@@ -1050,28 +1050,6 @@ void SurfaceMesh::remove_loop_helper(Halfedge h)
     has_garbage_ = true;
 }
 
-void SurfaceMesh::remove_edges_helper(Halfedge h1, Halfedge h3) 
-{
-    // Reroutes the topology at vertex to_vertex(ha) around ha & hb, so that
-    // ha and hb no longer form part of the fan around the vertex.
-    // ha is in, and hb is out.
-
-    // Collect the halfedges involved in this operation
-
-    auto h1n = next_halfedge(h1);
-    auto h3p = prev_halfedge(h3);
-
-    // Connect h1n and h3p to eachother
-
-    set_next_halfedge(h3p, h1n);
-
-    // That operation may have bisected the
-
-
-
-
-}
-
 void SurfaceMesh::combine_edges(Halfedge h1, Halfedge h2)
 {
     // Merges h2 into h1, removing a boundary and joining two faces.

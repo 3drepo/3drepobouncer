@@ -8,7 +8,7 @@ set(VERSION_MINOR 1_2)
 include_directories(${Boost_INCLUDE_DIRS} ${MONGO_INCLUDE_DIR} ${ASSIMP_INCLUDE_DIR} ${OCCT_INCLUDE_DIR} ${IFCOPENSHELL_INCLUDE_DIR} ${ODA_INCLUDE_DIR} ${SYNCHRO_READER_INCLUDE_DIR} ${AWSSDK_INCLUDE_DIR} ${CRYPTOLENS_INCLUDE_DIR} src ../)
 
 # == PMP ==
-include_directories("D:/3drepo/bouncer/3drepobouncer_ISSUE599/bouncer/src/repo/manipulator/modeloptimizer")
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/repo/manipulator/modeloptimizer)
 add_definitions(-D_USE_MATH_DEFINES)
 # ==
 

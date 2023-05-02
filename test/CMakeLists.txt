@@ -10,4 +10,7 @@ target_link_libraries(3drepobouncerTest gtest
 	${Boost_LIBRARIES} ${MONGO_LIBRARIES} ${ASSIMP_LIBRARIES} ${OCCT_LIBRARIES} ${IFCOPENSHELL_GEOMLIB} ${IFCOPENSHELL_PARSERLIB}  ${ODA_LIB}  ${SYNCHRO_READER_LIBRARIES} ${THRIFT_LIBRARIES} ${ZLIB_LIBRARIES} ${SYNCHRO_LIBRARIES} ${AWSSDK_LIBRARIES} ifcUtils_2x3 ifcUtils_4 ${CRYPTOLENS_LIBRARIES})
 add_test(3drepobouncerTest 3drepobouncerTest)
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../bouncer/src/repo/manipulator/modeloptimizer)
+add_definitions(-D_USE_MATH_DEFINES)
+
 install(TARGETS 3drepobouncerTest DESTINATION bin)

@@ -1,14 +1,6 @@
-#pragma optimize("", off)
-
 #include "pmp/algorithms/Merge.h"
 #include "pmp/algorithms/Normals.h"
-
-#include "pmp/algorithms/Diagnostics.h"
 #include "pmp/utilities.h"
-
-#include <unordered_map>
-#include <unordered_set>
-#include <set>
 
 /**
  * The Compression Algorithm combines vertices co-located in space.
@@ -140,8 +132,6 @@ void Merge::merge_vertices()
 
         merge_vertices(pair.first, pair.second);
     }
-
-    pmp::check_mesh(mesh);
 }
 
 // Collapses /p v1 into /p v0 and deletes /p v1. Both /p v0 and /p v1 must be

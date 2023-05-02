@@ -3,10 +3,18 @@
 
 #include "pmp/io/read_obj.h"
 #include <unordered_map>
+#include <fstream>
 
 namespace pmp {
 
-void read_obj(SurfaceMesh& mesh, const std::filesystem::path& file)
+void read_obj(SurfaceMesh& mesh, const std::filesystem::path& file) 
+{
+    std::ifstream in(file.string());
+    read_obj(mesh, in);
+    in.close();
+}
+
+void read_obj(SurfaceMesh& mesh, std::basic_istream<char>& in)
 {
     std::array<char, 200> s;
     float x, y, z;
@@ -38,16 +46,11 @@ void read_obj(SurfaceMesh& mesh, const std::filesystem::path& file)
     std::vector<Normal> all_normals;
     std::vector<TexCoord> all_tex_coords; 
    
-    // open file (in ASCII mode)
-    FILE* in = fopen(file.string().c_str(), "r");
-    if (!in)
-        throw IOException("Failed to open file: " + file.string());
-
     // clear line once
     memset(s.data(), 0, 200);
 
     // parse line by line (currently only supports vertex all_positions & faces
-    while (in && !feof(in) && fgets(s.data(), 200, in))
+    while (!in.eof() && in.getline(s.data(), 200))
     {
         // comment
         if (s[0] == '#' || isspace(s[0]))
@@ -210,9 +213,6 @@ void read_obj(SurfaceMesh& mesh, const std::filesystem::path& file)
     if (!with_normals)
     {
         mesh.remove_vertex_property(vertex_normals);
-    }
-
-    fclose(in);
-}
+    }}
 
 } // namespace pmp

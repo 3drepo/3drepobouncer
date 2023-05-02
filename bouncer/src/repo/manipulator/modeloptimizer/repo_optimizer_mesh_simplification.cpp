@@ -206,6 +206,10 @@ void MeshSimplificationOptimizer::convertMeshNode(repo::core::model::MeshNode* n
 
 repo::core::model::MeshNode MeshSimplificationOptimizer::updateMeshNode(repo::core::model::MeshNode* node, Mesh& mesh)
 {
+	// This method assumes a property arrays are contiguous, so make sure this is
+	// the case.
+	mesh.garbage_collection();
+
 	std::vector<uint32_t> level1faces; // (Api Level 1 Faces prepend each face with the number of indices, in this case always 3.)
 	for (auto face : mesh.faces())
 	{

@@ -5,14 +5,26 @@
 #pragma once
 
 #include <vector>
-#include <filesystem>
 
 #include "pmp/Types.h"
 #include "pmp/Properties.h"
 #include "pmp/io/IOFlags.h"
 
 namespace std {
-    namespace filesystem = std::experimental::filesystem;
+    namespace filesystem
+    {
+        class path
+        {
+            std::string inner;
+
+        public:
+            path(const char* s) { inner = std::string(s); }
+            path(std::string s) { inner = std::string(s); }
+
+            path extension() const { return path(inner.substr(inner.size() - 4)); }
+            std::string string() const { return inner; }
+        };
+    }
 }
 
 namespace pmp {
@@ -1911,8 +1923,6 @@ private:
 
     // Helper for halfedge collapse
     void remove_loop_helper(Halfedge h);
-
-    void remove_edges_helper(Halfedge ha, Halfedge hb);
 
     // are there any deleted entities?
     inline bool has_garbage() const { return has_garbage_; }

@@ -6,6 +6,7 @@
 
 add_subdirectory(algorithms)
 add_subdirectory(io)
+add_subdirectory(visualization)
 set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/SurfaceMesh.cpp

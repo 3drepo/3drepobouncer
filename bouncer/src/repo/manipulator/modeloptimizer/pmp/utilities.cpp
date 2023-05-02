@@ -119,14 +119,29 @@ void check_mesh(SurfaceMesh& mesh)
 
         // And that looping through the vertices doesn't get stuck
 
+
+        auto i = 0;
         auto hend = h;
         do
         {
             h = mesh.cw_rotated_halfedge(h);
+            i++;
+            if (i > 9999999)
+            {
+                auto what = "Infinite loop circulating around vertex";
+                throw pmp::TopologyException(what);
+            }
         } while (h != hend);
 
+        i = 0;
         do
         {
+            i++;
+            if (i > 9999999)
+            {
+                auto what = "Infinite loop circulating around vertex";
+                throw pmp::TopologyException(what);
+            }
             h = mesh.ccw_rotated_halfedge(h);
         } while (h != hend);
     }

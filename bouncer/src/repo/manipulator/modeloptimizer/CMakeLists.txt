@@ -3,7 +3,6 @@
 #If you need to import an extra library or something clever, do it on the CMakeLists.txt at the root level
 #If you really need to overwrite this file, be aware that it will be overwritten if updateSources.py is executed.
 
-include_directories(${CMAKE_CURRENT_LIST_DIR})
 
 add_subdirectory(Eigen)
 add_subdirectory(bvh)
