@@ -16,10 +16,9 @@
 */
 
 /**
-* Transformation Reduction Optimizer
-* Reduces the amount of transformations within the scene graph by
-* merging transformation with its mesh (provided the mesh doesn't have
-* multiple parent
+* Mesh Simplification Optimizer
+* Performs decimation on compatible meshes to reduce vertex count at the cost
+* of quality.
 */
 
 #include "repo_optimizer_mesh_simplification.h"
@@ -152,6 +151,11 @@ bool MeshSimplificationOptimizer::canOptimizeMeshNode(repo::core::model::RepoSce
 		return false;
 	}
 
+	if(node->getNumVertices() < minVertexCount)
+	{
+		return false;
+	}
+
 	return true;
 }
 
@@ -226,7 +230,7 @@ repo::core::model::MeshNode MeshSimplificationOptimizer::updateMeshNode(repo::co
 
 	std::vector<repo::lib::RepoVector3D> normals;
 	normals.resize(mesh.n_vertices());
-	memcpy(normals.data(), mesh.get_vertex_property<pmp::Point>("v:normal").data(), mesh.n_vertices() * sizeof(repo::lib::RepoVector3D));
+	memcpy(normals.data(), mesh.get_vertex_property<pmp::Normal>("v:normal").data(), mesh.n_vertices() * sizeof(repo::lib::RepoVector3D));
 
 	return node->cloneAndUpdateGeometry(
 		vertices,
@@ -243,12 +247,7 @@ repo::core::model::MeshNode MeshSimplificationOptimizer::optimizeMeshNode(repo::
 	MeshSimplificationOptimizer::Mesh mesh;
 	convertMeshNode(meshNode, mesh);
 
-	auto maxVertices = getVolume(meshNode) * quality;
-
-	if(meshNode->getNumVertices() < minVertexCount) // Don't try and do anything with very small meshes
-	{
-		return *meshNode;
-	}
+	auto maxVertices = std::max(getVolume(meshNode) * quality, (double)minVertexCount);
 
 	try {
 
@@ -267,17 +266,8 @@ repo::core::model::MeshNode MeshSimplificationOptimizer::optimizeMeshNode(repo::
 		pmp::Merge merge(mesh);
 		merge.merge();
 
-		// The decimation expects a pure triangle mesh. The triangulation expects 
-		// manifold polygons.
-
-		manifold.fix_manifold();
-
-		pmp::check_mesh(mesh);
-
-		pmp::Triangulation(mesh).triangulate();
-
 		pmp::Decimation decimation(mesh);
-		decimation.initialize();
+		decimation.initialize(0.0, 0.0, 0.0, 30.0, 0.0);
 		decimation.decimate(maxVertices);
 
 		pmp::check_mesh(mesh);
