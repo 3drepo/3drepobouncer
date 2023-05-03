@@ -429,7 +429,7 @@ int32_t importFileAndCommit(
 			timeZone = jsonTree.get<std::string>("timezone", "");
 			units = jsonTree.get<std::string>("units", "");
 			simplificationQuality = jsonTree.get<double>("quality", 0.0);
-			simplificationMinVertexCount = jsonTree.get<int>("minVertexCount", 0.0);
+			simplificationMinVertexCount = jsonTree.get<int>("vertexCount", 0.0);
 
 			rotate = jsonTree.get<bool>("dxrotate", rotate);
 			importAnimations = jsonTree.get<bool>("importAnimations", importAnimations);
@@ -496,7 +496,8 @@ int32_t importFileAndCommit(
 
 	repoLog("File: " + fileLoc + " database: " + database
 		+ " project: " + project + " target units: " + (units.empty() ? "none" : units) 
-		+ " target quality: " + (simplificationQuality > 0 ? std::to_string(simplificationQuality) : "off") + " rotate: " + (rotate ? "true" : "false")
+		+ " simplification: " + (simplificationQuality > 0 ? ("(quality " + std::to_string(simplificationQuality)) + ", min vertex count " + std::to_string(simplificationMinVertexCount) + ")" : "off")
+		+ " rotate: " + (rotate ? "true" : "false")
 		+ " owner :" + owner + " importAnimations: " + (importAnimations ? "true" : "false"));
 
 	repo::manipulator::modelconvertor::ModelImportConfig config(true, rotate, importAnimations, targetUnits, simplificationQuality, simplificationMinVertexCount, timeZone);
