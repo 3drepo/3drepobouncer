@@ -26,6 +26,7 @@
 #include "../../lib/repo_log.h"
 
 #include <vector>
+#include <chrono>
 
 #include <ifcUtils/repo_ifc_utils_constants.h>
 
@@ -43,6 +44,8 @@
 #include "pmp/BoundingBox.h"
 #include "pmp/utilities.h";
 #include "pmp/io/write_pmp.h"
+
+#define CHRONO_DURATION(start) std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count()
 
 using namespace repo::manipulator::modeloptimizer;
 
@@ -66,6 +69,7 @@ MeshSimplificationOptimizer::~MeshSimplificationOptimizer()
 
 bool MeshSimplificationOptimizer::apply(repo::core::model::RepoScene *scene)
 {
+	auto start = std::chrono::high_resolution_clock::now();
 	bool success = false;
 	if (scene && scene->hasRoot(gType))
 	{
@@ -97,6 +101,7 @@ bool MeshSimplificationOptimizer::apply(repo::core::model::RepoScene *scene)
 	{
 		repoError << "Trying to apply optimisation on an empty scene!";
 	}
+	repoInfo << "MeshSimplificationOptimizer completed in " << CHRONO_DURATION(start) << " milliseconds.";
 	return success;
 }
 
@@ -261,8 +266,6 @@ repo::core::model::MeshNode MeshSimplificationOptimizer::optimizeMeshNode(repo::
 		pmp::Manifold manifold(mesh);
 		manifold.fix_manifold();
 
-		pmp::check_mesh(mesh);
-
 		pmp::Merge merge(mesh);
 		merge.merge();
 
@@ -270,14 +273,22 @@ repo::core::model::MeshNode MeshSimplificationOptimizer::optimizeMeshNode(repo::
 		decimation.initialize(0.0, 0.0, 0.0, 30.0, 0.0);
 		decimation.decimate(maxVertices);
 
-		pmp::check_mesh(mesh);
-
-		manifold.fix_manifold();
-	
 		// Finally make sure the mesh is still a pure triangle mesh since that
 		// is the highest order primitive we handle.
 
-		pmp::Triangulation(mesh).triangulate();
+		bool isTriangular = true;
+		for (auto f : mesh.faces())
+		{
+			if (mesh.valence(f) != 3) {
+				isTriangular = false;
+			}
+		}
+
+		if (!isTriangular) {
+
+			manifold.fix_manifold();
+			pmp::Triangulation(mesh).triangulate();
+		}
 
 		repoInfo << "Reduced mesh from " << meshNode->getNumVertices() << " to " << mesh.n_vertices() << " vertices (target " << maxVertices << " vertices)";
 
