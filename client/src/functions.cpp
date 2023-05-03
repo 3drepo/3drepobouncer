@@ -407,8 +407,8 @@ int32_t importFileAndCommit(
 	std::string project;
 	std::string  owner, tag, desc, units;
 	repo::lib::RepoUUID revId = repo::lib::RepoUUID::createUUID();
-	double simplificationQuality;
-	int simplificationMinVertexCount;
+	double simplificationQuality = 0;
+	int simplificationMinVertexCount = 0;
 
 	bool success = true;
 	bool rotate = false;
