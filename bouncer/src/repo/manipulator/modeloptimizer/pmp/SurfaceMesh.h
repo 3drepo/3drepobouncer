@@ -1826,6 +1826,16 @@ public:
         return Vertex(static_cast<IndexType>(vertices_size()) - 1);
     }
 
+    Vertex clone_vertex(Vertex v) 
+    {
+        auto new_vertex = add_vertex(vpoint_[v]);
+        for (auto p : vprops_.arrays())
+        {
+            p->copy(v.idx(), new_vertex.idx());
+        }
+        return new_vertex;
+    }
+
     //! \brief Allocate a new edge, resize edge and halfedge properties accordingly.
     //! \throw AllocationException in case of failure to allocate a new edge.
     Halfedge new_edge()

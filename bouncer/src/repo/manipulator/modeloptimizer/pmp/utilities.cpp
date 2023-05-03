@@ -177,6 +177,23 @@ void check_mesh(SurfaceMesh& mesh)
             }
         }
     }
+
+    // Check for degenerate normals
+
+    auto p = mesh.get_vertex_property<pmp::Normal>("v:normal");
+    if (p)
+    {
+        for (auto v : mesh.vertices())
+        {
+            auto n = p[v];
+            auto dp = n[0] * n[0] + n[1] * n[1] + n[2] * n[2];
+            if (dp > 1.1 || dp < 0.9)
+            {
+                auto what = "Found a non-normalized normal.";
+                throw pmp::TopologyException(what);
+            }
+        }
+    }
 }
 
 } // namespace pmp

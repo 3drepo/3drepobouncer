@@ -1147,7 +1147,7 @@ void SurfaceMesh::combine_edges(Halfedge h1, Halfedge h2)
         {
             // If we have created a non-boundary vertex, then the newly created 
             // patch will have to go attach to a new vertex
-            auto nv = add_vertex(vpoint_[v0]);
+            auto nv = clone_vertex(v0);
             set_vertex(h3p, nv);
             set_vertex(opposite_halfedge(h1n), nv);
             set_halfedge(nv, opposite_halfedge(h3p));
@@ -1169,7 +1169,7 @@ void SurfaceMesh::combine_edges(Halfedge h1, Halfedge h2)
         }
         else
         {
-            auto nv = add_vertex(vpoint_[v1]);
+            auto nv = clone_vertex(v1);
             set_vertex(h1p, nv);
             set_vertex(opposite_halfedge(h3n), nv);
             set_halfedge(nv, opposite_halfedge(h1p));

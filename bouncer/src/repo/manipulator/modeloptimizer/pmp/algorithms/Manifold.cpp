@@ -1,5 +1,3 @@
-#pragma optimize("", off)
-
 #include "pmp/algorithms/Manifold.h"
 #include "pmp/algorithms/Normals.h"
 #include <vector>
@@ -45,6 +43,7 @@ void Manifold::remove_reflected_edge(Halfedge in, Halfedge out)
 void Manifold::fix_manifold()
 {
     auto points = mesh.get_vertex_property<Point>("v:point");
+    auto normals = mesh.get_vertex_property<Normal>("v:normal");
     std::vector<Halfedge> second_corner;
     for (auto v : mesh.vertices())
     {
@@ -109,6 +108,8 @@ void Manifold::fix_manifold()
                         // Make a copy of the vertex to re-direct the new patch to
                         auto p = points[v];
                         auto copy = mesh.add_vertex(p);
+
+                        normals[copy] = normals[v];
 
                         for (auto ch : second_corner)
                         {
