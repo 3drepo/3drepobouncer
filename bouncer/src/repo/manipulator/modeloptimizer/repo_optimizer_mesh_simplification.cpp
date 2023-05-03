@@ -254,17 +254,18 @@ repo::core::model::MeshNode MeshSimplificationOptimizer::optimizeMeshNode(repo::
 
 	auto maxVertices = std::max(getVolume(meshNode) * quality, (double)minVertexCount);
 
+	/*
+	std::string path = "D:\\3drepo\\ISSUE_599\\debug\\" + meshNode->getUniqueID().toString();
+	pmp::IOFlags flags;
+	flags.use_vertex_normals = true;
+	pmp::write_pmp(mesh, path, flags);
+	*/
+
 	try {
 
 		// The first step is to collapse coincident vertices; most importers will 
 		// generate multiple vertices when encountering per-vertex normals, which
 		// prevent the identification of common edges to collapse.
-
-		// The merge algorithm expects that meshes are manifold to begin with, 
-		// though it may not leave it manifold.
-
-		pmp::Manifold manifold(mesh);
-		manifold.fix_manifold();
 
 		pmp::Merge merge(mesh);
 		merge.merge();
@@ -286,7 +287,7 @@ repo::core::model::MeshNode MeshSimplificationOptimizer::optimizeMeshNode(repo::
 
 		if (!isTriangular) {
 
-			manifold.fix_manifold();
+			pmp::Manifold(mesh).fix_manifold();
 			pmp::Triangulation(mesh).triangulate();
 		}
 
