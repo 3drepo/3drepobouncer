@@ -19,5 +19,6 @@ private:
     SurfaceMesh& mesh;
 
     void remove_reflected_edge(Halfedge in, Halfedge out);
+    void detach_patch(Halfedge rh);
 };
 } // namespace pmp

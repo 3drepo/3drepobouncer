@@ -1151,6 +1151,7 @@ void SurfaceMesh::combine_edges(Halfedge h1, Halfedge h2)
             set_vertex(h3p, nv);
             set_vertex(opposite_halfedge(h1n), nv);
             set_halfedge(nv, opposite_halfedge(h3p));
+            adjust_outgoing_halfedge(nv);
         }
     }
 
@@ -1173,6 +1174,7 @@ void SurfaceMesh::combine_edges(Halfedge h1, Halfedge h2)
             set_vertex(h1p, nv);
             set_vertex(opposite_halfedge(h3n), nv);
             set_halfedge(nv, opposite_halfedge(h1p));
+            adjust_outgoing_halfedge(nv);
         }
     }
 

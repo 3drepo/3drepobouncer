@@ -1,3 +1,5 @@
+#pragma optimize("", off)
+
 #include "pmp/algorithms/Manifold.h"
 #include "pmp/algorithms/Normals.h"
 #include <vector>
@@ -40,113 +42,77 @@ void Manifold::remove_reflected_edge(Halfedge in, Halfedge out)
     }
 }
 
+void Manifold::detach_patch(Halfedge start) 
+{
+    // start is the outgoing half-edge on the right hand side of the fan.
+    // First, find the end (incoming, on the left hand side of the fan).
+
+    auto h = start;
+    do
+    {
+        h = mesh.cw_rotated_halfedge(h);
+    } while (!mesh.is_boundary(mesh.opposite_halfedge(h)));
+    auto end = mesh.opposite_halfedge(h);
+
+    // Update the topology, disconnecting the two patches
+
+    mesh.set_next_halfedge(mesh.prev_halfedge(start), mesh.next_halfedge(end));
+    mesh.set_next_halfedge(end, start);
+
+    // Then clone the vertex and redirect the patch to it
+
+    auto v = mesh.clone_vertex(mesh.from_vertex(start));
+
+    h = start;
+    do
+    {
+        mesh.set_vertex(mesh.opposite_halfedge(h), v);
+        h = mesh.cw_rotated_halfedge(h);
+    } while (mesh.opposite_halfedge(h) != end);
+
+    mesh.set_vertex(end, v);
+
+    mesh.set_halfedge(v, start);
+}
+
 void Manifold::fix_manifold()
 {
-    auto points = mesh.get_vertex_property<Point>("v:point");
-    auto normals = mesh.get_vertex_property<Normal>("v:normal");
-    std::vector<Halfedge> second_corner;
+    std::vector<Halfedge> patch;
     for (auto v : mesh.vertices())
     {
-        second_corner.clear();
+        patch.clear();
         auto h = mesh.halfedge(v);
-        auto hend = h;
 
-        // This is the boundary edge of the primary patch (the one that won't
-        // be detached). Moving from corner_start (which we find below) to
-        // corner_end should be across a set of faces with no gaps.
-        Halfedge corner_end;
-
-        // Since we are changing the topology in this method, step through
-        // the edges manually rather than using the iterator.
-
-        if (h.is_valid())
+        if(!mesh.is_boundary(v))
         {
-            do
-            {
-                auto nh = mesh.ccw_rotated_halfedge(h); // If not changed below, nh will be the next outgoing halfedge around v
-
-                if (corner_end.is_valid())
-                {
-                    // If we've already encountered a boundary, start tracking
-                    // additional edges, because they may form their own corner.
-
-                    second_corner.push_back(h);
-                }
-
-                if (mesh.is_boundary(h))
-                {
-                    if (!corner_end.is_valid())
-                    {
-                        corner_end = h;
-                    }
-                    else
-                    {
-                        // We have encountered a second outgoing boundary, and
-                        // so patch - we need to detach the corner into its own 
-                        // patch.
-
-                        // corner_start is the edge on the opposite side of the
-                        // primary patch to corner_end.
-
-                        auto corner_start =
-                            mesh.prev_halfedge(second_corner[second_corner.size() - 1]);
-
-                        // First split the two faces at v by turning the figure-
-                        // of-eight edge-loop into two closed loops.
-
-                        // (a & b are the incoming/outgoing edges that delineate
-                        // the patch to be detached).
-
-                        auto a = mesh.prev_halfedge(corner_end);
-                        auto b = mesh.next_halfedge(corner_start);
-
-                        // Make the connections..
-
-                        mesh.set_next_halfedge(corner_start, corner_end);
-                        mesh.set_next_halfedge(a, b);
-
-                        // Make a copy of the vertex to re-direct the new patch to
-                        auto p = points[v];
-                        auto copy = mesh.add_vertex(p);
-
-                        normals[copy] = normals[v];
-
-                        for (auto ch : second_corner)
-                        {
-                            mesh.set_vertex(mesh.opposite_halfedge(ch), copy);
-                        }
-
-                        mesh.set_halfedge(copy, second_corner[0]);
-
-                        // We are done with the corner patch. There may be more
-                        // patches to detach, so keep the corner_start edge
-                        // around.
-
-                        second_corner.clear();
-
-                        // Update the iterator so we keep to the main patch
-
-                        nh = mesh.opposite_halfedge(corner_start);
-
-                        // Check if we have introduced a reflected edge, and if
-                        // so delete it. Do this after the new topology has been 
-                        // completely finished, as it will delete the attached
-                        // vertices.
-
-                        if (mesh.edge(corner_start) == mesh.edge(corner_end))
-                        {
-                            remove_reflected_edge(corner_start, corner_end);
-                        }
-
-                        if (mesh.edge(a) == mesh.edge(b))
-                        {
-                            remove_reflected_edge(a, b);
-                        }
-                    }
-                }
-
-                h = nh;
-            } while (h != hend);
+            continue; // If the vertex is closed, then there can be no more than one patch
         }
+
+        if (!h.is_valid())
+        {
+            continue;
+        }
+
+        // To begin with, find the end of the primary patch
+        auto hend = h;
+        do
+        {
+            h = mesh.cw_rotated_halfedge(h);
+            auto o = mesh.opposite_halfedge(h);
+            if (mesh.is_boundary(o))
+            {
+                // If we've completed the loop, then there is only one patch 
+                // (the mesh vertex is manifold).
+                if (mesh.next_halfedge(o) == hend)
+                {
+                    break;
+                }
+
+                // Otherwise, we have found a second patch, that must be 
+                // detached.
+
+                detach_patch(mesh.next_halfedge(o));
+            }
+        } while (h != hend);
     }
 }
