@@ -165,6 +165,7 @@ bool AssetModelExport::generateTreeRepresentation()
 		auto meshes = scene->getAllMeshes(gType);
 
 		std::vector<std::string> assetFiles, vrAssetFiles, iosAssetsFiles, androidAssetsFiles, jsons;
+		std::vector<repo::lib::PropertyTree> meshesTrees;
 		for (const repo::core::model::RepoNode* node : meshes)
 		{
 			auto mesh = dynamic_cast<const repo::core::model::MeshNode*>(node);
@@ -208,6 +209,14 @@ bool AssetModelExport::generateTreeRepresentation()
 				jsons.push_back(fNamePrefix + "_unity.json.mpc");
 
 				success &= generateJSONMapping(mesh, scene, reSplitter->getSplitMapping());
+
+				repo::lib::PropertyTree meshTree;
+				meshTree.addToTree("id", mesh->getUniqueID().toString());
+				std::string jsonFileName = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + mesh->getUniqueID().toString() + "_unity.json.mpc";
+				meshTree.mergeSubTree("data", jsonTrees[jsonFileName]);
+
+				meshesTrees.push_back(meshTree);
+
 				delete reSplitter;
 			}
 			else
@@ -215,6 +224,16 @@ bool AssetModelExport::generateTreeRepresentation()
 				repoError << "Failed to generate a remapped mesh for mesh with ID : " << mesh->getUniqueID();
 				break;
 			}
+		}
+
+		if (jsonTrees.size()) {
+			// construct the full supermeshes cache
+
+			repo::lib::PropertyTree superMeshesTree;
+			superMeshesTree.addToTree("model", scene->getProjectName());
+			superMeshesTree.addArrayObjects("supermeshes", meshesTrees);
+
+			jsonTrees["/revision/" + scene->getRevisionID().toString() + "/supermeshes.json"] = superMeshesTree;
 		}
 
 		unityAssets = core::model::RepoBSONFactory::makeRepoUnityAssets(
