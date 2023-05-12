@@ -67,9 +67,48 @@ MeshSimplificationOptimizer::~MeshSimplificationOptimizer()
 {
 }
 
+static repo::core::model::MeshNode currentMeshNode;
+
+/*
+BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
+{
+	switch (fdwCtrlType)
+	{
+		// Handle the CTRL-C signal.
+	case CTRL_C_EVENT:
+		printf("Ctrl-C event\n\n");
+		try {
+			MeshSimplificationOptimizer::Mesh original;
+			MeshSimplificationOptimizer::convertMeshNode(&currentMeshNode, original);
+			std::string path = "D:\\3drepo\\ISSUE_599\\exception\\" + currentMeshNode.getUniqueID().toString();
+			pmp::IOFlags flags;
+			flags.use_vertex_normals = true;
+			pmp::write_pmp(original, path, flags);
+		}
+		catch (std::exception e) {
+			// Failed twice, no way we can get the mesh...
+		}
+		return TRUE;
+
+	default:
+		return FALSE;
+	}
+}
+*/
+
+
 bool MeshSimplificationOptimizer::apply(repo::core::model::RepoScene *scene)
 {
+	/*
+	if (SetConsoleCtrlHandler(CtrlHandler, TRUE))
+	{
+		repoInfo << "Control Handler Registered";
+	}
+	*/
+
 	auto start = std::chrono::high_resolution_clock::now();
+	size_t startingVertexCount = 0;
+	size_t endingVertexCount = 0;
 	bool success = false;
 	if (scene && scene->hasRoot(gType))
 	{
@@ -86,9 +125,13 @@ bool MeshSimplificationOptimizer::apply(repo::core::model::RepoScene *scene)
 				repo::core::model::MeshNode *mesh = dynamic_cast<repo::core::model::MeshNode*>(node);
 				if (mesh)
 				{
+					startingVertexCount += mesh->getNumVertices();
+
 					if (shouldOptimizeMeshNode(scene, mesh)) {
 						mesh->swap(optimizeMeshNode(mesh));
 					}
+
+					endingVertexCount += mesh->getNumVertices();
 				}
 				else
 				{
@@ -102,6 +145,8 @@ bool MeshSimplificationOptimizer::apply(repo::core::model::RepoScene *scene)
 		repoError << "Trying to apply optimisation on an empty scene!";
 	}
 	repoInfo << "MeshSimplificationOptimizer completed in " << CHRONO_DURATION(start) << " milliseconds.";
+	repoInfo << "MeshSimplificationOptimizer reduced model from " << startingVertexCount << " to " << endingVertexCount << " vertices.";
+
 	return success;
 }
 
@@ -246,22 +291,16 @@ repo::core::model::MeshNode MeshSimplificationOptimizer::updateMeshNode(repo::co
 
 repo::core::model::MeshNode MeshSimplificationOptimizer::optimizeMeshNode(repo::core::model::MeshNode* meshNode)
 {
-	// do the simplification here...
-	repoInfo << "Simplifying mesh " << meshNode->getName();
-
-	MeshSimplificationOptimizer::Mesh mesh;
-	convertMeshNode(meshNode, mesh);
-
-	auto maxVertices = std::max(getVolume(meshNode) * quality, (double)minVertexCount);
-
-	/*
-	std::string path = "D:\\3drepo\\ISSUE_599\\debug\\" + meshNode->getUniqueID().toString();
-	pmp::IOFlags flags;
-	flags.use_vertex_normals = true;
-	pmp::write_pmp(mesh, path, flags);
-	*/
-
 	try {
+		// do the simplification here...
+		repoInfo << "Simplifying mesh " << meshNode->getName();
+
+		currentMeshNode = *meshNode;//todo: debug
+
+		MeshSimplificationOptimizer::Mesh mesh;
+		convertMeshNode(meshNode, mesh);
+
+		auto maxVertices = std::max(getVolume(meshNode) * quality, (double)minVertexCount);
 
 		// The first step is to collapse coincident vertices; most importers will 
 		// generate multiple vertices when encountering per-vertex normals, which
@@ -297,19 +336,23 @@ repo::core::model::MeshNode MeshSimplificationOptimizer::optimizeMeshNode(repo::
 	}
 	catch (std::exception e)
 	{
-		repoInfo << "Exception " << e.what() << " simplifying mesh " << meshNode->getUniqueID().toString() << " to " << maxVertices << " vertices.";
+		repoInfo << "Exception " << e.what() << " simplifying mesh " << meshNode->getUniqueID().toString();
 
 		// uncomment this to have the bouncer output a pmp of any failed meshes so the algorithm can be run in isolation
-		
 		/*
-		MeshSimplificationOptimizer::Mesh original;
-		convertMeshNode(meshNode, original);
-		std::string path = "D:\\3drepo\\ISSUE_599\\exception\\" + meshNode->getUniqueID().toString();
-		pmp::IOFlags flags;
-		flags.use_vertex_normals = true;
-		pmp::write_pmp(original, path, flags);
+		try {
+			MeshSimplificationOptimizer::Mesh original;
+			convertMeshNode(meshNode, original);
+			std::string path = "D:\\3drepo\\ISSUE_599\\exception\\" + meshNode->getUniqueID().toString();
+			pmp::IOFlags flags;
+			flags.use_vertex_normals = true;
+			pmp::write_pmp(original, path, flags);
+		}
+		catch (std::exception e) {
+			// Failed twice, no way we can get the mesh...
+		}
 		*/
-
+		
 		return *meshNode;
 	}
 }

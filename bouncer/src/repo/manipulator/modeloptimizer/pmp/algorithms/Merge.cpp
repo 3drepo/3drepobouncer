@@ -226,6 +226,11 @@ void Merge::merge_edges()
                 std::swap(h1, h2);
             }
 
+            if (mesh.opposite_halfedge(mesh.next_halfedge(h2)) == mesh.prev_halfedge(mesh.opposite_halfedge(h1)))
+            {
+                continue;
+            }
+
             // We can only combine edges that mirror eachother across a boundary,
             // otherwise we would create complex edges.
 

@@ -54,7 +54,7 @@ namespace repo {
 				*/
 				virtual bool apply(repo::core::model::RepoScene *scene);
 
-			private:
+			public: //todo: private
 				const repo::core::model::RepoScene::GraphType gType;
 
 				/**
@@ -79,7 +79,7 @@ namespace repo {
 				* Converts a Repo MeshNode into the mutable representation for
 				* simplification.
 				*/
-				void convertMeshNode(repo::core::model::MeshNode* node, Mesh& mesh);
+				static void convertMeshNode(repo::core::model::MeshNode* node, Mesh& mesh);
 
 				/**
 				* Converts a mutable simplification mesh into a Repo MeshNode.
