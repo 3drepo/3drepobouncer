@@ -282,6 +282,12 @@ Face SurfaceMesh::add_face(const std::vector<Vertex>& vertices)
             auto what = "SurfaceMesh::add_face: Complex edge.";
             throw TopologyException(what);
         }
+
+        if (vertices[i] == vertices[ii])
+        {
+            auto what = "SurfaceMesh::add_face: Degenerate face.";
+            throw new TopologyException(what);
+        }
     }
 
     // re-link patches if necessary

@@ -195,15 +195,11 @@ void Merge::merge_edges()
 
         if (edges.size() > 1)
         {
-            // h1 must be the boundary edge in the pair
             auto h1 = edges[0];
             auto h2 = edges[1];
-            if (!mesh.is_boundary(h1))
-            {
-                std::swap(h1, h2);
-            }
 
-            // Make sure we are not touching any edges that have already been deleted.
+            // Make sure we are not touching any edges that have already been 
+            // deleted.
 
             if (mesh.is_deleted(h1))
             {
@@ -213,6 +209,21 @@ void Merge::merge_edges()
             if (mesh.is_deleted(h2))
             {
                 continue;
+            }
+
+            // A previous merge operation may have changed the topology since 
+            // the map was built, so double check the edges are still mirrored.
+
+            if(mesh.to_vertex(h1) != mesh.to_vertex(h2) || mesh.from_vertex(h1) != mesh.from_vertex(h2))
+            {
+                continue;
+            }
+
+            // h1 must be the boundary edge in the pair.
+
+            if (!mesh.is_boundary(h1))
+            {
+                std::swap(h1, h2);
             }
 
             // We can only combine edges that mirror eachother across a boundary,

@@ -125,7 +125,7 @@ void check_mesh(SurfaceMesh& mesh)
         {
             h = mesh.cw_rotated_halfedge(h);
             i++;
-            if (i > 9999999)
+            if (i > mesh.n_halfedges())
             {
                 auto what = "Infinite loop circulating around vertex";
                 throw pmp::TopologyException(what);
@@ -136,7 +136,7 @@ void check_mesh(SurfaceMesh& mesh)
         do
         {
             i++;
-            if (i > 9999999)
+            if (i > mesh.n_halfedges())
             {
                 auto what = "Infinite loop circulating around vertex";
                 throw pmp::TopologyException(what);
