@@ -875,7 +875,7 @@ bool RepoScene::commitNodes(
 	{
 		if (++count % 500 == 0 || count == total - 1)
 		{
-			repoInfo << "Committing " << count << " of " << total << "(Process time: " << processTime / 1000 << "s, FS I/O " << fsTime / 1000 << "s, DB I/O " << dbTime / 1000 << ")";
+			repoInfo << "Committing " << count << " of " << total << "(Process time: " << (processTime / 1000) << "s, FS I/O " << (fsTime / 1000) << "s, DB I/O " << (dbTime / 1000) << "s)";
 		}
 
 		auto pStart = std::chrono::high_resolution_clock::now();
@@ -894,7 +894,7 @@ bool RepoScene::commitNodes(
 		{
 			node->swap(shrunkNode);
 			auto pEnd = std::chrono::high_resolution_clock::now();
-			processTime += (pEnd - pStart).count();
+			processTime += std::chrono::duration_cast<std::chrono::milliseconds>(pEnd - pStart).count();
 
 			std::pair<size_t, size_t> timers;
 			success &= handler->insertDocument(databaseName, projectName + "." + ext, *node, errMsg, timers);

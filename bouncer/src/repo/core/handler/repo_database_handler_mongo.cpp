@@ -996,8 +996,8 @@ bool MongoDatabaseHandler::insertDocument(
 				success = storeBigFiles(database, collection, obj, errMsg);
 				auto fsEnd = std::chrono::high_resolution_clock::now();
 
-				timers.first = (dbEnd - dbStart).count();
-				timers.second = (fsEnd - fsStart).count();
+				timers.first = std::chrono::duration_cast<std::chrono::milliseconds>(dbEnd - dbStart).count();
+				timers.second = std::chrono::duration_cast<std::chrono::milliseconds>(fsEnd - fsStart).count();
 			}
 			else
 				errMsg = "Failed to count number of items in collection: cannot obtain a database worker from the pool";
