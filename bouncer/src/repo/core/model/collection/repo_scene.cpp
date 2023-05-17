@@ -25,6 +25,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
+#include <chrono>
 #include <fstream>
 
 #include "../../../lib/repo_log.h"
@@ -645,8 +646,9 @@ bool RepoScene::commitSequence(
 	bool success = true;
 	if (frameStates.size()) {
 		auto sequenceCol = projectName + "." + REPO_COLLECTION_SEQUENCE;
+		std::pair<size_t, size_t> timers;
 		if (handler->insertDocument(
-			databaseName, sequenceCol, sequence.cloneAndAddRevision(revID), err)) {
+			databaseName, sequenceCol, sequence.cloneAndAddRevision(revID), err, timers)) {
 			for (const auto &state : frameStates) {
 				if (!manager->uploadFileAndCommit(databaseName, sequenceCol, state.first, state.second)) {
 					repoError << "Failed to commit a sequence state.";
@@ -661,7 +663,7 @@ bool RepoScene::commitSequence(
 
 		auto taskCol = projectName + "." + REPO_COLLECTION_TASK;
 		for (const auto &task : tasks) {
-			if (!handler->insertDocument(databaseName, taskCol, task, err)) {
+			if (!handler->insertDocument(databaseName, taskCol, task, err, timers)) {
 				repoError << "Failed to commit task bson: " << err;
 				return false;
 			}
@@ -714,8 +716,9 @@ bool RepoScene::commitProjectSettings(
 	RepoProjectSettings projectSettings =
 		RepoBSONFactory::makeRepoProjectSettings(projectName, userName, graph.references.size());
 
+	std::pair<size_t, size_t> timers;
 	bool success = handler->insertDocument(
-		databaseName, REPO_COLLECTION_SETTINGS, projectSettings, errMsg);
+		databaseName, REPO_COLLECTION_SETTINGS, projectSettings, errMsg, timers);
 
 	if (!success)
 	{
@@ -862,19 +865,26 @@ bool RepoScene::commitNodes(
 	size_t count = 0;
 	size_t total = nodesToCommit.size();
 
+	size_t dbTime = 0;
+	size_t fsTime = 0;
+	size_t processTime = 0;
+
 	repoInfo << "Committing " << total << " nodes...";
 
 	for (const repo::lib::RepoUUID &id : nodesToCommit)
 	{
 		if (++count % 500 == 0 || count == total - 1)
 		{
-			repoInfo << "Committing " << count << " of " << total;
+			repoInfo << "Committing " << count << " of " << total << "(Process time: " << processTime / 1000 << "s, FS I/O " << fsTime / 1000 << "s, DB I/O " << dbTime / 1000 << ")";
 		}
+
+		auto pStart = std::chrono::high_resolution_clock::now();
 
 		const repo::lib::RepoUUID uniqueID = gType == GraphType::OPTIMIZED ? id : g.sharedIDtoUniqueID[id];
 		RepoNode *node = g.nodesByUniqueID[uniqueID];
 
 		RepoNode shrunkNode = node->cloneAndAddRevId(revId).cloneAndShrink();
+
 		if (shrunkNode.objsize() > handler->documentSizeLimit())
 		{
 			success = false;
@@ -883,7 +893,13 @@ bool RepoScene::commitNodes(
 		else
 		{
 			node->swap(shrunkNode);
-			success &= handler->insertDocument(databaseName, projectName + "." + ext, *node, errMsg);
+			auto pEnd = std::chrono::high_resolution_clock::now();
+			processTime += (pEnd - pStart).count();
+
+			std::pair<size_t, size_t> timers;
+			success &= handler->insertDocument(databaseName, projectName + "." + ext, *node, errMsg, timers);
+			dbTime += timers.first;
+			fsTime += timers.second;
 		}
 	}
 

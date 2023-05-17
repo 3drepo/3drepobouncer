@@ -19,6 +19,7 @@
 *  Mongo database handler
 */
 
+#include <chrono>
 #include <regex>
 #include <unordered_map>
 
@@ -975,7 +976,8 @@ bool MongoDatabaseHandler::insertDocument(
 	const std::string &database,
 	const std::string &collection,
 	const repo::core::model::RepoBSON &obj,
-	std::string &errMsg)
+	std::string &errMsg,
+	std::pair<size_t, size_t> &timers)
 {
 	bool success = false;
 	mongo::DBClientBase *worker;
@@ -985,10 +987,17 @@ bool MongoDatabaseHandler::insertDocument(
 			worker = workerPool->getWorker();
 			if (worker)
 			{
+				auto dbStart = std::chrono::high_resolution_clock::now();
 				worker->insert(getNamespace(database, collection), obj);
+				auto dbEnd = std::chrono::high_resolution_clock::now();
 				workerPool->returnWorker(worker);
 				worker = nullptr;
+				auto fsStart = std::chrono::high_resolution_clock::now();
 				success = storeBigFiles(database, collection, obj, errMsg);
+				auto fsEnd = std::chrono::high_resolution_clock::now();
+
+				timers.first = (dbEnd - dbStart).count();
+				timers.second = (fsEnd - fsStart).count();
 			}
 			else
 				errMsg = "Failed to count number of items in collection: cannot obtain a database worker from the pool";

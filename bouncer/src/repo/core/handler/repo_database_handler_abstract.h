@@ -30,9 +30,8 @@
 #include "../model/bson/repo_bson_role.h"
 #include "../model/bson/repo_bson_user.h"
 
-
-namespace repo{
-	namespace core{
+namespace repo {
+	namespace core {
 		namespace handler {
 			class AbstractDatabaseHandler {
 			public:
@@ -40,13 +39,13 @@ namespace repo{
 				/**
 				 * A Deconstructor
 				 */
-                                virtual ~AbstractDatabaseHandler(){}
+				virtual ~AbstractDatabaseHandler() {}
 
 				/**
 				* returns the size limit of each document(record) in bytes
 				* @return returns size limit in bytes.
 				*/
-                                uint64_t documentSizeLimit() { return maxDocumentSize; }
+				uint64_t documentSizeLimit() { return maxDocumentSize; }
 
 				///**
 				//* Generates a BSON object containing user credentials
@@ -92,19 +91,18 @@ namespace repo{
 				*/
 				virtual std::vector<repo::core::model::RepoBSON>
 					getAllFromCollectionTailable(
-					const std::string                             &database,
-					const std::string                             &collection,
-					const uint64_t                                &skip = 0,
-					const uint32_t								  &limit = 0,
-					const std::list<std::string>				  &fields = std::list<std::string>(),
-					const std::string							  &sortField = std::string(),
-					const int									  &sortOrder = -1) = 0;
+						const std::string                             &database,
+						const std::string                             &collection,
+						const uint64_t                                &skip = 0,
+						const uint32_t								  &limit = 0,
+						const std::list<std::string>				  &fields = std::list<std::string>(),
+						const std::string							  &sortField = std::string(),
+						const int									  &sortOrder = -1) = 0;
 
 				/**
 				* Get a list of all available collections
 				*/
 				virtual std::list<std::string> getCollections(const std::string &database) = 0;
-
 
 				/**
 				* Get a list of all available databases, alphabetically sorted by default.
@@ -119,7 +117,7 @@ namespace repo{
 				*/
 				virtual std::map<std::string, std::list<std::string> > getDatabasesWithProjects(
 					const std::list<std::string> &databases,
-					const std::string &projectExt = "scene") = 0;                          
+					const std::string &projectExt = "scene") = 0;
 
 				/**
 				* Get a list of projects associated with a given database (aka company account).
@@ -172,7 +170,8 @@ namespace repo{
 					const std::string &database,
 					const std::string &collection,
 					const repo::core::model::RepoBSON &obj,
-					std::string &errMsg) = 0;
+					std::string &errMsg,
+					std::pair<size_t, size_t> &timers) = 0;
 
 				/**
 				* Insert big raw file in binary format (using GridFS)
@@ -191,7 +190,7 @@ namespace repo{
 					const std::vector<uint8_t> &bin,
 					std::string          &errMsg,
 					const std::string          &contentType = "binary/octet-stream"
-					) = 0;
+				) = 0;
 
 				/**
 				* Insert a role into the database
@@ -409,14 +408,14 @@ namespace repo{
 					const std::string& database,
 					const std::string& collection,
 					const std::string& fname
-					) = 0;
+				) = 0;
 
 			protected:
 				/**
 				* Default constructor
 				* @param size maximum size of documents(records) in bytes
 				*/
-				AbstractDatabaseHandler(uint64_t size) :maxDocumentSize(size){};
+				AbstractDatabaseHandler(uint64_t size) :maxDocumentSize(size) {};
 
 				const uint64_t maxDocumentSize;
 			};

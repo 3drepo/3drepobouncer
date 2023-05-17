@@ -381,7 +381,8 @@ namespace repo {
 					const std::string &database,
 					const std::string &collection,
 					const repo::core::model::RepoBSON &obj,
-					std::string &errMsg);
+					std::string &errMsg,
+					std::pair<size_t, size_t> &timers);
 
 				/**
 				* Insert big raw file in binary format (using GridFS)
