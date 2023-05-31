@@ -29,10 +29,10 @@ namespace repo {
 				const static size_t MAX_FILE_SIZE_BYTES = 104857600; //100MB
 				class DataRef {
 					const std::string fileName;
-					const size_t startPos;
-					const size_t size;
+					const unsigned int startPos;
+					const unsigned int size;
 				public:
-					DataRef(const std::string &fileName, const size_t &startPos, const size_t &size)
+					DataRef(const std::string &fileName, const unsigned int &startPos, const unsigned int &size)
 						: fileName(fileName), startPos(startPos), size(size) {}
 
 					repo::core::model::RepoBSON serialise() const;
