@@ -37,6 +37,8 @@ namespace repo {
 
 					BlobFilesCreator(FileManager *fileManager, const std::string &database, const std::string &collection) : manager(fileManager), database(database), collection(collection) {};
 
+					void finished() { commitActiveFile(); }
+
 					DataRef insertBinary(const std::vector<uint8_t> &data);
 
 				private:

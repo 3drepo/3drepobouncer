@@ -1048,6 +1048,8 @@ bool MongoDatabaseHandler::insertManyDocuments(
 					worker->insert(getNamespace(database, collection), toCommit);
 				}
 
+				blobCreator.finished();
+
 				workerPool->returnWorker(worker);
 				worker = nullptr;
 				success = true;
