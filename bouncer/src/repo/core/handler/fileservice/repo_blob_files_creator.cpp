@@ -52,12 +52,3 @@ DataRef BlobFilesCreator::insertBinary(const std::vector<uint8_t> &data) {
 
 	return DataRef(activeFile->name, startPos, dataSize);
 }
-
-repo::core::model::RepoBSON DataRef::serialise() const {
-	repo::core::model::RepoBSONBuilder builder;
-	builder.append("start", startPos);
-	builder.append("size", size);
-	builder.append("name", fileName);
-
-	return builder.obj();
-}

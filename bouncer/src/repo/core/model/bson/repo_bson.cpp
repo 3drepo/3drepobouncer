@@ -22,7 +22,7 @@
 using namespace repo::core::model;
 
 RepoBSON::RepoBSON(const RepoBSON &obj,
-	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping) : 
+	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping) :
 	mongo::BSONObj(obj),
 	bigFiles(binMapping) {
 	auto existingFiles = obj.getFilesMapping();
@@ -54,7 +54,6 @@ RepoBSON::RepoBSON(const RepoBSON &obj,
 			bigFiles[pair.first] = pair.second;
 		}
 	}
-
 }
 
 RepoBSON::RepoBSON(
@@ -63,7 +62,6 @@ RepoBSON::RepoBSON(
 	: mongo::BSONObj(obj),
 	bigFiles(binMapping)
 {
-	
 	if (bigFiles.size() > 0)
 	{
 		mongo::BSONObjBuilder builder, arrbuilder;
@@ -116,7 +114,7 @@ RepoBSON RepoBSON::cloneAndShrink() const
 	std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>>> rawFiles(bigFiles.begin(), bigFiles.end());
 	std::string uniqueIDStr = hasField(REPO_LABEL_ID) ? getUUIDField(REPO_LABEL_ID).toString() : repo::lib::RepoUUID::createUUID().toString();
 
-	RepoBSON resultBson = *this;	
+	RepoBSON resultBson = *this;
 
 	for (const std::string &field : fields)
 	{
@@ -131,15 +129,49 @@ RepoBSON RepoBSON::cloneAndShrink() const
 	return RepoBSON(resultBson, rawFiles);
 }
 
-repo::lib::RepoUUID RepoBSON::getUUIDField(const std::string &label) const{
+std::pair<repo::core::model::RepoBSON, std::vector<uint8_t>> RepoBSON::getBinariesAsBuffer() const {
+	std::pair<repo::core::model::RepoBSON, std::vector<uint8_t>> res;
+	if (bigFiles.size()) {
+		std::vector<uint8_t> &buffer = res.second;
+		mongo::BSONObjBuilder elemsBuilder;
 
+		for (const auto &entry : bigFiles) {
+			mongo::BSONObjBuilder entryBuilder;
 
+			entryBuilder << "start" << (unsigned int)buffer.size();
+			buffer.insert(buffer.end(), entry.second.second.begin(), entry.second.second.end());
+			entryBuilder << "size" << (unsigned int)entry.second.second.size();
+
+			elemsBuilder << entry.first << entryBuilder.obj();
+		}
+
+		res.first = elemsBuilder.obj();
+	}
+
+	return res;
+}
+
+void RepoBSON::replaceBinaryWithReference(const repo::core::model::RepoBSON &fileRef, const repo::core::model::RepoBSON &elemRef) {
+	mongo::BSONObjBuilder objBuilder;
+	objBuilder << "elements" << (mongo::BSONObj)elemRef;
+	objBuilder << "buffer" << (mongo::BSONObj)fileRef;
+
+	auto obj = objBuilder.obj();
+
+	mongo::BSONObjBuilder builder;
+	builder.append("_blobRef", obj);
+	builder.appendElementsUnique(*this);
+
+	*this = builder.obj();
+}
+
+repo::lib::RepoUUID RepoBSON::getUUIDField(const std::string &label) const {
 	return hasField(label) ?
 		repo::lib::RepoUUID::fromBSONElement(getField(label)) :
 		repo::lib::RepoUUID::createUUID();
 }
 
-std::vector<repo::lib::RepoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) const{
+std::vector<repo::lib::RepoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) const {
 	std::vector<repo::lib::RepoUUID> results;
 
 	if (hasField(label))

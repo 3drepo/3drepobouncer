@@ -19,39 +19,21 @@
 
 #include <string>
 
-#include "./repo_file_manager.h"
-#include "./repo_data_ref.h"
+#include "../../../core/model/bson/repo_bson_builder.h"
 
 namespace repo {
 	namespace core {
 		namespace handler {
 			namespace fileservice {
-				const static size_t MAX_FILE_SIZE_BYTES = 104857600; //100MB
-				class BlobFilesCreator
-				{
+				class DataRef {
+					const std::string fileName;
+					const unsigned int startPos;
+					const unsigned int size;
 				public:
-					/**
-					 * A Deconstructor
-					 */
-					~BlobFilesCreator() { commitActiveFile(); }
+					DataRef(const std::string &fileName, const unsigned int &startPos, const unsigned int &size)
+						: fileName(fileName), startPos(startPos), size(size) {}
 
-					BlobFilesCreator(FileManager *fileManager, const std::string &database, const std::string &collection) : manager(fileManager), database(database), collection(collection) {};
-
-					DataRef insertBinary(const std::vector<uint8_t> &data);
-
-				private:
-					struct fileEntry
-					{
-						std::string name;
-						std::vector<uint8_t> buffer;
-					};
-
-					void commitActiveFile();
-					void newActiveFile();
-
-					FileManager* manager;
-					const std::string database, collection;
-					std::shared_ptr<fileEntry> activeFile; //mem address we're currently writing to
+					repo::core::model::RepoBSON serialise() const;
 				};
 			}
 		}

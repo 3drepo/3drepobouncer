@@ -1038,7 +1038,11 @@ bool MongoDatabaseHandler::insertManyDocuments(
 					std::vector<mongo::BSONObj> toCommit;
 					do {
 						auto node = *it;
-						//node.storeBinaries(blobCreator);
+						auto data = node.getBinariesAsBuffer();
+						if (data.second.size()) {
+							auto ref = blobCreator.insertBinary(data.second);
+							node.replaceBinaryWithReference(ref.serialise(), data.first);
+						}
 					} while (++it != last);
 
 					worker->insert(getNamespace(database, collection), toCommit);
@@ -1046,8 +1050,6 @@ bool MongoDatabaseHandler::insertManyDocuments(
 
 				workerPool->returnWorker(worker);
 				worker = nullptr;
-				//FIXME
-				//success = storeBigFiles(database, collection, objs, errMsg);
 			}
 			else
 				errMsg = "Failed to count number of items in collection: cannot obtain a database worker from the pool";
