@@ -20,6 +20,7 @@
 #include <string>
 
 #include "./repo_file_manager.h"
+#include "../../../core/model/bson/repo_bson_builder.h"
 
 namespace repo {
 	namespace core {
@@ -33,6 +34,8 @@ namespace repo {
 				public:
 					DataRef(const std::string &fileName, const size_t &startPos, const size_t &size)
 						: fileName(fileName), startPos(startPos), size(size) {}
+
+					repo::core::model::RepoBSON serialise() const;
 				};
 				class BlobFilesCreator
 				{
