@@ -24,11 +24,13 @@
 
 #include "repo_database_handler_mongo.h"
 #include "fileservice/repo_file_manager.h"
+#include "fileservice/repo_blob_files_creator.h"
 #include "../../lib/repo_log.h"
 
 using namespace repo::core::handler;
 
 static uint64_t MAX_MONGO_BSON_SIZE = 16777216L;
+static uint64_t MAX_PARALLEL_BSON = 10000;
 //------------------------------------------------------------------------------
 
 const std::string repo::core::handler::MongoDatabaseHandler::ID = "_id";
@@ -988,7 +990,64 @@ bool MongoDatabaseHandler::insertDocument(
 				worker->insert(getNamespace(database, collection), obj);
 				workerPool->returnWorker(worker);
 				worker = nullptr;
-				success = storeBigFiles(database, collection, obj, errMsg);
+
+				//FI
+//				success = storeBigFiles(database, collection, obj, errMsg);
+			}
+			else
+				errMsg = "Failed to count number of items in collection: cannot obtain a database worker from the pool";
+		}
+		catch (mongo::DBException &e)
+		{
+			std::string errString(e.what());
+			errMsg += errString;
+		}
+		if (worker)
+			workerPool->returnWorker(worker);
+	}
+	else
+	{
+		errMsg = "Unable to insert Document, database(value : " + database + ")/collection(value : " + collection + ") name was not specified";
+	}
+
+	return success;
+}
+
+bool MongoDatabaseHandler::insertManyDocuments(
+	const std::string &database,
+	const std::string &collection,
+	const std::vector<repo::core::model::RepoBSON> &objs,
+	std::string &errMsg)
+{
+	bool success = false;
+	mongo::DBClientBase *worker;
+	if (!database.empty() || collection.empty())
+	{
+		try {
+			worker = workerPool->getWorker();
+			if (worker)
+			{
+				auto fileManager = fileservice::FileManager::getManager();
+
+				fileservice::BlobFilesCreator blobCreator(fileManager, database, collection);
+
+				for (int i = 0; i < objs.size(); i += MAX_PARALLEL_BSON) {
+					std::vector<repo::core::model::RepoBSON>::const_iterator it = objs.begin() + i;
+					std::vector<repo::core::model::RepoBSON>::const_iterator last = i + MAX_PARALLEL_BSON >= objs.size() ? objs.end() : it + MAX_PARALLEL_BSON;
+
+					std::vector<mongo::BSONObj> toCommit;
+					do {
+						auto node = *it;
+						//node.storeBinaries(blobCreator);
+					} while (++it != last);
+
+					worker->insert(getNamespace(database, collection), toCommit);
+				}
+
+				workerPool->returnWorker(worker);
+				worker = nullptr;
+				//FIXME
+				//success = storeBigFiles(database, collection, objs, errMsg);
 			}
 			else
 				errMsg = "Failed to count number of items in collection: cannot obtain a database worker from the pool";
@@ -1286,7 +1345,8 @@ bool MongoDatabaseHandler::upsertDocument(
 			if (success) {
 				workerPool->returnWorker(worker);
 				worker = nullptr;
-				success = storeBigFiles(database, collection, obj, errMsg);
+				//FIXME
+				//success = storeBigFiles(database, collection, obj, errMsg);
 			}
 		}
 		else
@@ -1298,35 +1358,6 @@ bool MongoDatabaseHandler::upsertDocument(
 		std::string errString(e.what());
 		errMsg += errString;
 		if (worker) workerPool->returnWorker(worker);
-	}
-
-	return success;
-}
-
-bool MongoDatabaseHandler::storeBigFiles(
-	const std::string &database,
-	const std::string &collection,
-	const repo::core::model::RepoBSON &obj,
-	std::string &errMsg
-)
-{
-	bool success = true;
-
-	if (obj.hasOversizeFiles())
-	{
-		const std::vector<std::pair<std::string, std::string>> fNames = obj.getFileList();
-		repoTrace << "storeBigFiles: #oversized files: " << fNames.size();
-		auto fileManager = fileservice::FileManager::getManager();
-		for (const auto &file : fNames)
-		{
-			std::vector<uint8_t> binary = obj.getBigBinary(file.first);
-			repoTrace << "Uploading " << file.second << " file size " << binary.size();
-			if (!(binary.size() && fileManager->uploadFileAndCommit(database, collection, file.second, binary))) {
-				repoError << "Failed to upload binary into file service";
-				success = false;
-			}
-			repoTrace << "Upload completed " << success;
-		}
 	}
 
 	return success;

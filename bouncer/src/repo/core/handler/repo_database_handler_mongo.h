@@ -384,6 +384,20 @@ namespace repo {
 					std::string &errMsg);
 
 				/**
+				* Insert multiple document in database.collection
+				* @param database name
+				* @param collection name
+				* @param documents to insert
+				* @param errMsg error message should it fail
+				* @return returns true upon success
+				*/
+				virtual bool insertManyDocuments(
+					const std::string &database,
+					const std::string &collection,
+					const std::vector<repo::core::model::RepoBSON> &obj,
+					std::string &errMsg);
+
+				/**
 				* Insert big raw file in binary format (using GridFS)
 				* @param database name
 				* @param collection name
@@ -723,22 +737,6 @@ namespace repo {
 					const OPERATION                         &op,
 					const repo::core::model::RepoUser &user,
 					std::string                       &errMsg);
-
-				/**
-				* check if the bson object contains any big binary files
-				* if yes, store them in gridFS
-				* @param worker the worker to operate with
-				* @param database database to store in
-				* @param collection collection to store in
-				* @param obj the bson object to work with
-				* @param errMsg error message when failed
-				* @return returns true upon success
-				*/
-				bool storeBigFiles(
-					const std::string &database,
-					const std::string &collection,
-					const repo::core::model::RepoBSON &obj,
-					std::string &errMsg);
 
 				/**
 				* Compares two strings.

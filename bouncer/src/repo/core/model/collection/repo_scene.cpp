@@ -863,6 +863,7 @@ bool RepoScene::commitNodes(
 	size_t total = nodesToCommit.size();
 
 	repoInfo << "Committing " << total << " nodes...";
+	std::vector< repo::core::model::RepoBSON> nodes;
 
 	for (const repo::lib::RepoUUID &id : nodesToCommit)
 	{
@@ -883,11 +884,11 @@ bool RepoScene::commitNodes(
 		else
 		{
 			node->swap(shrunkNode);
-			success &= handler->insertDocument(databaseName, projectName + "." + ext, *node, errMsg);
+			nodes.push_back(*node);
 		}
 	}
 
-	return success;
+	return handler->insertManyDocuments(databaseName, projectName + "." + ext, nodes, errMsg);
 }
 
 bool RepoScene::commitSceneChanges(
