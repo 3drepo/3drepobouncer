@@ -867,11 +867,6 @@ bool RepoScene::commitNodes(
 
 	for (const repo::lib::RepoUUID &id : nodesToCommit)
 	{
-		if (++count % 500 == 0 || count == total - 1)
-		{
-			repoInfo << "Committing " << count << " of " << total;
-		}
-
 		const repo::lib::RepoUUID uniqueID = gType == GraphType::OPTIMIZED ? id : g.sharedIDtoUniqueID[id];
 		RepoNode *node = g.nodesByUniqueID[uniqueID];
 

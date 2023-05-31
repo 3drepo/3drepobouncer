@@ -27,28 +27,6 @@ RepoBSON::RepoBSON(const RepoBSON &obj,
 	bigFiles(binMapping) {
 	auto existingFiles = obj.getFilesMapping();
 
-	if (bigFiles.size() > 0)
-	{
-		mongo::BSONObjBuilder builder, arrbuilder;
-
-		for (const auto & pair : bigFiles)
-		{
-			//append field name :file name
-			arrbuilder << pair.first << pair.second.first;
-		}
-
-		if (obj.hasField(REPO_LABEL_OVERSIZED_FILES))
-		{
-			arrbuilder.appendElementsUnique(obj.getObjectField(REPO_LABEL_OVERSIZED_FILES));
-		}
-
-		builder.append(REPO_LABEL_OVERSIZED_FILES, arrbuilder.obj());
-		builder.appendElementsUnique(obj);
-
-		*this = builder.obj();
-		bigFiles = binMapping;
-	}
-
 	for (const auto &pair : existingFiles) {
 		if (bigFiles.find(pair.first) == bigFiles.end()) {
 			bigFiles[pair.first] = pair.second;
@@ -62,27 +40,6 @@ RepoBSON::RepoBSON(
 	: mongo::BSONObj(obj),
 	bigFiles(binMapping)
 {
-	if (bigFiles.size() > 0)
-	{
-		mongo::BSONObjBuilder builder, arrbuilder;
-
-		for (const auto & pair : bigFiles)
-		{
-			//append field name :file name
-			arrbuilder << pair.first << pair.second.first;
-		}
-
-		if (obj.hasField(REPO_LABEL_OVERSIZED_FILES))
-		{
-			arrbuilder.appendElementsUnique(obj.getObjectField(REPO_LABEL_OVERSIZED_FILES));
-		}
-
-		builder.append(REPO_LABEL_OVERSIZED_FILES, arrbuilder.obj());
-		builder.appendElementsUnique(obj);
-
-		*this = builder.obj();
-		bigFiles = binMapping;
-	}
 }
 
 int64_t RepoBSON::getCurrentTimestamp()

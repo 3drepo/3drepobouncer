@@ -1030,11 +1030,9 @@ bool MongoDatabaseHandler::insertManyDocuments(
 				auto fileManager = fileservice::FileManager::getManager();
 
 				fileservice::BlobFilesCreator blobCreator(fileManager, database, collection);
-
 				for (int i = 0; i < objs.size(); i += MAX_PARALLEL_BSON) {
 					std::vector<repo::core::model::RepoBSON>::const_iterator it = objs.begin() + i;
 					std::vector<repo::core::model::RepoBSON>::const_iterator last = i + MAX_PARALLEL_BSON >= objs.size() ? objs.end() : it + MAX_PARALLEL_BSON;
-
 					std::vector<mongo::BSONObj> toCommit;
 					do {
 						auto node = *it;
@@ -1043,13 +1041,16 @@ bool MongoDatabaseHandler::insertManyDocuments(
 							auto ref = blobCreator.insertBinary(data.second);
 							node.replaceBinaryWithReference(ref.serialise(), data.first);
 						}
+						toCommit.push_back(node);
 					} while (++it != last);
 
+					repoInfo << "Inserting " << toCommit.size() << " documents...";
 					worker->insert(getNamespace(database, collection), toCommit);
 				}
 
 				workerPool->returnWorker(worker);
 				worker = nullptr;
+				success = true;
 			}
 			else
 				errMsg = "Failed to count number of items in collection: cannot obtain a database worker from the pool";
