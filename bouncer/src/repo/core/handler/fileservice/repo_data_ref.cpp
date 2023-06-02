@@ -21,9 +21,17 @@ using namespace repo::core::handler::fileservice;
 
 repo::core::model::RepoBSON DataRef::serialise() const {
 	repo::core::model::RepoBSONBuilder builder;
-	builder.append("start", startPos);
-	builder.append("size", size);
-	builder.append("name", fileName);
+	builder.append(REPO_LABEL_BINARY_START, startPos);
+	builder.append(REPO_LABEL_BINARY_SIZE, size);
+	builder.append(REPO_LABEL_BINARY_FILENAME, fileName);
 
 	return builder.obj();
+}
+
+DataRef DataRef::deserialise(const repo::core::model::RepoBSON &serialisedObj) {
+	return DataRef(
+		serialisedObj.getStringField(REPO_LABEL_BINARY_FILENAME),
+		serialisedObj.getIntField(REPO_LABEL_BINARY_START),
+		serialisedObj.getIntField(REPO_LABEL_BINARY_SIZE)
+	);
 }

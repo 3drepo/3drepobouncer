@@ -26,6 +26,8 @@ namespace repo {
 		namespace handler {
 			namespace fileservice {
 				class DataRef {
+					friend class BlobFilesCreator;
+				private:
 					const std::string fileName;
 					const unsigned int startPos;
 					const unsigned int size;
@@ -34,6 +36,8 @@ namespace repo {
 						: fileName(fileName), startPos(startPos), size(size) {}
 
 					repo::core::model::RepoBSON serialise() const;
+
+					static DataRef deserialise(const repo::core::model::RepoBSON &serialisedObj);
 				};
 			}
 		}
