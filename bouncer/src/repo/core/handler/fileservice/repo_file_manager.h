@@ -74,6 +74,15 @@ namespace repo {
 					);
 
 					/**
+					 * Get the file base on the the ref entry in database
+					 */
+					std::ifstream getFileStream(
+						const std::string                            &databaseName,
+						const std::string                            &collectionNamePrefix,
+						const std::string                            &fileName
+					);
+
+					/**
 					 * Delete file ref and associated file from database.
 					 */
 					bool deleteFileAndRef(
@@ -98,6 +107,11 @@ namespace repo {
 					 */
 					std::string cleanFileName(
 						const std::string &fileName);
+
+					repo::core::model::RepoRef getFileRef(
+						const std::string                            &databaseName,
+						const std::string                            &collectionNamePrefix,
+						const std::string                            &fileName);
 
 					/**
 					 * Remove ref entry for file to database.
