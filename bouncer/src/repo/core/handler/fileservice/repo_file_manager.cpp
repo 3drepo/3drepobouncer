@@ -111,18 +111,24 @@ bool FileManager::deleteFileAndRef(
 	return success;
 }
 
+repo::core::model::RepoRef FileManager::getFileRef(
+	const std::string                            &databaseName,
+	const std::string                            &collectionNamePrefix,
+	const std::string                            &fileName) {
+	repo::core::model::RepoBSON criteria = BSON(REPO_LABEL_ID << cleanFileName(fileName));
+	return dbHandler->findOneByCriteria(
+		databaseName,
+		collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
+		criteria);
+}
+
 std::vector<uint8_t> FileManager::getFile(
 	const std::string                            &databaseName,
 	const std::string                            &collectionNamePrefix,
 	const std::string                            &fileName
 ) {
-	repo::core::model::RepoBSON criteria = BSON(REPO_LABEL_ID << cleanFileName(fileName));
-	repo::core::model::RepoRef ref = dbHandler->findOneByCriteria(
-		databaseName,
-		collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
-		criteria);
-
 	std::vector<uint8_t> file;
+	auto ref = getFileRef(databaseName, collectionNamePrefix, fileName);
 	if (ref.isEmpty())
 	{
 		repoTrace << "Failed: cannot find file ref "
@@ -147,11 +153,52 @@ std::vector<uint8_t> FileManager::getFile(
 			file = handler->getFile(databaseName, collectionNamePrefix, keyName);
 		}
 		else {
-			repoError << "Trying to delete a file from " << repo::core::model::RepoRef::convertTypeAsString(type) << " but connection to this service is not configured.";
+			repoError << "Trying to read a file from " << repo::core::model::RepoRef::convertTypeAsString(type) << " but connection to this service is not configured.";
 		}
 	}
 
 	return file;
+}
+
+/**
+ * Get the file base on the the ref entry in database
+ */
+std::ifstream FileManager::getFileStream(
+	const std::string                            &databaseName,
+	const std::string                            &collectionNamePrefix,
+	const std::string                            &fileName
+) {
+	std::ifstream fs;
+	auto ref = getFileRef(databaseName, collectionNamePrefix, fileName);
+	if (ref.isEmpty())
+	{
+		repoTrace << "Failed: cannot find file ref "
+			<< cleanFileName(fileName) << " from "
+			<< databaseName << "/"
+			<< collectionNamePrefix << "." << REPO_COLLECTION_EXT_REF;
+	}
+	else
+	{
+		const auto keyName = ref.getRefLink();
+		const auto type = ref.getType(); //Should return enum
+
+		std::shared_ptr<AbstractFileHandler> handler = gridfsHandler;
+		switch (type) {
+		case repo::core::model::RepoRef::RefType::FS:
+			handler = fsHandler;
+			break;
+		}
+
+		if (handler) {
+			repoTrace << "Getting file (" << keyName << ") from " << (type == repo::core::model::RepoRef::RefType::FS ? "FS" : "GridFS");
+			fs = handler->getFileStream(databaseName, collectionNamePrefix, keyName);
+		}
+		else {
+			repoError << "Trying to read a file from " << repo::core::model::RepoRef::convertTypeAsString(type) << " but connection to this service is not configured.";
+		}
+	}
+
+	return fs;
 }
 
 FileManager::FileManager(

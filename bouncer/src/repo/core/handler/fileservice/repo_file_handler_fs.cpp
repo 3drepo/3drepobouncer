@@ -66,17 +66,31 @@ std::vector<uint8_t> FSFileHandler::getFile(
 	const std::string &keyName)
 {
 	std::vector<uint8_t> results;
+
+	auto stream = getFileStream(database, collection, keyName);
+
+	if (stream) {
+		results = std::vector<uint8_t>((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+		stream.close();
+	}
+
+	return results;
+}
+
+std::ifstream FSFileHandler::getFileStream(
+	const std::string          &database,
+	const std::string          &collection,
+	const std::string          &keyName)
+{
 	auto fullPath = boost::filesystem::absolute(keyName, dirPath);
 	if (repo::lib::doesFileExist(fullPath)) {
 		auto fileStr = fullPath.string();
 		std::ifstream stream(fileStr, std::ios::in | std::ios::binary);
-		results = std::vector<uint8_t>((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
-		stream.close();
+		return stream;
 	}
-	else {
-		repoError << "File " << fullPath.string() << " does not exist";
-	}
-	return results;
+	repoError << "File " << fullPath.string() << " does not exist";
+
+	return std::ifstream();
 }
 
 std::vector<std::string> FSFileHandler::determineHierachy(
