@@ -18,6 +18,7 @@
 #pragma once
 
 #include <string>
+#include <fstream>
 
 #include "./repo_file_manager.h"
 #include "./repo_data_ref.h"
@@ -33,13 +34,14 @@ namespace repo {
 					/**
 					 * A Deconstructor
 					 */
-					~BlobFilesCreator() { commitActiveFile(); }
+					~BlobFilesCreator();
 
 					BlobFilesCreator(FileManager *fileManager, const std::string &database, const std::string &collection) : manager(fileManager), database(database), collection(collection) {};
 
 					void finished() { commitActiveFile(); }
 
 					DataRef insertBinary(const std::vector<uint8_t> &data);
+					void readToBuffer(const DataRef &ref, uint8_t *buffer);
 
 				private:
 					struct fileEntry
@@ -51,9 +53,13 @@ namespace repo {
 					void commitActiveFile();
 					void newActiveFile();
 
+					std::istream fetchStream(const std::string &name);
+
 					FileManager* manager;
 					const std::string database, collection;
 					std::shared_ptr<fileEntry> activeFile; //mem address we're currently writing to
+
+					std::map<std::string, std::ifstream> readStreams;
 				};
 			}
 		}

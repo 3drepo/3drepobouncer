@@ -19,6 +19,12 @@
 
 using namespace repo::core::handler::fileservice;
 
+BlobFilesCreator::~BlobFilesCreator() {
+	commitActiveFile();
+	for (auto &entry : readStreams) {
+		entry.second.close();
+	}
+}
 void BlobFilesCreator::commitActiveFile() {
 	if (activeFile) {
 		manager->uploadFileAndCommit(database, collection, activeFile->name, activeFile->buffer);
@@ -51,4 +57,17 @@ DataRef BlobFilesCreator::insertBinary(const std::vector<uint8_t> &data) {
 	memcpy(&(activeFile->buffer.data())[startPos], data.data(), dataSize);
 
 	return DataRef(activeFile->name, startPos, dataSize);
+}
+
+std::istream BlobFilesCreator::fetchStream(const std::string &name) {
+	manager->getFile(database, collection, name);
+}
+
+void BlobFilesCreator::readToBuffer(const DataRef &ref, uint8_t *buffer) {
+	if (readStreams.find(ref.fileName) == readStreams.end()) {
+		readStreams[ref.fileName] = manager->getFileStream(database, collection, ref.fileName);
+	}
+
+	readStreams[ref.fileName].seekg(ref.startPos, std::ios_base::beg);
+	readStreams[ref.fileName].read((char*)buffer, ref.size);
 }
