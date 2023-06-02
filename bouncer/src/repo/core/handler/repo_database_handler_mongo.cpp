@@ -192,25 +192,39 @@ void MongoDatabaseHandler::createIndex(const std::string &database, const std::s
 	}
 }
 
-repo::core::model::RepoBSON MongoDatabaseHandler::createRepoBSON(
+repo::core::model::RepoBSON createRepoBSON(
+	fileservice::BlobFilesCreator &blobHandler,
 	const std::string &database,
 	const std::string &collection,
 	const mongo::BSONObj &obj,
-	const bool ignoreExtFile)
+	const bool ignoreExtFile = false)
 {
 	repo::core::model::RepoBSON orgBson = repo::core::model::RepoBSON(obj);
-	std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>> > binMap;
 
 	if (!ignoreExtFile) {
-		std::vector<std::pair<std::string, std::string>> extFileList = orgBson.getFileList();
-		for (const auto &pair : extFileList)
-		{
-			repoTrace << "Found existing external file reference, retrieving file @ " << database << "." << collection << ":" << pair.second;
-			binMap[pair.first] = std::pair<std::string, std::vector<uint8_t>>(pair.second, getBigFile(database, collection, pair.second));
+		if (orgBson.hasFileReference()) {
+			auto ref = orgBson.initBinaryBuffer();
+
+			blobHandler.readToBuffer(fileservice::DataRef::deserialise(ref.first), ref.second);
+		}
+		else if (orgBson.hasLegacyFileReference()) {
+			std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>> > binMap;
+			std::vector<std::pair<std::string, std::string>> extFileList = orgBson.getFileList();
+			for (const auto &pair : extFileList)
+			{
+				repoTrace << "Found existing external file reference, retrieving file @ " << database << "." << collection << ":" << pair.second;
+
+				auto fileManager = fileservice::FileManager::getManager();
+
+				auto file = fileManager->getFile(database, collection, pair.second);
+
+				binMap[pair.first] = std::pair<std::string, std::vector<uint8_t>>(pair.second, file);
+			}
+			return repo::core::model::RepoBSON(obj, binMap);
 		}
 	}
 
-	return repo::core::model::RepoBSON(obj, binMap);
+	return orgBson;
 }
 
 void MongoDatabaseHandler::disconnectHandler()
@@ -443,6 +457,9 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 			worker = workerPool->getWorker();
 			if (worker)
 			{
+				auto fileManager = fileservice::FileManager::getManager();
+				fileservice::BlobFilesCreator blobCreator(fileManager, database, collection);
+
 				do
 				{
 					repoTrace << " Querying " << database << "." << collection << " with : " << criteria.toString();
@@ -456,7 +473,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 					worker = nullptr;
 					for (; cursor.get() && cursor->more(); ++retrieved)
 					{
-						data.push_back(createRepoBSON(database, collection, cursor->nextSafe().copy()));
+						data.push_back(createRepoBSON(blobCreator, database, collection, cursor->nextSafe().copy()));
 					}
 					worker = workerPool->getWorker();
 				} while (cursor.get() && cursor->more());
@@ -529,6 +546,8 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 			{
 				do
 				{
+					auto fileManager = fileservice::FileManager::getManager();
+					fileservice::BlobFilesCreator blobCreator(fileManager, database, collection);
 					mongo::BSONObjBuilder query;
 					query << ID << BSON("$in" << array);
 
@@ -542,7 +561,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 					worker = nullptr;
 					for (; cursor.get() && cursor->more(); ++retrieved)
 					{
-						data.push_back(createRepoBSON(database, collection, cursor->nextSafe().copy(), ignoreExtFiles));
+						data.push_back(createRepoBSON(blobCreator, database, collection, cursor->nextSafe().copy(), ignoreExtFiles));
 					}
 					worker = workerPool->getWorker();
 				} while (cursor.get() && cursor->more());
@@ -584,6 +603,8 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 		worker = workerPool->getWorker();
 		if (worker)
 		{
+			auto fileManager = fileservice::FileManager::getManager();
+			fileservice::BlobFilesCreator blobCreator(fileManager, database, collection);
 			auto query = mongo::Query(queryBuilder.mongoObj());
 			if (!sortField.empty())
 				query = query.sort(sortField, -1);
@@ -594,7 +615,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 
 			workerPool->returnWorker(worker);
 			worker = nullptr;
-			bson = createRepoBSON(database, collection, bsonMongo);
+			bson = createRepoBSON(blobCreator, database, collection, bsonMongo);
 		}
 		else
 		{
@@ -624,12 +645,14 @@ repo::core::model::RepoBSON  MongoDatabaseHandler::findOneByUniqueID(
 		worker = workerPool->getWorker();
 		if (worker)
 		{
+			auto fileManager = fileservice::FileManager::getManager();
+			fileservice::BlobFilesCreator blobCreator(fileManager, database, collection);
 			mongo::BSONObj bsonMongo = worker->findOne(getNamespace(database, collection),
 				mongo::Query(queryBuilder.mongoObj()));
 
 			workerPool->returnWorker(worker);
 			worker = nullptr;
-			bson = createRepoBSON(database, collection, bsonMongo);
+			bson = createRepoBSON(blobCreator, database, collection, bsonMongo);
 		}
 		else
 			repoError << "Failed to count number of items in collection: cannot obtain a database worker from the pool";
@@ -670,10 +693,12 @@ MongoDatabaseHandler::getAllFromCollectionTailable(
 				fields.size() > 0 ? &tmp : nullptr);
 			workerPool->returnWorker(worker);
 			worker = nullptr;
+			auto fileManager = fileservice::FileManager::getManager();
+			fileservice::BlobFilesCreator blobCreator(fileManager, database, collection);
 			while (cursor.get() && cursor->more())
 			{
 				//have to copy since the bson info gets cleaned up when cursor gets out of scope
-				bsons.push_back(createRepoBSON(database, collection, cursor->nextSafe().copy()));
+				bsons.push_back(createRepoBSON(blobCreator, database, collection, cursor->nextSafe().copy()));
 			}
 			worker = workerPool->getWorker();
 		}
@@ -1030,6 +1055,7 @@ bool MongoDatabaseHandler::insertManyDocuments(
 				auto fileManager = fileservice::FileManager::getManager();
 
 				fileservice::BlobFilesCreator blobCreator(fileManager, database, collection);
+
 				for (int i = 0; i < objs.size(); i += MAX_PARALLEL_BSON) {
 					std::vector<repo::core::model::RepoBSON>::const_iterator it = objs.begin() + i;
 					std::vector<repo::core::model::RepoBSON>::const_iterator last = i + MAX_PARALLEL_BSON >= objs.size() ? objs.end() : it + MAX_PARALLEL_BSON;

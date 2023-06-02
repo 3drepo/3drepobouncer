@@ -637,23 +637,6 @@ namespace repo {
 					const model::RepoBSON         *cred);
 
 				/**
-				* Create a Repo BSON and populate all relevant data
-				* this includes getting data from GridFS
-				* NOTE: the handler will only get the data from GridFS if it is
-				* listed in REPO_LABEL_OVERSIZED_FILES
-				* @param worker the worker to operate with
-				* @param database database to store in
-				* @param collection collection to store in
-				* @param obj the mongo bson this repoBSON is basing from
-				* @return returns a repo BSON that is fully populated
-				*/
-				repo::core::model::RepoBSON createRepoBSON(
-					const std::string &database,
-					const std::string &collection,
-					const mongo::BSONObj &obj,
-					const bool ignoreExtFile = false);
-
-				/**
 				* Generates a mongo BSON object for authentication
 				* @param database database to authenticate against
 				* @param username user name for authentication

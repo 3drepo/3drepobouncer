@@ -375,9 +375,15 @@ namespace repo {
 
 				void replaceBinaryWithReference(const repo::core::model::RepoBSON &fileRef, const repo::core::model::RepoBSON &elemRef);
 
-			protected:
+				std::pair<repo::core::model::RepoBSON, uint8_t*> initBinaryBuffer();
 
+				bool hasLegacyFileReference() const;
+				bool hasFileReference() const;
+
+			protected:
+				//FIXME: to remove
 				std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t> > > bigFiles;
+				std::vector<uint8_t> binBuffer;
 			}; // end
 		}// end namespace model
 	} // end namespace core

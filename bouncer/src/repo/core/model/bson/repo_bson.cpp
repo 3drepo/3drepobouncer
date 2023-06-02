@@ -95,9 +95,9 @@ std::pair<repo::core::model::RepoBSON, std::vector<uint8_t>> RepoBSON::getBinari
 		for (const auto &entry : bigFiles) {
 			mongo::BSONObjBuilder entryBuilder;
 
-			entryBuilder << "start" << (unsigned int)buffer.size();
+			entryBuilder << REPO_LABEL_BINARY_START << (unsigned int)buffer.size();
 			buffer.insert(buffer.end(), entry.second.second.begin(), entry.second.second.end());
-			entryBuilder << "size" << (unsigned int)entry.second.second.size();
+			entryBuilder << REPO_LABEL_BINARY_SIZE << (unsigned int)entry.second.second.size();
 
 			elemsBuilder << entry.first << entryBuilder.obj();
 		}
@@ -110,13 +110,13 @@ std::pair<repo::core::model::RepoBSON, std::vector<uint8_t>> RepoBSON::getBinari
 
 void RepoBSON::replaceBinaryWithReference(const repo::core::model::RepoBSON &fileRef, const repo::core::model::RepoBSON &elemRef) {
 	mongo::BSONObjBuilder objBuilder;
-	objBuilder << "elements" << (mongo::BSONObj)elemRef;
-	objBuilder << "buffer" << (mongo::BSONObj)fileRef;
+	objBuilder << REPO_LABEL_BINARY_ELEMENTS << (mongo::BSONObj)elemRef;
+	objBuilder << REPO_LABEL_BINARY_BUFFER << (mongo::BSONObj)fileRef;
 
 	auto obj = objBuilder.obj();
 
 	mongo::BSONObjBuilder builder;
-	builder.append("_blobRef", obj);
+	builder.append(REPO_LABEL_BINARY_REFERENCE, obj);
 	builder.appendElementsUnique(*this);
 
 	*this = builder.obj();
@@ -185,6 +185,28 @@ std::vector<std::pair<std::string, std::string>> RepoBSON::getFileList() const
 	}
 
 	return fileList;
+}
+
+std::pair<repo::core::model::RepoBSON, uint8_t*> RepoBSON::initBinaryBuffer() {
+	std::pair<repo::core::model::RepoBSON, uint8_t*> res;
+	if (hasField(REPO_LABEL_BINARY_REFERENCE))
+	{
+		RepoBSON extRefbson = getObjectField(REPO_LABEL_BINARY_REFERENCE);
+		res.first = extRefbson.getObjectField(REPO_LABEL_BINARY_BUFFER);
+
+		size_t bufferSize = extRefbson.getObjectField(REPO_LABEL_BINARY_BUFFER).getIntField(REPO_LABEL_BINARY_SIZE);
+		binBuffer.resize(bufferSize);
+		res.second = binBuffer.data();
+	}
+
+	return res;
+}
+
+bool RepoBSON::hasLegacyFileReference() const {
+	return hasField(REPO_LABEL_OVERSIZED_FILES);
+}
+bool RepoBSON::hasFileReference() const {
+	return hasField(REPO_LABEL_BINARY_REFERENCE);
 }
 
 std::vector<float> RepoBSON::getFloatArray(const std::string &label) const
