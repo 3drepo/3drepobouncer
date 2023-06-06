@@ -41,7 +41,7 @@ namespace repo {
 					void finished() { commitActiveFile(); }
 
 					DataRef insertBinary(const std::vector<uint8_t> &data);
-					void readToBuffer(const DataRef &ref, uint8_t *buffer);
+					std::vector<uint8_t> BlobFilesCreator::readToBuffer(const DataRef &ref);
 
 				private:
 					struct fileEntry

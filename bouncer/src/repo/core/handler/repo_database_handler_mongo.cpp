@@ -200,20 +200,18 @@ repo::core::model::RepoBSON createRepoBSON(
 	const bool ignoreExtFile = false)
 {
 	repo::core::model::RepoBSON orgBson = repo::core::model::RepoBSON(obj);
-
 	if (!ignoreExtFile) {
 		if (orgBson.hasFileReference()) {
-			auto ref = orgBson.initBinaryBuffer();
+			auto ref = orgBson.getBinaryReference();
 
-			blobHandler.readToBuffer(fileservice::DataRef::deserialise(ref.first), ref.second);
+			auto buffer = blobHandler.readToBuffer(fileservice::DataRef::deserialise(ref));
+			orgBson.initBinaryBuffer(buffer);
 		}
 		else if (orgBson.hasLegacyFileReference()) {
 			std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>> > binMap;
 			std::vector<std::pair<std::string, std::string>> extFileList = orgBson.getFileList();
 			for (const auto &pair : extFileList)
 			{
-				repoTrace << "Found existing external file reference, retrieving file @ " << database << "." << collection << ":" << pair.second;
-
 				auto fileManager = fileservice::FileManager::getManager();
 
 				auto file = fileManager->getFile(database, collection, pair.second);
@@ -462,13 +460,12 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 
 				do
 				{
-					repoTrace << " Querying " << database << "." << collection << " with : " << criteria.toString();
+					repoTrace << "Querying " << database << "." << collection << " with : " << criteria.toString();
 					cursor = worker->query(
 						database + "." + collection,
 						criteria,
 						0,
 						retrieved);
-
 					workerPool->returnWorker(worker);
 					worker = nullptr;
 					for (; cursor.get() && cursor->more(); ++retrieved)

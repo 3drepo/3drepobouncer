@@ -1300,7 +1300,6 @@ bool RepoScene::loadStash(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	std::string &errMsg) {
 	bool success = true;
-
 	if (!handler)
 	{
 		errMsg += "Trying to load stash graph without a database handler!";

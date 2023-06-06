@@ -187,19 +187,40 @@ std::vector<std::pair<std::string, std::string>> RepoBSON::getFileList() const
 	return fileList;
 }
 
-std::pair<repo::core::model::RepoBSON, uint8_t*> RepoBSON::initBinaryBuffer() {
-	std::pair<repo::core::model::RepoBSON, uint8_t*> res;
+repo::core::model::RepoBSON RepoBSON::getBinaryReference() const {
+	repo::core::model::RepoBSON res;
 	if (hasField(REPO_LABEL_BINARY_REFERENCE))
 	{
 		RepoBSON extRefbson = getObjectField(REPO_LABEL_BINARY_REFERENCE);
-		res.first = extRefbson.getObjectField(REPO_LABEL_BINARY_BUFFER);
-
-		size_t bufferSize = extRefbson.getObjectField(REPO_LABEL_BINARY_BUFFER).getIntField(REPO_LABEL_BINARY_SIZE);
-		binBuffer.resize(bufferSize);
-		res.second = binBuffer.data();
+		return extRefbson.getObjectField(REPO_LABEL_BINARY_BUFFER);
 	}
 
 	return res;
+}
+
+void RepoBSON::initBinaryBuffer(const std::vector<uint8_t> &buffer) {
+	if (hasField(REPO_LABEL_BINARY_REFERENCE))
+	{
+		RepoBSON extRefbson = getObjectField(REPO_LABEL_BINARY_REFERENCE);
+
+		auto elemRefs = extRefbson.getObjectField(REPO_LABEL_BINARY_ELEMENTS);
+
+		for (const auto &elem : elemRefs.getFieldNames()) {
+			auto elemRefBson = elemRefs.getObjectField(elem);
+			size_t start = elemRefBson.getIntField(REPO_LABEL_BINARY_START);
+			size_t size = elemRefBson.getIntField(REPO_LABEL_BINARY_SIZE);
+
+			repoInfo << "Setting up buffer for " << elem;
+			repoInfo << "start: " << start << " size: " << size << " buffer size: " << buffer.size();
+			bigFiles[elem] = { std::string(), std::vector<uint8_t>(buffer.begin() + start, buffer.begin() + start + size) };
+			repoInfo << "done " << elem;
+		}
+	}
+}
+
+bool RepoBSON::hasBinField(const std::string &label) const
+{
+	return hasField(label) || bigFiles.find(label) != bigFiles.end();
 }
 
 bool RepoBSON::hasLegacyFileReference() const {

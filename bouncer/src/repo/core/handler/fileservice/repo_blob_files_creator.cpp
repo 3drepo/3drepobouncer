@@ -63,11 +63,15 @@ std::istream BlobFilesCreator::fetchStream(const std::string &name) {
 	manager->getFile(database, collection, name);
 }
 
-void BlobFilesCreator::readToBuffer(const DataRef &ref, uint8_t *buffer) {
+std::vector<uint8_t> BlobFilesCreator::readToBuffer(const DataRef &ref) {
+	std::vector<uint8_t> res;
 	if (readStreams.find(ref.fileName) == readStreams.end()) {
 		readStreams[ref.fileName] = manager->getFileStream(database, collection, ref.fileName);
 	}
 
+	res.resize(ref.size);
 	readStreams[ref.fileName].seekg(ref.startPos, std::ios_base::beg);
-	readStreams[ref.fileName].read((char*)buffer, ref.size);
+	readStreams[ref.fileName].read((char*)res.data(), ref.size);
+
+	return res;
 }

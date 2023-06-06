@@ -299,10 +299,7 @@ namespace repo {
 				* @param label field name in question
 				* @return returns true if found
 				*/
-				bool hasBinField(const std::string &label) const
-				{
-					return hasField(label) || bigFiles.find(label) != bigFiles.end();
-				}
+				bool hasBinField(const std::string &label) const;
 
 				virtual RepoBSON cloneAndAddFields(
 					const RepoBSON *changes) const;
@@ -375,15 +372,15 @@ namespace repo {
 
 				void replaceBinaryWithReference(const repo::core::model::RepoBSON &fileRef, const repo::core::model::RepoBSON &elemRef);
 
-				std::pair<repo::core::model::RepoBSON, uint8_t*> initBinaryBuffer();
+				repo::core::model::RepoBSON RepoBSON::getBinaryReference() const;
+				void initBinaryBuffer(const std::vector<uint8_t> &buffer);
 
 				bool hasLegacyFileReference() const;
 				bool hasFileReference() const;
 
 			protected:
-				//FIXME: to remove
+
 				std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t> > > bigFiles;
-				std::vector<uint8_t> binBuffer;
 			}; // end
 		}// end namespace model
 	} // end namespace core
