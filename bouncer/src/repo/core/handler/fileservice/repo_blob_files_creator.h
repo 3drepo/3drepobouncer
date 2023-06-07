@@ -36,7 +36,12 @@ namespace repo {
 					 */
 					~BlobFilesCreator();
 
-					BlobFilesCreator(FileManager *fileManager, const std::string &database, const std::string &collection) : manager(fileManager), database(database), collection(collection) {};
+					BlobFilesCreator(
+						FileManager *fileManager,
+						const std::string &database,
+						const std::string &collection,
+						const repo::core::model::RepoBSON &metadata = repo::core::model::RepoBSON()
+					) : manager(fileManager), database(database), collection(collection), metadata(metadata) {};
 
 					void finished() { commitActiveFile(); }
 
@@ -58,6 +63,7 @@ namespace repo {
 					FileManager* manager;
 					const std::string database, collection;
 					std::shared_ptr<fileEntry> activeFile; //mem address we're currently writing to
+					const repo::core::model::RepoBSON metadata;
 
 					std::map<std::string, std::ifstream> readStreams;
 				};

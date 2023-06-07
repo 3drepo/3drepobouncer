@@ -45,7 +45,8 @@ bool FileManager::uploadFileAndCommit(
 	const std::string                            &databaseName,
 	const std::string                            &collectionNamePrefix,
 	const std::string                            &fileName,
-	const std::vector<uint8_t>                   &bin)
+	const std::vector<uint8_t>                   &bin,
+	const repo::core::model::RepoBSON            &metadata)
 {
 	bool success = true;
 	auto fileUUID = repo::lib::RepoUUID::createUUID();
@@ -57,7 +58,8 @@ bool FileManager::uploadFileAndCommit(
 			cleanFileName(fileName),
 			linkName,
 			defaultHandler->getType(),
-			bin.size());
+			bin.size(),
+			metadata);
 	}
 
 	return success;
@@ -262,12 +264,13 @@ bool FileManager::upsertFileRef(
 	const std::string                            &id,
 	const std::string                            &link,
 	const repo::core::model::RepoRef::RefType    &type,
-	const uint32_t                               &size)
+	const uint32_t                               &size,
+	const repo::core::model::RepoBSON            &metadata)
 {
 	std::string errMsg;
 	bool success = true;
 
-	auto refObj = repo::core::model::RepoBSONFactory::makeRepoRef(id, type, link, size);
+	auto refObj = repo::core::model::RepoBSONFactory::makeRepoRef(id, type, link, size, metadata);
 	std::string collectionName = collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF;
 	success = dbHandler->upsertDocument(databaseName, collectionName, refObj, true, errMsg);
 	if (!success)

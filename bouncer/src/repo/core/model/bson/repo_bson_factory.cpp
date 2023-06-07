@@ -639,12 +639,17 @@ RepoRef RepoBSONFactory::makeRepoRef(
 	const std::string &fileName,
 	const RepoRef::RefType &type,
 	const std::string &link,
-	const uint32_t size) {
+	const uint32_t size,
+	const repo::core::model::RepoBSON            &metadata) {
 	repo::core::model::RepoBSONBuilder builder;
 	builder.append(REPO_LABEL_ID, fileName);
 	builder.append(REPO_REF_LABEL_TYPE, RepoRef::convertTypeAsString(type));
 	builder.append(REPO_REF_LABEL_LINK, link);
 	builder.append(REPO_REF_LABEL_SIZE, (unsigned int)size);
+
+	if (!metadata.isEmpty()) {
+		builder.appendElementsUnique(metadata);
+	}
 	return RepoRef(builder.obj());
 }
 

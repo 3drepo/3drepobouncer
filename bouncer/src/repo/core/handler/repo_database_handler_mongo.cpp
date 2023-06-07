@@ -1039,7 +1039,8 @@ bool MongoDatabaseHandler::insertManyDocuments(
 	const std::string &database,
 	const std::string &collection,
 	const std::vector<repo::core::model::RepoBSON> &objs,
-	std::string &errMsg)
+	std::string &errMsg,
+	const repo::core::model::RepoBSON &binaryStorageMetadata)
 {
 	bool success = false;
 	mongo::DBClientBase *worker;
@@ -1051,7 +1052,7 @@ bool MongoDatabaseHandler::insertManyDocuments(
 			{
 				auto fileManager = fileservice::FileManager::getManager();
 
-				fileservice::BlobFilesCreator blobCreator(fileManager, database, collection);
+				fileservice::BlobFilesCreator blobCreator(fileManager, database, collection, binaryStorageMetadata);
 
 				for (int i = 0; i < objs.size(); i += MAX_PARALLEL_BSON) {
 					std::vector<repo::core::model::RepoBSON>::const_iterator it = objs.begin() + i;

@@ -184,7 +184,8 @@ namespace repo {
 					const std::string &database,
 					const std::string &collection,
 					const std::vector<repo::core::model::RepoBSON> &obj,
-					std::string &errMsg) = 0;
+					std::string &errMsg,
+					const repo::core::model::RepoBSON &metadata = repo::core::model::RepoBSON()) = 0;
 
 				/**
 				* Insert big raw file in binary format (using GridFS)

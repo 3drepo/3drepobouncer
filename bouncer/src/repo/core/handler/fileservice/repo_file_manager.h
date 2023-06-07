@@ -61,7 +61,8 @@ namespace repo {
 						const std::string                            &databaseName,
 						const std::string                            &collectionNamePrefix,
 						const std::string                            &fileName,
-						const std::vector<uint8_t>                   &bin
+						const std::vector<uint8_t>                   &bin,
+						const repo::core::model::RepoBSON            &metadata = repo::core::model::RepoBSON()
 					);
 
 					/**
@@ -129,7 +130,8 @@ namespace repo {
 						const std::string                            &id,
 						const std::string                            &link,
 						const repo::core::model::RepoRef::RefType    &type,
-						const uint32_t                               &size);
+						const uint32_t                               &size,
+						const repo::core::model::RepoBSON            &metadata);
 
 					static FileManager* manager;
 					repo::core::handler::AbstractDatabaseHandler *dbHandler;

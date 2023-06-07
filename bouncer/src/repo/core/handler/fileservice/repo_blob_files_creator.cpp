@@ -27,7 +27,7 @@ BlobFilesCreator::~BlobFilesCreator() {
 }
 void BlobFilesCreator::commitActiveFile() {
 	if (activeFile) {
-		manager->uploadFileAndCommit(database, collection, activeFile->name, activeFile->buffer);
+		manager->uploadFileAndCommit(database, collection, activeFile->name, activeFile->buffer, metadata);
 	}
 
 	activeFile.reset();

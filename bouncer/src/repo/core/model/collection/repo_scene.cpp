@@ -882,8 +882,11 @@ bool RepoScene::commitNodes(
 			nodes.push_back(*node);
 		}
 	}
+	RepoBSONBuilder builder;
 
-	return handler->insertManyDocuments(databaseName, projectName + "." + ext, nodes, errMsg);
+	builder.append(REPO_NODE_REVISION_ID, revId);
+
+	return handler->insertManyDocuments(databaseName, projectName + "." + ext, nodes, errMsg, builder.obj());
 }
 
 bool RepoScene::commitSceneChanges(
