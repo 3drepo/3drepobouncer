@@ -805,6 +805,13 @@ bool SurfaceMesh::is_collapse_ok(Halfedge v0v1) const
                 return false;
     }
 
+    // vertices cannot be connected by multiple edges
+    for (auto vh : halfedges(v0))
+    {
+        if (vh != v0v1 && to_vertex(vh) == v1)
+            return false;
+    }
+
     // passed all tests
     return true;
 }

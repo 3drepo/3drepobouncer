@@ -193,7 +193,7 @@ void Merge::merge_edges()
     {
         auto edges = pair.second;
 
-        if (edges.size() > 1)
+        if (edges.size() == 2)
         {
             auto h1 = edges[0];
             auto h2 = edges[1];
