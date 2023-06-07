@@ -210,10 +210,7 @@ void RepoBSON::initBinaryBuffer(const std::vector<uint8_t> &buffer) {
 			size_t start = elemRefBson.getIntField(REPO_LABEL_BINARY_START);
 			size_t size = elemRefBson.getIntField(REPO_LABEL_BINARY_SIZE);
 
-			repoInfo << "Setting up buffer for " << elem;
-			repoInfo << "start: " << start << " size: " << size << " buffer size: " << buffer.size();
 			bigFiles[elem] = { std::string(), std::vector<uint8_t>(buffer.begin() + start, buffer.begin() + start + size) };
-			repoInfo << "done " << elem;
 		}
 	}
 }
