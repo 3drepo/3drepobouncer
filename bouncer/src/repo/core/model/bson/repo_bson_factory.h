@@ -97,7 +97,7 @@ namespace repo {
 					const RepoRef::RefType &type,
 					const std::string &link,
 					const uint32_t size,
-					const repo::core::model::RepoBSON &metadata);
+					const repo::core::model::RepoBSON &metadata = repo::core::model::RepoBSON());
 
 				/**
 				* Create a role BSON
