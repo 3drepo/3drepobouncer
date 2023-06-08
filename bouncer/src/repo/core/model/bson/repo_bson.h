@@ -372,7 +372,7 @@ namespace repo {
 
 				void replaceBinaryWithReference(const repo::core::model::RepoBSON &fileRef, const repo::core::model::RepoBSON &elemRef);
 
-				repo::core::model::RepoBSON RepoBSON::getBinaryReference() const;
+				repo::core::model::RepoBSON getBinaryReference() const;
 				void initBinaryBuffer(const std::vector<uint8_t> &buffer);
 
 				bool hasLegacyFileReference() const;
