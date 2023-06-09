@@ -1012,9 +1012,6 @@ bool MongoDatabaseHandler::insertDocument(
 				worker->insert(getNamespace(database, collection), obj);
 				workerPool->returnWorker(worker);
 				worker = nullptr;
-
-				//FI
-//				success = storeBigFiles(database, collection, obj, errMsg);
 			}
 			else
 				errMsg = "Failed to count number of items in collection: cannot obtain a database worker from the pool";
@@ -1374,8 +1371,6 @@ bool MongoDatabaseHandler::upsertDocument(
 			if (success) {
 				workerPool->returnWorker(worker);
 				worker = nullptr;
-				//FIXME
-				//success = storeBigFiles(database, collection, obj, errMsg);
 			}
 		}
 		else
