@@ -193,7 +193,7 @@ void MongoDatabaseHandler::createIndex(const std::string &database, const std::s
 }
 
 repo::core::model::RepoBSON createRepoBSON(
-	fileservice::BlobFilesCreator &blobHandler,
+	fileservice::BlobFilesHandler &blobHandler,
 	const std::string &database,
 	const std::string &collection,
 	const mongo::BSONObj &obj,
@@ -456,7 +456,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 			if (worker)
 			{
 				auto fileManager = fileservice::FileManager::getManager();
-				fileservice::BlobFilesCreator blobCreator(fileManager, database, collection);
+				fileservice::BlobFilesHandler blobCreator(fileManager, database, collection);
 
 				do
 				{
@@ -544,7 +544,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 				do
 				{
 					auto fileManager = fileservice::FileManager::getManager();
-					fileservice::BlobFilesCreator blobCreator(fileManager, database, collection);
+					fileservice::BlobFilesHandler blobCreator(fileManager, database, collection);
 					mongo::BSONObjBuilder query;
 					query << ID << BSON("$in" << array);
 
@@ -601,7 +601,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 		if (worker)
 		{
 			auto fileManager = fileservice::FileManager::getManager();
-			fileservice::BlobFilesCreator blobCreator(fileManager, database, collection);
+			fileservice::BlobFilesHandler blobCreator(fileManager, database, collection);
 			auto query = mongo::Query(queryBuilder.mongoObj());
 			if (!sortField.empty())
 				query = query.sort(sortField, -1);
@@ -643,7 +643,7 @@ repo::core::model::RepoBSON  MongoDatabaseHandler::findOneByUniqueID(
 		if (worker)
 		{
 			auto fileManager = fileservice::FileManager::getManager();
-			fileservice::BlobFilesCreator blobCreator(fileManager, database, collection);
+			fileservice::BlobFilesHandler blobCreator(fileManager, database, collection);
 			mongo::BSONObj bsonMongo = worker->findOne(getNamespace(database, collection),
 				mongo::Query(queryBuilder.mongoObj()));
 
@@ -691,7 +691,7 @@ MongoDatabaseHandler::getAllFromCollectionTailable(
 			workerPool->returnWorker(worker);
 			worker = nullptr;
 			auto fileManager = fileservice::FileManager::getManager();
-			fileservice::BlobFilesCreator blobCreator(fileManager, database, collection);
+			fileservice::BlobFilesHandler blobCreator(fileManager, database, collection);
 			while (cursor.get() && cursor->more())
 			{
 				//have to copy since the bson info gets cleaned up when cursor gets out of scope
@@ -1052,7 +1052,7 @@ bool MongoDatabaseHandler::insertManyDocuments(
 			{
 				auto fileManager = fileservice::FileManager::getManager();
 
-				fileservice::BlobFilesCreator blobCreator(fileManager, database, collection, binaryStorageMetadata);
+				fileservice::BlobFilesHandler blobCreator(fileManager, database, collection, binaryStorageMetadata);
 
 				for (int i = 0; i < objs.size(); i += MAX_PARALLEL_BSON) {
 					std::vector<repo::core::model::RepoBSON>::const_iterator it = objs.begin() + i;

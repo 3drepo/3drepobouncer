@@ -19,13 +19,13 @@
 
 using namespace repo::core::handler::fileservice;
 
-BlobFilesCreator::~BlobFilesCreator() {
+BlobFilesHandler::~BlobFilesHandler() {
 	commitActiveFile();
 	for (auto &entry : readStreams) {
 		entry.second.close();
 	}
 }
-void BlobFilesCreator::commitActiveFile() {
+void BlobFilesHandler::commitActiveFile() {
 	if (activeFile) {
 		manager->uploadFileAndCommit(database, collection, activeFile->name, activeFile->buffer, metadata);
 	}
@@ -33,7 +33,7 @@ void BlobFilesCreator::commitActiveFile() {
 	activeFile.reset();
 }
 
-void BlobFilesCreator::newActiveFile() {
+void BlobFilesHandler::newActiveFile() {
 	if (activeFile) {
 		commitActiveFile();
 	}
@@ -43,7 +43,7 @@ void BlobFilesCreator::newActiveFile() {
 	activeFile->buffer.reserve(MAX_FILE_SIZE_BYTES);
 }
 
-DataRef BlobFilesCreator::insertBinary(const std::vector<uint8_t> &data) {
+DataRef BlobFilesHandler::insertBinary(const std::vector<uint8_t> &data) {
 	if (!activeFile || activeFile->buffer.size() + data.size() > MAX_FILE_SIZE_BYTES) {
 		// either there is no activeFile or adding this data will exceed the max size to the blob file
 		// create a new one.
@@ -59,11 +59,11 @@ DataRef BlobFilesCreator::insertBinary(const std::vector<uint8_t> &data) {
 	return DataRef(activeFile->name, startPos, dataSize);
 }
 
-std::istream BlobFilesCreator::fetchStream(const std::string &name) {
+std::istream BlobFilesHandler::fetchStream(const std::string &name) {
 	manager->getFile(database, collection, name);
 }
 
-std::vector<uint8_t> BlobFilesCreator::readToBuffer(const DataRef &ref) {
+std::vector<uint8_t> BlobFilesHandler::readToBuffer(const DataRef &ref) {
 	std::vector<uint8_t> res;
 	if (readStreams.find(ref.fileName) == readStreams.end()) {
 		readStreams[ref.fileName] = manager->getFileStream(database, collection, ref.fileName);

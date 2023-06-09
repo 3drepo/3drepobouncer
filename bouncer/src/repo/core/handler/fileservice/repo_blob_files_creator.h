@@ -28,15 +28,15 @@ namespace repo {
 		namespace handler {
 			namespace fileservice {
 				const static size_t MAX_FILE_SIZE_BYTES = 104857600; //100MB
-				class BlobFilesCreator
+				class BlobFilesHandler
 				{
 				public:
 					/**
 					 * A Deconstructor
 					 */
-					~BlobFilesCreator();
+					~BlobFilesHandler();
 
-					BlobFilesCreator(
+					BlobFilesHandler(
 						FileManager *fileManager,
 						const std::string &database,
 						const std::string &collection,
@@ -46,7 +46,7 @@ namespace repo {
 					void finished() { commitActiveFile(); }
 
 					DataRef insertBinary(const std::vector<uint8_t> &data);
-					std::vector<uint8_t> BlobFilesCreator::readToBuffer(const DataRef &ref);
+					std::vector<uint8_t> readToBuffer(const DataRef &ref);
 
 				private:
 					struct fileEntry

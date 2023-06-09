@@ -26,7 +26,7 @@ namespace repo {
 		namespace handler {
 			namespace fileservice {
 				class DataRef {
-					friend class BlobFilesCreator;
+					friend class BlobFilesHandler;
 				private:
 					const std::string fileName;
 					const unsigned int startPos;
