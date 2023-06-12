@@ -173,7 +173,13 @@ std::vector<uint8_t> RepoBSON::getBigBinary(
 std::vector<std::pair<std::string, std::string>> RepoBSON::getFileList() const
 {
 	std::vector<std::pair<std::string, std::string>> fileList;
-	if (hasField(REPO_LABEL_OVERSIZED_FILES))
+
+	if (bigFiles.size()) {
+		for (const auto &entry : bigFiles) {
+			fileList.push_back({ entry.first, entry.second.first });
+		}
+	}
+	else if (hasField(REPO_LABEL_OVERSIZED_FILES))
 	{
 		RepoBSON extRefbson = getObjectField(REPO_LABEL_OVERSIZED_FILES);
 
