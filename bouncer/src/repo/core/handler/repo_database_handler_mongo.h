@@ -590,6 +590,7 @@ namespace repo {
 				 */
 
 				connectionPool::MongoConnectionPool *workerPool;
+				mongo::DBClientBase* worker;
 
 				/*!
 				 * Map holding database name as key and <username, password digest> as a
