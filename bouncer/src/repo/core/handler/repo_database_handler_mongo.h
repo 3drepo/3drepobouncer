@@ -589,7 +589,7 @@ namespace repo {
 				 *	=================================== Private Fields ========================================
 				 */
 
-				connectionPool::MongoConnectionPool *workerPool;
+				 //				connectionPool::MongoConnectionPool *workerPool;
 				mongo::DBClientBase* worker;
 
 				/*!
@@ -598,6 +598,11 @@ namespace repo {
 				 * connection.
 				 */
 				std::map<std::string, std::pair<std::string, std::string> > databasesAuthentication;
+
+				void initWorker(
+					const mongo::ConnectionString &dbAddress,
+					const mongo::BSONObj *auth
+				);
 
 				mongo::ConnectionString dbAddress; /* !address of the database (host:port)*/
 

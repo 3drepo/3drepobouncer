@@ -48,6 +48,43 @@ const std::list<std::string> repo::core::handler::MongoDatabaseHandler::ADMIN_ON
 
 MongoDatabaseHandler* MongoDatabaseHandler::handler = NULL;
 
+void MongoDatabaseHandler::initWorker(
+	const mongo::ConnectionString &dbAddress,
+	const mongo::BSONObj *auth
+) {
+	/*
+	 * Updated in ISSUE #626 to just have a single instance of worker
+	 * With filesManager being handled by this handler we're running into a lot of issues regarding pool resources.
+	 * The way we use 3drepobouncer now means it's always a single threaded applciation, we essentially
+	 * never run more than one db ops at any one time anyway so it will be logistically easier to do this
+	 * To support multi threading again, we should really refactor the files manager out of here
+	 */
+
+	std::string errMsg;
+	worker = dbAddress.connect(errMsg);
+
+	if (worker)
+	{
+		repoDebug << "Connected to database, trying authentication..";
+
+		if (auth)
+		{
+			repoTrace << auth->toString();
+			if (!worker->auth(auth->getStringField("db"), auth->getStringField("user"), auth->getStringField("pwd"), errMsg, auth->getField("digestPassword").boolean()))
+			{
+				throw mongo::DBException(errMsg, mongo::ErrorCodes::AuthenticationFailed);
+			}
+		}
+		else
+		{
+			repoWarning << "No credentials found. User is not authenticated against the database!";
+		}
+	}
+	else {
+		throw mongo::DBException(errMsg, mongo::ErrorCodes::AuthenticationFailed);
+	}
+}
+
 MongoDatabaseHandler::MongoDatabaseHandler(
 	const mongo::ConnectionString &dbAddress,
 	const uint32_t                &maxConnections,
@@ -58,16 +95,11 @@ MongoDatabaseHandler::MongoDatabaseHandler(
 	AbstractDatabaseHandler(MAX_MONGO_BSON_SIZE)
 {
 	mongo::client::initialize();
-	workerPool = new connectionPool::MongoConnectionPool(1, dbAddress, createAuthBSON(dbName, username, password, pwDigested));
 
-	/*
-	 * Updated in ISSUE #626 to just have a single instance of worker
-	 * With filesManager being handled by this handler we're running into a lot of issues regarding pool resources.
-	 * The way we use 3drepobouncer now means it's always a single threaded applciation, we essentially
-	 * never run more than one db ops at any one time anyway so it will be logistically easier to do this
-	 * To support multi threading again, we should really refactor the files manager out of here
-	 */
-	auto worker = workerPool->getWorker();
+	auto cred = createAuthBSON(dbName, username, password, pwDigested);
+	//workerPool = new connectionPool::MongoConnectionPool(1, dbAddress, cred);
+
+	initWorker(dbAddress, cred);
 }
 
 MongoDatabaseHandler::MongoDatabaseHandler(
@@ -78,8 +110,9 @@ MongoDatabaseHandler::MongoDatabaseHandler(
 	AbstractDatabaseHandler(MAX_MONGO_BSON_SIZE)
 {
 	mongo::client::initialize();
-	workerPool = new connectionPool::MongoConnectionPool(1, dbAddress, (mongo::BSONObj*)cred);
-	auto worker = workerPool->getWorker();
+	/*workerPool = new connectionPool::MongoConnectionPool(1, dbAddress, (mongo::BSONObj*)cred);*/
+
+	initWorker(dbAddress, cred);
 }
 
 /**
@@ -87,11 +120,13 @@ MongoDatabaseHandler::MongoDatabaseHandler(
 */
 MongoDatabaseHandler::~MongoDatabaseHandler()
 {
-	if (workerPool) {
-		if (worker) {
-			workerPool->returnWorker(worker);
-		}
-		delete workerPool;
+	//if (workerPool) {
+	//
+	//	delete workerPool;
+	//}
+
+	if (worker) {
+		delete worker;
 	}
 	mongo::client::shutdown();
 }
