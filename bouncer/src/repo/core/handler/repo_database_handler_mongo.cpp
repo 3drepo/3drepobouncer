@@ -59,6 +59,14 @@ MongoDatabaseHandler::MongoDatabaseHandler(
 {
 	mongo::client::initialize();
 	workerPool = new connectionPool::MongoConnectionPool(1, dbAddress, createAuthBSON(dbName, username, password, pwDigested));
+
+	/*
+	 * Updated in ISSUE #626 to just have a single instance of worker
+	 * With filesManager being handled by this handler we're running into a lot of issues regarding pool resources.
+	 * The way we use 3drepobouncer now means it's always a single threaded applciation, we essentially
+	 * never run more than one db ops at any one time anyway so it will be logistically easier to do this
+	 * To support multi threading again, we should really refactor the files manager out of here
+	 */
 	auto worker = workerPool->getWorker();
 }
 
