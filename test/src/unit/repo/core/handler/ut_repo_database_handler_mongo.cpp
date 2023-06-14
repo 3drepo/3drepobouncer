@@ -17,6 +17,7 @@
 
 #include <gtest/gtest.h>
 #include <repo/core/handler/repo_database_handler_mongo.h>
+#include <repo/core/handler/fileservice/repo_file_manager.h>
 #include <repo/core/model/bson/repo_node.h>
 #include "../../../repo_test_database_info.h"
 
@@ -113,6 +114,8 @@ TEST(MongoDatabaseHandlerTest, GetAllFromCollectionTailable)
 	auto handler = getHandler();
 	ASSERT_TRUE(handler);
 	auto goldenData = getGoldenForGetAllFromCollectionTailable();
+
+	repo::core::handler::fileservice::FileManager::instantiateManager(getConfig(), handler);
 
 	std::vector<repo::core::model::RepoBSON> bsons = handler->getAllFromCollectionTailable(
 		goldenData.first.first, goldenData.first.second);
@@ -408,6 +411,7 @@ TEST(MongoDatabaseHandlerTest, InsertDocument)
 	repo::core::model::RepoBSON testCase = BSON("_id" << "testID" << "anotherField" << std::rand());
 	std::string database = "sandbox";
 	std::string collection = "sbCollection";
+
 	EXPECT_TRUE(handler->insertDocument(database, collection, testCase, errMsg));
 	EXPECT_TRUE(errMsg.empty());
 	errMsg.clear();

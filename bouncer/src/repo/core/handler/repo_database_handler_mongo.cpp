@@ -935,6 +935,7 @@ bool MongoDatabaseHandler::insertDocument(
 	{
 		try {
 			worker->insert(getNamespace(database, collection), obj);
+			success = true;
 		}
 		catch (mongo::DBException &e)
 		{
