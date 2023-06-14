@@ -14,7 +14,7 @@
 *  You should have received a copy of the GNU Affero General Public License
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include "repo_blob_files_creator.h"
+#include "repo_blob_files_handler.h"
 #include "../../../lib/datastructure/repo_uuid.h"
 
 using namespace repo::core::handler::fileservice;

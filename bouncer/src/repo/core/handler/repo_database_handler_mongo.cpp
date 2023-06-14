@@ -24,7 +24,7 @@
 
 #include "repo_database_handler_mongo.h"
 #include "fileservice/repo_file_manager.h"
-#include "fileservice/repo_blob_files_creator.h"
+#include "fileservice/repo_blob_files_handler.h"
 #include "../../lib/repo_log.h"
 
 using namespace repo::core::handler;
@@ -458,7 +458,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 			std::auto_ptr<mongo::DBClientCursor> cursor;
 
 			auto fileManager = fileservice::FileManager::getManager();
-			fileservice::BlobFilesHandler blobCreator(fileManager, database, collection);
+			fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
 
 			do
 			{
@@ -471,7 +471,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 
 				for (; cursor.get() && cursor->more(); ++retrieved)
 				{
-					data.push_back(createRepoBSON(blobCreator, database, collection, cursor->nextSafe().copy()));
+					data.push_back(createRepoBSON(blobHandler, database, collection, cursor->nextSafe().copy()));
 				}
 			} while (cursor.get() && cursor->more());
 		}
@@ -531,7 +531,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 			do
 			{
 				auto fileManager = fileservice::FileManager::getManager();
-				fileservice::BlobFilesHandler blobCreator(fileManager, database, collection);
+				fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
 				mongo::BSONObjBuilder query;
 				query << ID << BSON("$in" << array);
 
@@ -543,7 +543,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 
 				for (; cursor.get() && cursor->more(); ++retrieved)
 				{
-					data.push_back(createRepoBSON(blobCreator, database, collection, cursor->nextSafe().copy(), ignoreExtFiles));
+					data.push_back(createRepoBSON(blobHandler, database, collection, cursor->nextSafe().copy(), ignoreExtFiles));
 				}
 			} while (cursor.get() && cursor->more());
 
@@ -575,7 +575,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 		//----------------------------------------------------------------------
 
 		auto fileManager = fileservice::FileManager::getManager();
-		fileservice::BlobFilesHandler blobCreator(fileManager, database, collection);
+		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
 		auto query = mongo::Query(queryBuilder.mongoObj());
 		if (!sortField.empty())
 			query = query.sort(sortField, -1);
@@ -584,7 +584,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 			getNamespace(database, collection),
 			query);
 
-		bson = createRepoBSON(blobCreator, database, collection, bsonMongo);
+		bson = createRepoBSON(blobHandler, database, collection, bsonMongo);
 	}
 	catch (mongo::DBException& e)
 	{
@@ -606,11 +606,11 @@ repo::core::model::RepoBSON  MongoDatabaseHandler::findOneByUniqueID(
 		queryBuilder.append(ID, uuid);
 
 		auto fileManager = fileservice::FileManager::getManager();
-		fileservice::BlobFilesHandler blobCreator(fileManager, database, collection);
+		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
 		mongo::BSONObj bsonMongo = worker->findOne(getNamespace(database, collection),
 			mongo::Query(queryBuilder.mongoObj()));
 
-		bson = createRepoBSON(blobCreator, database, collection, bsonMongo);
+		bson = createRepoBSON(blobHandler, database, collection, bsonMongo);
 	}
 	catch (mongo::DBException& e)
 	{
@@ -644,11 +644,11 @@ MongoDatabaseHandler::getAllFromCollectionTailable(
 			fields.size() > 0 ? &tmp : nullptr);
 
 		auto fileManager = fileservice::FileManager::getManager();
-		fileservice::BlobFilesHandler blobCreator(fileManager, database, collection);
+		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
 		while (cursor.get() && cursor->more())
 		{
 			//have to copy since the bson info gets cleaned up when cursor gets out of scope
-			bsons.push_back(createRepoBSON(blobCreator, database, collection, cursor->nextSafe().copy()));
+			bsons.push_back(createRepoBSON(blobHandler, database, collection, cursor->nextSafe().copy()));
 		}
 	}
 	catch (mongo::DBException& e)
@@ -965,7 +965,7 @@ bool MongoDatabaseHandler::insertManyDocuments(
 		try {
 			auto fileManager = fileservice::FileManager::getManager();
 
-			fileservice::BlobFilesHandler blobCreator(fileManager, database, collection, binaryStorageMetadata);
+			fileservice::BlobFilesHandler blobHandler(fileManager, database, collection, binaryStorageMetadata);
 
 			for (int i = 0; i < objs.size(); i += MAX_PARALLEL_BSON) {
 				std::vector<repo::core::model::RepoBSON>::const_iterator it = objs.begin() + i;
@@ -975,7 +975,7 @@ bool MongoDatabaseHandler::insertManyDocuments(
 					auto node = *it;
 					auto data = node.getBinariesAsBuffer();
 					if (data.second.size()) {
-						auto ref = blobCreator.insertBinary(data.second);
+						auto ref = blobHandler.insertBinary(data.second);
 						node.replaceBinaryWithReference(ref.serialise(), data.first);
 					}
 					toCommit.push_back(node);
@@ -985,7 +985,7 @@ bool MongoDatabaseHandler::insertManyDocuments(
 				worker->insert(getNamespace(database, collection), toCommit);
 			}
 
-			blobCreator.finished();
+			blobHandler.finished();
 
 			success = true;
 		}
