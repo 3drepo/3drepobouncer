@@ -255,6 +255,27 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 
 	auto identity = repo::lib::RepoMatrix();
 	determineUnits(reader->getUnits());
+
+	auto unitsScale = determineScaleFactor(modelUnits, settings.getTargetUnits());
+	auto reverseUnitsScale = determineScaleFactor(settings.getTargetUnits(), modelUnits);
+
+	std::vector<float> scalingMatrixArr = {
+		unitsScale, 0, 0, 0,
+		0, unitsScale, 0, 0,
+		0, 0, unitsScale, 0,
+		0, 0, 0, 1
+	};
+
+	std::vector<float> reverseScalingMatrixArr = {
+		reverseUnitsScale, 0, 0, 0,
+		0, reverseUnitsScale, 0, 0,
+		0, 0, reverseUnitsScale, 0,
+		0, 0, 0, 1
+	};
+
+	scaleMatrix = repo::lib::RepoMatrix64(scalingMatrixArr);
+	reverseScaleMatrix = repo::lib::RepoMatrix64(reverseScalingMatrixArr);
+
 	auto root = createTransNode(identity, reader->getProjectName());
 	transNodes.insert(root);
 
@@ -489,7 +510,7 @@ repo::lib::RepoMatrix64 SynchroModelImport::convertMatrixTo3DRepoWorld(
 	repo::lib::RepoMatrix64 matToWorld(toWorld);
 	auto fromWorld = matToWorld.invert();
 
-	return matToWorld * matGL * matrix * matDX * fromWorld;
+	return scaleMatrix * ((matToWorld * matGL * matrix * matDX * fromWorld) * reverseScaleMatrix);
 }
 
 void SynchroModelImport::updateFrameState(
@@ -546,6 +567,7 @@ void SynchroModelImport::updateFrameState(
 				bool reset = !color.size();
 				auto colour32Bit = reset ? 0 : colourIn32Bit(color);
 				auto meshes = resourceIDsToSharedIDs.at(colourTask->resourceID);
+
 				for (const auto &mesh : meshes) {
 					meshColourState[mesh].second = reset || meshColourState[mesh].first == colour32Bit ? std::vector<float>() : color;
 				}
@@ -607,7 +629,6 @@ void SynchroModelImport::updateFrameState(
 			if (resourceIDsToSharedIDs.find(visibilityTask->resourceID) != resourceIDsToSharedIDs.end()) {
 				auto visibility = visibilityTask->visibility;
 				auto meshes = resourceIDsToSharedIDs.at(visibilityTask->resourceID);
-
 				for (const auto mesh : meshes) {
 					auto previousState = meshAlphaState[mesh].second;
 					auto meshStr = mesh.toString();
@@ -802,6 +823,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 				}
 
 				auto matInverse = matrix.invert();
+
 				resourceIDTransState[lastStateEntry.first] = convertMatrixTo3DRepoWorld(matInverse, offset).getData();
 			}
 		}
