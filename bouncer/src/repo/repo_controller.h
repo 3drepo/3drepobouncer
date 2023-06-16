@@ -56,7 +56,7 @@ namespace repo {
 		RepoController(
 			std::vector<lib::RepoAbstractListener*> listeners = std::vector<lib::RepoAbstractListener *>(),
 			const uint32_t &numConcurrentOps = 1,
-			const uint32_t &numDbConn = 4);
+			const uint32_t &numDbConn = 1);
 
 		/**
 			* Destructor

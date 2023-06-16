@@ -184,7 +184,7 @@ std::ifstream FileManager::getFileStream(
 		const auto keyName = ref.getRefLink();
 		const auto type = ref.getType(); //Should return enum
 
-		std::shared_ptr<AbstractFileHandler> handler = gridfsHandler;
+		std::shared_ptr<AbstractFileHandler> handler = nullptr;
 		switch (type) {
 		case repo::core::model::RepoRef::RefType::FS:
 			handler = fsHandler;
@@ -211,13 +211,15 @@ FileManager::FileManager(
 		throw repo::lib::RepoException("Trying to instantiate FileManager with a nullptr to database!");
 
 	gridfsHandler = std::make_shared<GridFSFileHandler>(dbHandler);
-	defaultHandler = gridfsHandler;
 
 	auto fsConfig = config.getFSConfig();
 	if (fsConfig.configured) {
 		fsHandler = std::make_shared<FSFileHandler>(fsConfig.dir, fsConfig.nLevel);
 		if (config.getDefaultStorageEngine() == repo::lib::RepoConfig::FileStorageEngine::FS)
 			defaultHandler = fsHandler;
+	}
+	else {
+		throw repo::lib::RepoException("Filestore configuration must be provided (GridFS is no longer supported as the default FileService!");
 	}
 }
 
