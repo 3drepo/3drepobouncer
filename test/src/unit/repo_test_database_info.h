@@ -17,6 +17,7 @@
 
 #pragma once
 #include <repo/core/handler/repo_database_handler_mongo.h>
+#include <repo/core/handler/fileservice/repo_file_manager.h>
 #include <repo/lib/repo_config.h>
 #include <repo/core/model/bson/repo_bson_builder.h>
 #include <boost/filesystem.hpp>
@@ -118,17 +119,30 @@ const static size_t REPO_GTEST_RAWFILE_FETCH_SIZE = 1024;
 
 static repo::lib::RepoConfig getConfig()
 {
-	return repo::lib::RepoConfig(REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
+	auto config = repo::lib::RepoConfig(REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
 		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+	config.configureFS(".");
+
+	return config;
 }
 
 static repo::core::handler::MongoDatabaseHandler* getHandler()
 {
 	std::string errMsg;
-	return 	repo::core::handler::MongoDatabaseHandler::getHandler(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
+
+	auto handler = repo::core::handler::MongoDatabaseHandler::getHandler(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
 		1,
 		REPO_GTEST_AUTH_DATABASE,
 		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+
+	static bool first = true;
+
+	if (first) {
+		repo::core::handler::fileservice::FileManager::instantiateManager(getConfig(), handler);
+		first = false;
+	}
+
+	return handler;
 }
 
 static std::vector<repo::lib::RepoVector3D> getGoldenDataForBBoxTest()
