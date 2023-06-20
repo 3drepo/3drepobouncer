@@ -384,6 +384,21 @@ namespace repo {
 					std::string &errMsg);
 
 				/**
+				* Insert multiple document in database.collection
+				* @param database name
+				* @param collection name
+				* @param documents to insert
+				* @param errMsg error message should it fail
+				* @return returns true upon success
+				*/
+				virtual bool insertManyDocuments(
+					const std::string &database,
+					const std::string &collection,
+					const std::vector<repo::core::model::RepoBSON> &obj,
+					std::string &errMsg,
+					const repo::core::model::RepoBSON &metadata = repo::core::model::RepoBSON());
+
+				/**
 				* Insert big raw file in binary format (using GridFS)
 				* @param database name
 				* @param collection name
@@ -574,7 +589,8 @@ namespace repo {
 				 *	=================================== Private Fields ========================================
 				 */
 
-				connectionPool::MongoConnectionPool *workerPool;
+				 //				connectionPool::MongoConnectionPool *workerPool;
+				mongo::DBClientBase* worker;
 
 				/*!
 				 * Map holding database name as key and <username, password digest> as a
@@ -582,6 +598,11 @@ namespace repo {
 				 * connection.
 				 */
 				std::map<std::string, std::pair<std::string, std::string> > databasesAuthentication;
+
+				void initWorker(
+					const mongo::ConnectionString &dbAddress,
+					const mongo::BSONObj *auth
+				);
 
 				mongo::ConnectionString dbAddress; /* !address of the database (host:port)*/
 
@@ -621,23 +642,6 @@ namespace repo {
 					const uint32_t                &maxConnections,
 					const std::string             &dbName,
 					const model::RepoBSON         *cred);
-
-				/**
-				* Create a Repo BSON and populate all relevant data
-				* this includes getting data from GridFS
-				* NOTE: the handler will only get the data from GridFS if it is
-				* listed in REPO_LABEL_OVERSIZED_FILES
-				* @param worker the worker to operate with
-				* @param database database to store in
-				* @param collection collection to store in
-				* @param obj the mongo bson this repoBSON is basing from
-				* @return returns a repo BSON that is fully populated
-				*/
-				repo::core::model::RepoBSON createRepoBSON(
-					const std::string &database,
-					const std::string &collection,
-					const mongo::BSONObj &obj,
-					const bool ignoreExtFile = false);
 
 				/**
 				* Generates a mongo BSON object for authentication
@@ -723,22 +727,6 @@ namespace repo {
 					const OPERATION                         &op,
 					const repo::core::model::RepoUser &user,
 					std::string                       &errMsg);
-
-				/**
-				* check if the bson object contains any big binary files
-				* if yes, store them in gridFS
-				* @param worker the worker to operate with
-				* @param database database to store in
-				* @param collection collection to store in
-				* @param obj the bson object to work with
-				* @param errMsg error message when failed
-				* @return returns true upon success
-				*/
-				bool storeBigFiles(
-					const std::string &database,
-					const std::string &collection,
-					const repo::core::model::RepoBSON &obj,
-					std::string &errMsg);
 
 				/**
 				* Compares two strings.

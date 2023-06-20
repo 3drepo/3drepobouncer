@@ -1,0 +1,45 @@
+/**
+*  Copyright (C) 2019 3D Repo Ltd
+*
+*  This program is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU Affero General Public License as
+*  published by the Free Software Foundation, either version 3 of the
+*  License, or (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU Affero General Public License for more details.
+*
+*  You should have received a copy of the GNU Affero General Public License
+*  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+
+#include <string>
+
+#include "../../../core/model/bson/repo_bson_builder.h"
+
+namespace repo {
+	namespace core {
+		namespace handler {
+			namespace fileservice {
+				class DataRef {
+					friend class BlobFilesHandler;
+				private:
+					const std::string fileName;
+					const unsigned int startPos;
+					const unsigned int size;
+				public:
+					DataRef(const std::string &fileName, const unsigned int &startPos, const unsigned int &size)
+						: fileName(fileName), startPos(startPos), size(size) {}
+
+					repo::core::model::RepoBSON serialise() const;
+
+					static DataRef deserialise(const repo::core::model::RepoBSON &serialisedObj);
+				};
+			}
+		}
+	}
+}

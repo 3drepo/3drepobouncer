@@ -863,14 +863,10 @@ bool RepoScene::commitNodes(
 	size_t total = nodesToCommit.size();
 
 	repoInfo << "Committing " << total << " nodes...";
+	std::vector< repo::core::model::RepoBSON> nodes;
 
 	for (const repo::lib::RepoUUID &id : nodesToCommit)
 	{
-		if (++count % 500 == 0 || count == total - 1)
-		{
-			repoInfo << "Committing " << count << " of " << total;
-		}
-
 		const repo::lib::RepoUUID uniqueID = gType == GraphType::OPTIMIZED ? id : g.sharedIDtoUniqueID[id];
 		RepoNode *node = g.nodesByUniqueID[uniqueID];
 
@@ -883,11 +879,14 @@ bool RepoScene::commitNodes(
 		else
 		{
 			node->swap(shrunkNode);
-			success &= handler->insertDocument(databaseName, projectName + "." + ext, *node, errMsg);
+			nodes.push_back(*node);
 		}
 	}
+	RepoBSONBuilder builder;
 
-	return success;
+	builder.append(REPO_NODE_REVISION_ID, revId);
+
+	return handler->insertManyDocuments(databaseName, projectName + "." + ext, nodes, errMsg, builder.obj());
 }
 
 bool RepoScene::commitSceneChanges(
@@ -1304,7 +1303,6 @@ bool RepoScene::loadStash(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	std::string &errMsg) {
 	bool success = true;
-
 	if (!handler)
 	{
 		errMsg += "Trying to load stash graph without a database handler!";

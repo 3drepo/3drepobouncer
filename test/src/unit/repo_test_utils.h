@@ -25,7 +25,7 @@ static repo::RepoController::RepoToken* initController(repo::RepoController *con
 	repo::lib::RepoConfig config = { REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
 		REPO_GTEST_DBUSER, REPO_GTEST_DBPW };
 
-	config.configureFS("./", 2, false);
+	config.configureFS("./", 2);
 	std::string errMsg;
 	return controller->init(errMsg, config);
 }

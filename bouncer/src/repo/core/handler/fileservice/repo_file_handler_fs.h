@@ -80,6 +80,14 @@ namespace repo {
 						const std::string          &collection,
 						const std::string &keyName);
 
+					/**
+					* Get file as stream.
+					*/
+					std::ifstream getFileStream(
+						const std::string          &database,
+						const std::string          &collection,
+						const std::string &fileName);
+
 				private:
 					/*
 					 *	=================================== Private Fields ========================================

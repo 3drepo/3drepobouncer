@@ -22,39 +22,16 @@
 using namespace repo::core::model;
 
 RepoBSON::RepoBSON(const RepoBSON &obj,
-	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping) : 
+	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping) :
 	mongo::BSONObj(obj),
 	bigFiles(binMapping) {
 	auto existingFiles = obj.getFilesMapping();
-
-	if (bigFiles.size() > 0)
-	{
-		mongo::BSONObjBuilder builder, arrbuilder;
-
-		for (const auto & pair : bigFiles)
-		{
-			//append field name :file name
-			arrbuilder << pair.first << pair.second.first;
-		}
-
-		if (obj.hasField(REPO_LABEL_OVERSIZED_FILES))
-		{
-			arrbuilder.appendElementsUnique(obj.getObjectField(REPO_LABEL_OVERSIZED_FILES));
-		}
-
-		builder.append(REPO_LABEL_OVERSIZED_FILES, arrbuilder.obj());
-		builder.appendElementsUnique(obj);
-
-		*this = builder.obj();
-		bigFiles = binMapping;
-	}
 
 	for (const auto &pair : existingFiles) {
 		if (bigFiles.find(pair.first) == bigFiles.end()) {
 			bigFiles[pair.first] = pair.second;
 		}
 	}
-
 }
 
 RepoBSON::RepoBSON(
@@ -63,28 +40,6 @@ RepoBSON::RepoBSON(
 	: mongo::BSONObj(obj),
 	bigFiles(binMapping)
 {
-	
-	if (bigFiles.size() > 0)
-	{
-		mongo::BSONObjBuilder builder, arrbuilder;
-
-		for (const auto & pair : bigFiles)
-		{
-			//append field name :file name
-			arrbuilder << pair.first << pair.second.first;
-		}
-
-		if (obj.hasField(REPO_LABEL_OVERSIZED_FILES))
-		{
-			arrbuilder.appendElementsUnique(obj.getObjectField(REPO_LABEL_OVERSIZED_FILES));
-		}
-
-		builder.append(REPO_LABEL_OVERSIZED_FILES, arrbuilder.obj());
-		builder.appendElementsUnique(obj);
-
-		*this = builder.obj();
-		bigFiles = binMapping;
-	}
 }
 
 int64_t RepoBSON::getCurrentTimestamp()
@@ -116,7 +71,7 @@ RepoBSON RepoBSON::cloneAndShrink() const
 	std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>>> rawFiles(bigFiles.begin(), bigFiles.end());
 	std::string uniqueIDStr = hasField(REPO_LABEL_ID) ? getUUIDField(REPO_LABEL_ID).toString() : repo::lib::RepoUUID::createUUID().toString();
 
-	RepoBSON resultBson = *this;	
+	RepoBSON resultBson = *this;
 
 	for (const std::string &field : fields)
 	{
@@ -131,15 +86,49 @@ RepoBSON RepoBSON::cloneAndShrink() const
 	return RepoBSON(resultBson, rawFiles);
 }
 
-repo::lib::RepoUUID RepoBSON::getUUIDField(const std::string &label) const{
+std::pair<repo::core::model::RepoBSON, std::vector<uint8_t>> RepoBSON::getBinariesAsBuffer() const {
+	std::pair<repo::core::model::RepoBSON, std::vector<uint8_t>> res;
+	if (bigFiles.size()) {
+		std::vector<uint8_t> &buffer = res.second;
+		mongo::BSONObjBuilder elemsBuilder;
 
+		for (const auto &entry : bigFiles) {
+			mongo::BSONObjBuilder entryBuilder;
 
+			entryBuilder << REPO_LABEL_BINARY_START << (unsigned int)buffer.size();
+			buffer.insert(buffer.end(), entry.second.second.begin(), entry.second.second.end());
+			entryBuilder << REPO_LABEL_BINARY_SIZE << (unsigned int)entry.second.second.size();
+
+			elemsBuilder << entry.first << entryBuilder.obj();
+		}
+
+		res.first = elemsBuilder.obj();
+	}
+
+	return res;
+}
+
+void RepoBSON::replaceBinaryWithReference(const repo::core::model::RepoBSON &fileRef, const repo::core::model::RepoBSON &elemRef) {
+	mongo::BSONObjBuilder objBuilder;
+	objBuilder << REPO_LABEL_BINARY_ELEMENTS << (mongo::BSONObj)elemRef;
+	objBuilder << REPO_LABEL_BINARY_BUFFER << (mongo::BSONObj)fileRef;
+
+	auto obj = objBuilder.obj();
+
+	mongo::BSONObjBuilder builder;
+	builder.append(REPO_LABEL_BINARY_REFERENCE, obj);
+	builder.appendElementsUnique(*this);
+
+	*this = builder.obj();
+}
+
+repo::lib::RepoUUID RepoBSON::getUUIDField(const std::string &label) const {
 	return hasField(label) ?
 		repo::lib::RepoUUID::fromBSONElement(getField(label)) :
 		repo::lib::RepoUUID::createUUID();
 }
 
-std::vector<repo::lib::RepoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) const{
+std::vector<repo::lib::RepoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) const {
 	std::vector<repo::lib::RepoUUID> results;
 
 	if (hasField(label))
@@ -184,7 +173,13 @@ std::vector<uint8_t> RepoBSON::getBigBinary(
 std::vector<std::pair<std::string, std::string>> RepoBSON::getFileList() const
 {
 	std::vector<std::pair<std::string, std::string>> fileList;
-	if (hasField(REPO_LABEL_OVERSIZED_FILES))
+
+	if (bigFiles.size()) {
+		for (const auto &entry : bigFiles) {
+			fileList.push_back({ entry.first, entry.second.first });
+		}
+	}
+	else if (hasField(REPO_LABEL_OVERSIZED_FILES))
 	{
 		RepoBSON extRefbson = getObjectField(REPO_LABEL_OVERSIZED_FILES);
 
@@ -196,6 +191,46 @@ std::vector<std::pair<std::string, std::string>> RepoBSON::getFileList() const
 	}
 
 	return fileList;
+}
+
+repo::core::model::RepoBSON RepoBSON::getBinaryReference() const {
+	repo::core::model::RepoBSON res;
+	if (hasField(REPO_LABEL_BINARY_REFERENCE))
+	{
+		RepoBSON extRefbson = getObjectField(REPO_LABEL_BINARY_REFERENCE);
+		return extRefbson.getObjectField(REPO_LABEL_BINARY_BUFFER);
+	}
+
+	return res;
+}
+
+void RepoBSON::initBinaryBuffer(const std::vector<uint8_t> &buffer) {
+	if (hasField(REPO_LABEL_BINARY_REFERENCE))
+	{
+		RepoBSON extRefbson = getObjectField(REPO_LABEL_BINARY_REFERENCE);
+
+		auto elemRefs = extRefbson.getObjectField(REPO_LABEL_BINARY_ELEMENTS);
+
+		for (const auto &elem : elemRefs.getFieldNames()) {
+			auto elemRefBson = elemRefs.getObjectField(elem);
+			size_t start = elemRefBson.getIntField(REPO_LABEL_BINARY_START);
+			size_t size = elemRefBson.getIntField(REPO_LABEL_BINARY_SIZE);
+
+			bigFiles[elem] = { std::string(), std::vector<uint8_t>(buffer.begin() + start, buffer.begin() + start + size) };
+		}
+	}
+}
+
+bool RepoBSON::hasBinField(const std::string &label) const
+{
+	return hasField(label) || bigFiles.find(label) != bigFiles.end();
+}
+
+bool RepoBSON::hasLegacyFileReference() const {
+	return hasField(REPO_LABEL_OVERSIZED_FILES);
+}
+bool RepoBSON::hasFileReference() const {
+	return hasField(REPO_LABEL_BINARY_REFERENCE);
 }
 
 std::vector<float> RepoBSON::getFloatArray(const std::string &label) const
