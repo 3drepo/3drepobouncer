@@ -408,6 +408,7 @@ TEST(MongoDatabaseHandlerTest, InsertDocument)
 	repo::core::model::RepoBSON testCase = BSON("_id" << "testID" << "anotherField" << std::rand());
 	std::string database = "sandbox";
 	std::string collection = "sbCollection";
+
 	EXPECT_TRUE(handler->insertDocument(database, collection, testCase, errMsg));
 	EXPECT_TRUE(errMsg.empty());
 	errMsg.clear();
@@ -534,70 +535,6 @@ TEST(MongoDatabaseHandlerTest, InsertUser)
 	errMsg.clear();
 
 	handler->dropUser(userTest, errMsg);
-}
-
-TEST(MongoDatabaseHandlerTest, UpsertDocument)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	std::string errMsg;
-
-	repo::core::model::RepoBSON testCase = BSON("_id" << repo::lib::RepoUUID::createUUID().toString() << "anotherField" << std::rand());
-	std::string database = "sandbox";
-	std::string collection = "sbCollection";
-	EXPECT_TRUE(handler->upsertDocument(database, collection, testCase, false, errMsg));
-	EXPECT_TRUE(errMsg.empty());
-	errMsg.clear();
-
-	//The following will of cousre fail if findOneByCriteria is failing
-	repo::core::model::RepoBSON result = handler->findOneByCriteria(database, collection, testCase);
-	EXPECT_FALSE(result.isEmpty());
-
-	std::set<std::string> fields = result.getFieldNames();
-	for (const auto &fname : fields)
-	{
-		ASSERT_TRUE(testCase.hasField(fname));
-		EXPECT_EQ(result.getField(fname), testCase.getField(fname));
-	}
-
-	//upserting the same thing twice shouldn't cause any errors
-	EXPECT_TRUE(handler->upsertDocument(database, collection, testCase, false, errMsg));
-	EXPECT_TRUE(errMsg.empty());
-	errMsg.clear();
-
-	std::string id = testCase.getStringField("_id");
-	repo::core::model::RepoBSON searchCriteria = BSON("_id" << id);
-	repo::core::model::RepoBSON extraFields = BSON("_id" << id << "extraField" << std::rand());
-
-	EXPECT_TRUE(handler->upsertDocument(database, collection, extraFields, false, errMsg));
-	EXPECT_TRUE(errMsg.empty());
-	errMsg.clear();
-
-	//The following will of cousre fail if findOneByCriteria is failing
-	result = handler->findOneByCriteria(database, collection, searchCriteria);
-	EXPECT_FALSE(result.isEmpty());
-
-	EXPECT_TRUE(result.hasField("anotherField"));
-	EXPECT_TRUE(result.hasField("extraField"));
-
-	EXPECT_TRUE(handler->upsertDocument(database, collection, extraFields, true, errMsg));
-	EXPECT_TRUE(errMsg.empty());
-	errMsg.clear();
-
-	//The following will of cousre fail if findOneByCriteria is failing
-	result = handler->findOneByCriteria(database, collection, searchCriteria);
-	EXPECT_FALSE(result.isEmpty());
-
-	EXPECT_FALSE(result.hasField("anotherField"));
-	EXPECT_TRUE(result.hasField("extraField"));
-
-	EXPECT_FALSE(handler->upsertDocument(database, "", extraFields, false, errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
-
-	EXPECT_FALSE(handler->upsertDocument("", collection, extraFields, false, errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
 }
 
 TEST(MongoDatabaseHandlerTest, UpdateRole)

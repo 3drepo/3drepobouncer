@@ -119,7 +119,7 @@ namespace repo {
 				{
 					mongo::BSONObj::swap(otherCopy);
 					bigFiles = otherCopy.bigFiles;
-				}				
+				}
 
 				bool couldBeArray() const {
 					return mongo::BSONObj::couldBeArray();
@@ -150,7 +150,7 @@ namespace repo {
 
 				bool getBoolField(const std::string &label) const
 				{
-					return mongo::BSONObj::getBoolField (label);
+					return mongo::BSONObj::getBoolField(label);
 				}
 
 				std::string getStringField(const std::string &label) const {
@@ -197,7 +197,7 @@ namespace repo {
 							return false;
 						}
 					}
-					else{
+					else {
 						RepoBSONElement bse = getField(field);
 						if (bse.type() == ElementType::BINARY && bse.binDataType() == mongo::BinDataGeneral)
 						{
@@ -210,12 +210,12 @@ namespace repo {
 								memcpy(vec.data(), binData, length);
 								success = true;
 							}
-							else{
+							else {
 								repoError << "RepoBSON::getBinaryFieldAsVector : "
 									<< "size of binary data (" << length << ") Unable to copy 0 bytes!";
 							}
 						}
-						else{
+						else {
 							repoError << "RepoBSON::getBinaryFieldAsVector : bson element type is not BinDataGeneral!";
 						}
 					}
@@ -261,7 +261,6 @@ namespace repo {
 				*/
 				int64_t getTimeStampField(const std::string &label) const;
 
-
 				std::set<std::string> getFieldNames() const {
 					std::set<std::string> fieldNames;
 					mongo::BSONObj::getFieldNames(fieldNames);
@@ -300,10 +299,7 @@ namespace repo {
 				* @param label field name in question
 				* @return returns true if found
 				*/
-				bool hasBinField(const std::string &label) const
-				{
-					return hasField(label) || bigFiles.find(label) != bigFiles.end();
-				}
+				bool hasBinField(const std::string &label) const;
 
 				virtual RepoBSON cloneAndAddFields(
 					const RepoBSON *changes) const;
@@ -371,6 +367,16 @@ namespace repo {
 				{
 					return bigFiles.size() > 0;
 				}
+
+				std::pair<repo::core::model::RepoBSON, std::vector<uint8_t>> getBinariesAsBuffer() const;
+
+				void replaceBinaryWithReference(const repo::core::model::RepoBSON &fileRef, const repo::core::model::RepoBSON &elemRef);
+
+				repo::core::model::RepoBSON getBinaryReference() const;
+				void initBinaryBuffer(const std::vector<uint8_t> &buffer);
+
+				bool hasLegacyFileReference() const;
+				bool hasFileReference() const;
 
 			protected:
 

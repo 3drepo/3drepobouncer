@@ -6,6 +6,8 @@
 
 set(SOURCES
 	${SOURCES}
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_blob_files_handler.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_data_ref.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_file_handler_fs.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_file_handler_gridfs.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_file_manager.cpp
@@ -13,6 +15,8 @@ set(SOURCES
 
 set(HEADERS
 	${HEADERS}
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_blob_files_handler.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_data_ref.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_file_handler_abstract.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_file_handler_fs.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_file_handler_gridfs.h

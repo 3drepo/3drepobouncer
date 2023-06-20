@@ -61,13 +61,23 @@ namespace repo {
 						const std::string                            &databaseName,
 						const std::string                            &collectionNamePrefix,
 						const std::string                            &fileName,
-						const std::vector<uint8_t>                   &bin
+						const std::vector<uint8_t>                   &bin,
+						const repo::core::model::RepoBSON            &metadata = repo::core::model::RepoBSON()
 					);
 
 					/**
 					 * Get the file base on the the ref entry in database
 					 */
 					std::vector<uint8_t> getFile(
+						const std::string                            &databaseName,
+						const std::string                            &collectionNamePrefix,
+						const std::string                            &fileName
+					);
+
+					/**
+					 * Get the file base on the the ref entry in database
+					 */
+					std::ifstream getFileStream(
 						const std::string                            &databaseName,
 						const std::string                            &collectionNamePrefix,
 						const std::string                            &fileName
@@ -99,6 +109,11 @@ namespace repo {
 					std::string cleanFileName(
 						const std::string &fileName);
 
+					repo::core::model::RepoRef getFileRef(
+						const std::string                            &databaseName,
+						const std::string                            &collectionNamePrefix,
+						const std::string                            &fileName);
+
 					/**
 					 * Remove ref entry for file to database.
 					 */
@@ -115,7 +130,8 @@ namespace repo {
 						const std::string                            &id,
 						const std::string                            &link,
 						const repo::core::model::RepoRef::RefType    &type,
-						const uint32_t                               &size);
+						const uint32_t                               &size,
+						const repo::core::model::RepoBSON            &metadata);
 
 					static FileManager* manager;
 					repo::core::handler::AbstractDatabaseHandler *dbHandler;

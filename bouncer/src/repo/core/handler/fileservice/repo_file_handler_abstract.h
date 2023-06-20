@@ -18,7 +18,8 @@
 #pragma once
 
 #include <string>
-
+#include <fstream>
+#include "../../../lib/repo_exception.h"
 #include "../repo_database_handler_abstract.h"
 
 #include "../../model/bson/repo_bson_ref.h"
@@ -50,6 +51,16 @@ namespace repo {
 						const std::string          &database,
 						const std::string          &collection,
 						const std::string &fileName) = 0;
+
+					/**
+					* Get file as stream.
+					*/
+					virtual std::ifstream getFileStream(
+						const std::string          &database,
+						const std::string          &collection,
+						const std::string &fileName) {
+						throw repo::lib::RepoException("This function is currently not supported for ref type: " + std::to_string((int)getType()));
+					};
 
 					/**
 					* Upload file.
