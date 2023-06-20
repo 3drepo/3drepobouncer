@@ -69,7 +69,7 @@ MeshSimplificationOptimizer::~MeshSimplificationOptimizer()
 
 static repo::core::model::MeshNode currentMeshNode;
 
-/*
+#ifdef _WIN32
 BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 {
 	switch (fdwCtrlType)
@@ -94,17 +94,17 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 		return FALSE;
 	}
 }
-*/
+#endif
 
 
 bool MeshSimplificationOptimizer::apply(repo::core::model::RepoScene *scene)
 {
-	/*
+#ifdef _WIN32
 	if (SetConsoleCtrlHandler(CtrlHandler, TRUE))
 	{
 		repoInfo << "Control Handler Registered";
 	}
-	*/
+#endif
 
 	auto start = std::chrono::high_resolution_clock::now();
 	size_t startingVertexCount = 0;
@@ -339,7 +339,7 @@ repo::core::model::MeshNode MeshSimplificationOptimizer::optimizeMeshNode(repo::
 		repoInfo << "Exception " << e.what() << " simplifying mesh " << meshNode->getUniqueID().toString();
 
 		// uncomment this to have the bouncer output a pmp of any failed meshes so the algorithm can be run in isolation
-		/*
+#ifdef _WIN32
 		try {
 			MeshSimplificationOptimizer::Mesh original;
 			convertMeshNode(meshNode, original);
@@ -351,8 +351,7 @@ repo::core::model::MeshNode MeshSimplificationOptimizer::optimizeMeshNode(repo::
 		catch (std::exception e) {
 			// Failed twice, no way we can get the mesh...
 		}
-		*/
-		
+#endif		
 		return *meshNode;
 	}
 }
