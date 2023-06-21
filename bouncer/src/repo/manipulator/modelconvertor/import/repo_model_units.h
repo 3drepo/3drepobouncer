@@ -50,6 +50,14 @@ namespace repo {
 				int index = (int)units;
 				return fromMetreLookUp[index];
 			}
+			static float determineScaleFactor(const ModelUnits &base, const ModelUnits &target) {
+				if (base == target || base == ModelUnits::UNKNOWN || target == ModelUnits::UNKNOWN) {
+					return 1.0;
+				}
+				auto baseToM = scaleFactorToMetres(base);
+				auto mToTarget = scaleFactorFromMetres(target);
+				return baseToM * mToTarget;
+			}
 		}
 	}
 }
