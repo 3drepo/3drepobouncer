@@ -35,7 +35,7 @@ TEST(SynchroModelImport, DeconstructorTest)
 TEST(SynchroModelImport, ImportModel)
 {
 	auto import = SynchroModelImport(ModelImportConfig());
-	uint8_t errCode;
+	uint8_t errCode = 0;
 	EXPECT_TRUE(import.importModel(getDataPath(synchroVersion6_4), errCode));
 	EXPECT_EQ(0, errCode);
 

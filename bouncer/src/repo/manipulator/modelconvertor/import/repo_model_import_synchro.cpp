@@ -70,6 +70,8 @@ bool SynchroModelImport::importModel(std::string filePath, uint8_t &errCode) {
 	reader = std::make_shared<synchro_reader::SynchroReader>(filePath, settings.getTimeZone());
 	repoInfo << "=== IMPORTING MODEL WITH SYNCHRO MODEL CONVERTOR (animations: " << settings.shouldImportAnimations() << ") ===";
 	repoInfo << "Sequence timezone is set to : " << (settings.getTimeZone().empty() ? "UTC" : settings.getTimeZone());
+
+	repoInfo << " errCode: " << errCode;
 	std::string msg;
 	auto synchroErrCode = reader->init(msg);
 	if (synchroErrCode != synchro_reader::SynchroError::ERR_OK) {
@@ -82,6 +84,8 @@ bool SynchroModelImport::importModel(std::string filePath, uint8_t &errCode) {
 		repoError << msg;
 		return false;
 	}
+
+	repoInfo << " errCode: " << errCode << "msg";
 	repoInfo << "Initialisation successful";
 
 	return true;
