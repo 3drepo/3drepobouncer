@@ -30,15 +30,6 @@
 
 using namespace repo::manipulator::modelconvertor;
 
-float determineScaleFactor(const ModelUnits &base, const ModelUnits &target) {
-	if (base == target || base == ModelUnits::UNKNOWN || target == ModelUnits::UNKNOWN) {
-		return 1.0;
-	}
-	auto baseToM = scaleFactorToMetres(base);
-	auto mToTarget = scaleFactorFromMetres(target);
-	return baseToM * mToTarget;
-}
-
 repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 	const std::string &file,
 	const repo::manipulator::modelconvertor::ModelImportConfig &config,

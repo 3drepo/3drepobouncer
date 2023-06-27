@@ -91,6 +91,7 @@ namespace repo {
 				const std::string TASK_START_DATE = "startDate";
 				const std::string TASK_END_DATE = "endDate";
 				const std::string TASK_CHILDREN = "subActivities";
+				repo::lib::RepoMatrix64 scaleMatrix, reverseScaleMatrix;
 
 				repo::lib::RepoMatrix64 convertMatrixTo3DRepoWorld(
 					const repo::lib::RepoMatrix64 &matrix,
@@ -204,6 +205,6 @@ namespace repo {
 				}
 #endif
 			};
-			} //namespace SynchroModelImport
-		} //namespace manipulator
-	} //namespace repo
+		} //namespace SynchroModelImport
+	} //namespace manipulator
+} //namespace repo
