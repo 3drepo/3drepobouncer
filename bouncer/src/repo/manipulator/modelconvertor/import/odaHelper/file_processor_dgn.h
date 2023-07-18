@@ -46,7 +46,7 @@ namespace repo {
 				class FileProcessorDgn : public FileProcessor
 				{
 				public:
-					FileProcessorDgn(const std::string &inputFile, GeometryCollector * geoCollector) : FileProcessor(inputFile, geoCollector) {};
+					FileProcessorDgn(const std::string &inputFile, GeometryCollector * geoCollector, const ModelImportConfig& config) : FileProcessor(inputFile, geoCollector, config) {};
 					~FileProcessorDgn() override;
 
 					uint8_t readFile() override;

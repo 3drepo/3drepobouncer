@@ -186,6 +186,11 @@ uint8_t FileProcessorRvt::readFile()
 	{
 		//.. change tessellation params here
 		wrTriangulationParams triParams(USE_NEW_TESSELLATION);
+		if (!importConfig.shouldUseAutoTriangulation()) {
+			triParams.bRecalculateSurfaceTolerance = false;
+			triParams.surfaceTolerance = importConfig.getSurfaceTolerance();
+			triParams.normalTolerance = importConfig.getNormalTolerance();
+		}
 		setTessellationParams(triParams);
 		OdBmDatabasePtr pDb = svcs.readFile(OdString(file.c_str()));
 		if (!pDb.isNull())

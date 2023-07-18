@@ -17,6 +17,7 @@
 
 #pragma once
 #include "geometry_collector.h"
+#include "../repo_model_import_config.h"
 #include "../../../../error_codes.h"
 #include <string>
 
@@ -27,9 +28,9 @@ namespace repo {
 				class FileProcessor
 				{
 				protected:
-					FileProcessor(const std::string& inputFile, GeometryCollector* geoCollector);
+					FileProcessor(const std::string& inputFile, GeometryCollector* geoCollector, const ModelImportConfig& config);
 				public:
-					static std::unique_ptr<FileProcessor> getFileProcessor(const std::string& inputFile, GeometryCollector* geoCollector);
+					static std::unique_ptr<FileProcessor> getFileProcessor(const std::string& inputFile, GeometryCollector* geoCollector, const ModelImportConfig& config);
 					virtual ~FileProcessor();
 					virtual uint8_t readFile() = 0;
 					bool shouldApplyReduction = false;
@@ -37,6 +38,7 @@ namespace repo {
 				protected:
 					const std::string file;
 					GeometryCollector *collector;
+					const ModelImportConfig& importConfig;
 				};
 			}
 		}

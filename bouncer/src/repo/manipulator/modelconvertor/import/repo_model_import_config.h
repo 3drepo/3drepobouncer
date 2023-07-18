@@ -40,6 +40,8 @@ namespace repo {
 				bool applyReductions;
 				bool rotateModel;
 				bool importAnimations;
+				double surfaceTolerance;
+				double normalTolerance;
 				std::string timeZone;
 				ModelUnits targetUnits;
 			public:
@@ -48,8 +50,16 @@ namespace repo {
 					const bool rotateModel = false,
 					const bool importAnimations = true,
 					const ModelUnits targetUnits = ModelUnits::UNKNOWN,
-					const std::string timeZone = "") :
-					applyReductions(applyReductions), rotateModel(rotateModel), importAnimations(importAnimations), targetUnits(targetUnits), timeZone(timeZone) {}
+					const std::string timeZone = "",
+					const double surfaceTolerance = 0,
+					const double normalTolerance = 0) :
+					applyReductions(applyReductions), 
+					rotateModel(rotateModel), 
+					importAnimations(importAnimations), 
+					targetUnits(targetUnits), 
+					timeZone(timeZone), 
+					surfaceTolerance(surfaceTolerance), 
+					normalTolerance(normalTolerance) {}
 
 				~ModelImportConfig() {}
 
@@ -58,6 +68,9 @@ namespace repo {
 				bool shouldImportAnimations() const { return importAnimations; }
 				std::string getTimeZone() const { return timeZone; }
 				ModelUnits getTargetUnits() const { return targetUnits; }
+				bool shouldUseAutoTriangulation() const { return surfaceTolerance == 0 && normalTolerance == 0; }
+				double getSurfaceTolerance() const { return surfaceTolerance; }
+				double getNormalTolerance() const { return normalTolerance; }
 			};
 		}//namespace modelconvertor
 	}//namespace manipulator

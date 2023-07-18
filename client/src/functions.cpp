@@ -407,6 +407,8 @@ int32_t importFileAndCommit(
 	std::string project;
 	std::string  owner, tag, desc, units;
 	repo::lib::RepoUUID revId = repo::lib::RepoUUID::createUUID();
+	double triangulationSurfaceTolerance = 0;
+	double triangulationNormalTolerance = 0;
 
 	bool success = true;
 	bool rotate = false;
@@ -426,6 +428,8 @@ int32_t importFileAndCommit(
 			desc = jsonTree.get<std::string>("desc", "");
 			timeZone = jsonTree.get<std::string>("timezone", "");
 			units = jsonTree.get<std::string>("units", "");
+			triangulationSurfaceTolerance = jsonTree.get<double>("surfaceTolerance", 0.0);
+			triangulationNormalTolerance = jsonTree.get<int>("normalTolerance", 0.0);
 			rotate = jsonTree.get<bool>("dxrotate", rotate);
 			importAnimations = jsonTree.get<bool>("importAnimations", importAnimations);
 			fileLoc = jsonTree.get<std::string>("file", "");
@@ -490,10 +494,12 @@ int32_t importFileAndCommit(
 	//Something like this: http://stackoverflow.com/questions/15541498/how-to-implement-subcommands-using-boost-program-options
 
 	repoLog("File: " + fileLoc + " database: " + database
-		+ " project: " + project + " target units: " + (units.empty() ? "none" : units) + " rotate:"
-		+ (rotate ? "true" : "false") + " owner :" + owner + " importAnimations: " + (importAnimations ? "true" : "false"));
+		+ " project: " + project + " target units: " + (units.empty() ? "none" : units) + " rotate: "
+		+ (rotate ? "true" : "false") + " owner :" + owner + " importAnimations: " + (importAnimations ? "true" : "false")
+		+ " surfaceTolerance: " + std::to_string(triangulationSurfaceTolerance) + " normalTolerance: " + std::to_string(triangulationNormalTolerance)
+	);
 
-	repo::manipulator::modelconvertor::ModelImportConfig config(true, rotate, importAnimations, targetUnits, timeZone);
+	repo::manipulator::modelconvertor::ModelImportConfig config(true, rotate, importAnimations, targetUnits, timeZone, triangulationSurfaceTolerance, triangulationNormalTolerance);
 	uint8_t err;
 	repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileLoc, err, config);
 	if (graph)
