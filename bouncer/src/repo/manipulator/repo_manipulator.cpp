@@ -102,28 +102,36 @@ repo::core::model::RepoBSON* RepoManipulator::createCredBSON(
 }
 
 repo::core::model::RepoScene* RepoManipulator::createFederatedScene(
-	const std::map<repo::core::model::TransformationNode, repo::core::model::ReferenceNode> &fedMap)
+	const std::map<repo::core::model::ReferenceNode, std::string> &fedMap)
 {
 	repo::core::model::RepoNodeSet transNodes;
 	repo::core::model::RepoNodeSet refNodes;
 	repo::core::model::RepoNodeSet emptySet;
 
-	repo::core::model::TransformationNode rootNode =
+	auto rootNode = new repo::core::model::TransformationNode(
 		repo::core::model::RepoBSONFactory::makeTransformationNode(
-			repo::lib::RepoMatrix(), "<root>");
+			repo::lib::RepoMatrix(), "Federation"));
 
-	transNodes.insert(new repo::core::model::TransformationNode(rootNode));
+	transNodes.insert(rootNode);
+
+	std::map<std::string, repo::core::model::TransformationNode*> groupNameToNode;
 
 	for (const auto &pair : fedMap)
 	{
-		transNodes.insert(new repo::core::model::TransformationNode(
-			pair.first.cloneAndAddParent(rootNode.getSharedID())
-		)
-		);
+		auto parentNode = rootNode;
+		if (!pair.second.empty()) {
+			if (groupNameToNode.find(pair.second) == groupNameToNode.end()) {
+				groupNameToNode[pair.second] = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode(
+					repo::lib::RepoMatrix(), pair.second, { rootNode->getSharedID() }));
+				transNodes.insert(groupNameToNode[pair.second]);
+			}
+
+			parentNode = groupNameToNode[pair.second];
+		}
+
 		refNodes.insert(new repo::core::model::ReferenceNode(
-			pair.second.cloneAndAddParent(pair.first.getSharedID())
-		)
-		);
+			pair.first.cloneAndAddParent(parentNode->getSharedID())
+		));
 	}
 	//federate scene has no referenced files
 	std::vector<std::string> empty;
