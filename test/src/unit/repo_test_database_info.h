@@ -47,6 +47,7 @@ const static std::string missingNodesModel = "Wall.ifc";
 const static std::string texturedModel2 = "texturedPlane2.dae"; //With Texture
 const static std::string badExtensionFile = "cube.exe";
 const static std::string ifcModel = "duplex.ifc";
+const static std::string ifcModel_InfiniteLoop = "infiniteLoop.ifc";
 const static std::string ifc4Model = "ifc4Test.ifc";
 const static std::string dgnModel = "sample.dgn";
 const static std::string dwgModel = "box.dwg";
