@@ -78,6 +78,7 @@
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
 static std::vector<std::string> ignoredCategories = { "Material", "Geometry", "Autodesk Material", "Revit Material" };
+static std::vector<std::string> ignoredKeys = { "Item::Source File Name" };
 static std::string sElementIdKey = "Element ID::Value";
 
 struct RepoNwTraversalContext {
@@ -155,6 +156,13 @@ template <>
 void setMetadataValue(const OdString& category, const OdString& key, const double& value, std::unordered_map<std::string, std::string>& metadata)
 {
 	setMetadataValue(category, key, std::to_string(value), metadata);
+}
+
+void removeFilepathFromMetadataValue(std::string key, std::unordered_map<std::string, std::string>& metadata)
+{
+	if (metadata.find(key) != metadata.end()) {
+		metadata[key] = boost::filesystem::path(metadata[key]).filename().string();
+	}
 }
 
 // Materials are defined at the Component level. Components contain different types
@@ -235,7 +243,12 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 	//	auto ItemRequired = modelItemPtr->?
 
 	// For the Layer, we can use the scene graph hierarchy.
-	auto ItemLayer = context.layer->getDisplayName();
+	auto ItemLayer = convertToStdString(context.layer->getDisplayName());
+
+	if (!OdNwPartition::cast(context.layer).isNull())
+	{
+		ItemLayer = boost::filesystem::path(ItemLayer).filename().string();
+	}
 
 	auto ItemGuid = modelItemPtr->getInstanceGuid().toString();
 	auto hasGuid = modelItemPtr->getInstanceGuid() != OdGUID::kNull;
@@ -256,8 +269,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 	// entire path (the path where the NWD is stored, if an NWD).
 
 	if (!context.partition.isNull()) {
-		auto ItemSourceFile = boost::filesystem::path(convertToStdString(context.partition->getSourceFileName()));
-		setMetadataValue(OD_T("Item"), OD_T("Source File"), ItemSourceFile.filename().string(), metadata);
+		setMetadataValue(OD_T("Item"), OD_T("Source File"), context.partition->getSourceFileName(), metadata);
 	}
 	else {
 		repoError << "Unknown partition (model source file) for " << convertToStdString(ItemName) << " this should never happen.";
@@ -500,6 +512,20 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 		//	OdNwPublish
 		// These are currently ignored.
 	}
+
+	// Make any necessary adjustments to the metadata.
+	// Here we remove the path from keys known to contain filenames.
+
+	removeFilepathFromMetadataValue("Item::Source File", metadata);
+	removeFilepathFromMetadataValue("Item::File Name", metadata);
+
+	// And remove any that should be ignored (at the end, so we don't have to
+	// check every key every time when looking for just a couple..)
+
+	for (auto key : ignoredKeys) {
+		metadata.erase(key);
+	}
+
 }
 
 OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
@@ -665,6 +691,14 @@ bool isCollection(OdNwModelItemPtr pNode)
 
 OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 {
+	// GeometryCollector::setLayer() is used to build the hierarchy. Each layer
+	// corresponds to a 'node' in the Navisworks Standard View and has a unique Id.
+	// Calling setLayer will immediately create the layer, even before geometry is
+	// added.
+
+	auto levelName = convertToStdString(pNode->getDisplayName());
+	auto levelId = convertToStdString(toString(pNode->objectId().getHandle()));
+
 	// The OdNwPartition distinguishes between branches of the scene graph from 
 	// different files.
 	// https://docs.opendesign.com/bimnv/OdNwPartition.html
@@ -675,20 +709,21 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 	if (!pPartition.isNull())
 	{
 		context.partition = pPartition;
+
+		// When "changing file", remove the path from the name fo the purposes of
+		// building the tree.
+
+		if (!levelName.empty())
+		{
+			levelName = boost::filesystem::path(levelName).filename().string();
+		}
 	}
-
-	// GeometryCollector::setLayer() is used to build the hierarchy. Each layer 
-	// corresponds to a 'node' in the Navisworks Standard View and has a unique Id.
-	// Calling setLayer will immediately create the layer, even before geometry is
-	// added.
-
-	auto levelName = convertToStdString(pNode->getDisplayName());
-	auto levelId = convertToStdString(toString(pNode->objectId().getHandle()));
 
 	// Some items (e.g. certain IFC entries) don't have names, so we use their Type
 	// instead to name the layer.
 
-	if (levelName.empty()) {
+	if (levelName.empty())
+	{
 		levelName = convertToStdString(pNode->getClassDisplayName());
 	}
 
