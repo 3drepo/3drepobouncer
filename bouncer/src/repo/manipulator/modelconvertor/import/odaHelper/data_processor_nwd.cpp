@@ -50,6 +50,7 @@
 #include <NwPartition.h>
 #include <NwCategoryConversionType.h>
 #include <NwURL.h>
+#include <NwVerticesData.h>
 
 #include <Attribute/NwAttribute.h>
 #include <Attribute/NwPropertyAttribute.h>
@@ -537,90 +538,90 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 		{
 			OdNwFragmentPtr pFrag = OdNwFragment::cast((*itFrag).safeOpenObject());
 			OdGeMatrix3d transformMatrix = pFrag->getTransformation();
+			OdNwObjectId geometryId = pFrag->getGeometryId(); // Returns an object ID of the base class OdNwGeometry object with geometry data.
 
-			if (pFrag->isLineSet())
+			if (geometryId.isNull() || !geometryId.isValid())
 			{
-				OdNwGeometryLineSetPtr pGeomertyLineSet = OdNwGeometryLineSet::cast(pFrag->getGeometryId().safeOpenObject());
-				if (!pGeomertyLineSet.isNull())
+				continue;
+			}
+
+			OdNwObjectPtr pGeometry = geometryId.safeOpenObject();
+
+			// If the fragment has geometry, see if it is of a type that we support
+
+			OdNwGeometryLineSetPtr pGeomertyLineSet = OdNwGeometryLineSet::cast(pGeometry);
+			if (!pGeomertyLineSet.isNull())
+			{
+				// BimNv lines also have colours, but these are not supported yet.
+
+				OdNwVerticesDataPtr aVertexesData = pGeomertyLineSet->getVerticesData();
+				OdGePoint3dArray aVertexes = aVertexesData->getVertices();
+				OdUInt16Array aVertexPerLine = pGeomertyLineSet->getVerticesCountPerLine();
+
+				// Each entry in aVertexPerLine corresponds to one line, which is a vertex strip. This snippet
+				// converts each strip into a set of 2-vertex line segments.
+
+				auto index = 0;
+				std::vector<repo::lib::RepoVector3D64> vertices;
+				for (auto line = aVertexPerLine.begin(); line != aVertexPerLine.end(); line++)
 				{
-					// BimNv lines also have colours, but these are not supported yet.
-					OdArray<OdGePoint3d> aVertexes = pGeomertyLineSet->getVertexes();
-					OdArray<OdUInt16> aVertexPerLine = pGeomertyLineSet->getVertexCountPerLine();
-
-					// Each entry in aVertexPerLine corresponds to one line, which is a vertex strip. This snippet
-					// converts each strip into a set of 2-vertex line segments.
-
-					auto index = 0;
-					std::vector<repo::lib::RepoVector3D64> vertices;
-					for (auto line = aVertexPerLine.begin(); line != aVertexPerLine.end(); line++)
+					for (auto i = 0; i < (*line - 1); i++)
 					{
-						for (auto i = 0; i < (*line - 1); i++)
-						{
-							vertices.clear();
-							vertices.push_back(convertPoint(aVertexes[index + 0], transformMatrix));
-							vertices.push_back(convertPoint(aVertexes[index + 1], transformMatrix));
-							index++;
-
-							context.collector->addFace(vertices);
-						}
-
+						vertices.clear();
+						vertices.push_back(convertPoint(aVertexes[index + 0], transformMatrix));
+						vertices.push_back(convertPoint(aVertexes[index + 1], transformMatrix));
 						index++;
+
+						context.collector->addFace(vertices);
 					}
+
+					index++;
 				}
+
+				continue;
 			}
-			else if (pFrag->isMesh())
+
+			OdNwGeometryMeshPtr pGeometryMesh = OdNwGeometryMesh::cast(pFrag->getGeometryId().safeOpenObject());
+			if (!pGeometryMesh.isNull())
 			{
-				OdNwGeometryMeshPtr pGeometrMesh = OdNwGeometryMesh::cast(pFrag->getGeometryId().safeOpenObject());
-				if (!pGeometrMesh.isNull())
+				const OdArray<OdNwTriangleIndexes>& aTriangles = pGeometryMesh->getTriangles();
+
+				if (pGeometryMesh->getIndices().length() && !aTriangles.length())
 				{
-					const OdArray<OdGePoint3d>& aVertices = pGeometrMesh->getVertexes();
-					const OdArray<OdGeVector3d>& aNormals = pGeometrMesh->getNormales();
-					const OdArray<OdGePoint2d>& aUvs = pGeometrMesh->getUVParameters();
-
-					const OdArray<OdNwTriangleIndexes>& aTriangles = pGeometrMesh->getTriangles();
-
-					if (pGeometrMesh->getIndexes().length() && !aTriangles.length())
-					{
-						repoError << "Mesh " << pNode->getDisplayName().c_str() << " has indices but does not have a triangulation. Only triangulated meshes are supported.";
-					}
-
-					for (auto triangle = aTriangles.begin(); triangle != aTriangles.end(); triangle++)
-					{
-						std::vector<repo::lib::RepoVector3D64> vertices;
-						vertices.push_back(convertPoint(aVertices[triangle->pointIndex1], transformMatrix));
-						vertices.push_back(convertPoint(aVertices[triangle->pointIndex2], transformMatrix));
-						vertices.push_back(convertPoint(aVertices[triangle->pointIndex3], transformMatrix));
-
-						auto normal = calcNormal(vertices[0], vertices[1], vertices[2]);
-
-						std::vector<repo::lib::RepoVector2D> uvs;
-						if (aUvs.length())
-						{
-							uvs.push_back(convertPoint(aUvs[triangle->pointIndex1]));
-							uvs.push_back(convertPoint(aUvs[triangle->pointIndex2]));
-							uvs.push_back(convertPoint(aUvs[triangle->pointIndex3]));
-						}
-
-						context.collector->addFace(vertices, normal, uvs);
-					}
+					repoError << "Mesh " << pNode->getDisplayName().c_str() << " has indices but does not have a triangulation. Only triangulated meshes are supported.";
 				}
+
+				const OdNwVerticesDataPtr aVertexesData = pGeometryMesh->getVerticesData();
+
+				const OdGePoint3dArray& aVertices = aVertexesData->getVertices();
+				const OdGeVector3dArray& aNormals = aVertexesData->getNormals();
+				const OdGePoint2dArray& aUvs = aVertexesData->getTexCoords();
+
+				for (auto triangle = aTriangles.begin(); triangle != aTriangles.end(); triangle++)
+				{
+					std::vector<repo::lib::RepoVector3D64> vertices;
+					vertices.push_back(convertPoint(aVertices[triangle->pointIndex1], transformMatrix));
+					vertices.push_back(convertPoint(aVertices[triangle->pointIndex2], transformMatrix));
+					vertices.push_back(convertPoint(aVertices[triangle->pointIndex3], transformMatrix));
+
+					auto normal = calcNormal(vertices[0], vertices[1], vertices[2]);
+
+					std::vector<repo::lib::RepoVector2D> uvs;
+					if (aUvs.length())
+					{
+						uvs.push_back(convertPoint(aUvs[triangle->pointIndex1]));
+						uvs.push_back(convertPoint(aUvs[triangle->pointIndex2]));
+						uvs.push_back(convertPoint(aUvs[triangle->pointIndex3]));
+					}
+
+					context.collector->addFace(vertices, normal, uvs);
+				}
+
+				continue;
 			}
-			else if (pFrag->isPointSet())
-			{
-				//Todo; warning unsupported geometry type
-			}
-			else if (pFrag->isText())
-			{
-				//Todo; warning unsupported geometry type
-			}
-			else if (pFrag->isTube())
-			{
-				//Todo; warning unsupported geometry type
-			}
-			else if (pFrag->isEllipse())
-			{
-				// Todo; warning unsupported geometry type
-			}
+
+			// The full set of types that the OdNwGeometry could be are described
+			// here: https://docs.opendesign.com/bimnv/OdNwGeometry.html
 		}
 	}
 
