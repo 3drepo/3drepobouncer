@@ -35,18 +35,16 @@ on [GitHub](https://github.com/boostorg)
 See [3D Repo guide for compiling MongoDB](https://github.com/3drepo/3drepobouncer/wiki/Compiling-MongoDB-CXX-Driver)
 * [ASSIMP](https://github.com/assimp/assimp)
 See [3D Repo guide for compiling ASSIMP](https://github.com/3drepo/3drepobouncer/wiki/Compiling-ASSIMP)
-* [3D Repo IFCOpenShell Fork](https://github.com/3drepo/IfcOpenShell)
-This relies on 3D Repo's fork of [OCCT](https://github.com/3drepo/occt). See [3D Repo guide for compiling IFCOpenShell](https://github.com/3drepo/3drepobouncer/wiki/Compiling-IFCOpenShell)
+* [IFCOpenShell](https://github.com/IfcOpenShell/IfcOpenShell)
 
 #### Optional Dependencies
 The following are optional dependencies depending on your configuration
-* [AWS SDK for C++](https://github.com/aws/aws-sdk-cpp)
 * 3D Repo Synchro Reader - 3D Repo's proprietary library for reading Synchro SPM files.
-* [Teigha Drawing and BIM library](https://www.opendesign.com/) - Proprietary library for reading RVT and DGN files
+* [Teigha Drawing and BIM library](https://www.opendesign.com/) - Proprietary library for reading RVT, NWD/NWC, DWG and DGN files
 
 To compile and install the library, the following are used:
 * [Python v2.x](https://www.python.org/)
-* [CMAKE v2.8] (http://www.cmake.org/)
+* [CMAKE v3.x] (http://www.cmake.org/)
 * A C++ compiler (GNU GCC v4.9+, [Visual Studio 12+](https://www.visualstudio.com/en-us/downloads/download-visual-studio-vs.aspx))
 
 Compilation (Qt)
