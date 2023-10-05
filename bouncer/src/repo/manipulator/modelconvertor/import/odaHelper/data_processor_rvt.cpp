@@ -390,7 +390,7 @@ void DataProcessorRvt::processParameter(
 	{
 		OdBmParamElemPtr pParamElem = paramId.safeOpenObject();
 		OdBmParamDefPtr pDescParam = pParamElem->getParamDef();
-		OdInt64 groupId = pDescParam->getGroupElemId();
+		OdBmForgeTypeId groupId = pDescParam->getGroupTypeId();
 
 		auto metaKey = convertToStdString(pDescParam->getCaption());
 
