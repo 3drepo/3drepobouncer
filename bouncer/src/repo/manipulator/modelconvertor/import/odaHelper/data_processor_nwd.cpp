@@ -50,6 +50,7 @@
 #include <NwPartition.h>
 #include <NwCategoryConversionType.h>
 #include <NwURL.h>
+#include <NwVerticesData.h>
 
 #include <Attribute/NwAttribute.h>
 #include <Attribute/NwPropertyAttribute.h>
@@ -77,6 +78,7 @@
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
 static std::vector<std::string> ignoredCategories = { "Material", "Geometry", "Autodesk Material", "Revit Material" };
+static std::vector<std::string> ignoredKeys = { "Item::Source File Name" };
 static std::string sElementIdKey = "Element ID::Value";
 
 struct RepoNwTraversalContext {
@@ -154,6 +156,13 @@ template <>
 void setMetadataValue(const OdString& category, const OdString& key, const double& value, std::unordered_map<std::string, std::string>& metadata)
 {
 	setMetadataValue(category, key, std::to_string(value), metadata);
+}
+
+void removeFilepathFromMetadataValue(std::string key, std::unordered_map<std::string, std::string>& metadata)
+{
+	if (metadata.find(key) != metadata.end()) {
+		metadata[key] = boost::filesystem::path(metadata[key]).filename().string();
+	}
 }
 
 // Materials are defined at the Component level. Components contain different types
@@ -234,7 +243,12 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 	//	auto ItemRequired = modelItemPtr->?
 
 	// For the Layer, we can use the scene graph hierarchy.
-	auto ItemLayer = context.layer->getDisplayName();
+	auto ItemLayer = convertToStdString(context.layer->getDisplayName());
+
+	if (!OdNwPartition::cast(context.layer).isNull())
+	{
+		ItemLayer = boost::filesystem::path(ItemLayer).filename().string();
+	}
 
 	auto ItemGuid = modelItemPtr->getInstanceGuid().toString();
 	auto hasGuid = modelItemPtr->getInstanceGuid() != OdGUID::kNull;
@@ -255,8 +269,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 	// entire path (the path where the NWD is stored, if an NWD).
 
 	if (!context.partition.isNull()) {
-		auto ItemSourceFile = boost::filesystem::path(convertToStdString(context.partition->getSourceFileName()));
-		setMetadataValue(OD_T("Item"), OD_T("Source File"), ItemSourceFile.filename().string(), metadata);
+		setMetadataValue(OD_T("Item"), OD_T("Source File"), context.partition->getSourceFileName(), metadata);
 	}
 	else {
 		repoError << "Unknown partition (model source file) for " << convertToStdString(ItemName) << " this should never happen.";
@@ -499,6 +512,20 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 		//	OdNwPublish
 		// These are currently ignored.
 	}
+
+	// Make any necessary adjustments to the metadata.
+	// Here we remove the path from keys known to contain filenames.
+
+	removeFilepathFromMetadataValue("Item::Source File", metadata);
+	removeFilepathFromMetadataValue("Item::File Name", metadata);
+
+	// And remove any that should be ignored (at the end, so we don't have to
+	// check every key every time when looking for just a couple..)
+
+	for (auto key : ignoredKeys) {
+		metadata.erase(key);
+	}
+
 }
 
 OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
@@ -537,90 +564,90 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 		{
 			OdNwFragmentPtr pFrag = OdNwFragment::cast((*itFrag).safeOpenObject());
 			OdGeMatrix3d transformMatrix = pFrag->getTransformation();
+			OdNwObjectId geometryId = pFrag->getGeometryId(); // Returns an object ID of the base class OdNwGeometry object with geometry data.
 
-			if (pFrag->isLineSet())
+			if (geometryId.isNull() || !geometryId.isValid())
 			{
-				OdNwGeometryLineSetPtr pGeomertyLineSet = OdNwGeometryLineSet::cast(pFrag->getGeometryId().safeOpenObject());
-				if (!pGeomertyLineSet.isNull())
+				continue;
+			}
+
+			OdNwObjectPtr pGeometry = geometryId.safeOpenObject();
+
+			// If the fragment has geometry, see if it is of a type that we support
+
+			OdNwGeometryLineSetPtr pGeomertyLineSet = OdNwGeometryLineSet::cast(pGeometry);
+			if (!pGeomertyLineSet.isNull())
+			{
+				// BimNv lines also have colours, but these are not supported yet.
+
+				OdNwVerticesDataPtr aVertexesData = pGeomertyLineSet->getVerticesData();
+				OdGePoint3dArray aVertexes = aVertexesData->getVertices();
+				OdUInt16Array aVertexPerLine = pGeomertyLineSet->getVerticesCountPerLine();
+
+				// Each entry in aVertexPerLine corresponds to one line, which is a vertex strip. This snippet
+				// converts each strip into a set of 2-vertex line segments.
+
+				auto index = 0;
+				std::vector<repo::lib::RepoVector3D64> vertices;
+				for (auto line = aVertexPerLine.begin(); line != aVertexPerLine.end(); line++)
 				{
-					// BimNv lines also have colours, but these are not supported yet.
-					OdArray<OdGePoint3d> aVertexes = pGeomertyLineSet->getVertexes();
-					OdArray<OdUInt16> aVertexPerLine = pGeomertyLineSet->getVertexCountPerLine();
-
-					// Each entry in aVertexPerLine corresponds to one line, which is a vertex strip. This snippet
-					// converts each strip into a set of 2-vertex line segments.
-
-					auto index = 0;
-					std::vector<repo::lib::RepoVector3D64> vertices;
-					for (auto line = aVertexPerLine.begin(); line != aVertexPerLine.end(); line++)
+					for (auto i = 0; i < (*line - 1); i++)
 					{
-						for (auto i = 0; i < (*line - 1); i++)
-						{
-							vertices.clear();
-							vertices.push_back(convertPoint(aVertexes[index + 0], transformMatrix));
-							vertices.push_back(convertPoint(aVertexes[index + 1], transformMatrix));
-							index++;
-
-							context.collector->addFace(vertices);
-						}
-
+						vertices.clear();
+						vertices.push_back(convertPoint(aVertexes[index + 0], transformMatrix));
+						vertices.push_back(convertPoint(aVertexes[index + 1], transformMatrix));
 						index++;
+
+						context.collector->addFace(vertices);
 					}
+
+					index++;
 				}
+
+				continue;
 			}
-			else if (pFrag->isMesh())
+
+			OdNwGeometryMeshPtr pGeometryMesh = OdNwGeometryMesh::cast(pFrag->getGeometryId().safeOpenObject());
+			if (!pGeometryMesh.isNull())
 			{
-				OdNwGeometryMeshPtr pGeometrMesh = OdNwGeometryMesh::cast(pFrag->getGeometryId().safeOpenObject());
-				if (!pGeometrMesh.isNull())
+				const OdArray<OdNwTriangleIndexes>& aTriangles = pGeometryMesh->getTriangles();
+
+				if (pGeometryMesh->getIndices().length() && !aTriangles.length())
 				{
-					const OdArray<OdGePoint3d>& aVertices = pGeometrMesh->getVertexes();
-					const OdArray<OdGeVector3d>& aNormals = pGeometrMesh->getNormales();
-					const OdArray<OdGePoint2d>& aUvs = pGeometrMesh->getUVParameters();
-
-					const OdArray<OdNwTriangleIndexes>& aTriangles = pGeometrMesh->getTriangles();
-
-					if (pGeometrMesh->getIndexes().length() && !aTriangles.length())
-					{
-						repoError << "Mesh " << pNode->getDisplayName().c_str() << " has indices but does not have a triangulation. Only triangulated meshes are supported.";
-					}
-
-					for (auto triangle = aTriangles.begin(); triangle != aTriangles.end(); triangle++)
-					{
-						std::vector<repo::lib::RepoVector3D64> vertices;
-						vertices.push_back(convertPoint(aVertices[triangle->pointIndex1], transformMatrix));
-						vertices.push_back(convertPoint(aVertices[triangle->pointIndex2], transformMatrix));
-						vertices.push_back(convertPoint(aVertices[triangle->pointIndex3], transformMatrix));
-
-						auto normal = calcNormal(vertices[0], vertices[1], vertices[2]);
-
-						std::vector<repo::lib::RepoVector2D> uvs;
-						if (aUvs.length())
-						{
-							uvs.push_back(convertPoint(aUvs[triangle->pointIndex1]));
-							uvs.push_back(convertPoint(aUvs[triangle->pointIndex2]));
-							uvs.push_back(convertPoint(aUvs[triangle->pointIndex3]));
-						}
-
-						context.collector->addFace(vertices, normal, uvs);
-					}
+					repoError << "Mesh " << pNode->getDisplayName().c_str() << " has indices but does not have a triangulation. Only triangulated meshes are supported.";
 				}
+
+				const OdNwVerticesDataPtr aVertexesData = pGeometryMesh->getVerticesData();
+
+				const OdGePoint3dArray& aVertices = aVertexesData->getVertices();
+				const OdGeVector3dArray& aNormals = aVertexesData->getNormals();
+				const OdGePoint2dArray& aUvs = aVertexesData->getTexCoords();
+
+				for (auto triangle = aTriangles.begin(); triangle != aTriangles.end(); triangle++)
+				{
+					std::vector<repo::lib::RepoVector3D64> vertices;
+					vertices.push_back(convertPoint(aVertices[triangle->pointIndex1], transformMatrix));
+					vertices.push_back(convertPoint(aVertices[triangle->pointIndex2], transformMatrix));
+					vertices.push_back(convertPoint(aVertices[triangle->pointIndex3], transformMatrix));
+
+					auto normal = calcNormal(vertices[0], vertices[1], vertices[2]);
+
+					std::vector<repo::lib::RepoVector2D> uvs;
+					if (aUvs.length())
+					{
+						uvs.push_back(convertPoint(aUvs[triangle->pointIndex1]));
+						uvs.push_back(convertPoint(aUvs[triangle->pointIndex2]));
+						uvs.push_back(convertPoint(aUvs[triangle->pointIndex3]));
+					}
+
+					context.collector->addFace(vertices, normal, uvs);
+				}
+
+				continue;
 			}
-			else if (pFrag->isPointSet())
-			{
-				//Todo; warning unsupported geometry type
-			}
-			else if (pFrag->isText())
-			{
-				//Todo; warning unsupported geometry type
-			}
-			else if (pFrag->isTube())
-			{
-				//Todo; warning unsupported geometry type
-			}
-			else if (pFrag->isEllipse())
-			{
-				// Todo; warning unsupported geometry type
-			}
+
+			// The full set of types that the OdNwGeometry could be are described
+			// here: https://docs.opendesign.com/bimnv/OdNwGeometry.html
 		}
 	}
 
@@ -664,6 +691,14 @@ bool isCollection(OdNwModelItemPtr pNode)
 
 OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 {
+	// GeometryCollector::setLayer() is used to build the hierarchy. Each layer
+	// corresponds to a 'node' in the Navisworks Standard View and has a unique Id.
+	// Calling setLayer will immediately create the layer, even before geometry is
+	// added.
+
+	auto levelName = convertToStdString(pNode->getDisplayName());
+	auto levelId = convertToStdString(toString(pNode->objectId().getHandle()));
+
 	// The OdNwPartition distinguishes between branches of the scene graph from 
 	// different files.
 	// https://docs.opendesign.com/bimnv/OdNwPartition.html
@@ -674,20 +709,21 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 	if (!pPartition.isNull())
 	{
 		context.partition = pPartition;
+
+		// When "changing file", remove the path from the name fo the purposes of
+		// building the tree.
+
+		if (!levelName.empty())
+		{
+			levelName = boost::filesystem::path(levelName).filename().string();
+		}
 	}
-
-	// GeometryCollector::setLayer() is used to build the hierarchy. Each layer 
-	// corresponds to a 'node' in the Navisworks Standard View and has a unique Id.
-	// Calling setLayer will immediately create the layer, even before geometry is
-	// added.
-
-	auto levelName = convertToStdString(pNode->getDisplayName());
-	auto levelId = convertToStdString(toString(pNode->objectId().getHandle()));
 
 	// Some items (e.g. certain IFC entries) don't have names, so we use their Type
 	// instead to name the layer.
 
-	if (levelName.empty()) {
+	if (levelName.empty())
+	{
 		levelName = convertToStdString(pNode->getClassDisplayName());
 	}
 

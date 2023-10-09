@@ -33,11 +33,9 @@
 #include <Geometry/Entities/BmMaterial.h>
 #include <Database/BmAppearanceAssetHelper.h>
 #include <Database/Entities/BmParamElem.h>
-
-#include <Main/Entities/BmDirectShape.h>
-#include <Main/Entities/BmDirectShapeCell.h>
-#include <Main/Entities/BmDirectShapeDataCell.h>
-
+#include <Database/Entities/BmDirectShape.h>
+#include <Database/Entities/BmDirectShapeCell.h>
+#include <Database/Entities/BmDirectShapeDataCell.h>
 #include <Database/Entities/BmElementHeader.h>
 
 #include <Essential/Entities/BmLevel.h>
