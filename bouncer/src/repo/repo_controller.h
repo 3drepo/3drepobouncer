@@ -518,7 +518,7 @@ namespace repo {
 			* @return returns a constructed scene graph with the reference.
 			*/
 		repo::core::model::RepoScene* createFederatedScene(
-			const std::map<repo::core::model::TransformationNode, repo::core::model::ReferenceNode> &fedMap);
+			const std::map<repo::core::model::ReferenceNode, std::string> &fedMap);
 
 		/**
 		* Generate and commit a GLTF encoding for the given scene

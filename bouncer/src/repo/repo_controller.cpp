@@ -275,7 +275,7 @@ void RepoController::logToFile(const std::string &filePath)
 }
 
 repo::core::model::RepoScene* RepoController::createFederatedScene(
-	const std::map<repo::core::model::TransformationNode, repo::core::model::ReferenceNode> &fedMap)
+	const std::map<repo::core::model::ReferenceNode, std::string> &fedMap)
 {
 	return impl->createFederatedScene(fedMap);
 }

@@ -184,7 +184,7 @@ int32_t generateFederation(
 		if (!revIdStr.empty()) {
 			revId = repo::lib::RepoUUID(revIdStr);
 		}
-		std::map< repo::core::model::TransformationNode, repo::core::model::ReferenceNode> refMap;
+		std::map< repo::core::model::ReferenceNode, std::string> refMap;
 
 		if (database.empty() || project.empty())
 		{
@@ -198,6 +198,7 @@ int32_t generateFederation(
 				// ===== Get project info =====
 				const std::string spDatabase = subPro.second.get<std::string>("database", database);
 				const std::string spProject = subPro.second.get<std::string>("project", "");
+				const std::string group = subPro.second.get<std::string>("group", "");
 				const std::string uuid = subPro.second.get<std::string>("revId", REPO_HISTORY_MASTER_BRANCH);
 				const bool isRevID = subPro.second.get<bool>("isRevId", false);
 				if (spProject.empty())
@@ -231,10 +232,8 @@ int32_t generateFederation(
 					matrix = repo::core::model::TransformationNode::identityMat();
 				}
 
-				std::string nodeNames = spDatabase + ":" + spProject;
-				auto transNode = repo::core::model::RepoBSONFactory::makeTransformationNode(matrix, nodeNames);
-				auto refNode = repo::core::model::RepoBSONFactory::makeReferenceNode(spDatabase, spProject, repo::lib::RepoUUID(uuid), isRevID, nodeNames);
-				refMap[transNode] = refNode;
+				auto refNode = repo::core::model::RepoBSONFactory::makeReferenceNode(spDatabase, spProject, repo::lib::RepoUUID(uuid), isRevID);
+				refMap[refNode] = group;
 			}
 
 			//Create the reference scene
