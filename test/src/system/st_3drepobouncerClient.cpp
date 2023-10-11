@@ -307,6 +307,11 @@ TEST(RepoClientTest, UploadTestIFC)
 	EXPECT_EQ((int)REPOERR_OK, runProcess(ifcUpload));
 	EXPECT_TRUE(projectExists(db, "ifcTest"));
 
+	//Upload IFCFile
+	std::string ifcUploadReg = produceUploadArgs(db, "ifcTestRegression", getDataPath(ifcModel_InfiniteLoop));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(ifcUploadReg));
+	EXPECT_TRUE(projectExists(db, "ifcTestRegression"));
+
 	std::string ifc4Upload = produceUploadArgs(db, "ifc4Test", getDataPath(ifc4Model));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(ifc4Upload));
 	EXPECT_TRUE(projectExists(db, "ifc4Test"));
@@ -411,6 +416,30 @@ TEST(RepoClientTest, UploadTestNWD2022)
 	std::string nwdUpload = produceUploadArgs(db, "nwdTest2022", getDataPath(nwdModel2022));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(nwdUpload));
 	EXPECT_TRUE(projectExists(db, "nwdTest2022"));
+}
+
+TEST(RepoClientTest, UploadTestRVT2024)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+	std::string db = "stUpload";
+
+	//Upload RVT file
+	std::string rvtUpload = produceUploadArgs(db, "rvtTest2024", getDataPath(rvtModel2024));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload));
+	EXPECT_TRUE(projectExists(db, "rvtTest2024"));
+}
+
+TEST(RepoClientTest, UploadTestNWD2024)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+	std::string db = "stUpload";
+
+	//Upload NWD file
+	std::string nwdUpload = produceUploadArgs(db, "nwdTest2024", getDataPath(nwdModel2024));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(nwdUpload));
+	EXPECT_TRUE(projectExists(db, "nwdTest2024"));
 }
 
 TEST(RepoClientTest, UploadTestNWC)

@@ -39,7 +39,7 @@ void repo::manipulator::modelconvertor::odaHelper::forEachBmDBView(OdBmDatabaseP
 	for (; !layouts->done(); layouts->next())
 	{
 		OdBmDBDrawingPtr pDBDrawing = layouts->object();
-		if (pDBDrawing->getBaseViewNameFormat() != OdBm::ViewType::_3d)
+		if (pDBDrawing->getBaseViewType() != OdBm::ViewType::ThreeD)
 			continue;
 
 		OdBmViewportPtr pViewport = pDBDrawing->getBaseViewportId().safeOpenObject();

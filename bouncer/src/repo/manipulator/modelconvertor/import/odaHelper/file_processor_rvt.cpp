@@ -122,7 +122,7 @@ OdString Get3DLayout(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimData
 		OdBmDBDrawingPtr pDBDrawing = layouts->object();
 		OdDbBaseLayoutPEPtr pLayout(layouts->object());
 
-		if (pDBDrawing->getBaseViewNameFormat() == OdBm::ViewType::_3d)
+		if (pDBDrawing->getBaseViewType() == OdBm::ViewType::ThreeD)
 		{
 			auto viewName = pLayout->name(layouts->object());
 			auto viewNameStr = convertToStdString(viewName);

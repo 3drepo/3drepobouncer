@@ -33,7 +33,7 @@
 #include <Database/Entities/BmDBView.h>
 #include <Database/Entities/BmViewport.h>
 #include <Database/Entities/BmDBDrawing.h>
-#include <Base/Enums/BmViewType.h>
+#include <Database/Enums/BmViewTypeEnum.h>
 
 #include "../../../../lib/datastructure/repo_structs.h"
 

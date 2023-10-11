@@ -50,13 +50,13 @@ matrix:
           - tar -zxf testData/bouncer/ext_libs/focal/assimp.tgz
           - export ASSIMP_ROOT=$PWD/assimp
           - echo ============ IFCOPENSHELL INSTALL =============
-          - tar -zxf testData/bouncer/ext_libs/focal/IfcOpenShell_v0.6.0/OCCT.tgz
+          - tar -zxf testData/bouncer/ext_libs/focal/IfcOpenShell_v0.6.0/OCCT_3drepoFix.tgz
           - tar -zxf testData/bouncer/ext_libs/focal/IfcOpenShell_v0.6.0/IfcOpenShell.tgz
           - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev
           - export OCCT_ROOT=$PWD/OCCT
           - export IFCOPENSHELL_ROOT=$PWD/IfcOpenShell
           - echo ============ TEIGHA INSTALL =============
-          - cat testData/bouncer/ext_libs/focal/teigha/2023.11/teighaLinuxGCC8.3.tgz* | tar -zxf -
+          - cat testData/bouncer/ext_libs/focal/teigha/2024.8/teighaLinuxGCC8.3.tgz* | tar -zxf -
           - export ODA_ROOT=$PWD/teighaLinuxGCC8.3
           - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_8.3dll/
           - ls $ODA_ROOT/BimRv/Include/Database
@@ -131,7 +131,7 @@ matrix:
           - export OCCT_ROOT=$PWD/OCCT
           - export IFCOPENSHELL_ROOT=$PWD/IfcOpenShell
           - echo ============ TEIGHA INSTALL =============
-          - cat testData/focal/teigha/2023.11/teighaLinuxGCC8.3.tgz* | tar -zxf -
+          - cat testData/focal/teigha/2024.8/teighaLinuxGCC8.3.tgz* | tar -zxf -
           - export ODA_ROOT=$PWD/teighaLinuxGCC8.3
           - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_8.3dll/
           - echo ============ SYNCHRO INSTALL =============
