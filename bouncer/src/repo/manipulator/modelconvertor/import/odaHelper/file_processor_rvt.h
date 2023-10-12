@@ -37,7 +37,7 @@ namespace repo {
 				class FileProcessorRvt : public FileProcessor
 				{
 				public:
-					FileProcessorRvt(const std::string& inputFile, GeometryCollector* geoCollector) : FileProcessor(inputFile, geoCollector) {
+					FileProcessorRvt(const std::string& inputFile, GeometryCollector* geoCollector, const ModelImportConfig& config) : FileProcessor(inputFile, geoCollector, config) {
 						shouldApplyReduction = true;
 					};
 					~FileProcessorRvt() override;

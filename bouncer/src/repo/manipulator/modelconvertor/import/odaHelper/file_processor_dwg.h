@@ -26,7 +26,7 @@ namespace repo {
 				class FileProcessorDwg : public FileProcessorDgn
 				{
 				public:
-					FileProcessorDwg(const std::string &inputFile, GeometryCollector * geoCollector) : FileProcessorDgn(inputFile, geoCollector) {}
+					FileProcessorDwg(const std::string &inputFile, GeometryCollector * geoCollector, const ModelImportConfig& config) : FileProcessorDgn(inputFile, geoCollector, config) {}
 					~FileProcessorDwg() override {}
 				protected:
 					virtual OdDgDatabasePtr initialiseOdDatabase();
