@@ -43,7 +43,7 @@ IfcGeom::IteratorSettings createSettings()
 	itSettings.set(IfcGeom::IteratorSettings::GENERATE_UVS, true);
 	itSettings.set(IfcGeom::IteratorSettings::APPLY_LAYERSETS, false);
 	//Enable to get 2D lines. You will need to set CONVERT_BACK_UNITS to false or the model may not align.
-	//itSettings.set(IfcGeom::IteratorSettings::INCLUDE_CURVES, true);
+	itSettings.set(IfcGeom::IteratorSettings::INCLUDE_CURVES, true);
 
 	return itSettings;
 }
@@ -101,6 +101,8 @@ bool repo::ifcUtility::SCHEMA_NS::GeometryHandler::retrieveGeometry(
 	std::vector<double>		&offset,
 	std::string              &errMsg)
 {
+	constexpr int data3D = 3;
+	constexpr int data2D = 2;
 	IfcParse::IfcFile ifcfile(file);
 	auto itSettings = createSettings();
 
@@ -128,11 +130,12 @@ bool repo::ifcUtility::SCHEMA_NS::GeometryHandler::retrieveGeometry(
 		auto ob_geo = static_cast<const IfcGeom::TriangulationElement<double>*>(ob);
 		if (ob_geo)
 		{
-			auto primitive = 3;
+			auto primitive = data3D;
 			auto faces = ob_geo->geometry().faces();
+			auto edges = ob_geo->geometry().edges();
 			if (!faces.size()) {
 				if ((faces = ob_geo->geometry().edges()).size()) {
-					primitive = 2;
+					primitive = data2D;
 				}
 				else {
 					continue;
@@ -168,7 +171,7 @@ bool repo::ifcUtility::SCHEMA_NS::GeometryHandler::retrieveGeometry(
 
 			for (int iface = 0; iface < faces.size(); iface += primitive)
 			{
-				auto matInd = primitive == 3 ? *matIndIt : ob_geo->geometry().materials().size();
+				auto matInd = primitive == data3D ? *matIndIt : ob_geo->geometry().materials().size();
 				if (indexMapping.find(matInd) == indexMapping.end())
 				{
 					//new material
@@ -204,6 +207,11 @@ bool repo::ifcUtility::SCHEMA_NS::GeometryHandler::retrieveGeometry(
 				for (int j = 0; j < primitive; ++j)
 				{
 					auto vIndex = faces[iface + j];
+					if (primitive == data2D)
+					{
+						vIndex = edges[iface + j];
+					}
+						
 					if (indexMapping[matInd].find(vIndex) == indexMapping[matInd].end())
 					{
 						//new index. create a mapping
@@ -227,8 +235,8 @@ bool repo::ifcUtility::SCHEMA_NS::GeometryHandler::retrieveGeometry(
 				}
 
 				post_faces[matInd].push_back(face);
-
-				if (primitive == 3) ++matIndIt;
+				
+				if ((primitive == data3D) || (primitive==data2D)) ++matIndIt;
 			}
 
 			auto guid = ob_geo->guid();
