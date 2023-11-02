@@ -677,7 +677,7 @@ void RepoController::_RepoControllerImpl::subscribeToLogger(
 }
 
 repo::core::model::RepoScene* RepoController::_RepoControllerImpl::createFederatedScene(
-	const std::map<repo::core::model::TransformationNode, repo::core::model::ReferenceNode> &fedMap)
+	const std::map<repo::core::model::ReferenceNode, std::string> &fedMap)
 {
 	repo::core::model::RepoScene* scene = nullptr;
 	if (fedMap.size() > 0)

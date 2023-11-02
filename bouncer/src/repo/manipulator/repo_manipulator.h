@@ -113,7 +113,7 @@ namespace repo {
 			* @return returns a constructed scene graph with the reference.
 			*/
 			repo::core::model::RepoScene* createFederatedScene(
-				const std::map<repo::core::model::TransformationNode, repo::core::model::ReferenceNode> &fedMap);
+				const std::map<repo::core::model::ReferenceNode, std::string> &fedMap);
 
 			/**
 			* Count the number of documents within the collection

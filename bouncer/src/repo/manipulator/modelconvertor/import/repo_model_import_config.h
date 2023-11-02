@@ -40,6 +40,7 @@ namespace repo {
 				bool applyReductions;
 				bool rotateModel;
 				bool importAnimations;
+				int lod;
 				std::string timeZone;
 				ModelUnits targetUnits;
 			public:
@@ -48,8 +49,14 @@ namespace repo {
 					const bool rotateModel = false,
 					const bool importAnimations = true,
 					const ModelUnits targetUnits = ModelUnits::UNKNOWN,
-					const std::string timeZone = "") :
-					applyReductions(applyReductions), rotateModel(rotateModel), importAnimations(importAnimations), targetUnits(targetUnits), timeZone(timeZone) {}
+					const std::string timeZone = "",
+					const int lod = 0) :
+					applyReductions(applyReductions), 
+					rotateModel(rotateModel), 
+					importAnimations(importAnimations), 
+					targetUnits(targetUnits), 
+					timeZone(timeZone), 
+					lod(lod) {}
 
 				~ModelImportConfig() {}
 
@@ -58,6 +65,7 @@ namespace repo {
 				bool shouldImportAnimations() const { return importAnimations; }
 				std::string getTimeZone() const { return timeZone; }
 				ModelUnits getTargetUnits() const { return targetUnits; }
+				int getLevelOfDetail() const { return lod; }
 			};
 		}//namespace modelconvertor
 	}//namespace manipulator

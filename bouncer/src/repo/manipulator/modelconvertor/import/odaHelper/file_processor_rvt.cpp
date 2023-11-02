@@ -53,6 +53,32 @@ const bool USE_NEW_TESSELLATION = true;
 const double TRIANGULATION_EDGE_LENGTH = 1;
 const double ROUNDING_ACCURACY = 0.000001;
 
+// The following sets up the level of detail parameters for the FileProcessorRvt.
+// The exact meaning of the LOD parameter provided in the config will depend on
+// each processor's tessellation method. For Revit, these correspond to different
+// tolerances in the BRep triangulator.
+
+struct LevelOfDetailParams
+{
+	int normalTolerance;
+	double surfaceTolerance;
+
+	LevelOfDetailParams(int normalTolerance, double surfaceTolerance) {
+		this->normalTolerance = normalTolerance;
+		this->surfaceTolerance = surfaceTolerance;
+	}
+};
+
+const std::vector<LevelOfDetailParams> LOD_PARAMETERS ({
+	LevelOfDetailParams(15, 0), // Default matches the wrTriangulationParams default constructor when bNewTess is true
+	LevelOfDetailParams(360, 10000),
+	LevelOfDetailParams(40, 10000),
+	LevelOfDetailParams(360, 0.1),
+	LevelOfDetailParams(360, 0.01),
+	LevelOfDetailParams(360, 0.005),
+	LevelOfDetailParams(360, 0.0005),	
+});
+
 class StubDeviceModuleRvt : public OdGsBaseModule
 {
 private:
@@ -96,7 +122,7 @@ OdString Get3DLayout(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimData
 		OdBmDBDrawingPtr pDBDrawing = layouts->object();
 		OdDbBaseLayoutPEPtr pLayout(layouts->object());
 
-		if (pDBDrawing->getBaseViewNameFormat() == OdBm::ViewType::_3d)
+		if (pDBDrawing->getBaseViewType() == OdBm::ViewType::ThreeD)
 		{
 			auto viewName = pLayout->name(layouts->object());
 			auto viewNameStr = convertToStdString(viewName);
@@ -186,6 +212,11 @@ uint8_t FileProcessorRvt::readFile()
 	{
 		//.. change tessellation params here
 		wrTriangulationParams triParams(USE_NEW_TESSELLATION);
+		if (importConfig.getLevelOfDetail()) {
+			triParams.bRecalculateSurfaceTolerance = false;
+			triParams.surfaceTolerance = LOD_PARAMETERS[importConfig.getLevelOfDetail()].surfaceTolerance;
+			triParams.normalTolerance = LOD_PARAMETERS[importConfig.getLevelOfDetail()].normalTolerance;
+		}
 		setTessellationParams(triParams);
 		OdBmDatabasePtr pDb = svcs.readFile(OdString(file.c_str()));
 		if (!pDb.isNull())
