@@ -25,6 +25,9 @@
 #include <ifcgeom/IfcGeom.h>
 #include <ifcgeom_schema_agnostic/IfcGeomIterator.h>
 
+constexpr int TRIANGLES = 3;
+constexpr int LINES = 2;
+
 IfcGeom::IteratorSettings createSettings()
 {
 	IfcGeom::IteratorSettings itSettings;
@@ -101,8 +104,6 @@ bool repo::ifcUtility::SCHEMA_NS::GeometryHandler::retrieveGeometry(
 	std::vector<double>		&offset,
 	std::string              &errMsg)
 {
-	constexpr int data3D = 3;
-	constexpr int data2D = 2;
 	IfcParse::IfcFile ifcfile(file);
 	auto itSettings = createSettings();
 
@@ -130,12 +131,11 @@ bool repo::ifcUtility::SCHEMA_NS::GeometryHandler::retrieveGeometry(
 		auto ob_geo = static_cast<const IfcGeom::TriangulationElement<double>*>(ob);
 		if (ob_geo)
 		{
-			auto primitive = data3D;
+			auto primitive = TRIANGLES;
 			auto faces = ob_geo->geometry().faces();
-			auto edges = ob_geo->geometry().edges();
 			if (!faces.size()) {
 				if ((faces = ob_geo->geometry().edges()).size()) {
-					primitive = data2D;
+					primitive = LINES;
 				}
 				else {
 					continue;
@@ -171,7 +171,7 @@ bool repo::ifcUtility::SCHEMA_NS::GeometryHandler::retrieveGeometry(
 
 			for (int iface = 0; iface < faces.size(); iface += primitive)
 			{
-				auto matInd = primitive == data3D ? *matIndIt : ob_geo->geometry().materials().size();
+				auto matInd = *matIndIt;
 				if (indexMapping.find(matInd) == indexMapping.end())
 				{
 					//new material
@@ -207,10 +207,6 @@ bool repo::ifcUtility::SCHEMA_NS::GeometryHandler::retrieveGeometry(
 				for (int j = 0; j < primitive; ++j)
 				{
 					auto vIndex = faces[iface + j];
-					if (primitive == data2D)
-					{
-						vIndex = edges[iface + j];
-					}
 						
 					if (indexMapping[matInd].find(vIndex) == indexMapping[matInd].end())
 					{
@@ -236,7 +232,7 @@ bool repo::ifcUtility::SCHEMA_NS::GeometryHandler::retrieveGeometry(
 
 				post_faces[matInd].push_back(face);
 				
-				if ((primitive == data3D) || (primitive==data2D)) ++matIndIt;
+				++matIndIt;
 			}
 
 			auto guid = ob_geo->guid();
