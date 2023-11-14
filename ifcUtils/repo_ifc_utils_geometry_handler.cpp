@@ -207,7 +207,7 @@ bool repo::ifcUtility::SCHEMA_NS::GeometryHandler::retrieveGeometry(
 				for (int j = 0; j < primitive; ++j)
 				{
 					auto vIndex = faces[iface + j];
-						
+
 					if (indexMapping[matInd].find(vIndex) == indexMapping[matInd].end())
 					{
 						//new index. create a mapping
@@ -231,7 +231,7 @@ bool repo::ifcUtility::SCHEMA_NS::GeometryHandler::retrieveGeometry(
 				}
 
 				post_faces[matInd].push_back(face);
-				
+
 				++matIndIt;
 			}
 
