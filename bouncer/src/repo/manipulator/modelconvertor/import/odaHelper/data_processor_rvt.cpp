@@ -254,34 +254,40 @@ void DataProcessorRvt::convertTo3DRepoTriangle(
 
 	normalOut = calcNormal(verticesOut[0], verticesOut[1], verticesOut[2]);
 
-	std::vector<OdGePoint2d> odaUvs;
-	odaUvs.resize(verticesOut.size());
+	if (isMapperEnabled() && isMapperAvailable()) {
 
-	if (vertexData() && vertexData()->mappingCoords(OdGiVertexData::kAllChannels))
-	{
-		// Where Uvs are predefined, we need to get them for each vertex from the
-		// dedicated array using the indices again...
+		std::vector<OdGePoint2d> odaUvs;
 
-		OdGiMapperItemEntryPtr mapper = currentMapper(false)->diffuseMapper();
-		const OdGePoint3d* predefinedUvCoords = vertexData()->mappingCoords(OdGiVertexData::kAllChannels);
-		for (OdInt32 i = 0; i < verticesOut.size(); i++)
+		if (vertexData() && vertexData()->mappingCoords(OdGiVertexData::kAllChannels))
 		{
-			mapper->mapPredefinedCoords(predefinedUvCoords + indices[i], odaUvs.data() + i, 1);
-		}
-	}
-	else
-	{
-		// ...Otherwise we can look up uvs directly from the world positions
+			// Where Uvs are predefined, we need to get them for each vertex from the
+			// dedicated array using the indices again...
 
-		if (!currentMapper().isNull() && !currentMapper()->diffuseMapper().isNull())
+			OdGiMapperItemEntryPtr mapper = currentMapper(false)->diffuseMapper();
+			if (!mapper.isNull()) {
+				odaUvs.resize(verticesOut.size());
+				const OdGePoint3d* predefinedUvCoords = vertexData()->mappingCoords(OdGiVertexData::kAllChannels);
+				for (OdInt32 i = 0; i < verticesOut.size(); i++)
+				{
+					mapper->mapPredefinedCoords(predefinedUvCoords + indices[i], odaUvs.data() + i, 1);
+				}
+			}
+		}
+		else
 		{
-			currentMapper()->diffuseMapper()->mapCoords(odaPoints.data(), odaUvs.data());
-		}
-	}
+			// ...Otherwise we can look up uvs directly from the world positions
 
-	uvsOut.clear();
-	for (int i = 0; i < odaUvs.size(); ++i) {
-		uvsOut.push_back({ (float)odaUvs[i].x, (float)odaUvs[i].y });
+			if (!currentMapper(true)->diffuseMapper().isNull())
+			{
+				odaUvs.resize(verticesOut.size());
+				currentMapper()->diffuseMapper()->mapCoords(odaPoints.data(), odaUvs.data());
+			}
+		}
+
+		uvsOut.clear();
+		for (int i = 0; i < odaUvs.size(); ++i) {
+			uvsOut.push_back({ (float)odaUvs[i].x, (float)odaUvs[i].y });
+		}
 	}
 }
 
