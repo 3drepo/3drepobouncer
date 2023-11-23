@@ -24,6 +24,7 @@
 #include "../../../../lib/repo_utils.h"
 #include <Database/BmTransaction.h>
 #include <Database/BmUnitUtils.h>
+#include <Database/Entities/BmRbsSystemType.h>
 #include <Base/BmForgeTypeId.h>
 #include <Base/BmParameterSet.h>
 #include <Base/BmSpecTypeId.h>
@@ -321,6 +322,17 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 
 	if (!element->isDBRO())
 		return;
+
+	// In the current version of ODA, each component that is a member of a
+	// system is followed by that system as an OdGiDrawable, so we need the
+	// geometry to be associated with the previous OdGiDrawable. This is
+	// achieved by simply skipping all system drawables (and so not changing
+	// the collector settings).
+
+	if (element->isKindOf(OdBmRbsSystemType::desc()))
+	{
+		return;
+	}
 
 	collector->stopMeshEntry();
 
