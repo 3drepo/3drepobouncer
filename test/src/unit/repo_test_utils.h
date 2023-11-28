@@ -17,6 +17,7 @@
 
 #pragma once
 #include <repo/repo_controller.h>
+#include <repo/core/model/bson/repo_node_metadata.h>
 #include "repo_test_database_info.h"
 #include "repo_test_fileservice_info.h"
 #include <fstream>
@@ -196,4 +197,81 @@ static std::string getRandomString(const uint32_t &iLen)
 	}
 
 	return sStr;
+}
+
+// Searches all elements in a project for one with metadata matching the
+// key-value provided, and returns true if that element has geometry Keys and
+// Values are case-sensitive. Additionally, if a value is a string type, it will
+// be enclosed in double quotations, so include these in the value to test
+// against.
+static bool projectHasGeometryWithMetadata(std::string dbName, std::string projectName, std::string key, std::string value)
+{
+	bool res = false;
+	repo::RepoController* controller = new repo::RepoController();
+	auto token = initController(controller);
+
+	if (token)
+	{
+		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, false, true, false, { repo::core::model::RevisionNode::UploadStatus::MISSING_BUNDLES });
+		if (scene)
+		{
+			auto metadata = scene->getAllMetadata(repo::core::model::RepoScene::GraphType::DEFAULT);
+			auto meshes = scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT);
+
+			std::unordered_map<repo::lib::RepoUUID, repo::core::model::MeshNode*, repo::lib::RepoUUIDHasher > sharedIdToMeshNode;
+
+			for (auto m : meshes) {
+				auto meshNode = dynamic_cast<repo::core::model::MeshNode*>(m);
+				sharedIdToMeshNode[meshNode->getSharedID()] = meshNode;
+			}
+
+			for (auto m : metadata) {
+				auto metaDataNode = dynamic_cast<repo::core::model::MetadataNode*>(m);
+				auto metaDataArray = m->getField(REPO_NODE_LABEL_METADATA).Array();
+				for (auto entry : metaDataArray)
+				{
+					// Keys are always strings for the metadata
+
+					auto aKey = entry.toMongoElement().Obj().getField(REPO_NODE_LABEL_META_KEY).String();
+
+					// toString will stringify the underlying type of the value, in the same
+					// way it is stringified for the frontend.
+
+					auto aValue = entry.toMongoElement().Obj().getField(REPO_NODE_LABEL_META_VALUE).toString(false);
+
+					if (aKey == key && aValue == value)
+					{
+						// This metadata node contains the key-value pair we are looking for. Now
+						// check if there is geometry associated with it.
+
+						for (auto p : metaDataNode->getParentIDs())
+						{
+							if (sharedIdToMeshNode.find(p) != sharedIdToMeshNode.end())
+							{
+								if (sharedIdToMeshNode[p]->getNumVertices() >= 0)
+								{
+									res = true;
+									break;
+								}
+							}
+						}
+					}
+
+					if (res)
+					{
+						break;
+					}
+				}
+
+				if (res)
+				{
+					break;
+				}
+			}
+			delete scene;
+		}
+	}
+	controller->disconnectFromDatabase(token);
+	delete controller;
+	return res;
 }
