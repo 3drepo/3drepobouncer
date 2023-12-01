@@ -21,6 +21,9 @@
 #include <repo/core/model/bson/repo_node_texture.h>
 #include <repo/lib/repo_exception.h>
 #include <boost/filesystem.hpp>
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/copy.hpp>
 #include <fstream>
 
 using namespace repo::lib;
@@ -386,12 +389,18 @@ bool CSharpWrapper::saveAssetBundles(
 
 		if (inputStream.is_open())
 		{
-			std::ostringstream ss;
-			ss << inputStream.rdbuf();
-			auto s = ss.str();
 			boost::filesystem::path path(assetFiles[i]);
 			std::string fileName = path.filename().string();
 			fileName = "/" + databaseName + "/" + projectName + "/" + fileName;
+
+			std::ostringstream ss; // memory stream containing the binary data to write to the database
+
+			boost::iostreams::filtering_streambuf<boost::iostreams::input> in;
+			in.push(boost::iostreams::gzip_compressor());
+			in.push(inputStream);
+			boost::iostreams::copy(in, ss);
+
+			auto s = ss.str();
 			webBuffers.geoFiles[fileName] = std::vector<uint8_t>(s.begin(), s.end());
 		}
 		else
