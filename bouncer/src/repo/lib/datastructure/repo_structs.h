@@ -25,9 +25,12 @@
 #include "repo_vector.h"
 #include <boost/crc.hpp>
 
+typedef std::unordered_map<std::string, std::tuple<std::vector<uint8_t>, repo::core::model::RepoBSON>> repo_web_geo_files_t;
+typedef std::unordered_map<std::string, std::vector<uint8_t>> repo_web_json_files_t;
+
 typedef struct {
-	std::unordered_map<std::string, std::vector<uint8_t>> geoFiles; //files where geometery are stored
-	std::unordered_map<std::string, std::vector<uint8_t>> jsonFiles; //JSON mapping files
+	repo_web_geo_files_t geoFiles; //files where geometery are stored
+	repo_web_json_files_t jsonFiles; //JSON mapping files
 	repo::core::model::RepoUnityAssets unityAssets; //Unity assets list
 }repo_web_buffers_t;
 

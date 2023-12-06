@@ -136,9 +136,9 @@ SRCModelExport::~SRCModelExport()
 {
 }
 
-std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getSRCFilesAsBuffer() const
+repo_web_geo_files_t SRCModelExport::getSRCFilesAsBuffer() const
 {
-	std::unordered_map < std::string, std::vector<uint8_t> > fileBuffers;
+	repo_web_geo_files_t fileBuffers;
 
 	for (const auto &treePair : trees)
 	{
@@ -198,7 +198,7 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getSRCFile
 
 			//Add data buffer to the full buffer
 			buffer.insert(buffer.end(), fullDataArray.begin(), fullDataArray.end());
-			fileBuffers[fName] = buffer;
+			fileBuffers[fName] = { buffer, {} };
 		}
 		else
 		{

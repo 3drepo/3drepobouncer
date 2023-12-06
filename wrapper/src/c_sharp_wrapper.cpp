@@ -17,6 +17,7 @@
 
 
 #include "c_sharp_wrapper.h"
+#include <repo/core/model/bson/repo_bson_builder.h>
 #include <repo/core/model/bson/repo_node_material.h>
 #include <repo/core/model/bson/repo_node_texture.h>
 #include <repo/lib/repo_exception.h>
@@ -395,13 +396,18 @@ bool CSharpWrapper::saveAssetBundles(
 
 			std::ostringstream ss; // memory stream containing the binary data to write to the database
 
+			// All unity asset bundles are gzipped by default
+
 			boost::iostreams::filtering_streambuf<boost::iostreams::input> in;
 			in.push(boost::iostreams::gzip_compressor());
 			in.push(inputStream);
 			boost::iostreams::copy(in, ss);
 
+			repo::core::model::RepoBSONBuilder builder;
+			builder.append("encoding", "gzip");
+
 			auto s = ss.str();
-			webBuffers.geoFiles[fileName] = std::vector<uint8_t>(s.begin(), s.end());
+			webBuffers.geoFiles[fileName] = { std::vector<uint8_t>(s.begin(), s.end()), builder.obj() };
 		}
 		else
 		{

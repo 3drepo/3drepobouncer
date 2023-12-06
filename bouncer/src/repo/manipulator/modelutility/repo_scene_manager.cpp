@@ -43,7 +43,7 @@ bool SceneManager::commitWebBuffers(
 	//Upload the files
 	for (const auto &bufferPair : resultBuffers.geoFiles)
 	{
-		if (success &= fileManager->uploadFileAndCommit(databaseName, projectName + "." + geoStashExt, bufferPair.first, bufferPair.second))
+		if (success &= fileManager->uploadFileAndCommit(databaseName, projectName + "." + geoStashExt, bufferPair.first, std::get<0>(bufferPair.second), std::get<1>(bufferPair.second)))
 		{
 			repoInfo << "File (" << bufferPair.first << ") added successfully to file storage.";
 		}

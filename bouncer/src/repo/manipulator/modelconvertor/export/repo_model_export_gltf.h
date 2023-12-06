@@ -236,7 +236,7 @@ namespace repo{
 				* Return the GLTF file as raw bytes buffer
 				* returns an empty vector if the export has failed
 				*/
-				std::unordered_map<std::string, std::vector<uint8_t>> getGLTFFilesAsBuffer() const;
+				repo_web_geo_files_t getGLTFFilesAsBuffer() const;
 
 				/**
 				* Reindex the given faces base on the given information

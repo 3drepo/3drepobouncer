@@ -564,9 +564,9 @@ repo_web_buffers_t GLTFModelExport::getAllFilesExportedAsBuffer() const
 	return{ getGLTFFilesAsBuffer(), getJSONFilesAsBuffer() };
 }
 
-std::unordered_map<std::string, std::vector<uint8_t>> GLTFModelExport::getGLTFFilesAsBuffer() const
+repo_web_geo_files_t GLTFModelExport::getGLTFFilesAsBuffer() const
 {
-	std::unordered_map<std::string, std::vector<uint8_t>> files;
+	repo_web_geo_files_t files;
 	//GLTF files
 	for (const auto &pair : trees)
 	{
@@ -575,10 +575,11 @@ std::unordered_map<std::string, std::vector<uint8_t>> GLTFModelExport::getGLTFFi
 		std::string jsonString = ss.str();
 		if (!jsonString.empty())
 		{
-			files[pair.first] = std::vector<uint8_t>();
+			files[pair.first] = { std::vector<uint8_t>(), repo::core::model::RepoBSON() };
 			size_t byteLength = jsonString.size() * sizeof(*jsonString.data());
-			files[pair.first].resize(byteLength);
-			memcpy(files[pair.first].data(), jsonString.data(), byteLength);
+			auto& buffer = std::get<0>(files[pair.first]);
+			buffer.resize(byteLength);
+			memcpy(buffer.data(), jsonString.data(), byteLength);
 		}
 		else
 		{
@@ -597,10 +598,11 @@ std::unordered_map<std::string, std::vector<uint8_t>> GLTFModelExport::getGLTFFi
 			//None of the gltf should ever share the same name, this is a sanity check
 			if (it == files.end())
 			{
-				files[fileName] = std::vector<uint8_t>();
+				files[fileName] = { std::vector<uint8_t>(), repo::core::model::RepoBSON() };
+				auto& buffer = std::get<0>(files[fileName]);
 				size_t byteLength = pair.second.size() * sizeof(*pair.second.data());
-				files[fileName].resize(byteLength);
-				memcpy(files[fileName].data(), pair.second.data(), byteLength);
+				buffer.resize(byteLength);
+				memcpy(buffer.data(), pair.second.data(), byteLength);
 			}
 			else
 			{

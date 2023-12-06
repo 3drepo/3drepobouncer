@@ -72,7 +72,8 @@ bool WebModelExport::exportToFile(
 		FILE* fp = fopen(boostPath.string().c_str(), "wb");
 		if (fp)
 		{
-			fwrite(buff.second.data(), sizeof(*buff.second.data()), buff.second.size(), fp);
+			auto content = std::get<0>(buff.second);
+			fwrite(content.data(), sizeof(*content.data()), content.size(), fp);
 			fclose(fp);
 		}
 		else
