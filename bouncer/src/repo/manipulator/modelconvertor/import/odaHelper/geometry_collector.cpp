@@ -383,7 +383,8 @@ repo::core::model::MetadataNode*  GeometryCollector::createMetaNode(
 	const repo::lib::RepoUUID &parentId,
 	const  std::unordered_map<std::string, std::string> &metaValues
 ) {
-	return new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(metaValues, name, { parentId }));
+	std::unordered_map<std::string, repo::lib::RepoVariant> metaData = repo::lib::RepoVariant().convertToRepoVariant(metaValues);
+	return new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(metaData, name, { parentId }));
 }
 
 repo::core::model::TransformationNode*  GeometryCollector::createTransNode(
