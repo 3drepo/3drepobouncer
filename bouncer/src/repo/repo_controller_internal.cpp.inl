@@ -878,26 +878,6 @@ std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoController::_RepoC
 	return res;
 }
 
-repo::core::model::RepoNodeSet RepoController::_RepoControllerImpl::loadMetadataFromFile(
-	const std::string &filePath,
-	const char        &delimiter)
-{
-	repo::core::model::RepoNodeSet metadata;
-
-	if (!filePath.empty())
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		metadata = worker->loadMetadataFromFile(filePath, delimiter);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to load from an empty file path!";
-	}
-
-	return metadata;
-}
-
 bool RepoController::_RepoControllerImpl::isVREnabled(const RepoToken *token,
 	const repo::core::model::RepoScene *scene)
 {

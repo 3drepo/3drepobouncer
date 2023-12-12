@@ -15,6 +15,7 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_matrix_def.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_structs.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_uuid.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_variant.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_vector.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_vector2d.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_vector3d.h

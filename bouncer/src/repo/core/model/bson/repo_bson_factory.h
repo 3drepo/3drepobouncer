@@ -38,6 +38,7 @@
 #include "repo_node_revision.h"
 #include "repo_node_texture.h"
 #include "repo_node_transformation.h"
+#include "../../../lib/datastructure/repo_variant.h"
 
 namespace repo {
 	namespace core {
@@ -223,22 +224,6 @@ namespace repo {
 
 				/**
 				* Create a Metadata Node
-				* @param keys labels for the fields
-				* @param values values of the fields, matching the key parameter
-				* @param name Name of Metadata (optional)
-				* @param parents
-				* @param apiLevel Repo Node API level (optional)
-				* @return returns a metadata node
-				*/
-				static MetadataNode makeMetaDataNode(
-					const std::vector<std::string>  &keys,
-					const std::vector<std::string>  &values,
-					const std::string               &name = std::string(),
-					const std::vector<repo::lib::RepoUUID>     &parents = std::vector<repo::lib::RepoUUID>(),
-					const int                       &apiLevel = REPO_NODE_API_LEVEL_1);
-
-				/**
-				* Create a Metadata Node
 				* @param data list of key value pair
 				* @param name Name of Metadata (optional)
 				* @param parents
@@ -246,7 +231,7 @@ namespace repo {
 				* @return returns a metadata node
 				*/
 				static MetadataNode makeMetaDataNode(
-					const std::unordered_map<std::string, std::string>  &data,
+					const std::unordered_map<std::string, repo::lib::RepoVariant>  &data,
 					const std::string            &name = std::string(),
 					const std::vector<repo::lib::RepoUUID> &parents = std::vector<repo::lib::RepoUUID>(),
 					const int                    &apiLevel = REPO_NODE_API_LEVEL_1);

@@ -52,7 +52,8 @@ void convertTreeToNodes(
 		}
 
 		if (tree.meta.size()) {
-			metaSet.insert(new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(tree.meta, tree.name, metaParents)));
+			std::unordered_map<std::string, repo::lib::RepoVariant> metaData = repo::lib::RepoVariant().convertToRepoVariant(tree.meta);
+			metaSet.insert(new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(metaData, tree.name, metaParents)));
 		}
 	}
 

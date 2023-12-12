@@ -543,17 +543,6 @@ namespace repo {
 				const repo::core::model::RepoScene      *scene) const;
 
 			/**
-			* Load metadata from a file
-			* @param filePath path to file
-			* @param delimiter
-			* @return returns a pointer to Repo Scene upon success
-			*/
-			repo::core::model::RepoNodeSet
-				loadMetadataFromFile(
-					const std::string &filePath,
-					const char        &delimiter = ',');
-
-			/**
 			* Load a Repo Scene from a file
 			* @param filePath path to file
 			* @param msg error message if it fails

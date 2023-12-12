@@ -610,8 +610,10 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 			}
 		}
 
+
+		std::unordered_map<std::string, repo::lib::RepoVariant> metaData = repo::lib::RepoVariant().convertToRepoVariant(metaEntries);
 		metaNode = new repo::core::model::MetadataNode(
-			repo::core::model::RepoBSONFactory::makeMetaDataNode(metaEntries, metadataName, parents));
+			repo::core::model::RepoBSONFactory::makeMetaDataNode(metaData, metadataName, parents));
 	}//if(assimpMeta)
 
 	return metaNode;

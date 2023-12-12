@@ -122,7 +122,8 @@ repo::core::model::MetadataNode* SynchroModelImport::createMetaNode(
 	const std::unordered_map<std::string, std::string> &metadata,
 	const std::string &name,
 	const std::vector<repo::lib::RepoUUID> &parents) {
-	return new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(metadata, name, parents));
+	std::unordered_map<std::string, repo::lib::RepoVariant> metaData = repo::lib::RepoVariant().convertToRepoVariant(metadata);
+	return new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(metaData, name, parents));
 }
 
 repo::core::model::TransformationNode* SynchroModelImport::createTransNode(
