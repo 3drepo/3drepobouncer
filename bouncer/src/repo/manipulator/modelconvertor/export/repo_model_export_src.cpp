@@ -198,7 +198,7 @@ repo_web_geo_files_t SRCModelExport::getSRCFilesAsBuffer() const
 
 			//Add data buffer to the full buffer
 			buffer.insert(buffer.end(), fullDataArray.begin(), fullDataArray.end());
-			fileBuffers[fName] = { buffer, {} };
+			fileBuffers[fName] = buffer;
 		}
 		else
 		{
