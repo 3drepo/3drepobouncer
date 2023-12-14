@@ -43,7 +43,7 @@ bool SceneManager::commitWebBuffers(
 	//Upload the files
 	for (const auto &bufferPair : resultBuffers.geoFiles)
 	{
-		if (success &= fileManager->uploadFileAndCommit(databaseName, projectName + "." + geoStashExt, bufferPair.first, std::get<0>(bufferPair.second), std::get<1>(bufferPair.second), repo::core::handler::fileservice::FileManager::Encoding::Gzip)) // Web geometry files are gzipped by default
+		if (success &= fileManager->uploadFileAndCommit(databaseName, projectName + "." + geoStashExt, bufferPair.first, bufferPair.second, {}, repo::core::handler::fileservice::FileManager::Encoding::Gzip)) // Web geometry files are gzipped by default
 		{
 			repoInfo << "File (" << bufferPair.first << ") added successfully to file storage.";
 		}

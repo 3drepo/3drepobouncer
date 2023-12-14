@@ -392,7 +392,7 @@ bool CSharpWrapper::saveAssetBundles(
 			boost::filesystem::path path(assetFiles[i]);
 			std::string fileName = path.filename().string();
 			fileName = "/" + databaseName + "/" + projectName + "/" + fileName;
-			webBuffers.geoFiles[fileName] = { std::vector<uint8_t>(s.begin(), s.end()), { } };
+			webBuffers.geoFiles[fileName] = std::vector<uint8_t>(s.begin(), s.end());
 		}
 		else
 		{

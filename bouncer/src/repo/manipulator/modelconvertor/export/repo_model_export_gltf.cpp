@@ -575,9 +575,9 @@ repo_web_geo_files_t GLTFModelExport::getGLTFFilesAsBuffer() const
 		std::string jsonString = ss.str();
 		if (!jsonString.empty())
 		{
-			files[pair.first] = { std::vector<uint8_t>(), repo::core::model::RepoBSON() };
+			files[pair.first] = std::vector<uint8_t>();
 			size_t byteLength = jsonString.size() * sizeof(*jsonString.data());
-			auto& buffer = std::get<0>(files[pair.first]);
+			auto& buffer = files[pair.first];
 			buffer.resize(byteLength);
 			memcpy(buffer.data(), jsonString.data(), byteLength);
 		}
@@ -598,8 +598,8 @@ repo_web_geo_files_t GLTFModelExport::getGLTFFilesAsBuffer() const
 			//None of the gltf should ever share the same name, this is a sanity check
 			if (it == files.end())
 			{
-				files[fileName] = { std::vector<uint8_t>(), repo::core::model::RepoBSON() };
-				auto& buffer = std::get<0>(files[fileName]);
+				files[fileName] = std::vector<uint8_t>();
+				auto& buffer = files[fileName];
 				size_t byteLength = pair.second.size() * sizeof(*pair.second.data());
 				buffer.resize(byteLength);
 				memcpy(buffer.data(), pair.second.data(), byteLength);
