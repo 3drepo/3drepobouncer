@@ -577,9 +577,8 @@ repo_web_geo_files_t GLTFModelExport::getGLTFFilesAsBuffer() const
 		{
 			files[pair.first] = std::vector<uint8_t>();
 			size_t byteLength = jsonString.size() * sizeof(*jsonString.data());
-			auto& buffer = files[pair.first];
-			buffer.resize(byteLength);
-			memcpy(buffer.data(), jsonString.data(), byteLength);
+			files[pair.first].resize(byteLength);
+			memcpy(files[pair.first].data(), jsonString.data(), byteLength);
 		}
 		else
 		{
@@ -599,10 +598,9 @@ repo_web_geo_files_t GLTFModelExport::getGLTFFilesAsBuffer() const
 			if (it == files.end())
 			{
 				files[fileName] = std::vector<uint8_t>();
-				auto& buffer = files[fileName];
 				size_t byteLength = pair.second.size() * sizeof(*pair.second.data());
-				buffer.resize(byteLength);
-				memcpy(buffer.data(), pair.second.data(), byteLength);
+				files[fileName].resize(byteLength);
+				memcpy(files[fileName].data(), pair.second.data(), byteLength);
 			}
 			else
 			{
