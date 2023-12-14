@@ -54,6 +54,14 @@ namespace repo {
 						repo::core::handler::AbstractDatabaseHandler *dbHandler
 					);
 
+					/*
+					* Possible options for static compression of stored files
+					*/
+					enum Encoding {
+						None = 0,
+						Gzip = 1
+					};
+
 					/**
 					 * Upload file and commit ref entry to database.
 					 */
@@ -62,7 +70,8 @@ namespace repo {
 						const std::string                            &collectionNamePrefix,
 						const std::string                            &fileName,
 						const std::vector<uint8_t>                   &bin,
-						const repo::core::model::RepoBSON            &metadata = repo::core::model::RepoBSON()
+						const repo::core::model::RepoBSON            &metadata = repo::core::model::RepoBSON(),
+						const Encoding                               &encoding = Encoding::None
 					);
 
 					/**

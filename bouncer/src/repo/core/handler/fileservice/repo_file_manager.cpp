@@ -18,9 +18,15 @@
 #include "repo_file_manager.h"
 #include "../../../lib/repo_exception.h"
 #include "../../model/repo_model_global.h"
+#include "../../model/bson/repo_bson_builder.h"
 #include "../../model/bson/repo_bson_factory.h"
 #include "repo_file_handler_fs.h"
 #include "repo_file_handler_gridfs.h"
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/copy.hpp>
+#include <boost/interprocess/streams/bufferstream.hpp>
+#include <istream>
 
 using namespace repo::core::handler::fileservice;
 
@@ -46,11 +52,45 @@ bool FileManager::uploadFileAndCommit(
 	const std::string                            &collectionNamePrefix,
 	const std::string                            &fileName,
 	const std::vector<uint8_t>                   &bin,
-	const repo::core::model::RepoBSON            &metadata)
+	const repo::core::model::RepoBSON            &metadata,
+	const Encoding                               &encoding)
 {
 	bool success = true;
 	auto fileUUID = repo::lib::RepoUUID::createUUID();
-	auto linkName = defaultHandler->uploadFile(databaseName, collectionNamePrefix, fileUUID.toString(), bin);
+
+	// Create local references that can be reassigned, if we need to do any
+	// further processing...
+
+	const std::vector<uint8_t>* fileContents = &bin;
+	repo::core::model::RepoBSON fileMetadata = metadata;
+
+	switch (encoding)
+	{
+		case Encoding::Gzip:
+		{
+			// Use stringstream as a binary container to hold the compressed data
+			std::ostringstream compressedstream;
+
+			// Bufferstream operates directly over the user provided array
+			boost::interprocess::bufferstream uncompressed((char*)bin.data(), bin.size());
+
+			boost::iostreams::filtering_istream in;
+			in.push(boost::iostreams::gzip_compressor());
+			in.push(std::istream(uncompressed.rdbuf())); // For some reason bufferstream is ambigous between stream and streambuf, so wrap it unambiguously
+
+			boost::iostreams::copy(in, compressedstream);
+
+			auto compresseddata = compressedstream.str();
+			fileContents = new std::vector<uint8_t>(compresseddata.begin(), compresseddata.end());
+
+			repo::core::model::RepoBSONBuilder builder;
+			builder.append("encoding", "gzip");
+			fileMetadata = metadata.cloneAndAddFields(&builder.obj());
+		}
+		break;
+	}
+
+	auto linkName = defaultHandler->uploadFile(databaseName, collectionNamePrefix, fileUUID.toString(), *fileContents);
 	if (success = !linkName.empty()) {
 		success = upsertFileRef(
 			databaseName,
@@ -58,8 +98,17 @@ bool FileManager::uploadFileAndCommit(
 			cleanFileName(fileName),
 			linkName,
 			defaultHandler->getType(),
-			bin.size(),
-			metadata);
+			fileContents->size(),
+			fileMetadata);
+	}
+
+	// If we've created a new vector, clean it up. metadata doesn't need to be
+	// deleted because Mongo BSONs have built in smart-pointers allowing them to
+	// be passed by value.
+
+	if (fileContents != &bin)
+	{
+		delete fileContents;
 	}
 
 	return success;
