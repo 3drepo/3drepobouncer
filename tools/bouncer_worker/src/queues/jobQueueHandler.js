@@ -20,10 +20,9 @@ const {
 	jobQueueSpecified,
 	logDirExists,
 	sharedDirExists } = require('./common');
-const { importToyModel, validateToyImporterSettings } = require('../tasks/importToy');
-const { ERRCODE_OK, ERRCODE_TOY_IMPORT_FAILED } = require('../constants/errorCodes');
+const { ERRCODE_OK } = require('../constants/errorCodes');
 const { config } = require('../lib/config');
-const { generateTreeStash, runBouncerCommand } = require('../tasks/bouncerClient');
+const { runBouncerCommand } = require('../tasks/bouncerClient');
 const { messageDecoder } = require('../lib/messageDecoder');
 const logger = require('../lib/logger');
 
@@ -31,30 +30,7 @@ const Handler = {};
 
 const logLabel = { label: 'JOBQ' };
 
-const importToy = async ({ database, model, toyModelID, skipPostProcessing }, logDir) => {
-	const returnMessage = {
-		value: ERRCODE_OK,
-		database,
-		project: model,
-	};
-
-	try {
-		await importToyModel(toyModelID, database, model, skipPostProcessing);
-
-		if (!skipPostProcessing.tree) {
-			logger.info('Toy model imported. Generating tree...', logLabel);
-			await generateTreeStash(logDir, database, model, 'tree');
-		}
-	} catch (err) {
-		logger.error(`importToy module error: ${err.message || err}`, logLabel);
-		returnMessage.value = ERRCODE_TOY_IMPORT_FAILED;
-		returnMessage.message = err.message || err;
-	}
-
-	return returnMessage;
-};
-
-const createFed = async ({ database, model, toyFed, cmdParams }, logDir) => {
+const createFed = async ({ database, model, cmdParams }, logDir) => {
 	const returnMessage = {
 		value: ERRCODE_OK,
 		database,
@@ -62,12 +38,9 @@ const createFed = async ({ database, model, toyFed, cmdParams }, logDir) => {
 	};
 	try {
 		returnMessage.value = await runBouncerCommand(logDir, cmdParams);
-		if (toyFed) {
-			await importToyModel(toyFed, database, model, { tree: 1 });
-		}
 	} catch (err) {
 		logger.error(`Error generating federation: ${err.message || err}`, logLabel);
-		returnMessage.value = toyFed ? ERRCODE_TOY_IMPORT_FAILED : err;
+		returnMessage.value = err;
 		returnMessage.message = err.message || err;
 	}
 
@@ -83,19 +56,13 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		return;
 	}
 
-	if (cmdMsg.command === 'importToy') {
-		const message = await importToy(cmdMsg, logDir);
-		callback(JSON.stringify(message));
-	} else {
-		const message = await createFed(cmdMsg, logDir);
-		callback(JSON.stringify(message));
-	}
+	const message = await createFed(cmdMsg, logDir);
+	callback(JSON.stringify(message));
 };
 
 Handler.validateConfiguration = (label) => logDirExists(label)
 		&& jobQueueSpecified(label)
 		&& sharedDirExists(label)
-		&& callbackQueueSpecified(label)
-		&& validateToyImporterSettings();
+		&& callbackQueueSpecified(label);
 
 module.exports = Handler;
