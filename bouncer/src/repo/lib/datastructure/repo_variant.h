@@ -8,8 +8,43 @@
 namespace repo {
 
     namespace lib {
-        typedef REPO_API_EXPORT boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float> repoVariant;
-        class REPO_API_EXPORT RepoVariant:public repoVariant {
+        using repoVariant = boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float>;
+        enum class RepoDataType { STRING, FLOAT, BOOL, DOUBLE, INT, UINT64, OTHER};
+        class RepoVariant:private repoVariant {
+        private:
+            template <typename T>
+            RepoDataType getVariantType(const T& value) const {
+                try {
+                    std::string dataTypeName = boost::core::demangle(typeid(T).name());
+                    if ("int" == dataTypeName) {
+                        return RepoDataType::INT;
+                    }
+                    else if ("double" == dataTypeName) {
+                        return RepoDataType::DOUBLE;
+                    }
+                    else if ("std::string" == dataTypeName)
+                    {
+                        return RepoDataType::STRING;
+                    }
+                    else if ("bool" == dataTypeName)
+                    {
+                        return RepoDataType::BOOL;
+                    }
+                    else if ("float" == dataTypeName)
+                    {
+                        return RepoDataType::FLOAT;
+                    }
+                    else if ("uint64_t" == dataTypeName)
+                    {
+                        return RepoDataType::UINT64;
+                    }
+                }
+                catch (const boost::bad_get& e) {
+                    // Handle the case where the type is not supported
+                    return RepoDataType::OTHER;
+                }
+            }
+
         public:
            using boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float>::variant;  // Inherit constructors
 
@@ -36,21 +71,66 @@ namespace repo {
                 return *this;
             }
             
-            std::string getVariantType() const {
+            // New function to convert any data type to RepoVariant
+            template <typename T>
+            RepoVariant convertToRepoVariant(const T& value) {
+                RepoDataType dataType = getVariantType(value);
+                switch (dataType)
+                {
+                case repo::lib::RepoDataType::STRING:
+                case repo::lib::RepoDataType::FLOAT:
+                case repo::lib::RepoDataType::BOOL:
+                case repo::lib::RepoDataType::DOUBLE:
+                case repo::lib::RepoDataType::INT:
+                case repo::lib::RepoDataType::UINT64:
+                    return RepoVariant(&value);
+                    break;
+                case repo::lib::RepoDataType::OTHER:
+                    return NULL;
+                    break;
+                default:
+                    break;
+                }
+            }
+
+            RepoDataType getVariantType() const {
                 try {
-                    return boost::core::demangle(typeid(*this).name());
+                    std::string dataTypeName = boost::core::demangle(typeid(*this).name());
+                    if ("int" == dataTypeName) {
+                        return RepoDataType::INT;
+                    }
+                    else if ("double" == dataTypeName) {
+                        return RepoDataType::DOUBLE;
+                    }
+                    else if ("std::string" == dataTypeName)
+                    {
+                        return RepoDataType::STRING;
+                    }
+                    else if ("bool" == dataTypeName)
+                    {
+                        return RepoDataType::BOOL;
+                    }
+                    else if ("float" == dataTypeName)
+                    {
+                        return RepoDataType::FLOAT;
+                    }
+                    else if ("uint64_t" == dataTypeName)
+                    {
+                        return RepoDataType::UINT64;
+                    }
                 }
                 catch (const boost::bad_get& e) {
                     // Handle the case where the type is not supported
-                    return "Unsupported type";
+                    return RepoDataType::OTHER;
                 }
             }
+                 
 
             bool isEmpty() const {
                 return this->which() == 0;
             }
 
-            bool isBool() const {
+            bool toBool() const {
                 return boost::get<bool>(this) != nullptr;
             }
 
@@ -78,6 +158,24 @@ namespace repo {
                 }
                 catch (const boost::bad_get& e) {
                     throw std::runtime_error("Failed to convert variant to std::string");
+                }
+            }
+
+            uint64_t toUint64() const {
+                try {
+                    return boost::get<uint64_t>(*this);
+                }
+                catch (const boost::bad_get& e) {
+                    throw std::runtime_error("Failed to convert variant to uint64_t");
+                }
+            }
+
+            float toFloat() const {
+                try {
+                    return boost::get<float>(*this);
+                }
+                catch (const boost::bad_get& e) {
+                    throw std::runtime_error("Failed to convert variant to float");
                 }
             }
 

@@ -35,6 +35,7 @@
 #include "../../../lib/datastructure/repo_matrix.h"
 #include "../../../lib/datastructure/repo_uuid.h"
 #include "repo_bson.h"
+#include <repo/lib/datastructure/repo_variant.h>
 
 namespace repo {
 	namespace core {
@@ -67,6 +68,41 @@ namespace repo {
 					const RepoBSON &bson)
 				{
 					mongo::BSONObjBuilder::appendArray(label, bson);
+				}
+
+				void appendRepoVariant(
+					const std::string& label,
+					repo::lib::RepoVariant repoVariant)
+				{
+					repo::lib::RepoDataType repoDataType = repoVariant.getVariantType();
+					switch (repoDataType) {
+						switch (repoDataType)
+						{
+						case repo::lib::RepoDataType::STRING:
+							mongo::BSONObjBuilder::append(label, repoVariant.toString());
+							break;
+						case repo::lib::RepoDataType::FLOAT:
+							mongo::BSONObjBuilder::append(label, repoVariant.toFloat());
+							break;
+						case repo::lib::RepoDataType::BOOL:
+							mongo::BSONObjBuilder::append(label, repoVariant.toBool());
+							break;
+						case repo::lib::RepoDataType::DOUBLE:
+							mongo::BSONObjBuilder::append(label, repoVariant.toDouble());
+							break;
+						case repo::lib::RepoDataType::INT:
+							mongo::BSONObjBuilder::append(label, repoVariant.toInt());
+							break;
+						case repo::lib::RepoDataType::UINT64:
+							//mongo::BSONObjBuilder::append(label, repoVariant.toUint64());
+							break;
+						case repo::lib::RepoDataType::OTHER:
+							break;
+						default:
+							break;
+						}
+					}
+					
 				}
 
 				template<class T>

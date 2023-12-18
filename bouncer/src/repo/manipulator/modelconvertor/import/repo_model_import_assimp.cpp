@@ -572,22 +572,23 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 			switch (currentValue.mType)
 			{
 			case AI_BOOL:
-				metaEntries[key] = std::to_string(*(static_cast<bool *>(currentValue.mData)));
+				metaEntries[key] = *(static_cast<bool *>(currentValue.mData));
 				break;
 
 			case AI_INT32:
-				metaEntries[key] = std::to_string(*(static_cast<int *>(currentValue.mData)));
+				metaEntries[key] = *(static_cast<int *>(currentValue.mData));
 				break;
 
 			case AI_UINT64:
-				metaEntries[key] = std::to_string(*(static_cast<uint64_t *>(currentValue.mData)));
+				metaEntries[key] = *(static_cast<uint64_t *>(currentValue.mData));
 				break;
 
 			case AI_FLOAT:
-				metaEntries[key] = std::to_string(*(static_cast<float *>(currentValue.mData)));
+				metaEntries[key] = *(static_cast<float *>(currentValue.mData));
 				break;
 
 			case AI_AISTRING:
+				//Need to change this to string and then use the repovariant
 				val = (static_cast<aiString *>(currentValue.mData))->C_Str();
 
 				if (val.compare(key)) {

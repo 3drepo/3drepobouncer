@@ -194,17 +194,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 			RepoBSONBuilder metaEntryBuilder;
 			metaEntryBuilder.append(REPO_NODE_LABEL_META_KEY, key);
 			//Check if it is a number, if it is, store it as a number
-
-			if ("int" == value.getVariantType()) {
-				metaEntryBuilder.append(REPO_NODE_LABEL_META_VALUE, value.toInt());
-			}
-			else if ("double" == value.getVariantType()) {
-				metaEntryBuilder.append(REPO_NODE_LABEL_META_VALUE, value.toDouble());
-			}
-			else if ("std::string" == value.getVariantType())
-			{
-				metaEntryBuilder.append(REPO_NODE_LABEL_META_VALUE, value.toString());
-			}
+			metaEntryBuilder.appendRepoVariant(REPO_NODE_LABEL_META_VALUE, &value);
 			metaEntries.push_back(metaEntryBuilder.obj());
 		}
 	}
