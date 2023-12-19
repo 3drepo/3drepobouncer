@@ -12,58 +12,26 @@ namespace repo {
         enum class RepoDataType { STRING, FLOAT, BOOL, DOUBLE, INT, UINT64, OTHER};
         class RepoVariant:private repoVariant {
         private:
-            template <typename T>
-            RepoDataType getVariantType(const T& value) const {
-                try {
-                    std::string dataTypeName = boost::core::demangle(typeid(T).name());
-                    if ("int" == dataTypeName) {
-                        return RepoDataType::INT;
-                    }
-                    else if ("double" == dataTypeName) {
-                        return RepoDataType::DOUBLE;
-                    }
-                    else if ("std::string" == dataTypeName)
-                    {
-                        return RepoDataType::STRING;
-                    }
-                    else if ("bool" == dataTypeName)
-                    {
-                        return RepoDataType::BOOL;
-                    }
-                    else if ("float" == dataTypeName)
-                    {
-                        return RepoDataType::FLOAT;
-                    }
-                    else if ("uint64_t" == dataTypeName)
-                    {
-                        return RepoDataType::UINT64;
-                    }
-                }
-                catch (const boost::bad_get& e) {
-                    // Handle the case where the type is not supported
-                    return RepoDataType::OTHER;
-                }
-            }
-
+            RepoDataType type = RepoDataType::OTHER;
+            using boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float>::variant;  // Inherit constructors
         public:
-           using boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float>::variant;  // Inherit constructors
 
             // Default constructor
             RepoVariant() = default;
 
-            RepoVariant(const std::string& other) : repoVariant(other) {};
+            RepoVariant(const std::string& data) : repoVariant(data),type(RepoDataType::STRING) {};
 
-            RepoVariant(bool& other) : repoVariant(other) {};
+            RepoVariant(bool& data) : repoVariant(data), type(RepoDataType::BOOL) {};
 
-            RepoVariant(int& other) : repoVariant(other) {};
+            RepoVariant(int& data) : repoVariant(data), type(RepoDataType::INT) {};
 
-            RepoVariant(double& other) : repoVariant(other) {};
+            RepoVariant(double& data) : repoVariant(data), type(RepoDataType::DOUBLE) {};
 
-            RepoVariant(uint64_t& other) : repoVariant(other) {};
+            RepoVariant(uint64_t& data) : repoVariant(data), type(RepoDataType::UINT64) {};
 
-            RepoVariant(float& other) : repoVariant(other) {};
+            RepoVariant(float& data) : repoVariant(data), type(RepoDataType::FLOAT) {};
 
-            RepoVariant(std::string& other) : repoVariant(other) {};
+            RepoVariant(std::string& data) : repoVariant(data), type(RepoDataType::STRING) {};
 
 
             RepoVariant& operator=(const std::string& str) {
@@ -74,8 +42,7 @@ namespace repo {
             // New function to convert any data type to RepoVariant
             template <typename T>
             RepoVariant convertToRepoVariant(const T& value) {
-                RepoDataType dataType = getVariantType(value);
-                switch (dataType)
+                switch (type)
                 {
                 case repo::lib::RepoDataType::STRING:
                 case repo::lib::RepoDataType::FLOAT:
@@ -95,29 +62,7 @@ namespace repo {
 
             RepoDataType getVariantType() const {
                 try {
-                    std::string dataTypeName = boost::core::demangle(typeid(*this).name());
-                    if ("int" == dataTypeName) {
-                        return RepoDataType::INT;
-                    }
-                    else if ("double" == dataTypeName) {
-                        return RepoDataType::DOUBLE;
-                    }
-                    else if ("std::string" == dataTypeName)
-                    {
-                        return RepoDataType::STRING;
-                    }
-                    else if ("bool" == dataTypeName)
-                    {
-                        return RepoDataType::BOOL;
-                    }
-                    else if ("float" == dataTypeName)
-                    {
-                        return RepoDataType::FLOAT;
-                    }
-                    else if ("uint64_t" == dataTypeName)
-                    {
-                        return RepoDataType::UINT64;
-                    }
+                    return type;
                 }
                 catch (const boost::bad_get& e) {
                     // Handle the case where the type is not supported

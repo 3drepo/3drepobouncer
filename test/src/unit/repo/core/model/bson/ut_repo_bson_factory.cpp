@@ -308,7 +308,7 @@ TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
 		auto key = metaEntry.getStringField(REPO_NODE_LABEL_META_KEY);
 		auto value = metaEntry.getStringField(REPO_NODE_LABEL_META_VALUE);
 		auto keyIt = metaDataUnMap.find(key);
-		ASSERT_NE(keyIt, metaDataUnMap.end());
+		ASSERT_NE(keyIt->first, metaDataUnMap.end()->first);
 		EXPECT_EQ(key, keyIt->first);
 		EXPECT_EQ(value, keyIt->second.toString());
 	}
