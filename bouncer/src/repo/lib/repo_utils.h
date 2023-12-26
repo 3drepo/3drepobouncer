@@ -60,5 +60,25 @@ namespace repo {
 			char* value = getenv(envVarName.c_str());
 			return (value && strlen(value) > 0) ? value : "";
 		}
+
+		static bool hasFileWritePermissions(const boost::filesystem::path& inputPath) 
+		{
+		
+			boost::filesystem::file_status s = boost::filesystem::status(inputPath);
+			if (boost::filesystem::perms::owner_write == s.permissions()) {
+				return true;
+			}
+			return false;
+		}
+
+		static bool isFileWritingSpaceAvailable(const boost::filesystem::path& inputPath) 
+		{
+			boost::filesystem::path pathWithoutFileName = inputPath;
+			boost::filesystem::space_info spaceInfo = boost::filesystem::space(pathWithoutFileName.remove_filename());
+			if (spaceInfo.free > (boost::filesystem::file_size(inputPath) + 1)) {
+				return true;
+			}
+			return false;
+		}
 	}
 }

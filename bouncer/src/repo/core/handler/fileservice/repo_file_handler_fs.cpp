@@ -133,15 +133,37 @@ std::string FSFileHandler::uploadFile(
 	path /= keyName;
 	ss << keyName;
 	int retries = 0;
-	bool failed;
+	bool failed = false;
 	do {
 		std::ofstream outs(path.string(), std::ios::out | std::ios::binary);
-		outs.write((char*)bin.data(), bin.size());
-		outs.close();
-		if (failed = (!outs || !repo::lib::doesFileExist(path))) {
-			repoError << "Failed to write to file " << path.string() << ((retries + 1) < 3 ? ". Retrying... " : "");
+		if (outs.good()) 
+		{
+			outs.write((char*)bin.data(), bin.size());
+			outs.close();
+		}
+		else if(outs.bad() || outs.fail()) 
+		{
+			failed = true;
+			if (repo::lib::doesFileExist(path)) {
+				repoError << "Failed to write to file " << path.filename() <<" as file is already present. ";
+			}
+
+			if (repo::lib::hasFileWritePermissions(path)) {
+				repoError << "Failed to write to file " << path.filename() << " as file writting permission is not there.";
+			}
+
+			if (repo::lib::isFileWritingSpaceAvailable(path)) {
+				repoError << "Failed to write to file " << path.filename() << " as there is insufficient space on the disk.";
+			}
+
+			repoError << ((retries + 1) < 3 ? ".Retrying... " : "");
 			boost::this_thread::sleep(boost::posix_time::seconds(5));
 		}
+		
+		/*if (failed = (!outs || !repo::lib::doesFileExist(path))) {
+			repoError << "Failed to write to file " << path.string() << ((retries + 1) < 3 ? ". Retrying... " : "");
+			boost::this_thread::sleep(boost::posix_time::seconds(5));
+		}*/
 	} while (failed && ++retries < 3);
 
 	return failed ? "" : ss.str();
