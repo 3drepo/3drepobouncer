@@ -51,7 +51,7 @@ matrix:
           - export ASSIMP_ROOT=$PWD/assimp
           - echo ============ IFCOPENSHELL INSTALL =============
           - tar -zxf testData/bouncer/ext_libs/focal/IfcOpenShell_v0.6.0/OCCT_3drepoFix.tgz
-          - tar -zxf testData/bouncer/ext_libs/focal/IfcOpenShell_v0.6.0/IfcOpenShell.tgz
+          - tar -zxf testData/bouncer/ext_libs/focal/IfcOpenShell_v0.6.0/IfcOpenShell_3drepofix.tgz
           - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev
           - export OCCT_ROOT=$PWD/OCCT
           - export IFCOPENSHELL_ROOT=$PWD/IfcOpenShell
@@ -125,8 +125,8 @@ matrix:
           - tar -zxf testData/focal/assimp.tgz
           - export ASSIMP_ROOT=$PWD/assimp
           - echo ============ IFCOPENSHELL INSTALL =============
-          - tar -zxf testData/focal/IfcOpenShell_v0.6.0/OCCT.tgz
-          - tar -zxf testData/focal/IfcOpenShell_v0.6.0/IfcOpenShell.tgz
+          - tar -zxf testData/focal/IfcOpenShell_v0.6.0/OCCT_3drepoFix.tgz
+          - tar -zxf testData/focal/IfcOpenShell_v0.6.0/IfcOpenShell_3drepofix.tgz
           - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev
           - export OCCT_ROOT=$PWD/OCCT
           - export IFCOPENSHELL_ROOT=$PWD/IfcOpenShell

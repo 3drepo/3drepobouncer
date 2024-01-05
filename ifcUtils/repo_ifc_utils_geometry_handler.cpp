@@ -25,6 +25,9 @@
 #include <ifcgeom/IfcGeom.h>
 #include <ifcgeom_schema_agnostic/IfcGeomIterator.h>
 
+constexpr int TRIANGLES = 3;
+constexpr int LINES = 2;
+
 IfcGeom::IteratorSettings createSettings()
 {
 	IfcGeom::IteratorSettings itSettings;
@@ -43,7 +46,7 @@ IfcGeom::IteratorSettings createSettings()
 	itSettings.set(IfcGeom::IteratorSettings::GENERATE_UVS, true);
 	itSettings.set(IfcGeom::IteratorSettings::APPLY_LAYERSETS, false);
 	//Enable to get 2D lines. You will need to set CONVERT_BACK_UNITS to false or the model may not align.
-	//itSettings.set(IfcGeom::IteratorSettings::INCLUDE_CURVES, true);
+	itSettings.set(IfcGeom::IteratorSettings::INCLUDE_CURVES, true);
 
 	return itSettings;
 }
@@ -128,11 +131,11 @@ bool repo::ifcUtility::SCHEMA_NS::GeometryHandler::retrieveGeometry(
 		auto ob_geo = static_cast<const IfcGeom::TriangulationElement<double>*>(ob);
 		if (ob_geo)
 		{
-			auto primitive = 3;
+			auto primitive = TRIANGLES;
 			auto faces = ob_geo->geometry().faces();
 			if (!faces.size()) {
 				if ((faces = ob_geo->geometry().edges()).size()) {
-					primitive = 2;
+					primitive = LINES;
 				}
 				else {
 					continue;
@@ -168,7 +171,7 @@ bool repo::ifcUtility::SCHEMA_NS::GeometryHandler::retrieveGeometry(
 
 			for (int iface = 0; iface < faces.size(); iface += primitive)
 			{
-				auto matInd = primitive == 3 ? *matIndIt : ob_geo->geometry().materials().size();
+				auto matInd = *matIndIt;
 				if (indexMapping.find(matInd) == indexMapping.end())
 				{
 					//new material
@@ -204,6 +207,7 @@ bool repo::ifcUtility::SCHEMA_NS::GeometryHandler::retrieveGeometry(
 				for (int j = 0; j < primitive; ++j)
 				{
 					auto vIndex = faces[iface + j];
+
 					if (indexMapping[matInd].find(vIndex) == indexMapping[matInd].end())
 					{
 						//new index. create a mapping
@@ -228,7 +232,7 @@ bool repo::ifcUtility::SCHEMA_NS::GeometryHandler::retrieveGeometry(
 
 				post_faces[matInd].push_back(face);
 
-				if (primitive == 3) ++matIndIt;
+				++matIndIt;
 			}
 
 			auto guid = ob_geo->guid();

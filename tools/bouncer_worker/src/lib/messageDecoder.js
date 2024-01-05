@@ -41,16 +41,6 @@ const messageDecoder = (cmd) => {
 		const args = replaceSharedDirPlaceHolder(cmd).split(/\s+/);
 		res = { command: args[0] };
 		switch (args[0]) {
-			case 'importToy':
-				res = {
-					command: args[0],
-					database: args[1],
-					model: args[2],
-					toyModelID: args[3],
-					user: args[1],
-					skipPostProcessing: (args[4] && JSON.parse(args[4])) || {},
-				};
-				break;
 			case 'import':
 				{
 					// eslint-disable-next-line
@@ -73,7 +63,6 @@ const messageDecoder = (cmd) => {
 						cmdParams: [configPath, ...args],
 						database: cmdFile.database,
 						model: cmdFile.project,
-						toyFed: cmdFile.toyFed,
 						user: cmdFile.owner,
 						...res,
 					};

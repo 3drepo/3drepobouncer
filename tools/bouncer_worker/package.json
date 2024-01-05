@@ -1,6 +1,6 @@
 {
   "name": "3drepobouncerWorker",
-  "version": "5.6.1",
+  "version": "5.7.0",
   "engines": {
     "node": "18.x.x"
   },
@@ -20,7 +20,6 @@
     "crypto-js": "4.1.1",
     "elastic-apm-node": "3.41.1",
     "moment": "2.29.1",
-    "mongodb": "3.6.6",
     "systeminformation": "5.6.20",
     "tree-kill": "1.2.2",
     "uuid": "8.3.2",
