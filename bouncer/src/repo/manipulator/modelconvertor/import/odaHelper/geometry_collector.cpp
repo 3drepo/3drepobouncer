@@ -348,7 +348,11 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 						auto itPtr = elementToMetaNode.find(meshGroupEntry.first);
 						auto metaParent = partialObject ? parentId : meshNode.getSharedID();
 						if (itPtr == elementToMetaNode.end()) {
-							auto metaNode = createMetaNode(meshGroupEntry.first, {}, idToMeta[meshGroupEntry.first]);
+							std::unordered_map<std::string, repo::lib::RepoVariant> idToRepoVariantMeta;
+							for (const auto& entry : idToMeta[meshGroupEntry.first]) {
+								idToRepoVariantMeta[entry.first] = entry.second;
+							}
+							auto metaNode = createMetaNode(meshGroupEntry.first, {}, idToRepoVariantMeta);
 							elementToMetaNode[meshGroupEntry.first] = metaNode;
 							metaNodes.insert(metaNode);
 							metaNodeToParents[metaNode] = { metaParent };
@@ -381,10 +385,9 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 repo::core::model::MetadataNode*  GeometryCollector::createMetaNode(
 	const std::string &name,
 	const repo::lib::RepoUUID &parentId,
-	const  std::unordered_map<std::string, std::string> &metaValues
+	const  std::unordered_map<std::string, repo::lib::RepoVariant> &metaValues
 ) {
-	std::unordered_map<std::string, repo::lib::RepoVariant> metaData = repo::lib::RepoVariant().convertToRepoVariant(metaValues);
-	return new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(metaData, name, { parentId }));
+	return new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(metaValues, name, { parentId }));
 }
 
 repo::core::model::TransformationNode*  GeometryCollector::createTransNode(
@@ -395,7 +398,11 @@ repo::core::model::TransformationNode*  GeometryCollector::createTransNode(
 	auto transNode = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), name, { parentId }));
 	if (idToMeta.find(id) != idToMeta.end()) {
 		if (elementToMetaNode.find(id) == elementToMetaNode.end()) {
-			auto metaNode = createMetaNode(name, transNode->getSharedID(), idToMeta[id]);
+			std::unordered_map<std::string, repo::lib::RepoVariant> idToRepoVariantMeta;
+			for (const auto& entry : idToMeta[id]) {
+				idToRepoVariantMeta[entry.first] = repo::lib::RepoVariant(entry.second);
+			}
+			auto metaNode = createMetaNode(name, transNode->getSharedID(), idToRepoVariantMeta);
 			metaNodes.insert(metaNode);
 			elementToMetaNode[id] = metaNode;
 		}

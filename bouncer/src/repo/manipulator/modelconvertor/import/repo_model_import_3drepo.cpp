@@ -60,19 +60,19 @@ repo::core::model::MetadataNode* RepoModelImport::createMetadataNode(
 		switch (type)
 		{
 		case REPO_IMPORT_TYPE_BOOL:
-			value.convertToRepoVariant(props->second.get_value<bool>());
+			value = props->second.get_value<bool>();
 			break;
 
 		case REPO_IMPORT_TYPE_INT:
-			value.convertToRepoVariant(props->second.get_value<int>());
+			value = props->second.get_value<int>();
 			break;
 
 		case REPO_IMPORT_TYPE_DOUBLE:
-			value.convertToRepoVariant(props->second.get_value<double>());
+			value = props->second.get_value<double>();
 			break;
 
 		case REPO_IMPORT_TYPE_STRING:
-			value.convertToRepoVariant(props->second.get_value<std::string>());
+			value = props->second.get_value<std::string>();
 			break;
 		}
 		metaDataMap[key] = value;

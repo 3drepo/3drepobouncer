@@ -39,7 +39,7 @@ VectoriseDeviceDgn* DataProcessorDgn::device()
 }
 
 void printTree(const boost::property_tree::ptree &tree,
-	std::unordered_map<std::string, std::string> &resultCollector,
+	std::unordered_map<std::string, repo::lib::RepoVariant> &resultCollector,
 	const std::string & parentName = "",
 	const bool isXMLAttri = false)
 {
@@ -58,8 +58,8 @@ void printTree(const boost::property_tree::ptree &tree,
 	}
 }
 
-std::unordered_map<std::string, std::string> DataProcessorDgn::extractXMLLinkages(OdDgElementPtr pElm) {
-	std::unordered_map<std::string, std::string> entries;
+std::unordered_map<std::string, repo::lib::RepoVariant> DataProcessorDgn::extractXMLLinkages(OdDgElementPtr pElm) {
+	std::unordered_map<std::string, repo::lib::RepoVariant> entries;
 
 	entries["Element ID"] = convertToStdString(toString(pElm->elementId().getHandle()));
 
@@ -137,7 +137,7 @@ bool DataProcessorDgn::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	if (!collector->hasMeta(groupID)) {
 		auto meta = extractXMLLinkages(previousItem);
 		if (!layerName.empty()) {
-			meta["Layer Name"] = layerName;
+			meta["Layer Name"] = layerName.c_str();
 		}
 		collector->setMetadata(groupID, meta);
 	}

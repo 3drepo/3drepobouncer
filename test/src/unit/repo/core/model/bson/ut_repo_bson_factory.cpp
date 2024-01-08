@@ -286,11 +286,11 @@ TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
 {
 	std::string name = "MetaTest";
 	std::unordered_map<std::string, repo::lib::RepoVariant> metaDataUnMap;
-	metaDataUnMap["one"]= repo::lib::RepoVariant().convertToRepoVariant("!");
-	metaDataUnMap["two"] = repo::lib::RepoVariant().convertToRepoVariant("!!");
-	metaDataUnMap["three"] = repo::lib::RepoVariant().convertToRepoVariant("!!!");
-	metaDataUnMap["four"] = repo::lib::RepoVariant().convertToRepoVariant("!!!!");
-	metaDataUnMap["five"] = repo::lib::RepoVariant().convertToRepoVariant("!!!!!");
+	metaDataUnMap["one"].convertToRepoVariant("!");
+	metaDataUnMap["two"].convertToRepoVariant("!!");
+	metaDataUnMap["three"].convertToRepoVariant("!!!");
+	metaDataUnMap["four"].convertToRepoVariant("!!!!");
+	metaDataUnMap["five"].convertToRepoVariant("!!!!!");
 	MetadataNode metaNode = RepoBSONFactory::makeMetaDataNode(metaDataUnMap, name);
 
 	EXPECT_FALSE(metaNode.isEmpty());

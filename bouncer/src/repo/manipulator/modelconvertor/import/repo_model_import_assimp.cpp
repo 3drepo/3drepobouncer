@@ -572,19 +572,19 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 			switch (currentValue.mType)
 			{
 			case AI_BOOL:
-				metaEntries[key] = *(static_cast<bool *>(currentValue.mData));
+				metaEntries[key].convertToRepoVariant(currentValue.mData);
 				break;
 
 			case AI_INT32:
-				metaEntries[key] = *(static_cast<int *>(currentValue.mData));
+				metaEntries[key].convertToRepoVariant(currentValue.mData);
 				break;
 
 			case AI_UINT64:
-				metaEntries[key] = *(static_cast<uint64_t *>(currentValue.mData));
+				metaEntries[key].convertToRepoVariant(currentValue.mData);
 				break;
 
 			case AI_FLOAT:
-				metaEntries[key] = *(static_cast<float *>(currentValue.mData));
+				metaEntries[key].convertToRepoVariant(currentValue.mData);
 				break;
 
 			case AI_AISTRING:
@@ -592,7 +592,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 				val = (static_cast<aiString *>(currentValue.mData))->C_Str();
 
 				if (val.compare(key)) {
-					metaEntries[key] = val;
+					metaEntries[key] = val.c_str();
 				}
 
 				break;

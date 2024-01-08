@@ -137,31 +137,31 @@ void convertColor(OdString color, std::vector<float>& dest)
 }
 
 template <class T>
-void setMetadataValue(const OdString& category, const OdString& key, const T& value, std::unordered_map<std::string, std::string>& metadata)
+void setMetadataValue(const OdString& category, const OdString& key, const T& value, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	auto metaKey = convertToStdString(category) + "::" + (key.isEmpty() ? std::string("Value") : convertToStdString(key));
 	auto metaValue = boost::lexical_cast<std::string>(value);
-	metadata[metaKey] = metaValue;
+	metadata[metaKey] = boost::lexical_cast<std::string>(value);
 }
 
 // This specialisation is required for Linux as lexical cast doesn't know what to with OdString there
 template <>
-void setMetadataValue(const OdString& category, const OdString& key, const OdString& value, std::unordered_map<std::string, std::string>& metadata)
+void setMetadataValue(const OdString& category, const OdString& key, const OdString& value, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	setMetadataValue(category, key, convertToStdString(value), metadata);
 }
 
 // This specialisation is because v140 doesn't support constexpr and will attempt to find a to_string overload regardless of the if-statement
 template <>
-void setMetadataValue(const OdString& category, const OdString& key, const double& value, std::unordered_map<std::string, std::string>& metadata)
+void setMetadataValue(const OdString& category, const OdString& key, const double& value, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	setMetadataValue(category, key, std::to_string(value), metadata);
 }
 
-void removeFilepathFromMetadataValue(std::string key, std::unordered_map<std::string, std::string>& metadata)
+void removeFilepathFromMetadataValue(std::string key, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	if (metadata.find(key) != metadata.end()) {
-		metadata[key] = boost::filesystem::path(metadata[key]).filename().string();
+		metadata[key] = boost::filesystem::path(metadata[key].toString()).filename().c_str();
 	}
 }
 
@@ -217,7 +217,7 @@ void processMaterial(OdNwComponentPtr pComp, repo_material_t& repoMaterial)
 	// be useful (e.g. names and descriptions)
 }
 
-void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext context, std::unordered_map<std::string, std::string>& metadata)
+void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext context, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	if (modelItemPtr.isNull()) {
 		return;
@@ -758,7 +758,7 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 		// the benefit of smart groups, node properties are overridden with their
 		// parent's metadata
 
-		std::unordered_map<std::string, std::string> metadata;
+		std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
 		processAttributes(pNode, context, metadata);
 		processAttributes(context.parent, context, metadata);
 
