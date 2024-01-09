@@ -74,9 +74,12 @@ bool FileManager::uploadFileAndCommit(
 			// Bufferstream operates directly over the user provided array
 			boost::interprocess::bufferstream uncompressed((char*)bin.data(), bin.size());
 
+			// In stream form for filtering_istream
+			std::istream uncompressedStream(uncompressed.rdbuf());
+
 			boost::iostreams::filtering_istream in;
 			in.push(boost::iostreams::gzip_compressor());
-			in.push(std::istream(uncompressed.rdbuf())); // For some reason bufferstream is ambigous between stream and streambuf, so wrap it unambiguously
+			in.push(uncompressedStream); // For some reason bufferstream is ambigous between stream and streambuf, so wrap it unambiguously
 
 			boost::iostreams::copy(in, compressedstream);
 
@@ -85,7 +88,8 @@ bool FileManager::uploadFileAndCommit(
 
 			repo::core::model::RepoBSONBuilder builder;
 			builder.append("encoding", "gzip");
-			fileMetadata = metadata.cloneAndAddFields(&builder.obj());
+			auto bson = builder.obj();
+			fileMetadata = metadata.cloneAndAddFields(&bson);
 		}
 		break;
 	}
