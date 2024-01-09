@@ -46,7 +46,7 @@ IfcGeom::IteratorSettings createSettings()
 	itSettings.set(IfcGeom::IteratorSettings::GENERATE_UVS, true);
 	itSettings.set(IfcGeom::IteratorSettings::APPLY_LAYERSETS, false);
 	//Enable to get 2D lines. You will need to set CONVERT_BACK_UNITS to false or the model may not align.
-	itSettings.set(IfcGeom::IteratorSettings::INCLUDE_CURVES, true);
+	itSettings.set(IfcGeom::IteratorSettings::INCLUDE_CURVES, false);
 
 	return itSettings;
 }
