@@ -85,7 +85,7 @@ AssetModelExport::~AssetModelExport()
 repo_web_buffers_t AssetModelExport::getAllFilesExportedAsBuffer() const
 {
 	return {
-		std::unordered_map<std::string, std::vector<uint8_t>>(),
+		repo_web_geo_files_t(),
 		getJSONFilesAsBuffer(),
 		getUnityAssets()
 	};
