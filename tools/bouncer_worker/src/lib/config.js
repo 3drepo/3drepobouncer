@@ -36,9 +36,6 @@ const applyDefaultValuesIfUndefined = (config) => {
 	config.rabbitmq.maxWaitTimeMS = config.rabbitmq.maxWaitTimeMS || 5 * 60 * 1000;
 	config.rabbitmq.waitBeforeShutdownMS = config.rabbitmq.waitBeforeShutdownMS || 60000;
 
-	// toy project configurations
-	config.toyModelDir = config.toyModelDir || path.resolve(__dirname, '../../toy');
-
 	// logging related
 	config.logging = config.logging || {};
 	config.logging.taskLogDir = config.logging.taskLogDir || config.bouncer.log_dir || config.rabbitmq.sharedDir;

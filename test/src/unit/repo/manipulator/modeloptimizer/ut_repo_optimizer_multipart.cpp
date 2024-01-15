@@ -389,7 +389,7 @@ TEST(MultipartOptimizer, TestSingleOversizedMesh)
 	auto nMesh = 3;
 	repo::core::model::RepoNodeSet meshes, trans, dummy;
 	trans.insert(root);
-	meshes.insert(createRandomMesh(65537, false, 3, { rootID }));
+	meshes.insert(createRandomMesh(1200000 + 1, false, 3, { rootID })); // 1200000 comes from the const in repo_optimizer_multipart.cpp
 
 	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, dummy, meshes, dummy, dummy, dummy, trans);
 	ASSERT_TRUE(scene->hasRoot(DEFAULT_GRAPH));

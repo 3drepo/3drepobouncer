@@ -136,9 +136,9 @@ SRCModelExport::~SRCModelExport()
 {
 }
 
-std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getSRCFilesAsBuffer() const
+repo_web_geo_files_t SRCModelExport::getSRCFilesAsBuffer() const
 {
-	std::unordered_map < std::string, std::vector<uint8_t> > fileBuffers;
+	repo_web_geo_files_t fileBuffers;
 
 	for (const auto &treePair : trees)
 	{
