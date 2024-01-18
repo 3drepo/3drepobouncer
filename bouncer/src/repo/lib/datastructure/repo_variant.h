@@ -8,39 +8,38 @@
 namespace repo {
 
     namespace lib {
-        using repoVariant = boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float>;
-        enum class RepoDataType { STRING, FLOAT, BOOL, DOUBLE, INT, UINT64, OTHER};
+        using repoVariant = boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float,long, unsigned long, __int64>;
+        enum class RepoDataType { STRING, FLOAT, BOOL, DOUBLE, INT, UINT64,LONG,ULONG,INT64,OTHER};
         class RepoVariant:private repoVariant {
         private:
             RepoDataType type = RepoDataType::OTHER;
-            using boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float>::variant;  // Inherit constructors
+            using boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float,long, unsigned long, __int64>::variant;  // Inherit constructors
         public:
+            using boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float, long, unsigned long, __int64>::operator=;  // Inherit = operator
 
             // Default constructor
             RepoVariant() = default;
 
-            RepoVariant(const std::string& data) : repoVariant(data),type(RepoDataType::STRING) {};
+            RepoVariant(const bool& data) : repoVariant(data), type(RepoDataType::BOOL) {};
 
-            RepoVariant(bool& data) : repoVariant(data), type(RepoDataType::BOOL) {};
+            RepoVariant(const int& data) : repoVariant(data), type(RepoDataType::INT) {};
 
-            RepoVariant(int& data) : repoVariant(data), type(RepoDataType::INT) {};
+            RepoVariant(const double& data) : repoVariant(data), type(RepoDataType::DOUBLE) {};
 
-            RepoVariant(double& data) : repoVariant(data), type(RepoDataType::DOUBLE) {};
+            RepoVariant(const uint64_t& data) : repoVariant(data), type(RepoDataType::UINT64) {};
 
-            RepoVariant(uint64_t& data) : repoVariant(data), type(RepoDataType::UINT64) {};
+            RepoVariant(const float& data) : repoVariant(data), type(RepoDataType::FLOAT) {};
 
-            RepoVariant(float& data) : repoVariant(data), type(RepoDataType::FLOAT) {};
+            RepoVariant(const std::string& data) : repoVariant(data), type(RepoDataType::STRING) {};
 
-            RepoVariant(std::string& data) : repoVariant(data), type(RepoDataType::STRING) {};
+            RepoVariant(const long& data) : repoVariant(data), type(RepoDataType::LONG) {};
 
+            RepoVariant(const unsigned long& data) : repoVariant(data), type(RepoDataType::ULONG) {};
 
-            RepoVariant& operator=(const std::string& str) {
-                repoVariant::operator=(str);
-                return *this;
-            }
+            RepoVariant(const __int64& data) : repoVariant(data), type(RepoDataType::INT64) {};
             
             // New function to convert any data type to RepoVariant
-            template <typename T>
+           template <typename T>
             RepoVariant convertToRepoVariant(const T& value) {
                 switch (type)
                 {
@@ -50,6 +49,9 @@ namespace repo {
                 case repo::lib::RepoDataType::DOUBLE:
                 case repo::lib::RepoDataType::INT:
                 case repo::lib::RepoDataType::UINT64:
+                case repo::lib::RepoDataType::LONG:
+                case repo::lib::RepoDataType::ULONG:
+                case repo::lib::RepoDataType::INT64:
                     return RepoVariant(&value);
                     break;
                 case repo::lib::RepoDataType::OTHER:
@@ -123,18 +125,8 @@ namespace repo {
                     throw std::runtime_error("Failed to convert variant to float");
                 }
             }
-
-            static std::unordered_map<std::string, RepoVariant> convertToRepoVariant(const std::unordered_map<std::string, std::string>& inputMap) {
-                std::unordered_map<std::string, RepoVariant> result;
-
-                for (const auto& entry : inputMap) {
-                    result[entry.first] = RepoVariant(entry.second);
-                }
-
-                return result;
-            }
         };
 
-    }  // namespace lib
+    }
 
-}  // namespace repo
+}
