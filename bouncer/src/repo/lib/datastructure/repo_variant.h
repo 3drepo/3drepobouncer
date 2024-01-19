@@ -8,14 +8,14 @@
 namespace repo {
 
     namespace lib {
-        using repoVariant = boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float, long, unsigned long>;
-        enum class RepoDataType { STRING, FLOAT, BOOL, DOUBLE, INT, UINT64, LONG, ULONG, OTHER };
+        using repoVariant = boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float, long>;
+        enum class RepoDataType { STRING, FLOAT, BOOL, DOUBLE, INT, UINT64, LONG, OTHER };
         class RepoVariant :private repoVariant {
         private:
             RepoDataType type = RepoDataType::OTHER;
-            using boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float, long, unsigned long>::variant;  // Inherit constructors
+            using boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float, long>::variant;  // Inherit constructors
         public:
-            using boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float, long, unsigned long>::operator=;  // Inherit = operator
+            using boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float, long>::operator=;  // Inherit = operator
 
             // Default constructor
             RepoVariant() = default;
@@ -34,8 +34,6 @@ namespace repo {
 
             RepoVariant(const long& data) : repoVariant(data), type(RepoDataType::LONG) {};
 
-            RepoVariant(const unsigned long& data) : repoVariant(data), type(RepoDataType::ULONG) {};
-
             // New function to convert any data type to RepoVariant
             template <typename T>
             RepoVariant convertToRepoVariant(const T& value) {
@@ -48,7 +46,6 @@ namespace repo {
                 case repo::lib::RepoDataType::INT:
                 case repo::lib::RepoDataType::UINT64:
                 case repo::lib::RepoDataType::LONG:
-                case repo::lib::RepoDataType::ULONG:
                     return RepoVariant(&value);
                     break;
                 case repo::lib::RepoDataType::OTHER:

@@ -93,9 +93,6 @@ namespace repo {
 						case repo::lib::RepoDataType::INT:
 							mongo::BSONObjBuilder::append(label, repoVariant.toInt());
 							break;
-						case repo::lib::RepoDataType::UINT64:
-							//mongo::BSONObjBuilder::append(label, repoVariant.toUint64());
-							break;
 						case repo::lib::RepoDataType::OTHER:
 							break;
 						default:
