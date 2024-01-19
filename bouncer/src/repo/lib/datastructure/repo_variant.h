@@ -8,14 +8,14 @@
 namespace repo {
 
     namespace lib {
-        using repoVariant = boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float,long, unsigned long, __int64>;
-        enum class RepoDataType { STRING, FLOAT, BOOL, DOUBLE, INT, UINT64,LONG,ULONG,INT64,OTHER};
-        class RepoVariant:private repoVariant {
+        using repoVariant = boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float, long, unsigned long>;
+        enum class RepoDataType { STRING, FLOAT, BOOL, DOUBLE, INT, UINT64, LONG, ULONG, OTHER };
+        class RepoVariant :private repoVariant {
         private:
             RepoDataType type = RepoDataType::OTHER;
-            using boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float,long, unsigned long, __int64>::variant;  // Inherit constructors
+            using boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float, long, unsigned long>::variant;  // Inherit constructors
         public:
-            using boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float, long, unsigned long, __int64>::operator=;  // Inherit = operator
+            using boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float, long, unsigned long>::operator=;  // Inherit = operator
 
             // Default constructor
             RepoVariant() = default;
@@ -36,10 +36,8 @@ namespace repo {
 
             RepoVariant(const unsigned long& data) : repoVariant(data), type(RepoDataType::ULONG) {};
 
-            RepoVariant(const __int64& data) : repoVariant(data), type(RepoDataType::INT64) {};
-            
             // New function to convert any data type to RepoVariant
-           template <typename T>
+            template <typename T>
             RepoVariant convertToRepoVariant(const T& value) {
                 switch (type)
                 {
@@ -51,7 +49,6 @@ namespace repo {
                 case repo::lib::RepoDataType::UINT64:
                 case repo::lib::RepoDataType::LONG:
                 case repo::lib::RepoDataType::ULONG:
-                case repo::lib::RepoDataType::INT64:
                     return RepoVariant(&value);
                     break;
                 case repo::lib::RepoDataType::OTHER:
@@ -71,7 +68,7 @@ namespace repo {
                     return RepoDataType::OTHER;
                 }
             }
-                 
+
 
             bool isEmpty() const {
                 return this->which() == 0;
