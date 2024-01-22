@@ -204,7 +204,7 @@ namespace repo {
 				* REPO_ASSETGENERATOR_SUPPORT ON. If not, this method will report
 				* an error and return an empty buffers object.
 				*/
-				repo_web_buffers_t generateBundleBuffer(
+				repo_web_buffers_t generateRepoBundleBuffer(
 					repo::core::model::RepoScene* scene);				
 			};
 		}
