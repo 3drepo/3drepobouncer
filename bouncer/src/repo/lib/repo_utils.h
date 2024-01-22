@@ -30,12 +30,12 @@ namespace repo {
 			return boost::filesystem::exists(inputPath) && boost::filesystem::is_directory(inputPath);
 		}
 
-		static std::string getExtension(const boost::filesystem::path &inputPath)
+		static std::string getExtension(const boost::filesystem::path& inputPath)
 		{
 			return inputPath.extension().string();
 		}
 
-		static void toLower(std::string &str)
+		static void toLower(std::string& str)
 		{
 #if defined(_WIN32) || defined(_WIN64)
 			//windows forces us to put in locale
@@ -45,7 +45,7 @@ namespace repo {
 #endif
 		}
 
-		static void toUpper(std::string &str)
+		static void toUpper(std::string& str)
 		{
 #if defined(_WIN32) || defined(_WIN64)
 			//windows forces us to put in locale
@@ -55,30 +55,10 @@ namespace repo {
 #endif
 		}
 
-		static std::string getEnvString(std::string const & envVarName)
+		static std::string getEnvString(std::string const& envVarName)
 		{
 			char* value = getenv(envVarName.c_str());
 			return (value && strlen(value) > 0) ? value : "";
-		}
-
-		static bool hasFileWritePermissions(const boost::filesystem::path& inputPath) 
-		{
-		
-			boost::filesystem::file_status s = boost::filesystem::status(inputPath);
-			if (boost::filesystem::perms::owner_write == s.permissions()) {
-				return true;
-			}
-			return false;
-		}
-
-		static bool isFileWritingSpaceAvailable(const boost::filesystem::path& inputPath) 
-		{
-			boost::filesystem::path pathWithoutFileName = inputPath;
-			boost::filesystem::space_info spaceInfo = boost::filesystem::space(pathWithoutFileName.remove_filename());
-			if (spaceInfo.free > (boost::filesystem::file_size(inputPath) + 1)) {
-				return true;
-			}
-			return false;
 		}
 	}
 }

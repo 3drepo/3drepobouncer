@@ -112,17 +112,17 @@ std::vector<std::string> FSFileHandler::determineHierachy(
 }
 
 std::string FSFileHandler::uploadFile(
-	const std::string          &database,
-	const std::string          &collection,
-	const std::string          &keyName,
-	const std::vector<uint8_t> &bin
+	const std::string& database,
+	const std::string& collection,
+	const std::string& keyName,
+	const std::vector<uint8_t>& bin
 )
 {
 	auto hierachy = level > 0 ? determineHierachy(keyName) : std::vector<std::string>();
 
 	boost::filesystem::path path(dirPath);
 	std::stringstream ss;
-	for (const auto &levelName : hierachy) {
+	for (const auto& levelName : hierachy) {
 		path /= levelName;
 		ss << levelName << "/";
 		if (!repo::lib::doesDirExist(path)) {
@@ -133,37 +133,24 @@ std::string FSFileHandler::uploadFile(
 	path /= keyName;
 	ss << keyName;
 	int retries = 0;
-	bool failed = false;
+	bool failed;
 	do {
 		std::ofstream outs(path.string(), std::ios::out | std::ios::binary);
-		if (outs.good()) 
-		{
+
+		try {
 			outs.write((char*)bin.data(), bin.size());
 			outs.close();
 		}
-		else if(outs.bad() || outs.fail()) 
+		catch (const boost::filesystem::filesystem_error& e)
 		{
-			failed = true;
-			if (repo::lib::doesFileExist(path)) {
-				repoError << "Failed to write to file " << path.filename() <<" as file is already present. ";
-			}
-
-			if (repo::lib::hasFileWritePermissions(path)) {
-				repoError << "Failed to write to file " << path.filename() << " as file writting permission is not there.";
-			}
-
-			if (repo::lib::isFileWritingSpaceAvailable(path)) {
-				repoError << "Failed to write to file " << path.filename() << " as there is insufficient space on the disk.";
-			}
-
-			repoError << ((retries + 1) < 3 ? ".Retrying... " : "");
-			boost::this_thread::sleep(boost::posix_time::seconds(5));
+			repoError << "Failed to write to file on " << path.string() << " because " << e.code().message();
+			//repoError << "File writing error code :  " << e.code();
 		}
 		
-		/*if (failed = (!outs || !repo::lib::doesFileExist(path))) {
+		if (failed = (!outs || !repo::lib::doesFileExist(path))) {
 			repoError << "Failed to write to file " << path.string() << ((retries + 1) < 3 ? ". Retrying... " : "");
 			boost::this_thread::sleep(boost::posix_time::seconds(5));
-		}*/
+		}
 	} while (failed && ++retries < 3);
 
 	return failed ? "" : ss.str();
