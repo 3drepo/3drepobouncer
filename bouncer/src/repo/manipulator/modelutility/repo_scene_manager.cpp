@@ -25,6 +25,10 @@
 #include "../modeloptimizer/repo_optimizer_multipart.h"
 #include "../modelutility/repo_maker_selection_tree.h"
 
+#ifdef REPO_ASSETGENERATOR_SUPPORT
+#include <submodules/asset_generator/repo_model_export_repobundle.h>
+#endif
+
 using namespace repo::manipulator::modelutility;
 
 bool SceneManager::commitWebBuffers(
@@ -153,10 +157,24 @@ uint8_t SceneManager::commitScene(
 				}
 			}
 
+			if (success)
+			{
+				repoInfo << "Generating Repo Bundles...";
+				repo_web_buffers_t buffers;
+				if (success = generateWebViewBuffers(scene, repo::manipulator::modelconvertor::WebExportType::REPO, buffers, handler, fileManager))
+					repoInfo << "Repo Bundles for Stash stored into the database";
+				else
+					repoError << "failed to commit Repo Bundles";
+			}
+
 			if (success) {
 				errCode = REPOERR_OK;
-				bool isFed = scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size();
-				scene->updateRevisionStatus(handler, isFed ? repo::core::model::RevisionNode::UploadStatus::COMPLETE : repo::core::model::RevisionNode::UploadStatus::MISSING_BUNDLES);
+				bool shouldGenerateUnityAssetBundles = false;
+				if (shouldGenerateUnityAssetBundles)
+				{
+					bool isFed = scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size();
+					scene->updateRevisionStatus(handler, isFed ? repo::core::model::RevisionNode::UploadStatus::COMPLETE : repo::core::model::RevisionNode::UploadStatus::MISSING_BUNDLES);
+				}
 			}
 			else {
 				errCode = REPOERR_UPLOAD_FAILED;
@@ -386,6 +404,10 @@ bool SceneManager::generateWebViewBuffers(
 			geoStashExt = REPO_COLLECTION_STASH_SRC;
 			resultBuffers = generateSRCBuffer(scene);
 			break;
+		case repo::manipulator::modelconvertor::WebExportType::REPO:
+			geoStashExt = REPO_COLLECTION_STASH_BUNDLE;
+			resultBuffers = generateRepoBundleBuffer(scene);
+			break;
 		case repo::manipulator::modelconvertor::WebExportType::UNITY:
 			repoInfo << "Skipping buffer generation for Unity assets";
 			return true;
@@ -498,6 +520,27 @@ repo_web_buffers_t SceneManager::generateSRCBuffer(
 	}
 	else
 		repoError << "Export to SRC failed.";
+
+	return result;
+}
+
+repo_web_buffers_t SceneManager::generateRepoBundleBuffer(
+	repo::core::model::RepoScene* scene)
+{
+	repo_web_buffers_t result;
+#ifdef REPO_ASSETGENERATOR_SUPPORT
+	repo::manipulator::modelconvertor::RepoBundleExport bundleExport(scene);
+	if (bundleExport.isOk()) {
+		repoTrace << "Exporting Repo Bundles as buffer...";
+		result = bundleExport.getAllFilesExportedAsBuffer();
+	}
+	else
+	{
+		repoError << "Export of Repo Bundles failed.";
+	}
+#else
+	repoError << "Bouncer must be built with REPO_ASSETGENERATOR_SUPPORT ON in order to generate Repo Bundles.";
+#endif // REPO_ASSETGENERATOR
 
 	return result;
 }

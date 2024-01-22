@@ -196,6 +196,16 @@ namespace repo {
 				*/
 				repo_web_buffers_t generateSRCBuffer(
 					repo::core::model::RepoScene *scene);
+
+				/**
+				* Generate a set of Repo Bundles in the form of web buffers for
+				* the given scene. The stash must have beeen generated already.
+				* This method requires project to have been built with
+				* REPO_ASSETGENERATOR_SUPPORT ON. If not, this method will report
+				* an error and return an empty buffers object.
+				*/
+				repo_web_buffers_t generateBundleBuffer(
+					repo::core::model::RepoScene* scene);				
 			};
 		}
 	}
