@@ -32,7 +32,9 @@ matrix:
           - sudo apt-get install -y gnupg mongodb-org=5.0.8 mongodb-org-database=5.0.8 mongodb-org-server=5.0.8 mongodb-org-shell=5.0.8 mongodb-org-tools=5.0.8
           - sudo systemctl daemon-reload && sudo systemctl start mongod && echo $(mongod --version)
           - mkdir testData && cd testData
-          - svn --no-auth-cache export --username $TESTUSER --password $TESTPW https://github.com/3drepo/tests/trunk/cplusplus/bouncer
+          - git clone --filter=blob:none --sparse https://$TESTUSER:$TESTPW@github.com/3drepo/tests.git .
+          - git sparse-checkout add cplusplus/bouncer
+          - mv cplusplus/bouncer/ .
           - cd ../
           - until nc -z localhost 27017; do echo Waiting for MongoDB; sleep 1; done
           - mongo admin testData/bouncer/createUser.js
@@ -63,7 +65,7 @@ matrix:
           - echo ============ SYNCHRO INSTALL =============
           - sudo apt-get install zlib1g-dev libssl-dev libxft-dev
           - tar -zxf testData/bouncer/ext_libs/focal/thrift-0.12.0.tgz
-          - tar -zxf testData/bouncer/ext_libs/focal/3drepoSynchroReader-4.0.1.tgz
+          - tar -zxf testData/bouncer/ext_libs/focal/3drepoSynchroReader-4.0.2.tgz
           - tar -zxf testData/bouncer/ext_libs/focal/date.tgz
           - export THRIFT_ROOT=$PWD/thrift-0.12.0
           - export DATE_ROOT=$PWD/date
@@ -114,7 +116,9 @@ matrix:
           - export CXX="g++"
           - export CC="gcc"
           - mkdir testData && cd testData
-          - svn --no-auth-cache export --username $TESTUSER --password $TESTPW https://github.com/3drepo/tests/trunk/cplusplus/bouncer/ext_libs/focal
+          - git clone --filter=blob:none --sparse https://$TESTUSER:$TESTPW@github.com/3drepo/tests.git .
+          - git sparse-checkout add cplusplus/bouncer/ext_libs/focal
+          - mv cplusplus/bouncer/ext_libs/focal/ .
           - cd ../
           - echo ============ BOOST  INSTALL =============
           - sudo apt-get install libboost-all-dev
@@ -137,7 +141,7 @@ matrix:
           - echo ============ SYNCHRO INSTALL =============
           - sudo apt-get install zlib1g-dev libssl-dev libxft-dev
           - tar -zxf testData/focal/thrift-0.12.0.tgz
-          - tar -zxf testData/focal/3drepoSynchroReader-4.0.1.tgz
+          - tar -zxf testData/focal/3drepoSynchroReader-4.0.2.tgz
           - export THRIFT_ROOT=$PWD/thrift-0.12.0
           - export SYNCHRO_READER_ROOT=$PWD/3drepoSynchroReader
           - echo ============ CRYPTOLENS INSTALL =============

@@ -564,9 +564,9 @@ repo_web_buffers_t GLTFModelExport::getAllFilesExportedAsBuffer() const
 	return{ getGLTFFilesAsBuffer(), getJSONFilesAsBuffer() };
 }
 
-std::unordered_map<std::string, std::vector<uint8_t>> GLTFModelExport::getGLTFFilesAsBuffer() const
+repo_web_geo_files_t GLTFModelExport::getGLTFFilesAsBuffer() const
 {
-	std::unordered_map<std::string, std::vector<uint8_t>> files;
+	repo_web_geo_files_t files;
 	//GLTF files
 	for (const auto &pair : trees)
 	{

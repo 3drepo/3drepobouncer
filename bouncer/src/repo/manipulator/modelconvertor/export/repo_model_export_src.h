@@ -94,7 +94,7 @@ namespace repo{
 				* Return the SRC file as raw bytes buffer
 				* returns an empty vector if the export has failed
 				*/
-				std::unordered_map<std::string, std::vector<uint8_t>> getSRCFilesAsBuffer() const;
+				repo_web_geo_files_t getSRCFilesAsBuffer() const;
 			};
 		} //namespace modelconvertor
 	} //namespace manipulator
