@@ -65,7 +65,7 @@ matrix:
           - echo ============ SYNCHRO INSTALL =============
           - sudo apt-get install zlib1g-dev libssl-dev libxft-dev
           - tar -zxf testData/bouncer/ext_libs/focal/thrift-0.12.0.tgz
-          - tar -zxf testData/bouncer/ext_libs/focal/3drepoSynchroReader-4.0.1.tgz
+          - tar -zxf testData/bouncer/ext_libs/focal/3drepoSynchroReader-4.0.2.tgz
           - tar -zxf testData/bouncer/ext_libs/focal/date.tgz
           - export THRIFT_ROOT=$PWD/thrift-0.12.0
           - export DATE_ROOT=$PWD/date
@@ -141,7 +141,7 @@ matrix:
           - echo ============ SYNCHRO INSTALL =============
           - sudo apt-get install zlib1g-dev libssl-dev libxft-dev
           - tar -zxf testData/focal/thrift-0.12.0.tgz
-          - tar -zxf testData/focal/3drepoSynchroReader-4.0.1.tgz
+          - tar -zxf testData/focal/3drepoSynchroReader-4.0.2.tgz
           - export THRIFT_ROOT=$PWD/thrift-0.12.0
           - export SYNCHRO_READER_ROOT=$PWD/3drepoSynchroReader
           - echo ============ CRYPTOLENS INSTALL =============

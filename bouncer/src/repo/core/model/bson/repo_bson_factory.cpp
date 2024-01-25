@@ -439,7 +439,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
 			bytesize += sizeof(bName);
 		}
-		else
+		else if(uvByteCount > 0)
 		{
 			builder.appendBinary(
 				REPO_NODE_MESH_LABEL_UV_CHANNELS,
