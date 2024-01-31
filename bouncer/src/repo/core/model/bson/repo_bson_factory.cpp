@@ -181,13 +181,18 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 	RepoBSONBuilder builder;
 	// Compulsory fields such as _id, type, api as well as path
 	// and optional name
+	repoTrace<< "Test 1";
 	auto defaults = appendDefaults(REPO_NODE_TYPE_METADATA, apiLevel, repo::lib::RepoUUID::createUUID(), name, parents);
+	repoTrace << "Test 2";
 	builder.appendElements(defaults);
+	repoTrace << "Test 3";
 	std::vector<RepoBSON> metaEntries;
 	auto count = 0;
 	for (const auto& entry : data) {
 		std::string key = sanitiseKey(entry.first);
+		repoTrace << "Test 4";
 		repo::lib::RepoVariant value = entry.second;
+		repoTrace << "Test 5";
 
 		if (!key.empty() && !value.isEmpty())
 		{
@@ -198,9 +203,9 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 			metaEntries.push_back(metaEntryBuilder.obj());
 		}
 	}
-
+	repoTrace << "Test 6";
 	builder.appendArray(REPO_NODE_LABEL_METADATA, metaEntries);
-
+	repoTrace << "Test 7";
 	return MetadataNode(builder.obj());
 }
 
