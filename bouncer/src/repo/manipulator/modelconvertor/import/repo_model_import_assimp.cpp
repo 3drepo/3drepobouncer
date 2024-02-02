@@ -1330,6 +1330,8 @@ bool AssimpModelImport::SetRootOrientationFromMetadata()
 	reqMetadataExists &= assimpScene->mMetaData->Get<int32_t>("FrontAxisSign", frontAxisSign);
 	reqMetadataExists &= assimpScene->mMetaData->Get<int32_t>("CoordAxis", coordAxis);
 	reqMetadataExists &= assimpScene->mMetaData->Get<int32_t>("CoordAxisSign", coordAxisSign);
+	repoInfo << "reqMetadataExists=" << (reqMetadataExists) ? "true" : "false";
+	repoInfo <<"UpAxis="<< upAxis<<" UpAxisSign="<< upAxisSign<< " FrontAxis=" << frontAxis << " FrontAxisSign=" << frontAxisSign << " CoordAxis=" << coordAxis << " CoordAxisSign=" << coordAxisSign;
 	if (!reqMetadataExists) return false;
 
 	// create the transformation
