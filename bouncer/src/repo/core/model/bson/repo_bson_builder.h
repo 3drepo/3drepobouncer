@@ -54,8 +54,8 @@ namespace repo {
 				*/
 				template <class T>
 				void appendArray(
-					const std::string &label,
-					const std::vector<T> &vec)
+					const std::string& label,
+					const std::vector<T>& vec)
 				{
 					RepoBSONBuilder array;
 					for (unsigned int i = 0; i < vec.size(); ++i)
@@ -64,8 +64,8 @@ namespace repo {
 				}
 
 				void appendArray(
-					const std::string &label,
-					const RepoBSON &bson)
+					const std::string& label,
+					const RepoBSON& bson)
 				{
 					mongo::BSONObjBuilder::appendArray(label, bson);
 				}
@@ -75,37 +75,34 @@ namespace repo {
 					repo::lib::RepoVariant repoVariant)
 				{
 					repo::lib::RepoDataType repoDataType = repoVariant.getVariantType();
-					switch (repoDataType) {
-						switch (repoDataType)
-						{
-						case repo::lib::RepoDataType::STRING:
-							mongo::BSONObjBuilder::append(label, repoVariant.toString());
-							break;
-						case repo::lib::RepoDataType::FLOAT:
-							mongo::BSONObjBuilder::append(label, repoVariant.toFloat());
-							break;
-						case repo::lib::RepoDataType::BOOL:
-							mongo::BSONObjBuilder::append(label, repoVariant.toBool());
-							break;
-						case repo::lib::RepoDataType::DOUBLE:
-							mongo::BSONObjBuilder::append(label, repoVariant.toDouble());
-							break;
-						case repo::lib::RepoDataType::INT:
-							mongo::BSONObjBuilder::append(label, repoVariant.toInt());
-							break;
-						case repo::lib::RepoDataType::OTHER:
-							break;
-						default:
-							break;
-						}
+					switch (repoDataType)
+					{
+					case repo::lib::RepoDataType::STRING:
+						mongo::BSONObjBuilder::append(label, repoVariant.toString());
+						break;
+					case repo::lib::RepoDataType::FLOAT:
+						mongo::BSONObjBuilder::append(label, repoVariant.toFloat());
+						break;
+					case repo::lib::RepoDataType::BOOL:
+						mongo::BSONObjBuilder::append(label, repoVariant.toBool());
+						break;
+					case repo::lib::RepoDataType::DOUBLE:
+						mongo::BSONObjBuilder::append(label, repoVariant.toDouble());
+						break;
+					case repo::lib::RepoDataType::INT:
+						mongo::BSONObjBuilder::append(label, repoVariant.toInt());
+						break;
+					case repo::lib::RepoDataType::OTHER:
+						break;
+					default:
+						break;
 					}
-					
 				}
 
 				template<class T>
 				void append(
-					const std::string &label,
-					const T &item)
+					const std::string& label,
+					const T& item)
 				{
 					mongo::BSONObjBuilder::append(label, item);
 				}
@@ -118,11 +115,11 @@ namespace repo {
 				* @param sndLabel label for #2 in the pair
 				*/
 				void appendArrayPair(
-					const std::string &label,
-					const std::list<std::pair<std::string, std::string> > &list,
-					const std::string &fstLabel,
-					const std::string &sndLabel
-					);
+					const std::string& label,
+					const std::list<std::pair<std::string, std::string> >& list,
+					const std::string& fstLabel,
+					const std::string& sndLabel
+				);
 
 				/*!
 				* Appends a pointer to some memory as binary mongo::BinDataGeneral type array.
@@ -137,19 +134,19 @@ namespace repo {
 				*/
 				template <class T>
 				void appendBinary(
-					const std::string &label,
-					const T           *data,
-					const uint32_t  &byteCount)
+					const std::string& label,
+					const T* data,
+					const uint32_t& byteCount)
 				{
 					if (data && 0 < byteCount)
 					{
 						// Store data as a binary blob
-						try{
+						try {
 							appendBinData(
 								label, byteCount, mongo::BinDataGeneral,
-								(void *)data);
+								(void*)data);
 						}
-						catch (std::exception &e)
+						catch (std::exception& e)
 						{
 							repoError << "Failed: " << e.what();
 							exit(-1);
@@ -169,11 +166,11 @@ namespace repo {
 					mongo::BSONObjBuilder::appendElementsUnique(bson);
 				}
 
-				void appendTimeStamp(std::string label){
+				void appendTimeStamp(std::string label) {
 					appendTime(label, time(NULL) * 1000);
 				}
 
-				void appendTime(std::string label, const int64_t &ts){
+				void appendTime(std::string label, const int64_t& ts) {
 					mongo::Date_t date = mongo::Date_t(ts);
 					mongo::BSONObjBuilder::append(label, date);
 				}
@@ -184,7 +181,7 @@ namespace repo {
 				*/
 				RepoBSON obj();
 
-				mongo::BSONObj mongoObj() { return mongo::BSONObjBuilder::obj();  }
+				mongo::BSONObj mongoObj() { return mongo::BSONObjBuilder::obj(); }
 
 			private:
 				/**
@@ -195,28 +192,28 @@ namespace repo {
 				* @param uuid UUID
 				*/
 				void appendUUID(
-					const std::string &label,
-					const repo::lib::RepoUUID &uuid);
+					const std::string& label,
+					const repo::lib::RepoUUID& uuid);
 			};
 
 			// Template specialization
 			template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoUUID >
-				(
-					const std::string &label,
-					const repo::lib::RepoUUID &uuid
-					);
+			(
+				const std::string& label,
+				const repo::lib::RepoUUID& uuid
+			);
 
-				template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoVector3D >
-					(
-						const std::string &label,
-						const repo::lib::RepoVector3D &vec
-						);
+			template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoVector3D >
+			(
+				const std::string& label,
+				const repo::lib::RepoVector3D& vec
+			);
 
-					template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoMatrix >
-						(
-							const std::string &label,
-							const repo::lib::RepoMatrix &mat
-							);
+			template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoMatrix >
+			(
+				const std::string& label,
+				const repo::lib::RepoMatrix& mat
+			);
 		}// end namespace model
 	} // end namespace core
 } // end namespace repo

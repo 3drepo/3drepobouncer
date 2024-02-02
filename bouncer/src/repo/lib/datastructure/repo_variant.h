@@ -1,78 +1,61 @@
 #pragma once
 #include <iostream>
 #include <boost/variant.hpp>
-#include <boost/core/demangle.hpp>
 #include <string>
 #include "../../repo_bouncer_global.h"
+#include "repo/lib/repo_log.h"
 
 namespace repo {
 
     namespace lib {
-        using repoVariant = boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float, long>;
-        enum class RepoDataType { STRING, FLOAT, BOOL, DOUBLE, INT, UINT64, LONG, OTHER };
+        using repoVariant = boost::variant<int, double, std::string, bool, uint64_t, float, long>;
+        enum RepoDataType { STRING, FLOAT, BOOL, DOUBLE, INT, UINT64, LONG,OTHER };
         class RepoVariant :private repoVariant {
-        private:
-            RepoDataType type = RepoDataType::OTHER;
-            using boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float, long>::variant;  // Inherit constructors
         public:
-            using boost::variant<int, double, std::string, bool, boost::blank, uint64_t, float, long>::operator=;  // Inherit = operator
+            using repoVariant::operator=;
 
-            // Default constructor
-            RepoVariant() = default;
+            RepoVariant() : repoVariant() {};
 
-            RepoVariant(const bool& data) : repoVariant(data), type(RepoDataType::BOOL) {};
+            RepoVariant(const bool& data) : repoVariant(data){};
 
-            RepoVariant(const int& data) : repoVariant(data), type(RepoDataType::INT) {};
+            RepoVariant(const int& data) : repoVariant(data){};
 
-            RepoVariant(const double& data) : repoVariant(data), type(RepoDataType::DOUBLE) {};
+            RepoVariant(const double& data) : repoVariant(data){};
 
-            RepoVariant(const uint64_t& data) : repoVariant(data), type(RepoDataType::UINT64) {};
+            RepoVariant(const uint64_t& data) : repoVariant(data){};
 
-            RepoVariant(const float& data) : repoVariant(data), type(RepoDataType::FLOAT) {};
+            RepoVariant(const float& data) : repoVariant(data){};
 
-            RepoVariant(const std::string& data) : repoVariant(data), type(RepoDataType::STRING) {};
+            RepoVariant(const std::string& data) : repoVariant(data){};
 
-            RepoVariant(const long& data) : repoVariant(data), type(RepoDataType::LONG) {};
+            RepoVariant(const long& data) : repoVariant(data){};
 
-            // New function to convert any data type to RepoVariant
-            template <typename T>
-            RepoVariant convertToRepoVariant(const T& value) {
-                switch (type)
-                {
-                case repo::lib::RepoDataType::STRING:
-                case repo::lib::RepoDataType::FLOAT:
-                case repo::lib::RepoDataType::BOOL:
-                case repo::lib::RepoDataType::DOUBLE:
-                case repo::lib::RepoDataType::INT:
-                case repo::lib::RepoDataType::UINT64:
-                case repo::lib::RepoDataType::LONG:
-                    return RepoVariant(&value);
-                    break;
-                case repo::lib::RepoDataType::OTHER:
-                    return NULL;
-                    break;
-                default:
-                    break;
+            repo::lib::RepoDataType getVariantType() {
+                switch (which()) {
+                case 0:
+                    return repo::lib::RepoDataType::INT;
+                case 1:
+                    return repo::lib::RepoDataType::DOUBLE;
+                case 2:
+                    return repo::lib::RepoDataType::STRING;
+                case 3:
+                    return repo::lib::RepoDataType::BOOL;
+                case 4:
+                    return repo::lib::RepoDataType::UINT64;
+                case 5:
+                    return repo::lib::RepoDataType::FLOAT;
+                case 6:
+                    return repo::lib::RepoDataType::LONG;
                 }
+                return repo::lib::RepoDataType::OTHER;
             }
-
-            RepoDataType getVariantType() const {
-                try {
-                    return type;
-                }
-                catch (const boost::bad_get& e) {
-                    // Handle the case where the type is not supported
-                    return RepoDataType::OTHER;
-                }
-            }
-
 
             bool isEmpty() const {
-                return this->which() == 0;
+                return this->empty();
             }
 
             bool toBool() const {
-                return boost::get<bool>(this) != nullptr;
+                return boost::get<bool>(*this);
             }
 
             int toInt() const {
@@ -80,7 +63,7 @@ namespace repo {
                     return boost::get<int>(*this);
                 }
                 catch (const boost::bad_get& e) {
-                    throw std::runtime_error("Failed to convert variant to int");
+                    repoError << "Failed to convert variant to int";
                 }
             }
 
@@ -89,7 +72,7 @@ namespace repo {
                     return boost::get<double>(*this);
                 }
                 catch (const boost::bad_get& e) {
-                    throw std::runtime_error("Failed to convert variant to double");
+                    repoError << "Failed to convert variant to double";
                 }
             }
 
@@ -98,7 +81,7 @@ namespace repo {
                     return boost::get<std::string>(*this);
                 }
                 catch (const boost::bad_get& e) {
-                    throw std::runtime_error("Failed to convert variant to std::string");
+                    repoError << "Failed to convert variant to std::string";
                 }
             }
 
@@ -107,7 +90,7 @@ namespace repo {
                     return boost::get<uint64_t>(*this);
                 }
                 catch (const boost::bad_get& e) {
-                    throw std::runtime_error("Failed to convert variant to uint64_t");
+                    repoError << "Failed to convert variant to uint64_t";
                 }
             }
 
@@ -116,11 +99,10 @@ namespace repo {
                     return boost::get<float>(*this);
                 }
                 catch (const boost::bad_get& e) {
-                    throw std::runtime_error("Failed to convert variant to float");
+                    repoError << "Failed to convert variant to float";
                 }
             }
         };
 
     }
-
 }

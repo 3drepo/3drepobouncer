@@ -572,19 +572,19 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 			switch (currentValue.mType)
 			{
 			case AI_BOOL:
-				metaEntries[key].convertToRepoVariant(currentValue.mData);
+				metaEntries[key] = currentValue.mData;
 				break;
 
 			case AI_INT32:
-				metaEntries[key].convertToRepoVariant(currentValue.mData);
+				metaEntries[key] = currentValue.mData;
 				break;
 
 			case AI_UINT64:
-				metaEntries[key].convertToRepoVariant(currentValue.mData);
+				metaEntries[key]=currentValue.mData;
 				break;
 
 			case AI_FLOAT:
-				metaEntries[key].convertToRepoVariant(currentValue.mData);
+				metaEntries[key]=currentValue.mData;
 				break;
 
 			case AI_AISTRING:
