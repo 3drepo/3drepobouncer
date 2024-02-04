@@ -378,9 +378,7 @@ void RepoModelImport::createObject(const ptree& tree)
 	repo::lib::RepoMatrix parentTransform = trans_matrix_map[myParent];
 
 	boost::optional< const ptree& > transMatTree = tree.get_child_optional("transformation");
-	if (node_map.size() <= myParent) {
-		repoError << "Unexpected node count, has " << node_map.size() << " trying to reference " << myParent;
-	}
+	
 	repo::core::model::TransformationNode* transNode = (repo::core::model::TransformationNode*) node_map[myParent];
 
 	// We only want to create a node if there is a matrix transformation to represent, or 
