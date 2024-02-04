@@ -172,7 +172,7 @@ void processMaterial(OdNwComponentPtr pComp, repo_material_t& repoMaterial)
 {
 	// BimNv has two types of material, that used in Realistic Mode (i.e.textured)
 	// and Shaded Mode.
-	// getMaterial() is for realistic (and will hold the texture), while 
+	// getMaterial() is for realistic (and will hold the texture), while
 	// getOriginalMaterial() corresponds to Shaded mode.
 	// https://forum.opendesign.com/showthread.php?20568-How-to-get-the-LcOaExMaterial-properties
 
@@ -192,14 +192,14 @@ void processMaterial(OdNwComponentPtr pComp, repo_material_t& repoMaterial)
 		repoMaterial.opacity = 1 - pMaterial->getTransparency();
 	}
 
-	// Textures are ignored for now, but if a material has a texture, it will be 
-	// an OdNwTexture subclass instance, which we can check for and convert to, 
+	// Textures are ignored for now, but if a material has a texture, it will be
+	// an OdNwTexture subclass instance, which we can check for and convert to,
 	// to access the texture properties.
-	// 
+	//
 	// e.g. if (pMaterial->isA() == OdNwTexture::desc()) { }
 	//
-	// Unlike BimRv, the texture references in NWDs are not simple filenames, but 
-	// GUIDs into the shared Autodesk material database. A complete copy of the 
+	// Unlike BimRv, the texture references in NWDs are not simple filenames, but
+	// GUIDs into the shared Autodesk material database. A complete copy of the
 	// database is required to resolve textures, and if this is not set correctly
 	// returned texture paths will be null.
 	//
@@ -211,8 +211,8 @@ void processMaterial(OdNwComponentPtr pComp, repo_material_t& repoMaterial)
 	// material with getMaterialId() (instead of Shaded with getOriginalMaterialId()
 	// before checking.
 
-	// Beyond the above, it is possible to iterate over all the material properties 
-	// using pMaterial->getProperties(). These don't provide any higher level 
+	// Beyond the above, it is possible to iterate over all the material properties
+	// using pMaterial->getProperties(). These don't provide any higher level
 	// information (e.g. texture filenames) but do provide more details that could
 	// be useful (e.g. names and descriptions)
 }
@@ -223,13 +223,13 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 		return;
 	}
 
-	// This method extracts all the metadata for the model Item node, and stores 
-	// in in the metadata map as text, in the form it will be displayed on the 
+	// This method extracts all the metadata for the model Item node, and stores
+	// in in the metadata map as text, in the form it will be displayed on the
 	// web.
 
 	// The Attributes correspond to the Property Categories in Navisworks.
-	// There doesn't appear to be an attribute type for the Item Tab (LcOaNode). 
-	// We can infer these parameters from the OdNwModelItem, and its positition 
+	// There doesn't appear to be an attribute type for the Item Tab (LcOaNode).
+	// We can infer these parameters from the OdNwModelItem, and its positition
 	// in the scene graph.
 
 	auto ItemName = modelItemPtr->getDisplayName(); // e.g. "Newspaper"
@@ -264,8 +264,8 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 		setMetadataValue(OD_T("Item"), OD_T("GUID"), ItemGuid, metadata);
 	}
 
-	// The source file name is contained within the OdNwPartition entry in the 
-	// scene graph, which segments branches. Note that this will contain the 
+	// The source file name is contained within the OdNwPartition entry in the
+	// scene graph, which segments branches. Note that this will contain the
 	// entire path (the path where the NWD is stored, if an NWD).
 
 	if (!context.partition.isNull()) {
@@ -295,18 +295,18 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 		auto name = attribute->getClassName();
 		auto category = attribute->getClassDisplayName();
 
-		// Ignore some specific Categories based on their name, regardless of 
+		// Ignore some specific Categories based on their name, regardless of
 		// Attribute Type
 
 		if (std::find(ignoredCategories.begin(), ignoredCategories.end(), convertToStdString(category)) != ignoredCategories.end()) {
 			continue;
 		}
 
-		// OdNwAttributes don't self-identify their type like the OdNwFragments. 
+		// OdNwAttributes don't self-identify their type like the OdNwFragments.
 		// Cast to one of the sub-classes to determine the type.
 		// https://docs.opendesign.com/bimnv/OdNwAttribute.html
 
-		// The OdNwPropertyAttribute is the typical block that contains key-value 
+		// The OdNwPropertyAttribute is the typical block that contains key-value
 		// pairs in the Tabs in Navisworks. These hold most of the propreties.
 
 		auto propertiesAttribute = OdNwPropertyAttribute::cast(attribute);
@@ -525,7 +525,6 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 	for (auto key : ignoredKeys) {
 		metadata.erase(key);
 	}
-
 }
 
 OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
@@ -546,10 +545,10 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 		return eOk;
 	}
 
-	// BimNv can have multiple material representations. The getMaterialId member 
-	// refers to the Autodesk Material Properties. Other properties are represented 
+	// BimNv can have multiple material representations. The getMaterialId member
+	// refers to the Autodesk Material Properties. Other properties are represented
 	// in attributes.
-	// Parse the member first as a back-up, then override any settings that we 
+	// Parse the member first as a back-up, then override any settings that we
 	// know how to handle explicitly.
 
 	repo_material_t repoMaterial;
@@ -682,14 +681,14 @@ bool isCollection(OdNwModelItemPtr pNode)
 	return false;
 }
 
-// Traverses the scene graph recursively. Each invocation of this method operates 
-// on one OdNwModelItem, which is the basic OdNwObject that makes up the geometry 
+// Traverses the scene graph recursively. Each invocation of this method operates
+// on one OdNwModelItem, which is the basic OdNwObject that makes up the geometry
 // scene/the tree in the Standard View.
-// As the scene is traversed we pass nodes that delimit branches, e.g. nodes that 
-// define the start of whole files. These stateful properties are stored in the 
+// As the scene is traversed we pass nodes that delimit branches, e.g. nodes that
+// define the start of whole files. These stateful properties are stored in the
 // context.
 
-OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
+OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext context, const bool inCompositeObject = false)
 {
 	// GeometryCollector::setLayer() is used to build the hierarchy. Each layer
 	// corresponds to a 'node' in the Navisworks Standard View and has a unique Id.
@@ -699,10 +698,10 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 	auto levelName = convertToStdString(pNode->getDisplayName());
 	auto levelId = convertToStdString(toString(pNode->objectId().getHandle()));
 
-	// The OdNwPartition distinguishes between branches of the scene graph from 
+	// The OdNwPartition distinguishes between branches of the scene graph from
 	// different files.
 	// https://docs.opendesign.com/bimnv/OdNwPartition.html
-	// OdNwModelItemPtr does not self-report this type in getIcon() as with other 
+	// OdNwModelItemPtr does not self-report this type in getIcon() as with other
 	// types, so we test for it with a cast.
 
 	auto pPartition = OdNwPartition::cast(pNode);
@@ -731,38 +730,44 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 	// import their metadata.
 
 	const bool shouldImport = !isInstanced(pNode);
+	bool isComposite = inCompositeObject || pNode->getIcon() == NwModelItemIcon::COMPOSITE_OBJECT;
+
 	if (shouldImport)
 	{
-		context.collector->setLayer(levelId, levelName, context.parentLayerId);
-		context.parentLayerId = levelId; // Track the ancestry manually so we can skip nodes at will when building the output tree
+		// If we're building a composite object, Keep the layer the same.
+		if (!inCompositeObject) {
+			context.collector->setLayer(levelId, levelName, context.parentLayerId);
+			context.parentLayerId = levelId; // Track the ancestry manually so we can skip nodes at will when building the output tree
+
+			// GetIcon distinguishes the type of node. This corresponds to the icon seen in
+			// the Selection Tree View in Navisworks.
+			// https://docs.opendesign.com/bimnv/OdNwModelItem__getIcon@const.html
+			// https://knowledge.autodesk.com/support/navisworks-products/learn-explore/caas/CloudHelp/cloudhelp/2017/ENU/Navisworks-Manage/files/GUID-BC657B3A-5104-45B7-93A9-C6F4A10ED0D4-htm.html
+			// (Note "INSERT" -> "INSTANCED")
+
+			if (pNode->getIcon() == NwModelItemIcon::LAYER)
+			{
+				context.layer = pNode;
+			}
+
+			// To match the plug-in, and ensure metadata ends up in the right place for
+			// the benefit of smart groups, node properties are overridden with their
+			// parent's metadata
+
+			std::unordered_map<std::string, std::string> metadata;
+			processAttributes(pNode, context, metadata);
+			processAttributes(context.parent, context, metadata);
+
+			context.collector->setMetadata(levelId, metadata);
+		}
 
 		if (pNode->hasGeometry())
 		{
-			context.collector->setMeshGroup(levelId); // Group and Layer names must match, so the mesh is flagged as a partial object and different primitives are combined in the tree view
+			context.collector->setMeshGroup(inCompositeObject ? context.parentLayerId : levelId); // Group and Layer names must match, so the mesh is flagged as a partial object and different primitives are combined in the tree view
 			context.collector->setNextMeshName(levelName);
+
 			processGeometry(pNode, context);
 		}
-
-		// GetIcon distinguishes the type of node. This corresponds to the icon seen in
-		// the Selection Tree View in Navisworks.
-		// https://docs.opendesign.com/bimnv/OdNwModelItem__getIcon@const.html
-		// https://knowledge.autodesk.com/support/navisworks-products/learn-explore/caas/CloudHelp/cloudhelp/2017/ENU/Navisworks-Manage/files/GUID-BC657B3A-5104-45B7-93A9-C6F4A10ED0D4-htm.html
-		// (Note "INSERT" -> "INSTANCED")
-
-		if (pNode->getIcon() == NwModelItemIcon::LAYER)
-		{
-			context.layer = pNode;
-		}
-
-		// To match the plug-in, and ensure metadata ends up in the right place for 
-		// the benefit of smart groups, node properties are overridden with their
-		// parent's metadata
-
-		std::unordered_map<std::string, std::string> metadata;
-		processAttributes(pNode, context, metadata);
-		processAttributes(context.parent, context, metadata);
-
-		context.collector->setMetadata(levelId, metadata);
 
 		context.collector->stopMeshEntry();
 	}
@@ -780,7 +785,7 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 	{
 		if (!itRootChildren->isNull())
 		{
-			res = traverseSceneGraph(OdNwModelItem::cast(itRootChildren->safeOpenObject()), context);
+			res = traverseSceneGraph(OdNwModelItem::cast(itRootChildren->safeOpenObject()), context, isComposite);
 			if (res != eOk)
 			{
 				return res;
