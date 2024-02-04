@@ -378,15 +378,14 @@ void RepoModelImport::createObject(const ptree& tree)
 	repo::lib::RepoMatrix parentTransform = trans_matrix_map[myParent];
 
 	boost::optional< const ptree& > transMatTree = tree.get_child_optional("transformation");
-	
+
 	repo::core::model::TransformationNode* transNode = (repo::core::model::TransformationNode*) node_map[myParent];
 
-	// We only want to create a node if there is a matrix transformation to represent, or 
+	// We only want to create a node if there is a matrix transformation to represent, or
 	// we're trying to represent a different entity to its parent. Otherwise, reuse the parent transform and only store the geometry
 	bool isEntity = !transName.empty() || transMatTree;
 
 	if (isEntity) {
-	
 		if (transMatTree) {
 			repo::lib::RepoMatrix transMat = repo::lib::RepoMatrix(as_vector<float>(tree, "transformation"));
 			trans_matrix_map.push_back(parentTransform * transMat);
@@ -431,8 +430,6 @@ void RepoModelImport::createObject(const ptree& tree)
 			*meta = meta->cloneAndAddParent(metaParentIDs);
 		}
 	}
-
-	
 }
 
 void RepoModelImport::skipAheadInFile(long amount)
@@ -607,7 +604,7 @@ boost::property_tree::ptree RepoModelImport::getNextJSON(long jsonSize)
 repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t& errCode)
 {
 	repoInfo << "Generating scene";
-	
+
 	// Process root node
 	boost::property_tree::ptree root = getNextJSON(sizes[1]);
 	std::string rootName = root.get<std::string>("name", "");
