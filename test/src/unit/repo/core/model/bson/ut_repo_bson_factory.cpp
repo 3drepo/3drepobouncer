@@ -302,7 +302,6 @@ TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
 	ASSERT_FALSE(metaBSON.isEmpty());
 	for (uint32_t i = 0; i < metaDataUnMap.size(); ++i)
 	{
-		repoTrace << "MakeMetaDataNodeTest metaDataUnMap.size()="<< metaDataUnMap.size();
 		auto index = std::to_string(i);
 		ASSERT_TRUE(metaBSON.hasField(index));
 		auto metaEntry = metaBSON.getObjectField(index);
@@ -311,10 +310,6 @@ TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
 		auto keyIt = metaDataUnMap.find(key);
 		auto endIt = metaDataUnMap.end();
 		ASSERT_NE(keyIt, endIt);
-		/*repoTrace << "MakeMetaDataNodeTest key=" << key;
-		repoTrace << "MakeMetaDataNodeTest value=" << value;
-		repoTrace << "MakeMetaDataNodeTest keyIt->first=" << keyIt->first;
-		repoTrace << "MakeMetaDataNodeTest keyIt->second=" << keyIt->second.toString();*/
 		EXPECT_EQ(key, keyIt->first);
 		EXPECT_EQ(value, keyIt->second.toString());
 	}

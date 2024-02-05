@@ -485,8 +485,7 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 std::unordered_map<std::string, repo::lib::RepoVariant> DataProcessorRvt::fillMetadata(OdBmElementPtr element)
 {
 	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
-	metadata[REVIT_ELEMENT_ID] = (OdUInt64)element->objectId().getHandle();
-
+	metadata[REVIT_ELEMENT_ID] = std::to_string((OdUInt64)element->objectId().getHandle());;
 	try
 	{
 		fillMetadataByElemPtr(element, metadata);
