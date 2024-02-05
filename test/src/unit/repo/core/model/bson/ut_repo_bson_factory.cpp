@@ -293,7 +293,6 @@ TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
 	metaDataUnMap["four"]= std::string("!!!!");
 	metaDataUnMap["five"]= std::string("!!!!!");
 	MetadataNode metaNode = RepoBSONFactory::makeMetaDataNode(metaDataUnMap, name);
-
 	EXPECT_FALSE(metaNode.isEmpty());
 	EXPECT_EQ(name, metaNode.getName());
 	EXPECT_EQ(metaNode.getTypeAsEnum(), NodeType::METADATA);
@@ -303,13 +302,19 @@ TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
 	ASSERT_FALSE(metaBSON.isEmpty());
 	for (uint32_t i = 0; i < metaDataUnMap.size(); ++i)
 	{
+		repoTrace << "MakeMetaDataNodeTest metaDataUnMap.size()="<< metaDataUnMap.size();
 		auto index = std::to_string(i);
 		ASSERT_TRUE(metaBSON.hasField(index));
 		auto metaEntry = metaBSON.getObjectField(index);
 		auto key = metaEntry.getStringField(REPO_NODE_LABEL_META_KEY);
 		auto value = metaEntry.getStringField(REPO_NODE_LABEL_META_VALUE);
 		auto keyIt = metaDataUnMap.find(key);
-		ASSERT_NE(keyIt->first, metaDataUnMap.end()->first);
+		auto endIt = metaDataUnMap.end();
+		ASSERT_NE(keyIt, endIt);
+		/*repoTrace << "MakeMetaDataNodeTest key=" << key;
+		repoTrace << "MakeMetaDataNodeTest value=" << value;
+		repoTrace << "MakeMetaDataNodeTest keyIt->first=" << keyIt->first;
+		repoTrace << "MakeMetaDataNodeTest keyIt->second=" << keyIt->second.toString();*/
 		EXPECT_EQ(key, keyIt->first);
 		EXPECT_EQ(value, keyIt->second.toString());
 	}

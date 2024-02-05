@@ -513,12 +513,12 @@ TEST(RepoClientTest, UploadTestRVTRegressionTests)
 	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload8));
 	EXPECT_TRUE(projectExists(db, "rvtTest8"));
 	// In rvtMeta3, some of these elements belong to systems, and others do not
-	/*EXPECT_TRUE(projectHasGeometryWithMetadata(db, "rvtTest8", "Element ID", "702167"));
+	EXPECT_TRUE(projectHasGeometryWithMetadata(db, "rvtTest8", "Element ID", "702167"));
 	EXPECT_TRUE(projectHasGeometryWithMetadata(db, "rvtTest8", "Element ID", "702041"));
 	EXPECT_TRUE(projectHasGeometryWithMetadata(db, "rvtTest8", "Element ID", "706118"));
 	EXPECT_TRUE(projectHasGeometryWithMetadata(db, "rvtTest8", "Element ID", "706347"));
 	EXPECT_TRUE(projectHasGeometryWithMetadata(db, "rvtTest8", "Element ID", "703971"));
-	EXPECT_TRUE(projectHasGeometryWithMetadata(db, "rvtTest8", "Element ID", "704116"));*/
+	EXPECT_TRUE(projectHasGeometryWithMetadata(db, "rvtTest8", "Element ID", "704116"));
 }
 
 TEST(RepoClientTest, UploadTestMissingFieldsInJSON)

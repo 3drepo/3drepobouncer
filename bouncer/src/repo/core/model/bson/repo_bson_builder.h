@@ -78,21 +78,32 @@ namespace repo {
 					switch (repoDataType)
 					{
 					case repo::lib::RepoDataType::STRING:
+						repoTrace << "appendRepoVariant STRING label=" << label;
+						repoTrace << "appendRepoVariant STRING value=" << repoVariant.toString();
 						mongo::BSONObjBuilder::append(label, repoVariant.toString());
 						break;
 					case repo::lib::RepoDataType::FLOAT:
+						repoTrace << "appendRepoVariant FLOAT label=" << label;
+						repoTrace << "appendRepoVariant FLOAT value=" << repoVariant.toFloat();
 						mongo::BSONObjBuilder::append(label, repoVariant.toFloat());
 						break;
 					case repo::lib::RepoDataType::BOOL:
+						repoTrace << "appendRepoVariant BOOL label=" << label;
+						repoTrace << "appendRepoVariant BOOL value=" << repoVariant.toBool();
 						mongo::BSONObjBuilder::append(label, repoVariant.toBool());
 						break;
 					case repo::lib::RepoDataType::DOUBLE:
+						repoTrace << "appendRepoVariant DOUBLE label=" << label;
+						repoTrace << "appendRepoVariant DOUBLE value=" << repoVariant.toDouble();
 						mongo::BSONObjBuilder::append(label, repoVariant.toDouble());
 						break;
 					case repo::lib::RepoDataType::INT:
+						repoTrace << "appendRepoVariant INT label=" << label;
+						repoTrace << "appendRepoVariant INT value=" << repoVariant.toInt();
 						mongo::BSONObjBuilder::append(label, repoVariant.toInt());
 						break;
 					case repo::lib::RepoDataType::OTHER:
+						repoTrace << "appendRepoVariant STRING label=" << label;
 						break;
 					default:
 						break;

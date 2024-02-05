@@ -191,8 +191,6 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 		if (!key.empty() && !value.isEmpty())
 		{
 			RepoBSONBuilder metaEntryBuilder;
-			repoTrace << "makeMetaDataNode key=" << key;
-			repoTrace << "makeMetaDataNode value=" << value.toString();
 			metaEntryBuilder.append(REPO_NODE_LABEL_META_KEY, key);
 			//Check if it is a number, if it is, store it as a number
 			metaEntryBuilder.appendRepoVariant(REPO_NODE_LABEL_META_VALUE, value);
