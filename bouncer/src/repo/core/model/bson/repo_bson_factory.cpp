@@ -248,15 +248,16 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 }
 
 MeshNode RepoBSONFactory::makeMeshNode(
-	const std::vector<repo::lib::RepoVector3D>                  &vertices,
+	const std::vector<repo::lib::RepoVector3D>        &vertices,
 	const std::vector<repo_face_t>                    &faces,
-	const std::vector<repo::lib::RepoVector3D>                  &normals,
+	const std::vector<repo::lib::RepoVector3D>        &normals,
 	const std::vector<std::vector<float>>             &boundingBox,
 	const std::vector<std::vector<repo::lib::RepoVector2D>>   &uvChannels,
 	const std::vector<repo_color4d_t>                 &colors,
-	const std::string                           &name,
-	const std::vector<repo::lib::RepoUUID>      &parents,
-	const int                                   &apiLevel)
+	const std::vector<float>                          &ids,
+	const std::string                                 &name,
+	const std::vector<repo::lib::RepoUUID>            &parents,
+	const int                                         &apiLevel)
 {
 	RepoBSONBuilder builder;
 	uint64_t bytesize = 0; //track the (approximate) size to know when we need to offload to gridFS
@@ -446,6 +447,31 @@ MeshNode RepoBSONFactory::makeMeshNode(
 				&colors[0],
 				colors.size() * sizeof(colors[0]));
 			bytesize += colorsByteCount;
+		}
+	}
+
+	if (ids.size())
+	{
+		auto idsByteCount = ids.size() * sizeof(ids[0]);
+
+		if (idsByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
+		{
+			std::string bName = uniqueID.toString() + "_ids";
+			//inclusion of this binary exceeds the maximum, store separately
+			binMapping[REPO_NODE_MESH_LABEL_IDS] =
+				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
+			binMapping[REPO_NODE_MESH_LABEL_IDS].second.resize(idsByteCount); //uint8_t will ensure it is a byte addrressing
+			memcpy(binMapping[REPO_NODE_MESH_LABEL_IDS].second.data(), &ids[0], idsByteCount);
+
+			bytesize += sizeof(bName);
+		}
+		else
+		{
+			builder.appendBinary(
+				REPO_NODE_MESH_LABEL_IDS,
+				&ids[0],
+				ids.size() * sizeof(ids[0]));
+			bytesize += idsByteCount;
 		}
 	}
 

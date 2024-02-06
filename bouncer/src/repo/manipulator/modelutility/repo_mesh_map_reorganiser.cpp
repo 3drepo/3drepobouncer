@@ -157,7 +157,14 @@ repo::core::model::MeshNode MeshMapReorganiser::getRemappedMesh() const
 			bboxArr.push_back({ bbox[1].x, bbox[1].y, bbox[1].z });
 		}
 
-		auto newMesh = repo::core::model::RepoBSONFactory::makeMeshNode(newVertices, newFaces, newNormals, bboxArr, newUVs, newColors);
+		auto submeshIds = getIDMapArrays();
+		std::vector<float> newIds;
+		for (auto& buf : submeshIds)
+		{
+			newIds.insert(newIds.end(), buf.begin(), buf.end());
+		}
+
+		auto newMesh = repo::core::model::RepoBSONFactory::makeMeshNode(newVertices, newFaces, newNormals, bboxArr, newUVs, newColors, newIds);
 		repo::core::model::RepoBSONBuilder builder;
 		builder.append(REPO_NODE_LABEL_ID, mesh->getUniqueID());
 		builder.append(REPO_NODE_LABEL_SHARED_ID, mesh->getSharedID());

@@ -239,6 +239,7 @@ bool AssetModelExport::generateTreeRepresentation()
 		unityAssets = core::model::RepoBSONFactory::makeRepoUnityAssets(
 			scene->getRevisionID(),
 			assetFiles,
+			{},
 			scene->getDatabaseName(),
 			scene->getProjectName(),
 			scene->getWorldOffset(),
