@@ -108,6 +108,13 @@ void PropertyTree::addToTree<std::string>(
 	}
 }
 
+PropertyTree::PropertyTree(const repo::lib::RepoVector3D& vector)
+{
+	addToTree("x", vector.x);
+	addToTree("y", vector.y);
+	addToTree("z", vector.z);
+}
+
 template <>
 void PropertyTree::addToTree<repo::lib::RepoUUID>(
 	const std::string          &label,
@@ -138,6 +145,19 @@ void PropertyTree::addToTree<repo::lib::RepoVector3D64>(
 	ss << value.x << " " << value.y << " " << value.z;
 
 	addToTree(label, ss.str());
+}
+
+template <>
+void PropertyTree::addToTree<repo_color4d_t>(
+	const std::string& label,
+	const repo_color4d_t& value)
+{
+	PropertyTree tree;
+	tree.addToTree("r", value.r);
+	tree.addToTree("g", value.g);
+	tree.addToTree("b", value.b);
+	tree.addToTree("a", value.a);
+	mergeSubTree(label, tree);
 }
 
 template <>

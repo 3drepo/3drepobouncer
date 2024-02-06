@@ -141,12 +141,39 @@ typedef struct {
 	}
 }repo_material_t;
 
-typedef struct {
+struct repo_color4d_t {
 	float r;
 	float g;
 	float b;
 	float a;
-}repo_color4d_t;
+
+	repo_color4d_t()
+	{
+		a = 1;
+	}
+
+	repo_color4d_t(float r, float g, float b, float a) : r(r), g(g), b(b), a(a)
+	{
+	}
+
+	repo_color4d_t(float r, float g, float b) : r(r), g(g), b(b), a(1)
+	{
+	}
+
+	repo_color4d_t(std::vector<float> v)
+	{
+		r = v[0];
+		g = v[1];
+		b = v[2];
+		if (v.size() > 3) {
+			a = v[3];
+		}
+		else
+		{
+			a = 1;
+		}
+	}
+};
 
 typedef std::vector<uint32_t> repo_face_t;
 
