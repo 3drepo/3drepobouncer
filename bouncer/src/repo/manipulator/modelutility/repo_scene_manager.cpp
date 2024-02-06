@@ -41,6 +41,7 @@ bool SceneManager::commitWebBuffers(
 {
 	bool success = true;
 	std::string jsonStashExt = REPO_COLLECTION_STASH_JSON;
+	std::string assetsStashExt = REPO_COLLECTION_STASH_UNITY;
 	std::string databaseName = scene->getDatabaseName();
 	std::string projectName = scene->getProjectName();
 
@@ -73,16 +74,17 @@ bool SceneManager::commitWebBuffers(
 	}
 
 	std::string errMsg;
-	if (REPO_COLLECTION_STASH_UNITY == geoStashExt)
+
+	if(!resultBuffers.unityAssets.isEmpty())
 	{
-		if (success &= handler->upsertDocument(databaseName, projectName + "." + geoStashExt, resultBuffers.unityAssets,
+		if (success &= handler->upsertDocument(databaseName, projectName + "." + assetsStashExt, resultBuffers.unityAssets,
 			true, errMsg))
 		{
-			repoInfo << "Unity assets list added successfully.";
+			repoInfo << "Assets list added successfully.";
 		}
 		else
 		{
-			repoError << "Failed to add Unity assets list: " << errMsg;;
+			repoError << "Failed to add assets list: " << errMsg;;
 		}
 	}
 

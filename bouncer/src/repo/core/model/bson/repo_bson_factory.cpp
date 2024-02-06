@@ -707,6 +707,7 @@ RepoUser RepoBSONFactory::makeRepoUser(
 RepoUnityAssets RepoBSONFactory::makeRepoUnityAssets(
 	const repo::lib::RepoUUID                   &revisionID,
 	const std::vector<std::string>              &assets,
+	const std::vector<std::string>              &repoBundleFiles,
 	const std::string                           &database,
 	const std::string                           &model,
 	const std::vector<double>                   &offset,
@@ -721,6 +722,9 @@ RepoUnityAssets RepoBSONFactory::makeRepoUnityAssets(
 
 	if (assets.size())
 		builder.appendArray(REPO_UNITY_ASSETS_LABEL_ASSETS, assets);
+
+	if (repoBundleFiles.size())
+		builder.appendArray(REPO_UNITY_ASSETS_LABEL_REPOBUNDLES, repoBundleFiles);
 
 	if (!database.empty())
 		builder.append(REPO_LABEL_DATABASE, database);

@@ -152,7 +152,8 @@ namespace repo {
 				*/
 				static RepoUnityAssets makeRepoUnityAssets(
 					const repo::lib::RepoUUID                              &revisionID,
-					const std::vector<std::string>                         &assets,
+					const std::vector<std::string>                         &unityAssetFiles,
+					const std::vector<std::string>                         &repoBundleFiles,
 					const std::string                                      &database,
 					const std::string                                      &model,
 					const std::vector<double>                              &offset,

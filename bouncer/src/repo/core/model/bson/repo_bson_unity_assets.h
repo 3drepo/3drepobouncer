@@ -31,6 +31,7 @@ namespace repo {
 			//
 			//------------------------------------------------------------------------------
 #define REPO_UNITY_ASSETS_LABEL_ASSETS "assets"
+#define REPO_UNITY_ASSETS_LABEL_REPOBUNDLES "repoBundles"
 #define REPO_UNITY_ASSETS_LABEL_OFFSET "offset"
 #define REPO_UNITY_ASSETS_LABEL_VRASSETS "vrAssets"
 #define REPO_UNITY_ASSETS_LABEL_IOSASSETS "iosAssets"
