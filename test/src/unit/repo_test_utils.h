@@ -238,13 +238,7 @@ static bool projectHasGeometryWithMetadata(std::string dbName, std::string proje
 					// toString will stringify the underlying type of the value, in the same
 					// way it is stringified for the frontend.
 
-					//auto aValue = entry.toMongoElement().Obj().getField(REPO_NODE_LABEL_META_VALUE).toString(false);
 					auto aValue = entry.toMongoElement().Obj().getField(REPO_NODE_LABEL_META_VALUE).String();
-					if (aKey == key) {
-						repoInfo << "projectHasGeometryWithMetadata aKey=" << aKey << " aValue=" << aValue << " condition=" << (aKey == key && aValue == value) ? "true" : "false";
-						repoInfo << "metaDataNode->getParentIDs() size=" << (metaDataNode->getParentIDs()).size();
-					}
-						
 					if (aKey == key && aValue == value)
 					{
 						// This metadata node contains the key-value pair we are looking for. Now
