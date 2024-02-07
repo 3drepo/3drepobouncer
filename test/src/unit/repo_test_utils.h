@@ -223,6 +223,7 @@ static bool projectHasGeometryWithMetadata(std::string dbName, std::string proje
 			for (auto m : meshes) {
 				auto meshNode = dynamic_cast<repo::core::model::MeshNode*>(m);
 				sharedIdToMeshNode[meshNode->getSharedID()] = meshNode;
+				repoInfo << "meshNode SharedId=" << meshNode->getSharedID().toString();
 			}
 
 			for (auto m : metadata) {
@@ -237,13 +238,17 @@ static bool projectHasGeometryWithMetadata(std::string dbName, std::string proje
 					// toString will stringify the underlying type of the value, in the same
 					// way it is stringified for the frontend.
 
-					auto aValue = entry.toMongoElement().Obj().getField(REPO_NODE_LABEL_META_VALUE).toString(false);
-
+					//auto aValue = entry.toMongoElement().Obj().getField(REPO_NODE_LABEL_META_VALUE).toString(false);
+					auto aValue = entry.toMongoElement().Obj().getField(REPO_NODE_LABEL_META_VALUE).String();
+					if (aKey == key) {
+						repoInfo << "projectHasGeometryWithMetadata aKey=" << aKey << " aValue=" << aValue << " condition=" << (aKey == key && aValue == value) ? "true" : "false";
+						repoInfo << "metaDataNode->getParentIDs() size=" << (metaDataNode->getParentIDs()).size();
+					}
+						
 					if (aKey == key && aValue == value)
 					{
 						// This metadata node contains the key-value pair we are looking for. Now
 						// check if there is geometry associated with it.
-
 						for (auto p : metaDataNode->getParentIDs())
 						{
 							if (sharedIdToMeshNode.find(p) != sharedIdToMeshNode.end())
