@@ -181,6 +181,16 @@ struct repo_color4d_t {
 		b = v[2];
 		this->a = a;
 	}
+
+	repo_color4d_t operator* (float scalar)
+	{
+		return {
+			r * scalar,
+			b * scalar,
+			g * scalar,
+			a * scalar
+		};
+	}
 };
 
 typedef std::vector<uint32_t> repo_face_t;
