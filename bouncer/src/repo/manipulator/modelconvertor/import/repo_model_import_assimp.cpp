@@ -336,13 +336,13 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 		if (AI_SUCCESS == material->Get(AI_MATKEY_SHININESS, tempFloat))
 			repo_material.shininess = normaliseShininess(tempFloat);
 		else
-			repo_material.shininess = std::numeric_limits<float>::quiet_NaN();
+			repo_material.shininess = 0.5;
 		//--------------------------------------------------------------------------
 		// Shininess strength
 		if (AI_SUCCESS == material->Get(AI_MATKEY_SHININESS_STRENGTH, tempFloat))
 			repo_material.shininessStrength = tempFloat >= 0 ? tempFloat : 0;
 		else
-			repo_material.shininessStrength = std::numeric_limits<float>::quiet_NaN();
+			repo_material.shininessStrength = 0.5;
 
 		materialNode = new repo::core::model::MaterialNode(
 			repo::core::model::RepoBSONFactory::makeMaterialNode(repo_material, name));
