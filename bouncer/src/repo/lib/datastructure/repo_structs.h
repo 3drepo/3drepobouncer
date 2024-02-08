@@ -173,6 +173,14 @@ struct repo_color4d_t {
 			a = 1;
 		}
 	}
+
+	repo_color4d_t(std::vector<float> v, float a)
+	{
+		r = v[0];
+		g = v[1];
+		b = v[2];
+		this->a = a;
+	}
 };
 
 typedef std::vector<uint32_t> repo_face_t;
