@@ -74,7 +74,10 @@ repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 				error = REPOERR_NO_MESHES;
 			}
 			else {
-				if (modelConvertor->requireReorientation()) {
+				std::string ext = repo::lib::getExtension(file);
+				repo::lib::toLower(ext);
+				bool isFbxFile = ext == ".fbx";
+				if ((config.shouldRotateModel() && !isFbxFile) || modelConvertor->requireReorientation()) {
 					repoTrace << "rotating model by 270 degress on the x axis...";
 					scene->reorientateDirectXModel();
 				}
