@@ -16,6 +16,8 @@
 */
 #include <stdio.h>
 #include <boost/thread.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
 #include "repo_file_handler_fs.h"
 
 #include "../../model/repo_model_global.h"
@@ -112,10 +114,10 @@ std::vector<std::string> FSFileHandler::determineHierachy(
 }
 
 std::string FSFileHandler::uploadFile(
-	const std::string& database,
-	const std::string& collection,
-	const std::string& keyName,
-	const std::vector<uint8_t>& bin
+	const std::string          &database,
+	const std::string          &collection,
+	const std::string          &keyName,
+	const std::vector<uint8_t> &bin
 )
 {
 	auto hierachy = level > 0 ? determineHierachy(keyName) : std::vector<std::string>();
@@ -135,8 +137,7 @@ std::string FSFileHandler::uploadFile(
 	int retries = 0;
 	bool failed;
 	do {
-		std::ofstream outs(path.string(), std::ios::out | std::ios::binary);
-
+		boost::filesystem::ofstream outs(path.string(), std::ios::out | std::ios::binary);
 		try {
 			outs.write((char*)bin.data(), bin.size());
 			outs.close();
