@@ -479,7 +479,7 @@ int32_t importFileAndCommit(
 	boost::filesystem::path filePath(fileLoc);
 	std::string fileExt = filePath.extension().string();
 	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
-	rotate |= fileExt == FBX_EXTENSION;
+	rotate &= fileExt != FBX_EXTENSION;
 
 	auto targetUnits = repo::manipulator::modelconvertor::ModelUnits::UNKNOWN;
 
