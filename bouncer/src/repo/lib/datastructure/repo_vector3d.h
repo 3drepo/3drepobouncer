@@ -35,7 +35,7 @@ namespace repo{
 		{
 		public:
 
-			_RepoVector3D<T>(const T &x = 0, const T &y = 0, const T &z = 0) : x(x), y(y), z(z) {}
+			_RepoVector3D<T>(T x = 0, T y = 0, T z = 0) : x(x), y(y), z(z) {}
 			_RepoVector3D<T>(const std::vector<T> &v)
 			{
 				x = (v.size() > 0) ? v[0] : 0;
@@ -72,20 +72,20 @@ namespace repo{
 
 			static _RepoVector3D<T> min(const _RepoVector3D<T>& a, const _RepoVector3D<T>& b)
 			{
-				return _RepoVector3D<T>({
+				return _RepoVector3D<T>(
 					std::min(a.x, b.x),
 					std::min(a.y, b.y),
 					std::min(a.z, b.z)
-				});
+				);
 			}
 
 			static _RepoVector3D<T> max(const _RepoVector3D<T>& a, const _RepoVector3D<T>& b)
 			{
-				return _RepoVector3D<T>({
+				return _RepoVector3D<T>(
 					std::max(a.x, b.x),
 					std::max(a.y, b.y),
 					std::max(a.z, b.z)
-					});
+				);
 			}
 
 			void normalize()
