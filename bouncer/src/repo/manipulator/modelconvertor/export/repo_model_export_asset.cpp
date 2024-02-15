@@ -246,7 +246,8 @@ bool AssetModelExport::generateTreeRepresentation()
 			vrAssetFiles,
 			iosAssetsFiles,
 			androidAssetsFiles,
-			jsons);
+			{} // The unity exporter no longer writes json files, as more comprehensive files are produced by the RepoBundles exporter
+		);
 	}
 
 	return success;

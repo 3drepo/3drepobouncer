@@ -78,7 +78,7 @@ bool SceneManager::commitWebBuffers(
 	if(!resultBuffers.unityAssets.isEmpty())
 	{
 		if (success &= handler->upsertDocument(databaseName, projectName + "." + assetsStashExt, resultBuffers.unityAssets,
-			true, errMsg))
+			false, errMsg))
 		{
 			repoInfo << "Assets list added successfully.";
 		}
@@ -171,7 +171,7 @@ uint8_t SceneManager::commitScene(
 
 			if (success) {
 				errCode = REPOERR_OK;
-				bool shouldGenerateUnityAssetBundles = false;
+				bool shouldGenerateUnityAssetBundles = true; // For now, these are just turned on. But if we need to add a flag in the db, it should be done here.
 				if (shouldGenerateUnityAssetBundles)
 				{
 					bool isFed = scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size();
