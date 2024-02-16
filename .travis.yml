@@ -8,6 +8,10 @@ matrix:
         - "18.12.1"
       script:
         - cd tools/bouncer_worker && yarn install && yarn lint
+
+      git:
+          submodules: false
+
     - language: cpp
       dist: focal
       name: Unit tests and integration tests
