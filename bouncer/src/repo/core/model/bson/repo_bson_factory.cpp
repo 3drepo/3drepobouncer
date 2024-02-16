@@ -479,9 +479,6 @@ MeshNode RepoBSONFactory::makeMeshNode(
 	// UV channels
 	if (uvChannels.size() > 0)
 	{
-		// Could be unsigned __int64 if BSON had such construct (the closest is only __int64)
-		builder.append(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT, (uint32_t)(uvChannels.size()));
-
 		std::vector<repo::lib::RepoVector2D> concatenated;
 
 		for (auto it = uvChannels.begin(); it != uvChannels.end(); ++it)
@@ -497,25 +494,30 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
 		uint64_t uvByteCount = concatenated.size() * sizeof(concatenated[0]);
 
-		if (uvByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
-		{
-			std::string bName = uniqueID.toString() + "_uv";
-			//inclusion of this binary exceeds the maximum, store separately
-			binMapping[REPO_NODE_MESH_LABEL_UV_CHANNELS] =
-				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
-			binMapping[REPO_NODE_MESH_LABEL_UV_CHANNELS].second.resize(uvByteCount); //uint8_t will ensure it is a byte addrressing
-			memcpy(binMapping[REPO_NODE_MESH_LABEL_UV_CHANNELS].second.data(), &concatenated[0], uvByteCount);
+		if (uvByteCount > 0) {
+			// Could be unsigned __int64 if BSON had such construct (the closest is only __int64)
+			builder.append(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT, (uint32_t)(uvChannels.size()));
 
-			bytesize += sizeof(bName);
-		}
-		else if(uvByteCount > 0)
-		{
-			builder.appendBinary(
-				REPO_NODE_MESH_LABEL_UV_CHANNELS,
-				&concatenated[0],
-				concatenated.size() * sizeof(concatenated[0]));
+			if (uvByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
+			{
+				std::string bName = uniqueID.toString() + "_uv";
+				//inclusion of this binary exceeds the maximum, store separately
+				binMapping[REPO_NODE_MESH_LABEL_UV_CHANNELS] =
+					std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
+				binMapping[REPO_NODE_MESH_LABEL_UV_CHANNELS].second.resize(uvByteCount); //uint8_t will ensure it is a byte addrressing
+				memcpy(binMapping[REPO_NODE_MESH_LABEL_UV_CHANNELS].second.data(), &concatenated[0], uvByteCount);
 
-			bytesize += uvByteCount;
+				bytesize += sizeof(bName);
+			}
+			else
+			{
+				builder.appendBinary(
+					REPO_NODE_MESH_LABEL_UV_CHANNELS,
+					&concatenated[0],
+					concatenated.size() * sizeof(concatenated[0]));
+
+				bytesize += uvByteCount;
+			}
 		}
 	}
 
