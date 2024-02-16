@@ -23,6 +23,8 @@ matrix:
               packages:
                   - gcc
                   - g++
+      git:
+          submodules: false
 
       before_install:
           - sudo apt remove mongodb && sudo apt purge mongodb && sudo apt autoremove && sudo rm -rf /var/lib/mongodb
@@ -70,6 +72,8 @@ matrix:
           - export THRIFT_ROOT=$PWD/thrift-0.12.0
           - export DATE_ROOT=$PWD/date
           - export SYNCHRO_READER_ROOT=$PWD/3drepoSynchroReader
+          - echo -e "machine github.com\n  login $TESTUSER\n  password $TESTPW" >~/.netrc
+          - git submodule update --init --recursive
 
       install:
           - sudo pip install cpp-coveralls
@@ -110,6 +114,8 @@ matrix:
               packages:
                   - gcc
                   - g++
+      git:
+          submodules: false
 
       before_install:
           - export BOUNCER_DIR=$PWD
@@ -153,6 +159,8 @@ matrix:
           - export LICENSE_RSA_PUB_KEY_EXP="1bc"
           - export LICENSE_AUTH_TOKEN="1bc"
           - export LICENSE_PRODUCT_ID=123
+          - echo -e "machine github.com\n  login $TESTUSER\n  password $TESTPW" >~/.netrc
+          - git submodule update --init --recursive
 
       before_script:
           - mkdir build && cd build
