@@ -25,7 +25,7 @@ project("3drepobouncer")
 cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -std=c++14 -pthread")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -Werror=return-type -std=c++14 -pthread")
 if(${APPLE})
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -framework Foundation")
 endif()
