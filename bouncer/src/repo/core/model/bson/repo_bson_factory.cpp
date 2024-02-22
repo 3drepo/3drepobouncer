@@ -742,7 +742,8 @@ RepoUnityAssets RepoBSONFactory::makeRepoUnityAssets(
 	const std::vector<std::string>              &vrAssetFiles,
 	const std::vector<std::string>              &iosAssetFiles,
 	const std::vector<std::string>              &androidAssetFiles,
-	const std::vector<std::string>              &jsonFiles)
+	const std::vector<std::string>              &unityJsonFiles,
+	const std::vector<std::string>              &repoJsonFiles)
 {
 	RepoBSONBuilder builder;
 
@@ -772,8 +773,11 @@ RepoUnityAssets RepoBSONFactory::makeRepoUnityAssets(
 	if (androidAssetFiles.size())
 		builder.appendArray(REPO_UNITY_ASSETS_LABEL_ANDROIDASSETS, androidAssetFiles);
 
-	if (jsonFiles.size())
-		builder.appendArray(REPO_UNITY_ASSETS_LABEL_JSONFILES, jsonFiles);
+	if (unityJsonFiles.size())
+		builder.appendArray(REPO_UNITY_ASSETS_LABEL_JSONFILES, unityJsonFiles);
+
+	if (repoJsonFiles.size())
+		builder.appendArray(REPO_UNITY_ASSETS_LABEL_REPOJSONS, repoJsonFiles);
 
 	return RepoUnityAssets(builder.obj());
 }

@@ -160,7 +160,8 @@ namespace repo {
 					const std::vector<std::string>                         &vrAssetFiles,
 					const std::vector<std::string>                         &iosAssetFiles,
 					const std::vector<std::string>                         &androidAssetFiles,
-					const std::vector<std::string>                         &jsonFiles);
+					const std::vector<std::string>                         &unityJsonFiles,
+					const std::vector<std::string>                         &repoJsonFiles);
 
 				/*
 				* -------------------- REPO NODES ------------------------
