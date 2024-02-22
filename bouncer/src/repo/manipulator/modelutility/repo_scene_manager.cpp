@@ -171,12 +171,8 @@ uint8_t SceneManager::commitScene(
 
 			if (success) {
 				errCode = REPOERR_OK;
-				bool shouldGenerateUnityAssetBundles = true; // For now, these are just turned on. But if we need to add a flag in the db, it should be done here.
-				if (shouldGenerateUnityAssetBundles)
-				{
-					bool isFed = scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size();
-					scene->updateRevisionStatus(handler, isFed ? repo::core::model::RevisionNode::UploadStatus::COMPLETE : repo::core::model::RevisionNode::UploadStatus::MISSING_BUNDLES);
-				}
+				bool isFed = scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size();
+				scene->updateRevisionStatus(handler, isFed ? repo::core::model::RevisionNode::UploadStatus::COMPLETE : repo::core::model::RevisionNode::UploadStatus::MISSING_BUNDLES);
 			}
 			else {
 				errCode = REPOERR_UPLOAD_FAILED;
