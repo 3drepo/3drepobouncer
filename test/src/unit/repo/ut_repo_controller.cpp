@@ -105,7 +105,7 @@ TEST(RepoControllerTest, LoadSceneFromFile) {
 			> scene->getAllTransformations(defaultG).size());
 
 	//Import the scene with root trans rotated
-	auto sceneRotated = controller->loadSceneFromFile(getDataPath(simpleModel), errCode, repo::manipulator::modelconvertor::ModelImportConfig(true, true, true));
+	auto sceneRotated = controller->loadSceneFromFile(getDataPath(simpleModel), errCode, repo::manipulator::modelconvertor::ModelImportConfig(true, true));
 	EXPECT_EQ(errCode, 0);
 	EXPECT_TRUE(sceneRotated);
 	ASSERT_TRUE(sceneRotated->getRoot(defaultG));

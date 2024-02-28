@@ -74,7 +74,7 @@ repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 				error = REPOERR_NO_MESHES;
 			}
 			else {
-				if (config.shouldRotateModel() || modelConvertor->requireReorientation()) {
+				if (modelConvertor->requireReorientation()) {
 					repoTrace << "rotating model by 270 degress on the x axis...";
 					scene->reorientateDirectXModel();
 				}
