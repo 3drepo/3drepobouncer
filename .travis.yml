@@ -49,7 +49,7 @@ matrix:
           - tar -zxf testData/bouncer/ext_libs/focal/mongo-cxx-driver.tgz
           - export MONGO_ROOT=$PWD/mongo-cxx-driver
           - echo ============ ASSIMP INSTALL =============
-          - tar -zxf testData/bouncer/ext_libs/focal/assimp.tgz
+          - tar -zxf testData/bouncer/ext_libs/focal/assimp-5.0.1.tgz
           - export ASSIMP_ROOT=$PWD/assimp
           - echo ============ IFCOPENSHELL INSTALL =============
           - tar -zxf testData/bouncer/ext_libs/focal/IfcOpenShell_v0.6.0/OCCT_3drepoFix.tgz
@@ -126,7 +126,7 @@ matrix:
           - tar -zxf testData/focal/mongo-cxx-driver.tgz
           - export MONGO_ROOT=$PWD/mongo-cxx-driver
           - echo ============ ASSIMP INSTALL =============
-          - tar -zxf testData/focal/assimp.tgz
+          - tar -zxf testData/focal/assimp-5.0.1.tgz
           - export ASSIMP_ROOT=$PWD/assimp
           - echo ============ IFCOPENSHELL INSTALL =============
           - tar -zxf testData/focal/IfcOpenShell_v0.6.0/OCCT_3drepoFix.tgz
