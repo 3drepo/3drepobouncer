@@ -427,7 +427,6 @@ int32_t importFileAndCommit(
 			timeZone = jsonTree.get<std::string>("timezone", "");
 			units = jsonTree.get<std::string>("units", "");
 			lod = jsonTree.get<int>("lod", 0);
-			rotate = jsonTree.get<bool>("dxrotate", rotate);
 			importAnimations = jsonTree.get<bool>("importAnimations", importAnimations);
 			fileLoc = jsonTree.get<std::string>("file", "");
 			auto revIdStr = jsonTree.get<std::string>("revId", "");
@@ -453,33 +452,13 @@ int32_t importFileAndCommit(
 
 		if (command.nArgcs > 3)
 		{
-			//If 3rd argument is "dxrotate", we need to rotate the X axis
-			//Otherwise the user is trying to name the owner, rotate is false.
-			std::string arg3 = command.args[3];
-			if (arg3 == "dxrotate")
-			{
-				rotate = true;
-			}
-			else
-			{
-				owner = command.args[3];
-			}
-		}
-		if (command.nArgcs > 4)
-		{
-			//If the last argument is rotate, this is owner
-			//otherwise this is configFile (confusing, I know.)
-			if (rotate)
-			{
-				owner = command.args[4];
-			}
+			owner = command.args[3];
 		}
 	}
 
 	boost::filesystem::path filePath(fileLoc);
 	std::string fileExt = filePath.extension().string();
 	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
-	rotate |= fileExt == FBX_EXTENSION;
 
 	auto targetUnits = repo::manipulator::modelconvertor::ModelUnits::UNKNOWN;
 
@@ -491,12 +470,11 @@ int32_t importFileAndCommit(
 	//Something like this: http://stackoverflow.com/questions/15541498/how-to-implement-subcommands-using-boost-program-options
 
 	repoLog("File: " + fileLoc + " database: " + database
-		+ " project: " + project + " target units: " + (units.empty() ? "none" : units) + " rotate: "
-		+ (rotate ? "true" : "false") + " owner :" + owner + " importAnimations: " + (importAnimations ? "true" : "false")
+		+ " project: " + project + " target units: " + (units.empty() ? "none" : units) + " owner :" + owner + " importAnimations: " + (importAnimations ? "true" : "false")
 		+ " lod: " + std::to_string(lod)
 	);
 
-	repo::manipulator::modelconvertor::ModelImportConfig config(true, rotate, importAnimations, targetUnits, timeZone, lod);
+	repo::manipulator::modelconvertor::ModelImportConfig config(true, importAnimations, targetUnits, timeZone, lod);
 	uint8_t err;
 	repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileLoc, err, config);
 	if (graph)
