@@ -25,8 +25,8 @@
 #include "../modeloptimizer/repo_optimizer_multipart.h"
 #include "../modelutility/repo_maker_selection_tree.h"
 
-#ifdef REPO_ASSETGENERATOR_SUPPORT
-#include <submodules/asset_generator/repo_model_export_repobundle.h>
+#ifdef REPO_ASSET_GENERATOR_SUPPORT
+#include <submodules/asset_generator/src/repo_model_export_repobundle.h>
 #endif
 
 using namespace repo::manipulator::modelutility;
@@ -526,7 +526,7 @@ repo_web_buffers_t SceneManager::generateRepoBundleBuffer(
 	repo::core::model::RepoScene* scene)
 {
 	repo_web_buffers_t result;
-#ifdef REPO_ASSETGENERATOR_SUPPORT
+#ifdef REPO_ASSET_GENERATOR_SUPPORT
 	repo::manipulator::modelconvertor::RepoBundleExport bundleExport(scene);
 	if (bundleExport.isOk()) {
 		repoTrace << "Exporting Repo Bundles as buffer...";
@@ -537,7 +537,7 @@ repo_web_buffers_t SceneManager::generateRepoBundleBuffer(
 		repoError << "Export of Repo Bundles failed.";
 	}
 #else
-	repoError << "Bouncer must be built with REPO_ASSETGENERATOR_SUPPORT ON in order to generate Repo Bundles.";
+	repoError << "Bouncer must be built with REPO_ASSET_GENERATOR_SUPPORT ON in order to generate Repo Bundles.";
 #endif // REPO_ASSETGENERATOR
 
 	return result;
