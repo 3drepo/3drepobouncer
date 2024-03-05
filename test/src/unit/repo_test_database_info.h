@@ -140,13 +140,6 @@ static repo::core::handler::MongoDatabaseHandler* getHandler()
 		REPO_GTEST_AUTH_DATABASE,
 		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
 
-	static bool first = true;
-
-	if (first) {
-		repo::core::handler::fileservice::FileManager::instantiateManager(getConfig(), handler);
-		first = false;
-	}
-
 	return handler;
 }
 
