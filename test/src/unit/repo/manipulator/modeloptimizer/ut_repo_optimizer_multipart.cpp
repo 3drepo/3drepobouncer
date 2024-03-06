@@ -59,7 +59,7 @@ repo::core::model::MeshNode* createRandomMesh(const int nVertices, const bool ha
 
 	std::vector<std::vector<float>> bbox = { 
 		{FLT_MAX, FLT_MAX, FLT_MAX},
-		{FLT_MIN, FLT_MIN, FLT_MIN}
+		{-FLT_MAX, -FLT_MAX, -FLT_MAX}
 	};
 
 	for (int i = 0; i < nVertices; ++i) {
