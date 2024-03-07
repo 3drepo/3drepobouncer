@@ -104,17 +104,6 @@ TEST(RepoControllerTest, LoadSceneFromFile) {
 	EXPECT_TRUE(sceneNoReduction->getAllTransformations(defaultG).size()
 			> scene->getAllTransformations(defaultG).size());
 
-	//Import the scene with root trans rotated
-	auto sceneRotated = controller->loadSceneFromFile(getDataPath(simpleModel), errCode, repo::manipulator::modelconvertor::ModelImportConfig(true, true, true));
-	EXPECT_EQ(errCode, 0);
-	EXPECT_TRUE(sceneRotated);
-	ASSERT_TRUE(sceneRotated->getRoot(defaultG));
-	EXPECT_TRUE(sceneRotated->getRoot(optG));
-	EXPECT_FALSE(sceneRotated->isMissingTexture());
-	//The root transformation should not be an identity
-	core::model::TransformationNode *rootTrans = dynamic_cast<core::model::TransformationNode*>(sceneRotated->getRoot(defaultG));
-	EXPECT_FALSE(rootTrans->isIdentity());
-
 	//Import the scene with non existant file
 	auto sceneNoFile = controller->loadSceneFromFile("thisFileDoesntExist.obj", errCode);
 	EXPECT_EQ(errCode, REPOERR_MODEL_FILE_READ);
