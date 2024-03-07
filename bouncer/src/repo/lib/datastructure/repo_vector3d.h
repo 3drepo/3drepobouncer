@@ -24,7 +24,7 @@
 #include <sstream>
 #include <cmath>
 
-// Undefine windef.h's wierdness
+// Undefine windef.h's weirdness
 #undef min
 #undef max
 
