@@ -35,7 +35,7 @@ namespace repo{
 		{
 		public:
 
-			_RepoVector3D<T>(T x = 0, T y = 0, T z = 0) : x(x), y(y), z(z) {}
+			_RepoVector3D<T>(const T x = 0, const T y = 0, const T z = 0) : x(x), y(y), z(z) {}
 			_RepoVector3D<T>(const std::vector<T> &v)
 			{
 				x = (v.size() > 0) ? v[0] : 0;
