@@ -265,15 +265,15 @@ std::vector<repo_color4d_t> MeshNode::getColors() const
 	return colors;
 }
 
-std::vector<float> MeshNode::getIds() const
+std::vector<float> MeshNode::getSubmeshIds() const
 {
-	std::vector<float> ids = std::vector<float>();
-	if (hasBinField(REPO_NODE_MESH_LABEL_IDS))
+	std::vector<float> submeshIds = std::vector<float>();
+	if (hasBinField(REPO_NODE_MESH_LABEL_SUBMESH_IDS))
 	{
-		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_IDS, ids);
+		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_SUBMESH_IDS, submeshIds);
 	}
 
-	return ids;
+	return submeshIds;
 }
 
 std::vector<repo::lib::RepoVector3D> MeshNode::getVertices() const

@@ -150,18 +150,37 @@ namespace repo {
 				* @param jsonFiles list of JSON files
 				* @return returns a RepoUnityAssets
 				*/
-				static RepoUnityAssets makeRepoUnityAssets(
+				static RepoUnityAssets makeUnityAssets(
 					const repo::lib::RepoUUID                              &revisionID,
 					const std::vector<std::string>                         &unityAssetFiles,
-					const std::vector<std::string>                         &repoBundleFiles,
 					const std::string                                      &database,
 					const std::string                                      &model,
 					const std::vector<double>                              &offset,
 					const std::vector<std::string>                         &vrAssetFiles,
 					const std::vector<std::string>                         &iosAssetFiles,
 					const std::vector<std::string>                         &androidAssetFiles,
-					const std::vector<std::string>                         &unityJsonFiles,
-					const std::vector<std::string>                         &repoJsonFiles);
+					const std::vector<std::string>                         &unityJsonFiles);
+
+				/**
+				* Create a RepoBundles list BSON
+				* @param revisionID uuid of the revision (default: master branch)
+				* @param assets list of RepoBundles assets
+				* @param database name of the database to reference
+				* @param model model ID (string) to reference
+				* @param offset world offset shift coordinates of the model
+				* @param vrAssetFiles list of VR Unity assets
+				* @param iosAssetFiles list of iOS Unity assets
+				* @param androidAssetFiles list of android Unity assets
+				* @param jsonFiles list of JSON files
+				* @return returns a RepoUnityAssets
+				*/
+				static RepoUnityAssets makeRepoBundleAssets(
+					const repo::lib::RepoUUID& revisionID,
+					const std::vector<std::string>& repoBundleFiles,
+					const std::string& database,
+					const std::string& model,
+					const std::vector<double>& offset,
+					const std::vector<std::string>& repoJsonFiles);
 
 				/*
 				* -------------------- REPO NODES ------------------------

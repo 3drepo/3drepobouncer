@@ -41,7 +41,8 @@ bool SceneManager::commitWebBuffers(
 {
 	bool success = true;
 	std::string jsonStashExt = REPO_COLLECTION_STASH_JSON;
-	std::string assetsStashExt = REPO_COLLECTION_STASH_UNITY;
+	std::string unityAssetsStashExt = REPO_COLLECTION_STASH_UNITY;
+	std::string repoAssetsStashExt = REPO_COLLECTION_STASH_BUNDLE;
 	std::string databaseName = scene->getDatabaseName();
 	std::string projectName = scene->getProjectName();
 
@@ -77,8 +78,21 @@ bool SceneManager::commitWebBuffers(
 
 	if(!resultBuffers.unityAssets.isEmpty())
 	{
-		if (success &= handler->upsertDocument(databaseName, projectName + "." + assetsStashExt, resultBuffers.unityAssets,
-			false, errMsg))
+		if (success &= handler->upsertDocument(databaseName, projectName + "." + unityAssetsStashExt, resultBuffers.unityAssets,
+			true, errMsg))
+		{
+			repoInfo << "Assets list added successfully.";
+		}
+		else
+		{
+			repoError << "Failed to add assets list: " << errMsg;;
+		}
+	}
+
+	if (!resultBuffers.repoAssets.isEmpty())
+	{
+		if (success &= handler->upsertDocument(databaseName, projectName + "." + repoAssetsStashExt, resultBuffers.repoAssets,
+			true, errMsg))
 		{
 			repoInfo << "Assets list added successfully.";
 		}

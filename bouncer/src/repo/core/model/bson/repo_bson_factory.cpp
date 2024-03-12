@@ -254,7 +254,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 	const std::vector<std::vector<float>>             &boundingBox,
 	const std::vector<std::vector<repo::lib::RepoVector2D>>   &uvChannels,
 	const std::vector<repo_color4d_t>                 &colors,
-	const std::vector<float>                          &ids,
+	const std::vector<float>                          &submeshIds,
 	const std::string                                 &name,
 	const std::vector<repo::lib::RepoUUID>            &parents,
 	const int                                         &apiLevel)
@@ -450,27 +450,27 @@ MeshNode RepoBSONFactory::makeMeshNode(
 		}
 	}
 
-	if (ids.size())
+	if (submeshIds.size())
 	{
-		auto idsByteCount = ids.size() * sizeof(ids[0]);
+		auto idsByteCount = submeshIds.size() * sizeof(submeshIds[0]);
 
 		if (idsByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
 		{
 			std::string bName = uniqueID.toString() + "_ids";
 			//inclusion of this binary exceeds the maximum, store separately
-			binMapping[REPO_NODE_MESH_LABEL_IDS] =
+			binMapping[REPO_NODE_MESH_LABEL_SUBMESH_IDS] =
 				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
-			binMapping[REPO_NODE_MESH_LABEL_IDS].second.resize(idsByteCount); //uint8_t will ensure it is a byte addrressing
-			memcpy(binMapping[REPO_NODE_MESH_LABEL_IDS].second.data(), &ids[0], idsByteCount);
+			binMapping[REPO_NODE_MESH_LABEL_SUBMESH_IDS].second.resize(idsByteCount); //uint8_t will ensure it is a byte addrressing
+			memcpy(binMapping[REPO_NODE_MESH_LABEL_SUBMESH_IDS].second.data(), &submeshIds[0], idsByteCount);
 
 			bytesize += sizeof(bName);
 		}
 		else
 		{
 			builder.appendBinary(
-				REPO_NODE_MESH_LABEL_IDS,
-				&ids[0],
-				ids.size() * sizeof(ids[0]));
+				REPO_NODE_MESH_LABEL_SUBMESH_IDS,
+				&submeshIds[0],
+				submeshIds.size() * sizeof(submeshIds[0]));
 			bytesize += idsByteCount;
 		}
 	}
@@ -732,18 +732,16 @@ RepoUser RepoBSONFactory::makeRepoUser(
 	return RepoUser(builder.obj());
 }
 
-RepoUnityAssets RepoBSONFactory::makeRepoUnityAssets(
+RepoUnityAssets RepoBSONFactory::makeUnityAssets(
 	const repo::lib::RepoUUID                   &revisionID,
 	const std::vector<std::string>              &assets,
-	const std::vector<std::string>              &repoBundleFiles,
 	const std::string                           &database,
 	const std::string                           &model,
 	const std::vector<double>                   &offset,
 	const std::vector<std::string>              &vrAssetFiles,
 	const std::vector<std::string>              &iosAssetFiles,
 	const std::vector<std::string>              &androidAssetFiles,
-	const std::vector<std::string>              &unityJsonFiles,
-	const std::vector<std::string>              &repoJsonFiles)
+	const std::vector<std::string>              &unityJsonFiles)
 {
 	RepoBSONBuilder builder;
 
@@ -751,9 +749,6 @@ RepoUnityAssets RepoBSONFactory::makeRepoUnityAssets(
 
 	if (assets.size())
 		builder.appendArray(REPO_UNITY_ASSETS_LABEL_ASSETS, assets);
-
-	if (repoBundleFiles.size())
-		builder.appendArray(REPO_UNITY_ASSETS_LABEL_REPOBUNDLES, repoBundleFiles);
 
 	if (!database.empty())
 		builder.append(REPO_LABEL_DATABASE, database);
@@ -776,8 +771,35 @@ RepoUnityAssets RepoBSONFactory::makeRepoUnityAssets(
 	if (unityJsonFiles.size())
 		builder.appendArray(REPO_UNITY_ASSETS_LABEL_JSONFILES, unityJsonFiles);
 
+	return RepoUnityAssets(builder.obj());
+}
+
+RepoUnityAssets RepoBSONFactory::makeRepoBundleAssets(
+	const repo::lib::RepoUUID& revisionID,
+	const std::vector<std::string>& repoBundleFiles,
+	const std::string& database,
+	const std::string& model,
+	const std::vector<double>& offset,
+	const std::vector<std::string>& repoJsonFiles)
+{
+	RepoBSONBuilder builder;
+
+	builder.append(REPO_LABEL_ID, revisionID);
+
+	if (repoBundleFiles.size())
+		builder.appendArray(REPO_UNITY_ASSETS_LABEL_ASSETS, repoBundleFiles);
+
+	if (!database.empty())
+		builder.append(REPO_LABEL_DATABASE, database);
+
+	if (!model.empty())
+		builder.append(REPO_LABEL_MODEL, model);
+
+	if (offset.size())
+		builder.appendArray(REPO_UNITY_ASSETS_LABEL_OFFSET, offset);
+
 	if (repoJsonFiles.size())
-		builder.appendArray(REPO_UNITY_ASSETS_LABEL_REPOJSONS, repoJsonFiles);
+		builder.appendArray(REPO_UNITY_ASSETS_LABEL_JSONFILES, repoJsonFiles);
 
 	return RepoUnityAssets(builder.obj());
 }

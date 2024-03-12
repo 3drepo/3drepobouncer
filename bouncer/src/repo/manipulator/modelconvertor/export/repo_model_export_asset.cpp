@@ -236,18 +236,16 @@ bool AssetModelExport::generateTreeRepresentation()
 			jsonTrees["/revision/" + scene->getRevisionID().toString() + "/supermeshes_unity.json"] = superMeshesTree;
 		}
 
-		unityAssets = core::model::RepoBSONFactory::makeRepoUnityAssets(
+		unityAssets = core::model::RepoBSONFactory::makeUnityAssets(
 			scene->getRevisionID(),
 			assetFiles,
-			{},
 			scene->getDatabaseName(),
 			scene->getProjectName(),
 			scene->getWorldOffset(),
 			vrAssetFiles,
 			iosAssetsFiles,
 			androidAssetsFiles,
-			jsons,
-			{}
+			jsons
 		);
 	}
 

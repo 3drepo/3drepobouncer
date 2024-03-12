@@ -32,6 +32,7 @@ struct repo_web_buffers_t{
 	repo_web_geo_files_t geoFiles; //files where geometery are stored
 	repo_web_json_files_t jsonFiles; //JSON mapping files
 	repo::core::model::RepoUnityAssets unityAssets; //Unity assets list
+	repo::core::model::RepoUnityAssets repoAssets; //RepoBundles assets list
 };
 
 //This is used to map info for multipart optimization
