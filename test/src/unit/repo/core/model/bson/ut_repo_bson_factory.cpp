@@ -359,7 +359,7 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 	auto fOut = mesh.getFaces();
 	auto cOut = mesh.getColors();
 	auto uvOut = mesh.getUVChannelsSeparated();
-	auto idOut = mesh.getIds();
+	auto idOut = mesh.getSubmeshIds();
 	EXPECT_TRUE(compareStdVectors(vectors, vOut));
 	EXPECT_TRUE(compareStdVectors(normals, nOut));
 	EXPECT_TRUE(compareStdVectors(faces, fOut));
@@ -397,7 +397,7 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 	fOut = mesh.getFaces();
 	cOut = mesh.getColors();
 	uvOut = mesh.getUVChannelsSeparated();
-	idOut = mesh.getIds();
+	idOut = mesh.getSubmeshIds();
 	EXPECT_TRUE(compareStdVectors(vectors, vOut));
 	EXPECT_TRUE(compareStdVectors(normals, nOut));
 	EXPECT_TRUE(compareStdVectors(faces, fOut));
