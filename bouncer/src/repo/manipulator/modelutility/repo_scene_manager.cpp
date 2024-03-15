@@ -25,6 +25,10 @@
 #include "../modeloptimizer/repo_optimizer_multipart.h"
 #include "../modelutility/repo_maker_selection_tree.h"
 
+#ifdef REPO_ASSET_GENERATOR_SUPPORT
+#include <submodules/asset_generator/src/repo_model_export_repobundle.h>
+#endif
+
 using namespace repo::manipulator::modelutility;
 
 bool SceneManager::commitWebBuffers(
@@ -37,6 +41,8 @@ bool SceneManager::commitWebBuffers(
 {
 	bool success = true;
 	std::string jsonStashExt = REPO_COLLECTION_STASH_JSON;
+	std::string unityAssetsStashExt = REPO_COLLECTION_STASH_UNITY;
+	std::string repoAssetsStashExt = REPO_COLLECTION_STASH_BUNDLE;
 	std::string databaseName = scene->getDatabaseName();
 	std::string projectName = scene->getProjectName();
 
@@ -69,16 +75,30 @@ bool SceneManager::commitWebBuffers(
 	}
 
 	std::string errMsg;
-	if (REPO_COLLECTION_STASH_UNITY == geoStashExt)
+
+	if(!resultBuffers.unityAssets.isEmpty())
 	{
-		if (success &= handler->upsertDocument(databaseName, projectName + "." + geoStashExt, resultBuffers.unityAssets,
+		if (success &= handler->upsertDocument(databaseName, projectName + "." + unityAssetsStashExt, resultBuffers.unityAssets,
 			true, errMsg))
 		{
-			repoInfo << "Unity assets list added successfully.";
+			repoInfo << "Assets list added successfully.";
 		}
 		else
 		{
-			repoError << "Failed to add Unity assets list: " << errMsg;;
+			repoError << "Failed to add assets list: " << errMsg;;
+		}
+	}
+
+	if (!resultBuffers.repoAssets.isEmpty())
+	{
+		if (success &= handler->upsertDocument(databaseName, projectName + "." + repoAssetsStashExt, resultBuffers.repoAssets,
+			true, errMsg))
+		{
+			repoInfo << "Assets list added successfully.";
+		}
+		else
+		{
+			repoError << "Failed to add assets list: " << errMsg;;
 		}
 	}
 
@@ -151,6 +171,16 @@ uint8_t SceneManager::commitScene(
 					else
 						repoError << "failed to commit SRC";
 				}
+			}
+
+			if (success)
+			{
+				repoInfo << "Generating Repo Bundles...";
+				repo_web_buffers_t buffers;
+				if (success = generateWebViewBuffers(scene, repo::manipulator::modelconvertor::WebExportType::REPO, buffers, handler, fileManager))
+					repoInfo << "Repo Bundles for Stash stored into the database";
+				else
+					repoError << "failed to commit Repo Bundles";
 			}
 
 			if (success) {
@@ -386,6 +416,10 @@ bool SceneManager::generateWebViewBuffers(
 			geoStashExt = REPO_COLLECTION_STASH_SRC;
 			resultBuffers = generateSRCBuffer(scene);
 			break;
+		case repo::manipulator::modelconvertor::WebExportType::REPO:
+			geoStashExt = REPO_COLLECTION_STASH_BUNDLE;
+			resultBuffers = generateRepoBundleBuffer(scene);
+			break;
 		case repo::manipulator::modelconvertor::WebExportType::UNITY:
 			repoInfo << "Skipping buffer generation for Unity assets";
 			return true;
@@ -498,6 +532,27 @@ repo_web_buffers_t SceneManager::generateSRCBuffer(
 	}
 	else
 		repoError << "Export to SRC failed.";
+
+	return result;
+}
+
+repo_web_buffers_t SceneManager::generateRepoBundleBuffer(
+	repo::core::model::RepoScene* scene)
+{
+	repo_web_buffers_t result;
+#ifdef REPO_ASSET_GENERATOR_SUPPORT
+	repo::manipulator::modelconvertor::RepoBundleExport bundleExport(scene);
+	if (bundleExport.isOk()) {
+		repoTrace << "Exporting Repo Bundles as buffer...";
+		result = bundleExport.getAllFilesExportedAsBuffer();
+	}
+	else
+	{
+		repoError << "Export of Repo Bundles failed.";
+	}
+#else
+	repoError << "Bouncer must be built with REPO_ASSET_GENERATOR_SUPPORT ON in order to generate Repo Bundles.";
+#endif // REPO_ASSETGENERATOR
 
 	return result;
 }

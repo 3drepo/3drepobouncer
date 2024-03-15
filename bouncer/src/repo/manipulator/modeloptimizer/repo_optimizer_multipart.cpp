@@ -675,7 +675,8 @@ repo::core::model::MeshNode* MultipartOptimizer::createMeshNode(
 		mapped.normals, 
 		bboxVec,
 		mapped.uvChannels,
-		mapped.colors, 
+		mapped.colors,
+		{},
 		isGrouped ? "grouped" : "");
 	resultMesh = new repo::core::model::MeshNode(superMesh.cloneAndUpdateMeshMapping(meshMapping, true));
 

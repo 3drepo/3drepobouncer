@@ -31,7 +31,7 @@
 namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
-			enum class WebExportType { GLTF, SRC, UNITY };
+			enum class WebExportType { GLTF, SRC, UNITY, REPO };
 
 			class WebModelExport : public AbstractModelExport
 			{

@@ -52,7 +52,7 @@ namespace boost {
 			> &stream,
 			Ptree &pt)
 			{
-				read_json_internal(stream, pt, std::string());
+				detail::read_json_internal(stream, pt, std::string());
 			}
 
 			/**

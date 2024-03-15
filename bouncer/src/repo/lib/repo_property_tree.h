@@ -25,6 +25,7 @@
 #include "json_parser.h"
 #include "datastructure/repo_uuid.h"
 #include "datastructure/repo_vector.h"
+#include "datastructure/repo_structs.h"
 
 namespace repo {
 	namespace lib {
@@ -284,6 +285,12 @@ namespace repo {
 				stream << stringxml;
 			}
 
+			/**
+			* Creates a PropertyTree from a vector, such that the members of the
+			* tree are the elements of the vector.
+			*/
+			PropertyTree(const repo::lib::RepoVector3D& vector);
+
 		private:
 			bool hackStrings;
 			boost::property_tree::ptree tree;
@@ -320,6 +327,11 @@ namespace repo {
 		void PropertyTree::addToTree<repo::lib::RepoVector3D64>(
 			const std::string             &label,
 			const repo::lib::RepoVector3D64 &value);
+
+		template <>
+		void PropertyTree::addToTree<repo_color4d_t>(
+			const std::string& label,
+			const repo_color4d_t& value);
 
 		template <>
 		void PropertyTree::addToTree<std::string>(
