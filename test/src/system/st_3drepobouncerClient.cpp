@@ -99,17 +99,16 @@ static std::string produceUploadFileArgs(
 }
 
 static std::string produceUploadArgs(
-	const std::string &database,
-	const std::string &project,
-	const std::string &filePath,
-	const std::string &configPath = getConnConfig())
+	const std::string& database,
+	const std::string& project,
+	const std::string& filePath,
+	const std::string& configPath = getConnConfig())
 {
-	std::string path = getClientExePath()
+	return  getClientExePath()
 		+ " " + configPath
 		+ " import \""
 		+ filePath + "\" "
 		+ database + " " + project;
-	return  boost::filesystem::path(path).string();
 }
 
 static int runProcess(

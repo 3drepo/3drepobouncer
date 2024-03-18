@@ -100,16 +100,16 @@ std::string DataProcessorRvt::translateMetadataValue(
 	case OdVariant::kVoid:
 		break;
 	case OdVariant::kString:
-		strOut = convertToStdString(val.getString());
+		strOut = val.getString();
 		break;
 	case OdVariant::kBool:
-		strOut = std::to_string(val.getBool());
+		strOut = val.getBool();
 		break;
 	case OdVariant::kInt8:
-		strOut = std::to_string(val.getInt8());
+		strOut = val.getInt8();
 		break;
 	case OdVariant::kInt16:
-		strOut = std::to_string(val.getInt16());
+		strOut = val.getInt16();
 		break;
 	case OdVariant::kInt32:
 		if (paramDef->getParameterTypeId() == OdBmSpecTypeId::Boolean::kYesNo)
@@ -118,7 +118,7 @@ std::string DataProcessorRvt::translateMetadataValue(
 			strOut = std::to_string(val.getInt32());
 		break;
 	case OdVariant::kInt64:
-		strOut = std::to_string(val.getInt64());
+		strOut = val.getInt64();
 		break;
 	case OdVariant::kDouble:
 	{
@@ -128,7 +128,7 @@ std::string DataProcessorRvt::translateMetadataValue(
 	}
 	break;
 	case OdVariant::kAnsiString:
-		strOut = std::string(val.getAnsiString().c_str());
+		strOut = val.getAnsiString().c_str();
 		break;
 	case OdTfVariant::kDbStubPtr:
 
@@ -144,7 +144,7 @@ std::string DataProcessorRvt::translateMetadataValue(
 			{
 				if (OdBmObjectId::isRegularHandle(hdl)) // A regular handle points to a database entry; if it is not regular, it is built-in.
 				{
-					strOut = std::to_string((OdUInt64)hdl);
+					strOut = ((OdUInt64)hdl);
 				}
 				else
 				{
@@ -170,7 +170,7 @@ std::string DataProcessorRvt::translateMetadataValue(
 					{
 						OdBmElementPtr elem = bmPtr;
 						if (elem->getElementName() == OdString::kEmpty) {
-							strOut = std::to_string((OdUInt64)bmId.getHandle());
+							strOut = (OdUInt64)bmId.getHandle();
 						}
 						else {
 							strOut = convertToStdString(elem->getElementName());

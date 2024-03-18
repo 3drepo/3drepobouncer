@@ -173,10 +173,10 @@ static std::string sanitiseKey(const std::string &key)
 }
 
 MetadataNode RepoBSONFactory::makeMetaDataNode(
-	const std::unordered_map<std::string, repo::lib::RepoVariant>& data,
-	const std::string& name,
-	const std::vector<repo::lib::RepoUUID>& parents,
-	const int& apiLevel)
+	const std::unordered_map<std::string, repo::lib::RepoVariant> &data,
+	const std::string &name,
+	const std::vector<repo::lib::RepoUUID> &parents,
+	const int &apiLevel)
 {
 	RepoBSONBuilder builder;
 	// Compulsory fields such as _id, type, api as well as path
@@ -185,14 +185,13 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 	builder.appendElements(defaults);
 	std::vector<RepoBSON> metaEntries;
 	auto count = 0;
-	for (const auto& entry : data) {
+	for (const auto &entry : data) {
 		std::string key = sanitiseKey(entry.first);
 		repo::lib::RepoVariant value = entry.second;
 		if (!key.empty() && !value.isEmpty())
 		{
 			RepoBSONBuilder metaEntryBuilder;
 			metaEntryBuilder.append(REPO_NODE_LABEL_META_KEY, key);
-			//Check if it is a number, if it is, store it as a number
 			metaEntryBuilder.appendRepoVariant(REPO_NODE_LABEL_META_VALUE, value);
 			metaEntries.push_back(metaEntryBuilder.obj());
 		}

@@ -294,7 +294,7 @@ repo::ifcUtility::SCHEMA_NS::TreeParser::Actions_t repo::ifcUtility::SCHEMA_NS::
 			units = processUnits(propVal->Unit()).second;
 		}
 
-		metaValues[constructMetadataLabel(propVal->Name(), metaPrefix, units)] = value.c_str();
+		metaValues[constructMetadataLabel(propVal->Name(), metaPrefix, units)] = value;
 
 		action.createElement = false;
 		action.traverseChildren = false;
@@ -1269,7 +1269,7 @@ void  repo::ifcUtility::SCHEMA_NS::TreeParser::generateClassificationInformation
 				if (refSource->hasSource()) {
 #endif
 					classificationName = refSource->Name();
-					metaValues[constructMetadataLabel("Name", classificationName)] = classificationName.c_str();
+					metaValues[constructMetadataLabel("Name", classificationName)] = classificationName;
 					metaValues[constructMetadataLabel("Source", classificationName)] = refSource->Source();
 #if DEFINED_Ifc4
 				}

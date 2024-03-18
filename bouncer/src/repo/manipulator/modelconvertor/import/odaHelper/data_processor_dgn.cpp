@@ -137,7 +137,7 @@ bool DataProcessorDgn::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	if (!collector->hasMeta(groupID)) {
 		auto meta = extractXMLLinkages(previousItem);
 		if (!layerName.empty()) {
-			meta["Layer Name"] = layerName.c_str();
+			meta["Layer Name"] = layerName;
 		}
 		collector->setMetadata(groupID, meta);
 	}
