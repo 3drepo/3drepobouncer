@@ -29,6 +29,8 @@ namespace repo {
 
             RepoVariant(const long& data) : boostVariantType(data){};
 
+            RepoVariant(const unsigned long& data) : boostVariantType(data){};
+
 
             repo::lib::RepoDataType getVariantType() {
                 const std::vector<repo::lib::RepoDataType> mapping = {repo::lib::RepoDataType::INT,
