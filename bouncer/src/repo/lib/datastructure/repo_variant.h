@@ -7,7 +7,7 @@
 
 namespace repo {
     namespace lib {
-        using boostVariantType = boost::variant<int, double, std::string, bool, uint64_t, float, long, unsigned long>;
+        using boostVariantType = boost::variant<int, double, std::string, bool, uint64_t, float, long>;
         enum RepoDataType { INT, DOUBLE,STRING, BOOL,UINT64, FLOAT,LONG,OTHER };
         class RepoVariant : private boostVariantType {
         public:
