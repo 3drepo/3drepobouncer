@@ -8,7 +8,7 @@
 namespace repo {
     namespace lib {
         using boostVariantType = boost::variant<int, double, std::string, bool, uint64_t, float, long, unsigned long>;
-        enum RepoDataType { INT, DOUBLE,STRING, BOOL,UINT64, FLOAT,LONG,UNSIGNEDLONG,OTHER };
+        enum RepoDataType { INT, DOUBLE,STRING, BOOL,UINT64, FLOAT,LONG,OTHER };
         class RepoVariant : private boostVariantType {
         public:
             using boostVariantType::operator=;
@@ -29,9 +29,6 @@ namespace repo {
 
             RepoVariant(const long& data) : boostVariantType(data){};
 
-            RepoVariant(const unsigned long& data) : boostVariantType(data){};
-
-
             repo::lib::RepoDataType getVariantType() {
                 const std::vector<repo::lib::RepoDataType> mapping = {repo::lib::RepoDataType::INT,
                                                                       repo::lib::RepoDataType::DOUBLE,
@@ -40,7 +37,6 @@ namespace repo {
                                                                       repo::lib::RepoDataType::UINT64,
                                                                       repo::lib::RepoDataType::FLOAT,
                                                                       repo::lib::RepoDataType::LONG,
-                                                                      repo::lib::RepoDataType::UNSIGNEDLONG,
                                                                       repo::lib::RepoDataType::OTHER};
                 auto typeIdx = which();
                 return (typeIdx > mapping.size())? repo::lib::RepoDataType::OTHER : mapping[typeIdx];
@@ -79,10 +75,6 @@ namespace repo {
                     }
                     case repo::lib::RepoDataType::LONG: {
                         t = boost::get<long>(*this);
-                        break;
-                    }
-                    case repo::lib::RepoDataType::UNSIGNEDLONG: {
-                        t = boost::get<unsigned long>(*this);
                         break;
                     }
                     default: {
