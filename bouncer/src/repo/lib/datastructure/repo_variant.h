@@ -7,7 +7,7 @@
 
 namespace repo {
     namespace lib {
-        using boostVariantType = boost::variant<int, double, std::string, bool, uint64_t, float, long,unsigned long,unsigned int>;
+        using boostVariantType = boost::variant<int, double, std::string, bool, uint64_t, float, long,unsigned int>;
         enum RepoDataType { INT, DOUBLE,STRING, BOOL,UINT64, FLOAT,LONG,ULONG,UINT,OTHER };
         class RepoVariant : private boostVariantType {
         public:
@@ -29,8 +29,6 @@ namespace repo {
 
             RepoVariant(const long& data) : boostVariantType(data){};
 
-            RepoVariant(const unsigned long& data) : boostVariantType(data){};
-
             RepoVariant(const unsigned int& data) : boostVariantType(data){};
 
             repo::lib::RepoDataType getVariantType() {
@@ -41,7 +39,6 @@ namespace repo {
                                                                       repo::lib::RepoDataType::UINT64,
                                                                       repo::lib::RepoDataType::FLOAT,
                                                                       repo::lib::RepoDataType::LONG,
-                                                                      repo::lib::RepoDataType::ULONG,
                                                                       repo::lib::RepoDataType::UINT,
                                                                       repo::lib::RepoDataType::OTHER};
                 auto typeIdx = which();
@@ -81,10 +78,6 @@ namespace repo {
                     }
                     case repo::lib::RepoDataType::LONG: {
                         t = boost::get<long>(*this);
-                        break;
-                    }
-                    case repo::lib::RepoDataType::ULONG: {
-                        t = boost::get<unsigned long>(*this);
                         break;
                     }
                     case repo::lib::RepoDataType::UINT: {
