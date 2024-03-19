@@ -5,10 +5,26 @@
 #include "../../repo_bouncer_global.h"
 #include "repo/lib/repo_log.h"
 
+#if   ULONG_MAX == 0xFFFFFFFFUL
+#define OD_SIZEOF_LONG  4
+#elif (ULONG_MAX > 0xFFFFFFFFU && ULONG_MAX == 0xFFFFFFFFFFFFFFFFU) || (defined(sparc) && defined(_LP64))
+#define OD_SIZEOF_LONG  8
+#else
+#error "Unsupported number of *bytes* in `long' type!"
+#endif
+
+#if OD_SIZEOF_LONG == 4
+typedef long OdInt32;
+typedef unsigned long OdUInt32;
+#else // assumes 4-byte int type
+typedef int OdInt32;
+typedef unsigned int OdUInt32;
+#endif
+
 namespace repo {
     namespace lib {
-        using boostVariantType = boost::variant<int, double, std::string, bool, uint64_t, float, long,unsigned int>;
-        enum RepoDataType { INT, DOUBLE,STRING, BOOL,UINT64, FLOAT,LONG,ULONG,UINT,OTHER };
+        using boostVariantType = boost::variant<int, double, std::string, bool, uint64_t, float, long,OdUInt32>;
+        enum RepoDataType { INT, DOUBLE,STRING, BOOL,UINT64, FLOAT,LONG,UINT,OTHER };
         class RepoVariant : private boostVariantType {
         public:
             using boostVariantType::operator=;
@@ -29,7 +45,7 @@ namespace repo {
 
             RepoVariant(const long& data) : boostVariantType(data){};
 
-            RepoVariant(const unsigned int& data) : boostVariantType(data){};
+            RepoVariant(const OdUInt32& data) : boostVariantType(data){};
 
             repo::lib::RepoDataType getVariantType() {
                 const std::vector<repo::lib::RepoDataType> mapping = {repo::lib::RepoDataType::INT,
@@ -81,7 +97,7 @@ namespace repo {
                         break;
                     }
                     case repo::lib::RepoDataType::UINT: {
-                        t = boost::get<unsigned int>(*this);
+                        t = boost::get<OdUInt32>(*this);
                         break;
                     }
                     default: {
