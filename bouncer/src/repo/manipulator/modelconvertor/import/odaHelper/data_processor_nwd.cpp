@@ -363,7 +363,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 					break;
 				case NwPropertyValueType::value_type_OdUInt32:
 					prop->getValue(u32value);
-					setMetadataValue(category, key, (unsigned long)u32value, metadata);
+					setMetadataValue(category, key, (OdUInt32)u32value, metadata);
 					break;
 				case NwPropertyValueType::value_type_OdUInt8:
 					prop->getValue(u8value);
