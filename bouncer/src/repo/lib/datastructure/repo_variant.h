@@ -5,6 +5,12 @@
 #include "../../repo_bouncer_global.h"
 #include "repo/lib/repo_log.h"
 
+
+typedef signed char OdInt8;
+typedef short OdInt16;
+typedef unsigned char OdUInt8;
+typedef unsigned short OdUInt16;
+
 #if   ULONG_MAX == 0xFFFFFFFFUL
 #define OD_SIZEOF_LONG  4
 #elif (ULONG_MAX > 0xFFFFFFFFU && ULONG_MAX == 0xFFFFFFFFFFFFFFFFU) || (defined(sparc) && defined(_LP64))
@@ -23,8 +29,8 @@ typedef unsigned int OdUInt32;
 
 namespace repo {
     namespace lib {
-        using boostVariantType = boost::variant<int, double, std::string, bool, uint64_t, float, long,OdUInt32>;
-        enum RepoDataType { INT, DOUBLE,STRING, BOOL,UINT64, FLOAT,LONG,UINT,OTHER };
+        using boostVariantType = boost::variant<int, double, std::string, bool, uint64_t, float, long,OdUInt32,OdInt8,OdInt16,OdUInt8,OdUInt16>;
+        enum RepoDataType { INT, DOUBLE,STRING, BOOL,UINT64, FLOAT,LONG,ODUINT32,ODINT8,ODINT16,ODUINT8,ODUINT16,OTHER };
         class RepoVariant : private boostVariantType {
         public:
             using boostVariantType::operator=;
@@ -47,6 +53,14 @@ namespace repo {
 
             RepoVariant(const OdUInt32& data) : boostVariantType(data){};
 
+            RepoVariant(const OdInt8& data) : boostVariantType(data){};
+
+            RepoVariant(const OdInt16& data) : boostVariantType(data){};
+
+            RepoVariant(const OdUInt8& data) : boostVariantType(data){};
+
+            RepoVariant(const OdUInt16& data) : boostVariantType(data){};
+
             repo::lib::RepoDataType getVariantType() {
                 const std::vector<repo::lib::RepoDataType> mapping = {repo::lib::RepoDataType::INT,
                                                                       repo::lib::RepoDataType::DOUBLE,
@@ -55,7 +69,11 @@ namespace repo {
                                                                       repo::lib::RepoDataType::UINT64,
                                                                       repo::lib::RepoDataType::FLOAT,
                                                                       repo::lib::RepoDataType::LONG,
-                                                                      repo::lib::RepoDataType::UINT,
+                                                                      repo::lib::RepoDataType::ODUINT32,
+                                                                      repo::lib::RepoDataType::ODINT8,
+                                                                      repo::lib::RepoDataType::ODINT16,
+                                                                      repo::lib::RepoDataType::ODUINT8,
+                                                                      repo::lib::RepoDataType::ODUINT16,
                                                                       repo::lib::RepoDataType::OTHER};
                 auto typeIdx = which();
                 return (typeIdx > mapping.size())? repo::lib::RepoDataType::OTHER : mapping[typeIdx];
@@ -96,8 +114,24 @@ namespace repo {
                         t = boost::get<long>(*this);
                         break;
                     }
-                    case repo::lib::RepoDataType::UINT: {
+                    case repo::lib::RepoDataType::ODUINT32: {
                         t = boost::get<OdUInt32>(*this);
+                        break;
+                    }
+                    case repo::lib::RepoDataType::ODINT8: {
+                        t = boost::get<OdInt8>(*this);
+                        break;
+                    }
+                    case repo::lib::RepoDataType::ODINT16: {
+                        t = boost::get<OdInt16>(*this);
+                        break;
+                    }
+                    case repo::lib::RepoDataType::ODUINT8: {
+                        t = boost::get<OdUInt8>(*this);
+                        break;
+                    }
+                    case repo::lib::RepoDataType::ODUINT16: {
+                        t = boost::get<OdUInt16>(*this);
                         break;
                     }
                     default: {
