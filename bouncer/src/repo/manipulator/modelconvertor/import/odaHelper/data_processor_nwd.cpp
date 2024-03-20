@@ -757,7 +757,7 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 			// the benefit of smart groups, node properties are overridden with their
 			// parent's metadata
 
-			std::unordered_map<std::string, std::string> metadata;
+			std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
 			processAttributes(pNode, context, metadata);
 			processAttributes(context.parent, context, metadata);
 
@@ -771,29 +771,6 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 
 			processGeometry(pNode, context);
 		}
-
-		/*
-		// GetIcon distinguishes the type of node. This corresponds to the icon seen in
-		// the Selection Tree View in Navisworks.
-		// https://docs.opendesign.com/bimnv/OdNwModelItem__getIcon@const.html
-		// https://knowledge.autodesk.com/support/navisworks-products/learn-explore/caas/CloudHelp/cloudhelp/2017/ENU/Navisworks-Manage/files/GUID-BC657B3A-5104-45B7-93A9-C6F4A10ED0D4-htm.html
-		// (Note "INSERT" -> "INSTANCED")
-
-		if (pNode->getIcon() == NwModelItemIcon::LAYER)
-		{
-			context.layer = pNode;
-		}
-
-		// To match the plug-in, and ensure metadata ends up in the right place for 
-		// the benefit of smart groups, node properties are overridden with their
-		// parent's metadata
-
-		std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
-		processAttributes(pNode, context, metadata);
-		processAttributes(context.parent, context, metadata);
-
-		context.collector->setMetadata(levelId, metadata);
-		*/
 
 		context.collector->stopMeshEntry();
 	}
