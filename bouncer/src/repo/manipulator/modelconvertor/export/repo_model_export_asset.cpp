@@ -233,10 +233,10 @@ bool AssetModelExport::generateTreeRepresentation()
 			superMeshesTree.addToTree("model", scene->getProjectName());
 			superMeshesTree.addArrayObjects("supermeshes", meshesTrees);
 
-			jsonTrees["/revision/" + scene->getRevisionID().toString() + "/supermeshes.json"] = superMeshesTree;
+			jsonTrees["/revision/" + scene->getRevisionID().toString() + "/supermeshes_unity.json"] = superMeshesTree;
 		}
 
-		unityAssets = core::model::RepoBSONFactory::makeRepoUnityAssets(
+		unityAssets = core::model::RepoBSONFactory::makeUnityAssets(
 			scene->getRevisionID(),
 			assetFiles,
 			scene->getDatabaseName(),
@@ -245,7 +245,8 @@ bool AssetModelExport::generateTreeRepresentation()
 			vrAssetFiles,
 			iosAssetsFiles,
 			androidAssetsFiles,
-			jsons);
+			jsons
+		);
 	}
 
 	return success;

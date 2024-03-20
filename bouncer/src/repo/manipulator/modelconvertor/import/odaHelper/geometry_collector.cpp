@@ -264,7 +264,6 @@ repo::core::model::TransformationNode* GeometryCollector::ensureParentNodeExists
 
 repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core::model::TransformationNode& root) {
 	repo::core::model::RepoNodeSet res;
-	auto dummyCol = std::vector<repo_color4d_t>();
 	auto dummyOutline = std::vector<std::vector<float>>();
 
 	std::unordered_map<std::string, repo::core::model::TransformationNode*> layerToTrans;
@@ -339,7 +338,8 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 						normals32,
 						meshData.boundingBox,
 						uvChannels,
-						dummyCol,
+						{},
+						{},
 						partialObject ? "" : meshGroupEntry.first,
 						{ parentId }
 					);

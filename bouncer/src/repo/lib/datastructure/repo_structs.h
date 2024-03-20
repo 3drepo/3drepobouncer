@@ -32,6 +32,7 @@ struct repo_web_buffers_t{
 	repo_web_geo_files_t geoFiles; //files where geometery are stored
 	repo_web_json_files_t jsonFiles; //JSON mapping files
 	repo::core::model::RepoUnityAssets unityAssets; //Unity assets list
+	repo::core::model::RepoUnityAssets repoAssets; //RepoBundles assets list
 };
 
 //This is used to map info for multipart optimization
@@ -141,12 +142,57 @@ typedef struct {
 	}
 }repo_material_t;
 
-typedef struct {
+struct repo_color4d_t {
 	float r;
 	float g;
 	float b;
 	float a;
-}repo_color4d_t;
+
+	repo_color4d_t()
+	{
+		a = 1;
+	}
+
+	repo_color4d_t(float r, float g, float b, float a) : r(r), g(g), b(b), a(a)
+	{
+	}
+
+	repo_color4d_t(float r, float g, float b) : r(r), g(g), b(b), a(1)
+	{
+	}
+
+	repo_color4d_t(std::vector<float> v)
+	{
+		r = v[0];
+		g = v[1];
+		b = v[2];
+		if (v.size() > 3) {
+			a = v[3];
+		}
+		else
+		{
+			a = 1;
+		}
+	}
+
+	repo_color4d_t(std::vector<float> v, float a)
+	{
+		r = v[0];
+		g = v[1];
+		b = v[2];
+		this->a = a;
+	}
+
+	repo_color4d_t operator* (float scalar)
+	{
+		return {
+			r * scalar,
+			b * scalar,
+			g * scalar,
+			a * scalar
+		};
+	}
+};
 
 typedef std::vector<uint32_t> repo_face_t;
 

@@ -373,34 +373,33 @@ void RepoModelImport::createObject(const ptree& tree)
 
 	std::string transName = tree.get<std::string>("name", "");
 
-	if (myParent > node_map.size())
-	{
-		repoError << "Invalid parent ID: " << myParent;
-	}
-
 	repo::lib::RepoUUID parentSharedID = node_map[myParent]->getSharedID();
 	repo::lib::RepoMatrix parentTransform = trans_matrix_map[myParent];
 
-	std::vector<repo::lib::RepoUUID> parentIDs;
-	parentIDs.push_back(parentSharedID);
-
 	boost::optional< const ptree& > transMatTree = tree.get_child_optional("transformation");
 
-	repo::lib::RepoMatrix transMat;
+	repo::core::model::TransformationNode* transNode = (repo::core::model::TransformationNode*) node_map[myParent];
 
-	if (transMatTree)
-	{
-		transMat = repo::lib::RepoMatrix(as_vector<float>(tree, "transformation"));
+	// We only want to create a node if there is a matrix transformation to represent, or
+	// we're trying to represent a different entity to its parent. Otherwise, reuse the parent transform and only store the geometry
+	bool isEntity = !transName.empty() || transMatTree;
+
+	if (isEntity) {
+		if (transMatTree) {
+			repo::lib::RepoMatrix transMat = repo::lib::RepoMatrix(as_vector<float>(tree, "transformation"));
+			trans_matrix_map.push_back(parentTransform * transMat);
+		}
+		else {
+			trans_matrix_map.push_back(parentTransform);
+		}
+		transNode =
+			new repo::core::model::TransformationNode(
+				repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), transName, { parentSharedID }));
+		transformations.insert(transNode);
 	}
-
-	trans_matrix_map.push_back(parentTransform * transMat);
-
-	repo::core::model::TransformationNode* transNode =
-		new repo::core::model::TransformationNode(
-			repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), transName, parentIDs));
-
-	repo::lib::RepoUUID transID = transNode->getSharedID();
-
+	else {
+		trans_matrix_map.push_back(parentTransform);
+	}
 	node_map.push_back(transNode);
 
 	std::vector<repo::core::model::MetadataNode*> metas;
@@ -408,27 +407,28 @@ void RepoModelImport::createObject(const ptree& tree)
 
 	for (ptree::const_iterator props = tree.begin(); props != tree.end(); props++)
 	{
-		if (props->first == REPO_IMPORT_METADATA)
+		if (isEntity && props->first == REPO_IMPORT_METADATA)
 		{
+			// The assumption is that if the entry is not an individual entity, we don't want to import the metadata.
 			metas.push_back(createMetadataNode(props->second, transName, parentSharedID));
 		}
 
 		if (props->first == REPO_IMPORT_GEOMETRY)
 		{
-			auto mesh = createMeshRecord(props->second, transName, transID, trans_matrix_map.back());
+			auto mesh = createMeshRecord(props->second, transNode->getName(), transNode->getSharedID(), trans_matrix_map.back());
 			metaParentIDs.push_back(mesh.sharedID);
 			meshEntries.push_back(mesh);
 		}
 	}
 
-	metaParentIDs.push_back(transNode->getSharedID());
+	if (isEntity) {
+		metaParentIDs.push_back(transNode->getSharedID());
 
-	for (auto& meta : metas)
-	{
-		*meta = meta->cloneAndAddParent(metaParentIDs);
+		for (auto& meta : metas)
+		{
+			*meta = meta->cloneAndAddParent(metaParentIDs);
+		}
 	}
-
-	transformations.insert(transNode);
 }
 
 void RepoModelImport::skipAheadInFile(long amount)
@@ -682,7 +682,8 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t& errCod
 			entry.normals,
 			boundingBox,
 			entry.uvChannels,
-			std::vector<repo_color4d_t>(),
+			{},
+			{},
 			std::string(),
 			{ entry.parent });
 		repo::core::model::RepoBSONBuilder builder;

@@ -14,6 +14,25 @@
 *  You should have received a copy of the GNU Affero General Public License
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+/**
+* The MeshMapReorganiser combines or splits the mappings in a MeshNode such
+* that all the mappings come as close to the vertThreshold and faceThreshold
+* limits as possible, but never exceed them. The result is a new MeshNode with
+* a new set of mappings.
+*
+The faces delineated by the new mappings are re-indexed so they refer directly
+* to vertices between vFrom and vTo of any mapping (though they are stored still
+* in a shared array).
+*
+* Using MeshMapReorganiser is destructive to the original mappings, however the
+* Ids are unchanged, and so can be used to index directly into the original
+* MeshNode's mappings. Additionally, getSplitMapping() returns a map from the
+* mesh_ids in the original mappings to the (indices of) the new one(s) that
+* contain it, and getMappingsPerSubMesh() returns for each new mapping, a list
+* of the original mappings that are encompassed by them.
+*/
+
 #pragma once
 #include <unordered_map>
 #include "../../core/model/bson/repo_node_mesh.h"

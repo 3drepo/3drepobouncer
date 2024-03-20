@@ -8,6 +8,10 @@ matrix:
         - "18.12.1"
       script:
         - cd tools/bouncer_worker && yarn install && yarn lint
+
+      git:
+          submodules: false
+
     - language: cpp
       dist: focal
       name: Unit tests and integration tests
@@ -23,8 +27,12 @@ matrix:
               packages:
                   - gcc
                   - g++
+      git:
+          submodules: false
 
       before_install:
+          - echo -e "machine github.com\n  login $TESTUSER\n  password $TESTPW" >~/.netrc
+          - git submodule update --init --recursive
           - sudo apt remove mongodb && sudo apt purge mongodb && sudo apt autoremove && sudo rm -rf /var/lib/mongodb
           - wget -qO - https://www.mongodb.org/static/pgp/server-5.0.asc | sudo apt-key add -
           - echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/5.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-5.0.list
@@ -49,7 +57,7 @@ matrix:
           - tar -zxf testData/bouncer/ext_libs/focal/mongo-cxx-driver.tgz
           - export MONGO_ROOT=$PWD/mongo-cxx-driver
           - echo ============ ASSIMP INSTALL =============
-          - tar -zxf testData/bouncer/ext_libs/focal/assimp.tgz
+          - tar -zxf testData/bouncer/ext_libs/focal/assimp-5.0.1.tgz
           - export ASSIMP_ROOT=$PWD/assimp
           - echo ============ IFCOPENSHELL INSTALL =============
           - tar -zxf testData/bouncer/ext_libs/focal/IfcOpenShell_v0.6.0/OCCT_3drepoFix.tgz
@@ -110,8 +118,12 @@ matrix:
               packages:
                   - gcc
                   - g++
+      git:
+          submodules: false
 
       before_install:
+          - echo -e "machine github.com\n  login $TESTUSER\n  password $TESTPW" >~/.netrc
+          - git submodule update --init --recursive
           - export BOUNCER_DIR=$PWD
           - export CXX="g++"
           - export CC="gcc"
@@ -126,7 +138,7 @@ matrix:
           - tar -zxf testData/focal/mongo-cxx-driver.tgz
           - export MONGO_ROOT=$PWD/mongo-cxx-driver
           - echo ============ ASSIMP INSTALL =============
-          - tar -zxf testData/focal/assimp.tgz
+          - tar -zxf testData/focal/assimp-5.0.1.tgz
           - export ASSIMP_ROOT=$PWD/assimp
           - echo ============ IFCOPENSHELL INSTALL =============
           - tar -zxf testData/focal/IfcOpenShell_v0.6.0/OCCT_3drepoFix.tgz

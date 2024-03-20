@@ -72,6 +72,7 @@ const static std::string synchroOldVersion = "synchro6_1.spm";
 const static std::string synchroVersion6_3 = "synchro6_3.spm";
 const static std::string synchroVersion6_4 = "synchro6_4.spm";
 const static std::string synchroVersion6_5 = "synchro6_5.spm";
+const static std::string synchroVersion6_5_3_7 = "synchro6_5_3_7.spm";
 
 const static std::string emptyFile = "empty.json";
 const static std::string emptyJSONFile = "empty2.json";
@@ -138,13 +139,6 @@ static repo::core::handler::MongoDatabaseHandler* getHandler()
 		1,
 		REPO_GTEST_AUTH_DATABASE,
 		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
-
-	static bool first = true;
-
-	if (first) {
-		repo::core::handler::fileservice::FileManager::instantiateManager(getConfig(), handler);
-		first = false;
-	}
 
 	return handler;
 }

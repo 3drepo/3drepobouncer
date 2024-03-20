@@ -49,6 +49,7 @@ namespace repo {
 #define REPO_NODE_MESH_LABEL_UV_CHANNELS_BYTE_COUNT	"uv_channels_byte_count"
 #define REPO_NODE_MESH_LABEL_SHA256                  "sha256"
 #define REPO_NODE_MESH_LABEL_COLORS                  "colors"
+#define REPO_NODE_MESH_LABEL_SUBMESH_IDS                     "submeshIds"
 			//------------------------------------------------------------------------------
 #define REPO_NODE_MESH_LABEL_MAP_ID			        "map_id"
 #define REPO_NODE_MESH_LABEL_MAP_SHARED_ID			"shared_id"
@@ -213,6 +214,8 @@ namespace repo {
 				* Retrieve a vector of UV Channels, separated by channels
 				*/
 				std::vector<std::vector<repo::lib::RepoVector2D>> getUVChannelsSeparated() const;
+
+				std::vector<float> getSubmeshIds() const;
 
 				/**
 				* Retrieve a vector of vertices from the bson object

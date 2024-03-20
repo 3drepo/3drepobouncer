@@ -327,12 +327,14 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 	std::vector<repo::lib::RepoVector3D> normals;
 	std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
 	std::vector<repo_color4d_t> colors;
+	std::vector<float> ids;
 	uvChannels.resize(1);
 	faces.reserve(nCount);
 	vectors.reserve(nCount);
 	normals.reserve(nCount);
 	uvChannels[0].reserve(nCount);
 	colors.reserve(nCount);
+	ids.reserve(nCount);
 	for (uint32_t i = 0; i < nCount; ++i)
 	{
 		repo_face_t face = { (uint32_t)std::rand(), (uint32_t)std::rand(), (uint32_t)std::rand() };
@@ -342,8 +344,8 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 		normals.push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f });
 		uvChannels[0].push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f });
 		colors.push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f });
+		ids.push_back(std::rand());
 	}
-
 	std::vector<std::vector<float>> boundingBox;
 	boundingBox.resize(2);
 	boundingBox[0] = { std::rand() / 100.f, std::rand() / 100.f, std::rand() / 100.f };
@@ -353,7 +355,7 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 
 	//End of setting up data... the actual testing happens here.
 
-	MeshNode mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, name);
+	MeshNode mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, ids, name);
 
 	repoTrace << mesh.toString();
 
@@ -362,11 +364,13 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 	auto fOut = mesh.getFaces();
 	auto cOut = mesh.getColors();
 	auto uvOut = mesh.getUVChannelsSeparated();
+	auto idOut = mesh.getSubmeshIds();
 	EXPECT_TRUE(compareStdVectors(vectors, vOut));
 	EXPECT_TRUE(compareStdVectors(normals, nOut));
 	EXPECT_TRUE(compareStdVectors(faces, fOut));
 	EXPECT_TRUE(compareVectors(colors, cOut));
 	EXPECT_TRUE(compareStdVectors(uvChannels, uvOut));
+	EXPECT_TRUE(compareStdVectors(ids, idOut));
 
 	ASSERT_EQ(MeshNode::Primitive::TRIANGLES, mesh.getPrimitive());
 
@@ -387,7 +391,7 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 
 	// Re-create the mesh but using lines instead of triangles. This should change the primitive type, but otherwise all properties should be handled identically.
 
-	mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, name);
+	mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, ids, name);
 
 	repoTrace << mesh.toString();
 
@@ -398,11 +402,13 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 	fOut = mesh.getFaces();
 	cOut = mesh.getColors();
 	uvOut = mesh.getUVChannelsSeparated();
+	idOut = mesh.getSubmeshIds();
 	EXPECT_TRUE(compareStdVectors(vectors, vOut));
 	EXPECT_TRUE(compareStdVectors(normals, nOut));
 	EXPECT_TRUE(compareStdVectors(faces, fOut));
 	EXPECT_TRUE(compareVectors(colors, cOut));
 	EXPECT_TRUE(compareStdVectors(uvChannels, uvOut));
+	EXPECT_TRUE(compareStdVectors(ids, idOut));
 
 	bbox = mesh.getBoundingBox();
 	ASSERT_EQ(boundingBox.size(), bbox.size());
@@ -422,7 +428,7 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 		faces.push_back(face);
 	}
 
-	mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, name);
+	mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, ids, name);
 
 	ASSERT_EQ(MeshNode::Primitive::UNKNOWN, mesh.getPrimitive());
 }

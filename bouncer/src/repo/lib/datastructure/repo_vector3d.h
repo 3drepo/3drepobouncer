@@ -24,6 +24,10 @@
 #include <sstream>
 #include <cmath>
 
+// Undefine windef.h's weirdness
+#undef min
+#undef max
+
 namespace repo{
 	namespace lib{
 		template <class T>
@@ -31,8 +35,8 @@ namespace repo{
 		{
 		public:
 
-			_RepoVector3D<T>(const T &x = 0, const T &y = 0, const T &z = 0) : x(x), y(y), z(z) {}
-			_RepoVector3D<T>(const std::vector<T > &v)
+			_RepoVector3D<T>(const T x = 0, const T y = 0, const T z = 0) : x(x), y(y), z(z) {}
+			_RepoVector3D<T>(const std::vector<T> &v)
 			{
 				x = (v.size() > 0) ? v[0] : 0;
 				y = (v.size() > 1) ? v[1] : 0;
@@ -66,6 +70,23 @@ namespace repo{
 				return x*vec.x + y*vec.y + z*vec.z;
 			}
 
+			static _RepoVector3D<T> min(const _RepoVector3D<T>& a, const _RepoVector3D<T>& b)
+			{
+				return _RepoVector3D<T>(
+					std::min(a.x, b.x),
+					std::min(a.y, b.y),
+					std::min(a.z, b.z)
+				);
+			}
+
+			static _RepoVector3D<T> max(const _RepoVector3D<T>& a, const _RepoVector3D<T>& b)
+			{
+				return _RepoVector3D<T>(
+					std::max(a.x, b.x),
+					std::max(a.y, b.y),
+					std::max(a.z, b.z)
+				);
+			}
 
 			void normalize()
 			{
