@@ -6,7 +6,7 @@
 #include "repo/lib/repo_log.h"
 
 
-typedef signed char OdInt8;
+/*typedef signed char OdInt8;
 typedef short OdInt16;
 typedef unsigned char OdUInt8;
 typedef unsigned short OdUInt16;
@@ -25,12 +25,12 @@ typedef unsigned long OdUInt32;
 #else // assumes 4-byte int type
 typedef int OdInt32;
 typedef unsigned int OdUInt32;
-#endif
+#endif*/
 
 namespace repo {
     namespace lib {
-        using boostVariantType = boost::variant<int, double, std::string, bool, uint64_t, float, long,OdUInt32,OdInt8,OdInt16,OdUInt8,OdUInt16>;
-        enum RepoDataType { INT, DOUBLE,STRING, BOOL,UINT64, FLOAT,LONG,ODUINT32,ODINT8,ODINT16,ODUINT8,ODUINT16,OTHER };
+        using boostVariantType = boost::variant<int, double, std::string, bool, uint64_t, float, long/*,OdUInt32,OdInt8,OdInt16,OdUInt8,OdUInt16*/>;
+        enum RepoDataType { INT, DOUBLE,STRING, BOOL,UINT64, FLOAT,LONG,/*ODUINT32,ODINT8,ODINT16,ODUINT8,ODUINT16,*/OTHER };
         class RepoVariant : private boostVariantType {
         public:
             using boostVariantType::operator=;
@@ -51,7 +51,7 @@ namespace repo {
 
             RepoVariant(const long& data) : boostVariantType(data){};
 
-            RepoVariant(const OdUInt32& data) : boostVariantType(data){};
+            /*RepoVariant(const OdUInt32& data) : boostVariantType(data){};
 
             RepoVariant(const OdInt8& data) : boostVariantType(data){};
 
@@ -59,7 +59,7 @@ namespace repo {
 
             RepoVariant(const OdUInt8& data) : boostVariantType(data){};
 
-            RepoVariant(const OdUInt16& data) : boostVariantType(data){};
+            RepoVariant(const OdUInt16& data) : boostVariantType(data){};*/
 
             repo::lib::RepoDataType getVariantType() {
                 const std::vector<repo::lib::RepoDataType> mapping = {repo::lib::RepoDataType::INT,
@@ -69,11 +69,11 @@ namespace repo {
                                                                       repo::lib::RepoDataType::UINT64,
                                                                       repo::lib::RepoDataType::FLOAT,
                                                                       repo::lib::RepoDataType::LONG,
-                                                                      repo::lib::RepoDataType::ODUINT32,
+                                                                      /*repo::lib::RepoDataType::ODUINT32,
                                                                       repo::lib::RepoDataType::ODINT8,
                                                                       repo::lib::RepoDataType::ODINT16,
                                                                       repo::lib::RepoDataType::ODUINT8,
-                                                                      repo::lib::RepoDataType::ODUINT16,
+                                                                      repo::lib::RepoDataType::ODUINT16,*/
                                                                       repo::lib::RepoDataType::OTHER};
                 auto typeIdx = which();
                 return (typeIdx > mapping.size())? repo::lib::RepoDataType::OTHER : mapping[typeIdx];
@@ -114,7 +114,7 @@ namespace repo {
                         t = boost::get<long>(*this);
                         break;
                     }
-                    case repo::lib::RepoDataType::ODUINT32: {
+                    /*case repo::lib::RepoDataType::ODUINT32: {
                         t = boost::get<OdUInt32>(*this);
                         break;
                     }
@@ -133,7 +133,7 @@ namespace repo {
                     case repo::lib::RepoDataType::ODUINT16: {
                         t = boost::get<OdUInt16>(*this);
                         break;
-                    }
+                    }*/
                     default: {
                         repoError << "Failed to convert RepoVariant type to base datatype.";
                         return false;
