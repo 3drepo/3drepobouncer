@@ -336,6 +336,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 				OdGeVector3d vValue;
 				OdNwColor cValue;
 				tm tmValue;
+				std::string tempValue;
 
 				switch (prop->getValueType())
 				{
@@ -363,8 +364,8 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 					break;
 				case NwPropertyValueType::value_type_OdUInt32:
 					prop->getValue(u32value);
-					auto value = boost::lexical_cast<std::string>(u32value);
-					setMetadataValue(category, key,  value, metadata);
+					tempValue = boost::lexical_cast<std::string>(u32value);
+					setMetadataValue(category, key,  tempValue, metadata);
 					break;
 				case NwPropertyValueType::value_type_OdUInt8:
 					prop->getValue(u8value);
