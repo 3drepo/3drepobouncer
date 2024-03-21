@@ -363,7 +363,8 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 					break;
 				case NwPropertyValueType::value_type_OdUInt32:
 					prop->getValue(u32value);
-					setMetadataValue(category, key, u32value, metadata);
+					auto value = boost::lexical_cast<std::string>(u32value);
+					setMetadataValue(category, key,  value, metadata);
 					break;
 				case NwPropertyValueType::value_type_OdUInt8:
 					prop->getValue(u8value);
