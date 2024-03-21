@@ -140,7 +140,7 @@ template <class T>
 void setMetadataValue(const OdString& category, const OdString& key, const T& value, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	auto metaKey = convertToStdString(category) + "::" + (key.isEmpty() ? std::string("Value") : convertToStdString(key));
-	auto metaValue = value;
+	auto metaValue = boost::lexical_cast<std::string>(value);;
 	metadata[metaKey] = metaValue;
 }
 
@@ -336,7 +336,6 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 				OdGeVector3d vValue;
 				OdNwColor cValue;
 				tm tmValue;
-				std::string tempValue;
 
 				switch (prop->getValueType())
 				{
@@ -364,8 +363,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 					break;
 				case NwPropertyValueType::value_type_OdUInt32:
 					prop->getValue(u32value);
-					tempValue = boost::lexical_cast<std::string>(u32value);
-					setMetadataValue(category, key,  tempValue, metadata);
+					setMetadataValue(category, key,  u32value, metadata);
 					break;
 				case NwPropertyValueType::value_type_OdUInt8:
 					prop->getValue(u8value);
