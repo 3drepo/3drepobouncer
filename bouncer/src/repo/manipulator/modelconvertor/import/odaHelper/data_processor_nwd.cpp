@@ -140,7 +140,7 @@ template <class T>
 void setMetadataValue(const OdString& category, const OdString& key, const T& value, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	auto metaKey = convertToStdString(category) + "::" + (key.isEmpty() ? std::string("Value") : convertToStdString(key));
-	auto metaValue = boost::lexical_cast<std::string>(value);;
+	auto metaValue = value;
 	metadata[metaKey] = metaValue;
 }
 
