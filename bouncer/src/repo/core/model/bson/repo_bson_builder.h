@@ -108,6 +108,12 @@ namespace repo {
 							mongo::BSONObjBuilder::append(label, data);
 					}
 					break;
+					case repo::lib::RepoDataType::LONGLONG:{
+						long long data;
+						if(repoVariant.getBaseData<long long>(data))
+							mongo::BSONObjBuilder::append(label, data);
+					}
+					break;
 					default:{
 						repoWarning << "Datatype is not supported in RepoVariant.";
 					}

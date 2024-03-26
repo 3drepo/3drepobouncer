@@ -30,7 +30,7 @@ typedef unsigned int OdUInt32;
 namespace repo {
     namespace lib {
         using boostVariantType = boost::variant<int, double, std::string, bool, uint64_t, float, long,long long,OdUInt32>;
-        enum RepoDataType { INT, DOUBLE,STRING, BOOL,UINT64, FLOAT,LONG,LONGLONG,ODUINT32,OTHER };
+        enum RepoDataType { INT,DOUBLE,STRING,BOOL,UINT64,FLOAT,LONG,LONGLONG,ODUINT32,OTHER };
         class RepoVariant : private boostVariantType {
         public:
             using boostVariantType::operator=;

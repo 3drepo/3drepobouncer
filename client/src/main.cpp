@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
 			op.nArgcs = 0;
 
 			int32_t errcode = performOperation(controller, nullptr, op);
-
+			repoInfo << "main errcode is : " << errcode;
 			return errcode;
 		}
 		printHelp();
