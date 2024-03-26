@@ -74,11 +74,14 @@ bool OdaModelImport::importModel(std::string filePath, uint8_t &err)
 	bool success = false;
 	err = REPOERR_OK;
 	try {
+		repoInfo << "readFile start";
 		err = odaProcessor->readFile();
+		repoInfo << "readFile ends with error:"<<err;
 		if (err == REPOERR_OK) {
 			err = geoCollector.getErrorCode(); // the outermost error codes should take precedence as they could cause inner errors
 		}
 		success = odaProcessor != nullptr && err == REPOERR_OK;
+		repoInfo << "readFile success value : "<< success;
 	}
 	catch (std::exception& ex) {
 		success = false;
