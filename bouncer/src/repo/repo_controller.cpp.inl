@@ -624,15 +624,6 @@ public:
 		const repo::manipulator::modelconvertor::ModelImportConfig &config);
 
 	/**
-	* Load metadata from a file
-	* @param filePath path to file
-	* @return returns a set of metadata nodes read from the file
-	*/
-	repo::core::model::RepoNodeSet loadMetadataFromFile(
-		const std::string &filePath,
-		const char        &delimiter = ',');
-
-	/**
 	* Save a Repo Scene to file
 	* @param filePath path to file
 	* @param scene scene to export

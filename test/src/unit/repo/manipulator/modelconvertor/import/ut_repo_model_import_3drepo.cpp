@@ -33,7 +33,9 @@ namespace RepoModelImportUtils
 	{
 		ModelImportConfig config;
 		auto modelConvertor = std::unique_ptr<AbstractModelImport>(new RepoModelImport(config));
+		repoWarning << "ImportBIMFile before bimFilePath:" << bimFilePath << ", impModelErrCode : " << impModelErrCode;
 		modelConvertor->importModel(bimFilePath, impModelErrCode);
+		repoWarning << "ImportBIMFile after bimFilePath:" << bimFilePath << ", impModelErrCode : " << impModelErrCode;
 		return modelConvertor;
 	}
 

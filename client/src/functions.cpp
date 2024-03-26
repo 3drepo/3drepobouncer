@@ -85,7 +85,9 @@ int32_t performOperation(
 	if (command.command == cmdImportFile)
 	{
 		try {
+			repoInfo << "performOperation started.";
 			errCode = importFileAndCommit(controller, token, command);
+			repoInfo << "performOperation ended with error code : " << errCode;
 		}
 		catch (const std::exception &e)
 		{
@@ -399,7 +401,7 @@ int32_t importFileAndCommit(
 			+ " requires 3 arguments: file database project [dxrotate] [owner] [config file] or 2 arguments: -f <path to json settings>");
 		return REPOERR_INVALID_ARG;
 	}
-
+	repoInfo << "importFileAndCommit started";
 	std::string timeZone;
 	std::string fileLoc;
 	std::string database;
@@ -438,6 +440,7 @@ int32_t importFileAndCommit(
 			{
 				return REPOERR_LOAD_SCENE_FAIL;
 			}
+			repoInfo << "importFileAndCommit process completed.";
 		}
 		catch (std::exception &e)
 		{

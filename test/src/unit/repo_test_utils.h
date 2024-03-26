@@ -238,12 +238,10 @@ static bool projectHasGeometryWithMetadata(std::string dbName, std::string proje
 					// way it is stringified for the frontend.
 
 					auto aValue = entry.toMongoElement().Obj().getField(REPO_NODE_LABEL_META_VALUE).toString(false);
-
 					if (aKey == key && aValue == value)
 					{
 						// This metadata node contains the key-value pair we are looking for. Now
 						// check if there is geometry associated with it.
-
 						for (auto p : metaDataNode->getParentIDs())
 						{
 							if (sharedIdToMeshNode.find(p) != sharedIdToMeshNode.end())

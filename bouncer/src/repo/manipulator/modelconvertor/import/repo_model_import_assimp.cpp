@@ -554,7 +554,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 	const std::vector<repo::lib::RepoUUID> &parents)
 {
 	repo::core::model::MetadataNode *metaNode;
-	std::unordered_map<std::string, std::string> metaEntries;
+	std::unordered_map<std::string, repo::lib::RepoVariant> metaEntries;
 	std::string val;
 	if (assimpMeta)
 	{
@@ -572,19 +572,19 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 			switch (currentValue.mType)
 			{
 			case AI_BOOL:
-				metaEntries[key] = std::to_string(*(static_cast<bool *>(currentValue.mData)));
+				metaEntries[key] = *(static_cast<bool *>(currentValue.mData));
 				break;
 
 			case AI_INT32:
-				metaEntries[key] = std::to_string(*(static_cast<int *>(currentValue.mData)));
+				metaEntries[key] = *(static_cast<int *>(currentValue.mData));
 				break;
 
 			case AI_UINT64:
-				metaEntries[key] = std::to_string(*(static_cast<uint64_t *>(currentValue.mData)));
+				metaEntries[key] = *(static_cast<uint64_t *>(currentValue.mData));
 				break;
 
 			case AI_FLOAT:
-				metaEntries[key] = std::to_string(*(static_cast<float *>(currentValue.mData)));
+				metaEntries[key] = *(static_cast<float *>(currentValue.mData));
 				break;
 
 			case AI_AISTRING:
