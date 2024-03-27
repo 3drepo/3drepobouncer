@@ -22,6 +22,7 @@
 
 #include "repo_bson_builder.h"
 #include "../../../lib/repo_log.h"
+#include "../../../lib/datastructure/repo_variant.h"
 
 using namespace repo::core::model;
 
@@ -173,32 +174,7 @@ static std::string sanitiseKey(const std::string &key)
 }
 
 MetadataNode RepoBSONFactory::makeMetaDataNode(
-	const std::vector<std::string>  &keys,
-	const std::vector<std::string>  &values,
-	const std::string               &name,
-	const std::vector<repo::lib::RepoUUID>     &parents,
-	const int                       &apiLevel)
-{
-	auto keysLen = keys.size();
-	auto valLen = values.size();
-	//check keys and values have the same sizes
-	if (keysLen != valLen)
-	{
-		repoWarning << "makeMetaDataNode: number of keys (" << keys.size()
-			<< ") does not match the number of values(" << values.size() << ")!";
-	}
-
-	std::unordered_map<std::string, std::string> metadataMap;
-
-	for (int i = 0; i < (keysLen < valLen ? keysLen : valLen); ++i) {
-		metadataMap[keys[i]] = values[i];
-	}
-
-	return makeMetaDataNode(metadataMap, name, parents);
-}
-
-MetadataNode RepoBSONFactory::makeMetaDataNode(
-	const std::unordered_map<std::string, std::string>  &data,
+	const std::unordered_map<std::string, repo::lib::RepoVariant>  &data,
 	const std::string               &name,
 	const std::vector<repo::lib::RepoUUID>     &parents,
 	const int                       &apiLevel)
@@ -212,30 +188,34 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 	auto count = 0;
 	for (const auto &entry : data) {
 		std::string key = sanitiseKey(entry.first);
-		std::string value = entry.second;
+		repo::lib::RepoVariant value = entry.second;
 
-		if (!key.empty() && !value.empty())
+		if (!key.empty() && !value.isEmpty())
 		{
 			RepoBSONBuilder metaEntryBuilder;
 			metaEntryBuilder.append(REPO_NODE_LABEL_META_KEY, key);
 			//Check if it is a number, if it is, store it as a number
 
 			try {
-				long long valueInt = boost::lexical_cast<long long>(value);
+				long long valueInt;
+				value.getBaseData<long long>(valueInt);
 				metaEntryBuilder.append(REPO_NODE_LABEL_META_VALUE, valueInt);
 			}
-			catch (boost::bad_lexical_cast &)
+			catch (std::exception e)
 			{
 				//not an int, try a double
 
 				try {
-					double valueFloat = boost::lexical_cast<double>(value);
+					double valueFloat;
+					value.getBaseData<double>(valueFloat);
 					metaEntryBuilder.append(REPO_NODE_LABEL_META_VALUE, valueFloat);
 				}
-				catch (boost::bad_lexical_cast &)
+				catch (std::exception e)
 				{
+					std::string strValue;
+					value.getStringData(strValue);
 					//not an int or float, store as string
-					metaEntryBuilder.append(REPO_NODE_LABEL_META_VALUE, value);
+					metaEntryBuilder.append(REPO_NODE_LABEL_META_VALUE, strValue);
 				}
 			}
 			metaEntries.push_back(metaEntryBuilder.obj());

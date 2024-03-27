@@ -370,7 +370,7 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 
 void DataProcessorRvt::fillMetadataById(
 	OdBmObjectId id,
-	std::unordered_map<std::string, std::string>& metadata)
+	std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	if (id.isNull())
 		return;
@@ -444,7 +444,7 @@ void DataProcessorRvt::processParameter(
 
 void DataProcessorRvt::fillMetadataByElemPtr(
 	OdBmElementPtr element,
-	std::unordered_map<std::string, std::string>& outputData)
+	std::unordered_map<std::string, repo::lib::RepoVariant>& outputData)
 {
 	OdBmParameterSet aParams;
 	element->getListParams(aParams);
@@ -482,10 +482,10 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 	}
 }
 
-std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBmElementPtr element)
+std::unordered_map<std::string, repo::lib::RepoVariant> DataProcessorRvt::fillMetadata(OdBmElementPtr element)
 {
-	std::unordered_map<std::string, std::string> metadata;
-	metadata[REVIT_ELEMENT_ID] = std::to_string((OdUInt64)element->objectId().getHandle());
+	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
+	metadata[REVIT_ELEMENT_ID] = (OdUInt64)element->objectId().getHandle();
 
 	try
 	{

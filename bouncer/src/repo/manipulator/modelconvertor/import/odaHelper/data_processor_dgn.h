@@ -64,7 +64,7 @@ namespace repo {
 				private:
 					OdCmEntityColor fixByACI(const ODCOLORREF *ids, const OdCmEntityColor &color);
 
-					std::unordered_map<std::string, std::string> extractXMLLinkages(OdDgElementPtr pElm);
+					std::unordered_map<std::string, repo::lib::RepoVariant> extractXMLLinkages(OdDgElementPtr pElm);
 
 				};
 				typedef OdSharedPtr<DataProcessorDgn> OdGiConveyorGeometryDgnDumperPtr;

@@ -352,13 +352,6 @@ std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoController::initia
 	return impl->initialiseAssetBuffer(token, scene, jsonFiles, unityAssets, serialisedFaceBuf, idMapBuf, meshMappings);
 }
 
-repo::core::model::RepoNodeSet RepoController::loadMetadataFromFile(
-	const std::string &filePath,
-	const char        &delimiter)
-{
-	return impl->loadMetadataFromFile(filePath, delimiter);
-}
-
 repo::core::model::RepoScene*
 RepoController::loadSceneFromFile(
 	const std::string                                          &filePath,

@@ -36,9 +36,10 @@ TransNode  repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformations(const 
 	if (initialElements->size())
 	{
 		repoTrace << "Looping through Elements";
-		std::unordered_map<std::string, std::string> metaValue, locationInfo;
+		std::unordered_map<std::string, repo::lib::RepoVariant> metaValue;
+		std::unordered_map<std::string, std::string> locationInfo;
 		std::unordered_map<std::string, std::string> projectUnits;
-		std::unordered_map<int, std::unordered_map<std::string, std::string>> metadataGroup;
+		std::unordered_map<int, std::unordered_map<std::string, repo::lib::RepoVariant>> metadataGroup;
 		node = createTransformationsRecursive(ifcFile, missingEntities, *initialElements->begin(), metaValue, locationInfo, projectUnits, metadataGroup);
 	}
 	else
@@ -53,16 +54,17 @@ TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursiv
 	IfcParse::IfcFile &ifcFile,
 	bool &missingEntities,
 	const IfcUtil::IfcBaseClass *element,
-	std::unordered_map<std::string, std::string>                               &metaValue,
-	std::unordered_map<std::string, std::string>                               &locationValue,
-	std::unordered_map<std::string, std::string>                               &projectUnits,
-	std::unordered_map<int, std::unordered_map<std::string, std::string>>      &metadataGroup,
-	const std::set<int>													       &ancestorsID,
-	const std::string														   &metaPrefix
+	std::unordered_map<std::string, repo::lib::RepoVariant>                           &metaValue,
+	std::unordered_map<std::string, std::string>                                      &locationValue,
+	std::unordered_map<std::string, std::string>                                      &projectUnits,
+	std::unordered_map<int, std::unordered_map<std::string, repo::lib::RepoVariant>>  &metadataGroup,
+	const std::set<int>													              &ancestorsID,
+	const std::string														          &metaPrefix
 )
 {
 	std::vector<IfcUtil::IfcBaseClass *> extraChildren; //children outside of reference
-	std::unordered_map<std::string, std::string> myMetaValues, elementInfo, locationInfo(locationValue);
+	std::unordered_map<std::string, std::string> elementInfo, locationInfo(locationValue);
+	std::unordered_map<std::string, repo::lib::RepoVariant> myMetaValues;
 
 	auto id = element->data().id();
 	std::string guid, childrenMetaPrefix;
@@ -212,7 +214,7 @@ TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursiv
 	else
 	{
 		if (actions.cacheMetadata) {
-			metadataGroup[id] = std::unordered_map<std::string, std::string>(myMetaValues);
+			metadataGroup[id] = std::unordered_map<std::string, repo::lib::RepoVariant>(myMetaValues);
 		}
 		metaValue.insert(myMetaValues.begin(), myMetaValues.end());
 	}
@@ -241,12 +243,12 @@ std::string repo::ifcUtility::SCHEMA_NS::TreeParser::constructMetadataLabel(
 repo::ifcUtility::SCHEMA_NS::TreeParser::Actions_t repo::ifcUtility::SCHEMA_NS::TreeParser::determineActionsByElementType(
 	const IfcUtil::IfcBaseClass *element,
 	bool & missingEntities,
-	std::unordered_map<std::string, std::string>                  &metaValues,
-	std::unordered_map<std::string, std::string>                  &locationData,
-	std::unordered_map<std::string, std::string>                  &projectUnits,
-	std::vector<IfcUtil::IfcBaseClass *>                          &extraChildren,
-	const std::string											  &metaPrefix,
-	std::string													  &childrenMetaPrefix)
+	std::unordered_map<std::string, repo::lib::RepoVariant> &metaValues,
+	std::unordered_map<std::string, std::string>            &locationData,
+	std::unordered_map<std::string, std::string>            &projectUnits,
+	std::vector<IfcUtil::IfcBaseClass *>                    &extraChildren,
+	const std::string										&metaPrefix,
+	std::string												&childrenMetaPrefix)
 {
 	Actions_t action;
 	action.createElement = !dynamic_cast<const IfcSchema::IfcRelationship *>(element);
@@ -1238,7 +1240,7 @@ std::string ifcDateToString(const IfcSchema::IfcCalendarDate *date) {
 
 void  repo::ifcUtility::SCHEMA_NS::TreeParser::generateClassificationInformation(
 	const IfcSchema::IfcRelAssociatesClassification * &relCS,
-	std::unordered_map<std::string, std::string>         &metaValues
+	std::unordered_map<std::string, repo::lib::RepoVariant> &metaValues
 
 ) {
 	auto relatedClassification = relCS->RelatingClassification();

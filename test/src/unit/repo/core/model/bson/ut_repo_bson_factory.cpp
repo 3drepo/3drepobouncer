@@ -284,12 +284,15 @@ TEST(RepoBSONFactoryTest, MakeMaterialNodeTest)
 
 TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
 {
-	std::vector<std::string> keys({ "one", "two", "three", "four", "five" }), values({ "!", "!!", "!!!", "!!!!", "!!!!!" });
-
 	std::string name = "MetaTest";
+	std::unordered_map<std::string, repo::lib::RepoVariant> metaDataUnMap;
 
-	MetadataNode metaNode = RepoBSONFactory::makeMetaDataNode(keys, values, name);
-
+	metaDataUnMap["one"]=1;
+	metaDataUnMap["two"]= 2;
+	metaDataUnMap["three"]= 3;
+	metaDataUnMap["four"]= 4;
+	metaDataUnMap["five"]= 5;
+	MetadataNode metaNode = RepoBSONFactory::makeMetaDataNode(metaDataUnMap, name);
 	EXPECT_FALSE(metaNode.isEmpty());
 	EXPECT_EQ(name, metaNode.getName());
 	EXPECT_EQ(metaNode.getTypeAsEnum(), NodeType::METADATA);
@@ -297,18 +300,20 @@ TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
 	auto metaBSON = metaNode.getObjectField(REPO_NODE_LABEL_METADATA);
 
 	ASSERT_FALSE(metaBSON.isEmpty());
-	for (uint32_t i = 0; i < keys.size(); ++i)
+	for (uint32_t i = 0; i < metaDataUnMap.size(); ++i)
 	{
 		auto index = std::to_string(i);
 		ASSERT_TRUE(metaBSON.hasField(index));
 		auto metaEntry = metaBSON.getObjectField(index);
 		auto key = metaEntry.getStringField(REPO_NODE_LABEL_META_KEY);
-		auto value = metaEntry.getStringField(REPO_NODE_LABEL_META_VALUE);
-		auto keyIt = std::find(keys.begin(), keys.end(), key);
-		ASSERT_NE(keyIt, keys.end());
-		auto vectorIdx = keyIt - keys.begin();
-		EXPECT_EQ(key, keys[vectorIdx]);
-		EXPECT_EQ(value, values[vectorIdx]);
+		auto value = metaEntry.getIntField(REPO_NODE_LABEL_META_VALUE);
+		auto keyIt = metaDataUnMap.find(key);
+		auto endIt = metaDataUnMap.end();
+		ASSERT_NE(keyIt, endIt);
+		EXPECT_EQ(key, keyIt->first);
+		int itValue;
+		if((keyIt->second).getBaseData<int>(itValue))
+			EXPECT_EQ(value,itValue);
 	}
 }
 
