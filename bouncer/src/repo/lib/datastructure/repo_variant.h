@@ -35,11 +35,6 @@ namespace repo {
         public:
             using boostVariantType::operator=;
 
-            RepoVariant& operator()(RepoVariant& rhs)
-            {
-                return rhs;
-            }
-
             bool operator==(const RepoVariant& rhs) const{
                 return (*this == rhs);
             }
