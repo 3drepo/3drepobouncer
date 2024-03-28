@@ -62,7 +62,7 @@ namespace repo {
 					GeometryCollector();
 					~GeometryCollector();
 
-					std::unordered_map<std::string, std::unordered_map<std::string, std::string>> metadataCache;
+					std::unordered_map<std::string, std::unordered_map<std::string, repo::lib::RepoVariant>> metadataCache;
 					ModelUnits units = ModelUnits::UNKNOWN;
 
 					/**

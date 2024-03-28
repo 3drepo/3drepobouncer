@@ -88,14 +88,14 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 	return std::string();
 }
 
-std::string DataProcessorRvt::translateMetadataValue(
+repo::lib::RepoVariant DataProcessorRvt::translateMetadataValue(
 	const OdTfVariant& val,
 	OdBmLabelUtilsPEPtr labelUtils,
 	OdBmParamDefPtr paramDef,
 	OdBmDatabase* database,
 	OdBm::BuiltInParameter::Enum param)
 {
-	std::string strOut;
+	repo::lib::RepoVariant strOut;
 	switch (val.type()) {
 	case OdVariant::kVoid:
 		break;
@@ -103,22 +103,22 @@ std::string DataProcessorRvt::translateMetadataValue(
 		strOut = convertToStdString(val.getString());
 		break;
 	case OdVariant::kBool:
-		strOut = std::to_string(val.getBool());
+		strOut = val.getBool();
 		break;
 	case OdVariant::kInt8:
-		strOut = std::to_string(val.getInt8());
+		strOut = val.getInt8();
 		break;
 	case OdVariant::kInt16:
-		strOut = std::to_string(val.getInt16());
+		strOut = val.getInt16();
 		break;
 	case OdVariant::kInt32:
 		if (paramDef->getParameterTypeId() == OdBmSpecTypeId::Boolean::kYesNo)
 			(val.getInt32()) ? strOut = "Yes" : strOut = "No";
 		else
-			strOut = std::to_string(val.getInt32());
+			strOut = val.getInt32();
 		break;
 	case OdVariant::kInt64:
-		strOut = std::to_string(val.getInt64());
+		strOut = val.getInt64();
 		break;
 	case OdVariant::kDouble:
 	{
@@ -398,7 +398,7 @@ void DataProcessorRvt::initLabelUtils() {
 void DataProcessorRvt::processParameter(
 	OdBmElementPtr element,
 	OdBmObjectId paramId,
-	std::unordered_map<std::string, std::string> &metadata,
+	std::unordered_map<std::string, repo::lib::RepoVariant> &metadata,
 	const OdBm::BuiltInParameter::Enum &buildInEnum
 ) {
 	OdTfVariant value;
@@ -430,8 +430,8 @@ void DataProcessorRvt::processParameter(
 				}
 			}
 
-			std::string variantValue = translateMetadataValue(value, labelUtils, pDescParam, element->getDatabase(), buildInEnum);
-			if (!variantValue.empty())
+			repo::lib::RepoVariant variantValue = translateMetadataValue(value, labelUtils, pDescParam, element->getDatabase(), buildInEnum);
+			if (!variantValue.isEmpty())
 			{
 				if (metadata.find(metaKey) != metadata.end() && metadata[metaKey] != variantValue) {
 					repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << "value before: " << metadata[metaKey] << " after: " << variantValue;
@@ -449,7 +449,7 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 	OdBmParameterSet aParams;
 	element->getListParams(aParams);
 
-	std::unordered_map<std::string, std::string> metadata;
+	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
 
 	auto id = std::to_string((OdUInt64)element->objectId().getHandle());
 	if (collector->metadataCache.find(id) != collector->metadataCache.end()) {
