@@ -306,13 +306,13 @@ TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
 		ASSERT_TRUE(metaBSON.hasField(index));
 		auto metaEntry = metaBSON.getObjectField(index);
 		auto key = metaEntry.getStringField(REPO_NODE_LABEL_META_KEY);
-		auto value = metaEntry.getStringField(REPO_NODE_LABEL_META_VALUE);
+		auto value = metaEntry.getIntField(REPO_NODE_LABEL_META_VALUE);
 		auto keyIt = metaDataUnMap.find(key);
 		auto endIt = metaDataUnMap.end();
 		ASSERT_NE(keyIt, endIt);
 		EXPECT_EQ(key, keyIt->first);
-		std::string itValue = "";
-		if((keyIt->second).getStringData(itValue))
+		int itValue;
+		if((keyIt->second).getBaseData<int>(itValue))
 			EXPECT_EQ(value,itValue);
 	}
 }

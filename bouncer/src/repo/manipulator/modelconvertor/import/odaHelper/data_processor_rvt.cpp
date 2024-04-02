@@ -88,19 +88,19 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 	return std::string();
 }
 
-std::string DataProcessorRvt::translateMetadataValue(
+repo::lib::RepoVariant DataProcessorRvt::translateMetadataValue(
 	const OdTfVariant& val,
 	OdBmLabelUtilsPEPtr labelUtils,
 	OdBmParamDefPtr paramDef,
 	OdBmDatabase* database,
 	OdBm::BuiltInParameter::Enum param)
 {
-	std::string strOut;
+	repo::lib::RepoVariant strOut;
 	switch (val.type()) {
 	case OdVariant::kVoid:
 		break;
 	case OdVariant::kString:
-		strOut = val.getString();
+		strOut = convertToStdString(val.getString());
 		break;
 	case OdVariant::kBool:
 		strOut = val.getBool();
@@ -115,7 +115,7 @@ std::string DataProcessorRvt::translateMetadataValue(
 		if (paramDef->getParameterTypeId() == OdBmSpecTypeId::Boolean::kYesNo)
 			(val.getInt32()) ? strOut = "Yes" : strOut = "No";
 		else
-			strOut = std::to_string(val.getInt32());
+			strOut = val.getInt32();
 		break;
 	case OdVariant::kInt64:
 		strOut = val.getInt64();
@@ -128,10 +128,9 @@ std::string DataProcessorRvt::translateMetadataValue(
 	}
 	break;
 	case OdVariant::kAnsiString:
-		strOut = val.getAnsiString().c_str();
+		strOut = std::string(val.getAnsiString().c_str());
 		break;
 	case OdTfVariant::kDbStubPtr:
-
 		// A stub is effectively a pointer to another database, or built-in, object. We don't recurse these objects, but will try to extract
 		// their names or identities where possible (e.g. if a key pointed to a wall object, we would get the name of the wall object).
 
@@ -170,7 +169,7 @@ std::string DataProcessorRvt::translateMetadataValue(
 					{
 						OdBmElementPtr elem = bmPtr;
 						if (elem->getElementName() == OdString::kEmpty) {
-							strOut = (OdUInt64)bmId.getHandle();
+							strOut = std::to_string((OdUInt64)bmId.getHandle());
 						}
 						else {
 							strOut = convertToStdString(elem->getElementName());
@@ -398,7 +397,7 @@ void DataProcessorRvt::initLabelUtils() {
 void DataProcessorRvt::processParameter(
 	OdBmElementPtr element,
 	OdBmObjectId paramId,
-	std::unordered_map<std::string, std::string> &metadata,
+	std::unordered_map<std::string, repo::lib::RepoVariant> &metadata,
 	const OdBm::BuiltInParameter::Enum &buildInEnum
 ) {
 	OdTfVariant value;
@@ -430,11 +429,132 @@ void DataProcessorRvt::processParameter(
 				}
 			}
 
-			std::string variantValue = translateMetadataValue(value, labelUtils, pDescParam, element->getDatabase(), buildInEnum);
-			if (!variantValue.empty())
+			repo::lib::RepoVariant variantValue = translateMetadataValue(value, labelUtils, pDescParam, element->getDatabase(), buildInEnum);
+			if (!variantValue.isEmpty())
 			{
 				if (metadata.find(metaKey) != metadata.end() && metadata[metaKey] != variantValue) {
-					repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << "value before: " << metadata[metaKey] << " after: " << variantValue;
+					
+					switch((metadata[metaKey]).getVariantType()){
+						case repo::lib::RepoDataType::INT:{
+							int metaDataValue;
+							metadata[metaKey].getBaseData<int>(metaDataValue);
+
+							int RvariantValue;
+							variantValue.getBaseData<int>(RvariantValue);
+							repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << " value before: " << metaDataValue << " after: " << RvariantValue;
+						}
+						break;
+						case repo::lib::RepoDataType::DOUBLE:{
+							double metaDataValue;
+							metadata[metaKey].getBaseData<double>(metaDataValue);
+
+							double RvariantValue;
+							variantValue.getBaseData<double>(RvariantValue);
+							repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << " value before: " << metaDataValue << " after: " << RvariantValue;
+						}
+						break;
+						case repo::lib::RepoDataType::STRING:{
+							std::string metaDataValue;
+							metadata[metaKey].getStringData(metaDataValue);
+
+							std::string RvariantValue;
+							variantValue.getStringData(RvariantValue);
+							repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << " value before: " << metaDataValue << " after: " << RvariantValue;
+						}
+						break;
+						case repo::lib::RepoDataType::BOOL:{
+							bool metaDataValue;
+							metadata[metaKey].getBaseData<bool>(metaDataValue);
+
+							bool RvariantValue;
+							variantValue.getBaseData<bool>(RvariantValue);
+							repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << " value before: " << metaDataValue << " after: " << RvariantValue;
+						}
+						break;
+						case repo::lib::RepoDataType::UINT64:{
+							uint64_t metaDataValue;
+							metadata[metaKey].getBaseData<uint64_t>(metaDataValue);
+
+							uint64_t RvariantValue;
+							variantValue.getBaseData<uint64_t>(RvariantValue);
+							repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << " value before: " << metaDataValue << " after: " << RvariantValue;
+						}
+						break;
+						case repo::lib::RepoDataType::FLOAT:{
+							float metaDataValue;
+							metadata[metaKey].getBaseData<float>(metaDataValue);
+
+							float RvariantValue;
+							variantValue.getBaseData<float>(RvariantValue);
+							repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << " value before: " << metaDataValue << " after: " << RvariantValue;
+						}
+						break;
+						case repo::lib::RepoDataType::LONG:{
+							long metaDataValue;
+							metadata[metaKey].getBaseData<long>(metaDataValue);
+
+							long RvariantValue;
+							variantValue.getBaseData<long>(RvariantValue);
+							repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << " value before: " << metaDataValue << " after: " << RvariantValue;
+						}
+						break;
+						case repo::lib::RepoDataType::LONGLONG:{
+							long long metaDataValue;
+							metadata[metaKey].getBaseData<long long>(metaDataValue);
+
+							long long RvariantValue;
+							variantValue.getBaseData<long long>(RvariantValue);
+							repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << " value before: " << metaDataValue << " after: " << RvariantValue;
+						}
+						break;
+						case repo::lib::RepoDataType::ODUINT32:{
+							OdUInt32 metaDataValue;
+							metadata[metaKey].getBaseData<OdUInt32>(metaDataValue);
+
+							OdUInt32 RvariantValue;
+							variantValue.getBaseData<OdUInt32>(RvariantValue);
+							repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << " value before: " << metaDataValue << " after: " << RvariantValue;
+						}
+						break;
+						case repo::lib::RepoDataType::ODINT8:{
+							OdInt8 metaDataValue;
+							metadata[metaKey].getBaseData<OdInt8>(metaDataValue);
+
+							OdInt8 RvariantValue;
+							variantValue.getBaseData<OdInt8>(RvariantValue);
+							repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << " value before: " << metaDataValue << " after: " << RvariantValue;
+						}
+						break;
+						case repo::lib::RepoDataType::ODINT16:{
+							OdInt16 metaDataValue;
+							metadata[metaKey].getBaseData<OdInt16>(metaDataValue);
+
+							OdInt16 RvariantValue;
+							variantValue.getBaseData<OdInt16>(RvariantValue);
+							repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << " value before: " << metaDataValue << " after: " << RvariantValue;
+						}
+						break;
+						case repo::lib::RepoDataType::ODUINT8:{
+							OdUInt8 metaDataValue;
+							metadata[metaKey].getBaseData<OdUInt8>(metaDataValue);
+
+							OdUInt8 RvariantValue;
+							variantValue.getBaseData<OdUInt8>(RvariantValue);
+							repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << " value before: " << metaDataValue << " after: " << RvariantValue;
+						}
+						break;
+						case repo::lib::RepoDataType::ODUINT16:{
+							OdUInt16 metaDataValue;
+							metadata[metaKey].getBaseData<OdUInt16>(metaDataValue);
+
+							OdUInt16 RvariantValue;
+							variantValue.getBaseData<OdUInt16>(RvariantValue);
+							repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << " value before: " << metaDataValue << " after: " << RvariantValue;
+						}
+						break;
+					}
+
+					//repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << " value before: " << metadata[metaKey] << " after: " << variantValue;
 				}
 				metadata[metaKey] = variantValue;
 			}
@@ -449,7 +569,7 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 	OdBmParameterSet aParams;
 	element->getListParams(aParams);
 
-	std::unordered_map<std::string, std::string> metadata;
+	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
 
 	auto id = std::to_string((OdUInt64)element->objectId().getHandle());
 	if (collector->metadataCache.find(id) != collector->metadataCache.end()) {
@@ -485,7 +605,8 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 std::unordered_map<std::string, repo::lib::RepoVariant> DataProcessorRvt::fillMetadata(OdBmElementPtr element)
 {
 	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
-	metadata[REVIT_ELEMENT_ID] = (OdUInt64)(element->objectId().getHandle());
+	metadata[REVIT_ELEMENT_ID] = ((OdUInt64)element->objectId().getHandle());
+
 	try
 	{
 		fillMetadataByElemPtr(element, metadata);

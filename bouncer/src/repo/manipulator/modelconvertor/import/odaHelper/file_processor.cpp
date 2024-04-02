@@ -43,18 +43,14 @@ std::unique_ptr<T> makeUnique(Args&&... args) {
 }
 
 std::unique_ptr<FileProcessor> FileProcessor::getFileProcessor(const std::string &inputFile, GeometryCollector * geoCollector, const ModelImportConfig& config) {
-	repoInfo << "getFileProcessor start inputFile:" << inputFile;
 	boost::filesystem::path filePathP(inputFile);
 	std::string fileExt = filePathP.extension().string();
-	repoInfo << "getFileProcessor fileExt:" << fileExt;
 	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
 
 	if (fileExt == ".DGN")
 		return makeUnique<FileProcessorDgn>(inputFile, geoCollector, config);
-	else if (fileExt == ".DWG" || fileExt == ".DXF"){
-		repoInfo << "getFileProcessor fileExt inside else if:" << fileExt;
+	else if (fileExt == ".DWG" || fileExt == ".DXF")
 		return makeUnique<FileProcessorDwg>(inputFile, geoCollector, config);
-	}
 	else if (fileExt == ".RVT" || fileExt == ".RFA")
 		return makeUnique<FileProcessorRvt>(inputFile, geoCollector, config);
 	else if (fileExt == ".NWD" || fileExt == ".NWC")

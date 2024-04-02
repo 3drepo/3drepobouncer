@@ -140,7 +140,7 @@ template <class T>
 void setMetadataValue(const OdString& category, const OdString& key, const T& value, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	auto metaKey = convertToStdString(category) + "::" + (key.isEmpty() ? std::string("Value") : convertToStdString(key));
-	auto metaValue = value;
+	auto metaValue = repo::lib::RepoVariant(value);
 	metadata[metaKey] = metaValue;
 }
 
@@ -148,23 +148,22 @@ void setMetadataValue(const OdString& category, const OdString& key, const T& va
 template <>
 void setMetadataValue(const OdString& category, const OdString& key, const OdString& value, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
-	setMetadataValue(category, key, convertToStdString(value), metadata);
+	setMetadataValue(category, key, repo::lib::RepoVariant(convertToStdString(value)), metadata);
 }
 
 // This specialisation is because v140 doesn't support constexpr and will attempt to find a to_string overload regardless of the if-statement
 template <>
 void setMetadataValue(const OdString& category, const OdString& key, const double& value, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
-	setMetadataValue(category, key, value, metadata);
+	setMetadataValue(category, key, repo::lib::RepoVariant(value), metadata);
 }
 
 void removeFilepathFromMetadataValue(std::string key, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	if (metadata.find(key) != metadata.end()) {
-		std::string strMetaData = "";
-		if(metadata[key].getStringData(strMetaData)){
-			metadata[key] = boost::filesystem::path(strMetaData).filename().string();
-		}
+		std::string strFilePath = "";
+		if(metadata[key].getStringData(strFilePath))
+			metadata[key] = boost::filesystem::path(strFilePath).filename().string();
 	}
 }
 
@@ -363,7 +362,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 					break;
 				case NwPropertyValueType::value_type_OdUInt32:
 					prop->getValue(u32value);
-					setMetadataValue(category, key,  u32value, metadata);
+					setMetadataValue(category, key, u32value, metadata);
 					break;
 				case NwPropertyValueType::value_type_OdUInt8:
 					prop->getValue(u8value);

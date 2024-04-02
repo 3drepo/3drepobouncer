@@ -99,10 +99,10 @@ static std::string produceUploadFileArgs(
 }
 
 static std::string produceUploadArgs(
-	const std::string& database,
-	const std::string& project,
-	const std::string& filePath,
-	const std::string& configPath = getConnConfig())
+	const std::string &database,
+	const std::string &project,
+	const std::string &filePath,
+	const std::string &configPath = getConnConfig())
 {
 	return  getClientExePath()
 		+ " " + configPath
@@ -114,7 +114,6 @@ static std::string produceUploadArgs(
 static int runProcess(
 	const std::string &cmd)
 {
-	repoInfo << "runProcess cmd: " << cmd;
 	int status = system(cmd.c_str());
 #ifndef _WIN32
 	//Linux, use WIFEXITED(status) to get the real exit code
@@ -427,7 +426,6 @@ TEST(RepoClientTest, UploadTestRVT2024)
 
 	//Upload RVT file
 	std::string rvtUpload = produceUploadArgs(db, "rvtTest2024", getDataPath(rvtModel2024));
-	
 	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload));
 	EXPECT_TRUE(projectExists(db, "rvtTest2024"));
 }

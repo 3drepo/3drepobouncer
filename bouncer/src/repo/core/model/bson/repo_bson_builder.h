@@ -35,7 +35,6 @@
 #include "../../../lib/datastructure/repo_matrix.h"
 #include "../../../lib/datastructure/repo_uuid.h"
 #include "repo_bson.h"
-#include "../../../lib/datastructure/repo_variant.h"
 
 namespace repo {
 	namespace core {
@@ -68,57 +67,6 @@ namespace repo {
 					const RepoBSON &bson)
 				{
 					mongo::BSONObjBuilder::appendArray(label, bson);
-				}
-
-				void appendRepoVariant(
-					const std::string &label,
-					repo::lib::RepoVariant repoVariant)
-				{
-					repo::lib::RepoDataType repoDataType = repoVariant.getVariantType();
-					repoTrace << "repoDataType = " << repoDataType;
-					switch (repoDataType)
-					{
-					case repo::lib::RepoDataType::STRING:{
-						std::string data="";
-						if(repoVariant.getStringData(data))
-							mongo::BSONObjBuilder::append(label, data);
-					}
-					break;
-					case repo::lib::RepoDataType::FLOAT:{
-						float data;
-						if(repoVariant.getBaseData<float>(data))
-							mongo::BSONObjBuilder::append(label, data);
-					}
-					break;
-					case repo::lib::RepoDataType::BOOL:{
-						bool data;
-						if(repoVariant.getBaseData<bool>(data))
-							mongo::BSONObjBuilder::append(label, data);
-					}
-					break;
-					case repo::lib::RepoDataType::DOUBLE:{
-						double data;
-						if(repoVariant.getBaseData<double>(data))
-							mongo::BSONObjBuilder::append(label, data);
-					}
-					break;
-					case repo::lib::RepoDataType::INT:{
-						int data;
-						if(repoVariant.getBaseData<int>(data))
-							mongo::BSONObjBuilder::append(label, data);
-					}
-					break;
-					case repo::lib::RepoDataType::LONGLONG:{
-						long long data;
-						if(repoVariant.getBaseData<long long>(data))
-							mongo::BSONObjBuilder::append(label, data);
-					}
-					break;
-					default:{
-						repoWarning << "Datatype is not supported in RepoVariant.";
-					}
-					break;
-					}
 				}
 
 				template<class T>

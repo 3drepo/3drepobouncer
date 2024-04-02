@@ -122,7 +122,7 @@ namespace repo {
 
 					bool ignoreParam(const std::string& param);
 
-					std::string translateMetadataValue(
+					repo::lib::RepoVariant translateMetadataValue(
 						const OdTfVariant& val,
 						OdBmLabelUtilsPEPtr labelUtils,
 						OdBmParamDefPtr paramDef,
@@ -132,7 +132,7 @@ namespace repo {
 					void processParameter(
 						OdBmElementPtr element,
 						OdBmObjectId paramId,
-						std::unordered_map<std::string, std::string> &metadata,
+						std::unordered_map<std::string, repo::lib::RepoVariant> &metadata,
 						const OdBm::BuiltInParameter::Enum &buildInEnum
 					);
 

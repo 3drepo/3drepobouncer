@@ -22,6 +22,7 @@
 
 #include "repo_bson_builder.h"
 #include "../../../lib/repo_log.h"
+#include "../../../lib/datastructure/repo_variant.h"
 
 using namespace repo::core::model;
 
@@ -192,7 +193,30 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 		{
 			RepoBSONBuilder metaEntryBuilder;
 			metaEntryBuilder.append(REPO_NODE_LABEL_META_KEY, key);
-			metaEntryBuilder.appendRepoVariant(REPO_NODE_LABEL_META_VALUE, value);
+			//Check if it is a number, if it is, store it as a number
+
+			try {
+				long long valueInt;
+				value.getBaseData<long long>(valueInt);
+				metaEntryBuilder.append(REPO_NODE_LABEL_META_VALUE, valueInt);
+			}
+			catch (std::exception e)
+			{
+				//not an int, try a double
+
+				try {
+					double valueFloat;
+					value.getBaseData<double>(valueFloat);
+					metaEntryBuilder.append(REPO_NODE_LABEL_META_VALUE, valueFloat);
+				}
+				catch (std::exception e)
+				{
+					std::string strValue;
+					value.getStringData(strValue);
+					//not an int or float, store as string
+					metaEntryBuilder.append(REPO_NODE_LABEL_META_VALUE, strValue);
+				}
+			}
 			metaEntries.push_back(metaEntryBuilder.obj());
 		}
 	}

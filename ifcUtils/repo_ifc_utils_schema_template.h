@@ -90,7 +90,7 @@ namespace repo {
 
 				static void generateClassificationInformation(
 					const SCHEMA_IN_FILE::IfcRelAssociatesClassification * &relCS,
-					std::unordered_map<std::string, repo::lib::RepoVariant>    &metaValues
+					std::unordered_map<std::string, repo::lib::RepoVariant> &metaValues
 
 				);
 
@@ -98,23 +98,23 @@ namespace repo {
 					IfcParse::IfcFile &ifcFile,
 					bool &missingEntities,
 					const IfcUtil::IfcBaseClass *element,
-					std::unordered_map<std::string, repo::lib::RepoVariant>                               &metaValue,
-					std::unordered_map<std::string, std::string>										  &locationValue,
-					std::unordered_map<std::string, std::string>										  &projectUnits,
-					std::unordered_map<int, std::unordered_map<std::string, repo::lib::RepoVariant>>      &metadataGroup,
-					const std::set<int>																	  &ancestorsID = std::set<int>(),
-					const std::string																	  &metaPrefix = std::string()
+					std::unordered_map<std::string, repo::lib::RepoVariant>							 &metaValue,
+					std::unordered_map<std::string, std::string>									 &locationValue,
+					std::unordered_map<std::string, std::string>									 &projectUnits,
+					std::unordered_map<int, std::unordered_map<std::string, repo::lib::RepoVariant>> &metadataGroup,
+					const std::set<int>													             &ancestorsID = std::set<int>(),
+					const std::string														         &metaPrefix = std::string()
 				);
 
 				static Actions_t determineActionsByElementType(
 					const IfcUtil::IfcBaseClass *element,
 					bool &missingEntities,
-					std::unordered_map<std::string, repo::lib::RepoVariant>                  &metaValues,
-					std::unordered_map<std::string, std::string>							 &locationData,
-					std::unordered_map<std::string, std::string>							 &projectUnits,
-					std::vector<IfcUtil::IfcBaseClass *>									 &extraChildren,
-					const std::string														 &metaPrefix,
-					std::string																 &childrenMetaPrefix);
+					std::unordered_map<std::string, repo::lib::RepoVariant>       &metaValues,
+					std::unordered_map<std::string, std::string>                  &locationData,
+					std::unordered_map<std::string, std::string>                  &projectUnits,
+					std::vector<IfcUtil::IfcBaseClass *>                          &extraChildren,
+					const std::string											  &metaPrefix,
+					std::string											          &childrenMetaPrefix);
 
 				static void setProjectUnits(
 					const SCHEMA_IN_FILE::IfcUnitAssignment* unitsAssignment,
