@@ -17,6 +17,7 @@
 
 #include <OdaCommon.h>
 #include <OdString.h>
+#include <DgCmColor.h>
 
 #include <toString.h>
 #include <DgLevelTableRecord.h>
@@ -139,31 +140,46 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	return OdGsBaseMaterialView::doDraw(i, pDrawable);
 }
 
+OdCmEntityColor fixByACI(const ODCOLORREF* ids, const OdCmEntityColor& color)
+{
+	if (color.isByACI() || color.isByDgnIndex())
+	{
+		return OdCmEntityColor(ODGETRED(ids[color.colorIndex()]), ODGETGREEN(ids[color.colorIndex()]), ODGETBLUE(ids[color.colorIndex()]));
+	}
+	else if (!color.isByColor())
+	{
+		return OdCmEntityColor(0, 0, 0);
+	}
+	return color;
+}
+
 void DataProcessorDwg::convertTo3DRepoMaterial(
 	OdGiMaterialItemPtr prevCache,
 	OdDbStub* materialId,
-	const OdGiMaterialTraitsData & materialData,
+	const OdGiMaterialTraitsData& materialData,
 	MaterialColours& matColors,
 	repo_material_t& material,
 	bool& missingTexture)
 {
 	DataProcessor::convertTo3DRepoMaterial(prevCache, materialId, materialData, matColors, material, missingTexture);
 
-	/*
 	OdCmEntityColor color = fixByACI(this->device()->getPalette(), effectiveTraits().trueColor());
-	// diffuse
-	if (matColors.colorDiffuseOverride)
+
+	if (matColors.colorDiffuseOverride) {
 		material.diffuse = { ODGETRED(matColors.colorDiffuse) / 255.0f, ODGETGREEN(matColors.colorDiffuse) / 255.0f, ODGETBLUE(matColors.colorDiffuse) / 255.0f, 1.0f };
-	else
+	}
+	else {
 		material.diffuse = { color.red() / 255.0f, color.green() / 255.0f, color.blue() / 255.0f, 1.0f };
-	// specular
-	if (matColors.colorSpecularOverride)
+	}
+
+	if (matColors.colorSpecularOverride) {
 		material.specular = { ODGETRED(matColors.colorSpecular) / 255.0f, ODGETGREEN(matColors.colorSpecular) / 255.0f, ODGETBLUE(matColors.colorSpecular) / 255.0f, 1.0f };
-	else
+	}
+	else {
 		material.specular = { color.red() / 255.0f, color.green() / 255.0f, color.blue() / 255.0f, 1.0f };
+	}
 
 	material.shininessStrength = 1 - material.shininessStrength;
-	*/
 }
 
 void DataProcessorDwg::init(GeometryCollector *const geoCollector)
@@ -184,18 +200,3 @@ void DataProcessorDwg::endViewVectorization()
 	collector->stopMeshEntry();
 	OdGsBaseMaterialView::endViewVectorization();
 }
-
-/*
-OdCmEntityColor DataProcessorDwg::fixByACI(const ODCOLORREF *ids, const OdCmEntityColor &color)
-{
-	if (color.isByACI() || color.isByDgnIndex())
-	{
-		return OdCmEntityColor(ODGETRED(ids[color.colorIndex()]), ODGETGREEN(ids[color.colorIndex()]), ODGETBLUE(ids[color.colorIndex()]));
-	}
-	else if (!color.isByColor())
-	{
-		return OdCmEntityColor(0, 0, 0);
-	}
-	return color;
-}
-*/
