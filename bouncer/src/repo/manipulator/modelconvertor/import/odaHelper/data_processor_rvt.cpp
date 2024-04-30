@@ -530,9 +530,9 @@ void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const Mater
 {
 	const float norm = 255.f;
 
-	material.specular = { ODGETRED(matColors.colorSpecular) / norm, ODGETGREEN(matColors.colorSpecular) / norm, ODGETBLUE(matColors.colorSpecular) / norm, 1.0f };
-	material.ambient = { ODGETRED(matColors.colorAmbient) / norm, ODGETGREEN(matColors.colorAmbient) / norm, ODGETBLUE(matColors.colorAmbient) / norm, 1.0f };
-	material.emissive = { ODGETRED(matColors.colorEmissive) / norm, ODGETGREEN(matColors.colorEmissive) / norm, ODGETBLUE(matColors.colorEmissive) / norm, 1.0f };
+	material.specular = { matColors.colorSpecular.red() / norm, matColors.colorSpecular.green() / norm, matColors.colorSpecular.blue() / norm, 1.0f };
+	material.ambient = { matColors.colorAmbient.red() / norm, matColors.colorAmbient.green() / norm, matColors.colorAmbient.blue() / norm, 1.0f };
+	material.emissive = { matColors.colorEmissive.red() / norm, matColors.colorEmissive.green() / norm, matColors.colorEmissive.blue() / norm, 1.0f };
 	material.diffuse = material.emissive;
 
 	if (!materialPtr.isNull())
