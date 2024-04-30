@@ -7,6 +7,8 @@
 #include <DynamicLinker.h>
 #include <RxDynamicModule.h>
 #include <Gs/GsBaseInclude.h>
+#include <DbGsManager.h>
+#include <GiContextForDbDatabase.h>
 
 #include "../../../../error_codes.h"
 #include "../../../../lib/repo_exception.h"
@@ -32,7 +34,7 @@ protected:
 	}
 	OdSmartPtr<OdGsViewImpl> createViewObject()
 	{
-		OdSmartPtr<OdGsViewImpl> pP = OdRxObjectImpl<DataProcessorDwg, OdGsViewImpl>::createObject();
+		auto pP = OdRxObjectImpl<DataProcessorDwg, OdGsViewImpl>::createObject();
 		((DataProcessorDwg*)pP.get())->init(collector);
 		return pP;
 	}
@@ -56,15 +58,18 @@ void importDwg(OdDbDatabasePtr pDb, GeometryCollector* collector)
 	// use the GeometryCollector underneath.
 
 	OdGsModulePtr pGsModule = ODRX_STATIC_MODULE_ENTRY_POINT(DeviceModuleDwg)(OD_T("DeviceModuleDwg"));
-	((DeviceModuleDwg*)pGsModule.get())->init(collector);
+	auto deviceModule = (DeviceModuleDwg*)pGsModule.get();
+	deviceModule->init(collector);
 	auto pDevice = pGsModule->createDevice();
 
 	// Set up the view to the default one in the file
 
-	OdDbBaseDatabasePEPtr pDbPE(pDb);
-	OdGiDefaultContextPtr pContext = pDbPE->createGiContext(pDb);
-	auto pHelperDevice = pDbPE->setupActiveLayoutViews(pDevice, pContext);
-	
+
+	OdGiContextForDbDatabasePtr pDwgContext = OdGiContextForDbDatabase::createObject();
+	pDwgContext->setDatabase(pDb);
+
+	auto pHelperDevice = OdDbGsManager::setupActiveLayoutViews(pDevice, pDwgContext);
+
 	OdGsDCRect screenRect(OdGsDCPoint(0, 1000), OdGsDCPoint(1000, 0));
 	pHelperDevice->onSize(screenRect);
 	pHelperDevice->update();

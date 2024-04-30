@@ -16,15 +16,21 @@
 */
 
 #include <OdaCommon.h>
+#include <DbObject.h>
+#include <DbEntity.h>
+#include <DbLayout.h>
+#include <DbLayerTableRecord.h>
+#include <DbStubPtrArray.h>
+#include <DbDictionary.h>
+#include <DbBlockReference.h>
+#include <DbLine.h>
 #include <OdString.h>
 #include <DgCmColor.h>
-
-#include <toString.h>
 #include <DgLevelTableRecord.h>
-
 #include <DgAttributeLinkage.h>
 #include <FlatMemStream.h>
 #include <OdPlatformStreamer.h>
+#include <toString.h>
 
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -34,124 +40,138 @@
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-VectoriseDeviceDgn* DataProcessorDwg::device()
-{
-	return static_cast<VectoriseDeviceDgn*>(OdGsBaseVectorizeView::device());
-}
-
-/*
-std::unordered_map<std::string, std::string> DataProcessorDwg::extractXMLLinkages(OdDgElementPtr pElm) {
-	std::unordered_map<std::string, std::string> entries;
-
-	entries["Element ID"] = convertToStdString(toString(pElm->elementId().getHandle()));
-
-	OdRxObjectPtrArray arrLinkages;
-	pElm->getLinkages(OdDgAttributeLinkage::kXmlLinkage, arrLinkages);
-
-	for (OdUInt32 counter = 0; counter < arrLinkages.size(); counter++)
-	{
-		OdDgAttributeLinkagePtr linkagePtr = arrLinkages[counter];
-		if (linkagePtr->getPrimaryId() == OdDgAttributeLinkage::kXmlLinkage) {
-			OdDgXmlLinkagePtr pXmlLinkage = OdDgXmlLinkage::cast(linkagePtr);
-			if (!pXmlLinkage.isNull()) {
-				boost::property_tree::ptree tree;
-				std::stringstream ss;
-				ss << convertToStdString(pXmlLinkage->getXmlData());
-				boost::property_tree::read_xml(ss, tree);
-				printTree(tree, entries);
-			}
-		}
-	}
-
-	return entries;
-}
-
-// Returns true when the type of element should be part of a grouped hierarchy
-// and so the traversal should continue upwards, and false when the type means
-// the traversal should terminate.
-bool shouldBeInGroupHierarchy(OdDgElement::ElementTypes type)
-{
-	switch (type) {
-	case OdDgElement::ElementTypes::kTypeUnapplicable:
-	case OdDgElement::ElementTypes::kTypeUndefined:
-		return false;
-	default:
-		return true;
-	}
-}
-*/
+#pragma optimize("", off)
 
 bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 {
-	OdDgElementPtr pElm = OdDgElement::cast(pDrawable);
-	auto currentItem = pElm;
-	auto previousItem = pElm;
-
-	/*
-
-	while (currentItem->ownerId() && shouldBeInGroupHierarchy(currentItem->getElementType())) {
-		previousItem = currentItem;
-		auto ownerId = currentItem->ownerId();
-		auto ownerItem = OdDgElement::cast(ownerId.openObject(OdDg::kForRead));
-		currentItem = ownerItem;
-	}
-	*/
-
-	//We want to group meshes together up to 1 below the top.
-	/*
-	std::string groupID = convertToStdString(toString(previousItem->elementId().getHandle()));
-
-	collector->setMeshGroup(groupID);
-	std::unordered_map<std::string, std::string> meta;
-
-	OdString sHandle = pElm->isDBRO() ? toString(pElm->elementId().getHandle()) : toString(OD_T("non-DbResident"));
-	collector->setNextMeshName(convertToStdString(sHandle));
-	*/
-
-	collector->setMeshGroup("Group");
-	collector->setNextMeshName("Mesh");
-	collector->setLayer("Layer", "Layer Name");
-
-	/*
-	OdGiSubEntityTraitsData traits = effectiveTraits();
-	OdDgElementId idLevel = traits.layer();
-	std::string layerName;
-	if (!idLevel.isNull())
+	OdDbEntityPtr pEntity = OdDbEntity::cast(pDrawable);
+	if (!pEntity.isNull())
 	{
-		OdDgLevelTableRecordPtr pLevel = idLevel.openObject(OdDg::kForRead);
-		const auto levelID = convertToStdString(toString(idLevel.getHandle()));
-		layerName = convertToStdString(pLevel->getName());
-		collector->setLayer(levelID, layerName);
+		// As soon as we get an actual entity, cache the active Layout Id. This
+		// can be used to determine when we are back at the top level (out of a
+		// block).
 
-		if (!collector->hasMeta(levelID)) {
-			collector->setMetadata(levelID, extractXMLLinkages(pLevel));
+		if (context.layoutId.isNull())
+		{
+			auto layout = OdDbLayout::cast(pEntity->database()->currentLayoutId().safeOpenObject());
+			auto layoutBlockId = layout->getBlockTableRecordId();
+			context.layoutId = layoutBlockId;
 		}
-	}
 
-	if (!collector->hasMeta(groupID)) {
-		auto meta = extractXMLLinkages(previousItem);
-		if (!layerName.empty()) {
-			meta["Layer Name"] = layerName;
+		auto layerId = convertToStdString(toString(pEntity->layerId().getHandle()));
+		auto layerName = convertToStdString(toString(pEntity->layer()));
+
+		// If a Block Entity has the default layer assigned, then it appears in
+		// the Navisworks tree under the Block Reference's layer. If it has a non
+		// default layer assigned, it appears under that Layer in the tree.
+		// In both cases the Entity appears under the Block's name in Navisworks,
+		// though we do not implement this bit.
+
+		// Make sure we have a layer for the actual DWG layer...
+
+		collector->setLayer(layerId, layerName);
+
+
+		const OdDbHandle& handle = pEntity->objectId().getHandle();
+		OdString sHandle = pEntity->isDBRO() ? toString(handle) : toString(L"non-DbResident");
+		std::string handleName = convertToStdString(toString(sHandle));
+
+		// Work out which layer the actual geometry should sit on.
+
+		// Entities that are not members of blocks belong to the Layout's
+		// Block Record
+
+		// (An alternative is to check the OdDbBlockTableRecord's getName() for
+		// the '*' character, since this prefixes the system block records and
+		// is not allowed in user defined block names.)
+
+		if (pEntity->blockId() == context.layoutId)
+		{
+			context.inBlock = false;
 		}
-		collector->setMetadata(groupID, meta);
+
+		// This indicates we are entering a Block. The top level block defines
+		// the tree node (layer). All subsequent entities, even if they belong
+		// to nested blocks, should appear under this node.
+
+		OdDbBlockReferencePtr pBlock = OdDbBlockReference::cast(pDrawable);
+		if (!pBlock.isNull() && !context.inBlock)
+		{
+			context.inBlock = true;
+			context.currentBlockReferenceLayerId = layerId;
+			context.currentBlockReferenceLayerName = layerName;
+			context.currentBlockReferenceHandle = handleName;
+			context.currentBlockReferenceName = handleName;
+
+			// If we wish to extract information about the Block in the future, we
+			// can get the table entry like so:
+			auto record = OdDbBlockTableRecord::cast(pBlock->blockTableRecord().safeOpenObject());
+
+			auto blockName = convertToStdString(record->getName());
+		}
+
+
+		if (context.inBlock) // Layer "0" cannot be renamed, so this is a safe way to check if it's the default layer
+		{
+			collector->setLayer(context.currentBlockReferenceHandle, context.currentBlockReferenceName, context.currentBlockReferenceLayerId);
+
+			collector->setMeshGroup(context.currentBlockReferenceName);
+
+			std::unordered_map<std::string, std::string> meta;
+			meta["Entity Handle::Value"] = convertToStdString(toString(handle));
+			collector->setMetadata(handleName, meta);
+		}
+		else
+		{
+			collector->setLayer(handleName, handleName, layerId);
+
+			collector->setMeshGroup(handleName);
+
+			std::unordered_map<std::string, std::string> meta;
+			meta["Entity Handle::Value"] = convertToStdString(toString(handle));
+			collector->setMetadata(handleName, meta);
+		}
+
+		// The mesh name should be the user-friendly name of the class type
+
+
+
+
+		collector->setNextMeshName(convertToStdString(sHandle));
+
+
+		//OdString sClassName = toString(pDrawable->isA());
 	}
-	*/
 
 	return OdGsBaseMaterialView::doDraw(i, pDrawable);
 }
 
-OdCmEntityColor fixByACI(const ODCOLORREF* ids, const OdCmEntityColor& color)
+void DataProcessorDwg::convertTo3DRepoColor(OdCmEntityColor& color, std::vector<float>& out)
 {
-	if (color.isByACI() || color.isByDgnIndex())
+	switch (color.colorMethod())
 	{
-		return OdCmEntityColor(ODGETRED(ids[color.colorIndex()]), ODGETGREEN(ids[color.colorIndex()]), ODGETBLUE(ids[color.colorIndex()]));
+	case OdCmEntityColor::ColorMethod::kByBlock:
+	case OdCmEntityColor::ColorMethod::kByLayer:
+	case OdCmEntityColor::ColorMethod::kByPen:
+		// Currently no special handling is needed for these
+		break;
+
+	case OdCmEntityColor::ColorMethod::kByDgnIndex:
+	case OdCmEntityColor::ColorMethod::kByACI:
+		color.setTrueColor();
+		break;
+
+	case OdCmEntityColor::ColorMethod::kForeground:
+		color = OdCmEntityColor(255, 255, 255);
+		break;
 	}
-	else if (!color.isByColor())
-	{
-		return OdCmEntityColor(0, 0, 0);
-	}
-	return color;
+
+	out.push_back(color.red() / 255.0f);
+	out.push_back(color.green() / 255.0f);
+	out.push_back(color.blue() / 255.0f);
+	out.push_back(1.0f);
 }
+
 
 void DataProcessorDwg::convertTo3DRepoMaterial(
 	OdGiMaterialItemPtr prevCache,
@@ -163,29 +183,23 @@ void DataProcessorDwg::convertTo3DRepoMaterial(
 {
 	DataProcessor::convertTo3DRepoMaterial(prevCache, materialId, materialData, matColors, material, missingTexture);
 
-	OdCmEntityColor color = fixByACI(this->device()->getPalette(), effectiveTraits().trueColor());
+	// The Gs superclass supercedes colour data from the material, unless the
+	// override flag is set.
 
-	if (matColors.colorDiffuseOverride) {
-		material.diffuse = { ODGETRED(matColors.colorDiffuse) / 255.0f, ODGETGREEN(matColors.colorDiffuse) / 255.0f, ODGETBLUE(matColors.colorDiffuse) / 255.0f, 1.0f };
-	}
-	else {
-		material.diffuse = { color.red() / 255.0f, color.green() / 255.0f, color.blue() / 255.0f, 1.0f };
-	}
+	auto traits = effectiveTraits();
+	auto deviceColor = traits.trueColor();
 
-	if (matColors.colorSpecularOverride) {
-		material.specular = { ODGETRED(matColors.colorSpecular) / 255.0f, ODGETGREEN(matColors.colorSpecular) / 255.0f, ODGETBLUE(matColors.colorSpecular) / 255.0f, 1.0f };
-	}
-	else {
-		material.specular = { color.red() / 255.0f, color.green() / 255.0f, color.blue() / 255.0f, 1.0f };
-	}
+	convertTo3DRepoColor(matColors.colorDiffuseOverride ? matColors.colorDiffuse : deviceColor, material.diffuse);
+	convertTo3DRepoColor(matColors.colorSpecularOverride ? matColors.colorSpecular : deviceColor, material.specular);
 
-	material.shininessStrength = 1 - material.shininessStrength;
+	// For DWGs, we don't set ambient or emissive properties of materials
+
+	material.shininessStrength = 0;
 }
 
 void DataProcessorDwg::init(GeometryCollector *const geoCollector)
 {
 	collector = geoCollector;
-	//deviationValue = extModel.maxPoint().distanceTo(extModel.minPoint()) / 1e5; //FIXME: Uncomment when dgn bug is fixed https://jira.opendesign.com/browse/DGN-2274
 }
 
 void DataProcessorDwg::setMode(OdGsView::RenderMode mode)

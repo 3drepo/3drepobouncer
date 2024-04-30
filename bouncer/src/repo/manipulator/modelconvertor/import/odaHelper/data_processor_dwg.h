@@ -39,8 +39,6 @@ namespace repo {
 				public:
 					DataProcessorDwg() {}
 
-					VectoriseDeviceDgn* device();
-
 					bool doDraw(OdUInt32 i,	const OdGiDrawable* pDrawable) override;
 					void init(GeometryCollector *const geoCollector);
 					void setMode(OdGsView::RenderMode mode);
@@ -57,8 +55,21 @@ namespace repo {
 						bool& missingTexture) override;
 
 				private:
-//					OdCmEntityColor fixByACI(const ODCOLORREF *ids, const OdCmEntityColor &color);
-//					std::unordered_map<std::string, std::string> extractXMLLinkages(OdDgElementPtr pElm);
+					void convertTo3DRepoColor(OdCmEntityColor& color, std::vector<float>& out);
+
+					// Some properties to be held between invocations of doDraw()
+					class Context
+					{
+					public:
+						bool inBlock = false;
+						std::string currentBlockReferenceLayerId;
+						std::string currentBlockReferenceLayerName;
+						std::string currentBlockReferenceHandle;
+						std::string currentBlockReferenceName;
+						OdDbObjectId layoutId;
+					};
+
+					Context context;
 				};
 
 				typedef OdSharedPtr<DataProcessorDwg> DataProcessorDwgPtr;
