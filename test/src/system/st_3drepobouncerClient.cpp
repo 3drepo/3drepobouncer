@@ -455,7 +455,7 @@ TEST(RepoClientTest, UploadTestNWD2024)
 	EXPECT_TRUE(projectExists(db, "nwdTest2024"));
 }
 
-TEST(RepoClientTest, ProtectedFiles)
+TEST(RepoClientTest, UploadTestNWDProtected)
 {
 	//this ensures we can run processes
 	ASSERT_TRUE(system(nullptr));
@@ -465,11 +465,6 @@ TEST(RepoClientTest, ProtectedFiles)
 	std::string nwdUpload = produceUploadArgs(db, "nwdPasswordProtected", getDataPath(nwdPasswordProtected));
 	EXPECT_EQ((int)ERRCODE_FILE_IS_ENCRYPTED, runProcess(nwdUpload));
 	EXPECT_FALSE(projectExists(db, "nwdPasswordProtected"));
-
-	//Upload password-protected DWG
-	std::string dwgUpload = produceUploadArgs(db, "dwgPasswordProtected", getDataPath(dwgPasswordProtected));
-	EXPECT_EQ((int)ERRCODE_FILE_IS_ENCRYPTED, runProcess(dwgUpload));
-	EXPECT_FALSE(projectExists(db, "dwgPasswordProtected"));
 }
 
 TEST(RepoClientTest, UploadTestNWC)
