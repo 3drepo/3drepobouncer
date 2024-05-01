@@ -69,7 +69,7 @@ if(DEFINED ENV{ODA_ROOT})
 			${ODA_ROOT}/ThirdParty/activation
 			${ODA_ROOT}/Kernel/Include
 			${ODA_ROOT}/KernelBase/Include
-			${ODA_ROOT}/Drawing/include
+			${ODA_ROOT}/Drawing/Include
 			${ODA_ROOT}/Drawing/Extensions/ExServices
 			${ODA_ROOT}/Dgn/include
 			${ODA_ROOT}/Dgn/Examples/Common
