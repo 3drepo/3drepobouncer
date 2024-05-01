@@ -64,12 +64,14 @@ namespace repo {
 						bool inBlock = false;
 						std::string currentBlockReferenceLayerId;
 						std::string currentBlockReferenceLayerName;
-						std::string currentBlockReferenceHandle;
+						std::string currentBlockReferenceId;
 						std::string currentBlockReferenceName;
 						OdDbObjectId layoutId;
 					};
 
 					Context context;
+
+					std::string getClassDisplayName(OdDbEntityPtr entity);
 				};
 
 				typedef OdSharedPtr<DataProcessorDwg> DataProcessorDwgPtr;

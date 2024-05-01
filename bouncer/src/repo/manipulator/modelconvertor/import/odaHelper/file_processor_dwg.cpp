@@ -19,6 +19,17 @@
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
+class VectoriseDeviceDwg : public OdGsBaseVectorizeDevice
+{
+protected:
+	ODRX_USING_HEAP_OPERATORS(OdGsBaseVectorizeDevice);
+
+public:
+
+	VectoriseDeviceDwg() {}
+	~VectoriseDeviceDwg() {}
+};
+
 class DeviceModuleDwg : public OdGsBaseModule
 {
 public:
@@ -30,18 +41,21 @@ public:
 protected:
 	OdSmartPtr<OdGsBaseVectorizeDevice> createDeviceObject()
 	{
-		return OdRxObjectImpl<VectoriseDeviceDgn, OdGsBaseVectorizeDevice>::createObject();
+		return OdRxObjectImpl<VectoriseDeviceDwg, OdGsBaseVectorizeDevice>::createObject();
 	}
+
 	OdSmartPtr<OdGsViewImpl> createViewObject()
 	{
 		auto pP = OdRxObjectImpl<DataProcessorDwg, OdGsViewImpl>::createObject();
 		((DataProcessorDwg*)pP.get())->init(collector);
 		return pP;
 	}
+
 	OdSmartPtr<OdGsBaseVectorizeDevice> createBitmapDeviceObject()
 	{
 		return OdSmartPtr<OdGsBaseVectorizeDevice>();
 	}
+
 	OdSmartPtr<OdGsViewImpl> createBitmapViewObject()
 	{
 		return OdSmartPtr<OdGsViewImpl>();
@@ -62,13 +76,12 @@ void importDwg(OdDbDatabasePtr pDb, GeometryCollector* collector)
 	deviceModule->init(collector);
 	auto pDevice = pGsModule->createDevice();
 
-	// Set up the view to the default one in the file
-
-
 	OdGiContextForDbDatabasePtr pDwgContext = OdGiContextForDbDatabase::createObject();
 	pDwgContext->setDatabase(pDb);
 
 	auto pHelperDevice = OdDbGsManager::setupActiveLayoutViews(pDevice, pDwgContext);
+
+	pDb->setGEOMARKERVISIBILITY(0); // This turns the OdDbGeoDataMarker 3D geometry off.
 
 	OdGsDCRect screenRect(OdGsDCPoint(0, 1000), OdGsDCPoint(1000, 0));
 	pHelperDevice->onSize(screenRect);
@@ -79,7 +92,7 @@ void importDwg(OdDbDatabasePtr pDb, GeometryCollector* collector)
 
 uint8_t FileProcessorDwg::readFile()
 {
-	uint8_t nRes = 0;               // Return value for the function
+	uint8_t nRes = 0; // Return value for the function
 	try 
 	{
 		odInitialize(&svcs);
@@ -100,20 +113,32 @@ uint8_t FileProcessorDwg::readFile()
 		importDwg(pDb, collector);
 
 		pDb.release();
-		odgsUninitialize();
-		odUninitialize();
 
 		nRes = REPOERR_OK;
 	}
 	catch (OdError& e)
 	{
 		repoError << convertToStdString(e.description());
-		nRes = REPOERR_MODEL_FILE_READ;
+		switch (e.code())
+		{
+		case eDwgFileIsEncrypted:
+			nRes = REPOERR_FILE_IS_ENCRYPTED;
+			break;
+		default:
+			nRes = REPOERR_MODEL_FILE_READ;
+		}
 	}
 	catch (std::exception& e)
 	{
 		repoError << "Failed: " << e.what();
 		nRes = REPOERR_MODEL_FILE_READ;
 	}
+
+	// These must be uninitialised even in the case of an error to allow the
+	// process to exit cleanly
+
+	odgsUninitialize();
+	odUninitialize();
+
 	return nRes;
 }

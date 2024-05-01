@@ -19,31 +19,33 @@
 #include <DbObject.h>
 #include <DbEntity.h>
 #include <DbLayout.h>
-#include <DbLayerTableRecord.h>
+#include <OdDbGeoDataMarker.h>
+#include <DbBlockTableRecord.h>
 #include <DbStubPtrArray.h>
-#include <DbDictionary.h>
 #include <DbBlockReference.h>
-#include <DbLine.h>
 #include <OdString.h>
 #include <DgCmColor.h>
-#include <DgLevelTableRecord.h>
-#include <DgAttributeLinkage.h>
-#include <FlatMemStream.h>
-#include <OdPlatformStreamer.h>
 #include <toString.h>
-
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
 
 #include "helper_functions.h"
 #include "data_processor_dwg.h"
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-#pragma optimize("", off)
-
 bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 {
+	// GeoDataMarkers derive directly from drawables; they aren't entities and
+	// don't have Ids. The current behaviour is to disable these by default
+	// through pDb->setGEOMARKERVISIBILITY. If they are re-enabled, this snippet
+	// ensures that the geometry goes into its own tree node.
+
+	auto pGeoDataMarker = OdDbGeoDataMarker::cast(pDrawable);
+	if (!pGeoDataMarker.isNull())
+	{
+		collector->setLayer("GeoPositionMarker", "Geo Position Marker");
+		collector->setMeshGroup("GeoPositionMarker");
+	}
+
 	OdDbEntityPtr pEntity = OdDbEntity::cast(pDrawable);
 	if (!pEntity.isNull())
 	{
@@ -58,28 +60,34 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 			context.layoutId = layoutBlockId;
 		}
 
+		// Get some common properties that will be used throughout
+
 		auto layerId = convertToStdString(toString(pEntity->layerId().getHandle()));
 		auto layerName = convertToStdString(toString(pEntity->layer()));
+
+		// Layer "0" cannot be renamed, so this is a safe way to check if we're
+		// on the default layer
+
+		auto isDefaultLayer = layerName == "0";
+
+		const OdDbHandle& handle = pEntity->objectId().getHandle();
+		auto sHandle = pEntity->isDBRO() ? toString(handle) : toString(L"non-DbResident");
+		auto entityId = convertToStdString(toString(sHandle));
+		auto entityName = getClassDisplayName(pEntity);
 
 		// If a Block Entity has the default layer assigned, then it appears in
 		// the Navisworks tree under the Block Reference's layer. If it has a non
 		// default layer assigned, it appears under that Layer in the tree.
-		// In both cases the Entity appears under the Block's name in Navisworks,
-		// though we do not implement this bit.
+		// In both cases the Entity appears under the Block's name.
 
-		// Make sure we have a layer for the actual DWG layer...
+		// Make sure we have created an actual layer entry for the DWG layer...
 
 		collector->setLayer(layerId, layerName);
 
+		// Check if this drawable is directly under a layer or in a block.
 
-		const OdDbHandle& handle = pEntity->objectId().getHandle();
-		OdString sHandle = pEntity->isDBRO() ? toString(handle) : toString(L"non-DbResident");
-		std::string handleName = convertToStdString(toString(sHandle));
-
-		// Work out which layer the actual geometry should sit on.
-
-		// Entities that are not members of blocks belong to the Layout's
-		// Block Record
+		// We do this by checking the blockId - Entities that are not in blocks
+		// belong to the Layout's Block Record.
 
 		// (An alternative is to check the OdDbBlockTableRecord's getName() for
 		// the '*' character, since this prefixes the system block records and
@@ -90,57 +98,60 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 			context.inBlock = false;
 		}
 
-		// This indicates we are entering a Block. The top level block defines
-		// the tree node (layer). All subsequent entities, even if they belong
-		// to nested blocks, should appear under this node.
+		// OdDbBlockReference indicates we are entering a Block. This object
+		// defines the handle and default layer of all subsequent entities.
 
 		OdDbBlockReferencePtr pBlock = OdDbBlockReference::cast(pDrawable);
-		if (!pBlock.isNull() && !context.inBlock)
+		if (!pBlock.isNull() && !context.inBlock) // We only consider the top level block when building the tree.
 		{
 			context.inBlock = true;
 			context.currentBlockReferenceLayerId = layerId;
 			context.currentBlockReferenceLayerName = layerName;
-			context.currentBlockReferenceHandle = handleName;
-			context.currentBlockReferenceName = handleName;
+			context.currentBlockReferenceId = entityId;
 
-			// If we wish to extract information about the Block in the future, we
-			// can get the table entry like so:
+			// Information about the Block prototype itself is available in its
+			// table record.
+
 			auto record = OdDbBlockTableRecord::cast(pBlock->blockTableRecord().safeOpenObject());
-
-			auto blockName = convertToStdString(record->getName());
+			context.currentBlockReferenceName = convertToStdString(record->getName());
 		}
 
-
-		if (context.inBlock) // Layer "0" cannot be renamed, so this is a safe way to check if it's the default layer
+		if (context.inBlock)
 		{
-			collector->setLayer(context.currentBlockReferenceHandle, context.currentBlockReferenceName, context.currentBlockReferenceLayerId);
+			// When inside a block, entities should sit under the Block's
+			// reference in the appropriate layer. A single Block Reference
+			// therefore may appear multiple times, once under a variety of
+			// different layers.
 
-			collector->setMeshGroup(context.currentBlockReferenceName);
+			auto blockReferenceNodeId = context.currentBlockReferenceId + layerId;
+			auto blockReferenceLayerNodeId = context.currentBlockReferenceLayerId;
+
+			if (!isDefaultLayer)
+			{
+				blockReferenceLayerNodeId = layerId; // If the Block Entity layer has been overridden within the Block, take the absolute layer
+			}
+
+			collector->setLayer(blockReferenceNodeId, context.currentBlockReferenceName, blockReferenceLayerNodeId);
+			collector->setMeshGroup(blockReferenceNodeId);
 
 			std::unordered_map<std::string, std::string> meta;
-			meta["Entity Handle::Value"] = convertToStdString(toString(handle));
-			collector->setMetadata(handleName, meta);
+			meta["Entity Handle::Value"] = context.currentBlockReferenceId;
+			collector->setMetadata(blockReferenceNodeId, meta);
 		}
 		else
 		{
-			collector->setLayer(handleName, handleName, layerId);
+			// When not inside a block, each entity appears under its own tree
+			// node, under the specified layer.
 
-			collector->setMeshGroup(handleName);
+			collector->setLayer(entityId, entityName, layerId);
+			collector->setMeshGroup(entityId);
 
 			std::unordered_map<std::string, std::string> meta;
 			meta["Entity Handle::Value"] = convertToStdString(toString(handle));
-			collector->setMetadata(handleName, meta);
+			collector->setMetadata(entityId, meta);
 		}
 
-		// The mesh name should be the user-friendly name of the class type
-
-
-
-
 		collector->setNextMeshName(convertToStdString(sHandle));
-
-
-		//OdString sClassName = toString(pDrawable->isA());
 	}
 
 	return OdGsBaseMaterialView::doDraw(i, pDrawable);
@@ -213,4 +224,121 @@ void DataProcessorDwg::endViewVectorization()
 {
 	collector->stopMeshEntry();
 	OdGsBaseMaterialView::endViewVectorization();
+}
+
+std::string DataProcessorDwg::getClassDisplayName(OdDbEntityPtr entity)
+{
+	// This method is used to get a user friendly version of the entity type to
+	// display in the tree. For example, AcDb3dSolid -> 3D Solid.
+
+	// ODA does not have inbuilt functionality for this, so we convert the class
+	// name based on the potential inheritance,
+	// https://docs.opendesign.com/td_api_cpp/OdDbEntity.html
+
+	// Some of the entries below will never actually appear in the tree. For
+	// example, the Block Start and Block End are database records that are
+	// not geometric entities in their own right. AdDbCurve will always the name
+	// of its subclass. Block References have their name overridden with the
+	// Block's name in doDraw.
+	// They are included here for completeness, to indicate they are not
+	// 'missing'.
+
+	auto className = convertToStdString(entity->isA()->name());
+
+	const static std::unordered_map<std::string, std::string> classToDisplayName
+	{
+		{"AcDb3dSolid", "3D Solid"},
+		{"AcDbArcAlignedText", "Arc-Aligned Text"},
+		{"AcDbAssocProjectedEntityPersSubentIdHolder", "Entity Id Holder"},
+		{"AcDbBlockBegin", "Block Begin"},
+		{"AcDbBlockEnd", "Block End"},
+		{"AcDbBlockReference", "Block Reference"},
+		{"AcDbBody", "Body"},
+		{"AcDbCamera", "Camera"},
+		{"AcDbCurve", "Curve"},
+		{"AcDb2dPolyline", "2D Polyline"},
+		{"AcDb3dPolyline", "3D Polyline"},
+		{"AcDbArc", "Arc"},
+		{"AcDbCircle", "Circle"},
+		{"AcDbEllipse", "Ellipse"},
+		{"AcDbLeader", "Leader"},
+		{"AcDbLine", "Line"},
+		{"AcDbPolyline", "Polyline"},
+		{"AcDbRay", "Ray"},
+		{"AcDbSpline", "Spline"},
+		{"AcDbXline", "XLine"}, // Infinity line
+		{"AcDbDimension", "Dimension"},
+		{"AcDb2LineAngularDimension", "2 Line Angular Dimension"},
+		{"AcDb3PointAngularDimension", "3 Point Angular Dimension"},
+		{"AcDbAlignedDimension", "Aligned Dimension"},
+		{"AcDbArcDimension", "Arc Dimension"},
+		{"AcDbDiametricDimension", "Diametric Dimension"},
+		{"AcDbOrdinateDimension", "Ordinate Dimension"},
+		{"AcDbRadialDimension", "Radial Dimension"},
+		{"AcDbRadialDimensionLarge", "Large Radial Dimension"},
+		{"AcDbRotatedDimension", "Rotated Dimension"},
+		{"AcDbFace", "Face"},
+		{"AcDbFaceRecord", "Face Record"},
+		{"AcDbFcf", "Feature Control Frame"},
+		{"AcDbFrame", "Frame"},
+		{"AcDbGeoPositionMarker", "Geographic Location"},
+		{"AcDbHatch", "Hatch"},
+		{"AcDbImage", "Image"},
+		{"AcDbRasterImage", "Raster Image"},
+		{"AcDbLight", "Light"},
+		{"AcDbMLeader", "Multileader"},
+		{"AcDbMPolygon", "Polygon"},
+		{"AcDbMText", "MText"},
+		{"AcDbMline", "Line"},
+		{"AcDbNavisworksReference", "Navisworks Reference"},
+		{"AcDbPoint", "Point"},
+		{"AcDbPointCloud", "Point Cloud"},
+		{"AcDbPointCloudEx", "Point Cloud"},
+		{"AcDbPolyFaceMesh", "Poly Face Mesh"},
+		{"AcDbPolygonMesh", "Polygon Mesh"},
+		{"AcDbProxyEntity", "Proxy"},
+		{"AcDbRegion", "Region"},
+		{"AcDbSection", "Section"},
+		{"AcDbSequenceEnd", "Sequence End"},
+		{"AcDbShape", "Shape"},
+		{"AcDbSolid", "Solid"},
+		{"AcDbSubDMesh", "Subdivision Mesh"},
+		{"AcDbSurface", "Surface"},
+		{"AcDbExtrudedSurface", "Extruded Surface"},
+		{"AcDbLoftedSurface", "Lofted Surface"},
+		{"AcDbNurbSurface", "Nurb Surface"},
+		{"AcDbPlaneSurface", "Plane Surface"},
+		{"AcDbRevolvedSurface", "Revolved Surface"},
+		{"AcDbSweptSurface", "Swept Surface"},
+		{"AcDbText", "Text"},
+		{"AcDbAttribute", "Attribute"},
+		{"AcDbAttributeDefinition", "Attribute Definition"},
+		{"AcDbTrace", "Trace"},
+		{"AcDbUnderlayReference", "Underlay Reference"},
+		{"AcDbDgnReference", "DGN Reference"},
+		{"AcDbDwfReference", "DWF Reference"},
+		{"AcDbPdfReference", "PDF Reference"},
+		{"AcDbVertex", "Vertex"},
+		{"AcDb2dVertex", "2D Vertex"},
+		{"AcDb3dPolylineVertex", "3D Polyline Vertex"},
+		{"AcDbPolyFaceMeshVertex", "Poly Face Mesh Vertex"},
+		{"AcDbPolygonMeshVertex", "Polygon Mesh Vertex"},
+		{"AcDbViewBorder", "View Border"},
+		{"AcDbViewRepImage", "View Image"},
+		{"AcDbViewSymbol", "View Symbol"},
+		{"AcDbDetailSymbol", "Detail Symbol"},
+		{"AcDbSectionSymbol", "Section Symbol"},
+		{"AcDbViewport", "Viewport"},
+		{"RText", "RText"},
+	};
+
+	auto it = classToDisplayName.find(className);
+	if (it != classToDisplayName.end())
+	{
+		return it->second;
+	}
+	else
+	{
+		return className;
+	}
 }
