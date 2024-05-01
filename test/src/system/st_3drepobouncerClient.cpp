@@ -463,7 +463,7 @@ TEST(RepoClientTest, UploadTestNWDProtected)
 
 	//Upload password-protected NWD
 	std::string nwdUpload = produceUploadArgs(db, "nwdPasswordProtected", getDataPath(nwdPasswordProtected));
-	EXPECT_EQ((int)ERRCODE_FILE_IS_ENCRYPTED, runProcess(nwdUpload));
+	EXPECT_EQ((int)REPOERR_FILE_IS_ENCRYPTED, runProcess(nwdUpload));
 	EXPECT_FALSE(projectExists(db, "nwdPasswordProtected"));
 }
 
