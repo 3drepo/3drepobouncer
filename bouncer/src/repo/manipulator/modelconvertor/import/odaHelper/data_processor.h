@@ -37,10 +37,10 @@ namespace repo {
 					GeometryCollector *collector;
 					struct MaterialColours
 					{
-						ODCOLORREF colorDiffuse = 0;
-						ODCOLORREF colorAmbient = 0;
-						ODCOLORREF colorSpecular = 0;
-						ODCOLORREF colorEmissive = 0;
+						OdCmEntityColor colorDiffuse;
+						OdCmEntityColor colorAmbient;
+						OdCmEntityColor colorSpecular;
+						OdCmEntityColor colorEmissive;
 
 						bool colorDiffuseOverride = false;
 						bool colorAmbientOverride = false;

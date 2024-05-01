@@ -1,61 +1,144 @@
 #include "file_processor_dwg.h"
 
+#include <OdaCommon.h>
 #include <StaticRxObject.h>
 #include <RxInit.h>
 #include <RxDynamicModule.h>
 #include <DynamicLinker.h>
-#include <DgDatabase.h>
 #include <RxDynamicModule.h>
-#include <Exports/DgnExport/DgnExport.h>
+#include <Gs/GsBaseInclude.h>
+#include <DbGsManager.h>
+#include <GiContextForDbDatabase.h>
+
+#include "../../../../error_codes.h"
 #include "../../../../lib/repo_exception.h"
 
+#include <vector>
+
+#include "data_processor_dwg.h"
+
 using namespace repo::manipulator::modelconvertor::odaHelper;
-using namespace TD_DGN_EXPORT;
 
-OdDgDatabasePtr FileProcessorDwg::initialiseOdDatabase() {
-	OdString fileSource = file.c_str();
-	OdDgDatabasePtr pDb;
-	// Register ODA Drawings API for DGN
-	::odrxDynamicLinker()->loadModule(OdDbModuleName, false);
-	::odrxDynamicLinker()->loadModule(L"TG_DwgDb", false);
-	// Dgn level table overrides for dwg reference attachments support
-	::odrxDynamicLinker()->loadModule(L"ExDgnImportLineStyle");
-	OdDgnExportModulePtr pModule = ::odrxDynamicLinker()->loadApp(OdDgnExportModuleName, false);
-	OdDgnExportPtr pExporter = pModule->create();
+class VectoriseDeviceDwg : public OdGsBaseVectorizeDevice
+{
+protected:
+	ODRX_USING_HEAP_OPERATORS(OdGsBaseVectorizeDevice);
 
-	pExporter->properties()->putAt(L"DgnServices", static_cast<OdDgHostAppServices*>(&svcs));
-	pExporter->properties()->putAt(L"DwgPath", OdRxVariantValue(OdString(fileSource)));
+public:
 
-	OdDgnExport::ExportResult res = pExporter->exportDb();
-	if (res == OdDgnExport::success)
-		pDb = pExporter->properties()->getAt(L"DgnDatabase");
-	else
+	VectoriseDeviceDwg() {}
+	~VectoriseDeviceDwg() {}
+};
+
+class DeviceModuleDwg : public OdGsBaseModule
+{
+public:
+	void init(GeometryCollector* collector)
 	{
-		std::stringstream ss;
-
-		ss << "Failed to export dwg/dxf into a dgn: ";
-		switch (res)
-		{
-		case OdDgnExport::bad_database:
-			ss << "Bad database";
-			break;
-		case OdDgnExport::bad_file:
-			ss << "DGN export";
-			break;
-		case OdDgnExport::encrypted_file:
-		case OdDgnExport::bad_password:
-			ss << "The file is encrypted";
-			break;
-
-		case OdDgnExport::fail:
-			ss << "Unknown import error";
-			break;
-		}
-		throw new repo::lib::RepoException(ss.str());
+		this->collector = collector;
 	}
 
-	pExporter.release();
-	pModule.release();
+protected:
+	OdSmartPtr<OdGsBaseVectorizeDevice> createDeviceObject()
+	{
+		return OdRxObjectImpl<VectoriseDeviceDwg, OdGsBaseVectorizeDevice>::createObject();
+	}
 
-	return pDb;
+	OdSmartPtr<OdGsViewImpl> createViewObject()
+	{
+		auto pP = OdRxObjectImpl<DataProcessorDwg, OdGsViewImpl>::createObject();
+		((DataProcessorDwg*)pP.get())->init(collector);
+		return pP;
+	}
+
+	OdSmartPtr<OdGsBaseVectorizeDevice> createBitmapDeviceObject()
+	{
+		return OdSmartPtr<OdGsBaseVectorizeDevice>();
+	}
+
+	OdSmartPtr<OdGsViewImpl> createBitmapViewObject()
+	{
+		return OdSmartPtr<OdGsViewImpl>();
+	}
+
+private:
+	GeometryCollector* collector;
+};
+ODRX_DEFINE_PSEUDO_STATIC_MODULE(DeviceModuleDwg);
+
+void importDwg(OdDbDatabasePtr pDb, GeometryCollector* collector)
+{
+	// Create the vectorizer device that will render the DWG database. This will
+	// use the GeometryCollector underneath.
+
+	OdGsModulePtr pGsModule = ODRX_STATIC_MODULE_ENTRY_POINT(DeviceModuleDwg)(OD_T("DeviceModuleDwg"));
+	auto deviceModule = (DeviceModuleDwg*)pGsModule.get();
+	deviceModule->init(collector);
+	auto pDevice = pGsModule->createDevice();
+
+	OdGiContextForDbDatabasePtr pDwgContext = OdGiContextForDbDatabase::createObject();
+	pDwgContext->setDatabase(pDb);
+
+	auto pHelperDevice = OdDbGsManager::setupActiveLayoutViews(pDevice, pDwgContext);
+
+	pDb->setGEOMARKERVISIBILITY(0); // This turns the OdDbGeoDataMarker 3D geometry off.
+
+	OdGsDCRect screenRect(OdGsDCPoint(0, 1000), OdGsDCPoint(1000, 0));
+	pHelperDevice->onSize(screenRect);
+	pHelperDevice->update();
+
+	pGsModule.release();
+}
+
+uint8_t FileProcessorDwg::readFile()
+{
+	uint8_t nRes = 0; // Return value for the function
+	try 
+	{
+		odInitialize(&svcs);
+		odgsInitialize();
+
+		::odrxDynamicLinker()->loadModule(L"TG_Db", false);
+		::odrxDynamicLinker()->loadModule(DbCryptModuleName, false);
+		::odrxDynamicLinker()->loadModule(OdExFieldEvaluatorModuleName, false);
+		::odrxDynamicLinker()->loadModule(Od3DSolidHistoryTxModuleName, false);
+		::odrxDynamicLinker()->loadModule(OdDynBlocksModuleName, false);
+		::odrxDynamicLinker()->loadModule(RxPropertiesModuleName, false);
+		::odrxDynamicLinker()->loadModule(DbPropertiesModuleName, false);
+		::odrxDynamicLinker()->loadModule(RxCommonDataAccessModuleName, false);
+
+		OdString f = file.c_str();
+		OdDbDatabasePtr pDb = svcs.readFile(f);
+
+		importDwg(pDb, collector);
+
+		pDb.release();
+
+		nRes = REPOERR_OK;
+	}
+	catch (OdError& e)
+	{
+		repoError << convertToStdString(e.description());
+		switch (e.code())
+		{
+		case eDwgFileIsEncrypted:
+			nRes = REPOERR_FILE_IS_ENCRYPTED;
+			break;
+		default:
+			nRes = REPOERR_MODEL_FILE_READ;
+		}
+	}
+	catch (std::exception& e)
+	{
+		repoError << "Failed: " << e.what();
+		nRes = REPOERR_MODEL_FILE_READ;
+	}
+
+	// These must be uninitialised even in the case of an error to allow the
+	// process to exit cleanly
+
+	odgsUninitialize();
+	odUninitialize();
+
+	return nRes;
 }

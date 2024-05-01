@@ -127,38 +127,10 @@ void DataProcessor::convertTo3DRepoMaterial(
 	materialData.opacity(opacityPercentage, opacityMap);
 	materialData.emission(emissiveColor, emissiveMap);
 
-	if (diffuseColor.color().colorMethod() == OdCmEntityColor::kByColor)
-	{
-		matColors.colorDiffuse = ODTOCOLORREF(diffuseColor.color());
-	}
-	else if (diffuseColor.color().colorMethod() == OdCmEntityColor::kByACI)
-	{
-		matColors.colorDiffuse = OdCmEntityColor::lookUpRGB((OdUInt8)diffuseColor.color().colorIndex());
-	}
-	if (ambientColor.color().colorMethod() == OdCmEntityColor::kByColor)
-	{
-		matColors.colorAmbient = ODTOCOLORREF(ambientColor.color());
-	}
-	else if (ambientColor.color().colorMethod() == OdCmEntityColor::kByACI)
-	{
-		matColors.colorAmbient = OdCmEntityColor::lookUpRGB((OdUInt8)ambientColor.color().colorIndex());
-	}
-	if (specularColor.color().colorMethod() == OdCmEntityColor::kByColor)
-	{
-		matColors.colorSpecular = ODTOCOLORREF(specularColor.color());
-	}
-	else if (specularColor.color().colorMethod() == OdCmEntityColor::kByACI)
-	{
-		matColors.colorSpecular = OdCmEntityColor::lookUpRGB((OdUInt8)specularColor.color().colorIndex());
-	}
-	if (emissiveColor.color().colorMethod() == OdCmEntityColor::kByColor)
-	{
-		matColors.colorEmissive = ODTOCOLORREF(emissiveColor.color());
-	}
-	else if (emissiveColor.color().colorMethod() == OdCmEntityColor::kByACI)
-	{
-		matColors.colorEmissive = OdCmEntityColor::lookUpRGB((OdUInt8)emissiveColor.color().colorIndex());
-	}
+	matColors.colorDiffuse = diffuseColor.color();
+	matColors.colorAmbient = ambientColor.color();
+	matColors.colorSpecular = specularColor.color();
+	matColors.colorEmissive = emissiveColor.color();
 
 	matColors.colorDiffuseOverride = diffuseColor.method() == OdGiMaterialColor::kOverride;
 	matColors.colorAmbientOverride = ambientColor.method() == OdGiMaterialColor::kOverride;
@@ -168,6 +140,9 @@ void DataProcessor::convertTo3DRepoMaterial(
 	material.shininessStrength = glossFactor;
 	material.shininess = materialData.reflectivity();
 	material.opacity = opacityPercentage;
+
+	// The caller should handle converting the colours to repo_material_t colours,
+	// as these may be overridden by the Gs device
 }
 
 OdGiMaterialItemPtr DataProcessor::fillMaterialCache(
@@ -187,7 +162,6 @@ OdGiMaterialItemPtr DataProcessor::fillMaterialCache(
 
 	return OdGiMaterialItemPtr();
 }
-
 
 repo_material_t DataProcessor::GetDefaultMaterial() const {
 	repo_material_t material;

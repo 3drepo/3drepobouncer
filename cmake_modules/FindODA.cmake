@@ -19,11 +19,39 @@
 #ODA_LIBRARIES will point to the libraries
 
 set(ODA_LIB_NAMES
-	TD_ExamplesCommon TG_ExamplesCommon TB_Common TB_ExamplesCommon TB_Essential
-	TG_Db TD_DbRoot TD_Gs TD_Gi TD_Ge TD_Root TD_Alloc TB_Loader TNW_Db
-	TB_Database TB_Base TB_ModelerGeometry TD_Br TD_TfCore TB_Main
-	TB_MEP TB_Analytical TB_Architecture TB_StairsRamp TB_Geometry TB_HostObj)
-
+	TD_Alloc
+	TD_Root
+	TD_Db
+	TD_DbRoot
+	TD_DbEntities
+	TD_TfCore
+	TD_DbCore
+	TD_Key
+	TD_Gs
+	TD_Gi
+	TD_Ge
+	TD_Br
+	TD_ExamplesCommon
+	TD_DrawingsExamplesCommon
+	TB_Base
+	TB_Database
+	TB_Main
+	TB_Loader
+	TB_Common
+	TB_Essential
+	TB_ModelerGeometry
+	TB_MEP
+	TB_Analytical
+	TB_Architecture
+	TB_StairsRamp
+	TB_Geometry
+	TB_HostObj
+	TB_ExamplesCommon
+	TG_Db
+	TG_ExamplesCommon
+	TNW_Db
+	RxCommonDataAccess
+)
 
 if(DEFINED ENV{ODA_LIB_DIR})
 	set(ODA_LIB_DIR $ENV{ODA_LIB_DIR})
@@ -42,6 +70,7 @@ if(DEFINED ENV{ODA_ROOT})
 			${ODA_ROOT}/Kernel/Include
 			${ODA_ROOT}/KernelBase/Include
 			${ODA_ROOT}/Drawing/include
+			${ODA_ROOT}/Drawing/Extensions/ExServices
 			${ODA_ROOT}/Dgn/include
 			${ODA_ROOT}/Dgn/Examples/Common
 			${ODA_ROOT}/Dgn/Extensions/ExServices
