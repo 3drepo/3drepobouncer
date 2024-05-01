@@ -16,7 +16,6 @@
 */
 
 #include <OdaCommon.h>
-#include <DbObject.h>
 #include <DbEntity.h>
 #include <DbLayout.h>
 #include <OdDbGeoDataMarker.h>
