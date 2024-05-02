@@ -106,7 +106,7 @@ uint8_t FileProcessorNwd::readFile()
 			break;
 		case OdResult::eDecryptionError:
 			nRes = REPOERR_FILE_IS_ENCRYPTED;
-				break;
+			break;
 		default:
 			nRes = REPOERR_LOAD_SCENE_FAIL;
 		}
