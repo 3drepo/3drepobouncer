@@ -185,8 +185,7 @@ uint8_t SceneManager::commitScene(
 
 			if (success) {
 				errCode = REPOERR_OK;
-				bool isFed = scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size();
-				scene->updateRevisionStatus(handler, isFed ? repo::core::model::RevisionNode::UploadStatus::COMPLETE : repo::core::model::RevisionNode::UploadStatus::MISSING_BUNDLES);
+				scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
 			}
 			else {
 				errCode = REPOERR_UPLOAD_FAILED;
@@ -420,9 +419,6 @@ bool SceneManager::generateWebViewBuffers(
 			geoStashExt = REPO_COLLECTION_STASH_BUNDLE;
 			resultBuffers = generateRepoBundleBuffer(scene);
 			break;
-		case repo::manipulator::modelconvertor::WebExportType::UNITY:
-			repoInfo << "Skipping buffer generation for Unity assets";
-			return true;
 		default:
 			repoError << "Unknown export type with enum:  " << (uint16_t)exType;
 			return false;

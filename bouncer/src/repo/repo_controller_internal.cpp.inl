@@ -854,30 +854,6 @@ std::string RepoController::_RepoControllerImpl::getSupportedImportFormats()
 	return repo::manipulator::modelconvertor::AssimpModelImport::getSupportedFormats();
 }
 
-std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoController::_RepoControllerImpl::initialiseAssetBuffer(
-	const RepoController::RepoToken                    *token,
-	repo::core::model::RepoScene *scene,
-	std::unordered_map<std::string, std::vector<uint8_t>> &jsonFiles,
-	repo::core::model::RepoUnityAssets &unityAssets,
-	std::vector<std::vector<uint16_t>> &serialisedFaceBuf,
-	std::vector<std::vector<std::vector<float>>> &idMapBuf,
-	std::vector<std::vector<std::vector<repo_mesh_mapping_t>>> &meshMappings)
-{
-	std::vector<std::shared_ptr<repo::core::model::MeshNode>> res;
-	if (scene)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		res = worker->initialiseAssetBuffer(token->databaseAd, token->getCredentials(), scene, jsonFiles, unityAssets, serialisedFaceBuf, idMapBuf, meshMappings);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to generate Asset buffer without a scene";
-	}
-
-	return res;
-}
-
 repo::core::model::RepoNodeSet RepoController::_RepoControllerImpl::loadMetadataFromFile(
 	const std::string &filePath,
 	const char        &delimiter)

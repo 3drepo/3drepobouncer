@@ -32,7 +32,6 @@
 #include "diff/repo_diff_name.h"
 #include "diff/repo_diff_sharedid.h"
 #include "modelconvertor/import/repo_model_import_manager.h"
-#include "modelconvertor/export/repo_model_export_asset.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
 #include "modelutility/repo_scene_manager.h"
@@ -724,30 +723,6 @@ bool RepoManipulator::init(
 	}
 
 	return success;
-}
-
-std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoManipulator::initialiseAssetBuffer(
-	const std::string                             &databaseAd,
-	const repo::core::model::RepoBSON	          *cred,
-	repo::core::model::RepoScene *scene,
-	std::unordered_map<std::string, std::vector<uint8_t>> &jsonFiles,
-	repo::core::model::RepoUnityAssets &unityAssets,
-	std::vector<std::vector<uint16_t>> &serialisedFaceBuf,
-	std::vector<std::vector<std::vector<float>>> &idMapBuf,
-	std::vector<std::vector<std::vector<repo_mesh_mapping_t>>> &meshMappings)
-{
-	bool vrEnabled = false;
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-	{
-		modelutility::SceneManager sceneManager;
-		vrEnabled = sceneManager.isVrEnabled(scene, handler);
-	}
-	repo::manipulator::modelconvertor::AssetModelExport assetExport(scene, vrEnabled);
-	jsonFiles = assetExport.getJSONFilesAsBuffer();
-	unityAssets = assetExport.getUnityAssets();
-	return assetExport.getReorganisedMeshes(serialisedFaceBuf, idMapBuf, meshMappings);
 }
 
 bool RepoManipulator::insertBinaryFileToDatabase(
