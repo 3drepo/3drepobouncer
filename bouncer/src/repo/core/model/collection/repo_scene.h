@@ -1063,7 +1063,7 @@ namespace repo {
 					auto& g = (gType == GraphType::OPTIMIZED) ? stashGraph : graph;
 					if (g.cleared)
 					{
-						throw std::exception("Attempting to access a cleared graph.");
+						throw std::logic_error("Attempting to access a cleared graph.");
 					}
 					return g;
 				}
@@ -1073,7 +1073,7 @@ namespace repo {
 					auto& g = (gType == GraphType::OPTIMIZED) ? stashGraph : graph;
 					if (g.cleared)
 					{
-						throw std::exception("Attempting to access a cleared graph.");
+						throw std::logic_error("Attempting to access a cleared graph.");
 					}
 					return g;
 				}
