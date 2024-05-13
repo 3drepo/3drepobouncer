@@ -55,6 +55,8 @@ namespace repo {
 					std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher> sharedIDtoUniqueID; //** mapping of shared ID to Unique ID
 					ParentMap parentToChildren; //** mapping of shared id to its children's shared id
 					std::unordered_map<repo::lib::RepoUUID, RepoScene*, repo::lib::RepoUUIDHasher> referenceToScene; //** mapping of reference ID to it's scene graph
+
+					bool cleared; // Indicates this graph has been explicitly cleared (as opposed to just not initialised yet)
 				};
 
 				static const std::vector<std::string> collectionsInProject;
@@ -244,6 +246,8 @@ namespace repo {
 				* Clears the contents within the Stash (if there is one)
 				*/
 				void clearStash();
+
+				void clearGraph(const GraphType& gType);
 
 				/**
 				* Commit changes on the default graph into the database
@@ -606,7 +610,7 @@ namespace repo {
 					const GraphType &gType,
 					const repo::lib::RepoUUID  &reference) const
 				{
-					const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+					const repoGraphInstance& g = getGraph(gType);
 					RepoScene* refScene = nullptr;
 
 					std::unordered_map<repo::lib::RepoUUID, RepoScene*, repo::lib::RepoUUIDHasher >::const_iterator it = g.referenceToScene.find(reference);
@@ -637,7 +641,7 @@ namespace repo {
 				RepoNodeSet getAllCameras(
 					const GraphType &gType) const
 				{
-					return  gType == GraphType::OPTIMIZED ? stashGraph.cameras : graph.cameras;
+					return getGraph(gType).cameras;
 				}
 
 				/**
@@ -647,7 +651,7 @@ namespace repo {
 				RepoNodeSet getAllMaterials(
 					const GraphType &gType) const
 				{
-					return  gType == GraphType::OPTIMIZED ? stashGraph.materials : graph.materials;
+					return getGraph(gType).materials;
 				}
 
 				/**
@@ -657,7 +661,7 @@ namespace repo {
 				RepoNodeSet getAllMeshes(
 					const GraphType &gType) const
 				{
-					return  gType == GraphType::OPTIMIZED ? stashGraph.meshes : graph.meshes;
+					return getGraph(gType).meshes;
 				}
 
 				/**
@@ -667,7 +671,7 @@ namespace repo {
 				RepoNodeSet getAllMetadata(
 					const GraphType &gType) const
 				{
-					return  gType == GraphType::OPTIMIZED ? stashGraph.metadata : graph.metadata;
+					return getGraph(gType).metadata;
 				}
 
 				/**
@@ -677,7 +681,7 @@ namespace repo {
 				RepoNodeSet getAllReferences(
 					const GraphType &gType) const
 				{
-					return  gType == GraphType::OPTIMIZED ? stashGraph.references : graph.references;
+					return getGraph(gType).references;
 				}
 
 				/**
@@ -687,7 +691,7 @@ namespace repo {
 				RepoNodeSet getAllTextures(
 					const GraphType &gType) const
 				{
-					return  gType == GraphType::OPTIMIZED ? stashGraph.textures : graph.textures;
+					return getGraph(gType).textures;
 				}
 
 				/**
@@ -697,7 +701,7 @@ namespace repo {
 				RepoNodeSet getAllTransformations(
 					const GraphType &gType) const
 				{
-					return  gType == GraphType::OPTIMIZED ? stashGraph.transformations : graph.transformations;
+					return getGraph(gType).transformations;
 				}
 
 				std::set<repo::lib::RepoUUID> getAllSharedIDs(
@@ -770,7 +774,7 @@ namespace repo {
 					const GraphType &gType,
 					const repo::lib::RepoUUID &sharedID) const
 				{
-					const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+					const repoGraphInstance &g = getGraph(gType);
 					auto it = g.sharedIDtoUniqueID.find(sharedID);
 
 					if (it == g.sharedIDtoUniqueID.end()) return nullptr;
@@ -788,7 +792,7 @@ namespace repo {
 					const GraphType &gType,
 					const repo::lib::RepoUUID &uniqueID) const
 				{
-					const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+					const repoGraphInstance& g = getGraph(gType);
 					auto it = g.nodesByUniqueID.find(uniqueID);
 
 					if (it == g.nodesByUniqueID.end()) return nullptr;
@@ -801,11 +805,11 @@ namespace repo {
 				* @return returns true if rootNode is not null.
 				*/
 				bool hasRoot(const GraphType &gType) const {
-					const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+					const repoGraphInstance &g = getGraph(gType);
 					return (bool)g.rootNode;
 				}
 				RepoNode* getRoot(const GraphType &gType) const {
-					const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+					const repoGraphInstance &g = getGraph(gType);
 					return g.rootNode;
 				}
 
@@ -815,7 +819,7 @@ namespace repo {
 				* @return number of nodes within the graph
 				*/
 				uint32_t getItemsInCurrentGraph(const GraphType &gType) {
-					const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+					const repoGraphInstance &g = getGraph(gType);
 					return g.nodesByUniqueID.size();
 				}
 
@@ -1053,6 +1057,26 @@ namespace repo {
 				*/
 				void shiftModel(
 					const std::vector<double> &offset);
+
+				repoGraphInstance& getGraph(const GraphType& gType)
+				{
+					auto& g = (gType == GraphType::OPTIMIZED) ? stashGraph : graph;
+					if (g.cleared)
+					{
+						throw std::exception("Attempting to access a cleared graph.");
+					}
+					return g;
+				}
+
+				const repoGraphInstance& getGraph(const GraphType& gType) const
+				{
+					auto& g = (gType == GraphType::OPTIMIZED) ? stashGraph : graph;
+					if (g.cleared)
+					{
+						throw std::exception("Attempting to access a cleared graph.");
+					}
+					return g;
+				}
 
 				/*
 				* ---------------- Scene utilities ----------------

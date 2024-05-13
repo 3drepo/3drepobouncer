@@ -155,7 +155,7 @@ void RepoScene::abandonChild(
 		return;
 	}
 
-	repoGraphInstance &g = GraphType::OPTIMIZED == gType ? stashGraph : graph;
+	repoGraphInstance &g = getGraph(gType);
 	repo::lib::RepoUUID childSharedID = child->getSharedID();
 
 	if (modifyParent)
@@ -197,7 +197,7 @@ void RepoScene::addInheritance(
 	RepoNode        *childNode,
 	const bool      &noUpdate)
 {
-	repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+	repoGraphInstance &g = getGraph(gType);
 	//stash has no sense of version control, so only default graph needs to track changes
 	bool trackChanges = !noUpdate && gType == GraphType::DEFAULT;
 
@@ -254,7 +254,7 @@ void RepoScene::addInheritance(
 	RepoNode        *childNode,
 	const bool      &noUpdate)
 {
-	repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+	repoGraphInstance &g = getGraph(gType);
 	//stash has no sense of version control, so only default graph needs to track changes
 	bool trackChanges = !noUpdate && gType == GraphType::DEFAULT;
 
@@ -315,7 +315,10 @@ void RepoScene::addMetadata(
 	const bool  &propagateData)
 {
 	std::unordered_map<std::string, std::vector<RepoNode*>> namesMap;
+
 	//stashed version of the graph does not need to track metadata information
+	auto graph = getGraph(GraphType::DEFAULT);
+
 	for (RepoNode* transformation : graph.transformations)
 	{
 		std::string transformationName = transformation->getName();
@@ -459,7 +462,7 @@ bool RepoScene::addNodeToMaps(
 	repo::lib::RepoUUID uniqueID = node->getUniqueID();
 	repo::lib::RepoUUID sharedID = node->getSharedID();
 
-	repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+	repoGraphInstance &g = getGraph(gType);
 	//----------------------------------------------------------------------
 	//If the node has no parents it must be the rootnode
 	if (!node->hasField(REPO_NODE_LABEL_PARENTS)) {
@@ -531,26 +534,35 @@ void RepoScene::addStashGraph(
 
 void RepoScene::clearStash()
 {
-	for (auto &pair : stashGraph.nodesByUniqueID)
+	clearGraph(GraphType::OPTIMIZED);
+}
+
+void RepoScene::clearGraph(const GraphType& gType)
+{
+	auto graph = getGraph(gType);
+
+	for (auto& pair : graph.nodesByUniqueID)
 	{
 		if (pair.second)
 			delete pair.second;
 	}
 
-	stashGraph.cameras.clear();
-	stashGraph.meshes.clear();
-	stashGraph.materials.clear();
-	stashGraph.metadata.clear();
-	stashGraph.references.clear();
-	stashGraph.textures.clear();
-	stashGraph.transformations.clear();
-	stashGraph.unknowns.clear();
-	stashGraph.nodesByUniqueID.clear();
-	stashGraph.sharedIDtoUniqueID.clear();
-	stashGraph.parentToChildren.clear();
-	stashGraph.referenceToScene.clear(); //how will this work for stash?
+	graph.cameras.clear();
+	graph.meshes.clear();
+	graph.materials.clear();
+	graph.metadata.clear();
+	graph.references.clear();
+	graph.textures.clear();
+	graph.transformations.clear();
+	graph.unknowns.clear();
+	graph.nodesByUniqueID.clear();
+	graph.sharedIDtoUniqueID.clear();
+	graph.parentToChildren.clear();
+	graph.referenceToScene.clear(); //how will this work for stash?
 
-	stashGraph.rootNode = nullptr;
+	graph.rootNode = nullptr;
+
+	graph.cleared = true;
 }
 
 uint8_t RepoScene::commit(
@@ -579,7 +591,7 @@ uint8_t RepoScene::commit(
 		return REPOERR_UPLOAD_FAILED;
 	}
 
-	if (!graph.rootNode)
+	if (!getGraph(GraphType::DEFAULT).rootNode)
 	{
 		errMsg = "Cannot commit to the database - Scene is empty!.";
 		return REPOERR_UPLOAD_FAILED;
@@ -712,7 +724,7 @@ bool RepoScene::commitProjectSettings(
 	const std::string &userName)
 {
 	RepoProjectSettings projectSettings =
-		RepoBSONFactory::makeRepoProjectSettings(projectName, userName, graph.references.size());
+		RepoBSONFactory::makeRepoProjectSettings(projectName, userName, (getGraph(GraphType::DEFAULT)).references.size());
 
 	bool success = handler->insertDocument(
 		databaseName, REPO_COLLECTION_SETTINGS, projectSettings, errMsg);
@@ -856,7 +868,7 @@ bool RepoScene::commitNodes(
 	bool success = true;
 
 	bool isStashGraph = gType == GraphType::OPTIMIZED;
-	repoGraphInstance &g = isStashGraph ? stashGraph : graph;
+	repoGraphInstance& g = getGraph(gType);
 	std::string ext = isStashGraph ? REPO_COLLECTION_STASH_REPO : REPO_COLLECTION_SCENE;
 
 	size_t count = 0;
@@ -933,6 +945,8 @@ bool RepoScene::commitStash(
 	{
 		rev = revNode->getUniqueID();
 	}
+
+	auto stashGraph = getGraph(GraphType::OPTIMIZED);
 	if (stashGraph.rootNode)
 	{
 		updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_REPO_STASH);
@@ -963,7 +977,7 @@ RepoScene::getChildrenAsNodes(
 	const repo::lib::RepoUUID &parent) const
 {
 	std::vector<RepoNode*> children;
-	const repoGraphInstance &g = GraphType::OPTIMIZED == gType ? stashGraph : graph;
+	const repoGraphInstance &g = getGraph(gType);
 	auto it = g.parentToChildren.find(parent);
 	return it != g.parentToChildren.end() ? it->second : std::vector<RepoNode*>();
 }
@@ -1065,7 +1079,7 @@ std::vector<repo::lib::RepoVector3D> RepoScene::getSceneBoundingBox() const
 		0, 0, 1, 0,
 		0, 0, 0, 1, };
 
-	getSceneBoundingBoxInternal(gType, gType == GraphType::OPTIMIZED ? stashGraph.rootNode : graph.rootNode, identity, bbox);
+	getSceneBoundingBoxInternal(gType, getGraph(gType).rootNode, identity, bbox);
 	return bbox;
 }
 
@@ -1124,9 +1138,9 @@ void RepoScene::getSceneBoundingBoxInternal(
 		}
 		case NodeType::REFERENCE:
 		{
-			repoGraphInstance g = gType == GraphType::DEFAULT ? graph : stashGraph;
-			auto refSceneIt = graph.referenceToScene.find(node->getSharedID());
-			if (refSceneIt != graph.referenceToScene.end())
+			repoGraphInstance g = getGraph(gType);
+			auto refSceneIt = g.referenceToScene.find(node->getSharedID());
+			if (refSceneIt != g.referenceToScene.end())
 			{
 				const RepoScene *refScene = refSceneIt->second;
 				const std::vector<repo::lib::RepoVector3D> refSceneBbox = refScene->getSceneBoundingBox();
@@ -1165,7 +1179,7 @@ std::set<repo::lib::RepoUUID> RepoScene::getAllSharedIDs(
 {
 	std::set<repo::lib::RepoUUID> sharedIDs;
 
-	const auto &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+	const auto &g = getGraph(gType);
 
 	boost::copy(
 		g.sharedIDtoUniqueID | boost::adaptors::map_keys,
@@ -1342,7 +1356,7 @@ void RepoScene::modifyNode(
 		repoError << "Failed to modify node in scene (node is nullptr)";
 		return;
 	}
-	repoGraphInstance &g = gtype == GraphType::OPTIMIZED ? stashGraph : graph;
+	repoGraphInstance &g = getGraph(gtype);
 
 	repo::lib::RepoUUID sharedID = nodeToChange->getSharedID();
 	repo::lib::RepoUUID uniqueID = nodeToChange->getUniqueID();
@@ -1377,7 +1391,7 @@ void RepoScene::removeNode(
 	const repo::lib::RepoUUID                    &sharedID
 )
 {
-	repoGraphInstance &g = gtype == GraphType::OPTIMIZED ? stashGraph : graph;
+	repoGraphInstance &g = getGraph(gtype);
 	RepoNode *node = getNodeBySharedID(gtype, sharedID);
 	if (node)
 	{
@@ -1466,7 +1480,7 @@ bool RepoScene::populate(
 {
 	bool success = true;
 
-	repoGraphInstance &g = gtype == GraphType::OPTIMIZED ? stashGraph : graph;
+	repoGraphInstance &g = getGraph(gtype);
 
 	std::unordered_map<repo::lib::RepoUUID, RepoNode *, repo::lib::RepoUUIDHasher> nodesBySharedID;
 	for (std::vector<RepoBSON>::const_iterator it = nodes.begin();
@@ -1618,7 +1632,7 @@ void RepoScene::populateAndUpdate(
 	const RepoNodeSet &unknowns)
 {
 	std::string errMsg;
-	repoGraphInstance &instance = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+	repoGraphInstance &instance = getGraph(gType);
 	addNodeToScene(gType, cameras, errMsg, &(instance.cameras));
 	addNodeToScene(gType, meshes, errMsg, &(instance.meshes));
 	addNodeToScene(gType, materials, errMsg, &(instance.materials));
@@ -1630,6 +1644,7 @@ void RepoScene::populateAndUpdate(
 }
 
 void RepoScene::applyScaleFactor(const float &scale) {
+	auto graph = getGraph(GraphType::DEFAULT);
 	if (graph.rootNode)
 	{
 		auto rootTrans = dynamic_cast<TransformationNode*>(graph.rootNode);
@@ -1661,6 +1676,7 @@ void RepoScene::reorientateDirectXModel()
 	//This is essentially swapping the 2nd and 3rd column, negating the 2nd.
 	repoTrace << "Reorientating model...";
 	//Stash root and scene root should be identical!
+	auto graph = getGraph(GraphType::DEFAULT);
 	if (graph.rootNode)
 	{
 		auto rootTrans = dynamic_cast<TransformationNode*>(graph.rootNode);
@@ -1695,7 +1711,7 @@ void RepoScene::resetChangeSet()
 	newCurrent.clear();
 	std::vector<repo::lib::RepoUUID> sharedIds;
 	//boost::copy(graph.nodesByUniqueID | boost::adaptors::map_keys, std::back_inserter(newCurrent));
-	boost::copy(graph.sharedIDtoUniqueID | boost::adaptors::map_keys, std::back_inserter(sharedIds));
+	boost::copy(getGraph(GraphType::DEFAULT).sharedIDtoUniqueID | boost::adaptors::map_keys, std::back_inserter(sharedIds));
 	newAdded.insert(sharedIds.begin(), sharedIds.end());
 	revNode = nullptr;
 	unRevisioned = true;
@@ -1732,12 +1748,14 @@ void RepoScene::shiftModel(
 		0, 1, 0, (float)offset[1],
 		0, 0, 1, (float)offset[2],
 		0, 0, 0, 1 };
+	auto graph = getGraph(GraphType::DEFAULT);
 	if (graph.rootNode)
 	{
 		auto translatedRoot = graph.rootNode->cloneAndApplyTransformation(transMat);
 		graph.rootNode->swap(translatedRoot);
 	}
 
+	auto stashGraph = getGraph(GraphType::OPTIMIZED);
 	if (stashGraph.rootNode)
 	{
 		auto translatedRoot = stashGraph.rootNode->cloneAndApplyTransformation(transMat);

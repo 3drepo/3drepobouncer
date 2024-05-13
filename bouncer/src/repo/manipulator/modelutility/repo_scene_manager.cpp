@@ -160,6 +160,8 @@ uint8_t SceneManager::commitScene(
 					repoError << "failed to commit selection tree";
 			}
 
+			scene->clearGraph(repo::core::model::RepoScene::GraphType::DEFAULT); // Free up some memory as we'll only work with the stash graph from here on in
+
 			if (success)
 			{
 				if (shouldGenerateSrcFiles(scene, handler))
