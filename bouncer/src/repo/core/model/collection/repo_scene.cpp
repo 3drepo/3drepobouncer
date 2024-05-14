@@ -97,6 +97,8 @@ RepoScene::RepoScene(
 {
 	graph.rootNode = nullptr;
 	stashGraph.rootNode = nullptr;
+	graph.cleared = false;
+	stashGraph.cleared = false;
 	//defaults to master branch
 	branch = repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH);
 }
@@ -122,6 +124,8 @@ RepoScene::RepoScene(
 {
 	graph.rootNode = nullptr;
 	stashGraph.rootNode = nullptr;
+	graph.cleared = false;
+	stashGraph.cleared = false;
 	branch = repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH);
 	populateAndUpdate(GraphType::DEFAULT, cameras, meshes, materials, metadata, textures, transformations, references, unknowns);
 }
