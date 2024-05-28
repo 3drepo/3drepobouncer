@@ -350,7 +350,7 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 
 	//End of setting up data... the actual testing happens here.
 
-	auto mesh = RepoBSONFactory::makeSupermeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, ids);
+	auto mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors);
 
 	repoTrace << mesh.toString();
 
@@ -359,13 +359,11 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 	auto fOut = mesh.getFaces();
 	auto cOut = mesh.getColors();
 	auto uvOut = mesh.getUVChannelsSeparated();
-	auto idOut = mesh.getSubmeshIds();
 	EXPECT_TRUE(compareStdVectors(vectors, vOut));
 	EXPECT_TRUE(compareStdVectors(normals, nOut));
 	EXPECT_TRUE(compareStdVectors(faces, fOut));
 	EXPECT_TRUE(compareVectors(colors, cOut));
 	EXPECT_TRUE(compareStdVectors(uvChannels, uvOut));
-	EXPECT_TRUE(compareStdVectors(ids, idOut));
 
 	ASSERT_EQ(MeshNode::Primitive::TRIANGLES, mesh.getPrimitive());
 
@@ -397,13 +395,11 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 	fOut = mesh.getFaces();
 	cOut = mesh.getColors();
 	uvOut = mesh.getUVChannelsSeparated();
-	idOut = mesh.getSubmeshIds();
 	EXPECT_TRUE(compareStdVectors(vectors, vOut));
 	EXPECT_TRUE(compareStdVectors(normals, nOut));
 	EXPECT_TRUE(compareStdVectors(faces, fOut));
 	EXPECT_TRUE(compareVectors(colors, cOut));
 	EXPECT_TRUE(compareStdVectors(uvChannels, uvOut));
-	EXPECT_TRUE(compareStdVectors(ids, idOut));
 
 	bbox = mesh.getBoundingBox();
 	ASSERT_EQ(boundingBox.size(), bbox.size());
@@ -423,7 +419,7 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 		faces.push_back(face);
 	}
 
-	mesh = RepoBSONFactory::makeSupermeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, ids);
+	mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, {});
 
 	ASSERT_EQ(MeshNode::Primitive::UNKNOWN, mesh.getPrimitive());
 }
