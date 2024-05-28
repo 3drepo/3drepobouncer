@@ -361,7 +361,7 @@ bool MeshMapReorganiser::splitLargeMesh(
 				splitMap[currentSubMesh.mesh_id].push_back(newMappings.size() - 1);
 
 			if (startedLargeMeshSplit) {
-				updateIDMapArray(splitMeshVertexCount, idMapIdx++);
+				updateIDMapArray(splitMeshVertexCount, idMapIdx);
 				finishSubMesh(newMappings.back(), bboxMin, bboxMax, splitMeshVertexCount, splitMeshFaceCount);
 
 				completeLastMatMapEntry(matMap.back().back().vertFrom + splitMeshVertexCount,
@@ -525,9 +525,14 @@ void MeshMapReorganiser::startSubMesh(
 {
 	mapping.vertFrom = sVertices;
 	mapping.triFrom = sFaces;
-	mapping.material_id = matID; //Not a reliable source. Just filled in for completeness
-	mapping.mesh_id = meshID;
-	mapping.shared_id = sharedID;
+
+	// The split mappings are not bijective with respect to the originals,
+	// so make sure these are initialised to invalid values so its obvious
+	// if they are being misused.
+
+	mapping.material_id = repo::lib::RepoUUID::defaultValue;
+	mapping.mesh_id = repo::lib::RepoUUID::defaultValue;
+	mapping.shared_id = repo::lib::RepoUUID::defaultValue;
 
 	idMapBuf.resize(idMapBuf.size() + 1);
 	idMapBuf.back().clear();
