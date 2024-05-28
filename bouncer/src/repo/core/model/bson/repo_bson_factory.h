@@ -28,7 +28,7 @@
 #include "repo_bson_sequence.h"
 #include "repo_bson_task.h"
 #include "repo_bson_user.h"
-#include "repo_bson_unity_assets.h"
+#include "repo_bson_assets.h"
 #include "repo_node.h"
 #include "repo_node_camera.h"
 #include "repo_node_metadata.h"
@@ -38,6 +38,7 @@
 #include "repo_node_revision.h"
 #include "repo_node_texture.h"
 #include "repo_node_transformation.h"
+#include "repo_bson_builder.h"
 
 namespace repo {
 	namespace core {
@@ -45,7 +46,6 @@ namespace repo {
 			class REPO_API_EXPORT RepoBSONFactory
 			{
 			public:
-
 				/**
 				* Create a project setting BSON
 				* @param uniqueProjectName a unique name for the project
@@ -138,30 +138,6 @@ namespace repo {
 					const std::vector<char>                                &avatar);
 
 				/**
-				* Create a Unity assets list BSON
-				* @param revisionID uuid of the revision (default: master branch)
-				* @param assets list of Unity assets
-				* @param database name of the database to reference
-				* @param model model ID (string) to reference
-				* @param offset world offset shift coordinates of the model
-				* @param vrAssetFiles list of VR Unity assets
-				* @param iosAssetFiles list of iOS Unity assets
-				* @param androidAssetFiles list of android Unity assets
-				* @param jsonFiles list of JSON files
-				* @return returns a RepoUnityAssets
-				*/
-				static RepoUnityAssets makeUnityAssets(
-					const repo::lib::RepoUUID                              &revisionID,
-					const std::vector<std::string>                         &unityAssetFiles,
-					const std::string                                      &database,
-					const std::string                                      &model,
-					const std::vector<double>                              &offset,
-					const std::vector<std::string>                         &vrAssetFiles,
-					const std::vector<std::string>                         &iosAssetFiles,
-					const std::vector<std::string>                         &androidAssetFiles,
-					const std::vector<std::string>                         &unityJsonFiles);
-
-				/**
 				* Create a RepoBundles list BSON
 				* @param revisionID uuid of the revision (default: master branch)
 				* @param assets list of RepoBundles assets
@@ -172,15 +148,16 @@ namespace repo {
 				* @param iosAssetFiles list of iOS Unity assets
 				* @param androidAssetFiles list of android Unity assets
 				* @param jsonFiles list of JSON files
-				* @return returns a RepoUnityAssets
+				* @return returns a RepoAssets
 				*/
-				static RepoUnityAssets makeRepoBundleAssets(
+				static RepoAssets makeRepoBundleAssets(
 					const repo::lib::RepoUUID& revisionID,
 					const std::vector<std::string>& repoBundleFiles,
 					const std::string& database,
 					const std::string& model,
 					const std::vector<double>& offset,
-					const std::vector<std::string>& repoJsonFiles);
+					const std::vector<std::string>& repoJsonFiles,
+					const std::vector<RepoSupermeshMetadata> metadata);
 
 				/*
 				* -------------------- REPO NODES ------------------------
@@ -288,14 +265,21 @@ namespace repo {
 				static MeshNode makeMeshNode(
 					const std::vector<repo::lib::RepoVector3D>        &vertices,
 					const std::vector<repo_face_t>                    &faces,
-					const std::vector<repo::lib::RepoVector3D>        &normals = std::vector<repo::lib::RepoVector3D>(),
-					const std::vector<std::vector<float>>             &boundingBox = std::vector<std::vector<float>>(),
-					const std::vector<std::vector<repo::lib::RepoVector2D>>   &uvChannels = std::vector<std::vector<repo::lib::RepoVector2D>>(),
-					const std::vector<repo_color4d_t>                 &colors = std::vector<repo_color4d_t>(),
-					const std::vector<float>                          &ids = std::vector<float>(),
-					const std::string                                 &name = std::string(),
-					const std::vector<repo::lib::RepoUUID>            &parents = std::vector<repo::lib::RepoUUID>(),
+					const std::vector<repo::lib::RepoVector3D>        &normals,
+					const std::vector<std::vector<float>>             &boundingBox,
+					const std::vector<std::vector<repo::lib::RepoVector2D>>   &uvChannels,
+					const std::vector<repo_color4d_t>                 &colors,
+					const std::string                                 &name,
+					const std::vector<repo::lib::RepoUUID>            &parents,
 					const int                                         &apiLevel = REPO_NODE_API_LEVEL_1);
+
+				static MeshNode makeMeshNode(
+					const std::vector<repo::lib::RepoVector3D>& vertices,
+					const std::vector<repo_face_t>& faces,
+					const std::vector<repo::lib::RepoVector3D>& normals,
+					const std::vector<std::vector<float>>& boundingBox,
+					const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
+					const std::vector<repo_color4d_t>& colors);
 
 				static MeshNode makeMeshNode(
 					const std::vector<repo::lib::RepoVector3D>        &vertices,
@@ -306,11 +290,44 @@ namespace repo {
 					return makeMeshNode(vertices, faces, normals, boundingBox,
 						std::vector<std::vector<repo::lib::RepoVector2D>>(),
 						std::vector<repo_color4d_t>(),
-						std::vector<float>(),
 						std::string(),
 						parents
 					);
 				}
+
+				static SupermeshNode makeSupermeshNode(
+					const std::vector<repo::lib::RepoVector3D>& vertices,
+					const std::vector<repo_face_t>& faces,
+					const std::vector<repo::lib::RepoVector3D>& normals = {},
+					const std::vector<std::vector<float>>& boundingBox = {},
+					const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels = {},
+					const std::vector<repo_color4d_t>& colors = {},
+					const std::vector<float> mappingIds = {}
+				);
+
+				static SupermeshNode makeSupermeshNode(
+					const std::vector<repo::lib::RepoVector3D>& vertices,
+					const std::vector<repo_face_t>& faces,
+					const std::vector<repo::lib::RepoVector3D>& normals,
+					const std::vector<std::vector<float>>& boundingBox,
+					const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
+					const std::vector<repo_color4d_t>& colors,
+					const std::string& name,
+					const std::vector<repo_mesh_mapping_t>& mappings
+				);
+
+				static SupermeshNode makeSupermeshNode(
+					const std::vector<repo::lib::RepoVector3D>& vertices,
+					const std::vector<repo_face_t>& faces,
+					const std::vector<repo::lib::RepoVector3D>& normals,
+					const std::vector<std::vector<float>>& boundingBox,
+					const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
+					const std::vector<repo_color4d_t>& colors,
+					const std::vector<float> mappingIds,
+					const std::vector<repo_mesh_mapping_t>& mappings,
+					const repo::lib::RepoUUID& id,
+					const repo::lib::RepoUUID& sharedId
+				);
 
 				/**
 				* Create a Reference Node

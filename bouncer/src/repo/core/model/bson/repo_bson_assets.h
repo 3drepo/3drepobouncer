@@ -16,35 +16,43 @@
 */
 
 /**
-*  Unity assets BSON
+*  Assets BSON
 */
 
 #pragma once
+
 #include "repo_bson.h"
+#include "repo/core/model/repo_model_global.h"
+#include "repo/lib/datastructure/repo_vector.h"
 
 namespace repo {
 	namespace core {
 		namespace model {
 			//------------------------------------------------------------------------------
 			//
-			// Fields specific to unity assets only
+			// Fields that define information about the assets that make up a container
 			//
 			//------------------------------------------------------------------------------
-#define REPO_UNITY_ASSETS_LABEL_ASSETS "assets"
-#define REPO_UNITY_ASSETS_LABEL_OFFSET "offset"
-#define REPO_UNITY_ASSETS_LABEL_VRASSETS "vrAssets"
-#define REPO_UNITY_ASSETS_LABEL_IOSASSETS "iosAssets"
-#define REPO_UNITY_ASSETS_LABEL_ANDROIDASSETS "androidAssets"
-#define REPO_UNITY_ASSETS_LABEL_JSONFILES "jsonFiles"
-			class REPO_API_EXPORT RepoUnityAssets : public RepoBSON
+			class REPO_API_EXPORT RepoSupermeshMetadata
+			{
+			public:
+				size_t numVertices;
+				size_t numFaces;
+				size_t numUVChannels;
+				size_t primitive;
+				repo::lib::RepoVector3D min;
+				repo::lib::RepoVector3D max;
+			};
+
+			class REPO_API_EXPORT RepoAssets : public RepoBSON
 			{
 			public:
 
-				RepoUnityAssets() : RepoBSON() {}
+				RepoAssets() : RepoBSON() {}
 
-				RepoUnityAssets(RepoBSON bson) : RepoBSON(bson) {}
+				RepoAssets(RepoBSON bson) : RepoBSON(bson) {}
 
-				~RepoUnityAssets() {}
+				~RepoAssets() {}
 			};
 		}// end namespace model
 	} // end namespace core

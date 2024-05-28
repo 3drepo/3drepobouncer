@@ -21,7 +21,7 @@
 * limits as possible, but never exceed them. The result is a new MeshNode with
 * a new set of mappings.
 *
-The faces delineated by the new mappings are re-indexed so they refer directly
+* The faces delineated by the new mappings are re-indexed so they refer directly
 * to vertices between vFrom and vTo of any mapping (though they are stored still
 * in a shared array).
 *
@@ -51,7 +51,7 @@ namespace repo {
 				* @param vertThreshold maximum vertices
 				*/
 				MeshMapReorganiser(
-					const repo::core::model::MeshNode *mesh,
+					const repo::core::model::SupermeshNode	*mesh,
 					const size_t                        &vertThreshold,
 					const size_t						&faceThreshold);
 				~MeshMapReorganiser();
@@ -72,7 +72,7 @@ namespace repo {
 				* Get the mesh, with mesh mappings and buffers modified
 				* @return returns the modified mesh
 				*/
-				repo::core::model::MeshNode getRemappedMesh() const;
+				repo::core::model::SupermeshNode getRemappedMesh() const;
 
 				/**
 				* Return serialised faces of the modified mesh
@@ -181,7 +181,7 @@ namespace repo {
 
 				bool reMapSuccess;
 
-				const repo::core::model::MeshNode *mesh;
+				const repo::core::model::SupermeshNode *mesh;
 				const size_t maxVertices;
 				const size_t maxFaces;
 				const std::vector<repo::lib::RepoVector3D> oldVertices;

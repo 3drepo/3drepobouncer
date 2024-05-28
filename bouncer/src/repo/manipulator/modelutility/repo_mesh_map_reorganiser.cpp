@@ -21,7 +21,7 @@
 using namespace repo::manipulator::modelutility;
 
 MeshMapReorganiser::MeshMapReorganiser(
-	const repo::core::model::MeshNode *mesh,
+	const repo::core::model::SupermeshNode *mesh,
 	const size_t                    &vertThreshold,
 	const size_t					&faceThreshold) :
 	mesh(mesh),
@@ -145,7 +145,7 @@ MeshMapReorganiser::getSplitMapping() const {
 	return reMapSuccess ? splitMap : std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher>();
 }
 
-repo::core::model::MeshNode MeshMapReorganiser::getRemappedMesh() const
+repo::core::model::SupermeshNode MeshMapReorganiser::getRemappedMesh() const
 {
 	if (reMapSuccess)
 	{
@@ -164,18 +164,23 @@ repo::core::model::MeshNode MeshMapReorganiser::getRemappedMesh() const
 			newIds.insert(newIds.end(), buf.begin(), buf.end());
 		}
 
-		auto newMesh = repo::core::model::RepoBSONFactory::makeMeshNode(newVertices, newFaces, newNormals, bboxArr, newUVs, newColors, newIds);
-		repo::core::model::RepoBSONBuilder builder;
-		builder.append(REPO_NODE_LABEL_ID, mesh->getUniqueID());
-		builder.append(REPO_NODE_LABEL_SHARED_ID, mesh->getSharedID());
-		auto changes = builder.obj();
-		newMesh = newMesh.cloneAndAddFields(&changes, false);
+		auto newMesh = repo::core::model::RepoBSONFactory::makeSupermeshNode(
+			newVertices,
+			newFaces,
+			newNormals,
+			bboxArr,
+			newUVs,
+			newColors,
+			newIds,
+			reMappedMappings,
+			mesh->getUniqueID(),
+			mesh->getSharedID());
 
-		return newMesh.cloneAndUpdateMeshMapping(reMappedMappings, true);
+		return newMesh;
 	}
 	else
 	{
-		return repo::core::model::MeshNode();
+		return repo::core::model::SupermeshNode();
 	}
 }
 

@@ -908,55 +908,6 @@ bool RepoScene::commitSceneChanges(
 	return success;
 }
 
-bool RepoScene::commitStash(
-	repo::core::handler::AbstractDatabaseHandler *handler,
-	std::string &errMsg)
-{
-	/*
-	* Don't bother if:
-	* 1. root node is null (not instantiated)
-	* 2. revnode is null (unoptimised scene graph needs to be commited first)
-	*/
-
-	repo::lib::RepoUUID rev;
-	if (!handler)
-	{
-		errMsg += "Cannot commit stash graph - nullptr to database handler.";
-		return false;
-	}
-	if (!revNode)
-	{
-		errMsg += "Revision node not found, make sure the default scene graph is commited";
-		return false;
-	}
-	else
-	{
-		rev = revNode->getUniqueID();
-	}
-	if (stashGraph.rootNode)
-	{
-		updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_REPO_STASH);
-		//Add rev id onto the stash nodes before committing.
-		std::vector<repo::lib::RepoUUID> nodes;
-		for (auto &pair : stashGraph.nodesByUniqueID)
-		{
-			nodes.push_back(pair.first);
-		}
-		auto success = commitNodes(handler, nodes, rev, GraphType::OPTIMIZED, errMsg);
-
-		if (success)
-			updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
-
-		return success;
-	}
-	else
-	{
-		//Not neccessarily an error. Make it visible for debugging purposes
-		repoDebug << "Stash graph not commited. Root node is nullptr!";
-		return true;
-	}
-}
-
 std::vector<RepoNode*>
 RepoScene::getChildrenAsNodes(
 	const GraphType &gType,

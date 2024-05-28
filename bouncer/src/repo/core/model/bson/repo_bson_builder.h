@@ -128,7 +128,7 @@ namespace repo {
 					}
 				}
 
-				void appendElements(RepoBSON bson) {
+				virtual void appendElements(RepoBSON bson) {
 					mongo::BSONObjBuilder::appendElements(bson);
 				}
 
@@ -144,6 +144,14 @@ namespace repo {
 					mongo::Date_t date = mongo::Date_t(ts);
 					mongo::BSONObjBuilder::append(label, date);
 				}
+
+				/**
+				* Appends a Vector but as an object, instead of an array.
+				*/
+				void RepoBSONBuilder::appendVector3d(
+					const std::string& label,
+					const repo::lib::RepoVector3D& vec
+				);
 
 				/**
 				* builds the BSON object as RepoBSON given the information within the builder
@@ -167,23 +175,20 @@ namespace repo {
 			};
 
 			// Template specialization
-			template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoUUID >
-				(
-					const std::string &label,
-					const repo::lib::RepoUUID &uuid
-					);
+			template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoUUID > (
+				const std::string &label,
+				const repo::lib::RepoUUID &uuid
+			);
 
-				template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoVector3D >
-					(
-						const std::string &label,
-						const repo::lib::RepoVector3D &vec
-						);
+			template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoVector3D > (
+				const std::string &label,
+				const repo::lib::RepoVector3D &vec
+			);
 
-					template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoMatrix >
-						(
-							const std::string &label,
-							const repo::lib::RepoMatrix &mat
-							);
+			template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoMatrix > (
+				const std::string &label,
+				const repo::lib::RepoMatrix &mat
+			);
 		}// end namespace model
 	} // end namespace core
 } // end namespace repo

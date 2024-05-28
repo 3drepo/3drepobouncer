@@ -50,39 +50,51 @@ RepoBSON RepoBSONBuilder::obj()
 	return RepoBSON(mongo::BSONObjBuilder::obj());
 }
 
-template<> void repo::core::model::RepoBSONBuilder::append < repo::lib::RepoUUID >
-	(
-		const std::string &label,
-		const repo::lib::RepoUUID &uuid
-		)
+template<> void repo::core::model::RepoBSONBuilder::append<repo::lib::RepoUUID>
+(
+	const std::string &label,
+	const repo::lib::RepoUUID &uuid
+)
 {
 	appendUUID(label, uuid);
 }
 
-	template<> void repo::core::model::RepoBSONBuilder::append < repo::lib::RepoVector3D >
-		(
-			const std::string &label,
-			const repo::lib::RepoVector3D &vec
-			)
-	{
-		appendArray(label, vec.toStdVector());
-	}
+template<> void repo::core::model::RepoBSONBuilder::append<repo::lib::RepoVector3D>
+(
+	const std::string &label,
+	const repo::lib::RepoVector3D &vec
+)
+{
+	appendArray(label, vec.toStdVector());
+}
 
-		template<> void repo::core::model::RepoBSONBuilder::append < repo::lib::RepoMatrix >
-			(
-				const std::string &label,
-				const repo::lib::RepoMatrix &mat
-				)
-		{
-			RepoBSONBuilder rows;
-			auto data = mat.getData();
-			for (uint32_t i = 0; i < 4; ++i)
-			{
-				RepoBSONBuilder columns;
-				for (uint32_t j = 0; j < 4; ++j){
-					columns << std::to_string(j) << data[i * 4 + j];
-				}
-				rows.appendArray(std::to_string(i), columns.obj());
-			}
-			appendArray(label, rows.obj());;
+template<> void repo::core::model::RepoBSONBuilder::append<repo::lib::RepoMatrix>
+(
+	const std::string &label,
+	const repo::lib::RepoMatrix &mat
+)
+{
+	RepoBSONBuilder rows;
+	auto data = mat.getData();
+	for (uint32_t i = 0; i < 4; ++i)
+	{
+		RepoBSONBuilder columns;
+		for (uint32_t j = 0; j < 4; ++j){
+			columns << std::to_string(j) << data[i * 4 + j];
 		}
+		rows.appendArray(std::to_string(i), columns.obj());
+	}
+	appendArray(label, rows.obj());;
+}
+
+void RepoBSONBuilder::appendVector3d(
+	const std::string& label,
+	const repo::lib::RepoVector3D& vec
+)
+{
+	mongo::BSONObjBuilder objBuilder;
+	objBuilder.append("x", vec.x);
+	objBuilder.append("y", vec.y);
+	objBuilder.append("z", vec.z);
+	append(label, objBuilder.obj());
+}

@@ -108,7 +108,7 @@ namespace repo {
 				/*
 				* Turns a mapped_mesh_t into a MeshNode that can be added to the database
 				*/
-				repo::core::model::MeshNode* createMeshNode(
+				repo::core::model::SupermeshNode* createSupermeshNode(
 					const mapped_mesh_t& mapped,
 					bool isGrouped
 				);
@@ -126,9 +126,8 @@ namespace repo {
 				void createSuperMeshes(
 					const repo::core::model::RepoScene *scene,
 					const std::vector<repo::core::model::MeshNode> &nodes,
-					UUIDMap &materialMap,
 					const bool isGrouped,
-					std::vector<repo::core::model::MeshNode*> &supermeshNodes);
+					std::vector<repo::core::model::SupermeshNode*> &supermeshNodes);
 
 				/**
 				* Generate the multipart scene
@@ -188,20 +187,7 @@ namespace repo {
 					const std::set<repo::lib::RepoUUID>	&groupMeshIds,
 					const repo::lib::RepoUUID &rootID,
 					repo::core::model::RepoNodeSet &mergedMeshes,
-					UUIDMap &originalIdToStashIdMap,
 					const bool isGrouped);
-
-				/**
-				* Creates a set of Stash MaterialNodes for all the supermeshes 
-				* in the set. It is assumed the supermeshes mappings are using
-				* the new stash Ids, which are mapped from the original Ids in
-				* originalIdToStashIdMap.
-				*/
-				repo::core::model::RepoNodeSet processSupermeshMaterials(
-					const repo::core::model::RepoScene* scene,
-					const repo::core::model::RepoNodeSet& supermeshes,
-					const UUIDMap& originalIdToStashIdMap
-				);
 
 				/**
 				* Groups the MeshNodes into sets based on their location and

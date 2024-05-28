@@ -215,7 +215,7 @@ repo_web_buffers_t SRCModelExport::getAllFilesExportedAsBuffer() const
 }
 
 bool SRCModelExport::generateJSONMapping(
-	const repo::core::model::MeshNode  *mesh,
+	const repo::core::model::SupermeshNode  *mesh,
 	const repo::core::model::RepoScene *scene,
 	const std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher> &splitMapping)
 {
@@ -333,13 +333,13 @@ bool SRCModelExport::generateTreeRepresentation(
 	bool success;
 	if (success = scene->hasRoot(gType))
 	{
-		auto meshes = scene->getAllMeshes(gType);
+		auto meshes = scene->getAllSupermeshes(gType);
 		size_t index = 0;
 		//Every mesh is a new SRC file
 		fullDataBuffer.reserve(meshes.size());
 		for (const repo::core::model::RepoNode* node : meshes)
 		{
-			auto mesh = dynamic_cast<const repo::core::model::MeshNode*>(node);
+			auto mesh = dynamic_cast<const repo::core::model::SupermeshNode*>(node);
 			if (!mesh)
 			{
 				repoError << "Failed to cast a Repo Node of type mesh into a MeshNode(" << node->getUniqueID() << "). Skipping...";
@@ -355,7 +355,7 @@ bool SRCModelExport::generateTreeRepresentation(
 			repo::manipulator::modelutility::MeshMapReorganiser *reSplitter =
 				new repo::manipulator::modelutility::MeshMapReorganiser(mesh, SRC_MAX_VERTEX_LIMIT, SRC_MAX_TRIANGLE_LIMIT);
 
-			repo::core::model::MeshNode splittedMesh = reSplitter->getRemappedMesh();
+			auto splittedMesh = reSplitter->getRemappedMesh();
 			if (success = !(splittedMesh.isEmpty()))
 			{
 				std::vector<uint16_t> facebuf = reSplitter->getSerialisedFaces();
@@ -388,7 +388,7 @@ bool SRCModelExport::generateTreeRepresentation(
 }
 
 bool SRCModelExport::addMeshToExport(
-	const repo::core::model::MeshNode      &mesh,
+	const repo::core::model::SupermeshNode &mesh,
 	const size_t                           &idx,
 	const std::vector<uint16_t>            &faceBuf,
 	const std::vector<std::vector<float>>  &idMapBuf,

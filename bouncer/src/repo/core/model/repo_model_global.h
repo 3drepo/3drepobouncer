@@ -97,7 +97,7 @@
 #define REPO_COLLECTION_STASH_GLTF      "stash.gltf"
 #define REPO_COLLECTION_STASH_X3D       "stash.x3d"
 #define REPO_COLLECTION_STASH_JSON      "stash.json_mpc"
-#define REPO_COLLECTION_STASH_UNITY     "stash.unity3d"
+#define REPO_COLLECTION_STASH_UNITY     "stash.unity3d" // This collection is no longer used but may still exist in the databse
 #define REPO_COLLECTION_STASH_BUNDLE    "stash.repobundles"
 #define REPO_COLLECTION_EXT_REF         "ref"
 #define REPO_COLLECTION_SEQUENCE        "sequences"
@@ -195,3 +195,11 @@
 #define REPO_NODE_TYPE_TRANSFORMATION   "transformation"
 #define REPO_NODE_TYPE_UNKNOWN			"unknown" // reserved UUID ext 00
 //-----------------------------------------------------------------------------
+
+// Assets schema labels
+#define REPO_ASSETS_LABEL_ASSETS		"assets"
+#define REPO_ASSETS_LABEL_OFFSET		"offset"
+#define REPO_ASSETS_LABEL_VRASSETS		"vrAssets"
+#define REPO_ASSETS_LABEL_IOSASSETS		"iosAssets"
+#define REPO_ASSETS_LABEL_ANDROIDASSETS	"androidAssets"
+#define REPO_ASSETS_LABEL_JSONFILES		"jsonFiles"

@@ -64,7 +64,7 @@ namespace repo{
 				* @param fileExt file extension required for this SRC file (*.src/.src.mpc/.src?<query>)
 				*/
 				bool addMeshToExport(
-					const repo::core::model::MeshNode &mesh,
+					const repo::core::model::SupermeshNode &mesh,
 					const size_t &idx,
 					const std::vector<uint16_t> &faceBuf,
 					const std::vector<std::vector<float>>  &idMapBuf,
@@ -79,7 +79,7 @@ namespace repo{
 				* @param splitMapping how the mapping is split after subMesh split
 				*/
 				bool generateJSONMapping(
-					const repo::core::model::MeshNode *mesh,
+					const repo::core::model::SupermeshNode *mesh,
 					const repo::core::model::RepoScene *scene,
 					const std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher> &splitMapping);
 

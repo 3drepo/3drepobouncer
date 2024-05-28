@@ -173,7 +173,19 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 	}
 }
 
-MeshNode MeshNode::cloneAndUpdateMeshMapping(
+SupermeshNode SupermeshNode::cloneAndUpdateIds(
+	repo::lib::RepoUUID& uniqueID,
+	repo::lib::RepoUUID& sharedID
+)
+{
+	RepoBSONBuilder builder;
+	builder.append(REPO_NODE_LABEL_ID, uniqueID);
+	builder.append(REPO_NODE_LABEL_SHARED_ID, sharedID);
+	builder.appendElementsUnique(*this);
+	return SupermeshNode(builder.obj(), bigFiles);
+}
+
+SupermeshNode SupermeshNode::cloneAndUpdateMeshMapping(
 	const std::vector<repo_mesh_mapping_t> &vec,
 	const bool                             &overwrite)
 {
@@ -200,8 +212,10 @@ MeshNode MeshNode::cloneAndUpdateMeshMapping(
 	//append the rest of the mesh onto this new bson
 	builder.appendElementsUnique(*this);
 
-	return MeshNode(builder.obj(), bigFiles);
+	return SupermeshNode(builder.obj(), bigFiles);
 }
+
+
 
 std::vector<repo::lib::RepoVector3D> MeshNode::getBoundingBox() const
 {
@@ -265,7 +279,7 @@ std::vector<repo_color4d_t> MeshNode::getColors() const
 	return colors;
 }
 
-std::vector<float> MeshNode::getSubmeshIds() const
+std::vector<float> SupermeshNode::getSubmeshIds() const
 {
 	std::vector<float> submeshIds = std::vector<float>();
 	if (hasBinField(REPO_NODE_MESH_LABEL_SUBMESH_IDS))
@@ -316,7 +330,7 @@ uint32_t MeshNode::getMFormat(const bool isTransparent, const bool isInvisibleDe
 	return vBit | fBit | nBit | cBit | uvBits | transBit | visiBit | typeBits;
 }
 
-std::vector<repo_mesh_mapping_t> MeshNode::getMeshMapping() const
+std::vector<repo_mesh_mapping_t> SupermeshNode::getMeshMapping() const
 {
 	std::vector<repo_mesh_mapping_t> mappings;
 	RepoBSON mapArray = getObjectField(REPO_NODE_MESH_LABEL_MERGE_MAP);
@@ -339,7 +353,7 @@ std::vector<repo_mesh_mapping_t> MeshNode::getMeshMapping() const
 
 			RepoBSON boundingBox = mappingObj.getObjectField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
 
-			std::vector<repo::lib::RepoVector3D> bboxVec = getBoundingBox(boundingBox);
+			std::vector<repo::lib::RepoVector3D> bboxVec = MeshNode::getBoundingBox(boundingBox);
 			mapping.min.x = bboxVec[0].x;
 			mapping.min.y = bboxVec[0].y;
 			mapping.min.z = bboxVec[0].z;
@@ -450,7 +464,7 @@ std::vector<repo_face_t> MeshNode::getFaces() const
 	return faces;
 }
 
-RepoBSON MeshNode::meshMappingAsBSON(const repo_mesh_mapping_t  &mapping)
+RepoBSON SupermeshNode::meshMappingAsBSON(const repo_mesh_mapping_t  &mapping)
 {
 	RepoBSONBuilder builder;
 	builder.append(REPO_NODE_MESH_LABEL_MAP_ID, mapping.mesh_id);

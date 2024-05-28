@@ -167,7 +167,7 @@ std::unordered_map<std::string, repo::core::model::MeshNode> SynchroModelImport:
 		for (const auto uv : meshDetails.uv) {
 			uvs.push_back({ (float)uv.x, (float)uv.y });
 		}
-		res[meshDetails.geoID] = repo::core::model::RepoBSONFactory::makeMeshNode(vertices, faces, normals, bbox, { uvs });
+		res[meshDetails.geoID] = repo::core::model::RepoBSONFactory::makeMeshNode(vertices, faces, normals, bbox, { uvs }, {});
 	}
 
 	return res;

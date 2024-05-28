@@ -64,7 +64,7 @@ namespace repo {
 			//------------------------------------------------------------------------------
 #define REPO_NODE_MESH_LABEL_PRIMITIVE		        "primitive"
 
-			class REPO_API_EXPORT MeshNode :public RepoNode
+			class REPO_API_EXPORT MeshNode : public RepoNode
 			{
 			public:
 				enum class Primitive {
@@ -163,14 +163,6 @@ namespace repo {
 				virtual RepoNode cloneAndApplyTransformation(
 					const repo::lib::RepoMatrix &matrix) const;
 
-				/**
-				* Create a new copy of the node and update its mesh mapping
-				* @return returns a new meshNode with the new mappings
-				*/
-				MeshNode cloneAndUpdateMeshMapping(
-					const std::vector<repo_mesh_mapping_t> &vec,
-					const bool& overwrite = false);
-
 				MeshNode cloneAndNoteGrouping(const std::string &group) const;
 
 				/**
@@ -198,8 +190,6 @@ namespace repo {
 				// get sepcific grouping for mesh batching (empty string if not specified)
 				std::string getGrouping() const;
 
-				std::vector<repo_mesh_mapping_t> getMeshMapping() const;
-
 				/**
 				* Retrieve a vector of vertices from the bson object
 				*/
@@ -215,8 +205,6 @@ namespace repo {
 				*/
 				std::vector<std::vector<repo::lib::RepoVector2D>> getUVChannelsSeparated() const;
 
-				std::vector<float> getSubmeshIds() const;
-
 				/**
 				* Retrieve a vector of vertices from the bson object
 				*/
@@ -230,16 +218,45 @@ namespace repo {
 
 			private:
 				/**
+				* Retrieve a vector of faces (serialised) from the bson object
+				*/
+				std::vector<uint32_t> getFacesSerialized() const;
+			};
+
+			class REPO_API_EXPORT SupermeshNode : public MeshNode
+			{
+			public:
+
+				SupermeshNode()
+				{
+				}
+
+				SupermeshNode(RepoBSON bson,
+					const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>& binMapping) : MeshNode(bson, binMapping)
+				{
+				}
+
+				std::vector<repo_mesh_mapping_t> getMeshMapping() const;
+				std::vector<float> getSubmeshIds() const;
+
+				SupermeshNode cloneAndUpdateIds(
+					repo::lib::RepoUUID& uniqueID,
+					repo::lib::RepoUUID& sharedID);
+
+				/**
+				* Create a new copy of the node and update its mesh mapping
+				* @return returns a new meshNode with the new mappings
+				*/
+				SupermeshNode cloneAndUpdateMeshMapping(
+					const std::vector<repo_mesh_mapping_t>& vec,
+					const bool& overwrite = false);
+
+				/**
 				* Given a mesh mapping, convert it into a bson object
 				* @param mapping the mapping to convert
 				* @return return a bson object containing the mapping
 				*/
-				RepoBSON meshMappingAsBSON(const repo_mesh_mapping_t  &mapping);
-
-				/**
-				* Retrieve a vector of faces (serialised) from the bson object
-				*/
-				std::vector<uint32_t> getFacesSerialized() const;
+				static RepoBSON meshMappingAsBSON(const repo_mesh_mapping_t& mapping);
 			};
 		} //namespace model
 	} //namespace core
