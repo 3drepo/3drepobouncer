@@ -350,7 +350,7 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 
 	//End of setting up data... the actual testing happens here.
 
-	MeshNode mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, ids, name);
+	auto mesh = RepoBSONFactory::makeSupermeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, ids);
 
 	repoTrace << mesh.toString();
 
@@ -386,7 +386,7 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 
 	// Re-create the mesh but using lines instead of triangles. This should change the primitive type, but otherwise all properties should be handled identically.
 
-	mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, ids, name);
+	mesh = RepoBSONFactory::makeSupermeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, ids);
 
 	repoTrace << mesh.toString();
 
@@ -423,7 +423,7 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 		faces.push_back(face);
 	}
 
-	mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, ids, name);
+	mesh = RepoBSONFactory::makeSupermeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, ids);
 
 	ASSERT_EQ(MeshNode::Primitive::UNKNOWN, mesh.getPrimitive());
 }

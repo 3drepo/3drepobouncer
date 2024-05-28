@@ -117,7 +117,7 @@ repo::core::model::MeshNode* createRandomMesh(const int nVertices, const bool ha
 		uvs.push_back(channel);
 	}
 
-	auto mesh = new repo::core::model::MeshNode(repo::core::model::RepoBSONFactory::makeMeshNode(vertices, faces, {}, bbox, uvs, {}, {}, "mesh", parent));
+	auto mesh = new repo::core::model::MeshNode(repo::core::model::RepoBSONFactory::makeMeshNode(vertices, faces, {}, bbox, uvs, {}, "mesh", parent));
 
 	return mesh;
 }
@@ -517,7 +517,7 @@ TEST(MultipartOptimizer, TestTinyMeshes)
 
 	for (const auto stash : scene->getAllMeshes(OPTIMIZED_GRAPH))
 	{
-		auto mapping = dynamic_cast<repo::core::model::MeshNode*>(stash)->getMeshMapping();
+		auto mapping = dynamic_cast<repo::core::model::SupermeshNode*>(stash)->getMeshMapping();
 		EXPECT_LE(mapping.size(), 5000);
 	}
 

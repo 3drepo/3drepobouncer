@@ -330,7 +330,7 @@ TEST(MeshNodeTest, CloneAndApplyTransformation)
 	v = { { 0.1f, 0.2f, 0.3f }, { 0.4f, 0.5f, 0.6f } };
 	f.resize(1);
 
-	auto mesh = RepoBSONFactory::makeMeshNode(v, f, v, bbox);
+	auto mesh = RepoBSONFactory::makeMeshNode(v, f, v, bbox, {});
 	MeshNode unchangedMesh = mesh.cloneAndApplyTransformation(identity);
 
 	EXPECT_TRUE(compareStdVectors(v, unchangedMesh.getVertices()));
@@ -343,7 +343,7 @@ TEST(MeshNodeTest, CloneAndApplyTransformation)
 
 TEST(MeshNodeTest, CloneAndApplyMeshMapping)
 {
-	MeshNode empty;
+	SupermeshNode empty;
 	std::vector<repo_mesh_mapping_t> mapping, emptyMapping;
 
 	mapping.resize(5);
