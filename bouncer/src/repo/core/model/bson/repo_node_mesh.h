@@ -240,8 +240,8 @@ namespace repo {
 				std::vector<float> getSubmeshIds() const;
 
 				SupermeshNode cloneAndUpdateIds(
-					repo::lib::RepoUUID& uniqueID,
-					repo::lib::RepoUUID& sharedID);
+					repo::lib::RepoUUID uniqueID,
+					repo::lib::RepoUUID sharedID);
 
 				/**
 				* Create a new copy of the node and update its mesh mapping

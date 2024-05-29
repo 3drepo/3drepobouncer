@@ -174,8 +174,8 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 }
 
 SupermeshNode SupermeshNode::cloneAndUpdateIds(
-	repo::lib::RepoUUID& uniqueID,
-	repo::lib::RepoUUID& sharedID
+	repo::lib::RepoUUID uniqueID,
+	repo::lib::RepoUUID sharedID
 )
 {
 	RepoBSONBuilder builder;
@@ -214,8 +214,6 @@ SupermeshNode SupermeshNode::cloneAndUpdateMeshMapping(
 
 	return SupermeshNode(builder.obj(), bigFiles);
 }
-
-
 
 std::vector<repo::lib::RepoVector3D> MeshNode::getBoundingBox() const
 {
