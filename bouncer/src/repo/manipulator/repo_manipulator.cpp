@@ -725,36 +725,6 @@ bool RepoManipulator::init(
 	return success;
 }
 
-bool RepoManipulator::insertBinaryFileToDatabase(
-	const std::string                             &databaseAd,
-	const repo::core::model::RepoBSON             *cred,
-	const std::string                             &bucketName,
-	const std::string                             &bucketRegion,
-	const std::string                             &database,
-	const std::string                             &collection,
-	const std::string                             &name,
-	const std::vector<uint8_t>                    &rawData,
-	const std::string                             &mimeType)
-{
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	auto manager = repo::core::handler::fileservice::FileManager::getManager();
-	bool success = false;
-	if (handler && manager)
-	{
-		if (success = manager->uploadFileAndCommit(database, collection, name, rawData))
-		{
-			repoInfo << "File (" << name << ") added successfully to storage.";
-		}
-		else
-		{
-			repoError << "Failed to add file (" << name << ") to storage.";
-		}
-	}
-
-	return success;
-}
-
 void RepoManipulator::insertRole(
 	const std::string                             &databaseAd,
 	const repo::core::model::RepoBSON	          *cred,

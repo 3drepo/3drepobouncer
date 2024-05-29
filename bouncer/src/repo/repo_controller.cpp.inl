@@ -317,21 +317,6 @@ public:
 		const repo::lib::RepoUUID           &revId = repo::lib::RepoUUID::createUUID());
 
 	/**
-	* Insert a binary file into the database (GridFS)
-	* @param token Authentication token
-	* @param database name of the database
-	* @param collection name of the collection (it'll be saved into *.files, *.chunks)
-	* @param  rawData data in the form of byte vector
-	* @param mimeType the MIME type of the data (optional)
-	*/
-	bool insertBinaryFileToDatabase(
-		const RepoToken            *token,
-		const std::string          &database,
-		const std::string          &collection,
-		const std::string          &name,
-		const std::vector<uint8_t> &rawData,
-		const std::string          &mimeType = "");
-	/**
 	* Insert a new role into the database
 	* @param token Authentication token
 	* @param role role info to insert

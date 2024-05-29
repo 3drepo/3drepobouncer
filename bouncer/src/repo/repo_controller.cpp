@@ -164,17 +164,6 @@ RepoController::getDatabasesWithProjects(
 	return impl->getDatabasesWithProjects(token, databases);
 }
 
-bool RepoController::insertBinaryFileToDatabase(
-	const RepoController::RepoToken            *token,
-	const std::string          &database,
-	const std::string          &collection,
-	const std::string          &name,
-	const std::vector<uint8_t> &rawData,
-	const std::string          &mimeType)
-{
-	return impl->insertBinaryFileToDatabase(token, database, collection, name, rawData, mimeType);
-}
-
 void RepoController::insertRole(
 	const RepoController::RepoToken   *token,
 	const repo::core::model::RepoRole &role
