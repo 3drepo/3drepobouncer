@@ -29,7 +29,7 @@ using namespace repo::manipulator::modeloptimizer;
 
 #pragma optimize("", off)
 
-TEST(MeshMapReorganiser, SingleLargeMesh)
+TEST(MeshMapReorganiser, VeryLargeMesh)
 {
 	// This snippet creates a Supermesh using the Multipart Optimizer
 
@@ -38,7 +38,7 @@ TEST(MeshMapReorganiser, SingleLargeMesh)
 	auto rootID = root->getSharedID();
 	repo::core::model::RepoNodeSet meshes, trans;
 	trans.insert(root);
-	meshes.insert(createRandomMesh(128000, false, 3, { rootID }));
+	meshes.insert(createRandomMesh(327890, false, 3, { rootID }));
 	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, {}, meshes, {}, {}, {}, trans);
 	opt.apply(scene);
 
@@ -63,9 +63,9 @@ TEST(MeshMapReorganiser, SingleLargeMesh)
 	auto count = end - ids.begin();
 	EXPECT_EQ(count, 1); 
 
-	// The supermesh should be split into two chunks (with the same submesh ids)
+	// The supermesh should be split into six chunks (with the same submesh ids)
 
-	EXPECT_EQ(remapped.getMeshMapping().size(), 2);
+	EXPECT_EQ(remapped.getMeshMapping().size(), 6);
 
 	// Mapping ids should be identities
 
@@ -85,7 +85,7 @@ TEST(MeshMapReorganiser, SingleLargeMesh)
 	auto usageIt = splitMapping.find(originalId);
 	EXPECT_FALSE(usageIt == splitMapping.end());
 	auto usage = usageIt->second;
-	EXPECT_EQ(usage.size(), 2);
+	EXPECT_EQ(usage.size(), 6);
 }
 
 
