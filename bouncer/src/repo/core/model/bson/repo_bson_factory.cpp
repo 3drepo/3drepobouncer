@@ -817,12 +817,12 @@ RepoAssets RepoBSONFactory::makeRepoBundleAssets(
 	for (auto& meta : metadata)
 	{
 		RepoBSONBuilder metadataBuilder;
-		metadataBuilder.append("numVertices", (unsigned int)meta.numVertices);
-		metadataBuilder.append("numFaces", (unsigned int)meta.numFaces);
-		metadataBuilder.append("numUVChannels", (unsigned int)meta.numUVChannels);
-		metadataBuilder.append("primitive", (unsigned int)meta.primitive);
-		metadataBuilder.appendVector3d("min", meta.min);
-		metadataBuilder.appendVector3d("max", meta.max);
+		metadataBuilder.append(REPO_ASSETS_LABEL_NUMVERTICES, (unsigned int)meta.numVertices);
+		metadataBuilder.append(REPO_ASSETS_LABEL_NUMFACES, (unsigned int)meta.numFaces);
+		metadataBuilder.append(REPO_ASSETS_LABEL_NUMUVCHANNELS, (unsigned int)meta.numUVChannels);
+		metadataBuilder.append(REPO_ASSETS_LABEL_PRIMITIVE, (unsigned int)meta.primitive);
+		metadataBuilder.appendVector3d(REPO_ASSETS_LABEL_MIN, meta.min);
+		metadataBuilder.appendVector3d(REPO_ASSETS_LABEL_MIN, meta.max);
 		metadataNodes.push_back(metadataBuilder.obj());
 	}
 
