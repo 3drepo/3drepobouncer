@@ -455,6 +455,18 @@ TEST(RepoClientTest, UploadTestNWD2024)
 	EXPECT_TRUE(projectExists(db, "nwdTest2024"));
 }
 
+TEST(RepoClientTest, UploadTestNWDProtected)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+	std::string db = "stUpload";
+
+	//Upload password-protected NWD
+	std::string nwdUpload = produceUploadArgs(db, "nwdPasswordProtected", getDataPath(nwdPasswordProtected));
+	EXPECT_EQ((int)REPOERR_FILE_IS_ENCRYPTED, runProcess(nwdUpload));
+	EXPECT_FALSE(projectExists(db, "nwdPasswordProtected"));
+}
+
 TEST(RepoClientTest, UploadTestNWC)
 {
 	//this ensures we can run processes

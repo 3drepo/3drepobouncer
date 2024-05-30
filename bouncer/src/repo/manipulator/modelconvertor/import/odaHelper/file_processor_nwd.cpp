@@ -99,10 +99,15 @@ uint8_t FileProcessorNwd::readFile()
 	catch (OdError& e)
 	{
 		repoError << convertToStdString(e.description()) << ", code: " << e.code();
-		if (e.code() == OdResult::eUnsupportedFileFormat) {
+		switch (e.code())
+		{
+		case OdResult::eUnsupportedFileFormat:
 			nRes = REPOERR_UNSUPPORTED_VERSION;
-		}
-		else {
+			break;
+		case OdResult::eDecryptionError:
+			nRes = REPOERR_FILE_IS_ENCRYPTED;
+			break;
+		default:
 			nRes = REPOERR_LOAD_SCENE_FAIL;
 		}
 	}
