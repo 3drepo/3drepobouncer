@@ -40,18 +40,6 @@ RepoBSON SupermeshNode::meshMappingAsBSON(const repo_mesh_mapping_t& mapping)
 	return builder.obj();
 }
 
-SupermeshNode SupermeshNode::cloneAndUpdateIds(
-	repo::lib::RepoUUID uniqueID,
-	repo::lib::RepoUUID sharedID
-)
-{
-	RepoBSONBuilder builder;
-	builder.append(REPO_NODE_LABEL_ID, uniqueID);
-	builder.append(REPO_NODE_LABEL_SHARED_ID, sharedID);
-	builder.appendElementsUnique(*this);
-	return SupermeshNode(builder.obj(), bigFiles);
-}
-
 SupermeshNode SupermeshNode::cloneAndUpdateMeshMapping(
 	const std::vector<repo_mesh_mapping_t>& vec,
 	const bool& overwrite)
