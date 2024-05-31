@@ -148,7 +148,7 @@ namespace repo {
 				/**
 				* Appends a Vector but as an object, instead of an array.
 				*/
-				void appendVector3d(
+				void appendVector3DObject(
 					const std::string& label,
 					const repo::lib::RepoVector3D& vec
 				);

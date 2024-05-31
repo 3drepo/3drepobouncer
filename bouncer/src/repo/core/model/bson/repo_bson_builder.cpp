@@ -87,7 +87,7 @@ template<> void repo::core::model::RepoBSONBuilder::append<repo::lib::RepoMatrix
 	appendArray(label, rows.obj());;
 }
 
-void RepoBSONBuilder::appendVector3d(
+void RepoBSONBuilder::appendVector3DObject(
 	const std::string& label,
 	const repo::lib::RepoVector3D& vec
 )

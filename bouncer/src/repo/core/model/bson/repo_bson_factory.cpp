@@ -821,8 +821,8 @@ RepoAssets RepoBSONFactory::makeRepoBundleAssets(
 		metadataBuilder.append(REPO_ASSETS_LABEL_NUMFACES, (unsigned int)meta.numFaces);
 		metadataBuilder.append(REPO_ASSETS_LABEL_NUMUVCHANNELS, (unsigned int)meta.numUVChannels);
 		metadataBuilder.append(REPO_ASSETS_LABEL_PRIMITIVE, (unsigned int)meta.primitive);
-		metadataBuilder.appendVector3d(REPO_ASSETS_LABEL_MIN, meta.min);
-		metadataBuilder.appendVector3d(REPO_ASSETS_LABEL_MIN, meta.max);
+		metadataBuilder.appendVector3DObject(REPO_ASSETS_LABEL_MIN, meta.min);
+		metadataBuilder.appendVector3DObject(REPO_ASSETS_LABEL_MIN, meta.max);
 		metadataNodes.push_back(metadataBuilder.obj());
 	}
 
