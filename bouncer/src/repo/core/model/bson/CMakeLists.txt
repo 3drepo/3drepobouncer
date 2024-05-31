@@ -23,6 +23,7 @@ set(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_metadata.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_reference.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_revision.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_supermesh.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_texture.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_transformation.cpp
 	CACHE STRING "SOURCES" FORCE)
@@ -48,6 +49,7 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_metadata.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_reference.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_revision.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_supermesh.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_texture.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_transformation.h
 	CACHE STRING "HEADERS" FORCE)

@@ -34,6 +34,7 @@
 #include "repo_node_metadata.h"
 #include "repo_node_material.h"
 #include "repo_node_mesh.h"
+#include "repo_node_supermesh.h"
 #include "repo_node_reference.h"
 #include "repo_node_revision.h"
 #include "repo_node_texture.h"
