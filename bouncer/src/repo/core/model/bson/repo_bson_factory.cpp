@@ -499,7 +499,6 @@ SupermeshNode RepoBSONFactory::makeSupermeshNode(
 	return SupermeshNode(builder.obj(), builder.mapping());
 }
 
-
 RepoProjectSettings RepoBSONFactory::makeRepoProjectSettings(
 	const std::string &uniqueProjectName,
 	const std::string &owner,

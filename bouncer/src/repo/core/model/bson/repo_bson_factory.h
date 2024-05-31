@@ -349,6 +349,22 @@ namespace repo {
 					const repo::lib::RepoUUID& sharedId
 				);
 
+				static SupermeshNode makeSupermeshNode(
+					const std::vector<repo::lib::RepoVector3D>& vertices,
+					const std::vector<repo_face_t>& faces,
+					const std::vector<repo::lib::RepoVector3D>& normals,
+					const std::vector<std::vector<float>>& boundingBox,
+					const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
+					const std::vector<repo_mesh_mapping_t>& mappings,
+					const repo::lib::RepoUUID& id,
+					const repo::lib::RepoUUID& sharedId
+				)
+				{
+					return makeSupermeshNode(vertices, faces, normals, boundingBox, uvChannels,
+						{},
+						mappings, id, sharedId);
+				}
+
 				/**
 				* Create a Reference Node
 				* If revision ID is unique, it will be referencing a specific revision
