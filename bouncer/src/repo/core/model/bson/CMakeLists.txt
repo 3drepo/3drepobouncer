@@ -7,6 +7,7 @@
 set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_binmapping_builder.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_builder.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_element.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_factory.cpp
@@ -30,6 +31,7 @@ set(HEADERS
 	${HEADERS}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_assets.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_binmapping_builder.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_builder.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_element.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_factory.h

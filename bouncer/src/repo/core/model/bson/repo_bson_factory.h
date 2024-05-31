@@ -164,6 +164,18 @@ namespace repo {
 				*/
 
 				/**
+				* Appends default information onto a RepoBSONBuilder and returns
+				* an object constructed by the builder.
+				*/
+				static RepoBSON appendDefaults(
+					const std::string &type,
+					const unsigned int api = REPO_NODE_API_LEVEL_0,
+					const repo::lib::RepoUUID &sharedId = repo::lib::RepoUUID::createUUID(),
+					const std::string &name = std::string(),
+					const std::vector<repo::lib::RepoUUID> &parents = std::vector<repo::lib::RepoUUID>(),
+					const repo::lib::RepoUUID &uniqueID = repo::lib::RepoUUID::createUUID());
+
+				/**
 				* Append default information onto the a RepoBSONBuilder
 				* This is used for children nodes to create their BSONs.
 				* @param type type of node
@@ -175,13 +187,14 @@ namespace repo {
 				*			sure you know what you're doing!)
 				* @ return return a bson object with the default parameters
 				*/
-				static RepoBSON appendDefaults(
-					const std::string &type,
+				static void appendDefaults(
+					RepoBSONBuilder& builder,
+					const std::string& type,
 					const unsigned int api = REPO_NODE_API_LEVEL_0,
-					const repo::lib::RepoUUID &sharedId = repo::lib::RepoUUID::createUUID(),
-					const std::string &name = std::string(),
-					const std::vector<repo::lib::RepoUUID> &parents = std::vector<repo::lib::RepoUUID>(),
-					const repo::lib::RepoUUID &uniqueID = repo::lib::RepoUUID::createUUID());
+					const repo::lib::RepoUUID& sharedId = repo::lib::RepoUUID::createUUID(),
+					const std::string& name = std::string(),
+					const std::vector<repo::lib::RepoUUID>& parents = std::vector<repo::lib::RepoUUID>(),
+					const repo::lib::RepoUUID& uniqueID = repo::lib::RepoUUID::createUUID());
 
 				/**
 				* Create a Camera Node
@@ -427,6 +440,20 @@ namespace repo {
 					const repo::lib::RepoUUID &parent = repo::lib::RepoUUID::createUUID(),
 					const repo::lib::RepoUUID &id = repo::lib::RepoUUID::createUUID()
 				);
+
+			private:
+				/*
+				* The following methods are used internally by the makeMeshNode and
+				* make SupermeshNode methods.
+				*/
+
+				static void appendBounds(class RepoBSONBinMappingBuilder& builder, const std::vector<std::vector<float>>& boundingBox);
+				static void appendVertices(class RepoBSONBinMappingBuilder& builder, const std::vector<repo::lib::RepoVector3D>& vertices);
+				static void appendFaces(class RepoBSONBinMappingBuilder& builder, const std::vector<repo_face_t>& faces);
+				static void appendNormals(class RepoBSONBinMappingBuilder& builder, const std::vector<repo::lib::RepoVector3D>& normals);
+				static void appendColors(class RepoBSONBinMappingBuilder& builder, const std::vector<repo_color4d_t>& colors);
+				static void appendUVChannels(class RepoBSONBinMappingBuilder& builder, const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels);
+				static void appendSubmeshIds(class RepoBSONBinMappingBuilder& builder, const std::vector<float>& submeshIds);
 			};
 		} //namespace model
 	} //namespace core
