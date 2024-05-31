@@ -17,6 +17,7 @@
 
 #include "repo_spatial_partitioner_rdtree.h"
 #include "../../../core/model/bson/repo_node_mesh.h"
+#include "../../../core/model/bson/repo_node_supermesh.h"
 
 using namespace repo::manipulator::modelutility;
 

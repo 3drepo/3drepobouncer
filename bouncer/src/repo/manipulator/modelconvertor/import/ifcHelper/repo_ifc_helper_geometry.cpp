@@ -114,7 +114,7 @@ bool IFCUtilsGeometry::generateGeometry(
 		if (uvs.size())
 			uvChannels.push_back(uvs);
 
-		auto mesh = repo::core::model::RepoBSONFactory::makeMeshNode(vertices, allFaces[i], normals, boundingBox, uvChannels, {});
+		auto mesh = repo::core::model::RepoBSONFactory::makeMeshNode(vertices, allFaces[i], normals, boundingBox, uvChannels);
 
 		if (meshes.find(allIds[i]) == meshes.end())
 		{

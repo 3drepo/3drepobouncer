@@ -277,33 +277,42 @@ namespace repo {
 				* @return returns a mesh node
 				*/
 				static MeshNode makeMeshNode(
-					const std::vector<repo::lib::RepoVector3D>        &vertices,
-					const std::vector<repo_face_t>                    &faces,
-					const std::vector<repo::lib::RepoVector3D>        &normals,
-					const std::vector<std::vector<float>>             &boundingBox,
-					const std::vector<std::vector<repo::lib::RepoVector2D>>   &uvChannels,
-					const std::vector<repo_color4d_t>                 &colors,
-					const std::string                                 &name,
-					const std::vector<repo::lib::RepoUUID>            &parents,
-					const int                                         &apiLevel = REPO_NODE_API_LEVEL_1);
+					const std::vector<repo::lib::RepoVector3D>& vertices,
+					const std::vector<repo_face_t>& faces,
+					const std::vector<repo::lib::RepoVector3D>& normals,
+					const std::vector<std::vector<float>>& boundingBox,
+					const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
+					const std::string& name,
+					const std::vector<repo::lib::RepoUUID>& parents);
 
 				static MeshNode makeMeshNode(
 					const std::vector<repo::lib::RepoVector3D>& vertices,
 					const std::vector<repo_face_t>& faces,
 					const std::vector<repo::lib::RepoVector3D>& normals,
 					const std::vector<std::vector<float>>& boundingBox,
-					const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
-					const std::vector<repo_color4d_t>& colors);
+					const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels);
 
 				static MeshNode makeMeshNode(
-					const std::vector<repo::lib::RepoVector3D>        &vertices,
-					const std::vector<repo_face_t>                    &faces,
-					const std::vector<repo::lib::RepoVector3D>        &normals,
-					const std::vector<std::vector<float>>             &boundingBox,
-					const std::vector<repo::lib::RepoUUID>            &parents) {
+					const std::vector<repo::lib::RepoVector3D>& vertices,
+					const std::vector<repo_face_t>& faces,
+					const std::vector<repo::lib::RepoVector3D>& normals,
+					const std::vector<std::vector<float>>& boundingBox)
+				{
 					return makeMeshNode(vertices, faces, normals, boundingBox,
 						std::vector<std::vector<repo::lib::RepoVector2D>>(),
-						std::vector<repo_color4d_t>(),
+						std::string(),
+						std::vector<repo::lib::RepoUUID>()
+					);
+				}
+
+				static MeshNode makeMeshNode(
+					const std::vector<repo::lib::RepoVector3D>& vertices,
+					const std::vector<repo_face_t>& faces,
+					const std::vector<repo::lib::RepoVector3D>& normals,
+					const std::vector<std::vector<float>>& boundingBox,
+					const std::vector<repo::lib::RepoUUID>& parents) {
+					return makeMeshNode(vertices, faces, normals, boundingBox,
+						std::vector<std::vector<repo::lib::RepoVector2D>>(),
 						std::string(),
 						parents
 					);
@@ -315,7 +324,6 @@ namespace repo {
 					const std::vector<repo::lib::RepoVector3D>& normals = {},
 					const std::vector<std::vector<float>>& boundingBox = {},
 					const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels = {},
-					const std::vector<repo_color4d_t>& colors = {},
 					const std::vector<float> mappingIds = {}
 				);
 
@@ -325,7 +333,6 @@ namespace repo {
 					const std::vector<repo::lib::RepoVector3D>& normals,
 					const std::vector<std::vector<float>>& boundingBox,
 					const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
-					const std::vector<repo_color4d_t>& colors,
 					const std::string& name,
 					const std::vector<repo_mesh_mapping_t>& mappings
 				);
@@ -336,7 +343,6 @@ namespace repo {
 					const std::vector<repo::lib::RepoVector3D>& normals,
 					const std::vector<std::vector<float>>& boundingBox,
 					const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
-					const std::vector<repo_color4d_t>& colors,
 					const std::vector<float> mappingIds,
 					const std::vector<repo_mesh_mapping_t>& mappings,
 					const repo::lib::RepoUUID& id,

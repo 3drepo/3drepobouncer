@@ -24,6 +24,7 @@
 #include "repo_optimizer_abstract.h"
 #include "../../core/model/collection/repo_scene.h"
 #include "../../core/model/bson/repo_node_mesh.h"
+#include "../../core/model/bson/repo_node_supermesh.h"
 #include "../../core/model/bson/repo_node_material.h"
 
 namespace repo {
@@ -85,7 +86,6 @@ namespace repo {
 					std::vector<repo::lib::RepoVector3D> normals;
 					std::vector<repo_face_t> faces;
 					std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
-					std::vector<repo_color4d_t> colors;
 					std::vector<repo_mesh_mapping_t> meshMapping;
 				};
 

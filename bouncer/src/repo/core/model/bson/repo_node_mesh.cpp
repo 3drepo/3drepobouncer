@@ -226,18 +226,6 @@ std::vector<repo::lib::RepoVector3D> MeshNode::getBoundingBox(RepoBSON &bbArr)
 	return bbox;
 }
 
-std::vector<repo_color4d_t> MeshNode::getColors() const
-{
-	std::vector<repo_color4d_t> colors = std::vector<repo_color4d_t>();
-	if (hasBinField(REPO_NODE_MESH_LABEL_COLORS))
-	{
-		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_COLORS, colors);
-	}
-
-	return colors;
-}
-
-
 std::vector<repo::lib::RepoVector3D> MeshNode::getVertices() const
 {
 	std::vector<repo::lib::RepoVector3D> vertices;
@@ -386,7 +374,6 @@ bool MeshNode::sEqual(const RepoNode &other) const
 	std::vector<repo::lib::RepoVector3D> vertices, vertices2, normals, normals2;
 	std::vector<repo::lib::RepoVector2D> uvChannels, uvChannels2;
 	std::vector<uint32_t> facesSerialized, facesSerialized2;
-	std::vector<repo_color4d_t> colors, colors2;
 
 	vertices = getVertices();
 	vertices2 = otherMesh.getVertices();
@@ -400,15 +387,11 @@ bool MeshNode::sEqual(const RepoNode &other) const
 	facesSerialized = getFacesSerialized();
 	facesSerialized2 = otherMesh.getFacesSerialized();
 
-	colors = getColors();
-	colors2 = otherMesh.getColors();
-
 	//check all the sizes match first, as comparing the content will be costly
 	bool success = vertices.size() == vertices2.size()
 		&& normals.size() == normals2.size()
 		&& uvChannels.size() == uvChannels2.size()
 		&& facesSerialized.size() == facesSerialized2.size()
-		&& colors.size() == colors2.size()
 		&& getPrimitive() == otherMesh.getPrimitive();
 
 	if (success)
@@ -426,11 +409,6 @@ bool MeshNode::sEqual(const RepoNode &other) const
 		if (success && uvChannels.size())
 		{
 			success &= !memcmp(uvChannels.data(), uvChannels2.data(), uvChannels.size() * sizeof(*uvChannels.data()));
-		}
-
-		if (success && colors.size())
-		{
-			success &= !memcmp(colors.data(), colors2.data(), colors.size() * sizeof(*colors.data()));
 		}
 
 		if (success && facesSerialized.size())

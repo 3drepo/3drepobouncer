@@ -146,7 +146,6 @@ void MultipartOptimizer::appendMesh(
 	std::vector<repo::lib::RepoVector3D> submVertices = node.getVertices();
 	std::vector<repo::lib::RepoVector3D> submNormals = node.getNormals();
 	std::vector<repo_face_t> submFaces = node.getFaces();
-	std::vector<repo_color4d_t> submColors = node.getColors();
 	std::vector<std::vector<repo::lib::RepoVector2D>> submUVs = node.getUVChannelsSeparated();
 
 	if (submVertices.size() && submFaces.size())
@@ -171,10 +170,6 @@ void MultipartOptimizer::appendMesh(
 
 		if (submNormals.size()) {
 			mapped.normals.insert(mapped.normals.end(), submNormals.begin(), submNormals.end());
-		}
-
-		if (submColors.size()) {
-			mapped.colors.insert(mapped.colors.end(), submColors.begin(), submColors.end());
 		}
 
 		if (mapped.uvChannels.size() == 0 && submUVs.size() != 0)
@@ -492,7 +487,6 @@ void MultipartOptimizer::splitMesh(
 	auto vertices = node.getVertices();
 	auto normals = node.getNormals();
 	auto uvChannels = node.getUVChannelsSeparated();
-	auto colors = node.getColors();
 
 	for (const auto head : branchNodes)
 	{
@@ -541,9 +535,6 @@ void MultipartOptimizer::splitMesh(
 			mapped.vertices.push_back(vertices[globalIndex]);
 			if (normals.size()) {
 				mapped.normals.push_back(normals[globalIndex]);
-			}
-			if (colors.size()) {
-				mapped.colors.push_back(colors[globalIndex]);
 			}
 			for (auto i = 0; i < uvChannels.size(); i++)
 			{
@@ -660,7 +651,6 @@ repo::core::model::SupermeshNode* MultipartOptimizer::createSupermeshNode(
 		mapped.normals, 
 		bboxVec,
 		mapped.uvChannels,
-		mapped.colors,
 		isGrouped ? "grouped" : "",
 		meshMapping);
 

@@ -178,11 +178,6 @@ namespace repo {
 				static std::vector<repo::lib::RepoVector3D> getBoundingBox(RepoBSON &bbArr);
 
 				/**
-				* Retrieve a vector of Colors from the bson object
-				*/
-				std::vector<repo_color4d_t> getColors() const;
-
-				/**
 				* Retrieve a vector of faces from the bson object
 				*/
 				std::vector<repo_face_t> getFaces() const;

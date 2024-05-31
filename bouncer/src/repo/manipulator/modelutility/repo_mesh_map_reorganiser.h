@@ -36,6 +36,7 @@
 #pragma once
 #include <unordered_map>
 #include "../../core/model/bson/repo_node_mesh.h"
+#include "../../core/model/bson/repo_node_supermesh.h"
 
 namespace repo {
 	namespace manipulator {
@@ -188,12 +189,10 @@ namespace repo {
 				const std::vector<repo::lib::RepoVector3D> oldNormals;
 				const std::vector<std::vector<repo::lib::RepoVector2D>> oldUVs;
 				const std::vector<repo_face_t>   oldFaces;
-				const std::vector<repo_color4d_t>   oldColors;
 
 				std::vector<repo::lib::RepoVector3D> newVertices;
 				std::vector<repo::lib::RepoVector3D> newNormals;
 				std::vector<repo_face_t>   newFaces;
-				std::vector<repo_color4d_t>   newColors;
 				std::vector<std::vector<repo::lib::RepoVector2D>> newUVs;
 
 				std::vector<uint16_t> serialisedFaces;

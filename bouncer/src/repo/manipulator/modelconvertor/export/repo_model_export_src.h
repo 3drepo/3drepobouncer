@@ -27,6 +27,7 @@
 #include "../../../lib/repo_property_tree.h"
 #include "../../../core/model/collection/repo_scene.h"
 #include "../../../core/model/bson/repo_node_mesh.h"
+#include "../../../core/model/bson/repo_node_supermesh.h"
 
 namespace repo{
 	namespace manipulator{

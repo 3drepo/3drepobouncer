@@ -31,14 +31,12 @@ MeshMapReorganiser::MeshMapReorganiser(
 	oldVertices(mesh->getVertices()),
 	oldNormals(mesh->getNormals()),
 	oldUVs(mesh->getUVChannelsSeparated()),
-	oldColors(mesh->getColors()),
 	reMapSuccess(false)
 {
 	if (mesh && mesh->getMeshMapping().size())
 	{
 		newVertices = oldVertices;
 		newNormals = oldNormals;
-		newColors = oldColors;
 		newUVs = oldUVs;
 		newFaces.reserve(oldFaces.size());
 		serialisedFaces.reserve(oldFaces.size() * static_cast<int>(mesh->getPrimitive()));
@@ -48,7 +46,6 @@ MeshMapReorganiser::MeshMapReorganiser(
 			//mission failed clear up the memory
 			newVertices.clear();
 			newNormals.clear();
-			newColors.clear();
 			newUVs.clear();
 			newFaces.clear();
 			matMap.clear();
@@ -170,7 +167,6 @@ repo::core::model::SupermeshNode MeshMapReorganiser::getRemappedMesh() const
 			newNormals,
 			bboxArr,
 			newUVs,
-			newColors,
 			newIds,
 			reMappedMappings,
 			mesh->getUniqueID(),
@@ -333,7 +329,6 @@ bool MeshMapReorganiser::splitLargeMesh(
 	auto newVerticesVFrom = newMappings.back().vertFrom;
 
 	const bool hasNormal = oldNormals.size();
-	const bool hasColor = oldColors.size();
 	const bool hasUV = oldUVs.size();
 
 	// Split mesh information
@@ -396,11 +391,6 @@ bool MeshMapReorganiser::splitLargeMesh(
 					reMappedNormals.push_back(oldNormals[indexValue]);
 				}
 
-				if (hasColor)
-				{
-					reMappedCols.push_back(oldColors[indexValue]);
-				}
-
 				if (hasUV)
 				{
 					for (int iUV = 0; iUV < oldUVs.size(); ++iUV)
@@ -444,12 +434,6 @@ bool MeshMapReorganiser::splitLargeMesh(
 			newNormals.erase(startingPosN, startingPosN + leftOverVertices);
 		}
 
-		if (hasColor)
-		{
-			auto startingPosN = newColors.begin() + newMappings.back().vertFrom + splitMeshVertexCount;
-			newColors.erase(startingPosN, startingPosN + leftOverVertices);
-		}
-
 		if (hasUV)
 		{
 			for (int iUV = 0; iUV < oldUVs.size(); ++iUV)
@@ -474,14 +458,6 @@ bool MeshMapReorganiser::splitLargeMesh(
 			newNormals.insert(startingPosN, extraVs.begin(), extraVs.end());
 		}
 
-		if (hasColor)
-		{
-			auto startingPosN = newColors.begin() + newVerticesVFrom;
-			std::vector<repo_color4d_t> extras;
-			extras.resize(extraVertices);
-			newColors.insert(startingPosN, extras.begin(), extras.end());
-		}
-
 		if (hasUV)
 		{
 			for (int iUV = 0; iUV < oldUVs.size(); ++iUV)
@@ -502,9 +478,6 @@ bool MeshMapReorganiser::splitLargeMesh(
 	if (hasUV)
 		for (int iUV = 0; iUV < oldUVs.size(); ++iUV)
 			std::copy(reMappedUVs[iUV].begin(), reMappedUVs[iUV].end(), newUVs[iUV].begin() + newVerticesVFrom);
-
-	if (hasColor)
-		std::copy(reMappedCols.begin(), reMappedCols.end(), newColors.begin() + newVerticesVFrom);
 
 	splitMap[currentSubMesh.mesh_id].push_back(newMappings.size() - 1);
 	finishSubMesh(newMappings.back(), bboxMin, bboxMax, splitMeshVertexCount, splitMeshFaceCount);
