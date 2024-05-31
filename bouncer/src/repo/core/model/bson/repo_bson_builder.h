@@ -161,6 +161,17 @@ namespace repo {
 
 				mongo::BSONObj mongoObj() { return mongo::BSONObjBuilder::obj();  }
 
+				/**
+				* Builds the BSON object as a temporary instance. This allows the caller to
+				* peak at the contents of the builder, but the object will become invalid
+				* as soon as the builder is modified or released. These temporary objects do
+				* not contain the bin mappings.
+				*/
+				RepoBSON tempObj()
+				{
+					return RepoBSON(mongo::BSONObjBuilder::asTempObj());
+				}
+
 			private:
 				/**
 				* @brief Append a UUID into the builder

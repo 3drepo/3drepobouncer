@@ -35,8 +35,17 @@ namespace repo {
 					return binMapping;
 				}
 
+				// (Keep the templated definition in the header so the compiler
+				// can create concrete classes with the templated types when they
+				// are used)
+
 				template<typename T>
-				void appendLargeArray(std::string name, const std::vector<T>& data);
+				void appendLargeArray(std::string name, const std::vector<T>& data)
+				{
+					appendLargeArray(name, &data[0], data.size() * sizeof(data[0]));
+				}
+
+				void appendLargeArray(std::string name, const void* data, size_t size);
 
 			private:
 				BinMapping binMapping;

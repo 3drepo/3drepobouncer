@@ -20,20 +20,18 @@
 
 using namespace repo::core::model;
 
-template<typename T>
-void RepoBSONBinMappingBuilder::appendLargeArray(std::string name, const std::vector<T>& data)
+void RepoBSONBinMappingBuilder::appendLargeArray(std::string name, const void* data, size_t size)
 {
-	auto obj = this->obj();
+	auto obj = this->tempObj();
 	if (!obj.hasField(REPO_NODE_LABEL_ID))
 	{
 		throw std::invalid_argument("appendLargeArray called before the builder is assigned a unique Id. Ensure appendDefaults has been called before appending large arrays.");
 	}
 
-	uint64_t byteCount = data.size() * sizeof(data[0]);
 	std::string bName = obj.getUUIDField(REPO_NODE_LABEL_ID).toString() + "_" + name;
-	
+
 	binMapping[name] =
 		std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
-	binMapping[name].second.resize(byteCount); //uint8_t will ensure it is a byte addrressing
-	memcpy(binMapping[name].second.data(), &data[0], byteCount);
+	binMapping[name].second.resize(size); //uint8_t will ensure it is a byte addrressing
+	memcpy(binMapping[name].second.data(), data, size);
 }
