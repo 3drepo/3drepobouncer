@@ -213,7 +213,6 @@ namespace repo {
 				const std::string                             &collection,
 				const repo::lib::RepoUUID                                &uuid,
 				const bool                                    &headRevision = false,
-				const bool                                    &lightFetch = false,
 				const bool                                    &ignoreRefScene = false,
 				const bool                                    &skeletonFetch = false,
 				const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus = {});
@@ -250,21 +249,6 @@ namespace repo {
 			);
 
 			/**
-			* Generate and commit stash graph (multipart viewing graph)
-			* The generated graph will be added into the scene provided
-			* also commited to the database/project set within the scene
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
-			* @param scene scene to optimise
-			* @param return true upon success
-			*/
-			bool generateAndCommitStashGraph(
-				const std::string                         &databaseAd,
-				const repo::core::model::RepoBSON         *cred,
-				repo::core::model::RepoScene* scene
-			);
-
-			/**
 			* Generate and commit a `exType` encoding for the given scene
 			* This requires the stash to have been generated already
 			* @param databaseAd database address:portdatabase
@@ -282,6 +266,21 @@ namespace repo {
 				repo::core::model::RepoScene          *scene,
 				repo_web_buffers_t                    &buffers,
 				const modelconvertor::WebExportType   &exType);
+
+			/**
+			* Generate and commit RepoBundles for the given scene
+			* @param databaseAd database address:portdatabase
+			* @param cred user credentials in bson form
+			* @param scene the scene to generate the gltf encoding from
+			* @return returns true upon success
+			*/
+
+			bool generateAndCommitRepoBundlesBuffer(
+				const std::string& databaseAd,
+				const repo::core::model::RepoBSON* cred,
+				const std::string& bucketName,
+				const std::string& bucketRegion,
+				repo::core::model::RepoScene* scene);
 
 			/**
 			* Generate and commit a GLTF encoding for the given scene
@@ -596,20 +595,6 @@ namespace repo {
 				repo::core::model::RepoScene                  *scene,
 				const repo::core::model::RepoScene::GraphType &gType
 				= repo::core::model::RepoScene::GraphType::DEFAULT);
-
-			/**
-			* Remove stash graph entry for this particular revision from
-			* the database
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
-			* @param scene scene reference to remove stash graph from
-			* @return returns true upon success
-			*/
-			bool removeStashGraphFromDatabase(
-				const std::string                         &databaseAd,
-				const repo::core::model::RepoBSON         *cred,
-				repo::core::model::RepoScene              *scene
-			);
 
 			/**
 			* remove a role from the database

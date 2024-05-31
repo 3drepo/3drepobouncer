@@ -195,7 +195,6 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::fetchScene(
 	const std::string    &collection,
 	const std::string    &uuid,
 	const bool           &headRevision,
-	const bool           &lightFetch,
 	const bool           &ignoreRefScene,
 	const bool           &skeletonFetch,
 	const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus)
@@ -206,7 +205,7 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::fetchScene(
 		manipulator::RepoManipulator* worker = workerPool.pop();
 
 		scene = worker->fetchScene(token->databaseAd, token->getCredentials(),
-			database, collection, repo::lib::RepoUUID(uuid), headRevision, lightFetch, ignoreRefScene, skeletonFetch, includeStatus);
+			database, collection, repo::lib::RepoUUID(uuid), headRevision, ignoreRefScene, skeletonFetch, includeStatus);
 
 		workerPool.push(worker);
 	}
@@ -239,39 +238,6 @@ bool RepoController::_RepoControllerImpl::generateAndCommitSelectionTree(
 			token->bucketRegion,
 			scene);
 		workerPool.push(worker);
-	}
-
-	return success;
-}
-
-bool RepoController::_RepoControllerImpl::generateAndCommitStashGraph(
-	const RepoController::RepoToken              *token,
-	repo::core::model::RepoScene* scene
-)
-{
-	bool success = false;
-
-	if (token && scene)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-
-		if (scene->isRevisioned() && !scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
-		{
-			//If the unoptimised graph isn't fetched, try to fetch full scene before beginning
-			//This should be safe considering if it has not loaded the unoptimised graph it shouldn't have
-			//any uncommited changes.
-			repoInfo << "Unoptimised scene not loaded, trying loading unoptimised scene...";
-			worker->fetchScene(token->databaseAd, token->getCredentials(), scene);
-		}
-
-		success = worker->generateAndCommitStashGraph(token->databaseAd, token->getCredentials(),
-			scene);
-
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Failed to generate stash graph: nullptr to scene or token!";
 	}
 
 	return success;
@@ -663,6 +629,28 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::createFederat
 	}
 
 	return scene;
+}
+
+bool RepoController::_RepoControllerImpl::generateAndCommitRepoBundlesBuffer(
+	const RepoController::RepoToken* token,
+	repo::core::model::RepoScene* scene)
+{
+	bool success;
+	if (success = token && scene)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		success = worker->generateAndCommitRepoBundlesBuffer(token->databaseAd,
+			token->getCredentials(),
+			token->bucketName,
+			token->bucketRegion,
+			scene);
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Failed to generate GLTF Buffer.";
+	}
+	return success;
 }
 
 bool RepoController::_RepoControllerImpl::generateAndCommitGLTFBuffer(

@@ -124,7 +124,7 @@ uint8_t SceneManager::commitScene(
 
 			if (!(success = scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED))) {
 				repoInfo << "Optimised scene not found. Attempt to generate...";
-				success = generateStashGraph(scene, handler);
+				success = generateStashGraph(scene);
 			}
 
 			if (success)
@@ -187,7 +187,6 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 	const std::string                             &project,
 	const repo::lib::RepoUUID                     &uuid,
 	const bool                                    &headRevision,
-	const bool                                    &lightFetch,
 	const bool                                    &ignoreRefScenes,
 	const bool                                    &skeletonFetch,
 	const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus)
@@ -216,48 +215,15 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 					(headRevision ? (" head revision of branch " + uuid.toString())
 						: (" revision " + uuid.toString()))
 					<< " of " << database << "." << project;
-				if (lightFetch)
-				{
-					if (scene->loadStash(handler, errMsg))
-					{
-						repoTrace << "Stash Loaded";
-					}
-					else
-					{
-						//failed to load stash isn't critical, give it a warning instead of returning false
-						repoWarning << "Error loading stash for " << database << "." << project << " : " << errMsg;
-						if (scene->loadScene(handler, errMsg))
-						{
-							repoTrace << "Scene Loaded";
-						}
-						else {
-							delete scene;
-							scene = nullptr;
-						}
-					}
-				}
-				else
-				{
-					if (scene->loadScene(handler, errMsg))
-					{
-						repoTrace << "Loaded Scene";
 
-						if (!skeletonFetch) {
-							if (scene->loadStash(handler, errMsg))
-							{
-								repoTrace << "Stash Loaded";
-							}
-							else
-							{
-								//failed to load stash isn't critical, give it a warning instead of returning false
-								repoWarning << "Error loading stash for " << database << "." << project << " : " << errMsg;
-							}
-						}
-					}
-					else {
-						delete scene;
-						scene = nullptr;
-					}
+				if (scene->loadScene(handler, errMsg))
+				{
+					repoTrace << "Loaded Scene";
+				}
+				else 
+				{
+					delete scene;
+					scene = nullptr;
 				}
 			}
 			else
@@ -320,14 +286,13 @@ void SceneManager::fetchScene(
 }
 
 bool SceneManager::generateStashGraph(
-	repo::core::model::RepoScene              *scene,
-	repo::core::handler::AbstractDatabaseHandler *handler
+	repo::core::model::RepoScene              *scene
 )
 {
 	bool success = false;
 	if (success = (scene && scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT)))
 	{
-		removeStashGraph(scene, handler);
+		removeStashGraph(scene);
 
 		repoInfo << "Generating stash graph...";
 
@@ -555,10 +520,7 @@ bool SceneManager::shouldGenerateSrcFiles(
 	return false;
 }
 
-bool SceneManager::removeStashGraph(
-	repo::core::model::RepoScene                 *scene,
-	repo::core::handler::AbstractDatabaseHandler *handler
-)
+bool SceneManager::removeStashGraph(repo::core::model::RepoScene *scene)
 {
 	if (scene)
 	{

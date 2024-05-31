@@ -94,12 +94,11 @@ repo::core::model::RepoScene* RepoController::fetchScene(
 	const std::string    &collection,
 	const std::string    &uuid,
 	const bool           &headRevision,
-	const bool           &lightFetch,
 	const bool           &ignoreRefScene,
 	const bool           &skeletonFetch,
 	const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus)
 {
-	return impl->fetchScene(token, database, collection, uuid, headRevision, lightFetch, ignoreRefScene, skeletonFetch, includeStatus);
+	return impl->fetchScene(token, database, collection, uuid, headRevision, ignoreRefScene, skeletonFetch, includeStatus);
 }
 
 bool RepoController::generateAndCommitSelectionTree(
@@ -107,14 +106,6 @@ bool RepoController::generateAndCommitSelectionTree(
 	repo::core::model::RepoScene            *scene)
 {
 	return impl->generateAndCommitSelectionTree(token, scene);
-}
-
-bool RepoController::generateAndCommitStashGraph(
-	const RepoController::RepoToken              *token,
-	repo::core::model::RepoScene* scene
-)
-{
-	return impl->generateAndCommitStashGraph(token, scene);
 }
 
 std::vector < repo::core::model::RepoBSON >
@@ -267,6 +258,13 @@ repo::core::model::RepoScene* RepoController::createFederatedScene(
 	const std::map<repo::core::model::ReferenceNode, std::string> &fedMap)
 {
 	return impl->createFederatedScene(fedMap);
+}
+
+bool RepoController::generateAndCommitRepoBundlesBuffer(
+	const RepoController::RepoToken* token,
+	repo::core::model::RepoScene* scene)
+{
+	return impl->generateAndCommitRepoBundlesBuffer(token, scene);
 }
 
 bool RepoController::generateAndCommitGLTFBuffer(

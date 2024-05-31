@@ -364,7 +364,6 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 	const std::string                             &project,
 	const repo::lib::RepoUUID                     &uuid,
 	const bool                                    &headRevision,
-	const bool                                    &lightFetch,
 	const bool                                    &ignoreRefScene,
 	const bool                                    &skeletonFetch,
 	const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus)
@@ -372,7 +371,7 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	modelutility::SceneManager sceneManager;
-	return sceneManager.fetchScene(handler, database, project, uuid, headRevision, lightFetch, ignoreRefScene, skeletonFetch, includeStatus);
+	return sceneManager.fetchScene(handler, database, project, uuid, headRevision, ignoreRefScene, skeletonFetch, includeStatus);
 }
 
 void RepoManipulator::fetchScene(
@@ -439,6 +438,18 @@ repo::core::model::RepoUser RepoManipulator::findUser(
 	return user;
 }
 
+bool RepoManipulator::generateAndCommitRepoBundlesBuffer(
+	const std::string& databaseAd,
+	const repo::core::model::RepoBSON* cred,
+	const std::string& bucketName,
+	const std::string& bucketRegion,
+	repo::core::model::RepoScene* scene)
+{
+	repo_web_buffers_t buffers;
+	return generateAndCommitWebViewBuffer(databaseAd, cred, bucketName, bucketRegion, scene,
+		buffers, modelconvertor::WebExportType::REPO);
+}
+
 bool RepoManipulator::generateAndCommitGLTFBuffer(
 	const std::string                     &databaseAd,
 	const repo::core::model::RepoBSON     *cred,
@@ -480,36 +491,12 @@ bool RepoManipulator::generateAndCommitSelectionTree(
 	return SceneManager.generateAndCommitSelectionTree(scene, handler, manager);
 }
 
-bool RepoManipulator::removeStashGraphFromDatabase(
-	const std::string                         &databaseAd,
-	const repo::core::model::RepoBSON         *cred,
-	repo::core::model::RepoScene* scene
-)
-{
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	modelutility::SceneManager SceneManager;
-	return SceneManager.removeStashGraph(scene, handler);
-}
-
 bool RepoManipulator::generateStashGraph(
 	repo::core::model::RepoScene              *scene
 )
 {
 	modelutility::SceneManager SceneManager;
-	return SceneManager.generateStashGraph(scene, nullptr);
-}
-
-bool RepoManipulator::generateAndCommitStashGraph(
-	const std::string                         &databaseAd,
-	const repo::core::model::RepoBSON         *cred,
-	repo::core::model::RepoScene              *scene
-)
-{
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	modelutility::SceneManager SceneManager;
-	return SceneManager.generateStashGraph(scene, handler);
+	return SceneManager.generateStashGraph(scene);
 }
 
 bool RepoManipulator::generateAndCommitWebViewBuffer(
@@ -525,6 +512,9 @@ bool RepoManipulator::generateAndCommitWebViewBuffer(
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	auto manager = repo::core::handler::fileservice::FileManager::getManager();
 	modelutility::SceneManager SceneManager;
+	if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED)) {
+		SceneManager.generateStashGraph(scene);
+	}
 	return SceneManager.generateWebViewBuffers(scene, exType, buffers, handler, manager);
 }
 

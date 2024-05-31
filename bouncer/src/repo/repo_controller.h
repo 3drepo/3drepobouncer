@@ -255,8 +255,6 @@ namespace repo {
 				* @param uuid if headRevision, uuid represents the branch id,
 				*              otherwise the unique id of the revision branch
 				* @param headRevision true if retrieving head revision
-				* @param lightFetch fetches only the stash (or scene if stash failed),
-				*                   reduce computation and memory usage (ideal for visualisation)
 				* @return returns a pointer to a repoScene.
 				*/
 		repo::core::model::RepoScene* fetchScene(
@@ -265,7 +263,6 @@ namespace repo {
 			const std::string    &project,
 			const std::string    &uuid = REPO_HISTORY_MASTER_BRANCH,
 			const bool           &headRevision = true,
-			const bool           &lightFetch = false,
 			const bool           &ignoreRefScene = false,
 			const bool           &skeletonFetch = false,
 			const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus = {});
@@ -521,8 +518,14 @@ namespace repo {
 			const std::map<repo::core::model::ReferenceNode, std::string> &fedMap);
 
 		/**
+		* Generate and commit RepoBundles for the given scene
+		*/
+		bool generateAndCommitRepoBundlesBuffer(
+			const RepoToken* token,
+			repo::core::model::RepoScene* scene);
+
+		/**
 		* Generate and commit a GLTF encoding for the given scene
-		* This requires the stash to have been generated already
 		* @param token token for authentication
 		* @param scene the scene to generate the gltf encoding from
 		* @return returns true upon success
@@ -613,21 +616,8 @@ namespace repo {
 			const repo::core::model::RepoScene* scene);
 
 		/*
-			*	------------- Optimizations --------------
-			*/
-
-			/**
-			* Generate and commit stash graph (multipart viewing graph)
-			* The generated graph will be added into the scene provided
-			* also commited to the database/project set within the scene
-			* @param token database token
-			* @param scene scene to optimise
-			* @param return true upon success
-			*/
-		bool generateAndCommitStashGraph(
-			const RepoToken              *token,
-			repo::core::model::RepoScene* scene
-		);
+		*	------------- Optimizations --------------
+		*/
 
 		/**
 		* Get a hierachical spatial partitioning in form of a tree
