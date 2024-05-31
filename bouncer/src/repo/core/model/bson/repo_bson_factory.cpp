@@ -35,7 +35,7 @@ RepoBSON RepoBSONFactory::appendDefaults(
 	const repo::lib::RepoUUID &uniqueID)
 {
 	RepoBSONBuilder builder;
-	appendDefaults(type, api, sharedId, name, parents, uniqueID);
+	appendDefaults(builder, type, api, sharedId, name, parents, uniqueID);
 	return builder.obj();
 }
 
