@@ -332,11 +332,7 @@ bool SceneManager::generateStashGraph(
 		repoInfo << "Generating stash graph...";
 
 		repo::manipulator::modeloptimizer::MultipartOptimizer mpOpt;
-		if (mpOpt.apply(scene))
-		{
-			success = true;
-		}
-		else
+		if (!(success = mpOpt.apply(scene)))
 		{
 			repoError << "Failed to generate stash graph with MultipartOptimizer.";
 		}
