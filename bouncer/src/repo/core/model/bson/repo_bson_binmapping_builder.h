@@ -26,7 +26,7 @@ namespace repo {
 			* come with a binary mapping for large blobs, such as Meshes and
 			* Supermeshes.
 			*/
-			class RepoBSONBinMappingBuilder : public RepoBSONBuilder
+			class REPO_API_EXPORT RepoBSONBinMappingBuilder : public RepoBSONBuilder
 			{
 				using BinMapping = std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>;
 			public:
@@ -36,7 +36,7 @@ namespace repo {
 				}
 
 				template<typename T>
-				void appendLargeArray(std::string name, std::vector<T> data);
+				void appendLargeArray(std::string name, const std::vector<T>& data);
 
 			private:
 				BinMapping binMapping;

@@ -21,7 +21,7 @@
 using namespace repo::core::model;
 
 template<typename T>
-void RepoBSONBinMappingBuilder::appendLargeArray(std::string name, std::vector<T> data)
+void RepoBSONBinMappingBuilder::appendLargeArray(std::string name, const std::vector<T>& data)
 {
 	auto obj = this->obj();
 	if (!obj.hasField(REPO_NODE_LABEL_ID))
@@ -35,6 +35,5 @@ void RepoBSONBinMappingBuilder::appendLargeArray(std::string name, std::vector<T
 	binMapping[name] =
 		std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
 	binMapping[name].second.resize(byteCount); //uint8_t will ensure it is a byte addrressing
-	
 	memcpy(binMapping[name].second.data(), &data[0], byteCount);
 }
