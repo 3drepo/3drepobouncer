@@ -510,24 +510,6 @@ aiMesh* AssimpModelExport::convertMesh(
 		}
 	}
 
-	std::vector<repo_color4d_t> colors = meshNode->getColors();
-
-	//--------------------------------------------------------------------------
-	// Vertex colors
-	if (colors.size())
-	{
-		assimpMesh->mColors[0] = new aiColor4D[colors.size()];
-		uint32_t i = 0;
-		for (const auto &color : colors)
-		{
-			assimpMesh->mColors[0][i].r = color.r;
-			assimpMesh->mColors[0][i].g = color.g;
-			assimpMesh->mColors[0][i].b = color.b;
-			assimpMesh->mColors[0][i].a = color.a;
-			i++;
-		}
-	}
-
 	//--------------------------------------------------------------------------
 	// Material index
 	//
