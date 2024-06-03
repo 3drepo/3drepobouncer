@@ -89,7 +89,7 @@ matrix:
       before_script:
           - export BOUNCER_DIR=$PWD
           - mkdir build && cd build
-          - cmake -DREPO_BUILD_WRAPPER=ON -DREPO_BUILD_WRAPPER_TESTS=ON -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_BUILD_TYPE=Debug -DSYNCHRO_SUPPORT=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
+          - cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_BUILD_TYPE=Debug -DSYNCHRO_SUPPORT=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
           - mongo mydb_test --eval 'db.createUser({user:"testUser",pwd:"3drepotest",roles:["readWrite"]});'
       script:
           - sudo make -j8 install
@@ -101,7 +101,6 @@ matrix:
           - export SYNCHRO_PLUGIN_LOCATION=$PWD/3drepobouncer/plugins
           - ln -s $REPO_MODEL_PATH/fileShare fileShare
           - LD_LIBRARY_PATH=$PWD/3drepobouncer PATH=$PWD/3drepobouncer:$PATH ./3drepobouncer/3drepobouncerTest
-          - LD_LIBRARY_PATH=$PWD/3drepobouncer PATH=$PWD/3drepobouncer:$PATH ./3drepobouncer/3drepobouncerwrapperTest
 
       after_success:
           - cd $BOUNCER_DIR - && coveralls --root . -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "mongo" -e "assimp" -e "assimp-install" -e "mongo-cxx-1.1.0" -e "aws-install"
@@ -173,7 +172,7 @@ matrix:
           - mkdir build && cd build
       script:
             # check compilation with license enabled
-          - cd $BOUNCER_DIR/build && cmake -DREPO_BUILD_WRAPPER=ON -DREPO_BUILD_WRAPPER_TESTS=ON -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Debug -DLICENSE_CHECK=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
+          - cd $BOUNCER_DIR/build && cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Debug -DLICENSE_CHECK=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
           - sudo make install -j8
 
 notifications:
