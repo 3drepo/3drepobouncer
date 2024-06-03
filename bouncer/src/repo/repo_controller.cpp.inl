@@ -488,17 +488,6 @@ public:
 	*/
 
 	/**
-	* Commit asset bundle buffers
-	* @param database database name
-	* @param project project name
-	* @param buffers web buffers
-	*/
-	bool commitAssetBundleBuffers(
-		const RepoController::RepoToken *token,
-		repo::core::model::RepoScene    *scene,
-		const repo_web_buffers_t &buffers);
-
-	/**
 	* Create a federated scene with the given scene collections
 	* @param fedMap a map of reference scene and transformation from root where the scene should lie
 	* @return returns a constructed scene graph with the reference.

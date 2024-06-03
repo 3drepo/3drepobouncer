@@ -88,24 +88,6 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::init(
 	return token;
 }
 
-bool RepoController::_RepoControllerImpl::commitAssetBundleBuffers(
-	const RepoController::RepoToken *token,
-	repo::core::model::RepoScene    *scene,
-	const repo_web_buffers_t &buffers)
-{
-	bool success = false;
-	manipulator::RepoManipulator* worker = workerPool.pop();
-	success = worker->commitAssetBundleBuffers(token->databaseAd,
-		token->getCredentials(),
-		token->bucketName,
-		token->bucketRegion,
-		scene,
-		buffers);
-	workerPool.push(worker);
-
-	return success;
-}
-
 uint8_t RepoController::_RepoControllerImpl::commitScene(
 	const RepoController::RepoToken                     *token,
 	repo::core::model::RepoScene        *scene,

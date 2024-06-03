@@ -51,14 +51,6 @@ RepoController::RepoToken* RepoController::init(
 	return impl->init(errMsg, config);
 }
 
-bool RepoController::commitAssetBundleBuffers(
-	const RepoController::RepoToken *token,
-	repo::core::model::RepoScene    *scene,
-	const repo_web_buffers_t &buffers)
-{
-	return impl->commitAssetBundleBuffers(token, scene, buffers);
-}
-
 uint8_t RepoController::commitScene(
 	const RepoController::RepoToken    *token,
 	repo::core::model::RepoScene        *scene,

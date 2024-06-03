@@ -140,21 +140,6 @@ repo::core::model::RepoScene* RepoManipulator::createFederatedScene(
 	return scene;
 }
 
-bool RepoManipulator::commitAssetBundleBuffers(
-	const std::string                     &databaseAd,
-	const repo::core::model::RepoBSON     *cred,
-	const std::string                     &bucketName,
-	const std::string                     &bucketRegion,
-	repo::core::model::RepoScene          *scene,
-	const repo_web_buffers_t              &buffers)
-{
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	auto manager = repo::core::handler::fileservice::FileManager::getManager();
-	modelutility::SceneManager SceneManager;
-	return SceneManager.commitWebBuffers(scene, REPO_COLLECTION_STASH_UNITY, buffers, handler, manager, true);
-}
-
 uint8_t RepoManipulator::commitScene(
 	const std::string                      &databaseAd,
 	const repo::core::model::RepoBSON      *cred,

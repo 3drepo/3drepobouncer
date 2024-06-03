@@ -60,22 +60,6 @@ namespace repo {
 				const repo::lib::RepoUUID             &revId = repo::lib::RepoUUID::createUUID());
 
 			/**
-			* Commit asset bundle buffers
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
-			* @param database database name
-			* @param project project name
-			* @param buffers web buffers
-			*/
-			bool commitAssetBundleBuffers(
-				const std::string                     &databaseAd,
-				const repo::core::model::RepoBSON     *cred,
-				const std::string                     &bucketName,
-				const std::string                     &bucketRegion,
-				repo::core::model::RepoScene          *scene,
-				const repo_web_buffers_t &buffers);
-
-			/**
 			* Compare 2 scenes.
 			* @param base base scene to compare against
 			* @param compare scene to compare base scene against
