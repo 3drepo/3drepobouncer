@@ -121,8 +121,9 @@ uint8_t SceneManager::commitScene(
 		if (errCode == REPOERR_OK) {
 			repoInfo << "Scene successfully committed to the database";
 			bool success = true;
+			bool isFederation = scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size();
 
-			if (!(success = scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED))) {
+			if (!isFederation && !(success = scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED))) { // Make sure to check if we are looking at a federation before updating success with the state of the stash graph
 				repoInfo << "Optimised scene not found. Attempt to generate...";
 				success = generateStashGraph(scene);
 			}
@@ -136,7 +137,7 @@ uint8_t SceneManager::commitScene(
 					repoError << "failed to commit selection tree";
 			}
 
-			if (success)
+			if (success && !isFederation)
 			{
 				if (shouldGenerateSrcFiles(scene, handler))
 				{
@@ -149,7 +150,7 @@ uint8_t SceneManager::commitScene(
 				}
 			}
 
-			if (success)
+			if (success && !isFederation)
 			{
 				repoInfo << "Generating Repo Bundles...";
 				repo_web_buffers_t buffers;
