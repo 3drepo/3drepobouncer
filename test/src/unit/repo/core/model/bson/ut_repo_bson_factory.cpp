@@ -538,3 +538,44 @@ TEST(RepoBSONFactoryTest, MakeTransformationNodeTest)
 	TransformationNode trans3 = RepoBSONFactory::makeTransformationNode(transMat, name, parents);
 	EXPECT_EQ(parents.size(), trans3.getParentIDs().size());
 }
+
+TEST(RepoBSONFactoryTest, MakeRepoBundleAssets)
+{
+	// Generate an assets list document with 64500 supermeshes. This is an
+	// arbitrary number, greater than the amount we would expect to handle for
+	// the near future. The document size with this number should be less than
+	// the 16 Mb maximum document size of mongo.
+
+	const int NUM_ASSETS = 64500;
+
+	std::vector<std::string> jsonFiles;
+	std::vector<std::string> bundleFiles;
+	std::vector<RepoSupermeshMetadata> metadata;
+
+	for (size_t i = 0; i < NUM_ASSETS; i++)
+	{
+		jsonFiles.push_back(repo::lib::RepoUUID::createUUID().toString());
+		bundleFiles.push_back(repo::lib::RepoUUID::createUUID().toString());
+		RepoSupermeshMetadata m;
+		m.max = { 1, 1, 1 };
+		m.min = { -1,-1,-1 };
+		m.numFaces = INT_MAX;
+		m.numVertices = USHRT_MAX;
+		m.numUVChannels = 8;
+		m.primitive = 3;
+		metadata.push_back(m);
+	}
+
+	auto assets = RepoBSONFactory::makeRepoBundleAssets(
+		repo::lib::RepoUUID::createUUID(),
+		bundleFiles,
+		"teamspace",
+		"model",
+		{ 0,0,0 },
+		jsonFiles,
+		metadata);
+
+	auto bsonsize = assets.objsize();
+
+	EXPECT_LT(bsonsize, 16777216);
+}
