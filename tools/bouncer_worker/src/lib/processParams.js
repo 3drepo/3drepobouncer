@@ -27,8 +27,8 @@ const parseParameters = () => {
 		describe: 'exit upon finishing the defined amount of tasks. Queue must also specified.',
 		number: true,
 	}).option('queue', {
-		describe: 'specify which queue to run on [job|model|unity]',
-		choice: ['job', 'model', 'unity'],
+		describe: 'specify which queue to run on [job|model]',
+		choice: ['job', 'model'],
 		string: true,
 	}).help().argv;
 };
