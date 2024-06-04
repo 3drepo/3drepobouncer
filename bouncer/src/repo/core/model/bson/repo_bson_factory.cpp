@@ -400,43 +400,6 @@ MeshNode RepoBSONFactory::makeMeshNode(
 	return MeshNode(builder.obj(), builder.mapping());
 }
 
-MeshNode repo::core::model::RepoBSONFactory::makeMeshNode(
-	const std::vector<repo::lib::RepoVector3D>& vertices, 
-	const std::vector<repo_face_t>& faces, 
-	const std::vector<repo::lib::RepoVector3D>& normals, 
-	const std::vector<std::vector<float>>& boundingBox, 
-	const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels)
-{
-	RepoBSONBinMappingBuilder builder;
-	appendDefaults(builder, REPO_NODE_TYPE_MESH);
-	appendBounds(builder, boundingBox);
-	appendVertices(builder, vertices);
-	appendFaces(builder, faces);
-	appendNormals(builder, normals);
-	appendUVChannels(builder, uvChannels);
-	return MeshNode(builder.obj(), builder.mapping());
-}
-
-SupermeshNode RepoBSONFactory::makeSupermeshNode(
-	const std::vector<repo::lib::RepoVector3D>& vertices,
-	const std::vector<repo_face_t>& faces,
-	const std::vector<repo::lib::RepoVector3D>& normals,
-	const std::vector<std::vector<float>>& boundingBox,
-	const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
-	const std::vector<float> mappingIds
-)
-{
-	RepoBSONBinMappingBuilder builder;
-	appendDefaults(builder, REPO_NODE_TYPE_MESH);
-	appendBounds(builder, boundingBox);
-	appendVertices(builder, vertices);
-	appendFaces(builder, faces);
-	appendNormals(builder, normals);
-	appendUVChannels(builder, uvChannels);
-	appendSubmeshIds(builder, mappingIds);
-	return SupermeshNode(builder.obj(), builder.mapping());
-}
-
 SupermeshNode RepoBSONFactory::makeSupermeshNode(
 	const std::vector<repo::lib::RepoVector3D>& vertices,
 	const std::vector<repo_face_t>& faces,
@@ -471,10 +434,10 @@ SupermeshNode RepoBSONFactory::makeSupermeshNode(
 	const std::vector<repo::lib::RepoVector3D>& normals,
 	const std::vector<std::vector<float>>& boundingBox,
 	const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
-	const std::vector<float> mappingIds,
 	const std::vector<repo_mesh_mapping_t>& mappings,
 	const repo::lib::RepoUUID& id,
-	const repo::lib::RepoUUID& sharedId
+	const repo::lib::RepoUUID& sharedId,
+	const std::vector<float> mappingIds
 )
 {
 	RepoBSONBinMappingBuilder builder;

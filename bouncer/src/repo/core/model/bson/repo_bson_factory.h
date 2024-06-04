@@ -281,51 +281,9 @@ namespace repo {
 					const std::vector<repo_face_t>& faces,
 					const std::vector<repo::lib::RepoVector3D>& normals,
 					const std::vector<std::vector<float>>& boundingBox,
-					const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
-					const std::string& name,
-					const std::vector<repo::lib::RepoUUID>& parents);
-
-				static MeshNode makeMeshNode(
-					const std::vector<repo::lib::RepoVector3D>& vertices,
-					const std::vector<repo_face_t>& faces,
-					const std::vector<repo::lib::RepoVector3D>& normals,
-					const std::vector<std::vector<float>>& boundingBox,
-					const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels);
-
-				static MeshNode makeMeshNode(
-					const std::vector<repo::lib::RepoVector3D>& vertices,
-					const std::vector<repo_face_t>& faces,
-					const std::vector<repo::lib::RepoVector3D>& normals,
-					const std::vector<std::vector<float>>& boundingBox)
-				{
-					return makeMeshNode(vertices, faces, normals, boundingBox,
-						std::vector<std::vector<repo::lib::RepoVector2D>>(),
-						std::string(),
-						std::vector<repo::lib::RepoUUID>()
-					);
-				}
-
-				static MeshNode makeMeshNode(
-					const std::vector<repo::lib::RepoVector3D>& vertices,
-					const std::vector<repo_face_t>& faces,
-					const std::vector<repo::lib::RepoVector3D>& normals,
-					const std::vector<std::vector<float>>& boundingBox,
-					const std::vector<repo::lib::RepoUUID>& parents) {
-					return makeMeshNode(vertices, faces, normals, boundingBox,
-						std::vector<std::vector<repo::lib::RepoVector2D>>(),
-						std::string(),
-						parents
-					);
-				}
-
-				static SupermeshNode makeSupermeshNode(
-					const std::vector<repo::lib::RepoVector3D>& vertices,
-					const std::vector<repo_face_t>& faces,
-					const std::vector<repo::lib::RepoVector3D>& normals = {},
-					const std::vector<std::vector<float>>& boundingBox = {},
 					const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels = {},
-					const std::vector<float> mappingIds = {}
-				);
+					const std::string& name = std::string(),
+					const std::vector<repo::lib::RepoUUID>& parents = {});
 
 				static SupermeshNode makeSupermeshNode(
 					const std::vector<repo::lib::RepoVector3D>& vertices,
@@ -343,27 +301,11 @@ namespace repo {
 					const std::vector<repo::lib::RepoVector3D>& normals,
 					const std::vector<std::vector<float>>& boundingBox,
 					const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
-					const std::vector<float> mappingIds,
 					const std::vector<repo_mesh_mapping_t>& mappings,
 					const repo::lib::RepoUUID& id,
-					const repo::lib::RepoUUID& sharedId
+					const repo::lib::RepoUUID& sharedId,
+					const std::vector<float> mappingIds = {}
 				);
-
-				static SupermeshNode makeSupermeshNode(
-					const std::vector<repo::lib::RepoVector3D>& vertices,
-					const std::vector<repo_face_t>& faces,
-					const std::vector<repo::lib::RepoVector3D>& normals,
-					const std::vector<std::vector<float>>& boundingBox,
-					const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
-					const std::vector<repo_mesh_mapping_t>& mappings,
-					const repo::lib::RepoUUID& id,
-					const repo::lib::RepoUUID& sharedId
-				)
-				{
-					return makeSupermeshNode(vertices, faces, normals, boundingBox, uvChannels,
-						{},
-						mappings, id, sharedId);
-				}
 
 				/**
 				* Create a Reference Node

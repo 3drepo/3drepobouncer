@@ -321,13 +321,11 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 	std::vector<repo::lib::RepoVector3D> vectors;
 	std::vector<repo::lib::RepoVector3D> normals;
 	std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
-	std::vector<float> ids;
 	uvChannels.resize(1);
 	faces.reserve(nCount);
 	vectors.reserve(nCount);
 	normals.reserve(nCount);
 	uvChannels[0].reserve(nCount);
-	ids.reserve(nCount);
 	for (uint32_t i = 0; i < nCount; ++i)
 	{
 		repo_face_t face = { (uint32_t)std::rand(), (uint32_t)std::rand(), (uint32_t)std::rand() };
@@ -336,7 +334,6 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 		vectors.push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f });
 		normals.push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f });
 		uvChannels[0].push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f });
-		ids.push_back(std::rand());
 	}
 	std::vector<std::vector<float>> boundingBox;
 	boundingBox.resize(2);
@@ -379,7 +376,7 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 
 	// Re-create the mesh but using lines instead of triangles. This should change the primitive type, but otherwise all properties should be handled identically.
 
-	mesh = RepoBSONFactory::makeSupermeshNode(vectors, faces, normals, boundingBox, uvChannels, ids);
+	mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels);
 
 	repoTrace << mesh.toString();
 

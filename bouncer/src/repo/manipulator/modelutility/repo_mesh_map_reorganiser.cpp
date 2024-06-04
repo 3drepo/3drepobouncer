@@ -167,10 +167,10 @@ repo::core::model::SupermeshNode MeshMapReorganiser::getRemappedMesh() const
 			newNormals,
 			bboxArr,
 			newUVs,
-			newIds,
 			reMappedMappings,
 			mesh->getUniqueID(),
-			mesh->getSharedID());
+			mesh->getSharedID(),
+			newIds);
 
 		return newMesh;
 	}
