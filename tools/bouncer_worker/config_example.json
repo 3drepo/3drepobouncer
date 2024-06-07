@@ -30,11 +30,6 @@
 		"level": 10
 	},
 	"defaultStorage": "db",
-	"unity":
-	{
-		"project": "C:\\unity.bat",
-		"batPath": "buildBundle.bat"
-	},
 	"elastic": {
 		"enabled"   : false,
 		"cloudId"   : "cloudhost:xxx",

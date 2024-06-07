@@ -17,6 +17,7 @@
 
 #include "repo_spatial_partitioner_rdtree.h"
 #include "../../../core/model/bson/repo_node_mesh.h"
+#include "../../../core/model/bson/repo_node_supermesh.h"
 
 using namespace repo::manipulator::modelutility;
 
@@ -42,11 +43,11 @@ std::vector<repo_mesh_entry_t> RDTreeSpatialPartitioner::createMeshEntries()
 		*/
 	assert(gType == repo::core::model::RepoScene::GraphType::OPTIMIZED);
 
-	auto meshes = scene->getAllMeshes(gType);
+	auto meshes = scene->getAllSupermeshes(gType);
 
 	for (const auto &node : meshes)
 	{
-		const auto mesh = dynamic_cast<repo::core::model::MeshNode*>(node);
+		const auto mesh = dynamic_cast<repo::core::model::SupermeshNode*>(node);
 		if (mesh)
 		{
 			auto meshMaps = mesh->getMeshMapping();

@@ -41,7 +41,6 @@ bool SceneManager::commitWebBuffers(
 {
 	bool success = true;
 	std::string jsonStashExt = REPO_COLLECTION_STASH_JSON;
-	std::string unityAssetsStashExt = REPO_COLLECTION_STASH_UNITY;
 	std::string repoAssetsStashExt = REPO_COLLECTION_STASH_BUNDLE;
 	std::string databaseName = scene->getDatabaseName();
 	std::string projectName = scene->getProjectName();
@@ -75,19 +74,6 @@ bool SceneManager::commitWebBuffers(
 	}
 
 	std::string errMsg;
-
-	if(!resultBuffers.unityAssets.isEmpty())
-	{
-		if (success &= handler->upsertDocument(databaseName, projectName + "." + unityAssetsStashExt, resultBuffers.unityAssets,
-			true, errMsg))
-		{
-			repoInfo << "Assets list added successfully.";
-		}
-		else
-		{
-			repoError << "Failed to add assets list: " << errMsg;;
-		}
-	}
 
 	if (!resultBuffers.repoAssets.isEmpty())
 	{
@@ -135,20 +121,11 @@ uint8_t SceneManager::commitScene(
 		if (errCode == REPOERR_OK) {
 			repoInfo << "Scene successfully committed to the database";
 			bool success = true;
-			if (!(success = (scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size())))
-			{
-				if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED)) {
-					repoInfo << "Optimised scene not found. Attempt to generate...";
-					success = generateStashGraph(scene, handler);
-				}
-				else if (success = scene->commitStash(handler, msg))
-				{
-					repoInfo << "Commited scene stash successfully.";
-				}
-				else
-				{
-					repoError << "Failed to commit scene stash : " << msg;
-				}
+			bool isFederation = scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size();
+
+			if (!isFederation && !(success = scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED))) { // Make sure to check if we are looking at a federation before updating success with the state of the stash graph
+				repoInfo << "Optimised scene not found. Attempt to generate...";
+				success = generateStashGraph(scene);
 			}
 
 			if (success)
@@ -160,7 +137,7 @@ uint8_t SceneManager::commitScene(
 					repoError << "failed to commit selection tree";
 			}
 
-			if (success)
+			if (success && !isFederation)
 			{
 				if (shouldGenerateSrcFiles(scene, handler))
 				{
@@ -173,7 +150,7 @@ uint8_t SceneManager::commitScene(
 				}
 			}
 
-			if (success)
+			if (success && !isFederation)
 			{
 				repoInfo << "Generating Repo Bundles...";
 				repo_web_buffers_t buffers;
@@ -185,8 +162,7 @@ uint8_t SceneManager::commitScene(
 
 			if (success) {
 				errCode = REPOERR_OK;
-				bool isFed = scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size();
-				scene->updateRevisionStatus(handler, isFed ? repo::core::model::RevisionNode::UploadStatus::COMPLETE : repo::core::model::RevisionNode::UploadStatus::MISSING_BUNDLES);
+				scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
 			}
 			else {
 				errCode = REPOERR_UPLOAD_FAILED;
@@ -212,7 +188,6 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 	const std::string                             &project,
 	const repo::lib::RepoUUID                     &uuid,
 	const bool                                    &headRevision,
-	const bool                                    &lightFetch,
 	const bool                                    &ignoreRefScenes,
 	const bool                                    &skeletonFetch,
 	const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus)
@@ -241,48 +216,15 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 					(headRevision ? (" head revision of branch " + uuid.toString())
 						: (" revision " + uuid.toString()))
 					<< " of " << database << "." << project;
-				if (lightFetch)
-				{
-					if (scene->loadStash(handler, errMsg))
-					{
-						repoTrace << "Stash Loaded";
-					}
-					else
-					{
-						//failed to load stash isn't critical, give it a warning instead of returning false
-						repoWarning << "Error loading stash for " << database << "." << project << " : " << errMsg;
-						if (scene->loadScene(handler, errMsg))
-						{
-							repoTrace << "Scene Loaded";
-						}
-						else {
-							delete scene;
-							scene = nullptr;
-						}
-					}
-				}
-				else
-				{
-					if (scene->loadScene(handler, errMsg))
-					{
-						repoTrace << "Loaded Scene";
 
-						if (!skeletonFetch) {
-							if (scene->loadStash(handler, errMsg))
-							{
-								repoTrace << "Stash Loaded";
-							}
-							else
-							{
-								//failed to load stash isn't critical, give it a warning instead of returning false
-								repoWarning << "Error loading stash for " << database << "." << project << " : " << errMsg;
-							}
-						}
-					}
-					else {
-						delete scene;
-						scene = nullptr;
-					}
+				if (scene->loadScene(handler, errMsg))
+				{
+					repoTrace << "Loaded Scene";
+				}
+				else 
+				{
+					delete scene;
+					scene = nullptr;
 				}
 			}
 			else
@@ -345,42 +287,20 @@ void SceneManager::fetchScene(
 }
 
 bool SceneManager::generateStashGraph(
-	repo::core::model::RepoScene              *scene,
-	repo::core::handler::AbstractDatabaseHandler *handler
+	repo::core::model::RepoScene              *scene
 )
 {
 	bool success = false;
 	if (success = (scene && scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT)))
 	{
-		bool toCommit = handler && scene->isRevisioned();
+		removeStashGraph(scene);
 
-		if (toCommit)
-		{
-			//Scene has an entry in database, set processing flag to gen stash
-			scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_REPO_STASH);
-		}
-
-		removeStashGraph(scene, handler);
 		repoInfo << "Generating stash graph...";
+
 		repo::manipulator::modeloptimizer::MultipartOptimizer mpOpt;
-		if (success = mpOpt.apply(scene))
+		if (!(success = mpOpt.apply(scene)))
 		{
-			if (toCommit)
-			{
-				repoInfo << "Committing stash graph to " << scene->getDatabaseName() << "." << scene->getProjectName() << "...";
-				std::string errMsg;
-				//commit stash will set uploadstatus to complete if succeed
-				if (!(success = scene->commitStash(handler, errMsg)))
-				{
-					repoError << "Failed to commit stash graph: " << errMsg;
-					success = false;
-				}
-			}
-		}
-		else
-		{
-			repoError << "Failed to generate stash graph";
-			success = false;
+			repoError << "Failed to generate stash graph with MultipartOptimizer.";
 		}
 	}
 	else
@@ -420,9 +340,6 @@ bool SceneManager::generateWebViewBuffers(
 			geoStashExt = REPO_COLLECTION_STASH_BUNDLE;
 			resultBuffers = generateRepoBundleBuffer(scene);
 			break;
-		case repo::manipulator::modelconvertor::WebExportType::UNITY:
-			repoInfo << "Skipping buffer generation for Unity assets";
-			return true;
 		default:
 			repoError << "Unknown export type with enum:  " << (uint16_t)exType;
 			return false;
@@ -604,28 +521,16 @@ bool SceneManager::shouldGenerateSrcFiles(
 	return false;
 }
 
-bool SceneManager::removeStashGraph(
-	repo::core::model::RepoScene                 *scene,
-	repo::core::handler::AbstractDatabaseHandler *handler
-)
+bool SceneManager::removeStashGraph(repo::core::model::RepoScene *scene)
 {
-	bool success;
-	if (success = scene)
+	if (scene)
 	{
 		scene->clearStash();
-		if (scene->isRevisioned())
-		{
-			std::string errMsg;
-
-			repo::core::model::RepoBSONBuilder builder;
-			builder.append(REPO_NODE_STASH_REF, scene->getRevisionID());
-			success = handler->dropDocuments(builder.obj(), scene->getDatabaseName(), scene->getProjectName() + "." + REPO_COLLECTION_STASH_REPO, errMsg);
-		}
+		return true;
 	}
 	else
 	{
 		repoError << "Trying to remove a stashGraph from scene but the scene is empty!";
+		return false;
 	}
-
-	return success;
 }

@@ -21,7 +21,7 @@
 using namespace repo::manipulator::modelutility;
 
 MeshMapReorganiser::MeshMapReorganiser(
-	const repo::core::model::MeshNode *mesh,
+	const repo::core::model::SupermeshNode *mesh,
 	const size_t                    &vertThreshold,
 	const size_t					&faceThreshold) :
 	mesh(mesh),
@@ -31,14 +31,12 @@ MeshMapReorganiser::MeshMapReorganiser(
 	oldVertices(mesh->getVertices()),
 	oldNormals(mesh->getNormals()),
 	oldUVs(mesh->getUVChannelsSeparated()),
-	oldColors(mesh->getColors()),
 	reMapSuccess(false)
 {
 	if (mesh && mesh->getMeshMapping().size())
 	{
 		newVertices = oldVertices;
 		newNormals = oldNormals;
-		newColors = oldColors;
 		newUVs = oldUVs;
 		newFaces.reserve(oldFaces.size());
 		serialisedFaces.reserve(oldFaces.size() * static_cast<int>(mesh->getPrimitive()));
@@ -48,7 +46,6 @@ MeshMapReorganiser::MeshMapReorganiser(
 			//mission failed clear up the memory
 			newVertices.clear();
 			newNormals.clear();
-			newColors.clear();
 			newUVs.clear();
 			newFaces.clear();
 			matMap.clear();
@@ -145,7 +142,7 @@ MeshMapReorganiser::getSplitMapping() const {
 	return reMapSuccess ? splitMap : std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher>();
 }
 
-repo::core::model::MeshNode MeshMapReorganiser::getRemappedMesh() const
+repo::core::model::SupermeshNode MeshMapReorganiser::getRemappedMesh() const
 {
 	if (reMapSuccess)
 	{
@@ -164,18 +161,22 @@ repo::core::model::MeshNode MeshMapReorganiser::getRemappedMesh() const
 			newIds.insert(newIds.end(), buf.begin(), buf.end());
 		}
 
-		auto newMesh = repo::core::model::RepoBSONFactory::makeMeshNode(newVertices, newFaces, newNormals, bboxArr, newUVs, newColors, newIds);
-		repo::core::model::RepoBSONBuilder builder;
-		builder.append(REPO_NODE_LABEL_ID, mesh->getUniqueID());
-		builder.append(REPO_NODE_LABEL_SHARED_ID, mesh->getSharedID());
-		auto changes = builder.obj();
-		newMesh = newMesh.cloneAndAddFields(&changes, false);
+		auto newMesh = repo::core::model::RepoBSONFactory::makeSupermeshNode(
+			newVertices,
+			newFaces,
+			newNormals,
+			bboxArr,
+			newUVs,
+			reMappedMappings,
+			mesh->getUniqueID(),
+			mesh->getSharedID(),
+			newIds);
 
-		return newMesh.cloneAndUpdateMeshMapping(reMappedMappings, true);
+		return newMesh;
 	}
 	else
 	{
-		return repo::core::model::MeshNode();
+		return repo::core::model::SupermeshNode();
 	}
 }
 
@@ -328,7 +329,6 @@ bool MeshMapReorganiser::splitLargeMesh(
 	auto newVerticesVFrom = newMappings.back().vertFrom;
 
 	const bool hasNormal = oldNormals.size();
-	const bool hasColor = oldColors.size();
 	const bool hasUV = oldUVs.size();
 
 	// Split mesh information
@@ -356,7 +356,7 @@ bool MeshMapReorganiser::splitLargeMesh(
 				splitMap[currentSubMesh.mesh_id].push_back(newMappings.size() - 1);
 
 			if (startedLargeMeshSplit) {
-				updateIDMapArray(splitMeshVertexCount, idMapIdx++);
+				updateIDMapArray(splitMeshVertexCount, idMapIdx);
 				finishSubMesh(newMappings.back(), bboxMin, bboxMax, splitMeshVertexCount, splitMeshFaceCount);
 
 				completeLastMatMapEntry(matMap.back().back().vertFrom + splitMeshVertexCount,
@@ -389,11 +389,6 @@ bool MeshMapReorganiser::splitLargeMesh(
 				if (hasNormal)
 				{
 					reMappedNormals.push_back(oldNormals[indexValue]);
-				}
-
-				if (hasColor)
-				{
-					reMappedCols.push_back(oldColors[indexValue]);
 				}
 
 				if (hasUV)
@@ -439,12 +434,6 @@ bool MeshMapReorganiser::splitLargeMesh(
 			newNormals.erase(startingPosN, startingPosN + leftOverVertices);
 		}
 
-		if (hasColor)
-		{
-			auto startingPosN = newColors.begin() + newMappings.back().vertFrom + splitMeshVertexCount;
-			newColors.erase(startingPosN, startingPosN + leftOverVertices);
-		}
-
 		if (hasUV)
 		{
 			for (int iUV = 0; iUV < oldUVs.size(); ++iUV)
@@ -469,14 +458,6 @@ bool MeshMapReorganiser::splitLargeMesh(
 			newNormals.insert(startingPosN, extraVs.begin(), extraVs.end());
 		}
 
-		if (hasColor)
-		{
-			auto startingPosN = newColors.begin() + newVerticesVFrom;
-			std::vector<repo_color4d_t> extras;
-			extras.resize(extraVertices);
-			newColors.insert(startingPosN, extras.begin(), extras.end());
-		}
-
 		if (hasUV)
 		{
 			for (int iUV = 0; iUV < oldUVs.size(); ++iUV)
@@ -498,9 +479,6 @@ bool MeshMapReorganiser::splitLargeMesh(
 		for (int iUV = 0; iUV < oldUVs.size(); ++iUV)
 			std::copy(reMappedUVs[iUV].begin(), reMappedUVs[iUV].end(), newUVs[iUV].begin() + newVerticesVFrom);
 
-	if (hasColor)
-		std::copy(reMappedCols.begin(), reMappedCols.end(), newColors.begin() + newVerticesVFrom);
-
 	splitMap[currentSubMesh.mesh_id].push_back(newMappings.size() - 1);
 	finishSubMesh(newMappings.back(), bboxMin, bboxMax, splitMeshVertexCount, splitMeshFaceCount);
 	completeLastMatMapEntry(matMap.back().back().vertFrom + splitMeshVertexCount,
@@ -520,9 +498,14 @@ void MeshMapReorganiser::startSubMesh(
 {
 	mapping.vertFrom = sVertices;
 	mapping.triFrom = sFaces;
-	mapping.material_id = matID; //Not a reliable source. Just filled in for completeness
-	mapping.mesh_id = meshID;
-	mapping.shared_id = sharedID;
+
+	// The split mappings are not bijective with respect to the originals,
+	// so make sure these are initialised to invalid values so its obvious
+	// if they are being misused.
+
+	mapping.material_id = repo::lib::RepoUUID::defaultValue;
+	mapping.mesh_id = repo::lib::RepoUUID::defaultValue;
+	mapping.shared_id = repo::lib::RepoUUID::defaultValue;
 
 	idMapBuf.resize(idMapBuf.size() + 1);
 	idMapBuf.back().clear();

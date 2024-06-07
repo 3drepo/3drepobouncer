@@ -19,13 +19,12 @@ const fs = require('fs');
 const {
 	callbackQueueSpecified,
 	modelQueueSpecified,
-	unityQueueSpecified,
 	logDirExists,
 	sharedDirExists } = require('./common');
 const { config } = require('../lib/config');
 const { runBouncerCommand } = require('../tasks/bouncerClient');
 const { ERRCODE_OK, ERRCODE_BOUNCER_CRASH, ERRCODE_REPO_LICENCE_INVALID } = require('../constants/errorCodes');
-const { MODEL_PROCESSING, UNITY_QUEUED } = require('../constants/statuses');
+const { MODEL_PROCESSING } = require('../constants/statuses');
 const { messageDecoder } = require('../lib/messageDecoder');
 const logger = require('../lib/logger');
 const processMonitor = require('../lib/processMonitor');
@@ -77,12 +76,7 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		returnMessage.value = await runBouncerCommand(logDir, cmdParams, processInformation);
 		await processMonitor.sendReport(ridString);
 
-		callback(JSON.stringify(returnMessage), config.rabbitmq.unity_queue);
-		callback(JSON.stringify({
-			status: UNITY_QUEUED,
-			database,
-			project: model,
-		}));
+		callback(JSON.stringify(returnMessage));
 	} catch (err) {
 		switch (err) {
 			case ERRCODE_REPO_LICENCE_INVALID:
@@ -101,7 +95,6 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 
 Handler.validateConfiguration = (label) => modelQueueSpecified(label)
 		&& callbackQueueSpecified(label)
-		&& unityQueueSpecified(label)
 		&& logDirExists(label)
 		&& sharedDirExists(label);
 

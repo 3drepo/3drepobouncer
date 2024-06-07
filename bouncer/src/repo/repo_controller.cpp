@@ -51,14 +51,6 @@ RepoController::RepoToken* RepoController::init(
 	return impl->init(errMsg, config);
 }
 
-bool RepoController::commitAssetBundleBuffers(
-	const RepoController::RepoToken *token,
-	repo::core::model::RepoScene    *scene,
-	const repo_web_buffers_t &buffers)
-{
-	return impl->commitAssetBundleBuffers(token, scene, buffers);
-}
-
 uint8_t RepoController::commitScene(
 	const RepoController::RepoToken    *token,
 	repo::core::model::RepoScene        *scene,
@@ -94,12 +86,11 @@ repo::core::model::RepoScene* RepoController::fetchScene(
 	const std::string    &collection,
 	const std::string    &uuid,
 	const bool           &headRevision,
-	const bool           &lightFetch,
 	const bool           &ignoreRefScene,
 	const bool           &skeletonFetch,
 	const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus)
 {
-	return impl->fetchScene(token, database, collection, uuid, headRevision, lightFetch, ignoreRefScene, skeletonFetch, includeStatus);
+	return impl->fetchScene(token, database, collection, uuid, headRevision, ignoreRefScene, skeletonFetch, includeStatus);
 }
 
 bool RepoController::generateAndCommitSelectionTree(
@@ -107,14 +98,6 @@ bool RepoController::generateAndCommitSelectionTree(
 	repo::core::model::RepoScene            *scene)
 {
 	return impl->generateAndCommitSelectionTree(token, scene);
-}
-
-bool RepoController::generateAndCommitStashGraph(
-	const RepoController::RepoToken              *token,
-	repo::core::model::RepoScene* scene
-)
-{
-	return impl->generateAndCommitStashGraph(token, scene);
 }
 
 std::vector < repo::core::model::RepoBSON >
@@ -162,17 +145,6 @@ RepoController::getDatabasesWithProjects(
 	const std::list<std::string>     &databases)
 {
 	return impl->getDatabasesWithProjects(token, databases);
-}
-
-bool RepoController::insertBinaryFileToDatabase(
-	const RepoController::RepoToken            *token,
-	const std::string          &database,
-	const std::string          &collection,
-	const std::string          &name,
-	const std::vector<uint8_t> &rawData,
-	const std::string          &mimeType)
-{
-	return impl->insertBinaryFileToDatabase(token, database, collection, name, rawData, mimeType);
 }
 
 void RepoController::insertRole(
@@ -280,6 +252,13 @@ repo::core::model::RepoScene* RepoController::createFederatedScene(
 	return impl->createFederatedScene(fedMap);
 }
 
+bool RepoController::generateAndCommitRepoBundlesBuffer(
+	const RepoController::RepoToken* token,
+	repo::core::model::RepoScene* scene)
+{
+	return impl->generateAndCommitRepoBundlesBuffer(token, scene);
+}
+
 bool RepoController::generateAndCommitGLTFBuffer(
 	const RepoController::RepoToken    *token,
 	repo::core::model::RepoScene *scene)
@@ -338,18 +317,6 @@ std::string RepoController::getSupportedImportFormats()
 std::string RepoController::getSupportedExportFormats()
 {
 	return impl->getSupportedExportFormats();
-}
-
-std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoController::initialiseAssetBuffer(
-	const RepoController::RepoToken                    *token,
-	repo::core::model::RepoScene *scene,
-	std::unordered_map<std::string, std::vector<uint8_t>> &jsonFiles,
-	repo::core::model::RepoUnityAssets &unityAssets,
-	std::vector<std::vector<uint16_t>> &serialisedFaceBuf,
-	std::vector<std::vector<std::vector<float>>> &idMapBuf,
-	std::vector<std::vector<std::vector<repo_mesh_mapping_t>>> &meshMappings)
-{
-	return impl->initialiseAssetBuffer(token, scene, jsonFiles, unityAssets, serialisedFaceBuf, idMapBuf, meshMappings);
 }
 
 repo::core::model::RepoNodeSet RepoController::loadMetadataFromFile(

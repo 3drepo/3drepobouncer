@@ -20,7 +20,7 @@
 #include <unordered_map>
 #include <cstdint>
 #include "../../repo_bouncer_global.h"
-#include "../../core/model/bson/repo_bson_unity_assets.h"
+#include "../../core/model/bson/repo_bson_assets.h"
 #include "repo_uuid.h"
 #include "repo_vector.h"
 #include <boost/crc.hpp>
@@ -31,8 +31,7 @@ using repo_web_json_files_t = std::unordered_map<std::string, std::vector<uint8_
 struct repo_web_buffers_t{
 	repo_web_geo_files_t geoFiles; //files where geometery are stored
 	repo_web_json_files_t jsonFiles; //JSON mapping files
-	repo::core::model::RepoUnityAssets unityAssets; //Unity assets list
-	repo::core::model::RepoUnityAssets repoAssets; //RepoBundles assets list
+	repo::core::model::RepoAssets repoAssets; //RepoBundles assets list
 };
 
 //This is used to map info for multipart optimization
@@ -41,7 +40,7 @@ typedef struct {
 	repo::lib::RepoVector3D max;
 	repo::lib::RepoUUID  mesh_id;
 	repo::lib::RepoUUID  shared_id;
-	repo::lib::RepoUUID  material_id;
+	repo::lib::RepoUUID  material_id; // MaterialNode Unique Id
 	int32_t       vertFrom;
 	int32_t       vertTo;
 	int32_t       triFrom;

@@ -64,7 +64,7 @@ namespace repo {
 			//------------------------------------------------------------------------------
 #define REPO_NODE_MESH_LABEL_PRIMITIVE		        "primitive"
 
-			class REPO_API_EXPORT MeshNode :public RepoNode
+			class REPO_API_EXPORT MeshNode : public RepoNode
 			{
 			public:
 				enum class Primitive {
@@ -163,14 +163,6 @@ namespace repo {
 				virtual RepoNode cloneAndApplyTransformation(
 					const repo::lib::RepoMatrix &matrix) const;
 
-				/**
-				* Create a new copy of the node and update its mesh mapping
-				* @return returns a new meshNode with the new mappings
-				*/
-				MeshNode cloneAndUpdateMeshMapping(
-					const std::vector<repo_mesh_mapping_t> &vec,
-					const bool& overwrite = false);
-
 				MeshNode cloneAndNoteGrouping(const std::string &group) const;
 
 				/**
@@ -186,19 +178,12 @@ namespace repo {
 				static std::vector<repo::lib::RepoVector3D> getBoundingBox(RepoBSON &bbArr);
 
 				/**
-				* Retrieve a vector of Colors from the bson object
-				*/
-				std::vector<repo_color4d_t> getColors() const;
-
-				/**
 				* Retrieve a vector of faces from the bson object
 				*/
 				std::vector<repo_face_t> getFaces() const;
 
 				// get sepcific grouping for mesh batching (empty string if not specified)
 				std::string getGrouping() const;
-
-				std::vector<repo_mesh_mapping_t> getMeshMapping() const;
 
 				/**
 				* Retrieve a vector of vertices from the bson object
@@ -215,8 +200,6 @@ namespace repo {
 				*/
 				std::vector<std::vector<repo::lib::RepoVector2D>> getUVChannelsSeparated() const;
 
-				std::vector<float> getSubmeshIds() const;
-
 				/**
 				* Retrieve a vector of vertices from the bson object
 				*/
@@ -229,13 +212,6 @@ namespace repo {
 				std::uint32_t getNumUVChannels() const;
 
 			private:
-				/**
-				* Given a mesh mapping, convert it into a bson object
-				* @param mapping the mapping to convert
-				* @return return a bson object containing the mapping
-				*/
-				RepoBSON meshMappingAsBSON(const repo_mesh_mapping_t  &mapping);
-
 				/**
 				* Retrieve a vector of faces (serialised) from the bson object
 				*/

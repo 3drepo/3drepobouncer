@@ -63,8 +63,6 @@ namespace repo {
 				* @param uuid if headRevision, uuid represents the branch id,
 				*              otherwise the unique id of the revision branch
 				* @param headRevision true if retrieving head revision
-				* @param lightFetch fetches only the stash (or scene if stash failed),
-				reduce computation and memory usage (ideal for visualisation only)
 				* @return returns a pointer to a repoScene.
 				*/
 				repo::core::model::RepoScene* fetchScene(
@@ -73,7 +71,6 @@ namespace repo {
 					const std::string                             &project,
 					const repo::lib::RepoUUID                     &uuid,
 					const bool                                    &headRevision = true,
-					const bool                                    &lightFetch = false,
 					const bool                                    &ignoreRefScenes = false,
 					const bool                                    &skeletonFetch = false,
 					const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus = {});
@@ -86,7 +83,7 @@ namespace repo {
 					const bool                                    &skeletonFetch = false)
 				{
 					repo::lib::RepoUUID master = repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH);
-					return fetchScene(handler, database, project, master, true, false, ignoreRefScene);
+					return fetchScene(handler, database, project, master, true, ignoreRefScene, skeletonFetch);
 				}
 
 				/**
@@ -122,9 +119,7 @@ namespace repo {
 				* @return returns true upon success
 				*/
 				bool generateStashGraph(
-					repo::core::model::RepoScene                 *scene,
-					repo::core::handler::AbstractDatabaseHandler *handler = nullptr
-				);
+					repo::core::model::RepoScene *scene);
 
 				/**
 				* Check if the scene is VR enabled
@@ -174,9 +169,7 @@ namespace repo {
 				* @return returns true upon success
 				*/
 				bool removeStashGraph(
-					repo::core::model::RepoScene                 *scene,
-					repo::core::handler::AbstractDatabaseHandler *handler = nullptr
-				);
+					repo::core::model::RepoScene *scene);
 
 			private:
 				/**

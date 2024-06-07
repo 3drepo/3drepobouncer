@@ -125,7 +125,7 @@ int32_t performOperation(
 
 static bool genRepoStash(std::shared_ptr<repo::RepoController> controller, const repo::RepoController::RepoToken *token, repo::core::model::RepoScene *scene)
 {
-	return controller->generateAndCommitStashGraph(token, scene);
+	return controller->generateAndCommitRepoBundlesBuffer(token, scene);
 }
 
 static bool genSrcStash(std::shared_ptr<repo::RepoController> controller, const repo::RepoController::RepoToken *token, repo::core::model::RepoScene *scene)

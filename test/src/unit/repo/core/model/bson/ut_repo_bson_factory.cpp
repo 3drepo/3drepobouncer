@@ -321,15 +321,11 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 	std::vector<repo::lib::RepoVector3D> vectors;
 	std::vector<repo::lib::RepoVector3D> normals;
 	std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
-	std::vector<repo_color4d_t> colors;
-	std::vector<float> ids;
 	uvChannels.resize(1);
 	faces.reserve(nCount);
 	vectors.reserve(nCount);
 	normals.reserve(nCount);
 	uvChannels[0].reserve(nCount);
-	colors.reserve(nCount);
-	ids.reserve(nCount);
 	for (uint32_t i = 0; i < nCount; ++i)
 	{
 		repo_face_t face = { (uint32_t)std::rand(), (uint32_t)std::rand(), (uint32_t)std::rand() };
@@ -338,8 +334,6 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 		vectors.push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f });
 		normals.push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f });
 		uvChannels[0].push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f });
-		colors.push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f });
-		ids.push_back(std::rand());
 	}
 	std::vector<std::vector<float>> boundingBox;
 	boundingBox.resize(2);
@@ -350,22 +344,18 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 
 	//End of setting up data... the actual testing happens here.
 
-	MeshNode mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, ids, name);
+	auto mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels);
 
 	repoTrace << mesh.toString();
 
 	auto vOut = mesh.getVertices();
 	auto nOut = mesh.getNormals();
 	auto fOut = mesh.getFaces();
-	auto cOut = mesh.getColors();
 	auto uvOut = mesh.getUVChannelsSeparated();
-	auto idOut = mesh.getSubmeshIds();
 	EXPECT_TRUE(compareStdVectors(vectors, vOut));
 	EXPECT_TRUE(compareStdVectors(normals, nOut));
 	EXPECT_TRUE(compareStdVectors(faces, fOut));
-	EXPECT_TRUE(compareVectors(colors, cOut));
 	EXPECT_TRUE(compareStdVectors(uvChannels, uvOut));
-	EXPECT_TRUE(compareStdVectors(ids, idOut));
 
 	ASSERT_EQ(MeshNode::Primitive::TRIANGLES, mesh.getPrimitive());
 
@@ -386,7 +376,7 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 
 	// Re-create the mesh but using lines instead of triangles. This should change the primitive type, but otherwise all properties should be handled identically.
 
-	mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, ids, name);
+	mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels);
 
 	repoTrace << mesh.toString();
 
@@ -395,15 +385,11 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 	vOut = mesh.getVertices();
 	nOut = mesh.getNormals();
 	fOut = mesh.getFaces();
-	cOut = mesh.getColors();
 	uvOut = mesh.getUVChannelsSeparated();
-	idOut = mesh.getSubmeshIds();
 	EXPECT_TRUE(compareStdVectors(vectors, vOut));
 	EXPECT_TRUE(compareStdVectors(normals, nOut));
 	EXPECT_TRUE(compareStdVectors(faces, fOut));
-	EXPECT_TRUE(compareVectors(colors, cOut));
 	EXPECT_TRUE(compareStdVectors(uvChannels, uvOut));
-	EXPECT_TRUE(compareStdVectors(ids, idOut));
 
 	bbox = mesh.getBoundingBox();
 	ASSERT_EQ(boundingBox.size(), bbox.size());
@@ -423,7 +409,7 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 		faces.push_back(face);
 	}
 
-	mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, ids, name);
+	mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox);
 
 	ASSERT_EQ(MeshNode::Primitive::UNKNOWN, mesh.getPrimitive());
 }
@@ -548,4 +534,45 @@ TEST(RepoBSONFactoryTest, MakeTransformationNodeTest)
 	parents.clear();
 	TransformationNode trans3 = RepoBSONFactory::makeTransformationNode(transMat, name, parents);
 	EXPECT_EQ(parents.size(), trans3.getParentIDs().size());
+}
+
+TEST(RepoBSONFactoryTest, MakeRepoBundleAssets)
+{
+	// Generate an assets list document with 64500 supermeshes. This is an
+	// arbitrary number, greater than the amount we would expect to handle for
+	// the near future. The document size with this number should be less than
+	// the 16 Mb maximum document size of mongo.
+
+	const int NUM_ASSETS = 64500;
+
+	std::vector<std::string> jsonFiles;
+	std::vector<std::string> bundleFiles;
+	std::vector<RepoSupermeshMetadata> metadata;
+
+	for (size_t i = 0; i < NUM_ASSETS; i++)
+	{
+		jsonFiles.push_back(repo::lib::RepoUUID::createUUID().toString());
+		bundleFiles.push_back(repo::lib::RepoUUID::createUUID().toString());
+		RepoSupermeshMetadata m;
+		m.max = { 1, 1, 1 };
+		m.min = { -1,-1,-1 };
+		m.numFaces = INT_MAX;
+		m.numVertices = USHRT_MAX;
+		m.numUVChannels = 8;
+		m.primitive = 3;
+		metadata.push_back(m);
+	}
+
+	auto assets = RepoBSONFactory::makeRepoBundleAssets(
+		repo::lib::RepoUUID::createUUID(),
+		bundleFiles,
+		"teamspace",
+		"model",
+		{ 0,0,0 },
+		jsonFiles,
+		metadata);
+
+	auto bsonsize = assets.objsize();
+
+	EXPECT_LT(bsonsize, 16777216);
 }

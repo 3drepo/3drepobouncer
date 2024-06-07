@@ -88,24 +88,6 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::init(
 	return token;
 }
 
-bool RepoController::_RepoControllerImpl::commitAssetBundleBuffers(
-	const RepoController::RepoToken *token,
-	repo::core::model::RepoScene    *scene,
-	const repo_web_buffers_t &buffers)
-{
-	bool success = false;
-	manipulator::RepoManipulator* worker = workerPool.pop();
-	success = worker->commitAssetBundleBuffers(token->databaseAd,
-		token->getCredentials(),
-		token->bucketName,
-		token->bucketRegion,
-		scene,
-		buffers);
-	workerPool.push(worker);
-
-	return success;
-}
-
 uint8_t RepoController::_RepoControllerImpl::commitScene(
 	const RepoController::RepoToken                     *token,
 	repo::core::model::RepoScene        *scene,
@@ -195,7 +177,6 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::fetchScene(
 	const std::string    &collection,
 	const std::string    &uuid,
 	const bool           &headRevision,
-	const bool           &lightFetch,
 	const bool           &ignoreRefScene,
 	const bool           &skeletonFetch,
 	const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus)
@@ -206,7 +187,7 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::fetchScene(
 		manipulator::RepoManipulator* worker = workerPool.pop();
 
 		scene = worker->fetchScene(token->databaseAd, token->getCredentials(),
-			database, collection, repo::lib::RepoUUID(uuid), headRevision, lightFetch, ignoreRefScene, skeletonFetch, includeStatus);
+			database, collection, repo::lib::RepoUUID(uuid), headRevision, ignoreRefScene, skeletonFetch, includeStatus);
 
 		workerPool.push(worker);
 	}
@@ -239,39 +220,6 @@ bool RepoController::_RepoControllerImpl::generateAndCommitSelectionTree(
 			token->bucketRegion,
 			scene);
 		workerPool.push(worker);
-	}
-
-	return success;
-}
-
-bool RepoController::_RepoControllerImpl::generateAndCommitStashGraph(
-	const RepoController::RepoToken              *token,
-	repo::core::model::RepoScene* scene
-)
-{
-	bool success = false;
-
-	if (token && scene)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-
-		if (scene->isRevisioned() && !scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
-		{
-			//If the unoptimised graph isn't fetched, try to fetch full scene before beginning
-			//This should be safe considering if it has not loaded the unoptimised graph it shouldn't have
-			//any uncommited changes.
-			repoInfo << "Unoptimised scene not loaded, trying loading unoptimised scene...";
-			worker->fetchScene(token->databaseAd, token->getCredentials(), scene);
-		}
-
-		success = worker->generateAndCommitStashGraph(token->databaseAd, token->getCredentials(),
-			scene);
-
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Failed to generate stash graph: nullptr to scene or token!";
 	}
 
 	return success;
@@ -420,35 +368,6 @@ RepoController::_RepoControllerImpl::getDatabasesWithProjects(
 	}
 
 	return map;
-}
-
-bool RepoController::_RepoControllerImpl::insertBinaryFileToDatabase(
-	const RepoController::RepoToken            *token,
-	const std::string          &database,
-	const std::string          &collection,
-	const std::string          &name,
-	const std::vector<uint8_t> &rawData,
-	const std::string          &mimeType)
-{
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		return worker->insertBinaryFileToDatabase(token->databaseAd,
-			token->getCredentials(),
-			token->bucketName,
-			token->bucketRegion,
-			database,
-			collection,
-			name,
-			rawData,
-			mimeType);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to save a binary file without a database connection!";
-		return false;
-	}
 }
 
 void RepoController::_RepoControllerImpl::insertRole(
@@ -694,6 +613,28 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::createFederat
 	return scene;
 }
 
+bool RepoController::_RepoControllerImpl::generateAndCommitRepoBundlesBuffer(
+	const RepoController::RepoToken* token,
+	repo::core::model::RepoScene* scene)
+{
+	bool success;
+	if (success = token && scene)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		success = worker->generateAndCommitRepoBundlesBuffer(token->databaseAd,
+			token->getCredentials(),
+			token->bucketName,
+			token->bucketRegion,
+			scene);
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Failed to generate GLTF Buffer.";
+	}
+	return success;
+}
+
 bool RepoController::_RepoControllerImpl::generateAndCommitGLTFBuffer(
 	const RepoController::RepoToken *token,
 	repo::core::model::RepoScene    *scene)
@@ -852,30 +793,6 @@ std::string RepoController::_RepoControllerImpl::getSupportedImportFormats()
 {
 	//This needs to be updated if we support more than assimp
 	return repo::manipulator::modelconvertor::AssimpModelImport::getSupportedFormats();
-}
-
-std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoController::_RepoControllerImpl::initialiseAssetBuffer(
-	const RepoController::RepoToken                    *token,
-	repo::core::model::RepoScene *scene,
-	std::unordered_map<std::string, std::vector<uint8_t>> &jsonFiles,
-	repo::core::model::RepoUnityAssets &unityAssets,
-	std::vector<std::vector<uint16_t>> &serialisedFaceBuf,
-	std::vector<std::vector<std::vector<float>>> &idMapBuf,
-	std::vector<std::vector<std::vector<repo_mesh_mapping_t>>> &meshMappings)
-{
-	std::vector<std::shared_ptr<repo::core::model::MeshNode>> res;
-	if (scene)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		res = worker->initialiseAssetBuffer(token->databaseAd, token->getCredentials(), scene, jsonFiles, unityAssets, serialisedFaceBuf, idMapBuf, meshMappings);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to generate Asset buffer without a scene";
-	}
-
-	return res;
 }
 
 repo::core::model::RepoNodeSet RepoController::_RepoControllerImpl::loadMetadataFromFile(

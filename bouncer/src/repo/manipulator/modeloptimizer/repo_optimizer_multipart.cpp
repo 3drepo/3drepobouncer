@@ -146,7 +146,6 @@ void MultipartOptimizer::appendMesh(
 	std::vector<repo::lib::RepoVector3D> submVertices = node.getVertices();
 	std::vector<repo::lib::RepoVector3D> submNormals = node.getNormals();
 	std::vector<repo_face_t> submFaces = node.getFaces();
-	std::vector<repo_color4d_t> submColors = node.getColors();
 	std::vector<std::vector<repo::lib::RepoVector2D>> submUVs = node.getUVChannelsSeparated();
 
 	if (submVertices.size() && submFaces.size())
@@ -171,10 +170,6 @@ void MultipartOptimizer::appendMesh(
 
 		if (submNormals.size()) {
 			mapped.normals.insert(mapped.normals.end(), submNormals.begin(), submNormals.end());
-		}
-
-		if (submColors.size()) {
-			mapped.colors.insert(mapped.colors.end(), submColors.begin(), submColors.end());
 		}
 
 		if (mapped.uvChannels.size() == 0 && submUVs.size() != 0)
@@ -492,7 +487,6 @@ void MultipartOptimizer::splitMesh(
 	auto vertices = node.getVertices();
 	auto normals = node.getNormals();
 	auto uvChannels = node.getUVChannelsSeparated();
-	auto colors = node.getColors();
 
 	for (const auto head : branchNodes)
 	{
@@ -542,9 +536,6 @@ void MultipartOptimizer::splitMesh(
 			if (normals.size()) {
 				mapped.normals.push_back(normals[globalIndex]);
 			}
-			if (colors.size()) {
-				mapped.colors.push_back(colors[globalIndex]);
-			}
 			for (auto i = 0; i < uvChannels.size(); i++)
 			{
 				if (uvChannels[i].size()) {
@@ -582,9 +573,8 @@ void MultipartOptimizer::splitMesh(
 void MultipartOptimizer::createSuperMeshes(
 	const repo::core::model::RepoScene* scene,
 	const std::vector<repo::core::model::MeshNode> &nodes,
-	UUIDMap &materialMap,
 	const bool isGrouped,
-	std::vector<repo::core::model::MeshNode*> &supermeshNodes)
+	std::vector<repo::core::model::SupermeshNode*> &supermeshNodes)
 {
 	// This will hold the final set of supermeshes
 
@@ -624,36 +614,22 @@ void MultipartOptimizer::createSuperMeshes(
 		mappedMeshes.push_back(currentSupermesh);
 	}
 
+	// Finally, construct the SupermeshNodes for each Supermesh
+
 	for (auto& mapped : mappedMeshes) 
 	{
-		// For all the mesh mappings, update the material UUIDs to re-mapped UUIDs so we can 
-		// clone the material nodes in the database later
-
-		for (auto& mapping : mapped.meshMapping)
-		{
-			if (materialMap.find(mapping.material_id) == materialMap.end()) // materialMap maps from original (default graph) material node uuids to stash graph uuids
-			{
-				materialMap[mapping.material_id] = repo::lib::RepoUUID::createUUID(); // The first time we've encountered this original material
-			}
-			mapping.material_id = materialMap[mapping.material_id];	
-		}
-
-		// Finally, construct MeshNodes for each Supermesh
-
-		supermeshNodes.push_back(createMeshNode(mapped, isGrouped));
+		supermeshNodes.push_back(createSupermeshNode(mapped, isGrouped));
 	}
 }
 
-repo::core::model::MeshNode* MultipartOptimizer::createMeshNode(
+repo::core::model::SupermeshNode* MultipartOptimizer::createSupermeshNode(
 	const mapped_mesh_t& mapped,
 	bool isGrouped
 )
 {
-	repo::core::model::MeshNode* resultMesh = nullptr;
-
 	if (!mapped.meshMapping.size())
 	{
-		return resultMesh;
+		return nullptr;
 	}
 
 	//workout bbox from meshMapping
@@ -669,18 +645,16 @@ repo::core::model::MeshNode* MultipartOptimizer::createMeshNode(
 
 	std::vector<std::vector<float>> bboxVec = { { bbox[0].x, bbox[0].y, bbox[0].z }, { bbox[1].x, bbox[1].y, bbox[1].z } };
 
-	repo::core::model::MeshNode superMesh = repo::core::model::RepoBSONFactory::makeMeshNode(
+	auto supermesh = repo::core::model::RepoBSONFactory::makeSupermeshNode(
 		mapped.vertices,
 		mapped.faces,
 		mapped.normals, 
 		bboxVec,
 		mapped.uvChannels,
-		mapped.colors,
-		{},
-		isGrouped ? "grouped" : "");
-	resultMesh = new repo::core::model::MeshNode(superMesh.cloneAndUpdateMeshMapping(meshMapping, true));
+		isGrouped ? "grouped" : "",
+		meshMapping);
 
-	return resultMesh;
+	return new repo::core::model::SupermeshNode(supermesh);
 }
 
 bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *scene)
@@ -712,15 +686,13 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 		trans.insert(rootNode);
 		repo::lib::RepoUUID rootID = rootNode->getSharedID();
 
-		UUIDMap defaultIdToStashIdMap;		
-
 		for (const auto &meshGroup : normalMeshes)
 		{
 			for (const auto &formats : meshGroup.second)
 			{
 				for (const auto formatSet : formats.second)
 				{
-					success &= processMeshGroup(scene, bakedMeshNodes, formatSet, rootID, mergedMeshes, defaultIdToStashIdMap, !meshGroup.first.empty());
+					success &= processMeshGroup(scene, bakedMeshNodes, formatSet, rootID, mergedMeshes, !meshGroup.first.empty());
 				}
 			}
 		}
@@ -731,7 +703,7 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 			{
 				for (const auto grouping : groupings.second)
 				{
-					success &= processMeshGroup(scene, bakedMeshNodes, grouping, rootID, mergedMeshes, defaultIdToStashIdMap, !meshGroup.first.empty());
+					success &= processMeshGroup(scene, bakedMeshNodes, grouping, rootID, mergedMeshes, !meshGroup.first.empty());
 				}
 			}
 		}
@@ -746,7 +718,7 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 				{
 					for (const auto grouping : groupings.second)
 					{
-						success &= processMeshGroup(scene, bakedMeshNodes, grouping, rootID, mergedMeshes, defaultIdToStashIdMap, !meshGroup.first.empty());
+						success &= processMeshGroup(scene, bakedMeshNodes, grouping, rootID, mergedMeshes, !meshGroup.first.empty());
 					}
 				}
 			}
@@ -754,29 +726,11 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 
 		if (success)
 		{
-			// fill material nodeset
+			// The new in-memory only stash graph does not hold its own
+			// materials or textures. In the future, we may want to copy
+			// these nodes temporarily from default, so we can free it.
 
-			// When the supermeshes are created in createSuperMeshes, the new 
-			// meshes will have their material Ids set to new UUIDs. The next 
-			// step is to create the actual MaterialNodes in the stash graph 
-			// for the new materials. defaultIdToStashIdMap contains the list
-			// of materials to be copied (as UUIDs to the original materials)
-			// and the new UUID that they should be copied as in the stash.
-
-			auto materials = processSupermeshMaterials(scene, mergedMeshes, defaultIdToStashIdMap);
-
-			// fill texture nodeset
-
-			for (const auto &texture : scene->getAllTextures(defaultGraph))
-			{
-				//create new instance with new UUID to avoid X contamination
-				repo::core::model::RepoBSONBuilder builder;
-				builder.append(REPO_NODE_LABEL_ID, repo::lib::RepoUUID::createUUID());
-				auto changeBSON = builder.obj();
-				textures.insert(new repo::core::model::TextureNode(texture->cloneAndAddFields(&changeBSON, false)));
-			}
-
-			scene->addStashGraph(dummy, mergedMeshes, materials, textures, trans);
+			scene->addStashGraph(dummy, mergedMeshes, {}, {}, trans);
 		}
 		else
 		{
@@ -1116,7 +1070,6 @@ bool MultipartOptimizer::processMeshGroup(
 	const std::set<repo::lib::RepoUUID>& groupMeshIds,
 	const repo::lib::RepoUUID& rootID,
 	repo::core::model::RepoNodeSet& mergedMeshes,
-	UUIDMap& materialMap,
 	const bool isGrouped
 )
 {
@@ -1151,10 +1104,10 @@ bool MultipartOptimizer::processMeshGroup(
 
 	// Build the actual supermesh nodes that hold the combined or split geometry from the sets
 
-	std::vector<repo::core::model::MeshNode*> supermeshes;
+	std::vector<repo::core::model::SupermeshNode*> supermeshes;
 	for (const auto cluster : clusters)
 	{
-		createSuperMeshes(scene, cluster, materialMap, isGrouped, supermeshes);
+		createSuperMeshes(scene, cluster, isGrouped, supermeshes);
 	}
 
 	for (const auto supermesh : supermeshes)
@@ -1168,57 +1121,6 @@ bool MultipartOptimizer::processMeshGroup(
 	}
 
 	return true;
-}
-
-repo::core::model::RepoNodeSet MultipartOptimizer::processSupermeshMaterials(
-	const repo::core::model::RepoScene* scene,
-	const repo::core::model::RepoNodeSet& supermeshes,
-	const UUIDMap& originalIdToStashIdMap
-)
-{
-	// originalIdToStashIdMap contains all the referenced materials. Start by
-	// getting a list of which supermeshes are referenced by the materials.
-	// Here, we get a list of references for the *new ids*.
-
-	auto stashMaterialParents = std::unordered_map< // Use a map of vectors instead of a multimap so we can pass the vector directly to cloneAndAddParent
-		repo::lib::RepoUUID, std::vector<repo::lib::RepoUUID>, 
-		repo::lib::RepoUUIDHasher>();
-
-	for(const auto supermesh : supermeshes)
-	{
-		for (const auto mapping : dynamic_cast<repo::core::model::MeshNode*>(supermesh)->getMeshMapping())
-		{
-			stashMaterialParents[mapping.material_id].push_back(supermesh->getSharedID());
-		}
-	}
-
-	// Now create nodes for each new material
-
-	repo::core::model::RepoNodeSet materials;
-
-	for (const auto cloned : originalIdToStashIdMap)
-	{
-		auto originalId = cloned.first;
-		auto stashId = cloned.second;
-
-		auto originalNode = scene->getNodeByUniqueID(defaultGraph, originalId);
-		if (originalNode)
-		{
-			repo::core::model::RepoNode clonedMat = repo::core::model::RepoNode(originalNode->removeField(REPO_NODE_LABEL_PARENTS));
-			repo::core::model::RepoBSONBuilder builder;
-			builder.append(REPO_NODE_LABEL_ID, stashId);
-			auto changeBSON = builder.obj();
-			clonedMat = clonedMat.cloneAndAddFields(&changeBSON, false);
-			clonedMat = clonedMat.cloneAndAddParent(stashMaterialParents[stashId]);
-			materials.insert(new repo::core::model::MaterialNode(clonedMat));
-		}
-		else
-		{
-			repoError << "Failed to find the original material node referenced by a supermesh.";
-		}
-	}
-
-	return materials;
 }
 
 void MultipartOptimizer::sortMeshes(

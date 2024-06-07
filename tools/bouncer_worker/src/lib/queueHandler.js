@@ -21,7 +21,6 @@ const logger = require('./logger');
 const { exitApplication, sleep } = require('./utils');
 const JobQHandler = require('../queues/jobQueueHandler');
 const ModelQHandler = require('../queues/modelQueueHandler');
-const UnityQHandler = require('../queues/unityQueueHandler');
 
 let connClosed = false;
 let retry = 0;
@@ -33,7 +32,6 @@ const QueueHandler = {};
 const queueLabel = {
 	JOB: 'job',
 	MODEL: 'model',
-	UNITY: 'unity',
 };
 
 const listenToQueue = (channel, queueName, prefetchCount, callback) => {
@@ -56,7 +54,7 @@ const listenToQueue = (channel, queueName, prefetchCount, callback) => {
 	}, { noAck: false });
 };
 
-const establishChannel = async (conn, listenToJobQueue, listenToModelQueue, listenToUnityQueue) => {
+const establishChannel = async (conn, listenToJobQueue, listenToModelQueue) => {
 	const channel = await conn.createChannel();
 	channel.assertQueue(rabbitmq.callback_queue, { durable: true });
 	if (listenToJobQueue) {
@@ -71,13 +69,6 @@ const establishChannel = async (conn, listenToJobQueue, listenToModelQueue, list
 			exitApplication();
 		}
 		listenToQueue(channel, rabbitmq.model_queue, rabbitmq.model_prefetch, ModelQHandler.onMessageReceived);
-	}
-
-	if (listenToUnityQueue) {
-		if (!UnityQHandler.validateConfiguration(logLabel)) {
-			exitApplication();
-		}
-		listenToQueue(channel, rabbitmq.unity_queue, rabbitmq.unity_prefetch, UnityQHandler.onMessageReceived);
 	}
 };
 
@@ -179,13 +170,12 @@ const connectToRabbitMQ = async (autoReconnect, uponConnected) => {
 QueueHandler.connectToQueue = async (specificQueue) => {
 	const listenToJobQueue = !specificQueue || specificQueue === queueLabel.JOB;
 	const listenToModelQueue = !specificQueue || specificQueue === queueLabel.MODEL;
-	const listenToUnityQueue = !specificQueue || specificQueue === queueLabel.UNITY;
 
-	if (listenToJobQueue || listenToModelQueue || listenToUnityQueue) {
+	if (listenToJobQueue || listenToModelQueue) {
 		connectToRabbitMQ(true,
-			(conn) => establishChannel(conn, listenToJobQueue, listenToModelQueue, listenToUnityQueue));
+			(conn) => establishChannel(conn, listenToJobQueue, listenToModelQueue));
 	} else {
-		logger.error(`Unrecognised queue type: ${specificQueue}. Expected [job|model|unity]`, logLabel);
+		logger.error(`Unrecognised queue type: ${specificQueue}. Expected [job|model]`, logLabel);
 		exitApplication();
 	}
 };
@@ -208,15 +198,8 @@ QueueHandler.runNTasks = async (queueType, nTasks) => {
 			queueName = rabbitmq.model_queue;
 			callback = ModelQHandler.onMessageReceived;
 			break;
-		case queueLabel.UNITY:
-			if (!UnityQHandler.validateConfiguration(logLabel)) {
-				exitApplication();
-			}
-			queueName = rabbitmq.unity_queue;
-			callback = UnityQHandler.onMessageReceived;
-			break;
 		default:
-			logger.error(`Unrecognised queue type: ${queueType}. Expected [job|model|unity]`, logLabel);
+			logger.error(`Unrecognised queue type: ${queueType}. Expected [job|model]`, logLabel);
 			exitApplication();
 	}
 	connectToRabbitMQ(false, (conn) => executeTasks(conn, queueName, nTasks, callback));

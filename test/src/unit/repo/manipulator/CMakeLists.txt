@@ -6,3 +6,4 @@
 
 add_subdirectory(modelconvertor)
 add_subdirectory(modeloptimizer)
+add_subdirectory(modelutility)

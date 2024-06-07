@@ -27,6 +27,7 @@
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/zlib.hpp>
+#include <unordered_set>
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -215,7 +216,7 @@ repo_web_buffers_t SRCModelExport::getAllFilesExportedAsBuffer() const
 }
 
 bool SRCModelExport::generateJSONMapping(
-	const repo::core::model::MeshNode  *mesh,
+	const repo::core::model::SupermeshNode  *mesh,
 	const repo::core::model::RepoScene *scene,
 	const std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher> &splitMapping)
 {
@@ -232,36 +233,48 @@ bool SRCModelExport::generateJSONMapping(
 		jsonTree.addToTree(MP_LABEL_NUM_IDs, mappingLength);
 		jsonTree.addToTree(MP_LABEL_MAX_GEO_COUNT, mappingLength);
 
-		std::vector<repo::core::model::RepoNode*> matChild =
-			scene->getChildrenNodesFiltered(gType, mesh->getSharedID(), repo::core::model::NodeType::MATERIAL);
+
+		std::unordered_set<const repo::core::model::MaterialNode*> materialNodes;
+		for (auto& mapping : mappings)
+		{
+			materialNodes.insert((const repo::core::model::MaterialNode*)scene->getNodeByUniqueID(repo::core::model::RepoScene::GraphType::DEFAULT, mapping.material_id));
+		}
+
+		// Extract the texture information, if any, from the material nodes.
+		// Currently, only one map is supported at the Supermesh level, which is the
+		// albedo (diffuse colour) map.
+		repo::core::model::TextureNode* textureNode = 0;
+
+		for (auto materialNode : materialNodes)
+		{
+			std::vector<repo::core::model::RepoNode*> textureNodes = scene->getChildrenNodesFiltered(
+				repo::core::model::RepoScene::GraphType::DEFAULT, materialNode->getSharedID(), repo::core::model::NodeType::TEXTURE); // Texture UUIDs are contained in the *default* scene graph
+			if (textureNodes.size())
+			{
+				// The current implementation assumes all textures are diffuse/albedo maps
+				textureNode = (repo::core::model::TextureNode*)textureNodes[0];
+			}
+		}
 
 		// This current implementation assumes that there is only one texture for all materials in a mesh, or no textures
 		// for any material in a mesh. This is consistent with the existing multipart mapping behaviour.
 
-		std::vector<repo::core::model::RepoNode*> textureNodes = scene->getChildrenNodesFiltered(
-			repo::core::model::RepoScene::GraphType::DEFAULT, matChild[0]->getSharedID(), repo::core::model::NodeType::TEXTURE); // The texture UID is referenced to the default scene graph
-		if (textureNodes.size())
+		if (textureNode)
 		{
 			std::vector<repo::lib::PropertyTree> textureTrees;
-
-			const repo::core::model::TextureNode* textureNode = (const repo::core::model::TextureNode*)textureNodes[0];
-
 			repo::lib::PropertyTree textureTree;
 			textureTree.addToTree(MP_LABEL_TEXTURE_MAPTYPE, "diffuse"); // The current implementation assumes there is only one texture and it is a diffuse map; in the future new maps can be added here
 			textureTree.addToTree(MP_LABEL_TEXTURE_NAME, textureNode->getName());
 			textureTree.addToTree(MP_LABEL_TEXTURE_ID, textureNode->getUniqueID().toString());
 			textureTree.addToTree(MP_LABEL_TEXTURE_EXTENSION, textureNode->getFileExtension());
-
 			textureTrees.push_back(textureTree);
-
 			jsonTree.addArrayObjects(MP_LABEL_TEXTURES, textureTrees);
 		}
 
 		std::vector <repo::lib::PropertyTree> matChildrenTrees;
-		for (size_t i = 0; i < matChild.size(); ++i)
+		for(auto& matNode : materialNodes)
 		{
 			repo::lib::PropertyTree matTree;
-			const repo::core::model::MaterialNode *matNode = (const repo::core::model::MaterialNode *) matChild[i];
 			matTree.addToTree(MP_LABEL_NAME, matNode->getUniqueID().toString());
 			repo_material_t matStruct = matNode->getMaterialStruct();
 
@@ -287,30 +300,32 @@ bool SRCModelExport::generateJSONMapping(
 
 		std::vector<repo::lib::PropertyTree> mappingTrees;
 		std::string meshUID = mesh->getUniqueID().toString();
-		//Could get the mesh split function to pass a mapping out so we don't do this again.
+
 		for (size_t i = 0; i < mappingLength; ++i)
 		{
+			repo::lib::PropertyTree mappingTree;
+
+			mappingTree.addToTree(MP_LABEL_NAME, mappings[i].mesh_id.toString());
+			mappingTree.addToTree(MP_LABEL_APPEARANCE, mappings[i].material_id.toString());
+			mappingTree.addToTree(MP_LABEL_MIN, mappings[i].min);
+			mappingTree.addToTree(MP_LABEL_MAX, mappings[i].max);
+
+			std::vector<std::string> usageArr;
 			auto mapIt = splitMapping.find(mappings[i].mesh_id);
 			if (mapIt != splitMapping.end())
 			{
 				for (const uint32_t &subMeshID : mapIt->second)
 				{
-					repo::lib::PropertyTree mappingTree;
-
-					mappingTree.addToTree(MP_LABEL_NAME, mappings[i].mesh_id.toString());
-					mappingTree.addToTree(MP_LABEL_APPEARANCE, mappings[i].material_id.toString());
-					mappingTree.addToTree(MP_LABEL_MIN, mappings[i].min);
-					mappingTree.addToTree(MP_LABEL_MAX, mappings[i].max);
-					std::vector<std::string> usageArr = { meshUID + "_" + std::to_string(subMeshID) };
-					mappingTree.addToTree(MP_LABEL_USAGE, usageArr);
-
-					mappingTrees.push_back(mappingTree);
+					usageArr.push_back(meshUID + "_" + std::to_string(subMeshID));
 				}
 			}
 			else
 			{
 				repoError << "Failed to find split mapping for id: " << mappings[i].mesh_id;
 			}
+			mappingTree.addToTree(MP_LABEL_USAGE, usageArr);
+
+			mappingTrees.push_back(mappingTree);
 		}
 
 		jsonTree.addArrayObjects(MP_LABEL_MAPPING, mappingTrees);
@@ -333,13 +348,13 @@ bool SRCModelExport::generateTreeRepresentation(
 	bool success;
 	if (success = scene->hasRoot(gType))
 	{
-		auto meshes = scene->getAllMeshes(gType);
+		auto meshes = scene->getAllSupermeshes(gType);
 		size_t index = 0;
 		//Every mesh is a new SRC file
 		fullDataBuffer.reserve(meshes.size());
 		for (const repo::core::model::RepoNode* node : meshes)
 		{
-			auto mesh = dynamic_cast<const repo::core::model::MeshNode*>(node);
+			auto mesh = dynamic_cast<const repo::core::model::SupermeshNode*>(node);
 			if (!mesh)
 			{
 				repoError << "Failed to cast a Repo Node of type mesh into a MeshNode(" << node->getUniqueID() << "). Skipping...";
@@ -355,7 +370,7 @@ bool SRCModelExport::generateTreeRepresentation(
 			repo::manipulator::modelutility::MeshMapReorganiser *reSplitter =
 				new repo::manipulator::modelutility::MeshMapReorganiser(mesh, SRC_MAX_VERTEX_LIMIT, SRC_MAX_TRIANGLE_LIMIT);
 
-			repo::core::model::MeshNode splittedMesh = reSplitter->getRemappedMesh();
+			auto splittedMesh = reSplitter->getRemappedMesh();
 			if (success = !(splittedMesh.isEmpty()))
 			{
 				std::vector<uint16_t> facebuf = reSplitter->getSerialisedFaces();
@@ -388,7 +403,7 @@ bool SRCModelExport::generateTreeRepresentation(
 }
 
 bool SRCModelExport::addMeshToExport(
-	const repo::core::model::MeshNode      &mesh,
+	const repo::core::model::SupermeshNode &mesh,
 	const size_t                           &idx,
 	const std::vector<uint16_t>            &faceBuf,
 	const std::vector<std::vector<float>>  &idMapBuf,

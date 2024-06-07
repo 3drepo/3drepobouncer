@@ -21,7 +21,7 @@
 * limits as possible, but never exceed them. The result is a new MeshNode with
 * a new set of mappings.
 *
-The faces delineated by the new mappings are re-indexed so they refer directly
+* The faces delineated by the new mappings are re-indexed so they refer directly
 * to vertices between vFrom and vTo of any mapping (though they are stored still
 * in a shared array).
 *
@@ -36,6 +36,7 @@ The faces delineated by the new mappings are re-indexed so they refer directly
 #pragma once
 #include <unordered_map>
 #include "../../core/model/bson/repo_node_mesh.h"
+#include "../../core/model/bson/repo_node_supermesh.h"
 
 namespace repo {
 	namespace manipulator {
@@ -51,7 +52,7 @@ namespace repo {
 				* @param vertThreshold maximum vertices
 				*/
 				MeshMapReorganiser(
-					const repo::core::model::MeshNode *mesh,
+					const repo::core::model::SupermeshNode	*mesh,
 					const size_t                        &vertThreshold,
 					const size_t						&faceThreshold);
 				~MeshMapReorganiser();
@@ -72,7 +73,7 @@ namespace repo {
 				* Get the mesh, with mesh mappings and buffers modified
 				* @return returns the modified mesh
 				*/
-				repo::core::model::MeshNode getRemappedMesh() const;
+				repo::core::model::SupermeshNode getRemappedMesh() const;
 
 				/**
 				* Return serialised faces of the modified mesh
@@ -181,19 +182,17 @@ namespace repo {
 
 				bool reMapSuccess;
 
-				const repo::core::model::MeshNode *mesh;
+				const repo::core::model::SupermeshNode *mesh;
 				const size_t maxVertices;
 				const size_t maxFaces;
 				const std::vector<repo::lib::RepoVector3D> oldVertices;
 				const std::vector<repo::lib::RepoVector3D> oldNormals;
 				const std::vector<std::vector<repo::lib::RepoVector2D>> oldUVs;
 				const std::vector<repo_face_t>   oldFaces;
-				const std::vector<repo_color4d_t>   oldColors;
 
 				std::vector<repo::lib::RepoVector3D> newVertices;
 				std::vector<repo::lib::RepoVector3D> newNormals;
 				std::vector<repo_face_t>   newFaces;
-				std::vector<repo_color4d_t>   newColors;
 				std::vector<std::vector<repo::lib::RepoVector2D>> newUVs;
 
 				std::vector<uint16_t> serialisedFaces;

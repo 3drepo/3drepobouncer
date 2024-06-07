@@ -16,7 +16,8 @@
 */
 
 /**
-* Allows Export functionality from 3D Repo World to SRC
+* Allows Export functionality from 3D Repo World to containers suitable
+* for dynamic loading over the web.
 */
 
 #pragma once
@@ -31,7 +32,7 @@
 namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
-			enum class WebExportType { GLTF, SRC, UNITY, REPO };
+			enum class WebExportType { GLTF, SRC, REPO };
 
 			class WebModelExport : public AbstractModelExport
 			{
