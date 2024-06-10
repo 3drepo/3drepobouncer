@@ -488,6 +488,7 @@ repo::core::model::MeshNode AssimpModelImport::createMeshRepoNode(
 		uvChannels.push_back(channelVector);
 	}
 
+	// Note that currently the colours are not used
 	// Consider only first color set
 	if (assimpMesh->HasVertexColors(0))
 	{
@@ -529,7 +530,7 @@ repo::core::model::MeshNode AssimpModelImport::createMeshRepoNode(
 	boundingBox.push_back(maxBound);
 
 	meshNode = repo::core::model::MeshNode(repo::core::model::RepoBSONFactory::makeMeshNode(
-		vertices, faces, normals, boundingBox, uvChannels, colors));
+		vertices, faces, normals, boundingBox, uvChannels));
 
 	///*
 	//*------------------------------ setParents ----------------------------------

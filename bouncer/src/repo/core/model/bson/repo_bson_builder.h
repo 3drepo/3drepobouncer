@@ -146,12 +146,31 @@ namespace repo {
 				}
 
 				/**
+				* Appends a Vector but as an object, instead of an array.
+				*/
+				void appendVector3DObject(
+					const std::string& label,
+					const repo::lib::RepoVector3D& vec
+				);
+
+				/**
 				* builds the BSON object as RepoBSON given the information within the builder
 				* @return returns a RepoBSON object with the fields given.
 				*/
 				RepoBSON obj();
 
 				mongo::BSONObj mongoObj() { return mongo::BSONObjBuilder::obj();  }
+
+				/**
+				* Builds the BSON object as a temporary instance. This allows the caller to
+				* peak at the contents of the builder, but the object will become invalid
+				* as soon as the builder is modified or released. These temporary objects do
+				* not contain the bin mappings.
+				*/
+				RepoBSON tempObj()
+				{
+					return RepoBSON(mongo::BSONObjBuilder::asTempObj());
+				}
 
 			private:
 				/**
@@ -167,23 +186,20 @@ namespace repo {
 			};
 
 			// Template specialization
-			template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoUUID >
-				(
-					const std::string &label,
-					const repo::lib::RepoUUID &uuid
-					);
+			template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoUUID > (
+				const std::string &label,
+				const repo::lib::RepoUUID &uuid
+			);
 
-				template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoVector3D >
-					(
-						const std::string &label,
-						const repo::lib::RepoVector3D &vec
-						);
+			template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoVector3D > (
+				const std::string &label,
+				const repo::lib::RepoVector3D &vec
+			);
 
-					template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoMatrix >
-						(
-							const std::string &label,
-							const repo::lib::RepoMatrix &mat
-							);
+			template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoMatrix > (
+				const std::string &label,
+				const repo::lib::RepoMatrix &mat
+			);
 		}// end namespace model
 	} // end namespace core
 } // end namespace repo

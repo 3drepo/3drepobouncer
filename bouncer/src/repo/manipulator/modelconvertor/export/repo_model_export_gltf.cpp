@@ -833,7 +833,7 @@ std::unordered_map<repo::lib::RepoUUID, uint32_t, repo::lib::RepoUUIDHasher> GLT
 	std::unordered_map<repo::lib::RepoUUID, uint32_t, repo::lib::RepoUUIDHasher> splitSizes;
 	for (const auto &mesh : meshes)
 	{
-		const repo::core::model::MeshNode *node = (const repo::core::model::MeshNode *)mesh;
+		auto *node = (const repo::core::model::SupermeshNode*)mesh;
 		const std::vector<repo_mesh_mapping_t> mappings = node->getMeshMapping();
 
 		std::string meshUUID = node->getUniqueID().toString();
@@ -856,7 +856,7 @@ std::unordered_map<repo::lib::RepoUUID, uint32_t, repo::lib::RepoUUIDHasher> GLT
 			repo::manipulator::modelutility::MeshMapReorganiser *reSplitter =
 				new repo::manipulator::modelutility::MeshMapReorganiser(node, GLTF_MAX_VERTEX_LIMIT, GLTF_MAX_TRIANGLE_LIMIT);
 
-			repo::core::model::MeshNode splitMesh = reSplitter->getRemappedMesh();
+			auto splitMesh = reSplitter->getRemappedMesh();
 			if (splitMesh.isEmpty())
 			{
 				repoError << "Failed to generate remappings for mesh: " << mesh->getUniqueID();

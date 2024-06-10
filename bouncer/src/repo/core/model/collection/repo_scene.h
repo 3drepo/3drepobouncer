@@ -265,17 +265,6 @@ namespace repo {
 					const repo::lib::RepoUUID &revId = repo::lib::RepoUUID::createUUID());
 
 				/**
-				* Commit the stash representation into the database
-				* This can only happen if there is a stash representation
-				* and the graph is already commited (i.e. there is a revision node)
-				* @param errMsg error message if this failed
-				* @return returns true upon success
-				*/
-				bool commitStash(
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					std::string &errMsg);
-
-				/**
 				* Get the branch ID of this scene graph
 				* @return returns the branch ID of this scene
 				*/
@@ -658,6 +647,18 @@ namespace repo {
 					const GraphType &gType) const
 				{
 					return  gType == GraphType::OPTIMIZED ? stashGraph.meshes : graph.meshes;
+				}
+
+				RepoNodeSet getAllSupermeshes(
+					const GraphType& gType) const
+				{
+					if (gType == GraphType::OPTIMIZED)
+					{
+						return stashGraph.meshes; // All stash graph meshes are supermeshes inherently
+					}
+					else {
+						return {};
+					}
 				}
 
 				/**

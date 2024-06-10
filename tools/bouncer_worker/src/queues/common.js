@@ -43,7 +43,6 @@ const CommonQueueUtils = {};
 CommonQueueUtils.callbackQueueSpecified = (logLabel) => queueSpecified('callback_queue', logLabel);
 CommonQueueUtils.jobQueueSpecified = (logLabel) => queueSpecified('worker_queue', logLabel);
 CommonQueueUtils.modelQueueSpecified = (logLabel) => queueSpecified('model_queue', logLabel);
-CommonQueueUtils.unityQueueSpecified = (logLabel) => queueSpecified('unity_queue', logLabel);
 
 CommonQueueUtils.logDirExists = (logLabel) => configSpecified('logging', 'taskLogDir', logLabel)
 											&& pathExists('logging', 'taskLogDir', logLabel);

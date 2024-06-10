@@ -21,6 +21,7 @@
 #include <boost/lexical_cast.hpp>
 
 #include "repo_bson_builder.h"
+#include "repo_bson_binmapping_builder.h"
 #include "../../../lib/repo_log.h"
 
 using namespace repo::core::model;
@@ -34,8 +35,19 @@ RepoBSON RepoBSONFactory::appendDefaults(
 	const repo::lib::RepoUUID &uniqueID)
 {
 	RepoBSONBuilder builder;
-	uint64_t bytesize = 0;
+	appendDefaults(builder, type, api, sharedId, name, parents, uniqueID);
+	return builder.obj();
+}
 
+void RepoBSONFactory::appendDefaults(
+	RepoBSONBuilder& builder,
+	const std::string& type,
+	const unsigned int api,
+	const repo::lib::RepoUUID& sharedId,
+	const std::string& name,
+	const std::vector<repo::lib::RepoUUID>& parents,
+	const repo::lib::RepoUUID& uniqueID)
+{
 	//--------------------------------------------------------------------------
 	// ID field (UUID)
 	builder.append(REPO_NODE_LABEL_ID, uniqueID);
@@ -43,8 +55,6 @@ RepoBSON RepoBSONFactory::appendDefaults(
 	//--------------------------------------------------------------------------
 	// Shared ID (UUID)
 	builder.append(REPO_NODE_LABEL_SHARED_ID, sharedId);
-
-	bytesize += 2 * sizeof(repo::lib::RepoUUID);
 
 	//--------------------------------------------------------------------------
 	// Type
@@ -66,8 +76,6 @@ RepoBSON RepoBSONFactory::appendDefaults(
 	{
 		builder.append(REPO_NODE_LABEL_NAME, name);
 	}
-
-	return builder.obj();
 }
 
 CameraNode RepoBSONFactory::makeCameraNode(
@@ -247,31 +255,8 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 	return MetadataNode(builder.obj());
 }
 
-MeshNode RepoBSONFactory::makeMeshNode(
-	const std::vector<repo::lib::RepoVector3D>        &vertices,
-	const std::vector<repo_face_t>                    &faces,
-	const std::vector<repo::lib::RepoVector3D>        &normals,
-	const std::vector<std::vector<float>>             &boundingBox,
-	const std::vector<std::vector<repo::lib::RepoVector2D>>   &uvChannels,
-	const std::vector<repo_color4d_t>                 &colors,
-	const std::vector<float>                          &submeshIds,
-	const std::string                                 &name,
-	const std::vector<repo::lib::RepoUUID>            &parents,
-	const int                                         &apiLevel)
+void RepoBSONFactory::appendBounds(RepoBSONBinMappingBuilder& builder, const std::vector<std::vector<float>>& boundingBox)
 {
-	RepoBSONBuilder builder;
-	uint64_t bytesize = 0; //track the (approximate) size to know when we need to offload to gridFS
-	repo::lib::RepoUUID uniqueID = repo::lib::RepoUUID::createUUID();
-	auto defaults = appendDefaults(REPO_NODE_TYPE_MESH, apiLevel, repo::lib::RepoUUID::createUUID(), name, parents, uniqueID);
-	bytesize += defaults.objsize();
-	builder.appendElements(defaults);
-
-	if (!vertices.size() || !faces.size())
-	{
-		repoWarning << "Creating a mesh (" << defaults.getUUIDField(REPO_NODE_LABEL_ID) << ") with no vertices/faces!";
-	}
-	std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> binMapping;
-
 	if (boundingBox.size() > 0)
 	{
 		RepoBSONBuilder arrayBuilder;
@@ -279,47 +264,23 @@ MeshNode RepoBSONFactory::makeMeshNode(
 		for (int i = 0; i < boundingBox.size(); i++)
 		{
 			arrayBuilder.appendArray(std::to_string(i), boundingBox[i]);
-			bytesize += boundingBox[i].size() * sizeof(boundingBox[i][0]);
 		}
 
 		builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, arrayBuilder.obj());
 	}
+}
 
-	/*
-		* TODO: because mongo has a stupid internal limit of 64MB, we can't store everything in a BSON
-		* There are 2 options
-		* 1. store binaries in memory outside of the bson and put it into GRIDFS at the point of commit
-		* 2. leave mongo's bson, use our own/exteral library that doesn't have this limit and database handle this at the point of commit
-		* below uses option 1, but ideally we should be doing option 2.
-		*/
-
+void RepoBSONFactory::appendVertices(RepoBSONBinMappingBuilder& builder, const std::vector<repo::lib::RepoVector3D>& vertices)
+{
 	if (vertices.size() > 0)
 	{
 		builder.append(REPO_NODE_MESH_LABEL_VERTICES_COUNT, (uint32_t)(vertices.size()));
-
-		uint64_t verticesByteCount = vertices.size() * sizeof(vertices[0]);
-
-		if (verticesByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
-		{
-			std::string bName = uniqueID.toString() + "_vertices";
-			//inclusion of this binary exceeds the maximum, store separately
-			binMapping[REPO_NODE_MESH_LABEL_VERTICES] =
-				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
-			binMapping[REPO_NODE_MESH_LABEL_VERTICES].second.resize(verticesByteCount); //uint8_t will ensure it is a byte addrressing
-			memcpy(binMapping[REPO_NODE_MESH_LABEL_VERTICES].second.data(), &vertices[0], verticesByteCount);
-			bytesize += sizeof(bName);
-		}
-		else
-		{
-			builder.appendBinary(
-				REPO_NODE_MESH_LABEL_VERTICES,
-				&vertices[0],
-				vertices.size() * sizeof(vertices[0])
-			);
-			bytesize += verticesByteCount;
-		}
+		builder.appendLargeArray(REPO_NODE_MESH_LABEL_VERTICES, vertices);
 	}
+}
 
+void RepoBSONFactory::appendFaces(RepoBSONBinMappingBuilder& builder, const std::vector<repo_face_t>& faces)
+{
 	if (faces.size() > 0)
 	{
 		builder.append(REPO_NODE_MESH_LABEL_FACES_COUNT, (uint32_t)(faces.size()));
@@ -331,7 +292,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 		MeshNode::Primitive primitive = MeshNode::Primitive::UNKNOWN;
 
 		std::vector<uint32_t> facesLevel1;
-		for (auto &face : faces) {
+		for (auto& face : faces) {
 			auto nIndices = face.size();
 			if (!nIndices)
 			{
@@ -366,117 +327,28 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
 		builder.append(REPO_NODE_MESH_LABEL_PRIMITIVE, static_cast<int>(primitive));
 
-		uint64_t facesByteCount = facesLevel1.size() * sizeof(facesLevel1[0]);
-
-		if (facesByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
-		{
-			std::string bName = uniqueID.toString() + "_faces";
-			//inclusion of this binary exceeds the maximum, store separately
-			binMapping[REPO_NODE_MESH_LABEL_FACES] =
-				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
-			binMapping[REPO_NODE_MESH_LABEL_FACES].second.resize(facesByteCount); //uint8_t will ensure it is a byte addrressing
-			memcpy(binMapping[REPO_NODE_MESH_LABEL_FACES].second.data(), &facesLevel1[0], facesByteCount);
-
-			bytesize += sizeof(bName);
-		}
-		else
-		{
-			builder.appendBinary(
-				REPO_NODE_MESH_LABEL_FACES,
-				&facesLevel1[0],
-				facesLevel1.size() * sizeof(facesLevel1[0])
-			);
-
-			bytesize += facesByteCount;
-		}
+		builder.appendLargeArray(REPO_NODE_MESH_LABEL_FACES, facesLevel1);
 	}
+}
 
+void RepoBSONFactory::appendNormals(RepoBSONBinMappingBuilder& builder, const std::vector<repo::lib::RepoVector3D>& normals)
+{
 	if (normals.size() > 0)
 	{
-		uint64_t normalsByteCount = normals.size() * sizeof(normals[0]);
-
-		if (normalsByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
-		{
-			std::string bName = uniqueID.toString() + "_normals";
-			//inclusion of this binary exceeds the maximum, store separately
-			binMapping[REPO_NODE_MESH_LABEL_NORMALS] =
-				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
-			binMapping[REPO_NODE_MESH_LABEL_NORMALS].second.resize(normalsByteCount); //uint8_t will ensure it is a byte addrressing
-			memcpy(binMapping[REPO_NODE_MESH_LABEL_NORMALS].second.data(), &normals[0], normalsByteCount);
-
-			bytesize += sizeof(bName);
-		}
-		else
-		{
-			builder.appendBinary(
-				REPO_NODE_MESH_LABEL_NORMALS,
-				&normals[0],
-				normals.size() * sizeof(normals[0]));
-
-			bytesize += normalsByteCount;
-		}
+		builder.appendLargeArray(REPO_NODE_MESH_LABEL_NORMALS, normals);
 	}
+}
 
-	//if (!vertexHash.empty())
-	//{
-	//	// TODO: Fix this call - needs to be fixed as int conversion is overloaded
-	//	//builder << REPO_NODE_LABEL_SHA256 << (long unsigned int)(vertexHash);
-	//}
-
-	//--------------------------------------------------------------------------
-	// Vertex colors
+void RepoBSONFactory::appendColors(RepoBSONBinMappingBuilder& builder, const std::vector<repo_color4d_t>& colors)
+{
 	if (colors.size())
 	{
-		uint64_t colorsByteCount = colors.size() * sizeof(colors[0]);
-
-		if (colorsByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
-		{
-			std::string bName = uniqueID.toString() + "_colors";
-			//inclusion of this binary exceeds the maximum, store separately
-			binMapping[REPO_NODE_MESH_LABEL_COLORS] =
-				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
-			binMapping[REPO_NODE_MESH_LABEL_COLORS].second.resize(colorsByteCount); //uint8_t will ensure it is a byte addrressing
-			memcpy(binMapping[REPO_NODE_MESH_LABEL_COLORS].second.data(), &colors[0], colorsByteCount);
-
-			bytesize += sizeof(bName);
-		}
-		else
-		{
-			builder.appendBinary(
-				REPO_NODE_MESH_LABEL_COLORS,
-				&colors[0],
-				colors.size() * sizeof(colors[0]));
-			bytesize += colorsByteCount;
-		}
+		builder.appendLargeArray(REPO_NODE_MESH_LABEL_COLORS, colors);
 	}
+}
 
-	if (submeshIds.size())
-	{
-		auto idsByteCount = submeshIds.size() * sizeof(submeshIds[0]);
-
-		if (idsByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
-		{
-			std::string bName = uniqueID.toString() + "_ids";
-			//inclusion of this binary exceeds the maximum, store separately
-			binMapping[REPO_NODE_MESH_LABEL_SUBMESH_IDS] =
-				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
-			binMapping[REPO_NODE_MESH_LABEL_SUBMESH_IDS].second.resize(idsByteCount); //uint8_t will ensure it is a byte addrressing
-			memcpy(binMapping[REPO_NODE_MESH_LABEL_SUBMESH_IDS].second.data(), &submeshIds[0], idsByteCount);
-
-			bytesize += sizeof(bName);
-		}
-		else
-		{
-			builder.appendBinary(
-				REPO_NODE_MESH_LABEL_SUBMESH_IDS,
-				&submeshIds[0],
-				submeshIds.size() * sizeof(submeshIds[0]));
-			bytesize += idsByteCount;
-		}
-	}
-
-	//--------------------------------------------------------------------------
-	// UV channels
+void RepoBSONFactory::appendUVChannels(RepoBSONBinMappingBuilder& builder, const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels)
+{
 	if (uvChannels.size() > 0)
 	{
 		std::vector<repo::lib::RepoVector2D> concatenated;
@@ -492,36 +364,102 @@ MeshNode RepoBSONFactory::makeMeshNode(
 			}
 		}
 
-		uint64_t uvByteCount = concatenated.size() * sizeof(concatenated[0]);
-
-		if (uvByteCount > 0) {
+		if (concatenated.size() > 0)
+		{
 			// Could be unsigned __int64 if BSON had such construct (the closest is only __int64)
 			builder.append(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT, (uint32_t)(uvChannels.size()));
-
-			if (uvByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
-			{
-				std::string bName = uniqueID.toString() + "_uv";
-				//inclusion of this binary exceeds the maximum, store separately
-				binMapping[REPO_NODE_MESH_LABEL_UV_CHANNELS] =
-					std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
-				binMapping[REPO_NODE_MESH_LABEL_UV_CHANNELS].second.resize(uvByteCount); //uint8_t will ensure it is a byte addrressing
-				memcpy(binMapping[REPO_NODE_MESH_LABEL_UV_CHANNELS].second.data(), &concatenated[0], uvByteCount);
-
-				bytesize += sizeof(bName);
-			}
-			else
-			{
-				builder.appendBinary(
-					REPO_NODE_MESH_LABEL_UV_CHANNELS,
-					&concatenated[0],
-					concatenated.size() * sizeof(concatenated[0]));
-
-				bytesize += uvByteCount;
-			}
+			builder.appendLargeArray(REPO_NODE_MESH_LABEL_UV_CHANNELS, concatenated);
 		}
 	}
+}
 
-	return MeshNode(builder.obj(), binMapping);
+void RepoBSONFactory::appendSubmeshIds(RepoBSONBinMappingBuilder& builder, const std::vector<float>& submeshIds)
+{
+	if (submeshIds.size())
+	{
+		builder.appendLargeArray(REPO_NODE_MESH_LABEL_SUBMESH_IDS, submeshIds);
+	}
+}
+
+MeshNode RepoBSONFactory::makeMeshNode(
+	const std::vector<repo::lib::RepoVector3D>        &vertices,
+	const std::vector<repo_face_t>                    &faces,
+	const std::vector<repo::lib::RepoVector3D>        &normals,
+	const std::vector<std::vector<float>>             &boundingBox,
+	const std::vector<std::vector<repo::lib::RepoVector2D>>   &uvChannels,
+	const std::string                                 &name,
+	const std::vector<repo::lib::RepoUUID>            &parents)
+{
+	RepoBSONBinMappingBuilder builder;
+	appendDefaults(builder, REPO_NODE_TYPE_MESH, REPO_NODE_API_LEVEL_0, repo::lib::RepoUUID::createUUID(), name, parents, repo::lib::RepoUUID::createUUID());
+	appendBounds(builder, boundingBox);
+	appendVertices(builder, vertices);
+	appendFaces(builder, faces);
+	appendNormals(builder, normals);
+	appendUVChannels(builder, uvChannels);
+	return MeshNode(builder.obj(), builder.mapping());
+}
+
+SupermeshNode RepoBSONFactory::makeSupermeshNode(
+	const std::vector<repo::lib::RepoVector3D>& vertices,
+	const std::vector<repo_face_t>& faces,
+	const std::vector<repo::lib::RepoVector3D>& normals,
+	const std::vector<std::vector<float>>& boundingBox,
+	const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
+	const std::string& name,
+	const std::vector<repo_mesh_mapping_t>& mappings
+)
+{
+	RepoBSONBinMappingBuilder builder;
+	appendDefaults(builder, REPO_NODE_TYPE_MESH, REPO_NODE_API_LEVEL_0, repo::lib::RepoUUID::createUUID(), name);
+	appendBounds(builder, boundingBox);
+	appendVertices(builder, vertices);
+	appendFaces(builder, faces);
+	appendNormals(builder, normals);
+	appendUVChannels(builder, uvChannels);
+
+	RepoBSONBuilder mapbuilder;
+	for (uint32_t i = 0; i < mappings.size(); ++i)
+	{
+		mapbuilder.append(std::to_string(i), SupermeshNode::meshMappingAsBSON(mappings[i]));
+	}
+	builder.appendArray(REPO_NODE_MESH_LABEL_MERGE_MAP, mapbuilder.obj());
+
+	return SupermeshNode(builder.obj(), builder.mapping());
+}
+
+SupermeshNode RepoBSONFactory::makeSupermeshNode(
+	const std::vector<repo::lib::RepoVector3D>& vertices,
+	const std::vector<repo_face_t>& faces,
+	const std::vector<repo::lib::RepoVector3D>& normals,
+	const std::vector<std::vector<float>>& boundingBox,
+	const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
+	const std::vector<repo_mesh_mapping_t>& mappings,
+	const repo::lib::RepoUUID& id,
+	const repo::lib::RepoUUID& sharedId,
+	const std::vector<float> mappingIds
+)
+{
+	RepoBSONBinMappingBuilder builder;
+
+	builder.append(REPO_NODE_LABEL_ID, id);
+	builder.append(REPO_NODE_LABEL_SHARED_ID, sharedId);
+
+	appendBounds(builder, boundingBox);
+	appendVertices(builder, vertices);
+	appendFaces(builder, faces);
+	appendNormals(builder, normals);
+	appendUVChannels(builder, uvChannels);
+	appendSubmeshIds(builder, mappingIds);
+
+	RepoBSONBuilder mapbuilder;
+	for (uint32_t i = 0; i < mappings.size(); ++i)
+	{
+		mapbuilder.append(std::to_string(i), SupermeshNode::meshMappingAsBSON(mappings[i]));
+	}
+	builder.appendArray(REPO_NODE_MESH_LABEL_MERGE_MAP, mapbuilder.obj());
+
+	return SupermeshNode(builder.obj(), builder.mapping());
 }
 
 RepoProjectSettings RepoBSONFactory::makeRepoProjectSettings(
@@ -732,62 +670,21 @@ RepoUser RepoBSONFactory::makeRepoUser(
 	return RepoUser(builder.obj());
 }
 
-RepoUnityAssets RepoBSONFactory::makeUnityAssets(
-	const repo::lib::RepoUUID                   &revisionID,
-	const std::vector<std::string>              &assets,
-	const std::string                           &database,
-	const std::string                           &model,
-	const std::vector<double>                   &offset,
-	const std::vector<std::string>              &vrAssetFiles,
-	const std::vector<std::string>              &iosAssetFiles,
-	const std::vector<std::string>              &androidAssetFiles,
-	const std::vector<std::string>              &unityJsonFiles)
-{
-	RepoBSONBuilder builder;
-
-	builder.append(REPO_LABEL_ID, revisionID);
-
-	if (assets.size())
-		builder.appendArray(REPO_UNITY_ASSETS_LABEL_ASSETS, assets);
-
-	if (!database.empty())
-		builder.append(REPO_LABEL_DATABASE, database);
-
-	if (!model.empty())
-		builder.append(REPO_LABEL_MODEL, model);
-
-	if (offset.size())
-		builder.appendArray(REPO_UNITY_ASSETS_LABEL_OFFSET, offset);
-
-	if (vrAssetFiles.size())
-		builder.appendArray(REPO_UNITY_ASSETS_LABEL_VRASSETS, vrAssetFiles);
-
-	if (iosAssetFiles.size())
-		builder.appendArray(REPO_UNITY_ASSETS_LABEL_IOSASSETS, iosAssetFiles);
-
-	if (androidAssetFiles.size())
-		builder.appendArray(REPO_UNITY_ASSETS_LABEL_ANDROIDASSETS, androidAssetFiles);
-
-	if (unityJsonFiles.size())
-		builder.appendArray(REPO_UNITY_ASSETS_LABEL_JSONFILES, unityJsonFiles);
-
-	return RepoUnityAssets(builder.obj());
-}
-
-RepoUnityAssets RepoBSONFactory::makeRepoBundleAssets(
+RepoAssets RepoBSONFactory::makeRepoBundleAssets(
 	const repo::lib::RepoUUID& revisionID,
 	const std::vector<std::string>& repoBundleFiles,
 	const std::string& database,
 	const std::string& model,
 	const std::vector<double>& offset,
-	const std::vector<std::string>& repoJsonFiles)
+	const std::vector<std::string>& repoJsonFiles,
+	const std::vector<RepoSupermeshMetadata> metadata)
 {
 	RepoBSONBuilder builder;
 
 	builder.append(REPO_LABEL_ID, revisionID);
 
 	if (repoBundleFiles.size())
-		builder.appendArray(REPO_UNITY_ASSETS_LABEL_ASSETS, repoBundleFiles);
+		builder.appendArray(REPO_ASSETS_LABEL_ASSETS, repoBundleFiles);
 
 	if (!database.empty())
 		builder.append(REPO_LABEL_DATABASE, database);
@@ -796,12 +693,33 @@ RepoUnityAssets RepoBSONFactory::makeRepoBundleAssets(
 		builder.append(REPO_LABEL_MODEL, model);
 
 	if (offset.size())
-		builder.appendArray(REPO_UNITY_ASSETS_LABEL_OFFSET, offset);
+		builder.appendArray(REPO_ASSETS_LABEL_OFFSET, offset);
 
 	if (repoJsonFiles.size())
-		builder.appendArray(REPO_UNITY_ASSETS_LABEL_JSONFILES, repoJsonFiles);
+		builder.appendArray(REPO_ASSETS_LABEL_JSONFILES, repoJsonFiles);
 
-	return RepoUnityAssets(builder.obj());
+	// Metadata is provided in an array with the same indexing as asset names.
+	// The metadata schema uses the object (instead of array) encoding of
+	// vectors, so that the type & entire array is a fixed size and cam be
+	// pre-allocated.
+
+	std::vector<RepoBSON> metadataNodes;
+	for (auto& meta : metadata)
+	{
+		RepoBSONBuilder metadataBuilder;
+		metadataBuilder.append(REPO_ASSETS_LABEL_NUMVERTICES, (unsigned int)meta.numVertices);
+		metadataBuilder.append(REPO_ASSETS_LABEL_NUMFACES, (unsigned int)meta.numFaces);
+		metadataBuilder.append(REPO_ASSETS_LABEL_NUMUVCHANNELS, (unsigned int)meta.numUVChannels);
+		metadataBuilder.append(REPO_ASSETS_LABEL_PRIMITIVE, (unsigned int)meta.primitive);
+		metadataBuilder.appendVector3DObject(REPO_ASSETS_LABEL_MIN, meta.min);
+		metadataBuilder.appendVector3DObject(REPO_ASSETS_LABEL_MAX, meta.max);
+		metadataNodes.push_back(metadataBuilder.obj());
+	}
+
+	if (metadataNodes.size())
+		builder.appendArray("metadata", metadataNodes);
+
+	return RepoAssets(builder.obj());
 }
 
 ReferenceNode RepoBSONFactory::makeReferenceNode(

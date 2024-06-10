@@ -24,7 +24,7 @@ module.exports = {
 	ERRCODE_ARG_FILE_FAIL: 16,
 	ERRCODE_TIMEOUT: 29,
 	ERRCODE_TOY_IMPORT_FAILED: 33,
-	ERRCODE_UNITY_LICENCE_INVALID: 35,
+	ERRCODE_UNITY_LICENCE_INVALID: 35, // Unity AssetBundles support has been remove but this error code may still be referenced elsewhere
 	ERRCODE_REPO_LICENCE_INVALID: 36,
 	BOUNCER_SOFT_FAILS: [7, 10, 15], // failures that should go through to generate
 };

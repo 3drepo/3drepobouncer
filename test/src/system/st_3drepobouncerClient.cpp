@@ -27,6 +27,7 @@
 #include <repo/repo_controller.h>
 #include "../unit/repo_test_database_info.h"
 #include "../unit/repo_test_utils.h"
+#include <unordered_set>
 
 static std::string getSuccessFilePath()
 {
@@ -637,36 +638,51 @@ TEST(RepoClientTest, GenStashTest)
 	std::string errMsg;
 	repo::RepoController::RepoToken *token = initController(controller);
 	repo::lib::RepoUUID stashRoot;
-	if (token)
+
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadArgs("genStashTest", "cube", getDataPath(simpleModel))));
+	EXPECT_TRUE(projectExists("genStashTest", "cube"));
+
+	auto handler = getHandler();
+
+	// Drop collections from the existing imports so we know any changes are due to this test.
+
+	std::string error;
+	handler->dropCollection("genStashTest", "cube.stash.repobundles", error);
+	handler->dropCollection("genStashTest", "cube.stash.repobundles.ref", error);
+	handler->dropCollection("genStashTest", "cube.stash.json_mpc.ref", error);
+
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("genStashTest", "cube", "repo")));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("genStashTest", "cube", "src")));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("genStashTest", "cube", "tree")));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("genStashTest", "cube", "gltf")));
+
+
+	std::unordered_set<std::string> collections;
+	for (auto& name : handler->getCollections("genStashTest"))
 	{
-		auto scene = controller->fetchScene(token, "sampleDataRW", "cube");
-		if (scene)
-		{
-			stashRoot = scene->getRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED)->getUniqueID();
-			delete scene;
-		}
+		collections.insert(name);
 	}
 
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("sampleDataRW", "cube", "src")));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("sampleDataRW", "cube", "tree")));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("sampleDataRW", "cube", "gltf")));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("sampleDataRW", "cube", "repo")));
+	EXPECT_TRUE(collections.find("cube.stash.gltf.ref") != collections.end());
+	EXPECT_TRUE(collections.find("cube.stash.src.ref") != collections.end());
+	EXPECT_TRUE(collections.find("cube.stash.repobundles") != collections.end());
+	EXPECT_TRUE(collections.find("cube.stash.repobundles.ref") != collections.end());
+	EXPECT_TRUE(collections.find("cube.stash.json_mpc.ref") != collections.end());
 
-	if (token)
-	{
-		auto scene = controller->fetchScene(token, "sampleDataRW", "cube");
-		if (scene)
-		{
-			EXPECT_NE(scene->getRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED)->getUniqueID(), stashRoot);
+	// Now check for the tree
 
-			delete scene;
-		}
-	}
+	repo::core::model::RepoBSONBuilder revisionCriteria;
+	revisionCriteria.append("type", "revision");
 
-	controller->disconnectFromDatabase(token);
-	EXPECT_EQ((int)REPOERR_STASH_GEN_FAIL, runProcess(produceGenStashArgs("blash", "blah", "tree")));
-	EXPECT_EQ((int)REPOERR_STASH_GEN_FAIL, runProcess(produceGenStashArgs("blash", "blah", "src")));
-	EXPECT_EQ((int)REPOERR_STASH_GEN_FAIL, runProcess(produceGenStashArgs("blash", "blah", "gltf")));
+	auto revisions = handler->findAllByCriteria("genStashTest", "cube.history", revisionCriteria.obj());
+
+	EXPECT_EQ(revisions.size(), 1);
+
+	auto revisionId = revisions[0].getUUIDField("_id").toString();
+	repo::core::model::RepoBSONBuilder builder;
+	builder.append("_id", revisionId + "/fulltree.json");
+	auto documents = handler->findAllByCriteria("genStashTest", "cube.stash.json_mpc.ref", builder.obj());
+	EXPECT_EQ(documents.size(), 1);
 
 	delete controller;
 }

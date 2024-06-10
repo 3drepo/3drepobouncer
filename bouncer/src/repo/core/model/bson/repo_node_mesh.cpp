@@ -173,35 +173,7 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 	}
 }
 
-MeshNode MeshNode::cloneAndUpdateMeshMapping(
-	const std::vector<repo_mesh_mapping_t> &vec,
-	const bool                             &overwrite)
-{
-	RepoBSONBuilder builder, mapbuilder;
-	uint32_t index = 0;
-	std::vector<repo_mesh_mapping_t> mappings;
-	RepoBSON mapArray = getObjectField(REPO_NODE_MESH_LABEL_MERGE_MAP);
-	if (!overwrite && !mapArray.isEmpty())
-	{
-		//if map array isn't empty, find the next index it needs to slot in
-		std::set<std::string> fields = mapArray.getFieldNames();
-		index = fields.size();
-	}
 
-	for (uint32_t i = 0; i < vec.size(); ++i)
-	{
-		mapbuilder.append(std::to_string(index + i), meshMappingAsBSON(vec[i]));
-	}
-	//append the rest of the array onto this new map bson
-	if (!overwrite) mapbuilder.appendElementsUnique(mapArray);
-
-	builder.appendArray(REPO_NODE_MESH_LABEL_MERGE_MAP, mapbuilder.obj());
-
-	//append the rest of the mesh onto this new bson
-	builder.appendElementsUnique(*this);
-
-	return MeshNode(builder.obj(), bigFiles);
-}
 
 std::vector<repo::lib::RepoVector3D> MeshNode::getBoundingBox() const
 {
@@ -254,28 +226,6 @@ std::vector<repo::lib::RepoVector3D> MeshNode::getBoundingBox(RepoBSON &bbArr)
 	return bbox;
 }
 
-std::vector<repo_color4d_t> MeshNode::getColors() const
-{
-	std::vector<repo_color4d_t> colors = std::vector<repo_color4d_t>();
-	if (hasBinField(REPO_NODE_MESH_LABEL_COLORS))
-	{
-		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_COLORS, colors);
-	}
-
-	return colors;
-}
-
-std::vector<float> MeshNode::getSubmeshIds() const
-{
-	std::vector<float> submeshIds = std::vector<float>();
-	if (hasBinField(REPO_NODE_MESH_LABEL_SUBMESH_IDS))
-	{
-		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_SUBMESH_IDS, submeshIds);
-	}
-
-	return submeshIds;
-}
-
 std::vector<repo::lib::RepoVector3D> MeshNode::getVertices() const
 {
 	std::vector<repo::lib::RepoVector3D> vertices;
@@ -314,44 +264,6 @@ uint32_t MeshNode::getMFormat(const bool isTransparent, const bool isInvisibleDe
 	uint32_t typeBits = (static_cast<int>(getPrimitive()) & 0xFF) << 16;
 
 	return vBit | fBit | nBit | cBit | uvBits | transBit | visiBit | typeBits;
-}
-
-std::vector<repo_mesh_mapping_t> MeshNode::getMeshMapping() const
-{
-	std::vector<repo_mesh_mapping_t> mappings;
-	RepoBSON mapArray = getObjectField(REPO_NODE_MESH_LABEL_MERGE_MAP);
-	if (!mapArray.isEmpty())
-	{
-		std::set<std::string> fields = mapArray.getFieldNames();
-		mappings.resize(fields.size());
-		for (const auto &name : fields)
-		{
-			repo_mesh_mapping_t mapping;
-			RepoBSON mappingObj = mapArray.getObjectField(name);
-
-			mapping.mesh_id = mappingObj.getUUIDField(REPO_NODE_MESH_LABEL_MAP_ID);
-			mapping.shared_id = mappingObj.getUUIDField(REPO_NODE_MESH_LABEL_MAP_SHARED_ID);
-			mapping.material_id = mappingObj.getUUIDField(REPO_NODE_MESH_LABEL_MATERIAL_ID);
-			mapping.vertFrom = mappingObj.getIntField(REPO_NODE_MESH_LABEL_VERTEX_FROM);
-			mapping.vertTo = mappingObj.getIntField(REPO_NODE_MESH_LABEL_VERTEX_TO);
-			mapping.triFrom = mappingObj.getIntField(REPO_NODE_MESH_LABEL_TRIANGLE_FROM);
-			mapping.triTo = mappingObj.getIntField(REPO_NODE_MESH_LABEL_TRIANGLE_TO);
-
-			RepoBSON boundingBox = mappingObj.getObjectField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
-
-			std::vector<repo::lib::RepoVector3D> bboxVec = getBoundingBox(boundingBox);
-			mapping.min.x = bboxVec[0].x;
-			mapping.min.y = bboxVec[0].y;
-			mapping.min.z = bboxVec[0].z;
-
-			mapping.max.x = bboxVec[1].x;
-			mapping.max.y = bboxVec[1].y;
-			mapping.max.z = bboxVec[1].z;
-
-			mappings[std::stoi(name)] = mapping;
-		}
-	}
-	return mappings;
 }
 
 std::vector<repo::lib::RepoVector3D> MeshNode::getNormals() const
@@ -450,26 +362,6 @@ std::vector<repo_face_t> MeshNode::getFaces() const
 	return faces;
 }
 
-RepoBSON MeshNode::meshMappingAsBSON(const repo_mesh_mapping_t  &mapping)
-{
-	RepoBSONBuilder builder;
-	builder.append(REPO_NODE_MESH_LABEL_MAP_ID, mapping.mesh_id);
-	builder.append(REPO_NODE_MESH_LABEL_MAP_SHARED_ID, mapping.shared_id);
-	builder.append(REPO_NODE_MESH_LABEL_MATERIAL_ID, mapping.material_id);
-	builder.append(REPO_NODE_MESH_LABEL_VERTEX_FROM, mapping.vertFrom);
-	builder.append(REPO_NODE_MESH_LABEL_VERTEX_TO, mapping.vertTo);
-	builder.append(REPO_NODE_MESH_LABEL_TRIANGLE_FROM, mapping.triFrom);
-	builder.append(REPO_NODE_MESH_LABEL_TRIANGLE_TO, mapping.triTo);
-
-	RepoBSONBuilder bbBuilder;
-	bbBuilder.append("0", mapping.min);
-	bbBuilder.append("1", mapping.max);
-
-	builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, bbBuilder.obj());
-
-	return builder.obj();
-}
-
 bool MeshNode::sEqual(const RepoNode &other) const
 {
 	if (other.getTypeAsEnum() != NodeType::MESH || other.getParentIDs().size() != getParentIDs().size())
@@ -482,7 +374,6 @@ bool MeshNode::sEqual(const RepoNode &other) const
 	std::vector<repo::lib::RepoVector3D> vertices, vertices2, normals, normals2;
 	std::vector<repo::lib::RepoVector2D> uvChannels, uvChannels2;
 	std::vector<uint32_t> facesSerialized, facesSerialized2;
-	std::vector<repo_color4d_t> colors, colors2;
 
 	vertices = getVertices();
 	vertices2 = otherMesh.getVertices();
@@ -496,15 +387,11 @@ bool MeshNode::sEqual(const RepoNode &other) const
 	facesSerialized = getFacesSerialized();
 	facesSerialized2 = otherMesh.getFacesSerialized();
 
-	colors = getColors();
-	colors2 = otherMesh.getColors();
-
 	//check all the sizes match first, as comparing the content will be costly
 	bool success = vertices.size() == vertices2.size()
 		&& normals.size() == normals2.size()
 		&& uvChannels.size() == uvChannels2.size()
 		&& facesSerialized.size() == facesSerialized2.size()
-		&& colors.size() == colors2.size()
 		&& getPrimitive() == otherMesh.getPrimitive();
 
 	if (success)
@@ -522,11 +409,6 @@ bool MeshNode::sEqual(const RepoNode &other) const
 		if (success && uvChannels.size())
 		{
 			success &= !memcmp(uvChannels.data(), uvChannels2.data(), uvChannels.size() * sizeof(*uvChannels.data()));
-		}
-
-		if (success && colors.size())
-		{
-			success &= !memcmp(colors.data(), colors2.data(), colors.size() * sizeof(*colors.data()));
 		}
 
 		if (success && facesSerialized.size())

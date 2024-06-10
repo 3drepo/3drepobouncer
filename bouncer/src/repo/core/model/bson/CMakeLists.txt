@@ -7,6 +7,7 @@
 set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_binmapping_builder.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_builder.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_element.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_factory.cpp
@@ -22,6 +23,7 @@ set(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_metadata.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_reference.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_revision.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_supermesh.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_texture.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_transformation.cpp
 	CACHE STRING "SOURCES" FORCE)
@@ -29,6 +31,8 @@ set(SOURCES
 set(HEADERS
 	${HEADERS}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_assets.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_binmapping_builder.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_builder.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_element.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_factory.h
@@ -37,7 +41,6 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_role.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_sequence.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_task.h
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_unity_assets.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_user.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_camera.h
@@ -46,6 +49,7 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_metadata.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_reference.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_revision.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_supermesh.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_texture.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_transformation.h
 	CACHE STRING "HEADERS" FORCE)

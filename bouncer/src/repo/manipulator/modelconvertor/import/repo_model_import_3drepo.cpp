@@ -683,8 +683,6 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t& errCod
 			entry.normals,
 			boundingBox,
 			entry.uvChannels,
-			{},
-			{},
 			std::string(),
 			{ entry.parent });
 		repo::core::model::RepoBSONBuilder builder;
