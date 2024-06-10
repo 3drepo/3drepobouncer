@@ -287,7 +287,7 @@ static bool projectHasMetaNodesWithPaths(std::string dbName, std::string project
 
 	if (token)
 	{
-		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, false, true, false, { repo::core::model::RevisionNode::UploadStatus::MISSING_BUNDLES });
+		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, false, false, { repo::core::model::RevisionNode::UploadStatus::MISSING_BUNDLES });
 		if (scene)
 		{
 			auto metadata = scene->getAllMetadata(repo::core::model::RepoScene::GraphType::DEFAULT);
