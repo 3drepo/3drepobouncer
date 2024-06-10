@@ -17,19 +17,38 @@
 
 #pragma once
 
-#include "file_processor_dgn.h"
+#include "../../../../core/model/bson/repo_node_mesh.h"
+
+#include <OdaCommon.h>
+#include <DbDatabase.h>
+#include <RxObjectImpl.h>
+#include <ExSystemServices.h>
+#include <ExHostAppServices.h>
+
+#include "file_processor.h"
+#include "geometry_collector.h"
 
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
-				class FileProcessorDwg : public FileProcessorDgn
+
+				class RepoDwgServices : public ExSystemServices, public ExHostAppServices
+				{
+				protected:
+					ODRX_USING_HEAP_OPERATORS(ExSystemServices);
+				};
+
+				class FileProcessorDwg : public FileProcessor
 				{
 				public:
-					FileProcessorDwg(const std::string &inputFile, GeometryCollector * geoCollector, const ModelImportConfig& config) : FileProcessorDgn(inputFile, geoCollector, config) {}
+					FileProcessorDwg(const std::string& inputFile, GeometryCollector* geoCollector, const ModelImportConfig& config) : FileProcessor(inputFile, geoCollector, config) {}
 					~FileProcessorDwg() override {}
+					uint8_t readFile();
+
 				protected:
-					virtual OdDgDatabasePtr initialiseOdDatabase();
+					OdStaticRxObject<RepoDwgServices> svcs;
+
 				};
 			}
 		}

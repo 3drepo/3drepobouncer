@@ -275,3 +275,93 @@ static bool projectHasGeometryWithMetadata(std::string dbName, std::string proje
 	delete controller;
 	return res;
 }
+
+// Finds all meta nodes that match the metadata criteria, and compares their
+// position in the transformation tree to the list in expected.
+static bool projectHasMetaNodesWithPaths(std::string dbName, std::string projectName, std::string key, std::string value, std::vector<std::string> expected)
+{
+	repo::RepoController* controller = new repo::RepoController();
+	auto token = initController(controller);
+
+	std::vector<std::string> paths;
+
+	if (token)
+	{
+		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, false, false, { repo::core::model::RevisionNode::UploadStatus::MISSING_BUNDLES });
+		if (scene)
+		{
+			auto metadata = scene->getAllMetadata(repo::core::model::RepoScene::GraphType::DEFAULT);
+			auto transforms = scene->getAllTransformations(repo::core::model::RepoScene::GraphType::DEFAULT);
+
+			std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> sharedIdToNode;
+
+			for (auto m : transforms) {
+				sharedIdToNode[m->getSharedID()] = m;
+			}
+
+			for (auto m : metadata) {
+				auto metaDataNode = dynamic_cast<repo::core::model::MetadataNode*>(m);
+				auto metaDataArray = m->getField(REPO_NODE_LABEL_METADATA).Array();
+				for (auto entry : metaDataArray)
+				{
+					// Keys are always strings for the metadata
+
+					auto aKey = entry.toMongoElement().Obj().getField(REPO_NODE_LABEL_META_KEY).String();
+
+					// toString will stringify the underlying type of the value, in the same
+					// way it is stringified for the frontend.
+
+					auto aValue = entry.toMongoElement().Obj().getField(REPO_NODE_LABEL_META_VALUE).toString(false);
+
+					if (aKey == key && aValue == value)
+					{
+						// This metadata node contains the key-value pair we are looking for. Now
+						// check its position in the tree.
+
+						auto path = metaDataNode->getName();
+						auto parents = metaDataNode->getParentIDs();
+
+						while (parents.size() > 0)
+						{
+							auto parent = sharedIdToNode[parents[0]];
+							path = parent->getName() + "->" + path;
+							parents = parent->getParentIDs();
+						}
+
+						paths.push_back(path);
+					}
+				}
+			}
+			delete scene;
+		}
+	}
+	controller->disconnectFromDatabase(token);
+	delete controller;
+
+	if (paths.size() != expected.size())
+	{
+		return false;
+	}
+
+	int found = 0;
+
+	for (auto p : expected)
+	{
+		for (size_t i = 0; i < paths.size(); i++)
+		{
+			if (paths[i] == p)
+			{
+				found++;
+				paths.erase(paths.begin() + i);
+				break;
+			}
+		}
+	}
+
+	if (found != expected.size())
+	{
+		return false;
+	}
+
+	return true;
+}

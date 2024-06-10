@@ -157,12 +157,12 @@ void DataProcessorDgn::convertTo3DRepoMaterial(
 	OdCmEntityColor color = fixByACI(this->device()->getPalette(), effectiveTraits().trueColor());
 	// diffuse
 	if (matColors.colorDiffuseOverride)
-		material.diffuse = { ODGETRED(matColors.colorDiffuse) / 255.0f, ODGETGREEN(matColors.colorDiffuse) / 255.0f, ODGETBLUE(matColors.colorDiffuse) / 255.0f, 1.0f };
+		material.diffuse = { matColors.colorDiffuse.red() / 255.0f, matColors.colorDiffuse.green() / 255.0f, matColors.colorDiffuse.blue() / 255.0f, 1.0f };
 	else
 		material.diffuse = { color.red() / 255.0f, color.green() / 255.0f, color.blue() / 255.0f, 1.0f };
 	// specular
 	if (matColors.colorSpecularOverride)
-		material.specular = { ODGETRED(matColors.colorSpecular) / 255.0f, ODGETGREEN(matColors.colorSpecular) / 255.0f, ODGETBLUE(matColors.colorSpecular) / 255.0f, 1.0f };
+		material.specular = { matColors.colorSpecular.red() / 255.0f, matColors.colorSpecular.green() / 255.0f, matColors.colorSpecular.blue() / 255.0f, 1.0f };
 	else
 		material.specular = { color.red() / 255.0f, color.green() / 255.0f, color.blue() / 255.0f, 1.0f };
 

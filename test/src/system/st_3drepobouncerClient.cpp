@@ -340,6 +340,19 @@ TEST(RepoClientTest, UploadTestDWG)
 	std::string dwgUpload = produceUploadArgs(db, "dwgTest", getDataPath(dwgModel));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(dwgUpload));
 	EXPECT_TRUE(projectExists(db, "dwgTest"));
+
+	// This snippet tests the behaviour of Block References and nested Block
+	// References in the tree.
+	std::string dwgUploadNestedBlocks = produceUploadArgs(db, "dwgTestNestedBlocks", getDataPath(dwgNestedBlocks));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(dwgUploadNestedBlocks));
+	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "\"[423]\"", { "rootNode->0->Block Text->Block Text" }));
+	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "\"[50D]\"", { "rootNode->0->My Block->My Block", "rootNode->Layer1->My Block->My Block" }));
+	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "\"[4FA]\"", { "rootNode->0->My Outer Block->My Outer Block", "rootNode->Layer1->My Outer Block->My Outer Block", "rootNode->Layer3->My Outer Block->My Outer Block"  }));
+	EXPECT_FALSE(projectHasGeometryWithMetadata(db, "dwgTestNestedBlocks", "Entity Handle::Value", "\"[534]\"")); // Even though this handle exists, it should be compressed in the tree.
+
+	// This snippet checks if encrypted files are handled correctly.
+	std::string dwgUploadProtected = produceUploadArgs(db, "dwgTestProtected", getDataPath(dwgPasswordProtected));
+	EXPECT_EQ(REPOERR_FILE_IS_ENCRYPTED, runProcess(dwgUploadProtected));
 }
 
 TEST(RepoClientTest, UploadTestDXF)
@@ -441,6 +454,18 @@ TEST(RepoClientTest, UploadTestNWD2024)
 	std::string nwdUpload = produceUploadArgs(db, "nwdTest2024", getDataPath(nwdModel2024));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(nwdUpload));
 	EXPECT_TRUE(projectExists(db, "nwdTest2024"));
+}
+
+TEST(RepoClientTest, UploadTestNWDProtected)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+	std::string db = "stUpload";
+
+	//Upload password-protected NWD
+	std::string nwdUpload = produceUploadArgs(db, "nwdPasswordProtected", getDataPath(nwdPasswordProtected));
+	EXPECT_EQ((int)REPOERR_FILE_IS_ENCRYPTED, runProcess(nwdUpload));
+	EXPECT_FALSE(projectExists(db, "nwdPasswordProtected"));
 }
 
 TEST(RepoClientTest, UploadTestNWC)
