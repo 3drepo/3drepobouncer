@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2015 3D Repo Ltd
+*  Copyright (C) 2024 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -20,23 +20,24 @@
 */
 
 #pragma once
-#include "repo_node.h"
+#include "repo_node_revision.h"
 
 //------------------------------------------------------------------------------
 //
 // Fields specific to revision only
 //
 //------------------------------------------------------------------------------
-#define REPO_NODE_REVISION_LABEL_AUTHOR					"author" //!< Author
-#define REPO_NODE_REVISION_LABEL_TIMESTAMP				"timestamp" //!< Timestamp
-#define REPO_NODE_REVISION_LABEL_REF_FILE               "rFile" //!< Reference file
-#define REPO_NODE_UUID_SUFFIX_REVISION					"10" //!< uuid suffix
+#define REPO_NODE_REVISION_LABEL_MESSAGE					"desc" //!< Message
+#define REPO_NODE_REVISION_LABEL_TAG						"tag" //!< Tag
+#define REPO_NODE_REVISION_LABEL_BRANCH_MASTER			"master" //!< Master branch
+#define REPO_NODE_REVISION_LABEL_INCOMPLETE             "incomplete"
+#define REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT      "coordOffset"
 //------------------------------------------------------------------------------
 
 namespace repo {
 	namespace core {
 		namespace model {
-			class REPO_API_EXPORT RevisionNode : public RepoNode
+			class REPO_API_EXPORT ModelRevisionNode : public RevisionNode
 			{
 			public:
 				// Some of these statuses will no longer be set by bouncer, but
@@ -48,10 +49,10 @@ namespace repo {
 				* Construct a RepoNode base on a RepoBSON object
 				* @param replicate this bson object
 				*/
-				RevisionNode(RepoBSON bson);
+				ModelRevisionNode(RepoBSON bson);
 
-				RevisionNode();
-				~RevisionNode();
+				ModelRevisionNode();
+				~ModelRevisionNode();
 
 				/**
 				* Get the type of node
@@ -72,23 +73,48 @@ namespace repo {
 				}
 
 				/**
+				* Update the status flag with the given status
+				* NOTE: the status flags denotes what it is currently doing
+				*       not what has been done. e.g. GEN_DEFAULT denotes the
+				*       revision does not have a fully commited default scene graph
+				* @param status the status to set to
+				* @return returns a clone of this node with updated status flag
+				*/
+				ModelRevisionNode cloneAndUpdateStatus(
+					const UploadStatus &status) const;
+
+				/**
 				* --------- Convenience functions -----------
 				*/
 
-				// Though rFile is a common member between Revision nodes, the type
-				// changes, so getting the file should be implemented in the subclasses
-
 				/**
-				* Get the author commited the revision
+				* Get the offset coordinates to translate the model
+				* @return return a vector of double (size of 3)
+				*/
+				std::vector<double> getCoordOffset() const;
+				/**
+				* Get the message commited with the revision
 				* @return returns a string for message. empty string if none.
 				*/
-				std::string getAuthor() const;
+				std::string getMessage() const;
 
 				/**
-				* Get the timestamp as int when this revision was commited
-				* @return returns a timestamp
+				* Get the tag commited with the revision
+				* @return returns a string for tag. empty string if none.
 				*/
-				int64_t getTimestampInt64() const;
+				std::string getTag() const;
+
+				/**
+				* Get the status of the upload for this revision
+				* @returns the upload status of the revision
+				*/
+				UploadStatus getUploadStatus() const;
+
+				/**
+				* Get the original file(s) the scene original created from
+				* @return returns a vector of string of files
+				*/
+				std::vector<std::string> getOrgFiles() const;
 			};
 		}// end namespace model
 	} // end namespace core

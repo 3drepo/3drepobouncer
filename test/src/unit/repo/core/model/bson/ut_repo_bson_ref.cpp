@@ -34,14 +34,14 @@ TEST(RepoRefTest, ConvertTypeAsString)
 
 TEST(RepoRefTest, GeneralTest)
 {
-	std::string fileName = "FileNameTest";
+	std::string id = "FileNameTest";
 	auto type = RepoRef::RefType::GRIDFS;
 	std::string link = "linkOfThisFile";
 	uint32_t size = std::rand();
-	auto ref = RepoBSONFactory::makeRepoRef(fileName, type, link, size);
+	auto ref = RepoBSONFactory::makeRepoRef(id, type, link, size);
 
 	EXPECT_FALSE(ref.isEmpty());
-	EXPECT_EQ(fileName, ref.getFileName());
+	EXPECT_EQ(id, ref.getID());
 	EXPECT_EQ(type, ref.getType());
 	EXPECT_EQ(link, ref.getRefLink());
 	EXPECT_EQ(size, ref.getIntField(REPO_REF_LABEL_SIZE));

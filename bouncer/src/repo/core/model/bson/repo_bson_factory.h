@@ -36,7 +36,7 @@
 #include "repo_node_mesh.h"
 #include "repo_node_supermesh.h"
 #include "repo_node_reference.h"
-#include "repo_node_revision.h"
+#include "repo_node_model_revision.h"
 #include "repo_node_texture.h"
 #include "repo_node_transformation.h"
 #include "repo_bson_builder.h"
@@ -342,7 +342,7 @@ namespace repo {
 				* @return returns a texture node
 				*/
 
-				static RevisionNode makeRevisionNode(
+				static ModelRevisionNode makeRevisionNode(
 					const std::string			   &user,
 					const repo::lib::RepoUUID                 &branch,
 					const repo::lib::RepoUUID                 &revId,

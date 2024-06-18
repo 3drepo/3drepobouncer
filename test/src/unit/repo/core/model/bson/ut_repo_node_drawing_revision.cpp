@@ -15,33 +15,22 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/**
-* A Revision Node - storing information about a specific revision
-*/
+#include <cstdlib>
 
-#include "repo_node_revision.h"
+#include <gtest/gtest.h>
+
+#include <repo/core/model/bson/repo_node_drawing_revision.h>
+#include <repo/core/model/bson/repo_bson_builder.h>
+#include <repo/core/model/bson/repo_bson_factory.h>
+
+#include "../../../../repo_test_utils.h"
 
 using namespace repo::core::model;
 
-RevisionNode::RevisionNode(RepoBSON bson) :
-	RepoNode(bson)
+TEST(DrawingRevisionNodeTest, Node)
 {
-}
-RevisionNode::RevisionNode() :
-	RepoNode()
-{
-}
+	// Bouncer is never intended to create a Drawing Revision Node, so for this
+	// test we mock up a BSON.
 
-RevisionNode::~RevisionNode()
-{
-}
 
-std::string RevisionNode::getAuthor() const
-{
-	return getStringField(REPO_NODE_REVISION_LABEL_AUTHOR);
-}
-
-int64_t RevisionNode::getTimestampInt64() const
-{
-	return getTimeStampField(REPO_NODE_REVISION_LABEL_TIMESTAMP);
 }

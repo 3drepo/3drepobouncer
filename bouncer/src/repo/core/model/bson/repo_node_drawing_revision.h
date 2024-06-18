@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2015 3D Repo Ltd
+*  Copyright (C) 2024 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -16,42 +16,41 @@
 */
 
 /**
-* A Revision Node - storing information about a specific revision
+* A Revision Node - storing information about a specific drawing revision
 */
 
 #pragma once
-#include "repo_node.h"
+#include "repo_node_revision.h"
 
 //------------------------------------------------------------------------------
 //
 // Fields specific to revision only
 //
 //------------------------------------------------------------------------------
-#define REPO_NODE_REVISION_LABEL_AUTHOR					"author" //!< Author
-#define REPO_NODE_REVISION_LABEL_TIMESTAMP				"timestamp" //!< Timestamp
-#define REPO_NODE_REVISION_LABEL_REF_FILE               "rFile" //!< Reference file
-#define REPO_NODE_UUID_SUFFIX_REVISION					"10" //!< uuid suffix
+#define REPO_NODE_REVISION_LABEL_PROJECT			"project"
+#define REPO_NODE_REVISION_LABEL_MODEL				"model"
+#define REPO_NODE_REVISION_LABEL_STATUS				"statusCode"
+#define REPO_NODE_REVISION_LABEL_REVCODE			"revCode"
+#define REPO_NODE_REVISION_LABEL_FORMAT				"format"
+#define REPO_NODE_REVISION_LABEL_IMAGE				"image"
+
 //------------------------------------------------------------------------------
 
 namespace repo {
 	namespace core {
 		namespace model {
-			class REPO_API_EXPORT RevisionNode : public RepoNode
+			class REPO_API_EXPORT DrawingRevisionNode : public RevisionNode
 			{
 			public:
-				// Some of these statuses will no longer be set by bouncer, but
-				// may still exist in the database.
-				enum class UploadStatus { COMPLETE = 0, GEN_DEFAULT = 1, GEN_REPO_STASH = 2, GEN_WEB_STASH = 3, GEN_SEL_TREE = 4, MISSING_BUNDLES = 5, UNKNOWN = 6 };
-
 				/**
 				* Constructor
 				* Construct a RepoNode base on a RepoBSON object
 				* @param replicate this bson object
 				*/
-				RevisionNode(RepoBSON bson);
+				DrawingRevisionNode(RepoBSON bson);
 
-				RevisionNode();
-				~RevisionNode();
+				DrawingRevisionNode();
+				~DrawingRevisionNode();
 
 				/**
 				* Get the type of node
@@ -75,20 +74,16 @@ namespace repo {
 				* --------- Convenience functions -----------
 				*/
 
-				// Though rFile is a common member between Revision nodes, the type
-				// changes, so getting the file should be implemented in the subclasses
-
 				/**
-				* Get the author commited the revision
-				* @return returns a string for message. empty string if none.
+				* Returns the list of files uploaded for this revision
 				*/
-				std::string getAuthor() const;
+				std::vector<lib::RepoUUID> getFiles() const;
 
-				/**
-				* Get the timestamp as int when this revision was commited
-				* @return returns a timestamp
-				*/
-				int64_t getTimestampInt64() const;
+				lib::RepoUUID getProject() const;
+
+				lib::RepoUUID getModel() const;
+
+				DrawingRevisionNode cloneAndAddImage(lib::RepoUUID imageRefNodeId) const;
 			};
 		}// end namespace model
 	} // end namespace core
