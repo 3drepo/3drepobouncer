@@ -47,9 +47,18 @@ namespace repo {
 					~FileProcessorDwg() override {}
 					uint8_t readFile();
 
+					/**
+					* Sets the object that will collect the svg data, if any.
+					*/
+					void setDrawingCollector(drawingconverter::DrawingImageInfo* collector)
+					{
+						this->drawingCollector = collector;
+					}
+
 				protected:
 					OdStaticRxObject<RepoDwgServices> svcs;
 
+					repo::manipulator::drawingconverter::DrawingImageInfo* drawingCollector;
 				};
 			}
 		}

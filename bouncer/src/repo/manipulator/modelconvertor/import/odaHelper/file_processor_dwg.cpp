@@ -171,7 +171,15 @@ uint8_t FileProcessorDwg::readFile()
 		OdString f = file.c_str();
 		OdDbDatabasePtr pDb = svcs.readFile(f);
 
-		importModel(pDb, collector);
+		if (collector)
+		{
+			importModel(pDb, collector);
+		}
+
+		if (drawingCollector)
+		{
+			importDrawing(pDb, drawingCollector);
+		}
 
 		pDb.release();
 

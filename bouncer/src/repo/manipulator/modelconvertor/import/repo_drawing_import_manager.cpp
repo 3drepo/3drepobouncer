@@ -44,6 +44,8 @@ void DrawingImportManager::importFromFile(
 	if (extension == "DWG")
 	{
 		repo::manipulator::modelconvertor::odaHelper::FileProcessorDwg dwg(filename, nullptr, {});
+		dwg.setDrawingCollector(&drawing);
+		error = dwg.readFile();
 	}
 	else if (extension == "DGN")
 	{
