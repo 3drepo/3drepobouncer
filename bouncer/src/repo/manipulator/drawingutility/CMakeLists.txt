@@ -4,18 +4,13 @@
 #If you really need to overwrite this file, be aware that it will be overwritten if updateSources.py is executed.
 
 
-add_subdirectory(diff)
-add_subdirectory(drawingutility)
-add_subdirectory(modelconvertor)
-add_subdirectory(modeloptimizer)
-add_subdirectory(modelutility)
 set(SOURCES
 	${SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_manipulator.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing_manager.cpp
 	CACHE STRING "SOURCES" FORCE)
 
 set(HEADERS
 	${HEADERS}
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_manipulator.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing_manager.h
 	CACHE STRING "HEADERS" FORCE)
 

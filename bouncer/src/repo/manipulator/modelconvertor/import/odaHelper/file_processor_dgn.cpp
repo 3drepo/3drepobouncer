@@ -21,9 +21,13 @@
 #include <DynamicLinker.h>
 #include <DgDatabase.h>
 #include <RxDynamicModule.h>
+#include <MemoryStream.h>
 
 #include <DgGiContext.h>
 #include <DgGsManager.h>
+#include <DbGsManager.h> // Requires TD_DbCore
+#include <GiContextForDbDatabase.h>
+#include <../Exports/2dExport/Include/2dExportDevice.h>
 
 #include "../../../../lib/repo_exception.h"
 #include "../repo_model_units.h"
@@ -96,9 +100,6 @@ ModelUnits FileProcessorDgn::determineModelUnits(const OdDgModel::UnitMeasure &u
 }
 
 uint8_t FileProcessorDgn::readFile() {
-	uint8_t nRes = 0;               // Return value for the function
-
-	OdString strStlFilename = OdString::kEmpty;
 
 	/**********************************************************************/
 	/* Initialize Runtime Extension environment                           */
@@ -106,6 +107,7 @@ uint8_t FileProcessorDgn::readFile() {
 	odrxInitialize(&svcs);
 	odgsInitialize();
 
+	uint8_t nRes = 0;               // Return value for the function
 	try
 	{
 		/**********************************************************************/
@@ -155,7 +157,9 @@ uint8_t FileProcessorDgn::readFile() {
 		OdDgModelPtr pModel = elementId.safeOpenObject();
 		ODCOLORREF background = pModel->getBackground();
 
-		collector->units = determineModelUnits(pModel->getMasterUnit());
+		if (collector) {
+			collector->units = determineModelUnits(pModel->getMasterUnit());
+		}
 
 		OdDgElementId vectorizedViewId;
 		OdDgViewGroupPtr pViewGroup = pDb->getActiveViewGroupId().openObject();
@@ -214,33 +218,25 @@ uint8_t FileProcessorDgn::readFile() {
 		OdGeExtents3d extModel;
 		//pModel->getGeomExtents(vectorizedViewId, extModel);
 		auto origin = pModel->getGlobalOrigin();
-		collector->setOrigin(origin.x, origin.y, origin.z);
+		if (collector) {
+			collector->setOrigin(origin.x, origin.y, origin.z);
+		}
 		// Color with #255 always defines backround. The background of the active model must be considered in the device palette.
 		pPalCpy[255] = background;
 		// Note: This method should be called to resolve "white background issue" before setting device palette
 		bool bCorrected = OdDgColorTable::correctPaletteForWhiteBackground(pPalCpy.asArrayPtr());
 
-		// Calculate deviations for dgn elements
-
-		std::map<OdDbStub*, double > mapDeviations;
-
-		/*OdDgElementIteratorPtr pIter = pModel->createGraphicsElementsIterator();
-
-		for (; !pIter->done(); pIter->step())
+		// Do the actual import
+		if (drawingCollector)
 		{
-			OdGeExtents3d extElm;
-			OdDgElementPtr pItem = pIter->item().openObject(OdDg::kForRead);
+			importDrawing(pDb, pPalCpy.asArrayPtr(), 256, vectorizedViewId);
+		}
 
-			if (pItem->isKindOf(OdDgGraphicsElement::desc()))
-			{
-				pItem->getGeomExtents(extElm);
+		if (collector)
+		{
+			importModel(pDb, pPalCpy.asArrayPtr(), 256, extModel);
+		}
 
-				if (extElm.isValidExtents())
-					mapDeviations[pItem->elementId()] = extElm.maxPoint().distanceTo(extElm.minPoint()) / 1e4;
-			}
-		}*/
-
-		importDgn(pDb, pPalCpy.asArrayPtr(), 256, extModel);
 		pDb.release();
 		odgsUninitialize();
 		odrxUninitialize();
@@ -258,7 +254,7 @@ uint8_t FileProcessorDgn::readFile() {
 	return nRes;
 }
 
-void FileProcessorDgn::importDgn(OdDbBaseDatabase *pDb,
+void FileProcessorDgn::importModel(OdDbBaseDatabase *pDb,
 	const ODCOLORREF* pPallete,
 	int numColors,
 	const OdGeExtents3d &extModel,
@@ -286,4 +282,96 @@ void FileProcessorDgn::importDgn(OdDbBaseDatabase *pDb,
 
 	pContext.release();
 	pGsModule.release();
+}
+
+#pragma optimize("", off)
+
+void FileProcessorDgn::importDrawing(OdDgDatabasePtr pDb, const ODCOLORREF* pPallete, int numColors, OdDgElementId view)
+{
+	OdGsModulePtr pModule = ::odrxDynamicLinker()->loadModule(OdSvgExportModuleName, false);
+	OdGsDevicePtr dev = pModule->createDevice();
+	if (!dev.isNull())
+	{
+		// This snippet sets the output of the device. Here is a memory stream
+		// but it may also be a file created with ::odrxSystemServices().
+
+		OdMemoryStreamPtr stream = OdMemoryStream::createNew();
+		dev->properties()->putAt("Output", stream.get());
+
+		// Prepare database context for device
+
+		OdGiContextForDgDatabasePtr pDwgContext = OdGiContextForDgDatabase::createObject();
+
+		pDwgContext->setDatabase(pDb);
+		// do not render paper background and borders
+		pDwgContext->setPlotGeneration(true);
+		// Avoid tessellation if possible
+		pDwgContext->setHatchAsPolygon(OdGiDefaultContext::kHatchPolygon);
+		// Set minimal line width in SVG so that too thin line would not disappear
+		dev->properties()->putAt(L"MinimalWidth", OdRxVariantValue(0.1));
+
+		// load plotstyle tables (as set in layout settings)
+		OdDbBaseDatabasePEPtr pBaseDatabase(pDb);
+		pBaseDatabase->loadPlotstyleTableForActiveLayout(pDwgContext, pDb);
+
+		// Prepare the device to render the active layout in this database.
+		//OdGsDevicePtr wrapper = OdDbGsManager::setupActiveLayoutViews(dev, pDwgContext);
+
+		// creating render device for rendering the shaded viewports
+
+		// This has two parts. First we create the device that will render the
+		// svg data. Then, we create the OdGsView from the OdDgView found
+		// previously, and add the view to the device
+		// https://docs.opendesign.com/tv/gs_OdGsView.html
+		// This is done by the setupModelView method. This method returns a
+		// wrapper with some overrides made.
+
+		auto pView = OdDgView::cast(view.safeOpenObject());
+		TD_2D_EXPORT::Od2dExportDevice* pDeviceSvg = (TD_2D_EXPORT::Od2dExportDevice*)dev.get();
+		auto pDeviceForDg = OdGsDeviceForDgModel::setupModelView(pView->getModelId(), pView->elementId(), pDeviceSvg, pDwgContext);
+
+		// Continue any final setup
+
+		pDeviceForDg->setLogicalPalette(pPallete, numColors);
+
+		// This section configures the device - all we do for now is set the
+		// viewport size
+
+		pDeviceForDg->onSize(OdGsDCRect(0, 1024, 768, 0));
+
+		// This section extracts the view information which can be used to map
+		// betweeen the SVG and world coordinate sytsems
+
+		const OdGsView* pGsView = pDeviceSvg->viewAt(0);
+
+		auto worldToDeviceMatrix = pGsView->worldToDeviceMatrix();
+		auto objectToDeviceMatrix = pGsView->objectToDeviceMatrix();
+
+		// Pick three points (two vectors) to describe the map. The transform
+		// can be computed from these each time from then on.
+
+		OdGePoint3d a(0, 0, 0);
+		OdGePoint3d b(1, 0, 0);
+		OdGePoint3d c(0, 1, 0);
+
+		// The following vector contains the points in the SVG file corresponding
+		// to the 3D coordinates above. Add these to the appropriate schema when
+		// it is ready...
+
+		std::vector<OdGePoint3d> points;
+		points.push_back(worldToDeviceMatrix * a);
+		points.push_back(worldToDeviceMatrix * b);
+		points.push_back(worldToDeviceMatrix * c);
+
+		// The call to update is what will create the svg in the memory stream
+
+		pDeviceForDg->update();
+
+		// Finally copy the contents of the stream to the collector's buffer;
+		// getBytes advances OdMemoryStream, so we must first seek its start.
+
+		drawingCollector->data.resize(stream->tell());
+		stream->seek(0, OdDb::FilerSeekType::kSeekFromStart);
+		stream->getBytes(drawingCollector->data.data(), stream->length());
+	}
 }

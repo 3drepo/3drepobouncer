@@ -18,6 +18,7 @@
 #pragma once
 
 #include "../../../../core/model/bson/repo_node_mesh.h"
+#include "../../../../manipulator/modelconvertor/import/repo_drawing_import_manager.h"
 
 #include <OdaCommon.h>
 #include <DgDatabase.h>
@@ -46,16 +47,27 @@ namespace repo {
 				class FileProcessorDgn : public FileProcessor
 				{
 				public:
-					FileProcessorDgn(const std::string &inputFile, GeometryCollector * geoCollector, const ModelImportConfig& config) : FileProcessor(inputFile, geoCollector, config) {};
+					FileProcessorDgn(const std::string &inputFile, GeometryCollector * geoCollector, const ModelImportConfig& config) : FileProcessor(inputFile, geoCollector, config) {
+						drawingCollector = nullptr;
+					};
 					~FileProcessorDgn() override;
 
 					uint8_t readFile() override;
 
+					/**
+					* Sets the object that will collect the svg data, if any.
+					*/
+					void setDrawingCollector(drawingconverter::DrawingImageInfo* collector)
+					{
+						this->drawingCollector = collector;
+					}
+
 				protected:
 					virtual OdDgDatabasePtr initialiseOdDatabase();
 					OdStaticRxObject<RepoDgnServices> svcs;
+
 				private:
-					void importDgn(OdDbBaseDatabase *pDb,
+					void importModel(OdDbBaseDatabase *pDb,
 						const ODCOLORREF* pPallete,
 						int numColors,
 						const OdGeExtents3d &extModel,
@@ -63,7 +75,20 @@ namespace repo {
 						const OdGeMatrix3d& matTransform = OdGeMatrix3d::kIdentity,
 						const std::map<OdDbStub*, double>* pMapDeviations = nullptr);
 
+					void importDrawing(OdDgDatabasePtr pDb,
+						const ODCOLORREF* pPallete,
+						int numColors,
+						OdDgElementId view);
+
+
 					ModelUnits determineModelUnits(const OdDgModel::UnitMeasure &units);
+
+					/**
+					* The drawing importers typically do not need further
+					* processing, so we can write directly into the import manager's
+					* type. If this changes we may need to add an intermediary.
+					*/
+					drawingconverter::DrawingImageInfo* drawingCollector;
 				};
 			}
 		}
