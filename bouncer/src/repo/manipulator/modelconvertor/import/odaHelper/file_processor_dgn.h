@@ -47,20 +47,11 @@ namespace repo {
 				class FileProcessorDgn : public FileProcessor
 				{
 				public:
-					FileProcessorDgn(const std::string &inputFile, GeometryCollector * geoCollector, const ModelImportConfig& config) : FileProcessor(inputFile, geoCollector, config) {
-						drawingCollector = nullptr;
-					};
+					FileProcessorDgn(const std::string &inputFile, GeometryCollector * geoCollector, const ModelImportConfig& config) : FileProcessor(inputFile, geoCollector, config), drawingCollector(nullptr) {};
+					FileProcessorDgn(const std::string& inputFile, drawingconverter::DrawingImageInfo* collector) : FileProcessor(inputFile, nullptr, {}), drawingCollector(collector) {};
 					~FileProcessorDgn() override;
 
 					uint8_t readFile() override;
-
-					/**
-					* Sets the object that will collect the svg data, if any.
-					*/
-					void setDrawingCollector(drawingconverter::DrawingImageInfo* collector)
-					{
-						this->drawingCollector = collector;
-					}
 
 				protected:
 					virtual OdDgDatabasePtr initialiseOdDatabase();
