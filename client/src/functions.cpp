@@ -33,6 +33,7 @@ static const std::string cmdCreateFed = "genFed"; //create a federation
 static const std::string cmdGenStash = "genStash";   //test the connection
 static const std::string cmdGetFile = "getFile"; //download original file
 static const std::string cmdImportFile = "import"; //file import
+static const std::string cmdProcessDrawing = "processDrawing"; //drawing import from revision node
 static const std::string cmdTestConn = "test";   //test the connection
 static const std::string cmdVersion = "version";   //get version
 static const std::string cmdVersion2 = "-v";   //get version
@@ -44,6 +45,7 @@ std::string helpInfo()
 	ss << cmdGenStash << "\tGenerate Stash for a project. (args: database project [repo|gltf|src|tree] [all|revId])\n";
 	ss << cmdGetFile << "\t\tGet original file for the latest revision of the project (args: database project dir)\n";
 	ss << cmdImportFile << "\t\tImport file to database. (args: {file database project [dxrotate] [owner] [configfile]} or {-f parameterFile} )\n";
+	ss << cmdProcessDrawing << "\t\tProcess drawing revision node into an image. (args: -f parameterFile)\n";
 	ss << cmdCreateFed << "\t\tGenerate a federation. (args: fedDetails [owner])\n";
 	ss << cmdTestConn << "\t\tTest the client and database connection is working. (args: none)\n";
 	ss << cmdVersion << "[-v]\tPrints the version of Repo Bouncer Client/Library\n";
@@ -59,6 +61,8 @@ bool isSpecialCommand(const std::string &cmd)
 int32_t knownValid(const std::string &cmd)
 {
 	if (cmd == cmdImportFile)
+		return 2;
+	if (cmd == cmdProcessDrawing)
 		return 2;
 	if (cmd == cmdGenStash)
 		return 3;
@@ -88,6 +92,17 @@ int32_t performOperation(
 			errCode = importFileAndCommit(controller, token, command);
 		}
 		catch (const std::exception &e)
+		{
+			repoLogError("Failed to import and commit file: " + std::string(e.what()));
+			errCode = REPOERR_UNKNOWN_ERR;
+		}
+	}
+	if (command.command == cmdProcessDrawing)
+	{
+		try {
+			errCode = importFileAndCommit(controller, token, command);
+		}
+		catch (const std::exception& e)
 		{
 			repoLogError("Failed to import and commit file: " + std::string(e.what()));
 			errCode = REPOERR_UNKNOWN_ERR;
@@ -411,7 +426,6 @@ int32_t importFileAndCommit(
 	bool success = true;
 	bool rotate = false;
 	bool importAnimations = true;
-	bool drawing = false;
 	if (usingSettingFiles)
 	{
 		//if we're using settings file then arg[1] must be file path
@@ -430,7 +444,6 @@ int32_t importFileAndCommit(
 			lod = jsonTree.get<int>("lod", 0);
 			importAnimations = jsonTree.get<bool>("importAnimations", importAnimations);
 			fileLoc = jsonTree.get<std::string>("file", "");
-			drawing = jsonTree.get<bool>("drawing", "");
 			auto revIdStr = jsonTree.get<std::string>("revId", "");
 			if (!revIdStr.empty()) {
 				revId = repo::lib::RepoUUID(revIdStr);
@@ -474,43 +487,80 @@ int32_t importFileAndCommit(
 	repoLog("File: " + fileLoc + " database: " + database
 		+ " project: " + project + " target units: " + (units.empty() ? "none" : units) + " owner :" + owner + " importAnimations: " + (importAnimations ? "true" : "false")
 		+ " lod: " + std::to_string(lod)
-		+ " drawing: " + (drawing ? "true" : "false")
 	);
 
 	uint8_t err;
 
-	if (drawing)
+	repo::manipulator::modelconvertor::ModelImportConfig config(true, importAnimations, targetUnits, timeZone, lod);
+	repo::core::model::RepoScene* graph = controller->loadSceneFromFile(fileLoc, err, config);
+	if (graph)
 	{
-		controller->processDrawingRevision(token, database, revId, err);
-	}
-	else
-	{
-		repo::manipulator::modelconvertor::ModelImportConfig config(true, importAnimations, targetUnits, timeZone, lod);
-		repo::core::model::RepoScene* graph = controller->loadSceneFromFile(fileLoc, err, config);
-		if (graph)
+		repoLog("Trying to commit this scene to database as " + database + "." + project);
+		graph->setDatabaseAndProjectName(database, project);
+
+		err = controller->commitScene(token, graph, owner, tag, desc, revId);
+
+		if (err == REPOERR_OK)
 		{
-			repoLog("Trying to commit this scene to database as " + database + "." + project);
-			graph->setDatabaseAndProjectName(database, project);
-
-			err = controller->commitScene(token, graph, owner, tag, desc, revId);
-
-			if (err == REPOERR_OK)
+			if (graph->isMissingNodes())
 			{
-				if (graph->isMissingNodes())
-				{
-					repoLog("Missing nodes detected!");
-					return REPOERR_LOAD_SCENE_MISSING_NODES;
-				}
-				else if (graph->isMissingTexture())
-				{
-					repoLog("Missing texture detected!");
-					return REPOERR_LOAD_SCENE_MISSING_TEXTURE;
-				}
-				else
-					return err;
+				repoLog("Missing nodes detected!");
+				return REPOERR_LOAD_SCENE_MISSING_NODES;
 			}
+			else if (graph->isMissingTexture())
+			{
+				repoLog("Missing texture detected!");
+				return REPOERR_LOAD_SCENE_MISSING_TEXTURE;
+			}
+			else
+				return err;
 		}
 	}
 
 	return err ? err : REPOERR_LOAD_SCENE_FAIL;
+}
+
+int32_t processDrawing(
+	std::shared_ptr<repo::RepoController> controller,
+	const repo::RepoController::RepoToken* token,
+	const repo_op_t& command
+)
+{
+	/*
+	* Check the amount of parameters matches
+	*/
+	bool usingSettingFiles = command.nArgcs == 2 && std::string(command.args[0]) == "-f";
+	if (!usingSettingFiles)
+	{
+		repoLogError("Number of arguments mismatch! " + cmdProcessDrawing + " requires 2 arguments: -f <path to json settings>");
+		return REPOERR_INVALID_ARG;
+	}
+
+	std::string database;
+	repo::lib::RepoUUID revision;
+
+	boost::property_tree::ptree jsonTree;
+	try {
+		boost::property_tree::read_json(command.args[1], jsonTree);
+
+		database = jsonTree.get<std::string>("database", "");
+		auto revisionStr = jsonTree.get<std::string>("revId", "");
+
+		if (database.empty() || revisionStr.empty())
+		{
+			return REPOERR_LOAD_SCENE_FAIL;
+		}
+
+		revision = repo::lib::RepoUUID(revisionStr);
+	}
+	catch (std::exception& e)
+	{
+		return REPOERR_LOAD_SCENE_FAIL;
+	}
+
+	repoLog("Drawing Revision: " + " database: " + database + " revision: " + revision);
+
+	uint8_t err;
+	controller->processDrawingRevision(token, database, revision, err);
+	return err;
 }
