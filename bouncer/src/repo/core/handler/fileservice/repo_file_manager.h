@@ -101,6 +101,19 @@ namespace repo {
 						const std::string                            &fileName
 					);
 
+					repo::core::model::RepoRef getFileRef(
+						const std::string& databaseName,
+						const std::string& collectionNamePrefix,
+						const std::string& fileName);
+
+					/**
+					* Get the fully qualified filename from the ref node given
+					* the current file handler.
+					*/
+					std::string getFilePath(
+						const repo::core::model::RepoRef& refNode
+					);
+
 				private:
 					/**
 					 * Default constructor
@@ -117,11 +130,6 @@ namespace repo {
 					 */
 					std::string cleanFileName(
 						const std::string &fileName);
-
-					repo::core::model::RepoRef getFileRef(
-						const std::string                            &databaseName,
-						const std::string                            &collectionNamePrefix,
-						const std::string                            &fileName);
 
 					/**
 					 * Remove ref entry for file to database.

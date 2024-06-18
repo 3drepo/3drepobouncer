@@ -256,6 +256,18 @@ std::ifstream FileManager::getFileStream(
 	return fs;
 }
 
+std::string FileManager::getFilePath(
+	const repo::core::model::RepoRef& ref
+)
+{
+	if (ref.getType() != repo::core::model::RepoRef::RefType::FS)
+	{
+		repoTrace << "Failed: can only get paths of files stored with fs";
+		return "";
+	}
+	return fsHandler->getFilePath(ref.getRefLink());
+}
+
 FileManager::FileManager(
 	const repo::lib::RepoConfig &config,
 	repo::core::handler::AbstractDatabaseHandler *dbHandler
