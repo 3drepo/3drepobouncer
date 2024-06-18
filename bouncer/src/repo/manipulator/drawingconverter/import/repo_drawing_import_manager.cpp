@@ -18,12 +18,11 @@
 #include "repo_drawing_import_manager.h"
 #include "../../../lib/repo_utils.h"
 #include "../../../error_codes.h"
-#include "odaHelper/file_processor_dwg.h"
-#include "odaHelper/file_processor_dgn.h"
-#include "repo_model_units.h"
-#include <boost/filesystem.hpp>
+#include "../../modelconvertor/import/odaHelper/file_processor_dgn.h"
+#include "../../modelconvertor/import/odaHelper/file_processor_dwg.h"
 
 using namespace repo::manipulator::drawingconverter;
+using namespace repo::manipulator::drawingutility;
 
 void DrawingImportManager::importFromFile(
 	DrawingImageInfo& drawing,

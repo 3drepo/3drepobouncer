@@ -16,7 +16,7 @@
 */
 #pragma once
 #include "../../core/model/bson/repo_node_drawing_revision.h"
-#include "../../manipulator/modelconvertor/import/repo_drawing_import_manager.h"
+#include "../../manipulator/drawingutility/repo_drawing.h"
 #include "../../core/handler/repo_database_handler_abstract.h"
 #include "../../core/handler/fileservice/repo_file_manager.h"
 
@@ -54,7 +54,7 @@ namespace repo {
 					repo::core::handler::fileservice::FileManager* fileManager,
 					const std::string& teamspace,
 					const DrawingRevisionNode& revision,
-					manipulator::drawingconverter::DrawingImageInfo& drawing
+					DrawingImageInfo& drawing
 				);
 			};
 		}

@@ -38,7 +38,7 @@ uint8_t DrawingManager::commitImage(
 	repo::core::handler::fileservice::FileManager* fileManager,
 	const std::string& teamspace,
 	const DrawingRevisionNode& revision,
-	repo::manipulator::drawingconverter::DrawingImageInfo& drawing
+	DrawingImageInfo& drawing
 )
 {
 	repo::core::model::RepoBSONBuilder metadata;

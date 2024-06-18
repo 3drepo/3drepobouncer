@@ -17,9 +17,6 @@
 
 #pragma once
 
-#include "../../../../core/model/bson/repo_node_mesh.h"
-#include "../../../../manipulator/drawingconverter/import/repo_drawing_import_manager.h"
-
 #include <OdaCommon.h>
 #include <DbDatabase.h>
 #include <RxObjectImpl.h>
@@ -43,15 +40,13 @@ namespace repo {
 				class FileProcessorDwg : public FileProcessor
 				{
 				public:
-					FileProcessorDwg(const std::string& inputFile, GeometryCollector* geoCollector, const ModelImportConfig& config) : FileProcessor(inputFile, geoCollector, config), drawingCollector(nullptr) {}
-					FileProcessorDwg(const std::string& inputFile, repo::manipulator::drawingconverter::DrawingImageInfo* collector) : FileProcessor(inputFile, nullptr, {}), drawingCollector(collector) {}
+					FileProcessorDwg(const std::string& inputFile, GeometryCollector* geoCollector, const ModelImportConfig& config) : FileProcessor(inputFile, geoCollector, config) {}
+					FileProcessorDwg(const std::string& inputFile, repo::manipulator::drawingutility::DrawingImageInfo* collector) : FileProcessor(inputFile, collector) {}
 					~FileProcessorDwg() override {}
 					uint8_t readFile();
 
 				protected:
 					OdStaticRxObject<RepoDwgServices> svcs;
-
-					repo::manipulator::drawingconverter::DrawingImageInfo* drawingCollector;
 				};
 			}
 		}

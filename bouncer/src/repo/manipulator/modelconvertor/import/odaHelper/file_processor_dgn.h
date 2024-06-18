@@ -18,7 +18,7 @@
 #pragma once
 
 #include "../../../../core/model/bson/repo_node_mesh.h"
-#include "../../../../manipulator/drawingconverter/import/repo_drawing_import_manager.h"
+#include "../../../../manipulator/drawingutility/repo_drawing.h"
 
 #include <OdaCommon.h>
 #include <DgDatabase.h>
@@ -47,8 +47,8 @@ namespace repo {
 				class FileProcessorDgn : public FileProcessor
 				{
 				public:
-					FileProcessorDgn(const std::string &inputFile, GeometryCollector * geoCollector, const ModelImportConfig& config) : FileProcessor(inputFile, geoCollector, config), drawingCollector(nullptr) {};
-					FileProcessorDgn(const std::string& inputFile, drawingconverter::DrawingImageInfo* collector) : FileProcessor(inputFile, nullptr, {}), drawingCollector(collector) {};
+					FileProcessorDgn(const std::string &inputFile, GeometryCollector * geoCollector, const ModelImportConfig& config) : FileProcessor(inputFile, geoCollector, config) {};
+					FileProcessorDgn(const std::string& inputFile, drawingutility::DrawingImageInfo* collector) : FileProcessor(inputFile, collector) {};
 					~FileProcessorDgn() override;
 
 					uint8_t readFile() override;
@@ -73,13 +73,6 @@ namespace repo {
 
 
 					ModelUnits determineModelUnits(const OdDgModel::UnitMeasure &units);
-
-					/**
-					* The drawing importers typically do not need further
-					* processing, so we can write directly into the import manager's
-					* type. If this changes we may need to add an intermediary.
-					*/
-					drawingconverter::DrawingImageInfo* drawingCollector;
 				};
 			}
 		}

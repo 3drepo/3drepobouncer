@@ -21,22 +21,13 @@
 #include <memory>
 #include <vector>
 
-#include "repo_model_import_config.h"
-#include "../../../core/model/collection/repo_scene.h"
-#include "repo_model_import_abstract.h"
+#include "../../drawingutility/repo_drawing.h"
+
+using namespace repo::manipulator::drawingutility;
 
 namespace repo {
 	namespace manipulator {
 		namespace drawingconverter {
-
-			/**
-			* Holds complete information about an imported drawing at runtime
-			*/
-			struct DrawingImageInfo
-			{
-				std::string name; // The name of the original file (e.g. "Floor1.DWG")
-				std::vector<uint8_t> data; // The drawing in svg format
-			};
 
 			class DrawingImportManager
 			{

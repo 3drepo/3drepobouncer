@@ -693,7 +693,7 @@ void RepoManipulator::processDrawingRevision(
 	// drawing, and return the contents along with calibration data etc
 
 	repo::manipulator::drawingconverter::DrawingImportManager importer;
-	repo::manipulator::drawingconverter::DrawingImageInfo drawing;
+	repo::manipulator::drawingutility::DrawingImageInfo drawing;
 	auto fullpath = fileManager->getFilePath(refNode);
 	auto ext = refNode.getFileExtension();
 	drawing.name = refNode.getFileName();
