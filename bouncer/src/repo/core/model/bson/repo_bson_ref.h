@@ -53,7 +53,11 @@ namespace repo {
 
 				static std::string convertTypeAsString(const RefType &type);
 
+				std::string getID() const;
+
 				std::string getFileName() const;
+
+				std::string getFileExtension() const;
 
 				std::string getRefLink() const;
 

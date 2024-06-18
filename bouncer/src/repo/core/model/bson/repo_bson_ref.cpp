@@ -34,12 +34,20 @@ std::string RepoRef::convertTypeAsString(const RefType &type) {
 	}
 }
 
-std::string RepoRef::getFileName() const {
+std::string RepoRef::getID() const {
 	return getStringField(REPO_LABEL_ID);
+}
+
+std::string RepoRef::getFileName() const {
+	return getStringField(REPO_NODE_LABEL_NAME);
 }
 
 std::string RepoRef::getRefLink() const {
 	return getStringField(REPO_REF_LABEL_LINK);
+}
+
+std::string RepoRef::getFileExtension() const {
+	return getStringField(REPO_NODE_LABEL_EXTENSION);
 }
 
 RepoRef::RefType RepoRef::getType() const {
