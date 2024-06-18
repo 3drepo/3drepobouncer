@@ -110,6 +110,8 @@ const static std::string  importNoOwnerPro2 = "owner2";
 const static std::string  importNoOwnerPro2Tag = "thisTag";
 const static std::string  importNoOwnerPro2Desc = "MyUpload";
 
+const static std::string  processDrawingConfig = "processDrawingConfig.json";
+
 const static std::string getFileFileName = "a0205d17-e73c-4d3f-ad1b-8b875cb5f342cube_obj";
 const static std::string getFileNameBIMModel = "5be1aca9-e4d0-4cec-987d-80d2fde3dade3DrepoBIM_obj";
 

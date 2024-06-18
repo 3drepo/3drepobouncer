@@ -25,26 +25,25 @@
 
 using namespace repo::manipulator::drawingconverter;
 
-TEST(DrawingImportManager, DGN)
+TEST(DrawingImportManager, ImportDGN)
 {
-	// Tests that the importer can handle a DGN
-
 	DrawingImportManager manager;
 	DrawingImageInfo drawing;
 	uint8_t error;
 	manager.importFromFile(drawing, getDataPath(dgnDrawing), "DGN", error);
 
 	EXPECT_EQ(error, REPOERR_OK);
+	EXPECT_GT(drawing.data.size(), 0);
 }
 
-TEST(DrawingImportManager, DWG)
+TEST(DrawingImportManager, ImportDWG)
 {
-	// Tests that the importer can handle a DWG
-
 	DrawingImportManager manager;
 	DrawingImageInfo drawing;
 	uint8_t error;
 	manager.importFromFile(drawing, getDataPath(dwgDrawing), "DWG", error);
 
 	EXPECT_EQ(error, REPOERR_OK);
+	EXPECT_GT(drawing.data.size(), 0);
 }
+

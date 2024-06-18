@@ -27,6 +27,7 @@
 #include <repo/repo_controller.h>
 #include "../unit/repo_test_database_info.h"
 #include "../unit/repo_test_utils.h"
+#include <repo/core/model/bson/repo_bson_builder.h>
 #include <unordered_set>
 
 static std::string getSuccessFilePath()
@@ -96,6 +97,16 @@ static std::string produceUploadFileArgs(
 	return  getClientExePath() + " "
 		+ getConnConfig()
 		+ " import -f \""
+		+ filePath + "\"";
+}
+
+static std::string produceProcessDrawingArgs(
+	const std::string& filePath
+)
+{
+	return  getClientExePath() + " "
+		+ getConnConfig()
+		+ " processDrawing -f \""
 		+ filePath + "\"";
 }
 
@@ -685,4 +696,97 @@ TEST(RepoClientTest, GenStashTest)
 	EXPECT_EQ(documents.size(), 1);
 
 	delete controller;
+}
+
+#pragma optimize("", off)
+
+TEST(RepoClientTest, ProcessDrawing)
+{
+	// Create a drawing revision to test against. This requires both the drawing
+	// itself, and a ref node.
+
+	auto handler = getHandler();
+
+	repo::core::model::RepoBSONBuilder revisionBuilder;
+
+	auto db = "testDrawing"; // This must match the database in processDrawingConfig
+	auto rid = repo::lib::RepoUUID("cad0c3fe-dd1d-4844-ad04-cfb75df26a63"); // This must match the revId in processDrawingConfig
+	auto name = "test.dwg";
+	auto model = repo::lib::RepoUUID::createUUID();
+	auto project = repo::lib::RepoUUID::createUUID();
+	auto rFile = repo::lib::RepoUUID::createUUID();
+	std::vector< repo::lib::RepoUUID> rFiles;
+	rFiles.push_back(rFile);
+	revisionBuilder.append("_id", rid);
+	revisionBuilder.append("project", project);
+	revisionBuilder.append("model", model);
+	revisionBuilder.appendArray("rFile", rFiles);
+
+	// Make sure that the file manager uses the same config as produceProcessDrawingArgs
+	auto manager = repo::core::handler::fileservice::FileManager::instantiateManager(repo::lib::RepoConfig::fromFile(getConnConfig()), handler);
+
+	// Get a DWG as a blob
+	auto path = getDataPath(dwgDrawing);
+	std::ifstream drawingFile{ path, std::ios::binary };
+	std::vector<uint8_t> bin(std::istreambuf_iterator<char>{drawingFile}, {});
+
+	repo::core::model::RepoBSONBuilder metadata;
+	metadata.append("extension", "DWG");
+	metadata.append("name", name);
+
+	manager->uploadFileAndCommit(
+		db,
+		REPO_COLLECTION_DRAWINGS,
+		rFile.toString(),
+		bin,
+		metadata.obj()
+	);
+
+	std::string err;
+	handler->upsertDocument(
+		db,
+		REPO_COLLECTION_DRAWINGS,
+		revisionBuilder.obj(),
+		true,
+		err
+	);
+
+	EXPECT_EQ(err.size(), 0);
+
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceProcessDrawingArgs(getDataPath(processDrawingConfig))));
+
+	// The revision should now be updated.
+
+	auto revision = handler->findOneByUniqueID(
+		db,
+		REPO_COLLECTION_DRAWINGS,
+		rid
+	);
+
+	// The image should be non-null, and point to a file ref
+
+	EXPECT_TRUE(revision.hasField("image"));
+
+	// The other properties should be the same
+
+	EXPECT_EQ(revision.getUUIDField("_id"), rid);
+	EXPECT_EQ(revision.getUUIDField("project"), project);
+	EXPECT_EQ(revision.getUUIDField("model"), model);
+
+	// Make sure to use the file manager method because ref nodes are keyed by string not uuid
+
+	auto imageRef = manager->getFileRef(
+		db,
+		REPO_COLLECTION_DRAWINGS,
+		revision.getUUIDField("image").toString()
+	);
+
+	// Check that the document is correctly populated
+
+	EXPECT_EQ(imageRef.getStringField("type"), "fs");
+	EXPECT_EQ(imageRef.getStringField("name"), name);
+	EXPECT_EQ(imageRef.getStringField("mime"), "image/svg+xml");
+	EXPECT_EQ(imageRef.getUUIDField("project"), project);
+	EXPECT_EQ(imageRef.getUUIDField("model"), model);
+	EXPECT_EQ(imageRef.getUUIDField("rid"), rid);	
 }

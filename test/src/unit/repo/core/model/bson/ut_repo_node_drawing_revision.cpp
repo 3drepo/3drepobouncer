@@ -30,7 +30,38 @@ using namespace repo::core::model;
 TEST(DrawingRevisionNodeTest, Node)
 {
 	// Bouncer is never intended to create a Drawing Revision Node, so for this
-	// test we mock up a BSON.
+	// test we mock up a BSON using the expected schema. Note that not all
+	// fields are required by bouncer so not all have accessors implemented.
 
+	auto model = repo::lib::RepoUUID::createUUID();
+	auto project = repo::lib::RepoUUID::createUUID();
+	auto file = repo::lib::RepoUUID::createUUID();
 
+	RepoBSONBuilder builder;
+	builder.append("model", model);
+	builder.append("project", project);
+	std::vector< repo::lib::RepoUUID> files;
+	files.push_back(file);
+	builder.appendArray("rFile", files);
+
+	DrawingRevisionNode revision(builder.obj());
+
+	// Check that the methods we support work
+
+	EXPECT_EQ(revision.getFiles().size(), 1);
+	EXPECT_EQ(revision.getFiles()[0], file);
+	EXPECT_EQ(revision.getProject(), project);
+	EXPECT_EQ(revision.getModel(), model);
+
+	// Check that clone and add image works
+
+	auto image = repo::lib::RepoUUID::createUUID();
+	auto revision1 = revision.cloneAndAddImage(image);
+	EXPECT_EQ(revision1.getUUIDField("image"), image);
+
+	// Check that clone and add image overwrites existing images
+
+	image = repo::lib::RepoUUID::createUUID();
+	auto revision2 = revision1.cloneAndAddImage(image);
+	EXPECT_EQ(revision2.getUUIDField("image"), image);
 }

@@ -100,11 +100,11 @@ int32_t performOperation(
 	if (command.command == cmdProcessDrawing)
 	{
 		try {
-			errCode = importFileAndCommit(controller, token, command);
+			errCode = processDrawing(controller, token, command);
 		}
 		catch (const std::exception& e)
 		{
-			repoLogError("Failed to import and commit file: " + std::string(e.what()));
+			repoLogError("Failed to process drawing: " + std::string(e.what()));
 			errCode = REPOERR_UNKNOWN_ERR;
 		}
 	}
@@ -558,7 +558,7 @@ int32_t processDrawing(
 		return REPOERR_LOAD_SCENE_FAIL;
 	}
 
-	repoLog("Drawing Revision: " + " database: " + database + " revision: " + revision);
+	repoLog("Drawing Revision: " + database + ", " + revision.toString());
 
 	uint8_t err;
 	controller->processDrawingRevision(token, database, revision, err);
