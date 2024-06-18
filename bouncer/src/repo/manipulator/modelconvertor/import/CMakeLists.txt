@@ -8,7 +8,6 @@ add_subdirectory(ifcHelper)
 add_subdirectory(odaHelper)
 set(SOURCES
 	${SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing_import_manager.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_metadata_import_csv.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_3drepo.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_abstract.cpp
@@ -21,7 +20,6 @@ set(SOURCES
 
 set(HEADERS
 	${HEADERS}
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing_import_manager.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_metadata_import_csv.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_3drepo.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_abstract.h

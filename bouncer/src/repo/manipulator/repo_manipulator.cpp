@@ -31,7 +31,7 @@
 #include "../lib/repo_config.h"
 #include "diff/repo_diff_name.h"
 #include "diff/repo_diff_sharedid.h"
-#include "modelconvertor/import/repo_drawing_import_manager.h"
+#include "drawingconverter/import/repo_drawing_import_manager.h"
 #include "modelconvertor/import/repo_model_import_manager.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"

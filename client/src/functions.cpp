@@ -411,6 +411,7 @@ int32_t importFileAndCommit(
 	bool success = true;
 	bool rotate = false;
 	bool importAnimations = true;
+	bool drawing = false;
 	if (usingSettingFiles)
 	{
 		//if we're using settings file then arg[1] must be file path
@@ -429,6 +430,7 @@ int32_t importFileAndCommit(
 			lod = jsonTree.get<int>("lod", 0);
 			importAnimations = jsonTree.get<bool>("importAnimations", importAnimations);
 			fileLoc = jsonTree.get<std::string>("file", "");
+			drawing = jsonTree.get<bool>("drawing", "");
 			auto revIdStr = jsonTree.get<std::string>("revId", "");
 			if (!revIdStr.empty()) {
 				revId = repo::lib::RepoUUID(revIdStr);
@@ -472,33 +474,43 @@ int32_t importFileAndCommit(
 	repoLog("File: " + fileLoc + " database: " + database
 		+ " project: " + project + " target units: " + (units.empty() ? "none" : units) + " owner :" + owner + " importAnimations: " + (importAnimations ? "true" : "false")
 		+ " lod: " + std::to_string(lod)
+		+ " drawing: " + (drawing ? "true" : "false")
 	);
 
-	repo::manipulator::modelconvertor::ModelImportConfig config(true, importAnimations, targetUnits, timeZone, lod);
 	uint8_t err;
-	repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileLoc, err, config);
-	if (graph)
+
+	if (drawing)
 	{
-		repoLog("Trying to commit this scene to database as " + database + "." + project);
-		graph->setDatabaseAndProjectName(database, project);
-
-		err = controller->commitScene(token, graph, owner, tag, desc, revId);
-
-		if (err == REPOERR_OK)
+		controller->processDrawingRevision(token, database, revId, err);
+	}
+	else
+	{
+		repo::manipulator::modelconvertor::ModelImportConfig config(true, importAnimations, targetUnits, timeZone, lod);
+		repo::core::model::RepoScene* graph = controller->loadSceneFromFile(fileLoc, err, config);
+		if (graph)
 		{
-			if (graph->isMissingNodes())
+			repoLog("Trying to commit this scene to database as " + database + "." + project);
+			graph->setDatabaseAndProjectName(database, project);
+
+			err = controller->commitScene(token, graph, owner, tag, desc, revId);
+
+			if (err == REPOERR_OK)
 			{
-				repoLog("Missing nodes detected!");
-				return REPOERR_LOAD_SCENE_MISSING_NODES;
+				if (graph->isMissingNodes())
+				{
+					repoLog("Missing nodes detected!");
+					return REPOERR_LOAD_SCENE_MISSING_NODES;
+				}
+				else if (graph->isMissingTexture())
+				{
+					repoLog("Missing texture detected!");
+					return REPOERR_LOAD_SCENE_MISSING_TEXTURE;
+				}
+				else
+					return err;
 			}
-			else if (graph->isMissingTexture())
-			{
-				repoLog("Missing texture detected!");
-				return REPOERR_LOAD_SCENE_MISSING_TEXTURE;
-			}
-			else
-				return err;
 		}
 	}
+
 	return err ? err : REPOERR_LOAD_SCENE_FAIL;
 }

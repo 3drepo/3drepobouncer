@@ -5,6 +5,7 @@
 
 
 add_subdirectory(diff)
+add_subdirectory(drawingconverter)
 add_subdirectory(drawingutility)
 add_subdirectory(modelconvertor)
 add_subdirectory(modeloptimizer)

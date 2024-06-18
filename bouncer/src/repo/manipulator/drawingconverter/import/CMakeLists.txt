@@ -6,13 +6,11 @@
 
 set(SOURCES
 	${SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing_manager.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing_import_manager.cpp
 	CACHE STRING "SOURCES" FORCE)
 
 set(HEADERS
 	${HEADERS}
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing.h
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing_manager.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing_import_manager.h
 	CACHE STRING "HEADERS" FORCE)
 
