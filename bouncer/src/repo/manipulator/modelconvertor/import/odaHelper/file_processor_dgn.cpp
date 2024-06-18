@@ -288,6 +288,11 @@ void FileProcessorDgn::importModel(OdDbBaseDatabase *pDb,
 
 void FileProcessorDgn::importDrawing(OdDgDatabasePtr pDb, const ODCOLORREF* pPallete, int numColors, OdDgElementId view)
 {
+	// This method creates an SVG output device, which is a type of rasteriser,
+	// provided by ODA. To use it, a Gi (graphics interface) context is created
+	// for the specific database type, and bound to the device. When the device
+	// is updated, the SVG is written to the stream assigned to "Output".
+
 	OdGsModulePtr pModule = ::odrxDynamicLinker()->loadModule(OdSvgExportModuleName, false);
 	OdGsDevicePtr dev = pModule->createDevice();
 	if (!dev.isNull())
@@ -295,52 +300,49 @@ void FileProcessorDgn::importDrawing(OdDgDatabasePtr pDb, const ODCOLORREF* pPal
 		// This snippet sets the output of the device. Here is a memory stream
 		// but it may also be a file created with ::odrxSystemServices().
 
-		OdMemoryStreamPtr stream = OdMemoryStream::createNew();
+		auto stream = OdMemoryStream::createNew();
 		dev->properties()->putAt("Output", stream.get());
 
-		// Prepare database context for device
+		// The Gi context exposes the database to the graphics system
+		// https://docs.opendesign.com/tv/gi_overview.html
 
-		OdGiContextForDgDatabasePtr pDwgContext = OdGiContextForDgDatabase::createObject();
+		auto pDgGiContext = OdGiContextForDgDatabase::createObject();
 
-		pDwgContext->setDatabase(pDb);
-		// do not render paper background and borders
-		pDwgContext->setPlotGeneration(true);
-		// Avoid tessellation if possible
-		pDwgContext->setHatchAsPolygon(OdGiDefaultContext::kHatchPolygon);
-		// Set minimal line width in SVG so that too thin line would not disappear
-		dev->properties()->putAt(L"MinimalWidth", OdRxVariantValue(0.1));
+		// The following snippets configure the database and device rendering
+		// settings.
+
+		pDgGiContext->setDatabase(pDb);
+		pDgGiContext->setPlotGeneration(true); // do not render paper background and borders
+		pDgGiContext->setHatchAsPolygon(OdGiDefaultContext::kHatchPolygon); // Avoid tessellation if possible
+		dev->properties()->putAt(L"MinimalWidth", OdRxVariantValue(0.1)); // Set minimal line width in SVG so that too thin line would not disappear
 
 		// load plotstyle tables (as set in layout settings)
+
 		OdDbBaseDatabasePEPtr pBaseDatabase(pDb);
-		pBaseDatabase->loadPlotstyleTableForActiveLayout(pDwgContext, pDb);
+		pBaseDatabase->loadPlotstyleTableForActiveLayout(pDgGiContext, pDb);
 
-		// Prepare the device to render the active layout in this database.
-		//OdGsDevicePtr wrapper = OdDbGsManager::setupActiveLayoutViews(dev, pDwgContext);
-
-		// creating render device for rendering the shaded viewports
-
-		// This has two parts. First we create the device that will render the
-		// svg data. Then, we create the OdGsView from the OdDgView found
-		// previously, and add the view to the device
-		// https://docs.opendesign.com/tv/gs_OdGsView.html
-		// This is done by the setupModelView method. This method returns a
-		// wrapper with some overrides made.
+		// Create a wrapper (pHelperDevice) around the svg exporter device that
+		// has the views configured. The view in this case is provided by the
+		// caller (pView).
 
 		auto pView = OdDgView::cast(view.safeOpenObject());
 		TD_2D_EXPORT::Od2dExportDevice* pDeviceSvg = (TD_2D_EXPORT::Od2dExportDevice*)dev.get();
-		auto pDeviceForDg = OdGsDeviceForDgModel::setupModelView(pView->getModelId(), pView->elementId(), pDeviceSvg, pDwgContext);
+		auto pHelperDevice = OdGsDeviceForDgModel::setupModelView(pView->getModelId(), pView->elementId(), pDeviceSvg, pDgGiContext);
 
 		// Continue any final setup
 
-		pDeviceForDg->setLogicalPalette(pPallete, numColors);
+		pHelperDevice->setLogicalPalette(pPallete, numColors);
 
 		// This section configures the device - all we do for now is set the
 		// viewport size
 
-		pDeviceForDg->onSize(OdGsDCRect(0, 1024, 768, 0));
+		pHelperDevice->onSize(OdGsDCRect(0, 1024, 768, 0));
 
 		// This section extracts the view information which can be used to map
-		// betweeen the SVG and world coordinate sytsems
+		// betweeen the SVG and world coordinate systems.
+		// The graphics system (Gs) view https://docs.opendesign.com/tv/gs_OdGsView.html
+		// is used to derive points that map between the WCS of the drawing and
+		// the svg file.
 
 		const OdGsView* pGsView = pDeviceSvg->viewAt(0);
 
@@ -365,7 +367,7 @@ void FileProcessorDgn::importDrawing(OdDgDatabasePtr pDb, const ODCOLORREF* pPal
 
 		// The call to update is what will create the svg in the memory stream
 
-		pDeviceForDg->update();
+		pHelperDevice->update();
 
 		// Finally copy the contents of the stream to the collector's buffer;
 		// getBytes advances OdMemoryStream, so we must first seek its start.

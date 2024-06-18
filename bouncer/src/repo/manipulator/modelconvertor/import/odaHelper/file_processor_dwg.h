@@ -18,6 +18,7 @@
 #pragma once
 
 #include "../../../../core/model/bson/repo_node_mesh.h"
+#include "../../../../manipulator/modelconvertor/import/repo_drawing_import_manager.h"
 
 #include <OdaCommon.h>
 #include <DbDatabase.h>

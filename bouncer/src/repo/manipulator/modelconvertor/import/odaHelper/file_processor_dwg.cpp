@@ -1,3 +1,20 @@
+/**
+*  Copyright (C) 2021 3D Repo Ltd
+*
+*  This program is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU Affero General Public License as
+*  published by the Free Software Foundation, either version 3 of the
+*  License, or (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU Affero General Public License for more details.
+*
+*  You should have received a copy of the GNU Affero General Public License
+*  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "file_processor_dwg.h"
 
 #include <OdaCommon.h>
@@ -5,10 +22,11 @@
 #include <RxInit.h>
 #include <RxDynamicModule.h>
 #include <DynamicLinker.h>
-#include <RxDynamicModule.h>
+#include <MemoryStream.h>
 #include <Gs/GsBaseInclude.h>
 #include <DbGsManager.h>
 #include <GiContextForDbDatabase.h>
+#include <../Exports/2dExport/Include/2dExportDevice.h>
 
 #include "../../../../error_codes.h"
 #include "../../../../lib/repo_exception.h"
@@ -66,7 +84,7 @@ private:
 };
 ODRX_DEFINE_PSEUDO_STATIC_MODULE(DeviceModuleDwg);
 
-void importDwg(OdDbDatabasePtr pDb, GeometryCollector* collector)
+void importModel(OdDbDatabasePtr pDb, GeometryCollector* collector)
 {
 	// Create the vectorizer device that will render the DWG database. This will
 	// use the GeometryCollector underneath.
@@ -76,10 +94,10 @@ void importDwg(OdDbDatabasePtr pDb, GeometryCollector* collector)
 	deviceModule->init(collector);
 	auto pDevice = pGsModule->createDevice();
 
-	OdGiContextForDbDatabasePtr pDwgContext = OdGiContextForDbDatabase::createObject();
-	pDwgContext->setDatabase(pDb);
+	OdGiContextForDbDatabasePtr pDbGiContext = OdGiContextForDbDatabase::createObject();
+	pDbGiContext->setDatabase(pDb);
 
-	auto pHelperDevice = OdDbGsManager::setupActiveLayoutViews(pDevice, pDwgContext);
+	auto pHelperDevice = OdDbGsManager::setupActiveLayoutViews(pDevice, pDbGiContext);
 
 	pDb->setGEOMARKERVISIBILITY(0); // This turns the OdDbGeoDataMarker 3D geometry off.
 
@@ -88,6 +106,49 @@ void importDwg(OdDbDatabasePtr pDb, GeometryCollector* collector)
 	pHelperDevice->update();
 
 	pGsModule.release();
+}
+
+void importDrawing(OdDbDatabasePtr pDb, repo::manipulator::drawingconverter::DrawingImageInfo* collector)
+{
+	OdGsModulePtr pModule = ::odrxDynamicLinker()->loadModule(OdSvgExportModuleName, false);
+	OdGsDevicePtr dev = pModule->createDevice();
+	if (!dev.isNull())
+	{
+		auto stream = OdMemoryStream::createNew();
+		dev->properties()->putAt("Output", stream.get());
+
+		// The below follows the same logic as the Dgn Exporter, which itself
+		// is based on the ODA samples. A Gi context - the interface between
+		// a database and the graphics system (GS) - is created for the specific
+		// database type. An SVG export device is created, and wrapped in an
+		// object that connects the Gi to this device. When the device updates,
+		// it will write an SVG with the contents of the database.
+
+		auto pDbGiContext = OdGiContextForDbDatabase::createObject();
+		pDbGiContext->setDatabase(pDb);
+
+		pDbGiContext->setPlotGeneration(true);
+		pDbGiContext->setHatchAsPolygon(OdGiDefaultContext::kHatchPolygon);
+		dev->properties()->putAt(L"MinimalWidth", OdRxVariantValue(0.1));
+
+		OdDbBaseDatabasePEPtr pBaseDatabase(pDb);
+		pBaseDatabase->loadPlotstyleTableForActiveLayout(pDbGiContext, pDb);
+
+		TD_2D_EXPORT::Od2dExportDevice* pDeviceSvg = (TD_2D_EXPORT::Od2dExportDevice*)dev.get();
+		auto pHelperDevice = OdDbGsManager::setupActiveLayoutViews(pDeviceSvg, pDbGiContext);
+
+		pDb->setGEOMARKERVISIBILITY(0); // This turns the OdDbGeoDataMarker 3D geometry off.
+
+		pHelperDevice->onSize(OdGsDCRect(0, 1024, 768, 0));
+
+		// Here we can extract the calibration in the same way as file_processor_dgn when ready...
+
+		pHelperDevice->update();
+
+		collector->data.resize(stream->tell());
+		stream->seek(0, OdDb::FilerSeekType::kSeekFromStart);
+		stream->getBytes(collector->data.data(), stream->length());
+	}
 }
 
 uint8_t FileProcessorDwg::readFile()
@@ -110,7 +171,7 @@ uint8_t FileProcessorDwg::readFile()
 		OdString f = file.c_str();
 		OdDbDatabasePtr pDb = svcs.readFile(f);
 
-		importDwg(pDb, collector);
+		importModel(pDb, collector);
 
 		pDb.release();
 
