@@ -18,8 +18,11 @@
 #include "repo_drawing_import_manager.h"
 #include "../../../lib/repo_utils.h"
 #include "../../../error_codes.h"
+
+#ifdef ODA_SUPPORT
 #include "../../modelconvertor/import/odaHelper/file_processor_dgn.h"
 #include "../../modelconvertor/import/odaHelper/file_processor_dwg.h"
+#endif
 
 using namespace repo::manipulator::modelconvertor;
 using namespace repo::manipulator::modelutility;
@@ -38,8 +41,8 @@ void DrawingImportManager::importFromFile(
 		return;
 	}
 
-	// Choose the file processor based on the extension
-
+	// Choose the file processor based on the format
+#ifdef ODA_SUPPORT
 	if (extension == "dwg")
 	{
 		repo::manipulator::modelconvertor::odaHelper::FileProcessorDwg dwg(filename, &drawing);
@@ -55,4 +58,7 @@ void DrawingImportManager::importFromFile(
 		repoError << "Unable to identify suitable importer for " << extension;
 		error = REPOERR_FILE_TYPE_NOT_SUPPORTED;
 	}
+#else
+	error = REPOERR_ODA_UNAVAILABLE;
+#endif
 }
