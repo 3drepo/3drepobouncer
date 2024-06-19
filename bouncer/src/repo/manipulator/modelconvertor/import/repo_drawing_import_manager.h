@@ -21,13 +21,13 @@
 #include <memory>
 #include <vector>
 
-#include "../../drawingutility/repo_drawing.h"
+#include "../../modelutility/repo_drawing.h"
 
-using namespace repo::manipulator::drawingutility;
+using namespace repo::manipulator::modelutility;
 
 namespace repo {
 	namespace manipulator {
-		namespace drawingconverter {
+		namespace modelconvertor {
 
 			class DrawingImportManager
 			{

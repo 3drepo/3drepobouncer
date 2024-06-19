@@ -41,7 +41,7 @@ namespace repo {
 				{
 				public:
 					FileProcessorDwg(const std::string& inputFile, GeometryCollector* geoCollector, const ModelImportConfig& config) : FileProcessor(inputFile, geoCollector, config) {}
-					FileProcessorDwg(const std::string& inputFile, repo::manipulator::drawingutility::DrawingImageInfo* collector) : FileProcessor(inputFile, collector) {}
+					FileProcessorDwg(const std::string& inputFile, repo::manipulator::modelutility::DrawingImageInfo* collector) : FileProcessor(inputFile, collector) {}
 					~FileProcessorDwg() override {}
 					uint8_t readFile();
 

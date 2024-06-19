@@ -22,7 +22,7 @@
 
 namespace repo {
 	namespace manipulator {
-		namespace drawingutility {
+		namespace modelutility {
 
 			/**
 			* Holds complete information about an imported drawing at runtime

@@ -181,6 +181,8 @@
 #define REPO_NODE_REVISION_ID           "rev_id"
 #define REPO_NODE_STASH_REF             "rev_id"
 #define REPO_NODE_LABEL_EXTENSION		"extension"
+#define REPO_NODE_LABEL_FORMAT			"format"
+
 //-----------------------------------------------------------------------------
 
 #define REPO_NODE_TYPE_ANIMATION		"animation"

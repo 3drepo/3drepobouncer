@@ -108,7 +108,7 @@ void importModel(OdDbDatabasePtr pDb, GeometryCollector* collector)
 	pGsModule.release();
 }
 
-void importDrawing(OdDbDatabasePtr pDb, repo::manipulator::drawingutility::DrawingImageInfo* collector)
+void importDrawing(OdDbDatabasePtr pDb, repo::manipulator::modelutility::DrawingImageInfo* collector)
 {
 	OdGsModulePtr pModule = ::odrxDynamicLinker()->loadModule(OdSvgExportModuleName, false);
 	OdGsDevicePtr dev = pModule->createDevice();

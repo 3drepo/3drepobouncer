@@ -46,10 +46,6 @@ std::string RepoRef::getRefLink() const {
 	return getStringField(REPO_REF_LABEL_LINK);
 }
 
-std::string RepoRef::getFileExtension() const {
-	return getStringField(REPO_NODE_LABEL_EXTENSION);
-}
-
 RepoRef::RefType RepoRef::getType() const {
 	auto typeStr = getStringField(REPO_REF_LABEL_TYPE);
 	auto type = RefType::UNKNOWN;

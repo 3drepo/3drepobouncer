@@ -6,6 +6,7 @@
 
 set(TEST_SOURCES
 	${TEST_SOURCES}
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_drawing_import_manager.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_model_import_3drepo.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_model_import_assimp.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_model_import_synchro.cpp

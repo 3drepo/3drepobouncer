@@ -31,13 +31,13 @@
 #include "../lib/repo_config.h"
 #include "diff/repo_diff_name.h"
 #include "diff/repo_diff_sharedid.h"
-#include "drawingconverter/import/repo_drawing_import_manager.h"
+#include "modelconvertor/import/repo_drawing_import_manager.h"
 #include "modelconvertor/import/repo_model_import_manager.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
 #include "modelutility/repo_scene_manager.h"
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
-#include "drawingutility/repo_drawing_manager.h"
+#include "modelutility/repo_drawing_manager.h"
 #include "modeloptimizer/repo_optimizer_trans_reduction.h"
 #include "repo_manipulator.h"
 
@@ -665,7 +665,8 @@ void RepoManipulator::processDrawingRevision(
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 
 	// get the drawing node that holds the ref
-	auto manager = repo::manipulator::drawingutility::DrawingManager();
+
+	auto manager = repo::manipulator::modelutility::DrawingManager();
 	auto revisionNode = manager.fetchRevision(handler, teamspace, revision);
 
 	auto fileNodeIds = revisionNode.getFiles();
@@ -678,26 +679,31 @@ void RepoManipulator::processDrawingRevision(
 	}
 
 	// The ODA importers supported (DWG, DGN) require actual files and do not
-	// have overloads for memory streams.
+	// have overloads for memory streams, so resolve the ref node to a path on
+	// a locally accessible filesystem.
 
 	auto fileManager = repo::core::handler::fileservice::FileManager::getManager();
-
-	auto rFileId = fileNodeIds[0].toString(); // We do not expect drawing revision nodes to have multiple rFile entries
+	auto refNodeId = fileNodeIds[0].toString(); // We do not expect drawing revision nodes to have multiple rFile entries
 	auto refNode = fileManager->getFileRef(
 		teamspace,
 		REPO_COLLECTION_DRAWINGS,
-		rFileId
+		refNodeId
 	);
+	auto fullpath = fileManager->getFilePath(refNode);
 
 	// The DrawingImportManager will select the correct importer to convert the
-	// drawing, and return the contents along with calibration data etc
+	// drawing, and return the contents along with calibration and any other
+	// metadata in the DrawingImageInfo.
 
-	repo::manipulator::drawingconverter::DrawingImportManager importer;
-	repo::manipulator::drawingutility::DrawingImageInfo drawing;
-	auto fullpath = fileManager->getFilePath(refNode);
-	auto ext = refNode.getFileExtension();
+	repo::manipulator::modelconvertor::DrawingImportManager importer;
+	repo::manipulator::modelutility::DrawingImageInfo drawing;
 	drawing.name = refNode.getFileName();
-	importer.importFromFile(drawing, fullpath, ext, error);
+	importer.importFromFile(
+		drawing, 
+		fullpath,
+		revisionNode.getFormat(),
+		error
+	);
 
 	if (error == REPOERR_OK) {
 		error = manager.commitImage(handler, fileManager, teamspace, revisionNode, drawing);

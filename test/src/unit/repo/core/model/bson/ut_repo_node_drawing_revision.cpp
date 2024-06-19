@@ -36,10 +36,12 @@ TEST(DrawingRevisionNodeTest, Node)
 	auto model = repo::lib::RepoUUID::createUUID();
 	auto project = repo::lib::RepoUUID::createUUID();
 	auto file = repo::lib::RepoUUID::createUUID();
+	auto format = "dwg";
 
 	RepoBSONBuilder builder;
 	builder.append("model", model);
 	builder.append("project", project);
+	builder.append("format", format);
 	std::vector< repo::lib::RepoUUID> files;
 	files.push_back(file);
 	builder.appendArray("rFile", files);
@@ -52,6 +54,7 @@ TEST(DrawingRevisionNodeTest, Node)
 	EXPECT_EQ(revision.getFiles()[0], file);
 	EXPECT_EQ(revision.getProject(), project);
 	EXPECT_EQ(revision.getModel(), model);
+	EXPECT_EQ(revision.getFormat(), format);
 
 	// Check that clone and add image works
 

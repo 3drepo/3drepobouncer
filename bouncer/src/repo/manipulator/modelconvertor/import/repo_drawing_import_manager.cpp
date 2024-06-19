@@ -21,8 +21,8 @@
 #include "../../modelconvertor/import/odaHelper/file_processor_dgn.h"
 #include "../../modelconvertor/import/odaHelper/file_processor_dwg.h"
 
-using namespace repo::manipulator::drawingconverter;
-using namespace repo::manipulator::drawingutility;
+using namespace repo::manipulator::modelconvertor;
+using namespace repo::manipulator::modelutility;
 
 void DrawingImportManager::importFromFile(
 	DrawingImageInfo& drawing,
@@ -40,12 +40,12 @@ void DrawingImportManager::importFromFile(
 
 	// Choose the file processor based on the extension
 
-	if (extension == "DWG")
+	if (extension == "dwg")
 	{
 		repo::manipulator::modelconvertor::odaHelper::FileProcessorDwg dwg(filename, &drawing);
 		error = dwg.readFile();
 	}
-	else if (extension == "DGN")
+	else if (extension == "dgn")
 	{
 		repo::manipulator::modelconvertor::odaHelper::FileProcessorDgn dgn(filename, &drawing);
 		error = dgn.readFile();

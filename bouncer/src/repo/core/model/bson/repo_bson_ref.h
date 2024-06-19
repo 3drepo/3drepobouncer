@@ -57,8 +57,6 @@ namespace repo {
 
 				std::string getFileName() const;
 
-				std::string getFileExtension() const;
-
 				std::string getRefLink() const;
 
 				RefType getType() const;

@@ -18,7 +18,7 @@
 #pragma once
 
 #include "../../../../core/model/bson/repo_node_mesh.h"
-#include "../../../../manipulator/drawingutility/repo_drawing.h"
+#include "../../../../manipulator/modelutility/repo_drawing.h"
 
 #include <OdaCommon.h>
 #include <DgDatabase.h>
@@ -48,7 +48,7 @@ namespace repo {
 				{
 				public:
 					FileProcessorDgn(const std::string &inputFile, GeometryCollector * geoCollector, const ModelImportConfig& config) : FileProcessor(inputFile, geoCollector, config) {};
-					FileProcessorDgn(const std::string& inputFile, drawingutility::DrawingImageInfo* collector) : FileProcessor(inputFile, collector) {};
+					FileProcessorDgn(const std::string& inputFile, modelutility::DrawingImageInfo* collector) : FileProcessor(inputFile, collector) {};
 					~FileProcessorDgn() override;
 
 					uint8_t readFile() override;

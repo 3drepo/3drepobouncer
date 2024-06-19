@@ -720,6 +720,7 @@ TEST(RepoClientTest, ProcessDrawing)
 	revisionBuilder.append("_id", rid);
 	revisionBuilder.append("project", project);
 	revisionBuilder.append("model", model);
+	revisionBuilder.append("format", "dwg");
 	revisionBuilder.appendArray("rFile", rFiles);
 
 	// Make sure that the file manager uses the same config as produceProcessDrawingArgs
@@ -731,7 +732,6 @@ TEST(RepoClientTest, ProcessDrawing)
 	std::vector<uint8_t> bin(std::istreambuf_iterator<char>{drawingFile}, {});
 
 	repo::core::model::RepoBSONBuilder metadata;
-	metadata.append("extension", "DWG");
 	metadata.append("name", name);
 
 	manager->uploadFileAndCommit(
@@ -788,5 +788,5 @@ TEST(RepoClientTest, ProcessDrawing)
 	EXPECT_EQ(imageRef.getStringField("mime"), "image/svg+xml");
 	EXPECT_EQ(imageRef.getUUIDField("project"), project);
 	EXPECT_EQ(imageRef.getUUIDField("model"), model);
-	EXPECT_EQ(imageRef.getUUIDField("rid"), rid);	
+	EXPECT_EQ(imageRef.getUUIDField("rev_id"), rid);
 }

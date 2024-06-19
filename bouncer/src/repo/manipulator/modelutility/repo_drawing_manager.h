@@ -16,13 +16,13 @@
 */
 #pragma once
 #include "../../core/model/bson/repo_node_drawing_revision.h"
-#include "../../manipulator/drawingutility/repo_drawing.h"
+#include "../../manipulator/modelutility/repo_drawing.h"
 #include "../../core/handler/repo_database_handler_abstract.h"
 #include "../../core/handler/fileservice/repo_file_manager.h"
 
 namespace repo {
 	namespace manipulator {
-		namespace drawingutility {
+		namespace modelutility {
 
 			using namespace repo::core::model;
 

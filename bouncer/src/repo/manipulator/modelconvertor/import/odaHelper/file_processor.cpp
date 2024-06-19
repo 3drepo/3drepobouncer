@@ -34,7 +34,7 @@ FileProcessor::FileProcessor(const std::string &inputFile, GeometryCollector *ge
 {
 }
 
-FileProcessor::FileProcessor(const std::string& inputFile, repo::manipulator::drawingutility::DrawingImageInfo* collector)
+FileProcessor::FileProcessor(const std::string& inputFile, repo::manipulator::modelutility::DrawingImageInfo* collector)
 	: file(inputFile),
 	collector(nullptr),
 	importConfig({}),

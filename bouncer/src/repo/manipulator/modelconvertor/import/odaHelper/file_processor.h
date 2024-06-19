@@ -17,7 +17,7 @@
 
 #pragma once
 #include "geometry_collector.h"
-#include "../../../drawingutility/repo_drawing.h"
+#include "../../../modelutility/repo_drawing.h"
 #include "../repo_model_import_config.h"
 #include "../../../../error_codes.h"
 #include <string>
@@ -30,7 +30,7 @@ namespace repo {
 				{
 				protected:
 					FileProcessor(const std::string& inputFile, GeometryCollector* geoCollector, const ModelImportConfig& config);
-					FileProcessor(const std::string& inputFile, drawingutility::DrawingImageInfo* collector);
+					FileProcessor(const std::string& inputFile, modelutility::DrawingImageInfo* collector);
 
 				public:
 					static std::unique_ptr<FileProcessor> getFileProcessor(const std::string& inputFile, GeometryCollector* geoCollector, const ModelImportConfig& config);
@@ -41,7 +41,7 @@ namespace repo {
 				protected:
 					const std::string file;
 					GeometryCollector *collector;
-					drawingutility::DrawingImageInfo* drawingCollector;
+					modelutility::DrawingImageInfo* drawingCollector;
 					const ModelImportConfig& importConfig;
 				};
 			}

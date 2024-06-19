@@ -27,12 +27,8 @@
 // Fields specific to revision only
 //
 //------------------------------------------------------------------------------
-#define REPO_NODE_REVISION_LABEL_PROJECT			"project"
-#define REPO_NODE_REVISION_LABEL_MODEL				"model"
-#define REPO_NODE_REVISION_LABEL_STATUS				"statusCode"
-#define REPO_NODE_REVISION_LABEL_REVCODE			"revCode"
-#define REPO_NODE_REVISION_LABEL_FORMAT				"format"
-#define REPO_NODE_REVISION_LABEL_IMAGE				"image"
+#define REPO_NODE_DRAWING_REVISION_LABEL_PROJECT			"project"
+#define REPO_NODE_DRAWING_REVISION_LABEL_MODEL				"model"
 
 //------------------------------------------------------------------------------
 
@@ -82,6 +78,13 @@ namespace repo {
 				lib::RepoUUID getProject() const;
 
 				lib::RepoUUID getModel() const;
+
+				/**
+				* Returns the format of the drawing referenced by rFile. This
+				* must be a format supported by DrawingImportManager, and all
+				* lowercase.
+				*/
+				std::string getFormat() const;
 
 				DrawingRevisionNode cloneAndAddImage(lib::RepoUUID imageRefNodeId) const;
 			};

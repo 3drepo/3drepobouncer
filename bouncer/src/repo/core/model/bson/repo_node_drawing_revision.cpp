@@ -48,18 +48,27 @@ std::vector<repo::lib::RepoUUID> DrawingRevisionNode::getFiles() const
 
 repo::lib::RepoUUID DrawingRevisionNode::getProject() const
 {
-	if (hasField(REPO_NODE_REVISION_LABEL_PROJECT))
+	if (hasField(REPO_NODE_DRAWING_REVISION_LABEL_PROJECT))
 	{
-		return getUUIDField(REPO_NODE_REVISION_LABEL_PROJECT);
+		return getUUIDField(REPO_NODE_DRAWING_REVISION_LABEL_PROJECT);
 	}
 	return {};
 }
 
 repo::lib::RepoUUID DrawingRevisionNode::getModel() const
 {
-	if (hasField(REPO_NODE_REVISION_LABEL_MODEL))
+	if (hasField(REPO_NODE_DRAWING_REVISION_LABEL_MODEL))
 	{
-		return getUUIDField(REPO_NODE_REVISION_LABEL_MODEL);
+		return getUUIDField(REPO_NODE_DRAWING_REVISION_LABEL_MODEL);
+	}
+	return {};
+}
+
+std::string DrawingRevisionNode::getFormat() const
+{
+	if (hasField(REPO_NODE_LABEL_FORMAT))
+	{
+		return getStringField(REPO_NODE_LABEL_FORMAT);
 	}
 	return {};
 }

@@ -16,21 +16,21 @@
 */
 
 #include <gtest/gtest.h>
-#include <repo/manipulator/drawingconverter/import/repo_drawing_import_manager.h>
+#include <repo/manipulator/modelconvertor/import/repo_drawing_import_manager.h>
 #include <repo/lib/repo_log.h>
 #include "../../../../repo_test_utils.h"
 #include "../../../../repo_test_database_info.h"
 #include "boost/filesystem.hpp"
 #include "../../bouncer/src/repo/error_codes.h"
 
-using namespace repo::manipulator::drawingconverter;
+using namespace repo::manipulator::modelconvertor;
 
 TEST(DrawingImportManager, ImportDGN)
 {
 	DrawingImportManager manager;
 	DrawingImageInfo drawing;
 	uint8_t error;
-	manager.importFromFile(drawing, getDataPath(dgnDrawing), "DGN", error);
+	manager.importFromFile(drawing, getDataPath(dgnDrawing), "dgn", error);
 
 	EXPECT_EQ(error, REPOERR_OK);
 	EXPECT_GT(drawing.data.size(), 0);
@@ -41,7 +41,7 @@ TEST(DrawingImportManager, ImportDWG)
 	DrawingImportManager manager;
 	DrawingImageInfo drawing;
 	uint8_t error;
-	manager.importFromFile(drawing, getDataPath(dwgDrawing), "DWG", error);
+	manager.importFromFile(drawing, getDataPath(dwgDrawing), "dwg", error);
 
 	EXPECT_EQ(error, REPOERR_OK);
 	EXPECT_GT(drawing.data.size(), 0);

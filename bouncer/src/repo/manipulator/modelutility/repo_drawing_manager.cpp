@@ -20,7 +20,7 @@
 #include "../../core/model/bson/repo_bson_ref.h"
 #include "../../error_codes.h"
 
-using namespace repo::manipulator::drawingutility;
+using namespace repo::manipulator::modelutility;
 
 DrawingRevisionNode DrawingManager::fetchRevision(
 	repo::core::handler::AbstractDatabaseHandler* handler,
@@ -46,7 +46,7 @@ uint8_t DrawingManager::commitImage(
 	metadata.append(REPO_LABEL_MEDIA_TYPE, REPO_MEDIA_TYPE_SVG);
 	metadata.append(REPO_LABEL_PROJECT, revision.getProject());
 	metadata.append(REPO_LABEL_MODEL, revision.getModel());
-	metadata.append("rid", revision.getUniqueID());
+	metadata.append(REPO_NODE_REVISION_ID, revision.getUniqueID());
 
 	auto drawingRefNodeId = repo::lib::RepoUUID::createUUID();
 
