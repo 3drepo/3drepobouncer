@@ -30,7 +30,6 @@
 #define REPO_NODE_REVISION_LABEL_MESSAGE					"desc" //!< Message
 #define REPO_NODE_REVISION_LABEL_TAG						"tag" //!< Tag
 #define REPO_NODE_REVISION_LABEL_BRANCH_MASTER			"master" //!< Master branch
-#define REPO_NODE_REVISION_LABEL_INCOMPLETE             "incomplete"
 #define REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT      "coordOffset"
 //------------------------------------------------------------------------------
 
@@ -103,12 +102,6 @@ namespace repo {
 				* @return returns a string for tag. empty string if none.
 				*/
 				std::string getTag() const;
-
-				/**
-				* Get the status of the upload for this revision
-				* @returns the upload status of the revision
-				*/
-				UploadStatus getUploadStatus() const;
 
 				/**
 				* Get the original file(s) the scene original created from

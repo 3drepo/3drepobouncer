@@ -106,7 +106,7 @@ static std::string produceProcessDrawingArgs(
 {
 	return  getClientExePath() + " "
 		+ getConnConfig()
-		+ " processDrawing -f \""
+		+ " processDrawing \""
 		+ filePath + "\"";
 }
 

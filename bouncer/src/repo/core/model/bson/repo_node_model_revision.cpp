@@ -110,14 +110,3 @@ std::vector<std::string> ModelRevisionNode::getOrgFiles() const
 	return fileList;
 }
 
-ModelRevisionNode::UploadStatus ModelRevisionNode::getUploadStatus() const
-{
-	UploadStatus status = UploadStatus::COMPLETE;
-	if (hasField(REPO_NODE_REVISION_LABEL_INCOMPLETE))
-	{
-		status = (UploadStatus)getIntField(REPO_NODE_REVISION_LABEL_INCOMPLETE);
-	}
-
-	return status;
-}
-

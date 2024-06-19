@@ -36,6 +36,17 @@ RevisionNode::~RevisionNode()
 {
 }
 
+RevisionNode::UploadStatus RevisionNode::getUploadStatus() const
+{
+	UploadStatus status = UploadStatus::COMPLETE;
+	if (hasField(REPO_NODE_REVISION_LABEL_INCOMPLETE))
+	{
+		status = (UploadStatus)getIntField(REPO_NODE_REVISION_LABEL_INCOMPLETE);
+	}
+
+	return status;
+}
+
 std::string RevisionNode::getAuthor() const
 {
 	return getStringField(REPO_NODE_REVISION_LABEL_AUTHOR);

@@ -30,6 +30,7 @@
 #define REPO_NODE_REVISION_LABEL_AUTHOR					"author" //!< Author
 #define REPO_NODE_REVISION_LABEL_TIMESTAMP				"timestamp" //!< Timestamp
 #define REPO_NODE_REVISION_LABEL_REF_FILE               "rFile" //!< Reference file
+#define REPO_NODE_REVISION_LABEL_INCOMPLETE             "incomplete"
 #define REPO_NODE_UUID_SUFFIX_REVISION					"10" //!< uuid suffix
 //------------------------------------------------------------------------------
 
@@ -77,6 +78,12 @@ namespace repo {
 
 				// Though rFile is a common member between Revision nodes, the type
 				// changes, so getting the file should be implemented in the subclasses
+
+				/**
+				* Get the status of the upload for this revision
+				* @returns the upload status of the revision
+				*/
+				UploadStatus getUploadStatus() const;
 
 				/**
 				* Get the author commited the revision

@@ -45,7 +45,7 @@ std::string helpInfo()
 	ss << cmdGenStash << "\tGenerate Stash for a project. (args: database project [repo|gltf|src|tree] [all|revId])\n";
 	ss << cmdGetFile << "\t\tGet original file for the latest revision of the project (args: database project dir)\n";
 	ss << cmdImportFile << "\t\tImport file to database. (args: {file database project [dxrotate] [owner] [configfile]} or {-f parameterFile} )\n";
-	ss << cmdProcessDrawing << "\t\tProcess drawing revision node into an image. (args: -f parameterFile)\n";
+	ss << cmdProcessDrawing << "\t\tProcess drawing revision node into an image. (args: parameterFile)\n";
 	ss << cmdCreateFed << "\t\tGenerate a federation. (args: fedDetails [owner])\n";
 	ss << cmdTestConn << "\t\tTest the client and database connection is working. (args: none)\n";
 	ss << cmdVersion << "[-v]\tPrints the version of Repo Bouncer Client/Library\n";
@@ -63,7 +63,7 @@ int32_t knownValid(const std::string &cmd)
 	if (cmd == cmdImportFile)
 		return 2;
 	if (cmd == cmdProcessDrawing)
-		return 2;
+		return 1;
 	if (cmd == cmdGenStash)
 		return 3;
 	if (cmd == cmdCreateFed)
@@ -529,10 +529,9 @@ int32_t processDrawing(
 	/*
 	* Check the amount of parameters matches
 	*/
-	bool usingSettingFiles = command.nArgcs == 2 && std::string(command.args[0]) == "-f";
-	if (!usingSettingFiles)
+	if (command.nArgcs < 1)
 	{
-		repoLogError("Number of arguments mismatch! " + cmdProcessDrawing + " requires 2 arguments: -f <path to json settings>");
+		repoLogError("Number of arguments mismatch! " + cmdProcessDrawing + " requires 1 arguments: <path to json settings>");
 		return REPOERR_INVALID_ARG;
 	}
 
@@ -541,7 +540,7 @@ int32_t processDrawing(
 
 	boost::property_tree::ptree jsonTree;
 	try {
-		boost::property_tree::read_json(command.args[1], jsonTree);
+		boost::property_tree::read_json(command.args[0], jsonTree);
 
 		database = jsonTree.get<std::string>("database", "");
 		auto revisionStr = jsonTree.get<std::string>("revId", "");
