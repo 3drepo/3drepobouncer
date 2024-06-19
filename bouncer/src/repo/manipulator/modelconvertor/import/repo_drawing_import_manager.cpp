@@ -18,7 +18,8 @@
 #include "repo_drawing_import_manager.h"
 #include "../../../lib/repo_utils.h"
 #include "../../../error_codes.h"
-#include "../../modelconvertor/import/odaHelper/file_processor.h"
+#include "../../modelconvertor/import/odaHelper/file_processor_dgn.h"
+#include "../../modelconvertor/import/odaHelper/file_processor_dwg.h"
 
 using namespace repo::manipulator::modelconvertor;
 using namespace repo::manipulator::modelutility;
@@ -27,7 +28,7 @@ void DrawingImportManager::importFromFile(
 	DrawingImageInfo& drawing,
 	const std::string& filename,
 	const std::string& extension,
-	uint8_t& error
+	uint8_t &error
 ) const {
 	repoTrace << "Importing drawing...";
 
@@ -37,11 +38,20 @@ void DrawingImportManager::importFromFile(
 		return;
 	}
 
-	auto processor = odaHelper::FileProcessor::getFileProcessor(filename, extension, &drawing);
-	if (processor) {
-		error = processor->readFile();
+	// Choose the file processor based on the extension
+
+	if (extension == "dwg")
+	{
+		repo::manipulator::modelconvertor::odaHelper::FileProcessorDwg dwg(filename, &drawing);
+		error = dwg.readFile();
 	}
-	else {
+	else if (extension == "dgn")
+	{
+		repo::manipulator::modelconvertor::odaHelper::FileProcessorDgn dgn(filename, &drawing);
+		error = dgn.readFile();
+	}
+	else
+	{
 		repoError << "Unable to identify suitable importer for " << extension;
 		error = REPOERR_FILE_TYPE_NOT_SUPPORTED;
 	}
