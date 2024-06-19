@@ -698,8 +698,6 @@ TEST(RepoClientTest, GenStashTest)
 	delete controller;
 }
 
-#pragma optimize("", off)
-
 TEST(RepoClientTest, ProcessDrawing)
 {
 	// Create a drawing revision to test against. This requires both the drawing

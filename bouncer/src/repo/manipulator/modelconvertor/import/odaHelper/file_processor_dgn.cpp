@@ -284,8 +284,6 @@ void FileProcessorDgn::importModel(OdDbBaseDatabase *pDb,
 	pGsModule.release();
 }
 
-#pragma optimize("", off)
-
 void FileProcessorDgn::importDrawing(OdDgDatabasePtr pDb, const ODCOLORREF* pPallete, int numColors, OdDgElementId view)
 {
 	// This method creates an SVG output device, which is a type of rasteriser,
