@@ -67,3 +67,12 @@ std::unique_ptr<FileProcessor> FileProcessor::getFileProcessor(const std::string
 
 	return nullptr;
 }
+
+std::unique_ptr<FileProcessor> FileProcessor::getFileProcessor(const std::string& inputFile, const std::string& format, repo::manipulator::modelutility::DrawingImageInfo* collector) {
+	if (format == "dgn")
+		return makeUnique<FileProcessorDgn>(inputFile, collector);
+	else if (format == "dwg" || format == "dxf")
+		return makeUnique<FileProcessorDwg>(inputFile, collector);
+	else
+		return nullptr;
+}

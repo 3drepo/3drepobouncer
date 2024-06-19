@@ -34,6 +34,8 @@ namespace repo {
 
 				public:
 					static std::unique_ptr<FileProcessor> getFileProcessor(const std::string& inputFile, GeometryCollector* geoCollector, const ModelImportConfig& config);
+					static std::unique_ptr<FileProcessor> getFileProcessor(const std::string& inputFile, const std::string& format, modelutility::DrawingImageInfo* collector);
+
 					virtual ~FileProcessor();
 					virtual uint8_t readFile() = 0;
 					bool shouldApplyReduction = false;
