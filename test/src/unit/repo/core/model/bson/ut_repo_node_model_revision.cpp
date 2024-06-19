@@ -61,10 +61,10 @@ TEST(ModelRevisionNodeTest, PositionDependantTest)
 TEST(ModelRevisionNodeTest, CloneAndUpdateStatusTest)
 {
 	ModelRevisionNode empty;
-	auto updatedEmpty = empty.cloneAndUpdateStatus(ModelRevisionNode::UploadStatus::GEN_DEFAULT);
-	EXPECT_EQ(updatedEmpty.getUploadStatus(), ModelRevisionNode::UploadStatus::GEN_DEFAULT);
-	auto updatedEmpty2 = updatedEmpty.cloneAndUpdateStatus(ModelRevisionNode::UploadStatus::GEN_SEL_TREE);
-	EXPECT_EQ(updatedEmpty2.getUploadStatus(), ModelRevisionNode::UploadStatus::GEN_SEL_TREE);
+	auto updatedEmpty = empty.cloneAndUpdateStatus(RevisionNode::UploadStatus::GEN_DEFAULT);
+	EXPECT_EQ(updatedEmpty.getUploadStatus(), RevisionNode::UploadStatus::GEN_DEFAULT);
+	auto updatedEmpty2 = updatedEmpty.cloneAndUpdateStatus(RevisionNode::UploadStatus::GEN_SEL_TREE);
+	EXPECT_EQ(updatedEmpty2.getUploadStatus(), RevisionNode::UploadStatus::GEN_SEL_TREE);
 }
 
 TEST(ModelRevisionNodeTest, GetterTest)
@@ -78,7 +78,7 @@ TEST(ModelRevisionNodeTest, GetterTest)
 
 	EXPECT_TRUE(empty.getMessage().empty());
 	EXPECT_TRUE(empty.getTag().empty());
-	EXPECT_EQ(ModelRevisionNode::UploadStatus::COMPLETE, empty.getUploadStatus());
+	EXPECT_EQ(RevisionNode::UploadStatus::COMPLETE, empty.getUploadStatus());
 
 	EXPECT_EQ(0, empty.getOrgFiles().size());
 	EXPECT_EQ(-1, empty.getTimestampInt64());
@@ -109,7 +109,7 @@ TEST(ModelRevisionNodeTest, GetterTest)
 
 	EXPECT_EQ(message, revisionNode.getMessage());
 	EXPECT_EQ(tag, revisionNode.getTag());
-	EXPECT_EQ(ModelRevisionNode::UploadStatus::COMPLETE, revisionNode.getUploadStatus());
+	EXPECT_EQ(RevisionNode::UploadStatus::COMPLETE, revisionNode.getUploadStatus());
 
 	auto filesOut = revisionNode.getOrgFiles();
 	EXPECT_EQ(files.size(), filesOut.size());

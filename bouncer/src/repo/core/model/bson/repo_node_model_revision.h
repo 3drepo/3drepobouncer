@@ -39,10 +39,6 @@ namespace repo {
 			class REPO_API_EXPORT ModelRevisionNode : public RevisionNode
 			{
 			public:
-				// Some of these statuses will no longer be set by bouncer, but
-				// may still exist in the database.
-				enum class UploadStatus { COMPLETE = 0, GEN_DEFAULT = 1, GEN_REPO_STASH = 2, GEN_WEB_STASH = 3, GEN_SEL_TREE = 4, MISSING_BUNDLES = 5, UNKNOWN = 6 };
-
 				/**
 				* Constructor
 				* Construct a RepoNode base on a RepoBSON object
