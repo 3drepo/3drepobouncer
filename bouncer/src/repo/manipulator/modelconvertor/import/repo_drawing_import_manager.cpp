@@ -16,6 +16,7 @@
 */
 
 #include "repo_drawing_import_manager.h"
+#include "../../../lib/repo_log.h"
 #include "../../../lib/repo_utils.h"
 #include "../../../error_codes.h"
 
