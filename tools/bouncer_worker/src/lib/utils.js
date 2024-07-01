@@ -38,8 +38,6 @@ Utils.gatherProcessInformation = (
 	model,
 	database,
 	queue,
-	filetype,
-	filesize,
 	repoLicense,
 	rid,
 ) => (
@@ -50,8 +48,6 @@ Utils.gatherProcessInformation = (
 		Rid: rid,
 		Database: database,
 		Queue: queue, // logLabel.label,
-		FileType: filetype, // file.split('.').pop().toString(),
-		FileSize: filesize, // fileStats.size,
 		licenseKey: repoLicense,
 	});
 

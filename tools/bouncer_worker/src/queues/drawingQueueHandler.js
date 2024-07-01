@@ -1,6 +1,5 @@
-
 /**
- * Copyright (C) 2020 3D Repo Ltd
+ * Copyright (C) 2024 3D Repo Ltd
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -16,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-const fs = require('fs');
 const {
 	callbackQueueSpecified,
 	logDirExists,
@@ -34,8 +32,7 @@ const Handler = {};
 const logLabel = { label: 'MODELQ' };
 
 Handler.onMessageReceived = async (cmd, rid, callback) => {
-	const logDir = `${config.logging.taskLogDir}/${rid.toString()}/`;
-	const { errorCode, database, model, user, cmdParams, file } = messageDecoder(cmd);
+	const { errorCode, database, model, user, cmdParams, revId } = messageDecoder(cmd);
 
 	if (errorCode) {
 		callback(JSON.stringify({ value: errorCode }));
@@ -61,7 +58,7 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	const ridString = rid.toString();
 
 	try {
-		let processInformation = Utils.gatherProcessInformation(
+		const processInformation = Utils.gatherProcessInformation(
 			user,
 			model,
 			database,
@@ -70,10 +67,8 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 			ridString,
 		);
 
-		// Append process information with queue specific properties
-		const { size } = fs.statSync(file);
-		processInformation.FileType = file.split('.').pop().toString(), // filetype
-		processInformation.FileSize = size;
+		// Append queue specific properties
+		processInformation.Revision = revId;
 
 		returnMessage.value = await runBouncerCommand(logDir, cmdParams, processInformation);
 		await processMonitor.sendReport(ridString);
@@ -87,7 +82,7 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 				await Utils.sleep(config.rabbitmq.maxWaitTimeMS);
 				throw err;
 			default:
-				logger.error(`Import model error: ${err.message || err}`, logLabel);
+				logger.error(`Import drawing error: ${err.message || err}`, logLabel);
 				await processMonitor.sendReport(ridString);
 				returnMessage.value = err || ERRCODE_BOUNCER_CRASH;
 				callback(JSON.stringify(returnMessage));

@@ -41,11 +41,10 @@ const queueSpecified = (queue, logLabel) => configSpecified('rabbitmq', queue, l
 const CommonQueueUtils = {};
 
 CommonQueueUtils.callbackQueueSpecified = (logLabel) => queueSpecified('callback_queue', logLabel);
-CommonQueueUtils.jobQueueSpecified = (logLabel) => queueSpecified('worker_queue', logLabel);
-CommonQueueUtils.modelQueueSpecified = (logLabel) => queueSpecified('model_queue', logLabel);
 
 CommonQueueUtils.logDirExists = (logLabel) => configSpecified('logging', 'taskLogDir', logLabel)
 											&& pathExists('logging', 'taskLogDir', logLabel);
 CommonQueueUtils.sharedDirExists = (logLabel) => configSpecified('rabbitmq', 'sharedDir', logLabel)
 											&& pathExists('rabbitmq', 'sharedDir', logLabel);
+
 module.exports = CommonQueueUtils;
