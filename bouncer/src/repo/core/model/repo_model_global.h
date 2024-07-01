@@ -54,6 +54,7 @@
 #define REPO_LABEL_DATABASE         "database"
 #define REPO_LABEL_HEIGHT           "height"
 #define REPO_LABEL_MEDIA_TYPE       "mime"              //!< Media Type (mime type)
+#define REPO_LABEL_PROJECT          "project"
 #define REPO_LABEL_MODEL            "model"
 #define REPO_LABEL_ROLE             "role"
 #define REPO_LABEL_ROLES            "roles"
@@ -66,6 +67,7 @@
 #define REPO_LABEL_SPEED            "speed"
 #define REPO_LABEL_ZFAR             "zFar"
 #define REPO_LABEL_ZNEAR            "zNear"
+#define REPO_LABEL_IMAGE			"image"
 
 #define REPO_LABEL_DESCRIPTION      "desc"
 #define REPO_LABEL_OWNER            "owner"
@@ -102,6 +104,7 @@
 #define REPO_COLLECTION_EXT_REF         "ref"
 #define REPO_COLLECTION_SEQUENCE        "sequences"
 #define REPO_COLLECTION_TASK            "activities"
+#define REPO_COLLECTION_DRAWINGS		"drawings.history"
 
 #define REPO_COLLECTION_SETTINGS            "settings"
 
@@ -176,7 +179,10 @@
 #define REPO_NODE_LABEL_NAME			"name" //!< optional bson field label
 #define REPO_NODE_LABEL_PARENTS			"parents" //!< optional field label
 #define REPO_NODE_REVISION_ID           "rev_id"
-#define REPO_NODE_STASH_REF              "rev_id"
+#define REPO_NODE_STASH_REF             "rev_id"
+#define REPO_NODE_LABEL_EXTENSION		"extension"
+#define REPO_NODE_LABEL_FORMAT			"format"
+
 //-----------------------------------------------------------------------------
 
 #define REPO_NODE_TYPE_ANIMATION		"animation"

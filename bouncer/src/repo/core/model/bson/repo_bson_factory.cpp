@@ -760,7 +760,7 @@ ReferenceNode RepoBSONFactory::makeReferenceNode(
 	return ReferenceNode(builder.obj());
 }
 
-RevisionNode RepoBSONFactory::makeRevisionNode(
+ModelRevisionNode RepoBSONFactory::makeRevisionNode(
 	const std::string			   &user,
 	const repo::lib::RepoUUID                 &branch,
 	const repo::lib::RepoUUID                 &id,
@@ -817,7 +817,7 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
 		builder.appendArray(REPO_NODE_REVISION_LABEL_REF_FILE, arrbuilder.obj());
 	}
 
-	return RevisionNode(builder.obj());
+	return ModelRevisionNode(builder.obj());
 }
 
 TextureNode RepoBSONFactory::makeTextureNode(

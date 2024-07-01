@@ -18,9 +18,11 @@ set(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_user.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_camera.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_drawing_revision.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_material.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_mesh.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_metadata.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_model_revision.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_reference.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_revision.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_supermesh.cpp
@@ -44,9 +46,11 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_user.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_camera.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_drawing_revision.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_material.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_mesh.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_metadata.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_model_revision.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_reference.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_revision.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_supermesh.h

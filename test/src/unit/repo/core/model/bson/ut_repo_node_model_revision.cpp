@@ -19,7 +19,7 @@
 
 #include <gtest/gtest.h>
 
-#include <repo/core/model/bson/repo_node_revision.h>
+#include <repo/core/model/bson/repo_node_model_revision.h>
 #include <repo/core/model/bson/repo_bson_builder.h>
 #include <repo/core/model/bson/repo_bson_factory.h>
 
@@ -29,7 +29,7 @@ using namespace repo::core::model;
 /**
 * Construct from mongo builder and mongo bson should give me the same bson
 */
-TEST(RevisionNodeTest, Constructor)
+TEST(ModelRevisionNodeTest, Constructor)
 {
 	RevisionNode empty;
 
@@ -44,7 +44,7 @@ TEST(RevisionNodeTest, Constructor)
 	EXPECT_EQ(0, fromRepoBSON.getFileList().size());
 }
 
-TEST(RevisionNodeTest, TypeTest)
+TEST(ModelRevisionNodeTest, TypeTest)
 {
 	RevisionNode node;
 
@@ -52,24 +52,24 @@ TEST(RevisionNodeTest, TypeTest)
 	EXPECT_EQ(NodeType::REVISION, node.getTypeAsEnum());
 }
 
-TEST(RevisionNodeTest, PositionDependantTest)
+TEST(ModelRevisionNodeTest, PositionDependantTest)
 {
 	RevisionNode node;
 	EXPECT_FALSE(node.positionDependant());
 }
 
-TEST(RevisionNodeTest, CloneAndUpdateStatusTest)
+TEST(ModelRevisionNodeTest, CloneAndUpdateStatusTest)
 {
-	RevisionNode empty;
+	ModelRevisionNode empty;
 	auto updatedEmpty = empty.cloneAndUpdateStatus(RevisionNode::UploadStatus::GEN_DEFAULT);
 	EXPECT_EQ(updatedEmpty.getUploadStatus(), RevisionNode::UploadStatus::GEN_DEFAULT);
 	auto updatedEmpty2 = updatedEmpty.cloneAndUpdateStatus(RevisionNode::UploadStatus::GEN_SEL_TREE);
 	EXPECT_EQ(updatedEmpty2.getUploadStatus(), RevisionNode::UploadStatus::GEN_SEL_TREE);
 }
 
-TEST(RevisionNodeTest, GetterTest)
+TEST(ModelRevisionNodeTest, GetterTest)
 {
-	RevisionNode empty;
+	ModelRevisionNode empty;
 	EXPECT_TRUE(empty.getAuthor().empty());
 	auto offset = empty.getCoordOffset();
 	EXPECT_EQ(3, offset.size());

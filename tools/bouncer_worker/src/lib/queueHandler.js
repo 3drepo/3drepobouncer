@@ -21,6 +21,7 @@ const logger = require('./logger');
 const { exitApplication, sleep } = require('./utils');
 const JobQHandler = require('../queues/jobQueueHandler');
 const ModelQHandler = require('../queues/modelQueueHandler');
+const DrawingQHandler = require('../queues/drawingQueueHandler');
 
 let connClosed = false;
 let retry = 0;
@@ -32,7 +33,44 @@ const QueueHandler = {};
 const queueLabel = {
 	JOB: 'job',
 	MODEL: 'model',
+	DRAWING: 'drawing',
 };
+
+const queueHandlers = {};
+if(rabbitmq.worker_queue){
+	queueHandlers[rabbitmq.worker_queue] = JobQHandler;
+}
+if(rabbitmq.model_queue){
+	queueHandlers[rabbitmq.model_queue] = ModelQHandler;
+}
+if(rabbitmq.drawing_queue){
+	queueHandlers[rabbitmq.drawing_queue] = DrawingQHandler;
+}
+
+const getQueueName = (label) => {
+	switch (label) {
+		case queueLabel.JOB:
+			if(rabbitmq.worker_queue){
+				return rabbitmq.worker_queue;
+			}
+			break;
+		case queueLabel.MODEL:
+			if(rabbitmq.model_queue){
+				return rabbitmq.model_queue;
+			}
+			break;
+		case queueLabel.DRAWING:
+			if(rabbitmq.drawing_queue){
+				return rabbitmq.drawing_queue;
+			}
+			break;
+		default:
+			logger.error(`Unrecognised queue type: ${label}. Expected [job|model|drawing]`, logLabel);
+			exitApplication();
+	}
+	logger.error(`Failed to find rabbitmq entry for queue type: ${label} in config`, logLabel);
+	exitApplication();
+}
 
 const listenToQueue = (channel, queueName, prefetchCount, callback) => {
 	channel.assertQueue(queueName, { durable: true });
@@ -54,22 +92,16 @@ const listenToQueue = (channel, queueName, prefetchCount, callback) => {
 	}, { noAck: false });
 };
 
-const establishChannel = async (conn, listenToJobQueue, listenToModelQueue) => {
+const establishChannel = async (conn, queueNames) => {
 	const channel = await conn.createChannel();
 	channel.assertQueue(rabbitmq.callback_queue, { durable: true });
-	if (listenToJobQueue) {
-		if (!JobQHandler.validateConfiguration(logLabel)) {
+	queueNames.forEach(queueName => {
+		const handler = queueHandlers[queueName];
+		if(!handler.validateConfiguration(logLabel)) {
 			exitApplication();
 		}
-		listenToQueue(channel, rabbitmq.worker_queue, rabbitmq.task_prefetch, JobQHandler.onMessageReceived);
-	}
-
-	if (listenToModelQueue) {
-		if (!ModelQHandler.validateConfiguration(logLabel)) {
-			exitApplication();
-		}
-		listenToQueue(channel, rabbitmq.model_queue, rabbitmq.model_prefetch, ModelQHandler.onMessageReceived);
-	}
+		listenToQueue(channel, queueName, rabbitmq.task_prefetch, handler.onMessageReceived);
+	})
 };
 
 const executeTasks = async (conn, queueName, nTasks, callback) => {
@@ -168,41 +200,26 @@ const connectToRabbitMQ = async (autoReconnect, uponConnected) => {
 };
 
 QueueHandler.connectToQueue = async (specificQueue) => {
-	const listenToJobQueue = !specificQueue || specificQueue === queueLabel.JOB;
-	const listenToModelQueue = !specificQueue || specificQueue === queueLabel.MODEL;
-
-	if (listenToJobQueue || listenToModelQueue) {
-		connectToRabbitMQ(true,
-			(conn) => establishChannel(conn, listenToJobQueue, listenToModelQueue));
-	} else {
-		logger.error(`Unrecognised queue type: ${specificQueue}. Expected [job|model]`, logLabel);
-		exitApplication();
+	let queueNames = [];
+	if(specificQueue){
+		queueNames.push(getQueueName(specificQueue));
 	}
+	else{
+		for(const label in queueLabel){
+			queueNames.push(getQueueName(queueLabel[label]));
+		}
+	}
+	connectToRabbitMQ(true,
+		(conn) => establishChannel(conn, queueNames));
 };
 
 QueueHandler.runNTasks = async (queueType, nTasks) => {
-	let queueName;
-	let callback;
-	switch (queueType) {
-		case queueLabel.JOB:
-			if (!JobQHandler.validateConfiguration(logLabel)) {
-				exitApplication();
-			}
-			queueName = rabbitmq.worker_queue;
-			callback = JobQHandler.onMessageReceived;
-			break;
-		case queueLabel.MODEL:
-			if (!ModelQHandler.validateConfiguration(logLabel)) {
-				exitApplication();
-			}
-			queueName = rabbitmq.model_queue;
-			callback = ModelQHandler.onMessageReceived;
-			break;
-		default:
-			logger.error(`Unrecognised queue type: ${queueType}. Expected [job|model]`, logLabel);
-			exitApplication();
+	const queueName = getQueueName(queueType);
+	const handler = queueHandlers[queueName];
+	if(!handler.validateConfiguration(logLabel)) {
+		exitApplication();
 	}
-	connectToRabbitMQ(false, (conn) => executeTasks(conn, queueName, nTasks, callback));
+	connectToRabbitMQ(false, (conn) => executeTasks(conn, queueName, nTasks, handler.onMessageReceived));
 };
 
 module.exports = QueueHandler;

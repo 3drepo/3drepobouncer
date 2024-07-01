@@ -31,11 +31,10 @@ namespace repo {
 			//------------------------------------------------------------------------------
 #define REPO_NODE_TYPE_TEXTURE				"texture"
 #define REPO_NODE_LABEL_BIT_DEPTH			"bit_depth"
-#define REPO_NODE_LABEL_EXTENSION			"extension"
 #define REPO_NODE_LABEL_DATA_BYTE_COUNT		"data_byte_count"
 			//------------------------------------------------------------------------------
 
-			class REPO_API_EXPORT TextureNode :public RepoNode
+			class REPO_API_EXPORT TextureNode : public RepoNode
 			{
 			public:
 

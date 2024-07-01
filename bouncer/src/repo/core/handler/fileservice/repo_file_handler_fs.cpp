@@ -93,6 +93,13 @@ std::ifstream FSFileHandler::getFileStream(
 	return std::ifstream();
 }
 
+std::string FSFileHandler::getFilePath(
+	const std::string& link)
+{
+	auto fullPath = boost::filesystem::absolute(link, dirPath);
+	return fullPath.string();
+}
+
 std::vector<std::string> FSFileHandler::determineHierachy(
 	const std::string &name
 ) const {

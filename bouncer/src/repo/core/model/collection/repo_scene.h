@@ -28,7 +28,7 @@
 #include "../bson/repo_bson_sequence.h"
 #include "../bson/repo_bson_task.h"
 #include "../bson/repo_node.h"
-#include "../bson/repo_node_revision.h"
+#include "../bson/repo_node_model_revision.h"
 
 typedef std::unordered_map<repo::lib::RepoUUID, std::vector<repo::core::model::RepoNode*>, repo::lib::RepoUUIDHasher> ParentMap;
 
@@ -475,7 +475,7 @@ namespace repo {
 				*/
 				bool updateRevisionStatus(
 					repo::core::handler::AbstractDatabaseHandler *handler,
-					const RevisionNode::UploadStatus &status);
+					const ModelRevisionNode::UploadStatus &status);
 
 				/**
 				* --------------------- Node Relationship ----------------------
@@ -979,7 +979,7 @@ namespace repo {
 					repo::core::handler::AbstractDatabaseHandler *handler,
 					repo::core::handler::fileservice::FileManager *manager,
 					std::string &errMsg,
-					RevisionNode *&newRevNode,
+					ModelRevisionNode *&newRevNode,
 					const std::string &userName,
 					const std::string &message,
 					const std::string &tag,
@@ -1077,7 +1077,7 @@ namespace repo {
 				bool unRevisioned;       /*! Flag to indicate if the scene graph is revisioned (true for scene graphs from model convertor)*/
 				std::string databaseName;/*! name of the database */
 				std::string projectName; /*! name of the project */
-				RevisionNode		 *revNode;
+				ModelRevisionNode		 *revNode;
 
 				RepoSequence sequence;
 				std::vector<RepoTask> tasks;
