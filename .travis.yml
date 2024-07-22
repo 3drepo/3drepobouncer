@@ -178,4 +178,4 @@ matrix:
 notifications:
     email:
         recipients:
-            - devops@3drepo.org
+            - 3drepo-devops@asite.com
