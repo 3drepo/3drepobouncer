@@ -33,7 +33,8 @@
 	"elastic": {
 		"enabled"   : false,
 		"cloudId"   : "cloudhost:xxx",
-		"cloudAuth" : "username:password"
+		"cloudAuth" : "username:password",
+		"namespace" : ""
 	},
 	"processMonitoring" : {
 		"enabled" : false,

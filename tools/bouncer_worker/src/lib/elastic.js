@@ -86,6 +86,11 @@ const createElasticRecord = async (index, body, id) => {
 			return;
 		}
 
+		const { namespace } = elastic;
+		if (body && namespace) {
+			body.namespace = namespace;
+		}
+
 		await elasticClient.create({
 			index,
 			id,
