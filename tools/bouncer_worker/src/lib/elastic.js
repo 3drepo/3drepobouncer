@@ -35,6 +35,7 @@ const processingRecordMapping = {
 	ProcessTime: { type: 'double' },
 	ReturnCode: { type: 'double' },
 	licenseKey: { type: 'keyword' },
+	namespace: { type: 'text' },
 };
 
 const indicesMappings = [
