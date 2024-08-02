@@ -1,4 +1,3 @@
-
 /**
  * Copyright (C) 2020 3D Repo Ltd
  *
@@ -61,7 +60,7 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	const ridString = rid.toString();
 
 	try {
-		let processInformation = Utils.gatherProcessInformation(
+		const processInformation = Utils.gatherProcessInformation(
 			user,
 			model,
 			database,
@@ -72,7 +71,7 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 
 		// Append process information with queue specific properties
 		const { size } = fs.statSync(file);
-		processInformation.FileType = file.split('.').pop().toString(), // filetype
+		processInformation.FileType = file.split('.').pop().toString(); // filetype
 		processInformation.FileSize = size;
 
 		returnMessage.value = await runBouncerCommand(logDir, cmdParams, processInformation);
@@ -95,10 +94,9 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	}
 };
 
-Handler.validateConfiguration = (label) =>
-		callbackQueueSpecified(label)
-		&& logDirExists(label)
-		&& sharedDirExists(label);
+Handler.validateConfiguration = (label) => callbackQueueSpecified(label)
+	&& logDirExists(label)
+	&& sharedDirExists(label);
 
 Handler.prefetchCount = config.rabbitmq.model_prefetch;
 

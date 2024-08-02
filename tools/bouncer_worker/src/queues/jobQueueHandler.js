@@ -59,10 +59,9 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	callback(JSON.stringify(message));
 };
 
-Handler.validateConfiguration = (label) =>
-		callbackQueueSpecified(label)
-		&& logDirExists(label)
-		&& sharedDirExists(label);
+Handler.validateConfiguration = (label) => callbackQueueSpecified(label)
+	&& logDirExists(label)
+	&& sharedDirExists(label);
 
 Handler.prefetchCount = config.rabbitmq.task_prefetch;
 

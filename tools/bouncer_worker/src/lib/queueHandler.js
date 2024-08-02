@@ -37,30 +37,32 @@ const queueLabel = {
 };
 
 const queueHandlers = {};
-if(rabbitmq.worker_queue) {
+if (rabbitmq.worker_queue) {
 	queueHandlers[rabbitmq.worker_queue] = JobQHandler;
 }
-if(rabbitmq.model_queue) {
+if (rabbitmq.model_queue) {
 	queueHandlers[rabbitmq.model_queue] = ModelQHandler;
 }
-if(rabbitmq.drawing_queue) {
+if (rabbitmq.drawing_queue) {
 	queueHandlers[rabbitmq.drawing_queue] = DrawingQHandler;
 }
 
+// Disable consistent-return because the non-return paths exit the process.
+// eslint-disable-next-line consistent-return
 const getQueueName = (label) => {
 	switch (label) {
 		case queueLabel.JOB:
-			if(rabbitmq.worker_queue) {
+			if (rabbitmq.worker_queue) {
 				return rabbitmq.worker_queue;
 			}
 			break;
 		case queueLabel.MODEL:
-			if(rabbitmq.model_queue) {
+			if (rabbitmq.model_queue) {
 				return rabbitmq.model_queue;
 			}
 			break;
 		case queueLabel.DRAWING:
-			if(rabbitmq.drawing_queue) {
+			if (rabbitmq.drawing_queue) {
 				return rabbitmq.drawing_queue;
 			}
 			break;
@@ -70,7 +72,7 @@ const getQueueName = (label) => {
 	}
 	logger.error(`Failed to find rabbitmq entry for queue type: ${label} in config`, logLabel);
 	exitApplication();
-}
+};
 
 const listenToQueue = (channel, queueName, prefetchCount, callback) => {
 	channel.assertQueue(queueName, { durable: true });
@@ -95,13 +97,13 @@ const listenToQueue = (channel, queueName, prefetchCount, callback) => {
 const establishChannel = async (conn, queueNames) => {
 	const channel = await conn.createChannel();
 	channel.assertQueue(rabbitmq.callback_queue, { durable: true });
-	queueNames.forEach(queueName => {
+	queueNames.forEach((queueName) => {
 		const handler = queueHandlers[queueName];
-		if(!handler.validateConfiguration(logLabel)) {
+		if (!handler.validateConfiguration(logLabel)) {
 			exitApplication();
 		}
 		listenToQueue(channel, queueName, handler.prefetchCount, handler.onMessageReceived);
-	})
+	});
 };
 
 const executeTasks = async (conn, queueName, nTasks, callback) => {
@@ -215,7 +217,7 @@ QueueHandler.connectToQueue = async (specificQueue) => {
 QueueHandler.runNTasks = async (queueType, nTasks) => {
 	const queueName = getQueueName(queueType);
 	const handler = queueHandlers[queueName];
-	if(!handler.validateConfiguration(logLabel)) {
+	if (!handler.validateConfiguration(logLabel)) {
 		exitApplication();
 	}
 	connectToRabbitMQ(false, (conn) => executeTasks(conn, queueName, nTasks, handler.onMessageReceived));

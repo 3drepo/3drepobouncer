@@ -32,6 +32,7 @@ const Handler = {};
 const logLabel = { label: 'MODELQ' };
 
 Handler.onMessageReceived = async (cmd, rid, callback) => {
+	const logDir = `${config.logging.taskLogDir}/${rid.toString()}/`;
 	const { errorCode, database, model, user, cmdParams, revId } = messageDecoder(cmd);
 
 	if (errorCode) {
@@ -90,10 +91,9 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	}
 };
 
-Handler.validateConfiguration = (label) =>
-		callbackQueueSpecified(label)
-		&& logDirExists(label)
-		&& sharedDirExists(label);
+Handler.validateConfiguration = (label) => callbackQueueSpecified(label)
+	&& logDirExists(label)
+	&& sharedDirExists(label);
 
 Handler.prefetchCount = config.rabbitmq.model_prefetch;
 
