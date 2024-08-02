@@ -37,30 +37,30 @@ const queueLabel = {
 };
 
 const queueHandlers = {};
-if(rabbitmq.worker_queue){
+if(rabbitmq.worker_queue) {
 	queueHandlers[rabbitmq.worker_queue] = JobQHandler;
 }
-if(rabbitmq.model_queue){
+if(rabbitmq.model_queue) {
 	queueHandlers[rabbitmq.model_queue] = ModelQHandler;
 }
-if(rabbitmq.drawing_queue){
+if(rabbitmq.drawing_queue) {
 	queueHandlers[rabbitmq.drawing_queue] = DrawingQHandler;
 }
 
 const getQueueName = (label) => {
 	switch (label) {
 		case queueLabel.JOB:
-			if(rabbitmq.worker_queue){
+			if(rabbitmq.worker_queue) {
 				return rabbitmq.worker_queue;
 			}
 			break;
 		case queueLabel.MODEL:
-			if(rabbitmq.model_queue){
+			if(rabbitmq.model_queue) {
 				return rabbitmq.model_queue;
 			}
 			break;
 		case queueLabel.DRAWING:
-			if(rabbitmq.drawing_queue){
+			if(rabbitmq.drawing_queue) {
 				return rabbitmq.drawing_queue;
 			}
 			break;
@@ -200,13 +200,12 @@ const connectToRabbitMQ = async (autoReconnect, uponConnected) => {
 };
 
 QueueHandler.connectToQueue = async (specificQueue) => {
-	let queueNames = [];
-	if(specificQueue){
+	const queueNames = [];
+	if (specificQueue) {
 		queueNames.push(getQueueName(specificQueue));
-	}
-	else{
-		for(const label in queueLabel){
-			queueNames.push(getQueueName(queueLabel[label]));
+	} else {
+		for (const label of Object.values(queueLabel)) {
+			queueNames.push(getQueueName(label));
 		}
 	}
 	connectToRabbitMQ(true,
