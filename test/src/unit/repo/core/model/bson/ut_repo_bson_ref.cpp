@@ -63,7 +63,7 @@ TEST(RepoRefTest, UUIDTest)
 	builder.append(REPO_REF_LABEL_LINK, link);
 	builder.append(REPO_REF_LABEL_SIZE, (unsigned int)size);
 
-	auto& ref = RepoRef(builder.obj());
+	auto ref = RepoRef(builder.obj());
 
 	EXPECT_FALSE(ref.isEmpty());
 	EXPECT_EQ(id.toString(), ref.getID());
@@ -76,7 +76,7 @@ TEST(RepoRefTest, InvalidIdType)
 {
 	repo::core::model::RepoBSONBuilder builder;
 	builder.append(REPO_LABEL_ID, 0); // An integer is not a valid Id type
-	auto& ref = RepoRef(builder.obj());
+	auto ref = RepoRef(builder.obj());
 
 	EXPECT_THROW({
 		ref.getID();
