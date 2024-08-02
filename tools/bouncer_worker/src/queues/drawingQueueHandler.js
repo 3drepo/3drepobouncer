@@ -29,7 +29,7 @@ const processMonitor = require('../lib/processMonitor');
 const Utils = require('../lib/utils');
 
 const Handler = {};
-const logLabel = { label: 'MODELQ' };
+const logLabel = { label: 'DRAWINGQ' };
 
 Handler.onMessageReceived = async (cmd, rid, callback) => {
 	const logDir = `${config.logging.taskLogDir}/${rid.toString()}/`;
