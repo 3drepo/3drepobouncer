@@ -35,7 +35,16 @@ std::string RepoRef::convertTypeAsString(const RefType &type) {
 }
 
 std::string RepoRef::getID() const {
-	return getStringField(REPO_LABEL_ID);
+	auto element = getField(REPO_LABEL_ID);
+	if (element.type() == ElementType::UUID) {
+		return lib::RepoUUID::fromBSONElement(element).toString();
+	}
+	else if (element.type() == ElementType::STRING) {
+		return element.String();
+	}
+	else {
+		throw std::invalid_argument("Ref node id is not a UUID or string");
+	}
 }
 
 std::string RepoRef::getFileName() const {
