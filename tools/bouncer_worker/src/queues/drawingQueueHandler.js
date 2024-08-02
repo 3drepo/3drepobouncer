@@ -95,6 +95,6 @@ Handler.validateConfiguration = (label) => callbackQueueSpecified(label)
 	&& logDirExists(label)
 	&& sharedDirExists(label);
 
-Handler.prefetchCount = config.rabbitmq.model_prefetch;
+Handler.prefetchCount = config.rabbitmq.drawing_prefetch;
 
 module.exports = Handler;
