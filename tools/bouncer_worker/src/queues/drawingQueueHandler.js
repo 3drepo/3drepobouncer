@@ -95,4 +95,6 @@ Handler.validateConfiguration = (label) =>
 		&& logDirExists(label)
 		&& sharedDirExists(label);
 
+Handler.prefetchCount = config.rabbitmq.model_prefetch;
+
 module.exports = Handler;

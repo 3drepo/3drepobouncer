@@ -100,7 +100,7 @@ const establishChannel = async (conn, queueNames) => {
 		if(!handler.validateConfiguration(logLabel)) {
 			exitApplication();
 		}
-		listenToQueue(channel, queueName, rabbitmq.task_prefetch, handler.onMessageReceived);
+		listenToQueue(channel, queueName, handler.prefetchCount, handler.onMessageReceived);
 	})
 };
 
