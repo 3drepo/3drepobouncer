@@ -35,6 +35,7 @@ const processingRecordMapping = {
 	ProcessTime: { type: 'double' },
 	ReturnCode: { type: 'double' },
 	licenseKey: { type: 'keyword' },
+	namespace: { type: 'text' },
 };
 
 const indicesMappings = [
@@ -84,6 +85,11 @@ const createElasticRecord = async (index, body, id) => {
 		const elasticClient = await elasticClientPromise;
 		if (!elasticClient) {
 			return;
+		}
+
+		const { namespace } = elastic;
+		if (body && namespace) {
+			body.namespace = namespace;
 		}
 
 		await elasticClient.create({
