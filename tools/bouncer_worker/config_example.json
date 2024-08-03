@@ -8,10 +8,11 @@
 		"worker_queue": "jobq",
 		"callback_queue": "callbackq",
 		"model_queue": "modelq",
+		"drawing_queue": "drawingq",
 		"task_prefetch": 4,
 		"model_prefetch": 1,
+		"drawing_prefetch": 2,
 		"sharedDir" : "C:/sharedSpace/"
-
 	},
 	"bouncer":{
 		"path" : "C:/local/3drepobouncer/bin/repobouncerclient.exe",
