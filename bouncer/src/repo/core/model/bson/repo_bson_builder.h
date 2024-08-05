@@ -36,6 +36,9 @@
 #include "../../../lib/datastructure/repo_uuid.h"
 #include "repo_bson.h"
 
+#include <boost/variant/static_visitor.hpp>
+#include "repo/lib/datastructure/repo_metadataVariant.h"
+
 namespace repo {
 	namespace core {
 		namespace model {
@@ -69,13 +72,23 @@ namespace repo {
 					mongo::BSONObjBuilder::appendArray(label, bson);
 				}
 
-				template<class T>
+				
 				void append(
 					const std::string &label,
-					const T &item)
+					const repo::lib::MetadataVariant &item)
+				{
+					// Apply visitor to handle the variant.
+					boost::apply_visitor(AppendVisitor(*this, label), item);
+				}
+
+				template<class T>
+				void append(
+					const std::string& label,
+					const T& item)
 				{
 					mongo::BSONObjBuilder::append(label, item);
 				}
+
 
 				/**
 				* Append a list of pairs into an arraybson of objects
@@ -183,6 +196,37 @@ namespace repo {
 				void appendUUID(
 					const std::string &label,
 					const repo::lib::RepoUUID &uuid);
+			};
+
+			// Visitor class to process the metadata variant correctly
+			class AppendVisitor : public boost::static_visitor<> {
+			public:
+				
+				AppendVisitor(RepoBSONBuilder& aBuilder, const std::string& aLabel) : builder(aBuilder), label(aLabel) {}
+
+				void operator()(const bool& b)  {	
+					builder.append(label, b);
+				}
+
+				void operator()(const int& i) {
+					builder.append(label, i);
+				}
+
+				void operator()(const long long& ll) {					
+					builder.append(label, ll);
+				}
+
+				void operator()(const double& d) {
+					builder.append(label, d);
+				}
+
+				void operator()(const std::string& s) {
+					builder.append(label, s);
+				}
+
+			private:
+				RepoBSONBuilder& builder;
+				std::string label;
 			};
 
 			// Template specialization

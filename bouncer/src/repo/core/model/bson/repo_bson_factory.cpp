@@ -182,7 +182,7 @@ static std::string sanitiseKey(const std::string &key)
 
 MetadataNode RepoBSONFactory::makeMetaDataNode(
 	const std::vector<std::string>  &keys,
-	const std::vector<std::string>  &values,
+	const std::vector<repo::lib::MetadataVariant>  &values,
 	const std::string               &name,
 	const std::vector<repo::lib::RepoUUID>     &parents,
 	const int                       &apiLevel)
@@ -196,7 +196,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 			<< ") does not match the number of values(" << values.size() << ")!";
 	}
 
-	std::unordered_map<std::string, std::string> metadataMap;
+	std::unordered_map<std::string, repo::lib::MetadataVariant> metadataMap;
 
 	for (int i = 0; i < (keysLen < valLen ? keysLen : valLen); ++i) {
 		metadataMap[keys[i]] = values[i];
@@ -206,7 +206,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 }
 
 MetadataNode RepoBSONFactory::makeMetaDataNode(
-	const std::unordered_map<std::string, std::string>  &data,
+	const std::unordered_map<std::string, repo::lib::MetadataVariant>  &data,
 	const std::string               &name,
 	const std::vector<repo::lib::RepoUUID>     &parents,
 	const int                       &apiLevel)
@@ -220,32 +220,16 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 	auto count = 0;
 	for (const auto &entry : data) {
 		std::string key = sanitiseKey(entry.first);
-		std::string value = entry.second;
+		repo::lib::MetadataVariant value = entry.second;
 
-		if (!key.empty() && !value.empty())
+		if (!key.empty()) // && !value.empty())
 		{
 			RepoBSONBuilder metaEntryBuilder;
 			metaEntryBuilder.append(REPO_NODE_LABEL_META_KEY, key);
-			//Check if it is a number, if it is, store it as a number
+			
+			// Pass variant on to the builder
+			metaEntryBuilder.append(REPO_NODE_LABEL_META_VALUE, value);
 
-			try {
-				long long valueInt = boost::lexical_cast<long long>(value);
-				metaEntryBuilder.append(REPO_NODE_LABEL_META_VALUE, valueInt);
-			}
-			catch (boost::bad_lexical_cast &)
-			{
-				//not an int, try a double
-
-				try {
-					double valueFloat = boost::lexical_cast<double>(value);
-					metaEntryBuilder.append(REPO_NODE_LABEL_META_VALUE, valueFloat);
-				}
-				catch (boost::bad_lexical_cast &)
-				{
-					//not an int or float, store as string
-					metaEntryBuilder.append(REPO_NODE_LABEL_META_VALUE, value);
-				}
-			}
 			metaEntries.push_back(metaEntryBuilder.obj());
 		}
 	}

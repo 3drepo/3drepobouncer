@@ -39,6 +39,8 @@
 #include "../../../core/model/bson/repo_node_metadata.h"
 #include "../../../core/model/bson/repo_node_transformation.h"
 
+#include "repo/lib/datastructure/repo_metadataVariant.h"
+
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {

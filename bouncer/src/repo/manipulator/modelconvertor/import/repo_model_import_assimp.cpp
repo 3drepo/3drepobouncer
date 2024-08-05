@@ -555,7 +555,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 	const std::vector<repo::lib::RepoUUID> &parents)
 {
 	repo::core::model::MetadataNode *metaNode;
-	std::unordered_map<std::string, std::string> metaEntries;
+	std::unordered_map<std::string, repo::lib::MetadataVariant> metaEntries;
 	std::string val;
 	if (assimpMeta)
 	{
@@ -570,44 +570,25 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 			if (key == "IfcGloballyUniqueId")
 				repoError << "TODO: fix IfcGloballyUniqueId in RepoMetadata" << std::endl;
 
-			switch (currentValue.mType)
+			if (currentValue.mType != AI_AISTRING && currentValue.mType != FORCE_32BIT)
 			{
-			case AI_BOOL:
-				metaEntries[key] = std::to_string(*(static_cast<bool *>(currentValue.mData)));
-				break;
+				// Convert assimp type into metadata variant
 
-			case AI_INT32:
-				metaEntries[key] = std::to_string(*(static_cast<int *>(currentValue.mData)));
-				break;
+				repo::lib::MetadataVariant v;
 
-			case AI_UINT64:
-				metaEntries[key] = std::to_string(*(static_cast<uint64_t *>(currentValue.mData)));
-				break;
-
-			case AI_FLOAT:
-				metaEntries[key] = std::to_string(*(static_cast<float *>(currentValue.mData)));
-				break;
-
-			case AI_AISTRING:
-				val = (static_cast<aiString *>(currentValue.mData))->C_Str();
-
+				if (repo::lib::MetadataVariant::TryConvert(currentValue, v)) {
+					metaEntries[key] = v;
+				}
+				else {
+					repoError << "Conversion of assimp entry to MetadataVariant failed" << std::endl;
+				}
+			}
+			else if (currentValue.mType == AI_AISTRING) {
+				// We do additional checks with the string, so we have to handle this separately from the rest
+				val = (static_cast<aiString*>(currentValue.mData))->C_Str();
 				if (val.compare(key)) {
 					metaEntries[key] = val;
 				}
-
-				break;
-			case AI_AIVECTOR3D:
-			{
-				aiVector3D *vector = (static_cast<aiVector3D *>(currentValue.mData));
-
-				repo::lib::RepoVector3D repoVector = { (float)vector->x, (float)vector->y, (float)vector->z };
-				metaEntries[key] = repoVector.toString();
-			}
-			break;
-			case FORCE_32BIT:
-				// Gracefully (but silently) handle the bogus enum used by
-				// assimp to ensure the enum is 32-bits.
-				break;
 			}
 		}
 
