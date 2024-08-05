@@ -26,6 +26,7 @@
 
 #include "repo_ifc_utils_constants.h"
 #include <repo/lib/repo_utils.h>
+#include <repo/lib/datastructure/repo_metadataVariant.h>
 
 TransNode  repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformations(const std::string &filePath, bool &missingEntities)
 {
@@ -36,9 +37,10 @@ TransNode  repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformations(const 
 	if (initialElements->size())
 	{
 		repoTrace << "Looping through Elements";
-		std::unordered_map<std::string, std::string> metaValue, locationInfo;
+		std::unordered_map<std::string, repo::lib::MetadataVariant> metaValue;
+		std::unordered_map<std::string, std::string> locationInfo;
 		std::unordered_map<std::string, std::string> projectUnits;
-		std::unordered_map<int, std::unordered_map<std::string, std::string>> metadataGroup;
+		std::unordered_map<int, std::unordered_map<std::string, repo::lib::MetadataVariant>> metadataGroup;
 		node = createTransformationsRecursive(ifcFile, missingEntities, *initialElements->begin(), metaValue, locationInfo, projectUnits, metadataGroup);
 	}
 	else
@@ -53,16 +55,17 @@ TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursiv
 	IfcParse::IfcFile &ifcFile,
 	bool &missingEntities,
 	const IfcUtil::IfcBaseClass *element,
-	std::unordered_map<std::string, std::string>                               &metaValue,
-	std::unordered_map<std::string, std::string>                               &locationValue,
-	std::unordered_map<std::string, std::string>                               &projectUnits,
-	std::unordered_map<int, std::unordered_map<std::string, std::string>>      &metadataGroup,
-	const std::set<int>													       &ancestorsID,
-	const std::string														   &metaPrefix
+	std::unordered_map<std::string, repo::lib::MetadataVariant>								&metaValue,
+	std::unordered_map<std::string, std::string>											&locationValue,
+	std::unordered_map<std::string, std::string>											&projectUnits,
+	std::unordered_map<int, std::unordered_map<std::string, repo::lib::MetadataVariant>>    &metadataGroup,
+	const std::set<int>																		&ancestorsID,
+	const std::string																		&metaPrefix
 )
 {
 	std::vector<IfcUtil::IfcBaseClass *> extraChildren; //children outside of reference
-	std::unordered_map<std::string, std::string> myMetaValues, elementInfo, locationInfo(locationValue);
+	std::unordered_map<std::string, repo::lib::MetadataVariant> myMetaValues;
+	std::unordered_map<std::string, std::string> elementInfo, locationInfo(locationValue);
 
 	auto id = element->data().id();
 	std::string guid, childrenMetaPrefix;
@@ -212,7 +215,7 @@ TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursiv
 	else
 	{
 		if (actions.cacheMetadata) {
-			metadataGroup[id] = std::unordered_map<std::string, std::string>(myMetaValues);
+			metadataGroup[id] = std::unordered_map<std::string, repo::lib::MetadataVariant>(myMetaValues);
 		}
 		metaValue.insert(myMetaValues.begin(), myMetaValues.end());
 	}
@@ -241,7 +244,7 @@ std::string repo::ifcUtility::SCHEMA_NS::TreeParser::constructMetadataLabel(
 repo::ifcUtility::SCHEMA_NS::TreeParser::Actions_t repo::ifcUtility::SCHEMA_NS::TreeParser::determineActionsByElementType(
 	const IfcUtil::IfcBaseClass *element,
 	bool & missingEntities,
-	std::unordered_map<std::string, std::string>                  &metaValues,
+	std::unordered_map<std::string, repo::lib::MetadataVariant>   &metaValues,
 	std::unordered_map<std::string, std::string>                  &locationData,
 	std::unordered_map<std::string, std::string>                  &projectUnits,
 	std::vector<IfcUtil::IfcBaseClass *>                          &extraChildren,
@@ -352,7 +355,7 @@ repo::ifcUtility::SCHEMA_NS::TreeParser::Actions_t repo::ifcUtility::SCHEMA_NS::
 		const std::string units = quantity->hasUnit() ? processUnits(quantity->Unit()).second :
 			getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_LENGTHUNIT, projectUnits);
 
-		metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = std::to_string(quantity->LengthValue());
+		metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = quantity->LengthValue();
 
 		action.createElement = false;
 		action.traverseChildren = false;
@@ -360,21 +363,21 @@ repo::ifcUtility::SCHEMA_NS::TreeParser::Actions_t repo::ifcUtility::SCHEMA_NS::
 	else if (auto quantity = dynamic_cast<const IfcSchema::IfcQuantityArea *>(element)) {
 		const std::string units = quantity->hasUnit() ? processUnits(quantity->Unit()).second : getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_AREAUNIT, projectUnits);
 
-		metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = std::to_string(quantity->AreaValue());
+		metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = quantity->AreaValue();
 
 		action.createElement = false;
 		action.traverseChildren = false;
 	}
 	else if (auto quantity = dynamic_cast<const IfcSchema::IfcQuantityCount *>(element)) {
 		const std::string units = quantity->hasUnit() ? processUnits(quantity->Unit()).second : "";
-		metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = std::to_string(quantity->CountValue());
+		metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = quantity->CountValue();
 
 		action.createElement = false;
 		action.traverseChildren = false;
 	}
 	else if (auto quantity = dynamic_cast<const IfcSchema::IfcQuantityTime *>(element)) {
 		const std::string units = quantity->hasUnit() ? processUnits(quantity->Unit()).second : getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_TIMEUNIT, projectUnits);
-		metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = std::to_string(quantity->TimeValue());
+		metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = quantity->TimeValue();
 
 		action.createElement = false;
 		action.traverseChildren = false;
@@ -382,7 +385,7 @@ repo::ifcUtility::SCHEMA_NS::TreeParser::Actions_t repo::ifcUtility::SCHEMA_NS::
 	else if (auto quantity = dynamic_cast<const IfcSchema::IfcQuantityVolume *>(element)) {
 		const std::string units = quantity->hasUnit() ? processUnits(quantity->Unit()).second : getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_VOLUMEUNIT, projectUnits);
 
-		metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = std::to_string(quantity->VolumeValue());
+		metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = quantity->VolumeValue();
 
 		action.createElement = false;
 		action.traverseChildren = false;
@@ -390,7 +393,7 @@ repo::ifcUtility::SCHEMA_NS::TreeParser::Actions_t repo::ifcUtility::SCHEMA_NS::
 	else if (auto quantity = dynamic_cast<const IfcSchema::IfcQuantityWeight *>(element)) {
 		const std::string units = quantity->hasUnit() ? processUnits(quantity->Unit()).second : getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_MASSUNIT, projectUnits);
 
-		metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = std::to_string(quantity->WeightValue());
+		metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = quantity->WeightValue();
 
 		action.createElement = false;
 		action.traverseChildren = false;
@@ -1238,7 +1241,7 @@ std::string ifcDateToString(const IfcSchema::IfcCalendarDate *date) {
 
 void  repo::ifcUtility::SCHEMA_NS::TreeParser::generateClassificationInformation(
 	const IfcSchema::IfcRelAssociatesClassification * &relCS,
-	std::unordered_map<std::string, std::string>         &metaValues
+	std::unordered_map<std::string, repo::lib::MetadataVariant> &metaValues
 
 ) {
 	auto relatedClassification = relCS->RelatingClassification();
