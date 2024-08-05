@@ -206,6 +206,32 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 }
 
 MetadataNode RepoBSONFactory::makeMetaDataNode(
+	const std::vector<std::string>& keys,
+	const std::vector<std::string>& values,
+	const std::string& name,
+	const std::vector<repo::lib::RepoUUID>& parents,
+	const int& apiLevel)
+{
+	auto keysLen = keys.size();
+	auto valLen = values.size();
+	//check keys and values have the same sizes
+	if (keysLen != valLen)
+	{
+		repoWarning << "makeMetaDataNode: number of keys (" << keys.size()
+			<< ") does not match the number of values(" << values.size() << ")!";
+	}
+
+	std::unordered_map<std::string, std::string> metadataMap;
+
+	for (int i = 0; i < (keysLen < valLen ? keysLen : valLen); ++i) {
+		metadataMap[keys[i]] = values[i];
+	}
+
+	return makeMetaDataNode(metadataMap, name, parents);
+}
+
+
+MetadataNode RepoBSONFactory::makeMetaDataNode(
 	const std::unordered_map<std::string, repo::lib::MetadataVariant>  &data,
 	const std::string               &name,
 	const std::vector<repo::lib::RepoUUID>     &parents,
@@ -228,13 +254,30 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 			metaEntryBuilder.append(REPO_NODE_LABEL_META_KEY, key);
 			
 			// Pass variant on to the builder
-			metaEntryBuilder.append(REPO_NODE_LABEL_META_VALUE, value);
+			metaEntryBuilder.appendMetadataVariant(REPO_NODE_LABEL_META_VALUE, value);
 
 			metaEntries.push_back(metaEntryBuilder.obj());
 		}
 	}
 
 	builder.appendArray(REPO_NODE_LABEL_METADATA, metaEntries);
+
+	return MetadataNode(builder.obj());
+}
+
+MetadataNode RepoBSONFactory::makeMetaDataNode(
+	const std::unordered_map<std::string, std::string>& data,
+	const std::string& name,
+	const std::vector<repo::lib::RepoUUID>& parents,
+	const int& apiLevel)
+{
+	// Basic definition to keep the compile errors in check.
+
+	RepoBSONBuilder builder;
+	// Compulsory fields such as _id, type, api as well as path
+	// and optional name
+	auto defaults = appendDefaults(REPO_NODE_TYPE_METADATA, apiLevel, repo::lib::RepoUUID::createUUID(), name, parents);
+	builder.appendElements(defaults);
 
 	return MetadataNode(builder.obj());
 }

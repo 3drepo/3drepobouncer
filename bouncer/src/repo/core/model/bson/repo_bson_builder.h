@@ -73,13 +73,10 @@ namespace repo {
 				}
 
 				
-				void append(
-					const std::string &label,
-					const repo::lib::MetadataVariant &item)
-				{
-					// Apply visitor to handle the variant.
-					boost::apply_visitor(AppendVisitor(*this, label), item);
-				}
+				void appendMetadataVariant(
+					const std::string& label,
+					const repo::lib::MetadataVariant& item);
+
 
 				template<class T>
 				void append(
@@ -204,23 +201,23 @@ namespace repo {
 				
 				AppendVisitor(RepoBSONBuilder& aBuilder, const std::string& aLabel) : builder(aBuilder), label(aLabel) {}
 
-				void operator()(const bool& b)  {	
+				void operator()(const bool& b) const {	
 					builder.append(label, b);
 				}
 
-				void operator()(const int& i) {
+				void operator()(const int& i) const {
 					builder.append(label, i);
 				}
 
-				void operator()(const long long& ll) {					
+				void operator()(const long long& ll) const {					
 					builder.append(label, ll);
 				}
 
-				void operator()(const double& d) {
+				void operator()(const double& d) const {
 					builder.append(label, d);
 				}
 
-				void operator()(const std::string& s) {
+				void operator()(const std::string& s) const {
 					builder.append(label, s);
 				}
 

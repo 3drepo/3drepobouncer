@@ -576,7 +576,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 
 				repo::lib::MetadataVariant v;
 
-				if (repo::lib::MetadataVariant::TryConvert(currentValue, v)) {
+				if (repo::lib::MetadataVariantHelper::TryConvert(currentValue, v)) {
 					metaEntries[key] = v;
 				}
 				else {

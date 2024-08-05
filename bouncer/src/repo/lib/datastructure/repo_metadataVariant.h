@@ -29,16 +29,17 @@ namespace repo {
 	namespace lib {
 
 
-	class MetadataVariant : boost::variant<bool, int, long long, double, std::string>  // TODO: Date?
-	{ 
-		using base_type = boost::variant<bool, int, long long, double, std::string>;
+		typedef public boost::variant<bool, int, long long, double, std::string> MetadataVariant;  // TODO: Date?
 
-	public:
-		using base_type::base_type;
-
-		static bool TryConvert(aiMetadataEntry &assimpMetaEntry, MetadataVariant &v);
-	};
+		class MetadataVariantHelper  
+		{		
+		public:		
+			static bool TryConvert(aiMetadataEntry& assimpMetaEntry, MetadataVariant& v);
+		};
 
 
 	}
+
+
+
 }
