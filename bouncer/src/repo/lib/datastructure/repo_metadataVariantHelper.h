@@ -21,13 +21,21 @@
 
 #include <string>
 #include "boost/variant.hpp"
+#include "assimp/scene.h"
 
+#include "repo_vector.h"
+#include "repo_metadataVariant.h"
 
 namespace repo {
 	namespace lib {
 
 
-		typedef public boost::variant<bool, int, long long, double, std::string> MetadataVariant;  // TODO: Date?
+		class MetadataVariantHelper  
+		{		
+		public:		
+			static bool TryConvert(aiMetadataEntry& assimpMetaEntry, MetadataVariant& v);
+		};
+
 
 	}
 

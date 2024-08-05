@@ -16,7 +16,7 @@
 */
 
 
-#include "repo_metadataVariant.h"
+#include "repo_metadataVariantHelper.h"
 
 using namespace repo::lib;
 
