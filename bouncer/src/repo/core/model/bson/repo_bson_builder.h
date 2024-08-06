@@ -86,7 +86,6 @@ namespace repo {
 					mongo::BSONObjBuilder::append(label, item);
 				}
 
-
 				/**
 				* Append a list of pairs into an arraybson of objects
 				* @param label label to append the array against
@@ -155,6 +154,11 @@ namespace repo {
 					mongo::BSONObjBuilder::append(label, date);
 				}
 
+				void appendTime(std::string label, const time_t& ts) {
+					mongo::Date_t date = mongo::Date_t(ts);
+					mongo::BSONObjBuilder::append(label, date);
+				}
+
 				/**
 				* Appends a Vector but as an object, instead of an array.
 				*/
@@ -219,6 +223,10 @@ namespace repo {
 
 				void operator()(const std::string& s) const {
 					builder.append(label, s);
+				}
+
+				void operator()(const time_t& t) const {
+					builder.appendTime(label, t);
 				}
 
 			private:
