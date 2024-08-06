@@ -40,6 +40,7 @@
 #include "../../../core/model/bson/repo_node_transformation.h"
 
 #include "repo/lib/datastructure/repo_metadataVariant.h"
+#include "repo/lib/datastructure/repo_metadataVariantHelper.h"
 
 namespace repo {
 	namespace manipulator {
