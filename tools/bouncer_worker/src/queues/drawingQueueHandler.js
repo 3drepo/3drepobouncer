@@ -33,7 +33,7 @@ const logLabel = { label: 'DRAWINGQ' };
 
 Handler.onMessageReceived = async (cmd, rid, callback) => {
 	const logDir = `${config.logging.taskLogDir}/${rid.toString()}/`;
-	const { errorCode, database, model, user, cmdParams, revId } = messageDecoder(cmd);
+	const { errorCode, database, model, user, cmdParams, revId, format, size } = messageDecoder(cmd);
 
 	if (errorCode) {
 		callback(JSON.stringify({ value: errorCode }));
@@ -70,6 +70,8 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 
 		// Append queue specific properties
 		processInformation.Revision = revId;
+		processInformation.FileFormat = format;
+		processInformation.FileSize = size;
 
 		returnMessage.value = await runBouncerCommand(logDir, cmdParams, processInformation);
 		await processMonitor.sendReport(ridString);

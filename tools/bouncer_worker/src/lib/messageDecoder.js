@@ -65,6 +65,8 @@ const messageDecoder = (cmd) => {
 						model: cmdFile.project,
 						user: cmdFile.owner,
 						revId: cmdFile.revId,
+						format: cmdFile.format,
+						size: cmdFile.size,
 						...res,
 					};
 				}
