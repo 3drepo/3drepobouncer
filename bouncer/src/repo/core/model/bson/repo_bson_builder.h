@@ -39,6 +39,8 @@
 #include <boost/variant/static_visitor.hpp>
 #include "repo/lib/datastructure/repo_metadataVariant.h"
 
+#include <ctime>
+
 namespace repo {
 	namespace core {
 		namespace model {
@@ -153,10 +155,12 @@ namespace repo {
 					mongo::Date_t date = mongo::Date_t(ts);
 					mongo::BSONObjBuilder::append(label, date);
 				}
-
-				void appendTime(std::string label, const time_t& ts) {
-					mongo::Date_t date = mongo::Date_t(ts);
-					mongo::BSONObjBuilder::append(label, date);
+				
+				void appendTime(std::string label, const tm& t) {
+					tm tmCpy = t; // Copy because mktime can alter the struct
+					time_t time = mktime(&tmCpy);
+					mongo::Date_t date = mongo::Date_t(time);
+					mongo::BSONObjBuilder::append(label, date);					
 				}
 
 				/**
@@ -225,7 +229,7 @@ namespace repo {
 					builder.append(label, s);
 				}
 
-				void operator()(const time_t& t) const {
+				void operator()(const tm& t) const {
 					builder.appendTime(label, t);
 				}
 
