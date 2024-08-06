@@ -11,7 +11,7 @@
 		"drawing_queue": "drawingq",
 		"task_prefetch": 4,
 		"model_prefetch": 1,
-		"drawing_prefetch": 2,
+		"drawing_prefetch": 1,
 		"sharedDir" : "C:/sharedSpace/"
 	},
 	"bouncer":{

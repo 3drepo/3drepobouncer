@@ -11,7 +11,6 @@ It performs 3 notable actions:
   - 3drepobouncerClient compiled
   - 3drepobouncerwrapper compiled
   - mongoexport utility
-  - Access to 3drepounity
   - Access to Toy Model export
 ### Installation
   - `yarn install`
@@ -28,14 +27,14 @@ It performs 3 notable actions:
   yarn run-worker --config prod_config.json
   ````
 
-  `--queue [job|model|unity]` will only listen to the specified queue
+  `--queue [job|model|drawing]` will only listen to the specified queue
   ````
-  yarn run-worker --queue unity
+  yarn run-worker --queue model
   ````
 
   `--exitAfter <number>` will process the specified amount of tasks on the queue and exit the process. note: `--queue` must be specified in this mode.
   ````
-  yarn run-worker --queue unity --exitAfter 10
+  yarn run-worker --queue model --exitAfter 10
   ````
 
   Run with `--help` to see the list of available options
@@ -60,9 +59,10 @@ Bouncer worker takes in a JSON file with the following parameters.
     "worker_queue": //name of the worker queue
     "callback_queue": //name of the callback queue
     "model_queue": //name of the model queue
-    "unity_queue": //name of the unity queue
+    "drawing_queue": //name of the drawing queue
     "task_prefetch": //Number of tasks to process simultaneously on the worker queue (default: 4)
     "model_prefetch": //Number of tasks to process simultaneously on the model queue (default: 1)
+    "drawing_prefetch": //Number of tasks to process simultaneously on the drawing queue (default: 1)
     "sharedDir": //Path to the sharedSpace being referenced by the queue
     "maxRetries": //Maximum number of attempts to reconnect to the queue before giving up (default: 3)
     "waitBeforeShutdownMS": //In exitAfter mode, the number of ms to wait before shutting down the application (default: 60000)
