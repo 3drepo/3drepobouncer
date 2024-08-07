@@ -30,7 +30,7 @@ TEST(DrawingImportManager, ImportDGN)
 	DrawingImportManager manager;
 	DrawingImageInfo drawing;
 	uint8_t error;
-	manager.importFromFile(drawing, getDataPath(dgnDrawing), "dgn", error);
+	manager.importFromFile(drawing, getDataPath(dgnDrawing), ".dgn", error);
 
 	EXPECT_EQ(error, REPOERR_OK);
 	EXPECT_GT(drawing.data.size(), 0);
@@ -41,7 +41,7 @@ TEST(DrawingImportManager, ImportDWG)
 	DrawingImportManager manager;
 	DrawingImageInfo drawing;
 	uint8_t error;
-	manager.importFromFile(drawing, getDataPath(dwgDrawing), "dwg", error);
+	manager.importFromFile(drawing, getDataPath(dwgDrawing), ".dwg", error);
 
 	EXPECT_EQ(error, REPOERR_OK);
 	EXPECT_GT(drawing.data.size(), 0);

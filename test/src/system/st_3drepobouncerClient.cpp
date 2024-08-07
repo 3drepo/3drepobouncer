@@ -718,7 +718,7 @@ TEST(RepoClientTest, ProcessDrawing)
 	revisionBuilder.append("_id", rid);
 	revisionBuilder.append("project", project);
 	revisionBuilder.append("model", model);
-	revisionBuilder.append("format", "dwg");
+	revisionBuilder.append("format", ".dwg");
 	revisionBuilder.appendArray("rFile", rFiles);
 
 	// Make sure that the file manager uses the same config as produceProcessDrawingArgs
@@ -735,7 +735,7 @@ TEST(RepoClientTest, ProcessDrawing)
 	manager->uploadFileAndCommit(
 		db,
 		REPO_COLLECTION_DRAWINGS,
-		rFile.toString(),
+		rFile, // Take care that drawing source ref node Ids are always UUIDs
 		bin,
 		metadata.obj()
 	);

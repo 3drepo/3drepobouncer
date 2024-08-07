@@ -352,7 +352,7 @@ repo::core::model::RepoRef FileManager::makeRefNode(
 	const uint32_t& size,
 	const repo::core::model::RepoBSON& metadata)
 {
-	return repo::core::model::RepoBSONFactory::makeRepoRef(id, type, link, size, metadata);
+	return repo::core::model::RepoBSONFactory::makeRepoRef(cleanFileName(id), type, link, size, metadata);
 }
 
 repo::core::model::RepoRef FileManager::makeRefNode(
