@@ -44,12 +44,12 @@ void DrawingImportManager::importFromFile(
 
 	// Choose the file processor based on the format
 #ifdef ODA_SUPPORT
-	if (extension == "dwg")
+	if (extension == ".dwg")
 	{
 		repo::manipulator::modelconvertor::odaHelper::FileProcessorDwg dwg(filename, &drawing);
 		error = dwg.readFile();
 	}
-	else if (extension == "dgn")
+	else if (extension == ".dgn")
 	{
 		repo::manipulator::modelconvertor::odaHelper::FileProcessorDgn dgn(filename, &drawing);
 		error = dgn.readFile();
