@@ -27,6 +27,7 @@
 
 #include "vectorise_device_dgn.h"
 #include "../../../../core/model/bson/repo_node_mesh.h"
+#include "repo/lib/datastructure/repo_metadataVariant.h"
 
 #include "data_processor.h"
 
@@ -64,7 +65,7 @@ namespace repo {
 				private:
 					OdCmEntityColor fixByACI(const ODCOLORREF *ids, const OdCmEntityColor &color);
 
-					std::unordered_map<std::string, std::string> extractXMLLinkages(OdDgElementPtr pElm);
+					std::unordered_map<std::string, repo::lib::MetadataVariant> extractXMLLinkages(OdDgElementPtr pElm);
 
 				};
 				typedef OdSharedPtr<DataProcessorDgn> OdGiConveyorGeometryDgnDumperPtr;

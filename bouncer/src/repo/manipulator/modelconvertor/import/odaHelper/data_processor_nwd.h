@@ -26,6 +26,11 @@
 #include <OdaCommon.h>
 #include <NwDatabase.h>
 
+#include <repo/lib/datastructure/repo_metadataVariant.h>
+#include <repo/lib/datastructure/repo_metadataVariantHelper.h>
+
+#include <boost/filesystem.hpp>
+
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
@@ -41,6 +46,23 @@ namespace repo {
 
 				private:
 					GeometryCollector* collector;
+				};
+
+				class NwdFilePathRemovalVisitor : public boost::static_visitor<> {
+				public:
+					NwdFilePathRemovalVisitor() {}
+
+					// Do nothing for most cases
+					void operator()(bool& b) const {}
+					void operator()(int& i) const {}
+					void operator()(long long& ll) const {}
+					void operator()(double& d) const {}
+					void operator()(tm& t) const {}
+
+					// In the string case, we remove the file path
+					void operator()(std::string& s) const {
+						s = boost::filesystem::path(s).filename().string();
+					}
 				};
 			}
 		}
