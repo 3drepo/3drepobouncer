@@ -22,6 +22,7 @@
 #pragma once
 
 #include "../../../core/model/bson/repo_bson_factory.h"
+#include "boost/lexical_cast.hpp"
 
 namespace repo{
 	namespace manipulator{
@@ -64,6 +65,8 @@ namespace repo{
 					std::istream             &stream,
 					std::vector<std::string> &tokenizedLine);
 				char delimiter;
+
+				std::vector<repo::lib::MetadataVariant> ConvertToVariants(std::vector<std::string> tokens);
 			};
 		} //namespace modelconvertor
 	} //namespace manipulator
