@@ -63,12 +63,14 @@ namespace repo {
 					};
 
 					/**
-					 * Upload file and commit ref entry to database.
+					 * Upload file and commit ref entry to database. id will be the member
+					 * by which the ref node is keyed. It can be a std::string or RepoUUID.
 					 */
+					template<typename IdType>
 					bool uploadFileAndCommit(
 						const std::string                            &databaseName,
 						const std::string                            &collectionNamePrefix,
-						const std::string                            &fileName,
+						const IdType								 &id,
 						const std::vector<uint8_t>                   &bin,
 						const repo::core::model::RepoBSON            &metadata = repo::core::model::RepoBSON(),
 						const Encoding                               &encoding = Encoding::None
@@ -77,10 +79,11 @@ namespace repo {
 					/**
 					 * Get the file base on the the ref entry in database
 					 */
+					template<typename IdType>
 					std::vector<uint8_t> getFile(
 						const std::string                            &databaseName,
 						const std::string                            &collectionNamePrefix,
-						const std::string                            &fileName
+						const IdType                                 &id
 					);
 
 					/**
@@ -105,6 +108,12 @@ namespace repo {
 						const std::string& databaseName,
 						const std::string& collectionNamePrefix,
 						const std::string& fileName);
+
+					repo::core::model::RepoRef getFileRef(
+						const std::string& databaseName,
+						const std::string& collectionNamePrefix,
+						const repo::lib::RepoUUID& id
+					);
 
 					/**
 					* Get the fully qualified filename from the ref node given
@@ -138,13 +147,29 @@ namespace repo {
 						const repo::core::model::RepoBSON            bson,
 						const std::string                            &databaseName,
 						const std::string                            &collectionNamePrefix);
+
+					repo::core::model::RepoRef makeRefNode(
+						const repo::lib::RepoUUID& id,
+						const std::string& link,
+						const repo::core::model::RepoRef::RefType& type,
+						const uint32_t& size,
+						const repo::core::model::RepoBSON& metadata);
+
+					repo::core::model::RepoRef makeRefNode(
+						const std::string& id,
+						const std::string& link,
+						const repo::core::model::RepoRef::RefType& type,
+						const uint32_t& size,
+						const repo::core::model::RepoBSON& metadata);
+
 					/**
 					 * Add ref entry for file to database.
 					 */
+					template<typename IdType>
 					bool upsertFileRef(
 						const std::string                            &databaseName,
 						const std::string                            &collectionNamePrefix,
-						const std::string                            &id,
+						const IdType                                 &id,
 						const std::string                            &link,
 						const repo::core::model::RepoRef::RefType    &type,
 						const uint32_t                               &size,

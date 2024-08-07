@@ -683,7 +683,7 @@ void RepoManipulator::processDrawingRevision(
 	// a locally accessible filesystem.
 
 	auto fileManager = repo::core::handler::fileservice::FileManager::getManager();
-	auto refNodeId = fileNodeIds[0].toString(); // We do not expect drawing revision nodes to have multiple rFile entries
+	auto refNodeId = fileNodeIds[0]; // We do not expect drawing revision nodes to have multiple rFile entries
 	auto refNode = fileManager->getFileRef(
 		teamspace,
 		REPO_COLLECTION_DRAWINGS,

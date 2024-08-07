@@ -601,14 +601,15 @@ RepoRole RepoBSONFactory::_makeRepoRole(
 	return RepoRole(builder.obj());
 }
 
+template<typename IdType>
 RepoRef RepoBSONFactory::makeRepoRef(
-	const std::string &fileName,
+	const IdType &id,
 	const RepoRef::RefType &type,
 	const std::string &link,
 	const uint32_t size,
 	const repo::core::model::RepoBSON            &metadata) {
 	repo::core::model::RepoBSONBuilder builder;
-	builder.append(REPO_LABEL_ID, fileName);
+	builder.append(REPO_LABEL_ID, id);
 	builder.append(REPO_REF_LABEL_TYPE, RepoRef::convertTypeAsString(type));
 	builder.append(REPO_REF_LABEL_LINK, link);
 	builder.append(REPO_REF_LABEL_SIZE, (unsigned int)size);
@@ -618,6 +619,25 @@ RepoRef RepoBSONFactory::makeRepoRef(
 	}
 	return RepoRef(builder.obj());
 }
+
+// Explicit instantations for the supported key types
+
+template RepoRef RepoBSONFactory::makeRepoRef(
+	const std::string&,
+	const RepoRef::RefType&,
+	const std::string&,
+	const uint32_t,
+	const repo::core::model::RepoBSON&
+);
+
+template RepoRef RepoBSONFactory::makeRepoRef(
+	const repo::lib::RepoUUID&,
+	const RepoRef::RefType&,
+	const std::string&,
+	const uint32_t,
+	const repo::core::model::RepoBSON&
+);
+
 
 RepoUser RepoBSONFactory::makeRepoUser(
 	const std::string                           &userName,

@@ -87,14 +87,16 @@ namespace repo {
 
 				/**
 				* Create RepoRef
-				* @param fileName name of the file
+				* @param fileName name of the file - this is what is stored in the _id member, and should be a UUID or string.
 				* @param type type of storage
 				* @param link reference link
 				* @param size size of file in bytes
 				* @return returns a bson with this reference information
 				*/
+
+				template<typename IdType>
 				static RepoRef makeRepoRef(
-					const std::string &fileName,
+					const IdType &id,
 					const RepoRef::RefType &type,
 					const std::string &link,
 					const uint32_t size,
