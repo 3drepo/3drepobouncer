@@ -159,6 +159,14 @@ namespace repo {
 				void appendTime(std::string label, const tm& t) {
 					tm tmCpy = t; // Copy because mktime can alter the struct
 					time_t time = mktime(&tmCpy);
+
+					// Check for a unsuccessful conversion
+					if (time == -1)
+					{
+						repoError << "Failed converting date to mongo compatible format. tm malformed or date pre 1970?";
+						exit(-1);
+					}
+
 					mongo::Date_t date = mongo::Date_t(time);
 					mongo::BSONObjBuilder::append(label, date);					
 				}
