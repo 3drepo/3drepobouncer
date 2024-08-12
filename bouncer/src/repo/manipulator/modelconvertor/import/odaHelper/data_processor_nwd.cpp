@@ -68,6 +68,7 @@
 #include <Attribute/NwTransRotationAttribute.h>
 #include <Attribute/NwUInt64Attribute.h>
 #include <Attribute/NwURLAttribute.h>
+#include <NwDataProperty.h>
 
 // boost
 #include <boost/tokenizer.hpp>
@@ -314,9 +315,9 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 		auto propertiesAttribute = OdNwPropertyAttribute::cast(attribute);
 		if (!propertiesAttribute.isNull())
 		{
-			OdArray<OdNwPropertyPtr> properties;
+			OdArray<OdNwDataPropertyPtr> properties;
 			propertiesAttribute->getProperties(properties);
-
+			
 			for (unsigned int j = 0; j < properties.length(); j++)
 			{
 				auto& prop = properties[j];
@@ -326,6 +327,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 				if (repo::lib::MetadataVariantHelper::TryConvert(prop, v))
 					setMetadataValueVariant(category, key, v, metadata);				
 			}
+			int i = 5;
 		}
 
 		// Translation and Rotation attribute

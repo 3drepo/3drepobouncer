@@ -34,6 +34,9 @@
 // For NWG
 #include <NwProperty.h>
 #include <NwColor.h>
+#include <NwDataProperty.h>
+#include <NwVariant.h>
+#include <NwName.h>
 
 // For RVT
 #include <Database/Entities/BmParamElem.h>
@@ -51,7 +54,7 @@ namespace repo {
 		public:		
 			static bool TryConvert(aiMetadataEntry& assimpMetaEntry, MetadataVariant& v);
 
-			static bool TryConvert(OdNwPropertyPtr& metaProperty, MetadataVariant& v);
+			static bool TryConvert(OdNwDataPropertyPtr& metaProperty, MetadataVariant& v);
 
 			static bool TryConvert(
 				OdTfVariant& metaEntry,
@@ -118,7 +121,4 @@ namespace repo {
 			}
 		};
 	}
-
-
-
 }

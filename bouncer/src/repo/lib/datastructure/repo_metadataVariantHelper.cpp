@@ -72,97 +72,100 @@ bool MetadataVariantHelper::TryConvert(aiMetadataEntry& assimpMetaEntry, Metadat
 
 }
 
-bool repo::lib::MetadataVariantHelper::TryConvert(OdNwPropertyPtr& metaProperty, MetadataVariant& v)
+bool repo::lib::MetadataVariantHelper::TryConvert(OdNwDataPropertyPtr& metaProperty, MetadataVariant& v)
 {
 
-	switch (metaProperty->getValueType())
+	switch (metaProperty->getDataType())
 	{
-	case NwPropertyValueType::value_type_default: {
+	case NwDataType::dt_NONE: {
 		return false;
 	}
-	case NwPropertyValueType::value_type_bool: {
-		bool value;
-		metaProperty->getValue(value);
-		v = value;
+	case NwDataType::dt_DOUBLE: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		v = odvar.getDouble();
 		break;
 	}
-	case NwPropertyValueType::value_type_double: {
-		double value;
-		metaProperty->getValue(value);
-		v = value;
+	case NwDataType::dt_INT32: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		v = static_cast<long long>(odvar.getInt32()); // Incoming is long, convert it to long long since int won't fit.
 		break;
 	}
-	case NwPropertyValueType::value_type_float: {
-		float value;
-		metaProperty->getValue(value);
-		v = static_cast<double>(value); // Potentially losing precision here, but mongo does not accept float
+	case NwDataType::dt_BOOL: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		v = odvar.getBool();
 		break;
 	}
-	case NwPropertyValueType::value_type_OdInt8: {
-		OdInt8 value;
-		metaProperty->getValue(value);
-		v = static_cast<int>(value);
-		break;
-	}
-	case NwPropertyValueType::value_type_OdUInt8: {
-		OdUInt8 value;
-		metaProperty->getValue(value);
-		v = static_cast<int>(value);
-		break;
-	}
-	case NwPropertyValueType::value_type_OdInt32: {
-		OdInt32 value;
-		metaProperty->getValue(value);
-		v = static_cast<long long>(value);
-		break;
-	}
-	case NwPropertyValueType::value_type_OdUInt32: {
-		OdUInt32 value;
-		metaProperty->getValue(value);
-		v = static_cast<long long>(value);
-		break;
-	}
-	case NwPropertyValueType::value_type_OdUInt64: {
-		OdUInt64 value;
-		metaProperty->getValue(value);
-		v = static_cast<long long>(value); // Potentially losing precision here since mongo does not support unsigned long long
-		break;
-	}
-	case NwPropertyValueType::value_type_OdString: {
-		OdString value;
-		metaProperty->getValue(value);
+	case NwDataType::dt_DISPLAY_STRING: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		OdString value = odvar.getString();
 		v = repo::manipulator::modelconvertor::odaHelper::convertToStdString(value);
 		break;
 	}
-	case NwPropertyValueType::value_type_OdStringArray: {
-		OdStringArray value;
-		metaProperty->getValue(value);
-		std::string combined;
-		for (auto str : value)
-		{
-			combined += repo::manipulator::modelconvertor::odaHelper::convertToStdString(str) + ";";
-		}
-		v = combined;
+	case NwDataType::dt_DATETIME: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		v = odvar.getTime();
 		break;
 	}
-	case NwPropertyValueType::value_type_OdGeVector3d: {
-		OdGeVector3d value;
-		metaProperty->getValue(value);
-		std::string str = std::to_string(value.x) + ", " + std::to_string(value.y) + ", " + std::to_string(value.z);
+	case NwDataType::dt_DOUBLE_LENGTH: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		v = odvar.getMeasuredDouble();
+		break;
+	}
+	case NwDataType::dt_DOUBLE_ANGLE: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		v = odvar.getMeasuredDouble();
+		break;
+	}
+	case NwDataType::dt_NAME: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		OdRxObjectPtr ptr = odvar.getRxObjectPtr();
+		OdNwNamePtr namePtr = static_cast<OdNwNamePtr>(ptr);
+		OdString displayNameOd = namePtr->getDisplayName();
+		std::string displayName = repo::manipulator::modelconvertor::odaHelper::convertToStdString(displayNameOd);
+		v = displayName;
+		break;
+	}
+	case NwDataType::dt_IDENTIFIER_STRING: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		OdString value = odvar.getString();
+		v = repo::manipulator::modelconvertor::odaHelper::convertToStdString(value);
+		break;
+	}
+	case NwDataType::dt_DOUBLE_AREA: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		v = odvar.getMeasuredDouble();
+		break;
+	}
+	case NwDataType::dt_DOUBLE_VOLUME: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		v = odvar.getMeasuredDouble();
+		break;
+	}
+	case NwDataType::dt_POINT2D: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		OdGePoint2d point = odvar.getPoint2d();
+		std::string str = std::to_string(point.x) + ", " + std::to_string(point.y);
 		v = str;
 		break;
 	}
-	case NwPropertyValueType::value_type_OdNwColor: {
-		OdNwColor value;
-		metaProperty->getValue(value);
-		std::string str = std::to_string(value.R()) + ", " + std::to_string(value.G()) + ", " + std::to_string(value.B());
+	case NwDataType::dt_POINT3D: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		OdGePoint3d point = odvar.getPoint3d();
+		std::string str = std::to_string(point.x) + ", " + std::to_string(point.y) + ", " + std::to_string(point.z);
 		v = str;
-		break;
-	}
-	case NwPropertyValueType::value_type_tm: {
-		tm value;
-		metaProperty->getValue(value);
-		v = value;
 		break;
 	}
 	default: {
