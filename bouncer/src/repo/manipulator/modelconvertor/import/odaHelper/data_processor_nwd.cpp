@@ -327,7 +327,6 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 				if (repo::lib::MetadataVariantHelper::TryConvert(prop, v))
 					setMetadataValueVariant(category, key, v, metadata);				
 			}
-			int i = 5;
 		}
 
 		// Translation and Rotation attribute
