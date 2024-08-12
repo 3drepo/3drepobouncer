@@ -108,7 +108,9 @@ bool repo::lib::MetadataVariantHelper::TryConvert(OdNwDataPropertyPtr& metaPrope
 	case NwDataType::dt_DATETIME: {
 		OdNwVariant odvar;
 		metaProperty->getValue(odvar);
-		v = odvar.getTime();
+		long long timePosix = static_cast<long long>(odvar.getUInt64());
+		tm* timeTm = localtime(&timePosix);
+		v = *timeTm;
 		break;
 	}
 	case NwDataType::dt_DOUBLE_LENGTH: {
