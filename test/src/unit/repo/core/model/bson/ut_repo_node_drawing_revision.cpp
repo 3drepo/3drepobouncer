@@ -33,7 +33,7 @@ TEST(DrawingRevisionNodeTest, Node)
 	// test we mock up a BSON using the expected schema. Note that not all
 	// fields are required by bouncer so not all have accessors implemented.
 
-	auto model = repo::lib::RepoUUID::createUUID();
+	auto model = repo::lib::RepoUUID::createUUID().toString();
 	auto project = repo::lib::RepoUUID::createUUID();
 	auto file = repo::lib::RepoUUID::createUUID();
 	auto format = "dwg";

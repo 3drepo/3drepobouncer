@@ -709,8 +709,7 @@ TEST(RepoClientTest, ProcessDrawing)
 
 	auto db = "testDrawing"; // This must match the database in processDrawingConfig
 	auto rid = repo::lib::RepoUUID("cad0c3fe-dd1d-4844-ad04-cfb75df26a63"); // This must match the revId in processDrawingConfig
-	auto name = "test.dwg";
-	auto model = repo::lib::RepoUUID::createUUID();
+	auto model = repo::lib::RepoUUID::createUUID().toString();
 	auto project = repo::lib::RepoUUID::createUUID();
 	auto rFile = repo::lib::RepoUUID::createUUID();
 	std::vector< repo::lib::RepoUUID> rFiles;
@@ -730,7 +729,7 @@ TEST(RepoClientTest, ProcessDrawing)
 	std::vector<uint8_t> bin(std::istreambuf_iterator<char>{drawingFile}, {});
 
 	repo::core::model::RepoBSONBuilder metadata;
-	metadata.append("name", name);
+	metadata.append("name", "test.dwg");
 
 	manager->uploadFileAndCommit(
 		db,
@@ -769,22 +768,22 @@ TEST(RepoClientTest, ProcessDrawing)
 
 	EXPECT_EQ(revision.getUUIDField("_id"), rid);
 	EXPECT_EQ(revision.getUUIDField("project"), project);
-	EXPECT_EQ(revision.getUUIDField("model"), model);
+	EXPECT_EQ(revision.getStringField("model"), model);
 
 	// Make sure to use the file manager method because ref nodes are keyed by string not uuid
 
 	auto imageRef = manager->getFileRef(
 		db,
 		REPO_COLLECTION_DRAWINGS,
-		revision.getUUIDField("image").toString()
+		revision.getUUIDField("image")
 	);
 
 	// Check that the document is correctly populated
 
 	EXPECT_EQ(imageRef.getStringField("type"), "fs");
-	EXPECT_EQ(imageRef.getStringField("name"), name);
+	EXPECT_EQ(imageRef.getStringField("name"), "test.svg"); // The image should have its file extension changed
 	EXPECT_EQ(imageRef.getStringField("mime"), "image/svg+xml");
 	EXPECT_EQ(imageRef.getUUIDField("project"), project);
-	EXPECT_EQ(imageRef.getUUIDField("model"), model);
+	EXPECT_EQ(imageRef.getStringField("model"), model);
 	EXPECT_EQ(imageRef.getUUIDField("rev_id"), rid);
 }
