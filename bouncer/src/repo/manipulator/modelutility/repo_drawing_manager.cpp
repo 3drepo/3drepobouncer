@@ -41,19 +41,20 @@ uint8_t DrawingManager::commitImage(
 	DrawingImageInfo& drawing
 )
 {
+	auto drawingRefNodeId = repo::lib::RepoUUID::createUUID();
+	auto name = drawing.name.substr(0, drawing.name.size() - 3) + "svg"; // The name should be the drawing's original name with an updated extension
+
 	repo::core::model::RepoBSONBuilder metadata;
-	metadata.append(REPO_NODE_LABEL_NAME, drawing.name); // This is the name of the original file (e.g. "Floor1.DWG")
+	metadata.append(REPO_NODE_LABEL_NAME, name);
 	metadata.append(REPO_LABEL_MEDIA_TYPE, REPO_MEDIA_TYPE_SVG);
 	metadata.append(REPO_LABEL_PROJECT, revision.getProject());
 	metadata.append(REPO_LABEL_MODEL, revision.getModel());
 	metadata.append(REPO_NODE_REVISION_ID, revision.getUniqueID());
 
-	auto drawingRefNodeId = repo::lib::RepoUUID::createUUID();
-
 	fileManager->uploadFileAndCommit(
 		teamspace,
 		REPO_COLLECTION_DRAWINGS,
-		drawingRefNodeId.toString(),
+		drawingRefNodeId,
 		drawing.data,
 		metadata.obj()
 	);
