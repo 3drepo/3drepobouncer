@@ -129,7 +129,8 @@ void importDrawing(OdDbDatabasePtr pDb, repo::manipulator::modelutility::Drawing
 
 		pDbGiContext->setPlotGeneration(true);
 		pDbGiContext->setHatchAsPolygon(OdGiDefaultContext::kHatchPolygon);
-		dev->properties()->putAt(L"MinimalWidth", OdRxVariantValue(0.1));
+		dev->properties()->putAt(L"MinimalWidth", OdRxVariantValue(0.01));
+		pDbGiContext->setPaletteBackground(ODRGB(255, 255, 255));
 
 		OdDbBaseDatabasePEPtr pBaseDatabase(pDb);
 		pBaseDatabase->loadPlotstyleTableForActiveLayout(pDbGiContext, pDb);
