@@ -55,11 +55,11 @@ repo::lib::RepoUUID DrawingRevisionNode::getProject() const
 	return {};
 }
 
-repo::lib::RepoUUID DrawingRevisionNode::getModel() const
+std::string DrawingRevisionNode::getModel() const
 {
 	if (hasField(REPO_NODE_DRAWING_REVISION_LABEL_MODEL))
 	{
-		return getUUIDField(REPO_NODE_DRAWING_REVISION_LABEL_MODEL);
+		return getStringField(REPO_NODE_DRAWING_REVISION_LABEL_MODEL);
 	}
 	return {};
 }

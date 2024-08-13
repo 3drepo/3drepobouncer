@@ -77,7 +77,7 @@ namespace repo {
 
 				lib::RepoUUID getProject() const;
 
-				lib::RepoUUID getModel() const;
+				std::string getModel() const;
 
 				/**
 				* Returns the format of the drawing referenced by rFile. This
