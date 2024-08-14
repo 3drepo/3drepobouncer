@@ -367,11 +367,23 @@ void FileProcessorDgn::importDrawing(OdDgDatabasePtr pDb, const ODCOLORREF* pPal
 
 		pHelperDevice->update();
 
-		// Finally copy the contents of the stream to the collector's buffer;
-		// getBytes advances OdMemoryStream, so we must first seek its start.
+		// Finally copy the contents of the stream to the collector's buffer
 
-		drawingCollector->data.resize(stream->tell());
+		// Copy the SVG contents into a string
+
+		std::vector<char> buffer;
+		buffer.resize(stream->tell());
 		stream->seek(0, OdDb::FilerSeekType::kSeekFromStart);
-		stream->getBytes(drawingCollector->data.data(), stream->length());
+		stream->getBytes(buffer.data(), stream->length());
+		std::string svg(buffer.data(), buffer.size());
+
+		// Perform any further necessary manipulations. In this case we add the width
+		// and height attributes.
+
+		svg.insert(61, "width=\"1024\" height=\"768\" "); // 61 is just after the svg tag. This offset is fixed for exporter version.
+
+		// Provide the string to the collector as a vector
+
+		std::copy(svg.c_str(), svg.c_str() + svg.length(), std::back_inserter(drawingCollector->data));
 	}
 }
