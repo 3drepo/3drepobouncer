@@ -154,6 +154,18 @@ void setMetadataValue(const std::string& category, const std::string& key, const
 	setMetadataValueVariant(category, key, v, metadata);
 }
 
+void setMetadataValue(const std::string& category, const std::string& key, const double& d, std::unordered_map<std::string, repo::lib::MetadataVariant>& metadata)
+{
+	repo::lib::MetadataVariant v = d;
+	setMetadataValueVariant(category, key, v, metadata);
+}
+
+void setMetadataValue(const std::string& category, const std::string& key, const OdUInt64& uint, std::unordered_map<std::string, repo::lib::MetadataVariant>& metadata)
+{
+	repo::lib::MetadataVariant v = static_cast<long long>(uint); // Potentially losing precision here, but mongo does not accept uint64
+	setMetadataValueVariant(category, key, v, metadata);
+}
+
 void setMetadataValue(const std::string& category, const std::string& key, const std::string& string, std::unordered_map<std::string, repo::lib::MetadataVariant>& metadata)
 {
 	repo::lib::MetadataVariant v = string;
