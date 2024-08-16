@@ -17,8 +17,6 @@
 
 #pragma once
 
-#include "../../../../core/model/bson/repo_node_mesh.h"
-
 #include <OdaCommon.h>
 #include <DbDatabase.h>
 #include <RxObjectImpl.h>
@@ -43,12 +41,12 @@ namespace repo {
 				{
 				public:
 					FileProcessorDwg(const std::string& inputFile, GeometryCollector* geoCollector, const ModelImportConfig& config) : FileProcessor(inputFile, geoCollector, config) {}
+					FileProcessorDwg(const std::string& inputFile, repo::manipulator::modelutility::DrawingImageInfo* collector) : FileProcessor(inputFile, collector) {}
 					~FileProcessorDwg() override {}
 					uint8_t readFile();
 
 				protected:
 					OdStaticRxObject<RepoDwgServices> svcs;
-
 				};
 			}
 		}

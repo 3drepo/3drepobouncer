@@ -47,10 +47,11 @@ FileManager* FileManager::instantiateManager(
 	return manager = new FileManager(config, dbHandler);
 }
 
+template<typename IdType>
 bool FileManager::uploadFileAndCommit(
 	const std::string                            &databaseName,
 	const std::string                            &collectionNamePrefix,
-	const std::string                            &fileName,
+	const IdType                                 &id,
 	const std::vector<uint8_t>                   &bin,
 	const repo::core::model::RepoBSON            &metadata,
 	const Encoding                               &encoding)
@@ -99,7 +100,7 @@ bool FileManager::uploadFileAndCommit(
 		success = upsertFileRef(
 			databaseName,
 			collectionNamePrefix,
-			cleanFileName(fileName),
+			id,
 			linkName,
 			defaultHandler->getType(),
 			fileContents->size(),
@@ -177,17 +178,31 @@ repo::core::model::RepoRef FileManager::getFileRef(
 		criteria);
 }
 
+repo::core::model::RepoRef FileManager::getFileRef(
+	const std::string& databaseName,
+	const std::string& collectionNamePrefix,
+	const repo::lib::RepoUUID& id) {
+	repo::core::model::RepoBSONBuilder builder;
+	builder.append(REPO_LABEL_ID, id);
+	auto criteria = builder.obj();
+	return dbHandler->findOneByCriteria(
+		databaseName,
+		collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
+		criteria);
+}
+
+template<typename IdType>
 std::vector<uint8_t> FileManager::getFile(
 	const std::string                            &databaseName,
 	const std::string                            &collectionNamePrefix,
-	const std::string                            &fileName
+	const IdType                                 &fileName
 ) {
 	std::vector<uint8_t> file;
 	auto ref = getFileRef(databaseName, collectionNamePrefix, fileName);
 	if (ref.isEmpty())
 	{
 		repoTrace << "Failed: cannot find file ref "
-			<< cleanFileName(fileName) << " from "
+			<< fileName << " from "
 			<< databaseName << "/"
 			<< collectionNamePrefix << "." << REPO_COLLECTION_EXT_REF;
 	}
@@ -214,6 +229,11 @@ std::vector<uint8_t> FileManager::getFile(
 
 	return file;
 }
+
+// Explicit instantations for the two id types supported
+
+template std::vector<uint8_t> FileManager::getFile(const std::string&, const std::string&, const std::string&);
+template std::vector<uint8_t> FileManager::getFile(const std::string&, const std::string&, const repo::lib::RepoUUID&);
 
 /**
  * Get the file base on the the ref entry in database
@@ -254,6 +274,18 @@ std::ifstream FileManager::getFileStream(
 	}
 
 	return fs;
+}
+
+std::string FileManager::getFilePath(
+	const repo::core::model::RepoRef& ref
+)
+{
+	if (ref.getType() != repo::core::model::RepoRef::RefType::FS)
+	{
+		repoTrace << "Failed: can only get paths of files stored with fs";
+		return "";
+	}
+	return fsHandler->getFilePath(ref.getRefLink());
 }
 
 FileManager::FileManager(
@@ -313,10 +345,31 @@ bool FileManager::dropFileRef(
 	return success;
 }
 
+repo::core::model::RepoRef FileManager::makeRefNode(
+	const std::string& id,
+	const std::string& link,
+	const repo::core::model::RepoRef::RefType& type,
+	const uint32_t& size,
+	const repo::core::model::RepoBSON& metadata)
+{
+	return repo::core::model::RepoBSONFactory::makeRepoRef(cleanFileName(id), type, link, size, metadata);
+}
+
+repo::core::model::RepoRef FileManager::makeRefNode(
+	const repo::lib::RepoUUID& id,
+	const std::string& link,
+	const repo::core::model::RepoRef::RefType& type,
+	const uint32_t& size,
+	const repo::core::model::RepoBSON& metadata)
+{
+	return repo::core::model::RepoBSONFactory::makeRepoRef(id, type, link, size, metadata);
+}
+
+template<typename IdType>
 bool FileManager::upsertFileRef(
 	const std::string                            &databaseName,
 	const std::string                            &collectionNamePrefix,
-	const std::string                            &id,
+	const IdType                                 &id,
 	const std::string                            &link,
 	const repo::core::model::RepoRef::RefType    &type,
 	const uint32_t                               &size,
@@ -325,7 +378,7 @@ bool FileManager::upsertFileRef(
 	std::string errMsg;
 	bool success = true;
 
-	auto refObj = repo::core::model::RepoBSONFactory::makeRepoRef(id, type, link, size, metadata);
+	auto refObj = makeRefNode(id, link, type, size, metadata);
 	std::string collectionName = collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF;
 	success = dbHandler->upsertDocument(databaseName, collectionName, refObj, true, errMsg);
 	if (!success)
@@ -335,3 +388,21 @@ bool FileManager::upsertFileRef(
 
 	return success;
 }
+
+// Explicit instantations for the two possible fileName types
+
+template bool FileManager::uploadFileAndCommit<std::string>(
+	const std::string&,
+	const std::string&,
+	const std::string&,
+	const std::vector<uint8_t>&,
+	const repo::core::model::RepoBSON&,
+	const Encoding&);
+
+template bool FileManager::uploadFileAndCommit<repo::lib::RepoUUID>(
+	const std::string&,
+	const std::string&,
+	const repo::lib::RepoUUID&,
+	const std::vector<uint8_t>&,
+	const repo::core::model::RepoBSON&,
+	const Encoding&);

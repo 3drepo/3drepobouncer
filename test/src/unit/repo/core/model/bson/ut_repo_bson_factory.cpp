@@ -451,7 +451,7 @@ TEST(RepoBSONFactoryTest, MakeRevisionNodeTest)
 	std::vector<double> offset = { std::rand() / 100., std::rand() / 100., std::rand() / 100. };
 	repo::lib::RepoUUID revId = repo::lib::RepoUUID::createUUID();
 
-	RevisionNode rev = RepoBSONFactory::makeRevisionNode(owner, branchID, revId, files, parents, offset, message, tag);
+	auto rev = RepoBSONFactory::makeRevisionNode(owner, branchID, revId, files, parents, offset, message, tag);
 	EXPECT_EQ(owner, rev.getAuthor());
 	EXPECT_EQ(branchID, rev.getSharedID());
 	EXPECT_EQ(revId, rev.getUniqueID());
@@ -465,7 +465,7 @@ TEST(RepoBSONFactoryTest, MakeRevisionNodeTest)
 
 	//ensure no random parent being generated
 	std::vector<repo::lib::RepoUUID> emptyParents;
-	RevisionNode rev2 = RepoBSONFactory::makeRevisionNode(owner, branchID, revId, files, emptyParents, offset, message, tag);
+	auto rev2 = RepoBSONFactory::makeRevisionNode(owner, branchID, revId, files, emptyParents, offset, message, tag);
 	EXPECT_EQ(0, rev2.getParentIDs().size());
 }
 

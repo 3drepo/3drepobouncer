@@ -46,22 +46,56 @@ TEST(FileManager, InstantiateManager)
 	EXPECT_THROW(FileManager::instantiateManager(repo::lib::RepoConfig::fromFile(getDataPath("config/withFS.json")), nullptr), repo::lib::RepoException);	
 }
 
-TEST(FileManager, UploadFileAndCommit)
+TEST(FileManager, UploadFileAndCommitStringId)
 {
+	// Test if we can upload a file and retrieve it with getRefNode
+	// and getFileRef.
+	// We should be able to do this when the filename is both a string
+	// and a UUID. This test tests the string version.
+
 	auto manager = getManagerDefaultFS();
 	ASSERT_TRUE(manager);
 	auto db = "testFileManager";
 	std::string col = "fileUpload";
-	auto fileName = "fileTest";
-	std::vector<uint8_t> file;
-	file.resize(1024);
-	EXPECT_TRUE(manager->uploadFileAndCommit(db, col, fileName, file));
-	
-	auto dbHandler = getHandler();
-	auto res = dbHandler->findOneByCriteria(db, col + "." + REPO_COLLECTION_EXT_REF, BSON("_id" << fileName));	
-	EXPECT_FALSE(res.isEmpty());
-	std::string linkName = res.getStringField(REPO_REF_LABEL_LINK);
-	EXPECT_TRUE(repo::lib::doesFileExist(getDataPath("fileShare/" + linkName)));
+
+	std::string content = "Test File Contents 1";
+	std::vector<uint8_t> expected(content.begin(), content.end());
+	expected.resize(1024);
+
+	auto id = repo::lib::RepoUUID().createUUID().toString();
+	EXPECT_TRUE(manager->uploadFileAndCommit(db, col, id, expected));
+
+	auto ref = manager->getFileRef(db, col, id);
+	EXPECT_FALSE(ref.getRefLink().empty());
+
+	auto actual = manager->getFile(db, col, id);
+	EXPECT_EQ(expected, actual);
+}
+
+TEST(FileManager, UploadFileAndCommitUUIDId)
+{
+	// Test if we can upload a file and retrieve it with getRefNode
+	// and getFileRef.
+	// We should be able to do this when the filename is both a string
+	// and a UUID. This test tests the UUID version.
+
+	auto manager = getManagerDefaultFS();
+	ASSERT_TRUE(manager);
+	auto db = "testFileManager";
+	std::string col = "fileUpload";
+
+	std::string content = "Test File Contents 2";
+	std::vector<uint8_t> expected(content.begin(), content.end());
+	expected.resize(1024);
+
+	auto id = repo::lib::RepoUUID().createUUID();
+	EXPECT_TRUE(manager->uploadFileAndCommit(db, col, id, expected));
+
+	auto ref = manager->getFileRef(db, col, id);
+	EXPECT_FALSE(ref.getRefLink().empty());
+
+	auto actual = manager->getFile(db, col, id);
+	EXPECT_EQ(expected, actual);
 }
 
 TEST(FileManager, deleteFileAndRef)

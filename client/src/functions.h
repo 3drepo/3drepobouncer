@@ -122,3 +122,16 @@ static int32_t importFileAndCommit(
 	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
 	);
+
+/**
+* Process a drawing revision node and update its image.
+* @param controller the controller to the bouncer library
+* @param token      token provided by the controller after authentication
+* @param command    command and it's arguments to perform
+* @return returns the error code or 0 on success
+*/
+static int32_t processDrawing(
+	std::shared_ptr<repo::RepoController> controller,
+	const repo::RepoController::RepoToken* token,
+	const repo_op_t& command
+);

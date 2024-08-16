@@ -51,6 +51,8 @@ const static std::string ifcModel_InfiniteLoop = "infiniteLoop.ifc";
 const static std::string ifc4Model = "ifc4Test.ifc";
 const static std::string dgnModel = "sample.dgn";
 const static std::string dwgModel = "box.dwg";
+const static std::string dgnDrawing = "square.dgn";
+const static std::string dwgDrawing = "square.dwg";
 const static std::string dwgNestedBlocks = "nestedBlocks.dwg";
 const static std::string dwgPasswordProtected = "passwordProtected.dwg";
 const static std::string dxfModel = "box.dxf";
@@ -107,6 +109,8 @@ const static std::string  importNoOwnerProDesc = "MyUpload";
 const static std::string  importNoOwnerPro2 = "owner2";
 const static std::string  importNoOwnerPro2Tag = "thisTag";
 const static std::string  importNoOwnerPro2Desc = "MyUpload";
+
+const static std::string  processDrawingConfig = "processDrawingConfig.json";
 
 const static std::string getFileFileName = "a0205d17-e73c-4d3f-ad1b-8b875cb5f342cube_obj";
 const static std::string getFileNameBIMModel = "5be1aca9-e4d0-4cec-987d-80d2fde3dade3DrepoBIM_obj";

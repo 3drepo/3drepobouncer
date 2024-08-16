@@ -89,6 +89,7 @@ const createElasticRecord = async (index, body, id) => {
 
 		const { namespace } = elastic;
 		if (body && namespace) {
+			// eslint-disable-next-line no-param-reassign
 			body.namespace = namespace;
 		}
 

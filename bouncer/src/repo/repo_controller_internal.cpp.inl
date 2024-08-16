@@ -856,6 +856,18 @@ RepoController::_RepoControllerImpl::loadSceneFromFile(
 	return scene;
 }
 
+void
+RepoController::_RepoControllerImpl::processDrawingRevision(
+	const RepoController::RepoToken* token,
+	const std::string& teamspace,
+	const repo::lib::RepoUUID revision,
+	uint8_t& err)
+{
+	manipulator::RepoManipulator* worker = workerPool.pop();
+	worker->processDrawingRevision(token->databaseAd, teamspace, revision, err);
+	workerPool.push(worker);
+}
+
 bool RepoController::_RepoControllerImpl::saveOriginalFiles(
 	const RepoController::RepoToken                    *token,
 	const repo::core::model::RepoScene *scene,
