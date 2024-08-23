@@ -158,7 +158,7 @@ namespace repo {
 				
 				void appendTime(std::string label, const tm& t) {
 					tm tmCpy = t; // Copy because mktime can alter the struct
-					time_t time = mktime(&tmCpy);
+					unsigned long long time = static_cast<unsigned long long>(mktime(&tmCpy));
 
 					// Check for a unsuccessful conversion
 					if (time == -1)
@@ -167,7 +167,13 @@ namespace repo {
 						exit(-1);
 					}
 
+					// Convert from seconds to milliseconds
+					time = time * 1000;
+
+					// Convert to mongo type
 					mongo::Date_t date = mongo::Date_t(time);
+
+					// Append
 					mongo::BSONObjBuilder::append(label, date);					
 				}
 
