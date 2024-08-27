@@ -283,6 +283,7 @@ bool repo::lib::MetadataVariantHelper::TryConvert(OdTfVariant& metaEntry, OdBmLa
 				}
 			}
 		}
+		break;
 	}
 	default:
 		return false;
