@@ -40,6 +40,9 @@
 #include "TB_Commands/TBCommandsStdAfx.h"
 
 #include "Essential/Entities/BmExtrusionElem.h"
+#include "Database/Entities/BmDirectShape.h"
+
+#include "Essential/Entities/BmBlendElem.h"
 
 using namespace repo::lib;
 
@@ -1046,46 +1049,92 @@ TEST(RepoMetaVariantConverterRevitTest, AnsiStringTest) {
 //	::odrxUninitialize();
 //}
 
-//TEST(RepoMetaVariantRevitConverterTest, StubPtrDataDBTest) {
-//
-//	// Setup of the OD environment
-//	OdStaticRxObject<MyRvServices> svcs;
-//
-//	odrxInitialize(&svcs);
-//	odgsInitialize();
-//	::odrxDynamicLinker()->loadModule(OdBmLoaderModuleName, false);
-//
-//	OdBmDatabasePtr pDB;
-//	pDB = svcs.createDatabase(true);
-//
-//	// Set up
-//	OdBmLabelUtilsPEPtr labelUtils;
-//	OdBmParamDefPtr paramDef;
-//	OdBm::BuiltInParameter::Enum param;
-//
-//	// Create data
-//	OdBmTransaction tr(pDB, OdBm::TransactionType::Regular);
-//	tr.start();
-//	OdBmObjectId id;
-//	OdBmSWallPtr pSWall = OdBmSWall::createObject();
-//	OdResult result = pDB->addElement(pSWall, id);
-//	EXPECT_EQ(result, OdResult::eOk);
-//	tr.commit();
-//
-//
-//	OdTfVariant variant;// = stub;
-//
-//
-//	// Convert
-//	MetadataVariant v;
-//	bool success = MetadataVariantHelper::TryConvert(variant, labelUtils, paramDef, pDB, param, v);
-//
-//	// Check result
-//	EXPECT_TRUE(success);
-//	EXPECT_EQ(boost::get<std::string>(v), std::string("test"));
-//
-//	// Teardown
-//	::odrxDynamicLinker()->unloadUnreferenced();
-//	odgsUninitialize();
-//	::odrxUninitialize();
-//}
+TEST(RepoMetaVariantConverterRevitTest, StubPtrDataTestNoParamNoName) {
+
+	// Setup of the OD environment
+	OdStaticRxObject<MyRvServices> svcs;
+
+	odrxInitialize(&svcs);
+	odgsInitialize();
+	::odrxDynamicLinker()->loadModule(OdBmLoaderModuleName, false);
+
+	OdBmDatabasePtr pDB;
+	pDB = svcs.createTemplate(OdBm::ProjectTemplate::Structural, OdBm::UnitSystem::Metric);
+
+	// Set up
+	OdBmLabelUtilsPEPtr labelUtils;
+	OdBmParamDefPtr paramDef;
+	OdBm::BuiltInParameter::Enum param;
+
+	// Create data
+	OdBmTransaction tr(pDB, OdBm::TransactionType::Regular);
+	tr.start();
+
+	OdBmObjectId id;	
+	OdResult result;
+	OdBmDirectShapePtr pDirectShape = OdBmDirectShape::createObject();
+
+	result = pDB->addElement(pDirectShape, id);
+
+	tr.commit();
+
+	OdDbStub* stub(id);
+	OdTfVariant variant = stub;
+
+
+	// Convert
+	MetadataVariant v;
+	bool success = MetadataVariantHelper::TryConvert(variant, labelUtils, paramDef, pDB, param, v);
+
+	// Check result
+	EXPECT_TRUE(success);
+	std::string variantResult = boost::get<std::string>(v);
+	EXPECT_EQ(variantResult, std::to_string((OdUInt64)id.getHandle()));
+
+}
+
+TEST(RepoMetaVariantConverterRevitTest, StubPtrDataTestParamSetRegularHdl) {
+
+	// Setup of the OD environment
+	OdStaticRxObject<MyRvServices> svcs;
+
+	odrxInitialize(&svcs);
+	odgsInitialize();
+	::odrxDynamicLinker()->loadModule(OdBmLoaderModuleName, false);
+
+	OdBmDatabasePtr pDB;
+	pDB = svcs.createTemplate(OdBm::ProjectTemplate::Structural, OdBm::UnitSystem::Metric);
+
+	// Set up
+	OdBmLabelUtilsPEPtr labelUtils;
+	OdBmParamDefPtr paramDef;
+	OdBm::BuiltInParameter::Enum param = OdBm::BuiltInParameter::ELEM_CATEGORY_PARAM;
+
+	// Create data
+	OdBmTransaction tr(pDB, OdBm::TransactionType::Regular);
+	tr.start();
+
+	OdBmObjectId id;
+	OdResult result;
+	OdBmDirectShapePtr pDirectShape = OdBmDirectShape::createObject();
+
+	result = pDB->addElement(pDirectShape, id);
+
+	tr.commit();
+
+	OdDbStub* stub(id);
+	OdTfVariant variant = stub;
+
+
+	// Convert
+	MetadataVariant v;
+	bool success = MetadataVariantHelper::TryConvert(variant, labelUtils, paramDef, pDB, param, v);
+
+	// Check result
+	EXPECT_TRUE(success);
+	std::string variantResult = boost::get<std::string>(v);
+	EXPECT_EQ(variantResult, std::to_string((OdUInt64)id.getHandle()));
+
+}
+
+
