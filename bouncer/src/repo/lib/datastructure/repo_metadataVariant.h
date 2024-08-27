@@ -28,7 +28,7 @@ namespace repo {
 	namespace lib {
 
 
-		typedef public boost::variant<bool, int, long long, double, std::string, tm> MetadataVariant;  // TODO: Date?
+		typedef public boost::variant<bool, int, long long, double, std::string, tm> MetadataVariant;
 
 	}
 
