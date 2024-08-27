@@ -240,7 +240,9 @@ namespace repo {
 				}
 
 				void operator()(const std::string& s) const {
-					builder.append(label, s);
+					// Filter out empty strings
+					if(s != "")
+						builder.append(label, s);
 				}
 
 				void operator()(const tm& t) const {
