@@ -91,3 +91,5 @@
 #define ERRCODE_REPO_LICENCE_INVALID 36
 //When a password protected or encrypted file is provided
 #define REPOERR_FILE_IS_ENCRYPTED 37
+//When image processing failed (only used by bouncer_worker)
+#define REPOERR_IMAGE_PROCESSING_FAILED 38
