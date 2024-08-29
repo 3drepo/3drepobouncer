@@ -472,11 +472,11 @@ namespace repo {
 			*	------------- Import/ Export --------------
 			*/
 
-		/**
-			* Create a federated scene with the given scene collections
-			* @param fedMap a map of reference scene and transformation from root where the scene should lie
-			* @return returns a constructed scene graph with the reference.
-			*/
+			/**
+				* Create a federated scene with the given scene collections
+				* @param fedMap a map of reference scene and transformation from root where the scene should lie
+				* @return returns a constructed scene graph with the reference.
+				*/
 		repo::core::model::RepoScene* createFederatedScene(
 			const std::map<repo::core::model::ReferenceNode, std::string> &fedMap);
 
@@ -562,12 +562,14 @@ namespace repo {
 		/**
 		* Given a teamspace and drawing revision, import the original file
 		* into a drawing and update the revision.
+		* If an image file is provided, processing will be omitted
 		*/
 		void processDrawingRevision(
 			const RepoController::RepoToken* token,
 			const std::string& teamspace,
 			const repo::lib::RepoUUID revision,
-			uint8_t& err);
+			uint8_t& err,
+			const std::string &imagePath = std::string());
 
 		/**
 			* Load metadata from a file

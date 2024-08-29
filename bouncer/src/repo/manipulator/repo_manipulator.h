@@ -535,10 +535,11 @@ namespace repo {
 			* Initialise the image of a drawing revision from its rfile
 			*/
 			void processDrawingRevision(
-					const std::string databaseAd,
-					const std::string& teamspace,
-					const lib::RepoUUID revision,
-					uint8_t& error);
+				const std::string databaseAd,
+				const std::string& teamspace,
+				const lib::RepoUUID revision,
+				uint8_t& error,
+				const std::string &imagePath);
 
 			/**
 			* remove a document from the database
