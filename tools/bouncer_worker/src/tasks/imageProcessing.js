@@ -36,7 +36,7 @@ ImageProcessing.testImageClient = async () => {
 ImageProcessing.generateSVG = async (file, output, taskInfo) => {
 	const retVal = await run(
 		INKSCAPE,
-		['--export-type="svg"', file, '-o', output, '-n', '1', '-D'],
+		['--export-type="svg"', file, '-o', output, '-n', '1', '-D', '--export-background=white', '--export-background-opacity=255'],
 		{ label: 'INKSCAPE' },
 		taskInfo,
 	);
