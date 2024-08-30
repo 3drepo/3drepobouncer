@@ -35,6 +35,9 @@
 
 #include "data_processor_dwg.h"
 
+#include <DbObjectIterator.h>
+#include <DbDimStyleTableRecord.h>
+
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
 class VectoriseDeviceDwg : public OdGsBaseVectorizeDevice
@@ -84,7 +87,7 @@ private:
 };
 ODRX_DEFINE_PSEUDO_STATIC_MODULE(DeviceModuleDwg);
 
-void importModel(OdDbDatabasePtr pDb, GeometryCollector* collector)
+void FileProcessorDwg::importModel(OdDbDatabasePtr pDb)
 {
 	// Create the vectorizer device that will render the DWG database. This will
 	// use the GeometryCollector underneath.
@@ -108,7 +111,7 @@ void importModel(OdDbDatabasePtr pDb, GeometryCollector* collector)
 	pGsModule.release();
 }
 
-void importDrawing(OdDbDatabasePtr pDb, repo::manipulator::modelutility::DrawingImageInfo* collector)
+void FileProcessorDwg::importDrawing(OdDbDatabasePtr pDb)
 {
 	OdGsModulePtr pModule = ::odrxDynamicLinker()->loadModule(OdSvgExportModuleName, false);
 	OdGsDevicePtr dev = pModule->createDevice();
@@ -142,8 +145,67 @@ void importDrawing(OdDbDatabasePtr pDb, repo::manipulator::modelutility::Drawing
 
 		pHelperDevice->onSize(OdGsDCRect(0, 1024, 768, 0));
 
-		// Here we can extract the calibration in the same way as file_processor_dgn when ready...
+		// This section extracts the view information which can be used to map
+		// betweeen the SVG and world coordinate systems.
+		// The graphics system (Gs) view https://docs.opendesign.com/tv/gs_OdGsView.html
+		// is used to derive points that map between the WCS of the drawing and
+		// the svg file.
 
+		const OdGsView* pGsView = pDeviceSvg->viewAt(0);
+
+		auto worldToDeviceMatrix = pGsView->worldToDeviceMatrix();
+		auto objectToDeviceMatrix = pGsView->objectToDeviceMatrix();
+		
+		// Pick three points (two vectors) to describe the map. The transform
+		// can be computed from these each time from then on.
+
+		OdGePoint3d a(0, 0, 0);
+		OdGePoint3d b(1, 0, 0);
+		OdGePoint3d c(0, 1, 0);
+
+		// The following vector contains the points in the SVG file corresponding
+		// to the 3D coordinates above. Add these to the appropriate schema when
+		// it is ready...
+
+		//std::vector<OdGePoint3d> points;
+		//points.push_back(worldToDeviceMatrix * a);
+		//points.push_back(worldToDeviceMatrix * b);
+		//points.push_back(worldToDeviceMatrix * c);
+
+		// Calculate points in SVG space
+		OdGePoint3d aS = worldToDeviceMatrix * a;
+		OdGePoint3d bS = worldToDeviceMatrix * b;
+
+		// Convert to 2D by dropping z component (note: have not thought about it. Just conceptually).
+		repo::lib::RepoVector2D aS2d = repo::lib::RepoVector2D(aS.x, aS.y);
+		repo::lib::RepoVector2D bS2d = repo::lib::RepoVector2D(bS.x, bS.y);
+
+		// Convert 3d vectors from ODA format to 3d repo format
+		repo::lib::RepoVector3D a3d = repo::lib::RepoVector3D(a.x, a.y, a.z);
+		repo::lib::RepoVector3D b3d = repo::lib::RepoVector3D(b.x, b.y, b.z);
+
+		// Assemble calibration outcome
+		std::vector<repo::lib::RepoVector3D> horizontal3d;
+		horizontal3d.push_back(a3d);
+		horizontal3d.push_back(b3d);
+
+		std::vector<repo::lib::RepoVector2D> horizontal2d;
+		horizontal2d.push_back(aS2d);
+		horizontal2d.push_back(bS2d);
+
+		repo::manipulator::modelutility::DrawingCalibration calibration;
+		calibration.horizontalCalibration3d = horizontal3d;
+		calibration.horizontalCalibration2d = horizontal2d;
+
+		calibration.verticalRange = { 0, 10 }; // TODO: how do I calculate that?
+
+		repo::manipulator::modelconvertor::ModelUnits units = determineModelUnits(pDb->getINSUNITS());
+		calibration.units = repo::manipulator::modelconvertor::toUnitsString(units);
+
+		// Pass calibration outcome to collector
+		drawingCollector->drawingCalibration = calibration;
+		
+		
 		pHelperDevice->update();
 
 		// Copy the SVG contents into a string
@@ -161,7 +223,21 @@ void importDrawing(OdDbDatabasePtr pDb, repo::manipulator::modelutility::Drawing
 
 		// Provide the string to the collector as a vector
 
-		std::copy(svg.c_str(), svg.c_str() + svg.length(), std::back_inserter(collector->data));
+		std::copy(svg.c_str(), svg.c_str() + svg.length(), std::back_inserter(drawingCollector->data));
+	}
+}
+
+repo::manipulator::modelconvertor::ModelUnits FileProcessorDwg::determineModelUnits(const OdDb::UnitsValue units){
+	switch (units) {
+		case OdDb::kUnitsMeters: return ModelUnits::METRES;
+		case OdDb::kUnitsDecimeters: return ModelUnits::DECIMETRES;
+		case OdDb::kUnitsCentimeters: return ModelUnits::CENTIMETRES;
+		case OdDb::kUnitsMillimeters: return ModelUnits::MILLIMETRES;
+		case OdDb::kUnitsFeet: return ModelUnits::FEET;
+		case OdDb::kUnitsInches: return ModelUnits::INCHES;
+		default:
+			repoWarning << "Unrecognised unit measure: " << (int)units;
+			return ModelUnits::UNKNOWN;
 	}
 }
 
@@ -187,12 +263,12 @@ uint8_t FileProcessorDwg::readFile()
 
 		if (collector)
 		{
-			importModel(pDb, collector);
+			importModel(pDb);
 		}
 
 		if (drawingCollector)
 		{
-			importDrawing(pDb, drawingCollector);
+			importDrawing(pDb);
 		}
 
 		pDb.release();

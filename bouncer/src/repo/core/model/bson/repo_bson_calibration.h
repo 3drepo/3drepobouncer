@@ -15,35 +15,28 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/**
+*  Assets BSON
+*/
+
 #pragma once
 
-#include <string>
-#include <vector>
-#include "repo/lib/datastructure/repo_vector.h"
+#include "repo_bson.h"
 
 namespace repo {
-	namespace manipulator {
-		namespace modelutility {
+	namespace core {
+		namespace model {
 
-			/**
-			* Holds outcome of the autocalibration
-			*/
-			struct DrawingCalibration {
-				std::vector<repo::lib::RepoVector3D> horizontalCalibration3d;
-				std::vector<repo::lib::RepoVector2D> horizontalCalibration2d;
-				std::vector<float> verticalRange;
-				std::string units;
-			};
-
-			/**
-			* Holds complete information about an imported drawing at runtime
-			*/
-			struct DrawingImageInfo
+			class REPO_API_EXPORT RepoCalibration : public RepoBSON
 			{
-				std::string name; // The name of the original file (e.g. "Floor1.DWG")
-				std::vector<uint8_t> data; // The drawing in svg format
-				DrawingCalibration drawingCalibration;
+			public:
+
+				RepoCalibration() : RepoBSON() {}
+
+				RepoCalibration(RepoBSON bson) : RepoBSON(bson) {}
+
+				~RepoCalibration() {}
 			};
-		}
-	}
-}
+		}// end namespace model
+	} // end namespace core
+} // end namespace repo

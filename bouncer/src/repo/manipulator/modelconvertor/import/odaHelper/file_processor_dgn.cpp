@@ -358,10 +358,50 @@ void FileProcessorDgn::importDrawing(OdDgDatabasePtr pDb, const ODCOLORREF* pPal
 		// to the 3D coordinates above. Add these to the appropriate schema when
 		// it is ready...
 
-		std::vector<OdGePoint3d> points;
-		points.push_back(worldToDeviceMatrix * a);
-		points.push_back(worldToDeviceMatrix * b);
-		points.push_back(worldToDeviceMatrix * c);
+		//std::vector<OdGePoint3d> points;
+		//points.push_back(worldToDeviceMatrix * a);
+		//points.push_back(worldToDeviceMatrix * b);
+		//points.push_back(worldToDeviceMatrix * c);
+
+		// Calculate points in SVG space
+		OdGePoint3d aS = worldToDeviceMatrix * a;
+		OdGePoint3d bS = worldToDeviceMatrix * b;
+
+		// Convert to 2D by dropping z component (note: have not thought about it. Just conceptually).
+		repo::lib::RepoVector2D aS2d = repo::lib::RepoVector2D(aS.x, aS.y);
+		repo::lib::RepoVector2D bS2d = repo::lib::RepoVector2D(bS.x, bS.y);
+
+		// Convert 3d vectors from ODA format to 3d repo format
+		repo::lib::RepoVector3D a3d = repo::lib::RepoVector3D(a.x, a.y, a.z);
+		repo::lib::RepoVector3D b3d = repo::lib::RepoVector3D(b.x, b.y, b.z);
+		
+		// Assemble calibration outcome
+		std::vector<repo::lib::RepoVector3D> horizontal3d;
+		horizontal3d.push_back(a3d);
+		horizontal3d.push_back(b3d);
+
+		std::vector<repo::lib::RepoVector2D> horizontal2d;
+		horizontal2d.push_back(aS2d);
+		horizontal2d.push_back(bS2d);
+
+		repo::manipulator::modelutility::DrawingCalibration calibration;
+		calibration.horizontalCalibration3d = horizontal3d;
+		calibration.horizontalCalibration2d = horizontal2d;
+		
+		calibration.verticalRange = { 0, 10 }; // TODO: how do I calculate that?
+
+		OdDgElementId elementActId = pDb->getActiveModelId();
+		OdDgModelPtr pModel = elementActId.safeOpenObject();
+
+		repo::manipulator::modelconvertor::ModelUnits units = determineModelUnits(pModel->getMasterUnit());
+		
+		calibration.units = repo::manipulator::modelconvertor::toUnitsString(units);
+
+
+
+		// Pass calibration outcome to collector
+		drawingCollector->drawingCalibration = calibration;
+
 
 		// The call to update is what will create the svg in the memory stream
 

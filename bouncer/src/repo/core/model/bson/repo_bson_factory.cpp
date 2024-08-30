@@ -742,6 +742,74 @@ RepoAssets RepoBSONFactory::makeRepoBundleAssets(
 	return RepoAssets(builder.obj());
 }
 
+RepoCalibration repo::core::model::RepoBSONFactory::makeRepoCalibration(
+	const repo::lib::RepoUUID& projectId,
+	const repo::lib::RepoUUID& drawingId,
+	const repo::lib::RepoUUID& revisionId,
+	const std::vector<repo::lib::RepoVector3D>& horizontal3d,
+	const std::vector<repo::lib::RepoVector2D>& horizontal2d,
+	const std::vector<float>& verticalRange,
+	const std::string& units)
+{
+	RepoBSONBuilder bsonBuilder;
+	bsonBuilder.append(REPO_LABEL_ID, repo::lib::RepoUUID::createUUID());
+	bsonBuilder.append(REPO_LABEL_PROJECT, projectId);
+	bsonBuilder.append(REPO_LABEL_DRAWING, drawingId);
+	bsonBuilder.append(REPO_LABEL_REVISION, revisionId);
+	bsonBuilder.appendTimeStamp(REPO_LABEL_CREATEDAT);
+
+	RepoBSONBuilder horizontalBuilder;
+	if (horizontal3d.size() == 2)	{
+		std::vector<std::vector<float>>arrays;
+		std::vector<float> arr1;
+		arr1.push_back(horizontal3d[0].x);
+		arr1.push_back(horizontal3d[0].y);
+		arr1.push_back(horizontal3d[0].z);
+		arrays.push_back(arr1);
+
+		std::vector<float> arr2;
+		arr2.push_back(horizontal3d[1].x);
+		arr2.push_back(horizontal3d[1].y);
+		arr2.push_back(horizontal3d[1].z);
+		arrays.push_back(arr2);
+
+		horizontalBuilder.appendArray(REPO_LABEL_MODEL, arrays);
+	}
+	else {
+		repoError << "Incorrect amount of horizontal 3D vectors supplied to makeRepoCalibration" << std::endl;
+	}
+
+	if (horizontal2d.size() == 2)	{
+		std::vector<std::vector<float>>arrays;
+		std::vector<float> arr1;
+		arr1.push_back(horizontal2d[0].x);
+		arr1.push_back(horizontal2d[0].y);
+		arrays.push_back(arr1);
+
+		std::vector<float> arr2;
+		arr2.push_back(horizontal2d[1].x);
+		arr2.push_back(horizontal2d[1].y);
+		arrays.push_back(arr2);
+
+		horizontalBuilder.appendArray(REPO_LABEL_DRAWING, arrays);
+	}
+	else {
+		repoError << "Incorrect amount of horizontal 2D vectors supplied to makeRepoCalibration" << std::endl;
+	}
+	bsonBuilder.append(REPO_LABEL_HORIZONTAL, horizontalBuilder.obj());
+
+	if (verticalRange.size() == 2)	{
+		bsonBuilder.appendArray(REPO_LABEL_VERTICALRANGE, verticalRange);
+	}
+	else {
+		repoError << "Incorrect amount of values for vertical range supplied to makeRepoCalibration" << std::endl;
+	}
+
+	bsonBuilder.append(REPO_LABEL_UNITS, units);
+
+	return RepoCalibration(bsonBuilder.obj());
+}
+
 ReferenceNode RepoBSONFactory::makeReferenceNode(
 	const std::string &database,
 	const std::string &project,
