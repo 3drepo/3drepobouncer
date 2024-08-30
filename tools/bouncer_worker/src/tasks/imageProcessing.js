@@ -23,12 +23,21 @@ const {
 } = require('../constants/errorCodes');
 
 const ImageProcessing = {};
+const INKSCAPE = 'inkscape';
+
+ImageProcessing.testImageClient = async () => {
+	try {
+		await run(INKSCAPE, ['--version'], { label: 'INIT' });
+	} catch (err) {
+		throw new Error(`Failed to call ${INKSCAPE}: ${err?.message}`);
+	}
+};
 
 ImageProcessing.generateSVG = async (file, output, taskInfo) => {
 	const retVal = await run(
-		'inkscape',
+		INKSCAPE,
 		['--export-type="svg"', file, '-o', output, '-n', '1', '-D'],
-		{ logLabel: 'INKSCAPE' },
+		{ label: 'INKSCAPE' },
 		taskInfo,
 	);
 	if (retVal !== ERRCODE_OK) return retVal;
