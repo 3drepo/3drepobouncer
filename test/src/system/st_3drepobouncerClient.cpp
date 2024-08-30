@@ -36,12 +36,12 @@ static std::string getSuccessFilePath()
 }
 
 static std::string produceCleanArgs(
-	const std::string &database,
-	const std::string &project,
-	const std::string &dbAdd = REPO_GTEST_DBADDRESS,
-	const int         &port = REPO_GTEST_DBPORT,
-	const std::string &username = REPO_GTEST_DBUSER,
-	const std::string &password = REPO_GTEST_DBPW
+	const std::string& database,
+	const std::string& project,
+	const std::string& dbAdd = REPO_GTEST_DBADDRESS,
+	const int& port = REPO_GTEST_DBPORT,
+	const std::string& username = REPO_GTEST_DBUSER,
+	const std::string& password = REPO_GTEST_DBPW
 )
 {
 	return  getClientExePath() + " "
@@ -52,9 +52,9 @@ static std::string produceCleanArgs(
 }
 
 static std::string produceGenStashArgs(
-	const std::string &database,
-	const std::string &project,
-	const std::string &type
+	const std::string& database,
+	const std::string& project,
+	const std::string& type
 )
 {
 	return  getClientExePath() + " "
@@ -66,9 +66,9 @@ static std::string produceGenStashArgs(
 }
 
 static std::string produceGetFileArgs(
-	const std::string &file,
-	const std::string &database,
-	const std::string &project
+	const std::string& file,
+	const std::string& database,
+	const std::string& project
 )
 {
 	return  getClientExePath() + " "
@@ -80,8 +80,8 @@ static std::string produceGetFileArgs(
 }
 
 static std::string produceCreateFedArgs(
-	const std::string &file,
-	const std::string &owner = std::string()
+	const std::string& file,
+	const std::string& owner = std::string()
 )
 {
 	return  getClientExePath() + " "
@@ -92,7 +92,7 @@ static std::string produceCreateFedArgs(
 }
 
 static std::string produceUploadFileArgs(
-	const std::string &filePath
+	const std::string& filePath
 ) {
 	return  getClientExePath() + " "
 		+ getConnConfig()
@@ -111,10 +111,10 @@ static std::string produceProcessDrawingArgs(
 }
 
 static std::string produceUploadArgs(
-	const std::string &database,
-	const std::string &project,
-	const std::string &filePath,
-	const std::string &configPath = getConnConfig())
+	const std::string& database,
+	const std::string& project,
+	const std::string& filePath,
+	const std::string& configPath = getConnConfig())
 {
 	return  getClientExePath()
 		+ " " + configPath
@@ -124,7 +124,7 @@ static std::string produceUploadArgs(
 }
 
 static int runProcess(
-	const std::string &cmd)
+	const std::string& cmd)
 {
 	int status = system(cmd.c_str());
 #ifndef _WIN32
@@ -358,7 +358,7 @@ TEST(RepoClientTest, UploadTestDWG)
 	EXPECT_EQ((int)REPOERR_OK, runProcess(dwgUploadNestedBlocks));
 	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "\"[423]\"", { "rootNode->0->Block Text->Block Text" }));
 	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "\"[50D]\"", { "rootNode->0->My Block->My Block", "rootNode->Layer1->My Block->My Block" }));
-	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "\"[4FA]\"", { "rootNode->0->My Outer Block->My Outer Block", "rootNode->Layer1->My Outer Block->My Outer Block", "rootNode->Layer3->My Outer Block->My Outer Block"  }));
+	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "\"[4FA]\"", { "rootNode->0->My Outer Block->My Outer Block", "rootNode->Layer1->My Outer Block->My Outer Block", "rootNode->Layer3->My Outer Block->My Outer Block" }));
 	EXPECT_FALSE(projectHasGeometryWithMetadata(db, "dwgTestNestedBlocks", "Entity Handle::Value", "\"[534]\"")); // Even though this handle exists, it should be compressed in the tree.
 
 	// This snippet checks if encrypted files are handled correctly.
@@ -645,9 +645,9 @@ TEST(RepoClientTest, GetFileTest)
 
 TEST(RepoClientTest, GenStashTest)
 {
-	repo::RepoController *controller = new repo::RepoController();
+	repo::RepoController* controller = new repo::RepoController();
 	std::string errMsg;
-	repo::RepoController::RepoToken *token = initController(controller);
+	repo::RepoController::RepoToken* token = initController(controller);
 	repo::lib::RepoUUID stashRoot;
 
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadArgs("genStashTest", "cube", getDataPath(simpleModel))));
@@ -666,7 +666,6 @@ TEST(RepoClientTest, GenStashTest)
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("genStashTest", "cube", "src")));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("genStashTest", "cube", "tree")));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("genStashTest", "cube", "gltf")));
-
 
 	std::unordered_set<std::string> collections;
 	for (auto& name : handler->getCollections("genStashTest"))
@@ -782,7 +781,7 @@ TEST(RepoClientTest, ProcessDrawing)
 
 	EXPECT_EQ(imageRef.getStringField("type"), "fs");
 	EXPECT_EQ(imageRef.getStringField("name"), "test.svg"); // The image should have its file extension changed
-	EXPECT_EQ(imageRef.getStringField("mime"), "image/svg+xml");
+	EXPECT_EQ(imageRef.getStringField("mimeType"), "image/svg+xml");
 	EXPECT_EQ(imageRef.getUUIDField("project"), project);
 	EXPECT_EQ(imageRef.getStringField("model"), model);
 	EXPECT_EQ(imageRef.getUUIDField("rev_id"), rid);
