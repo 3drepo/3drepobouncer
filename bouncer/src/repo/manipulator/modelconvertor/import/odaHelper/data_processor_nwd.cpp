@@ -142,12 +142,6 @@ void setMetadataValueVariant(const std::string& category, const std::string& key
 	metadata[metaKey] = value;
 }
 
-void setMetadataValue(const std::string& category, const std::string& key, const OdString& oString, std::unordered_map<std::string, repo::lib::MetadataVariant>& metadata)
-{
-	repo::lib::MetadataVariant v = convertToStdString(oString);
-	setMetadataValueVariant(category, key, v, metadata);
-}
-
 void setMetadataValue(const std::string& category, const std::string& key, const bool& b, std::unordered_map<std::string, repo::lib::MetadataVariant>& metadata)
 {
 	repo::lib::MetadataVariant v = b;
@@ -160,16 +154,18 @@ void setMetadataValue(const std::string& category, const std::string& key, const
 	setMetadataValueVariant(category, key, v, metadata);
 }
 
-void setMetadataValue(const std::string& category, const std::string& key, const OdUInt64& uint, std::unordered_map<std::string, repo::lib::MetadataVariant>& metadata)
+void setMetadataValue(const std::string& category, OdString& key, const OdUInt64& uint, std::unordered_map<std::string, repo::lib::MetadataVariant>& metadata)
 {
+	std::string keyString = convertToStdString(key);
 	repo::lib::MetadataVariant v = static_cast<long long>(uint); // Potentially losing precision here, but mongo does not accept uint64
-	setMetadataValueVariant(category, key, v, metadata);
+	setMetadataValueVariant(category, keyString, v, metadata);
 }
 
-void setMetadataValue(const std::string& category, const std::string& key, const std::string& string, std::unordered_map<std::string, repo::lib::MetadataVariant>& metadata)
+void setMetadataValue(const std::string& category, const OdString& key, const OdString& string, std::unordered_map<std::string, repo::lib::MetadataVariant>& metadata)
 {
-	repo::lib::MetadataVariant v = string;
-	setMetadataValueVariant(category, key, v, metadata);
+	std::string keyString = convertToStdString(key);
+	repo::lib::MetadataVariant v = convertToStdString(string);
+	setMetadataValueVariant(category, keyString, v, metadata);
 }
 
 void removeFilepathFromMetadataValue(std::string key, std::unordered_map<std::string, repo::lib::MetadataVariant>& metadata)
@@ -257,11 +253,11 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 	//	auto ItemRequired = modelItemPtr->?
 
 	// For the Layer, we can use the scene graph hierarchy.
-	auto ItemLayer = convertToStdString(context.layer->getDisplayName());
+	auto ItemLayer = context.layer->getDisplayName();
 
 	if (!OdNwPartition::cast(context.layer).isNull())
 	{
-		ItemLayer = boost::filesystem::path(ItemLayer).filename().string();
+		ItemLayer = OdString(boost::filesystem::path(ItemLayer).filename().c_str());
 	}
 
 	auto ItemGuid = modelItemPtr->getInstanceGuid().toString();
@@ -387,7 +383,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 		auto guidAttribute = OdNwGuidAttribute::cast(attribute);
 		if (!guidAttribute.isNull())
 		{
-			setMetadataValue(category, convertToStdString(guidAttribute->getDisplayName()), convertToStdString(guidAttribute->getGuid().toString()), metadata);
+			setMetadataValue(category,guidAttribute->getDisplayName(), guidAttribute->getGuid().toString(), metadata);
 		}
 
 		// (Note the "Element Id::Value" (LcOaNat64AttributeValue) key is stored as a UInt64 Attribute.)
@@ -395,14 +391,14 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 		auto uint64Attribute = OdNwUInt64Attribute::cast(attribute);
 		if (!uint64Attribute.isNull())
 		{
-			setMetadataValue(category, convertToStdString(uint64Attribute->getDisplayName()), uint64Attribute->getValue(), metadata);
+			setMetadataValue(category, uint64Attribute->getDisplayName(), uint64Attribute->getValue(), metadata);
 		}
 
 		auto materialAttribute = OdNwMaterialAttribute::cast(attribute);
 		if (!materialAttribute.isNull())
 		{
 			auto value = materialAttribute->getDisplayName();
-			setMetadataValue("Item", "Material", convertToStdString(value), metadata);
+			setMetadataValue("Item", "Material", value, metadata);
 		}
 
 		auto binaryAttribute = OdNwBinaryAttribute::cast(attribute);
@@ -411,7 +407,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 			OdBinaryData data;
 			binaryAttribute->getData(data);
 			auto asString = OdString((OdChar*)data.asArrayPtr(), data.length());
-			setMetadataValue(category, convertToStdString(binaryAttribute->getDisplayName()), asString, metadata);
+			setMetadataValue(category, binaryAttribute->getDisplayName(), asString, metadata);
 		}
 
 		auto urlAttribute = OdNwURLAttribute::cast(attribute);
@@ -419,19 +415,19 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 		{
 			OdArray<OdNwURLPtr> urls;
 			urlAttribute->getURLs(urls);
-			std::string combined;
+			OdString combined;
 			for (auto url : urls) {
 				if (!url.isNull()) {
-					combined += convertToStdString(url->getURL()) + ";";
+					combined += url->getURL() + ";";
 				}
 			}
-			setMetadataValue(category, convertToStdString(urlAttribute->getDisplayName()), combined, metadata);
+			setMetadataValue(category, urlAttribute->getDisplayName(), combined, metadata);
 		}
 
 		auto textAttribute = OdNwTextAttribute::cast(attribute);
 		if (!textAttribute.isNull())
 		{
-			setMetadataValue(category, convertToStdString(textAttribute->getDisplayName()), convertToStdString(textAttribute->getText()), metadata);
+			setMetadataValue(category, textAttribute->getDisplayName(), textAttribute->getText(), metadata);
 		}
 
 		//Other Attributes include:
