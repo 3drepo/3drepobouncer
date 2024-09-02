@@ -212,44 +212,45 @@ namespace repo {
 				void appendUUID(
 					const std::string &label,
 					const repo::lib::RepoUUID &uuid);
+
+				// Visitor class to process the metadata variant correctly
+				class AppendVisitor : public boost::static_visitor<> {
+				public:
+
+					AppendVisitor(RepoBSONBuilder& aBuilder, const std::string& aLabel) : builder(aBuilder), label(aLabel) {}
+
+					void operator()(const bool& b) const {
+						builder.append(label, b);
+					}
+
+					void operator()(const int& i) const {
+						builder.append(label, i);
+					}
+
+					void operator()(const long long& ll) const {
+						builder.append(label, ll);
+					}
+
+					void operator()(const double& d) const {
+						builder.append(label, d);
+					}
+
+					void operator()(const std::string& s) const {
+						// Filter out empty strings
+						if (s != "")
+							builder.append(label, s);
+					}
+
+					void operator()(const tm& t) const {
+						builder.appendTime(label, t);
+					}
+
+				private:
+					RepoBSONBuilder& builder;
+					std::string label;
+				};
 			};
 
-			// Visitor class to process the metadata variant correctly
-			class AppendVisitor : public boost::static_visitor<> {
-			public:
-				
-				AppendVisitor(RepoBSONBuilder& aBuilder, const std::string& aLabel) : builder(aBuilder), label(aLabel) {}
-
-				void operator()(const bool& b) const {	
-					builder.append(label, b);
-				}
-
-				void operator()(const int& i) const {
-					builder.append(label, i);
-				}
-
-				void operator()(const long long& ll) const {					
-					builder.append(label, ll);
-				}
-
-				void operator()(const double& d) const {
-					builder.append(label, d);
-				}
-
-				void operator()(const std::string& s) const {
-					// Filter out empty strings
-					if(s != "")
-						builder.append(label, s);
-				}
-
-				void operator()(const tm& t) const {
-					builder.appendTime(label, t);
-				}
-
-			private:
-				RepoBSONBuilder& builder;
-				std::string label;
-			};
 
 			// Template specialization
 			template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoUUID > (
