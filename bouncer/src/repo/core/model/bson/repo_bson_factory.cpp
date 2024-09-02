@@ -222,7 +222,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 		std::string key = sanitiseKey(entry.first);
 		repo::lib::MetadataVariant value = entry.second;
 
-		if (!key.empty())
+		if (!key.empty()) // && !value.empty())
 		{
 			RepoBSONBuilder metaEntryBuilder;
 			metaEntryBuilder.append(REPO_NODE_LABEL_META_KEY, key);
