@@ -163,15 +163,6 @@ void FileProcessorDwg::importDrawing(OdDbDatabasePtr pDb)
 		OdGePoint3d b(1, 0, 0);
 		OdGePoint3d c(0, 1, 0);
 
-		// The following vector contains the points in the SVG file corresponding
-		// to the 3D coordinates above. Add these to the appropriate schema when
-		// it is ready...
-
-		//std::vector<OdGePoint3d> points;
-		//points.push_back(worldToDeviceMatrix * a);
-		//points.push_back(worldToDeviceMatrix * b);
-		//points.push_back(worldToDeviceMatrix * c);
-
 		// Calculate points in SVG space
 		OdGePoint3d aS = worldToDeviceMatrix * a;
 		OdGePoint3d bS = worldToDeviceMatrix * b;
@@ -180,14 +171,14 @@ void FileProcessorDwg::importDrawing(OdDbDatabasePtr pDb)
 		OdGePoint2d pixelDensity;
 		pGsView->getNumPixelsInUnitSquare(OdGePoint3d::kOrigin, pixelDensity, false);
 
-		// Convert to 2D by dropping z component and applying the density values
-		// (note: have not thought about it. Just conceptually).
+		// Flattening to 2D by dropping z component and applying the density values
 		repo::lib::RepoVector2D aS2d = repo::lib::RepoVector2D(aS.x / pixelDensity.x, aS.y / pixelDensity.y);
 		repo::lib::RepoVector2D bS2d = repo::lib::RepoVector2D(bS.x / pixelDensity.x, bS.y / pixelDensity.y);
 
 		// Convert 3d vectors from ODA format to 3d repo format
-		repo::lib::RepoVector3D a3d = repo::lib::RepoVector3D(a.x, a.y, a.z);
-		repo::lib::RepoVector3D b3d = repo::lib::RepoVector3D(b.x, b.y, b.z);
+		// (Note how z and y are switched to move from input z-up CS to Unity y-up CS)
+		repo::lib::RepoVector3D a3d = repo::lib::RepoVector3D(a.x, a.z, a.y);
+		repo::lib::RepoVector3D b3d = repo::lib::RepoVector3D(b.x, b.z, b.y);
 
 		// Assemble calibration outcome
 		std::vector<repo::lib::RepoVector3D> horizontal3d;
