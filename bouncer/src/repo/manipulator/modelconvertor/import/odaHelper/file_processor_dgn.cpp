@@ -367,9 +367,14 @@ void FileProcessorDgn::importDrawing(OdDgDatabasePtr pDb, const ODCOLORREF* pPal
 		OdGePoint3d aS = worldToDeviceMatrix * a;
 		OdGePoint3d bS = worldToDeviceMatrix * b;
 
-		// Convert to 2D by dropping z component (note: have not thought about it. Just conceptually).
-		repo::lib::RepoVector2D aS2d = repo::lib::RepoVector2D(aS.x, aS.y);
-		repo::lib::RepoVector2D bS2d = repo::lib::RepoVector2D(bS.x, bS.y);
+		// Get pixel density to apply it to SVG coordinates for converting from pixel to unit values
+		OdGePoint2d pixelDensity;
+		pGsView->getNumPixelsInUnitSquare(OdGePoint3d::kOrigin, pixelDensity, false);
+
+		// Convert to 2D by dropping z component and applying the density values
+		// (note: have not thought about it. Just conceptually).
+		repo::lib::RepoVector2D aS2d = repo::lib::RepoVector2D(aS.x / pixelDensity.x, aS.y / pixelDensity.y);
+		repo::lib::RepoVector2D bS2d = repo::lib::RepoVector2D(bS.x / pixelDensity.x, bS.y / pixelDensity.y);
 
 		// Convert 3d vectors from ODA format to 3d repo format
 		repo::lib::RepoVector3D a3d = repo::lib::RepoVector3D(a.x, a.y, a.z);
