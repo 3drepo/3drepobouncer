@@ -36,6 +36,55 @@
 
 using namespace repo::manipulator::modelconvertor;
 
+
+bool repo::manipulator::modelconvertor::TryConvertMetadataEntry(aiMetadataEntry& assimpMetaEntry, repo::lib::MetadataVariant& v){
+	// Dissect the entry object
+	switch (assimpMetaEntry.mType)
+	{
+	case AI_BOOL:
+	{
+		v = *(static_cast<bool*>(assimpMetaEntry.mData));
+		break;
+	}
+	case AI_INT32:
+	{
+		v = *(static_cast<int*>(assimpMetaEntry.mData));
+		break;
+	}
+	case AI_UINT64:
+	{
+		uint64_t value = *(static_cast<uint64_t*>(assimpMetaEntry.mData));
+		v = static_cast<long long>(value); // Potentially losing precision here, but mongo does not accept uint64_t
+		break;
+	}
+	case AI_FLOAT:
+	{
+		float value = *(static_cast<float*>(assimpMetaEntry.mData));
+		v = static_cast<double>(value); // Potentially losing precision here, but mongo does not accept float
+		break;
+	}
+	case AI_DOUBLE:
+	{
+		v = *(static_cast<double*>(assimpMetaEntry.mData));
+		break;
+	}
+	case AI_AIVECTOR3D:
+	{
+		aiVector3D* vector = (static_cast<aiVector3D*>(assimpMetaEntry.mData));
+		repo::lib::RepoVector3D repoVector = { (float)vector->x, (float)vector->y, (float)vector->z };
+		v = repoVector.toString(); // not the best way to store a vector, but this appears to be the way it is done at the moment.
+		break;
+	}
+	default:
+	{
+		// The other cases (AI_AISTRING and FORCE_32BIT) need extra treatment.
+		return false;
+	}
+	}
+
+	return true;
+}
+
 AssimpModelImport::AssimpModelImport(const ModelImportConfig &settings) :
 	AbstractModelImport(settings)
 {
@@ -576,7 +625,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 
 				repo::lib::MetadataVariant v;
 
-				if (repo::lib::MetadataVariantHelper::TryConvert(currentValue, v)) {
+				if (TryConvertMetadataEntry(currentValue, v)) {
 					metaEntries[key] = v;
 				}
 				else {

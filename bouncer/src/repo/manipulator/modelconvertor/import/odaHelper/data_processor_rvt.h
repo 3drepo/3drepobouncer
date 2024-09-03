@@ -137,6 +137,8 @@ namespace repo {
 					OdBmDatabasePtr database;
 					OdBmSampleLabelUtilsPE* labelUtils = nullptr;
 				};
+
+				bool TryConvertMetadataEntry(OdTfVariant& metaEntry, OdBmLabelUtilsPEPtr labelUtils, OdBmParamDefPtr paramDef, OdBmDatabase* database, OdBm::BuiltInParameter::Enum param, repo::lib::MetadataVariant& v);
 			}
 		}
 	}

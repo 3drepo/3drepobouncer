@@ -6,7 +6,6 @@
 
 set(SOURCES
 	${SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_metadataVariantHelper.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_uuid.cpp
 	CACHE STRING "SOURCES" FORCE)
 

@@ -25,9 +25,11 @@
 
 #include <OdaCommon.h>
 #include <NwDatabase.h>
+#include <NwDataProperty.h>
+#include <NwVariant.h>
+#include <NwName.h>
 
 #include <repo/lib/datastructure/repo_metadataVariant.h>
-#include <repo/lib/datastructure/repo_metadataVariantHelper.h>
 
 #include <boost/filesystem.hpp>
 
@@ -64,6 +66,8 @@ namespace repo {
 						s = boost::filesystem::path(s).filename().string();
 					}
 				};
+
+				bool TryConvertMetadataProperty(OdNwDataPropertyPtr& metaProperty, repo::lib::MetadataVariant& v);
 			}
 		}
 	}

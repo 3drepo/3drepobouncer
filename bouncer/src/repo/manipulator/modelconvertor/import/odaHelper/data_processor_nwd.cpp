@@ -175,6 +175,113 @@ void removeFilepathFromMetadataValue(std::string key, std::unordered_map<std::st
 	}
 }
 
+bool repo::manipulator::modelconvertor::odaHelper::TryConvertMetadataProperty(OdNwDataPropertyPtr& metaProperty, repo::lib::MetadataVariant& v)
+{
+
+	switch (metaProperty->getDataType())
+	{
+	case NwDataType::dt_NONE: {
+		return false;
+	}
+	case NwDataType::dt_DOUBLE: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		v = odvar.getDouble();
+		break;
+	}
+	case NwDataType::dt_INT32: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		v = static_cast<long long>(odvar.getInt32()); // Incoming is long, convert it to long long since int won't fit.
+		break;
+	}
+	case NwDataType::dt_BOOL: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		v = odvar.getBool();
+		break;
+	}
+	case NwDataType::dt_DISPLAY_STRING: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		OdString value = odvar.getString();
+		v = repo::manipulator::modelconvertor::odaHelper::convertToStdString(value);
+		break;
+	}
+	case NwDataType::dt_DATETIME: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		long long timePosix = static_cast<long long>(odvar.getUInt64());
+		tm* timeTm = localtime(&timePosix);
+		v = *timeTm;
+		break;
+	}
+	case NwDataType::dt_DOUBLE_LENGTH: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		v = odvar.getMeasuredDouble();
+		break;
+	}
+	case NwDataType::dt_DOUBLE_ANGLE: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		v = odvar.getMeasuredDouble();
+		break;
+	}
+	case NwDataType::dt_NAME: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		OdRxObjectPtr ptr = odvar.getRxObjectPtr();
+		OdNwNamePtr namePtr = static_cast<OdNwNamePtr>(ptr);
+		OdString displayNameOd = namePtr->getDisplayName();
+		std::string displayName = repo::manipulator::modelconvertor::odaHelper::convertToStdString(displayNameOd);
+		v = displayName;
+		break;
+	}
+	case NwDataType::dt_IDENTIFIER_STRING: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		OdString value = odvar.getString();
+		v = repo::manipulator::modelconvertor::odaHelper::convertToStdString(value);
+		break;
+	}
+	case NwDataType::dt_DOUBLE_AREA: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		v = odvar.getMeasuredDouble();
+		break;
+	}
+	case NwDataType::dt_DOUBLE_VOLUME: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		v = odvar.getMeasuredDouble();
+		break;
+	}
+	case NwDataType::dt_POINT2D: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		OdGePoint2d point = odvar.getPoint2d();
+		std::string str = std::to_string(point.x) + ", " + std::to_string(point.y);
+		v = str;
+		break;
+	}
+	case NwDataType::dt_POINT3D: {
+		OdNwVariant odvar;
+		metaProperty->getValue(odvar);
+		OdGePoint3d point = odvar.getPoint3d();
+		std::string str = std::to_string(point.x) + ", " + std::to_string(point.y) + ", " + std::to_string(point.z);
+		v = str;
+		break;
+	}
+	default: {
+		// All other cases can not be handled by this converter.
+		return false;
+	}
+	}
+
+	return true;
+}
+
 // Materials are defined at the Component level. Components contain different types
 // geometric primitive, all with the same material.
 
@@ -332,7 +439,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 				auto key = convertToStdString(prop->getDisplayName());
 
 				repo::lib::MetadataVariant v;
-				if (repo::lib::MetadataVariantHelper::TryConvert(prop, v))
+				if (TryConvertMetadataProperty(prop, v))
 					setMetadataValueVariant(category, key, v, metadata);				
 			}
 		}

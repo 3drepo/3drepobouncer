@@ -21,50 +21,13 @@
 
 #include <string>
 #include "boost/variant.hpp"
-#include "assimp/scene.h"
-
-#include "repo_vector.h"
 #include "repo_metadataVariant.h"
 #include <ctime>
 #include <iostream>
 
-// For ODA
-#include "repo/manipulator/modelconvertor/import/odaHelper/helper_functions.h"
-
-// For NWG
-#include <NwProperty.h>
-#include <NwColor.h>
-#include <NwDataProperty.h>
-#include <NwVariant.h>
-#include <NwName.h>
-
-// For RVT
-#include <Database/Entities/BmParamElem.h>
-#include <TB_ExLabelUtils/BmSampleLabelUtilsPE.h>
-#include <Base/BmSpecTypeId.h>
-#include <Tf/TfVariant.h>
-
 
 namespace repo {
 	namespace lib {
-
-
-		class MetadataVariantHelper  
-		{		
-		public:		
-			static bool TryConvert(aiMetadataEntry& assimpMetaEntry, MetadataVariant& v);
-
-			static bool TryConvert(OdNwDataPropertyPtr& metaProperty, MetadataVariant& v);
-
-			static bool TryConvert(
-				OdTfVariant& metaEntry,
-				OdBmLabelUtilsPEPtr labelUtils,
-				OdBmParamDefPtr paramDef,
-				OdBmDatabase* database,
-				OdBm::BuiltInParameter::Enum param,
-				MetadataVariant& v);
-		};
-
 		class DuplicationVisitor : public boost::static_visitor<bool> {
 		public:
 

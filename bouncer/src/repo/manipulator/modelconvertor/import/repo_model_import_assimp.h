@@ -40,7 +40,6 @@
 #include "../../../core/model/bson/repo_node_transformation.h"
 
 #include "repo/lib/datastructure/repo_metadataVariant.h"
-#include "repo/lib/datastructure/repo_metadataVariantHelper.h"
 
 namespace repo {
 	namespace manipulator {
@@ -229,6 +228,8 @@ namespace repo {
 				bool keepMetadata;
 				bool requiresOrientation = false;
 			};
+
+			bool TryConvertMetadataEntry(aiMetadataEntry& assimpMetaEntry, repo::lib::MetadataVariant& v);
 		} //namespace AssimpModelImport
 	} //namespace manipulator
 } //namespace repo
