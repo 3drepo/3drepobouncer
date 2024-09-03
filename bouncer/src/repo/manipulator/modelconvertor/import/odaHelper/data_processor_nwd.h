@@ -67,7 +67,7 @@ namespace repo {
 					}
 				};
 
-				bool TryConvertMetadataProperty(OdNwDataPropertyPtr& metaProperty, repo::lib::RepoVariant& v);
+				bool TryConvertMetadataProperty(std::string key, OdNwDataPropertyPtr& metaProperty, repo::lib::RepoVariant& v);
 			}
 		}
 	}
