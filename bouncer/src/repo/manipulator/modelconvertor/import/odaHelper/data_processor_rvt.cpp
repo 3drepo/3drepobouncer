@@ -335,7 +335,6 @@ void DataProcessorRvt::processParameter(
 			repo::lib::MetadataVariant v;
 
 
-			//std::string variantValue = translateMetadataValue(value, labelUtils, pDescParam, element->getDatabase(), buildInEnum);
 			if (repo::lib::MetadataVariantHelper::TryConvert(value, labelUtils, pDescParam, element->getDatabase(), buildInEnum, v))
 			{
 				if (metadata.find(metaKey) != metadata.end() && !boost::apply_visitor(repo::lib::DuplicationVisitor(), metadata[metaKey], v)) {
