@@ -79,6 +79,7 @@ using namespace repo::manipulator::modelconvertor::odaHelper;
 
 static std::vector<std::string> ignoredCategories = { "Material", "Geometry", "Autodesk Material", "Revit Material" };
 static std::vector<std::string> ignoredKeys = { "Item::Source File Name" };
+static std::vector<std::string> keysForPathSanitation = { "Item::Source File", "Item::File Name" };
 static std::string sElementIdKey = "Element ID::Value";
 
 struct RepoNwTraversalContext {
@@ -136,6 +137,16 @@ void convertColor(OdString color, std::vector<float>& dest)
 	}
 }
 
+std::string checkForPathAndSanitise(std::string key, std::string value)
+{
+	if (std::find(keysForPathSanitation.begin(), keysForPathSanitation.end(), key) != keysForPathSanitation.end()) {
+		return boost::filesystem::path(value).filename().string();
+	}
+	else {
+		return value;
+	}
+}
+
 void setMetadataValueVariant(const std::string& category, const std::string& key, const repo::lib::RepoVariant& value, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	std::string metaKey = category + "::" + (key.empty() ? std::string("Value") : key);
@@ -164,18 +175,13 @@ void setMetadataValue(const std::string& category, OdString& key, const OdUInt64
 void setMetadataValue(const std::string& category, const OdString& key, const OdString& string, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	std::string keyString = convertToStdString(key);
-	repo::lib::RepoVariant v = convertToStdString(string);
+	std::string strValue = repo::manipulator::modelconvertor::odaHelper::convertToStdString(string);
+	strValue = checkForPathAndSanitise(keyString, strValue);
+	repo::lib::RepoVariant v = strValue;
 	setMetadataValueVariant(category, keyString, v, metadata);
 }
 
-void removeFilepathFromMetadataValue(std::string key, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
-{
-	if (metadata.find(key) != metadata.end()) {
-		metadata[key].apply_visitor(NwdFilePathRemovalVisitor());
-	}
-}
-
-bool repo::manipulator::modelconvertor::odaHelper::TryConvertMetadataProperty(OdNwDataPropertyPtr& metaProperty, repo::lib::RepoVariant& v)
+bool repo::manipulator::modelconvertor::odaHelper::TryConvertMetadataProperty(std::string key, OdNwDataPropertyPtr& metaProperty, repo::lib::RepoVariant& v)
 {
 
 	switch (metaProperty->getDataType())
@@ -205,7 +211,9 @@ bool repo::manipulator::modelconvertor::odaHelper::TryConvertMetadataProperty(Od
 		OdNwVariant odvar;
 		metaProperty->getValue(odvar);
 		OdString value = odvar.getString();
-		v = repo::manipulator::modelconvertor::odaHelper::convertToStdString(value);
+		std::string strValue = repo::manipulator::modelconvertor::odaHelper::convertToStdString(value);
+		strValue = checkForPathAndSanitise(key, strValue);
+		v = strValue;
 		break;
 	}
 	case NwDataType::dt_DATETIME: {
@@ -242,7 +250,9 @@ bool repo::manipulator::modelconvertor::odaHelper::TryConvertMetadataProperty(Od
 		OdNwVariant odvar;
 		metaProperty->getValue(odvar);
 		OdString value = odvar.getString();
-		v = repo::manipulator::modelconvertor::odaHelper::convertToStdString(value);
+		std::string strValue = repo::manipulator::modelconvertor::odaHelper::convertToStdString(value);
+		strValue = checkForPathAndSanitise(key, strValue);
+		v = strValue;
 		break;
 	}
 	case NwDataType::dt_DOUBLE_AREA: {
@@ -439,7 +449,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 				auto key = convertToStdString(prop->getDisplayName());
 
 				repo::lib::RepoVariant v;
-				if (TryConvertMetadataProperty(prop, v))
+				if (TryConvertMetadataProperty(key, prop, v))
 					setMetadataValueVariant(category, key, v, metadata);				
 			}
 		}
@@ -546,11 +556,6 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 		// These are currently ignored.
 	}
 
-	// Make any necessary adjustments to the metadata.
-	// Here we remove the path from keys known to contain filenames.
-
-	removeFilepathFromMetadataValue("Item::Source File", metadata);
-	removeFilepathFromMetadataValue("Item::File Name", metadata);
 
 	// And remove any that should be ignored (at the end, so we don't have to
 	// check every key every time when looking for just a couple..)
