@@ -19,7 +19,7 @@
 #include <gtest/gtest.h>
 #include "../../repo_test_utils.h"
 
-#include <repo/lib/datastructure/repo_metadataVariant.h>
+#include <repo/lib/datastructure/repo_variant.h>
 #include <repo/manipulator/modelconvertor/import/repo_model_import_assimp.h>
 #include "assimp/scene.h"
 
@@ -33,7 +33,7 @@ TEST(RepoMetaVariantConverterAssimpTest, Boolean)
 	meta.mType = aiMetadataType::AI_BOOL;
 	meta.mData = &data;
 
-	MetadataVariant v;
+	RepoVariant v;
 	EXPECT_TRUE(TryConvertMetadataEntry(meta, v));
 	EXPECT_EQ(boost::get<bool>(v), true);
 }
@@ -46,7 +46,7 @@ TEST(RepoMetaVariantConverterAssimpTest, Int32)
 	metaPos.mType = aiMetadataType::AI_INT32;
 	metaPos.mData = &dataPos;
 
-	MetadataVariant vPos;
+	RepoVariant vPos;
 	EXPECT_TRUE(TryConvertMetadataEntry(metaPos, vPos));
 	EXPECT_EQ(boost::get<int>(vPos), 2147483647);
 
@@ -56,7 +56,7 @@ TEST(RepoMetaVariantConverterAssimpTest, Int32)
 	metaNeg.mType = aiMetadataType::AI_INT32;
 	metaNeg.mData = &dataNeg;
 
-	MetadataVariant vNeg;
+	RepoVariant vNeg;
 	EXPECT_TRUE(TryConvertMetadataEntry(metaNeg, vNeg));
 	EXPECT_EQ(boost::get<int>(vNeg), -2147483647);
 }
@@ -70,7 +70,7 @@ TEST(RepoMetaVariantConverterAssimpTest, UInt64)
 	metaMin.mType = aiMetadataType::AI_UINT64;
 	metaMin.mData = &dataMin;
 
-	MetadataVariant vMin;
+	RepoVariant vMin;
 	EXPECT_TRUE(TryConvertMetadataEntry(metaMin, vMin));
 	EXPECT_EQ(boost::get<long long>(vMin), 0);
 
@@ -80,7 +80,7 @@ TEST(RepoMetaVariantConverterAssimpTest, UInt64)
 	metaMax.mType = aiMetadataType::AI_UINT64;
 	metaMax.mData = &dataMax;
 
-	MetadataVariant vMax;
+	RepoVariant vMax;
 	EXPECT_TRUE(TryConvertMetadataEntry(metaMax, vMax));
 	EXPECT_EQ(boost::get<long long>(vMax), 18446744073709551615);
 }
@@ -92,7 +92,7 @@ TEST(RepoMetaVariantConverterAssimpTest, Float)
 	meta.mType = aiMetadataType::AI_FLOAT;
 	meta.mData = &data;
 
-	MetadataVariant v;
+	RepoVariant v;
 	EXPECT_TRUE(TryConvertMetadataEntry(meta, v));
 	EXPECT_EQ(boost::get<double>(v), 0.5);
 }
@@ -104,7 +104,7 @@ TEST(RepoMetaVariantConverterAssimpTest, Double)
 	meta.mType = aiMetadataType::AI_DOUBLE;
 	meta.mData = &data;
 
-	MetadataVariant v;
+	RepoVariant v;
 	EXPECT_TRUE(TryConvertMetadataEntry(meta, v));
 	EXPECT_EQ(boost::get<double>(v), 0.6);
 }
@@ -119,7 +119,7 @@ TEST(RepoMetaVariantConverterAssimpTest, Vector)
 	meta.mType = aiMetadataType::AI_AIVECTOR3D;
 	meta.mData = &data;
 
-	MetadataVariant v;
+	RepoVariant v;
 	EXPECT_TRUE(TryConvertMetadataEntry(meta, v));
 	EXPECT_EQ(boost::get<std::string>(v), "[1.00000000000000000, 2.00000000000000000, 3.00000000000000000]");
 }
@@ -131,6 +131,6 @@ TEST(RepoMetaVariantConverterAssimpTest, AISTRING)
 	meta.mType = aiMetadataType::AI_AISTRING;
 	meta.mData = &data;
 
-	MetadataVariant v;
+	RepoVariant v;
 	EXPECT_FALSE(TryConvertMetadataEntry(meta, v));
 }

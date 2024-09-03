@@ -20,7 +20,7 @@
 #include <unordered_map>
 #include <cstdint>
 #include <string>
-#include <repo/lib/datastructure/repo_metadataVariant.h>
+#include <repo/lib/datastructure/repo_variant.h>
 
 #if defined(_WIN32) || defined(_WIN64)
 #   define IFC_UTILS_DECL_EXPORT __declspec(dllexport)
@@ -50,7 +50,7 @@ struct TransNode {
 	std::vector<float> transformation;
 	std::string name;
 	std::string guid;
-	std::unordered_map<std::string, repo::lib::MetadataVariant> meta;
+	std::unordered_map<std::string, repo::lib::RepoVariant> meta;
 	std::vector<TransNode> children;
 	bool createNode = false;
 	bool meshTakeName = false;

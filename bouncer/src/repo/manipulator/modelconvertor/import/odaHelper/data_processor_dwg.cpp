@@ -133,7 +133,7 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 			collector->setLayer(blockReferenceNodeId, context.currentBlockReferenceName, blockReferenceLayerNodeId);
 			collector->setMeshGroup(blockReferenceNodeId);
 
-			std::unordered_map<std::string, repo::lib::MetadataVariant> meta;
+			std::unordered_map<std::string, repo::lib::RepoVariant> meta;
 			meta["Entity Handle::Value"] = context.currentBlockReferenceId;
 			collector->setMetadata(blockReferenceNodeId, meta);
 		}
@@ -145,7 +145,7 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 			collector->setLayer(entityId, entityName, layerId);
 			collector->setMeshGroup(entityId);
 
-			std::unordered_map<std::string, repo::lib::MetadataVariant> meta;
+			std::unordered_map<std::string, repo::lib::RepoVariant> meta;
 			meta["Entity Handle::Value"] = convertToStdString(toString(handle));
 			collector->setMetadata(entityId, meta);
 		}

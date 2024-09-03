@@ -19,7 +19,7 @@
 #include <gtest/gtest.h>
 #include "../../repo_test_utils.h"
 
-#include <repo/lib/datastructure/repo_metadataVariant.h>
+#include <repo/lib/datastructure/repo_variant.h>
 #include <repo/manipulator/modelconvertor/import/odaHelper/data_processor_nwd.h>
 
 #include <Attribute/NwPropertyAttribute.h>
@@ -81,8 +81,8 @@ TEST(RepoMetaVariantConverterNWDTest, DoubleTest)
 	OdArray<OdNwDataPropertyPtr> props;
 	attribute->getProperties(props);
 
-	// Convert to MetadataVariant
-	MetadataVariant v;
+	// Convert to RepoVariant
+	RepoVariant v;
 	bool success = TryConvertMetadataProperty(props[0], v);
 
 	// Check results
@@ -112,8 +112,8 @@ TEST(RepoMetaVariantConverterNWDTest, Int32Test)
 	OdArray<OdNwDataPropertyPtr> props;
 	attribute->getProperties(props);
 
-	// Convert to MetadataVariant
-	MetadataVariant v;
+	// Convert to RepoVariant
+	RepoVariant v;
 	bool success = TryConvertMetadataProperty(props[0], v);
 
 	// Check results
@@ -143,8 +143,8 @@ TEST(RepoMetaVariantConverterNWDTest, BoolTest)
 	OdArray<OdNwDataPropertyPtr> props;
 	attribute->getProperties(props);
 
-	// Convert to MetadataVariant
-	MetadataVariant v;
+	// Convert to RepoVariant
+	RepoVariant v;
 	bool success = TryConvertMetadataProperty(props[0], v);
 
 	// Check results
@@ -174,8 +174,8 @@ TEST(RepoMetaVariantConverterNWDTest, DisplayStringTest)
 	OdArray<OdNwDataPropertyPtr> props;
 	attribute->getProperties(props);
 
-	// Convert to MetadataVariant
-	MetadataVariant v;
+	// Convert to RepoVariant
+	RepoVariant v;
 	bool success = TryConvertMetadataProperty(props[0], v);
 
 	// Check results
@@ -205,8 +205,8 @@ TEST(RepoMetaVariantConverterNWDTest, TimeTest)
 	OdArray<OdNwDataPropertyPtr> props;
 	attribute->getProperties(props);
 
-	// Convert to MetadataVariant
-	MetadataVariant v;
+	// Convert to RepoVariant
+	RepoVariant v;
 	bool success = TryConvertMetadataProperty(props[0], v);
 
 	// Check results
@@ -236,8 +236,8 @@ TEST(RepoMetaVariantConverterNWDTest, LengthTest)
 	OdArray<OdNwDataPropertyPtr> props;
 	attribute->getProperties(props);
 
-	// Convert to MetadataVariant
-	MetadataVariant v;
+	// Convert to RepoVariant
+	RepoVariant v;
 	bool success = TryConvertMetadataProperty(props[0], v);
 
 	// Check results
@@ -267,8 +267,8 @@ TEST(RepoMetaVariantConverterNWDTest, AngleTest)
 	OdArray<OdNwDataPropertyPtr> props;
 	attribute->getProperties(props);
 
-	// Convert to MetadataVariant
-	MetadataVariant v;
+	// Convert to RepoVariant
+	RepoVariant v;
 	bool success = TryConvertMetadataProperty(props[0], v);
 
 	// Check results
@@ -298,8 +298,8 @@ TEST(RepoMetaVariantConverterNWDTest, NameTest)
 	OdArray<OdNwDataPropertyPtr> props;
 	attribute->getProperties(props);
 
-	// Convert to MetadataVariant
-	MetadataVariant v;
+	// Convert to RepoVariant
+	RepoVariant v;
 	bool success = TryConvertMetadataProperty(props[0], v);
 
 	// Check results
@@ -329,8 +329,8 @@ TEST(RepoMetaVariantConverterNWDTest, IDStringTest)
 	OdArray<OdNwDataPropertyPtr> props;
 	attribute->getProperties(props);
 
-	// Convert to MetadataVariant
-	MetadataVariant v;
+	// Convert to RepoVariant
+	RepoVariant v;
 	bool success = TryConvertMetadataProperty(props[0], v);
 
 	// Check results
@@ -360,8 +360,8 @@ TEST(RepoMetaVariantConverterNWDTest, AreaTest)
 	OdArray<OdNwDataPropertyPtr> props;
 	attribute->getProperties(props);
 
-	// Convert to MetadataVariant
-	MetadataVariant v;
+	// Convert to RepoVariant
+	RepoVariant v;
 	bool success = TryConvertMetadataProperty(props[0], v);
 
 	// Check results
@@ -391,8 +391,8 @@ TEST(RepoMetaVariantConverterNWDTest, VolumeTest)
 	OdArray<OdNwDataPropertyPtr> props;
 	attribute->getProperties(props);
 
-	// Convert to MetadataVariant
-	MetadataVariant v;
+	// Convert to RepoVariant
+	RepoVariant v;
 	bool success = TryConvertMetadataProperty(props[0], v);
 
 	// Check results
@@ -422,8 +422,8 @@ TEST(RepoMetaVariantConverterNWDTest, Point2DTest)
 	OdArray<OdNwDataPropertyPtr> props;
 	attribute->getProperties(props);
 
-	// Convert to MetadataVariant
-	MetadataVariant v;
+	// Convert to RepoVariant
+	RepoVariant v;
 	bool success = TryConvertMetadataProperty(props[0], v);
 
 	// Check results
@@ -453,8 +453,8 @@ TEST(RepoMetaVariantConverterNWDTest, Point3DTest)
 	OdArray<OdNwDataPropertyPtr> props;
 	attribute->getProperties(props);
 
-	// Convert to MetadataVariant
-	MetadataVariant v;
+	// Convert to RepoVariant
+	RepoVariant v;
 	bool success = TryConvertMetadataProperty(props[0], v);
 
 	// Check results

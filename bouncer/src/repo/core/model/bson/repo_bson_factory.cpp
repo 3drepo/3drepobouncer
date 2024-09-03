@@ -182,7 +182,7 @@ static std::string sanitiseKey(const std::string &key)
 
 MetadataNode RepoBSONFactory::makeMetaDataNode(
 	const std::vector<std::string>  &keys,
-	const std::vector<repo::lib::MetadataVariant>  &values,
+	const std::vector<repo::lib::RepoVariant>  &values,
 	const std::string               &name,
 	const std::vector<repo::lib::RepoUUID>     &parents,
 	const int                       &apiLevel)
@@ -196,7 +196,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 			<< ") does not match the number of values(" << values.size() << ")!";
 	}
 
-	std::unordered_map<std::string, repo::lib::MetadataVariant> metadataMap;
+	std::unordered_map<std::string, repo::lib::RepoVariant> metadataMap;
 
 	for (int i = 0; i < (keysLen < valLen ? keysLen : valLen); ++i) {
 		metadataMap[keys[i]] = values[i];
@@ -206,7 +206,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 }
 
 MetadataNode RepoBSONFactory::makeMetaDataNode(
-	const std::unordered_map<std::string, repo::lib::MetadataVariant>  &data,
+	const std::unordered_map<std::string, repo::lib::RepoVariant>  &data,
 	const std::string               &name,
 	const std::vector<repo::lib::RepoUUID>     &parents,
 	const int                       &apiLevel)
@@ -220,7 +220,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 	auto count = 0;
 	for (const auto &entry : data) {
 		std::string key = sanitiseKey(entry.first);
-		repo::lib::MetadataVariant value = entry.second;
+		repo::lib::RepoVariant value = entry.second;
 
 		if (!key.empty())
 		{
@@ -228,7 +228,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 			metaEntryBuilder.append(REPO_NODE_LABEL_META_KEY, key);
 			
 			// Pass variant on to the builder
-			metaEntryBuilder.appendMetadataVariant(REPO_NODE_LABEL_META_VALUE, value);
+			metaEntryBuilder.appendRepoVariant(REPO_NODE_LABEL_META_VALUE, value);
 
 			metaEntries.push_back(metaEntryBuilder.obj());
 		}

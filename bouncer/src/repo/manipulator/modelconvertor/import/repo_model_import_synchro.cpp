@@ -123,11 +123,11 @@ repo::core::model::MetadataNode* SynchroModelImport::createMetaNode(
 	const std::string &name,
 	const std::vector<repo::lib::RepoUUID> &parents) {
 
-	std::unordered_map<std::string, repo::lib::MetadataVariant> metadataVariant;
+	std::unordered_map<std::string, repo::lib::RepoVariant> RepoVariant;
 
 	for (auto& it: metadata) {
 
-		repo::lib::MetadataVariant v;
+		repo::lib::RepoVariant v;
 
 		// Guess-cast into the variant
 		std::string value = it.second;
@@ -152,10 +152,10 @@ repo::core::model::MetadataNode* SynchroModelImport::createMetaNode(
 		}
 
 		// Store the variant
-		metadataVariant[it.first] = v;
+		RepoVariant[it.first] = v;
 	}
 
-	return new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(metadataVariant, name, parents));
+	return new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(RepoVariant, name, parents));
 }
 
 repo::core::model::TransformationNode* SynchroModelImport::createTransNode(

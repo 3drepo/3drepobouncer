@@ -13,10 +13,10 @@ set(HEADERS
 	${HEADERS}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_matrix.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_matrix_def.h
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_metadataVariant.h
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_metadataVariantHelper.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_structs.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_uuid.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_variant.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_variant_utils.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_vector.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_vector2d.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_vector3d.h

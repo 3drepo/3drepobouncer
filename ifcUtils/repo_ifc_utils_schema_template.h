@@ -31,7 +31,7 @@
 #undef CONCAT
 
 #include <repo/lib/datastructure/repo_structs.h>
-#include <repo/lib/datastructure/repo_metadataVariant.h>
+#include <repo/lib/datastructure/repo_variant.h>
 
 namespace repo {
 	namespace ifcUtility {
@@ -91,7 +91,7 @@ namespace repo {
 
 				static void generateClassificationInformation(
 					const SCHEMA_IN_FILE::IfcRelAssociatesClassification * &relCS,
-					std::unordered_map<std::string, repo::lib::MetadataVariant>    &metaValues
+					std::unordered_map<std::string, repo::lib::RepoVariant>    &metaValues
 
 				);
 
@@ -99,10 +99,10 @@ namespace repo {
 					IfcParse::IfcFile &ifcFile,
 					bool &missingEntities,
 					const IfcUtil::IfcBaseClass *element,
-					std::unordered_map<std::string, repo::lib::MetadataVariant>								&metaValue,
+					std::unordered_map<std::string, repo::lib::RepoVariant>									&metaValue,
 					std::unordered_map<std::string, std::string>											&locationValue,
 					std::unordered_map<std::string, std::string>											&projectUnits,
-					std::unordered_map<int, std::unordered_map<std::string, repo::lib::MetadataVariant>>    &metadataGroup,
+					std::unordered_map<int, std::unordered_map<std::string, repo::lib::RepoVariant>>		&metadataGroup,
 					const std::set<int>																		&ancestorsID = std::set<int>(),
 					const std::string																		&metaPrefix = std::string()
 				);
@@ -110,7 +110,7 @@ namespace repo {
 				static Actions_t determineActionsByElementType(
 					const IfcUtil::IfcBaseClass *element,
 					bool &missingEntities,
-					std::unordered_map<std::string, repo::lib::MetadataVariant>                  &metaValues,
+					std::unordered_map<std::string, repo::lib::RepoVariant>       &metaValues,
 					std::unordered_map<std::string, std::string>                  &locationData,
 					std::unordered_map<std::string, std::string>                  &projectUnits,
 					std::vector<IfcUtil::IfcBaseClass *>                          &extraChildren,

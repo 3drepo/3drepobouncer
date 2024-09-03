@@ -45,12 +45,12 @@ std::istream& MetadataImportCSV::readLine(
 	return stream;
 }
 
-std::vector<repo::lib::MetadataVariant> repo::manipulator::modelconvertor::MetadataImportCSV::ConvertToVariants(std::vector<std::string> tokens)
+std::vector<repo::lib::RepoVariant> repo::manipulator::modelconvertor::MetadataImportCSV::ConvertToVariants(std::vector<std::string> tokens)
 {
-	std::vector<repo::lib::MetadataVariant> metaData;
+	std::vector<repo::lib::RepoVariant> metaData;
 
 	for (auto& value : tokens) {
-		repo::lib::MetadataVariant v;
+		repo::lib::RepoVariant v;
 
 		// Guess-cast into the variant
 

@@ -37,7 +37,7 @@
 #include "repo_bson.h"
 
 #include <boost/variant/static_visitor.hpp>
-#include "repo/lib/datastructure/repo_metadataVariant.h"
+#include "repo/lib/datastructure/repo_variant.h"
 
 #include <ctime>
 
@@ -75,9 +75,9 @@ namespace repo {
 				}
 
 				
-				void appendMetadataVariant(
+				void appendRepoVariant(
 					const std::string& label,
-					const repo::lib::MetadataVariant& item);
+					const repo::lib::RepoVariant& item);
 
 
 				template<class T>

@@ -60,8 +60,8 @@
 #include "geometry_collector.h"
 #include "data_processor.h"
 
-#include "repo/lib/datastructure/repo_metadataVariant.h"
-#include "repo/lib/datastructure/repo_metadataVariantHelper.h"
+#include "repo/lib/datastructure/repo_variant.h"
+#include "repo/lib/datastructure/repo_variant_utils.h"
 
 namespace repo {
 	namespace manipulator {
@@ -109,13 +109,13 @@ namespace repo {
 
 					void fillMetadataById(
 						OdBmObjectId id,
-						std::unordered_map<std::string, repo::lib::MetadataVariant>& metadata);
+						std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
 
 					void fillMetadataByElemPtr(
 						OdBmElementPtr element,
-						std::unordered_map<std::string, repo::lib::MetadataVariant>& metadata);
+						std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
 
-					std::unordered_map<std::string, repo::lib::MetadataVariant> fillMetadata(OdBmElementPtr element);
+					std::unordered_map<std::string, repo::lib::RepoVariant> fillMetadata(OdBmElementPtr element);
 					std::string getLevel(OdBmElementPtr element, const std::string& name);
 					std::string getElementName(OdBmElementPtr element);
 
@@ -128,7 +128,7 @@ namespace repo {
 					void processParameter(
 						OdBmElementPtr element,
 						OdBmObjectId paramId,
-						std::unordered_map<std::string, repo::lib::MetadataVariant> &metadata,
+						std::unordered_map<std::string, repo::lib::RepoVariant> &metadata,
 						const OdBm::BuiltInParameter::Enum &buildInEnum
 					);
 
@@ -138,7 +138,7 @@ namespace repo {
 					OdBmSampleLabelUtilsPE* labelUtils = nullptr;
 				};
 
-				bool TryConvertMetadataEntry(OdTfVariant& metaEntry, OdBmLabelUtilsPEPtr labelUtils, OdBmParamDefPtr paramDef, OdBmDatabase* database, OdBm::BuiltInParameter::Enum param, repo::lib::MetadataVariant& v);
+				bool TryConvertMetadataEntry(OdTfVariant& metaEntry, OdBmLabelUtilsPEPtr labelUtils, OdBmParamDefPtr paramDef, OdBmDatabase* database, OdBm::BuiltInParameter::Enum param, repo::lib::RepoVariant& v);
 			}
 		}
 	}

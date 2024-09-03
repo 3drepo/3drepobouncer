@@ -36,7 +36,7 @@ void RepoBSONBuilder::appendUUID(
 	appendBinData(label, uuidData.size(), mongo::bdtUUID, (char*)uuidData.data());
 }
 
-void repo::core::model::RepoBSONBuilder::appendMetadataVariant(const std::string& label, const repo::lib::MetadataVariant& item)
+void repo::core::model::RepoBSONBuilder::appendRepoVariant(const std::string& label, const repo::lib::RepoVariant& item)
 {
 	// Apply visitor to handle the variant.
 	boost::apply_visitor(AppendVisitor(*this, label), item);

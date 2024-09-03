@@ -39,7 +39,7 @@
 #include "../../../core/model/bson/repo_node_metadata.h"
 #include "../../../core/model/bson/repo_node_transformation.h"
 
-#include "repo/lib/datastructure/repo_metadataVariant.h"
+#include "repo/lib/datastructure/repo_variant.h"
 
 namespace repo {
 	namespace manipulator {
@@ -229,7 +229,7 @@ namespace repo {
 				bool requiresOrientation = false;
 			};
 
-			bool TryConvertMetadataEntry(aiMetadataEntry& assimpMetaEntry, repo::lib::MetadataVariant& v);
+			bool TryConvertMetadataEntry(aiMetadataEntry& assimpMetaEntry, repo::lib::RepoVariant& v);
 		} //namespace AssimpModelImport
 	} //namespace manipulator
 } //namespace repo

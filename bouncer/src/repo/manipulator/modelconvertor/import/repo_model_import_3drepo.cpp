@@ -48,7 +48,7 @@ repo::core::model::MetadataNode* RepoModelImport::createMetadataNode(
 	const repo::lib::RepoUUID& parentID)
 {
 	std::vector<std::string> keys;
-	std::vector<repo::lib::MetadataVariant> values;
+	std::vector<repo::lib::RepoVariant> values;
 
 	for (ptree::const_iterator props = metaTree.begin(); props != metaTree.end(); props++)
 	{
@@ -58,7 +58,7 @@ repo::core::model::MetadataNode* RepoModelImport::createMetadataNode(
 		key = origKey.substr(1);
 
 		keys.push_back(key);
-		repo::lib::MetadataVariant value;
+		repo::lib::RepoVariant value;
 		switch (type)
 		{
 		case REPO_IMPORT_TYPE_BOOL:

@@ -37,7 +37,7 @@
 using namespace repo::manipulator::modelconvertor;
 
 
-bool repo::manipulator::modelconvertor::TryConvertMetadataEntry(aiMetadataEntry& assimpMetaEntry, repo::lib::MetadataVariant& v){
+bool repo::manipulator::modelconvertor::TryConvertMetadataEntry(aiMetadataEntry& assimpMetaEntry, repo::lib::RepoVariant& v){
 	// Dissect the entry object
 	switch (assimpMetaEntry.mType)
 	{
@@ -604,7 +604,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 	const std::vector<repo::lib::RepoUUID> &parents)
 {
 	repo::core::model::MetadataNode *metaNode;
-	std::unordered_map<std::string, repo::lib::MetadataVariant> metaEntries;
+	std::unordered_map<std::string, repo::lib::RepoVariant> metaEntries;
 	std::string val;
 	if (assimpMeta)
 	{
@@ -623,13 +623,13 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 			{
 				// Convert assimp type into metadata variant
 
-				repo::lib::MetadataVariant v;
+				repo::lib::RepoVariant v;
 
 				if (TryConvertMetadataEntry(currentValue, v)) {
 					metaEntries[key] = v;
 				}
 				else {
-					repoError << "Conversion of assimp entry to MetadataVariant failed" << std::endl;
+					repoError << "Conversion of assimp entry to RepoVariant failed" << std::endl;
 				}
 			}
 			else if (currentValue.mType == AI_AISTRING) {

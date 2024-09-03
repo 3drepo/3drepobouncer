@@ -66,7 +66,7 @@ namespace repo{
 					std::vector<std::string> &tokenizedLine);
 				char delimiter;
 
-				std::vector<repo::lib::MetadataVariant> ConvertToVariants(std::vector<std::string> tokens);
+				std::vector<repo::lib::RepoVariant> ConvertToVariants(std::vector<std::string> tokens);
 			};
 		} //namespace modelconvertor
 	} //namespace manipulator

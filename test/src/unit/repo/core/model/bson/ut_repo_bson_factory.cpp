@@ -21,7 +21,7 @@
 #include "../../../../repo_test_utils.h"
 #include <repo/core/model/bson/repo_bson_factory.h>
 #include <repo/core/model/bson/repo_bson_builder.h>
-#include <repo/lib/datastructure/repo_metadataVariantHelper.h>
+#include <repo/lib/datastructure/repo_variant_utils.h>
 
 using namespace repo::core::model;
 
@@ -286,7 +286,7 @@ TEST(RepoBSONFactoryTest, MakeMaterialNodeTest)
 TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
 {
 	std::vector<std::string> keys({ "one", "two", "three", "four", "five" });
-	std::vector<repo::lib::MetadataVariant> values({ "!", "!!", "!!!", "!!!!", "!!!!!" });
+	std::vector<repo::lib::RepoVariant> values({ "!", "!!", "!!!", "!!!!", "!!!!!" });
 
 	std::string name = "MetaTest";
 

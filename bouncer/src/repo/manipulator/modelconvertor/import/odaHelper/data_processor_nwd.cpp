@@ -136,46 +136,46 @@ void convertColor(OdString color, std::vector<float>& dest)
 	}
 }
 
-void setMetadataValueVariant(const std::string& category, const std::string& key, const repo::lib::MetadataVariant& value, std::unordered_map<std::string, repo::lib::MetadataVariant>& metadata)
+void setMetadataValueVariant(const std::string& category, const std::string& key, const repo::lib::RepoVariant& value, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	std::string metaKey = category + "::" + (key.empty() ? std::string("Value") : key);
 	metadata[metaKey] = value;
 }
 
-void setMetadataValue(const std::string& category, const std::string& key, const bool& b, std::unordered_map<std::string, repo::lib::MetadataVariant>& metadata)
+void setMetadataValue(const std::string& category, const std::string& key, const bool& b, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
-	repo::lib::MetadataVariant v = b;
+	repo::lib::RepoVariant v = b;
 	setMetadataValueVariant(category, key, v, metadata);
 }
 
-void setMetadataValue(const std::string& category, const std::string& key, const double& d, std::unordered_map<std::string, repo::lib::MetadataVariant>& metadata)
+void setMetadataValue(const std::string& category, const std::string& key, const double& d, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
-	repo::lib::MetadataVariant v = d;
+	repo::lib::RepoVariant v = d;
 	setMetadataValueVariant(category, key, v, metadata);
 }
 
-void setMetadataValue(const std::string& category, OdString& key, const OdUInt64& uint, std::unordered_map<std::string, repo::lib::MetadataVariant>& metadata)
+void setMetadataValue(const std::string& category, OdString& key, const OdUInt64& uint, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	std::string keyString = convertToStdString(key);
-	repo::lib::MetadataVariant v = static_cast<long long>(uint); // Potentially losing precision here, but mongo does not accept uint64
+	repo::lib::RepoVariant v = static_cast<long long>(uint); // Potentially losing precision here, but mongo does not accept uint64
 	setMetadataValueVariant(category, keyString, v, metadata);
 }
 
-void setMetadataValue(const std::string& category, const OdString& key, const OdString& string, std::unordered_map<std::string, repo::lib::MetadataVariant>& metadata)
+void setMetadataValue(const std::string& category, const OdString& key, const OdString& string, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	std::string keyString = convertToStdString(key);
-	repo::lib::MetadataVariant v = convertToStdString(string);
+	repo::lib::RepoVariant v = convertToStdString(string);
 	setMetadataValueVariant(category, keyString, v, metadata);
 }
 
-void removeFilepathFromMetadataValue(std::string key, std::unordered_map<std::string, repo::lib::MetadataVariant>& metadata)
+void removeFilepathFromMetadataValue(std::string key, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	if (metadata.find(key) != metadata.end()) {
 		metadata[key].apply_visitor(NwdFilePathRemovalVisitor());
 	}
 }
 
-bool repo::manipulator::modelconvertor::odaHelper::TryConvertMetadataProperty(OdNwDataPropertyPtr& metaProperty, repo::lib::MetadataVariant& v)
+bool repo::manipulator::modelconvertor::odaHelper::TryConvertMetadataProperty(OdNwDataPropertyPtr& metaProperty, repo::lib::RepoVariant& v)
 {
 
 	switch (metaProperty->getDataType())
@@ -334,7 +334,7 @@ void processMaterial(OdNwComponentPtr pComp, repo_material_t& repoMaterial)
 	// be useful (e.g. names and descriptions)
 }
 
-void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext context, std::unordered_map<std::string, repo::lib::MetadataVariant>& metadata)
+void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext context, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	if (modelItemPtr.isNull()) {
 		return;
@@ -438,7 +438,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 				auto& prop = properties[j];
 				auto key = convertToStdString(prop->getDisplayName());
 
-				repo::lib::MetadataVariant v;
+				repo::lib::RepoVariant v;
 				if (TryConvertMetadataProperty(prop, v))
 					setMetadataValueVariant(category, key, v, metadata);				
 			}
@@ -787,7 +787,7 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 			// the benefit of smart groups, node properties are overridden with their
 			// parent's metadata
 
-			std::unordered_map<std::string, repo::lib::MetadataVariant> metadata;
+			std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
 			processAttributes(pNode, context, metadata);
 			processAttributes(context.parent, context, metadata);
 

@@ -29,7 +29,7 @@
 #include <NwVariant.h>
 #include <NwName.h>
 
-#include <repo/lib/datastructure/repo_metadataVariant.h>
+#include <repo/lib/datastructure/repo_variant.h>
 
 #include <boost/filesystem.hpp>
 
@@ -67,7 +67,7 @@ namespace repo {
 					}
 				};
 
-				bool TryConvertMetadataProperty(OdNwDataPropertyPtr& metaProperty, repo::lib::MetadataVariant& v);
+				bool TryConvertMetadataProperty(OdNwDataPropertyPtr& metaProperty, repo::lib::RepoVariant& v);
 			}
 		}
 	}

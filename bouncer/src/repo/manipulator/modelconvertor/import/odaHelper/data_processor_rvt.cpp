@@ -42,7 +42,7 @@ const std::set<std::string> IGNORE_PARAMS = {
 	"RENDER APPEARANCE PROPERTIES"
 };
 
-bool repo::manipulator::modelconvertor::odaHelper::TryConvertMetadataEntry(OdTfVariant& metaEntry, OdBmLabelUtilsPEPtr labelUtils, OdBmParamDefPtr paramDef, OdBmDatabase* database, OdBm::BuiltInParameter::Enum param, repo::lib::MetadataVariant& v)
+bool repo::manipulator::modelconvertor::odaHelper::TryConvertMetadataEntry(OdTfVariant& metaEntry, OdBmLabelUtilsPEPtr labelUtils, OdBmParamDefPtr paramDef, OdBmDatabase* database, OdBm::BuiltInParameter::Enum param, repo::lib::RepoVariant& v)
 {
 	switch (metaEntry.type()) {
 	case OdVariant::kVoid: {
@@ -386,7 +386,7 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 
 void DataProcessorRvt::fillMetadataById(
 	OdBmObjectId id,
-	std::unordered_map<std::string, repo::lib::MetadataVariant>& metadata)
+	std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	if (id.isNull())
 		return;
@@ -414,7 +414,7 @@ void DataProcessorRvt::initLabelUtils() {
 void DataProcessorRvt::processParameter(
 	OdBmElementPtr element,
 	OdBmObjectId paramId,
-	std::unordered_map<std::string, repo::lib::MetadataVariant> &metadata,
+	std::unordered_map<std::string, repo::lib::RepoVariant> &metadata,
 	const OdBm::BuiltInParameter::Enum &buildInEnum
 ) {
 	OdTfVariant value;
@@ -446,7 +446,7 @@ void DataProcessorRvt::processParameter(
 				}
 			}
 
-			repo::lib::MetadataVariant v;
+			repo::lib::RepoVariant v;
 
 
 			if (TryConvertMetadataEntry(value, labelUtils, pDescParam, element->getDatabase(), buildInEnum, v))
@@ -468,12 +468,12 @@ void DataProcessorRvt::processParameter(
 
 void DataProcessorRvt::fillMetadataByElemPtr(
 	OdBmElementPtr element,
-	std::unordered_map<std::string, repo::lib::MetadataVariant>& outputData)
+	std::unordered_map<std::string, repo::lib::RepoVariant>& outputData)
 {
 	OdBmParameterSet aParams;
 	element->getListParams(aParams);
 
-	std::unordered_map<std::string, repo::lib::MetadataVariant> metadata;
+	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
 
 	auto id = std::to_string((OdUInt64)element->objectId().getHandle());
 	if (collector->metadataCache.find(id) != collector->metadataCache.end()) {
@@ -506,9 +506,9 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 	}
 }
 
-std::unordered_map<std::string, repo::lib::MetadataVariant> DataProcessorRvt::fillMetadata(OdBmElementPtr element)
+std::unordered_map<std::string, repo::lib::RepoVariant> DataProcessorRvt::fillMetadata(OdBmElementPtr element)
 {
-	std::unordered_map<std::string, repo::lib::MetadataVariant> metadata;
+	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
 	metadata[REVIT_ELEMENT_ID] = std::to_string((OdUInt64)element->objectId().getHandle());
 
 	try

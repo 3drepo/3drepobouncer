@@ -379,7 +379,7 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 repo::core::model::MetadataNode*  GeometryCollector::createMetaNode(
 	const std::string &name,
 	const repo::lib::RepoUUID &parentId,
-	const  std::unordered_map<std::string, repo::lib::MetadataVariant> &metaValues
+	const  std::unordered_map<std::string, repo::lib::RepoVariant> &metaValues
 ) {
 	return new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(metaValues, name, { parentId }));
 }

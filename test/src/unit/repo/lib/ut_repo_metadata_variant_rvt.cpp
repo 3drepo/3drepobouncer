@@ -19,7 +19,7 @@
 #include <gtest/gtest.h>
 #include "../../repo_test_utils.h"
 
-#include <repo/lib/datastructure/repo_metadataVariant.h>
+#include <repo/lib/datastructure/repo_variant.h>
 #include <repo/manipulator/modelconvertor/import/odaHelper/data_processor_rvt.h>
 
 #include "Gs/GsBaseModule.h"
@@ -78,7 +78,7 @@ TEST(RepoMetaVariantConverterRevitTest, EmptyTest) {
 	OdTfVariant variant;
 
 	// Convert
-	MetadataVariant v;
+	RepoVariant v;
 	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, database, param, v);
 
 	// Check result
@@ -97,7 +97,7 @@ TEST(RepoMetaVariantConverterRevitTest, StringTest) {
 	OdTfVariant variant = OdString("Test");
 
 	// Convert
-	MetadataVariant v;
+	RepoVariant v;
 	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, database, param, v);
 
 	// Check result
@@ -117,7 +117,7 @@ TEST(RepoMetaVariantConverterRevitTest, BoolTest) {
 	OdTfVariant variant = true;
 
 	// Convert
-	MetadataVariant v;
+	RepoVariant v;
 	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, database, param, v);
 
 	// Check result
@@ -138,7 +138,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int8Test) {
 	OdTfVariant variant = data;
 
 	// Convert
-	MetadataVariant v;
+	RepoVariant v;
 	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, database, param, v);
 
 	// Check result
@@ -159,7 +159,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int16Test) {
 	OdTfVariant variant = data;
 
 	// Convert
-	MetadataVariant v;
+	RepoVariant v;
 	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, database, param, v);
 
 	// Check result
@@ -189,7 +189,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int32AsBoolTest) {
 	OdTfVariant variant = data;
 
 	// Convert
-	MetadataVariant v;
+	RepoVariant v;
 	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, pDB, param, v);
 
 	// Check result
@@ -221,7 +221,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int32asIntTest) {
 
 
 	// Convert
-	MetadataVariant v;
+	RepoVariant v;
 	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, pDB, param, v);
 
 	// Check result
@@ -245,7 +245,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int64Test) {
 	OdTfVariant variant = data;
 
 	// Convert
-	MetadataVariant v;
+	RepoVariant v;
 	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, database, param, v);
 
 	// Check result
@@ -266,7 +266,7 @@ TEST(RepoMetaVariantConverterRevitTest, DoubleTest) {
 	OdTfVariant variant = data;
 
 	// Convert
-	MetadataVariant v;
+	RepoVariant v;
 	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, database, param, v);
 
 	// Check result
@@ -287,7 +287,7 @@ TEST(RepoMetaVariantConverterRevitTest, AnsiStringTest) {
 	OdTfVariant variant = data;
 
 	// Convert
-	MetadataVariant v;
+	RepoVariant v;
 	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, database, param, v);
 
 	// Check result
@@ -329,7 +329,7 @@ TEST(RepoMetaVariantConverterRevitTest, StubPtrDataTestNoParamNoName) {
 
 
 	// Convert
-	MetadataVariant v;
+	RepoVariant v;
 	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, pDB, param, v);
 
 	// Check result
@@ -373,7 +373,7 @@ TEST(RepoMetaVariantConverterRevitTest, StubPtrDataTestParamSetRegularHdl) {
 
 
 	// Convert
-	MetadataVariant v;
+	RepoVariant v;
 	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, pDB, param, v);
 
 	// Check result
