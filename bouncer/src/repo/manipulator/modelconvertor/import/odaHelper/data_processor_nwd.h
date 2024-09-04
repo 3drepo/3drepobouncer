@@ -50,23 +50,6 @@ namespace repo {
 					GeometryCollector* collector;
 				};
 
-				class NwdFilePathRemovalVisitor : public boost::static_visitor<> {
-				public:
-					NwdFilePathRemovalVisitor() {}
-
-					// Do nothing for most cases
-					void operator()(bool& b) const {}
-					void operator()(int& i) const {}
-					void operator()(long long& ll) const {}
-					void operator()(double& d) const {}
-					void operator()(tm& t) const {}
-
-					// In the string case, we remove the file path
-					void operator()(std::string& s) const {
-						s = boost::filesystem::path(s).filename().string();
-					}
-				};
-
 				bool TryConvertMetadataProperty(std::string key, OdNwDataPropertyPtr& metaProperty, repo::lib::RepoVariant& v);
 			}
 		}

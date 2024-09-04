@@ -137,7 +137,7 @@ void convertColor(OdString color, std::vector<float>& dest)
 	}
 }
 
-std::string checkForPathAndSanitise(std::string key, std::string value)
+std::string sanitiseString(std::string key, std::string value)
 {
 	if (std::find(keysForPathSanitation.begin(), keysForPathSanitation.end(), key) != keysForPathSanitation.end()) {
 		return boost::filesystem::path(value).filename().string();
@@ -176,7 +176,7 @@ void setMetadataValue(const std::string& category, const OdString& key, const Od
 {
 	std::string keyString = convertToStdString(key);
 	std::string strValue = repo::manipulator::modelconvertor::odaHelper::convertToStdString(string);
-	strValue = checkForPathAndSanitise(keyString, strValue);
+	strValue = sanitiseString(keyString, strValue);
 	repo::lib::RepoVariant v = strValue;
 	setMetadataValueVariant(category, keyString, v, metadata);
 }
@@ -212,7 +212,7 @@ bool repo::manipulator::modelconvertor::odaHelper::TryConvertMetadataProperty(st
 		metaProperty->getValue(odvar);
 		OdString value = odvar.getString();
 		std::string strValue = repo::manipulator::modelconvertor::odaHelper::convertToStdString(value);
-		strValue = checkForPathAndSanitise(key, strValue);
+		strValue = sanitiseString(key, strValue);
 		v = strValue;
 		break;
 	}
@@ -251,7 +251,7 @@ bool repo::manipulator::modelconvertor::odaHelper::TryConvertMetadataProperty(st
 		metaProperty->getValue(odvar);
 		OdString value = odvar.getString();
 		std::string strValue = repo::manipulator::modelconvertor::odaHelper::convertToStdString(value);
-		strValue = checkForPathAndSanitise(key, strValue);
+		strValue = sanitiseString(key, strValue);
 		v = strValue;
 		break;
 	}
