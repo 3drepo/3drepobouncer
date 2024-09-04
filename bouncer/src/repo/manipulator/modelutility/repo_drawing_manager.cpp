@@ -56,7 +56,8 @@ uint8_t DrawingManager::commitImage(
 		REPO_COLLECTION_DRAWINGS,
 		drawingRefNodeId,
 		drawing.data,
-		metadata.obj()
+		metadata.obj(),
+		repo::core::handler::fileservice::FileManager::Encoding::Gzip
 	);
 
 	auto updated = revision.cloneAndAddImage(drawingRefNodeId);
