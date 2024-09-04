@@ -29,7 +29,7 @@
 #include <Database/BmParamDefHelper.h>
 #include "HostObj/Entities/BmSWall.h"
 #include "Database/BmDatabase.h"
-#include "TB_Commands/TBCommandsStdAfx.h"
+#include "Database/BmTransaction.h"
 
 #include "Essential/Entities/BmExtrusionElem.h"
 #include "Database/Entities/BmDirectShape.h"
