@@ -37,7 +37,7 @@ TEST(RepoMetaVariantTest, AssignmentTest)
 	int value1 = boost::get<int>(v1);
 	EXPECT_EQ(value1, 24);
 
-	RepoVariant v2 = 9223372036854775806;
+	RepoVariant v2 = 9223372036854775806ll;
 	long long value2 = boost::get<long long>(v2);
 	EXPECT_EQ(value2, 9223372036854775806);
 
@@ -81,7 +81,7 @@ TEST(RepoMetaVariantTest, StringVisitor) {
 	std::string value1 = boost::apply_visitor(StringConversionVisitor(), v1);
 	EXPECT_EQ(value1, "24");
 
-	RepoVariant v2 = 9223372036854775806;
+	RepoVariant v2 = 9223372036854775806ll;
 	std::string value2 = boost::apply_visitor(StringConversionVisitor(), v2);
 	EXPECT_EQ(value2, "9223372036854775806");
 

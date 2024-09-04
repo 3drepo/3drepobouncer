@@ -165,7 +165,7 @@ void setMetadataValue(const std::string& category, const std::string& key, const
 	setMetadataValueVariant(category, key, v, metadata);
 }
 
-void setMetadataValue(const std::string& category, OdString& key, const OdUInt64& uint, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
+void setMetadataValue(const std::string& category, const OdString& key, const OdUInt64& uint, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	std::string keyString = convertToStdString(key);
 	repo::lib::RepoVariant v = static_cast<long long>(uint); // Potentially losing precision here, but mongo does not accept uint64
@@ -219,7 +219,7 @@ bool repo::manipulator::modelconvertor::odaHelper::TryConvertMetadataProperty(st
 	case NwDataType::dt_DATETIME: {
 		OdNwVariant odvar;
 		metaProperty->getValue(odvar);
-		long long timePosix = static_cast<long long>(odvar.getUInt64());
+		time_t timePosix = static_cast<time_t>(odvar.getUInt64());
 		tm* timeTm = localtime(&timePosix);
 		v = *timeTm;
 		break;
