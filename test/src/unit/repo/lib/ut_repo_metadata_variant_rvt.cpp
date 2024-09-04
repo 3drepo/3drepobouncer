@@ -94,7 +94,8 @@ TEST(RepoMetaVariantConverterRevitTest, StringTest) {
 	OdBm::BuiltInParameter::Enum param;
 
 	// Create data
-	OdTfVariant variant = OdString("Test");
+	OdString data = OdString("Test");
+	OdTfVariant variant = OdTfVariant(data);
 
 	// Convert
 	RepoVariant v;
@@ -114,7 +115,8 @@ TEST(RepoMetaVariantConverterRevitTest, BoolTest) {
 	OdBm::BuiltInParameter::Enum param;
 
 	// Create data
-	OdTfVariant variant = true;
+	bool data = true;
+	OdTfVariant variant = OdTfVariant(data);
 
 	// Convert
 	RepoVariant v;
@@ -135,7 +137,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int8Test) {
 
 	// Create data
 	OdInt8 data = -128;
-	OdTfVariant variant = data;
+	OdTfVariant variant = OdTfVariant(data);
 
 	// Convert
 	RepoVariant v;
@@ -156,7 +158,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int16Test) {
 
 	// Create data
 	OdInt16 data = -32768;
-	OdTfVariant variant = data;
+	OdTfVariant variant = OdTfVariant(data);
 
 	// Convert
 	RepoVariant v;
@@ -186,7 +188,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int32AsBoolTest) {
 
 	// Create data
 	OdInt32 data = 0;
-	OdTfVariant variant = data;
+	OdTfVariant variant = OdTfVariant(data);
 
 	// Convert
 	RepoVariant v;
@@ -214,7 +216,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int32asIntTest) {
 
 	// Create data
 	OdInt32 data = -2147483648ll;
-	OdTfVariant variant = data;
+	OdTfVariant variant = OdTfVariant(data);
 
 	// Configure paramDef (to anything but kYesNo)
 	paramDef = OdBmParamDefHelper::createParamDef(OdBmSpecTypeId::Int::kInteger, OdBm::StorageType::Integer);
@@ -242,7 +244,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int64Test) {
 
 	// Create data
 	OdInt64 data = -9223372036854775808ll;
-	OdTfVariant variant = data;
+	OdTfVariant variant = OdTfVariant(data);
 
 	// Convert
 	RepoVariant v;
@@ -263,7 +265,7 @@ TEST(RepoMetaVariantConverterRevitTest, DoubleTest) {
 
 	// Create data
 	OdDouble data = 1.0;
-	OdTfVariant variant = data;
+	OdTfVariant variant = OdTfVariant(data);
 
 	// Convert
 	RepoVariant v;
@@ -284,7 +286,7 @@ TEST(RepoMetaVariantConverterRevitTest, AnsiStringTest) {
 
 	// Create data
 	OdAnsiString data = "Test";
-	OdTfVariant variant = data;
+	OdTfVariant variant = OdTfVariant(data);
 
 	// Convert
 	RepoVariant v;
@@ -325,7 +327,7 @@ TEST(RepoMetaVariantConverterRevitTest, StubPtrDataTestNoParamNoName) {
 	tr.commit();
 
 	OdDbStub* stub(id);
-	OdTfVariant variant = stub;
+	OdTfVariant variant = OdTfVariant(stub);
 
 
 	// Convert
@@ -369,7 +371,7 @@ TEST(RepoMetaVariantConverterRevitTest, StubPtrDataTestParamSetRegularHdl) {
 	tr.commit();
 
 	OdDbStub* stub(id);
-	OdTfVariant variant = stub;
+	OdTfVariant variant = OdTfVariant(stub);
 
 
 	// Convert
