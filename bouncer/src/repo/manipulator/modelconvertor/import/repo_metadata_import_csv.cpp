@@ -45,7 +45,7 @@ std::istream& MetadataImportCSV::readLine(
 	return stream;
 }
 
-std::vector<repo::lib::RepoVariant> repo::manipulator::modelconvertor::MetadataImportCSV::ConvertToVariants(std::vector<std::string> tokens)
+std::vector<repo::lib::RepoVariant> repo::manipulator::modelconvertor::MetadataImportCSV::convertToVariants(std::vector<std::string> tokens)
 {
 	std::vector<repo::lib::RepoVariant> metaData;
 
@@ -99,7 +99,7 @@ repo::core::model::RepoNodeSet MetadataImportCSV::readMetadata(
 			else if (!tokens.empty())
 			{
 				repo::core::model::MetadataNode meta =
-					repo::core::model::RepoBSONFactory::makeMetaDataNode(headers, ConvertToVariants(tokens), tokens[0]);
+					repo::core::model::RepoBSONFactory::makeMetaDataNode(headers, convertToVariants(tokens), tokens[0]);
 				metadata.insert(new repo::core::model::MetadataNode(meta));
 			}
 		}
