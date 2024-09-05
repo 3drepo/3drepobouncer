@@ -500,7 +500,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 		auto guidAttribute = OdNwGuidAttribute::cast(attribute);
 		if (!guidAttribute.isNull())
 		{
-			setMetadataValue(category,guidAttribute->getDisplayName(), guidAttribute->getGuid().toString(), metadata);
+			setMetadataValue(category, guidAttribute->getDisplayName(), guidAttribute->getGuid().toString(), metadata);
 		}
 
 		// (Note the "Element Id::Value" (LcOaNat64AttributeValue) key is stored as a UInt64 Attribute.)
