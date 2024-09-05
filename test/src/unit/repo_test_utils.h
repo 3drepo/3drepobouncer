@@ -237,9 +237,19 @@ static bool projectHasGeometryWithMetadata(std::string dbName, std::string proje
 					// toString will stringify the underlying type of the value, in the same
 					// way it is stringified for the frontend.
 
-					auto aValue = entry.toMongoElement().Obj().getField(REPO_NODE_LABEL_META_VALUE).toString(false);
+					std::string aValue = entry.toMongoElement().Obj().getField(REPO_NODE_LABEL_META_VALUE).toString(false);
 
-					if (aKey == key && aValue == value)
+					// Note: the string conversion encloses values that are stored as strings in the DB with \"
+					// We will need to remove them to guarantee a correct comparison
+					std::string sanitisedValue;
+					if (aValue.length() > 2 && aValue.substr(0, 1) == "\"" && aValue.substr(aValue.length() - 1, 1) == "\"")					{
+						sanitisedValue = aValue.substr(1, aValue.length() - 2);
+					} else {
+						sanitisedValue = aValue;
+					}
+
+
+					if (aKey == key && sanitisedValue == value)
 					{
 						// This metadata node contains the key-value pair we are looking for. Now
 						// check if there is geometry associated with it.

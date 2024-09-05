@@ -286,11 +286,16 @@ TEST(RepoBSONFactoryTest, MakeMaterialNodeTest)
 TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
 {
 	std::vector<std::string> keys({ "one", "two", "three", "four", "five" });
-	std::vector<repo::lib::RepoVariant> values({ "!", "!!", "!!!", "!!!!", "!!!!!" });
+	std::vector<std::string> values({ "!", "!!", "!!!", "!!!!", "!!!!!" });
 
 	std::string name = "MetaTest";
 
-	MetadataNode metaNode = RepoBSONFactory::makeMetaDataNode(keys, values, name);
+	std::vector<repo::lib::RepoVariant> variants;
+	for (int i = 0; i < keys.size(); i++) {
+		variants.push_back(repo::lib::RepoVariant(values[i]));
+	}
+
+	MetadataNode metaNode = RepoBSONFactory::makeMetaDataNode(keys, variants, name);
 
 	EXPECT_FALSE(metaNode.isEmpty());
 	EXPECT_EQ(name, metaNode.getName());
@@ -310,7 +315,7 @@ TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
 		ASSERT_NE(keyIt, keys.end());
 		auto vectorIdx = keyIt - keys.begin();
 		EXPECT_EQ(key, keys[vectorIdx]);
-		EXPECT_EQ(value, boost::apply_visitor(repo::lib::StringConversionVisitor(), values[vectorIdx]));
+		EXPECT_EQ(value, values[vectorIdx]);
 	}
 }
 

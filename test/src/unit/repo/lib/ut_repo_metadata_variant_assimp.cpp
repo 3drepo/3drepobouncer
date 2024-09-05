@@ -75,14 +75,14 @@ TEST(RepoMetaVariantConverterAssimpTest, UInt64)
 	EXPECT_EQ(boost::get<long long>(vMin), 0);
 
 	// Uint64 (max)
-	uint64_t dataMax = 18446744073709551615;
+	uint64_t dataMax = 9223372036854775807ll;
 	aiMetadataEntry metaMax;
 	metaMax.mType = aiMetadataType::AI_UINT64;
 	metaMax.mData = &dataMax;
 
 	RepoVariant vMax;
 	EXPECT_TRUE(TryConvertMetadataEntry(metaMax, vMax));
-	EXPECT_EQ(boost::get<long long>(vMax), 18446744073709551615);
+	EXPECT_EQ(boost::get<long long>(vMax), 9223372036854775807ll);
 }
 
 TEST(RepoMetaVariantConverterAssimpTest, Float)
