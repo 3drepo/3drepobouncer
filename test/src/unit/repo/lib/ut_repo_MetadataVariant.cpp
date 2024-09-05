@@ -15,7 +15,6 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "repo/manipulator/modelconvertor/import/odaHelper/helper_functions.h"
 #include <cstdlib>
 #include <repo/lib/datastructure/repo_variant.h>
 #include <repo/lib/datastructure/repo_variant_utils.h>
