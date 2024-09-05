@@ -37,7 +37,7 @@
 using namespace repo::manipulator::modelconvertor;
 
 
-bool repo::manipulator::modelconvertor::TryConvertMetadataEntry(aiMetadataEntry& assimpMetaEntry, repo::lib::RepoVariant& v){
+bool AssimpModelImport::TryConvertMetadataEntry(aiMetadataEntry& assimpMetaEntry, repo::lib::RepoVariant& v){
 	// Dissect the entry object
 	switch (assimpMetaEntry.mType)
 	{

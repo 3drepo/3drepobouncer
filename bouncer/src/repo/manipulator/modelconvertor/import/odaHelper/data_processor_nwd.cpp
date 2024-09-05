@@ -181,7 +181,7 @@ void setMetadataValue(const std::string& category, const OdString& key, const Od
 	setMetadataValueVariant(category, keyString, v, metadata);
 }
 
-bool repo::manipulator::modelconvertor::odaHelper::TryConvertMetadataProperty(std::string key, OdNwDataPropertyPtr& metaProperty, repo::lib::RepoVariant& v)
+bool DataProcessorNwd::TryConvertMetadataProperty(std::string key, OdNwDataPropertyPtr& metaProperty, repo::lib::RepoVariant& v)
 {
 
 	switch (metaProperty->getDataType())
@@ -449,7 +449,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 				auto key = convertToStdString(prop->getDisplayName());
 
 				repo::lib::RepoVariant v;
-				if (TryConvertMetadataProperty(key, prop, v))
+				if (DataProcessorNwd:: TryConvertMetadataProperty(key, prop, v))
 					setMetadataValueVariant(category, key, v, metadata);				
 			}
 		}

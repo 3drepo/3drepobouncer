@@ -81,6 +81,14 @@ namespace repo {
 				*/
 				bool importModel(std::string filePath, uint8_t &errMsg);
 
+				/**
+				* Attempts to convert the assimp metadata entry into a RepoVariant
+				* @param the assimp metadata entry
+				* @param the repo variant passed as reference
+				* @return the success of the operation
+				*/
+				static bool TryConvertMetadataEntry(aiMetadataEntry& assimpMetaEntry, repo::lib::RepoVariant& v);
+
 			private:
 
 				/**
@@ -228,8 +236,6 @@ namespace repo {
 				bool keepMetadata;
 				bool requiresOrientation = false;
 			};
-
-			bool TryConvertMetadataEntry(aiMetadataEntry& assimpMetaEntry, repo::lib::RepoVariant& v);
 		} //namespace AssimpModelImport
 	} //namespace manipulator
 } //namespace repo

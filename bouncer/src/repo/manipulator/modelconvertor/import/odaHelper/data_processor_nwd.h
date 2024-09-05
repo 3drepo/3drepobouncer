@@ -45,12 +45,12 @@ namespace repo {
 					}
 
 					void process(OdNwDatabasePtr pNwDb);
+					
+					static bool TryConvertMetadataProperty(std::string key, OdNwDataPropertyPtr& metaProperty, repo::lib::RepoVariant& v);
 
 				private:
 					GeometryCollector* collector;
 				};
-
-				bool TryConvertMetadataProperty(std::string key, OdNwDataPropertyPtr& metaProperty, repo::lib::RepoVariant& v);
 			}
 		}
 	}

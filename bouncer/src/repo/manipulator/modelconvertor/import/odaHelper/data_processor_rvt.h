@@ -79,6 +79,13 @@ namespace repo {
 
 					void init(GeometryCollector* geoColl, OdBmDatabasePtr database);
 
+					static bool TryConvertMetadataEntry(
+						OdTfVariant& metaEntry,
+						OdBmLabelUtilsPEPtr labelUtils,
+						OdBmParamDefPtr paramDef,
+						OdBm::BuiltInParameter::Enum param,
+						repo::lib::RepoVariant& v);
+
 				protected:
 					void draw(const OdGiDrawable*) override;
 
@@ -137,8 +144,6 @@ namespace repo {
 					OdBmDatabasePtr database;
 					OdBmSampleLabelUtilsPE* labelUtils = nullptr;
 				};
-
-				bool TryConvertMetadataEntry(OdTfVariant& metaEntry, OdBmLabelUtilsPEPtr labelUtils, OdBmParamDefPtr paramDef, OdBm::BuiltInParameter::Enum param, repo::lib::RepoVariant& v);
 			}
 		}
 	}

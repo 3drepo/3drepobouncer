@@ -34,7 +34,7 @@ TEST(RepoMetaVariantConverterAssimpTest, Boolean)
 	meta.mData = &data;
 
 	RepoVariant v;
-	EXPECT_TRUE(TryConvertMetadataEntry(meta, v));
+	EXPECT_TRUE(AssimpModelImport::TryConvertMetadataEntry(meta, v));
 	EXPECT_EQ(boost::get<bool>(v), true);
 }
 
@@ -47,7 +47,7 @@ TEST(RepoMetaVariantConverterAssimpTest, Int32)
 	metaPos.mData = &dataPos;
 
 	RepoVariant vPos;
-	EXPECT_TRUE(TryConvertMetadataEntry(metaPos, vPos));
+	EXPECT_TRUE(AssimpModelImport::TryConvertMetadataEntry(metaPos, vPos));
 	EXPECT_EQ(boost::get<int>(vPos), 2147483647);
 
 	// Int32 (negative)
@@ -57,7 +57,7 @@ TEST(RepoMetaVariantConverterAssimpTest, Int32)
 	metaNeg.mData = &dataNeg;
 
 	RepoVariant vNeg;
-	EXPECT_TRUE(TryConvertMetadataEntry(metaNeg, vNeg));
+	EXPECT_TRUE(AssimpModelImport::TryConvertMetadataEntry(metaNeg, vNeg));
 	EXPECT_EQ(boost::get<int>(vNeg), -2147483647);
 }
 
@@ -71,7 +71,7 @@ TEST(RepoMetaVariantConverterAssimpTest, UInt64)
 	metaMin.mData = &dataMin;
 
 	RepoVariant vMin;
-	EXPECT_TRUE(TryConvertMetadataEntry(metaMin, vMin));
+	EXPECT_TRUE(AssimpModelImport::TryConvertMetadataEntry(metaMin, vMin));
 	EXPECT_EQ(boost::get<long long>(vMin), 0);
 
 	// Uint64 (max)
@@ -81,7 +81,7 @@ TEST(RepoMetaVariantConverterAssimpTest, UInt64)
 	metaMax.mData = &dataMax;
 
 	RepoVariant vMax;
-	EXPECT_TRUE(TryConvertMetadataEntry(metaMax, vMax));
+	EXPECT_TRUE(AssimpModelImport::TryConvertMetadataEntry(metaMax, vMax));
 	EXPECT_EQ(boost::get<long long>(vMax), 9223372036854775807ll);
 }
 
@@ -93,7 +93,7 @@ TEST(RepoMetaVariantConverterAssimpTest, Float)
 	meta.mData = &data;
 
 	RepoVariant v;
-	EXPECT_TRUE(TryConvertMetadataEntry(meta, v));
+	EXPECT_TRUE(AssimpModelImport::TryConvertMetadataEntry(meta, v));
 	EXPECT_EQ(boost::get<double>(v), 0.5);
 }
 
@@ -105,7 +105,7 @@ TEST(RepoMetaVariantConverterAssimpTest, Double)
 	meta.mData = &data;
 
 	RepoVariant v;
-	EXPECT_TRUE(TryConvertMetadataEntry(meta, v));
+	EXPECT_TRUE(AssimpModelImport::TryConvertMetadataEntry(meta, v));
 	EXPECT_EQ(boost::get<double>(v), 0.6);
 }
 
@@ -120,7 +120,7 @@ TEST(RepoMetaVariantConverterAssimpTest, Vector)
 	meta.mData = &data;
 
 	RepoVariant v;
-	EXPECT_TRUE(TryConvertMetadataEntry(meta, v));
+	EXPECT_TRUE(AssimpModelImport::TryConvertMetadataEntry(meta, v));
 	EXPECT_EQ(boost::get<std::string>(v), "[1.00000000000000000, 2.00000000000000000, 3.00000000000000000]");
 }
 
@@ -132,5 +132,5 @@ TEST(RepoMetaVariantConverterAssimpTest, AISTRING)
 	meta.mData = &data;
 
 	RepoVariant v;
-	EXPECT_FALSE(TryConvertMetadataEntry(meta, v));
+	EXPECT_FALSE(AssimpModelImport::TryConvertMetadataEntry(meta, v));
 }

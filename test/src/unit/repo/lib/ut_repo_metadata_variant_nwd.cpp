@@ -83,7 +83,7 @@ TEST(RepoMetaVariantConverterNWDTest, DoubleTest)
 
 	// Convert to RepoVariant
 	RepoVariant v;
-	bool success = TryConvertMetadataProperty("test", props[0], v);
+	bool success = DataProcessorNwd::TryConvertMetadataProperty("test", props[0], v);
 
 	// Check results
 	EXPECT_TRUE(success);
@@ -114,7 +114,7 @@ TEST(RepoMetaVariantConverterNWDTest, Int32Test)
 
 	// Convert to RepoVariant
 	RepoVariant v;
-	bool success = TryConvertMetadataProperty("test", props[0], v);
+	bool success = DataProcessorNwd::TryConvertMetadataProperty("test", props[0], v);
 
 	// Check results
 	EXPECT_TRUE(success);
@@ -145,7 +145,7 @@ TEST(RepoMetaVariantConverterNWDTest, BoolTest)
 
 	// Convert to RepoVariant
 	RepoVariant v;
-	bool success = TryConvertMetadataProperty("test", props[0], v);
+	bool success = DataProcessorNwd::TryConvertMetadataProperty("test", props[0], v);
 
 	// Check results
 	EXPECT_TRUE(success);
@@ -176,7 +176,7 @@ TEST(RepoMetaVariantConverterNWDTest, DisplayStringTest)
 
 	// Convert to RepoVariant
 	RepoVariant v;
-	bool success = TryConvertMetadataProperty("test", props[0], v);
+	bool success = DataProcessorNwd::TryConvertMetadataProperty("test", props[0], v);
 
 	// Check results
 	EXPECT_TRUE(success);
@@ -207,7 +207,7 @@ TEST(RepoMetaVariantConverterNWDTest, TimeTest)
 
 	// Convert to RepoVariant
 	RepoVariant v;
-	bool success = TryConvertMetadataProperty("test", props[0], v);
+	bool success = DataProcessorNwd::TryConvertMetadataProperty("test", props[0], v);
 
 	// Check results
 	EXPECT_TRUE(success);
@@ -238,7 +238,7 @@ TEST(RepoMetaVariantConverterNWDTest, LengthTest)
 
 	// Convert to RepoVariant
 	RepoVariant v;
-	bool success = TryConvertMetadataProperty("test", props[0], v);
+	bool success = DataProcessorNwd::TryConvertMetadataProperty("test", props[0], v);
 
 	// Check results
 	EXPECT_TRUE(success);
@@ -269,7 +269,7 @@ TEST(RepoMetaVariantConverterNWDTest, AngleTest)
 
 	// Convert to RepoVariant
 	RepoVariant v;
-	bool success = TryConvertMetadataProperty("test", props[0], v);
+	bool success = DataProcessorNwd::TryConvertMetadataProperty("test", props[0], v);
 
 	// Check results
 	EXPECT_TRUE(success);
@@ -300,7 +300,7 @@ TEST(RepoMetaVariantConverterNWDTest, NameTest)
 
 	// Convert to RepoVariant
 	RepoVariant v;
-	bool success = TryConvertMetadataProperty("test", props[0], v);
+	bool success = DataProcessorNwd::TryConvertMetadataProperty("test", props[0], v);
 
 	// Check results
 	EXPECT_TRUE(success);
@@ -331,7 +331,7 @@ TEST(RepoMetaVariantConverterNWDTest, IDStringTest)
 
 	// Convert to RepoVariant
 	RepoVariant v;
-	bool success = TryConvertMetadataProperty("test", props[0], v);
+	bool success = DataProcessorNwd::TryConvertMetadataProperty("test", props[0], v);
 
 	// Check results
 	EXPECT_TRUE(success);
@@ -362,7 +362,7 @@ TEST(RepoMetaVariantConverterNWDTest, AreaTest)
 
 	// Convert to RepoVariant
 	RepoVariant v;
-	bool success = TryConvertMetadataProperty("test", props[0], v);
+	bool success = DataProcessorNwd::TryConvertMetadataProperty("test", props[0], v);
 
 	// Check results
 	EXPECT_TRUE(success);
@@ -393,7 +393,7 @@ TEST(RepoMetaVariantConverterNWDTest, VolumeTest)
 
 	// Convert to RepoVariant
 	RepoVariant v;
-	bool success = TryConvertMetadataProperty("test", props[0], v);
+	bool success = DataProcessorNwd::TryConvertMetadataProperty("test", props[0], v);
 
 	// Check results
 	EXPECT_TRUE(success);
@@ -424,7 +424,7 @@ TEST(RepoMetaVariantConverterNWDTest, Point2DTest)
 
 	// Convert to RepoVariant
 	RepoVariant v;
-	bool success = TryConvertMetadataProperty("test", props[0], v);
+	bool success = DataProcessorNwd::TryConvertMetadataProperty("test", props[0], v);
 
 	// Check results
 	EXPECT_TRUE(success);
@@ -455,7 +455,7 @@ TEST(RepoMetaVariantConverterNWDTest, Point3DTest)
 
 	// Convert to RepoVariant
 	RepoVariant v;
-	bool success = TryConvertMetadataProperty("test", props[0], v);
+	bool success = DataProcessorNwd::TryConvertMetadataProperty("test", props[0], v);
 
 	// Check results
 	EXPECT_TRUE(success);
