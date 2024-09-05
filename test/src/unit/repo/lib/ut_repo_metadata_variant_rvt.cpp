@@ -57,10 +57,12 @@ void SetupOdEnvForRvt(OdStaticRxObject<MyRvServices>& svcs, OdBmDatabasePtr& pDB
 	odgsInitialize();
 	::odrxDynamicLinker()->loadModule(OdBmLoaderModuleName, false);
 
-	pDB = svcs.createDatabase(true);
+	pDB = svcs.createTemplate(OdBm::ProjectTemplate::Structural, OdBm::UnitSystem::Metric);
 }
 
-void TeardownOdEnvForRvt() {
+void TeardownOdEnvForRvt(OdBmDatabasePtr& pDB) {
+	pDB.release();
+
 	::odrxDynamicLinker()->unloadUnreferenced();
 	odgsUninitialize();
 	::odrxUninitialize();
@@ -199,7 +201,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int32AsBoolTest) {
 	EXPECT_EQ(boost::get<bool>(v), false);
 
 	// Teardown
-	TeardownOdEnvForRvt();
+	TeardownOdEnvForRvt(pDB);
 }
 
 TEST(RepoMetaVariantConverterRevitTest, Int32asIntTest) {
@@ -231,7 +233,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int32asIntTest) {
 	EXPECT_EQ(boost::get<long long>(v), -2147483648ll);
 
 	// Teardown
-	TeardownOdEnvForRvt();
+	TeardownOdEnvForRvt(pDB);
 }
 
 TEST(RepoMetaVariantConverterRevitTest, Int64Test) {
@@ -301,13 +303,8 @@ TEST(RepoMetaVariantConverterRevitTest, StubPtrDataTestNoParamNoName) {
 
 	// Setup of the OD environment
 	OdStaticRxObject<MyRvServices> svcs;
-
-	odrxInitialize(&svcs);
-	odgsInitialize();
-	::odrxDynamicLinker()->loadModule(OdBmLoaderModuleName, false);
-
 	OdBmDatabasePtr pDB;
-	pDB = svcs.createTemplate(OdBm::ProjectTemplate::Structural, OdBm::UnitSystem::Metric);
+	SetupOdEnvForRvt(svcs, pDB);
 
 	// Set up
 	OdBmLabelUtilsPEPtr labelUtils;
@@ -315,16 +312,21 @@ TEST(RepoMetaVariantConverterRevitTest, StubPtrDataTestNoParamNoName) {
 	OdBm::BuiltInParameter::Enum param;
 
 	// Create data
-	OdBmTransaction tr(pDB, OdBm::TransactionType::Regular);
-	tr.start();
-
 	OdBmObjectId id;
-	OdResult result;
-	OdBmDirectShapePtr pDirectShape = OdBmDirectShape::createObject();
 
-	result = pDB->addElement(pDirectShape, id);
+	// Note, the transaction gets its own scope
+	// Don't ask me why, but this is the only way this does not crashes and burns on teardown.
+	{
+		OdBmTransaction tr(pDB, OdBm::TransactionType::Regular);
+		tr.start();
 
-	tr.commit();
+		OdResult result;
+		OdBmDirectShapePtr pDirectShape = OdBmDirectShape::createObject();
+
+		result = pDB->addElement(pDirectShape, id);
+
+		tr.commit();
+	}
 
 	OdDbStub* stub(id);
 	OdTfVariant variant = OdTfVariant(stub);
@@ -338,6 +340,9 @@ TEST(RepoMetaVariantConverterRevitTest, StubPtrDataTestNoParamNoName) {
 	EXPECT_TRUE(success);
 	std::string variantResult = boost::get<std::string>(v);
 	EXPECT_EQ(variantResult, std::to_string((OdUInt64)id.getHandle()));
+
+	// Teardown
+	TeardownOdEnvForRvt(pDB);
 
 }
 
@@ -345,13 +350,8 @@ TEST(RepoMetaVariantConverterRevitTest, StubPtrDataTestParamSetRegularHdl) {
 
 	// Setup of the OD environment
 	OdStaticRxObject<MyRvServices> svcs;
-
-	odrxInitialize(&svcs);
-	odgsInitialize();
-	::odrxDynamicLinker()->loadModule(OdBmLoaderModuleName, false);
-
 	OdBmDatabasePtr pDB;
-	pDB = svcs.createTemplate(OdBm::ProjectTemplate::Structural, OdBm::UnitSystem::Metric);
+	SetupOdEnvForRvt(svcs, pDB);
 
 	// Set up
 	OdBmLabelUtilsPEPtr labelUtils;
@@ -359,16 +359,21 @@ TEST(RepoMetaVariantConverterRevitTest, StubPtrDataTestParamSetRegularHdl) {
 	OdBm::BuiltInParameter::Enum param = OdBm::BuiltInParameter::ELEM_CATEGORY_PARAM;
 
 	// Create data
-	OdBmTransaction tr(pDB, OdBm::TransactionType::Regular);
-	tr.start();
-
 	OdBmObjectId id;
-	OdResult result;
-	OdBmDirectShapePtr pDirectShape = OdBmDirectShape::createObject();
 
-	result = pDB->addElement(pDirectShape, id);
+	// Note, the transaction gets its own scope
+	// Don't ask me why, but this is the only way this does not crashes and burns on teardown.
+	{
+		OdBmTransaction tr(pDB, OdBm::TransactionType::Regular);
+		tr.start();
 
-	tr.commit();
+		OdResult result;
+		OdBmDirectShapePtr pDirectShape = OdBmDirectShape::createObject();
+
+		result = pDB->addElement(pDirectShape, id);
+
+		tr.commit();
+	}
 
 	OdDbStub* stub(id);
 	OdTfVariant variant = OdTfVariant(stub);
@@ -383,4 +388,5 @@ TEST(RepoMetaVariantConverterRevitTest, StubPtrDataTestParamSetRegularHdl) {
 	std::string variantResult = boost::get<std::string>(v);
 	EXPECT_EQ(variantResult, std::to_string((OdUInt64)id.getHandle()));
 
+	TeardownOdEnvForRvt(pDB);
 }
