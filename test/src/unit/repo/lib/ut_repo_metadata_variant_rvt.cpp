@@ -73,7 +73,6 @@ TEST(RepoMetaVariantConverterRevitTest, EmptyTest) {
 	// Set up
 	OdBmLabelUtilsPEPtr labelUtils;
 	OdBmParamDefPtr paramDef;
-	OdBmDatabase* database;
 	OdBm::BuiltInParameter::Enum param;
 
 	// Create data
@@ -81,7 +80,7 @@ TEST(RepoMetaVariantConverterRevitTest, EmptyTest) {
 
 	// Convert
 	RepoVariant v;
-	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, database, param, v);
+	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
 
 	// Check result
 	EXPECT_FALSE(success);
@@ -92,7 +91,6 @@ TEST(RepoMetaVariantConverterRevitTest, StringTest) {
 	// Set up
 	OdBmLabelUtilsPEPtr labelUtils;
 	OdBmParamDefPtr paramDef;
-	OdBmDatabase* database;
 	OdBm::BuiltInParameter::Enum param;
 
 	// Create data
@@ -101,7 +99,7 @@ TEST(RepoMetaVariantConverterRevitTest, StringTest) {
 
 	// Convert
 	RepoVariant v;
-	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, database, param, v);
+	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
 
 	// Check result
 	EXPECT_TRUE(success);
@@ -113,7 +111,6 @@ TEST(RepoMetaVariantConverterRevitTest, BoolTest) {
 	// Set up
 	OdBmLabelUtilsPEPtr labelUtils;
 	OdBmParamDefPtr paramDef;
-	OdBmDatabase* database;
 	OdBm::BuiltInParameter::Enum param;
 
 	// Create data
@@ -122,7 +119,7 @@ TEST(RepoMetaVariantConverterRevitTest, BoolTest) {
 
 	// Convert
 	RepoVariant v;
-	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, database, param, v);
+	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
 
 	// Check result
 	EXPECT_TRUE(success);
@@ -134,7 +131,6 @@ TEST(RepoMetaVariantConverterRevitTest, Int8Test) {
 	// Set up
 	OdBmLabelUtilsPEPtr labelUtils;
 	OdBmParamDefPtr paramDef;
-	OdBmDatabase* database;
 	OdBm::BuiltInParameter::Enum param;
 
 	// Create data
@@ -143,7 +139,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int8Test) {
 
 	// Convert
 	RepoVariant v;
-	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, database, param, v);
+	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
 
 	// Check result
 	EXPECT_TRUE(success);
@@ -155,7 +151,6 @@ TEST(RepoMetaVariantConverterRevitTest, Int16Test) {
 	// Set up
 	OdBmLabelUtilsPEPtr labelUtils;
 	OdBmParamDefPtr paramDef;
-	OdBmDatabase* database;
 	OdBm::BuiltInParameter::Enum param;
 
 	// Create data
@@ -164,7 +159,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int16Test) {
 
 	// Convert
 	RepoVariant v;
-	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, database, param, v);
+	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
 
 	// Check result
 	EXPECT_TRUE(success);
@@ -194,7 +189,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int32AsBoolTest) {
 
 	// Convert
 	RepoVariant v;
-	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, pDB, param, v);
+	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
 
 	// Check result
 	EXPECT_TRUE(success);
@@ -226,7 +221,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int32asIntTest) {
 
 	// Convert
 	RepoVariant v;
-	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, pDB, param, v);
+	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
 
 	// Check result
 	EXPECT_TRUE(success);
@@ -241,7 +236,6 @@ TEST(RepoMetaVariantConverterRevitTest, Int64Test) {
 	// Set up
 	OdBmLabelUtilsPEPtr labelUtils;
 	OdBmParamDefPtr paramDef;
-	OdBmDatabase* database;
 	OdBm::BuiltInParameter::Enum param;
 
 	// Create data
@@ -250,7 +244,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int64Test) {
 
 	// Convert
 	RepoVariant v;
-	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, database, param, v);
+	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
 
 	// Check result
 	EXPECT_TRUE(success);
@@ -262,7 +256,6 @@ TEST(RepoMetaVariantConverterRevitTest, DoubleTest) {
 	// Set up
 	OdBmLabelUtilsPEPtr labelUtils;
 	OdBmParamDefPtr paramDef;
-	OdBmDatabase* database;
 	OdBm::BuiltInParameter::Enum param;
 
 	// Create data
@@ -271,7 +264,7 @@ TEST(RepoMetaVariantConverterRevitTest, DoubleTest) {
 
 	// Convert
 	RepoVariant v;
-	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, database, param, v);
+	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
 
 	// Check result
 	EXPECT_TRUE(success);
@@ -283,7 +276,6 @@ TEST(RepoMetaVariantConverterRevitTest, AnsiStringTest) {
 	// Set up
 	OdBmLabelUtilsPEPtr labelUtils;
 	OdBmParamDefPtr paramDef;
-	OdBmDatabase* database;
 	OdBm::BuiltInParameter::Enum param;
 
 	// Create data
@@ -292,7 +284,7 @@ TEST(RepoMetaVariantConverterRevitTest, AnsiStringTest) {
 
 	// Convert
 	RepoVariant v;
-	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, database, param, v);
+	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
 
 	// Check result
 	EXPECT_TRUE(success);
@@ -334,7 +326,7 @@ TEST(RepoMetaVariantConverterRevitTest, StubPtrDataTestNoParamNoName) {
 
 	// Convert
 	RepoVariant v;
-	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, pDB, param, v);
+	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
 
 	// Check result
 	EXPECT_TRUE(success);
@@ -381,7 +373,7 @@ TEST(RepoMetaVariantConverterRevitTest, StubPtrDataTestParamSetRegularHdl) {
 
 	// Convert
 	RepoVariant v;
-	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, pDB, param, v);
+	bool success = TryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
 
 	// Check result
 	EXPECT_TRUE(success);

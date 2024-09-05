@@ -42,7 +42,7 @@ const std::set<std::string> IGNORE_PARAMS = {
 	"RENDER APPEARANCE PROPERTIES"
 };
 
-bool repo::manipulator::modelconvertor::odaHelper::TryConvertMetadataEntry(OdTfVariant& metaEntry, OdBmLabelUtilsPEPtr labelUtils, OdBmParamDefPtr paramDef, OdBmDatabase* database, OdBm::BuiltInParameter::Enum param, repo::lib::RepoVariant& v)
+bool repo::manipulator::modelconvertor::odaHelper::TryConvertMetadataEntry(OdTfVariant& metaEntry, OdBmLabelUtilsPEPtr labelUtils, OdBmParamDefPtr paramDef, OdBm::BuiltInParameter::Enum param, repo::lib::RepoVariant& v)
 {
 	switch (metaEntry.type()) {
 		case OdVariant::kVoid: {
@@ -445,7 +445,7 @@ void DataProcessorRvt::processParameter(
 			repo::lib::RepoVariant v;
 
 
-			if (TryConvertMetadataEntry(value, labelUtils, pDescParam, element->getDatabase(), buildInEnum, v))
+			if (TryConvertMetadataEntry(value, labelUtils, pDescParam, buildInEnum, v))
 			{
 				if (metadata.find(metaKey) != metadata.end() && !boost::apply_visitor(repo::lib::DuplicationVisitor(), metadata[metaKey], v)) {
 										
