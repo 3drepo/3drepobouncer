@@ -17,7 +17,7 @@
 
 #include <cstdlib>
 #include <gtest/gtest.h>
-#include "../../repo_test_utils.h"
+#include <unit/repo_test_utils.h>
 
 #include <repo/lib/datastructure/repo_variant.h>
 #include <repo/manipulator/modelconvertor/import/odaHelper/data_processor_rvt.h>
