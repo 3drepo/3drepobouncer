@@ -44,7 +44,8 @@ const std::set<std::string> IGNORE_PARAMS = {
 
 bool DataProcessorRvt::TryConvertMetadataEntry(OdTfVariant& metaEntry, OdBmLabelUtilsPEPtr labelUtils, OdBmParamDefPtr paramDef, OdBm::BuiltInParameter::Enum param, repo::lib::RepoVariant& v)
 {
-	switch (metaEntry.type()) {
+	auto dataType = metaEntry.type();
+	switch (dataType) {
 		case OdVariant::kVoid: {
 			return false;
 		}
@@ -145,6 +146,7 @@ bool DataProcessorRvt::TryConvertMetadataEntry(OdTfVariant& metaEntry, OdBmLabel
 			break;
 		}
 	default:
+		repoWarning << "Unknown Metadata data type encountered in DataProcessorRvt::TryConvertMetadataProperty. Type: " + dataType;
 		return false;
 	}
 
