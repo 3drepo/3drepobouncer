@@ -147,52 +147,19 @@ void FileProcessorDwg::importDrawing(OdDbDatabasePtr pDb)
 		pHelperDevice->onSize(OdGsDCRect(0, 1024, 768, 0));
 
 		// This section extracts the view information which can be used to map
-		// betweeen the SVG and world coordinate systems.
-		// The graphics system (Gs) view https://docs.opendesign.com/tv/gs_OdGsView.html
-		// is used to derive points that map between the WCS of the drawing and
-		// the svg file.
+		// between the SVG and world coordinate systems. The graphics system (Gs) view
+		// https://docs.opendesign.com/tv/gs_OdGsView.html is used to derive points
+		// that map between the WCS of the drawing and the space the SVG primitives
+		// are defined.
 
 		const OdGsView* pGsView = pDeviceSvg->viewAt(0);
+		repo::manipulator::modelutility::DrawingCalibration calibration;
 
-		auto worldToDeviceMatrix = pGsView->worldToDeviceMatrix();
-		auto objectToDeviceMatrix = pGsView->objectToDeviceMatrix();
-		
-		// Pick three points (two vectors) to describe the map. The transform
-		// can be computed from these each time from then on.
-
-		OdGePoint3d a(0, 0, 0);
-		OdGePoint3d b(1, 0, 0);
-		OdGePoint3d c(0, 1, 0);
-
-		// Calculate points in SVG space
-		OdGePoint3d aS = worldToDeviceMatrix * a;
-		OdGePoint3d bS = worldToDeviceMatrix * b;
-
-		// Get pixel density to apply it to SVG coordinates for converting from pixel to unit values
-		OdGePoint2d pixelDensity;
-		pGsView->getNumPixelsInUnitSquare(OdGePoint3d::kOrigin, pixelDensity, false);
-
-		// Flattening to 2D by dropping z component and applying the density values
-		repo::lib::RepoVector2D aS2d = repo::lib::RepoVector2D(aS.x / pixelDensity.x, aS.y / pixelDensity.y);
-		repo::lib::RepoVector2D bS2d = repo::lib::RepoVector2D(bS.x / pixelDensity.x, bS.y / pixelDensity.y);
-
-		// Convert 3d vectors from ODA format to 3d repo format
-		// (Note how z and y are switched to move from input z-up CS to Unity y-up CS)
-		repo::lib::RepoVector3D a3d = repo::lib::RepoVector3D(a.x, a.z, a.y);
-		repo::lib::RepoVector3D b3d = repo::lib::RepoVector3D(b.x, b.z, b.y);
-
-		// Assemble calibration outcome
-		std::vector<repo::lib::RepoVector3D> horizontal3d;
-		horizontal3d.push_back(a3d);
-		horizontal3d.push_back(b3d);
-
-		std::vector<repo::lib::RepoVector2D> horizontal2d;
-		horizontal2d.push_back(aS2d);
-		horizontal2d.push_back(bS2d);
+		updateDrawingHorizontalCalibration(pGsView, calibration);
 
 
 		// TEST Vertical Calibration
-
+		/*
 		OdDbBlockTablePtr pTable = pDb->getBlockTableId().safeOpenObject(OdDb::kForRead);
 		OdDbBlockTableIteratorPtr blockRecordIter = pTable->newIterator();
 		
@@ -278,21 +245,20 @@ void FileProcessorDwg::importDrawing(OdDbDatabasePtr pDb)
 
 		}
 
-
+		*/
 		// END TEST Vertical Calibration
 
-		repo::manipulator::modelutility::DrawingCalibration calibration;
-		calibration.horizontalCalibration3d = horizontal3d;
-		calibration.horizontalCalibration2d = horizontal2d;
 
 		calibration.verticalRange = { 0, 10 }; // TODO: how do I calculate that?
+
+		// Update drawing calibration units and assign to the collector
 
 		repo::manipulator::modelconvertor::ModelUnits units = determineModelUnits(pDb->getINSUNITS());
 		calibration.units = repo::manipulator::modelconvertor::toUnitsString(units);
 
-		// Pass calibration outcome to collector
-		drawingCollector->drawingCalibration = calibration;
-		
+		drawingCollector->calibration = calibration;
+
+		// Render the SVG
 		
 		pHelperDevice->update();
 

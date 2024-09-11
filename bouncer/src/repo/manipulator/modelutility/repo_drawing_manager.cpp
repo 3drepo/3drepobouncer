@@ -73,7 +73,7 @@ uint8_t DrawingManager::commitImage(
 	}
 
 	// Retreive and process calibration
-	auto calibration = drawing.drawingCalibration;
+	auto calibration = drawing.calibration;
 
 	auto calibrationBSON = repo::core::model::RepoBSONFactory::makeRepoCalibration(
 		revision.getProject(),

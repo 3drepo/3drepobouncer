@@ -43,6 +43,10 @@ namespace repo {
 					GeometryCollector *collector;
 					modelutility::DrawingImageInfo* drawingCollector;
 					const ModelImportConfig& importConfig;
+
+					// Helper function to update the DrawingCalibration's horizontal calibration
+					// based on the MVP matrix of the view.
+					static void updateDrawingHorizontalCalibration(const OdGsView* view, modelutility::DrawingCalibration& calibration);
 				};
 			}
 		}

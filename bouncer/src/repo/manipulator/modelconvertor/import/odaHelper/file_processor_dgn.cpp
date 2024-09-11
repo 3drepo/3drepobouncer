@@ -343,61 +343,23 @@ void FileProcessorDgn::importDrawing(OdDgDatabasePtr pDb, const ODCOLORREF* pPal
 		// the svg file.
 
 		const OdGsView* pGsView = pDeviceSvg->viewAt(0);
-
-		auto worldToDeviceMatrix = pGsView->worldToDeviceMatrix();
-		auto objectToDeviceMatrix = pGsView->objectToDeviceMatrix();
-
-		// Pick three points (two vectors) to describe the map. The transform
-		// can be computed from these each time from then on.
-
-		OdGePoint3d a(0, 0, 0);
-		OdGePoint3d b(1, 0, 0);
-		OdGePoint3d c(0, 1, 0);
-
-		// Calculate points in SVG space
-		OdGePoint3d aS = worldToDeviceMatrix * a;
-		OdGePoint3d bS = worldToDeviceMatrix * b;
-
-		// Get pixel density to apply it to SVG coordinates for converting from pixel to unit values
-		OdGePoint2d pixelDensity;
-		pGsView->getNumPixelsInUnitSquare(OdGePoint3d::kOrigin, pixelDensity, false);
-
-		// Flattening to 2D by dropping z component and applying the density values
-		repo::lib::RepoVector2D aS2d = repo::lib::RepoVector2D(aS.x / pixelDensity.x, aS.y / pixelDensity.y);
-		repo::lib::RepoVector2D bS2d = repo::lib::RepoVector2D(bS.x / pixelDensity.x, bS.y / pixelDensity.y);
-
-		// Convert 3d vectors from ODA format to 3d repo format
-		// (Note how z and y are switched to move from input z-up CS to Unity y-up CS)
-		repo::lib::RepoVector3D a3d = repo::lib::RepoVector3D(a.x, a.z, a.y);
-		repo::lib::RepoVector3D b3d = repo::lib::RepoVector3D(b.x, b.z, b.y);
-		
-		// Assemble calibration outcome
-		std::vector<repo::lib::RepoVector3D> horizontal3d;
-		horizontal3d.push_back(a3d);
-		horizontal3d.push_back(b3d);
-
-		std::vector<repo::lib::RepoVector2D> horizontal2d;
-		horizontal2d.push_back(aS2d);
-		horizontal2d.push_back(bS2d);
-
 		repo::manipulator::modelutility::DrawingCalibration calibration;
-		calibration.horizontalCalibration3d = horizontal3d;
-		calibration.horizontalCalibration2d = horizontal2d;
+		updateDrawingHorizontalCalibration(pGsView, calibration);
+
+		// Update the calibration vertical range
 		
 		calibration.verticalRange = { 0, 10 }; // TODO: how do I calculate that?
 
+		// And set the calibration units
+
 		OdDgElementId elementActId = pDb->getActiveModelId();
 		OdDgModelPtr pModel = elementActId.safeOpenObject();
-
 		repo::manipulator::modelconvertor::ModelUnits units = determineModelUnits(pModel->getMasterUnit());
-		
 		calibration.units = repo::manipulator::modelconvertor::toUnitsString(units);
 
-
-
 		// Pass calibration outcome to collector
-		drawingCollector->drawingCalibration = calibration;
 
+		drawingCollector->calibration = calibration;
 
 		// The call to update is what will create the svg in the memory stream
 

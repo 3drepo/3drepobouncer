@@ -42,7 +42,7 @@ namespace repo {
 			{
 				std::string name; // The name of the original file (e.g. "Floor1.DWG")
 				std::vector<uint8_t> data; // The drawing in svg format
-				DrawingCalibration drawingCalibration;
+				DrawingCalibration calibration;
 			};
 		}
 	}
