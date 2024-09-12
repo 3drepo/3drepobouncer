@@ -41,6 +41,8 @@
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
+#define FLOOR_HEIGHT_M 2.4f
+
 class VectoriseDeviceDwg : public OdGsBaseVectorizeDevice
 {
 protected:
@@ -133,7 +135,7 @@ void FileProcessorDwg::importDrawing(OdDbDatabasePtr pDb)
 
 		pDbGiContext->setPlotGeneration(true);
 		pDbGiContext->setHatchAsPolygon(OdGiDefaultContext::kHatchPolygon);
-		dev->properties()->putAt(L"MinimalWidth", OdRxVariantValue(0.01));
+		dev->properties()->putAt(L"MinimalWidth", OdRxVariantValue(0.08));
 		pDbGiContext->setPaletteBackground(ODRGB(255, 255, 255));
 
 		OdDbBaseDatabasePEPtr pBaseDatabase(pDb);
@@ -157,109 +159,51 @@ void FileProcessorDwg::importDrawing(OdDbDatabasePtr pDb)
 
 		updateDrawingHorizontalCalibration(pGsView, calibration);
 
-
-		// TEST Vertical Calibration
-		/*
-		OdDbBlockTablePtr pTable = pDb->getBlockTableId().safeOpenObject(OdDb::kForRead);
-		OdDbBlockTableIteratorPtr blockRecordIter = pTable->newIterator();
-		
-
-		// Get extents with the matrix applied
-		OdGeExtents3d tableExtents;
-		OdResult tableResult = pTable->getGeomExtents(tableExtents);
-		if (tableResult == eOk) {
-			OdGePoint3d center = tableExtents.center();
-			OdGePoint3d minPoint = tableExtents.minPoint();
-			OdGePoint3d maxPoint = tableExtents.maxPoint();
-
-			std::cout << "Table Extent Fit Centre Point: " << center.x << " | " << center.y << " | " << center.z << std::endl;
-			std::cout << "Table Extent Fit Min Point: " << minPoint.x << " | " << minPoint.y << " | " << minPoint.z << std::endl;
-			std::cout << "Table Extent Fit Max Point: " << maxPoint.x << " | " << maxPoint.y << " | " << maxPoint.z << std::endl;
-		}
-		else {
-			std::cout << "No Extents for this. Error is: " << tableResult << std::endl;
-		}
-
-
-		for (; !blockRecordIter->done(); blockRecordIter->step()) {
-			OdDbBlockTableRecordPtr record = blockRecordIter->getRecordId().safeOpenObject();
-			
-			// Dump Record information
-			std::cout << "New Record:" << std::endl;
-			std::cout << record->getName() << std::endl;
-
-			// Block Type
-			std::cout << "Is Anonymous: " << (record->isAnonymous() ? "True" : "False") << std::endl;
-			std::cout << "Is from external ref: " << (record->isFromExternalReference() ? "True" : "False") << std::endl;
-			std::cout << "Is Layout: " << (record->isLayout() ? "True" : "False") << std::endl;
-
-			
-			// Get origin
-			OdGePoint3d blockOrigin = record->origin();
-			std::cout << "Origin: " << blockOrigin.x << " | " << blockOrigin.y << " | " << blockOrigin.z << " | " << std::endl;
-
-			// Get raw extents
-			OdGeExtents3d blockExtents;
-			OdResult result = record->getGeomExtents(blockExtents);
-			// record->geomExtentsBestFit takes a matrix? Can we do that with our post-view CS?
-			if (result == eOk) {
-				OdGePoint3d center = blockExtents.center();
-				OdGePoint3d minPoint = blockExtents.minPoint();
-				OdGePoint3d maxPoint = blockExtents.maxPoint();
-
-				std::cout << "Extent Centre Point: " << center.x << " | " << center.y << " | " << center.z << std::endl;
-				std::cout << "Extent Min Point: " << minPoint.x << " | " << minPoint.y << " | " << minPoint.z << std::endl;
-				std::cout << "Extent Max Point: " << maxPoint.x << " | " << maxPoint.y << " | " << maxPoint.z << std::endl;
-			}
-			else {
-				std::cout << "No Extents for this. Error is: " << result << std::endl;
-			}
-
-			// Get extents with the matrix applied
-			OdGeExtents3d blockExtentsFit;
-			result = record->geomExtentsBestFit(blockExtents, worldToDeviceMatrix);
-			// record->geomExtentsBestFit takes a matrix? Can we do that with our post-view CS?
-			if (result == eOk) {
-				OdGePoint3d center = blockExtentsFit.center();
-				OdGePoint3d minPoint = blockExtentsFit.minPoint();
-				OdGePoint3d maxPoint = blockExtentsFit.maxPoint();
-
-				std::cout << "Extent Fit Centre Point: " << center.x << " | " << center.y << " | " << center.z << std::endl;
-				std::cout << "Extent Fit Min Point: " << minPoint.x << " | " << minPoint.y << " | " << minPoint.z << std::endl;
-				std::cout << "Extent Fit Max Point: " << maxPoint.x << " | " << maxPoint.y << " | " << maxPoint.z << std::endl;
-			}
-			else {
-				std::cout << "No Extents for this. Error is: " << result << std::endl;
-			}
-			
-			//// Iterate over entities
-			//std::cout << "Printing Entities:" << std::endl;
-			//OdDbObjectIteratorPtr entityIter = record->newIterator();
-
-			//for (; !entityIter->done(); entityIter->step()) {
-			//	OdDbEntityPtr entity = entityIter->entity();
-			//	printf("ObjectID: %lx\n", entity->objectId());
-			//	
-			//	std::cout << "Class name: " << (entity->isA()).c_str());
-			//}
-
-		}
-
-		*/
-		// END TEST Vertical Calibration
-
-
-		calibration.verticalRange = { 0, 10 }; // TODO: how do I calculate that?
-
-		// Update drawing calibration units and assign to the collector
+		// Collect the units (we may also need these for the vertical calibration)
 
 		repo::manipulator::modelconvertor::ModelUnits units = determineModelUnits(pDb->getINSUNITS());
 		calibration.units = repo::manipulator::modelconvertor::toUnitsString(units);
 
+		// Get the vertical calibration by checking the geometry extents of all
+		// entities (visual elements).
+
+		double zmin = DBL_MAX;
+		double zmax = DBL_MIN;
+
+		OdDbBlockTablePtr pTable = pDb->getBlockTableId().safeOpenObject(OdDb::kForRead);
+		OdDbBlockTableIteratorPtr blockRecordIter = pTable->newIterator();
+		for (; !blockRecordIter->done(); blockRecordIter->step()) {
+			
+			OdDbBlockTableRecordPtr record = blockRecordIter->getRecordId().safeOpenObject();
+
+			OdDbObjectIteratorPtr entityIter = record->newIterator();
+			for (; !entityIter->done(); entityIter->step()) {
+				OdDbEntityPtr entity = entityIter->entity();
+
+				OdGeExtents3d extents;
+				if (entity->drawable()->getGeomExtents(extents) == eOk) {
+					zmin = std::min(zmin, extents.minPoint().z);
+					zmax = std::max(zmax, extents.maxPoint().z);
+				}
+			}
+		}
+
+		// If the drawing is all on one plane, then just take this plane.
+		// Otherwise try and guess the range based on the default floor height.
+
+		if (zmin == zmax)
+		{
+			calibration.verticalRange = { (float)zmin, scaleFactorFromMetres(units) * FLOOR_HEIGHT_M };
+		}
+		else
+		{
+			calibration.verticalRange = { (float)zmin, (float)zmax };
+		}
+
 		drawingCollector->calibration = calibration;
 
 		// Render the SVG
-		
+
 		pHelperDevice->update();
 
 		// Copy the SVG contents into a string
