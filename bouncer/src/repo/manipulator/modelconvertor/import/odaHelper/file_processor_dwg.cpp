@@ -136,6 +136,7 @@ void FileProcessorDwg::importDrawing(OdDbDatabasePtr pDb)
 		pDbGiContext->setPlotGeneration(true);
 		pDbGiContext->setHatchAsPolygon(OdGiDefaultContext::kHatchPolygon);
 		dev->properties()->putAt(L"MinimalWidth", OdRxVariantValue(0.08));
+		dev->properties()->putAt(L"UseHLR", OdRxVariantValue(true));
 		pDbGiContext->setPaletteBackground(ODRGB(255, 255, 255));
 
 		OdDbBaseDatabasePEPtr pBaseDatabase(pDb);
