@@ -97,7 +97,7 @@ int32_t performOperation(
 			errCode = REPOERR_UNKNOWN_ERR;
 		}
 	}
-	if (command.command == cmdProcessDrawing)
+	else if (command.command == cmdProcessDrawing)
 	{
 		try {
 			errCode = processDrawing(controller, token, command);
