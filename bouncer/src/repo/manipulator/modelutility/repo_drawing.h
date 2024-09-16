@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2015 3D Repo Ltd
+*  Copyright (C) 2024 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -16,26 +16,22 @@
 */
 
 #pragma once
-#include <cstdint>
-#if defined(_WIN32) || defined(_WIN64)
-#   define REPO_DECL_EXPORT __declspec(dllexport)
-#   define REPO_DECL_IMPORT __declspec(dllimport)
-#else
-#   define REPO_DECL_EXPORT
-#   define REPO_DECL_IMPORT
-#endif
 
-//------------------------------------------------------------------------------
-#if defined(REPO_API_LIBRARY)
-#   define REPO_API_EXPORT REPO_DECL_EXPORT
-#else
-#   define REPO_API_EXPORT REPO_DECL_IMPORT
-#endif
+#include <string>
+#include <vector>
 
-//------------------------------------------------------------------------------
-#define BOUNCER_VMAJOR 5
+namespace repo {
+	namespace manipulator {
+		namespace modelutility {
 
-#define BOUNCER_VMINOR "11_3"
-#define REPO_MAX_OBJ_SIZE (16 * 1024 * 1024)
-
-//
+			/**
+			* Holds complete information about an imported drawing at runtime
+			*/
+			struct DrawingImageInfo
+			{
+				std::string name; // The name of the original file (e.g. "Floor1.DWG")
+				std::vector<uint8_t> data; // The drawing in svg format
+			};
+		}
+	}
+}

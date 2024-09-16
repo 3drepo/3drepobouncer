@@ -185,17 +185,6 @@ namespace repo {
 				const uint32_t               &limit = 0);
 
 		/**
-			* Return a list of collections within the database
-			* @param token A RepoToken given at authentication
-			* @param databaseName database to get collections from
-			* @return returns a list of collection names
-			*/
-		std::list<std::string> getCollections(
-			const RepoToken             *token,
-			const std::string     &databaseName
-		);
-
-		/**
 			* Return a list of database available to the user
 			* @param token A RepoToken given at authentication
 			* @return returns a list of database names
@@ -309,21 +298,6 @@ namespace repo {
 			const std::string                      &desc = "",
 			const repo::lib::RepoUUID           &revId = repo::lib::RepoUUID::createUUID());
 
-		/**
-		* Insert a binary file into the database (GridFS)
-		* @param token Authentication token
-		* @param database name of the database
-		* @param collection name of the collection (it'll be saved into *.files, *.chunks)
-		* @param  rawData data in the form of byte vector
-		* @param mimeType the MIME type of the data (optional)
-		*/
-		bool insertBinaryFileToDatabase(
-			const RepoToken            *token,
-			const std::string          &database,
-			const std::string          &collection,
-			const std::string          &name,
-			const std::vector<uint8_t> &rawData,
-			const std::string          &mimeType = "");
 		/**
 			* Insert a new role into the database
 			* @param token Authentication token
@@ -499,21 +473,10 @@ namespace repo {
 			*/
 
 			/**
-			* Commit asset bundle buffers
-			* @param database database name
-			* @param project project name
-			* @param buffers web buffers
-			*/
-		bool commitAssetBundleBuffers(
-			const RepoController::RepoToken *token,
-			repo::core::model::RepoScene    *scene,
-			const repo_web_buffers_t &buffers);
-
-		/**
-			* Create a federated scene with the given scene collections
-			* @param fedMap a map of reference scene and transformation from root where the scene should lie
-			* @return returns a constructed scene graph with the reference.
-			*/
+				* Create a federated scene with the given scene collections
+				* @param fedMap a map of reference scene and transformation from root where the scene should lie
+				* @return returns a constructed scene graph with the reference.
+				*/
 		repo::core::model::RepoScene* createFederatedScene(
 			const std::map<repo::core::model::ReferenceNode, std::string> &fedMap);
 
@@ -595,6 +558,18 @@ namespace repo {
 			const std::string &filePath,
 			uint8_t           &err,
 			const repo::manipulator::modelconvertor::ModelImportConfig &config = repo::manipulator::modelconvertor::ModelImportConfig());
+
+		/**
+		* Given a teamspace and drawing revision, import the original file
+		* into a drawing and update the revision.
+		* If an image file is provided, processing will be omitted
+		*/
+		void processDrawingRevision(
+			const RepoController::RepoToken* token,
+			const std::string& teamspace,
+			const repo::lib::RepoUUID revision,
+			uint8_t& err,
+			const std::string &imagePath = std::string());
 
 		/**
 			* Load metadata from a file

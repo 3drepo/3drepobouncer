@@ -36,85 +36,6 @@ RevisionNode::~RevisionNode()
 {
 }
 
-RevisionNode RevisionNode::cloneAndUpdateStatus(
-	const UploadStatus &status) const
-{
-	switch (status)
-	{
-	case UploadStatus::COMPLETE:
-		return RepoNode(removeField(REPO_NODE_REVISION_LABEL_INCOMPLETE), bigFiles);
-	case UploadStatus::UNKNOWN:
-		repoError << "Cannot set the status flag to Unknown state!";
-		return *this;
-	default:
-		RepoBSON bsonChange = BSON(REPO_NODE_REVISION_LABEL_INCOMPLETE << (int)status);
-		return cloneAndAddFields(&bsonChange, false);
-	}
-}
-
-std::string RevisionNode::getAuthor() const
-{
-	return getStringField(REPO_NODE_REVISION_LABEL_AUTHOR);
-}
-
-std::string RevisionNode::getMessage() const
-{
-	return getStringField(REPO_NODE_REVISION_LABEL_MESSAGE);
-}
-
-std::string RevisionNode::getTag() const
-{
-	return getStringField(REPO_NODE_REVISION_LABEL_TAG);
-}
-
-std::vector<double> RevisionNode::getCoordOffset() const
-{
-	std::vector<double> offset;
-	if (hasField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT))
-	{
-		auto offsetObj = getObjectField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT);
-		if (!offsetObj.isEmpty())
-		{
-			for (int i = 0; i < 3; ++i)
-			{
-				offset.push_back(offsetObj.getDoubleField(std::to_string(i)));
-			}
-		}
-		else
-		{
-			offset.push_back(0);
-			offset.push_back(0);
-			offset.push_back(0);
-		}
-	}
-	else
-	{
-		offset.push_back(0);
-		offset.push_back(0);
-		offset.push_back(0);
-	}
-
-	return offset;
-}
-
-std::vector<std::string> RevisionNode::getOrgFiles() const
-{
-	std::vector<std::string> fileList;
-	if (hasField(REPO_NODE_REVISION_LABEL_REF_FILE))
-	{
-		RepoBSON arraybson = getObjectField(REPO_NODE_REVISION_LABEL_REF_FILE);
-
-		std::set<std::string> fields = arraybson.getFieldNames();
-
-		for (const auto &field : fields)
-		{
-			fileList.push_back(arraybson.getStringField(field));
-		}
-	}
-
-	return fileList;
-}
-
 RevisionNode::UploadStatus RevisionNode::getUploadStatus() const
 {
 	UploadStatus status = UploadStatus::COMPLETE;
@@ -124,6 +45,11 @@ RevisionNode::UploadStatus RevisionNode::getUploadStatus() const
 	}
 
 	return status;
+}
+
+std::string RevisionNode::getAuthor() const
+{
+	return getStringField(REPO_NODE_REVISION_LABEL_AUTHOR);
 }
 
 int64_t RevisionNode::getTimestampInt64() const

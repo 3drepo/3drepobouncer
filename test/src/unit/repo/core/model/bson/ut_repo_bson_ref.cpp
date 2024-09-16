@@ -34,15 +34,52 @@ TEST(RepoRefTest, ConvertTypeAsString)
 
 TEST(RepoRefTest, GeneralTest)
 {
-	std::string fileName = "FileNameTest";
+	std::string id = "FileNameTest";
 	auto type = RepoRef::RefType::GRIDFS;
 	std::string link = "linkOfThisFile";
 	uint32_t size = std::rand();
-	auto ref = RepoBSONFactory::makeRepoRef(fileName, type, link, size);
+	auto ref = RepoBSONFactory::makeRepoRef(id, type, link, size);
 
 	EXPECT_FALSE(ref.isEmpty());
-	EXPECT_EQ(fileName, ref.getFileName());
+	EXPECT_EQ(id, ref.getID());
 	EXPECT_EQ(type, ref.getType());
 	EXPECT_EQ(link, ref.getRefLink());
 	EXPECT_EQ(size, ref.getIntField(REPO_REF_LABEL_SIZE));
+}
+
+TEST(RepoRefTest, UUIDTest)
+{
+	// Ref nodes can be created outside of makeRepoRef, where the _id
+	// field is a UUID, so make sure we can handle these too.
+
+	repo::core::model::RepoBSONBuilder builder;
+	auto id = repo::lib::RepoUUID::createUUID();
+	auto type = RepoRef::RefType::GRIDFS;
+	std::string link = "linkOfThisFile";
+	uint32_t size = std::rand();
+
+	builder.append(REPO_LABEL_ID, id);
+	builder.append(REPO_REF_LABEL_TYPE, RepoRef::convertTypeAsString(type));
+	builder.append(REPO_REF_LABEL_LINK, link);
+	builder.append(REPO_REF_LABEL_SIZE, (unsigned int)size);
+
+	auto ref = RepoRef(builder.obj());
+
+	EXPECT_FALSE(ref.isEmpty());
+	EXPECT_EQ(id.toString(), ref.getID());
+	EXPECT_EQ(type, ref.getType());
+	EXPECT_EQ(link, ref.getRefLink());
+	EXPECT_EQ(size, ref.getIntField(REPO_REF_LABEL_SIZE));
+}
+
+TEST(RepoRefTest, InvalidIdType)
+{
+	repo::core::model::RepoBSONBuilder builder;
+	builder.append(REPO_LABEL_ID, 0); // An integer is not a valid Id type
+	auto ref = RepoRef(builder.obj());
+
+	EXPECT_THROW({
+		ref.getID();
+	},
+	std::invalid_argument);
 }

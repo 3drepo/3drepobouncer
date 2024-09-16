@@ -27,6 +27,7 @@
 #include <repo/repo_controller.h>
 #include "../unit/repo_test_database_info.h"
 #include "../unit/repo_test_utils.h"
+#include <repo/core/model/bson/repo_bson_builder.h>
 #include <unordered_set>
 
 static std::string getSuccessFilePath()
@@ -35,12 +36,12 @@ static std::string getSuccessFilePath()
 }
 
 static std::string produceCleanArgs(
-	const std::string &database,
-	const std::string &project,
-	const std::string &dbAdd = REPO_GTEST_DBADDRESS,
-	const int         &port = REPO_GTEST_DBPORT,
-	const std::string &username = REPO_GTEST_DBUSER,
-	const std::string &password = REPO_GTEST_DBPW
+	const std::string& database,
+	const std::string& project,
+	const std::string& dbAdd = REPO_GTEST_DBADDRESS,
+	const int& port = REPO_GTEST_DBPORT,
+	const std::string& username = REPO_GTEST_DBUSER,
+	const std::string& password = REPO_GTEST_DBPW
 )
 {
 	return  getClientExePath() + " "
@@ -51,9 +52,9 @@ static std::string produceCleanArgs(
 }
 
 static std::string produceGenStashArgs(
-	const std::string &database,
-	const std::string &project,
-	const std::string &type
+	const std::string& database,
+	const std::string& project,
+	const std::string& type
 )
 {
 	return  getClientExePath() + " "
@@ -65,9 +66,9 @@ static std::string produceGenStashArgs(
 }
 
 static std::string produceGetFileArgs(
-	const std::string &file,
-	const std::string &database,
-	const std::string &project
+	const std::string& file,
+	const std::string& database,
+	const std::string& project
 )
 {
 	return  getClientExePath() + " "
@@ -79,8 +80,8 @@ static std::string produceGetFileArgs(
 }
 
 static std::string produceCreateFedArgs(
-	const std::string &file,
-	const std::string &owner = std::string()
+	const std::string& file,
+	const std::string& owner = std::string()
 )
 {
 	return  getClientExePath() + " "
@@ -91,7 +92,7 @@ static std::string produceCreateFedArgs(
 }
 
 static std::string produceUploadFileArgs(
-	const std::string &filePath
+	const std::string& filePath
 ) {
 	return  getClientExePath() + " "
 		+ getConnConfig()
@@ -99,11 +100,21 @@ static std::string produceUploadFileArgs(
 		+ filePath + "\"";
 }
 
+static std::string produceProcessDrawingArgs(
+	const std::string& filePath
+)
+{
+	return  getClientExePath() + " "
+		+ getConnConfig()
+		+ " processDrawing \""
+		+ filePath + "\"";
+}
+
 static std::string produceUploadArgs(
-	const std::string &database,
-	const std::string &project,
-	const std::string &filePath,
-	const std::string &configPath = getConnConfig())
+	const std::string& database,
+	const std::string& project,
+	const std::string& filePath,
+	const std::string& configPath = getConnConfig())
 {
 	return  getClientExePath()
 		+ " " + configPath
@@ -113,7 +124,7 @@ static std::string produceUploadArgs(
 }
 
 static int runProcess(
-	const std::string &cmd)
+	const std::string& cmd)
 {
 	int status = system(cmd.c_str());
 #ifndef _WIN32
@@ -347,7 +358,7 @@ TEST(RepoClientTest, UploadTestDWG)
 	EXPECT_EQ((int)REPOERR_OK, runProcess(dwgUploadNestedBlocks));
 	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "\"[423]\"", { "rootNode->0->Block Text->Block Text" }));
 	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "\"[50D]\"", { "rootNode->0->My Block->My Block", "rootNode->Layer1->My Block->My Block" }));
-	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "\"[4FA]\"", { "rootNode->0->My Outer Block->My Outer Block", "rootNode->Layer1->My Outer Block->My Outer Block", "rootNode->Layer3->My Outer Block->My Outer Block"  }));
+	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "\"[4FA]\"", { "rootNode->0->My Outer Block->My Outer Block", "rootNode->Layer1->My Outer Block->My Outer Block", "rootNode->Layer3->My Outer Block->My Outer Block" }));
 	EXPECT_FALSE(projectHasGeometryWithMetadata(db, "dwgTestNestedBlocks", "Entity Handle::Value", "\"[534]\"")); // Even though this handle exists, it should be compressed in the tree.
 
 	// This snippet checks if encrypted files are handled correctly.
@@ -634,9 +645,9 @@ TEST(RepoClientTest, GetFileTest)
 
 TEST(RepoClientTest, GenStashTest)
 {
-	repo::RepoController *controller = new repo::RepoController();
+	repo::RepoController* controller = new repo::RepoController();
 	std::string errMsg;
-	repo::RepoController::RepoToken *token = initController(controller);
+	repo::RepoController::RepoToken* token = initController(controller);
 	repo::lib::RepoUUID stashRoot;
 
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadArgs("genStashTest", "cube", getDataPath(simpleModel))));
@@ -655,7 +666,6 @@ TEST(RepoClientTest, GenStashTest)
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("genStashTest", "cube", "src")));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("genStashTest", "cube", "tree")));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("genStashTest", "cube", "gltf")));
-
 
 	std::unordered_set<std::string> collections;
 	for (auto& name : handler->getCollections("genStashTest"))
@@ -685,4 +695,94 @@ TEST(RepoClientTest, GenStashTest)
 	EXPECT_EQ(documents.size(), 1);
 
 	delete controller;
+}
+
+TEST(RepoClientTest, ProcessDrawing)
+{
+	// Create a drawing revision to test against. This requires both the drawing
+	// itself, and a ref node.
+
+	auto handler = getHandler();
+
+	repo::core::model::RepoBSONBuilder revisionBuilder;
+
+	auto db = "testDrawing"; // This must match the database in processDrawingConfig
+	auto rid = repo::lib::RepoUUID("cad0c3fe-dd1d-4844-ad04-cfb75df26a63"); // This must match the revId in processDrawingConfig
+	auto model = repo::lib::RepoUUID::createUUID().toString();
+	auto project = repo::lib::RepoUUID::createUUID();
+	auto rFile = repo::lib::RepoUUID::createUUID();
+	std::vector< repo::lib::RepoUUID> rFiles;
+	rFiles.push_back(rFile);
+	revisionBuilder.append("_id", rid);
+	revisionBuilder.append("project", project);
+	revisionBuilder.append("model", model);
+	revisionBuilder.append("format", ".dwg");
+	revisionBuilder.appendArray("rFile", rFiles);
+
+	// Make sure that the file manager uses the same config as produceProcessDrawingArgs
+	auto manager = repo::core::handler::fileservice::FileManager::instantiateManager(repo::lib::RepoConfig::fromFile(getConnConfig()), handler);
+
+	// Get a DWG as a blob
+	auto path = getDataPath(dwgDrawing);
+	std::ifstream drawingFile{ path, std::ios::binary };
+	std::vector<uint8_t> bin(std::istreambuf_iterator<char>{drawingFile}, {});
+
+	repo::core::model::RepoBSONBuilder metadata;
+	metadata.append("name", "test.dwg");
+
+	manager->uploadFileAndCommit(
+		db,
+		REPO_COLLECTION_DRAWINGS,
+		rFile, // Take care that drawing source ref node Ids are always UUIDs
+		bin,
+		metadata.obj()
+	);
+
+	std::string err;
+	handler->upsertDocument(
+		db,
+		REPO_COLLECTION_DRAWINGS,
+		revisionBuilder.obj(),
+		true,
+		err
+	);
+
+	EXPECT_EQ(err.size(), 0);
+
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceProcessDrawingArgs(getDataPath(processDrawingConfig))));
+
+	// The revision should now be updated.
+
+	auto revision = handler->findOneByUniqueID(
+		db,
+		REPO_COLLECTION_DRAWINGS,
+		rid
+	);
+
+	// The image should be non-null, and point to a file ref
+
+	EXPECT_TRUE(revision.hasField("image"));
+
+	// The other properties should be the same
+
+	EXPECT_EQ(revision.getUUIDField("_id"), rid);
+	EXPECT_EQ(revision.getUUIDField("project"), project);
+	EXPECT_EQ(revision.getStringField("model"), model);
+
+	// Make sure to use the file manager method because ref nodes are keyed by string not uuid
+
+	auto imageRef = manager->getFileRef(
+		db,
+		REPO_COLLECTION_DRAWINGS,
+		revision.getUUIDField("image")
+	);
+
+	// Check that the document is correctly populated
+
+	EXPECT_EQ(imageRef.getStringField("type"), "fs");
+	EXPECT_EQ(imageRef.getStringField("name"), "test.svg"); // The image should have its file extension changed
+	EXPECT_EQ(imageRef.getStringField("mimeType"), "image/svg+xml");
+	EXPECT_EQ(imageRef.getUUIDField("project"), project);
+	EXPECT_EQ(imageRef.getStringField("model"), model);
+	EXPECT_EQ(imageRef.getUUIDField("rev_id"), rid);
 }

@@ -63,26 +63,27 @@ const shouldMonitor = async () => enabled && permittedOS.includes(await currentO
 
 ProcessMonitor.startMonitor = async (processInfo) => {
 	if (!(await shouldMonitor())) return;
-	if (dataByRid[processInfo.Rid]) delete dataByRid[processInfo.Rid];
 	const currentMemUsage = await getCurrentMemUsage();
 	dataByRid[processInfo.Rid] = {
 		startMemory: currentMemUsage,
 		maxMemory: currentMemUsage,
 		startTime: Date.now(),
-		processInfo };
+		processInfo,
+		prevRecord: dataByRid[processInfo.Rid],
+	};
 	dataByRid[processInfo.Rid].timer = monitor(processInfo.Rid);
 	logger.verbose(`Monitoring enabled for revision ${processInfo.Rid} starting at ${dataByRid[processInfo.Rid].startMemory}`, logLabel);
 };
 
 ProcessMonitor.stopMonitor = async (rid, returnCode) => {
 	if (!(await shouldMonitor()) || !dataByRid[rid]) return;
-	const { processInfo, maxMemory, startMemory, startTime, timer } = dataByRid[rid];
+	const { processInfo, maxMemory, startMemory, startTime, timer, prevRecord } = dataByRid[rid];
 	clearInterval(timer);
 	const report = {
 		...processInfo,
 		ReturnCode: returnCode,
-		MaxMemory: maxMemory - startMemory,
-		ProcessTime: Date.now() - startTime,
+		MaxMemory: Math.max(maxMemory - startMemory, prevRecord?.MaxMemory ?? 0),
+		ProcessTime: (prevRecord?.ProcessTime ?? 0) + (Date.now() - startTime),
 	};
 
 	dataByRid[rid] = report;

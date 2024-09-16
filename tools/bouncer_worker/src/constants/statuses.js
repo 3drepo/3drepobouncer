@@ -16,7 +16,7 @@
  */
 
 module.exports = {
-	MODEL_PROCESSING: 'processing',
+	PROCESSING: 'processing',
 	UNITY_QUEUED: 'Queued for Unity', // Support for Unity AssetBundles has been removed but these states may still be referenced elsewhere
 	UNITY_PROCESSING: 'Generating Bundles',
 };

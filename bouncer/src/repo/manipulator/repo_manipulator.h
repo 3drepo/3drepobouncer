@@ -532,6 +532,16 @@ namespace repo {
 					const repo::manipulator::modelconvertor::ModelImportConfig &config);
 
 			/**
+			* Initialise the image of a drawing revision from its rfile
+			*/
+			void processDrawingRevision(
+				const std::string databaseAd,
+				const std::string& teamspace,
+				const lib::RepoUUID revision,
+				uint8_t& error,
+				const std::string &imagePath);
+
+			/**
 			* remove a document from the database
 			* NOTE: this should never be called for a RepoNode family
 			*       as you should never remove a node from a scene graph like this.

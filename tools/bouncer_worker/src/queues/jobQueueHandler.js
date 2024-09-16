@@ -17,7 +17,6 @@
 
 const {
 	callbackQueueSpecified,
-	jobQueueSpecified,
 	logDirExists,
 	sharedDirExists } = require('./common');
 const { ERRCODE_OK } = require('../constants/errorCodes');
@@ -60,9 +59,10 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	callback(JSON.stringify(message));
 };
 
-Handler.validateConfiguration = (label) => logDirExists(label)
-		&& jobQueueSpecified(label)
-		&& sharedDirExists(label)
-		&& callbackQueueSpecified(label);
+Handler.validateConfiguration = (label) => callbackQueueSpecified(label)
+	&& logDirExists(label)
+	&& sharedDirExists(label);
+
+Handler.prefetchCount = config.rabbitmq.task_prefetch;
 
 module.exports = Handler;

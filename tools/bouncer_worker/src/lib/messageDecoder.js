@@ -55,6 +55,22 @@ const messageDecoder = (cmd) => {
 					};
 				}
 				break;
+			case 'processDrawing':
+				{
+					// eslint-disable-next-line
+					const cmdFile = require(args[1]);
+					res = {
+						cmdParams: [configPath, ...args],
+						database: cmdFile.database,
+						model: cmdFile.project,
+						user: cmdFile.owner,
+						file: cmdFile.file,
+						format: cmdFile.format,
+						size: cmdFile.size,
+						...res,
+					};
+				}
+				break;
 			case 'genFed':
 				{
 					// eslint-disable-next-line

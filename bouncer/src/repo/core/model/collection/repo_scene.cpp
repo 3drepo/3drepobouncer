@@ -588,7 +588,7 @@ uint8_t RepoScene::commit(
 	if (success &= commitProjectSettings(handler, errMsg, userName))
 	{
 		repoInfo << "Commited project settings, commiting revision...";
-		RevisionNode *newRevNode = 0;
+		ModelRevisionNode *newRevNode = 0;
 		if (!message.empty())
 			commitMsg = message;
 
@@ -740,7 +740,7 @@ bool RepoScene::commitRevisionNode(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	repo::core::handler::fileservice::FileManager *manager,
 	std::string &errMsg,
-	RevisionNode *&newRevNode,
+	ModelRevisionNode *&newRevNode,
 	const std::string &userName,
 	const std::string &message,
 	const std::string &tag,
@@ -767,7 +767,7 @@ bool RepoScene::commitRevisionNode(
 	}
 
 	newRevNode =
-		new RevisionNode(RepoBSONFactory::makeRevisionNode(userName, branch, revId,
+		new ModelRevisionNode(RepoBSONFactory::makeRevisionNode(userName, branch, revId,
 			fileNames, parent, worldOffset, message, tag));
 	*newRevNode = newRevNode->cloneAndUpdateStatus(RevisionNode::UploadStatus::GEN_DEFAULT);
 
@@ -1217,7 +1217,7 @@ bool RepoScene::loadRevision(
 		success = false;
 	}
 	else {
-		revNode = new RevisionNode(bson);
+		revNode = new ModelRevisionNode(bson);
 		worldOffset = revNode->getCoordOffset();
 	}
 

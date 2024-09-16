@@ -335,6 +335,16 @@ RepoController::loadSceneFromFile(
 	return impl->loadSceneFromFile(filePath, err, config);
 }
 
+void RepoController::processDrawingRevision(
+	const RepoController::RepoToken* token,
+	const std::string& teamspace,
+	const repo::lib::RepoUUID revision,
+	uint8_t& err,
+	const std::string &imagePath)
+{
+	return impl->processDrawingRevision(token, teamspace, revision, err, imagePath);
+}
+
 bool RepoController::saveOriginalFiles(
 	const RepoController::RepoToken    *token,
 	const repo::core::model::RepoScene *scene,

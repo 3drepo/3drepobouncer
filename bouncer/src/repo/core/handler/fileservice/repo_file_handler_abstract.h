@@ -40,25 +40,35 @@ namespace repo {
 					* Delete file.
 					*/
 					virtual bool deleteFile(
-						const std::string          &database,
-						const std::string          &collection,
+						const std::string &database,
+						const std::string &collection,
 						const std::string &fileName) = 0;
 
 					/**
 					* Get file.
 					*/
 					virtual std::vector<uint8_t> getFile(
-						const std::string          &database,
-						const std::string          &collection,
+						const std::string &database,
+						const std::string &collection,
 						const std::string &fileName) = 0;
 
 					/**
 					* Get file as stream.
 					*/
 					virtual std::ifstream getFileStream(
-						const std::string          &database,
-						const std::string          &collection,
+						const std::string &database,
+						const std::string &collection,
 						const std::string &fileName) {
+						throw repo::lib::RepoException("This function is currently not supported for ref type: " + std::to_string((int)getType()));
+					};
+
+					/**
+					* Gets the link as a fully qualified filename that can be
+					* passed directly into fopen or similar functions.
+					* Currently only supported by FSFileHandler.
+					*/
+					virtual std::string getFilePath(
+						const std::string& link) {
 						throw repo::lib::RepoException("This function is currently not supported for ref type: " + std::to_string((int)getType()));
 					};
 
@@ -66,9 +76,9 @@ namespace repo {
 					* Upload file.
 					*/
 					virtual std::string uploadFile(
-						const std::string          &database,
-						const std::string          &collection,
-						const std::string          &fileName,
+						const std::string &database,
+						const std::string &collection,
+						const std::string &fileName,
 						const std::vector<uint8_t> &bin
 					) = 0;
 

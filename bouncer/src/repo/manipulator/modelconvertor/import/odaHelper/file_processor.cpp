@@ -29,7 +29,16 @@ using namespace repo::manipulator::modelconvertor::odaHelper;
 FileProcessor::FileProcessor(const std::string &inputFile, GeometryCollector *geoCollector, const ModelImportConfig& config)
 	: file(inputFile),
 	collector(geoCollector),
-	importConfig(config)
+	importConfig(config),
+	drawingCollector(nullptr)
+{
+}
+
+FileProcessor::FileProcessor(const std::string& inputFile, repo::manipulator::modelutility::DrawingImageInfo* collector)
+	: file(inputFile),
+	collector(nullptr),
+	importConfig({}),
+	drawingCollector(collector)
 {
 }
 

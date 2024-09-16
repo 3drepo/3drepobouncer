@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2020 3D Repo Ltd
+ * Copyright (C) 2024 3D Repo Ltd
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,13 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-const fs = require('fs');
+const Path = require('path');
 const {
 	callbackQueueSpecified,
 	logDirExists,
 	sharedDirExists } = require('./common');
 const { config } = require('../lib/config');
 const { runBouncerCommand } = require('../tasks/bouncerClient');
+const { generateSVG } = require('../tasks/imageProcessing');
 const { ERRCODE_OK, ERRCODE_BOUNCER_CRASH, ERRCODE_REPO_LICENCE_INVALID } = require('../constants/errorCodes');
 const { PROCESSING } = require('../constants/statuses');
 const { messageDecoder } = require('../lib/messageDecoder');
@@ -30,11 +31,26 @@ const processMonitor = require('../lib/processMonitor');
 const Utils = require('../lib/utils');
 
 const Handler = {};
-const logLabel = { label: 'MODELQ' };
+const logLabel = { label: 'DRAWINGQ' };
+
+const generateTaskProfile = (user, model, database, rid, format, size) => ({
+	...Utils.gatherProcessInformation(
+		user,
+		model,
+		database,
+		logLabel.label, // queue
+		config.repoLicense,
+		rid,
+	),
+	Revision: rid,
+	FileFormat: format,
+	FileSize: size,
+});
 
 Handler.onMessageReceived = async (cmd, rid, callback) => {
-	const logDir = `${config.logging.taskLogDir}/${rid.toString()}/`;
-	const { errorCode, database, model, user, cmdParams, file } = messageDecoder(cmd);
+	const ridString = rid.toString();
+	const logDir = Path.join(config.logging.taskLogDir, ridString);
+	const { errorCode, database, model, user, cmdParams, format, size, file } = messageDecoder(cmd);
 
 	if (errorCode) {
 		callback(JSON.stringify({ value: errorCode }));
@@ -57,24 +73,16 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		user,
 	};
 
-	const ridString = rid.toString();
-
 	try {
-		const processInformation = Utils.gatherProcessInformation(
-			user,
-			model,
-			database,
-			logLabel.label, // queue
-			config.repoLicense,
-			ridString,
-		);
+		const procInfo = generateTaskProfile(user, model, database, ridString, format, size);
 
-		// Append process information with queue specific properties
-		const { size } = fs.statSync(file);
-		processInformation.FileType = file.split('.').pop().toString(); // filetype
-		processInformation.FileSize = size;
+		if (format === '.pdf') {
+			const svgPath = Path.join(logDir, `${ridString}.svg`);
+			await generateSVG(file, svgPath, procInfo);
+			cmdParams.push(svgPath);
+		}
 
-		returnMessage.value = await runBouncerCommand(logDir, cmdParams, processInformation);
+		returnMessage.value = await runBouncerCommand(logDir, cmdParams, procInfo);
 		await processMonitor.sendReport(ridString);
 
 		callback(JSON.stringify(returnMessage));
@@ -86,7 +94,7 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 				await Utils.sleep(config.rabbitmq.maxWaitTimeMS);
 				throw err;
 			default:
-				logger.error(`Import model error: ${err.message || err}`, logLabel);
+				logger.error(`Import drawing error: ${err.message || err}`, logLabel);
 				await processMonitor.sendReport(ridString);
 				returnMessage.value = err || ERRCODE_BOUNCER_CRASH;
 				callback(JSON.stringify(returnMessage));
@@ -98,6 +106,6 @@ Handler.validateConfiguration = (label) => callbackQueueSpecified(label)
 	&& logDirExists(label)
 	&& sharedDirExists(label);
 
-Handler.prefetchCount = config.rabbitmq.model_prefetch;
+Handler.prefetchCount = config.rabbitmq.drawing_prefetch;
 
 module.exports = Handler;
