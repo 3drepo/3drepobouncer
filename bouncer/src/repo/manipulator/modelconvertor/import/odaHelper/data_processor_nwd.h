@@ -46,7 +46,7 @@ namespace repo {
 
 					void process(OdNwDatabasePtr pNwDb);
 					
-					static bool TryConvertMetadataProperty(std::string key, OdNwDataPropertyPtr& metaProperty, repo::lib::RepoVariant& v);
+					static bool tryConvertMetadataProperty(std::string key, OdNwDataPropertyPtr& metaProperty, repo::lib::RepoVariant& v);
 
 				private:
 					GeometryCollector* collector;

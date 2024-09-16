@@ -87,7 +87,7 @@ namespace repo {
 				* @param the repo variant passed as reference
 				* @return the success of the operation
 				*/
-				static bool TryConvertMetadataEntry(aiMetadataEntry& assimpMetaEntry, repo::lib::RepoVariant& v);
+				static bool tryConvertMetadataEntry(aiMetadataEntry& assimpMetaEntry, repo::lib::RepoVariant& v);
 
 			private:
 

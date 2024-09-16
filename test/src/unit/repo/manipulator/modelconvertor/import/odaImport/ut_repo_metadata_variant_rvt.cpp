@@ -80,7 +80,7 @@ TEST(RepoMetaVariantConverterRevitTest, EmptyTest) {
 
 	// Convert
 	RepoVariant v;
-	bool success = DataProcessorRvt::TryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
+	bool success = DataProcessorRvt::tryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
 
 	// Check result
 	EXPECT_FALSE(success);
@@ -99,7 +99,7 @@ TEST(RepoMetaVariantConverterRevitTest, StringTest) {
 
 	// Convert
 	RepoVariant v;
-	bool success = DataProcessorRvt::TryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
+	bool success = DataProcessorRvt::tryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
 
 	// Check result
 	EXPECT_TRUE(success);
@@ -119,7 +119,7 @@ TEST(RepoMetaVariantConverterRevitTest, BoolTest) {
 
 	// Convert
 	RepoVariant v;
-	bool success = DataProcessorRvt::TryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
+	bool success = DataProcessorRvt::tryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
 
 	// Check result
 	EXPECT_TRUE(success);
@@ -139,7 +139,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int8Test) {
 
 	// Convert
 	RepoVariant v;
-	bool success = DataProcessorRvt::TryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
+	bool success = DataProcessorRvt::tryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
 
 	// Check result
 	EXPECT_TRUE(success);
@@ -159,7 +159,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int16Test) {
 
 	// Convert
 	RepoVariant v;
-	bool success = DataProcessorRvt::TryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
+	bool success = DataProcessorRvt::tryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
 
 	// Check result
 	EXPECT_TRUE(success);
@@ -189,7 +189,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int32AsBoolTest) {
 
 	// Convert
 	RepoVariant v;
-	bool success = DataProcessorRvt::TryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
+	bool success = DataProcessorRvt::tryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
 
 	// Check result
 	EXPECT_TRUE(success);
@@ -221,7 +221,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int32asIntTest) {
 
 	// Convert
 	RepoVariant v;
-	bool success = DataProcessorRvt::TryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
+	bool success = DataProcessorRvt::tryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
 
 	// Check result
 	EXPECT_TRUE(success);
@@ -244,7 +244,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int64Test) {
 
 	// Convert
 	RepoVariant v;
-	bool success = DataProcessorRvt::TryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
+	bool success = DataProcessorRvt::tryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
 
 	// Check result
 	EXPECT_TRUE(success);
@@ -264,7 +264,7 @@ TEST(RepoMetaVariantConverterRevitTest, DoubleTest) {
 
 	// Convert
 	RepoVariant v;
-	bool success = DataProcessorRvt::TryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
+	bool success = DataProcessorRvt::tryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
 
 	// Check result
 	EXPECT_TRUE(success);
@@ -284,7 +284,7 @@ TEST(RepoMetaVariantConverterRevitTest, AnsiStringTest) {
 
 	// Convert
 	RepoVariant v;
-	bool success = DataProcessorRvt::TryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
+	bool success = DataProcessorRvt::tryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
 
 	// Check result
 	EXPECT_TRUE(success);
@@ -326,7 +326,7 @@ TEST(RepoMetaVariantConverterRevitTest, StubPtrDataTestNoParamNoName) {
 
 	// Convert
 	RepoVariant v;
-	bool success = DataProcessorRvt::TryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
+	bool success = DataProcessorRvt::tryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
 
 	// Check result
 	EXPECT_TRUE(success);
@@ -373,7 +373,7 @@ TEST(RepoMetaVariantConverterRevitTest, StubPtrDataTestParamSetRegularHdl) {
 
 	// Convert
 	RepoVariant v;
-	bool success = DataProcessorRvt::TryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
+	bool success = DataProcessorRvt::tryConvertMetadataEntry(variant, labelUtils, paramDef, param, v);
 
 	// Check result
 	EXPECT_TRUE(success);

@@ -79,7 +79,7 @@ namespace repo {
 
 					void init(GeometryCollector* geoColl, OdBmDatabasePtr database);
 
-					static bool TryConvertMetadataEntry(
+					static bool tryConvertMetadataEntry(
 						OdTfVariant& metaEntry,
 						OdBmLabelUtilsPEPtr labelUtils,
 						OdBmParamDefPtr paramDef,

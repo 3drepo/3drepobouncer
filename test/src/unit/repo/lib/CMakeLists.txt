@@ -6,9 +6,9 @@
 
 set(TEST_SOURCES
 	${TEST_SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_MetadataVariant.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_config.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_matrix.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_metadata_variant.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_uuid.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_vector2d.cpp
 	CACHE STRING "TEST_SOURCES" FORCE)

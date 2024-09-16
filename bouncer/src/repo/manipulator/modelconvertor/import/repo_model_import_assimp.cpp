@@ -37,7 +37,7 @@
 using namespace repo::manipulator::modelconvertor;
 
 
-bool AssimpModelImport::TryConvertMetadataEntry(aiMetadataEntry& assimpMetaEntry, repo::lib::RepoVariant& v){
+bool AssimpModelImport::tryConvertMetadataEntry(aiMetadataEntry& assimpMetaEntry, repo::lib::RepoVariant& v){
 	// Dissect the entry object
 	auto dataType = assimpMetaEntry.mType;
 	switch (dataType)
@@ -636,7 +636,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 
 				repo::lib::RepoVariant v;
 
-				if (TryConvertMetadataEntry(currentValue, v)) {
+				if (tryConvertMetadataEntry(currentValue, v)) {
 					metaEntries[key] = v;
 				}
 				else {

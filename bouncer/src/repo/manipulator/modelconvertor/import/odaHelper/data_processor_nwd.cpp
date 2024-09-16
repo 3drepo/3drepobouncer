@@ -181,7 +181,7 @@ void setMetadataValue(const std::string& category, const OdString& key, const Od
 	setMetadataValueVariant(category, keyString, v, metadata);
 }
 
-bool DataProcessorNwd::TryConvertMetadataProperty(std::string key, OdNwDataPropertyPtr& metaProperty, repo::lib::RepoVariant& v)
+bool DataProcessorNwd::tryConvertMetadataProperty(std::string key, OdNwDataPropertyPtr& metaProperty, repo::lib::RepoVariant& v)
 {
 	auto dataType = metaProperty->getDataType();
 	switch (dataType)
@@ -285,7 +285,7 @@ bool DataProcessorNwd::TryConvertMetadataProperty(std::string key, OdNwDataPrope
 		}
 		default: {
 			// All other cases can not be handled by this converter.
-			repoWarning << "Unknown Metadata data type encountered in DataProcessorNwd::TryConvertMetadataProperty. Type: " + dataType;
+			repoWarning << "Unknown Metadata data type encountered in DataProcessorNwd::tryConvertMetadataProperty. Type: " + dataType;
 			return false;
 		}
 	}
@@ -450,7 +450,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 				auto key = convertToStdString(prop->getDisplayName());
 
 				repo::lib::RepoVariant v;
-				if (DataProcessorNwd:: TryConvertMetadataProperty(key, prop, v))
+				if (DataProcessorNwd:: tryConvertMetadataProperty(key, prop, v))
 					setMetadataValueVariant(category, key, v, metadata);				
 			}
 		}

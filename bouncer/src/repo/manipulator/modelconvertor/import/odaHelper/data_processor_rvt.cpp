@@ -42,7 +42,7 @@ const std::set<std::string> IGNORE_PARAMS = {
 	"RENDER APPEARANCE PROPERTIES"
 };
 
-bool DataProcessorRvt::TryConvertMetadataEntry(OdTfVariant& metaEntry, OdBmLabelUtilsPEPtr labelUtils, OdBmParamDefPtr paramDef, OdBm::BuiltInParameter::Enum param, repo::lib::RepoVariant& v)
+bool DataProcessorRvt::tryConvertMetadataEntry(OdTfVariant& metaEntry, OdBmLabelUtilsPEPtr labelUtils, OdBmParamDefPtr paramDef, OdBm::BuiltInParameter::Enum param, repo::lib::RepoVariant& v)
 {
 	auto dataType = metaEntry.type();
 	switch (dataType) {
@@ -447,7 +447,7 @@ void DataProcessorRvt::processParameter(
 			repo::lib::RepoVariant v;
 
 
-			if (TryConvertMetadataEntry(value, labelUtils, pDescParam, buildInEnum, v))
+			if (tryConvertMetadataEntry(value, labelUtils, pDescParam, buildInEnum, v))
 			{
 				if (metadata.find(metaKey) != metadata.end() && !boost::apply_visitor(repo::lib::DuplicationVisitor(), metadata[metaKey], v)) {
 										
