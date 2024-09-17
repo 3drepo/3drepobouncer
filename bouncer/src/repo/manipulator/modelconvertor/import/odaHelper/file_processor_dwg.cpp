@@ -41,8 +41,6 @@
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-#define FLOOR_HEIGHT_M 2.4f
-
 class VectoriseDeviceDwg : public OdGsBaseVectorizeDevice
 {
 protected:

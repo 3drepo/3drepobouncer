@@ -170,7 +170,6 @@ namespace repo {
 				* @param revisionId uuid of the revision
 				* @param horizontal3d two reference points in the 3d space
 				* @param horizontal2d two reference points in the 2d space
-				* @param verticalRange two values marking the vertical range
 				* @param units the units used for the values.
 				* @return returns a RepoCalibration
 				*/
