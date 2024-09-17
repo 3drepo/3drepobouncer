@@ -339,9 +339,10 @@ void RepoController::processDrawingRevision(
 	const RepoController::RepoToken* token,
 	const std::string& teamspace,
 	const repo::lib::RepoUUID revision,
-	uint8_t& err)
+	uint8_t& err,
+	const std::string &imagePath)
 {
-	return impl->processDrawingRevision(token, teamspace, revision, err);
+	return impl->processDrawingRevision(token, teamspace, revision, err, imagePath);
 }
 
 bool RepoController::saveOriginalFiles(

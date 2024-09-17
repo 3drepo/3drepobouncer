@@ -861,10 +861,11 @@ RepoController::_RepoControllerImpl::processDrawingRevision(
 	const RepoController::RepoToken* token,
 	const std::string& teamspace,
 	const repo::lib::RepoUUID revision,
-	uint8_t& err)
+	uint8_t& err,
+	const std::string &imagePath)
 {
 	manipulator::RepoManipulator* worker = workerPool.pop();
-	worker->processDrawingRevision(token->databaseAd, teamspace, revision, err);
+	worker->processDrawingRevision(token->databaseAd, teamspace, revision, err, imagePath);
 	workerPool.push(worker);
 }
 

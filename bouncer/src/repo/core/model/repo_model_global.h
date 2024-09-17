@@ -53,7 +53,7 @@
 #define REPO_LABEL_DATA             "data"
 #define REPO_LABEL_DATABASE         "database"
 #define REPO_LABEL_HEIGHT           "height"
-#define REPO_LABEL_MEDIA_TYPE       "mime"              //!< Media Type (mime type)
+#define REPO_LABEL_MEDIA_TYPE       "mimeType"              //!< Media Type (mime type)
 #define REPO_LABEL_PROJECT          "project"
 #define REPO_LABEL_MODEL            "model"
 #define REPO_LABEL_ROLE             "role"

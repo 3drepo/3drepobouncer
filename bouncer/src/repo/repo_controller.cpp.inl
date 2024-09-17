@@ -588,12 +588,12 @@ public:
 		uint8_t           &err,
 		const repo::manipulator::modelconvertor::ModelImportConfig &config);
 
-
 	void processDrawingRevision(
 		const RepoController::RepoToken* token,
 		const std::string& teamspace,
 		const repo::lib::RepoUUID revision,
-		uint8_t& err);
+		uint8_t& err,
+		const std::string &imagePath);
 
 	/**
 	* Load metadata from a file

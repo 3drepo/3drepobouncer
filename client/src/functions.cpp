@@ -53,12 +53,12 @@ std::string helpInfo()
 	return ss.str();
 }
 
-bool isSpecialCommand(const std::string &cmd)
+bool isSpecialCommand(const std::string& cmd)
 {
 	return cmd == cmdVersion || cmd == cmdVersion2;
 }
 
-int32_t knownValid(const std::string &cmd)
+int32_t knownValid(const std::string& cmd)
 {
 	if (cmd == cmdImportFile)
 		return 2;
@@ -80,8 +80,8 @@ int32_t knownValid(const std::string &cmd)
 int32_t performOperation(
 
 	std::shared_ptr<repo::RepoController> controller,
-	const repo::RepoController::RepoToken      *token,
-	const repo_op_t            &command
+	const repo::RepoController::RepoToken* token,
+	const repo_op_t& command
 )
 {
 	int32_t errCode = REPOERR_UNKNOWN_CMD;
@@ -91,7 +91,7 @@ int32_t performOperation(
 		try {
 			errCode = importFileAndCommit(controller, token, command);
 		}
-		catch (const std::exception &e)
+		catch (const std::exception& e)
 		{
 			repoLogError("Failed to import and commit file: " + std::string(e.what()));
 			errCode = REPOERR_UNKNOWN_ERR;
@@ -113,7 +113,7 @@ int32_t performOperation(
 		try {
 			errCode = generateStash(controller, token, command);
 		}
-		catch (const std::exception &e)
+		catch (const std::exception& e)
 		{
 			repoLogError("Failed to generate optimised stash: " + std::string(e.what()));
 			errCode = REPOERR_UNKNOWN_ERR;
@@ -124,7 +124,7 @@ int32_t performOperation(
 		try {
 			errCode = generateFederation(controller, token, command);
 		}
-		catch (const std::exception &e)
+		catch (const std::exception& e)
 		{
 			repoLogError("Failed to generate federation: " + std::string(e.what()));
 			errCode = REPOERR_UNKNOWN_ERR;
@@ -135,7 +135,7 @@ int32_t performOperation(
 		try {
 			errCode = getFileFromProject(controller, token, command);
 		}
-		catch (const std::exception &e)
+		catch (const std::exception& e)
 		{
 			repoLogError("Failed to retrieve file from project: " + std::string(e.what()));
 			errCode = REPOERR_UNKNOWN_ERR;
@@ -164,8 +164,8 @@ int32_t performOperation(
 
 int32_t generateFederation(
 	std::shared_ptr<repo::RepoController> controller,
-	const repo::RepoController::RepoToken      *token,
-	const repo_op_t            &command
+	const repo::RepoController::RepoToken* token,
+	const repo_op_t& command
 )
 {
 	/*
@@ -208,7 +208,7 @@ int32_t generateFederation(
 		}
 		else
 		{
-			for (const auto &subPro : jsonTree.get_child("subProjects"))
+			for (const auto& subPro : jsonTree.get_child("subProjects"))
 			{
 				// ===== Get project info =====
 				const std::string spDatabase = subPro.second.get<std::string>("database", database);
@@ -227,7 +227,7 @@ int32_t generateFederation(
 				int x = 0;
 				if (subPro.second.count("transformation"))
 				{
-					for (const auto &value : subPro.second.get_child("transformation"))
+					for (const auto& value : subPro.second.get_child("transformation"))
 					{
 						if (!(matrix.size() % 4))
 						{
@@ -267,7 +267,7 @@ int32_t generateFederation(
 			}
 		}
 	}
-	catch (std::exception &e)
+	catch (std::exception& e)
 	{
 		success = false;
 		repoLogError("Failed to generate Federation: " + std::string(e.what()));
@@ -278,12 +278,12 @@ int32_t generateFederation(
 
 bool _generateStash(
 	std::shared_ptr<repo::RepoController> controller,
-	const repo::RepoController::RepoToken      *token,
-	const std::string            &type,
-	const std::string            &dbName,
-	const std::string            &project,
+	const repo::RepoController::RepoToken* token,
+	const std::string& type,
+	const std::string& dbName,
+	const std::string& project,
 	const bool                   isBranch,
-	const std::string            &revID) {
+	const std::string& revID) {
 	repoLog("Generating stash of type " + type + " for " + dbName + "." + project + " rev: " + revID + (isBranch ? " (branch ID)" : ""));
 	auto scene = controller->fetchScene(token, dbName, project, revID, isBranch, false, type == "tree");
 	bool  success = false;
@@ -313,8 +313,8 @@ bool _generateStash(
 
 int32_t generateStash(
 	std::shared_ptr<repo::RepoController> controller,
-	const repo::RepoController::RepoToken      *token,
-	const repo_op_t            &command
+	const repo::RepoController::RepoToken* token,
+	const repo_op_t& command
 )
 {
 	/*
@@ -350,8 +350,8 @@ int32_t generateStash(
 	if (revToLower == "all")
 	{
 		auto revs = controller->getAllFromCollectionContinuous(token, dbName, project + ".history");
-		for (const auto &rev : revs) {
-			auto revNode = (const repo::core::model::RevisionNode) rev;
+		for (const auto& rev : revs) {
+			auto revNode = (const repo::core::model::RevisionNode)rev;
 			auto revId = revNode.getUniqueID();
 			success &= _generateStash(controller, token, type, dbName, project, false, revId.toString());
 		}
@@ -365,8 +365,8 @@ int32_t generateStash(
 
 int32_t getFileFromProject(
 	std::shared_ptr<repo::RepoController> controller,
-	const repo::RepoController::RepoToken      *token,
-	const repo_op_t            &command
+	const repo::RepoController::RepoToken* token,
+	const repo_op_t& command
 )
 {
 	/*
@@ -388,7 +388,7 @@ int32_t getFileFromProject(
 	return success ? REPOERR_OK : REPOERR_GET_FILE_FAILED;
 }
 
-repo::manipulator::modelconvertor::ModelUnits determineUnits(const std::string &units) {
+repo::manipulator::modelconvertor::ModelUnits determineUnits(const std::string& units) {
 	if (units == "m") return repo::manipulator::modelconvertor::ModelUnits::METRES;
 	if (units == "cm") return repo::manipulator::modelconvertor::ModelUnits::CENTIMETRES;
 	if (units == "mm") return repo::manipulator::modelconvertor::ModelUnits::MILLIMETRES;
@@ -400,8 +400,8 @@ repo::manipulator::modelconvertor::ModelUnits determineUnits(const std::string &
 
 int32_t importFileAndCommit(
 	std::shared_ptr<repo::RepoController> controller,
-	const repo::RepoController::RepoToken      *token,
-	const repo_op_t            &command
+	const repo::RepoController::RepoToken* token,
+	const repo_op_t& command
 )
 {
 	/*
@@ -454,7 +454,7 @@ int32_t importFileAndCommit(
 				return REPOERR_LOAD_SCENE_FAIL;
 			}
 		}
-		catch (std::exception &e)
+		catch (std::exception& e)
 		{
 			return REPOERR_LOAD_SCENE_FAIL;
 		}
@@ -536,6 +536,7 @@ int32_t processDrawing(
 	}
 
 	std::string database;
+	std::string svgPath;
 	repo::lib::RepoUUID revision;
 
 	boost::property_tree::ptree jsonTree;
@@ -557,9 +558,13 @@ int32_t processDrawing(
 		return REPOERR_LOAD_SCENE_FAIL;
 	}
 
-	repoLog("Drawing Revision: " + database + ", " + revision.toString());
+	if (command.nArgcs > 1) {
+		svgPath = command.args[1];
+	}
+	repoLog("Drawing Revision: " + database + ", " + revision.toString() + (svgPath.empty() ? "" : (", processed image file in " + svgPath)));
 
 	uint8_t err;
-	controller->processDrawingRevision(token, database, revision, err);
+
+	controller->processDrawingRevision(token, database, revision, err, svgPath);
 	return err;
 }

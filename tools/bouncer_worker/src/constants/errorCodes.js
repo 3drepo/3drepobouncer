@@ -26,5 +26,6 @@ module.exports = {
 	ERRCODE_TOY_IMPORT_FAILED: 33,
 	ERRCODE_UNITY_LICENCE_INVALID: 35, // Unity AssetBundles support has been remove but this error code may still be referenced elsewhere
 	ERRCODE_REPO_LICENCE_INVALID: 36,
+	ERRCODE_IMAGE_PROCESSING_FAILED: 38,
 	BOUNCER_SOFT_FAILS: [7, 10, 15], // failures that should go through to generate
 };
