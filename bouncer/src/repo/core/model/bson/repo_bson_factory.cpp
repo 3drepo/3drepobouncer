@@ -748,7 +748,6 @@ RepoCalibration repo::core::model::RepoBSONFactory::makeRepoCalibration(
 	const repo::lib::RepoUUID& revisionId,
 	const std::vector<repo::lib::RepoVector3D>& horizontal3d,
 	const std::vector<repo::lib::RepoVector2D>& horizontal2d,
-	const std::vector<float>& verticalRange,
 	const std::string& units)
 {
 	RepoBSONBuilder bsonBuilder;
@@ -797,12 +796,6 @@ RepoCalibration repo::core::model::RepoBSONFactory::makeRepoCalibration(
 		repoError << "Incorrect amount of horizontal 2D vectors supplied to makeRepoCalibration" << std::endl;
 	}
 	bsonBuilder.append(REPO_LABEL_HORIZONTAL, horizontalBuilder.obj());
-
-	// (Note the vertical range is optional)
-
-	if (verticalRange.size() == 2)	{
-		bsonBuilder.appendArray(REPO_LABEL_VERTICALRANGE, verticalRange);
-	}
 
 	bsonBuilder.append(REPO_LABEL_UNITS, units);
 

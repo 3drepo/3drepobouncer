@@ -153,55 +153,12 @@ void FileProcessorDwg::importDrawing(OdDbDatabasePtr pDb)
 		// between the SVG and world coordinate systems. The graphics system (Gs) view
 		// https://docs.opendesign.com/tv/gs_OdGsView.html is used to derive points
 		// that map between the WCS of the drawing and the space the SVG primitives
-		// are defined.
+		// are defined for the purpose of autocalibration.
 
 		const OdGsView* pGsView = pDeviceSvg->viewAt(0);
-		repo::manipulator::modelutility::DrawingCalibration calibration;
-
-		updateDrawingHorizontalCalibration(pGsView, calibration);
-
-		// Collect the units (we may also need these for the vertical calibration)
-
+		updateDrawingHorizontalCalibration(pGsView, drawingCollector->calibration);
 		repo::manipulator::modelconvertor::ModelUnits units = determineModelUnits(pDb->getINSUNITS());
-		calibration.units = repo::manipulator::modelconvertor::toUnitsString(units);
-
-		// Get the vertical calibration by checking the geometry extents of all
-		// entities (visual elements).
-
-		double zmin = DBL_MAX;
-		double zmax = DBL_MIN;
-
-		OdDbBlockTablePtr pTable = pDb->getBlockTableId().safeOpenObject(OdDb::kForRead);
-		OdDbBlockTableIteratorPtr blockRecordIter = pTable->newIterator();
-		for (; !blockRecordIter->done(); blockRecordIter->step()) {
-			
-			OdDbBlockTableRecordPtr record = blockRecordIter->getRecordId().safeOpenObject();
-
-			OdDbObjectIteratorPtr entityIter = record->newIterator();
-			for (; !entityIter->done(); entityIter->step()) {
-				OdDbEntityPtr entity = entityIter->entity();
-
-				OdGeExtents3d extents;
-				if (entity->drawable()->getGeomExtents(extents) == eOk) {
-					zmin = std::min(zmin, extents.minPoint().z);
-					zmax = std::max(zmax, extents.maxPoint().z);
-				}
-			}
-		}
-
-		// If the drawing is all on one plane, then just take this plane.
-		// Otherwise try and guess the range based on the default floor height.
-
-		if (zmin == zmax)
-		{
-			calibration.verticalRange = { (float)zmin, scaleFactorFromMetres(units) * FLOOR_HEIGHT_M };
-		}
-		else
-		{
-			calibration.verticalRange = { (float)zmin, (float)zmax };
-		}
-
-		drawingCollector->calibration = calibration;
+		drawingCollector->calibration.units = repo::manipulator::modelconvertor::toUnitsString(units);
 
 		// Render the SVG
 

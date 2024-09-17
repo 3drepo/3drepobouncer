@@ -81,7 +81,6 @@ uint8_t DrawingManager::commitImage(
 		revId,
 		calibration.horizontalCalibration3d,
 		calibration.horizontalCalibration2d,
-		calibration.verticalRange,
 		calibration.units
 	);
 

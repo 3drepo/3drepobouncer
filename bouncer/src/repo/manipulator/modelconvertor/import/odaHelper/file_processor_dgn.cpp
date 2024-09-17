@@ -340,26 +340,17 @@ void FileProcessorDgn::importDrawing(OdDgDatabasePtr pDb, const ODCOLORREF* pPal
 		// betweeen the SVG and world coordinate systems.
 		// The graphics system (Gs) view https://docs.opendesign.com/tv/gs_OdGsView.html
 		// is used to derive points that map between the WCS of the drawing and
-		// the svg file.
+		// the svg file for autocalibration.
 
 		const OdGsView* pGsView = pDeviceSvg->viewAt(0);
-		repo::manipulator::modelutility::DrawingCalibration calibration;
-		updateDrawingHorizontalCalibration(pGsView, calibration);
-
-		// Update the calibration vertical range
-		
-		calibration.verticalRange = { 0, 10 }; // TODO: how do I calculate that?
+		updateDrawingHorizontalCalibration(pGsView, drawingCollector->calibration);
 
 		// And set the calibration units
 
 		OdDgElementId elementActId = pDb->getActiveModelId();
 		OdDgModelPtr pModel = elementActId.safeOpenObject();
 		repo::manipulator::modelconvertor::ModelUnits units = determineModelUnits(pModel->getMasterUnit());
-		calibration.units = repo::manipulator::modelconvertor::toUnitsString(units);
-
-		// Pass calibration outcome to collector
-
-		drawingCollector->calibration = calibration;
+		drawingCollector->calibration.units = repo::manipulator::modelconvertor::toUnitsString(units);
 
 		// The call to update is what will create the svg in the memory stream
 

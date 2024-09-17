@@ -180,7 +180,6 @@ namespace repo {
 					const repo::lib::RepoUUID& revisionId,
 					const std::vector<repo::lib::RepoVector3D>& horizontal3d,
 					const std::vector<repo::lib::RepoVector2D>& horizontal2d,
-					const std::vector<float>& verticalRange,
 					const std::string& units
 				);
 

@@ -31,7 +31,6 @@ namespace repo {
 			struct DrawingCalibration {
 				std::vector<repo::lib::RepoVector3D> horizontalCalibration3d;
 				std::vector<repo::lib::RepoVector2D> horizontalCalibration2d;
-				std::vector<float> verticalRange;
 				std::string units;
 			};
 
