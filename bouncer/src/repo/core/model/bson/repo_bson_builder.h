@@ -36,6 +36,11 @@
 #include "../../../lib/datastructure/repo_uuid.h"
 #include "repo_bson.h"
 
+#include <boost/variant/static_visitor.hpp>
+#include "repo/lib/datastructure/repo_variant.h"
+
+#include <ctime>
+
 namespace repo {
 	namespace core {
 		namespace model {
@@ -69,10 +74,16 @@ namespace repo {
 					mongo::BSONObjBuilder::appendArray(label, bson);
 				}
 
+				
+				void appendRepoVariant(
+					const std::string& label,
+					const repo::lib::RepoVariant& item);
+
+
 				template<class T>
 				void append(
-					const std::string &label,
-					const T &item)
+					const std::string& label,
+					const T& item)
 				{
 					mongo::BSONObjBuilder::append(label, item);
 				}
@@ -144,6 +155,24 @@ namespace repo {
 					mongo::Date_t date = mongo::Date_t(ts);
 					mongo::BSONObjBuilder::append(label, date);
 				}
+				
+				void appendTime(std::string label, const tm& t) {
+					tm tmCpy = t; // Copy because mktime can alter the struct
+					int64_t time = static_cast<int64_t>(mktime(&tmCpy));
+
+					// Check for a unsuccessful conversion
+					if (time == -1)
+					{
+						repoError << "Failed converting date to mongo compatible format. tm malformed or date pre 1970?";
+						exit(-1);
+					}
+
+					// Convert from seconds to milliseconds
+					time = time * 1000;
+
+					// Append time
+					appendTime(label, time);
+				}
 
 				/**
 				* Appends a Vector but as an object, instead of an array.
@@ -183,7 +212,45 @@ namespace repo {
 				void appendUUID(
 					const std::string &label,
 					const repo::lib::RepoUUID &uuid);
+
+				// Visitor class to process the metadata variant correctly
+				class AppendVisitor : public boost::static_visitor<> {
+				public:
+
+					AppendVisitor(RepoBSONBuilder& aBuilder, const std::string& aLabel) : builder(aBuilder), label(aLabel) {}
+
+					void operator()(const bool& b) const {
+						builder.append(label, b);
+					}
+
+					void operator()(const int& i) const {
+						builder.append(label, i);
+					}
+
+					void operator()(const long long& ll) const {
+						builder.append(label, ll);
+					}
+
+					void operator()(const double& d) const {
+						builder.append(label, d);
+					}
+
+					void operator()(const std::string& s) const {
+						// Filter out empty strings
+						if (s != "")
+							builder.append(label, s);
+					}
+
+					void operator()(const tm& t) const {
+						builder.appendTime(label, t);
+					}
+
+				private:
+					RepoBSONBuilder& builder;
+					std::string label;
+				};
 			};
+
 
 			// Template specialization
 			template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoUUID > (

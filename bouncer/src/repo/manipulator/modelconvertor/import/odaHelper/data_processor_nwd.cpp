@@ -68,17 +68,18 @@
 #include <Attribute/NwTransRotationAttribute.h>
 #include <Attribute/NwUInt64Attribute.h>
 #include <Attribute/NwURLAttribute.h>
+#include <NwDataProperty.h>
 
 // boost
 #include <boost/tokenizer.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
 static std::vector<std::string> ignoredCategories = { "Material", "Geometry", "Autodesk Material", "Revit Material" };
 static std::vector<std::string> ignoredKeys = { "Item::Source File Name" };
+static std::vector<std::string> keysForPathSanitation = { "Item::Source File", "Item::File Name" };
 static std::string sElementIdKey = "Element ID::Value";
 
 struct RepoNwTraversalContext {
@@ -136,33 +137,160 @@ void convertColor(OdString color, std::vector<float>& dest)
 	}
 }
 
-template <class T>
-void setMetadataValue(const OdString& category, const OdString& key, const T& value, std::unordered_map<std::string, std::string>& metadata)
+std::string sanitiseString(std::string key, std::string value)
 {
-	auto metaKey = convertToStdString(category) + "::" + (key.isEmpty() ? std::string("Value") : convertToStdString(key));
-	auto metaValue = boost::lexical_cast<std::string>(value);
-	metadata[metaKey] = metaValue;
-}
-
-// This specialisation is required for Linux as lexical cast doesn't know what to with OdString there
-template <>
-void setMetadataValue(const OdString& category, const OdString& key, const OdString& value, std::unordered_map<std::string, std::string>& metadata)
-{
-	setMetadataValue(category, key, convertToStdString(value), metadata);
-}
-
-// This specialisation is because v140 doesn't support constexpr and will attempt to find a to_string overload regardless of the if-statement
-template <>
-void setMetadataValue(const OdString& category, const OdString& key, const double& value, std::unordered_map<std::string, std::string>& metadata)
-{
-	setMetadataValue(category, key, std::to_string(value), metadata);
-}
-
-void removeFilepathFromMetadataValue(std::string key, std::unordered_map<std::string, std::string>& metadata)
-{
-	if (metadata.find(key) != metadata.end()) {
-		metadata[key] = boost::filesystem::path(metadata[key]).filename().string();
+	if (std::find(keysForPathSanitation.begin(), keysForPathSanitation.end(), key) != keysForPathSanitation.end()) {
+		return boost::filesystem::path(value).filename().string();
 	}
+	else {
+		return value;
+	}
+}
+
+void setMetadataValueVariant(const std::string& category, const std::string& key, const repo::lib::RepoVariant& value, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
+{
+	std::string metaKey = category + "::" + (key.empty() ? std::string("Value") : key);
+	metadata[metaKey] = value;
+}
+
+void setMetadataValue(const std::string& category, const std::string& key, const bool& b, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
+{
+	repo::lib::RepoVariant v = b;
+	setMetadataValueVariant(category, key, v, metadata);
+}
+
+void setMetadataValue(const std::string& category, const std::string& key, const double& d, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
+{
+	repo::lib::RepoVariant v = d;
+	setMetadataValueVariant(category, key, v, metadata);
+}
+
+void setMetadataValue(const std::string& category, const OdString& key, const OdUInt64& uint, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
+{
+	std::string keyString = convertToStdString(key);
+	repo::lib::RepoVariant v = static_cast<long long>(uint); // Potentially losing precision here, but mongo does not accept uint64
+	setMetadataValueVariant(category, keyString, v, metadata);
+}
+
+void setMetadataValue(const std::string& category, const OdString& key, const OdString& string, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
+{
+	std::string keyString = convertToStdString(key);
+	std::string strValue = repo::manipulator::modelconvertor::odaHelper::convertToStdString(string);
+	strValue = sanitiseString(keyString, strValue);
+	repo::lib::RepoVariant v = strValue;
+	setMetadataValueVariant(category, keyString, v, metadata);
+}
+
+bool DataProcessorNwd::tryConvertMetadataProperty(std::string key, OdNwDataPropertyPtr& metaProperty, repo::lib::RepoVariant& v)
+{
+	auto dataType = metaProperty->getDataType();
+	switch (dataType)
+	{
+		case NwDataType::dt_NONE: {
+			return false;
+		}
+		case NwDataType::dt_DOUBLE: {
+			OdNwVariant odvar;
+			metaProperty->getValue(odvar);
+			v = odvar.getDouble();
+			break;
+		}
+		case NwDataType::dt_INT32: {
+			OdNwVariant odvar;
+			metaProperty->getValue(odvar);
+			v = static_cast<long long>(odvar.getInt32()); // Incoming is long, convert it to long long since int won't fit.
+			break;
+		}
+		case NwDataType::dt_BOOL: {
+			OdNwVariant odvar;
+			metaProperty->getValue(odvar);
+			v = odvar.getBool();
+			break;
+		}
+		case NwDataType::dt_DISPLAY_STRING: {
+			OdNwVariant odvar;
+			metaProperty->getValue(odvar);
+			OdString value = odvar.getString();
+			std::string strValue = repo::manipulator::modelconvertor::odaHelper::convertToStdString(value);
+			strValue = sanitiseString(key, strValue);
+			v = strValue;
+			break;
+		}
+		case NwDataType::dt_DATETIME: {
+			OdNwVariant odvar;
+			metaProperty->getValue(odvar);
+			time_t timePosix = static_cast<time_t>(odvar.getUInt64());
+			tm* timeTm = localtime(&timePosix);
+			v = *timeTm;
+			break;
+		}
+		case NwDataType::dt_DOUBLE_LENGTH: {
+			OdNwVariant odvar;
+			metaProperty->getValue(odvar);
+			v = odvar.getMeasuredDouble();
+			break;
+		}
+		case NwDataType::dt_DOUBLE_ANGLE: {
+			OdNwVariant odvar;
+			metaProperty->getValue(odvar);
+			v = odvar.getMeasuredDouble();
+			break;
+		}
+		case NwDataType::dt_NAME: {
+			OdNwVariant odvar;
+			metaProperty->getValue(odvar);
+			OdRxObjectPtr ptr = odvar.getRxObjectPtr();
+			OdNwNamePtr namePtr = static_cast<OdNwNamePtr>(ptr);
+			OdString displayNameOd = namePtr->getDisplayName();
+			std::string displayName = repo::manipulator::modelconvertor::odaHelper::convertToStdString(displayNameOd);
+			v = displayName;
+			break;
+		}
+		case NwDataType::dt_IDENTIFIER_STRING: {
+			OdNwVariant odvar;
+			metaProperty->getValue(odvar);
+			OdString value = odvar.getString();
+			std::string strValue = repo::manipulator::modelconvertor::odaHelper::convertToStdString(value);
+			strValue = sanitiseString(key, strValue);
+			v = strValue;
+			break;
+		}
+		case NwDataType::dt_DOUBLE_AREA: {
+			OdNwVariant odvar;
+			metaProperty->getValue(odvar);
+			v = odvar.getMeasuredDouble();
+			break;
+		}
+		case NwDataType::dt_DOUBLE_VOLUME: {
+			OdNwVariant odvar;
+			metaProperty->getValue(odvar);
+			v = odvar.getMeasuredDouble();
+			break;
+		}
+		case NwDataType::dt_POINT2D: {
+			OdNwVariant odvar;
+			metaProperty->getValue(odvar);
+			OdGePoint2d point = odvar.getPoint2d();
+			std::string str = std::to_string(point.x) + ", " + std::to_string(point.y);
+			v = str;
+			break;
+		}
+		case NwDataType::dt_POINT3D: {
+			OdNwVariant odvar;
+			metaProperty->getValue(odvar);
+			OdGePoint3d point = odvar.getPoint3d();
+			std::string str = std::to_string(point.x) + ", " + std::to_string(point.y) + ", " + std::to_string(point.z);
+			v = str;
+			break;
+		}
+		default: {
+			// All other cases can not be handled by this converter.
+			repoWarning << "Unknown Metadata data type encountered in DataProcessorNwd::tryConvertMetadataProperty. Type: " + dataType;
+			return false;
+		}
+	}
+
+	return true;
 }
 
 // Materials are defined at the Component level. Components contain different types
@@ -217,7 +345,7 @@ void processMaterial(OdNwComponentPtr pComp, repo_material_t& repoMaterial)
 	// be useful (e.g. names and descriptions)
 }
 
-void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext context, std::unordered_map<std::string, std::string>& metadata)
+void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext context, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	if (modelItemPtr.isNull()) {
 		return;
@@ -243,11 +371,11 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 	//	auto ItemRequired = modelItemPtr->?
 
 	// For the Layer, we can use the scene graph hierarchy.
-	auto ItemLayer = convertToStdString(context.layer->getDisplayName());
+	auto ItemLayer = context.layer->getDisplayName();
 
 	if (!OdNwPartition::cast(context.layer).isNull())
 	{
-		ItemLayer = boost::filesystem::path(ItemLayer).filename().string();
+		ItemLayer = OdString(boost::filesystem::path(ItemLayer).filename().c_str());
 	}
 
 	auto ItemGuid = modelItemPtr->getInstanceGuid().toString();
@@ -255,13 +383,14 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 
 	// Print the custom Item block to the metadata
 
-	setMetadataValue(OD_T("Item"), OD_T("Name"), ItemName, metadata);
-	setMetadataValue(OD_T("Item"), OD_T("Type"), ItemType, metadata);
-	setMetadataValue(OD_T("Item"), OD_T("Internal Type"), ItemInternalType, metadata);
-	setMetadataValue(OD_T("Item"), OD_T("Hidden"), ItemHidden, metadata);
-	setMetadataValue(OD_T("Item"), OD_T("Layer"), ItemLayer, metadata);
-	if (hasGuid) {
-		setMetadataValue(OD_T("Item"), OD_T("GUID"), ItemGuid, metadata);
+
+	setMetadataValue("Item", "Name", ItemName, metadata);
+	setMetadataValue("Item", "Type", ItemType, metadata);
+	setMetadataValue("Item", "Internal Type", ItemInternalType, metadata);
+	setMetadataValue("Item", "Hidden", ItemHidden, metadata);
+	setMetadataValue("Item", "Layer", ItemLayer, metadata);
+	if (hasGuid) {		
+		setMetadataValue("Item", "GUID", ItemGuid, metadata);
 	}
 
 	// The source file name is contained within the OdNwPartition entry in the
@@ -269,7 +398,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 	// entire path (the path where the NWD is stored, if an NWD).
 
 	if (!context.partition.isNull()) {
-		setMetadataValue(OD_T("Item"), OD_T("Source File"), context.partition->getSourceFileName(), metadata);
+		setMetadataValue("Item", "Source File", context.partition->getSourceFileName(), metadata);
 	}
 	else {
 		repoError << "Unknown partition (model source file) for " << convertToStdString(ItemName) << " this should never happen.";
@@ -292,13 +421,13 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 		// activating the 'Show Property Internal Names' option in
 		//     Navisworks -> Options -> Interface -> Developer.
 
-		auto name = attribute->getClassName();
-		auto category = attribute->getClassDisplayName();
+		auto name = convertToStdString(attribute->getClassName());
+		auto category = convertToStdString(attribute->getClassDisplayName());
 
 		// Ignore some specific Categories based on their name, regardless of
 		// Attribute Type
 
-		if (std::find(ignoredCategories.begin(), ignoredCategories.end(), convertToStdString(category)) != ignoredCategories.end()) {
+		if (std::find(ignoredCategories.begin(), ignoredCategories.end(), category) != ignoredCategories.end()) {
 			continue;
 		}
 
@@ -312,102 +441,17 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 		auto propertiesAttribute = OdNwPropertyAttribute::cast(attribute);
 		if (!propertiesAttribute.isNull())
 		{
-			OdArray<OdNwPropertyPtr> properties;
+			OdArray<OdNwDataPropertyPtr> properties;
 			propertiesAttribute->getProperties(properties);
-
+			
 			for (unsigned int j = 0; j < properties.length(); j++)
 			{
 				auto& prop = properties[j];
-				auto key = prop->getDisplayName();
+				auto key = convertToStdString(prop->getDisplayName());
 
-				bool bValue;
-				double dValue;
-				double fValue;
-				OdInt32 i32Value;
-				OdInt8 i8value;
-				OdUInt32 u32value;
-				OdUInt8 u8value;
-				OdString sValue;
-				OdUInt64 u64value;
-				OdStringArray arrValue;
-				OdGeVector3d vValue;
-				OdNwColor cValue;
-				tm tmValue;
-
-				switch (prop->getValueType())
-				{
-				case NwPropertyValueType::value_type_default:
-					break;
-				case NwPropertyValueType::value_type_bool:
-					prop->getValue(bValue);
-					setMetadataValue(category, key, bValue, metadata);
-					break;
-				case NwPropertyValueType::value_type_double:
-					prop->getValue(dValue);
-					setMetadataValue(category, key, dValue, metadata);
-					break;
-				case NwPropertyValueType::value_type_float:
-					prop->getValue(fValue);
-					setMetadataValue(category, key, fValue, metadata);
-					break;
-				case NwPropertyValueType::value_type_OdInt32:
-					prop->getValue(i32Value);
-					setMetadataValue(category, key, i32Value, metadata);
-					break;
-				case NwPropertyValueType::value_type_OdInt8:
-					prop->getValue(i8value);
-					setMetadataValue(category, key, i8value, metadata);
-					break;
-				case NwPropertyValueType::value_type_OdUInt32:
-					prop->getValue(u32value);
-					setMetadataValue(category, key, u32value, metadata);
-					break;
-				case NwPropertyValueType::value_type_OdUInt8:
-					prop->getValue(u8value);
-					setMetadataValue(category, key, u8value, metadata);
-					break;
-				case NwPropertyValueType::value_type_OdString:
-					prop->getValue(sValue);
-					setMetadataValue(category, key, convertToStdString(sValue), metadata);
-					break;
-				case NwPropertyValueType::value_type_OdStringArray:
-				{
-					prop->getValue(arrValue);
-					std::string combined;
-					for (auto str : arrValue)
-					{
-						combined += convertToStdString(str) + ";";
-					}
-					setMetadataValue(category, key, combined, metadata);
-				}
-				break;
-				case NwPropertyValueType::value_type_OdGeVector3d:
-				{
-					prop->getValue(vValue);
-					auto value = boost::lexical_cast<std::string>(vValue.x) + ", " + boost::lexical_cast<std::string>(vValue.y) + ", " + boost::lexical_cast<std::string>(vValue.z);
-					setMetadataValue(category, key, value, metadata);
-				}
-				break;
-				case NwPropertyValueType::value_type_OdUInt64:
-					prop->getValue(u64value);
-					setMetadataValue(category, key, u64value, metadata);
-					break;
-				case NwPropertyValueType::value_type_OdNwColor:
-				{
-					prop->getValue(cValue);
-					auto value = boost::lexical_cast<std::string>(cValue.R()) + ", " + boost::lexical_cast<std::string>(cValue.G()) + ", " + boost::lexical_cast<std::string>(cValue.B()) + ", " + boost::lexical_cast<std::string>(cValue.A());
-					setMetadataValue(category, key, value, metadata);
-				}
-				break;
-				case NwPropertyValueType::value_type_tm:
-				{
-					prop->getValue(tmValue);
-					char buffer[80];
-					std::strftime(buffer, 80, "%c", &tmValue);
-					setMetadataValue(category, key, std::string(buffer), metadata);
-				}
-				break;
-				}
+				repo::lib::RepoVariant v;
+				if (DataProcessorNwd:: tryConvertMetadataProperty(key, prop, v))
+					setMetadataValueVariant(category, key, v, metadata);				
 			}
 		}
 
@@ -418,26 +462,26 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 			auto translation = transRotationAttribute->getTranslation();
 			auto rotation = transRotationAttribute->getRotation();
 
-			setMetadataValue(OD_T("Transform"), OD_T("Rotation:X"), rotation.x, metadata);
-			setMetadataValue(OD_T("Transform"), OD_T("Rotation:Y"), rotation.y, metadata);
-			setMetadataValue(OD_T("Transform"), OD_T("Rotation:Z"), rotation.z, metadata);
-			setMetadataValue(OD_T("Transform"), OD_T("Rotation:W"), rotation.w, metadata);
-			setMetadataValue(OD_T("Transform"), OD_T("Translation:X"), translation.x, metadata);
-			setMetadataValue(OD_T("Transform"), OD_T("Translation:Y"), translation.y, metadata);
-			setMetadataValue(OD_T("Transform"), OD_T("Translation:Z"), translation.z, metadata);
+			setMetadataValue("Transform", "Rotation:X", rotation.x, metadata);
+			setMetadataValue("Transform", "Rotation:Y", rotation.y, metadata);
+			setMetadataValue("Transform", "Rotation:Z", rotation.z, metadata);
+			setMetadataValue("Transform", "Rotation:W", rotation.w, metadata);
+			setMetadataValue("Transform", "Translation:X", translation.x, metadata);
+			setMetadataValue("Transform", "Translation:Y", translation.y, metadata);
+			setMetadataValue("Transform", "Translation:Z", translation.z, metadata);
 		}
 
 		// Transform matrix attribute
 		auto transformAttribute = OdNwTransformAttribute::cast(attribute);
 		if (!transformAttribute.isNull())
 		{
-			setMetadataValue(OD_T("Transform"), OD_T("Reverses"), transformAttribute->isReverse(), metadata);
+			setMetadataValue("Transform", "Reverses", transformAttribute->isReverse(), metadata);
 			auto matrix = transformAttribute->getTransform();
 
 			OdGeVector3d translation(matrix.entry[0][3], matrix.entry[1][3], matrix.entry[2][3]);
-			setMetadataValue(OD_T("Transform"), OD_T("Translation:X"), translation.x, metadata);
-			setMetadataValue(OD_T("Transform"), OD_T("Translation:Y"), translation.y, metadata);
-			setMetadataValue(OD_T("Transform"), OD_T("Translation:Z"), translation.z, metadata);
+			setMetadataValue("Transform", "Translation:X", translation.x, metadata);
+			setMetadataValue("Transform", "Translation:Y", translation.y, metadata);
+			setMetadataValue("Transform", "Translation:Z", translation.z, metadata);
 
 			//Todo: extract rotation (in angle axis format) and scale
 		}
@@ -447,9 +491,9 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 		if (!transAttribute.isNull())
 		{
 			auto translation = transAttribute->getTranslation();
-			setMetadataValue(OD_T("Transform"), OD_T("Translation:X"), translation.x, metadata);
-			setMetadataValue(OD_T("Transform"), OD_T("Translation:Y"), translation.y, metadata);
-			setMetadataValue(OD_T("Transform"), OD_T("Translation:Z"), translation.z, metadata);
+			setMetadataValue("Transform", "Translation:X", translation.x, metadata);
+			setMetadataValue("Transform", "Translation:Y", translation.y, metadata);
+			setMetadataValue("Transform", "Translation:Z", translation.z, metadata);
 		}
 
 		// (Note The Guid in the Item block is not an attribute, but rather is retrieved using getInstanceGuid(). This will be something else.)
@@ -457,7 +501,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 		auto guidAttribute = OdNwGuidAttribute::cast(attribute);
 		if (!guidAttribute.isNull())
 		{
-			setMetadataValue(category, guidAttribute->getDisplayName(), convertToStdString(guidAttribute->getGuid().toString()), metadata);
+			setMetadataValue(category, guidAttribute->getDisplayName(), guidAttribute->getGuid().toString(), metadata);
 		}
 
 		// (Note the "Element Id::Value" (LcOaNat64AttributeValue) key is stored as a UInt64 Attribute.)
@@ -472,7 +516,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 		if (!materialAttribute.isNull())
 		{
 			auto value = materialAttribute->getDisplayName();
-			setMetadataValue(OD_T("Item"), OD_T("Material"), convertToStdString(value), metadata);
+			setMetadataValue("Item", "Material", value, metadata);
 		}
 
 		auto binaryAttribute = OdNwBinaryAttribute::cast(attribute);
@@ -489,10 +533,10 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 		{
 			OdArray<OdNwURLPtr> urls;
 			urlAttribute->getURLs(urls);
-			std::string combined;
+			OdString combined;
 			for (auto url : urls) {
 				if (!url.isNull()) {
-					combined += convertToStdString(url->getURL()) + ";";
+					combined += url->getURL() + ";";
 				}
 			}
 			setMetadataValue(category, urlAttribute->getDisplayName(), combined, metadata);
@@ -501,7 +545,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 		auto textAttribute = OdNwTextAttribute::cast(attribute);
 		if (!textAttribute.isNull())
 		{
-			setMetadataValue(category, textAttribute->getDisplayName(), convertToStdString(textAttribute->getText()), metadata);
+			setMetadataValue(category, textAttribute->getDisplayName(), textAttribute->getText(), metadata);
 		}
 
 		//Other Attributes include:
@@ -513,11 +557,6 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 		// These are currently ignored.
 	}
 
-	// Make any necessary adjustments to the metadata.
-	// Here we remove the path from keys known to contain filenames.
-
-	removeFilepathFromMetadataValue("Item::Source File", metadata);
-	removeFilepathFromMetadataValue("Item::File Name", metadata);
 
 	// And remove any that should be ignored (at the end, so we don't have to
 	// check every key every time when looking for just a couple..)
@@ -754,7 +793,7 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 			// the benefit of smart groups, node properties are overridden with their
 			// parent's metadata
 
-			std::unordered_map<std::string, std::string> metadata;
+			std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
 			processAttributes(pNode, context, metadata);
 			processAttributes(context.parent, context, metadata);
 

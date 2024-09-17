@@ -42,6 +42,118 @@ const std::set<std::string> IGNORE_PARAMS = {
 	"RENDER APPEARANCE PROPERTIES"
 };
 
+bool DataProcessorRvt::tryConvertMetadataEntry(OdTfVariant& metaEntry, OdBmLabelUtilsPEPtr labelUtils, OdBmParamDefPtr paramDef, OdBm::BuiltInParameter::Enum param, repo::lib::RepoVariant& v)
+{
+	auto dataType = metaEntry.type();
+	switch (dataType) {
+		case OdVariant::kVoid: {
+			return false;
+		}
+		case OdVariant::kString: {
+			v = repo::manipulator::modelconvertor::odaHelper::convertToStdString(metaEntry.getString());
+			break;
+		}
+		case OdVariant::kBool:
+		{
+			v = metaEntry.getBool();
+			break;
+		}
+		case OdVariant::kInt8: {
+			OdInt8 value = metaEntry.getInt8();
+			v = static_cast<int>(value);
+			break;
+		}
+		case OdVariant::kInt16: {
+			OdInt16 value = metaEntry.getInt16();
+			v = static_cast<int>(value);
+			break;
+		}
+		case OdVariant::kInt32: {
+			if (paramDef->getParameterTypeId() == OdBmSpecTypeId::Boolean::kYesNo){
+				(metaEntry.getInt32()) ? v = true : v = false;
+			} else{
+				OdInt32 value = metaEntry.getInt32();
+				v = static_cast<long long>(value);
+			}
+			break;
+		}
+		case OdVariant::kInt64: {
+			OdInt64 value = metaEntry.getInt64();
+			v = static_cast<long long>(value);
+			break;
+		}
+		case OdVariant::kDouble: {
+			OdDouble value = metaEntry.getDouble();
+			v = static_cast<double>(value);
+			break;
+		}
+		case OdVariant::kAnsiString: {
+			v = std::string(metaEntry.getAnsiString().c_str());
+			break;
+		}
+		case OdTfVariant::kDbStubPtr: {
+			// A stub is effectively a pointer to another database, or built-in, object. We don't recurse these objects, but will try to extract
+			// their names or identities where possible (e.g. if a key pointed to a wall object, we would get the name of the wall object).
+
+			OdDbStub* stub = metaEntry.getDbStubPtr();
+			OdBmObjectId bmId = OdBmObjectId(stub);
+			if (stub)
+			{
+				OdDbHandle hdl = bmId.getHandle();
+				if (param == OdBm::BuiltInParameter::ELEM_CATEGORY_PARAM || param == OdBm::BuiltInParameter::ELEM_CATEGORY_PARAM_MT)
+				{
+					if (OdBmObjectId::isRegularHandle(hdl)) // A regular handle points to a database entry; if it is not regular, it is built-in.
+					{
+						v = std::to_string((OdUInt64)hdl);
+					}
+					else
+					{
+						OdBm::BuiltInCategory::Enum builtInValue = static_cast<OdBm::BuiltInCategory::Enum>((OdUInt64)hdl);
+						auto category = labelUtils->getLabelFor(OdBm::BuiltInCategory::Enum(builtInValue));
+						if (!category.isEmpty()) {
+							v = repo::manipulator::modelconvertor::odaHelper::convertToStdString(category);
+						}
+						else {
+							v = repo::manipulator::modelconvertor::odaHelper::convertToStdString(OdBm::BuiltInCategory(builtInValue).toString());
+						}
+					}
+				}
+				else
+				{
+					OdBmObjectPtr bmPtr = bmId.openObject();
+					if (!bmPtr.isNull())
+					{
+						// The object class is unknown - some superclasses we can handle explicitly.
+
+						auto bmPtrClass = bmPtr->isA();
+						if (!bmPtrClass->isKindOf(OdBmElement::desc()))
+						{
+							OdBmElementPtr elem = bmPtr;
+							if (elem->getElementName() == OdString::kEmpty) {
+								v = std::to_string((OdUInt64)bmId.getHandle());
+							}
+							else {
+								v = repo::manipulator::modelconvertor::odaHelper::convertToStdString(elem->getElementName());
+							}
+						}
+						else
+						{
+							repoError << "Unsupported metadata value type (class) " << repo::manipulator::modelconvertor::odaHelper::convertToStdString(bmPtrClass->name()) << " currently only OdBmElement's are supported.";
+						}
+					}
+				}
+			}
+			break;
+		}
+	default:
+		repoWarning << "Unknown Metadata data type encountered in DataProcessorRvt::TryConvertMetadataProperty. Type: " + dataType;
+		return false;
+	}
+
+	return true;
+}
+
+
 bool DataProcessorRvt::ignoreParam(const std::string& param)
 {
 	std::string paramUpper = param; // Copy the string to transform it in place
@@ -88,105 +200,7 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 	return std::string();
 }
 
-std::string DataProcessorRvt::translateMetadataValue(
-	const OdTfVariant& val,
-	OdBmLabelUtilsPEPtr labelUtils,
-	OdBmParamDefPtr paramDef,
-	OdBmDatabase* database,
-	OdBm::BuiltInParameter::Enum param)
-{
-	std::string strOut;
-	switch (val.type()) {
-	case OdVariant::kVoid:
-		break;
-	case OdVariant::kString:
-		strOut = convertToStdString(val.getString());
-		break;
-	case OdVariant::kBool:
-		strOut = std::to_string(val.getBool());
-		break;
-	case OdVariant::kInt8:
-		strOut = std::to_string(val.getInt8());
-		break;
-	case OdVariant::kInt16:
-		strOut = std::to_string(val.getInt16());
-		break;
-	case OdVariant::kInt32:
-		if (paramDef->getParameterTypeId() == OdBmSpecTypeId::Boolean::kYesNo)
-			(val.getInt32()) ? strOut = "Yes" : strOut = "No";
-		else
-			strOut = std::to_string(val.getInt32());
-		break;
-	case OdVariant::kInt64:
-		strOut = std::to_string(val.getInt64());
-		break;
-	case OdVariant::kDouble:
-	{
-		auto valWithUnits = convertToStdString(labelUtils->format(database, paramDef->getSpecTypeId(), val.getDouble(), false));
-		std::size_t pos = valWithUnits.find(" ");
-		strOut = pos == std::string::npos ? valWithUnits : valWithUnits.substr(0, pos);
-	}
-	break;
-	case OdVariant::kAnsiString:
-		strOut = std::string(val.getAnsiString().c_str());
-		break;
-	case OdTfVariant::kDbStubPtr:
 
-		// A stub is effectively a pointer to another database, or built-in, object. We don't recurse these objects, but will try to extract
-		// their names or identities where possible (e.g. if a key pointed to a wall object, we would get the name of the wall object).
-
-		OdDbStub* stub = val.getDbStubPtr();
-		OdBmObjectId bmId = OdBmObjectId(stub);
-		if (stub)
-		{
-			OdDbHandle hdl = bmId.getHandle();
-			if (param == OdBm::BuiltInParameter::ELEM_CATEGORY_PARAM || param == OdBm::BuiltInParameter::ELEM_CATEGORY_PARAM_MT)
-			{
-				if (OdBmObjectId::isRegularHandle(hdl)) // A regular handle points to a database entry; if it is not regular, it is built-in.
-				{
-					strOut = std::to_string((OdUInt64)hdl);
-				}
-				else
-				{
-					OdBm::BuiltInCategory::Enum builtInValue = static_cast<OdBm::BuiltInCategory::Enum>((OdUInt64)hdl);
-					auto category = labelUtils->getLabelFor(OdBm::BuiltInCategory::Enum(builtInValue));
-					if (!category.isEmpty()) {
-						strOut = convertToStdString(category);
-					}
-					else {
-						strOut = convertToStdString(OdBm::BuiltInCategory(builtInValue).toString());
-					}
-				}
-			}
-			else
-			{
-				OdBmObjectPtr bmPtr = bmId.openObject();
-				if (!bmPtr.isNull())
-				{
-					// The object class is unknown - some superclasses we can handle explicitly.
-
-					auto bmPtrClass = bmPtr->isA();
-					if (!bmPtrClass->isKindOf(OdBmElement::desc()))
-					{
-						OdBmElementPtr elem = bmPtr;
-						if (elem->getElementName() == OdString::kEmpty) {
-							strOut = std::to_string((OdUInt64)bmId.getHandle());
-						}
-						else {
-							strOut = convertToStdString(elem->getElementName());
-						}
-					}
-					else
-					{
-						repoError << "Unsupported metadata value type (class) " << convertToStdString(bmPtrClass->name()) << " currently only OdBmElement's are supported.";
-					}
-				}
-			}
-		}
-	}
-
-	return strOut;
-}
 
 void DataProcessorRvt::init(GeometryCollector* geoColl, OdBmDatabasePtr database)
 {
@@ -370,7 +384,7 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 
 void DataProcessorRvt::fillMetadataById(
 	OdBmObjectId id,
-	std::unordered_map<std::string, std::string>& metadata)
+	std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	if (id.isNull())
 		return;
@@ -398,7 +412,7 @@ void DataProcessorRvt::initLabelUtils() {
 void DataProcessorRvt::processParameter(
 	OdBmElementPtr element,
 	OdBmObjectId paramId,
-	std::unordered_map<std::string, std::string> &metadata,
+	std::unordered_map<std::string, repo::lib::RepoVariant> &metadata,
 	const OdBm::BuiltInParameter::Enum &buildInEnum
 ) {
 	OdTfVariant value;
@@ -430,13 +444,21 @@ void DataProcessorRvt::processParameter(
 				}
 			}
 
-			std::string variantValue = translateMetadataValue(value, labelUtils, pDescParam, element->getDatabase(), buildInEnum);
-			if (!variantValue.empty())
+			repo::lib::RepoVariant v;
+
+
+			if (tryConvertMetadataEntry(value, labelUtils, pDescParam, buildInEnum, v))
 			{
-				if (metadata.find(metaKey) != metadata.end() && metadata[metaKey] != variantValue) {
-					repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << "value before: " << metadata[metaKey] << " after: " << variantValue;
+				if (metadata.find(metaKey) != metadata.end() && !boost::apply_visitor(repo::lib::DuplicationVisitor(), metadata[metaKey], v)) {
+										
+					repoDebug 
+						<< "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " 
+						<< metaKey << "value before: "
+						<< boost::apply_visitor(repo::lib::StringConversionVisitor(), metadata[metaKey]) 
+						<< " after: " 
+						<< boost::apply_visitor(repo::lib::StringConversionVisitor(), v);
 				}
-				metadata[metaKey] = variantValue;
+				metadata[metaKey] = v;
 			}
 		}
 	}
@@ -444,12 +466,12 @@ void DataProcessorRvt::processParameter(
 
 void DataProcessorRvt::fillMetadataByElemPtr(
 	OdBmElementPtr element,
-	std::unordered_map<std::string, std::string>& outputData)
+	std::unordered_map<std::string, repo::lib::RepoVariant>& outputData)
 {
 	OdBmParameterSet aParams;
 	element->getListParams(aParams);
 
-	std::unordered_map<std::string, std::string> metadata;
+	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
 
 	auto id = std::to_string((OdUInt64)element->objectId().getHandle());
 	if (collector->metadataCache.find(id) != collector->metadataCache.end()) {
@@ -482,10 +504,10 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 	}
 }
 
-std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBmElementPtr element)
+std::unordered_map<std::string, repo::lib::RepoVariant> DataProcessorRvt::fillMetadata(OdBmElementPtr element)
 {
-	std::unordered_map<std::string, std::string> metadata;
-	metadata[REVIT_ELEMENT_ID] = std::to_string((OdUInt64)element->objectId().getHandle());
+	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
+	metadata[REVIT_ELEMENT_ID] = static_cast<long long>((OdUInt64)element->objectId().getHandle());
 
 	try
 	{

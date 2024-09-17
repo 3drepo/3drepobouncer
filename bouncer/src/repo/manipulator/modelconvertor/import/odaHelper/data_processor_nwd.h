@@ -25,6 +25,13 @@
 
 #include <OdaCommon.h>
 #include <NwDatabase.h>
+#include <NwDataProperty.h>
+#include <NwVariant.h>
+#include <NwName.h>
+
+#include <repo/lib/datastructure/repo_variant.h>
+
+#include <boost/filesystem.hpp>
 
 namespace repo {
 	namespace manipulator {
@@ -38,6 +45,8 @@ namespace repo {
 					}
 
 					void process(OdNwDatabasePtr pNwDb);
+					
+					static bool tryConvertMetadataProperty(std::string key, OdNwDataPropertyPtr& metaProperty, repo::lib::RepoVariant& v);
 
 				private:
 					GeometryCollector* collector;
