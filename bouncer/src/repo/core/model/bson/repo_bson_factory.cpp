@@ -757,44 +757,20 @@ RepoCalibration repo::core::model::RepoBSONFactory::makeRepoCalibration(
 	bsonBuilder.append(REPO_LABEL_REVISION, revisionId);
 	bsonBuilder.appendTimeStamp(REPO_LABEL_CREATEDAT);
 
+	if (horizontal2d.size() != horizontal3d.size() != 2)
+	{
+		throw std::runtime_error("Incomplete calibration vectors supplied to makeRepoCalibration");
+	}
+
 	RepoBSONBuilder horizontalBuilder;
-	if (horizontal3d.size() == 2)	{
-		std::vector<std::vector<float>>arrays;
-		std::vector<float> arr1;
-		arr1.push_back(horizontal3d[0].x);
-		arr1.push_back(horizontal3d[0].y);
-		arr1.push_back(horizontal3d[0].z);
-		arrays.push_back(arr1);
-
-		std::vector<float> arr2;
-		arr2.push_back(horizontal3d[1].x);
-		arr2.push_back(horizontal3d[1].y);
-		arr2.push_back(horizontal3d[1].z);
-		arrays.push_back(arr2);
-
-		horizontalBuilder.appendArray(REPO_LABEL_MODEL, arrays);
-	}
-	else {
-		repoError << "Incorrect amount of horizontal 3D vectors supplied to makeRepoCalibration" << std::endl;
-	}
-
-	if (horizontal2d.size() == 2)	{
-		std::vector<std::vector<float>>arrays;
-		std::vector<float> arr1;
-		arr1.push_back(horizontal2d[0].x);
-		arr1.push_back(horizontal2d[0].y);
-		arrays.push_back(arr1);
-
-		std::vector<float> arr2;
-		arr2.push_back(horizontal2d[1].x);
-		arr2.push_back(horizontal2d[1].y);
-		arrays.push_back(arr2);
-
-		horizontalBuilder.appendArray(REPO_LABEL_DRAWING, arrays);
-	}
-	else {
-		repoError << "Incorrect amount of horizontal 2D vectors supplied to makeRepoCalibration" << std::endl;
-	}
+	horizontalBuilder.appendArray< std::vector<float> >(REPO_LABEL_MODEL, {
+		horizontal3d[0].toStdVector(),
+		horizontal3d[1].toStdVector()
+	});
+	horizontalBuilder.appendArray< std::vector<float> >(REPO_LABEL_DRAWING, {
+		horizontal2d[0].toStdVector(),
+		horizontal2d[1].toStdVector()
+	});
 	bsonBuilder.append(REPO_LABEL_HORIZONTAL, horizontalBuilder.obj());
 
 	bsonBuilder.append(REPO_LABEL_UNITS, units);
