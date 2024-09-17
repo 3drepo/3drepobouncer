@@ -757,7 +757,7 @@ RepoCalibration repo::core::model::RepoBSONFactory::makeRepoCalibration(
 	bsonBuilder.append(REPO_LABEL_REVISION, revisionId);
 	bsonBuilder.appendTimeStamp(REPO_LABEL_CREATEDAT);
 
-	if (horizontal2d.size() != horizontal3d.size() != 2)
+	if (horizontal2d.size() != 2 || horizontal3d.size() != 2)
 	{
 		throw std::runtime_error("Incomplete calibration vectors supplied to makeRepoCalibration");
 	}
