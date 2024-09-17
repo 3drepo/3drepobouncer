@@ -60,7 +60,7 @@ uint8_t DrawingManager::commitImage(
 		drawing.data,
 		metadata.obj()
 	);
-	
+
 	auto updated = revision.cloneAndAddImage(drawingRefNodeId);
 
 	std::string error;
@@ -91,7 +91,6 @@ uint8_t DrawingManager::commitImage(
 		repoError << "Error committing calibration: " << error;
 		return REPOERR_UPLOAD_FAILED;
 	}
-
 
 	return REPOERR_OK;
 }
