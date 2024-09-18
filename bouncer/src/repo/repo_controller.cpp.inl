@@ -376,24 +376,14 @@ public:
 		const std::map<repo::core::model::ReferenceNode, std::string> &fedMap);
 
 	/**
-	* Generate and commit a GLTF encoding for the given scene
+	* Generate and commit a RepoBundles encoding for the given scene
 	* @param token token for authentication
-	* @param scene the scene to generate the gltf encoding from
+	* @param scene the scene to generate the repobundles encoding from
 	* @return returns true upon success
 	*/
 	bool generateAndCommitRepoBundlesBuffer(
 		const RepoToken* token,
 		repo::core::model::RepoScene* scene);
-
-	/**
-	* Generate and commit a GLTF encoding for the given scene
-	* @param token token for authentication
-	* @param scene the scene to generate the gltf encoding from
-	* @return returns true upon success
-	*/
-	bool generateAndCommitGLTFBuffer(
-		const RepoToken                               *token,
-		repo::core::model::RepoScene            *scene);
 
 	/**
 	* Generate and commit a SRC encoding for the given scene
@@ -405,15 +395,6 @@ public:
 	bool generateAndCommitSRCBuffer(
 		const RepoToken                               *token,
 		repo::core::model::RepoScene            *scene);
-
-	/**
-	* Generate a GLTF encoding in the form of a buffer for the given scene
-	* This requires the stash to have been generated already
-	* @param scene the scene to generate the gltf encoding from
-	* @return returns a buffer in the form of a byte vector
-	*/
-	repo_web_buffers_t generateGLTFBuffer(
-		repo::core::model::RepoScene *scene);
 
 	/**
 	* Generate and commit a selection tree for the given scene

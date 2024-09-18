@@ -186,25 +186,6 @@ namespace repo {
 					const repo::core::model::RepoBSON &metadata = repo::core::model::RepoBSON()) = 0;
 
 				/**
-				* Insert big raw file in binary format (using GridFS)
-				* @param database name
-				* @param collection name
-				* @param fileName to insert (has to be unique)
-				* @param bin raw binary of the file
-				* @param errMsg error message if it fails
-				* @param contentType the MIME type of the object (optional)
-				* @return returns true upon success
-				*/
-				virtual bool insertRawFile(
-					const std::string          &database,
-					const std::string          &collection,
-					const std::string          &fileName,
-					const std::vector<uint8_t> &bin,
-					std::string          &errMsg,
-					const std::string          &contentType = "binary/octet-stream"
-				) = 0;
-
-				/**
 				* Update/insert a single document in database.collection
 				* If the document exists, update it, if it doesn't, insert it
 				* @param database name
@@ -265,19 +246,6 @@ namespace repo {
 					const repo::core::model::RepoBSON criteria,
 					const std::string &database,
 					const std::string &collection,
-					std::string &errMsg) = 0;
-
-				/**
-				* Remove a file from raw file storage (gridFS)
-				* @param database the database the collection resides in
-				* @param collection name of the collection the document is in
-				* @param filename name of the file
-				* @param errMsg name of the database to drop
-				*/
-				virtual bool dropRawFile(
-					const std::string &database,
-					const std::string &collection,
-					const std::string &fileName,
 					std::string &errMsg) = 0;
 
 				/*
@@ -349,19 +317,6 @@ namespace repo {
 					const std::string& database,
 					const std::string& collection,
 					const repo::lib::RepoUUID& uuid) = 0;
-
-				/**
-				* Get raw binary file from database
-				* @param database name of database
-				* @param collection name of collection
-				* @param fname name of the file
-				* @return return the raw binary as a vector of uint8_t (if found)
-				*/
-				virtual std::vector<uint8_t> getRawFile(
-					const std::string& database,
-					const std::string& collection,
-					const std::string& fname
-				) = 0;
 
 			protected:
 				/**

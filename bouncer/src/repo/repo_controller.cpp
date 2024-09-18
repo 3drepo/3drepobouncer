@@ -189,24 +189,11 @@ bool RepoController::generateAndCommitRepoBundlesBuffer(
 	return impl->generateAndCommitRepoBundlesBuffer(token, scene);
 }
 
-bool RepoController::generateAndCommitGLTFBuffer(
-	const RepoController::RepoToken    *token,
-	repo::core::model::RepoScene *scene)
-{
-	return impl->generateAndCommitGLTFBuffer(token, scene);
-}
-
 bool RepoController::generateAndCommitSRCBuffer(
 	const RepoController::RepoToken    *token,
 	repo::core::model::RepoScene *scene)
 {
 	return impl->generateAndCommitSRCBuffer(token, scene);
-}
-
-repo_web_buffers_t RepoController::generateGLTFBuffer(
-	repo::core::model::RepoScene *scene)
-{
-	return impl->generateGLTFBuffer(scene);
 }
 
 repo_web_buffers_t RepoController::generateSRCBuffer(

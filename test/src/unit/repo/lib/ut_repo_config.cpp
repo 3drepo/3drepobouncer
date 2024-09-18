@@ -46,7 +46,7 @@ TEST(RepoConfigTest, ConstructFromFile)
 		auto config = RepoConfig::fromFile(getDataPath("/config/withAllDbDefault.json"));
 		EXPECT_TRUE(config.validate());
 		EXPECT_TRUE(config.getFSConfig().configured);
-		EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::GRIDFS);
+		EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::FS);
 		});
 
 	EXPECT_NO_THROW({

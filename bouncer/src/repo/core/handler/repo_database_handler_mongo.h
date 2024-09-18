@@ -329,19 +329,6 @@ namespace repo {
 					std::string &errMsg);
 
 				/**
-				* Remove a file from raw file storage (gridFS)
-				* @param database the database the collection resides in
-				* @param collection name of the collection the document is in
-				* @param filename name of the file
-				* @param errMsg name of the database to drop
-				*/
-				bool dropRawFile(
-					const std::string &database,
-					const std::string &collection,
-					const std::string &fileName,
-					std::string &errMsg);
-
-				/**
 				 * Insert a single document in database.collection
 				 * @param database name
 				 * @param collection name
@@ -369,25 +356,6 @@ namespace repo {
 					const std::vector<repo::core::model::RepoBSON> &obj,
 					std::string &errMsg,
 					const repo::core::model::RepoBSON &metadata = repo::core::model::RepoBSON());
-
-				/**
-				* Insert big raw file in binary format (using GridFS)
-				* @param database name
-				* @param collection name
-				* @param fileName to insert (has to be unique)
-				* @param bin raw binary of the file
-				* @param errMsg error message if it fails
-				* @param contentType the MIME type of the object (optional)
-				* @return returns true upon success
-				*/
-				bool insertRawFile(
-					const std::string          &database,
-					const std::string          &collection,
-					const std::string          &fileName,
-					const std::vector<uint8_t> &bin,
-					std::string          &errMsg,
-					const std::string          &contentType = "binary/octet-stream"
-				);
 
 				/**
 				* Update/insert a single document in database.collection
@@ -477,19 +445,6 @@ namespace repo {
 					const std::string& database,
 					const std::string& collection,
 					const repo::lib::RepoUUID& uuid);
-
-				/**
-				* Get raw binary file from database
-				* @param database name of database
-				* @param collection name of collection
-				* @param fname name of the file
-				* @return return the raw binary as a vector of uint8_t (if found)
-				*/
-				std::vector<uint8_t> getRawFile(
-					const std::string& database,
-					const std::string& collection,
-					const std::string& fname
-				);
 
 				/*
 				 *	=============================================================================================

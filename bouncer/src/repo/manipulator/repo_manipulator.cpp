@@ -283,18 +283,6 @@ bool RepoManipulator::generateAndCommitRepoBundlesBuffer(
 		buffers, modelconvertor::WebExportType::REPO);
 }
 
-bool RepoManipulator::generateAndCommitGLTFBuffer(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& bucketName,
-	const std::string& bucketRegion,
-	repo::core::model::RepoScene* scene)
-{
-	repo_web_buffers_t buffers;
-	return generateAndCommitWebViewBuffer(databaseAd, cred, bucketName, bucketRegion, scene,
-		buffers, modelconvertor::WebExportType::GLTF);
-}
-
 bool RepoManipulator::generateAndCommitSRCBuffer(
 	const std::string& databaseAd,
 	const repo::core::model::RepoBSON* cred,
@@ -349,15 +337,6 @@ bool RepoManipulator::generateAndCommitWebViewBuffer(
 		SceneManager.generateStashGraph(scene);
 	}
 	return SceneManager.generateWebViewBuffers(scene, exType, buffers, handler, manager);
-}
-
-repo_web_buffers_t RepoManipulator::generateGLTFBuffer(
-	repo::core::model::RepoScene* scene)
-{
-	repo_web_buffers_t buffers;
-	modelutility::SceneManager SceneManager;
-	SceneManager.generateWebViewBuffers(scene, modelconvertor::WebExportType::GLTF, buffers, nullptr);
-	return buffers;
 }
 
 repo_web_buffers_t RepoManipulator::generateSRCBuffer(

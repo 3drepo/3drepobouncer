@@ -403,43 +403,6 @@ TEST(MongoDatabaseHandlerTest, InsertDocument)
 	errMsg.clear();
 }
 
-TEST(MongoDatabaseHandlerTest, InsertRawFile)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	std::string errMsg;
-
-	std::vector<uint8_t> binary;
-	for (int i = 0; i < 100; ++i)
-	{
-		binary.push_back(std::rand());
-	}
-
-	EXPECT_TRUE(handler->insertRawFile("randomTest", "randomCol", "rawFileName", binary, errMsg));
-	EXPECT_TRUE(errMsg.empty());
-
-	std::vector<uint8_t> result = handler->getRawFile("randomTest", "randomCol", "rawFileName");
-	ASSERT_EQ(result.size(), binary.size());
-	for (int i = 0; i < binary.size(); ++i)
-		EXPECT_EQ(binary[i], result[i]);
-
-	errMsg.clear();
-	EXPECT_FALSE(handler->insertRawFile("randomTest", "", "rawFileName", binary, errMsg));
-	EXPECT_FALSE(errMsg.empty());
-
-	errMsg.clear();
-	EXPECT_FALSE(handler->insertRawFile("", "randomCol", "rawFileName", binary, errMsg));
-	EXPECT_FALSE(errMsg.empty());
-
-	errMsg.clear();
-	EXPECT_FALSE(handler->insertRawFile("randomTest", "randomCol", "", binary, errMsg));
-	EXPECT_FALSE(errMsg.empty());
-
-	errMsg.clear();
-	EXPECT_FALSE(handler->insertRawFile("randomTest", "randomCol", "rawFileName", std::vector<uint8_t>(), errMsg));
-	EXPECT_FALSE(errMsg.empty());
-}
-
 TEST(MongoDatabaseHandlerTest, FindAllByUniqueIDs)
 {
 	auto handler = getHandler();
@@ -519,17 +482,4 @@ TEST(MongoDatabaseHandlerTest, FindOneBySharedID)
 	EXPECT_TRUE(result.isEmpty());
 	result = handler->findOneBySharedID(REPO_GTEST_DBNAME_ROLEUSERTEST, "", repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH), "timestamp");
 	EXPECT_TRUE(result.isEmpty());
-}
-
-TEST(MongoDatabaseHandlerTest, GetRawFile)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	auto file = handler->getRawFile(REPO_GTEST_DBNAME_FILE_MANAGER, REPO_GTEST_COLNAME_FILE_MANAGER, REPO_GTEST_RAWFILE_FETCH_TEST);
-
-	EXPECT_EQ(REPO_GTEST_RAWFILE_FETCH_SIZE, file.size());
-
-	EXPECT_EQ(0, handler->getRawFile(REPO_GTEST_DBNAME_FILE_MANAGER, REPO_GTEST_COLNAME_FILE_MANAGER, "some_non_existent_file").size());
-	EXPECT_EQ(0, handler->getRawFile("", REPO_GTEST_COLNAME_FILE_MANAGER, REPO_GTEST_RAWFILE_FETCH_TEST).size());
-	EXPECT_EQ(0, handler->getRawFile(REPO_GTEST_DBNAME_FILE_MANAGER, "", REPO_GTEST_RAWFILE_FETCH_TEST).size());
 }

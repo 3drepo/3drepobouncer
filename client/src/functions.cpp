@@ -42,7 +42,7 @@ std::string helpInfo()
 {
 	std::stringstream ss;
 
-	ss << cmdGenStash << "\tGenerate Stash for a project. (args: database project [repo|gltf|src|tree] [all|revId])\n";
+	ss << cmdGenStash << "\tGenerate Stash for a project. (args: database project [repo|src|tree] [all|revId])\n";
 	ss << cmdGetFile << "\t\tGet original file for the latest revision of the project (args: database project dir)\n";
 	ss << cmdImportFile << "\t\tImport file to database. (args: {file database project [dxrotate] [owner] [configfile]} or {-f parameterFile} )\n";
 	ss << cmdProcessDrawing << "\t\tProcess drawing revision node into an image. (args: parameterFile)\n";
@@ -292,10 +292,6 @@ bool _generateStash(
 		{
 			success = controller->generateAndCommitRepoBundlesBuffer(token, scene);
 		}
-		else if (type == "gltf")
-		{
-			success = controller->generateAndCommitGLTFBuffer(token, scene);
-		}
 		else if (type == "src")
 		{
 			success = controller->generateAndCommitSRCBuffer(token, scene);
@@ -323,7 +319,7 @@ int32_t generateStash(
 	if (command.nArgcs < 3)
 	{
 		repoLogError("Number of arguments mismatch! " + cmdGenStash
-			+ " requires 3 arguments:database project [repo|gltf|src|tree]");
+			+ " requires 3 arguments:database project [repo|src|tree]");
 		return REPOERR_INVALID_ARG;
 	}
 
@@ -331,7 +327,7 @@ int32_t generateStash(
 	std::string project = command.args[1];
 	std::string type = command.args[2];
 
-	if (!(type == "repo" || type == "gltf" || type == "src" || type == "tree"))
+	if (!(type == "repo" || type == "src" || type == "tree"))
 	{
 		repoLogError("Unknown stash type: " + type);
 		return REPOERR_INVALID_ARG;

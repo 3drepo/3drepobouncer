@@ -389,44 +389,6 @@ bool MongoDatabaseHandler::dropDocuments(
 	return success;
 }
 
-bool MongoDatabaseHandler::dropRawFile(
-	const std::string &database,
-	const std::string &collection,
-	const std::string &fileName,
-	std::string &errMsg
-)
-{
-	bool success = true;
-
-	if (fileName.empty())
-	{
-		errMsg = "Cannot  remove a raw file from the database with no file name!";
-		return false;
-	}
-
-	if (database.empty() || collection.empty())
-	{
-		errMsg = "Cannot remove a raw file: database(value: " + database + ") or collection name(value: " + collection + ") is not specified!";
-		return false;
-	}
-
-	try {
-		//store the big biary file within GridFS
-		mongo::GridFS gfs(*worker, database, collection);
-		//FIXME: there must be errors to catch...
-		repoTrace << "removing " << fileName << " in gridfs: " << database << "." << collection;
-		gfs.removeFile(fileName);
-	}
-	catch (mongo::DBException &e)
-	{
-		success = false;
-		std::string errString(e.what());
-		errMsg += errString;
-	}
-
-	return success;
-}
-
 mongo::BSONObj MongoDatabaseHandler::fieldsToReturn(
 	const std::list<std::string>& fields,
 	bool excludeIdField)
@@ -876,53 +838,6 @@ std::list<std::string> MongoDatabaseHandler::getProjects(const std::string &data
 	return projects;
 }
 
-std::vector<uint8_t> MongoDatabaseHandler::getRawFile(
-	const std::string& database,
-	const std::string& collection,
-	const std::string& fname
-)
-{
-	std::vector<uint8_t> bin;
-
-	try {
-		mongo::GridFS gfs(*worker, database, collection);
-		mongo::GridFile tmpFile = gfs.findFileByName(fname);
-
-		repoTrace << "Getting file from GridFS: " << fname << " in : " << database << "." << collection;
-
-		if (tmpFile.exists())
-		{
-			std::ostringstream oss;
-			tmpFile.write(oss);
-
-			std::string fileStr = oss.str();
-
-			assert(sizeof(*fileStr.c_str()) == sizeof(uint8_t));
-
-			if (!fileStr.empty())
-			{
-				bin.resize(fileStr.size());
-				memcpy(&bin[0], fileStr.c_str(), fileStr.size());
-			}
-			else
-			{
-				repoError << "GridFS file : " << fname << " in "
-					<< database << "." << collection << " is empty.";
-			}
-		}
-		else
-		{
-			repoError << "Failed to find file within GridFS";
-		}
-	}
-	catch (mongo::DBException e)
-	{
-		repoError << "Error fetching raw file: " << e.what();
-	}
-
-	return bin;
-}
-
 bool MongoDatabaseHandler::insertDocument(
 	const std::string &database,
 	const std::string &collection,
@@ -999,63 +914,6 @@ bool MongoDatabaseHandler::insertManyDocuments(
 	else
 	{
 		errMsg = "Unable to insert Document, database(value : " + database + ")/collection(value : " + collection + ") name was not specified";
-	}
-
-	return success;
-}
-
-bool MongoDatabaseHandler::insertRawFile(
-	const std::string          &database,
-	const std::string          &collection,
-	const std::string          &fileName,
-	const std::vector<uint8_t> &bin,
-	std::string          &errMsg,
-	const std::string          &contentType
-)
-{
-	bool success = false;
-
-	repoTrace << "writing raw file: " << fileName;
-
-	if (bin.size() == 0)
-	{
-		errMsg = "size of file is 0!";
-		return false;
-	}
-
-	if (fileName.empty())
-	{
-		errMsg = "Cannot store a raw file in the database with no file name!";
-		return false;
-	}
-
-	if (database.empty() || collection.empty())
-	{
-		errMsg = "Cannot store a raw file: database(value: " + database + ") or collection name(value: " + collection + ") is not specified!";
-		return false;
-	}
-
-	int retry = 0;
-	while (!success && retry < 5)
-	{
-		try {
-			mongo::GridFS gfs(*worker, database, collection);
-			//FIXME: there must be errors to catch...
-			repoTrace << "storing " << fileName << " in gridfs: " << database << "." << collection;
-			gfs.removeFile(fileName);
-			mongo::BSONObj bson = gfs.storeFile((char*)&bin[0], bin.size() * sizeof(bin[0]), fileName, contentType);
-			repoTrace << "returned object: " << bson.toString();
-			success = true;
-		}
-		catch (mongo::DBException &e)
-		{
-			success = false;
-			std::string errString(e.what());
-			errMsg = errString;
-			repoError << "Failed to upload gridFS file : " << errString << " retrying in 5s...";
-			boost::this_thread::sleep(boost::posix_time::seconds(5));
-			retry++;
-		}
 	}
 
 	return success;

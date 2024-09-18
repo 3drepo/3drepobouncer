@@ -35,9 +35,33 @@
 
 using namespace repo::core::model;
 
-const std::vector<std::string> RepoScene::collectionsInProject = { "scene", "scene.files", "scene.chunks", "stash.3drepo", "stash.3drepo.files", "stash.3drepo.chunks", "stash.x3d", "stash.x3d.files",
-"stash.json_mpc.files", "stash.json_mpc.chunks", "stash.x3d.chunks", "stash.gltf", "stash.gltf.files", "stash.gltf.chunks", "stash.src", "stash.src.files", "stash.src.chunks", "history",
-"history.files", "history.chunks", "issues", "wayfinder", "groups", "sequences", "tasks" };
+const std::vector<std::string> RepoScene::collectionsInProject = { 
+	"scene", 
+	"scene.files", 
+	"scene.chunks", 
+	"stash.3drepo", 
+	"stash.3drepo.files", 
+	"stash.3drepo.chunks", 
+	"stash.x3d",	// X3D is no longer supported but may exist in old imports
+	"stash.x3d.files",
+	"stash.json_mpc.files", 
+	"stash.json_mpc.chunks", 
+	"stash.x3d.chunks", 
+	"stash.gltf",	// GLTF is no longer supported but may exist in old imports
+	"stash.gltf.files", 
+	"stash.gltf.chunks", 
+	"stash.src", 
+	"stash.src.files", 
+	"stash.src.chunks", 
+	"history",
+	"history.files", 
+	"history.chunks", 
+	"issues", 
+	"wayfinder", 
+	"groups", 
+	"sequences", 
+	"tasks",
+};
 
 static bool nameCheck(const char &c)
 {
@@ -745,7 +769,7 @@ bool RepoScene::commitRevisionNode(
 		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON(REPO_NODE_REVISION_ID << 1 << REPO_NODE_LABEL_SHARED_ID << 1 << REPO_LABEL_TYPE << 1));
 		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON(REPO_NODE_LABEL_SHARED_ID << 1));
 		//Creation of the revision node will append unique id onto the filename (e.g. <uniqueID>chair.obj)
-		//we need to store the file in GridFS under the new name
+		//we need to store the file under the new name
 		std::vector<std::string> newRefFileNames = newRevNode->getOrgFiles();
 		for (size_t i = 0; i < refFiles.size(); i++)
 		{
@@ -754,19 +778,19 @@ bool RepoScene::commitRevisionNode(
 			if (file.is_open())
 			{
 				//newRefFileNames should be at the same index as the refFile. but double check this!
-				std::string gridFSName = newRefFileNames[i];
-				if (gridFSName.find(fileNames[i]) == std::string::npos)
+				std::string fsName = newRefFileNames[i];
+				if (fsName.find(fileNames[i]) == std::string::npos)
 				{
 					//fileNames[i] is not a substring of newName, try to find it
 					for (const std::string &name : newRefFileNames)
 					{
-						if (gridFSName.find(fileNames[i]) != std::string::npos)
+						if (fsName.find(fileNames[i]) != std::string::npos)
 						{
-							gridFSName = name;
+							fsName = name;
 						}
 					}
 
-					if (gridFSName == newRefFileNames[i])
+					if (fsName == newRefFileNames[i])
 					{
 						//could not find the matching name (theoretically this should never happen). Skip this file.
 						repoError << "Cannot find matching file name for : " << refFiles[i] << " skipping...";
@@ -781,9 +805,9 @@ bool RepoScene::commitRevisionNode(
 				std::vector<uint8_t> rawFile(size);
 				if (file.read((char*)rawFile.data(), size))
 				{
-					if (!(success = manager->uploadFileAndCommit(databaseName, projectName + "." + REPO_COLLECTION_RAW, gridFSName, rawFile)))
+					if (!(success = manager->uploadFileAndCommit(databaseName, projectName + "." + REPO_COLLECTION_RAW, fsName, rawFile)))
 					{
-						errMsg = "Failed to save original file into file storage: " + gridFSName;
+						errMsg = "Failed to save original file into file storage: " + fsName;
 						repoError << errMsg;
 					}
 				}

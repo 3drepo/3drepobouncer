@@ -96,10 +96,10 @@
 #define REPO_COLLECTION_SCENE           "scene"
 #define REPO_COLLECTION_STASH_REPO      "stash.3drepo"
 #define REPO_COLLECTION_STASH_SRC       "stash.src"
-#define REPO_COLLECTION_STASH_GLTF      "stash.gltf"
-#define REPO_COLLECTION_STASH_X3D       "stash.x3d"
+#define REPO_COLLECTION_STASH_GLTF      "stash.gltf" // This collection is no longer used but may still exist in the database
+#define REPO_COLLECTION_STASH_X3D       "stash.x3d" // This collection is no longer used but may still exist in the database
 #define REPO_COLLECTION_STASH_JSON      "stash.json_mpc"
-#define REPO_COLLECTION_STASH_UNITY     "stash.unity3d" // This collection is no longer used but may still exist in the databse
+#define REPO_COLLECTION_STASH_UNITY     "stash.unity3d" // This collection is no longer used but may still exist in the database
 #define REPO_COLLECTION_STASH_BUNDLE    "stash.repobundles"
 #define REPO_COLLECTION_EXT_REF         "ref"
 #define REPO_COLLECTION_SEQUENCE        "sequences"

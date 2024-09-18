@@ -20,7 +20,7 @@
 using namespace repo::core::model;
 
 const std::string RepoRef::REPO_REF_TYPE_FS = "fs";
-const std::string RepoRef::REPO_REF_TYPE_GRIDFS = "gridfs";
+const std::string RepoRef::REPO_REF_TYPE_GRIDFS = "gridfs"; // GRIDFS is no longer supported but may exist in the database
 const std::string RepoRef::REPO_REF_TYPE_UNKNOWN = "unknown";
 
 std::string RepoRef::convertTypeAsString(const RefType &type) {

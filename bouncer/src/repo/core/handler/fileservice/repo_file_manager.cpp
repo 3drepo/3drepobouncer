@@ -21,7 +21,6 @@
 #include "../../model/bson/repo_bson_builder.h"
 #include "../../model/bson/repo_bson_factory.h"
 #include "repo_file_handler_fs.h"
-#include "repo_file_handler_gridfs.h"
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/copy.hpp>
@@ -144,7 +143,7 @@ bool FileManager::deleteFileAndRef(
 		const auto keyName = ref.getRefLink();
 		const auto type = ref.getType(); //Should return enum
 
-		std::shared_ptr<AbstractFileHandler> handler = gridfsHandler;
+		std::shared_ptr<AbstractFileHandler> handler = nullptr;
 		switch (type) {
 		case repo::core::model::RepoRef::RefType::FS:
 			handler = fsHandler;
@@ -211,18 +210,14 @@ std::vector<uint8_t> FileManager::getFile(
 		const auto keyName = ref.getRefLink();
 		const auto type = ref.getType(); //Should return enum
 
-		std::shared_ptr<AbstractFileHandler> handler = gridfsHandler;
 		switch (type) {
-		case repo::core::model::RepoRef::RefType::FS:
-			handler = fsHandler;
+			case repo::core::model::RepoRef::RefType::FS:
+			{
+				repoTrace << "Getting file (" << keyName << ") from FS";
+				file = fsHandler->getFile(databaseName, collectionNamePrefix, keyName);
+			}
 			break;
-		}
-
-		if (handler) {
-			repoTrace << "Getting file (" << keyName << ") from " << (type == repo::core::model::RepoRef::RefType::FS ? "FS" : "GridFS");
-			file = handler->getFile(databaseName, collectionNamePrefix, keyName);
-		}
-		else {
+		default:
 			repoError << "Trying to read a file from " << repo::core::model::RepoRef::convertTypeAsString(type) << " but connection to this service is not configured.";
 		}
 	}
@@ -257,18 +252,14 @@ std::ifstream FileManager::getFileStream(
 		const auto keyName = ref.getRefLink();
 		const auto type = ref.getType(); //Should return enum
 
-		std::shared_ptr<AbstractFileHandler> handler = nullptr;
 		switch (type) {
-		case repo::core::model::RepoRef::RefType::FS:
-			handler = fsHandler;
+			case repo::core::model::RepoRef::RefType::FS:
+			{
+				repoTrace << "Getting file (" << keyName << ") from FS";
+				fs = fsHandler->getFileStream(databaseName, collectionNamePrefix, keyName);
+			}
 			break;
-		}
-
-		if (handler) {
-			repoTrace << "Getting file (" << keyName << ") from " << (type == repo::core::model::RepoRef::RefType::FS ? "FS" : "GridFS");
-			fs = handler->getFileStream(databaseName, collectionNamePrefix, keyName);
-		}
-		else {
+		default:
 			repoError << "Trying to read a file from " << repo::core::model::RepoRef::convertTypeAsString(type) << " but connection to this service is not configured.";
 		}
 	}
@@ -295,8 +286,6 @@ FileManager::FileManager(
 	if (!dbHandler)
 		throw repo::lib::RepoException("Trying to instantiate FileManager with a nullptr to database!");
 
-	gridfsHandler = std::make_shared<GridFSFileHandler>(dbHandler);
-
 	auto fsConfig = config.getFSConfig();
 	if (fsConfig.configured) {
 		fsHandler = std::make_shared<FSFileHandler>(fsConfig.dir, fsConfig.nLevel);
@@ -304,7 +293,7 @@ FileManager::FileManager(
 			defaultHandler = fsHandler;
 	}
 	else {
-		throw repo::lib::RepoException("Filestore configuration must be provided (GridFS is no longer supported as the default FileService!");
+		throw repo::lib::RepoException("Filestore configuration must be provided (GridFS is no longer supported!)");
 	}
 }
 
