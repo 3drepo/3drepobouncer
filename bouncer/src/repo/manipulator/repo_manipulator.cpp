@@ -176,25 +176,6 @@ void RepoManipulator::disconnectFromDatabase(const std::string& databaseAd)
 	core::handler::MongoDatabaseHandler::disconnectHandler();
 }
 
-bool RepoManipulator::dropCollection(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& databaseName,
-	const std::string& collectionName,
-	std::string& errMsg
-)
-{
-	bool success = false;
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-		success = handler->dropCollection(databaseName, collectionName, errMsg);
-	else
-		errMsg = "Unable to locate database handler for " + databaseAd + ". Try reauthenticating.";
-
-	return success;
-}
-
 std::list<std::string> RepoManipulator::fetchDatabases(
 	const std::string& databaseAd,
 	const repo::core::model::RepoBSON* cred

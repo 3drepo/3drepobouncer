@@ -87,23 +87,6 @@ namespace repo {
 			void disconnectFromDatabase(const std::string &databaseAd);
 
 			/**
-			* Remove a collection from the database
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
-			* @param database the database the collection resides in
-			* @param collection name of the collection to drop
-			* @param errMsg error message if failed
-			* @return returns true upon success
-			*/
-			bool dropCollection(
-				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON             *cred,
-				const std::string                             &databaseName,
-				const std::string                             &collectionName,
-				std::string			                          &errMsg
-			);
-
-			/**
 			* Get a list of all available databases, alphabetically sorted by default.
 			* @param databaseAd mongo database address:port
 			* @param cred user credentials in bson form
