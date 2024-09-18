@@ -222,31 +222,6 @@ int32_t generateFederation(
 					break;
 				}
 
-				// ===== Get Transformation =====
-				std::vector<std::vector<float>> matrix;
-				int x = 0;
-				if (subPro.second.count("transformation"))
-				{
-					for (const auto& value : subPro.second.get_child("transformation"))
-					{
-						if (!(matrix.size() % 4))
-						{
-							matrix.push_back(std::vector<float>());
-						}
-						matrix.back().push_back(value.second.get_value<float>());
-						++x;
-					}
-				}
-
-				if (x != 16)
-				{
-					//no matrix/invalid input, assume identity
-					if (x)
-						repoLogError("Transformation was inserted for " + spDatabase + ":" + spProject
-							+ " but it is not a 4x4 matrix(size found: " + std::to_string(x) + "). Using identity...");
-					matrix = repo::core::model::TransformationNode::identityMat();
-				}
-
 				auto refNode = repo::core::model::RepoBSONFactory::makeReferenceNode(spDatabase, spProject, repo::lib::RepoUUID(uuid), isRevID);
 				refMap[refNode] = group;
 			}
