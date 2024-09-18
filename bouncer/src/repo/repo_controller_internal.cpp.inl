@@ -398,22 +398,6 @@ repo_web_buffers_t RepoController::_RepoControllerImpl::generateSRCBuffer(
 	return buffer;
 }
 
-std::string RepoController::_RepoControllerImpl::getNameOfAdminDatabase(const RepoController::RepoToken *token)
-{
-	std::string name;
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		name = worker->getNameOfAdminDatabase(token->databaseAd);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to get database roles without a token!";
-	}
-	return name;
-}
-
 std::shared_ptr<repo_partitioning_tree_t>
 RepoController::_RepoControllerImpl::getScenePartitioning(
 	const repo::core::model::RepoScene *scene,

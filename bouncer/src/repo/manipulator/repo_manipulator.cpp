@@ -358,14 +358,6 @@ std::list<std::string> RepoManipulator::getStandardDatabaseRoles(
 	return roles;
 }
 
-std::string RepoManipulator::getNameOfAdminDatabase(
-	const std::string& databaseAd) const
-{
-	//FIXME: at the moment we only have mongo. But if we have
-	//different database types then this would not work
-	return  repo::core::handler::MongoDatabaseHandler::getAdminDatabaseName();
-}
-
 repo::core::model::RepoNodeSet
 RepoManipulator::loadMetadataFromFile(
 	const std::string& filePath,

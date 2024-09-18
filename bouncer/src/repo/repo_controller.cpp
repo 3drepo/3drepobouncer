@@ -162,11 +162,6 @@ repo_web_buffers_t RepoController::generateSRCBuffer(
 	return impl->generateSRCBuffer(scene);
 }
 
-std::string RepoController::getNameOfAdminDatabase(const RepoController::RepoToken *token)
-{
-	return impl->getNameOfAdminDatabase(token);
-}
-
 std::shared_ptr<repo_partitioning_tree_t>
 RepoController::getScenePartitioning(
 	const repo::core::model::RepoScene *scene,

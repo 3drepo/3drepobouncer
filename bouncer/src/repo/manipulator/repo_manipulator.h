@@ -289,16 +289,6 @@ namespace repo {
 				const std::string                             &databaseAd);
 
 			/**
-			* Get the name of the admin database
-			* note it is done this way to support different admin database names
-			* for different handlers (which may be of different database types)
-			* @param databaseAd database address:portdatabase
-			* @return returns the name of the admin database
-			*/
-			std::string getNameOfAdminDatabase(
-				const std::string                             &databaseAd) const;
-
-			/**
 			* Connect to all services required as per config provided
 			* @param errMsg error message if failed
 			* @param config RepoConfig instance containing all connection information

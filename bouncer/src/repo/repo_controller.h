@@ -152,13 +152,6 @@ namespace repo {
 				const uint32_t               &limit = 0);
 
 		/**
-		* Get the name of the admin database
-		* @param token repo token to the database
-		* @return returns the name of the admin database
-		*/
-		std::string getNameOfAdminDatabase(const RepoToken *token);
-
-		/**
 		* Get a list of standard roles from the database
 		* @param token repo token to the database
 		* @return returns a vector of roles
