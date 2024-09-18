@@ -198,23 +198,6 @@ void RepoController::processDrawingRevision(
 	return impl->processDrawingRevision(token, teamspace, revision, err, imagePath);
 }
 
-bool RepoController::saveOriginalFiles(
-	const RepoController::RepoToken    *token,
-	const repo::core::model::RepoScene *scene,
-	const std::string                   &directory)
-{
-	return impl->saveOriginalFiles(token, scene, directory);
-}
-
-bool RepoController::saveOriginalFiles(
-	const RepoController::RepoToken     *token,
-	const std::string                   &database,
-	const std::string                   &project,
-	const std::string                   &directory)
-{
-	return impl->saveOriginalFiles(token, database, project, directory);
-}
-
 bool RepoController::saveSceneToFile(
 	const std::string &filePath,
 	const repo::core::model::RepoScene* scene)

@@ -174,22 +174,6 @@ TEST(MongoDatabaseHandlerTest, GetCollections)
 	EXPECT_EQ(0, handler->getCollections("blahblah").size());
 }
 
-TEST(MongoDatabaseHandlerTest, GetProjects)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-
-	auto projects = handler->getProjects(REPO_GTEST_DBNAME1, "history");
-	ASSERT_EQ(projects.size(), 2);
-	EXPECT_EQ(projects.front(), REPO_GTEST_DBNAME1_PROJ);
-
-	projects = handler->getProjects(REPO_GTEST_DBNAME1, "blah");
-	EXPECT_EQ(projects.size(), 0);
-
-	projects = handler->getProjects("noDB", "history");
-	EXPECT_EQ(projects.size(), 0);
-}
-
 TEST(MongoDatabaseHandlerTest, GetAdminDatabaseName)
 {
 	auto handler = getHandler();
@@ -225,23 +209,6 @@ TEST(MongoDatabaseHandlerTest, DropCollection)
 	EXPECT_FALSE(errMsg.empty());
 	errMsg.clear();
 	EXPECT_FALSE(handler->dropCollection("", REPO_GTEST_DROPCOL_TESTCASE.second, errMsg));
-	EXPECT_FALSE(errMsg.empty());
-}
-
-TEST(MongoDatabaseHandlerTest, DropDatabase)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	std::string errMsg;
-
-	EXPECT_TRUE(handler->dropDatabase(REPO_GTEST_DROPCOL_TESTCASE.first, errMsg));
-	EXPECT_TRUE(errMsg.empty());
-	errMsg.clear();
-	//Apparently if you drop the database that doesn't exist it still returns true... Which is inconsistent to dropCollection..
-	EXPECT_TRUE(handler->dropDatabase(REPO_GTEST_DROPCOL_TESTCASE.first, errMsg));
-	EXPECT_TRUE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_FALSE(handler->dropDatabase("", errMsg));
 	EXPECT_FALSE(errMsg.empty());
 }
 

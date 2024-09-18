@@ -270,30 +270,6 @@ bool MongoDatabaseHandler::dropCollection(
 	return success;
 }
 
-bool MongoDatabaseHandler::dropDatabase(
-	const std::string &database,
-	std::string &errMsg)
-{
-	bool success = false;
-
-	if (!database.empty())
-	{
-		try {
-			success = worker->dropDatabase(database);
-		}
-		catch (mongo::DBException& e)
-		{
-			errMsg = "Failed to drop database :" + std::string(e.what());
-		}
-	}
-	else
-	{
-		errMsg = "Failed to drop database: name of database is unspecified!";
-	}
-
-	return success;
-}
-
 bool MongoDatabaseHandler::dropDocument(
 	const repo::core::model::RepoBSON bson,
 	const std::string &database,
@@ -319,39 +295,6 @@ bool MongoDatabaseHandler::dropDocument(
 		{
 			errMsg = "Failed to drop document :" + std::string(e.what());
 			success = false;
-		}
-	}
-	else
-	{
-		errMsg = "Failed to drop document: either database (value: " + database + ") or collection (value: " + collection + ") is empty";
-	}
-
-	return success;
-}
-
-bool MongoDatabaseHandler::dropDocuments(
-	const repo::core::model::RepoBSON criteria,
-	const std::string &database,
-	const std::string &collection,
-	std::string &errMsg)
-{
-	bool success = false;
-
-	if (!database.empty() && !collection.empty())
-	{
-		try {
-			if (success = !criteria.isEmpty())
-			{
-				worker->remove(database + "." + collection, criteria, false);
-			}
-			else
-			{
-				errMsg = "Failed to drop documents: empty criteria";
-			}
-		}
-		catch (mongo::DBException& e)
-		{
-			errMsg = "Failed to drop documents:" + std::string(e.what());
 		}
 	}
 	else
@@ -753,21 +696,6 @@ std::string MongoDatabaseHandler::getNamespace(
 	const std::string &collection)
 {
 	return database + "." + collection;
-}
-
-std::list<std::string> MongoDatabaseHandler::getProjects(const std::string &database, const std::string &projectExt)
-{
-	// TODO: remove db.info from the list (anything that is not a project basically)
-	std::list<std::string> collections = getCollections(database);
-	std::list<std::string> projects;
-	for (std::list<std::string>::iterator it = collections.begin(); it != collections.end(); ++it) {
-		std::string project = getProjectFromCollection(*it, projectExt);
-		if (!project.empty())
-			projects.push_back(project);
-	}
-	projects.sort();
-	projects.unique();
-	return projects;
 }
 
 bool MongoDatabaseHandler::insertDocument(

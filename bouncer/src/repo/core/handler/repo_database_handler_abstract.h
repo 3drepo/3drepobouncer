@@ -45,19 +45,6 @@ namespace repo {
 				*/
 				uint64_t documentSizeLimit() { return maxDocumentSize; }
 
-				///**
-				//* Generates a BSON object containing user credentials
-				//* @param username user name for authentication
-				//* @param password password of the user
-				//* @param pwDigested true if pw is digested
-				//* @return returns the constructed BSON object, or 0 if username is empty
-				//*/
-				//sta repo::core::model::RepoBSON* createBSONCredentials(
-				//	const std::string &dbAddress,
-				//	const std::string &username,
-				//	const std::string &password,
-				//	const bool        &pwDigested = false) = 0;
-
 				/*
 				*	------------- Database info lookup --------------
 				*/
@@ -89,14 +76,6 @@ namespace repo {
 				* Get a list of all available collections
 				*/
 				virtual std::list<std::string> getCollections(const std::string &database) = 0;
-
-				/**
-				* Get a list of projects associated with a given database (aka company account).
-				* @param list of database
-				* @param extension that indicates it is a project (.scene)
-				* @return list of projects for the database
-				*/
-				virtual std::list<std::string> getProjects(const std::string &database, const std::string &projectExt) = 0;
 
 				/*
 				*	------------- Database operations (insert/delete/update) --------------
@@ -175,15 +154,6 @@ namespace repo {
 					std::string &errMsg) = 0;
 
 				/**
-				* Remove a database from the database instance
-				* @param database name of the database to drop
-				* @param errMsg name of the database to drop
-				*/
-				virtual bool dropDatabase(
-					const std::string &database,
-					std::string &errMsg) = 0;
-
-				/**
 				* Remove a document from the mongo database
 				* @param bson document to remove
 				* @param database the database the collection resides in
@@ -192,19 +162,6 @@ namespace repo {
 				*/
 				virtual bool dropDocument(
 					const repo::core::model::RepoBSON bson,
-					const std::string &database,
-					const std::string &collection,
-					std::string &errMsg) = 0;
-
-				/**
-				* Remove all documents satisfying a certain criteria
-				* @param criteria document to remove
-				* @param database the database the collection resides in
-				* @param collection name of the collection the document is in
-				* @param errMsg name of the database to drop
-				*/
-				virtual bool dropDocuments(
-					const repo::core::model::RepoBSON criteria,
 					const std::string &database,
 					const std::string &collection,
 					std::string &errMsg) = 0;

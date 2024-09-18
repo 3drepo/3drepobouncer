@@ -202,15 +202,6 @@ namespace repo {
 				std::list<std::string> getCollections(const std::string &database);
 
 				/**
-				 * Get a list of projects associated with a given database (aka company account).
-				 * It will filter out any collections without that isn't *.projectExt
-				 * @param list of database
-				 * @param extension that determines it is a project (scene)
-				 * @return list of projects for the database
-				 */
-				std::list<std::string> getProjects(const std::string &database, const std::string &projectExt);
-
-				/**
 				* Return the name of admin database
 				* @return name of admin database
 				*/
@@ -250,15 +241,6 @@ namespace repo {
 					std::string &errMsg);
 
 				/**
-				* Remove a database from the mongo database
-				* @param database name of the database to drop
-				* @param errMsg name of the database to drop
-				*/
-				bool dropDatabase(
-					const std::string &database,
-					std::string &errMsg);
-
-				/**
 				* Remove a document from the mongo database
 				* @param bson document to remove
 				* @param database the database the collection resides in
@@ -267,19 +249,6 @@ namespace repo {
 				*/
 				bool dropDocument(
 					const repo::core::model::RepoBSON bson,
-					const std::string &database,
-					const std::string &collection,
-					std::string &errMsg);
-
-				/**
-				* Remove all documents satisfying a certain criteria
-				* @param criteria document to remove
-				* @param database the database the collection resides in
-				* @param collection name of the collection the document is in
-				* @param errMsg name of the database to drop
-				*/
-				bool dropDocuments(
-					const repo::core::model::RepoBSON criteria,
 					const std::string &database,
 					const std::string &collection,
 					std::string &errMsg);
