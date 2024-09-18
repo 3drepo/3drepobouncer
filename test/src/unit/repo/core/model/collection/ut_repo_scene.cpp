@@ -171,7 +171,7 @@ TEST(RepoSceneTest, AddMetadata)
 	metaNodes.insert(new MetadataNode(mm3));
 
 	RepoScene scene,
-		scene2(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
+		scene2(std::vector<std::string>(), meshNodes, empty, empty, empty, transNodes);
 	scene.addMetadata(metaNodes, true);
 	EXPECT_EQ(0, scene.getAllMetadata(defaultG).size());
 	scene2.addMetadata(metaNodes, true, false); //no propagation check
@@ -204,7 +204,7 @@ TEST(RepoSceneTest, AddMetadata)
 	metaNodes.insert(new MetadataNode(mm2));
 	metaNodes.insert(new MetadataNode(mm3));
 
-	RepoScene scene3(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
+	RepoScene scene3(std::vector<std::string>(), meshNodes, empty, empty, empty, transNodes);
 
 	scene3.addMetadata(metaNodes, true, true); //propagation check
 
