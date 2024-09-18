@@ -40,7 +40,6 @@ namespace repo {
 				//FIXME: unsure as to whether i should make the graph a differen class.. struct for now.
 				struct repoGraphInstance
 				{
-					RepoNodeSet cameras; //!< Cameras
 					RepoNodeSet meshes; //!< Meshes
 					RepoNodeSet materials; //!< Materials
 					RepoNodeSet metadata; //!< Metadata
@@ -103,7 +102,6 @@ namespace repo {
 				*/
 				RepoScene(
 					const std::vector<std::string> &refFiles,
-					const RepoNodeSet              &cameras,
 					const RepoNodeSet              &meshes,
 					const RepoNodeSet              &materials,
 					const RepoNodeSet              &metadata,
@@ -187,7 +185,6 @@ namespace repo {
 				* @param transformations set of transformations
 				*/
 				void addStashGraph(
-					const RepoNodeSet &cameras,
 					const RepoNodeSet &meshes,
 					const RepoNodeSet &materials,
 					const RepoNodeSet &textures,
@@ -620,16 +617,6 @@ namespace repo {
 				*/
 
 				/**
-				* Get all camera nodes within current scene revision
-				* @return a RepoNodeSet of materials
-				*/
-				RepoNodeSet getAllCameras(
-					const GraphType &gType) const
-				{
-					return  gType == GraphType::OPTIMIZED ? stashGraph.cameras : graph.cameras;
-				}
-
-				/**
 				* Get all material nodes within current scene revision
 				* @return a RepoNodeSet of materials
 				*/
@@ -1038,7 +1025,6 @@ namespace repo {
 				*/
 				void populateAndUpdate(
 					const GraphType &gType,
-					const RepoNodeSet &cameras,
 					const RepoNodeSet &meshes,
 					const RepoNodeSet &materials,
 					const RepoNodeSet &metadata,

@@ -29,7 +29,6 @@
 
 #include "repo_model_import_abstract.h"
 #include "../../../core/model/collection/repo_scene.h"
-#include "../../../core/model/bson/repo_node_camera.h"
 #include "../../../core/model/bson/repo_node_material.h"
 #include "../../../core/model/bson/repo_node_mesh.h"
 #include "../../../core/model/bson/repo_node_metadata.h"
@@ -152,7 +151,6 @@ namespace repo {
 				std::vector<mesh_data_t> meshEntries;
 
 				// Variables directly used to instantiate the RepoScene
-				repo::core::model::RepoNodeSet cameras;
 				repo::core::model::RepoNodeSet materials;
 				repo::core::model::RepoNodeSet metadata;
 				repo::core::model::RepoNodeSet transformations;

@@ -287,21 +287,6 @@ RepoController::_RepoControllerImpl::getAllFromCollectionContinuous(
 	return vector;
 }
 
-std::vector < repo::core::model::RepoRole > RepoController::_RepoControllerImpl::getRolesFromDatabase(
-	const RepoController::RepoToken              *token,
-	const std::string            &database,
-	const uint64_t               &skip,
-	const uint32_t               &limit)
-{
-	auto bsons = getAllFromCollectionContinuous(token, database, REPO_SYSTEM_ROLES, skip, limit);
-	std::vector<repo::core::model::RepoRole> roles;
-	for (const auto &b : bsons)
-	{
-		roles.push_back(repo::core::model::RepoRole(b));
-	}
-
-	return roles;
-}
 std::list<std::string> RepoController::_RepoControllerImpl::getDatabases(const RepoController::RepoToken *token)
 {
 	repoTrace << "Controller: Fetching Database....";
@@ -370,41 +355,6 @@ RepoController::_RepoControllerImpl::getDatabasesWithProjects(
 	return map;
 }
 
-void RepoController::_RepoControllerImpl::insertRole(
-	const RepoController::RepoToken                   *token,
-	const repo::core::model::RepoRole &role
-)
-{
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		worker->insertRole(token->databaseAd,
-			token->getCredentials(), role);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to insert a role without a database connection!";
-	}
-}
-
-void RepoController::_RepoControllerImpl::insertUser(
-	const RepoController::RepoToken                          *token,
-	const repo::core::model::RepoUser  &user)
-{
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		worker->insertUser(token->databaseAd,
-			token->getCredentials(), user);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to insert a user without a database connection!";
-	}
-}
-
 bool RepoController::_RepoControllerImpl::removeCollection(
 	const RepoController::RepoToken             *token,
 	const std::string     &databaseName,
@@ -418,29 +368,6 @@ bool RepoController::_RepoControllerImpl::removeCollection(
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		success = worker->dropCollection(token->databaseAd,
 			token->getCredentials(), databaseName, collectionName, errMsg);
-		workerPool.push(worker);
-	}
-	else
-	{
-		errMsg = "Trying to fetch collections without a database connection!";
-		repoError << errMsg;
-	}
-
-	return success;
-}
-
-bool RepoController::_RepoControllerImpl::removeDatabase(
-	const RepoController::RepoToken       *token,
-	const std::string     &databaseName,
-	std::string			  &errMsg
-)
-{
-	bool success = false;
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		success = worker->dropDatabase(token->databaseAd,
-			token->getCredentials(), databaseName, errMsg);
 		workerPool.push(worker);
 	}
 	else
@@ -468,95 +395,6 @@ void RepoController::_RepoControllerImpl::removeDocument(
 	else
 	{
 		repoError << "Trying to delete a document without a database connection!";
-	}
-}
-
-bool RepoController::_RepoControllerImpl::removeProject(
-	const RepoController::RepoToken                          *token,
-	const std::string                        &databaseName,
-	const std::string                        &projectName,
-	std::string								 &errMsg)
-{
-	bool result = false;
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		result = worker->removeProject(token->databaseAd,
-			token->getCredentials(), databaseName, projectName, errMsg);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to delete a document without a database connection!";
-	}
-	return result;
-}
-
-void RepoController::_RepoControllerImpl::removeRole(
-	const RepoController::RepoToken                          *token,
-	const repo::core::model::RepoRole        &role)
-{
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		worker->removeRole(token->databaseAd,
-			token->getCredentials(), role);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to insert a user without a database connection!";
-	}
-}
-
-void RepoController::_RepoControllerImpl::removeUser(
-	const RepoController::RepoToken                          *token,
-	const repo::core::model::RepoUser  &user)
-{
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		worker->removeUser(token->databaseAd,
-			token->getCredentials(), user);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to insert a user without a database connection!";
-	}
-}
-
-void RepoController::_RepoControllerImpl::updateRole(
-	const RepoController::RepoToken                          *token,
-	const repo::core::model::RepoRole        &role)
-{
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		worker->updateRole(token->databaseAd,
-			token->getCredentials(), role);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to insert a user without a database connection!";
-	}
-}
-
-void RepoController::_RepoControllerImpl::updateUser(
-	const RepoController::RepoToken                          *token,
-	const repo::core::model::RepoUser  &user)
-{
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		worker->updateUser(token->databaseAd,
-			token->getCredentials(), user);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to insert a user without a database connection!";
 	}
 }
 
@@ -961,51 +799,6 @@ void RepoController::_RepoControllerImpl::reduceTransformations(
 		workerPool.push(worker);
 		repoInfo << "Optimization completed. Number of transformations has been reduced from "
 			<< transNodes_pre << " to " << scene->getAllTransformations(gType).size();
-	}
-	else {
-		repoError << "RepoController::_RepoControllerImpl::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";
-	}
-}
-
-void RepoController::_RepoControllerImpl::compareScenes(
-	const RepoController::RepoToken                    *token,
-	repo::core::model::RepoScene       *base,
-	repo::core::model::RepoScene       *compare,
-	repo_diff_result_t &baseResults,
-	repo_diff_result_t &compResults,
-	const repo::DiffMode       &diffMode
-)
-{
-	//We only do reduction optimisations on the unoptimised graph
-	const repo::core::model::RepoScene::GraphType gType = repo::core::model::RepoScene::GraphType::DEFAULT;
-	if (token && base && compare)
-	{
-		//If the unoptimised graph isn't fetched, try to fetch full scene before beginning
-		//This should be safe considering if it has not loaded the unoptimised graph it shouldn't have
-		//any uncommited changes.
-		if (base->isRevisioned() && !base->hasRoot(gType))
-		{
-			repoInfo << "Unoptimised base scene not loaded, trying loading unoptimised scene...";
-			manipulator::RepoManipulator* worker = workerPool.pop();
-			worker->fetchScene(token->databaseAd, token->getCredentials(), base);
-			workerPool.push(worker);
-		}
-
-		if (compare->isRevisioned() && !compare->hasRoot(gType))
-		{
-			repoInfo << "Unoptimised compare scene not loaded, trying loading unoptimised scene...";
-			manipulator::RepoManipulator* worker = workerPool.pop();
-			worker->fetchScene(token->databaseAd, token->getCredentials(), compare);
-			workerPool.push(worker);
-		}
-	}
-
-	if (base && base->hasRoot(gType) && compare && compare->hasRoot(gType))
-	{
-		repoInfo << "Comparing scenes...";
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		worker->compareScenes(base, compare, baseResults, compResults, diffMode, gType);
-		workerPool.push(worker);
 	}
 	else {
 		repoError << "RepoController::_RepoControllerImpl::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";

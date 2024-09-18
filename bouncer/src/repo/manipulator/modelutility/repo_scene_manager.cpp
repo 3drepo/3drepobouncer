@@ -29,6 +29,9 @@
 #include <submodules/asset_generator/src/repo_model_export_repobundle.h>
 #endif
 
+#define REPO_USER_LABEL_VR_ENABLED					"vrEnabled"
+#define REPO_USER_LABEL_SRC_ENABLED					"srcEnabled"
+
 using namespace repo::manipulator::modelutility;
 
 bool SceneManager::commitWebBuffers(

@@ -96,8 +96,6 @@ namespace repo {
 						std::vector<repo::lib::RepoVector2D>& uvOut) override;
 
 				private:
-					void getCameras(OdBmDatabasePtr database);
-					camera_t convertCamera(OdBmDBViewPtr view);
 					std::string determineTexturePath(const std::string& inputPath);
 					void establishProjectTranslation(OdBmDatabase* pDb);
 					void fillTexture(OdBmMaterialElemPtr materialPtr, repo_material_t& material, bool& missingTexture);

@@ -33,7 +33,6 @@
 
 #include "repo_model_import_abstract.h"
 #include "../../../core/model/collection/repo_scene.h"
-#include "../../../core/model/bson/repo_node_camera.h"
 #include "../../../core/model/bson/repo_node_material.h"
 #include "../../../core/model/bson/repo_node_mesh.h"
 #include "../../../core/model/bson/repo_node_metadata.h"
@@ -88,14 +87,6 @@ namespace repo {
 				*/
 				repo::core::model::RepoScene* convertAiSceneToRepoScene();
 
-				/**
-				* Create a Camera Node given the information in ASSIMP objects
-				* @param assimp camera object
-				* @return returns a pointer to the created camera node
-				*/
-				repo::core::model::CameraNode* createCameraRepoNode(
-					const aiCamera *assimpCamera,
-					const std::vector<double> &offset);
 				/**
 				* Create a Material Node given the information in ASSIMP objects
 				* NOTE: textures must've been populated at this point to populate references

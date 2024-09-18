@@ -30,31 +30,6 @@ GeometryCollector::~GeometryCollector()
 {
 }
 
-repo::core::model::CameraNode generateCameraNode(camera_t camera, repo::lib::RepoUUID parentID)
-{
-	auto node = repo::core::model::RepoBSONFactory::makeCameraNode(camera.aspectRatio, camera.farClipPlane, camera.nearClipPlane, camera.FOV, camera.eye, camera.pos, camera.up, camera.name);
-	node = node.cloneAndAddParent(parentID);
-	return node;
-}
-
-void GeometryCollector::addCameraNode(camera_t node)
-{
-	cameras.push_back(node);
-}
-
-repo::core::model::RepoNodeSet GeometryCollector::getCameraNodes(repo::lib::RepoUUID parentID)
-{
-	repo::core::model::RepoNodeSet camerasNodeSet;
-	for (auto& camera : cameras)
-		camerasNodeSet.insert(new repo::core::model::CameraNode(generateCameraNode(camera, parentID)));
-	return camerasNodeSet;
-}
-
-bool GeometryCollector::hasCameraNodes()
-{
-	return cameras.size();
-}
-
 repo::core::model::TransformationNode GeometryCollector::createRootNode()
 {
 	return repo::core::model::RepoBSONFactory::makeTransformationNode(rootMatrix, "rootNode");

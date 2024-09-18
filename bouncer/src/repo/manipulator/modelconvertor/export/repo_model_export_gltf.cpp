@@ -195,8 +195,8 @@ GLTFModelExport::GLTFModelExport(
 {
 	if (convertSuccess)
 	{
-		//We only need a GLTF representation if there are meshes or cameras
-		if (scene->getAllMeshes(gType).size() || scene->getAllCameras(gType).size())
+		//We only need a GLTF representation if there are meshes
+		if (scene->getAllMeshes(gType).size())
 			convertSuccess = generateTreeRepresentation();
 	}
 	else
@@ -503,7 +503,6 @@ bool GLTFModelExport::constructScene(
 			populateWithNodes(tree, splitMeshes);
 			populateWithMaterials(tree);
 			populateWithTextures(tree);
-			populateWithCameras(tree);
 
 			repo::lib::PropertyTree spatialPartTree = generateSpatialPartitioning();
 
@@ -717,29 +716,6 @@ void GLTFModelExport::processNodeChildren(
 		tree.addToTree(prefix + GLTF_LABEL_MESHES, meshes);
 	if (cameras.size())
 		tree.addToTree(prefix + GLTF_LABEL_CAMERAS, cameras);
-}
-
-void GLTFModelExport::populateWithCameras(
-	repo::lib::PropertyTree           &tree)
-{
-	repo::core::model::RepoNodeSet cameras = scene->getAllCameras(gType);
-	for (const auto &cam : cameras)
-	{
-		const repo::core::model::CameraNode *node = (const repo::core::model::CameraNode *)cam;
-		const std::string label = GLTF_LABEL_CAMERAS + "." + node->getUniqueID().toString();
-		//All our viewpoints are perspective..?
-		tree.addToTree(label + "." + GLTF_LABEL_TYPE, GLTF_CAM_TYPE_PERSPECTIVE);
-		std::string name = node->getName();
-		if (!name.empty())
-			tree.addToTree(label + "." + GLTF_LABEL_NAME, name);
-
-		const std::string perspectLabel = label + "." + GLTF_CAM_TYPE_PERSPECTIVE;
-
-		tree.addToTree(perspectLabel + "." + GLTF_LABEL_ASP_RATIO, node->getAspectRatio());
-		tree.addToTree(perspectLabel + "." + GLTF_LABEL_FOV, node->getFieldOfView());
-		tree.addToTree(perspectLabel + "." + GLTF_LABEL_FAR_CP, node->getFarClippingPlane());
-		tree.addToTree(perspectLabel + "." + GLTF_LABEL_NEAR_CP, node->getNearClippingPlane());
-	}
 }
 
 void GLTFModelExport::populateWithMaterials(

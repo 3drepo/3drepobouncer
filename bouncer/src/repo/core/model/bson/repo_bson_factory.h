@@ -22,15 +22,11 @@
 
 #pragma once
 
-#include "repo_bson_project_settings.h"
 #include "repo_bson_ref.h"
-#include "repo_bson_role.h"
 #include "repo_bson_sequence.h"
 #include "repo_bson_task.h"
-#include "repo_bson_user.h"
 #include "repo_bson_assets.h"
 #include "repo_node.h"
-#include "repo_node_camera.h"
 #include "repo_node_metadata.h"
 #include "repo_node_material.h"
 #include "repo_node_mesh.h"
@@ -48,44 +44,6 @@ namespace repo {
 			{
 			public:
 				/**
-				* Create a project setting BSON
-				* @param uniqueProjectName a unique name for the project
-				* @param owner owner ofthis project
-				* @param isFederate is the project a federation
-				* @param group group with access of this project
-				* @param type  type of project
-				* @param description Short description of the project
-				* @return returns a Project settings
-				*/
-				static RepoProjectSettings makeRepoProjectSettings(
-					const std::string &uniqueProjectName,
-					const std::string &owner,
-					const bool        &isFederate,
-					const std::string &type = REPO_DEFAULT_PROJECT_TYPE_ARCHITECTURAL,
-					const std::string &description = std::string(),
-					const double pinSize = REPO_DEFAULT_PROJECT_PIN_SIZE,
-					const double avatarHeight = REPO_DEFAULT_PROJECT_AVATAR_HEIGHT,
-					const double visibilityLimit = REPO_DEFAULT_PROJECT_VISIBILITY_LIMIT,
-					const double speed = REPO_DEFAULT_PROJECT_SPEED,
-					const double zNear = REPO_DEFAULT_PROJECT_ZNEAR,
-					const double zFar = REPO_DEFAULT_PROJECT_ZFAR);
-
-				/**
-				* Create a role BSON from previous role
-				* Use _makeRepoRole() if you wish to have direct control on the interface
-				* @param roleName name of the role
-				* @param database database where this role resides
-				* @param permissions a vector of project and their access permissions
-				* @param oldRole previous role from which to copy over privileges and inherited roles
-				* @return returns a bson with this role information
-				*/
-				static RepoRole makeRepoRole(
-					const std::string &roleName,
-					const std::string &database,
-					const std::vector<RepoPermission> &permissions = std::vector<RepoPermission>(),
-					const RepoRole &oldRole = RepoRole());
-
-				/**
 				* Create RepoRef
 				* @param fileName name of the file - this is what is stored in the _id member, and should be a UUID or string.
 				* @param type type of storage
@@ -101,44 +59,6 @@ namespace repo {
 					const std::string &link,
 					const uint32_t size,
 					const repo::core::model::RepoBSON &metadata = repo::core::model::RepoBSON());
-
-				/**
-				* Create a role BSON
-				* @param roleName name of the role
-				* @param database database where this role resides
-				* @param privileges a vector of privileges this role has
-				* @param inhertedRoles vector of roles which this role inherits from
-				* @return returns a bson with this role information
-				*/
-				static RepoRole _makeRepoRole(
-					const std::string &roleName,
-					const std::string &database,
-					const std::vector<RepoPrivilege> &privileges,
-					const std::vector<std::pair<std::string, std::string>> &inheritedRoles
-					= std::vector<std::pair<std::string, std::string>>()
-				);
-
-				/**
-				* Create a user BSON
-				* @param userName username
-				* @param password password of the user
-				* @param firstName first name of user
-				* @param lastName last name of user
-				* @param email  email address of the user
-				* @param roles list of roles the users are capable of
-				* @param apiKeys a list of api keys for the user
-				* @param avatar picture of the user
-				* @return returns a RepoUser
-				*/
-				static RepoUser makeRepoUser(
-					const std::string                                      &userName,
-					const std::string                                      &password,
-					const std::string                                      &firstName,
-					const std::string                                      &lastName,
-					const std::string                                      &email,
-					const std::list<std::pair<std::string, std::string>>   &roles,
-					const std::list<std::pair<std::string, std::string>>   &apiKeys,
-					const std::vector<char>                                &avatar);
 
 				/**
 				* Create a RepoBundles list BSON
@@ -198,30 +118,6 @@ namespace repo {
 					const std::string& name = std::string(),
 					const std::vector<repo::lib::RepoUUID>& parents = std::vector<repo::lib::RepoUUID>(),
 					const repo::lib::RepoUUID& uniqueID = repo::lib::RepoUUID::createUUID());
-
-				/**
-				* Create a Camera Node
-				* @param aspect ratio
-				* @param Far clipping plane
-				* @param Near clipping plane. Should not be 0 to avoid divis
-				* @param Field of view.
-				* @param LookAt vector relative to parent transformations.
-				* @param Position relative to parent transformations
-				* @param Up vector relative to parent transformations.
-				* @param API level of the node (optional, default REPO_NODE_API_LEVEL_1)
-				* @param name of the node (optional, default empty string)
-				* @return returns a Camera node
-				*/
-				static CameraNode makeCameraNode(
-					const float         &aspectRatio,
-					const float         &farClippingPlane,
-					const float         &nearClippingPlane,
-					const float         &fieldOfView,
-					const repo::lib::RepoVector3D &lookAt,
-					const repo::lib::RepoVector3D &position,
-					const repo::lib::RepoVector3D &up,
-					const std::string   &name = std::string(),
-					const int           &apiLevel = REPO_NODE_API_LEVEL_1);
 
 				/**
 				* Create a Material Node

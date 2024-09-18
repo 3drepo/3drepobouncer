@@ -27,8 +27,6 @@
 #include <string>
 
 #include "../model/bson/repo_bson.h"
-#include "../model/bson/repo_bson_role.h"
-#include "../model/bson/repo_bson_user.h"
 
 namespace repo {
 	namespace core {
@@ -207,16 +205,6 @@ namespace repo {
 				) = 0;
 
 				/**
-				* Insert a role into the database
-				* @param role role bson to insert
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				virtual bool insertRole(
-					const repo::core::model::RepoRole       &role,
-					std::string                             &errmsg) = 0;
-
-				/**
 				* Update/insert a single document in database.collection
 				* If the document exists, update it, if it doesn't, insert it
 				* @param database name
@@ -232,16 +220,6 @@ namespace repo {
 					const repo::core::model::RepoBSON &obj,
 					const bool        &overwrite,
 					std::string &errMsg) = 0;
-
-				/**
-				* Insert a user into the database
-				* @param user user bson to insert
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				virtual bool insertUser(
-					const repo::core::model::RepoUser &user,
-					std::string                             &errmsg) = 0;
 
 				/**
 				* Remove a collection from the database
@@ -302,45 +280,6 @@ namespace repo {
 					const std::string &fileName,
 					std::string &errMsg) = 0;
 
-				/**
-				* Remove a role from the database
-				* @param role user bson to remove
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				virtual bool dropRole(
-					const repo::core::model::RepoRole &role,
-					std::string                       &errmsg) = 0;
-
-				/**
-				* Remove a user from the database
-				* @param user user bson to remove
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				virtual bool dropUser(
-					const repo::core::model::RepoUser &user,
-					std::string                             &errmsg) = 0;
-
-				/**
-				* Update a role in the database
-				* @param role role bson to update
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				virtual bool updateRole(
-					const repo::core::model::RepoRole       &role,
-					std::string                             &errmsg) = 0;
-
-				/**
-				* Update a user in the database
-				* @param user user bson to update
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				virtual bool updateUser(
-					const repo::core::model::RepoUser &user,
-					std::string                             &errmsg) = 0;
 				/*
 				*	------------- Query operations --------------
 				*/

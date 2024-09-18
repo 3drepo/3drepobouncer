@@ -187,7 +187,7 @@
 
 #define REPO_NODE_TYPE_ANIMATION		"animation"
 #define REPO_NODE_TYPE_BONE				"bone"
-#define REPO_NODE_TYPE_CAMERA			"camera"
+#define REPO_NODE_TYPE_CAMERA			"camera" // No longer supported in Bouncer but may exist in previous imports
 #define REPO_NODE_TYPE_COMMENT			"comment"
 #define REPO_NODE_TYPE_LIGHT			"light"
 #define REPO_NODE_TYPE_LOCK				"lock"

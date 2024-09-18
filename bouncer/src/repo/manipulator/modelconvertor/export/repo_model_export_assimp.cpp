@@ -191,30 +191,6 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 						meshIndices.push_back(index);
 					}
 					break;
-
-					//--------------------------------------------------------------------------
-					// Cameras
-					// Unlike meshes, cameras are not pointed to by index from transformations.
-					// Instead, corresponding camera shares the same name with transformation in Assimp.
-					case repo::core::model::NodeType::CAMERA:
-					{
-						auto it = camMap.find(childSharedID);
-						aiCamera *assimpCam;
-
-						if (it == camMap.end())
-						{
-							//mesh isn't in the map yet - create a new entry
-							assimpCam = convertCamera(scene, (repo::core::model::CameraNode *)child, currNode->getName());
-							camMap[childSharedID] = assimpCam;
-							camVec.push_back(assimpCam);
-						}
-						else{
-							assimpCam = it->second;
-						}
-
-						//Find index within the map
-						uint32_t index = std::distance(camVec.begin(), std::find(camVec.begin(), camVec.end(), assimpCam));
-					}
 					}
 				} //end of looping for mesh/camera
 
@@ -263,54 +239,6 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 	}
 
 	return node;
-}
-
-aiCamera* AssimpModelExport::convertCamera(
-	const repo::core::model::RepoScene  *scene,
-	const repo::core::model::CameraNode *camNode,
-	const std::string                   &name)
-{
-	if (!scene || !camNode) return nullptr;
-
-	aiCamera *aiCam = new aiCamera();
-	//--------------------------------------------------------------------------
-	// Name
-	if (!name.empty())
-		aiCam->mName = aiString(name);
-	else
-		aiCam->mName = aiString(camNode->getName());
-
-	//--------------------------------------------------------------------------
-	// Aspect ratio
-	aiCam->mAspect = camNode->getAspectRatio();
-
-	//--------------------------------------------------------------------------
-	// Far clipping plane
-	aiCam->mClipPlaneFar = camNode->getFarClippingPlane();
-
-	//--------------------------------------------------------------------------
-	// Near clipping plane
-	aiCam->mClipPlaneNear = camNode->getNearClippingPlane();
-	//--------------------------------------------------------------------------
-	// Field of view
-	aiCam->mHorizontalFOV = camNode->getFieldOfView();
-
-	//--------------------------------------------------------------------------
-	// Look at vector
-	repo::lib::RepoVector3D lookAt = camNode->getLookAt();
-	aiCam->mLookAt = aiVector3D(lookAt.x, lookAt.y, lookAt.z);
-
-	//--------------------------------------------------------------------------
-	// Position vector
-	repo::lib::RepoVector3D position = camNode->getPosition();
-	aiCam->mPosition = aiVector3D(position.x, position.y, position.z);;
-
-	//--------------------------------------------------------------------------
-	// Up vector
-	repo::lib::RepoVector3D up = camNode->getUp();
-	aiCam->mUp = aiVector3D(up.x, up.y, up.z);
-
-	return aiCam;
 }
 
 aiMaterial* AssimpModelExport::convertMaterial(

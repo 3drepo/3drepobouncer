@@ -12,7 +12,6 @@ set(TEST_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_factory.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_ref.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node_camera.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node_drawing_revision.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node_material.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node_mesh.cpp

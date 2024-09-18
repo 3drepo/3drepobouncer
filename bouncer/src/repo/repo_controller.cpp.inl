@@ -15,7 +15,6 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #pragma once
-#include "lib/repo_stack.h"
 #include "lib/repo_license.h"
 #include "manipulator/repo_manipulator.h"
 #include "repo_controller.h"
@@ -183,24 +182,6 @@ public:
 			const uint32_t               &limit = 0);
 
 	/**
-	* Retrieve roles from a specified database
-	* due to limitations of the transfer protocol this might need
-	* to be called multiple times, utilising the skip index to skip
-	* the first n items.
-	* @param token A RepoToken given at authentication
-	* @param database name of database
-	* @param skip specify how many documents to skip (see description above)
-	* @param limit specifiy max. number of documents to retrieve (0 = no limit)
-	* @return list of RepoRole representing the roles
-	*/
-	std::vector < repo::core::model::RepoRole >
-		getRolesFromDatabase(
-			const RepoToken              *token,
-			const std::string            &database,
-			const uint64_t               &skip = 0,
-			const uint32_t               &limit = 0);
-
-	/**
 	* Return a list of collections within the database
 	* @param token A RepoToken given at authentication
 	* @param databaseName database to get collections from
@@ -314,24 +295,6 @@ public:
 		const repo::lib::RepoUUID           &revId = repo::lib::RepoUUID::createUUID());
 
 	/**
-	* Insert a new role into the database
-	* @param token Authentication token
-	* @param role role info to insert
-	*/
-	void insertRole(
-		const RepoToken                     *token,
-		const repo::core::model::RepoRole   &role);
-
-	/**
-	* Insert a new user into the database
-	* @param token Authentication token
-	* @param user user info to insert
-	*/
-	void insertUser(
-		const RepoToken                    *token,
-		const repo::core::model::RepoUser  &user);
-
-	/**
 	* Remove a collection from the database
 	* @param token Authentication token
 	* @param database the database the collection resides in
@@ -344,19 +307,6 @@ public:
 		const std::string     &databaseName,
 		const std::string     &collectionName,
 		std::string			  &errMsg
-	);
-
-	/**
-	* Remove a database
-	* @param token Authentication token
-	* @param database the database the collection resides in
-	* @param errMsg error message if failed
-	* @return returns true upon success
-	*/
-	bool removeDatabase(
-		const RepoToken             *token,
-		const std::string           &databaseName,
-		std::string			        &errMsg
 	);
 
 	/**
@@ -375,68 +325,6 @@ public:
 		const repo::core::model::RepoBSON  &bson);
 
 	/**
-	* Remove a project from the database
-	* This removes:
-	*   1. all collections associated with the project,
-	*   2. the project entry within project settings
-	*   3. all privileges assigned to any roles, related to this project
-	* @param token Authentication token
-	* @param database name of the datbase
-	* @param name of the project
-	* @param errMsg error message if the operation fails
-	* @return returns true upon success
-	*/
-	bool removeProject(
-		const RepoToken                          *token,
-		const std::string                        &databaseName,
-		const std::string                        &projectName,
-		std::string								 &errMsg);
-
-	void removeProjectSettings(
-		const RepoToken *token,
-		const std::string &database,
-		const repo::core::model::RepoProjectSettings &projectSettings)
-	{
-		removeDocument(token, database, REPO_COLLECTION_SETTINGS_PROJECTS, projectSettings);
-	}
-
-	/**
-	* remove a user from the database
-	* @param token Authentication token
-	* @param role role to remove
-	*/
-	void removeRole(
-		const RepoToken                          *token,
-		const repo::core::model::RepoRole  &role);
-
-	/**
-	* remove a user from the database
-	* @param token Authentication token
-	* @param user user info to remove
-	*/
-	void removeUser(
-		const RepoToken                          *token,
-		const repo::core::model::RepoUser  &user);
-
-	/**
-	* Update a role on the database
-	* @param token Authentication token
-	* @param role role info to modify
-	*/
-	void updateRole(
-		const RepoToken                          *token,
-		const repo::core::model::RepoRole		 &role);
-
-	/**
-	* Update a user on the database
-	* @param token Authentication token
-	* @param user user info to modify
-	*/
-	void updateUser(
-		const RepoToken                          *token,
-		const repo::core::model::RepoUser  &user);
-
-	/**
 	* upsert a document in the database
 	* NOTE: this should never be called for a bson from  RepoNode family
 	*       as you should never update a node from a scene graph like this.
@@ -450,14 +338,6 @@ public:
 		const std::string                        &databaseName,
 		const std::string                        &collectionName,
 		const repo::core::model::RepoBSON  &bson);
-
-	void upsertProjectSettings(
-		const RepoToken *token,
-		const std::string &database,
-		const repo::core::model::RepoProjectSettings &projectSettings)
-	{
-		upsertDocument(token, database, REPO_COLLECTION_SETTINGS, projectSettings);
-	}
 
 	/*
 	*	------------- Logging --------------
@@ -639,69 +519,6 @@ public:
 	void reduceTransformations(
 		const RepoToken              *token,
 		repo::core::model::RepoScene *scene);
-
-	/*
-	*	------------- 3D Diff --------------
-	*/
-
-	/**
-	* Compare 2 scenes via IDs.
-	* @param token to load full scene from database if required
-	*		(if not required, a nullptr can be passed in)
-	* @param base base scene to compare against
-	* @param compare scene to compare base scene against
-	* @param baseResults Diff results in the perspective of base
-	* @param compResults Diff results in the perspective of compare
-	* @param repo::DiffMode mode to use on comparison
-	*/
-	void compareScenes(
-		const RepoToken                     *token,
-		repo::core::model::RepoScene        *base,
-		repo::core::model::RepoScene        *compare,
-		repo_diff_result_t &baseResults,
-		repo_diff_result_t &compResults,
-		const repo::DiffMode       &diffMode
-	);
-
-	/**
-	* Compare 2 scenes via IDs.
-	* @param token to load full scene from database if required
-	*		(if not required, a nullptr can be passed in)
-	* @param base base scene to compare against
-	* @param compare scene to compare base scene against
-	* @param baseResults Diff results in the perspective of base
-	* @param compResults Diff results in the perspective of compare
-	*/
-	void compareScenesByIDs(
-		const RepoToken                     *token,
-		repo::core::model::RepoScene        *base,
-		repo::core::model::RepoScene        *compare,
-		repo_diff_result_t &baseResults,
-		repo_diff_result_t &compResults
-	)
-	{
-		compareScenes(token, base, compare, baseResults, compResults, repo::DiffMode::DIFF_BY_ID);
-	}
-
-	/**
-	* Compare 2 scenes via Names.
-	* @param token to load full scene from database if required
-	*		(if not required, a nullptr can be passed in)
-	* @param base base scene to compare against
-	* @param compare scene to compare base scene against
-	* @param baseResults Diff results in the perspective of base
-	* @param compResults Diff results in the perspective of compare
-	*/
-	void compareScenesByNames(
-		const RepoToken                     *token,
-		repo::core::model::RepoScene        *base,
-		repo::core::model::RepoScene        *compare,
-		repo_diff_result_t &baseResults,
-		repo_diff_result_t &compResults
-	)
-	{
-		compareScenes(token, base, compare, baseResults, compResults, repo::DiffMode::DIFF_BY_NAME);
-	}
 
 	/*
 	*	------------- Versioning --------------

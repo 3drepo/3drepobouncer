@@ -125,15 +125,6 @@ RepoController::getAllFromCollectionContinuous(
 	return impl->getAllFromCollectionContinuous(token, database, collection, fields, sortField, sortOrder, skip, limit);
 }
 
-std::vector < repo::core::model::RepoRole > RepoController::getRolesFromDatabase(
-	const RepoController::RepoToken              *token,
-	const std::string            &database,
-	const uint64_t               &skip,
-	const uint32_t               &limit)
-{
-	return impl->getRolesFromDatabase(token, database, skip, limit);
-}
-
 std::list<std::string> RepoController::getDatabases(const RepoController::RepoToken *token)
 {
 	return impl->getDatabases(token);
@@ -147,21 +138,6 @@ RepoController::getDatabasesWithProjects(
 	return impl->getDatabasesWithProjects(token, databases);
 }
 
-void RepoController::insertRole(
-	const RepoController::RepoToken   *token,
-	const repo::core::model::RepoRole &role
-)
-{
-	impl->insertRole(token, role);
-}
-
-void RepoController::insertUser(
-	const RepoController::RepoToken    *token,
-	const repo::core::model::RepoUser  &user)
-{
-	impl->insertUser(token, user);
-}
-
 bool RepoController::removeCollection(
 	const RepoController::RepoToken             *token,
 	const std::string     &databaseName,
@@ -172,15 +148,6 @@ bool RepoController::removeCollection(
 	return impl->removeCollection(token, databaseName, collectionName, errMsg);
 }
 
-bool RepoController::removeDatabase(
-	const RepoController::RepoToken       *token,
-	const std::string     &databaseName,
-	std::string			  &errMsg
-)
-{
-	return impl->removeDatabase(token, databaseName, errMsg);
-}
-
 void RepoController::removeDocument(
 	const RepoController::RepoToken          *token,
 	const std::string                        &databaseName,
@@ -188,43 +155,6 @@ void RepoController::removeDocument(
 	const repo::core::model::RepoBSON        &bson)
 {
 	impl->removeDocument(token, databaseName, collectionName, bson);
-}
-
-bool RepoController::removeProject(
-	const RepoController::RepoToken          *token,
-	const std::string                        &databaseName,
-	const std::string                        &projectName,
-	std::string								 &errMsg)
-{
-	return impl->removeProject(token, databaseName, projectName, errMsg);
-}
-
-void RepoController::removeRole(
-	const RepoController::RepoToken          *token,
-	const repo::core::model::RepoRole        &role)
-{
-	impl->removeRole(token, role);
-}
-
-void RepoController::removeUser(
-	const RepoController::RepoToken    *token,
-	const repo::core::model::RepoUser  &user)
-{
-	impl->removeUser(token, user);
-}
-
-void RepoController::updateRole(
-	const RepoController::RepoToken          *token,
-	const repo::core::model::RepoRole        &role)
-{
-	impl->updateRole(token, role);
-}
-
-void RepoController::updateUser(
-	const RepoController::RepoToken    *token,
-	const repo::core::model::RepoUser  &user)
-{
-	impl->updateUser(token, user);
 }
 
 void RepoController::upsertDocument(
@@ -374,18 +304,6 @@ void RepoController::reduceTransformations(
 	repo::core::model::RepoScene *scene)
 {
 	impl->reduceTransformations(token, scene);
-}
-
-void RepoController::compareScenes(
-	const RepoController::RepoToken    *token,
-	repo::core::model::RepoScene       *base,
-	repo::core::model::RepoScene       *compare,
-	repo_diff_result_t                         &baseResults,
-	repo_diff_result_t                         &compResults,
-	const repo::DiffMode                     &diffMode
-)
-{
-	impl->compareScenes(token, base, compare, baseResults, compResults, diffMode);
 }
 
 bool RepoController::isVREnabled(const RepoController::RepoToken *token,

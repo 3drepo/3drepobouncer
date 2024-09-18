@@ -33,18 +33,6 @@ namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
-				struct camera_t
-				{
-					float aspectRatio;
-					float farClipPlane;
-					float nearClipPlane;
-					float FOV;
-					repo::lib::RepoVector3D eye;
-					repo::lib::RepoVector3D pos;
-					repo::lib::RepoVector3D up;
-					std::string name;
-				};
-
 				struct mesh_data_t {
 					std::vector<repo_face_t> faces;
 					std::vector<std::vector<float>> boundingBox;
@@ -213,23 +201,6 @@ namespace repo {
 					void setRootMatrix(repo::lib::RepoMatrix matrix);
 
 					/**
-					* Set additional camera for scene
-					* @param camera node
-					*/
-					void addCameraNode(repo::manipulator::modelconvertor::odaHelper::camera_t node);
-
-					/**
-					* Returns true if cameras are available
-					*/
-					bool hasCameraNodes();
-
-					/**
-					* Get cameras for scene
-					* @return cameras
-					*/
-					repo::core::model::RepoNodeSet getCameraNodes(repo::lib::RepoUUID parentID);
-
-					/**
 					* Create transformation root node
 					* @return root transformation node
 					*/
@@ -267,7 +238,6 @@ namespace repo {
 					bool missingTextures = false;
 					int errorCode = REPOERR_OK;
 					repo::lib::RepoMatrix rootMatrix;
-					std::vector<repo::manipulator::modelconvertor::odaHelper::camera_t> cameras;
 
 					/**
 					* Add a face to the current mesh. This method should only be called by one of the overloads above.

@@ -693,7 +693,7 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t& errCod
 
 	// Generate scene
 	repo::core::model::RepoScene* scenePtr = new repo::core::model::RepoScene(
-		fileVect, cameras, meshes, materials, metadata, textures, transformations);
+		fileVect, meshes, materials, metadata, textures, transformations);
 	scenePtr->setWorldOffset(offset);
 
 	// Error handling

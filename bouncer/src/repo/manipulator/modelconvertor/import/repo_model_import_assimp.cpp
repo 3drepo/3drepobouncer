@@ -209,39 +209,6 @@ uint32_t AssimpModelImport::composeAssimpPostProcessingFlags(
 	return flag;
 }
 
-repo::core::model::CameraNode* AssimpModelImport::createCameraRepoNode(
-	const aiCamera *assimpCamera,
-	const std::vector<double> &worldOffset)
-{
-	std::string cameraName(assimpCamera->mName.data);
-
-	repo::core::model::CameraNode * cameraNode;
-	std::vector<double> offset;
-	if (worldOffset.size())
-	{
-		offset = worldOffset;
-	}
-	else
-	{
-		offset = { 0, 0, 0 };
-	}
-	if (assimpCamera)
-	{
-		cameraNode = new repo::core::model::CameraNode(repo::core::model::RepoBSONFactory::makeCameraNode(
-			assimpCamera->mAspect,
-			assimpCamera->mClipPlaneFar,
-			assimpCamera->mClipPlaneNear,
-			assimpCamera->mHorizontalFOV,
-			{ (float)(assimpCamera->mLookAt.x - offset[0]), (float)(assimpCamera->mLookAt.y - offset[1]), (float)(assimpCamera->mLookAt.z - offset[2]) },
-			{ (float)(assimpCamera->mPosition.x), (float)(assimpCamera->mPosition.y - offset[1]), (float)(assimpCamera->mPosition.z - offset[2]) },
-			{ (float)(assimpCamera->mUp.x - offset[0]), (float)(assimpCamera->mUp.y - offset[1]), (float)(assimpCamera->mUp.z - offset[2]) },
-			cameraName
-		));
-	}
-
-	return cameraNode;
-}
-
 float AssimpModelImport::normaliseShininess(const float &rawValue) const {
 	std::string ext = getFileExtension(orgFile);
 	float value;
@@ -937,35 +904,6 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 			matParents.clear();
 		}
 
-		/*
-		* ---------------------------------------------
-		*/
-
-		repoInfo << "Constructing Camera Nodes...";
-		/*
-		* ------------- Camera Nodes ------------------
-		*/
-
-		if (assimpScene->HasCameras())
-		{
-			for (unsigned int i = 0; i < assimpScene->mNumCameras; ++i)
-			{
-				if (i % 100 == 0 || i == assimpScene->mNumCameras - 1)
-				{
-					repoInfo << "Constructing " << i << " of " << assimpScene->mNumCameras;
-				}
-				std::string cameraName(assimpScene->mCameras[i]->mName.data);
-				repo::core::model::RepoNode* camera = createCameraRepoNode(assimpScene->mCameras[i], sceneBbox.size() ? sceneBbox[0] : std::vector<double>());
-				if (!camera)
-					repoError << "Unable to construct mesh node in Assimp Model Convertor!";
-				else
-				{
-					cameras.insert(camera);
-				}
-
-				camerasMap.insert(std::make_pair(cameraName, camera));
-			}
-		}
 		/*
 		* ---------------------------------------------
 		*/

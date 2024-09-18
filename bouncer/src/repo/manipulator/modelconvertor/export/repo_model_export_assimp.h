@@ -26,7 +26,6 @@
 #include <assimp/scene.h>
 #include <assimp/Exporter.hpp>
 
-#include "../../../core/model/bson/repo_node_camera.h"
 #include "../../../core/model/bson/repo_node_material.h"
 #include "../../../core/model/bson/repo_node_mesh.h"
 #include "../../../core/model/collection/repo_scene.h"
@@ -123,19 +122,6 @@ namespace repo{
 					repo::core::model::RepoNodeSet                            &textNodes,
 					const repo::core::model::RepoScene::GraphType             &gType
 					= repo::core::model::RepoScene::GraphType::DEFAULT);
-
-				/**
-				* Convert a camera node to aiCamera
-				* @param scene the scene the node came from
-				* @param camNode the camera node itself
-				* @param name override in assimp node to this
-				*             (used to ensure it has the same name as the transformation it's attached to)
-				* @return returns a aiCamera node
-				*/
-				aiCamera* convertCamera(
-					const repo::core::model::RepoScene  *scene,
-					const repo::core::model::CameraNode *camNode,
-					const std::string                   &name = std::string());
 
 				/**
 				* Convert a material node to aiMaterial

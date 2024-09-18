@@ -38,8 +38,6 @@
 #include "connectionpool/repo_connection_pool_mongo.h"
 #include "../model/bson/repo_bson.h"
 #include "../model/bson/repo_bson_builder.h"
-#include "../model/bson/repo_bson_role.h"
-#include "../model/bson/repo_bson_user.h"
 #include "../../lib/repo_stack.h"
 
 namespace repo {
@@ -344,32 +342,6 @@ namespace repo {
 					std::string &errMsg);
 
 				/**
-				* Remove a role from the database
-				* @param role user bson to remove
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				bool dropRole(
-					const repo::core::model::RepoRole &role,
-					std::string                             &errmsg)
-				{
-					return performRoleCmd(OPERATION::DROP, role, errmsg);
-				}
-
-				/**
-				* Remove a user from the database
-				* @param user user bson to remove
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				bool dropUser(
-					const repo::core::model::RepoUser &user,
-					std::string                             &errmsg)
-				{
-					return performUserCmd(OPERATION::DROP, user, errmsg);
-				}
-
-				/**
 				 * Insert a single document in database.collection
 				 * @param database name
 				 * @param collection name
@@ -418,32 +390,6 @@ namespace repo {
 				);
 
 				/**
-				* Insert a role into the database
-				* @param role role bson to insert
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				bool insertRole(
-					const repo::core::model::RepoRole       &role,
-					std::string                             &errmsg)
-				{
-					return performRoleCmd(OPERATION::INSERT, role, errmsg);
-				}
-
-				/**
-				* Insert a user into the database
-				* @param user user bson to insert
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				bool insertUser(
-					const repo::core::model::RepoUser &user,
-					std::string                             &errmsg)
-				{
-					return performUserCmd(OPERATION::INSERT, user, errmsg);
-				}
-
-				/**
 				* Update/insert a single document in database.collection
 				* If the document exists, update it, if it doesn't, insert it
 				* @param database name
@@ -459,32 +405,6 @@ namespace repo {
 					const repo::core::model::RepoBSON &obj,
 					const bool        &overwrite,
 					std::string &errMsg);
-
-				/**
-				* Update a role in the database
-				* @param role role bson to update
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				bool updateRole(
-					const repo::core::model::RepoRole       &role,
-					std::string                             &errmsg)
-				{
-					return performRoleCmd(OPERATION::UPDATE, role, errmsg);
-				}
-
-				/**
-				* Update a user in the database
-				* @param user user bson to update
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				bool updateUser(
-					const repo::core::model::RepoUser &user,
-					std::string                             &errmsg)
-				{
-					return performUserCmd(OPERATION::UPDATE, user, errmsg);
-				}
 
 				/*
 				*	------------- Query operations --------------
@@ -667,13 +587,6 @@ namespace repo {
 					bool excludeIdField = false);
 
 				/**
-				 * Extract collection name from namespace (db.collection)
-				 * @param namespace as string
-				 * @return returns a string with just the collection name
-				 */
-				std::string getCollectionFromNamespace(const std::string &ns);
-
-				/**
 				* Get large file off GridFS
 				* @param worker the worker to operate with
 				* @param database database that it is stored in
@@ -703,30 +616,6 @@ namespace repo {
 				* @return returns a string with just the database name
 				*/
 				std::string getProjectFromCollection(const std::string &ns, const std::string &projectExt);
-
-				/**
-				* Perform command on the user
-				* @param op (insert, drop or update)
-				* @param role user to modify
-				* @param errMsg error message if failed
-				* @return returns true upon success
-				*/
-				bool performRoleCmd(
-					const OPERATION                         &op,
-					const repo::core::model::RepoRole       &role,
-					std::string                             &errMsg);
-
-				/**
-				* Perform command on the user
-				* @param op (insert, drop or update)
-				* @param user user to modify
-				* @param errMsg error message if failed
-				* @return returns true upon success
-				*/
-				bool performUserCmd(
-					const OPERATION                         &op,
-					const repo::core::model::RepoUser &user,
-					std::string                       &errMsg);
 
 				/**
 				* Compares two strings.
