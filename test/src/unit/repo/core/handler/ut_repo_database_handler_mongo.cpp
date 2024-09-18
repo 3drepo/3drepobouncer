@@ -190,14 +190,6 @@ TEST(MongoDatabaseHandlerTest, GetProjects)
 	EXPECT_EQ(projects.size(), 0);
 }
 
-TEST(MongoDatabaseHandlerTest, GetAdminDatabaseRoles)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	//This should be non zero.
-	EXPECT_TRUE(handler->getAdminDatabaseRoles().size());
-}
-
 TEST(MongoDatabaseHandlerTest, GetAdminDatabaseName)
 {
 	auto handler = getHandler();

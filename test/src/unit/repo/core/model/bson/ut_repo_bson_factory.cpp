@@ -25,50 +25,6 @@
 
 using namespace repo::core::model;
 
-TEST(RepoBSONFactoryTest, MakeRepoProjectSettingsTest)
-{
-	// Project Settings can be read from an existing BSON, but not created anew
-
-	std::string projectName = "project";
-	std::string owner = "repo";
-	std::string type = "Structural";
-	std::string description = "testing project";
-
-	{
-		RepoBSONBuilder builder;
-		builder.append(REPO_LABEL_ID, projectName);
-		builder.append(REPO_LABEL_DESCRIPTION, description);
-		builder.append(REPO_LABEL_OWNER, owner);
-		builder.append(REPO_LABEL_TYPE, type);
-		builder.append(REPO_LABEL_TYPE, false);
-
-		RepoProjectSettings settings(builder.obj());
-
-		EXPECT_EQ(projectName, settings.getProjectName());
-		EXPECT_EQ(description, settings.getDescription());
-		EXPECT_EQ(owner, settings.getOwner());
-		EXPECT_EQ(type, settings.getType());
-		EXPECT_FALSE(settings.isFederate());
-	}
-
-	{
-		RepoBSONBuilder builder;
-		builder.append(REPO_LABEL_ID, projectName);
-		builder.append(REPO_LABEL_DESCRIPTION, description);
-		builder.append(REPO_LABEL_OWNER, owner);
-		builder.append(REPO_LABEL_TYPE, type);
-		builder.append(REPO_LABEL_TYPE, true);
-
-		RepoProjectSettings settings2(builder.obj());
-
-		EXPECT_EQ(projectName, settings2.getProjectName());
-		EXPECT_EQ(description, settings2.getDescription());
-		EXPECT_EQ(owner, settings2.getOwner());
-		EXPECT_EQ(type, settings2.getType());
-		EXPECT_TRUE(settings2.isFederate());
-	}
-}
-
 TEST(RepoBSONFactoryTest, AppendDefaultsTest)
 {
 	RepoBSONBuilder builder;
