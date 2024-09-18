@@ -284,25 +284,6 @@ std::list<std::string>  RepoController::_RepoControllerImpl::getCollections(
 	return list;
 }
 
-void RepoController::_RepoControllerImpl::upsertDocument(
-	const RepoController::RepoToken                          *token,
-	const std::string                        &databaseName,
-	const std::string                        &collectionName,
-	const repo::core::model::RepoBSON  &bson)
-{
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		worker->upsertDocument(token->databaseAd,
-			token->getCredentials(), databaseName, collectionName, bson);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to upsert a document without a database connection!";
-	}
-}
-
 void RepoController::_RepoControllerImpl::setLoggingLevel(const repo::lib::RepoLog::RepoLogLevel &level)
 {
 	repo::lib::RepoLog::getInstance().setLoggingLevel(level);

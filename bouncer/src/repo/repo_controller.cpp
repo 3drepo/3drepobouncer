@@ -117,15 +117,6 @@ RepoController::getAllFromCollectionContinuous(
 	return impl->getAllFromCollectionContinuous(token, database, collection, fields, sortField, sortOrder, skip, limit);
 }
 
-void RepoController::upsertDocument(
-	const RepoController::RepoToken          *token,
-	const std::string                        &databaseName,
-	const std::string                        &collectionName,
-	const repo::core::model::RepoBSON        &bson)
-{
-	impl->upsertDocument(token, databaseName, collectionName, bson);
-}
-
 void RepoController::setLoggingLevel(const repo::lib::RepoLog::RepoLogLevel &level)
 {
 	impl->setLoggingLevel(level);

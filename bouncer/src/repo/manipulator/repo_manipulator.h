@@ -389,23 +389,6 @@ namespace repo {
 				const std::string &filePath,
 				const repo::core::model::RepoScene* scene);
 
-			/**
-			* upsert a document in the database
-			* NOTE: this should never be called for a bson from RepoNode family
-			*       as you should never update a node from a scene graph like this.
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
-			* @param database the database the collection resides in
-			* @param collection name of the collection
-			* @param bson document to update/insert
-			*/
-			void upsertDocument(
-				const std::string                       &databaseAd,
-				const repo::core::model::RepoBSON       *cred,
-				const std::string                       &databaseName,
-				const std::string                       &collectionName,
-				const repo::core::model::RepoBSON       &bson);
-
 		private:
 
 			/**

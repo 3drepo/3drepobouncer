@@ -593,26 +593,3 @@ bool RepoManipulator::saveSceneToFile(
 	modelconvertor::AssimpModelExport modelExport(scene);
 	return modelExport.exportToFile(filePath);
 }
-
-void RepoManipulator::upsertDocument(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& databaseName,
-	const std::string& collectionName,
-	const repo::core::model::RepoBSON& bson)
-{
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-	{
-		std::string errMsg;
-		if (handler->upsertDocument(databaseName, collectionName, bson, true, errMsg))
-		{
-			repoInfo << "Document updated successfully.";
-		}
-		else
-		{
-			repoError << "Failed to remove document : " << errMsg;
-		}
-	}
-}

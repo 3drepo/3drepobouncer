@@ -242,21 +242,6 @@ public:
 		const std::string                      &desc = "",
 		const repo::lib::RepoUUID           &revId = repo::lib::RepoUUID::createUUID());
 
-	/**
-	* upsert a document in the database
-	* NOTE: this should never be called for a bson from  RepoNode family
-	*       as you should never update a node from a scene graph like this.
-	* @param token Authentication token
-	* @param database the database the collection resides in
-	* @param collection name of the collection
-	* @param bson document to update/insert
-	*/
-	void upsertDocument(
-		const RepoToken                          *token,
-		const std::string                        &databaseName,
-		const std::string                        &collectionName,
-		const repo::core::model::RepoBSON  &bson);
-
 	/*
 	*	------------- Logging --------------
 	*/
