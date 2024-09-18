@@ -550,7 +550,7 @@ TEST(RepoBSONTest, ProjectSettingsTest)
 		builder.append(REPO_LABEL_DESCRIPTION, description);
 		builder.append(REPO_LABEL_OWNER, owner);
 		builder.append(REPO_LABEL_TYPE, type);
-		builder.append(REPO_LABEL_TYPE, false);
+		builder.append(REPO_PROJECT_SETTINGS_LABEL_IS_FEDERATION, false);
 
 		RepoProjectSettings settings(builder.obj());
 
@@ -567,7 +567,7 @@ TEST(RepoBSONTest, ProjectSettingsTest)
 		builder.append(REPO_LABEL_DESCRIPTION, description);
 		builder.append(REPO_LABEL_OWNER, owner);
 		builder.append(REPO_LABEL_TYPE, type);
-		builder.append(REPO_LABEL_TYPE, true);
+		builder.append(REPO_PROJECT_SETTINGS_LABEL_IS_FEDERATION, true);
 
 		RepoProjectSettings settings2(builder.obj());
 

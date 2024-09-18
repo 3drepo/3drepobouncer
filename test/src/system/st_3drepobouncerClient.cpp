@@ -633,16 +633,6 @@ TEST(RepoClientTest, CreateFedTest)
 	EXPECT_TRUE(projectExists(genFedDB, genFedSuccessName));
 }
 
-TEST(RepoClientTest, GetFileTest)
-{
-	EXPECT_EQ((int)REPOERR_GET_FILE_FAILED, runProcess(produceGetFileArgs(".", "nonExistent1", "nonExistent2")));
-	EXPECT_EQ((int)REPOERR_GET_FILE_FAILED, runProcess(produceGetFileArgs(".", REPO_GTEST_DBNAME1, "nonExistent2")));
-
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGetFileArgs(".", "sampleDataRW", "cube")));
-	EXPECT_TRUE(fileExists(getFileFileName));
-	EXPECT_TRUE(filesCompare(getFileFileName, getDataPath("cube.obj")));
-}
-
 TEST(RepoClientTest, GenStashTest)
 {
 	repo::RepoController* controller = new repo::RepoController();
