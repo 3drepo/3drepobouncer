@@ -71,43 +71,6 @@ TEST(MongoDatabaseHandlerTest, CreateBSONCredentials)
 	EXPECT_FALSE(handler->createBSONCredentials("testdb", "username", ""));
 }
 
-TEST(MongoDatabaseHandlerTest, CountItemsInCollection)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	auto goldenData = getCollectionCounts(REPO_GTEST_DBNAME1);
-	for (const auto &pair : goldenData)
-	{
-		std::string message;
-		EXPECT_EQ(pair.second, handler->countItemsInCollection(REPO_GTEST_DBNAME1, pair.first, message));
-		EXPECT_TRUE(message.empty());
-	}
-
-	goldenData = getCollectionCounts(REPO_GTEST_DBNAME2);
-	for (const auto &pair : goldenData)
-	{
-		std::string message;
-		EXPECT_EQ(pair.second, handler->countItemsInCollection(REPO_GTEST_DBNAME2, pair.first, message));
-		EXPECT_TRUE(message.empty());
-	}
-
-	std::string message;
-	EXPECT_EQ(0, handler->countItemsInCollection("", "", message));
-	EXPECT_FALSE(message.empty());
-
-	message.clear();
-	EXPECT_EQ(0, handler->countItemsInCollection("", "blah", message));
-	EXPECT_FALSE(message.empty());
-
-	message.clear();
-	EXPECT_EQ(0, handler->countItemsInCollection("blah", "", message));
-	EXPECT_FALSE(message.empty());
-
-	message.clear();
-	EXPECT_EQ(0, handler->countItemsInCollection("blah", "blah", message));
-	EXPECT_TRUE(message.empty());
-}
-
 TEST(MongoDatabaseHandlerTest, GetAllFromCollectionTailable)
 {
 	auto handler = getHandler();

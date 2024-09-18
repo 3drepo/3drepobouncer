@@ -132,29 +132,6 @@ uint8_t RepoController::_RepoControllerImpl::commitScene(
 	return errCode;
 }
 
-uint64_t RepoController::_RepoControllerImpl::countItemsInCollection(
-	const RepoController::RepoToken            *token,
-	const std::string    &database,
-	const std::string    &collection)
-{
-	uint64_t numItems = 0;
-	repoTrace << "Controller: Counting number of items in the collection";
-
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		std::string errMsg;
-		numItems = worker->countItemsInCollection(token->databaseAd, token->getCredentials(), database, collection, errMsg);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to fetch database without a database connection!";
-	}
-
-	return numItems;
-}
-
 void RepoController::_RepoControllerImpl::disconnectFromDatabase(const RepoController::RepoToken* token)
 {
 	if (token)

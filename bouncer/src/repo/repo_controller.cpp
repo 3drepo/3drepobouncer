@@ -62,14 +62,6 @@ uint8_t RepoController::commitScene(
 	return impl->commitScene(token, scene, owner, tag, desc, revId);
 }
 
-uint64_t RepoController::countItemsInCollection(
-	const RepoController::RepoToken            *token,
-	const std::string    &database,
-	const std::string    &collection)
-{
-	return impl->countItemsInCollection(token, database, collection);
-}
-
 void RepoController::destroyToken(RepoController::RepoToken* token)
 {
 	if (token) delete token;

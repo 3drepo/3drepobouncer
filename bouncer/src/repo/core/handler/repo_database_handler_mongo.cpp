@@ -138,33 +138,6 @@ bool MongoDatabaseHandler::caseInsensitiveStringCompare(
 	return strcasecmp(s1.c_str(), s2.c_str()) <= 0;
 }
 
-uint64_t MongoDatabaseHandler::countItemsInCollection(
-	const std::string &database,
-	const std::string &collection,
-	std::string &errMsg)
-{
-	uint64_t numItems = 0;
-
-	if (database.empty() || collection.empty())
-	{
-		errMsg = "Failed to count num. items in collection: database name or collection name was not specified";
-	}
-	try {
-		if (worker)
-			numItems = worker->count(database + "." + collection);
-		else
-			errMsg = "Failed to count number of items in collection: cannot obtain a database worker from the pool";
-	}
-	catch (mongo::DBException& e)
-	{
-		errMsg = "Failed to count num. items within "
-			+ database + "." + collection + ":" + e.what();
-		repoError << errMsg;
-	}
-
-	return numItems;
-}
-
 mongo::BSONObj* MongoDatabaseHandler::createAuthBSON(
 	const std::string &database,
 	const std::string &username,

@@ -170,23 +170,6 @@ uint8_t RepoManipulator::commitScene(
 	return sceneManager.commitScene(scene, projOwner, tag, desc, revId, handler, manager);
 }
 
-uint64_t RepoManipulator::countItemsInCollection(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& database,
-	const std::string& collection,
-	std::string& errMsg)
-{
-	uint64_t numItems;
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-
-	if (handler)
-		numItems = handler->countItemsInCollection(database, collection, errMsg);
-
-	return numItems;
-}
-
 void RepoManipulator::disconnectFromDatabase(const std::string& databaseAd)
 {
 	//FIXME: can only kill mongo here, but this is suppose to be a quick fix

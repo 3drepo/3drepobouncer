@@ -106,18 +106,6 @@ namespace repo {
 		*/
 
 		/**
-		* Count the number of documents within the collection
-		* @param token A RepoToken given at authentication
-		* @param database name of database
-		* @param collection name of collection
-		* @return number of documents within the specified collection
-		*/
-		uint64_t countItemsInCollection(
-			const RepoToken            *token,
-			const std::string    &database,
-			const std::string    &collection);
-
-		/**
 		* Retrieve documents from a specified collection
 		* due to limitations of the transfer protocol this might need
 		* to be called multiple times, utilising the skip index to skip

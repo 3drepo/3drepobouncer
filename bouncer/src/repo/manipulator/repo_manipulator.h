@@ -81,22 +81,6 @@ namespace repo {
 				const std::map<repo::core::model::ReferenceNode, std::string> &fedMap);
 
 			/**
-			* Count the number of documents within the collection
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
-			* @param database name of database
-			* @param collection name of collection
-			* @return number of documents within the specified collection
-			*/
-			uint64_t countItemsInCollection(
-				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON             *cred,
-				const std::string                             &database,
-				const std::string                             &collection,
-				std::string                                   &errMsg
-			);
-
-			/**
 			* Disconnects from the given database host
 			* @param databaseAd database address:port
 			*/

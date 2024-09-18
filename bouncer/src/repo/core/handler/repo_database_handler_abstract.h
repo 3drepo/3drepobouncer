@@ -63,18 +63,6 @@ namespace repo {
 				*/
 
 				/**
-				* Count the number of documents within the collection
-				* @param database name of database
-				* @param collection name of collection
-				* @param errMsg errMsg if failed
-				* @return number of documents within the specified collection
-				*/
-				virtual uint64_t countItemsInCollection(
-					const std::string &database,
-					const std::string &collection,
-					std::string &errMsg) = 0;
-
-				/**
 				* Retrieve documents from a specified collection
 				* due to limitations of the transfer protocol this might need
 				* to be called multiple times, utilising the skip index to skip
