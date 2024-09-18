@@ -198,14 +198,6 @@ TEST(MongoDatabaseHandlerTest, GetAdminDatabaseName)
 	EXPECT_FALSE(handler->getAdminDatabaseName().empty());
 }
 
-TEST(MongoDatabaseHandlerTest, GetStandardDatabaseRoles)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	//This should be non zero.
-	EXPECT_TRUE(handler->getStandardDatabaseRoles().size());
-}
-
 TEST(MongoDatabaseHandlerTest, CreateCollection)
 {
 	auto handler = getHandler();

@@ -418,23 +418,6 @@ RepoController::_RepoControllerImpl::getScenePartitioning(
 	return partition;
 }
 
-std::list<std::string> RepoController::_RepoControllerImpl::getStandardDatabaseRoles(const RepoController::RepoToken *token)
-{
-	std::list<std::string> roles;
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		roles = worker->getStandardDatabaseRoles(token->databaseAd);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to get database roles without a token!";
-	}
-
-	return roles;
-}
-
 std::string RepoController::_RepoControllerImpl::getSupportedExportFormats()
 {
 	//This needs to be updated if we support more than assimp

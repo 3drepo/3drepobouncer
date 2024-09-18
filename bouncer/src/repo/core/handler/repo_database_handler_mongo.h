@@ -219,14 +219,6 @@ namespace repo {
 					return ADMIN_DATABASE;
 				}
 
-				/**
-				* Return a list of standard database roles
-				* @return a vector of standard database roles
-				*/
-				std::list<std::string> getStandardDatabaseRoles()
-				{
-					return ANY_DATABASE_ROLES;
-				}
 				/*
 				*	------------- Database operations (insert/delete/update) --------------
 				*/

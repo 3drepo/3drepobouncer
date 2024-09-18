@@ -281,14 +281,6 @@ namespace repo {
 			);
 
 			/**
-			* Get a list of standard roles from the database
-			* @param databaseAd database address:portdatabase
-			* @return returns a vector of roles
-			*/
-			std::list<std::string> getStandardDatabaseRoles(
-				const std::string                             &databaseAd);
-
-			/**
 			* Connect to all services required as per config provided
 			* @param errMsg error message if failed
 			* @param config RepoConfig instance containing all connection information

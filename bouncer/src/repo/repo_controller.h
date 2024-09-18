@@ -152,13 +152,6 @@ namespace repo {
 				const uint32_t               &limit = 0);
 
 		/**
-		* Get a list of standard roles from the database
-		* @param token repo token to the database
-		* @return returns a vector of roles
-		*/
-		std::list<std::string> getStandardDatabaseRoles(const RepoToken *token);
-
-		/**
 		* Check if VR is enabled for this model
 		* @param token repo token to the database
 		* @param scene scene to query on

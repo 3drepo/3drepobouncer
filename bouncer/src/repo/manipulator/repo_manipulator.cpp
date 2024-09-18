@@ -345,19 +345,6 @@ RepoManipulator::getScenePartitioning(
 	return partitioner.partitionScene();
 }
 
-std::list<std::string> RepoManipulator::getStandardDatabaseRoles(
-	const std::string& databaseAd)
-{
-	std::list<std::string> roles;
-
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-		roles = handler->getStandardDatabaseRoles();
-
-	return roles;
-}
-
 repo::core::model::RepoNodeSet
 RepoManipulator::loadMetadataFromFile(
 	const std::string& filePath,

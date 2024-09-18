@@ -171,11 +171,6 @@ RepoController::getScenePartitioning(
 	return impl->getScenePartitioning(scene, maxDepth);
 }
 
-std::list<std::string> RepoController::getStandardDatabaseRoles(const RepoController::RepoToken *token)
-{
-	return impl->getStandardDatabaseRoles(token);
-}
-
 std::string RepoController::getSupportedImportFormats()
 {
 	return impl->getSupportedImportFormats();

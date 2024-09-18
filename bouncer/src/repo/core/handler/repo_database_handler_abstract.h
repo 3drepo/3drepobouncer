@@ -98,12 +98,6 @@ namespace repo {
 				*/
 				virtual std::list<std::string> getProjects(const std::string &database, const std::string &projectExt) = 0;
 
-				/**
-				* Return a list of standard database roles
-				* @return a vector of standard database roles
-				*/
-				virtual  std::list<std::string> getStandardDatabaseRoles() = 0;
-
 				/*
 				*	------------- Database operations (insert/delete/update) --------------
 				*/
