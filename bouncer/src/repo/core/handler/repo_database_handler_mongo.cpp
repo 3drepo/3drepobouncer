@@ -611,26 +611,6 @@ std::list<std::string> MongoDatabaseHandler::getCollections(
 	return collections;
 }
 
-std::list<std::string> MongoDatabaseHandler::getDatabases(
-	const bool &sorted)
-{
-	std::list<std::string> list;
-
-	try
-	{
-		list = worker->getDatabaseNames();
-
-		if (sorted)
-			list.sort(&MongoDatabaseHandler::caseInsensitiveStringCompare);
-	}
-	catch (mongo::DBException& e)
-	{
-		repoError << e.what();
-	}
-
-	return list;
-}
-
 std::vector<uint8_t> MongoDatabaseHandler::getBigFile(
 	const std::string &database,
 	const std::string &collection,

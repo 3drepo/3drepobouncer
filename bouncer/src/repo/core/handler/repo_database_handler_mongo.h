@@ -202,13 +202,6 @@ namespace repo {
 				std::list<std::string> getCollections(const std::string &database);
 
 				/**
-				 * Get a list of all available databases, alphabetically sorted by default.
-				 * @param sort the database
-				 * @return returns a list of database names
-				 */
-				std::list<std::string> getDatabases(const bool &sorted = true);
-
-				/**
 				 * Get a list of projects associated with a given database (aka company account).
 				 * It will filter out any collections without that isn't *.projectExt
 				 * @param list of database

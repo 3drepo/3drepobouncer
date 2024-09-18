@@ -176,20 +176,6 @@ void RepoManipulator::disconnectFromDatabase(const std::string& databaseAd)
 	core::handler::MongoDatabaseHandler::disconnectHandler();
 }
 
-std::list<std::string> RepoManipulator::fetchDatabases(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred
-)
-{
-	std::list<std::string> list;
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-		list = handler->getDatabases();
-
-	return list;
-}
-
 std::list<std::string> RepoManipulator::fetchCollections(
 	const std::string& databaseAd,
 	const repo::core::model::RepoBSON* cred,

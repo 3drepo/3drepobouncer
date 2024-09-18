@@ -264,33 +264,6 @@ RepoController::_RepoControllerImpl::getAllFromCollectionContinuous(
 	return vector;
 }
 
-std::list<std::string> RepoController::_RepoControllerImpl::getDatabases(const RepoController::RepoToken *token)
-{
-	repoTrace << "Controller: Fetching Database....";
-	std::list<std::string> list;
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		if (token->databaseName == worker->getNameOfAdminDatabase(token->databaseAd))
-		{
-			list = worker->fetchDatabases(token->databaseAd, token->getCredentials());
-		}
-		else
-		{
-			//If the user is only authenticated against a single
-			//database then just return the database he/she is authenticated against.
-			list.push_back(token->databaseName);
-		}
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to fetch database without a database connection!";
-	}
-
-	return list;
-}
-
 std::list<std::string>  RepoController::_RepoControllerImpl::getCollections(
 	const RepoController::RepoToken       *token,
 	const std::string     &databaseName

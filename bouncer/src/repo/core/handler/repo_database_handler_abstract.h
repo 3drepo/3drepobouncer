@@ -91,13 +91,6 @@ namespace repo {
 				virtual std::list<std::string> getCollections(const std::string &database) = 0;
 
 				/**
-				* Get a list of all available databases, alphabetically sorted by default.
-				* @param sort the database
-				* @return returns a list of database names
-				*/
-				virtual std::list<std::string> getDatabases(const bool &sorted = true) = 0;
-
-				/**
 				* Get a list of projects associated with a given database (aka company account).
 				* @param list of database
 				* @param extension that indicates it is a project (.scene)

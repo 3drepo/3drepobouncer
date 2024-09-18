@@ -87,17 +87,6 @@ namespace repo {
 			void disconnectFromDatabase(const std::string &databaseAd);
 
 			/**
-			* Get a list of all available databases, alphabetically sorted by default.
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
-			* @return returns a list of database names
-			*/
-			std::list<std::string> fetchDatabases(
-				const std::string                 &databaseAd,
-				const repo::core::model::RepoBSON *cred
-			);
-
-			/**
 			* Get a list of all available collections.
 			* @param databaseAd mongo database address:port
 			* @param cred user credentials in bson form

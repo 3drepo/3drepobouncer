@@ -181,14 +181,6 @@ public:
 	);
 
 	/**
-	* Return a list of database available to the user
-	* @param token A RepoToken given at authentication
-	* @return returns a list of database names
-	*/
-	std::list<std::string> getDatabases(
-		const RepoToken *token);
-
-	/**
 	* Get a list of Admin roles from the database
 	* @param token repo token to the database
 	* @return returns a vector of roles

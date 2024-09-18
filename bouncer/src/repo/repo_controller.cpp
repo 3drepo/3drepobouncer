@@ -117,11 +117,6 @@ RepoController::getAllFromCollectionContinuous(
 	return impl->getAllFromCollectionContinuous(token, database, collection, fields, sortField, sortOrder, skip, limit);
 }
 
-std::list<std::string> RepoController::getDatabases(const RepoController::RepoToken *token)
-{
-	return impl->getDatabases(token);
-}
-
 void RepoController::upsertDocument(
 	const RepoController::RepoToken          *token,
 	const std::string                        &databaseName,
