@@ -706,7 +706,7 @@ TEST(RepoSceneTest, getTextureIDForMesh)
 	matNodes.insert(mat2);
 	texNodes.insert(tex1);
 
-	auto scene2 = RepoScene(std::vector<std::string>(), empty, meshNodes, matNodes, empty, texNodes, transNodes);
+	auto scene2 = RepoScene(std::vector<std::string>(), meshNodes, matNodes, empty, texNodes, transNodes);
 
 	EXPECT_EQ(tex1->getUniqueID().toString(), scene2.getTextureIDForMesh(defaultG, m1->getSharedID()));
 	EXPECT_TRUE(scene2.getTextureIDForMesh(defaultG, m2->getSharedID()).empty());
@@ -828,7 +828,7 @@ TEST(RepoSceneTest, getAllDescendantsByType)
 	matNodes.insert(mat2);
 	texNodes.insert(tex1);
 
-	auto scene2 = RepoScene(std::vector<std::string>(), empty, meshNodes, matNodes, empty, texNodes, transNodes);
+	auto scene2 = RepoScene(std::vector<std::string>(), meshNodes, matNodes, empty, texNodes, transNodes);
 	auto trans = scene2.getAllDescendantsByType(defaultG, root->getSharedID(), NodeType::TRANSFORMATION);
 	ASSERT_EQ(1, trans.size());
 	EXPECT_EQ(trans2, trans[0]);
@@ -899,7 +899,7 @@ TEST(RepoSceneTest, getNodeBySharedID)
 	matNodes.insert(mat2st);
 	texNodes.insert(tex1st);
 
-	auto scene2 = RepoScene(std::vector<std::string>(), empty, meshNodes, matNodes, empty, texNodes, transNodes);
+	auto scene2 = RepoScene(std::vector<std::string>(), meshNodes, matNodes, empty, texNodes, transNodes);
 
 	EXPECT_EQ(root, scene2.getNodeBySharedID(defaultG, root->getSharedID()));
 	EXPECT_EQ(nullptr, scene2.getNodeBySharedID(defaultG, repo::lib::RepoUUID::createUUID()));
@@ -944,7 +944,7 @@ TEST(RepoSceneTest, getNodeByUniqueID)
 	matNodes.insert(mat2st);
 	texNodes.insert(tex1st);
 
-	auto scene2 = RepoScene(std::vector<std::string>(), empty, meshNodes, matNodes, empty, texNodes, transNodes);
+	auto scene2 = RepoScene(std::vector<std::string>(), meshNodes, matNodes, empty, texNodes, transNodes);
 
 	EXPECT_EQ(root, scene2.getNodeByUniqueID(defaultG, root->getUniqueID()));
 	EXPECT_EQ(nullptr, scene2.getNodeBySharedID(defaultG, repo::lib::RepoUUID::createUUID()));
@@ -963,7 +963,7 @@ TEST(RepoSceneTest, hasRoot)
 	transNodes.insert(root);
 	transNodesStash.insert(rootStash);
 
-	auto scene2 = RepoScene(std::vector<std::string>(), empty, empty, empty, empty, empty, transNodes);
+	auto scene2 = RepoScene(std::vector<std::string>(), empty, empty, empty, empty, transNodes);
 	EXPECT_TRUE(scene2.hasRoot(defaultG));
 	EXPECT_FALSE(scene2.hasRoot(RepoScene::GraphType::OPTIMIZED));
 	scene2.addStashGraph(empty, empty, empty, transNodesStash);
@@ -985,7 +985,7 @@ TEST(RepoSceneTest, getRoot)
 	transNodes.insert(root);
 	transNodesStash.insert(rootStash);
 
-	auto scene2 = RepoScene(std::vector<std::string>(), empty, empty, empty, empty, empty, transNodes);
+	auto scene2 = RepoScene(std::vector<std::string>(), empty, empty, empty, empty, transNodes);
 	EXPECT_EQ(root, scene2.getRoot(defaultG));
 	EXPECT_EQ(nullptr, scene2.getRoot(RepoScene::GraphType::OPTIMIZED));
 	scene2.addStashGraph(empty, empty, empty, transNodesStash);
@@ -1007,7 +1007,7 @@ TEST(RepoSceneTest, getItemsInCurrentGraph)
 	transNodes.insert(root);
 	transNodesStash.insert(rootStash);
 
-	auto scene2 = RepoScene(std::vector<std::string>(), empty, empty, empty, empty, empty, transNodes);
+	auto scene2 = RepoScene(std::vector<std::string>(), empty, empty, empty, empty, transNodes);
 	EXPECT_EQ(1, scene2.getItemsInCurrentGraph(defaultG));
 	EXPECT_EQ(0, scene2.getItemsInCurrentGraph(RepoScene::GraphType::OPTIMIZED));
 	scene2.addStashGraph(empty, empty, empty, transNodesStash);
@@ -1032,7 +1032,7 @@ TEST(RepoSceneTest, getOriginalFiles)
 		orgFiles.push_back(getRandomString(rand() % 10 + 1));
 	}
 
-	auto scene3 = RepoScene(orgFiles, empty, empty, empty, empty, empty, empty);
+	auto scene3 = RepoScene(orgFiles, empty, empty, empty, empty, empty);
 	auto orgFilesOut = scene3.getOriginalFiles();
 	ASSERT_EQ(orgFiles.size(), orgFilesOut.size());
 
@@ -1140,7 +1140,7 @@ TEST(RepoSceneTest, reorientateDirectXModel)
 
 	ASSERT_TRUE(root->isIdentity());
 	ASSERT_TRUE(rootStash->isIdentity());
-	auto scene2 = RepoScene(std::vector<std::string>(), empty, empty, empty, empty, empty, transNodes);
+	auto scene2 = RepoScene(std::vector<std::string>(), empty, empty, empty, empty, transNodes);
 	scene2.addStashGraph(empty, empty, empty, transNodesStash);
 	scene2.reorientateDirectXModel();
 	std::vector<float> rotatedMat =
