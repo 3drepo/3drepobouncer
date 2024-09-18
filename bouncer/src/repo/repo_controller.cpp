@@ -122,14 +122,6 @@ std::list<std::string> RepoController::getDatabases(const RepoController::RepoTo
 	return impl->getDatabases(token);
 }
 
-std::map<std::string, std::list<std::string>>
-RepoController::getDatabasesWithProjects(
-	const RepoController::RepoToken  *token,
-	const std::list<std::string>     &databases)
-{
-	return impl->getDatabasesWithProjects(token, databases);
-}
-
 void RepoController::upsertDocument(
 	const RepoController::RepoToken          *token,
 	const std::string                        &databaseName,

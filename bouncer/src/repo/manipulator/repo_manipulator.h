@@ -282,19 +282,6 @@ namespace repo {
 					const uint32_t                                &limit = 0);
 
 			/**
-			* Return a list of projects with the database available to the user
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
-			* @param databases list of databases to look up
-			* @return returns a list of database names
-			*/
-			std::map<std::string, std::list<std::string>>
-				getDatabasesWithProjects(
-					const std::string                 &databaseAd,
-					const repo::core::model::RepoBSON *cred,
-					const std::list<std::string>      &databases);
-
-			/**
 			* Get a list of admin roles from the database
 			* @param databaseAd database address:portdatabase
 			* @return returns a vector of roles
@@ -329,24 +316,6 @@ namespace repo {
 			*/
 			std::string getNameOfAdminDatabase(
 				const std::string                             &databaseAd) const;
-
-			bool hasCollection(
-				const std::string                      &databaseAd,
-				const repo::core::model::RepoBSON 	   *cred,
-				const std::string                      &dbName,
-				const std::string                      &project);
-
-			/**
-			* Check if the database exist in the given database address
-			* @param databaseAd database address
-			* @param cred credentials
-			* @param dbName name of the database
-			* @return returns true if found
-			*/
-			bool hasDatabase(
-				const std::string                      &databaseAd,
-				const repo::core::model::RepoBSON 	   *cred,
-				const std::string                      &dbName);
 
 			/**
 			* Connect to all services required as per config provided

@@ -97,14 +97,6 @@ namespace repo {
 				*/
 				virtual std::list<std::string> getDatabases(const bool &sorted = true) = 0;
 
-				/** get the associated projects for the list of database.
-				* @param list of database
-				* @return returns a map of database -> list of projects
-				*/
-				virtual std::map<std::string, std::list<std::string> > getDatabasesWithProjects(
-					const std::list<std::string> &databases,
-					const std::string &projectExt = "scene") = 0;
-
 				/**
 				* Get a list of projects associated with a given database (aka company account).
 				* @param list of database

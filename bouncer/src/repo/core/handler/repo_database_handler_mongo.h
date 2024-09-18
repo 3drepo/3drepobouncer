@@ -208,14 +208,6 @@ namespace repo {
 				 */
 				std::list<std::string> getDatabases(const bool &sorted = true);
 
-				/** get the associated projects for the list of database.
-				 * @param list of database
-				 * @return returns a map of database -> list of projects
-				 */
-				std::map<std::string, std::list<std::string> > getDatabasesWithProjects(
-					const std::list<std::string> &databases,
-					const std::string &projectExt = "history");
-
 				/**
 				 * Get a list of projects associated with a given database (aka company account).
 				 * It will filter out any collections without that isn't *.projectExt

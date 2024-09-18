@@ -653,27 +653,6 @@ std::string MongoDatabaseHandler::getProjectFromCollection(const std::string &ns
 	return project;
 }
 
-std::map<std::string, std::list<std::string> > MongoDatabaseHandler::getDatabasesWithProjects(
-	const std::list<std::string> &databases, const std::string &projectExt)
-{
-	std::map<std::string, std::list<std::string> > mapping;
-	try
-	{
-		for (std::list<std::string>::const_iterator it = databases.begin();
-			it != databases.end(); ++it)
-		{
-			std::string database = *it;
-			std::list<std::string> projects = getProjects(database, projectExt);
-			mapping.insert(std::make_pair(database, projects));
-		}
-	}
-	catch (mongo::DBException& e)
-	{
-		repoError << e.what();
-	}
-	return mapping;
-}
-
 MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
 	std::string       &errMsg,
 	const std::string &connectionString,

@@ -188,37 +188,6 @@ TEST(MongoDatabaseHandlerTest, GetDatabases)
 	EXPECT_FALSE(std::find(dbList.begin(), dbList.end(), REPO_GTEST_DBNAME2) == dbList.end());
 }
 
-TEST(MongoDatabaseHandlerTest, GetDatabasesWithProjects)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	std::string fakeDB = "nonExistentDB";
-	auto dbWithProjects = handler->getDatabasesWithProjects({ REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME2, fakeDB });
-	ASSERT_EQ(3, dbWithProjects.size());
-
-	//Should be able to find all 3 database on the returning map
-	EXPECT_FALSE(dbWithProjects.find(REPO_GTEST_DBNAME1) == dbWithProjects.end());
-	EXPECT_FALSE(dbWithProjects.find(REPO_GTEST_DBNAME2) == dbWithProjects.end());
-	EXPECT_FALSE(dbWithProjects.find(fakeDB) == dbWithProjects.end());
-
-	EXPECT_EQ(dbWithProjects[REPO_GTEST_DBNAME1].size(), 2);
-	EXPECT_EQ(dbWithProjects[REPO_GTEST_DBNAME2].size(), 1);
-	EXPECT_EQ(dbWithProjects[fakeDB].size(), 0);
-
-	EXPECT_EQ(dbWithProjects[REPO_GTEST_DBNAME1].front(), REPO_GTEST_DBNAME1_PROJ);
-	EXPECT_EQ(dbWithProjects[REPO_GTEST_DBNAME2].front(), REPO_GTEST_DBNAME2_PROJ);
-
-	//If i change the extenion to something that doesn't exist, it shouldn't give me any projects
-	auto dbWithProjects2 = handler->getDatabasesWithProjects({ REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME2, fakeDB }, "blahblah");
-	EXPECT_FALSE(dbWithProjects2.find(REPO_GTEST_DBNAME1) == dbWithProjects2.end());
-	EXPECT_FALSE(dbWithProjects2.find(REPO_GTEST_DBNAME2) == dbWithProjects2.end());
-	EXPECT_FALSE(dbWithProjects2.find(fakeDB) == dbWithProjects2.end());
-
-	EXPECT_EQ(dbWithProjects2[REPO_GTEST_DBNAME1].size(), 0);
-	EXPECT_EQ(dbWithProjects2[REPO_GTEST_DBNAME2].size(), 0);
-	EXPECT_EQ(dbWithProjects2[fakeDB].size(), 0);
-}
-
 TEST(MongoDatabaseHandlerTest, GetProjects)
 {
 	auto handler = getHandler();

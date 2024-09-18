@@ -160,17 +160,6 @@ namespace repo {
 			const RepoToken *token);
 
 		/**
-		* Return a list of projects with the database available to the user
-		* @param token A RepoToken given at authentication
-		* @param databases list of databases to look up
-		* @return returns a list of database names
-		*/
-		std::map<std::string, std::list<std::string>>
-			getDatabasesWithProjects(
-				const RepoToken *token,
-				const std::list<std::string> &databases);
-
-		/**
 		* Get a list of Admin roles from the database
 		* @param token repo token to the database
 		* @return returns a vector of roles

@@ -311,27 +311,6 @@ std::list<std::string>  RepoController::_RepoControllerImpl::getCollections(
 	return list;
 }
 
-std::map<std::string, std::list<std::string>>
-RepoController::_RepoControllerImpl::getDatabasesWithProjects(
-	const RepoController::RepoToken *token,
-	const std::list<std::string> &databases)
-{
-	std::map<std::string, std::list<std::string> > map;
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		map = worker->getDatabasesWithProjects(token->databaseAd,
-			token->getCredentials(), databases);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to get database listings without a database connection!";
-	}
-
-	return map;
-}
-
 void RepoController::_RepoControllerImpl::upsertDocument(
 	const RepoController::RepoToken                          *token,
 	const std::string                        &databaseName,

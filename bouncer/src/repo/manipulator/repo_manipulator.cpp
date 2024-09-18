@@ -349,21 +349,6 @@ RepoManipulator::getAllFromCollectionTailable(
 	return vector;
 }
 
-std::map<std::string, std::list<std::string>>
-RepoManipulator::getDatabasesWithProjects(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::list<std::string>& databases)
-{
-	std::map<std::string, std::list<std::string>> list;
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-		list = handler->getDatabasesWithProjects(databases);
-
-	return list;
-}
-
 std::list<std::string> RepoManipulator::getAdminDatabaseRoles(
 	const std::string& databaseAd)
 {
@@ -509,30 +494,6 @@ void RepoManipulator::processDrawingRevision(
 	if (error == REPOERR_OK) {
 		error = manager.commitImage(handler, fileManager, teamspace, revisionNode, drawing);
 	}
-}
-
-bool RepoManipulator::hasCollection(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& dbName,
-	const std::string& project)
-{
-	std::list<std::string> dList = { dbName };
-	auto databaseList = getDatabasesWithProjects(databaseAd, cred, dList);
-	if (!databaseList.size()) return false;
-	auto collectionList = databaseList.begin()->second;
-	auto findIt = std::find(collectionList.begin(), collectionList.end(), project);
-	return findIt != collectionList.end();
-}
-
-bool RepoManipulator::hasDatabase(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& dbName)
-{
-	auto databaseList = fetchDatabases(databaseAd, cred);
-	auto findIt = std::find(databaseList.begin(), databaseList.end(), dbName);
-	return findIt != databaseList.end();
 }
 
 bool RepoManipulator::init(
