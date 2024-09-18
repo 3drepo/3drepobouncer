@@ -628,7 +628,6 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 
 repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecursive(
 	const aiNode                                                     *assimpNode,
-	const std::unordered_map<std::string, repo::core::model::RepoNode *> &cameras,
 	const std::vector<repo::core::model::RepoNode>           &meshes,
 	const std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode *, repo::lib::RepoUUIDHasher>    &meshToMat,
 	std::unordered_map<repo::core::model::RepoNode *, std::vector<repo::lib::RepoUUID>> &matParents,
@@ -694,20 +693,6 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 		}
 
 		//--------------------------------------------------------------------------
-		// Register cameras as children of this transformation (by name) if any
-		std::unordered_map<std::string, repo::core::model::RepoNode *>::const_iterator it =
-			cameras.find(assimpNode->mName.data);
-		if (cameras.end() != it)
-		{
-			repo::core::model::RepoNode * camera = it->second;
-			if (camera)
-			{
-				repo::core::model::RepoNode tmp = camera->cloneAndAddParent(sharedId);
-				camera->swap(tmp);
-			}
-		}
-
-		//--------------------------------------------------------------------------
 		// Collect metadata and add as a child
 		if (keepMetadata && assimpNode->mMetaData)
 		{
@@ -727,7 +712,7 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 		{
 			repo::core::model::RepoNodeSet childMetadata;
 			repo::core::model::RepoNodeSet childSet = createTransformationNodesRecursive(assimpNode->mChildren[i],
-				cameras, meshes, meshToMat, matParents, newMeshes, childMetadata, ++count, worldOffset, myShareID);
+				meshes, meshToMat, matParents, newMeshes, childMetadata, ++count, worldOffset, myShareID);
 
 			transNodes.insert(childSet.begin(), childSet.end());
 			metadata.insert(childMetadata.begin(), childMetadata.end());
@@ -744,7 +729,6 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 	if (assimpScene)
 	{
 		//Turn everything into repoNodes and construct a scene
-		repo::core::model::RepoNodeSet cameras; //!< Cameras
 		repo::core::model::RepoNodeSet meshes; //!< Meshes
 		repo::core::model::RepoNodeSet materials; //!< Materials
 		repo::core::model::RepoNodeSet metadata; //!< Metadata
@@ -755,7 +739,6 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 		std::unordered_map<repo::core::model::RepoNode *, std::vector<repo::lib::RepoUUID>> matParents;//Tracks material parents
 		std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> meshToMat;
 		std::vector<repo::core::model::RepoNode> originalOrderMesh; //vector that keeps track original order for assimp indices
-		std::unordered_map<std::string, repo::core::model::RepoNode *> camerasMap;
 		std::unordered_map<std::string, repo::core::model::RepoNode *> nameToTexture;
 
 		std::vector<std::vector<double>> sceneBbox = getSceneBoundingBox();
@@ -972,7 +955,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 
 		uint32_t count = 0;
 		transformations = createTransformationNodesRecursive(assimpScene->mRootNode,
-			camerasMap, originalOrderMesh, meshToMat, matParents, meshes, metadata, count, sceneBbox[0]);
+			originalOrderMesh, meshToMat, matParents, meshes, metadata, count, sceneBbox[0]);
 
 		repoInfo << "Node Construction completed. (#transformations: " << transformations.size() << ", #Metadata" << metadata.size() << ")";
 
@@ -993,7 +976,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 		std::vector<std::string> fileVect;
 		if (!orgFile.empty())
 			fileVect.push_back(orgFile);
-		scenePtr = new repo::core::model::RepoScene(fileVect, cameras, meshes, materials, metadata, textures, transformations);
+		scenePtr = new repo::core::model::RepoScene(fileVect, meshes, materials, metadata, textures, transformations);
 		if (missingTextures)
 		{
 			scenePtr->setMissingTexture();

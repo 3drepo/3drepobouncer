@@ -200,13 +200,10 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 	return std::string();
 }
 
-
-
 void DataProcessorRvt::init(GeometryCollector* geoColl, OdBmDatabasePtr database)
 {
 	this->collector = geoColl;
 	this->database = database;
-	//getCameras(database);
 
 	establishProjectTranslation(database);
 
