@@ -339,34 +339,6 @@ namespace repo {
 				= repo::core::model::RepoScene::GraphType::DEFAULT);
 
 			/**
-			* Save the files of the original model to a specified directory
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
-			* @param scene Repo Scene to save
-			* @param directory directory to save into
-			*/
-			bool saveOriginalFiles(
-				const std::string                    &databaseAd,
-				const repo::core::model::RepoBSON	 *cred,
-				const repo::core::model::RepoScene   *scene,
-				const std::string                    &directory);
-
-			/**
-			* Save the files of the original model to a specified directory
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
-			* @param database name of database
-			* @param project name of project
-			* @param directory directory to save into
-			*/
-			bool saveOriginalFiles(
-				const std::string                    &databaseAd,
-				const repo::core::model::RepoBSON	 *cred,
-				const std::string                    &database,
-				const std::string                    &project,
-				const std::string                    &directory);
-
-			/**
 			* Save a Repo Scene to file
 			* @param filePath path to file
 			* @param scene scene to export

@@ -189,30 +189,6 @@ public:
 		const bool           &skeletonFetch = false,
 		const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus = {});
 
-	/**
-	* Save the files of the original model to a specified directory
-	* @param token Authentication token
-	* @param scene Repo Scene to save
-	* @param directory directory to save into
-	*/
-	bool saveOriginalFiles(
-		const RepoToken                    *token,
-		const repo::core::model::RepoScene *scene,
-		const std::string                   &directory);
-
-	/**
-	* Save the original file of the head of the project into a specified directory
-	* @param token Authentication token
-	* @param database name of database
-	* @param project  name of project
-	* @param directory directory to save into
-	*/
-	bool saveOriginalFiles(
-		const RepoToken                    *token,
-		const std::string                   &database,
-		const std::string                   &project,
-		const std::string                   &directory);
-
 	/*
 	*	------- Database Operations (insert/delete/update) ---------
 	*/
