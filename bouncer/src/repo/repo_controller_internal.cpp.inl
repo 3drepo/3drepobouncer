@@ -264,26 +264,6 @@ RepoController::_RepoControllerImpl::getAllFromCollectionContinuous(
 	return vector;
 }
 
-std::list<std::string>  RepoController::_RepoControllerImpl::getCollections(
-	const RepoController::RepoToken       *token,
-	const std::string     &databaseName
-)
-{
-	std::list<std::string> list;
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		list = worker->fetchCollections(token->databaseAd, token->getCredentials(), databaseName);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to fetch collections without a database connection!";
-	}
-
-	return list;
-}
-
 void RepoController::_RepoControllerImpl::setLoggingLevel(const repo::lib::RepoLog::RepoLogLevel &level)
 {
 	repo::lib::RepoLog::getInstance().setLoggingLevel(level);

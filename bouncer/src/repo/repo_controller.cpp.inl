@@ -170,17 +170,6 @@ public:
 			const uint32_t               &limit = 0);
 
 	/**
-	* Return a list of collections within the database
-	* @param token A RepoToken given at authentication
-	* @param databaseName database to get collections from
-	* @return returns a list of collection names
-	*/
-	std::list<std::string> getCollections(
-		const RepoToken             *token,
-		const std::string     &databaseName
-	);
-
-	/**
 	* Retrieve a RepoScene with a specific revision loaded.
 	* @param token Authentication token
 	* @param database the database the collection resides in
