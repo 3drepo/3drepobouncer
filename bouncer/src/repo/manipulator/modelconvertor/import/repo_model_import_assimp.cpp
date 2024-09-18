@@ -36,6 +36,66 @@
 
 using namespace repo::manipulator::modelconvertor;
 
+
+bool AssimpModelImport::tryConvertMetadataEntry(aiMetadataEntry& assimpMetaEntry, repo::lib::RepoVariant& v){
+	// Dissect the entry object
+	auto dataType = assimpMetaEntry.mType;
+	switch (dataType)
+	{
+		case AI_BOOL:
+		{
+			v = *(static_cast<bool*>(assimpMetaEntry.mData));
+			break;
+		}
+		case AI_INT32:
+		{
+			v = *(static_cast<int*>(assimpMetaEntry.mData));
+			break;
+		}
+		case AI_UINT64:
+		{
+			uint64_t value = *(static_cast<uint64_t*>(assimpMetaEntry.mData));
+			v = static_cast<long long>(value); // Potentially losing precision here, but mongo does not accept uint64_t
+			break;
+		}
+		case AI_FLOAT:
+		{
+			float value = *(static_cast<float*>(assimpMetaEntry.mData));
+			v = static_cast<double>(value); // Potentially losing precision here, but mongo does not accept float
+			break;
+		}
+		case AI_DOUBLE:
+		{
+			v = *(static_cast<double*>(assimpMetaEntry.mData));
+			break;
+		}
+		case AI_AIVECTOR3D:
+		{
+			aiVector3D* vector = (static_cast<aiVector3D*>(assimpMetaEntry.mData));
+			repo::lib::RepoVector3D repoVector = { (float)vector->x, (float)vector->y, (float)vector->z };
+			v = repoVector.toString(); // not the best way to store a vector, but this appears to be the way it is done at the moment.
+			break;
+		}
+		case AI_AISTRING:
+		{
+			// AI_AISTRING need extra treatment, but is filtered before calling this.
+			return false;
+		}
+		case FORCE_32BIT:
+		{
+			// FORCE_32BIT need extra treatment, but is filtered before calling this.
+			return false;
+		}
+		default:
+		{
+			repoWarning << "Unknown Metadata data type encountered in DataProcessorNwd::TryConvertMetadataProperty. Type: " + dataType;
+			return false;
+		}
+	}
+
+	return true;
+}
+
 AssimpModelImport::AssimpModelImport(const ModelImportConfig &settings) :
 	AbstractModelImport(settings)
 {
@@ -522,7 +582,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 	const std::vector<repo::lib::RepoUUID> &parents)
 {
 	repo::core::model::MetadataNode *metaNode;
-	std::unordered_map<std::string, std::string> metaEntries;
+	std::unordered_map<std::string, repo::lib::RepoVariant> metaEntries;
 	std::string val;
 	if (assimpMeta)
 	{
@@ -537,44 +597,25 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 			if (key == "IfcGloballyUniqueId")
 				repoError << "TODO: fix IfcGloballyUniqueId in RepoMetadata" << std::endl;
 
-			switch (currentValue.mType)
+			if (currentValue.mType != AI_AISTRING && currentValue.mType != FORCE_32BIT)
 			{
-			case AI_BOOL:
-				metaEntries[key] = std::to_string(*(static_cast<bool *>(currentValue.mData)));
-				break;
+				// Convert assimp type into metadata variant
 
-			case AI_INT32:
-				metaEntries[key] = std::to_string(*(static_cast<int *>(currentValue.mData)));
-				break;
+				repo::lib::RepoVariant v;
 
-			case AI_UINT64:
-				metaEntries[key] = std::to_string(*(static_cast<uint64_t *>(currentValue.mData)));
-				break;
-
-			case AI_FLOAT:
-				metaEntries[key] = std::to_string(*(static_cast<float *>(currentValue.mData)));
-				break;
-
-			case AI_AISTRING:
-				val = (static_cast<aiString *>(currentValue.mData))->C_Str();
-
+				if (tryConvertMetadataEntry(currentValue, v)) {
+					metaEntries[key] = v;
+				}
+				else {
+					repoError << "Conversion of assimp entry to RepoVariant failed" << std::endl;
+				}
+			}
+			else if (currentValue.mType == AI_AISTRING) {
+				// We do additional checks with the string, so we have to handle this separately from the rest
+				val = (static_cast<aiString*>(currentValue.mData))->C_Str();
 				if (val.compare(key)) {
 					metaEntries[key] = val;
 				}
-
-				break;
-			case AI_AIVECTOR3D:
-			{
-				aiVector3D *vector = (static_cast<aiVector3D *>(currentValue.mData));
-
-				repo::lib::RepoVector3D repoVector = { (float)vector->x, (float)vector->y, (float)vector->z };
-				metaEntries[key] = repoVector.toString();
-			}
-			break;
-			case FORCE_32BIT:
-				// Gracefully (but silently) handle the bogus enum used by
-				// assimp to ensure the enum is 32-bits.
-				break;
 			}
 		}
 

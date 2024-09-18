@@ -21,6 +21,7 @@
 #include "../repo_model_units.h"
 #include "../../../../core/model/bson/repo_bson_factory.h"
 #include "../../../../lib/datastructure/repo_structs.h"
+#include "../../../../lib/datastructure/repo_variant.h"
 #include "helper_functions.h"
 #include "vertex_map.h"
 
@@ -50,7 +51,7 @@ namespace repo {
 					GeometryCollector();
 					~GeometryCollector();
 
-					std::unordered_map<std::string, std::unordered_map<std::string, std::string>> metadataCache;
+					std::unordered_map<std::string, std::unordered_map<std::string, repo::lib::RepoVariant>> metadataCache;
 					ModelUnits units = ModelUnits::UNKNOWN;
 
 					/**
@@ -186,7 +187,7 @@ namespace repo {
 					* Change current meta node to the one provided
 					* @param meta node
 					*/
-					void setCurrentMeta(const std::map<std::string, std::string>& meta);
+					void setCurrentMeta(const std::map<std::string, repo::lib::RepoVariant>& meta);
 
 					/**
 					* Get all meta nodes collected.
@@ -212,7 +213,7 @@ namespace repo {
 					* @param metaEntry Metadata entry for groupName
 					*/
 					void setMetadata(const std::string &groupName,
-						const std::unordered_map<std::string, std::string> &metaEntry)
+						const std::unordered_map<std::string, repo::lib::RepoVariant> &metaEntry)
 					{
 						if (!hasMeta(groupName) && metaEntry.size() > 0) {
 							idToMeta[groupName] = metaEntry;
@@ -222,7 +223,7 @@ namespace repo {
 				private:
 
 					std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<int, std::vector<mesh_data_t>>>> meshData;
-					std::unordered_map<std::string, std::unordered_map<std::string, std::string> > idToMeta;
+					std::unordered_map<std::string, std::unordered_map<std::string, repo::lib::RepoVariant> > idToMeta;
 					std::unordered_map<std::string, std::string> layerIDToName, layerIDToParent;
 					std::unordered_map<std::string, repo::core::model::MetadataNode*> elementToMetaNode;
 					std::string nextMeshName, nextLayer, nextGroupName;
@@ -259,7 +260,7 @@ namespace repo {
 					repo::core::model::MetadataNode*  createMetaNode(
 						const std::string &name,
 						const repo::lib::RepoUUID &parentId,
-						const  std::unordered_map<std::string, std::string> &metaValues
+						const  std::unordered_map<std::string, repo::lib::RepoVariant> &metaValues
 					);
 
 					mesh_data_t* startOrContinueMeshByFormat(uint32_t format);

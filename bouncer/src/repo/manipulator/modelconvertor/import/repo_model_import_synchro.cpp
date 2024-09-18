@@ -122,7 +122,40 @@ repo::core::model::MetadataNode* SynchroModelImport::createMetaNode(
 	const std::unordered_map<std::string, std::string> &metadata,
 	const std::string &name,
 	const std::vector<repo::lib::RepoUUID> &parents) {
-	return new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(metadata, name, parents));
+
+	std::unordered_map<std::string, repo::lib::RepoVariant> RepoVariant;
+
+	for (auto& it: metadata) {
+
+		repo::lib::RepoVariant v;
+
+		// Guess-cast into the variant
+		std::string value = it.second;
+
+		//Check if it is a number, if it is, store it as a number
+
+		try {
+			v = boost::lexical_cast<long long>(value);			
+		}
+		catch (boost::bad_lexical_cast&)
+		{
+			//not an int, try a double
+
+			try {
+				v = boost::lexical_cast<double>(value);				
+			}
+			catch (boost::bad_lexical_cast&)
+			{
+				//not an int or float, store as string
+				v = value;
+			}
+		}
+
+		// Store the variant
+		RepoVariant[it.first] = v;
+	}
+
+	return new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(RepoVariant, name, parents));
 }
 
 repo::core::model::TransformationNode* SynchroModelImport::createTransNode(

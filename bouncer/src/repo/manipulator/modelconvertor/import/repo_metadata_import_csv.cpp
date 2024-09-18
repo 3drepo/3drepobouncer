@@ -45,6 +45,40 @@ std::istream& MetadataImportCSV::readLine(
 	return stream;
 }
 
+std::vector<repo::lib::RepoVariant> repo::manipulator::modelconvertor::MetadataImportCSV::convertToVariants(std::vector<std::string> tokens)
+{
+	std::vector<repo::lib::RepoVariant> metaData;
+
+	for (auto& value : tokens) {
+		repo::lib::RepoVariant v;
+
+		// Guess-cast into the variant
+
+		//Check if it is a number, if it is, store it as a number
+		try {
+			v = boost::lexical_cast<long long>(value);
+		}
+		catch (boost::bad_lexical_cast&)
+		{
+			//not an int, try a double
+
+			try {
+				v = boost::lexical_cast<double>(value);
+			}
+			catch (boost::bad_lexical_cast&)
+			{
+				//not an int or float, store as string
+				v = value;
+			}
+		}
+
+		// Store the variant
+		metaData.push_back(v);
+	}
+
+	return metaData;
+}
+
 repo::core::model::RepoNodeSet MetadataImportCSV::readMetadata(
 	const std::string        &path,
 	std::vector<std::string> &headers,
@@ -65,7 +99,7 @@ repo::core::model::RepoNodeSet MetadataImportCSV::readMetadata(
 			else if (!tokens.empty())
 			{
 				repo::core::model::MetadataNode meta =
-					repo::core::model::RepoBSONFactory::makeMetaDataNode(headers, tokens, tokens[0]);
+					repo::core::model::RepoBSONFactory::makeMetaDataNode(headers, convertToVariants(tokens), tokens[0]);
 				metadata.insert(new repo::core::model::MetadataNode(meta));
 			}
 		}

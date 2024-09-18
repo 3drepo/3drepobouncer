@@ -29,6 +29,7 @@
 
 #include "vectorise_device_dgn.h"
 #include "../../../../core/model/bson/repo_node_mesh.h"
+#include "repo/lib/datastructure/repo_variant.h"
 
 namespace repo {
 	namespace manipulator {
