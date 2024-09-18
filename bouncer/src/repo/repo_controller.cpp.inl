@@ -295,36 +295,6 @@ public:
 		const repo::lib::RepoUUID           &revId = repo::lib::RepoUUID::createUUID());
 
 	/**
-	* Remove a collection from the database
-	* @param token Authentication token
-	* @param database the database the collection resides in
-	* @param collection name of the collection to drop
-	* @param errMsg error message if failed
-	* @return returns true upon success
-	*/
-	bool removeCollection(
-		const RepoToken             *token,
-		const std::string     &databaseName,
-		const std::string     &collectionName,
-		std::string			  &errMsg
-	);
-
-	/**
-	* remove a document from the database
-	* NOTE: this should never be called for a bson from RepoNode family
-	*       as you should never remove a node from a scene graph like this.
-	* @param token Authentication token
-	* @param database the database the collection resides in
-	* @param collection name of the collection to drop
-	* @param bson document to remove
-	*/
-	void removeDocument(
-		const RepoToken                          *token,
-		const std::string                        &databaseName,
-		const std::string                        &collectionName,
-		const repo::core::model::RepoBSON  &bson);
-
-	/**
 	* upsert a document in the database
 	* NOTE: this should never be called for a bson from  RepoNode family
 	*       as you should never update a node from a scene graph like this.

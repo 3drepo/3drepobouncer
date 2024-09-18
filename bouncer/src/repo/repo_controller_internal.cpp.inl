@@ -355,49 +355,6 @@ RepoController::_RepoControllerImpl::getDatabasesWithProjects(
 	return map;
 }
 
-bool RepoController::_RepoControllerImpl::removeCollection(
-	const RepoController::RepoToken             *token,
-	const std::string     &databaseName,
-	const std::string     &collectionName,
-	std::string			  &errMsg
-)
-{
-	bool success = false;
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		success = worker->dropCollection(token->databaseAd,
-			token->getCredentials(), databaseName, collectionName, errMsg);
-		workerPool.push(worker);
-	}
-	else
-	{
-		errMsg = "Trying to fetch collections without a database connection!";
-		repoError << errMsg;
-	}
-
-	return success;
-}
-
-void RepoController::_RepoControllerImpl::removeDocument(
-	const RepoController::RepoToken                          *token,
-	const std::string                        &databaseName,
-	const std::string                        &collectionName,
-	const repo::core::model::RepoBSON  &bson)
-{
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		worker->removeDocument(token->databaseAd,
-			token->getCredentials(), databaseName, collectionName, bson);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to delete a document without a database connection!";
-	}
-}
-
 void RepoController::_RepoControllerImpl::upsertDocument(
 	const RepoController::RepoToken                          *token,
 	const std::string                        &databaseName,

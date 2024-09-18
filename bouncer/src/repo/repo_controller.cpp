@@ -138,25 +138,6 @@ RepoController::getDatabasesWithProjects(
 	return impl->getDatabasesWithProjects(token, databases);
 }
 
-bool RepoController::removeCollection(
-	const RepoController::RepoToken             *token,
-	const std::string     &databaseName,
-	const std::string     &collectionName,
-	std::string			  &errMsg
-)
-{
-	return impl->removeCollection(token, databaseName, collectionName, errMsg);
-}
-
-void RepoController::removeDocument(
-	const RepoController::RepoToken          *token,
-	const std::string                        &databaseName,
-	const std::string                        &collectionName,
-	const repo::core::model::RepoBSON        &bson)
-{
-	impl->removeDocument(token, databaseName, collectionName, bson);
-}
-
 void RepoController::upsertDocument(
 	const RepoController::RepoToken          *token,
 	const std::string                        &databaseName,

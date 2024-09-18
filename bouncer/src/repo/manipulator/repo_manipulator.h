@@ -442,23 +442,6 @@ namespace repo {
 				const std::string &imagePath);
 
 			/**
-			* remove a document from the database
-			* NOTE: this should never be called for a RepoNode family
-			*       as you should never remove a node from a scene graph like this.
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
-			* @param database the database the collection resides in
-			* @param collection name of the collection to drop
-			* @param bson document to remove
-			*/
-			void removeDocument(
-				const std::string                       &databaseAd,
-				const repo::core::model::RepoBSON       *cred,
-				const std::string                       &databaseName,
-				const std::string                       &collectionName,
-				const repo::core::model::RepoBSON       &bson);
-
-			/**
 			* Reduce redundant transformations from the scene
 			* to optimise the graph
 			* @param scene RepoScene to optimize

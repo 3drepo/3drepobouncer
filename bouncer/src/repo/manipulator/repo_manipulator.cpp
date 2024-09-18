@@ -634,29 +634,6 @@ void RepoManipulator::reduceTransformations(
 	}
 }
 
-void RepoManipulator::removeDocument(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& databaseName,
-	const std::string& collectionName,
-	const repo::core::model::RepoBSON& bson)
-{
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-	{
-		std::string errMsg;
-		if (handler->dropDocument(bson, databaseName, collectionName, errMsg))
-		{
-			repoInfo << "Document removed successfully.";
-		}
-		else
-		{
-			repoError << "Failed to remove document : " << errMsg;
-		}
-	}
-}
-
 bool RepoManipulator::saveOriginalFiles(
 	const std::string& databaseAd,
 	const repo::core::model::RepoBSON* cred,
