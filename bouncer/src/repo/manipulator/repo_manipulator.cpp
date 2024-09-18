@@ -335,19 +335,6 @@ RepoManipulator::getAllFromCollectionTailable(
 	return vector;
 }
 
-std::list<std::string> RepoManipulator::getAdminDatabaseRoles(
-	const std::string& databaseAd)
-{
-	std::list<std::string> roles;
-
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-		roles = handler->getAdminDatabaseRoles();
-
-	return roles;
-}
-
 std::shared_ptr<repo_partitioning_tree_t>
 RepoManipulator::getScenePartitioning(
 	const repo::core::model::RepoScene* scene,

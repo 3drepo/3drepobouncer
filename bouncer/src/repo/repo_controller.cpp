@@ -162,11 +162,6 @@ repo_web_buffers_t RepoController::generateSRCBuffer(
 	return impl->generateSRCBuffer(scene);
 }
 
-std::list<std::string> RepoController::getAdminDatabaseRoles(const RepoController::RepoToken *token)
-{
-	return impl->getAdminDatabaseRoles(token);
-}
-
 std::string RepoController::getNameOfAdminDatabase(const RepoController::RepoToken *token)
 {
 	return impl->getNameOfAdminDatabase(token);

@@ -181,13 +181,6 @@ public:
 	);
 
 	/**
-	* Get a list of Admin roles from the database
-	* @param token repo token to the database
-	* @return returns a vector of roles
-	*/
-	std::list<std::string> getAdminDatabaseRoles(const RepoToken *token);
-
-	/**
 	* Get the name of the admin database
 	* @param token repo token to the database
 	* @return returns the name of the admin database

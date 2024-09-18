@@ -211,15 +211,6 @@ namespace repo {
 				std::list<std::string> getProjects(const std::string &database, const std::string &projectExt);
 
 				/**
-				* Return a list of Admin database roles
-				* @return a vector of Admin database roles
-				*/
-				std::list<std::string> getAdminDatabaseRoles()
-				{
-					return ADMIN_ONLY_DATABASE_ROLES;
-				}
-
-				/**
 				* Return the name of admin database
 				* @return name of admin database
 				*/

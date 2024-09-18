@@ -398,23 +398,6 @@ repo_web_buffers_t RepoController::_RepoControllerImpl::generateSRCBuffer(
 	return buffer;
 }
 
-std::list<std::string> RepoController::_RepoControllerImpl::getAdminDatabaseRoles(const RepoController::RepoToken *token)
-{
-	std::list<std::string> roles;
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		roles = worker->getAdminDatabaseRoles(token->databaseAd);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to get database roles without a database connection!";
-	}
-
-	return roles;
-}
-
 std::string RepoController::_RepoControllerImpl::getNameOfAdminDatabase(const RepoController::RepoToken *token)
 {
 	std::string name;

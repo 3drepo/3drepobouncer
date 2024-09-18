@@ -271,14 +271,6 @@ namespace repo {
 					const uint32_t                                &limit = 0);
 
 			/**
-			* Get a list of admin roles from the database
-			* @param databaseAd database address:portdatabase
-			* @return returns a vector of roles
-			*/
-			std::list<std::string> getAdminDatabaseRoles(
-				const std::string                     &databaseAd);
-
-			/**
 			* Get a hierachical spatial partitioning in form of a tree
 			* @param scene scene to partition
 			* @param maxDepth max partitioning depth
