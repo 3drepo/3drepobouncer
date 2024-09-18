@@ -40,8 +40,8 @@ std::string helpInfo()
 {
 	std::stringstream ss;
 	ss << cmdTestImport << "\tRun file import for the given file (no saving to database, no optimisation). (args: <file to import>)\n";
-	ss << cmdGenStash << "\tGenerate Stash for all databases. (args: [repo|gltf|src|tree])\n";
-	ss << cmdGenStashSpecific << "\tGenerate Stash for specific list of databases. (args: <file with list of databases> [repo|gltf|src|tree])\n";
+	ss << cmdGenStash << "\tGenerate Stash for all databases. (args: [repo|src|tree])\n";
+	ss << cmdGenStashSpecific << "\tGenerate Stash for specific list of databases. (args: <file with list of databases> [repo|src|tree])\n";
 	ss << cmdTestConn << "\t\tTest the client and database connection is working. (args: none)\n";
 	ss << cmdVersion << "[-v]\tPrints the version of Repo Bouncer Client/Library\n";
 
@@ -133,11 +133,6 @@ static bool genSrcStash(std::shared_ptr<repo::RepoController> controller, const 
 	return controller->generateAndCommitSRCBuffer(token, scene);
 }
 
-static bool genGLTFStash(std::shared_ptr<repo::RepoController> controller, const repo::RepoController::RepoToken *token, repo::core::model::RepoScene *scene)
-{
-	return controller->generateAndCommitGLTFBuffer(token, scene);
-}
-
 static bool genSelectionTree(std::shared_ptr<repo::RepoController> controller, const repo::RepoController::RepoToken *token, repo::core::model::RepoScene *scene)
 {
 	return controller->generateAndCommitSelectionTree(token, scene);
@@ -187,7 +182,7 @@ int32_t generateStash(
 		if (command.nArgcs < 1)
 		{
 			repoLogError("Number of arguments mismatch! " + cmdGenStash
-				+ " requires 1 arguments: [repo|gltf|src|tree]");
+				+ " requires 1 arguments: [repo|src|tree]");
 			return REPOERR_INVALID_ARG;
 		}
 		else
@@ -201,7 +196,7 @@ int32_t generateStash(
 		if (command.nArgcs < 2)
 		{
 			repoLogError("Number of arguments mismatch! " + cmdGenStashSpecific
-				+ " requires 2 arguments: <file with list of database> [repo|gltf|src|tree]");
+				+ " requires 2 arguments: <file with list of database> [repo|src|tree]");
 			return REPOERR_INVALID_ARG;
 		}
 		else
@@ -224,11 +219,6 @@ int32_t generateStash(
 	{
 		genFn = genRepoStash;
 		stashOnly = false;
-	}
-	else if (type == "gltf")
-	{
-		genFn = genGLTFStash;
-		stashOnly = true;
 	}
 	else if (type == "src")
 	{
