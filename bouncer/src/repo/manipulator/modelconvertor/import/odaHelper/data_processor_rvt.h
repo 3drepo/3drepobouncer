@@ -60,6 +60,9 @@
 #include "geometry_collector.h"
 #include "data_processor.h"
 
+#include "repo/lib/datastructure/repo_variant.h"
+#include "repo/lib/datastructure/repo_variant_utils.h"
+
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
@@ -75,6 +78,13 @@ namespace repo {
 					DataProcessorRvt();
 
 					void init(GeometryCollector* geoColl, OdBmDatabasePtr database);
+
+					static bool tryConvertMetadataEntry(
+						OdTfVariant& metaEntry,
+						OdBmLabelUtilsPEPtr labelUtils,
+						OdBmParamDefPtr paramDef,
+						OdBm::BuiltInParameter::Enum param,
+						repo::lib::RepoVariant& v);
 
 				protected:
 					void draw(const OdGiDrawable*) override;
@@ -106,13 +116,13 @@ namespace repo {
 
 					void fillMetadataById(
 						OdBmObjectId id,
-						std::unordered_map<std::string, std::string>& metadata);
+						std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
 
 					void fillMetadataByElemPtr(
 						OdBmElementPtr element,
-						std::unordered_map<std::string, std::string>& metadata);
+						std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
 
-					std::unordered_map<std::string, std::string> fillMetadata(OdBmElementPtr element);
+					std::unordered_map<std::string, repo::lib::RepoVariant> fillMetadata(OdBmElementPtr element);
 					std::string getLevel(OdBmElementPtr element, const std::string& name);
 					std::string getElementName(OdBmElementPtr element);
 
@@ -122,17 +132,10 @@ namespace repo {
 
 					bool ignoreParam(const std::string& param);
 
-					std::string translateMetadataValue(
-						const OdTfVariant& val,
-						OdBmLabelUtilsPEPtr labelUtils,
-						OdBmParamDefPtr paramDef,
-						OdBmDatabase* database,
-						OdBm::BuiltInParameter::Enum param);
-
 					void processParameter(
 						OdBmElementPtr element,
 						OdBmObjectId paramId,
-						std::unordered_map<std::string, std::string> &metadata,
+						std::unordered_map<std::string, repo::lib::RepoVariant> &metadata,
 						const OdBm::BuiltInParameter::Enum &buildInEnum
 					);
 

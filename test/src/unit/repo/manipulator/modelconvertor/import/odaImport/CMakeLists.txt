@@ -4,12 +4,11 @@
 #If you really need to overwrite this file, be aware that it will be overwritten if updateSources.py is executed.
 
 
-set(TEST_SOURCES
-	${TEST_SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_config.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_matrix.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_metadata_variant.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_uuid.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_vector2d.cpp
-	CACHE STRING "TEST_SOURCES" FORCE)
+if(ODA_SUPPORT)
+	set(TEST_SOURCES
+		${TEST_SOURCES}
+		${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_metadata_variant_nwd.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_metadata_variant_rvt.cpp
+		CACHE STRING "TEST_SOURCES" FORCE)
 
+endif()

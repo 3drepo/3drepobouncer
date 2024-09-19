@@ -19,8 +19,8 @@ def createCMakeList(dirName, files, subDirList, sourceName, headerName):
 	sources = {}
 	headers = {}
 
-	isOdaRequired = os.path.basename(dirName) == "odaHelper"
-
+	isOdaRequired = os.path.basename(dirName) == "odaHelper" or os.path.basename(dirName) == "odaImport"
+	
 	for fname in sorted(files):
 		if fname.lower().endswith('.cpp') or fname.lower().endswith('.cpp.inl'):
 			sources[cppInd] = fname
@@ -65,8 +65,8 @@ def createCMakeList(dirName, files, subDirList, sourceName, headerName):
 
 		cmakeFile.write(prefix + '\tCACHE STRING "'+headerName+'" FORCE)\n\n')
 
-		if isOdaRequired :
-			cmakeFile.write("endif()")
+	if isOdaRequired :
+		cmakeFile.write("endif()")
 
 	cmakeFile.close()
 

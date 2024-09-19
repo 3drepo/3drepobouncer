@@ -21,6 +21,7 @@
 #include "../../../../repo_test_utils.h"
 #include <repo/core/model/bson/repo_bson_factory.h>
 #include <repo/core/model/bson/repo_bson_builder.h>
+#include <repo/lib/datastructure/repo_variant_utils.h>
 
 using namespace repo::core::model;
 
@@ -284,11 +285,17 @@ TEST(RepoBSONFactoryTest, MakeMaterialNodeTest)
 
 TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
 {
-	std::vector<std::string> keys({ "one", "two", "three", "four", "five" }), values({ "!", "!!", "!!!", "!!!!", "!!!!!" });
+	std::vector<std::string> keys({ "one", "two", "three", "four", "five" });
+	std::vector<std::string> values({ "!", "!!", "!!!", "!!!!", "!!!!!" });
 
 	std::string name = "MetaTest";
 
-	MetadataNode metaNode = RepoBSONFactory::makeMetaDataNode(keys, values, name);
+	std::vector<repo::lib::RepoVariant> variants;
+	for (int i = 0; i < keys.size(); i++) {
+		variants.push_back(repo::lib::RepoVariant(values[i]));
+	}
+
+	MetadataNode metaNode = RepoBSONFactory::makeMetaDataNode(keys, variants, name);
 
 	EXPECT_FALSE(metaNode.isEmpty());
 	EXPECT_EQ(name, metaNode.getName());
