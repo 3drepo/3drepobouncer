@@ -23,6 +23,7 @@
 #include "repo_bson_builder.h"
 #include "repo_bson_binmapping_builder.h"
 #include "../../../lib/repo_log.h"
+#include "../../../lib/repo_exception.h"
 
 using namespace repo::core::model;
 
@@ -743,7 +744,7 @@ RepoCalibration repo::core::model::RepoBSONFactory::makeRepoCalibration(
 
 	if (horizontal2d.size() != 2 || horizontal3d.size() != 2)
 	{
-		throw std::runtime_error("Incomplete calibration vectors supplied to makeRepoCalibration");
+		throw repo::lib::RepoException("Incomplete calibration vectors supplied to makeRepoCalibration");
 	}
 
 	RepoBSONBuilder horizontalBuilder;

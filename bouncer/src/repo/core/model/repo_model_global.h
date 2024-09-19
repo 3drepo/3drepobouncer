@@ -85,9 +85,7 @@
 #define REPO_LABEL_DRAWING			"drawing"
 #define REPO_LABEL_REVISION			"revision"
 #define REPO_LABEL_CREATEDAT		"createdAt"
-#define REPO_LABEL_CREATEDBY		"createdBy"
 #define	REPO_LABEL_HORIZONTAL		"horizontal"
-#define REPO_LABEL_VERTICALRANGE	"verticalRange"
 #define	REPO_LABEL_UNITS			"units"
 
 #define REPO_COMMAND_UPDATE         "update"
