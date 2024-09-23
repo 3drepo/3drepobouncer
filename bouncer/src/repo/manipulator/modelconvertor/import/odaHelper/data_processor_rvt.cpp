@@ -413,7 +413,7 @@ void DataProcessorRvt::processParameter(
 		auto metaKey = convertToStdString(pDescParam->getCaption());
 
 		if (!ignoreParam(metaKey)) {
-			auto paramGroup = labelUtils->getLabelFor(OdBm::BuiltInParameterGroup::Enum(groupId));
+			auto paramGroup = labelUtils->getLabelForGroup(groupId);
 			if (!paramGroup.isEmpty()) {
 				metaKey = convertToStdString(paramGroup) + "::" + metaKey;
 			}
