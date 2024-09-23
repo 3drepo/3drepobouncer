@@ -24,7 +24,6 @@
 #include <Database/BmUnitUtils.h>
 #include <Database/Entities/BmDBDrawing.h>
 #include <Database/Entities/BmUnitsElem.h>
-#include <Database/GiContextForBmDatabase.h>
 #include <Database/Managers/BmUnitsTracking.h>
 #include <DynamicLinker.h>
 #include <ExBimHostAppServices.h>
@@ -194,7 +193,7 @@ void setupUnitsFormat(OdBmDatabasePtr pDb, double accuracy)
 	}
 }
 
-void setupRenderMode(OdBmDatabasePtr database, OdGsDevicePtr device, OdGiContextForBmDatabasePtr bimContext, OdGsView::RenderMode renderMode)
+void setupRenderMode(OdBmDatabasePtr database, OdGsDevicePtr device, OdGiDefaultContextPtr bimContext, OdGsView::RenderMode renderMode)
 {
 	OdGsBmDBDrawingHelperPtr drawingHelper = OdGsBmDBDrawingHelper::setupDBDrawingViews(database->getActiveDBDrawingId(), device, bimContext);
 	auto view = drawingHelper->activeView();
@@ -230,13 +229,12 @@ uint8_t FileProcessorRvt::readFile()
 			else {
 				pDbPE->setCurrentLayout(pDb, layout);
 
-				OdGiContextForBmDatabasePtr pBimContext = OdGiContextForBmDatabase::createObject();
+				OdGiDefaultContextPtr pBimContext = OdDbBaseDatabasePEPtr(pDb)->createGiContext(pDb);
 				OdGsModulePtr pGsModule = ODRX_STATIC_MODULE_ENTRY_POINT(StubDeviceModuleRvt)(OD_T("StubDeviceModuleRvt"));
 
 				((StubDeviceModuleRvt*)pGsModule.get())->init(collector, pDb);
 				OdGsDevicePtr pDevice = pGsModule->createDevice();
 
-				pBimContext->setDatabase(pDb);
 				pDevice = pDbPE->setupActiveLayoutViews(pDevice, pBimContext);
 
 				// NOTE: Render mode can be kFlatShaded, kGouraudShaded, kFlatShadedWithWireframe, kGouraudShadedWithWireframe
