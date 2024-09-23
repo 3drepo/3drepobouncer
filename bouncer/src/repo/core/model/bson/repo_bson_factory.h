@@ -41,6 +41,8 @@
 #include "repo_node_transformation.h"
 #include "repo_bson_builder.h"
 
+#include "repo/lib/datastructure/repo_variant.h"
+
 namespace repo {
 	namespace core {
 		namespace model {
@@ -246,7 +248,7 @@ namespace repo {
 				*/
 				static MetadataNode makeMetaDataNode(
 					const std::vector<std::string>  &keys,
-					const std::vector<std::string>  &values,
+					const std::vector<repo::lib::RepoVariant>  &values,
 					const std::string               &name = std::string(),
 					const std::vector<repo::lib::RepoUUID>     &parents = std::vector<repo::lib::RepoUUID>(),
 					const int                       &apiLevel = REPO_NODE_API_LEVEL_1);
@@ -260,7 +262,7 @@ namespace repo {
 				* @return returns a metadata node
 				*/
 				static MetadataNode makeMetaDataNode(
-					const std::unordered_map<std::string, std::string>  &data,
+					const std::unordered_map<std::string, repo::lib::RepoVariant>  &data,
 					const std::string            &name = std::string(),
 					const std::vector<repo::lib::RepoUUID> &parents = std::vector<repo::lib::RepoUUID>(),
 					const int                    &apiLevel = REPO_NODE_API_LEVEL_1);

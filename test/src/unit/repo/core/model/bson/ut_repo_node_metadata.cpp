@@ -30,11 +30,14 @@ using namespace repo::core::model;
 static MetadataNode makeRandomMetaNode()
 {
 	uint32_t nItems = rand() % 10 + 1;
-	std::vector<std::string> keys, values;
+	std::vector<std::string> keys;
+	std::vector<repo::lib::RepoVariant> values;
 	for (int i = 0; i < nItems; ++i)
 	{
 		keys.push_back(getRandomString(rand() % 10 + 1));
-		values.push_back(getRandomString(rand() % 10 + 1));
+		
+		repo::lib::RepoVariant v = getRandomString(rand() % 10 + 1);
+		values.push_back(v);
 	}
 	return	RepoBSONFactory::makeMetaDataNode(keys, values);
 }

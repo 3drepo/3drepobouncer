@@ -39,6 +39,8 @@
 #include "../../../core/model/bson/repo_node_metadata.h"
 #include "../../../core/model/bson/repo_node_transformation.h"
 
+#include "repo/lib/datastructure/repo_variant.h"
+
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
@@ -78,6 +80,14 @@ namespace repo {
 				* @return returns true upon success
 				*/
 				bool importModel(std::string filePath, uint8_t &errMsg);
+
+				/**
+				* Attempts to convert the assimp metadata entry into a RepoVariant
+				* @param the assimp metadata entry
+				* @param the repo variant passed as reference
+				* @return the success of the operation
+				*/
+				static bool tryConvertMetadataEntry(aiMetadataEntry& assimpMetaEntry, repo::lib::RepoVariant& v);
 
 			private:
 
