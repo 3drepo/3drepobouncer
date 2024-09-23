@@ -114,7 +114,11 @@ void FileProcessorDwg::importModel(OdDbDatabasePtr pDb)
 
 void FileProcessorDwg::importDrawing(OdDbDatabasePtr pDb)
 {
-	OdGsModulePtr pModule = ::odrxDynamicLinker()->loadModule(OdSvgExportModuleName, false);
+	// SvgExport is the name of the 3DRepo variant of the SVG exporter module.
+	// The actual module name searched for will have an SDK and compiler version
+	// suffix, depending on platform. This is handled by CMake.
+
+	OdGsModulePtr pModule = ::odrxDynamicLinker()->loadModule("SvgExport", false);
 	OdGsDevicePtr dev = pModule->createDevice();
 	if (!dev.isNull())
 	{
@@ -135,6 +139,7 @@ void FileProcessorDwg::importDrawing(OdDbDatabasePtr pDb)
 		pDbGiContext->setHatchAsPolygon(OdGiDefaultContext::kHatchPolygon);
 		dev->properties()->putAt(L"MinimalWidth", OdRxVariantValue(0.08));
 		dev->properties()->putAt(L"UseHLR", OdRxVariantValue(true));
+		dev->properties()->putAt(L"ColorPolicy", OdRxVariantValue((OdInt32)2)); // kGrayscale
 		pDbGiContext->setPaletteBackground(ODRGB(255, 255, 255));
 
 		OdDbBaseDatabasePEPtr pBaseDatabase(pDb);
