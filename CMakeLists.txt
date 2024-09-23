@@ -166,7 +166,7 @@ if (REPO_ASSET_GENERATOR_SUPPORT)
 	add_subdirectory(submodules/asset_generator)
 endif()
 
-if (REPO_SVG_EXPORT_SUPPORT)
+if (ODA_SUPPORT AND REPO_SVG_EXPORT_SUPPORT) # (The Svg exporter is an ODA extension so ODA is required)
 	add_definitions(-DREPO_SVG_EXPORT_SUPPORT)
 	add_subdirectory(submodules/svgexport)
 endif()

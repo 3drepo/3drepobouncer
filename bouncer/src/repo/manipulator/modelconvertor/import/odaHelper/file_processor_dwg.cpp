@@ -139,7 +139,7 @@ void FileProcessorDwg::importDrawing(OdDbDatabasePtr pDb)
 		pDbGiContext->setHatchAsPolygon(OdGiDefaultContext::kHatchPolygon);
 		dev->properties()->putAt(L"MinimalWidth", OdRxVariantValue(0.08));
 		dev->properties()->putAt(L"UseHLR", OdRxVariantValue(true));
-		dev->properties()->putAt(L"ColorPolicy", OdRxVariantValue((OdInt32)2)); // kGrayscale
+		dev->properties()->putAt(L"ColorPolicy", OdRxVariantValue((OdInt32)3)); // kDarken
 		pDbGiContext->setPaletteBackground(ODRGB(255, 255, 255));
 
 		OdDbBaseDatabasePEPtr pBaseDatabase(pDb);
