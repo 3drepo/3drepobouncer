@@ -41,11 +41,6 @@ target_link_libraries(3drepobouncer
 	ifcUtils_4
 )
 
-if(REPO_SVG_EXPORT_SUPPORT)
-	include_directories(${SVG_EXPORT_INCLUDE_DIR})
-	target_link_libraries(3drepobouncer SvgExport)
-endif()
-
 install(DIRECTORY src/ DESTINATION include FILES_MATCHING PATTERN "*.h")
 install(TARGETS 3drepobouncer DESTINATION lib)
 
