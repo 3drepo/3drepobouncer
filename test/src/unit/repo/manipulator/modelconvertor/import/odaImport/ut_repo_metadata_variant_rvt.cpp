@@ -181,7 +181,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int32AsBoolTest) {
 	OdBm::BuiltInParameter::Enum param;
 
 	// Configure paramDef
-	paramDef = OdBmParamDefHelper::createParamDef(OdBmSpecTypeId::Boolean::kYesNo, OdBm::StorageType::Integer);
+	paramDef = OdBmParamDefHelper::createParamDef(OdBmSpecTypeId::Boolean::kYesNo);
 
 	// Create data
 	OdInt32 data = 0;
@@ -216,7 +216,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int32asIntTest) {
 	OdTfVariant variant = OdTfVariant(data);
 
 	// Configure paramDef (to anything but kYesNo)
-	paramDef = OdBmParamDefHelper::createParamDef(OdBmSpecTypeId::Int::kInteger, OdBm::StorageType::Integer);
+	paramDef = OdBmParamDefHelper::createParamDef(OdBmSpecTypeId::Int::kInteger);
 
 
 	// Convert
