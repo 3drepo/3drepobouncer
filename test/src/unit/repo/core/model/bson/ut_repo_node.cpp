@@ -465,10 +465,6 @@ TEST(RepoNodeTest, GetTypeAsEnumTest)
 	RepoNode node = RepoNode(BSON(REPO_NODE_LABEL_TYPE << "nonExistentType"));
 	EXPECT_EQ(NodeType::UNKNOWN, node.getTypeAsEnum());
 
-	//camera
-	node = RepoNode(BSON(REPO_NODE_LABEL_TYPE << REPO_NODE_TYPE_CAMERA));
-	EXPECT_EQ(NodeType::CAMERA, node.getTypeAsEnum());
-
 	//material
 	node = RepoNode(BSON(REPO_NODE_LABEL_TYPE << REPO_NODE_TYPE_MATERIAL));
 	EXPECT_EQ(NodeType::MATERIAL, node.getTypeAsEnum());

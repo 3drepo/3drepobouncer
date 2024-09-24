@@ -176,9 +176,7 @@ NodeType RepoNode::getTypeAsEnum() const
 
 	NodeType enumType = NodeType::UNKNOWN;
 
-	if (REPO_NODE_TYPE_CAMERA == type)
-		enumType = NodeType::CAMERA;
-	else if (REPO_NODE_TYPE_MATERIAL == type)
+	if (REPO_NODE_TYPE_MATERIAL == type)
 		enumType = NodeType::MATERIAL;
 	else if (REPO_NODE_TYPE_MESH == type)
 		enumType = NodeType::MESH;
