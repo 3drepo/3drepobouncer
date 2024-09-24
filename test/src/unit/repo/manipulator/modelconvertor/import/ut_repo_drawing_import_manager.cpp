@@ -65,6 +65,9 @@ TEST(DrawingImportManager, ImportDWG)
 	boost::iostreams::basic_array_source<char> svgArraySource((char*)drawing.data.data(), drawing.data.size());
 	boost::iostreams::stream<boost::iostreams::basic_array_source<char>> svgStream(svgArraySource);
 
+	std::string s((char*)drawing.data.data(), drawing.data.size());
+	std::cout << s << std::endl;
+
 	boost::property_tree::ptree svgTree;
 	boost::property_tree::read_xml(svgStream, svgTree); // This will throw an exception if the xml is not well formed
 
