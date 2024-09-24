@@ -167,22 +167,13 @@ void FileProcessorDwg::importDrawing(OdDbDatabasePtr pDb)
 
 		pHelperDevice->update();
 
-		// Copy the SVG contents into a string
+		// And assign the contents to the collector's buffer
 
-		std::vector<char> buffer;
+		std::vector<uint8_t> buffer;
 		buffer.resize(stream->tell());
 		stream->seek(0, OdDb::FilerSeekType::kSeekFromStart);
 		stream->getBytes(buffer.data(), stream->length());
-		std::string svg(buffer.data(), buffer.size());
-
-		// Perform any further necessary manipulations. In this case we add the width
-		// and height attributes.
-
-		svg.insert(61, "width=\"1024\" height=\"768\" "); // 61 is just after the svg tag. This offset is fixed for exporter version.
-
-		// Provide the string to the collector as a vector
-
-		std::copy(svg.c_str(), svg.c_str() + svg.length(), std::back_inserter(drawingCollector->data));
+		drawingCollector->data = buffer;
 	}
 }
 
