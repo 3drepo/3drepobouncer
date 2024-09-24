@@ -224,6 +224,7 @@ void MongoDatabaseHandler::createIndex(const std::string &database, const std::s
 	}
 }
 
+#pragma optimize( "", off )
 repo::core::model::RepoBSON createRepoBSON(
 	fileservice::BlobFilesHandler &blobHandler,
 	const std::string &database,
@@ -256,6 +257,7 @@ repo::core::model::RepoBSON createRepoBSON(
 
 	return orgBson;
 }
+#pragma optimize( "", on )
 
 void MongoDatabaseHandler::disconnectHandler()
 {
@@ -483,6 +485,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 	return data;
 }
 
+#pragma optimize( "", off )
 repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 	const std::string& database,
 	const std::string& collection,
@@ -512,6 +515,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 
 	return data;
 }
+#pragma optimize( "", on )
 
 std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueIDs(
 	const std::string& database,
@@ -560,6 +564,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 	return data;
 }
 
+#pragma optimize( "", off )
 repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 	const std::string& database,
 	const std::string& collection,
@@ -619,6 +624,7 @@ repo::core::model::RepoBSON  MongoDatabaseHandler::findOneByUniqueID(
 
 	return bson;
 }
+#pragma optimize( "", on )
 
 std::vector<repo::core::model::RepoBSON>
 MongoDatabaseHandler::getAllFromCollectionTailable(

@@ -152,6 +152,7 @@ std::string RepoUser::getCleartextPassword() const
 	return password;
 }
 
+#pragma optimize( "", off )
 RepoBSON RepoUser::getCustomDataBSON() const
 {
 	RepoBSON customData;
@@ -171,6 +172,7 @@ RepoBSON RepoUser::getRolesBSON() const
 	}
 	return roles;
 }
+#pragma optimize( "", on )
 
 std::string RepoUser::getPassword() const
 {
