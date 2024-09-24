@@ -338,16 +338,6 @@ namespace repo {
 				const repo::core::model::RepoScene::GraphType &gType
 				= repo::core::model::RepoScene::GraphType::DEFAULT);
 
-			/**
-			* Save a Repo Scene to file
-			* @param filePath path to file
-			* @param scene scene to export
-			* @return returns true upon success
-			*/
-			bool saveSceneToFile(
-				const std::string &filePath,
-				const repo::core::model::RepoScene* scene);
-
 		private:
 
 			/**

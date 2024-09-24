@@ -31,7 +31,6 @@
 #include "../lib/repo_config.h"
 #include "modelconvertor/import/repo_drawing_import_manager.h"
 #include "modelconvertor/import/repo_model_import_manager.h"
-#include "modelconvertor/export/repo_model_export_assimp.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
 #include "modelutility/repo_scene_manager.h"
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
@@ -494,12 +493,4 @@ void RepoManipulator::reduceTransformations(
 	else {
 		repoError << "RepoController::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";
 	}
-}
-
-bool RepoManipulator::saveSceneToFile(
-	const std::string& filePath,
-	const repo::core::model::RepoScene* scene)
-{
-	modelconvertor::AssimpModelExport modelExport(scene);
-	return modelExport.exportToFile(filePath);
 }

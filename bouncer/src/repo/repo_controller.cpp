@@ -167,11 +167,6 @@ std::string RepoController::getSupportedImportFormats()
 	return impl->getSupportedImportFormats();
 }
 
-std::string RepoController::getSupportedExportFormats()
-{
-	return impl->getSupportedExportFormats();
-}
-
 repo::core::model::RepoNodeSet RepoController::loadMetadataFromFile(
 	const std::string &filePath,
 	const char        &delimiter)
@@ -196,13 +191,6 @@ void RepoController::processDrawingRevision(
 	const std::string &imagePath)
 {
 	return impl->processDrawingRevision(token, teamspace, revision, err, imagePath);
-}
-
-bool RepoController::saveSceneToFile(
-	const std::string &filePath,
-	const repo::core::model::RepoScene* scene)
-{
-	return impl->saveSceneToFile(filePath, scene);
 }
 
 void RepoController::reduceTransformations(

@@ -20,7 +20,6 @@
 #include "error_codes.h"
 
 #include "manipulator/modelconvertor/import/repo_model_import_assimp.h"
-#include "manipulator/modelconvertor/export/repo_model_export_assimp.h"
 
 RepoController::_RepoControllerImpl::_RepoControllerImpl(
 	std::vector<lib::RepoAbstractListener*> listeners,
@@ -379,12 +378,6 @@ RepoController::_RepoControllerImpl::getScenePartitioning(
 	return partition;
 }
 
-std::string RepoController::_RepoControllerImpl::getSupportedExportFormats()
-{
-	//This needs to be updated if we support more than assimp
-	return repo::manipulator::modelconvertor::AssimpModelExport::getSupportedFormats();
-}
-
 std::string RepoController::_RepoControllerImpl::getSupportedImportFormats()
 {
 	//This needs to be updated if we support more than assimp
@@ -463,26 +456,6 @@ RepoController::_RepoControllerImpl::processDrawingRevision(
 	manipulator::RepoManipulator* worker = workerPool.pop();
 	worker->processDrawingRevision(token->databaseAd, teamspace, revision, err, imagePath);
 	workerPool.push(worker);
-}
-
-bool RepoController::_RepoControllerImpl::saveSceneToFile(
-	const std::string &filePath,
-	const repo::core::model::RepoScene* scene)
-{
-	bool success = true;
-	if (scene)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-
-		worker->saveSceneToFile(filePath, scene);
-		workerPool.push(worker);
-	}
-	else {
-		repoError << "RepoController::_RepoControllerImpl::saveSceneToFile: NULL pointer to scene!";
-		success = false;
-	}
-
-	return success;
 }
 
 void RepoController::_RepoControllerImpl::reduceTransformations(

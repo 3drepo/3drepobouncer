@@ -275,12 +275,6 @@ namespace repo {
 			repo::core::model::RepoScene *scene);
 
 		/**
-			* Get a string of supported file formats for file export
-			* @return returns a string with list of supported file formats
-			*/
-		std::string getSupportedExportFormats();
-
-		/**
 			* Get a string of supported file formats for file import
 			* @return returns a string with list of supported file formats
 			*/
@@ -317,16 +311,6 @@ namespace repo {
 		repo::core::model::RepoNodeSet loadMetadataFromFile(
 			const std::string &filePath,
 			const char        &delimiter = ',');
-
-		/**
-			* Save a Repo Scene to file
-			* @param filePath path to file
-			* @param scene scene to export
-			* @return returns true upon success
-			*/
-		bool saveSceneToFile(
-			const std::string &filePath,
-			const repo::core::model::RepoScene* scene);
 
 		/*
 		*	------------- Optimizations --------------
