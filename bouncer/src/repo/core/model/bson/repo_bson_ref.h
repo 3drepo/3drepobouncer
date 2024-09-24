@@ -42,7 +42,6 @@ namespace repo {
 				const static std::string REPO_REF_TYPE_UNKNOWN;
 
 				enum class RefType {
-					GRIDFS, // GRIDFS is no longer supported but may exist in the database
 					FS, 
 					UNKNOWN,
 				};

@@ -293,7 +293,7 @@ FileManager::FileManager(
 			defaultHandler = fsHandler;
 	}
 	else {
-		throw repo::lib::RepoException("Filestore configuration must be provided (GridFS is no longer supported!)");
+		throw repo::lib::RepoException("Filestore configuration must be provided.");
 	}
 }
 
