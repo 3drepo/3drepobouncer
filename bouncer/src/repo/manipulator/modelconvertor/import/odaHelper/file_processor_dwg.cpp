@@ -118,7 +118,7 @@ void FileProcessorDwg::importDrawing(OdDbDatabasePtr pDb)
 	// The actual module name searched for will have an SDK and compiler version
 	// suffix, depending on platform. This is handled by CMake.
 
-	OdGsModulePtr pModule = ::odrxDynamicLinker()->loadModule(L"RepoSvgExport", false);
+	OdGsModulePtr pModule = ::odrxDynamicLinker()->loadModule(L"SvgExport", false);
 	OdGsDevicePtr dev = pModule->createDevice();
 	if (!dev.isNull())
 	{
