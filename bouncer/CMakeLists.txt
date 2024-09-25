@@ -3,7 +3,7 @@
 add_subdirectory(src)
 
 set(VERSION_MAJOR 5)
-set(VERSION_MINOR 11_3)
+set(VERSION_MINOR 11_4)
 
 include_directories(
 	${Boost_INCLUDE_DIRS}
