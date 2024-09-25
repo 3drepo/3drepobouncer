@@ -291,7 +291,7 @@ void FileProcessorDgn::importDrawing(OdDgDatabasePtr pDb, const ODCOLORREF* pPal
 	// for the specific database type, and bound to the device. When the device
 	// is updated, the SVG is written to the stream assigned to "Output".
 
-	OdGsModulePtr pModule = ::odrxDynamicLinker()->loadModule(OdSvgExportModuleName, false);
+	OdGsModulePtr pModule = ::odrxDynamicLinker()->loadModule(L"RepoSvgExport", false);
 	OdGsDevicePtr dev = pModule->createDevice();
 	if (!dev.isNull())
 	{
