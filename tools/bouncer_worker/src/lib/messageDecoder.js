@@ -31,6 +31,10 @@ const replaceSharedDirPlaceHolder = (command) => {
 		const data = fs.readFileSync(cmdArr[2], 'utf8');
 		const result = data.replace(tagToReplace, config.rabbitmq.sharedDir);
 		fs.writeFileSync(cmdArr[2], result, 'utf8');
+	} else if (cmdArr[0] === 'processDrawing') {
+		const data = fs.readFileSync(cmdArr[1], 'utf8');
+		const result = data.replace(tagToReplace, config.rabbitmq.sharedDir);
+		fs.writeFileSync(cmdArr[1], result, 'utf8');
 	}
 	return cmd;
 };
