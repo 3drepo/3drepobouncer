@@ -32,6 +32,10 @@ namespace repo {
 				std::vector<repo::lib::RepoVector3D> horizontalCalibration3d;
 				std::vector<repo::lib::RepoVector2D> horizontalCalibration2d;
 				std::string units;
+
+				bool valid() {
+					return horizontalCalibration2d.size() && horizontalCalibration3d.size();
+				}
 			};
 
 			/**

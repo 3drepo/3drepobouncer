@@ -73,24 +73,28 @@ uint8_t DrawingManager::commitImage(
 		return REPOERR_UPLOAD_FAILED;
 	}
 
-	// Retreive and process calibration
+	// Retreive and process calibration - drawing processors do not have to return a calibration,
+	// in which case the vectors will be empty.
+
 	auto calibration = drawing.calibration;
+	if (calibration.valid()) {
 
-	auto calibrationBSON = repo::core::model::RepoBSONFactory::makeRepoCalibration(
-		revision.getProject(),
-		revision.getModel(),
-		revId,
-		calibration.horizontalCalibration3d,
-		calibration.horizontalCalibration2d,
-		calibration.units
-	);
+		auto calibrationBSON = repo::core::model::RepoBSONFactory::makeRepoCalibration(
+			revision.getProject(),
+			revision.getModel(),
+			revId,
+			calibration.horizontalCalibration3d,
+			calibration.horizontalCalibration2d,
+			calibration.units
+		);
 
-	handler->insertDocument(teamspace, REPO_COLLECTION_CALIBRATIONS, calibrationBSON, error);
+		handler->insertDocument(teamspace, REPO_COLLECTION_CALIBRATIONS, calibrationBSON, error);
 
-	if (error.size())
-	{
-		repoError << "Error committing calibration: " << error;
-		return REPOERR_UPLOAD_FAILED;
+		if (error.size())
+		{
+			repoError << "Error committing calibration: " << error;
+			return REPOERR_UPLOAD_FAILED;
+		}
 	}
 
 	return REPOERR_OK;

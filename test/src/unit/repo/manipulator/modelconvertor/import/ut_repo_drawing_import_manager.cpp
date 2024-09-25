@@ -103,5 +103,9 @@ TEST(DrawingImportManager, ImportDWG)
 	// And of course expect that the DWG holds the above geometries
 
 	EXPECT_EQ(groupPrimitives, 2);
+
+	// Finally check that the calibration structure has been populated
+
+	EXPECT_TRUE(drawing.calibration.valid());
 }
 
