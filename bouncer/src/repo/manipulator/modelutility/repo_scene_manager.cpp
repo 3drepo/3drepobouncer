@@ -20,7 +20,6 @@
 #include "../../core/model/bson/repo_bson_ref.h"
 #include "../../error_codes.h"
 #include "../modeloptimizer/repo_optimizer_multipart.h"
-#include "../modelconvertor/export/repo_model_export_gltf.h"
 #include "../modelconvertor/export/repo_model_export_src.h"
 #include "../modeloptimizer/repo_optimizer_multipart.h"
 #include "../modelutility/repo_maker_selection_tree.h"
@@ -28,6 +27,9 @@
 #ifdef REPO_ASSET_GENERATOR_SUPPORT
 #include <submodules/asset_generator/src/repo_model_export_repobundle.h>
 #endif
+
+#define REPO_USER_LABEL_VR_ENABLED					"vrEnabled"
+#define REPO_USER_LABEL_SRC_ENABLED					"srcEnabled"
 
 using namespace repo::manipulator::modelutility;
 
@@ -328,10 +330,6 @@ bool SceneManager::generateWebViewBuffers(
 
 		switch (exType)
 		{
-		case repo::manipulator::modelconvertor::WebExportType::GLTF:
-			geoStashExt = REPO_COLLECTION_STASH_GLTF;
-			resultBuffers = generateGLTFBuffer(scene);
-			break;
 		case repo::manipulator::modelconvertor::WebExportType::SRC:
 			geoStashExt = REPO_COLLECTION_STASH_SRC;
 			resultBuffers = generateSRCBuffer(scene);
@@ -363,22 +361,6 @@ bool SceneManager::generateWebViewBuffers(
 	}
 
 	return success;
-}
-
-repo_web_buffers_t SceneManager::generateGLTFBuffer(
-	repo::core::model::RepoScene *scene)
-{
-	repo_web_buffers_t result;
-	repo::manipulator::modelconvertor::GLTFModelExport gltfExport(scene);
-	if (gltfExport.isOk())
-	{
-		repoTrace << "Conversion succeed.. exporting as buffer..";
-		result = gltfExport.getAllFilesExportedAsBuffer();
-	}
-	else
-		repoError << "Export to GLTF failed.";
-
-	return result;
 }
 
 bool SceneManager::generateAndCommitSelectionTree(

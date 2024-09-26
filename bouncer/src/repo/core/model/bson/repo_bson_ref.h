@@ -42,7 +42,8 @@ namespace repo {
 				const static std::string REPO_REF_TYPE_UNKNOWN;
 
 				enum class RefType {
-					GRIDFS, FS, UNKNOWN
+					FS, 
+					UNKNOWN,
 				};
 
 				RepoRef() : RepoBSON() {}

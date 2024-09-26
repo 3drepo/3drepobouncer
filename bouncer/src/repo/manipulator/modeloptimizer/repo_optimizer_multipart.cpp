@@ -730,7 +730,7 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 			// materials or textures. In the future, we may want to copy
 			// these nodes temporarily from default, so we can free it.
 
-			scene->addStashGraph(dummy, mergedMeshes, {}, {}, trans);
+			scene->addStashGraph(mergedMeshes, {}, {}, trans);
 		}
 		else
 		{

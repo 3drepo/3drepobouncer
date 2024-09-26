@@ -31,12 +31,31 @@
 #include "../../../error_codes.h"
 #include "../bson/repo_bson_builder.h"
 #include "../bson/repo_bson_factory.h"
+#include "../bson/repo_bson_project_settings.h"
 
 using namespace repo::core::model;
 
-const std::vector<std::string> RepoScene::collectionsInProject = { "scene", "scene.files", "scene.chunks", "stash.3drepo", "stash.3drepo.files", "stash.3drepo.chunks", "stash.x3d", "stash.x3d.files",
-"stash.json_mpc.files", "stash.json_mpc.chunks", "stash.x3d.chunks", "stash.gltf", "stash.gltf.files", "stash.gltf.chunks", "stash.src", "stash.src.files", "stash.src.chunks", "history",
-"history.files", "history.chunks", "issues", "wayfinder", "groups", "sequences", "tasks" };
+const std::vector<std::string> RepoScene::collectionsInProject = { 
+	"scene",
+	"scene.files",
+	"scene.chunks", 
+	"stash.3drepo",
+	"stash.3drepo.files",
+	"stash.3drepo.chunks",
+	"stash.json_mpc.files",
+	"stash.json_mpc.chunks",
+	"stash.src",
+	"stash.src.files",
+	"stash.src.chunks",
+	"history",
+	"history.files",
+	"history.chunks",
+	"issues",
+	"wayfinder",
+	"groups",
+	"sequences",
+	"tasks",
+};
 
 static bool nameCheck(const char &c)
 {
@@ -103,7 +122,6 @@ RepoScene::RepoScene(
 
 RepoScene::RepoScene(
 	const std::vector<std::string> &refFiles,
-	const RepoNodeSet              &cameras,
 	const RepoNodeSet              &meshes,
 	const RepoNodeSet              &materials,
 	const RepoNodeSet              &metadata,
@@ -123,7 +141,7 @@ RepoScene::RepoScene(
 	graph.rootNode = nullptr;
 	stashGraph.rootNode = nullptr;
 	branch = repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH);
-	populateAndUpdate(GraphType::DEFAULT, cameras, meshes, materials, metadata, textures, transformations, references, unknowns);
+	populateAndUpdate(GraphType::DEFAULT, meshes, materials, metadata, textures, transformations, references, unknowns);
 }
 
 RepoScene::~RepoScene()
@@ -519,13 +537,12 @@ bool RepoScene::addNodeToMaps(
 }
 
 void RepoScene::addStashGraph(
-	const RepoNodeSet &cameras,
 	const RepoNodeSet &meshes,
 	const RepoNodeSet &materials,
 	const RepoNodeSet &textures,
 	const RepoNodeSet &transformations)
 {
-	populateAndUpdate(GraphType::OPTIMIZED, cameras, meshes, materials, RepoNodeSet(),
+	populateAndUpdate(GraphType::OPTIMIZED, meshes, materials, RepoNodeSet(),
 		textures, transformations, RepoNodeSet(), RepoNodeSet());
 }
 
@@ -537,7 +554,6 @@ void RepoScene::clearStash()
 			delete pair.second;
 	}
 
-	stashGraph.cameras.clear();
 	stashGraph.meshes.clear();
 	stashGraph.materials.clear();
 	stashGraph.metadata.clear();
@@ -585,51 +601,49 @@ uint8_t RepoScene::commit(
 		return REPOERR_UPLOAD_FAILED;
 	}
 
-	if (success &= commitProjectSettings(handler, errMsg, userName))
+	repoInfo << "Commiting revision...";
+	ModelRevisionNode* newRevNode = 0;
+	if (!message.empty())
+		commitMsg = message;
+
+	if (success &= commitRevisionNode(handler, manager, errMsg, newRevNode, userName, commitMsg, tag, revId))
 	{
-		repoInfo << "Commited project settings, commiting revision...";
-		ModelRevisionNode *newRevNode = 0;
-		if (!message.empty())
-			commitMsg = message;
-
-		if (success &= commitRevisionNode(handler, manager, errMsg, newRevNode, userName, commitMsg, tag, revId))
+		repoInfo << "Commited revision node, commiting scene nodes...";
+		//commited the revision node, commit the modification on the scene
+		if (success &= commitSceneChanges(handler, revId, errMsg))
 		{
-			repoInfo << "Commited revision node, commiting scene nodes...";
-			//commited the revision node, commit the modification on the scene
-			if (success &= commitSceneChanges(handler, revId, errMsg))
+			handler->createCollection(databaseName, projectName + "." + REPO_COLLECTION_ISSUES);
+
+			//Succeed in commiting everything.
+			//Update Revision Node and reset state.
+
+			if (revNode)
 			{
-				handler->createCollection(databaseName, projectName + "." + REPO_COLLECTION_ISSUES);
-
-				//Succeed in commiting everything.
-				//Update Revision Node and reset state.
-
-				if (revNode)
-				{
-					delete revNode;
-				}
-
-				revNode = newRevNode;
-				revision = newRevNode->getUniqueID();
-
-				newAdded.clear();
-				newRemoved.clear();
-				newModified.clear();
-				commitMsg.clear();
-
-				refFiles.clear();
-				for (RepoNode* node : toRemove)
-				{
-					delete node;
-				}
-				toRemove.clear();
-				unRevisioned = false;
+				delete revNode;
 			}
-			if (success && frameStates.size()) {
-				repoInfo << "Commited Scene nodes, committing sequence";
-				commitSequence(handler, manager, newRevNode->getUniqueID(), errMsg);
+
+			revNode = newRevNode;
+			revision = newRevNode->getUniqueID();
+
+			newAdded.clear();
+			newRemoved.clear();
+			newModified.clear();
+			commitMsg.clear();
+
+			refFiles.clear();
+			for (RepoNode* node : toRemove)
+			{
+				delete node;
 			}
+			toRemove.clear();
+			unRevisioned = false;
+		}
+		if (success && frameStates.size()) {
+			repoInfo << "Commited Scene nodes, committing sequence";
+			commitSequence(handler, manager, newRevNode->getUniqueID(), errMsg);
 		}
 	}
+
 	if (success) updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
 	//Create and Commit revision node
 	repoInfo << "Succes: " << success << " msg: " << errMsg;
@@ -706,36 +720,6 @@ void RepoScene::addTimestampToProjectSettings(
 	}
 }
 
-bool RepoScene::commitProjectSettings(
-	repo::core::handler::AbstractDatabaseHandler *handler,
-	std::string &errMsg,
-	const std::string &userName)
-{
-	RepoProjectSettings projectSettings =
-		RepoBSONFactory::makeRepoProjectSettings(projectName, userName, graph.references.size());
-
-	bool success = handler->insertDocument(
-		databaseName, REPO_COLLECTION_SETTINGS, projectSettings, errMsg);
-
-	if (!success)
-	{
-		//check that the error occurred because of duplicated index (i.e. there's already an entry for projects)
-		RepoBSON criteria = BSON(REPO_LABEL_ID << projectName);
-
-		RepoBSON doc = handler->findOneByCriteria(databaseName, REPO_COLLECTION_SETTINGS, criteria);
-
-		//If it already exist, that's fine.
-		success = !doc.isEmpty();
-		if (success)
-		{
-			repoTrace << "This project already has a project settings entry, skipping project settings commit...";
-			errMsg.clear();
-		}
-	}
-
-	return success;
-}
-
 bool RepoScene::commitRevisionNode(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	repo::core::handler::fileservice::FileManager *manager,
@@ -779,7 +763,7 @@ bool RepoScene::commitRevisionNode(
 		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON(REPO_NODE_REVISION_ID << 1 << REPO_NODE_LABEL_SHARED_ID << 1 << REPO_LABEL_TYPE << 1));
 		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON(REPO_NODE_LABEL_SHARED_ID << 1));
 		//Creation of the revision node will append unique id onto the filename (e.g. <uniqueID>chair.obj)
-		//we need to store the file in GridFS under the new name
+		//we need to store the file under the new name
 		std::vector<std::string> newRefFileNames = newRevNode->getOrgFiles();
 		for (size_t i = 0; i < refFiles.size(); i++)
 		{
@@ -788,19 +772,19 @@ bool RepoScene::commitRevisionNode(
 			if (file.is_open())
 			{
 				//newRefFileNames should be at the same index as the refFile. but double check this!
-				std::string gridFSName = newRefFileNames[i];
-				if (gridFSName.find(fileNames[i]) == std::string::npos)
+				std::string fsName = newRefFileNames[i];
+				if (fsName.find(fileNames[i]) == std::string::npos)
 				{
 					//fileNames[i] is not a substring of newName, try to find it
 					for (const std::string &name : newRefFileNames)
 					{
-						if (gridFSName.find(fileNames[i]) != std::string::npos)
+						if (fsName.find(fileNames[i]) != std::string::npos)
 						{
-							gridFSName = name;
+							fsName = name;
 						}
 					}
 
-					if (gridFSName == newRefFileNames[i])
+					if (fsName == newRefFileNames[i])
 					{
 						//could not find the matching name (theoretically this should never happen). Skip this file.
 						repoError << "Cannot find matching file name for : " << refFiles[i] << " skipping...";
@@ -815,9 +799,9 @@ bool RepoScene::commitRevisionNode(
 				std::vector<uint8_t> rawFile(size);
 				if (file.read((char*)rawFile.data(), size))
 				{
-					if (!(success = manager->uploadFileAndCommit(databaseName, projectName + "." + REPO_COLLECTION_RAW, gridFSName, rawFile)))
+					if (!(success = manager->uploadFileAndCommit(databaseName, projectName + "." + REPO_COLLECTION_RAW, fsName, rawFile)))
 					{
-						errMsg = "Failed to save original file into file storage: " + gridFSName;
+						errMsg = "Failed to save original file into file storage: " + fsName;
 						repoError << errMsg;
 					}
 				}
@@ -1361,9 +1345,6 @@ void RepoScene::removeNode(
 		//remove from the nodes sets
 		switch (node->getTypeAsEnum())
 		{
-		case NodeType::CAMERA:
-			g.cameras.erase(node);
-			break;
 		case NodeType::MATERIAL:
 			g.materials.erase(node);
 			break;
@@ -1447,11 +1428,6 @@ bool RepoScene::populate(
 		{
 			node = new TextureNode(obj);
 			g.textures.insert(node);
-		}
-		else if (REPO_NODE_TYPE_CAMERA == nodeType)
-		{
-			node = new CameraNode(obj);
-			g.cameras.insert(node);
 		}
 		else if (REPO_NODE_TYPE_REFERENCE == nodeType)
 		{
@@ -1559,7 +1535,6 @@ bool RepoScene::populate(
 
 void RepoScene::populateAndUpdate(
 	const GraphType   &gType,
-	const RepoNodeSet &cameras,
 	const RepoNodeSet &meshes,
 	const RepoNodeSet &materials,
 	const RepoNodeSet &metadata,
@@ -1570,7 +1545,6 @@ void RepoScene::populateAndUpdate(
 {
 	std::string errMsg;
 	repoGraphInstance &instance = gType == GraphType::OPTIMIZED ? stashGraph : graph;
-	addNodeToScene(gType, cameras, errMsg, &(instance.cameras));
 	addNodeToScene(gType, meshes, errMsg, &(instance.meshes));
 	addNodeToScene(gType, materials, errMsg, &(instance.materials));
 	addNodeToScene(gType, metadata, errMsg, &(instance.metadata));

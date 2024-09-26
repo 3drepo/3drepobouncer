@@ -38,8 +38,6 @@
 #include "connectionpool/repo_connection_pool_mongo.h"
 #include "../model/bson/repo_bson.h"
 #include "../model/bson/repo_bson_builder.h"
-#include "../model/bson/repo_bson_role.h"
-#include "../model/bson/repo_bson_user.h"
 #include "../../lib/repo_stack.h"
 
 namespace repo {
@@ -173,18 +171,6 @@ namespace repo {
 				*/
 
 				/**
-				* Count the number of documents within the collection
-				* @param database name of database
-				* @param collection name of collection
-				* @param errMsg errMsg if failed
-				* @return number of documents within the specified collection
-				*/
-				uint64_t countItemsInCollection(
-					const std::string &database,
-					const std::string &collection,
-					std::string &errMsg);
-
-				/**
 				* Retrieve documents from a specified collection
 				* due to limitations of the transfer protocol this might need
 				* to be called multiple times, utilising the skip index to skip
@@ -216,39 +202,6 @@ namespace repo {
 				std::list<std::string> getCollections(const std::string &database);
 
 				/**
-				 * Get a list of all available databases, alphabetically sorted by default.
-				 * @param sort the database
-				 * @return returns a list of database names
-				 */
-				std::list<std::string> getDatabases(const bool &sorted = true);
-
-				/** get the associated projects for the list of database.
-				 * @param list of database
-				 * @return returns a map of database -> list of projects
-				 */
-				std::map<std::string, std::list<std::string> > getDatabasesWithProjects(
-					const std::list<std::string> &databases,
-					const std::string &projectExt = "history");
-
-				/**
-				 * Get a list of projects associated with a given database (aka company account).
-				 * It will filter out any collections without that isn't *.projectExt
-				 * @param list of database
-				 * @param extension that determines it is a project (scene)
-				 * @return list of projects for the database
-				 */
-				std::list<std::string> getProjects(const std::string &database, const std::string &projectExt);
-
-				/**
-				* Return a list of Admin database roles
-				* @return a vector of Admin database roles
-				*/
-				std::list<std::string> getAdminDatabaseRoles()
-				{
-					return ADMIN_ONLY_DATABASE_ROLES;
-				}
-
-				/**
 				* Return the name of admin database
 				* @return name of admin database
 				*/
@@ -257,14 +210,6 @@ namespace repo {
 					return ADMIN_DATABASE;
 				}
 
-				/**
-				* Return a list of standard database roles
-				* @return a vector of standard database roles
-				*/
-				std::list<std::string> getStandardDatabaseRoles()
-				{
-					return ANY_DATABASE_ROLES;
-				}
 				/*
 				*	------------- Database operations (insert/delete/update) --------------
 				*/
@@ -296,15 +241,6 @@ namespace repo {
 					std::string &errMsg);
 
 				/**
-				* Remove a database from the mongo database
-				* @param database name of the database to drop
-				* @param errMsg name of the database to drop
-				*/
-				bool dropDatabase(
-					const std::string &database,
-					std::string &errMsg);
-
-				/**
 				* Remove a document from the mongo database
 				* @param bson document to remove
 				* @param database the database the collection resides in
@@ -316,58 +252,6 @@ namespace repo {
 					const std::string &database,
 					const std::string &collection,
 					std::string &errMsg);
-
-				/**
-				* Remove all documents satisfying a certain criteria
-				* @param criteria document to remove
-				* @param database the database the collection resides in
-				* @param collection name of the collection the document is in
-				* @param errMsg name of the database to drop
-				*/
-				bool dropDocuments(
-					const repo::core::model::RepoBSON criteria,
-					const std::string &database,
-					const std::string &collection,
-					std::string &errMsg);
-
-				/**
-				* Remove a file from raw file storage (gridFS)
-				* @param database the database the collection resides in
-				* @param collection name of the collection the document is in
-				* @param filename name of the file
-				* @param errMsg name of the database to drop
-				*/
-				bool dropRawFile(
-					const std::string &database,
-					const std::string &collection,
-					const std::string &fileName,
-					std::string &errMsg);
-
-				/**
-				* Remove a role from the database
-				* @param role user bson to remove
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				bool dropRole(
-					const repo::core::model::RepoRole &role,
-					std::string                             &errmsg)
-				{
-					return performRoleCmd(OPERATION::DROP, role, errmsg);
-				}
-
-				/**
-				* Remove a user from the database
-				* @param user user bson to remove
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				bool dropUser(
-					const repo::core::model::RepoUser &user,
-					std::string                             &errmsg)
-				{
-					return performUserCmd(OPERATION::DROP, user, errmsg);
-				}
 
 				/**
 				 * Insert a single document in database.collection
@@ -399,51 +283,6 @@ namespace repo {
 					const repo::core::model::RepoBSON &metadata = repo::core::model::RepoBSON());
 
 				/**
-				* Insert big raw file in binary format (using GridFS)
-				* @param database name
-				* @param collection name
-				* @param fileName to insert (has to be unique)
-				* @param bin raw binary of the file
-				* @param errMsg error message if it fails
-				* @param contentType the MIME type of the object (optional)
-				* @return returns true upon success
-				*/
-				bool insertRawFile(
-					const std::string          &database,
-					const std::string          &collection,
-					const std::string          &fileName,
-					const std::vector<uint8_t> &bin,
-					std::string          &errMsg,
-					const std::string          &contentType = "binary/octet-stream"
-				);
-
-				/**
-				* Insert a role into the database
-				* @param role role bson to insert
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				bool insertRole(
-					const repo::core::model::RepoRole       &role,
-					std::string                             &errmsg)
-				{
-					return performRoleCmd(OPERATION::INSERT, role, errmsg);
-				}
-
-				/**
-				* Insert a user into the database
-				* @param user user bson to insert
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				bool insertUser(
-					const repo::core::model::RepoUser &user,
-					std::string                             &errmsg)
-				{
-					return performUserCmd(OPERATION::INSERT, user, errmsg);
-				}
-
-				/**
 				* Update/insert a single document in database.collection
 				* If the document exists, update it, if it doesn't, insert it
 				* @param database name
@@ -459,32 +298,6 @@ namespace repo {
 					const repo::core::model::RepoBSON &obj,
 					const bool        &overwrite,
 					std::string &errMsg);
-
-				/**
-				* Update a role in the database
-				* @param role role bson to update
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				bool updateRole(
-					const repo::core::model::RepoRole       &role,
-					std::string                             &errmsg)
-				{
-					return performRoleCmd(OPERATION::UPDATE, role, errmsg);
-				}
-
-				/**
-				* Update a user in the database
-				* @param user user bson to update
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				bool updateUser(
-					const repo::core::model::RepoUser &user,
-					std::string                             &errmsg)
-				{
-					return performUserCmd(OPERATION::UPDATE, user, errmsg);
-				}
 
 				/*
 				*	------------- Query operations --------------
@@ -557,19 +370,6 @@ namespace repo {
 					const std::string& database,
 					const std::string& collection,
 					const repo::lib::RepoUUID& uuid);
-
-				/**
-				* Get raw binary file from database
-				* @param database name of database
-				* @param collection name of collection
-				* @param fname name of the file
-				* @return return the raw binary as a vector of uint8_t (if found)
-				*/
-				std::vector<uint8_t> getRawFile(
-					const std::string& database,
-					const std::string& collection,
-					const std::string& fname
-				);
 
 				/*
 				 *	=============================================================================================
@@ -667,13 +467,6 @@ namespace repo {
 					bool excludeIdField = false);
 
 				/**
-				 * Extract collection name from namespace (db.collection)
-				 * @param namespace as string
-				 * @return returns a string with just the collection name
-				 */
-				std::string getCollectionFromNamespace(const std::string &ns);
-
-				/**
 				* Get large file off GridFS
 				* @param worker the worker to operate with
 				* @param database database that it is stored in
@@ -703,30 +496,6 @@ namespace repo {
 				* @return returns a string with just the database name
 				*/
 				std::string getProjectFromCollection(const std::string &ns, const std::string &projectExt);
-
-				/**
-				* Perform command on the user
-				* @param op (insert, drop or update)
-				* @param role user to modify
-				* @param errMsg error message if failed
-				* @return returns true upon success
-				*/
-				bool performRoleCmd(
-					const OPERATION                         &op,
-					const repo::core::model::RepoRole       &role,
-					std::string                             &errMsg);
-
-				/**
-				* Perform command on the user
-				* @param op (insert, drop or update)
-				* @param user user to modify
-				* @param errMsg error message if failed
-				* @return returns true upon success
-				*/
-				bool performUserCmd(
-					const OPERATION                         &op,
-					const repo::core::model::RepoUser &user,
-					std::string                       &errMsg);
 
 				/**
 				* Compares two strings.

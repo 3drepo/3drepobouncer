@@ -173,15 +173,6 @@ namespace repo {
 
 			private:
 				/**
-				* Generate a gltf encoding in the form of a buffer for the given scene
-				* This requires the stash to have been generated already
-				* @param scene the scene to generate the gltf encoding from
-				* @return returns a buffer in the form of a byte vector mapped to its filename
-				*/
-				repo_web_buffers_t generateGLTFBuffer(
-					repo::core::model::RepoScene *scene);
-
-				/**
 				* Generate a SRC encoding in the form of a buffer for the given scene
 				* This requires the stash to have been generated already
 				* @param scene the scene to generate the src encoding from

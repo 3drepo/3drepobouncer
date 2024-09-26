@@ -177,7 +177,7 @@ namespace repo {
 
 					static FileManager* manager;
 					repo::core::handler::AbstractDatabaseHandler *dbHandler;
-					std::shared_ptr<AbstractFileHandler> defaultHandler, fsHandler, gridfsHandler;
+					std::shared_ptr<AbstractFileHandler> defaultHandler, fsHandler;
 				};
 			}
 		}

@@ -113,7 +113,7 @@ repo::core::model::RepoScene* IFCUtilsParser::generateRepoScene(
 	}
 
 	std::vector<std::string> files = { file };
-	repo::core::model::RepoScene *scene = new repo::core::model::RepoScene(files, dummy, meshSet, matSet, metaSet, dummy, transSet);
+	repo::core::model::RepoScene *scene = new repo::core::model::RepoScene(files, meshSet, matSet, metaSet, dummy, transSet);
 	scene->setWorldOffset(offset);
 
 	if (missingEntities)

@@ -28,8 +28,6 @@
 #include <string>
 
 #include "core/model/bson/repo_bson_project_settings.h"
-#include "core/model/bson/repo_bson_role.h"
-#include "core/model/bson/repo_bson_user.h"
 #include "core/model/bson/repo_node_transformation.h"
 #include "core/model/bson/repo_node_mesh.h"
 #include "core/model/bson/repo_node_reference.h"
@@ -44,45 +42,44 @@ namespace repo {
 	class REPO_API_EXPORT RepoController
 	{
 	public:
-
 		class RepoToken;
 
 		/**
-			* Constructor
-			* @param listeners a list of listeners subscribing to the log
-			* @param numConcurrentOps maximum number of requests it can handle concurrently
-			* @param numDBConn number of concurrent connections to the database
-			*/
+		* Constructor
+		* @param listeners a list of listeners subscribing to the log
+		* @param numConcurrentOps maximum number of requests it can handle concurrently
+		* @param numDBConn number of concurrent connections to the database
+		*/
 		RepoController(
 			std::vector<lib::RepoAbstractListener*> listeners = std::vector<lib::RepoAbstractListener *>(),
 			const uint32_t &numConcurrentOps = 1,
 			const uint32_t &numDbConn = 1);
 
 		/**
-			* Destructor
-			*/
+		* Destructor
+		*/
 		~RepoController();
 
 		/*
-			*	------------- Database Connection & Authentication --------------
-			*/
+		*	------------- Database Connection & Authentication --------------
+		*/
 
-			/**
-				* Connect to a mongo database, authenticate by the admin database
-				* @param errMsg error message if failed
-				* @param config RepoConfig instance containing all connection information
-				*/
+		/**
+		* Connect to a mongo database, authenticate by the admin database
+		* @param errMsg error message if failed
+		* @param config RepoConfig instance containing all connection information
+		*/
 		RepoToken* init(
 			std::string       &errMsg,
 			const lib::RepoConfig  &config
 		);
 
 		/**
-			* Disconnect the controller from a database connection
-			* and destroys the token
-			* FIXME: CURRENTLY NOT THREAD SAFE! POTENTIALLY DANGEROUS
-			* @param token token to the database
-			*/
+		* Disconnect the controller from a database connection
+		* and destroys the token
+		* FIXME: CURRENTLY NOT THREAD SAFE! POTENTIALLY DANGEROUS
+		* @param token token to the database
+		*/
 		void disconnectFromDatabase(const RepoToken* token);
 
 		/*
@@ -109,29 +106,17 @@ namespace repo {
 		*/
 
 		/**
-			* Count the number of documents within the collection
-			* @param token A RepoToken given at authentication
-			* @param database name of database
-			* @param collection name of collection
-			* @return number of documents within the specified collection
-			*/
-		uint64_t countItemsInCollection(
-			const RepoToken            *token,
-			const std::string    &database,
-			const std::string    &collection);
-
-		/**
-			* Retrieve documents from a specified collection
-			* due to limitations of the transfer protocol this might need
-			* to be called multiple times, utilising the skip index to skip
-			* the first n items.
-			* @param token A RepoToken given at authentication
-			* @param database name of database
-			* @param collection name of collection
-			* @param skip specify how many documents to skip
-			* @param limit specifiy max. number of documents to retrieve (0 = no limit)
-			* @return list of RepoBSONs representing the documents
-			*/
+		* Retrieve documents from a specified collection
+		* due to limitations of the transfer protocol this might need
+		* to be called multiple times, utilising the skip index to skip
+		* the first n items.
+		* @param token A RepoToken given at authentication
+		* @param database name of database
+		* @param collection name of collection
+		* @param skip specify how many documents to skip
+		* @param limit specifiy max. number of documents to retrieve (0 = no limit)
+		* @return list of RepoBSONs representing the documents
+		*/
 		std::vector < repo::core::model::RepoBSON >
 			getAllFromCollectionContinuous(
 				const RepoToken      *token,
@@ -141,20 +126,20 @@ namespace repo {
 				const uint32_t       &limit = 0);
 
 		/**
-			* Retrieve documents from a specified collection, returning only the specified fields
-			* due to limitations of the transfer protocol this might need
-			* to be called multiple times, utilising the skip index to skip
-			* the first n items.
-			* @param token A RepoToken given at authentication
-			* @param database name of database
-			* @param collection name of collection
-			* @param fields fields to get back from the database
-			* @param sortField field to sort upon
-			* @param sortOrder 1 ascending, -1 descending
-			* @param skip specify how many documents to skip (see description above)
-			* @param limit specifiy max. number of documents to retrieve (0 = no limit)
-			* @return list of RepoBSONs representing the documents
-			*/
+		* Retrieve documents from a specified collection, returning only the specified fields
+		* due to limitations of the transfer protocol this might need
+		* to be called multiple times, utilising the skip index to skip
+		* the first n items.
+		* @param token A RepoToken given at authentication
+		* @param database name of database
+		* @param collection name of collection
+		* @param fields fields to get back from the database
+		* @param sortField field to sort upon
+		* @param sortOrder 1 ascending, -1 descending
+		* @param skip specify how many documents to skip (see description above)
+		* @param limit specifiy max. number of documents to retrieve (0 = no limit)
+		* @return list of RepoBSONs representing the documents
+		*/
 		std::vector < repo::core::model::RepoBSON >
 			getAllFromCollectionContinuous(
 				const RepoToken              *token,
@@ -167,64 +152,6 @@ namespace repo {
 				const uint32_t               &limit = 0);
 
 		/**
-		* Retrieve roles from a specified database
-		* due to limitations of the transfer protocol this might need
-		* to be called multiple times, utilising the skip index to skip
-		* the first n items.
-		* @param token A RepoToken given at authentication
-		* @param database name of database
-		* @param skip specify how many documents to skip (see description above)
-		* @param limit specifiy max. number of documents to retrieve (0 = no limit)
-		* @return list of RepoRole representing the roles
-		*/
-		std::vector < repo::core::model::RepoRole >
-			getRolesFromDatabase(
-				const RepoToken              *token,
-				const std::string            &database,
-				const uint64_t               &skip = 0,
-				const uint32_t               &limit = 0);
-
-		/**
-			* Return a list of database available to the user
-			* @param token A RepoToken given at authentication
-			* @return returns a list of database names
-			*/
-		std::list<std::string> getDatabases(
-			const RepoToken *token);
-
-		/**
-			* Return a list of projects with the database available to the user
-			* @param token A RepoToken given at authentication
-			* @param databases list of databases to look up
-			* @return returns a list of database names
-			*/
-		std::map<std::string, std::list<std::string>>
-			getDatabasesWithProjects(
-				const RepoToken *token,
-				const std::list<std::string> &databases);
-
-		/**
-			* Get a list of Admin roles from the database
-			* @param token repo token to the database
-			* @return returns a vector of roles
-			*/
-		std::list<std::string> getAdminDatabaseRoles(const RepoToken *token);
-
-		/**
-			* Get the name of the admin database
-			* @param token repo token to the database
-			* @return returns the name of the admin database
-			*/
-		std::string getNameOfAdminDatabase(const RepoToken *token);
-
-		/**
-			* Get a list of standard roles from the database
-			* @param token repo token to the database
-			* @return returns a vector of roles
-			*/
-		std::list<std::string> getStandardDatabaseRoles(const RepoToken *token);
-
-		/**
 		* Check if VR is enabled for this model
 		* @param token repo token to the database
 		* @param scene scene to query on
@@ -234,18 +161,18 @@ namespace repo {
 			const repo::core::model::RepoScene *scene);
 
 		/*
-			*	---------------- Database Retrieval -----------------------
-			*/
-			/**
-				* Retrieve a RepoScene with a specific revision loaded.
-				* @param token Authentication token
-				* @param database the database the collection resides in
-				* @param project name of the project
-				* @param uuid if headRevision, uuid represents the branch id,
-				*              otherwise the unique id of the revision branch
-				* @param headRevision true if retrieving head revision
-				* @return returns a pointer to a repoScene.
-				*/
+		*	---------------- Database Retrieval -----------------------
+		*/
+		/**
+		* Retrieve a RepoScene with a specific revision loaded.
+		* @param token Authentication token
+		* @param database the database the collection resides in
+		* @param project name of the project
+		* @param uuid if headRevision, uuid represents the branch id,
+		*              otherwise the unique id of the revision branch
+		* @param headRevision true if retrieving head revision
+		* @return returns a pointer to a repoScene.
+		*/
 		repo::core::model::RepoScene* fetchScene(
 			const RepoToken      *token,
 			const std::string    &database,
@@ -256,40 +183,16 @@ namespace repo {
 			const bool           &skeletonFetch = false,
 			const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus = {});
 
-		/**
-			* Save the files of the original model to a specified directory
-			* @param token Authentication token
-			* @param scene Repo Scene to save
-			* @param directory directory to save into
-			*/
-		bool saveOriginalFiles(
-			const RepoToken                    *token,
-			const repo::core::model::RepoScene *scene,
-			const std::string                   &directory);
-
-		/**
-		* Save the original file of the head of the project into a specified directory
-		* @param token Authentication token
-		* @param database name of database
-		* @param project  name of project
-		* @param directory directory to save into
-		*/
-		bool saveOriginalFiles(
-			const RepoToken                    *token,
-			const std::string                   &database,
-			const std::string                   &project,
-			const std::string                   &directory);
-
 		/*
-			*	------- Database Operations (insert/delete/update) ---------
-			*/
+		*	------- Database Operations (insert/delete/update) ---------
+		*/
 
-			/**
-				* Commit a scene graph
-				* @param token Authentication token
-				* @param scene RepoScene to commit
-				* @param owner specify the owner of the scene (by default it is the user authorised to commit)
-				*/
+		/**
+		* Commit a scene graph
+		* @param token Authentication token
+		* @param scene RepoScene to commit
+		* @param owner specify the owner of the scene (by default it is the user authorised to commit)
+		*/
 		uint8_t commitScene(
 			const RepoToken                     *token,
 			repo::core::model::RepoScene        *scene,
@@ -298,185 +201,39 @@ namespace repo {
 			const std::string                      &desc = "",
 			const repo::lib::RepoUUID           &revId = repo::lib::RepoUUID::createUUID());
 
-		/**
-			* Insert a new role into the database
-			* @param token Authentication token
-			* @param role role info to insert
-			*/
-		void insertRole(
-			const RepoToken                     *token,
-			const repo::core::model::RepoRole   &role);
-
-		/**
-			* Insert a new user into the database
-			* @param token Authentication token
-			* @param user user info to insert
-			*/
-		void insertUser(
-			const RepoToken                    *token,
-			const repo::core::model::RepoUser  &user);
-
-		/**
-			* Remove a collection from the database
-			* @param token Authentication token
-			* @param database the database the collection resides in
-			* @param collection name of the collection to drop
-			* @param errMsg error message if failed
-			* @return returns true upon success
-			*/
-		bool removeCollection(
-			const RepoToken             *token,
-			const std::string     &databaseName,
-			const std::string     &collectionName,
-			std::string			  &errMsg
-		);
-
-		/**
-			* Remove a database
-			* @param token Authentication token
-			* @param database the database the collection resides in
-			* @param errMsg error message if failed
-			* @return returns true upon success
-			*/
-		bool removeDatabase(
-			const RepoToken             *token,
-			const std::string           &databaseName,
-			std::string			        &errMsg
-		);
-
-		/**
-			* remove a document from the database
-			* NOTE: this should never be called for a bson from RepoNode family
-			*       as you should never remove a node from a scene graph like this.
-			* @param token Authentication token
-			* @param database the database the collection resides in
-			* @param collection name of the collection to drop
-			* @param bson document to remove
-			*/
-		void removeDocument(
-			const RepoToken                          *token,
-			const std::string                        &databaseName,
-			const std::string                        &collectionName,
-			const repo::core::model::RepoBSON  &bson);
-
-		/**
-		* Remove a project from the database
-		* This removes:
-		*   1. all collections associated with the project,
-		*   2. the project entry within project settings
-		*   3. all privileges assigned to any roles, related to this project
-		* @param token Authentication token
-		* @param database name of the datbase
-		* @param name of the project
-		* @param errMsg error message if the operation fails
-		* @return returns true upon success
-		*/
-		bool removeProject(
-			const RepoToken                          *token,
-			const std::string                        &databaseName,
-			const std::string                        &projectName,
-			std::string								 &errMsg);
-
-		void removeProjectSettings(
-			const RepoToken *token,
-			const std::string &database,
-			const repo::core::model::RepoProjectSettings &projectSettings)
-		{
-			removeDocument(token, database, REPO_COLLECTION_SETTINGS_PROJECTS, projectSettings);
-		}
-
-		/**
-			* remove a user from the database
-			* @param token Authentication token
-			* @param role role to remove
-			*/
-		void removeRole(
-			const RepoToken                          *token,
-			const repo::core::model::RepoRole  &role);
-
-		/**
-			* remove a user from the database
-			* @param token Authentication token
-			* @param user user info to remove
-			*/
-		void removeUser(
-			const RepoToken                          *token,
-			const repo::core::model::RepoUser  &user);
-
-		/**
-			* Update a role on the database
-			* @param token Authentication token
-			* @param role role info to modify
-			*/
-		void updateRole(
-			const RepoToken                          *token,
-			const repo::core::model::RepoRole		 &role);
-
-		/**
-			* Update a user on the database
-			* @param token Authentication token
-			* @param user user info to modify
-			*/
-		void updateUser(
-			const RepoToken                          *token,
-			const repo::core::model::RepoUser  &user);
-
-		/**
-			* upsert a document in the database
-			* NOTE: this should never be called for a bson from  RepoNode family
-			*       as you should never update a node from a scene graph like this.
-			* @param token Authentication token
-			* @param database the database the collection resides in
-			* @param collection name of the collection
-			* @param bson document to update/insert
-			*/
-		void upsertDocument(
-			const RepoToken                          *token,
-			const std::string                        &databaseName,
-			const std::string                        &collectionName,
-			const repo::core::model::RepoBSON  &bson);
-
-		void upsertProjectSettings(
-			const RepoToken *token,
-			const std::string &database,
-			const repo::core::model::RepoProjectSettings &projectSettings)
-		{
-			upsertDocument(token, database, REPO_COLLECTION_SETTINGS, projectSettings);
-		}
-
 		/*
-			*	------------- Logging --------------
-			*/
+		*	------------- Logging --------------
+		*/
 
-			/**
-				* Configure how verbose the log should be
-				* The levels of verbosity are:
-				* TRACE - log all messages
-				* DEBUG - log messages of level debug or above (use for debugging)
-				* INFO - log messages of level info or above (use to filter debugging messages but want informative logging)
-				* WARNING - log messages of level warning or above
-				* ERROR - log messages of level error or above
-				* FATAL - log messages of level fatal or above
-				* @param level specify logging level
-				*
-				*/
+		/**
+		* Configure how verbose the log should be
+		* The levels of verbosity are:
+		* TRACE - log all messages
+		* DEBUG - log messages of level debug or above (use for debugging)
+		* INFO - log messages of level info or above (use to filter debugging messages but want informative logging)
+		* WARNING - log messages of level warning or above
+		* ERROR - log messages of level error or above
+		* FATAL - log messages of level fatal or above
+		* @param level specify logging level
+		*
+		*/
 		void setLoggingLevel(const repo::lib::RepoLog::RepoLogLevel &level);
 
 		/**
-			* Log to a specific file
-			* @param filePath path to file
-			*/
+		* Log to a specific file
+		* @param filePath path to file
+		*/
 		void logToFile(const std::string &filePath);
 
 		/*
-			*	------------- Import/ Export --------------
-			*/
+		*	------------- Import/ Export --------------
+		*/
 
-			/**
-				* Create a federated scene with the given scene collections
-				* @param fedMap a map of reference scene and transformation from root where the scene should lie
-				* @return returns a constructed scene graph with the reference.
-				*/
+		/**
+		* Create a federated scene with the given scene collections
+		* @param fedMap a map of reference scene and transformation from root where the scene should lie
+		* @return returns a constructed scene graph with the reference.
+		*/
 		repo::core::model::RepoScene* createFederatedScene(
 			const std::map<repo::core::model::ReferenceNode, std::string> &fedMap);
 
@@ -488,16 +245,6 @@ namespace repo {
 			repo::core::model::RepoScene* scene);
 
 		/**
-		* Generate and commit a GLTF encoding for the given scene
-		* @param token token for authentication
-		* @param scene the scene to generate the gltf encoding from
-		* @return returns true upon success
-		*/
-		bool generateAndCommitGLTFBuffer(
-			const RepoToken                               *token,
-			repo::core::model::RepoScene            *scene);
-
-		/**
 		* Generate and commit a SRC encoding for the given scene
 		* This requires the stash to have been generated already
 		* @param token token for authentication
@@ -507,15 +254,6 @@ namespace repo {
 		bool generateAndCommitSRCBuffer(
 			const RepoToken                               *token,
 			repo::core::model::RepoScene            *scene);
-
-		/**
-		* Generate a GLTF encoding in the form of a buffer for the given scene
-		* This requires the stash to have been generated already
-		* @param scene the scene to generate the gltf encoding from
-		* @return returns a buffer in the form of a byte vector
-		*/
-		repo_web_buffers_t generateGLTFBuffer(
-			repo::core::model::RepoScene *scene);
 
 		/**
 		* Generate and commit a selection tree for the given scene
@@ -535,12 +273,6 @@ namespace repo {
 		*/
 		repo_web_buffers_t generateSRCBuffer(
 			repo::core::model::RepoScene *scene);
-
-		/**
-			* Get a string of supported file formats for file export
-			* @return returns a string with list of supported file formats
-			*/
-		std::string getSupportedExportFormats();
 
 		/**
 			* Get a string of supported file formats for file import
@@ -580,16 +312,6 @@ namespace repo {
 			const std::string &filePath,
 			const char        &delimiter = ',');
 
-		/**
-			* Save a Repo Scene to file
-			* @param filePath path to file
-			* @param scene scene to export
-			* @return returns true upon success
-			*/
-		bool saveSceneToFile(
-			const std::string &filePath,
-			const repo::core::model::RepoScene* scene);
-
 		/*
 		*	------------- Optimizations --------------
 		*/
@@ -615,69 +337,6 @@ namespace repo {
 		void reduceTransformations(
 			const RepoToken              *token,
 			repo::core::model::RepoScene *scene);
-
-		/*
-		*	------------- 3D Diff --------------
-		*/
-
-		/**
-		* Compare 2 scenes via IDs.
-		* @param token to load full scene from database if required
-		*		(if not required, a nullptr can be passed in)
-		* @param base base scene to compare against
-		* @param compare scene to compare base scene against
-		* @param baseResults Diff results in the perspective of base
-		* @param compResults Diff results in the perspective of compare
-		* @param repo::DiffMode mode to use on comparison
-		*/
-		void compareScenes(
-			const RepoToken                     *token,
-			repo::core::model::RepoScene        *base,
-			repo::core::model::RepoScene        *compare,
-			repo_diff_result_t &baseResults,
-			repo_diff_result_t &compResults,
-			const repo::DiffMode       &diffMode
-		);
-
-		/**
-			* Compare 2 scenes via IDs.
-			* @param token to load full scene from database if required
-			*		(if not required, a nullptr can be passed in)
-			* @param base base scene to compare against
-			* @param compare scene to compare base scene against
-			* @param baseResults Diff results in the perspective of base
-			* @param compResults Diff results in the perspective of compare
-			*/
-		void compareScenesByIDs(
-			const RepoToken                     *token,
-			repo::core::model::RepoScene        *base,
-			repo::core::model::RepoScene        *compare,
-			repo_diff_result_t                          &baseResults,
-			repo_diff_result_t                          &compResults
-		)
-		{
-			compareScenes(token, base, compare, baseResults, compResults, repo::DiffMode::DIFF_BY_ID);
-		}
-
-		/**
-		* Compare 2 scenes via Names.
-		* @param token to load full scene from database if required
-		*		(if not required, a nullptr can be passed in)
-		* @param base base scene to compare against
-		* @param compare scene to compare base scene against
-		* @param baseResults Diff results in the perspective of base
-		* @param compResults Diff results in the perspective of compare
-		*/
-		void compareScenesByNames(
-			const RepoToken                     *token,
-			repo::core::model::RepoScene        *base,
-			repo::core::model::RepoScene        *compare,
-			repo_diff_result_t &baseResults,
-			repo_diff_result_t &compResults
-		)
-		{
-			compareScenes(token, base, compare, baseResults, compResults, repo::DiffMode::DIFF_BY_NAME);
-		}
 
 		/*
 		*	------------- Versioning --------------

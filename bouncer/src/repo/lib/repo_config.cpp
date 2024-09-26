@@ -32,7 +32,7 @@ RepoConfig::RepoConfig(
 	const int &port,
 	const std::string &username,
 	const std::string &password,
-	const bool pwDigested) : defaultStorage(FileStorageEngine::GRIDFS)
+	const bool pwDigested) : defaultStorage(FileStorageEngine::FS)
 {
 	dbConf.addr = databaseAddr;
 	dbConf.port = port;
@@ -45,7 +45,7 @@ RepoConfig::RepoConfig(
 	const std::string &connString,
 	const std::string &username,
 	const std::string &password,
-	const bool pwDigested) : defaultStorage(FileStorageEngine::GRIDFS)
+	const bool pwDigested) : defaultStorage(FileStorageEngine::FS)
 {
 	dbConf.connString = connString;
 	dbConf.username = username;

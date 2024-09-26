@@ -31,7 +31,6 @@ static const std::string FBX_EXTENSION = ".FBX";
 
 static const std::string cmdCreateFed = "genFed"; //create a federation
 static const std::string cmdGenStash = "genStash";   //test the connection
-static const std::string cmdGetFile = "getFile"; //download original file
 static const std::string cmdImportFile = "import"; //file import
 static const std::string cmdProcessDrawing = "processDrawing"; //drawing import from revision node
 static const std::string cmdTestConn = "test";   //test the connection
@@ -42,8 +41,7 @@ std::string helpInfo()
 {
 	std::stringstream ss;
 
-	ss << cmdGenStash << "\tGenerate Stash for a project. (args: database project [repo|gltf|src|tree] [all|revId])\n";
-	ss << cmdGetFile << "\t\tGet original file for the latest revision of the project (args: database project dir)\n";
+	ss << cmdGenStash << "\tGenerate Stash for a project. (args: database project [repo|src|tree] [all|revId])\n";
 	ss << cmdImportFile << "\t\tImport file to database. (args: {file database project [dxrotate] [owner] [configfile]} or {-f parameterFile} )\n";
 	ss << cmdProcessDrawing << "\t\tProcess drawing revision node into an image. (args: parameterFile)\n";
 	ss << cmdCreateFed << "\t\tGenerate a federation. (args: fedDetails [owner])\n";
@@ -68,8 +66,6 @@ int32_t knownValid(const std::string& cmd)
 		return 3;
 	if (cmd == cmdCreateFed)
 		return 1;
-	if (cmd == cmdGetFile)
-		return 3;
 	if (cmd == cmdTestConn)
 		return 0;
 	if (cmd == cmdVersion || cmd == cmdVersion2)
@@ -127,17 +123,6 @@ int32_t performOperation(
 		catch (const std::exception& e)
 		{
 			repoLogError("Failed to generate federation: " + std::string(e.what()));
-			errCode = REPOERR_UNKNOWN_ERR;
-		}
-	}
-	else if (command.command == cmdGetFile)
-	{
-		try {
-			errCode = getFileFromProject(controller, token, command);
-		}
-		catch (const std::exception& e)
-		{
-			repoLogError("Failed to retrieve file from project: " + std::string(e.what()));
 			errCode = REPOERR_UNKNOWN_ERR;
 		}
 	}
@@ -222,31 +207,6 @@ int32_t generateFederation(
 					break;
 				}
 
-				// ===== Get Transformation =====
-				std::vector<std::vector<float>> matrix;
-				int x = 0;
-				if (subPro.second.count("transformation"))
-				{
-					for (const auto& value : subPro.second.get_child("transformation"))
-					{
-						if (!(matrix.size() % 4))
-						{
-							matrix.push_back(std::vector<float>());
-						}
-						matrix.back().push_back(value.second.get_value<float>());
-						++x;
-					}
-				}
-
-				if (x != 16)
-				{
-					//no matrix/invalid input, assume identity
-					if (x)
-						repoLogError("Transformation was inserted for " + spDatabase + ":" + spProject
-							+ " but it is not a 4x4 matrix(size found: " + std::to_string(x) + "). Using identity...");
-					matrix = repo::core::model::TransformationNode::identityMat();
-				}
-
 				auto refNode = repo::core::model::RepoBSONFactory::makeReferenceNode(spDatabase, spProject, repo::lib::RepoUUID(uuid), isRevID);
 				refMap[refNode] = group;
 			}
@@ -292,10 +252,6 @@ bool _generateStash(
 		{
 			success = controller->generateAndCommitRepoBundlesBuffer(token, scene);
 		}
-		else if (type == "gltf")
-		{
-			success = controller->generateAndCommitGLTFBuffer(token, scene);
-		}
 		else if (type == "src")
 		{
 			success = controller->generateAndCommitSRCBuffer(token, scene);
@@ -323,7 +279,7 @@ int32_t generateStash(
 	if (command.nArgcs < 3)
 	{
 		repoLogError("Number of arguments mismatch! " + cmdGenStash
-			+ " requires 3 arguments:database project [repo|gltf|src|tree]");
+			+ " requires 3 arguments:database project [repo|src|tree]");
 		return REPOERR_INVALID_ARG;
 	}
 
@@ -331,7 +287,7 @@ int32_t generateStash(
 	std::string project = command.args[1];
 	std::string type = command.args[2];
 
-	if (!(type == "repo" || type == "gltf" || type == "src" || type == "tree"))
+	if (!(type == "repo" || type == "src" || type == "tree"))
 	{
 		repoLogError("Unknown stash type: " + type);
 		return REPOERR_INVALID_ARG;
@@ -361,31 +317,6 @@ int32_t generateStash(
 	}
 
 	return success ? REPOERR_OK : REPOERR_STASH_GEN_FAIL;
-}
-
-int32_t getFileFromProject(
-	std::shared_ptr<repo::RepoController> controller,
-	const repo::RepoController::RepoToken* token,
-	const repo_op_t& command
-)
-{
-	/*
-	* Check the amount of parameters matches
-	*/
-	if (command.nArgcs < 3)
-	{
-		repoLogError("Number of arguments mismatch! " + cmdGenStash
-			+ " requires 3 arguments:database project dir");
-		return REPOERR_INVALID_ARG;
-	}
-
-	std::string dbName = command.args[0];
-	std::string project = command.args[1];
-	std::string dir = command.args[2];
-
-	bool success = controller->saveOriginalFiles(token, dbName, project, dir);
-
-	return success ? REPOERR_OK : REPOERR_GET_FILE_FAILED;
 }
 
 repo::manipulator::modelconvertor::ModelUnits determineUnits(const std::string& units) {
