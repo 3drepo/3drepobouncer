@@ -229,7 +229,7 @@ uint8_t FileProcessorRvt::readFile()
 			else {
 				pDbPE->setCurrentLayout(pDb, layout);
 
-				OdGiDefaultContextPtr pBimContext = OdDbBaseDatabasePEPtr(pDb)->createGiContext(pDb);
+				OdGiDefaultContextPtr pBimContext = pDbPE->createGiContext(pDb);
 				OdGsModulePtr pGsModule = ODRX_STATIC_MODULE_ENTRY_POINT(StubDeviceModuleRvt)(OD_T("StubDeviceModuleRvt"));
 
 				((StubDeviceModuleRvt*)pGsModule.get())->init(collector, pDb);
