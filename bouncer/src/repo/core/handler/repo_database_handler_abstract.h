@@ -27,8 +27,6 @@
 #include <string>
 
 #include "../model/bson/repo_bson.h"
-#include "../model/bson/repo_bson_role.h"
-#include "../model/bson/repo_bson_user.h"
 
 namespace repo {
 	namespace core {
@@ -47,34 +45,9 @@ namespace repo {
 				*/
 				uint64_t documentSizeLimit() { return maxDocumentSize; }
 
-				///**
-				//* Generates a BSON object containing user credentials
-				//* @param username user name for authentication
-				//* @param password password of the user
-				//* @param pwDigested true if pw is digested
-				//* @return returns the constructed BSON object, or 0 if username is empty
-				//*/
-				//sta repo::core::model::RepoBSON* createBSONCredentials(
-				//	const std::string &dbAddress,
-				//	const std::string &username,
-				//	const std::string &password,
-				//	const bool        &pwDigested = false) = 0;
-
 				/*
 				*	------------- Database info lookup --------------
 				*/
-
-				/**
-				* Count the number of documents within the collection
-				* @param database name of database
-				* @param collection name of collection
-				* @param errMsg errMsg if failed
-				* @return number of documents within the specified collection
-				*/
-				virtual uint64_t countItemsInCollection(
-					const std::string &database,
-					const std::string &collection,
-					std::string &errMsg) = 0;
 
 				/**
 				* Retrieve documents from a specified collection
@@ -103,41 +76,6 @@ namespace repo {
 				* Get a list of all available collections
 				*/
 				virtual std::list<std::string> getCollections(const std::string &database) = 0;
-
-				/**
-				* Get a list of all available databases, alphabetically sorted by default.
-				* @param sort the database
-				* @return returns a list of database names
-				*/
-				virtual std::list<std::string> getDatabases(const bool &sorted = true) = 0;
-
-				/** get the associated projects for the list of database.
-				* @param list of database
-				* @return returns a map of database -> list of projects
-				*/
-				virtual std::map<std::string, std::list<std::string> > getDatabasesWithProjects(
-					const std::list<std::string> &databases,
-					const std::string &projectExt = "scene") = 0;
-
-				/**
-				* Get a list of projects associated with a given database (aka company account).
-				* @param list of database
-				* @param extension that indicates it is a project (.scene)
-				* @return list of projects for the database
-				*/
-				virtual std::list<std::string> getProjects(const std::string &database, const std::string &projectExt) = 0;
-
-				/**
-				* Return a list of Admin database roles
-				* @return a vector of Admin database roles
-				*/
-				virtual std::list<std::string> getAdminDatabaseRoles() = 0;
-
-				/**
-				* Return a list of standard database roles
-				* @return a vector of standard database roles
-				*/
-				virtual  std::list<std::string> getStandardDatabaseRoles() = 0;
 
 				/*
 				*	------------- Database operations (insert/delete/update) --------------
@@ -188,35 +126,6 @@ namespace repo {
 					const repo::core::model::RepoBSON &metadata = repo::core::model::RepoBSON()) = 0;
 
 				/**
-				* Insert big raw file in binary format (using GridFS)
-				* @param database name
-				* @param collection name
-				* @param fileName to insert (has to be unique)
-				* @param bin raw binary of the file
-				* @param errMsg error message if it fails
-				* @param contentType the MIME type of the object (optional)
-				* @return returns true upon success
-				*/
-				virtual bool insertRawFile(
-					const std::string          &database,
-					const std::string          &collection,
-					const std::string          &fileName,
-					const std::vector<uint8_t> &bin,
-					std::string          &errMsg,
-					const std::string          &contentType = "binary/octet-stream"
-				) = 0;
-
-				/**
-				* Insert a role into the database
-				* @param role role bson to insert
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				virtual bool insertRole(
-					const repo::core::model::RepoRole       &role,
-					std::string                             &errmsg) = 0;
-
-				/**
 				* Update/insert a single document in database.collection
 				* If the document exists, update it, if it doesn't, insert it
 				* @param database name
@@ -234,16 +143,6 @@ namespace repo {
 					std::string &errMsg) = 0;
 
 				/**
-				* Insert a user into the database
-				* @param user user bson to insert
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				virtual bool insertUser(
-					const repo::core::model::RepoUser &user,
-					std::string                             &errmsg) = 0;
-
-				/**
 				* Remove a collection from the database
 				* @param database the database the collection resides in
 				* @param collection name of the collection to drop
@@ -252,15 +151,6 @@ namespace repo {
 				virtual bool dropCollection(
 					const std::string &database,
 					const std::string &collection,
-					std::string &errMsg) = 0;
-
-				/**
-				* Remove a database from the database instance
-				* @param database name of the database to drop
-				* @param errMsg name of the database to drop
-				*/
-				virtual bool dropDatabase(
-					const std::string &database,
 					std::string &errMsg) = 0;
 
 				/**
@@ -276,71 +166,6 @@ namespace repo {
 					const std::string &collection,
 					std::string &errMsg) = 0;
 
-				/**
-				* Remove all documents satisfying a certain criteria
-				* @param criteria document to remove
-				* @param database the database the collection resides in
-				* @param collection name of the collection the document is in
-				* @param errMsg name of the database to drop
-				*/
-				virtual bool dropDocuments(
-					const repo::core::model::RepoBSON criteria,
-					const std::string &database,
-					const std::string &collection,
-					std::string &errMsg) = 0;
-
-				/**
-				* Remove a file from raw file storage (gridFS)
-				* @param database the database the collection resides in
-				* @param collection name of the collection the document is in
-				* @param filename name of the file
-				* @param errMsg name of the database to drop
-				*/
-				virtual bool dropRawFile(
-					const std::string &database,
-					const std::string &collection,
-					const std::string &fileName,
-					std::string &errMsg) = 0;
-
-				/**
-				* Remove a role from the database
-				* @param role user bson to remove
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				virtual bool dropRole(
-					const repo::core::model::RepoRole &role,
-					std::string                       &errmsg) = 0;
-
-				/**
-				* Remove a user from the database
-				* @param user user bson to remove
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				virtual bool dropUser(
-					const repo::core::model::RepoUser &user,
-					std::string                             &errmsg) = 0;
-
-				/**
-				* Update a role in the database
-				* @param role role bson to update
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				virtual bool updateRole(
-					const repo::core::model::RepoRole       &role,
-					std::string                             &errmsg) = 0;
-
-				/**
-				* Update a user in the database
-				* @param user user bson to update
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				virtual bool updateUser(
-					const repo::core::model::RepoUser &user,
-					std::string                             &errmsg) = 0;
 				/*
 				*	------------- Query operations --------------
 				*/
@@ -410,19 +235,6 @@ namespace repo {
 					const std::string& database,
 					const std::string& collection,
 					const repo::lib::RepoUUID& uuid) = 0;
-
-				/**
-				* Get raw binary file from database
-				* @param database name of database
-				* @param collection name of collection
-				* @param fname name of the file
-				* @return return the raw binary as a vector of uint8_t (if found)
-				*/
-				virtual std::vector<uint8_t> getRawFile(
-					const std::string& database,
-					const std::string& collection,
-					const std::string& fname
-				) = 0;
 
 			protected:
 				/**

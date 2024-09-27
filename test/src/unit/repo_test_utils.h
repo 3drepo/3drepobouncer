@@ -35,25 +35,13 @@ static bool projectExists(
 	const std::string &db,
 	const std::string &project)
 {
-	bool res = false;
-	repo::RepoController *controller = new repo::RepoController();
-	auto token = initController(controller);
-
-	if (token)
-	{
-		std::list<std::string> dbList;
-		dbList.push_back(db);
-		auto dbMap = controller->getDatabasesWithProjects(token, dbList);
-		auto dbMapIt = dbMap.find(db);
-		if (dbMapIt != dbMap.end())
-		{
-			std::list<std::string> projects = dbMapIt->second;
-			res = std::find(projects.begin(), projects.end(), project) != projects.end();
+	auto handler = getHandler();
+	for (auto collection : handler->getCollections(db)) {
+		if (collection == (project + ".history")) {
+			return true;
 		}
 	}
-	controller->disconnectFromDatabase(token);
-	delete controller;
-	return res;
+	return false;
 }
 
 static bool projectSettingsCheck(

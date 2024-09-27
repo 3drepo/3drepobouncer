@@ -200,13 +200,10 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 	return std::string();
 }
 
-
-
 void DataProcessorRvt::init(GeometryCollector* geoColl, OdBmDatabasePtr database)
 {
 	this->collector = geoColl;
 	this->database = database;
-	//getCameras(database);
 
 	establishProjectTranslation(database);
 
@@ -608,37 +605,6 @@ OdBmForgeTypeId DataProcessorRvt::getLengthUnits(OdBmDatabasePtr database)
 {
 	OdBmFormatOptionsPtr formatOptionsLength = getUnits(database)->getFormatOptions(OdBmSpecTypeId::kLength);
 	return formatOptionsLength->getUnitTypeId();
-}
-
-void DataProcessorRvt::getCameras(OdBmDatabasePtr database)
-{
-	if (collector->hasCameraNodes())
-		return;
-
-	forEachBmDBView(database, [&](OdBmDBViewPtr pDBView) { collector->addCameraNode(convertCamera(pDBView)); });
-}
-
-void getCameraConfigurations(OdGsViewImpl& view, float& aspectRatio, float& farClipPlane, float& nearClipPlane, float& FOV)
-{
-	//NOTE : configurations were taken from current 3d view
-	aspectRatio = view.windowAspect();
-	farClipPlane = view.frontClip();
-	nearClipPlane = view.backClip();
-	FOV = view.lensLengthToFOV(view.lensLength());
-}
-
-camera_t DataProcessorRvt::convertCamera(OdBmDBViewPtr view)
-{
-	camera_t camera;
-	getCameraConfigurations(this->view(), camera.aspectRatio, camera.farClipPlane, camera.nearClipPlane, camera.FOV);
-	auto eye = view->getViewDirection();
-	auto pos = view->getOrigin();
-	auto up = view->getUpDirection();
-	camera.eye = repo::lib::RepoVector3D(eye.x, eye.y, eye.z);
-	camera.pos = repo::lib::RepoVector3D(pos.x, pos.y, pos.z);
-	camera.up = repo::lib::RepoVector3D(up.z, up.y, up.z);
-	camera.name = view->getNamed() ? convertToStdString(view->getViewName()) : "camera";
-	return camera;
 }
 
 ModelUnits DataProcessorRvt::getProjectUnits(OdBmDatabase* pDb) {

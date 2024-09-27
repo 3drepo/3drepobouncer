@@ -71,43 +71,6 @@ TEST(MongoDatabaseHandlerTest, CreateBSONCredentials)
 	EXPECT_FALSE(handler->createBSONCredentials("testdb", "username", ""));
 }
 
-TEST(MongoDatabaseHandlerTest, CountItemsInCollection)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	auto goldenData = getCollectionCounts(REPO_GTEST_DBNAME1);
-	for (const auto &pair : goldenData)
-	{
-		std::string message;
-		EXPECT_EQ(pair.second, handler->countItemsInCollection(REPO_GTEST_DBNAME1, pair.first, message));
-		EXPECT_TRUE(message.empty());
-	}
-
-	goldenData = getCollectionCounts(REPO_GTEST_DBNAME2);
-	for (const auto &pair : goldenData)
-	{
-		std::string message;
-		EXPECT_EQ(pair.second, handler->countItemsInCollection(REPO_GTEST_DBNAME2, pair.first, message));
-		EXPECT_TRUE(message.empty());
-	}
-
-	std::string message;
-	EXPECT_EQ(0, handler->countItemsInCollection("", "", message));
-	EXPECT_FALSE(message.empty());
-
-	message.clear();
-	EXPECT_EQ(0, handler->countItemsInCollection("", "blah", message));
-	EXPECT_FALSE(message.empty());
-
-	message.clear();
-	EXPECT_EQ(0, handler->countItemsInCollection("blah", "", message));
-	EXPECT_FALSE(message.empty());
-
-	message.clear();
-	EXPECT_EQ(0, handler->countItemsInCollection("blah", "blah", message));
-	EXPECT_TRUE(message.empty());
-}
-
 TEST(MongoDatabaseHandlerTest, GetAllFromCollectionTailable)
 {
 	auto handler = getHandler();
@@ -211,89 +174,12 @@ TEST(MongoDatabaseHandlerTest, GetCollections)
 	EXPECT_EQ(0, handler->getCollections("blahblah").size());
 }
 
-TEST(MongoDatabaseHandlerTest, GetDatabases)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-
-	std::list<std::string> dbList = handler->getDatabases();
-
-	//there are probably bogus databases in there due to the previous tests automatically creating them
-	//so just check that the 2 we are looking for is in there.
-
-	EXPECT_FALSE(std::find(dbList.begin(), dbList.end(), REPO_GTEST_DBNAME1) == dbList.end());
-	EXPECT_FALSE(std::find(dbList.begin(), dbList.end(), REPO_GTEST_DBNAME2) == dbList.end());
-}
-
-TEST(MongoDatabaseHandlerTest, GetDatabasesWithProjects)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	std::string fakeDB = "nonExistentDB";
-	auto dbWithProjects = handler->getDatabasesWithProjects({ REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME2, fakeDB });
-	ASSERT_EQ(3, dbWithProjects.size());
-
-	//Should be able to find all 3 database on the returning map
-	EXPECT_FALSE(dbWithProjects.find(REPO_GTEST_DBNAME1) == dbWithProjects.end());
-	EXPECT_FALSE(dbWithProjects.find(REPO_GTEST_DBNAME2) == dbWithProjects.end());
-	EXPECT_FALSE(dbWithProjects.find(fakeDB) == dbWithProjects.end());
-
-	EXPECT_EQ(dbWithProjects[REPO_GTEST_DBNAME1].size(), 2);
-	EXPECT_EQ(dbWithProjects[REPO_GTEST_DBNAME2].size(), 1);
-	EXPECT_EQ(dbWithProjects[fakeDB].size(), 0);
-
-	EXPECT_EQ(dbWithProjects[REPO_GTEST_DBNAME1].front(), REPO_GTEST_DBNAME1_PROJ);
-	EXPECT_EQ(dbWithProjects[REPO_GTEST_DBNAME2].front(), REPO_GTEST_DBNAME2_PROJ);
-
-	//If i change the extenion to something that doesn't exist, it shouldn't give me any projects
-	auto dbWithProjects2 = handler->getDatabasesWithProjects({ REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME2, fakeDB }, "blahblah");
-	EXPECT_FALSE(dbWithProjects2.find(REPO_GTEST_DBNAME1) == dbWithProjects2.end());
-	EXPECT_FALSE(dbWithProjects2.find(REPO_GTEST_DBNAME2) == dbWithProjects2.end());
-	EXPECT_FALSE(dbWithProjects2.find(fakeDB) == dbWithProjects2.end());
-
-	EXPECT_EQ(dbWithProjects2[REPO_GTEST_DBNAME1].size(), 0);
-	EXPECT_EQ(dbWithProjects2[REPO_GTEST_DBNAME2].size(), 0);
-	EXPECT_EQ(dbWithProjects2[fakeDB].size(), 0);
-}
-
-TEST(MongoDatabaseHandlerTest, GetProjects)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-
-	auto projects = handler->getProjects(REPO_GTEST_DBNAME1, "history");
-	ASSERT_EQ(projects.size(), 2);
-	EXPECT_EQ(projects.front(), REPO_GTEST_DBNAME1_PROJ);
-
-	projects = handler->getProjects(REPO_GTEST_DBNAME1, "blah");
-	EXPECT_EQ(projects.size(), 0);
-
-	projects = handler->getProjects("noDB", "history");
-	EXPECT_EQ(projects.size(), 0);
-}
-
-TEST(MongoDatabaseHandlerTest, GetAdminDatabaseRoles)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	//This should be non zero.
-	EXPECT_TRUE(handler->getAdminDatabaseRoles().size());
-}
-
 TEST(MongoDatabaseHandlerTest, GetAdminDatabaseName)
 {
 	auto handler = getHandler();
 	ASSERT_TRUE(handler);
 	//This should not be an empty string
 	EXPECT_FALSE(handler->getAdminDatabaseName().empty());
-}
-
-TEST(MongoDatabaseHandlerTest, GetStandardDatabaseRoles)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	//This should be non zero.
-	EXPECT_TRUE(handler->getStandardDatabaseRoles().size());
 }
 
 TEST(MongoDatabaseHandlerTest, CreateCollection)
@@ -326,23 +212,6 @@ TEST(MongoDatabaseHandlerTest, DropCollection)
 	EXPECT_FALSE(errMsg.empty());
 }
 
-TEST(MongoDatabaseHandlerTest, DropDatabase)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	std::string errMsg;
-
-	EXPECT_TRUE(handler->dropDatabase(REPO_GTEST_DROPCOL_TESTCASE.first, errMsg));
-	EXPECT_TRUE(errMsg.empty());
-	errMsg.clear();
-	//Apparently if you drop the database that doesn't exist it still returns true... Which is inconsistent to dropCollection..
-	EXPECT_TRUE(handler->dropDatabase(REPO_GTEST_DROPCOL_TESTCASE.first, errMsg));
-	EXPECT_TRUE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_FALSE(handler->dropDatabase("", errMsg));
-	EXPECT_FALSE(errMsg.empty());
-}
-
 TEST(MongoDatabaseHandlerTest, DropDocument)
 {
 	auto handler = getHandler();
@@ -365,38 +234,6 @@ TEST(MongoDatabaseHandlerTest, DropDocument)
 	errMsg.clear();
 	EXPECT_FALSE(handler->dropDocument(testCase.second, "", testCase.first.first, errMsg));
 	EXPECT_FALSE(errMsg.empty());
-}
-
-TEST(MongoDatabaseHandlerTest, DropRole)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	std::string errMsg;
-	EXPECT_TRUE(handler->dropRole(repo::core::model::RepoRole(REPO_GTEST_DROPROLETEST), errMsg));
-	EXPECT_TRUE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_FALSE(handler->dropRole(repo::core::model::RepoRole(REPO_GTEST_DROPROLETEST), errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_FALSE(handler->dropRole(repo::core::model::RepoRole(mongo::BSONObj()), errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
-}
-
-TEST(MongoDatabaseHandlerTest, DropUser)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	std::string errMsg;
-	EXPECT_TRUE(handler->dropUser(repo::core::model::RepoUser(REPO_GTEST_DROPUSERTEST), errMsg));
-	EXPECT_TRUE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_FALSE(handler->dropUser(repo::core::model::RepoUser(REPO_GTEST_DROPUSERTEST), errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_FALSE(handler->dropUser(repo::core::model::RepoUser(mongo::BSONObj()), errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
 }
 
 TEST(MongoDatabaseHandlerTest, InsertDocument)
@@ -433,150 +270,6 @@ TEST(MongoDatabaseHandlerTest, InsertDocument)
 	EXPECT_FALSE(handler->insertDocument("", "", repo::core::model::RepoBSON(), errMsg));
 	EXPECT_FALSE(errMsg.empty());
 	errMsg.clear();
-}
-
-TEST(MongoDatabaseHandlerTest, InsertRawFile)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	std::string errMsg;
-
-	std::vector<uint8_t> binary;
-	for (int i = 0; i < 100; ++i)
-	{
-		binary.push_back(std::rand());
-	}
-
-	EXPECT_TRUE(handler->insertRawFile("randomTest", "randomCol", "rawFileName", binary, errMsg));
-	EXPECT_TRUE(errMsg.empty());
-
-	std::vector<uint8_t> result = handler->getRawFile("randomTest", "randomCol", "rawFileName");
-	ASSERT_EQ(result.size(), binary.size());
-	for (int i = 0; i < binary.size(); ++i)
-		EXPECT_EQ(binary[i], result[i]);
-
-	errMsg.clear();
-	EXPECT_FALSE(handler->insertRawFile("randomTest", "", "rawFileName", binary, errMsg));
-	EXPECT_FALSE(errMsg.empty());
-
-	errMsg.clear();
-	EXPECT_FALSE(handler->insertRawFile("", "randomCol", "rawFileName", binary, errMsg));
-	EXPECT_FALSE(errMsg.empty());
-
-	errMsg.clear();
-	EXPECT_FALSE(handler->insertRawFile("randomTest", "randomCol", "", binary, errMsg));
-	EXPECT_FALSE(errMsg.empty());
-
-	errMsg.clear();
-	EXPECT_FALSE(handler->insertRawFile("randomTest", "randomCol", "rawFileName", std::vector<uint8_t>(), errMsg));
-	EXPECT_FALSE(errMsg.empty());
-}
-
-TEST(MongoDatabaseHandlerTest, InsertRole)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	std::string errMsg;
-
-	repo::core::model::RepoRole roleTest = repo::core::model::RepoRole(BSON("db" << "admin" << "role" << "insertRoleTest"));
-
-	EXPECT_TRUE(handler->insertRole(roleTest, errMsg));
-	EXPECT_TRUE(errMsg.empty());
-	errMsg.clear();
-
-	//The following will of cousre fail if findOneByCriteria is failing
-	repo::core::model::RepoBSON result = handler->findOneByCriteria("admin", "system.roles", roleTest);
-	EXPECT_FALSE(result.isEmpty());
-
-	std::set<std::string> fields = roleTest.getFieldNames();
-	for (const auto &fname : fields)
-	{
-		ASSERT_TRUE(result.hasField(fname));
-		EXPECT_EQ(result.getField(fname), roleTest.getField(fname));
-	}
-
-	EXPECT_FALSE(handler->insertRole(repo::core::model::RepoRole(), errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_FALSE(handler->insertRole(repo::core::model::RepoRole(BSON("role" << "insertRoleTest")), errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_FALSE(handler->insertRole(repo::core::model::RepoRole(BSON("db" << "admin")), errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
-
-	//drop it after the test is done
-	handler->dropRole(roleTest, errMsg);
-}
-
-TEST(MongoDatabaseHandlerTest, InsertUser)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	std::string errMsg;
-	repo::core::model::RepoUser userTest = repo::core::model::RepoUser(BSON("db" << "admin" << "user" << "insertUserTest"
-		<< REPO_USER_LABEL_CREDENTIALS << BSON(REPO_USER_LABEL_CLEARTEXT << "123")));
-	EXPECT_TRUE(handler->insertUser(userTest, errMsg));
-	EXPECT_TRUE(errMsg.empty());
-	errMsg.clear();
-
-	//The following will of cousre fail if findOneByCriteria is failing
-	repo::core::model::RepoBSON result = handler->findOneByCriteria("admin", "system.users", BSON("_id" << "admin.insertUserTest"));
-	EXPECT_FALSE(result.isEmpty());
-
-	EXPECT_FALSE(handler->insertUser(repo::core::model::RepoUser(), errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_FALSE(handler->insertUser(repo::core::model::RepoUser(BSON("_id" << "insertUserTest")), errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_FALSE(handler->insertUser(repo::core::model::RepoUser(BSON("db" << "admin")), errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
-
-	handler->dropUser(userTest, errMsg);
-}
-
-TEST(MongoDatabaseHandlerTest, UpdateRole)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	std::string errMsg;
-
-	EXPECT_TRUE(handler->updateRole(repo::core::model::RepoRole(REPO_GTEST_UPDATEROLETEST), errMsg));
-	EXPECT_TRUE(errMsg.empty());
-
-	//The following will of cousre fail if findOneByCriteria is failing
-	repo::core::model::RepoRole result = repo::core::model::RepoRole(
-		handler->findOneByCriteria("admin", "system.roles", repo::core::model::RepoRole(REPO_GTEST_UPDATEROLETEST)));
-	EXPECT_FALSE(result.isEmpty());
-	EXPECT_EQ(0, result.getPrivileges().size());
-
-	EXPECT_FALSE(handler->updateRole(repo::core::model::RepoRole(), errMsg));
-	EXPECT_FALSE(errMsg.empty());
-}
-
-TEST(MongoDatabaseHandlerTest, UpdateUser)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	std::string errMsg;
-
-	EXPECT_TRUE(handler->updateUser(repo::core::model::RepoUser(REPO_GTEST_UPDATEUSERTEST), errMsg));
-	EXPECT_TRUE(errMsg.empty());
-	errMsg.clear();
-	//The following will of cousre fail if findOneByCriteria is failing
-	std::string userID = std::string(REPO_GTEST_UPDATEUSERTEST.getStringField("db")) + "." + std::string(REPO_GTEST_UPDATEUSERTEST.getStringField("user"));
-	repo::core::model::RepoBSON search = BSON("_id" << userID);
-	repo::core::model::RepoUser result = repo::core::model::RepoUser(
-		handler->findOneByCriteria("admin", "system.users", repo::core::model::RepoUser(search)));
-	EXPECT_FALSE(result.isEmpty());
-	EXPECT_TRUE(result.getRolesBSON().isEmpty());
-
-	EXPECT_FALSE(handler->updateUser(repo::core::model::RepoUser(), errMsg));
-	EXPECT_FALSE(errMsg.empty());
-
-	handler->dropUser(search, errMsg);
 }
 
 TEST(MongoDatabaseHandlerTest, FindAllByUniqueIDs)
@@ -658,17 +351,4 @@ TEST(MongoDatabaseHandlerTest, FindOneBySharedID)
 	EXPECT_TRUE(result.isEmpty());
 	result = handler->findOneBySharedID(REPO_GTEST_DBNAME_ROLEUSERTEST, "", repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH), "timestamp");
 	EXPECT_TRUE(result.isEmpty());
-}
-
-TEST(MongoDatabaseHandlerTest, GetRawFile)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	auto file = handler->getRawFile(REPO_GTEST_DBNAME_FILE_MANAGER, REPO_GTEST_COLNAME_FILE_MANAGER, REPO_GTEST_RAWFILE_FETCH_TEST);
-
-	EXPECT_EQ(REPO_GTEST_RAWFILE_FETCH_SIZE, file.size());
-
-	EXPECT_EQ(0, handler->getRawFile(REPO_GTEST_DBNAME_FILE_MANAGER, REPO_GTEST_COLNAME_FILE_MANAGER, "some_non_existent_file").size());
-	EXPECT_EQ(0, handler->getRawFile("", REPO_GTEST_COLNAME_FILE_MANAGER, REPO_GTEST_RAWFILE_FETCH_TEST).size());
-	EXPECT_EQ(0, handler->getRawFile(REPO_GTEST_DBNAME_FILE_MANAGER, "", REPO_GTEST_RAWFILE_FETCH_TEST).size());
 }

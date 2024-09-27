@@ -120,7 +120,7 @@ std::unordered_map<std::string, std::vector<uint8_t>> WebModelExport::getJSONFil
 
 std::string WebModelExport::getSupportedFormats()
 {
-	return ".src, .gltf";
+	return ".src, .repobundle";
 }
 
 std::string WebModelExport::sanitizeFileName(

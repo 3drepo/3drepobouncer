@@ -66,7 +66,7 @@ TEST(MultipartOptimizer, TestAllMerged)
 	for (int i = 0; i < nMesh; ++i)
 		meshes.insert(createRandomMesh(10, false, 3, { rootID }));
 
-	repo::core::model::RepoScene *scene = new repo::core::model::RepoScene({}, dummy, meshes, dummy, dummy, dummy, trans);
+	repo::core::model::RepoScene *scene = new repo::core::model::RepoScene({}, meshes, dummy, dummy, dummy, trans);
 	ASSERT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
 	ASSERT_FALSE(scene->hasRoot(OPTIMIZED_GRAPH));
 
@@ -91,7 +91,7 @@ TEST(MultipartOptimizer, TestWithUV)
 	for (int i = 0; i < nMesh; ++i)
 		meshes.insert(createRandomMesh(10, i == 1, 3, { rootID }));
 
-	repo::core::model::RepoScene *scene = new repo::core::model::RepoScene({}, dummy, meshes, dummy, dummy, dummy, trans);
+	repo::core::model::RepoScene *scene = new repo::core::model::RepoScene({}, meshes, dummy, dummy, dummy, trans);
 	ASSERT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
 	ASSERT_FALSE(scene->hasRoot(OPTIMIZED_GRAPH));
 
@@ -120,7 +120,7 @@ TEST(MultipartOptimizer, TestMixedPrimitives)
 	meshes.insert(createRandomMesh(nVertices, false, 3, { rootID }));
 	meshes.insert(createRandomMesh(nVertices, false, 1, { rootID })); // unsupported primitive types must be identified as such and not combined with known types
 
-	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, dummy, meshes, dummy, dummy, dummy, trans);
+	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, dummy, dummy, dummy, trans);
 	ASSERT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
 	ASSERT_FALSE(scene->hasRoot(OPTIMIZED_GRAPH));
 
@@ -168,7 +168,7 @@ TEST(MultipartOptimizer, TestSingleLargeMesh)
 	trans.insert(root);
 	meshes.insert(createRandomMesh(65536, false, 2, { rootID }));
 
-	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, dummy, meshes, dummy, dummy, dummy, trans);
+	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, dummy, dummy, dummy, trans);
 	ASSERT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
 	ASSERT_FALSE(scene->hasRoot(OPTIMIZED_GRAPH));
 
@@ -192,7 +192,7 @@ TEST(MultipartOptimizer, TestSingleOversizedMesh)
 	trans.insert(root);
 	meshes.insert(createRandomMesh(1200000 + 1, false, 3, { rootID })); // 1200000 comes from the const in repo_optimizer_multipart.cpp
 
-	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, dummy, meshes, dummy, dummy, dummy, trans);
+	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, dummy, dummy, dummy, trans);
 	ASSERT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
 	ASSERT_FALSE(scene->hasRoot(OPTIMIZED_GRAPH));
 
@@ -218,7 +218,7 @@ TEST(MultipartOptimizer, TestMultipleOversizedMeshes)
 	meshes.insert(createRandomMesh(65537, false, 3, { rootID }));
 	meshes.insert(createRandomMesh(128537, false, 3, { rootID }));
 
-	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, dummy, meshes, dummy, dummy, dummy, trans);
+	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, dummy, dummy, dummy, trans);
 	ASSERT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
 	ASSERT_FALSE(scene->hasRoot(OPTIMIZED_GRAPH));
 
@@ -250,7 +250,7 @@ TEST(MultipartOptimizer, TestMultiplesMeshes)
 	meshes.insert(createRandomMesh(16384, false, 2, { rootID }));
 	meshes.insert(createRandomMesh(16384, false, 2, { rootID }));
 
-	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, dummy, meshes, dummy, dummy, dummy, trans);
+	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, dummy, dummy, dummy, trans);
 	ASSERT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
 	ASSERT_FALSE(scene->hasRoot(OPTIMIZED_GRAPH));
 
@@ -280,7 +280,7 @@ TEST(MultipartOptimizer, TestMultipleSmallAndLargeMeshes)
 	meshes.insert(createRandomMesh(16384, false, 3, { rootID }));
 	meshes.insert(createRandomMesh(8000, false, 3, { rootID }));
 
-	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, dummy, meshes, dummy, dummy, dummy, trans);
+	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, dummy, dummy, dummy, trans);
 	ASSERT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
 	ASSERT_FALSE(scene->hasRoot(OPTIMIZED_GRAPH));
 
@@ -304,7 +304,7 @@ TEST(MultipartOptimizer, TestTinyMeshes)
 		meshes.insert(createRandomMesh(4, false, 3, { rootID }));
 	}
 
-	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, dummy, meshes, dummy, dummy, dummy, trans);
+	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, dummy, dummy, dummy, trans);
 	ASSERT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
 	ASSERT_FALSE(scene->hasRoot(OPTIMIZED_GRAPH));
 

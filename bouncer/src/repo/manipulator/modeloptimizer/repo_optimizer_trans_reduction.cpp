@@ -76,29 +76,6 @@ bool TransformationReductionOptimizer::apply(repo::core::model::RepoScene *scene
 
 		repoInfo << "Mesh Optimisation complete. Number of transformations has been reduced from "
 			<< transNodes_pre << " to " << scene->getAllTransformations(gType).size();
-
-		transNodes_pre = scene->getAllTransformations(gType).size();
-		auto cameras = scene->getAllCameras(gType);
-		count = 0;
-		total = cameras.size();
-		for (repo::core::model::RepoNode *node : cameras)
-		{
-			++count;
-			if (count % 100 == 0)
-			{
-				repoInfo << "Optimizer : processed " << count << " of " << total << " cameras";
-			}
-			if (node && node->getTypeAsEnum() == repo::core::model::NodeType::CAMERA)
-			{
-				repo::core::model::CameraNode *cam = dynamic_cast<repo::core::model::CameraNode*>(node);
-				if (cam)
-					applyOptimOnCamera(scene, cam);
-				else
-					repoError << "Failed to dynamically cast a camera node!!!";
-			}
-		}
-		repoInfo << "Camera Optimisation complete. Number of transformations has been reduced from "
-			<< transNodes_pre << " to " << scene->getAllTransformations(gType).size();
 	}
 	else
 	{
@@ -231,101 +208,6 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 						{
 							repoError << "Failed to dynamically cast a transformation node!!!!";
 						}
-					}
-				} //(singleMeshChild && noTransSiblings && granTransParents.size() == 1)
-			}//(trans->getUniqueID() != scene->getRoot()->getUniqueID() && trans->isIdentity())
-		}
-		else
-		{
-			repoError << "Failed to dynamically cast a transformation node!!!!";
-		}
-	}
-}
-
-void TransformationReductionOptimizer::applyOptimOnCamera(
-	repo::core::model::RepoScene *scene,
-	repo::core::model::CameraNode  *camera)
-{
-	/*
-	* Assimp importer generates an extra transformation as a parent for the camera
-	* The camera and the transformation shares the same name.
-	* This function will remove this transformation provided the camera name matches
-	* the transformation's
-	*/
-	std::vector<repo::core::model::RepoNode*> transParents =
-		scene->getParentNodesFiltered(gType,
-			camera, repo::core::model::NodeType::TRANSFORMATION);
-
-	if (transParents.size() == 1)
-	{
-		repo::core::model::TransformationNode *trans =
-			dynamic_cast<repo::core::model::TransformationNode*>(transParents[0]);
-		if (trans)
-		{
-			repo::lib::RepoUUID parentUniqueID = trans->getUniqueID();
-			repo::lib::RepoUUID parentSharedID = trans->getSharedID();
-			repo::lib::RepoUUID rootUniqueID = scene->getRoot(gType)->getUniqueID();
-			bool isRoot = parentUniqueID == rootUniqueID;
-			bool isIdentity = trans->isIdentity();
-			if (!isRoot)
-			{
-				std::vector<repo::core::model::RepoNode*> children = scene->getChildrenAsNodes(gType, parentSharedID);
-				bool sameName = camera->getName() == trans->getName();
-
-				bool noMeshSiblings = scene->filterNodesByType(
-					children, repo::core::model::NodeType::MESH).size() == 0;
-
-				bool noTransSiblings = (bool)!scene->filterNodesByType(
-					children, repo::core::model::NodeType::TRANSFORMATION).size() == 1;
-
-				std::vector<repo::core::model::RepoNode*> granTransParents =
-					scene->getParentNodesFiltered(gType,
-						trans, repo::core::model::NodeType::TRANSFORMATION);
-
-				if (sameName && noMeshSiblings && noTransSiblings && granTransParents.size() == 1)
-				{
-					repo::core::model::TransformationNode *granTrans =
-						dynamic_cast<repo::core::model::TransformationNode*>(granTransParents[0]);
-
-					if (granTrans)
-					{
-						repo::lib::RepoUUID granSharedID = granTrans->getSharedID();
-						repo::lib::RepoUUID camSharedID = camera->getSharedID();
-						//Disconnect grandparent from parent
-						scene->abandonChild(gType,
-							granSharedID, trans, true, false);
-						for (repo::core::model::RepoNode *node : children)
-						{
-							//Put all children of trans node to granTrans
-							if (node)
-							{
-								scene->abandonChild(gType,
-									parentSharedID, node, false, true);
-								if (!isIdentity && node->positionDependant()) {
-									//Parent is not the identity matrix, we need to reapply the transformation if
-									//the node is position dependant
-									node->swap(node->cloneAndApplyTransformation(trans->getTransMatrix(false)));
-								}
-
-								//metadata should be assigned under the mesh
-								scene->addInheritance(gType,
-									granTrans, node, false);
-							}
-						}
-
-						//change mesh name
-						repo::core::model::MeshNode *newCam =
-							new repo::core::model::MeshNode(camera->cloneAndChangeName(trans->getName(), false));
-
-						scene->modifyNode(gType, camera, newCam);
-
-						//remove parent from the scene.
-						scene->removeNode(gType, parentSharedID);
-						delete newCam;
-					}
-					else
-					{
-						repoError << "Failed to dynamically cast a transformation node!!!!";
 					}
 				} //(singleMeshChild && noTransSiblings && granTransParents.size() == 1)
 			}//(trans->getUniqueID() != scene->getRoot()->getUniqueID() && trans->isIdentity())

@@ -46,7 +46,7 @@ TEST(RepoConfigTest, ConstructFromFile)
 		auto config = RepoConfig::fromFile(getDataPath("/config/withAllDbDefault.json"));
 		EXPECT_TRUE(config.validate());
 		EXPECT_TRUE(config.getFSConfig().configured);
-		EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::GRIDFS);
+		EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::FS);
 		});
 
 	EXPECT_NO_THROW({
@@ -70,7 +70,7 @@ TEST(RepoConfigTest, dbConfigTest)
 	EXPECT_EQ(dbData.password, password);
 	EXPECT_EQ(dbData.pwDigested, pwDigested);
 
-	EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::GRIDFS);
+	EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::FS);
 }
 
 repo::lib::RepoConfig createConfig() {
@@ -93,7 +93,7 @@ TEST(RepoConfigTest, fsConfigTest)
 	EXPECT_EQ(fsConf.nLevel, level1);
 	EXPECT_TRUE(fsConf.configured);
 
-	EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::GRIDFS);
+	EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::FS);
 
 	config.configureFS(dir2, level2, true);
 	fsConf = config.getFSConfig();

@@ -39,7 +39,7 @@ TEST(MeshMapReorganiser, VeryLargeMesh)
 	repo::core::model::RepoNodeSet meshes, trans;
 	trans.insert(root);
 	meshes.insert(createRandomMesh(327890, false, 3, { rootID }));
-	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, {}, meshes, {}, {}, {}, trans);
+	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, {}, {}, {}, trans);
 	opt.apply(scene);
 
 	auto supermesh = (repo::core::model::SupermeshNode*)*scene->getAllSupermeshes(repo::core::model::RepoScene::GraphType::OPTIMIZED).begin();
@@ -107,7 +107,7 @@ TEST(MeshMapReorganiser, MultipleTinyMeshes)
 		meshes.insert(createRandomMesh(NUM_VERTICES, false, 3, { rootID }));
 	}
 
-	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, {}, meshes, {}, {}, {}, trans);
+	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, {}, {}, {}, trans);
 	opt.apply(scene);
 
 	auto supermesh = (repo::core::model::SupermeshNode*)*scene->getAllSupermeshes(repo::core::model::RepoScene::GraphType::OPTIMIZED).begin();
@@ -187,7 +187,7 @@ TEST(MeshMapReorganiser, InterleavedMixedSplit)
 
 	const int NUM_SUBMESHES = 6;
 
-	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, {}, meshes, {}, {}, {}, trans);
+	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, {}, {}, {}, trans);
 	opt.apply(scene);
 
 	auto supermesh = (repo::core::model::SupermeshNode*)*scene->getAllSupermeshes(repo::core::model::RepoScene::GraphType::OPTIMIZED).begin();

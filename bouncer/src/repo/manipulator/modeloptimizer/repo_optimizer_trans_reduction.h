@@ -24,7 +24,6 @@
 
 #include "repo_optimizer_abstract.h"
 
-#include "../../core/model/bson/repo_node_camera.h"
 #include "../../core/model/bson/repo_node_mesh.h"
 
 #include <tuple>
@@ -72,16 +71,6 @@ namespace repo {
 					repo::core::model::MeshNode  *mesh,
 					std::unordered_map < repo::core::model::RepoNode*, repo::core::model::RepoNodeSet> &metaToNewParents
 				);
-
-				/**
-				* Apply optimization on the camera, given
-				* it satisfies the condition for the optimisation to happen
-				* @param scene scene to optimise
-				* @param camera camera in question
-				*/
-				void applyOptimOnCamera(
-					repo::core::model::RepoScene *scene,
-					repo::core::model::CameraNode  *camera);
 			};
 		}
 	}
