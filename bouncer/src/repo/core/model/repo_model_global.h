@@ -112,7 +112,7 @@
 #define REPO_COLLECTION_SEQUENCE        "sequences"
 #define REPO_COLLECTION_TASK            "activities"
 #define REPO_COLLECTION_DRAWINGS		"drawings.history"
-#define REPO_COLLECTION_CALIBRATIONS	"drawings.revisions.calibrations"
+#define REPO_COLLECTION_CALIBRATIONS	"drawings.calibrations"
 
 #define REPO_COLLECTION_SETTINGS            "settings"
 
