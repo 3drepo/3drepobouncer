@@ -34,6 +34,14 @@
 
 #include <mongo/client/dbclient.h>
 
+// New driver includes
+#include <bsoncxx/builder/basic/document.hpp>
+#include <bsoncxx/json.hpp>
+#include <mongocxx/client.hpp>
+#include <mongocxx/instance.hpp>
+#include <mongocxx/stdx.hpp>
+#include <mongocxx/uri.hpp>
+
 #include "repo_database_handler_abstract.h"
 #include "connectionpool/repo_connection_pool_mongo.h"
 #include "../model/bson/repo_bson.h"
