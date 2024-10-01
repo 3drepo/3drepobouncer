@@ -76,6 +76,11 @@ if(NOT ${MONGO_FOUND})
 	message(FATAL_ERROR "Cannot find mongo cxx driver")
 endif()
 
+#================MONGO CXX DRIVER SETTINGS=======================
+find_package(MongoCXXDriver REQUIRED)
+if(NOT ${MONGO_CXX_DRIVER_FOUND})
+	message(FATAL_ERROR "Cannot find mongo cxx driver (new)")
+endif()
 
 #================ASSIMP SETTINGS=======================
 find_package(ASSIMPM REQUIRED)
