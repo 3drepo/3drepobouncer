@@ -91,11 +91,11 @@ TEST(DrawingImportManager, ImportDWG)
 		}
 
 		// We expect the Red circle to be off-shade, because we apply a colour
-		// correction.
+		// correction of 0.8
 
 		auto c = g.second.get_child_optional("circle");
 		if (c) {
-			EXPECT_EQ(g.second.get<std::string>("<xmlattr>.stroke"), "rgb(127,0,0)");
+			EXPECT_EQ(g.second.get<std::string>("<xmlattr>.stroke"), "rgb(204,0,0)");
 			groupPrimitives++;
 		}
 	}
