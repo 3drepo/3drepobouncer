@@ -41,6 +41,13 @@
 #include <mongocxx/instance.hpp>
 #include <mongocxx/stdx.hpp>
 #include <mongocxx/uri.hpp>
+#include <mongocxx/pool.hpp>
+#include <mongocxx/exception/operation_exception.hpp>
+#include <mongocxx/exception/bulk_write_exception.hpp>
+#include <mongocxx/exception/query_exception.hpp>
+#include <mongocxx/exception/logic_error.hpp>
+#include <bsoncxx/builder/basic/document.hpp>
+
 
 #include "repo_database_handler_abstract.h"
 #include "connectionpool/repo_connection_pool_mongo.h"
@@ -207,7 +214,7 @@ namespace repo {
 				* @param name of the database
 				* @return a list of collection names
 				*/
-				std::list<std::string> getCollections(const std::string &database);
+				std::vector<std::string> getCollections(const std::string &database);
 
 				/**
 				* Return the name of admin database
@@ -235,7 +242,7 @@ namespace repo {
 				* @param name name of the collection
 				* @param index BSONObj specifying the index
 				*/
-				virtual void createIndex(const std::string &database, const std::string &collection, const mongo::BSONObj & obj);
+				virtual void createIndex(const std::string &database, const std::string &collection, const bsoncxx::document::view_or_value& obj);
 
 				/**
 				* Remove a collection from the database
@@ -321,7 +328,7 @@ namespace repo {
 				std::vector<repo::core::model::RepoBSON> findAllByUniqueIDs(
 					const std::string& database,
 					const std::string& collection,
-					const repo::core::model::RepoBSON& uuids,
+					const std::vector<repo::lib::RepoUUID> uuids,
 					const bool ignoreExtFiles = false);
 
 				/**
@@ -399,6 +406,9 @@ namespace repo {
 
 				 //				connectionPool::MongoConnectionPool *workerPool;
 				mongo::DBClientBase* worker;
+
+				mongocxx::instance instance;
+				std::unique_ptr<mongocxx::pool> clientPool;
 
 				/*!
 				 * Map holding database name as key and <username, password digest> as a
