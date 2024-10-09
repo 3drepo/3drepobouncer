@@ -81,6 +81,13 @@
 // Vertex/triangle map propeties
 #define REPO_LABEL_MERGED_NODES     "merged_nodes"
 
+// Drawing calibration properties
+#define REPO_LABEL_DRAWING			"drawing"
+#define REPO_LABEL_REVISION			"rev_id"
+#define REPO_LABEL_CREATEDAT		"createdAt"
+#define	REPO_LABEL_HORIZONTAL		"horizontal"
+#define	REPO_LABEL_UNITS			"units"
+
 #define REPO_COMMAND_UPDATE         "update"
 #define REPO_COMMAND_UPDATES        "updates"
 #define REPO_COMMAND_DELETE         "delete"
@@ -105,6 +112,7 @@
 #define REPO_COLLECTION_SEQUENCE        "sequences"
 #define REPO_COLLECTION_TASK            "activities"
 #define REPO_COLLECTION_DRAWINGS		"drawings.history"
+#define REPO_COLLECTION_CALIBRATIONS	"drawings.calibrations"
 
 #define REPO_COLLECTION_SETTINGS            "settings"
 

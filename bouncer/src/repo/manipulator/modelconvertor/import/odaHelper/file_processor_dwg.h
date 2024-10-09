@@ -47,6 +47,11 @@ namespace repo {
 
 				protected:
 					OdStaticRxObject<RepoDwgServices> svcs;
+
+				private:
+					void importModel(OdDbDatabasePtr pDb);
+					void importDrawing(OdDbDatabasePtr pDb);
+					ModelUnits determineModelUnits(const OdDb::UnitsValue units);
 				};
 			}
 		}

@@ -23,16 +23,17 @@
 #include "repo_bson_builder.h"
 #include "repo_bson_binmapping_builder.h"
 #include "../../../lib/repo_log.h"
+#include "../../../lib/repo_exception.h"
 
 using namespace repo::core::model;
 
 RepoBSON RepoBSONFactory::appendDefaults(
-	const std::string &type,
+	const std::string& type,
 	const unsigned int api,
-	const repo::lib::RepoUUID &sharedId,
-	const std::string &name,
-	const std::vector<repo::lib::RepoUUID> &parents,
-	const repo::lib::RepoUUID &uniqueID)
+	const repo::lib::RepoUUID& sharedId,
+	const std::string& name,
+	const std::vector<repo::lib::RepoUUID>& parents,
+	const repo::lib::RepoUUID& uniqueID)
 {
 	RepoBSONBuilder builder;
 	appendDefaults(builder, type, api, sharedId, name, parents, uniqueID);
@@ -79,10 +80,10 @@ void RepoBSONFactory::appendDefaults(
 }
 
 MaterialNode RepoBSONFactory::makeMaterialNode(
-	const repo_material_t &material,
-	const std::string     &name,
-	const std::vector<repo::lib::RepoUUID> &parents,
-	const int             &apiLevel)
+	const repo_material_t& material,
+	const std::string& name,
+	const std::vector<repo::lib::RepoUUID>& parents,
+	const int& apiLevel)
 {
 	RepoBSONBuilder builder;
 
@@ -118,12 +119,12 @@ MaterialNode RepoBSONFactory::makeMaterialNode(
 	return MaterialNode(builder.obj());
 }
 
-static bool keyCheck(const char &c)
+static bool keyCheck(const char& c)
 {
 	return c == '$' || c == '.';
 }
 
-static std::string sanitiseKey(const std::string &key)
+static std::string sanitiseKey(const std::string& key)
 {
 	std::string cleanedKey(key);
 	std::replace_if(cleanedKey.begin(), cleanedKey.end(), keyCheck, ':');
@@ -131,11 +132,11 @@ static std::string sanitiseKey(const std::string &key)
 }
 
 MetadataNode RepoBSONFactory::makeMetaDataNode(
-	const std::vector<std::string>  &keys,
-	const std::vector<repo::lib::RepoVariant>  &values,
-	const std::string               &name,
-	const std::vector<repo::lib::RepoUUID>     &parents,
-	const int                       &apiLevel)
+	const std::vector<std::string>& keys,
+	const std::vector<repo::lib::RepoVariant>& values,
+	const std::string& name,
+	const std::vector<repo::lib::RepoUUID>& parents,
+	const int& apiLevel)
 {
 	auto keysLen = keys.size();
 	auto valLen = values.size();
@@ -156,10 +157,10 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 }
 
 MetadataNode RepoBSONFactory::makeMetaDataNode(
-	const std::unordered_map<std::string, repo::lib::RepoVariant>  &data,
-	const std::string               &name,
-	const std::vector<repo::lib::RepoUUID>     &parents,
-	const int                       &apiLevel)
+	const std::unordered_map<std::string, repo::lib::RepoVariant>& data,
+	const std::string& name,
+	const std::vector<repo::lib::RepoUUID>& parents,
+	const int& apiLevel)
 {
 	RepoBSONBuilder builder;
 	// Compulsory fields such as _id, type, api as well as path
@@ -168,7 +169,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 	builder.appendElements(defaults);
 	std::vector<RepoBSON> metaEntries;
 	auto count = 0;
-	for (const auto &entry : data) {
+	for (const auto& entry : data) {
 		std::string key = sanitiseKey(entry.first);
 		repo::lib::RepoVariant value = entry.second;
 
@@ -176,7 +177,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 		{
 			RepoBSONBuilder metaEntryBuilder;
 			metaEntryBuilder.append(REPO_NODE_LABEL_META_KEY, key);
-			
+
 			// Pass variant on to the builder
 			metaEntryBuilder.appendRepoVariant(REPO_NODE_LABEL_META_VALUE, value);
 
@@ -316,13 +317,13 @@ void RepoBSONFactory::appendSubmeshIds(RepoBSONBinMappingBuilder& builder, const
 }
 
 MeshNode RepoBSONFactory::makeMeshNode(
-	const std::vector<repo::lib::RepoVector3D>        &vertices,
-	const std::vector<repo_face_t>                    &faces,
-	const std::vector<repo::lib::RepoVector3D>        &normals,
-	const std::vector<std::vector<float>>             &boundingBox,
-	const std::vector<std::vector<repo::lib::RepoVector2D>>   &uvChannels,
-	const std::string                                 &name,
-	const std::vector<repo::lib::RepoUUID>            &parents)
+	const std::vector<repo::lib::RepoVector3D>& vertices,
+	const std::vector<repo_face_t>& faces,
+	const std::vector<repo::lib::RepoVector3D>& normals,
+	const std::vector<std::vector<float>>& boundingBox,
+	const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
+	const std::string& name,
+	const std::vector<repo::lib::RepoUUID>& parents)
 {
 	RepoBSONBinMappingBuilder builder;
 	appendDefaults(builder, REPO_NODE_TYPE_MESH, REPO_NODE_API_LEVEL_0, repo::lib::RepoUUID::createUUID(), name, parents, repo::lib::RepoUUID::createUUID());
@@ -398,11 +399,11 @@ SupermeshNode RepoBSONFactory::makeSupermeshNode(
 
 template<typename IdType>
 RepoRef RepoBSONFactory::makeRepoRef(
-	const IdType &id,
-	const RepoRef::RefType &type,
-	const std::string &link,
+	const IdType& id,
+	const RepoRef::RefType& type,
+	const std::string& link,
 	const uint32_t size,
-	const repo::core::model::RepoBSON            &metadata) {
+	const repo::core::model::RepoBSON& metadata) {
 	repo::core::model::RepoBSONBuilder builder;
 	builder.append(REPO_LABEL_ID, id);
 	builder.append(REPO_REF_LABEL_TYPE, RepoRef::convertTypeAsString(type));
@@ -485,13 +486,49 @@ RepoAssets RepoBSONFactory::makeRepoBundleAssets(
 	return RepoAssets(builder.obj());
 }
 
+RepoCalibration repo::core::model::RepoBSONFactory::makeRepoCalibration(
+	const repo::lib::RepoUUID& projectId,
+	const repo::lib::RepoUUID& drawingId,
+	const repo::lib::RepoUUID& revisionId,
+	const std::vector<repo::lib::RepoVector3D>& horizontal3d,
+	const std::vector<repo::lib::RepoVector2D>& horizontal2d,
+	const std::string& units)
+{
+	RepoBSONBuilder bsonBuilder;
+	bsonBuilder.append(REPO_LABEL_ID, repo::lib::RepoUUID::createUUID());
+	bsonBuilder.append(REPO_LABEL_PROJECT, projectId);
+	bsonBuilder.append(REPO_LABEL_DRAWING, drawingId.toString());
+	bsonBuilder.append(REPO_LABEL_REVISION, revisionId);
+	bsonBuilder.appendTimeStamp(REPO_LABEL_CREATEDAT);
+
+	if (horizontal2d.size() != 2 || horizontal3d.size() != 2)
+	{
+		throw repo::lib::RepoException("Incomplete calibration vectors supplied to makeRepoCalibration");
+	}
+
+	RepoBSONBuilder horizontalBuilder;
+	horizontalBuilder.appendArray< std::vector<float> >(REPO_LABEL_MODEL, {
+		horizontal3d[0].toStdVector(),
+		horizontal3d[1].toStdVector()
+		});
+	horizontalBuilder.appendArray< std::vector<float> >(REPO_LABEL_DRAWING, {
+		horizontal2d[0].toStdVector(),
+		horizontal2d[1].toStdVector()
+		});
+	bsonBuilder.append(REPO_LABEL_HORIZONTAL, horizontalBuilder.obj());
+
+	bsonBuilder.append(REPO_LABEL_UNITS, units);
+
+	return RepoCalibration(bsonBuilder.obj());
+}
+
 ReferenceNode RepoBSONFactory::makeReferenceNode(
-	const std::string &database,
-	const std::string &project,
-	const repo::lib::RepoUUID    &revisionID,
-	const bool        &isUniqueID,
-	const std::string &name,
-	const int         &apiLevel)
+	const std::string& database,
+	const std::string& project,
+	const repo::lib::RepoUUID& revisionID,
+	const bool& isUniqueID,
+	const std::string& name,
+	const int& apiLevel)
 {
 	RepoBSONBuilder builder;
 	std::string nodeName = name.empty() ? database + "." + project : name;
@@ -524,15 +561,15 @@ ReferenceNode RepoBSONFactory::makeReferenceNode(
 }
 
 ModelRevisionNode RepoBSONFactory::makeRevisionNode(
-	const std::string			   &user,
-	const repo::lib::RepoUUID                 &branch,
-	const repo::lib::RepoUUID                 &id,
-	const std::vector<std::string> &files,
-	const std::vector<repo::lib::RepoUUID>    &parent,
-	const std::vector<double>    &worldOffset,
-	const std::string              &message,
-	const std::string              &tag,
-	const int                      &apiLevel
+	const std::string& user,
+	const repo::lib::RepoUUID& branch,
+	const repo::lib::RepoUUID& id,
+	const std::vector<std::string>& files,
+	const std::vector<repo::lib::RepoUUID>& parent,
+	const std::vector<double>& worldOffset,
+	const std::string& message,
+	const std::string& tag,
+	const int& apiLevel
 )
 {
 	RepoBSONBuilder builder;
@@ -584,13 +621,13 @@ ModelRevisionNode RepoBSONFactory::makeRevisionNode(
 }
 
 TextureNode RepoBSONFactory::makeTextureNode(
-	const std::string &name,
-	const char        *data,
-	const uint32_t    &byteCount,
-	const uint32_t    &width,
-	const uint32_t    &height,
+	const std::string& name,
+	const char* data,
+	const uint32_t& byteCount,
+	const uint32_t& width,
+	const uint32_t& height,
 	const std::vector<repo::lib::RepoUUID>& parentIDs,
-	const int         &apiLevel)
+	const int& apiLevel)
 {
 	RepoBSONBuilder builder;
 	repo::lib::RepoUUID uniqueID = repo::lib::RepoUUID::createUUID();
@@ -634,10 +671,10 @@ TextureNode RepoBSONFactory::makeTextureNode(
 }
 
 TransformationNode RepoBSONFactory::makeTransformationNode(
-	const repo::lib::RepoMatrix &transMatrix,
-	const std::string                     &name,
-	const std::vector<repo::lib::RepoUUID>		  &parents,
-	const int                             &apiLevel)
+	const repo::lib::RepoMatrix& transMatrix,
+	const std::string& name,
+	const std::vector<repo::lib::RepoUUID>& parents,
+	const int& apiLevel)
 {
 	RepoBSONBuilder builder;
 
@@ -650,14 +687,14 @@ TransformationNode RepoBSONFactory::makeTransformationNode(
 }
 
 RepoTask RepoBSONFactory::makeTask(
-	const std::string &name,
-	const uint64_t &startTime,
-	const uint64_t &endTime,
-	const repo::lib::RepoUUID &sequenceID,
-	const std::unordered_map<std::string, std::string> &data,
-	const std::vector<repo::lib::RepoUUID> &resources,
-	const repo::lib::RepoUUID &parent,
-	const repo::lib::RepoUUID &id
+	const std::string& name,
+	const uint64_t& startTime,
+	const uint64_t& endTime,
+	const repo::lib::RepoUUID& sequenceID,
+	const std::unordered_map<std::string, std::string>& data,
+	const std::vector<repo::lib::RepoUUID>& resources,
+	const repo::lib::RepoUUID& parent,
+	const repo::lib::RepoUUID& id
 ) {
 	RepoBSONBuilder builder;
 	builder.append(REPO_LABEL_ID, id);
@@ -676,7 +713,7 @@ RepoTask RepoBSONFactory::makeTask(
 	}
 
 	std::vector<RepoBSON> metaEntries;
-	for (const auto &entry : data) {
+	for (const auto& entry : data) {
 		std::string key = sanitiseKey(entry.first);
 		std::string value = entry.second;
 
@@ -690,14 +727,14 @@ RepoTask RepoBSONFactory::makeTask(
 				long long valueInt = boost::lexical_cast<long long>(value);
 				metaBuilder.append(REPO_TASK_META_VALUE, valueInt);
 			}
-			catch (boost::bad_lexical_cast &)
+			catch (boost::bad_lexical_cast&)
 			{
 				//not an int, try a double
 				try {
 					double valueFloat = boost::lexical_cast<double>(value);
 					metaBuilder.append(REPO_TASK_META_VALUE, valueFloat);
 				}
-				catch (boost::bad_lexical_cast &)
+				catch (boost::bad_lexical_cast&)
 				{
 					//not an int or float, store as string
 					metaBuilder.append(REPO_TASK_META_VALUE, value);
@@ -714,9 +751,9 @@ RepoTask RepoBSONFactory::makeTask(
 }
 
 RepoSequence RepoBSONFactory::makeSequence(
-	const std::vector<repo::core::model::RepoSequence::FrameData> &frameData,
-	const std::string &name,
-	const repo::lib::RepoUUID &id,
+	const std::vector<repo::core::model::RepoSequence::FrameData>& frameData,
+	const std::string& name,
+	const repo::lib::RepoUUID& id,
 	const uint64_t firstFrame,
 	const uint64_t lastFrame
 ) {
@@ -728,7 +765,7 @@ RepoSequence RepoBSONFactory::makeSequence(
 
 	std::vector<RepoBSON> frames;
 
-	for (const auto &frameEntry : frameData) {
+	for (const auto& frameEntry : frameData) {
 		RepoBSONBuilder bsonBuilder;
 		bsonBuilder.append(REPO_SEQUENCE_LABEL_DATE, mongo::Date_t(frameEntry.timestamp * 1000));
 		bsonBuilder.append(REPO_SEQUENCE_LABEL_STATE, frameEntry.ref);

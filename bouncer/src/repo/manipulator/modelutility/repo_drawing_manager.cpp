@@ -18,6 +18,7 @@
 
 #include "../../core/model/bson/repo_bson_builder.h"
 #include "../../core/model/bson/repo_bson_ref.h"
+#include "../../core/model/bson/repo_bson_factory.h"
 #include "../../error_codes.h"
 
 using namespace repo::manipulator::modelutility;
@@ -45,11 +46,12 @@ uint8_t DrawingManager::commitImage(
 	auto name = drawing.name.substr(0, drawing.name.size() - 3) + "svg"; // The name should be the drawing's original name with an updated extension
 
 	repo::core::model::RepoBSONBuilder metadata;
+	auto revId = revision.getUniqueID();
 	metadata.append(REPO_NODE_LABEL_NAME, name);
 	metadata.append(REPO_LABEL_MEDIA_TYPE, REPO_MEDIA_TYPE_SVG);
 	metadata.append(REPO_LABEL_PROJECT, revision.getProject());
 	metadata.append(REPO_LABEL_MODEL, revision.getModel());
-	metadata.append(REPO_NODE_REVISION_ID, revision.getUniqueID());
+	metadata.append(REPO_NODE_REVISION_ID, revId);
 
 	fileManager->uploadFileAndCommit(
 		teamspace,
@@ -69,6 +71,30 @@ uint8_t DrawingManager::commitImage(
 	{
 		repoError << "Error committing drawing: " << error;
 		return REPOERR_UPLOAD_FAILED;
+	}
+
+	// Retreive and process calibration - drawing processors do not have to return a calibration,
+	// in which case the vectors will be empty.
+
+	auto calibration = drawing.calibration;
+	if (calibration.valid()) {
+
+		auto calibrationBSON = repo::core::model::RepoBSONFactory::makeRepoCalibration(
+			revision.getProject(),
+			revision.getModel(),
+			revId,
+			calibration.horizontalCalibration3d,
+			calibration.horizontalCalibration2d,
+			calibration.units
+		);
+
+		handler->insertDocument(teamspace, REPO_COLLECTION_CALIBRATIONS, calibrationBSON, error);
+
+		if (error.size())
+		{
+			repoError << "Error committing calibration: " << error;
+			return REPOERR_UPLOAD_FAILED;
+		}
 	}
 
 	return REPOERR_OK;

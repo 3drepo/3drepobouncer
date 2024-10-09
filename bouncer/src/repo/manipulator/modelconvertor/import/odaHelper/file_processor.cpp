@@ -67,3 +67,33 @@ std::unique_ptr<FileProcessor> FileProcessor::getFileProcessor(const std::string
 
 	return nullptr;
 }
+
+void FileProcessor::updateDrawingHorizontalCalibration(const OdGsView* pGsView, repo::manipulator::modelutility::DrawingCalibration& calibration)
+{
+	auto worldToDeviceMatrix = pGsView->worldToDeviceMatrix();
+
+	// Define the vectors in the drawing world coordinate system to resolve to
+	// SVG points.
+
+	OdGePoint3d a3d(0, 0, 0);
+	OdGePoint3d b3d(1, 0, 0);
+
+	// Calculate points in SVG space
+
+	OdGePoint3d a2d = worldToDeviceMatrix * a3d;
+	OdGePoint3d b2d = worldToDeviceMatrix * b3d;
+
+	// The SVG primitive coordinate system is the same one used by the frontend
+	// when interacting with the SVG.
+
+	calibration.horizontalCalibration2d.push_back(repo::lib::RepoVector2D(a2d.x, a2d.y));
+	calibration.horizontalCalibration2d.push_back(repo::lib::RepoVector2D(b2d.x, b2d.y));
+
+	// Transform the 3d vectors to the Repo coordinate system - the same
+	// transforms that would be applied to the 3D model, and which the Unity API
+	// operates in, which includes a conversion to a left-handed coordinate
+	// system.
+
+	calibration.horizontalCalibration3d.push_back(repo::lib::RepoVector3D(a3d.x, a3d.z, -a3d.y));
+	calibration.horizontalCalibration3d.push_back(repo::lib::RepoVector3D(b3d.x, b3d.z, -b3d.y));
+}
