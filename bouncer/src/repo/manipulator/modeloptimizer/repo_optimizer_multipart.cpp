@@ -99,7 +99,7 @@ bool MultipartOptimizer::getBakedMeshNodes(
 		case repo::core::model::NodeType::TRANSFORMATION:
 		{
 			auto trans = (repo::core::model::TransformationNode*)node;
-			mat = mat * trans->getTransMatrix(false);
+			mat = mat * trans->getTransMatrix();
 			auto children = scene->getChildrenAsNodes(defaultGraph, trans->getSharedID());
 			for (const auto& child : children)
 			{
@@ -1112,11 +1112,7 @@ bool MultipartOptimizer::processMeshGroup(
 
 	for (const auto supermesh : supermeshes)
 	{
-		// First create a new entry parented to the scene root. This will be the final 
-		// object.
-
-		auto sMeshWithParent = supermesh->cloneAndAddParent({ rootID });
-		supermesh->swap(sMeshWithParent);
+		supermesh->addParent(rootID);
 		mergedMeshes.insert(supermesh);
 	}
 

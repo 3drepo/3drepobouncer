@@ -67,43 +67,73 @@ namespace repo {
 					return NodeType::REVISION;
 				}
 
-				/**
-				* Update the status flag with the given status
-				* NOTE: the status flags denotes what it is currently doing
-				*       not what has been done. e.g. GEN_DEFAULT denotes the
-				*       revision does not have a fully commited default scene graph
-				* @param status the status to set to
-				* @return returns a clone of this node with updated status flag
-				*/
-				ModelRevisionNode cloneAndUpdateStatus(
-					const UploadStatus &status) const;
+			private:
+				std::vector<double> offset;
+				std::string message;
+				std::string tag;
+				std::vector<std::string> files;
 
-				/**
-				* --------- Convenience functions -----------
-				*/
+			protected:
+				void deserialise(RepoBSON&);
+				void serialise(repo::core::model::RepoBSONBuilder&) const;
+
+			public:
 
 				/**
 				* Get the offset coordinates to translate the model
 				* @return return a vector of double (size of 3)
 				*/
-				std::vector<double> getCoordOffset() const;
+				std::vector<double> getCoordOffset() const 
+				{
+					return offset;
+				}
+
+				void setCoordOffset(std::vector<double> offset)
+				{
+					this->offset = offset;
+				}
+
 				/**
 				* Get the message commited with the revision
 				* @return returns a string for message. empty string if none.
 				*/
-				std::string getMessage() const;
+				std::string getMessage() const
+				{
+					return message;
+				}
+
+				void setMessage(const std::string& message)
+				{
+					this->message = message;
+				}
 
 				/**
 				* Get the tag commited with the revision
 				* @return returns a string for tag. empty string if none.
 				*/
-				std::string getTag() const;
+				std::string getTag() const
+				{
+					return tag;
+				}
+
+				void setTag(const std::string& tag) 
+				{
+					this->tag = tag;
+				}
 
 				/**
 				* Get the original file(s) the scene original created from
 				* @return returns a vector of string of files
 				*/
-				std::vector<std::string> getOrgFiles() const;
+				std::vector<std::string> getOrgFiles() const
+				{
+					return files;
+				}
+
+				void setFiles(std::vector<std::string> files)
+				{
+					this->files = files;
+				}
 			};
 		}// end namespace model
 	} // end namespace core

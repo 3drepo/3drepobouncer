@@ -17,6 +17,7 @@
 
 #include <gtest/gtest.h>
 #include <cstdlib>
+#include <repo/core/model/bson/repo_bson_factory.h>
 #include <repo/manipulator/modelutility/repo_mesh_map_reorganiser.h>
 #include <repo/manipulator/modeloptimizer/repo_optimizer_multipart.h>
 #include <limits>

@@ -19,6 +19,8 @@
 
 #include <mongo/client/dbclient.h>
 
+#include "../../../lib/repo_exception.h"
+
 using namespace repo::core::model;
 
 RepoBSON::RepoBSON(const RepoBSON &obj,
@@ -125,7 +127,77 @@ void RepoBSON::replaceBinaryWithReference(const repo::core::model::RepoBSON &fil
 repo::lib::RepoUUID RepoBSON::getUUIDField(const std::string &label) const {
 	return hasField(label) ?
 		repo::lib::RepoUUID::fromBSONElement(getField(label)) :
-		repo::lib::RepoUUID::createUUID();
+		throw repo::lib::RepoException("UUID field does not exist on document");
+}
+
+std::vector<float> RepoBSON::getFloatVectorField(const std::string& label) const {
+	std::vector<float> results;
+	if (hasField(label))
+	{
+		RepoBSON array = getObjectField(label);
+		if (!array.isEmpty())
+		{
+			std::set<std::string> fields = array.getFieldNames();
+			std::set<std::string>::iterator it;
+			for (it = fields.begin(); it != fields.end(); ++it)
+				results.push_back(array.getDoubleField(*it));
+		}
+		else
+		{
+			repoDebug << "getFloatVectorField: field " << label << " is an empty bson or wrong type!";
+		}
+	}
+	return results;
+}
+
+repo::lib::RepoMatrix RepoBSON::getMatrixField(const std::string& label) const {
+
+	std::vector<mongo::BSONElement> rows;
+	std::vector<mongo::BSONElement> cols;
+
+	std::vector<float> transformationMatrix;
+
+	uint32_t rowInd = 0, colInd = 0;
+	transformationMatrix.resize(16);
+	float* transArr = &transformationMatrix.at(0);
+
+	// matrix is stored as array of arrays, row first
+
+	auto matrixObj = getField(label).embeddedObject();
+
+	matrixObj.elems(rows);
+	for (size_t rowInd = 0; rowInd < 4; rowInd++)
+	{
+		cols.clear();
+		rows[rowInd].embeddedObject().elems(cols);
+		for (size_t colInd = 0; colInd < 4; colInd++)
+		{
+			uint32_t index = rowInd * 4 + colInd;
+			transArr[index] = cols[colInd].number();
+		}
+	}
+
+	return repo::lib::RepoMatrix(transformationMatrix);
+}
+
+std::vector<double> RepoBSON::getDoubleVectorField(const std::string& label) const {
+	std::vector<double> results;
+	if (hasField(label))
+	{
+		RepoBSON array = getObjectField(label);
+		if (!array.isEmpty())
+		{
+			std::set<std::string> fields = array.getFieldNames();
+			std::set<std::string>::iterator it;
+			for (it = fields.begin(); it != fields.end(); ++it)
+				results.push_back(array.getDoubleField(*it));
+		}
+		else
+		{
+			repoDebug << "getVectorAsStdDouble: field " << label << " is an empty bson or wrong type!";
+		}
+	}
+	return results;
 }
 
 std::vector<repo::lib::RepoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) const {
@@ -270,15 +342,15 @@ std::vector<std::string> RepoBSON::getStringArray(const std::string &label) cons
 	return results;
 }
 
-int64_t RepoBSON::getTimeStampField(const std::string &label) const
+time_t RepoBSON::getTimeStampField(const std::string &label) const
 {
-	int64_t time = -1;
+	time_t time = 0;
 
 	if (hasField(label))
 	{
 		auto field = getField(label);
 		if (field.type() == ElementType::DATE)
-			time = field.date().asInt64();
+			time = field.date().toTimeT();
 		else
 		{
 			repoError << "GetTimeStampField: field " << label << " is not of type Date!";

@@ -37,8 +37,8 @@ uint8_t DrawingManager::commitImage(
 	repo::core::handler::AbstractDatabaseHandler* handler,
 	repo::core::handler::fileservice::FileManager* fileManager,
 	const std::string& teamspace,
-	const DrawingRevisionNode& revision,
-	DrawingImageInfo& drawing
+	DrawingRevisionNode& revision,
+	const DrawingImageInfo& drawing
 )
 {
 	auto drawingRefNodeId = repo::lib::RepoUUID::createUUID();
@@ -60,10 +60,10 @@ uint8_t DrawingManager::commitImage(
 		repo::core::handler::fileservice::FileManager::Encoding::Gzip
 	);
 
-	auto updated = revision.cloneAndAddImage(drawingRefNodeId);
+	revision.addImage(drawingRefNodeId);
 
 	std::string error;
-	handler->upsertDocument(teamspace, REPO_COLLECTION_DRAWINGS, updated, false, error);
+	handler->upsertDocument(teamspace, REPO_COLLECTION_DRAWINGS, revision, false, error);
 
 	if (error.size())
 	{

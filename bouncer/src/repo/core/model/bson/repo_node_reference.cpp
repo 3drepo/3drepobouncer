@@ -20,31 +20,90 @@
 */
 
 #include "repo_node_reference.h"
+#include "repo_bson_builder.h"
 
 using namespace repo::core::model;
 
 ReferenceNode::ReferenceNode() :
 RepoNode()
 {
+	isUnique = false;
 }
 
 ReferenceNode::ReferenceNode(RepoBSON bson) :
 RepoNode(bson)
 {
+	revisionId = repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH);
+	deserialise(bson);
 }
 
 ReferenceNode::~ReferenceNode()
 {
 }
 
+void ReferenceNode::deserialise(RepoBSON& bson)
+{
+	databaseName = bson.getStringField(REPO_NODE_REFERENCE_LABEL_OWNER);
+	projectId = bson.getStringField(REPO_NODE_REFERENCE_LABEL_PROJECT);
+
+	if (bson.hasField(REPO_NODE_REFERENCE_LABEL_REVISION_ID))
+	{
+		revisionId = bson.getUUIDField(REPO_NODE_REFERENCE_LABEL_REVISION_ID);
+	}
+
+	if (bson.hasField(REPO_NODE_REFERENCE_LABEL_UNIQUE))
+	{
+		isUnique = bson.getBoolField(REPO_NODE_REFERENCE_LABEL_UNIQUE);
+	}
+}
+
+
+void ReferenceNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
+{
+	RepoNode::serialise(builder);
+
+	builder.append(REPO_NODE_REFERENCE_LABEL_OWNER, databaseName);
+	builder.append(REPO_NODE_REFERENCE_LABEL_PROJECT, projectId);
+
+	if (revisionId != repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH))
+	{
+		builder.append(REPO_NODE_REFERENCE_LABEL_REVISION_ID, revisionId);
+	}
+
+	if (isUnique) 
+	{
+		builder.append(REPO_NODE_REFERENCE_LABEL_UNIQUE, isUnique);
+	}
+}
+
 bool ReferenceNode::sEqual(const RepoNode &other) const
 {
-	if (other.getTypeAsEnum() != NodeType::REFERENCE || other.getParentIDs().size() != getParentIDs().size())
+	if (other.getTypeAsEnum() != NodeType::REFERENCE)
 	{
 		return false;
 	}
 
-	//TODO:
-	repoError << "Semantic comparison of reference nodes are currently not supported!";
-	return false;
+	auto& node = dynamic_cast<const ReferenceNode&>(other);
+
+	if (revisionId != node.revisionId)
+	{
+		return false;
+	}
+
+	if (databaseName != node.databaseName) 
+	{
+		return false;
+	}
+
+	if (projectId != node.projectId)
+	{
+		return false;
+	}
+
+	if (isUnique != node.isUnique) 
+	{
+		return false;
+	}
+
+	return true;
 }

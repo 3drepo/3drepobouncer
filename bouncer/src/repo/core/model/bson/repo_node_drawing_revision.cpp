@@ -27,7 +27,9 @@ using namespace repo::core::model;
 DrawingRevisionNode::DrawingRevisionNode(RepoBSON bson) :
 	RevisionNode(bson)
 {
+	deserialise(bson);
 }
+
 DrawingRevisionNode::DrawingRevisionNode() :
 	RevisionNode()
 {
@@ -37,46 +39,20 @@ DrawingRevisionNode::~DrawingRevisionNode()
 {
 }
 
-std::vector<repo::lib::RepoUUID> DrawingRevisionNode::getFiles() const
+void DrawingRevisionNode::deserialise(RepoBSON& bson)
 {
-	if (hasField(REPO_NODE_REVISION_LABEL_REF_FILE))
-	{
-		return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_REF_FILE);
-	}
-	return {};
+	files = bson.getUUIDFieldArray(REPO_NODE_REVISION_LABEL_REF_FILE);
+	project = bson.getUUIDField(REPO_NODE_DRAWING_REVISION_LABEL_PROJECT);
+	model = bson.getStringField(REPO_NODE_DRAWING_REVISION_LABEL_MODEL);
+	format = bson.getStringField(REPO_NODE_LABEL_FORMAT);
 }
 
-repo::lib::RepoUUID DrawingRevisionNode::getProject() const
+void DrawingRevisionNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 {
-	if (hasField(REPO_NODE_DRAWING_REVISION_LABEL_PROJECT))
-	{
-		return getUUIDField(REPO_NODE_DRAWING_REVISION_LABEL_PROJECT);
-	}
-	return {};
-}
-
-std::string DrawingRevisionNode::getModel() const
-{
-	if (hasField(REPO_NODE_DRAWING_REVISION_LABEL_MODEL))
-	{
-		return getStringField(REPO_NODE_DRAWING_REVISION_LABEL_MODEL);
-	}
-	return {};
-}
-
-std::string DrawingRevisionNode::getFormat() const
-{
-	if (hasField(REPO_NODE_LABEL_FORMAT))
-	{
-		return getStringField(REPO_NODE_LABEL_FORMAT);
-	}
-	return {};
-}
-
-DrawingRevisionNode DrawingRevisionNode::cloneAndAddImage(repo::lib::RepoUUID imageRefNodeId) const
-{
-	repo::core::model::RepoBSONBuilder builder;
-	builder.append(REPO_LABEL_IMAGE, imageRefNodeId);
-	builder.appendElementsUnique(*this);
-	return DrawingRevisionNode(builder.obj());
+	RepoNode::serialise(builder);
+	builder.appendArray(REPO_NODE_REVISION_LABEL_REF_FILE, files);
+	builder.append(REPO_NODE_DRAWING_REVISION_LABEL_PROJECT, project);
+	builder.append(REPO_NODE_DRAWING_REVISION_LABEL_MODEL, model);
+	builder.append(REPO_NODE_LABEL_FORMAT, format);
+	builder.append(REPO_LABEL_IMAGE, image);
 }

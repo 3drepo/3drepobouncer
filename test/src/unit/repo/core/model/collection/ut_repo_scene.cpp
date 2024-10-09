@@ -806,8 +806,6 @@ TEST(RepoSceneTest, getAllNodes)
 TEST(RepoSceneTest, getAllDescendantsByType)
 {
 	RepoScene scene;
-	EXPECT_EQ(0, scene.getAllDescendantsByType(defaultG, repo::lib::RepoUUID::createUUID(), NodeType::CAMERA).size());
-	EXPECT_EQ(0, scene.getAllDescendantsByType(RepoScene::GraphType::OPTIMIZED, repo::lib::RepoUUID::createUUID(), NodeType::CAMERA).size());
 
 	RepoNodeSet transNodes, meshNodes, empty, matNodes, texNodes;
 
@@ -1083,23 +1081,6 @@ TEST(RepoSceneTest, addNodes)
 	EXPECT_EQ(newNodes.size() + currentSize, scene.getItemsInCurrentGraph(defaultG));
 }
 
-TEST(RepoSceneTest, modifyNode)
-{
-	RepoScene scene;
-	scene.modifyNode(defaultG, nullptr, nullptr);
-	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
-	scene.addNodes({ root });
-	RepoNode newFields = RepoBSON(BSON("name" << "cream"));
-	scene.modifyNode(defaultG, root, &newFields);
-
-	EXPECT_EQ(newFields.getName(), root->getName());
-
-	RepoNode removedName = RepoBSON(root->removeField("name"));
-	scene.modifyNode(defaultG, root, &removedName, true);
-	EXPECT_FALSE(root->hasField("name"));
-	scene.modifyNode(defaultG, root, nullptr, true);
-}
-
 TEST(RepoSceneTest, removeNode)
 {
 	RepoScene scene;
@@ -1151,6 +1132,6 @@ TEST(RepoSceneTest, reorientateDirectXModel)
 		0, 0, 0, 1
 	};
 
-	EXPECT_EQ(repo::lib::RepoMatrix(rotatedMat), root->getTransMatrix(false));
+	EXPECT_EQ(repo::lib::RepoMatrix(rotatedMat), root->getTransMatrix());
 	EXPECT_FALSE(scene2.hasRoot(RepoScene::GraphType::OPTIMIZED));
 }

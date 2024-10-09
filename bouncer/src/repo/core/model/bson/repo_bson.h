@@ -42,6 +42,10 @@
 #include "../../../lib/datastructure/repo_uuid.h"
 #include "repo_bson_element.h"
 
+#include "../../../lib/datastructure/repo_vector.h"
+#include "../../../lib/datastructure/repo_matrix.h"
+
+
 #define REPO_BSON_MAX_BYTE_SIZE 16770000 //max size is 16MB,but leave a bit for buffer
 
 namespace repo {
@@ -54,7 +58,7 @@ namespace repo {
 			//TODO: Eventually we should inherit from a generic BSON object.
 			//work seems to have been started in here:https://github.com/jbenet/bson-cpp
 			//alternatively we can use a c++ wrapper on https://github.com/mongodb/libbson
-			class REPO_API_EXPORT RepoBSON : public mongo::BSONObj
+			class REPO_API_EXPORT RepoBSON : private mongo::BSONObj
 			{
 				friend class RepoBSONBuilder;
 				friend class repo::core::handler::MongoDatabaseHandler;
@@ -161,6 +165,32 @@ namespace repo {
 					return mongo::BSONObj::getObjectField(label);
 				}
 
+				std::vector<lib::RepoVector3D> getBounds3D(const std::string& label) {
+					auto field = getObjectField(label);
+					return std::vector< lib::RepoVector3D>({
+						lib::RepoVector3D(field.getFloatVectorField("0")),
+						lib::RepoVector3D(field.getFloatVectorField("1")),
+					});
+				}
+
+				repo::lib::RepoMatrix getMatrixField(const std::string& label) const;
+
+				std::vector<float> getFloatVectorField(const std::string& label) const;
+
+				std::vector<double> getDoubleVectorField(const std::string& label) const;
+
+				std::vector<std::string> getFileList(const std::string& label) const
+				{
+					std::vector<std::string> fileList;
+					RepoBSON arraybson = getObjectField(label);
+					std::set<std::string> fields = arraybson.getFieldNames();
+					for (const auto& field : fields)
+					{
+						fileList.push_back(arraybson.getStringField(field));
+					}
+					return fileList;
+				}
+
 				double getDoubleField(const std::string &label) const;
 
 				bool isEmpty() const {
@@ -259,7 +289,7 @@ namespace repo {
 				* @param label name of the element
 				* @return returns timestamp as int64, return -1 if not found
 				*/
-				int64_t getTimeStampField(const std::string &label) const;
+				time_t getTimeStampField(const std::string &label) const;
 
 				std::set<std::string> getFieldNames() const {
 					std::set<std::string> fieldNames;

@@ -18,6 +18,8 @@
 #include <cstdlib>
 
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest-matchers.h>
 
 #include <repo/core/model/bson/repo_node_metadata.h>
 #include <repo/core/model/bson/repo_bson_builder.h>
@@ -26,20 +28,64 @@
 #include "../../../../repo_test_utils.h"
 
 using namespace repo::core::model;
+using namespace testing;
 
-static MetadataNode makeRandomMetaNode()
+std::unordered_map<std::string, repo::lib::RepoVariant> makeRandomMetadata(int seed = 0)
 {
-	uint32_t nItems = rand() % 10 + 1;
-	std::vector<std::string> keys;
-	std::vector<repo::lib::RepoVariant> values;
+	std::srand(seed);
+	std::unordered_map<std::string, repo::lib::RepoVariant> data;
+	uint32_t nItems = rand() % 100 + 1;
 	for (int i = 0; i < nItems; ++i)
 	{
-		keys.push_back(getRandomString(rand() % 10 + 1));
-		
-		repo::lib::RepoVariant v = getRandomString(rand() % 10 + 1);
-		values.push_back(v);
+		repo::lib::RepoVariant v;
+		switch (rand() % 6)
+		{
+		case 0:
+			v = (bool)(rand() > RAND_MAX / 2);
+			break;
+		case 1:
+			v = (int)(rand());
+			break;
+		case 2:
+			v = (long long)(rand());
+			break;
+		case 3:
+			v = (double)(rand());
+			break;
+		case 4:
+			v = getRandomString(rand() % 10 + 1);
+			break;
+		case 5:
+			v = getRandomTm();
+		}
+		data[getRandomString(rand() % 10 + 1)] = v;
 	}
-	return	RepoBSONFactory::makeMetaDataNode(keys, values);
+	return data;
+}
+
+/* 
+ * Define local operators required for gtest to interact with RepoVariant.
+ */
+static bool operator== (tm a, tm b)
+{
+	return difftime(std::mktime(&a), std::mktime(&b)) == 0;
+}
+
+static void operator<< (std::basic_ostream<char, std::char_traits<char>>& out, tm a)
+{
+	out << std::put_time(&a, "%d-%m-%Y %H-%M-%S");
+}
+
+MetadataNode makeRandomMetaNode(int seed = 0)
+{
+	auto m = makeRandomMetadata(seed);
+	std::vector<std::string> keys;
+	std::vector<repo::lib::RepoVariant> values;
+	for (auto& p : m) {
+		keys.push_back(p.first);
+		values.push_back(p.second);
+	}
+	return RepoBSONFactory::makeMetaDataNode(keys, values);
 }
 
 /**
@@ -48,16 +94,78 @@ static MetadataNode makeRandomMetaNode()
 TEST(MetaNodeTest, Constructor)
 {
 	MetadataNode empty;
-
-	EXPECT_TRUE(empty.isEmpty());
 	EXPECT_EQ(NodeType::METADATA, empty.getTypeAsEnum());
+	EXPECT_FALSE(empty.getUniqueID().isDefaultValue());
+	EXPECT_TRUE(empty.getSharedID().isDefaultValue());
+}
 
-	auto repoBson = RepoBSON(BSON("test" << "blah" << "test2" << 2));
+TEST(MetaNodeTest, Serialise)
+{
+	auto node = makeRandomMetaNode();
+	auto bson = (RepoBSON)node;
 
-	auto fromRepoBSON = MetadataNode(repoBson);
-	EXPECT_EQ(NodeType::METADATA, fromRepoBSON.getTypeAsEnum());
-	EXPECT_EQ(fromRepoBSON.nFields(), repoBson.nFields());
-	EXPECT_EQ(0, fromRepoBSON.getFileList().size());
+	EXPECT_THAT(bson.hasField(REPO_NODE_LABEL_ID), IsTrue());
+	EXPECT_THAT(bson.hasField(REPO_NODE_LABEL_SHARED_ID), IsTrue());
+	EXPECT_THAT(bson.hasField(REPO_NODE_LABEL_TYPE), IsTrue());
+	EXPECT_THAT(bson.hasField(REPO_NODE_LABEL_METADATA), IsTrue());
+}
+
+/*
+ * Tests the construction of a MetadataNode from BSON. This is the reference
+ * database schema and should be effectively idential to the serialise method. 
+ */
+TEST(MetaNodeTest, Deserialise)
+{
+	auto data = makeRandomMetadata();
+
+	RepoBSONBuilder builder;
+	builder.append(REPO_NODE_LABEL_ID, repo::lib::RepoUUID::createUUID());
+	builder.append(REPO_NODE_LABEL_SHARED_ID, repo::lib::RepoUUID::createUUID());
+	builder.append(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_METADATA);
+
+	std::vector<RepoBSON> metaEntries;
+	for (const auto& entry : data) {
+		std::string key = entry.first;
+		repo::lib::RepoVariant value = entry.second;
+
+		if (!key.empty())
+		{
+			RepoBSONBuilder metaEntryBuilder;
+			metaEntryBuilder.append(REPO_NODE_LABEL_META_KEY, key);
+
+			// Pass variant on to the builder
+			metaEntryBuilder.appendRepoVariant(REPO_NODE_LABEL_META_VALUE, value);
+
+			metaEntries.push_back(metaEntryBuilder.obj());
+		}
+	}
+	builder.appendArray(REPO_NODE_LABEL_METADATA, metaEntries);
+
+	MetadataNode node(builder.obj());
+
+	EXPECT_THAT(node.getUniqueID().isDefaultValue(), IsFalse());
+	EXPECT_THAT(node.getSharedID().isDefaultValue(), IsFalse());
+	EXPECT_THAT(node.getAllMetadata(), Eq(data));
+	EXPECT_THAT(node.getAllMetadata().size(), Gt(0));
+	EXPECT_THAT(node.getType(), Eq(REPO_NODE_TYPE_METADATA));
+}
+
+TEST(MetaNodeTest, Factory)
+{
+	auto m = makeRandomMetadata();
+	std::vector<std::string> keys;
+	std::vector<repo::lib::RepoVariant> values;
+	for (auto& p : m) {
+		keys.push_back(p.first);
+		values.push_back(p.second);
+	}
+
+	auto node = RepoBSONFactory::makeMetaDataNode(keys, values);
+
+	EXPECT_THAT(node.getUniqueID().isDefaultValue(), IsFalse());
+	EXPECT_THAT(node.getSharedID().isDefaultValue(), IsFalse()); // The factory method should give MetadataNode a shared Id
+	EXPECT_THAT(node.getName().empty(), IsTrue());
+	EXPECT_THAT(node.getAllMetadata(), Eq(m));
 }
 
 TEST(MetaNodeTest, TypeTest)
@@ -79,44 +187,92 @@ TEST(MetaNodeTest, SEqualTest)
 	MetadataNode empty;
 	EXPECT_TRUE(empty.sEqual(empty));
 
-	auto metaNode = makeRandomMetaNode();
-	auto metaNode2 = makeRandomMetaNode();
+	auto metaNode = makeRandomMetaNode(0);
+	auto metaNode2 = makeRandomMetaNode(1);
 
 	EXPECT_TRUE(metaNode.sEqual(metaNode));
 	EXPECT_FALSE(metaNode.sEqual(empty));
 	EXPECT_FALSE(metaNode.sEqual(metaNode2));
 }
 
-TEST(MetaNodeTest, CloneAndAddMetadataTest)
+TEST(MetaNodeTest, Sanitisation)
 {
-	MetadataNode empty;
+	// Sanitisation should take place as soon as the key is added, so the state
+	// of the node at any given time matches what will be in the database
 
-	auto metaNode = makeRandomMetaNode();
-	auto metaNode2 = makeRandomMetaNode();
+	std::unordered_map<std::string, repo::lib::RepoVariant> before = { 
+		{ "a", repo::lib::RepoVariant("b") },
+		{ "c$d", repo::lib::RepoVariant("e") },
+		{ "f..g",repo::lib::RepoVariant("h") }
+	};
 
-	auto meta1 = metaNode.getObjectField(REPO_NODE_LABEL_METADATA);
-	auto meta2 = metaNode2.getObjectField(REPO_NODE_LABEL_METADATA);
-	auto updatedMeta = empty.cloneAndAddMetadata(meta1);
+	std::unordered_map<std::string, repo::lib::RepoVariant> after = {
+		{ "a", repo::lib::RepoVariant("b") },
+		{ "c:d", repo::lib::RepoVariant("e") },
+		{ "f::g",repo::lib::RepoVariant("h") }
+	};
 
-	updatedMeta.sEqual(metaNode);
+	MetadataNode node;
 
-	auto updatedMeta2 = updatedMeta.cloneAndAddMetadata(meta2);
+	node.setMetadata(before);
+	EXPECT_THAT(node.getAllMetadata(), Eq(after));
 
-	auto resMeta = updatedMeta2.getObjectField(REPO_NODE_LABEL_METADATA);
+	node = RepoBSONFactory::makeMetaDataNode(before);
+	EXPECT_THAT(node.getAllMetadata(), Eq(after));
 
-	std::set<std::string> fieldNames1 = meta1.getFieldNames(), fieldNames2 = meta2.getFieldNames();
+}
 
-	for (const auto &fieldName : fieldNames1)
-	{
-		//Skip the ones that would be overwritten
-		if (meta2.hasField(fieldName)) continue;
-		ASSERT_TRUE(resMeta.hasField(fieldName));
-		EXPECT_EQ(resMeta.getField(fieldName), meta1.getField(fieldName));
-	}
+// This function is used by the CopyConstructor Test to return a heap-allocated
+// copy of a MetadataNode originally allocated on the stack.
+MetadataNode* makeNewMetaNode()
+{
+	auto a = makeRandomMetaNode();
+	return new MetadataNode(a);
+}
 
-	for (const auto &fieldName : fieldNames2)
-	{
-		ASSERT_TRUE(resMeta.hasField(fieldName));
-		EXPECT_EQ(resMeta.getField(fieldName), meta2.getField(fieldName));
-	}
+// This function is used by the CopyConstructor Test to return a stack-allocated
+// copy of a MetadataNode on the stack.
+MetadataNode makeRefMetaNode()
+{
+	auto m = makeRandomMetaNode();
+	return m;
+}
+
+TEST(MetaNodeTest, CopyConstructor)
+{
+	auto a = makeRandomMetaNode();
+
+	std::unordered_map<std::string, repo::lib::RepoVariant> other = {
+		{ "a", repo::lib::RepoVariant("b") },
+		{ "c:d", repo::lib::RepoVariant("e") },
+		{ "f::g",repo::lib::RepoVariant("h") }
+	};
+
+	auto b = a;
+	EXPECT_THAT(a.sEqual(b), IsTrue());
+
+	b.setMetadata(other);
+	EXPECT_THAT(a.sEqual(b), IsFalse());
+
+	auto c = new MetadataNode(a);
+	EXPECT_THAT(a.sEqual(*c), IsTrue());
+
+	c->setMetadata(other);
+	EXPECT_THAT(a.sEqual(*c), IsFalse());
+
+	delete c;
+
+	auto d = makeNewMetaNode();
+	EXPECT_THAT(a.sEqual(*d), IsTrue());
+
+	d->setMetadata(other);
+	EXPECT_THAT(a.sEqual(*d), IsFalse());
+
+	delete d;
+
+	auto e = makeRefMetaNode();
+	EXPECT_THAT(a.sEqual(e), IsTrue());
+
+	e.setMetadata(other);
+	EXPECT_THAT(a.sEqual(e), IsFalse());
 }

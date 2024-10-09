@@ -42,7 +42,7 @@ namespace RepoModelImportUtils
 		for (auto const mesh : meshes)
 		{
 			auto meshNode = static_cast<repo::core::model::MeshNode*>(mesh);
-			std::vector<repo::lib::RepoVector2D> uvs = meshNode->getUVChannels();
+			std::vector<repo::lib::RepoVector2D> uvs = meshNode->getUVChannelsSerialised();
 			std::vector<repo::lib::RepoVector3D> vertices = meshNode->getVertices();
 			if (uvs.size() != vertices.size())
 			{
@@ -51,83 +51,6 @@ namespace RepoModelImportUtils
 			}
 		}
 		return true;
-	}
-
-	static void PrintDebugMesh(std::string debugMeshDataFilePath, const repo::core::model::RepoNodeSet& meshes)
-	{
-		if (debugMeshDataFilePath != "")
-		{
-			// Print out the mesh debug text file
-			std::ofstream stream;
-			stream.open(debugMeshDataFilePath);
-			if (stream)
-			{
-				for (auto const mesh : meshes)
-				{
-					auto meshNode = static_cast<repo::core::model::MeshNode*>(mesh);
-					std::vector<repo_face_t> triangularFaces = meshNode->getFaces();
-					std::vector<repo::lib::RepoVector3D> vertices = meshNode->getVertices();
-					std::vector<repo::lib::RepoVector3D> normals = meshNode->getNormals();
-					std::vector<repo::lib::RepoVector2D> uvs = meshNode->getUVChannels();
-					char lastsep = ',';
-					stream << "------mesh------" << std::endl;
-					// Set this to the parent node id for an easier debugging life
-					stream << mesh->getName() << std::endl;
-					for (auto vertIt = vertices.begin(); vertIt != vertices.end(); ++vertIt)
-					{
-						if (vertIt == (vertices.end() - 1)) { lastsep = '\n'; }
-						stream << vertIt->x << ",";
-						stream << vertIt->y << ",";
-						stream << vertIt->z << lastsep;
-					}
-					lastsep = ',';
-					for (auto normIt = normals.begin(); normIt != normals.end(); ++normIt)
-					{
-						if (normIt == (normals.end() - 1)) { lastsep = '\n'; }
-						stream << normIt->x << ",";
-						stream << normIt->y << ",";
-						stream << normIt->z << lastsep;
-					}
-					lastsep = ',';
-					for (auto faceIt = triangularFaces.begin(); faceIt != triangularFaces.end(); ++faceIt)
-					{
-						if (faceIt == (triangularFaces.end() - 1)) { lastsep = '\n'; }
-						stream << faceIt->at(0) << ",";
-						stream << faceIt->at(1) << ",";
-						stream << faceIt->at(2) << lastsep;
-					}
-					lastsep = ',';
-					for (auto uvIt = uvs.begin(); uvIt != uvs.end(); ++uvIt)
-					{
-						if (uvIt == (uvs.end() - 1)) { lastsep = '\n'; }
-						stream << uvIt->x << ",";
-						stream << uvIt->y << lastsep;
-					}
-				}
-			}
-			stream.close();
-		}
-	}
-
-	static void DumpTextureFileImage(
-		std::string textureFilesDumpPath, 
-		const repo::core::model::RepoNodeSet& textures)
-	{
-		for (auto const img : textures)
-		{
-			auto textureNode = static_cast<repo::core::model::TextureNode*>(img);
-			std::vector<char> imgData = textureNode->getRawData();
-			boost::filesystem::path dirPath(textureFilesDumpPath);
-			boost::filesystem::path fileName("DUMP_" + textureNode->getName());
-			auto fullPath = dirPath / fileName;
-			std::ofstream stream;
-			stream.open(fullPath.string(), std::ios::binary);
-			if (stream)
-			{
-				stream.write(&imgData[0], imgData.size());
-			}
-			stream.close();
-		}
 	}
 }
 

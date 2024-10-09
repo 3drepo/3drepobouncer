@@ -22,64 +22,92 @@
 #include "repo_node_texture.h"
 #include "../../../lib/repo_log.h"
 #include <boost/filesystem.hpp>
+#include "repo_bson_builder.h"
 
 using namespace repo::core::model;
 
 TextureNode::TextureNode() :
 	RepoNode()
 {
+	width = 0;
+	height = 0;
 }
 
 TextureNode::TextureNode(RepoBSON bson, const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>&binMapping) :
 	RepoNode(bson, binMapping)
 {
+	width = 0;
+	height = 0;
+	deserialise(bson);
 }
 
 TextureNode::~TextureNode()
 {
 }
 
-std::vector<char> TextureNode::getRawData() const
+void TextureNode::deserialise(RepoBSON& bson)
 {
-	std::vector<char> dataVec;
-	if (hasBinField(REPO_LABEL_DATA))
+	if (bson.hasBinField(REPO_LABEL_DATA))
 	{
-		getBinaryFieldAsVector(REPO_LABEL_DATA, dataVec);
-	}
-	else {
-		repoError << "Cannot find field for data in texture node!";
+		bson.getBinaryFieldAsVector(REPO_LABEL_DATA, data);
 	}
 
-	return dataVec;
+	if (bson.hasField(REPO_LABEL_WIDTH))
+	{
+		width = bson.getIntField(REPO_LABEL_WIDTH);
+	}
+
+	if (bson.hasField(REPO_LABEL_HEIGHT))
+	{
+		height = bson.getIntField(REPO_LABEL_HEIGHT);
+	}
+
+	if (bson.hasField(REPO_NODE_LABEL_EXTENSION)) 
+	{
+		extension = bson.getStringField(REPO_NODE_LABEL_EXTENSION);
+	}
 }
 
-std::string TextureNode::getFileExtension() const
+void TextureNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 {
-	return getStringField(REPO_NODE_LABEL_EXTENSION);
+	RepoNode::serialise(builder);
+
+	builder.append(REPO_LABEL_WIDTH, width);
+	builder.append(REPO_LABEL_HEIGHT, height);
+
+	if (!extension.empty()) 
+	{
+		builder.append(REPO_NODE_LABEL_EXTENSION, extension);
+	}
+
+	if (data.size()) {
+		builder.appendLargeArray(REPO_LABEL_DATA, data);
+	}
+	else
+	{
+		repoWarning << " Creating a texture node with no texture!";
+	}
 }
 
 bool TextureNode::sEqual(const RepoNode &other) const
 {
-	if (other.getTypeAsEnum() != NodeType::TEXTURE || other.getParentIDs().size() != getParentIDs().size())
+	if (other.getTypeAsEnum() != NodeType::TEXTURE)
 	{
 		return false;
 	}
 
-	TextureNode otherText = TextureNode(other);
-	bool equal;
+	auto node = dynamic_cast<const TextureNode&>(other);
 
-	if (equal = getFileExtension() == otherText.getFileExtension())
-	{
-		std::vector<char> raw, raw2;
+	// The file extension and dimensions are just metadata of the underlying
+	// buffer - if this is identical, then the textures are identical.
 
-		raw = getRawData();
-		raw2 = otherText.getRawData();
+	auto buf1 = getRawData();
+	auto buf2 = node.getRawData();
 
-		if (equal = (raw.size() == raw2.size()))
-		{
-			equal = !memcmp(raw.data(), raw2.data(), raw.size() * sizeof(*raw.data()));
-		}
-	}
+	return buf1 == buf2;
+}
 
-	return equal;
+bool TextureNode::isEmpty() const
+{
+	return !data.size();
 }

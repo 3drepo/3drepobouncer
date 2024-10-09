@@ -50,6 +50,30 @@ namespace repo {
 				RepoBSONBuilder();
 				~RepoBSONBuilder();
 
+				using BinMapping = std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>;
+
+				BinMapping& mapping()
+				{
+					return binMapping;
+				}
+
+			private:
+				BinMapping binMapping;
+
+			public:
+
+				// (Keep the templated definition in the header so the compiler
+				// can create concrete classes with the templated types when they
+				// are used)
+
+				template<typename T>
+				void appendLargeArray(std::string name, const std::vector<T>& data)
+				{
+					appendLargeArray(name, &data[0], data.size() * sizeof(data[0]));
+				}
+
+				void appendLargeArray(std::string name, const void* data, size_t size);
+
 				/**
 				* Append a vector as object into the bson
 				* This function creates an embedded RepoBSON and append that object as an array into the builder

@@ -307,8 +307,7 @@ int32_t generateStash(
 	{
 		auto revs = controller->getAllFromCollectionContinuous(token, dbName, project + ".history");
 		for (const auto& rev : revs) {
-			auto revNode = (const repo::core::model::RevisionNode)rev;
-			auto revId = revNode.getUniqueID();
+			auto revId = repo::core::model::RepoNode(rev).getUniqueID();
 			success &= _generateStash(controller, token, type, dbName, project, false, revId.toString());
 		}
 	}

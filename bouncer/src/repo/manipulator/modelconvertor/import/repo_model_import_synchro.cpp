@@ -216,8 +216,10 @@ repo::core::model::MeshNode* SynchroModelImport::createMeshNode(
 	//trans[7] -= offset[1];
 	//trans[11] -= offset[2];
 	auto matrix = repo::lib::RepoMatrix(trans);
-	return new repo::core::model::MeshNode(
-		templateMesh.cloneAndApplyTransformation(matrix).cloneAndAddParent(parentID, true, true));
+	auto instance = templateMesh.cloneAndApplyTransformation(matrix);
+	instance.addParent(parentID);
+	instance.setSharedID(repo::lib::RepoUUID::createUUID());
+	return new repo::core::model::MeshNode(instance);
 }
 
 std::vector<repo::lib::RepoUUID> SynchroModelImport::findRecursiveMeshSharedIDs(
@@ -851,10 +853,10 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 			if (!matrix.isIdentity()) {
 				resourceIDLastTrans[resourceID] = matrix;
 				for (const auto transId : resourceIDsToTransIDs[resourceID]) {
-					auto node = (repo::core::model::TransformationNode*) scene->getNodeByUniqueID(
-						repo::core::model::RepoScene::GraphType::DEFAULT, transId);
-
-					node->swap(node->cloneAndApplyTransformation(matrix.getData()));
+					auto node = dynamic_cast<repo::core::model::TransformationNode*>(
+						scene->getNodeByUniqueID(repo::core::model::RepoScene::GraphType::DEFAULT, transId)
+					);
+					node->applyTransformation(matrix.getData());
 				}
 
 				auto matInverse = matrix.invert();
@@ -901,8 +903,10 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 		repoInfo << "transforming Mesh: " << transformingResources.size();
 		for (const auto &resourceID : transformingResources) {
 			for (const auto &mesh : resourceIDsToSharedIDs[resourceID]) {
-				auto meshNode = (repo::core::model::MeshNode*) scene->getNodeBySharedID(repo::core::model::RepoScene::GraphType::DEFAULT, mesh);
-				meshNode->swap(meshNode->cloneAndNoteGrouping(resourceID));
+				auto meshNode = dynamic_cast<repo::core::model::MeshNode*>(
+					scene->getNodeBySharedID(repo::core::model::RepoScene::GraphType::DEFAULT, mesh)
+				);
+				meshNode->setGrouping(resourceID);
 			}
 		}
 

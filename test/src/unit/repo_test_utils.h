@@ -20,6 +20,8 @@
 #include <repo/core/model/bson/repo_node_metadata.h>
 #include "repo_test_database_info.h"
 #include "repo_test_fileservice_info.h"
+#include "repo/lib/datastructure/repo_variant.h"
+#include "repo/lib/datastructure/repo_variant_utils.h"
 #include <fstream>
 
 static repo::RepoController::RepoToken* initController(repo::RepoController *controller) {
@@ -187,6 +189,21 @@ static std::string getRandomString(const uint32_t &iLen)
 	return sStr;
 }
 
+static tm getRandomTm()
+{
+	tm tm;
+	tm.tm_sec = rand() % 60;
+	tm.tm_min = rand() % 60;
+	tm.tm_hour = rand() % 24;
+	tm.tm_mday = 1 + (rand() % 30);
+	tm.tm_mon = rand() % 12;
+	tm.tm_year = 70 + (rand() % 100); // Converting to mongo date requires the date be after the Unix epoch (1970)
+	tm.tm_wday = rand() % 7;
+	tm.tm_yday = rand() % 366;
+	tm.tm_isdst = rand() % 2;
+	return tm;
+}
+
 // Searches all elements in a project for one with metadata matching the
 // key-value provided, and returns true if that element has geometry Keys and
 // Values are case-sensitive. Additionally, if a value is a string type, it will
@@ -215,22 +232,16 @@ static bool projectHasGeometryWithMetadata(std::string dbName, std::string proje
 
 			for (auto m : metadata) {
 				auto metaDataNode = dynamic_cast<repo::core::model::MetadataNode*>(m);
-				auto metaDataArray = m->getField(REPO_NODE_LABEL_METADATA).Array();
+				auto metaDataArray = metaDataNode->getAllMetadata();
 				for (auto entry : metaDataArray)
 				{
-					// Keys are always strings for the metadata
-
-					auto aKey = entry.toMongoElement().Obj().getField(REPO_NODE_LABEL_META_KEY).String();
-
-					// toString will stringify the underlying type of the value, in the same
-					// way it is stringified for the frontend.
-
-					std::string aValue = entry.toMongoElement().Obj().getField(REPO_NODE_LABEL_META_VALUE).toString(false);
+					auto aKey = entry.first;
+					std::string aValue = boost::apply_visitor(repo::lib::StringConversionVisitor(), entry.second);
 
 					// Note: the string conversion encloses values that are stored as strings in the DB with \"
 					// We will need to remove them to guarantee a correct comparison
 					std::string sanitisedValue;
-					if (aValue.length() > 2 && aValue.substr(0, 1) == "\"" && aValue.substr(aValue.length() - 1, 1) == "\"")					{
+					if (aValue.length() > 2 && aValue.substr(0, 1) == "\"" && aValue.substr(aValue.length() - 1, 1) == "\"") {
 						sanitisedValue = aValue.substr(1, aValue.length() - 2);
 					} else {
 						sanitisedValue = aValue;
@@ -299,17 +310,11 @@ static bool projectHasMetaNodesWithPaths(std::string dbName, std::string project
 
 			for (auto m : metadata) {
 				auto metaDataNode = dynamic_cast<repo::core::model::MetadataNode*>(m);
-				auto metaDataArray = m->getField(REPO_NODE_LABEL_METADATA).Array();
+				auto metaDataArray = metaDataNode->getAllMetadata();
 				for (auto entry : metaDataArray)
 				{
-					// Keys are always strings for the metadata
-
-					auto aKey = entry.toMongoElement().Obj().getField(REPO_NODE_LABEL_META_KEY).String();
-
-					// toString will stringify the underlying type of the value, in the same
-					// way it is stringified for the frontend.
-
-					auto aValue = entry.toMongoElement().Obj().getField(REPO_NODE_LABEL_META_VALUE).toString(false);
+					auto aKey = entry.first;
+					std::string aValue = boost::apply_visitor(repo::lib::StringConversionVisitor(), entry.second);
 
 					if (aKey == key && aValue == value)
 					{

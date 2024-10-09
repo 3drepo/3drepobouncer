@@ -20,13 +20,41 @@
 * for unit test implementations.
 */
 
-#include <repo/core/model/bson/repo_bson_factory.h>
 #include <boost/functional/hash.hpp>
+#include <repo/core/model/bson/repo_node_mesh.h>
 
 namespace repo {
 	namespace test {
 		namespace utils {
 			namespace mesh {
+
+				/*
+				* A set of mesh data that might be stored by a MeshNode. Geometry is
+				* initialised based on the parameters provided to the constructor.
+				* Faces are generated such that all vertices are referenced.
+				*/
+				struct mesh_data
+				{
+					mesh_data(
+						bool name,
+						bool sharedId,
+						int numParents,
+						int faceSize,
+						bool normals,
+						int numUvChannels,
+						int numVertices
+					);
+
+					std::string name;
+					repo::lib::RepoUUID uniqueId;
+					repo::lib::RepoUUID sharedId;
+					std::vector<repo::lib::RepoUUID> parents;
+					std::vector<std::vector<float>> boundingBox;
+					std::vector<repo::lib::RepoVector3D> vertices;
+					std::vector<repo_face_t> faces;
+					std::vector<repo::lib::RepoVector3D> normals;
+					std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
+				};
 
 				struct GenericFace
 				{
@@ -72,6 +100,10 @@ namespace repo {
 					const int primitiveSize,
 					const std::vector<repo::lib::RepoUUID>& parent);
 
+				/*
+				* Compare the geometric content of two meshes to determine if their
+				* hulls are identical.
+				*/
 				bool compareMeshes(
 					repo::core::model::RepoNodeSet original,
 					repo::core::model::RepoNodeSet stash);
@@ -79,6 +111,59 @@ namespace repo {
 				void addFaces(
 					repo::core::model::MeshNode* mesh, 
 					std::vector<GenericFace>& faces);
+
+				/*
+				* Creates a RepoBSON for a MeshNode based on the mesh_data
+				*/
+				repo::core::model::RepoBSON meshNodeTestBSONFactory(mesh_data);
+
+				/*
+				* Creates a MeshNode based on the mesh_data
+				*/
+				repo::core::model::MeshNode makeMeshNode(mesh_data);
+
+				/*
+				* Creates a random mesh with the given format. The RepoNode properties
+				* (uniqueId, sharedId, etc) are not initialised.
+				*/
+				repo::core::model::MeshNode makeMeshNode(int primitive, bool normals, int uvs);
+
+				/*
+				* Creates an arbitrary transform matrix
+				*/
+				repo::lib::RepoMatrix makeTransform(bool translation, bool rotation);
+
+				/*
+				* Compares mesh nodes for absolute equality of all members. This is beyond
+				* the hulls being the same - this method expects that the meshes are
+				* effectively memory-equivalent.
+				*/
+				void compareMeshNode(mesh_data expected, repo::core::model::MeshNode actual);
+
+				/*
+				* Creates randomised vertices
+				*/
+				std::vector<repo::lib::RepoVector3D> makeVertices(int num);
+
+				/*
+				* Creates randomised normals
+				*/
+				std::vector<repo::lib::RepoVector3D> makeNormals(int num);
+
+				/*
+				* Creates randomised UVs
+				*/
+				std::vector<repo::lib::RepoVector2D> makeUVs(int num);
+
+				/*
+				* Creates randomised faces
+				*/
+				std::vector<repo_face_t> makeFaces(repo::core::model::MeshNode::Primitive);
+
+				/*
+				* Computes the bounding box for a set of vertices
+				*/
+				std::vector< repo::lib::RepoVector3D> getBoundingBox(std::vector< repo::lib::RepoVector3D> vertices);
 			}
 		}
 	}

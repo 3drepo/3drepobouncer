@@ -1,4 +1,6 @@
 #include "repo_bson_element.h"
+#include "../../../lib/datastructure/repo_variant.h"
+#include "../../../lib/repo_exception.h"
 
 using namespace repo::core::model;
 
@@ -64,4 +66,38 @@ ElementType RepoBSONElement::type() const
 	}
 
 	return elementType;
+}
+
+repo::lib::RepoVariant RepoBSONElement::repoVariant() const
+{
+	repo::lib::RepoVariant v;
+	switch (type())
+	{
+	case ElementType::BOOL:
+		v = Bool();
+		break;
+	case ElementType::DATE:
+		{
+		tm time;
+		auto d = date();
+		d.toTm(&time);
+		v = time;
+		}
+		break;
+	case ElementType::INT:
+		v = Int();
+		break;
+	case ElementType::LONG:
+		v = Long();
+		break;
+	case ElementType::DOUBLE:
+		v = Double();
+		break;
+	case ElementType::STRING:
+		v = String();
+		break;
+	default:
+		throw repo::lib::RepoException("Cannot convert BSONElement to Variant because Variant will not accept the type.");
+	}
+	return v;
 }

@@ -24,25 +24,30 @@ namespace repo {
 			class REPO_API_EXPORT SupermeshNode : public MeshNode
 			{
 			public:
-				SupermeshNode()
-				{
-				}
+				SupermeshNode();
 
 				SupermeshNode(RepoBSON bson,
-					const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>& binMapping) : MeshNode(bson, binMapping)
+					const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>& binMapping);
+
+			protected:
+				std::vector<repo_mesh_mapping_t> mappings;
+				std::vector<float> submeshIds;
+
+			protected:
+				virtual void deserialise(RepoBSON&);
+				virtual void serialise(repo::core::model::RepoBSONBuilder&) const;
+
+			public:
+
+				std::vector<repo_mesh_mapping_t> getMeshMapping() const
 				{
+					return mappings;
 				}
 
-				std::vector<repo_mesh_mapping_t> getMeshMapping() const;
-				std::vector<float> getSubmeshIds() const;
-
-				/**
-				* Create a new copy of the node and update its mesh mapping
-				* @return returns a new meshNode with the new mappings
-				*/
-				SupermeshNode cloneAndUpdateMeshMapping(
-					const std::vector<repo_mesh_mapping_t>& vec,
-					const bool& overwrite = false);
+				std::vector<float> getSubmeshIds() const
+				{
+					return submeshIds;
+				}
 
 				/**
 				* Given a mesh mapping, convert it into a bson object

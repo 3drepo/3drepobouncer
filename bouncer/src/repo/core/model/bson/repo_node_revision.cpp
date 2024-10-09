@@ -20,39 +20,52 @@
 */
 
 #include "repo_node_revision.h"
+#include "repo_bson_builder.h"
 
 using namespace repo::core::model;
 
 RevisionNode::RevisionNode(RepoBSON bson) :
 	RepoNode(bson)
 {
+	deserialise(bson);
 }
+
 RevisionNode::RevisionNode() :
 	RepoNode()
 {
+	status = UploadStatus::COMPLETE;
+	timestamp = 0;
 }
 
 RevisionNode::~RevisionNode()
 {
 }
 
-RevisionNode::UploadStatus RevisionNode::getUploadStatus() const
+void RevisionNode::deserialise(RepoBSON& bson)
 {
-	UploadStatus status = UploadStatus::COMPLETE;
-	if (hasField(REPO_NODE_REVISION_LABEL_INCOMPLETE))
+	status = UploadStatus::COMPLETE;
+	if (bson.hasField(REPO_NODE_REVISION_LABEL_INCOMPLETE))
 	{
-		status = (UploadStatus)getIntField(REPO_NODE_REVISION_LABEL_INCOMPLETE);
+		status = (UploadStatus)bson.getIntField(REPO_NODE_REVISION_LABEL_INCOMPLETE);
+	}
+	if (bson.hasField(REPO_NODE_REVISION_LABEL_AUTHOR)) 
+	{
+		author = bson.getStringField(REPO_NODE_REVISION_LABEL_AUTHOR);
+	}
+	timestamp = bson.getTimeStampField(REPO_NODE_REVISION_LABEL_TIMESTAMP);
+}
+
+
+void RevisionNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
+{
+	RepoNode::serialise(builder);
+	if (status != UploadStatus::COMPLETE)
+	{
+		builder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, (uint32_t)status);
+	}
+	if (!author.empty()) {
+		builder.append(REPO_NODE_REVISION_LABEL_AUTHOR, author);
 	}
 
-	return status;
-}
-
-std::string RevisionNode::getAuthor() const
-{
-	return getStringField(REPO_NODE_REVISION_LABEL_AUTHOR);
-}
-
-int64_t RevisionNode::getTimestampInt64() const
-{
-	return getTimeStampField(REPO_NODE_REVISION_LABEL_TIMESTAMP);
+	builder.appendTime(REPO_NODE_REVISION_LABEL_TIMESTAMP, ((int64_t)timestamp) * 1000);
 }

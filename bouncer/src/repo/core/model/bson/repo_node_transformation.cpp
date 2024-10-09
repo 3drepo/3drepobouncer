@@ -27,139 +27,52 @@ using namespace repo::core::model;
 TransformationNode::TransformationNode() :
 RepoNode()
 {
+	// (The default matrix constructor initialises itself to identity)
 }
 
 TransformationNode::TransformationNode(RepoBSON bson) :
 RepoNode(bson)
 {
+	deserialise(bson);
 }
 
 TransformationNode::~TransformationNode()
 {
 }
 
-RepoNode TransformationNode::cloneAndApplyTransformation(
-	const repo::lib::RepoMatrix &matrix) const
+void TransformationNode::deserialise(RepoBSON& bson)
 {
-	RepoNode resultNode;
-	RepoBSONBuilder builder;
-	
-	auto currentTrans = getTransMatrix(false);
-	auto resultTrans = currentTrans * matrix;
-	auto resultData = resultTrans.getData();
-
-	RepoBSONBuilder rows;
-	for (uint32_t i = 0; i < 4; ++i)
-	{
-		RepoBSONBuilder columns;
-		for (uint32_t j = 0; j < 4; ++j){
-			size_t idx = i * 4 + j;
-			columns.append(std::to_string(j), resultData[idx]);
-		}
-		rows.appendArray(std::to_string(i), columns.obj());
-	}
-	builder.appendArray(REPO_NODE_LABEL_MATRIX, rows.obj());
-	
-
-	builder.appendElementsUnique(*this);
-
-	return TransformationNode(RepoBSON(builder.mongoObj(), bigFiles));
+	matrix = bson.getMatrixField(REPO_NODE_LABEL_MATRIX);
 }
 
-TransformationNode TransformationNode::cloneAndResetMatrix() const
+void TransformationNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 {
-	RepoNode resultNode;
-	RepoBSONBuilder builder;
-
-	RepoBSONBuilder rows;
-	for (uint32_t i = 0; i < 4; ++i)
-	{
-		RepoBSONBuilder columns;
-		for (uint32_t j = 0; j < 4; ++j){
-			columns.append(std::to_string(j), (i == j ? 1.0 : 0.0));
-		}
-		rows.appendArray(std::to_string(i), columns.obj());
-	}
-	builder.appendArray(REPO_NODE_LABEL_MATRIX, rows.obj());
-
-	builder.appendElementsUnique(*this);
-
-	return TransformationNode(RepoBSON(builder.mongoObj(), bigFiles));
+	RepoNode::serialise(builder);
+	builder.append(REPO_NODE_LABEL_MATRIX, matrix);
 }
 
-std::vector<std::vector<float>> TransformationNode::identityMat()
+void TransformationNode::applyTransformation(const repo::lib::RepoMatrix& t)
 {
-	std::vector<std::vector<float>> idMat;
-	idMat.push_back({ 1, 0, 0, 0 });
-	idMat.push_back({ 0, 1, 0, 0 });
-	idMat.push_back({ 0, 0, 1, 0 });
-	idMat.push_back({ 0, 0, 0, 1 });
-	return idMat;
+	matrix = matrix * t;
+}
+
+void TransformationNode::setTransformation(const repo::lib::RepoMatrix& t)
+{
+	matrix = t;
 }
 
 bool TransformationNode::isIdentity(const float &eps) const
 {
-	
-	return  getTransMatrix(false).isIdentity(eps);
-}
-
-repo::lib::RepoMatrix TransformationNode::getTransMatrix(const bool &rowMajor) const
-{
-	std::vector<mongo::BSONElement> rows;
-	std::vector<mongo::BSONElement> cols;
-	std::vector<float> transformationMatrix;
-
-	uint32_t rowInd = 0, colInd = 0;
-	if (hasField(REPO_NODE_LABEL_MATRIX))
-	{
-		transformationMatrix.resize(16);
-		float *transArr = &transformationMatrix.at(0);
-
-		// matrix is stored as array of arrays
-		auto matrixObj =
-			getField(REPO_NODE_LABEL_MATRIX).embeddedObject();
-
-		matrixObj.elems(rows);
-		for (size_t rowInd = 0; rowInd < 4; rowInd++)
-		{
-			cols.clear();
-			rows[rowInd].embeddedObject().elems(cols);
-			for (size_t colInd = 0; colInd < 4; colInd++)
-			{
-				uint32_t index;
-				if (rowMajor) // Whether to return the matrix transposed - matrices are always *stored* row-major.
-				{
-					index = colInd * 4 + rowInd;
-				}
-				else
-				{
-					index = rowInd * 4 + colInd;
-				}
-
-				transArr[index] = cols[colInd].number();
-			}
-		}
-		return repo::lib::RepoMatrix(transformationMatrix);
-	}
-	else
-	{
-		repoWarning << "This transformation has no matrix field, returning identity";
-		return repo::lib::RepoMatrix();
-	}
+	return  getTransMatrix().isIdentity(eps);
 }
 
 bool TransformationNode::sEqual(const RepoNode &other) const
 {
-	if (other.getTypeAsEnum() != NodeType::TRANSFORMATION || other.getParentIDs().size() != getParentIDs().size())
+	if (other.getTypeAsEnum() != NodeType::TRANSFORMATION)
 	{
-		repoTrace << "Failed at start";
 		return false;
 	}
 
-	const TransformationNode otherTrans = TransformationNode(other);
-
-	auto mat = getTransMatrix(false);
-	auto otherMat = otherTrans.getTransMatrix(false);
-
-	return mat == otherMat;
+	auto node = dynamic_cast<const TransformationNode&>(other);
+	return matrix == node.matrix;
 }

@@ -33,12 +33,14 @@ TEST(DrawingRevisionNodeTest, Node)
 	// test we mock up a BSON using the expected schema. Note that not all
 	// fields are required by bouncer so not all have accessors implemented.
 
+	auto id = repo::lib::RepoUUID::createUUID();
 	auto model = repo::lib::RepoUUID::createUUID().toString();
 	auto project = repo::lib::RepoUUID::createUUID();
 	auto file = repo::lib::RepoUUID::createUUID();
 	auto format = "dwg";
 
 	RepoBSONBuilder builder;
+	builder.append(REPO_LABEL_ID, id);
 	builder.append("model", model);
 	builder.append("project", project);
 	builder.append("format", format);
@@ -56,15 +58,21 @@ TEST(DrawingRevisionNodeTest, Node)
 	EXPECT_EQ(revision.getModel(), model);
 	EXPECT_EQ(revision.getFormat(), format);
 
-	// Check that clone and add image works
+	// Check that the type information is correct
+
+	EXPECT_EQ(revision.getType(), REPO_NODE_TYPE_REVISION);
+
+	// Check that adding the image works
 
 	auto image = repo::lib::RepoUUID::createUUID();
-	auto revision1 = revision.cloneAndAddImage(image);
-	EXPECT_EQ(revision1.getUUIDField("image"), image);
+	revision.addImage(image);
+	auto bson1 = (RepoBSON)revision;
+	EXPECT_EQ(bson1.getUUIDField("image"), image);
 
-	// Check that clone and add image overwrites existing images
+	// Check that add image overwrites existing image
 
 	image = repo::lib::RepoUUID::createUUID();
-	auto revision2 = revision1.cloneAndAddImage(image);
-	EXPECT_EQ(revision2.getUUIDField("image"), image);
+	revision.addImage(image);
+	auto bson2 = (RepoBSON)revision;
+	EXPECT_EQ(bson2.getUUIDField("image"), image);
 }

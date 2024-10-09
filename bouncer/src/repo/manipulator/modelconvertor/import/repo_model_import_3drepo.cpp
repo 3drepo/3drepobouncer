@@ -428,7 +428,7 @@ void RepoModelImport::createObject(const ptree& tree)
 
 		for (auto& meta : metas)
 		{
-			*meta = meta->cloneAndAddParent(metaParentIDs);
+			meta->addParents(metaParentIDs);
 		}
 	}
 }
@@ -647,9 +647,8 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t& errCod
 	materials.clear();
 	for (int i = 0; i < matNodeList.size(); i++)
 	{
-		repo::core::model::MaterialNode* tmpMaterial = new repo::core::model::MaterialNode();
-		*tmpMaterial = matNodeList[i]->cloneAndAddParent(matParents[i]);
-		materials.insert(tmpMaterial);
+		//TODO SJF: check if we actually need to clone here...
+		materials.insert(new repo::core::model::MaterialNode(matNodeList[i]->cloneAndAddParent(matParents[i])));
 	}
 
 	// Preparing reference files
@@ -686,10 +685,8 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t& errCod
 			entry.uvChannels,
 			std::string(),
 			{ entry.parent });
-		repo::core::model::RepoBSONBuilder builder;
-		builder.append(REPO_NODE_LABEL_SHARED_ID, entry.sharedID);
-		auto changes = builder.obj();
-		meshes.insert(new repo::core::model::MeshNode(mesh.cloneAndAddFields(&changes, false)));
+		mesh.setSharedID(entry.sharedID);
+		meshes.insert(new repo::core::model::MeshNode(mesh));
 	}
 
 	// Generate scene

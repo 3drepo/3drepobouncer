@@ -18,13 +18,16 @@
 #include <cstdlib>
 #include <repo/lib/datastructure/repo_matrix.h>
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest-matchers.h>
 
 #include "../../repo_test_utils.h"
-
-
+#include "../../repo_test_matchers.h"
 
 using namespace repo::lib;
+using namespace testing;
 
+#define RAD(x) ((float)x*(3.14159274101257324219 / 180))
 
 bool checkIsIdentity(const RepoMatrix &mat)
 {
@@ -175,7 +178,6 @@ TEST(RepoMatrixTest, isIdentityTest)
 	EXPECT_TRUE(RepoMatrix(lowerUnder).isIdentity(eps));
 }
 
-
 TEST(RepoMatrixTest, toStringTest)
 {	
 
@@ -320,3 +322,45 @@ TEST(RepoMatrixTest, neqOpTest)
 
 }
 
+TEST(RepoMatrixTest, RotateX)
+{
+	repo::lib::RepoVector3D x(1, 0, 0);
+	repo::lib::RepoVector3D y(0, 1, 0);
+	repo::lib::RepoVector3D z(0, 0, 1);
+
+	EXPECT_THAT(RepoMatrix::rotationX(RAD(45)) * x, VectorNear(x));
+	EXPECT_THAT(RepoMatrix::rotationX(RAD(90)) * y, VectorNear(z));
+	EXPECT_THAT(RepoMatrix::rotationX(RAD(45)) * repo::lib::RepoVector3D(1, 1, 1), VectorNear(repo::lib::RepoVector3D(1, 0, 1.41421353816986084)));
+}
+
+TEST(RepoMatrixTest, RotateY)
+{
+	repo::lib::RepoVector3D x(1, 0, 0);
+	repo::lib::RepoVector3D y(0, 1, 0);
+	repo::lib::RepoVector3D z(0, 0, 1);
+
+	EXPECT_THAT(RepoMatrix::rotationY(RAD(45)) * y, VectorNear(y));
+	EXPECT_THAT(RepoMatrix::rotationY(RAD(90)) * z, VectorNear(x));
+	EXPECT_THAT(RepoMatrix::rotationY(RAD(45)) * repo::lib::RepoVector3D(1, 1, 1), VectorNear(repo::lib::RepoVector3D(1.41421353816986084, 1, 0)));
+}
+
+TEST(RepoMatrixTest, RotateZ)
+{
+	repo::lib::RepoVector3D x(1, 0, 0);
+	repo::lib::RepoVector3D y(0, 1, 0);
+	repo::lib::RepoVector3D z(0, 0, 1);
+
+	EXPECT_THAT(RepoMatrix::rotationZ(RAD(45)) * z, VectorNear(z));
+	EXPECT_THAT(RepoMatrix::rotationZ(RAD(90)) * x, VectorNear(y));
+	EXPECT_THAT(RepoMatrix::rotationZ(RAD(45)) * repo::lib::RepoVector3D(1, 1, 1), VectorNear(repo::lib::RepoVector3D(0, 1.41421353816986084, 1)));
+}
+
+TEST(RepoMatrixTest, Translate)
+{
+	repo::lib::RepoVector3D a(rand(), rand(), rand());
+	repo::lib::RepoVector3D b(rand(), rand(), rand());
+
+	repo::lib::RepoVector3D c(a.x + b.x, a.y + b.y, a.z + b.z);
+
+	EXPECT_THAT(RepoMatrix::translate(a) * b, VectorNear(c));
+}

@@ -20,6 +20,7 @@
 */
 
 #include "repo_node_material.h"
+#include "repo_bson_builder.h"
 
 using namespace repo::core::model;
 
@@ -31,55 +32,82 @@ RepoNode()
 MaterialNode::MaterialNode(RepoBSON bson) :
 RepoNode(bson)
 {
+	deserialise(bson);
 }
 
 MaterialNode::~MaterialNode()
 {
 }
 
-repo_material_t MaterialNode::getMaterialStruct() const
+void MaterialNode::deserialise(RepoBSON& bson)
 {
-	repo_material_t mat;
-
-	std::vector<float> tempVec = getFloatArray(REPO_NODE_MATERIAL_LABEL_AMBIENT);
+	std::vector<float> tempVec = bson.getFloatArray(REPO_NODE_MATERIAL_LABEL_AMBIENT);
 	if (tempVec.size() > 0)
-		mat.ambient.insert(mat.ambient.end(), tempVec.begin(), tempVec.end());
+		material.ambient.insert(material.ambient.end(), tempVec.begin(), tempVec.end());
 
-	tempVec = getFloatArray(REPO_NODE_MATERIAL_LABEL_DIFFUSE);
+	tempVec = bson.getFloatArray(REPO_NODE_MATERIAL_LABEL_DIFFUSE);
 	if (tempVec.size() > 0)
-		mat.diffuse.insert(mat.diffuse.end(), tempVec.begin(), tempVec.end());
+		material.diffuse.insert(material.diffuse.end(), tempVec.begin(), tempVec.end());
 
-	tempVec = getFloatArray(REPO_NODE_MATERIAL_LABEL_SPECULAR);
+	tempVec = bson.getFloatArray(REPO_NODE_MATERIAL_LABEL_SPECULAR);
 	if (tempVec.size() > 0)
-		mat.specular.insert(mat.specular.end(), tempVec.begin(), tempVec.end());
+		material.specular.insert(material.specular.end(), tempVec.begin(), tempVec.end());
 
-	tempVec = getFloatArray(REPO_NODE_MATERIAL_LABEL_EMISSIVE);
+	tempVec = bson.getFloatArray(REPO_NODE_MATERIAL_LABEL_EMISSIVE);
 	if (tempVec.size() > 0)
-		mat.emissive.insert(mat.emissive.end(), tempVec.begin(), tempVec.end());
+		material.emissive.insert(material.emissive.end(), tempVec.begin(), tempVec.end());
 
-	mat.isWireframe = hasField(REPO_NODE_MATERIAL_LABEL_WIREFRAME) &&
-		getBoolField(REPO_NODE_MATERIAL_LABEL_WIREFRAME);
+	material.isWireframe = bson.hasField(REPO_NODE_MATERIAL_LABEL_WIREFRAME) &&
+		bson.getBoolField(REPO_NODE_MATERIAL_LABEL_WIREFRAME);
 
-	mat.isTwoSided = hasField(REPO_NODE_MATERIAL_LABEL_TWO_SIDED) &&
-		getBoolField(REPO_NODE_MATERIAL_LABEL_TWO_SIDED);
+	material.isTwoSided = bson.hasField(REPO_NODE_MATERIAL_LABEL_TWO_SIDED) &&
+		bson.getBoolField(REPO_NODE_MATERIAL_LABEL_TWO_SIDED);
 
-	mat.opacity = hasField(REPO_NODE_MATERIAL_LABEL_OPACITY) ?
-		getDoubleField(REPO_NODE_MATERIAL_LABEL_OPACITY):
+	material.opacity = bson.hasField(REPO_NODE_MATERIAL_LABEL_OPACITY) ?
+		bson.getDoubleField(REPO_NODE_MATERIAL_LABEL_OPACITY) :
 		std::numeric_limits<float>::quiet_NaN();
 
-	mat.shininess = hasField(REPO_NODE_MATERIAL_LABEL_SHININESS) ?
-		getDoubleField(REPO_NODE_MATERIAL_LABEL_SHININESS):
+	material.shininess = bson.hasField(REPO_NODE_MATERIAL_LABEL_SHININESS) ?
+		bson.getDoubleField(REPO_NODE_MATERIAL_LABEL_SHININESS) :
 		std::numeric_limits<float>::quiet_NaN();
 
-	mat.shininessStrength = hasField(REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH) ?
-		getDoubleField(REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH):
+	material.shininessStrength = bson.hasField(REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH) ?
+		bson.getDoubleField(REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH) :
 		std::numeric_limits<float>::quiet_NaN();
 
-	mat.lineWeight = hasField(REPO_NODE_MATERIAL_LABEL_LINE_WEIGHT) ?
-		getDoubleField(REPO_NODE_MATERIAL_LABEL_LINE_WEIGHT) :
+	material.lineWeight = bson.hasField(REPO_NODE_MATERIAL_LABEL_LINE_WEIGHT) ?
+		bson.getDoubleField(REPO_NODE_MATERIAL_LABEL_LINE_WEIGHT) :
 		std::numeric_limits<float>::quiet_NaN();
+}
 
-	return mat;
+
+void MaterialNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
+{
+	RepoNode::serialise(builder);
+	if (material.ambient.size() > 0)
+		builder.appendArray(REPO_NODE_MATERIAL_LABEL_AMBIENT, material.ambient);
+	if (material.diffuse.size() > 0)
+		builder.appendArray(REPO_NODE_MATERIAL_LABEL_DIFFUSE, material.diffuse);
+	if (material.specular.size() > 0)
+		builder.appendArray(REPO_NODE_MATERIAL_LABEL_SPECULAR, material.specular);
+	if (material.emissive.size() > 0)
+		builder.appendArray(REPO_NODE_MATERIAL_LABEL_EMISSIVE, material.emissive);
+
+	if (material.isWireframe)
+		builder.append(REPO_NODE_MATERIAL_LABEL_WIREFRAME, material.isWireframe);
+	if (material.isTwoSided)
+		builder.append(REPO_NODE_MATERIAL_LABEL_TWO_SIDED, material.isTwoSided);
+
+	// Checking for NaN values
+
+	if (material.opacity == material.opacity)
+		builder.append(REPO_NODE_MATERIAL_LABEL_OPACITY, material.opacity);
+	if (material.shininess == material.shininess)
+		builder.append(REPO_NODE_MATERIAL_LABEL_SHININESS, material.shininess);
+	if (material.shininessStrength == material.shininessStrength)
+		builder.append(REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH, material.shininessStrength);
+	if (material.lineWeight == material.lineWeight)
+		builder.append(REPO_NODE_MATERIAL_LABEL_LINE_WEIGHT, material.lineWeight);
 }
 
 std::vector<float> MaterialNode::getDataAsBuffer() const
@@ -127,8 +155,14 @@ bool MaterialNode::sEqual(const RepoNode &other) const
 		return false;
 	}
 
-	auto mat = getDataAsBuffer();
-	auto otherMat = MaterialNode(other).getDataAsBuffer();
-
-	return mat.size() == otherMat.size() && !memcmp(mat.data(), otherMat.data(), mat.size() * sizeof(*mat.data()));
+	try{
+		auto otherMaterialNode = dynamic_cast<const MaterialNode&>(other);
+		auto mat = getDataAsBuffer();
+		auto otherMat = otherMaterialNode.getDataAsBuffer();
+		return mat.size() == otherMat.size() && !memcmp(mat.data(), otherMat.data(), mat.size() * sizeof(*mat.data()));
+	}
+	catch (std::bad_cast) 
+	{
+		return false;
+	}
 }

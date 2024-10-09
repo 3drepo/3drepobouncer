@@ -312,13 +312,13 @@ namespace repo {
 				* make SupermeshNode methods.
 				*/
 
-				static void appendBounds(class RepoBSONBinMappingBuilder& builder, const std::vector<std::vector<float>>& boundingBox);
-				static void appendVertices(class RepoBSONBinMappingBuilder& builder, const std::vector<repo::lib::RepoVector3D>& vertices);
-				static void appendFaces(class RepoBSONBinMappingBuilder& builder, const std::vector<repo_face_t>& faces);
-				static void appendNormals(class RepoBSONBinMappingBuilder& builder, const std::vector<repo::lib::RepoVector3D>& normals);
-				static void appendColors(class RepoBSONBinMappingBuilder& builder, const std::vector<repo_color4d_t>& colors);
-				static void appendUVChannels(class RepoBSONBinMappingBuilder& builder, const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels);
-				static void appendSubmeshIds(class RepoBSONBinMappingBuilder& builder, const std::vector<float>& submeshIds);
+				static void appendBounds(class RepoBSONBuilder& builder, const std::vector<std::vector<float>>& boundingBox);
+				static void appendVertices(class RepoBSONBuilder& builder, const std::vector<repo::lib::RepoVector3D>& vertices);
+				static void appendFaces(class RepoBSONBuilder& builder, const std::vector<repo_face_t>& faces);
+				static void appendNormals(class RepoBSONBuilder& builder, const std::vector<repo::lib::RepoVector3D>& normals);
+				static void appendColors(class RepoBSONBuilder& builder, const std::vector<repo_color4d_t>& colors);
+				static void appendUVChannels(class RepoBSONBuilder& builder, const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels);
+				static void appendSubmeshIds(class RepoBSONBuilder& builder, const std::vector<float>& submeshIds);
 			};
 		} //namespace model
 	} //namespace core

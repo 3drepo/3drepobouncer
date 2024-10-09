@@ -30,6 +30,8 @@
 
 #include "../../../repo_bouncer_global.h"
 #include "../../../lib/repo_log.h"
+#include "../../../lib/datastructure/repo_variant.h"
+
 namespace repo {
 	namespace core {
 		namespace model {
@@ -123,7 +125,9 @@ namespace repo {
 				const char* binData(int &length) const {
 					return mongo::BSONElement::binData(length);
 				}
-				
+
+				repo::lib::RepoVariant repoVariant() const;
+
 				mongo::BSONElement toMongoElement() const {
 					return *this;
 				}

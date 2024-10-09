@@ -20,6 +20,7 @@
 
 #pragma once
 #include "repo_node.h"
+#include "../../../lib/datastructure/repo_variant.h"
 
 namespace repo {
 	namespace core {
@@ -56,6 +57,21 @@ namespace repo {
 				*/
 				~MetadataNode();
 
+			protected:
+				std::unordered_map<std::string, repo::lib::RepoVariant> metadataMap;
+
+			protected:
+				virtual void deserialise(RepoBSON&);
+				virtual void serialise(class RepoBSONBuilder&) const;
+
+			public:
+				const std::unordered_map<std::string, repo::lib::RepoVariant>& getAllMetadata() const
+				{
+					return metadataMap;
+				}
+
+				void setMetadata(const std::unordered_map<std::string, repo::lib::RepoVariant>&);
+
 				/**
 				* Get the type of node
 				* @return returns the type as a string
@@ -82,14 +98,6 @@ namespace repo {
 				* @param returns true if equal, false otherwise
 				*/
 				virtual bool sEqual(const RepoNode &other) const;
-
-				/**
-				* Append the given metadata to the list of currently existing metadata
-				* @param metadata the metadata to add
-				* @return returns a cloned version with updated metadata
-				*/
-				MetadataNode cloneAndAddMetadata(
-					const RepoBSON &metadata) const;
 			};
 		} //namespace model
 	} //namespace core

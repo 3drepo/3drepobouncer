@@ -63,6 +63,14 @@ namespace repo {
 				*/
 				~MaterialNode();
 
+			protected:
+				void deserialise(RepoBSON&);
+				void serialise(repo::core::model::RepoBSONBuilder&) const;
+
+			private:
+				repo_material_t material;
+
+			public:
 				/**
 				* Get the type of node
 				* @return returns the type as a string
@@ -98,7 +106,15 @@ namespace repo {
 				* Get material information from the node as a struct
 				* @return returns a repo_material_t containing the information
 				*/
-				repo_material_t getMaterialStruct() const;
+				repo_material_t getMaterialStruct() const
+				{
+					return material;
+				}
+
+				void setMaterialStruct(const repo_material_t& s) 
+				{
+					material = s;
+				}
 
 			protected:
 				std::vector<float> getDataAsBuffer() const;

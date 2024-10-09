@@ -20,6 +20,7 @@
 #include <repo/manipulator/modeloptimizer/repo_optimizer_multipart.h>
 #include <limits>
 #include <test/src/unit/repo_test_mesh_utils.h>
+#include <repo/core/model/bson/repo_bson_factory.h>
 
 using namespace repo::manipulator::modeloptimizer;
 using namespace repo::test::utils::mesh;

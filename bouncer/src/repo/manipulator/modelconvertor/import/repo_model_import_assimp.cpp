@@ -28,6 +28,7 @@
 
 #include <assimp/importerdesc.h>
 
+#include "../../../core/model/bson/repo_node_mesh.h"
 #include "../../../core/model/bson/repo_bson_builder.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "../../../lib/repo_utils.h"
@@ -400,9 +401,7 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 			if (nameToTexture.end() != it)
 			{
 				repo::core::model::RepoNode * nodeAddr = it->second;
-
-				repo::core::model::RepoNode tmp = nodeAddr->cloneAndAddParent(materialNode->getSharedID());
-				nodeAddr->swap(tmp);
+				nodeAddr->addParent(materialNode->getSharedID());
 			}
 			else
 			{
@@ -683,9 +682,8 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 			unsigned int meshIndex = assimpNode->mMeshes[i];
 			if (meshIndex < meshes.size())
 			{
-				repo::core::model::RepoNode mesh = meshes[meshIndex];
-
-				if (!mesh.isEmpty())
+				auto mesh = dynamic_cast<const repo::core::model::MeshNode&>(meshes[meshIndex]);
+				if (!mesh.getNumVertices())
 				{
 					newMeshes.insert(duplicateMesh(sharedId, mesh, meshToMat, matParents));
 				}
@@ -899,14 +897,16 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 				}
 
 				int numTextures = assimpScene->mMaterials[assimpScene->mMeshes[i]->mMaterialIndex]->GetTextureCount(aiTextureType_DIFFUSE);
-				repo::core::model::RepoNode mesh = createMeshRepoNode(
+				auto mesh = createMeshRepoNode(
 					assimpScene->mMeshes[i],
 					originalOrderMaterial,
 					matParents, numTextures > 0,
 					sceneBbox.size() ? sceneBbox[0] : std::vector<double>());
 
-				if (mesh.isEmpty())
+				if (!mesh.getNumVertices())
+				{
 					repoError << "Unable to construct mesh node in Assimp Model Convertor!";
+				}
 				else
 				{
 					originalOrderMesh.push_back(mesh);
@@ -964,8 +964,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 		{
 			if (matPair.second.size() > 0)
 			{
-				repo::core::model::RepoNode updatedMat = matPair.first->cloneAndAddParent(matPair.second);
-				matPair.first->swap(updatedMat);
+				matPair.first->addParents(matPair.second);
 			}
 		}
 

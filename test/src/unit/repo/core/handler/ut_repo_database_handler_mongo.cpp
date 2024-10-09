@@ -340,15 +340,15 @@ TEST(MongoDatabaseHandlerTest, FindOneBySharedID)
 	ASSERT_TRUE(handler);
 
 	repo::core::model::RepoNode result = handler->findOneBySharedID(REPO_GTEST_DBNAME_ROLEUSERTEST, "sampleProject.history", repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH), "timestamp");
-	EXPECT_FALSE(result.isEmpty());
+	EXPECT_FALSE(result.getUniqueID().isDefaultValue());
 	EXPECT_EQ(result.getSharedID(), repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH));
 
 	result = handler->findOneBySharedID(REPO_GTEST_DBNAME_ROLEUSERTEST, "sampleProject.history", repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH), "");
-	EXPECT_FALSE(result.isEmpty());
+	EXPECT_FALSE(result.getUniqueID().isDefaultValue());
 	EXPECT_EQ(result.getSharedID(), repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH));
 
 	result = handler->findOneBySharedID("", "sampleProject", repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH), "timestamp");
-	EXPECT_TRUE(result.isEmpty());
+	EXPECT_TRUE(result.getUniqueID().isDefaultValue());
 	result = handler->findOneBySharedID(REPO_GTEST_DBNAME_ROLEUSERTEST, "", repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH), "timestamp");
-	EXPECT_TRUE(result.isEmpty());
+	EXPECT_TRUE(result.getUniqueID().isDefaultValue());
 }

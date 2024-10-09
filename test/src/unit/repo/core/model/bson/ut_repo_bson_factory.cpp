@@ -32,7 +32,7 @@ TEST(RepoBSONFactoryTest, AppendDefaultsTest)
 	auto defaults = RepoBSONFactory::appendDefaults("test");
 	builder.appendElements(defaults);
 
-	RepoNode n = builder.obj();
+	RepoBSON n = builder.obj();
 	EXPECT_FALSE(n.isEmpty());
 
 	EXPECT_EQ(3, n.nFields());
@@ -51,7 +51,7 @@ TEST(RepoBSONFactoryTest, AppendDefaultsTest)
 	auto defaults2 = RepoBSONFactory::appendDefaults("test");
 	builderWithFields.appendElements(defaults2);
 
-	RepoNode nWithExists = builderWithFields.obj();
+	RepoBSON nWithExists = builderWithFields.obj();
 	EXPECT_FALSE(nWithExists.isEmpty());
 
 	EXPECT_EQ(5, nWithExists.nFields());
@@ -84,7 +84,6 @@ TEST(RepoBSONFactoryTest, MakeMaterialNodeTest)
 
 	MaterialNode material = RepoBSONFactory::makeMaterialNode(mat_struct, name);
 
-	EXPECT_FALSE(material.isEmpty());
 	EXPECT_EQ(name, material.getName());
 	EXPECT_EQ(material.getTypeAsEnum(), NodeType::MATERIAL);
 
@@ -96,7 +95,6 @@ TEST(RepoBSONFactoryTest, MakeMaterialNodeTest)
 
 	//See if it breaks if the vectors in the struct is never filled
 	MaterialNode material2 = RepoBSONFactory::makeMaterialNode(emptyStruct, name);
-	EXPECT_FALSE(material2.isEmpty());
 	EXPECT_EQ(name, material2.getName());
 	EXPECT_EQ(material2.getTypeAsEnum(), NodeType::MATERIAL);
 }
@@ -115,23 +113,22 @@ TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
 
 	MetadataNode metaNode = RepoBSONFactory::makeMetaDataNode(keys, variants, name);
 
-	EXPECT_FALSE(metaNode.isEmpty());
 	EXPECT_EQ(name, metaNode.getName());
 	EXPECT_EQ(metaNode.getTypeAsEnum(), NodeType::METADATA);
 
-	auto metaBSON = metaNode.getObjectField(REPO_NODE_LABEL_METADATA);
+	auto metadata = metaNode.getAllMetadata();
 
-	ASSERT_FALSE(metaBSON.isEmpty());
-	for (uint32_t i = 0; i < keys.size(); ++i)
+	ASSERT_TRUE(metadata.size());
+
+	for(auto m : metadata)
 	{
-		auto index = std::to_string(i);
-		ASSERT_TRUE(metaBSON.hasField(index));
-		auto metaEntry = metaBSON.getObjectField(index);
-		auto key = metaEntry.getStringField(REPO_NODE_LABEL_META_KEY);
-		auto value = metaEntry.getStringField(REPO_NODE_LABEL_META_VALUE);
+		auto key = m.first;
+		auto value = m.second.apply_visitor(repo::lib::StringConversionVisitor());
+
 		auto keyIt = std::find(keys.begin(), keys.end(), key);
 		ASSERT_NE(keyIt, keys.end());
 		auto vectorIdx = keyIt - keys.begin();
+
 		EXPECT_EQ(key, keys[vectorIdx]);
 		EXPECT_EQ(value, values[vectorIdx]);
 	}
@@ -171,12 +168,12 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 
 	auto mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels);
 
-	repoTrace << mesh.toString();
-
 	auto vOut = mesh.getVertices();
 	auto nOut = mesh.getNormals();
 	auto fOut = mesh.getFaces();
 	auto uvOut = mesh.getUVChannelsSeparated();
+	EXPECT_FALSE(mesh.getUniqueID().isDefaultValue());
+	EXPECT_FALSE(mesh.getSharedID().isDefaultValue());
 	EXPECT_TRUE(compareStdVectors(vectors, vOut));
 	EXPECT_TRUE(compareStdVectors(normals, nOut));
 	EXPECT_TRUE(compareStdVectors(faces, fOut));
@@ -203,14 +200,14 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 
 	mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels);
 
-	repoTrace << mesh.toString();
-
 	ASSERT_EQ(MeshNode::Primitive::LINES, mesh.getPrimitive());
 
 	vOut = mesh.getVertices();
 	nOut = mesh.getNormals();
 	fOut = mesh.getFaces();
 	uvOut = mesh.getUVChannelsSeparated();
+	EXPECT_FALSE(mesh.getUniqueID().isDefaultValue());
+	EXPECT_FALSE(mesh.getSharedID().isDefaultValue());
 	EXPECT_TRUE(compareStdVectors(vectors, vOut));
 	EXPECT_TRUE(compareStdVectors(normals, nOut));
 	EXPECT_TRUE(compareStdVectors(faces, fOut));
@@ -236,6 +233,9 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 
 	mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox);
 
+	EXPECT_FALSE(mesh.getUniqueID().isDefaultValue());
+	EXPECT_FALSE(mesh.getSharedID().isDefaultValue());
+
 	ASSERT_EQ(MeshNode::Primitive::UNKNOWN, mesh.getPrimitive());
 }
 
@@ -249,11 +249,9 @@ TEST(RepoBSONFactoryTest, MakeReferenceNodeTest)
 
 	ReferenceNode ref = RepoBSONFactory::makeReferenceNode(dbName, proName, revId, isUnique, name);
 
-	ASSERT_FALSE(ref.isEmpty());
-
 	EXPECT_EQ(dbName, ref.getDatabaseName());
-	EXPECT_EQ(proName, ref.getProjectName());
-	EXPECT_EQ(revId, ref.getRevisionID());
+	EXPECT_EQ(proName, ref.getProjectId());
+	EXPECT_EQ(revId, ref.getProjectRevision());
 	EXPECT_EQ(isUnique, ref.useSpecificRevision());
 	EXPECT_EQ(name, ref.getName());
 
@@ -306,10 +304,10 @@ TEST(RepoBSONFactoryTest, MakeTextureNodeTest)
 	ASSERT_FALSE(tex.isEmpty());
 
 	EXPECT_EQ(name, tex.getName());
-	EXPECT_EQ(width, tex.getField(REPO_LABEL_WIDTH).Int());
-	EXPECT_EQ(height, tex.getField(REPO_LABEL_HEIGHT).Int());
+	EXPECT_EQ(width, tex.getWidth());
+	EXPECT_EQ(height, tex.getHeight());
 	EXPECT_EQ(ext, tex.getFileExtension());
-	std::vector<char> rawOut = tex.getRawData();
+	auto rawOut = tex.getRawData();
 	ASSERT_EQ(data.size(), rawOut.size());
 	EXPECT_EQ(0, memcmp(data.c_str(), rawOut.data(), data.size()));
 
@@ -328,8 +326,7 @@ TEST(RepoBSONFactoryTest, MakeTransformationNodeTest)
 
 	TransformationNode trans = RepoBSONFactory::makeTransformationNode();
 
-	ASSERT_FALSE(trans.isEmpty());
-	EXPECT_TRUE(compareStdVectors(identity, trans.getTransMatrix(false).getData()));
+	EXPECT_TRUE(compareStdVectors(identity, trans.getTransMatrix().getData()));
 
 	std::vector<std::vector<float>> transMat;
 	std::vector<float> transMatFlat;
@@ -348,9 +345,8 @@ TEST(RepoBSONFactoryTest, MakeTransformationNodeTest)
 
 	TransformationNode trans2 = RepoBSONFactory::makeTransformationNode(transMat, name, parents);
 
-	ASSERT_FALSE(trans2.isEmpty());
 	EXPECT_EQ(name, trans2.getName());
-	auto matrix = trans2.getTransMatrix(false);
+	auto matrix = trans2.getTransMatrix();
 
 	EXPECT_TRUE(compareStdVectors(transMatFlat, matrix.getData()));
 	EXPECT_TRUE(compareStdVectors(parents, trans2.getParentIDs()));
