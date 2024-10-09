@@ -83,7 +83,7 @@
 
 // Drawing calibration properties
 #define REPO_LABEL_DRAWING			"drawing"
-#define REPO_LABEL_REVISION			"revision"
+#define REPO_LABEL_REVISION			"rev_id"
 #define REPO_LABEL_CREATEDAT		"createdAt"
 #define	REPO_LABEL_HORIZONTAL		"horizontal"
 #define	REPO_LABEL_UNITS			"units"
