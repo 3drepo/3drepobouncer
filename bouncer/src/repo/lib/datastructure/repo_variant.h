@@ -21,9 +21,10 @@
 #include <string>
 #include "boost/variant.hpp"
 #include <ctime>
+#include "repo_uuid.h"
 
 namespace repo {
 	namespace lib {
-		typedef boost::variant<bool, int, long long, double, std::string, tm> RepoVariant;
+		typedef boost::variant<bool, int, long long, double, std::string, tm, RepoUUID> RepoVariant;
 	}
 }

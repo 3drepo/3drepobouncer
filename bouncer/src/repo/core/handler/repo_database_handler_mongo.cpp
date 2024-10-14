@@ -731,7 +731,7 @@ bool MongoDatabaseHandler::insertManyDocuments(
 	const std::string &collection,
 	const std::vector<repo::core::model::RepoBSON> &objs,
 	std::string &errMsg,
-	const repo::core::model::RepoBSON &binaryStorageMetadata)
+	const Metadata& binaryStorageMetadata)
 {
 	bool success = false;
 

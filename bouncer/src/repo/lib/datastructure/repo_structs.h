@@ -47,6 +47,20 @@ typedef struct {
 	int32_t       triTo;
 }repo_mesh_mapping_t;
 
+static bool operator== (repo_mesh_mapping_t a, repo_mesh_mapping_t b) 
+{
+	return
+		a.min == b.min &&
+		a.max == b.max &&
+		a.mesh_id == b.mesh_id &&
+		a.shared_id == b.shared_id &&
+		a.material_id == b.material_id &&
+		a.vertFrom == b.vertFrom &&
+		a.vertTo == b.vertFrom &&
+		a.triFrom == b.triFrom &&
+		a.triTo == b.triTo;
+}
+
 struct repo_mesh_entry_t
 {
 	std::vector<float> min;

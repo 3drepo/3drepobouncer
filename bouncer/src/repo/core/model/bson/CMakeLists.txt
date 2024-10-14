@@ -7,12 +7,14 @@
 set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_assets.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_builder.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_element.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_factory.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_project_settings.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_ref.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_sequence.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_task.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_drawing_revision.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_material.cpp

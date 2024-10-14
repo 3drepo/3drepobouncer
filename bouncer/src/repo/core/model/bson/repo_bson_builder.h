@@ -172,11 +172,11 @@ namespace repo {
 				}
 
 				void appendTimeStamp(std::string label){
-					appendTime(label, time(NULL) * 1000);
+					appendTime(label, time(NULL));
 				}
 
 				void appendTime(std::string label, const int64_t &ts){
-					mongo::Date_t date = mongo::Date_t(ts);
+					mongo::Date_t date = mongo::Date_t(ts * 1000); // Mongo expects time in ms
 					mongo::BSONObjBuilder::append(label, date);
 				}
 				
@@ -269,12 +269,15 @@ namespace repo {
 						builder.appendTime(label, t);
 					}
 
+					void operator()(const repo::lib::RepoUUID& u) const {
+						builder.appendUUID(label, u); // Use the explicit version becaues the specialisation is declared later
+					}
+
 				private:
 					RepoBSONBuilder& builder;
 					std::string label;
 				};
 			};
-
 
 			// Template specialization
 			template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoUUID > (

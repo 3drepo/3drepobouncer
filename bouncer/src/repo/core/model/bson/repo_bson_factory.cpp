@@ -18,64 +18,11 @@
 #include "repo_bson_factory.h"
 
 #include <boost/filesystem.hpp>
-#include <boost/lexical_cast.hpp>
 
-#include "repo_bson_builder.h"
 #include "../../../lib/repo_log.h"
+#include "../../../lib/repo_exception.h"
 
 using namespace repo::core::model;
-
-RepoBSON RepoBSONFactory::appendDefaults(
-	const std::string &type,
-	const unsigned int api,
-	const repo::lib::RepoUUID &sharedId,
-	const std::string &name,
-	const std::vector<repo::lib::RepoUUID> &parents,
-	const repo::lib::RepoUUID &uniqueID)
-{
-	RepoBSONBuilder builder;
-	appendDefaults(builder, type, api, sharedId, name, parents, uniqueID);
-	return builder.obj();
-}
-
-void RepoBSONFactory::appendDefaults(
-	RepoBSONBuilder& builder,
-	const std::string& type,
-	const unsigned int api,
-	const repo::lib::RepoUUID& sharedId,
-	const std::string& name,
-	const std::vector<repo::lib::RepoUUID>& parents,
-	const repo::lib::RepoUUID& uniqueID)
-{
-	//--------------------------------------------------------------------------
-	// ID field (UUID)
-	builder.append(REPO_NODE_LABEL_ID, uniqueID);
-
-	//--------------------------------------------------------------------------
-	// Shared ID (UUID)
-	builder.append(REPO_NODE_LABEL_SHARED_ID, sharedId);
-
-	//--------------------------------------------------------------------------
-	// Type
-	if (!type.empty())
-	{
-		builder.append(REPO_NODE_LABEL_TYPE, type);
-	}
-
-	//--------------------------------------------------------------------------
-	// Parents
-	if (parents.size() > 0)
-	{
-		builder.appendArray(REPO_NODE_LABEL_PARENTS, parents);
-	}
-
-	//--------------------------------------------------------------------------
-	// Name
-	if (!name.empty())
-	{
-		builder.append(REPO_NODE_LABEL_NAME, name);
-	}
-}
 
 MaterialNode RepoBSONFactory::makeMaterialNode(
 	const repo_material_t &material,
@@ -88,18 +35,6 @@ MaterialNode RepoBSONFactory::makeMaterialNode(
 	node.changeName(name);
 	node.addParents(parents);
 	return node;
-}
-
-static bool keyCheck(const char &c)
-{
-	return c == '$' || c == '.';
-}
-
-static std::string sanitiseKey(const std::string &key)
-{
-	std::string cleanedKey(key);
-	std::replace_if(cleanedKey.begin(), cleanedKey.end(), keyCheck, ':');
-	return cleanedKey;
 }
 
 MetadataNode RepoBSONFactory::makeMetaDataNode(
@@ -141,132 +76,6 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 	return node;
 }
 
-void RepoBSONFactory::appendBounds(RepoBSONBuilder& builder, const std::vector<std::vector<float>>& boundingBox)
-{
-	if (boundingBox.size() > 0)
-	{
-		RepoBSONBuilder arrayBuilder;
-
-		for (int i = 0; i < boundingBox.size(); i++)
-		{
-			arrayBuilder.appendArray(std::to_string(i), boundingBox[i]);
-		}
-
-		builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, arrayBuilder.obj());
-	}
-}
-
-void RepoBSONFactory::appendVertices(RepoBSONBuilder& builder, const std::vector<repo::lib::RepoVector3D>& vertices)
-{
-	if (vertices.size() > 0)
-	{
-		builder.append(REPO_NODE_MESH_LABEL_VERTICES_COUNT, (uint32_t)(vertices.size()));
-		builder.appendLargeArray(REPO_NODE_MESH_LABEL_VERTICES, vertices);
-	}
-}
-
-void RepoBSONFactory::appendFaces(RepoBSONBuilder& builder, const std::vector<repo_face_t>& faces)
-{
-	if (faces.size() > 0)
-	{
-		builder.append(REPO_NODE_MESH_LABEL_FACES_COUNT, (uint32_t)(faces.size()));
-
-		// In API LEVEL 1, faces are stored as
-		// [n1, v1, v2, ..., n2, v1, v2...]
-		std::vector<repo_face_t>::iterator faceIt;
-
-		MeshNode::Primitive primitive = MeshNode::Primitive::UNKNOWN;
-
-		std::vector<uint32_t> facesLevel1;
-		for (auto& face : faces) {
-			auto nIndices = face.size();
-			if (!nIndices)
-			{
-				repoWarning << "number of indices in this face is 0!";
-			}
-			if (primitive == MeshNode::Primitive::UNKNOWN) // The primitive type is unknown, so attempt to infer it
-			{
-				if (nIndices == 2) {
-					primitive = MeshNode::Primitive::LINES;
-				}
-				else if (nIndices == 3) {
-					primitive = MeshNode::Primitive::TRIANGLES;
-				}
-				else // The primitive type is not one we support
-				{
-					repoWarning << "unsupported primitive type - only lines and triangles are supported but this face has " << nIndices << " indices!";
-				}
-			}
-			else  // (otherwise check for consistency with the existing type)
-			{
-				if (nIndices != static_cast<int>(primitive))
-				{
-					repoWarning << "mixing different primitives within a mesh is not supported!";
-				}
-			}
-			facesLevel1.push_back(nIndices);
-			for (uint32_t ind = 0; ind < nIndices; ind++)
-			{
-				facesLevel1.push_back(face[ind]);
-			}
-		}
-
-		builder.append(REPO_NODE_MESH_LABEL_PRIMITIVE, static_cast<int>(primitive));
-
-		builder.appendLargeArray(REPO_NODE_MESH_LABEL_FACES, facesLevel1);
-	}
-}
-
-void RepoBSONFactory::appendNormals(RepoBSONBuilder& builder, const std::vector<repo::lib::RepoVector3D>& normals)
-{
-	if (normals.size() > 0)
-	{
-		builder.appendLargeArray(REPO_NODE_MESH_LABEL_NORMALS, normals);
-	}
-}
-
-void RepoBSONFactory::appendColors(RepoBSONBuilder& builder, const std::vector<repo_color4d_t>& colors)
-{
-	if (colors.size())
-	{
-		builder.appendLargeArray(REPO_NODE_MESH_LABEL_COLORS, colors);
-	}
-}
-
-void RepoBSONFactory::appendUVChannels(RepoBSONBuilder& builder, const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels)
-{
-	if (uvChannels.size() > 0)
-	{
-		std::vector<repo::lib::RepoVector2D> concatenated;
-
-		for (auto it = uvChannels.begin(); it != uvChannels.end(); ++it)
-		{
-			std::vector<repo::lib::RepoVector2D> channel = *it;
-
-			std::vector<repo::lib::RepoVector2D>::iterator cit;
-			for (cit = channel.begin(); cit != channel.end(); ++cit)
-			{
-				concatenated.push_back(*cit);
-			}
-		}
-
-		if (concatenated.size() > 0)
-		{
-			// Could be unsigned __int64 if BSON had such construct (the closest is only __int64)
-			builder.append(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT, (uint32_t)(uvChannels.size()));
-			builder.appendLargeArray(REPO_NODE_MESH_LABEL_UV_CHANNELS, concatenated);
-		}
-	}
-}
-
-void RepoBSONFactory::appendSubmeshIds(RepoBSONBuilder& builder, const std::vector<float>& submeshIds)
-{
-	if (submeshIds.size())
-	{
-		builder.appendLargeArray(REPO_NODE_MESH_LABEL_SUBMESH_IDS, submeshIds);
-	}
-}
-
 MeshNode RepoBSONFactory::makeMeshNode(
 	const std::vector<repo::lib::RepoVector3D>        &vertices,
 	const std::vector<repo_face_t>                    &faces,
@@ -304,22 +113,21 @@ SupermeshNode RepoBSONFactory::makeSupermeshNode(
 	const std::vector<repo_mesh_mapping_t>& mappings
 )
 {
-	RepoBSONBuilder builder;
-	appendDefaults(builder, REPO_NODE_TYPE_MESH, REPO_NODE_API_LEVEL_0, repo::lib::RepoUUID::createUUID(), name);
-	appendBounds(builder, boundingBox);
-	appendVertices(builder, vertices);
-	appendFaces(builder, faces);
-	appendNormals(builder, normals);
-	appendUVChannels(builder, uvChannels);
-
-	RepoBSONBuilder mapbuilder;
-	for (uint32_t i = 0; i < mappings.size(); ++i)
+	SupermeshNode node;
+	node.setVertices(vertices);
+	node.setFaces(faces);
+	node.setNormals(normals);
+	node.setBoundingBox({
+		repo::lib::RepoVector3D(boundingBox[0]),
+		repo::lib::RepoVector3D(boundingBox[1]),
+	});
+	for (size_t i = 0; i < uvChannels.size(); i++)
 	{
-		mapbuilder.append(std::to_string(i), SupermeshNode::meshMappingAsBSON(mappings[i]));
+		node.setUVChannel(i, uvChannels[i]);
 	}
-	builder.appendArray(REPO_NODE_MESH_LABEL_MERGE_MAP, mapbuilder.obj());
-
-	return SupermeshNode(builder.obj(), builder.mapping());
+	node.changeName(name);
+	node.setMeshMapping(mappings);
+	return node;
 }
 
 SupermeshNode RepoBSONFactory::makeSupermeshNode(
@@ -334,63 +142,62 @@ SupermeshNode RepoBSONFactory::makeSupermeshNode(
 	const std::vector<float> mappingIds
 )
 {
-	RepoBSONBuilder builder;
-
-	builder.append(REPO_NODE_LABEL_ID, id);
-	builder.append(REPO_NODE_LABEL_SHARED_ID, sharedId);
-
-	appendBounds(builder, boundingBox);
-	appendVertices(builder, vertices);
-	appendFaces(builder, faces);
-	appendNormals(builder, normals);
-	appendUVChannels(builder, uvChannels);
-	appendSubmeshIds(builder, mappingIds);
-
-	RepoBSONBuilder mapbuilder;
-	for (uint32_t i = 0; i < mappings.size(); ++i)
+	SupermeshNode node;
+	node.setVertices(vertices);
+	node.setFaces(faces);
+	node.setNormals(normals);
+	node.setBoundingBox({
+		repo::lib::RepoVector3D(boundingBox[0]),
+		repo::lib::RepoVector3D(boundingBox[1]),
+		});
+	for (size_t i = 0; i < uvChannels.size(); i++)
 	{
-		mapbuilder.append(std::to_string(i), SupermeshNode::meshMappingAsBSON(mappings[i]));
+		node.setUVChannel(i, uvChannels[i]);
 	}
-	builder.appendArray(REPO_NODE_MESH_LABEL_MERGE_MAP, mapbuilder.obj());
-
-	return SupermeshNode(builder.obj(), builder.mapping());
+	node.setUniqueId(id);
+	node.setSharedID(id);
+	node.setMeshMapping(mappings);
+	node.setSubmeshIds(mappingIds);
+	return node;
 }
 
 template<typename IdType>
-RepoRef RepoBSONFactory::makeRepoRef(
+RepoRefT<IdType> RepoBSONFactory::makeRepoRef(
 	const IdType &id,
 	const RepoRef::RefType &type,
 	const std::string &link,
 	const uint32_t size,
-	const repo::core::model::RepoBSON            &metadata) {
-	repo::core::model::RepoBSONBuilder builder;
-	builder.append(REPO_LABEL_ID, id);
-	builder.append(REPO_REF_LABEL_TYPE, RepoRef::convertTypeAsString(type));
-	builder.append(REPO_REF_LABEL_LINK, link);
-	builder.append(REPO_REF_LABEL_SIZE, (unsigned int)size);
-
-	if (!metadata.isEmpty()) {
-		builder.appendElementsUnique(metadata);
+	const RepoRef::Metadata &metadata) 
+{
+	if (type != RepoRef::RefType::FS)
+	{
+		throw repo::lib::RepoException("New RefNodes must be FS");
 	}
-	return RepoRef(builder.obj());
+
+	return RepoRefT<IdType>(
+		id,
+		link,
+		size,
+		metadata
+	);
 }
 
 // Explicit instantations for the supported key types
 
-template RepoRef RepoBSONFactory::makeRepoRef(
+template RepoRefT<std::string> RepoBSONFactory::makeRepoRef(
 	const std::string&,
 	const RepoRef::RefType&,
 	const std::string&,
 	const uint32_t,
-	const repo::core::model::RepoBSON&
+	const RepoRef::Metadata&
 );
 
-template RepoRef RepoBSONFactory::makeRepoRef(
+template RepoRefT<repo::lib::RepoUUID> RepoBSONFactory::makeRepoRef(
 	const repo::lib::RepoUUID&,
 	const RepoRef::RefType&,
 	const std::string&,
 	const uint32_t,
-	const repo::core::model::RepoBSON&
+	const RepoRef::Metadata&
 );
 
 RepoAssets RepoBSONFactory::makeRepoBundleAssets(
@@ -402,47 +209,15 @@ RepoAssets RepoBSONFactory::makeRepoBundleAssets(
 	const std::vector<std::string>& repoJsonFiles,
 	const std::vector<RepoSupermeshMetadata> metadata)
 {
-	RepoBSONBuilder builder;
-
-	builder.append(REPO_LABEL_ID, revisionID);
-
-	if (repoBundleFiles.size())
-		builder.appendArray(REPO_ASSETS_LABEL_ASSETS, repoBundleFiles);
-
-	if (!database.empty())
-		builder.append(REPO_LABEL_DATABASE, database);
-
-	if (!model.empty())
-		builder.append(REPO_LABEL_MODEL, model);
-
-	if (offset.size())
-		builder.appendArray(REPO_ASSETS_LABEL_OFFSET, offset);
-
-	if (repoJsonFiles.size())
-		builder.appendArray(REPO_ASSETS_LABEL_JSONFILES, repoJsonFiles);
-
-	// Metadata is provided in an array with the same indexing as asset names.
-	// The metadata schema uses the object (instead of array) encoding of
-	// vectors, so that the type & entire array is a fixed size and cam be
-	// pre-allocated.
-
-	std::vector<RepoBSON> metadataNodes;
-	for (auto& meta : metadata)
-	{
-		RepoBSONBuilder metadataBuilder;
-		metadataBuilder.append(REPO_ASSETS_LABEL_NUMVERTICES, (unsigned int)meta.numVertices);
-		metadataBuilder.append(REPO_ASSETS_LABEL_NUMFACES, (unsigned int)meta.numFaces);
-		metadataBuilder.append(REPO_ASSETS_LABEL_NUMUVCHANNELS, (unsigned int)meta.numUVChannels);
-		metadataBuilder.append(REPO_ASSETS_LABEL_PRIMITIVE, (unsigned int)meta.primitive);
-		metadataBuilder.appendVector3DObject(REPO_ASSETS_LABEL_MIN, meta.min);
-		metadataBuilder.appendVector3DObject(REPO_ASSETS_LABEL_MAX, meta.max);
-		metadataNodes.push_back(metadataBuilder.obj());
-	}
-
-	if (metadataNodes.size())
-		builder.appendArray("metadata", metadataNodes);
-
-	return RepoAssets(builder.obj());
+	return RepoAssets(
+		revisionID,
+		database,
+		model,
+		offset,
+		repoBundleFiles,
+		repoJsonFiles,
+		metadata
+	);
 }
 
 ReferenceNode RepoBSONFactory::makeReferenceNode(
@@ -544,58 +319,16 @@ RepoTask RepoBSONFactory::makeTask(
 	const repo::lib::RepoUUID &parent,
 	const repo::lib::RepoUUID &id
 ) {
-	RepoBSONBuilder builder;
-	builder.append(REPO_LABEL_ID, id);
-	builder.append(REPO_TASK_LABEL_NAME, name);
-	builder.append(REPO_TASK_LABEL_START, (long long)startTime);
-	builder.append(REPO_TASK_LABEL_END, (long long)endTime);
-	builder.append(REPO_TASK_LABEL_SEQ_ID, sequenceID);
-
-	if (!parent.isDefaultValue())
-		builder.append(REPO_TASK_LABEL_PARENT, parent);
-
-	if (resources.size()) {
-		RepoBSONBuilder resourceBuilder;
-		resourceBuilder.appendArray(REPO_TASK_SHARED_IDS, resources);
-		builder.append(REPO_TASK_LABEL_RESOURCES, resourceBuilder.obj());
-	}
-
-	std::vector<RepoBSON> metaEntries;
-	for (const auto &entry : data) {
-		std::string key = sanitiseKey(entry.first);
-		std::string value = entry.second;
-
-		if (!key.empty() && !value.empty())
-		{
-			RepoBSONBuilder metaBuilder;
-			//Check if it is a number, if it is, store it as a number
-
-			metaBuilder.append(REPO_TASK_META_KEY, key);
-			try {
-				long long valueInt = boost::lexical_cast<long long>(value);
-				metaBuilder.append(REPO_TASK_META_VALUE, valueInt);
-			}
-			catch (boost::bad_lexical_cast &)
-			{
-				//not an int, try a double
-				try {
-					double valueFloat = boost::lexical_cast<double>(value);
-					metaBuilder.append(REPO_TASK_META_VALUE, valueFloat);
-				}
-				catch (boost::bad_lexical_cast &)
-				{
-					//not an int or float, store as string
-					metaBuilder.append(REPO_TASK_META_VALUE, value);
-				}
-			}
-
-			metaEntries.push_back(metaBuilder.obj());
-		}
-	}
-
-	builder.appendArray(REPO_TASK_LABEL_DATA, metaEntries);
-
-	return builder.obj();
+	return RepoTask(
+		name,
+		id,
+		parent,
+		sequenceID,
+		startTime,
+		endTime,
+		resources,
+		data
+	);
 }
 
 RepoSequence RepoBSONFactory::makeSequence(
@@ -605,23 +338,12 @@ RepoSequence RepoBSONFactory::makeSequence(
 	const uint64_t firstFrame,
 	const uint64_t lastFrame
 ) {
-	RepoBSONBuilder builder;
-	builder.append(REPO_LABEL_ID, id);
-	builder.append(REPO_SEQUENCE_LABEL_NAME, name);
-	builder.append(REPO_SEQUENCE_LABEL_START_DATE, (long long)firstFrame);
-	builder.append(REPO_SEQUENCE_LABEL_END_DATE, (long long)lastFrame);
-
-	std::vector<RepoBSON> frames;
-
-	for (const auto &frameEntry : frameData) {
-		RepoBSONBuilder bsonBuilder;
-		bsonBuilder.append(REPO_SEQUENCE_LABEL_DATE, mongo::Date_t(frameEntry.timestamp * 1000));
-		bsonBuilder.append(REPO_SEQUENCE_LABEL_STATE, frameEntry.ref);
-
-		frames.push_back(bsonBuilder.obj());
-	}
-
-	builder.appendArray(REPO_SEQUENCE_LABEL_FRAMES, frames);
-
-	return RepoSequence(builder.obj());
+	return RepoSequence(
+		name,
+		id,
+		repo::lib::RepoUUID::defaultValue,
+		firstFrame,
+		lastFrame,
+		frameData
+	);
 }

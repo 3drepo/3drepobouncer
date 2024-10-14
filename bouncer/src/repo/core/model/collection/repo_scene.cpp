@@ -630,7 +630,7 @@ bool RepoScene::commitSequence(
 	if (frameStates.size()) {
 		auto sequenceCol = projectName + "." + REPO_COLLECTION_SEQUENCE;
 		if (handler->insertDocument(
-			databaseName, sequenceCol, sequence.cloneAndAddRevision(revID), err)) {
+			databaseName, sequenceCol, (RepoBSON)sequence.cloneAndAddRevision(revID), err)) {
 			for (const auto &state : frameStates) {
 				if (!manager->uploadFileAndCommit(databaseName, sequenceCol, state.first, state.second)) {
 					repoError << "Failed to commit a sequence state.";
@@ -652,7 +652,7 @@ bool RepoScene::commitSequence(
 		}
 
 		if (taskList.size()) {
-			if (!manager->uploadFileAndCommit(databaseName, taskCol, sequence.getUUIDField(REPO_LABEL_ID).toString(), taskList)) {
+			if (!manager->uploadFileAndCommit(databaseName, taskCol, sequence.getUniqueId().toString(), taskList)) {
 				repoError << "Failed to commit a task list";
 				success = false;
 			}
@@ -808,10 +808,7 @@ bool RepoScene::commitNodes(
 		nodes.push_back(*node);
 	}
 
-	RepoBSONBuilder builder;
-	builder.append(REPO_NODE_REVISION_ID, revId);
-
-	return handler->insertManyDocuments(databaseName, projectName + "." + ext, nodes, errMsg, builder.obj());
+	return handler->insertManyDocuments(databaseName, projectName + "." + ext, nodes, errMsg);
 }
 
 bool RepoScene::commitSceneChanges(

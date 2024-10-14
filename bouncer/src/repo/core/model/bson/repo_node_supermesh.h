@@ -39,22 +39,25 @@ namespace repo {
 
 			public:
 
-				std::vector<repo_mesh_mapping_t> getMeshMapping() const
+				const std::vector<repo_mesh_mapping_t>& getMeshMapping() const
 				{
 					return mappings;
 				}
 
-				std::vector<float> getSubmeshIds() const
+				void setMeshMapping(const std::vector<repo_mesh_mapping_t>& mapping)
+				{
+					this->mappings = mapping;
+				}
+
+				const std::vector<float>& getSubmeshIds() const
 				{
 					return submeshIds;
 				}
 
-				/**
-				* Given a mesh mapping, convert it into a bson object
-				* @param mapping the mapping to convert
-				* @return return a bson object containing the mapping
-				*/
-				static RepoBSON meshMappingAsBSON(const repo_mesh_mapping_t& mapping);
+				void setSubmeshIds(const std::vector<float>& ids)
+				{
+					this->submeshIds = ids;
+				}
 			};
 		}
 	}

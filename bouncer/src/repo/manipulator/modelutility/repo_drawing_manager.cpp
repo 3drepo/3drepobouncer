@@ -44,19 +44,19 @@ uint8_t DrawingManager::commitImage(
 	auto drawingRefNodeId = repo::lib::RepoUUID::createUUID();
 	auto name = drawing.name.substr(0, drawing.name.size() - 3) + "svg"; // The name should be the drawing's original name with an updated extension
 
-	repo::core::model::RepoBSONBuilder metadata;
-	metadata.append(REPO_NODE_LABEL_NAME, name);
-	metadata.append(REPO_LABEL_MEDIA_TYPE, REPO_MEDIA_TYPE_SVG);
-	metadata.append(REPO_LABEL_PROJECT, revision.getProject());
-	metadata.append(REPO_LABEL_MODEL, revision.getModel());
-	metadata.append(REPO_NODE_REVISION_ID, revision.getUniqueID());
+	repo::core::handler::AbstractDatabaseHandler::Metadata metadata;
+	metadata[REPO_NODE_LABEL_NAME] = name;
+	metadata[REPO_LABEL_MEDIA_TYPE] = std::string(REPO_MEDIA_TYPE_SVG);
+	metadata[REPO_LABEL_MEDIA_TYPE] = revision.getProject();
+	metadata[REPO_LABEL_MODEL] = revision.getModel();
+	metadata[REPO_NODE_REVISION_ID] = revision.getUniqueID();
 
 	fileManager->uploadFileAndCommit(
 		teamspace,
 		REPO_COLLECTION_DRAWINGS,
 		drawingRefNodeId,
 		drawing.data,
-		metadata.obj(),
+		metadata,
 		repo::core::handler::fileservice::FileManager::Encoding::Gzip
 	);
 

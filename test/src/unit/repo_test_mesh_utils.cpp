@@ -21,6 +21,7 @@
 
 #include "repo_test_mesh_utils.h"
 #include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/core/model/bson/repo_bson_builder.h"
 
 using namespace repo::core::model;
 using namespace testing;

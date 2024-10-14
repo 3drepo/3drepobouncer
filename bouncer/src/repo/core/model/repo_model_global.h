@@ -214,3 +214,4 @@
 #define REPO_ASSETS_LABEL_PRIMITIVE		"primitive"
 #define REPO_ASSETS_LABEL_MIN			"min"
 #define REPO_ASSETS_LABEL_MAX			"max"
+#define REPO_ASSETS_LABEL_METADATA      "metadata"

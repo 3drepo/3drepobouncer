@@ -67,5 +67,5 @@ void RevisionNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 		builder.append(REPO_NODE_REVISION_LABEL_AUTHOR, author);
 	}
 
-	builder.appendTime(REPO_NODE_REVISION_LABEL_TIMESTAMP, ((int64_t)timestamp) * 1000);
+	builder.appendTime(REPO_NODE_REVISION_LABEL_TIMESTAMP, (int64_t)timestamp);
 }

@@ -44,7 +44,7 @@
 
 #include "../../../lib/datastructure/repo_vector.h"
 #include "../../../lib/datastructure/repo_matrix.h"
-
+#include "../../../lib/repo_exception.h"
 
 #define REPO_BSON_MAX_BYTE_SIZE 16770000 //max size is 16MB,but leave a bit for buffer
 
@@ -158,11 +158,30 @@ namespace repo {
 				}
 
 				std::string getStringField(const std::string &label) const {
-					return mongo::BSONObj::getStringField(label);
+					if (hasField(label))
+					{
+						auto f = getField(label);
+						if (f.type() == ElementType::STRING)
+						{
+							return f.String();
+						}
+						else
+						{
+							throw repo::lib::RepoFieldTypeException(label);
+						}
+					}
+					throw repo::lib::RepoFieldNotFoundException(label);
 				}
 
 				RepoBSON getObjectField(const std::string &label) const {
-					return mongo::BSONObj::getObjectField(label);
+					if (hasField(label)) 
+					{
+						return mongo::BSONObj::getObjectField(label);
+					}
+					else
+					{
+						throw repo::lib::RepoFieldNotFoundException(label);
+					}
 				}
 
 				std::vector<lib::RepoVector3D> getBounds3D(const std::string& label) {
@@ -172,6 +191,8 @@ namespace repo {
 						lib::RepoVector3D(field.getFloatVectorField("1")),
 					});
 				}
+
+				lib::RepoVector3D getVector3DField(const std::string& label) const;
 
 				repo::lib::RepoMatrix getMatrixField(const std::string& label) const;
 
@@ -192,6 +213,8 @@ namespace repo {
 				}
 
 				double getDoubleField(const std::string &label) const;
+
+				long long getLongField(const std::string& label) const;
 
 				bool isEmpty() const {
 					return mongo::BSONObj::isEmpty();

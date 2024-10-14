@@ -60,7 +60,7 @@ TEST(RepoUUIDTest, dataTest)
 	repo::core::model::RepoBSONBuilder builder;
 	builder.append("id", fromBoost);
 	auto bson = builder.obj();
-	RepoUUID fromEle = RepoUUID::fromBSONElement(bson.getField("id"));
+	RepoUUID fromEle = bson.getUUIDField("id");
 	auto data3 = fromEle.data();
 	EXPECT_EQ(0, memcmp(data3.data(), data.data(), data.size() * sizeof(*data.data())));
 
@@ -90,7 +90,7 @@ TEST(RepoUUIDTest, hashTest)
 	repo::core::model::RepoBSONBuilder builder;
 	builder.append("id", fromBoost);
 	auto bson = builder.obj();
-	RepoUUID fromEle = RepoUUID::fromBSONElement(bson.getField("id"));
+	RepoUUID fromEle = bson.getUUIDField("id");
 	EXPECT_EQ(fromBoost.getHash(), fromEle.getHash());
 
 	RepoUUID fromString(fromBoost.toString());
@@ -120,7 +120,7 @@ TEST(RepoUUIDTest, toStringTest)
 	repo::core::model::RepoBSONBuilder builder;
 	builder.append("id", fromBoost);
 	auto bson = builder.obj();
-	RepoUUID fromEle = RepoUUID::fromBSONElement(bson.getField("id"));
+	RepoUUID fromEle = bson.getUUIDField("id");
 	EXPECT_EQ(idString, fromEle.toString());
 
 	RepoUUID fromString(fromBoost.toString());

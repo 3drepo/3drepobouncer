@@ -78,23 +78,3 @@ void SupermeshNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 {
 	throw repo::lib::RepoException("Supermesh Nodes cannot not be serialised");
 }
-
-RepoBSON SupermeshNode::meshMappingAsBSON(const repo_mesh_mapping_t& mapping)
-{
-	RepoBSONBuilder builder;
-	builder.append(REPO_NODE_MESH_LABEL_MAP_ID, mapping.mesh_id);
-	builder.append(REPO_NODE_MESH_LABEL_MAP_SHARED_ID, mapping.shared_id);
-	builder.append(REPO_NODE_MESH_LABEL_MATERIAL_ID, mapping.material_id);
-	builder.append(REPO_NODE_MESH_LABEL_VERTEX_FROM, mapping.vertFrom);
-	builder.append(REPO_NODE_MESH_LABEL_VERTEX_TO, mapping.vertTo);
-	builder.append(REPO_NODE_MESH_LABEL_TRIANGLE_FROM, mapping.triFrom);
-	builder.append(REPO_NODE_MESH_LABEL_TRIANGLE_TO, mapping.triTo);
-
-	RepoBSONBuilder bbBuilder;
-	bbBuilder.append("0", mapping.min);
-	bbBuilder.append("1", mapping.max);
-
-	builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, bbBuilder.obj());
-
-	return builder.obj();
-}

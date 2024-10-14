@@ -52,7 +52,7 @@ bool FileManager::uploadFileAndCommit(
 	const std::string                            &collectionNamePrefix,
 	const IdType                                 &id,
 	const std::vector<uint8_t>                   &bin,
-	const repo::core::model::RepoBSON            &metadata,
+	const Metadata                               &metadata,
 	const Encoding                               &encoding)
 {
 	bool success = true;
@@ -62,7 +62,7 @@ bool FileManager::uploadFileAndCommit(
 	// further processing...
 
 	const std::vector<uint8_t>* fileContents = &bin;
-	repo::core::model::RepoBSON fileMetadata = metadata;
+	auto fileMetadata = metadata;
 
 	switch (encoding)
 	{
@@ -85,11 +85,8 @@ bool FileManager::uploadFileAndCommit(
 
 			auto compresseddata = compressedstream.str();
 			fileContents = new std::vector<uint8_t>(compresseddata.begin(), compresseddata.end());
-
-			repo::core::model::RepoBSONBuilder builder;
-			builder.append("encoding", "gzip");
-			auto bson = builder.obj();
-			fileMetadata = metadata.cloneAndAddFields(&bson);
+			
+			fileMetadata["encoding"] = "gzip";
 		}
 		break;
 	}
@@ -125,12 +122,12 @@ bool FileManager::deleteFileAndRef(
 {
 	bool success = true;
 	repo::core::model::RepoBSON criteria = BSON(REPO_LABEL_ID << cleanFileName(fileName));
-	repo::core::model::RepoRef ref = dbHandler->findOneByCriteria(
+	repo::core::model::RepoBSON node = dbHandler->findOneByCriteria(
 		databaseName,
 		collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
 		criteria);
 
-	if (ref.isEmpty())
+	if (node.isEmpty())
 	{
 		repoTrace << "Failed: cannot find file ref "
 			<< cleanFileName(fileName) << " from "
@@ -140,6 +137,7 @@ bool FileManager::deleteFileAndRef(
 	}
 	else
 	{
+		repo::core::model::RepoRef ref(node);
 		const auto keyName = ref.getRefLink();
 		const auto type = ref.getType(); //Should return enum
 
@@ -171,10 +169,12 @@ repo::core::model::RepoRef FileManager::getFileRef(
 	const std::string                            &collectionNamePrefix,
 	const std::string                            &fileName) {
 	repo::core::model::RepoBSON criteria = BSON(REPO_LABEL_ID << cleanFileName(fileName));
-	return dbHandler->findOneByCriteria(
-		databaseName,
-		collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
-		criteria);
+	return repo::core::model::RepoRefT<std::string>(
+		dbHandler->findOneByCriteria(
+			databaseName,
+			collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
+			criteria)
+		);
 }
 
 repo::core::model::RepoRef FileManager::getFileRef(
@@ -184,10 +184,12 @@ repo::core::model::RepoRef FileManager::getFileRef(
 	repo::core::model::RepoBSONBuilder builder;
 	builder.append(REPO_LABEL_ID, id);
 	auto criteria = builder.obj();
-	return dbHandler->findOneByCriteria(
-		databaseName,
-		collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
-		criteria);
+	return repo::core::model::RepoRefT<repo::lib::RepoUUID>(
+		dbHandler->findOneByCriteria(
+			databaseName,
+			collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
+			criteria)
+		);
 }
 
 template<typename IdType>
@@ -339,7 +341,7 @@ repo::core::model::RepoRef FileManager::makeRefNode(
 	const std::string& link,
 	const repo::core::model::RepoRef::RefType& type,
 	const uint32_t& size,
-	const repo::core::model::RepoBSON& metadata)
+	const repo::core::model::RepoRef::Metadata& metadata)
 {
 	return repo::core::model::RepoBSONFactory::makeRepoRef(cleanFileName(id), type, link, size, metadata);
 }
@@ -349,7 +351,7 @@ repo::core::model::RepoRef FileManager::makeRefNode(
 	const std::string& link,
 	const repo::core::model::RepoRef::RefType& type,
 	const uint32_t& size,
-	const repo::core::model::RepoBSON& metadata)
+	const repo::core::model::RepoRef::Metadata& metadata)
 {
 	return repo::core::model::RepoBSONFactory::makeRepoRef(id, type, link, size, metadata);
 }
@@ -362,7 +364,7 @@ bool FileManager::upsertFileRef(
 	const std::string                            &link,
 	const repo::core::model::RepoRef::RefType    &type,
 	const uint32_t                               &size,
-	const repo::core::model::RepoBSON            &metadata)
+	const repo::core::model::RepoRef::Metadata   &metadata)
 {
 	std::string errMsg;
 	bool success = true;
@@ -385,7 +387,7 @@ template bool FileManager::uploadFileAndCommit<std::string>(
 	const std::string&,
 	const std::string&,
 	const std::vector<uint8_t>&,
-	const repo::core::model::RepoBSON&,
+	const Metadata&,
 	const Encoding&);
 
 template bool FileManager::uploadFileAndCommit<repo::lib::RepoUUID>(
@@ -393,5 +395,5 @@ template bool FileManager::uploadFileAndCommit<repo::lib::RepoUUID>(
 	const std::string&,
 	const repo::lib::RepoUUID&,
 	const std::vector<uint8_t>&,
-	const repo::core::model::RepoBSON&,
+	const Metadata&,
 	const Encoding&);

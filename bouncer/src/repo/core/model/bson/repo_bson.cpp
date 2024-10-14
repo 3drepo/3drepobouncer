@@ -125,9 +125,26 @@ void RepoBSON::replaceBinaryWithReference(const repo::core::model::RepoBSON &fil
 }
 
 repo::lib::RepoUUID RepoBSON::getUUIDField(const std::string &label) const {
-	return hasField(label) ?
-		repo::lib::RepoUUID::fromBSONElement(getField(label)) :
-		throw repo::lib::RepoException("UUID field does not exist on document");
+	if (hasField(label))
+	{
+		auto f = getField(label);
+		if (f.type() == repo::core::model::ElementType::UUID)
+		{
+			boost::uuids::uuid id;
+			int len = static_cast<int>(f.size() * sizeof(uint8_t));
+			const char* binData = f.binData(len);
+			memcpy(id.data, binData, len);
+			return repo::lib::RepoUUID(id);
+		}
+		else
+		{
+			throw repo::lib::RepoFieldTypeException(label);
+		}
+	}
+	else
+	{
+		throw repo::lib::RepoFieldNotFoundException(label);
+	}
 }
 
 std::vector<float> RepoBSON::getFloatVectorField(const std::string& label) const {
@@ -148,6 +165,15 @@ std::vector<float> RepoBSON::getFloatVectorField(const std::string& label) const
 		}
 	}
 	return results;
+}
+
+repo::lib::RepoVector3D RepoBSON::getVector3DField(const std::string& label) const {
+	auto f = getObjectField(label);
+	repo::lib::RepoVector3D v;
+	v.x = f.getDoubleField("x");
+	v.y = f.getDoubleField("y");
+	v.z = f.getDoubleField("z");
+	return v;
 }
 
 repo::lib::RepoMatrix RepoBSON::getMatrixField(const std::string& label) const {
@@ -413,6 +439,12 @@ double RepoBSON::getDoubleField(const std::string &label) const {
 	}
 
 	return ret;
+}
+
+long long RepoBSON::getLongField(const std::string& label) const
+{
+	auto field = mongo::BSONObj::getField(label);
+	return field.Long();
 }
 
 bool RepoBSON::hasEmbeddedField(

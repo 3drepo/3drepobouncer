@@ -22,7 +22,7 @@ namespace repo {
 	namespace lib {
 		class RepoException : std::exception {
 		public:
-			RepoException(const std::string &msg) : errMsg(msg) {};
+			RepoException(const std::string& msg) : errMsg(msg) {};
 
 			char const* what() const throw() { return errMsg.c_str(); }
 		private:
@@ -31,7 +31,26 @@ namespace repo {
 
 		class RepoInvalidLicenseException : public RepoException {
 		public:
-			RepoInvalidLicenseException(const std::string &msg) : RepoException(msg) {};
+			RepoInvalidLicenseException(const std::string& msg)
+				: RepoException(msg) {};
+		};
+
+		class RepoBSONException : public RepoException {
+		public:
+			RepoBSONException(const std::string& msg)
+				: RepoException(msg) {}
+		};
+
+		class RepoFieldNotFoundException : public RepoBSONException {
+		public:
+			RepoFieldNotFoundException(const std::string& fieldName)
+				: RepoBSONException("BSON does not have the field: " + fieldName) {}
+		};
+
+		class RepoFieldTypeException : public RepoBSONException {
+		public:
+			RepoFieldTypeException(const std::string& fieldName)
+				: RepoBSONException("BSON field " + fieldName + " attempting to be read as a different type") {}
 		};
 	}
 }

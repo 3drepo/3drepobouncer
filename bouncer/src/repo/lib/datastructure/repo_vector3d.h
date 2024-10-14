@@ -100,6 +100,11 @@ namespace repo{
 				}
 			}
 
+			T norm() const
+			{
+				return std::sqrt(x * x + y * y + z * z);
+			}
+
 			inline _RepoVector3D<T>& operator=(const _RepoVector3D<T> &other)
 			{
 				x = other.x;

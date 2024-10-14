@@ -36,6 +36,11 @@ namespace repo {
 					 */
 					~FileManager() {}
 
+					// The FileManager's definition of Metadata. Consumers of this
+					// do not need to know about RepoRef, so it has its own type
+					// alias in case they diverge.
+					using Metadata = repo::core::model::RepoRef::Metadata;
+
 					/*
 					* Returns file handler.
 					* Get file manager instance
@@ -72,7 +77,7 @@ namespace repo {
 						const std::string                            &collectionNamePrefix,
 						const IdType								 &id,
 						const std::vector<uint8_t>                   &bin,
-						const repo::core::model::RepoBSON            &metadata = repo::core::model::RepoBSON(),
+						const repo::core::model::RepoRef::Metadata   &metadata = {},
 						const Encoding                               &encoding = Encoding::None
 					);
 
@@ -153,14 +158,14 @@ namespace repo {
 						const std::string& link,
 						const repo::core::model::RepoRef::RefType& type,
 						const uint32_t& size,
-						const repo::core::model::RepoBSON& metadata);
+						const repo::core::model::RepoRef::Metadata& metadata);
 
 					repo::core::model::RepoRef makeRefNode(
 						const std::string& id,
 						const std::string& link,
 						const repo::core::model::RepoRef::RefType& type,
 						const uint32_t& size,
-						const repo::core::model::RepoBSON& metadata);
+						const repo::core::model::RepoRef::Metadata& metadata);
 
 					/**
 					 * Add ref entry for file to database.
@@ -173,7 +178,7 @@ namespace repo {
 						const std::string                            &link,
 						const repo::core::model::RepoRef::RefType    &type,
 						const uint32_t                               &size,
-						const repo::core::model::RepoBSON            &metadata);
+						const repo::core::model::RepoRef::Metadata   &metadata);
 
 					static FileManager* manager;
 					repo::core::handler::AbstractDatabaseHandler *dbHandler;

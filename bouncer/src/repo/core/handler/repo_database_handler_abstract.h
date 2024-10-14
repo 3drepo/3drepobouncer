@@ -25,6 +25,8 @@
 #include <list>
 #include <map>
 #include <string>
+#include <unordered_map>
+#include "repo/lib/datastructure/repo_variant.h"
 
 #include "../model/bson/repo_bson.h"
 
@@ -33,7 +35,6 @@ namespace repo {
 		namespace handler {
 			class AbstractDatabaseHandler {
 			public:
-
 				/**
 				 * A Deconstructor
 				 */
@@ -44,6 +45,8 @@ namespace repo {
 				* @return returns size limit in bytes.
 				*/
 				uint64_t documentSizeLimit() { return maxDocumentSize; }
+
+				using Metadata = std::unordered_map<std::string, repo::lib::RepoVariant>;
 
 				/*
 				*	------------- Database info lookup --------------
@@ -123,7 +126,7 @@ namespace repo {
 					const std::string &collection,
 					const std::vector<repo::core::model::RepoBSON> &obj,
 					std::string &errMsg,
-					const repo::core::model::RepoBSON &metadata = repo::core::model::RepoBSON()) = 0;
+					const Metadata& metadata = {}) = 0;
 
 				/**
 				* Update/insert a single document in database.collection

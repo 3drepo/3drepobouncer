@@ -43,6 +43,9 @@
 namespace repo {
 	namespace core {
 		namespace handler {
+			namespace fileservice{
+				class Metadata; // Forward declaration for alias
+			}
 			class MongoDatabaseHandler : public AbstractDatabaseHandler {
 				enum class OPERATION { DROP, INSERT, UPDATE };
 			public:
@@ -280,7 +283,7 @@ namespace repo {
 					const std::string &collection,
 					const std::vector<repo::core::model::RepoBSON> &obj,
 					std::string &errMsg,
-					const repo::core::model::RepoBSON &metadata = repo::core::model::RepoBSON());
+					const Metadata& metadata = {});
 
 				/**
 				* Update/insert a single document in database.collection

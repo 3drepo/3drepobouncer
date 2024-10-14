@@ -715,15 +715,15 @@ TEST(RepoClientTest, ProcessDrawing)
 	std::ifstream drawingFile{ path, std::ios::binary };
 	std::vector<uint8_t> bin(std::istreambuf_iterator<char>{drawingFile}, {});
 
-	repo::core::model::RepoBSONBuilder metadata;
-	metadata.append("name", "test.dwg");
+	repo::core::handler::fileservice::FileManager::Metadata metadata;
+	metadata["name"] = "test.dwg";
 
 	manager->uploadFileAndCommit(
 		db,
 		REPO_COLLECTION_DRAWINGS,
 		rFile, // Take care that drawing source ref node Ids are always UUIDs
 		bin,
-		metadata.obj()
+		metadata
 	);
 
 	std::string err;
@@ -767,10 +767,25 @@ TEST(RepoClientTest, ProcessDrawing)
 
 	// Check that the document is correctly populated
 
-	EXPECT_EQ(imageRef.getStringField("type"), "fs");
-	EXPECT_EQ(imageRef.getStringField("name"), "test.svg"); // The image should have its file extension changed
-	EXPECT_EQ(imageRef.getStringField("mimeType"), "image/svg+xml");
-	EXPECT_EQ(imageRef.getUUIDField("project"), project);
-	EXPECT_EQ(imageRef.getStringField("model"), model);
-	EXPECT_EQ(imageRef.getUUIDField("rev_id"), rid);
+	// Via the RepoRef object
+	EXPECT_EQ(imageRef.getType(), repo::core::model::RepoRef::RefType::FS);
+	EXPECT_EQ(imageRef.getFileName(), "test.svg"); // The image should have its file extension changed
+	
+	// And via the node directly
+	repo::core::model::RepoBSONBuilder builder;
+	builder.append(REPO_LABEL_ID, revision.getUUIDField("image"));
+	auto criteria = builder.obj();
+
+	auto refNode = handler->findOneByCriteria(
+		db,
+		REPO_COLLECTION_DRAWINGS,
+		criteria
+	);
+
+	EXPECT_EQ(refNode.getStringField("type"), "fs");
+	EXPECT_EQ(refNode.getStringField("name"), "test.svg"); 
+	EXPECT_EQ(refNode.getStringField("mimeType"), "image/svg+xml");
+	EXPECT_EQ(refNode.getUUIDField("project"), project);
+	EXPECT_EQ(refNode.getStringField("model"), model);
+	EXPECT_EQ(refNode.getUUIDField("rev_id"), rid);
 }

@@ -14,6 +14,7 @@ set(TEST_HEADERS
 	${TEST_HEADERS}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_database_info.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_fileservice_info.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_matchers.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_mesh_utils.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_utils.h
 	CACHE STRING "TEST_HEADERS" FORCE)

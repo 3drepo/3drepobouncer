@@ -37,14 +37,21 @@ const static RepoScene::GraphType defaultG = RepoScene::GraphType::DEFAULT;
 static RepoBSON makeRandomNode(
 	const std::string &name = "")
 {
-	return RepoBSONFactory::appendDefaults("", 0U, repo::lib::RepoUUID::createUUID(), name);
+	RepoNode node;
+	node.setSharedID(repo::lib::RepoUUID::createUUID());
+	node.changeName(name);
+	return node;
 }
 
 static RepoBSON makeRandomNode(
 	const repo::lib::RepoUUID &parent,
 	const std::string &name = "")
 {
-	return RepoBSONFactory::appendDefaults("", 0U, repo::lib::RepoUUID::createUUID(), name, { parent });
+	RepoNode node;
+	node.setSharedID(repo::lib::RepoUUID::createUUID());
+	node.addParent(parent);
+	node.changeName(name);
+	return node;
 }
 
 TEST(RepoSceneTest, Constructor)

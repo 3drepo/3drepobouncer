@@ -913,7 +913,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 		std::string animationName = animation.name.empty() ? DEFAULT_SEQUENCE_NAME : animation.name;
 		auto sequence = repo::core::model::RepoBSONFactory::makeSequence(frameData, animationName, sequenceID, firstFrame, lastFrame);
 
-		if (sequence.objsize() > REPO_MAX_OBJ_SIZE) {
+		if (!sequence.checkSize()) {
 			errMsg = REPOERR_SYNCHRO_SEQUENCE_TOO_BIG;
 			delete scene;
 			scene = nullptr;

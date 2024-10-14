@@ -25,47 +25,6 @@
 
 using namespace repo::core::model;
 
-TEST(RepoBSONFactoryTest, AppendDefaultsTest)
-{
-	RepoBSONBuilder builder;
-
-	auto defaults = RepoBSONFactory::appendDefaults("test");
-	builder.appendElements(defaults);
-
-	RepoBSON n = builder.obj();
-	EXPECT_FALSE(n.isEmpty());
-
-	EXPECT_EQ(3, n.nFields());
-
-	EXPECT_TRUE(n.hasField(REPO_NODE_LABEL_ID));
-	EXPECT_TRUE(n.hasField(REPO_NODE_LABEL_SHARED_ID));
-	EXPECT_TRUE(n.hasField(REPO_NODE_LABEL_TYPE));
-
-	//Ensure existing fields doesnt' disappear
-
-	RepoBSONBuilder builderWithFields;
-
-	builderWithFields.append("Number", 1023);
-	builderWithFields.append("doll", "Kitty");
-
-	auto defaults2 = RepoBSONFactory::appendDefaults("test");
-	builderWithFields.appendElements(defaults2);
-
-	RepoBSON nWithExists = builderWithFields.obj();
-	EXPECT_FALSE(nWithExists.isEmpty());
-
-	EXPECT_EQ(5, nWithExists.nFields());
-
-	EXPECT_TRUE(nWithExists.hasField(REPO_NODE_LABEL_ID));
-	EXPECT_TRUE(nWithExists.hasField(REPO_NODE_LABEL_SHARED_ID));
-	EXPECT_TRUE(nWithExists.hasField(REPO_NODE_LABEL_TYPE));
-
-	EXPECT_TRUE(nWithExists.hasField("doll"));
-	EXPECT_EQ("Kitty", std::string(nWithExists.getStringField("doll")));
-	EXPECT_TRUE(nWithExists.hasField("Number"));
-	EXPECT_EQ(nWithExists.getField("Number").Int(), 1023);
-}
-
 TEST(RepoBSONFactoryTest, MakeMaterialNodeTest)
 {
 	repo_material_t mat_struct;
@@ -393,7 +352,7 @@ TEST(RepoBSONFactoryTest, MakeRepoBundleAssets)
 		jsonFiles,
 		metadata);
 
-	auto bsonsize = assets.objsize();
+	auto bsonsize = ((RepoBSON)assets).objsize();
 
 	EXPECT_LT(bsonsize, 16777216);
 }
