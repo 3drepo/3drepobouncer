@@ -25,10 +25,10 @@
 using namespace repo::core::model;
 
 MaterialNode RepoBSONFactory::makeMaterialNode(
-	const repo_material_t &material,
-	const std::string     &name,
-	const std::vector<repo::lib::RepoUUID> &parents,
-	const int             &apiLevel)
+	const repo_material_t& material,
+	const std::string& name,
+	const std::vector<repo::lib::RepoUUID>& parents,
+	const int& apiLevel)
 {
 	MaterialNode node;
 	node.setMaterialStruct(material);
@@ -38,11 +38,11 @@ MaterialNode RepoBSONFactory::makeMaterialNode(
 }
 
 MetadataNode RepoBSONFactory::makeMetaDataNode(
-	const std::vector<std::string>  &keys,
-	const std::vector<repo::lib::RepoVariant>  &values,
-	const std::string               &name,
-	const std::vector<repo::lib::RepoUUID>     &parents,
-	const int                       &apiLevel)
+	const std::vector<std::string>& keys,
+	const std::vector<repo::lib::RepoVariant>& values,
+	const std::string& name,
+	const std::vector<repo::lib::RepoUUID>& parents,
+	const int& apiLevel)
 {
 	auto keysLen = keys.size();
 	auto valLen = values.size();
@@ -63,10 +63,10 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 }
 
 MetadataNode RepoBSONFactory::makeMetaDataNode(
-	const std::unordered_map<std::string, repo::lib::RepoVariant>  &data,
-	const std::string               &name,
-	const std::vector<repo::lib::RepoUUID>     &parents,
-	const int                       &apiLevel)
+	const std::unordered_map<std::string, repo::lib::RepoVariant>& data,
+	const std::string& name,
+	const std::vector<repo::lib::RepoUUID>& parents,
+	const int& apiLevel)
 {
 	MetadataNode node;
 	node.setSharedID(repo::lib::RepoUUID::createUUID()); // By convention, factory produced MetadataNodes have SharedIds
@@ -77,13 +77,13 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 }
 
 MeshNode RepoBSONFactory::makeMeshNode(
-	const std::vector<repo::lib::RepoVector3D>        &vertices,
-	const std::vector<repo_face_t>                    &faces,
-	const std::vector<repo::lib::RepoVector3D>        &normals,
-	const std::vector<std::vector<float>>             &boundingBox,
-	const std::vector<std::vector<repo::lib::RepoVector2D>>   &uvChannels,
-	const std::string                                 &name,
-	const std::vector<repo::lib::RepoUUID>            &parents)
+	const std::vector<repo::lib::RepoVector3D>& vertices,
+	const std::vector<repo_face_t>& faces,
+	const std::vector<repo::lib::RepoVector3D>& normals,
+	const std::vector<std::vector<float>>& boundingBox,
+	const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
+	const std::string& name,
+	const std::vector<repo::lib::RepoUUID>& parents)
 {
 	MeshNode node;
 	node.setSharedID(repo::lib::RepoUUID::createUUID());
@@ -220,13 +220,49 @@ RepoAssets RepoBSONFactory::makeRepoBundleAssets(
 	);
 }
 
+RepoCalibration repo::core::model::RepoBSONFactory::makeRepoCalibration(
+	const repo::lib::RepoUUID& projectId,
+	const repo::lib::RepoUUID& drawingId,
+	const repo::lib::RepoUUID& revisionId,
+	const std::vector<repo::lib::RepoVector3D>& horizontal3d,
+	const std::vector<repo::lib::RepoVector2D>& horizontal2d,
+	const std::string& units)
+{
+	RepoBSONBuilder bsonBuilder;
+	bsonBuilder.append(REPO_LABEL_ID, repo::lib::RepoUUID::createUUID());
+	bsonBuilder.append(REPO_LABEL_PROJECT, projectId);
+	bsonBuilder.append(REPO_LABEL_DRAWING, drawingId.toString());
+	bsonBuilder.append(REPO_LABEL_REVISION, revisionId);
+	bsonBuilder.appendTimeStamp(REPO_LABEL_CREATEDAT);
+
+	if (horizontal2d.size() != 2 || horizontal3d.size() != 2)
+	{
+		throw repo::lib::RepoException("Incomplete calibration vectors supplied to makeRepoCalibration");
+	}
+
+	RepoBSONBuilder horizontalBuilder;
+	horizontalBuilder.appendArray< std::vector<float> >(REPO_LABEL_MODEL, {
+		horizontal3d[0].toStdVector(),
+		horizontal3d[1].toStdVector()
+		});
+	horizontalBuilder.appendArray< std::vector<float> >(REPO_LABEL_DRAWING, {
+		horizontal2d[0].toStdVector(),
+		horizontal2d[1].toStdVector()
+		});
+	bsonBuilder.append(REPO_LABEL_HORIZONTAL, horizontalBuilder.obj());
+
+	bsonBuilder.append(REPO_LABEL_UNITS, units);
+
+	return RepoCalibration(bsonBuilder.obj());
+}
+
 ReferenceNode RepoBSONFactory::makeReferenceNode(
-	const std::string &database,
-	const std::string &project,
-	const repo::lib::RepoUUID    &revisionID,
-	const bool        &isUniqueID,
-	const std::string &name,
-	const int         &apiLevel)
+	const std::string& database,
+	const std::string& project,
+	const repo::lib::RepoUUID& revisionID,
+	const bool& isUniqueID,
+	const std::string& name,
+	const int& apiLevel)
 {
 	ReferenceNode node;
 	node.setSharedID(repo::lib::RepoUUID::createUUID());
@@ -239,15 +275,15 @@ ReferenceNode RepoBSONFactory::makeReferenceNode(
 }
 
 ModelRevisionNode RepoBSONFactory::makeRevisionNode(
-	const std::string			   &user,
-	const repo::lib::RepoUUID                 &branch,
-	const repo::lib::RepoUUID                 &id,
-	const std::vector<std::string> &files,
-	const std::vector<repo::lib::RepoUUID>    &parent,
-	const std::vector<double>    &worldOffset,
-	const std::string              &message,
-	const std::string              &tag,
-	const int                      &apiLevel
+	const std::string& user,
+	const repo::lib::RepoUUID& branch,
+	const repo::lib::RepoUUID& id,
+	const std::vector<std::string>& files,
+	const std::vector<repo::lib::RepoUUID>& parent,
+	const std::vector<double>& worldOffset,
+	const std::string& message,
+	const std::string& tag,
+	const int& apiLevel
 )
 {
 	ModelRevisionNode node;
@@ -264,13 +300,13 @@ ModelRevisionNode RepoBSONFactory::makeRevisionNode(
 }
 
 TextureNode RepoBSONFactory::makeTextureNode(
-	const std::string &name,
-	const char        *data,
-	const uint32_t    &byteCount,
-	const uint32_t    &width,
-	const uint32_t    &height,
+	const std::string& name,
+	const char* data,
+	const uint32_t& byteCount,
+	const uint32_t& width,
+	const uint32_t& height,
 	const std::vector<repo::lib::RepoUUID>& parentIDs,
-	const int         &apiLevel)
+	const int& apiLevel)
 {
 	TextureNode node;
 	std::string ext;
@@ -296,10 +332,10 @@ TextureNode RepoBSONFactory::makeTextureNode(
 }
 
 TransformationNode RepoBSONFactory::makeTransformationNode(
-	const repo::lib::RepoMatrix &transMatrix,
-	const std::string                     &name,
-	const std::vector<repo::lib::RepoUUID>		  &parents,
-	const int                             &apiLevel)
+	const repo::lib::RepoMatrix& transMatrix,
+	const std::string& name,
+	const std::vector<repo::lib::RepoUUID>& parents,
+	const int& apiLevel)
 {
 	TransformationNode node;
 	node.setSharedID(repo::lib::RepoUUID::createUUID());
@@ -310,14 +346,14 @@ TransformationNode RepoBSONFactory::makeTransformationNode(
 }
 
 RepoTask RepoBSONFactory::makeTask(
-	const std::string &name,
-	const uint64_t &startTime,
-	const uint64_t &endTime,
-	const repo::lib::RepoUUID &sequenceID,
-	const std::unordered_map<std::string, std::string> &data,
-	const std::vector<repo::lib::RepoUUID> &resources,
-	const repo::lib::RepoUUID &parent,
-	const repo::lib::RepoUUID &id
+	const std::string& name,
+	const uint64_t& startTime,
+	const uint64_t& endTime,
+	const repo::lib::RepoUUID& sequenceID,
+	const std::unordered_map<std::string, std::string>& data,
+	const std::vector<repo::lib::RepoUUID>& resources,
+	const repo::lib::RepoUUID& parent,
+	const repo::lib::RepoUUID& id
 ) {
 	return RepoTask(
 		name,
@@ -332,9 +368,9 @@ RepoTask RepoBSONFactory::makeTask(
 }
 
 RepoSequence RepoBSONFactory::makeSequence(
-	const std::vector<repo::core::model::RepoSequence::FrameData> &frameData,
-	const std::string &name,
-	const repo::lib::RepoUUID &id,
+	const std::vector<repo::core::model::RepoSequence::FrameData>& frameData,
+	const std::string& name,
+	const repo::lib::RepoUUID& id,
 	const uint64_t firstFrame,
 	const uint64_t lastFrame
 ) {

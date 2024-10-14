@@ -26,6 +26,7 @@
 #include "repo_bson_sequence.h"
 #include "repo_bson_task.h"
 #include "repo_bson_assets.h"
+#include "repo_bson_calibration.h"
 #include "repo_node.h"
 #include "repo_node_metadata.h"
 #include "repo_node_material.h"
@@ -82,6 +83,25 @@ namespace repo {
 					const std::vector<double>& offset,
 					const std::vector<std::string>& repoJsonFiles,
 					const std::vector<RepoSupermeshMetadata> metadata);
+
+				/**
+				* Create a Drawing Calibration BSON
+				* @param projectId uuid of the project
+				* @param drawingId uuid of the drawing
+				* @param revisionId uuid of the revision
+				* @param horizontal3d two reference points in the 3d space
+				* @param horizontal2d two reference points in the 2d space
+				* @param units the units used for the values.
+				* @return returns a RepoCalibration
+				*/
+				static RepoCalibration makeRepoCalibration(
+					const repo::lib::RepoUUID& projectId,
+					const repo::lib::RepoUUID& drawingId,
+					const repo::lib::RepoUUID& revisionId,
+					const std::vector<repo::lib::RepoVector3D>& horizontal3d,
+					const std::vector<repo::lib::RepoVector2D>& horizontal2d,
+					const std::string& units
+				);
 
 				/*
 				* -------------------- REPO NODES ------------------------

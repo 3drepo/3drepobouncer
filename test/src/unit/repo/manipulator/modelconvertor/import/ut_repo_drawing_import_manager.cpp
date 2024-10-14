@@ -70,8 +70,42 @@ TEST(DrawingImportManager, ImportDWG)
 
 	// Check a number of properties that we expect to be consistent
 
+	// We expect the dimensions and viewbox to be set, as these are required by the
+	// frontend.
+
 	EXPECT_EQ(svgTree.get<std::string>("svg.<xmlattr>.width"), "1024");
 	EXPECT_EQ(svgTree.get<std::string>("svg.<xmlattr>.height"), "768");
 	EXPECT_EQ(svgTree.get<std::string>("svg.<xmlattr>.viewBox"), "0 0 1024 768");
+
+
+	int groupPrimitives = 0;
+	for (auto g : svgTree.get_child("svg"))
+	{
+		// We expect that the white square in the test drawing is drawn as a black
+		// square, because we set the background of the exporter to White.
+
+		auto p = g.second.get_child_optional("polyline");
+		if (p) {
+			EXPECT_EQ(g.second.get<std::string>("<xmlattr>.stroke"), "rgb(0,0,0)");
+			groupPrimitives++;
+		}
+
+		// We expect the Red circle to be off-shade, because we apply a colour
+		// correction of 0.8
+
+		auto c = g.second.get_child_optional("circle");
+		if (c) {
+			EXPECT_EQ(g.second.get<std::string>("<xmlattr>.stroke"), "rgb(204,0,0)");
+			groupPrimitives++;
+		}
+	}
+
+	// And of course expect that the DWG holds the above geometries
+
+	EXPECT_EQ(groupPrimitives, 2);
+
+	// Finally check that the calibration structure has been populated
+
+	EXPECT_TRUE(drawing.calibration.valid());
 }
 
