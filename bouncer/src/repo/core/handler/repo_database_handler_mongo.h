@@ -171,8 +171,18 @@ namespace repo {
 					const std::string &username,
 					const std::string &password)
 				{
-					mongo::BSONObj *mongoBSON = createAuthBSON(dbName, username, password);
-					return mongoBSON ? new repo::core::model::RepoBSON(*mongoBSON) : nullptr;
+
+
+					if (!username.empty() && !dbName.empty() && !password.empty())
+					{
+						return new repo::core::model::RepoBSON(BSON("user" << username <<
+							"db" << dbName <<
+							"pwd" << password));
+					}
+					else
+					{
+						return nullptr;
+					}
 				}
 
 				/*
@@ -208,7 +218,7 @@ namespace repo {
 				* @param name of the database
 				* @return a list of collection names
 				*/
-				std::vector<std::string> getCollections(const std::string &database);
+				std::list<std::string> getCollections(const std::string &database);
 
 				/**
 				* Return the name of admin database
@@ -441,17 +451,6 @@ namespace repo {
 					const std::string             &password = std::string());
 
 
-				/**
-				* Generates a mongo BSON object for authentication
-				* @param database database to authenticate against
-				* @param username user name for authentication
-				* @param password password of the user
-				* @return returns the constructed BSON object, or 0 if username is empty
-				*/
-				static mongo::BSONObj* createAuthBSON(
-					const std::string &database,
-					const std::string &username,
-					const std::string &password);
 				/**
 				* Turns a list of fields that needs to be returned by the query into a bson
 				* object.

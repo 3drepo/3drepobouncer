@@ -92,22 +92,6 @@ bool MongoDatabaseHandler::caseInsensitiveStringCompare(
 	return strcasecmp(s1.c_str(), s2.c_str()) <= 0;
 }
 
-mongo::BSONObj* MongoDatabaseHandler::createAuthBSON(
-	const std::string &database,
-	const std::string &username,
-	const std::string &password)
-{
-	mongo::BSONObj* authBson = nullptr;
-	if (!username.empty() && !database.empty() && !password.empty())
-	{
-		authBson = new mongo::BSONObj(BSON("user" << username <<
-			"db" << database <<
-			"pwd" << password));
-	}
-
-	return authBson;
-}
-
 void MongoDatabaseHandler::createCollection(const std::string &database, const std::string &name)
 {
 	if (!(database.empty() || name.empty()))
@@ -670,10 +654,10 @@ MongoDatabaseHandler::getAllFromCollectionTailable(
 	return bsons;
 }
 
-std::vector<std::string> MongoDatabaseHandler::getCollections(
+std::list<std::string> MongoDatabaseHandler::getCollections(
 	const std::string &database)
 {
-	std::vector<std::string> collections;
+	std::list<std::string> collections;
 
 	try
 	{
@@ -686,7 +670,9 @@ std::vector<std::string> MongoDatabaseHandler::getCollections(
 		// Get database
 		auto dbObj = client->database(dbString);
 		
-		collections = dbObj.list_collection_names();
+		auto collectionsVector = dbObj.list_collection_names();
+
+		collections = std::list<std::string>(collectionsVector.begin(), collectionsVector.end());
 	}
 	catch (mongocxx::operation_exception& e)
 	{
