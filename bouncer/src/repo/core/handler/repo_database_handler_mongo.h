@@ -412,14 +412,7 @@ namespace repo {
 				mongocxx::instance instance;
 				std::unique_ptr<mongocxx::pool> clientPool;
 
-				/*!
-				 * Map holding database name as key and <username, password> as a
-				 * value. User can be authenticated on any number of databases on a single
-				 * connection.
-				 */
-				std::map<std::string, std::pair<std::string, std::string> > databasesAuthentication;
 
-				mongo::ConnectionString dbAddress; /* !address of the database (host:port)*/
 
 				/*
 				 *	=============================================================================================

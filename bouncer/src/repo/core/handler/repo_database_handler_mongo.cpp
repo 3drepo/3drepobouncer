@@ -156,6 +156,7 @@ void MongoDatabaseHandler::createIndex(const std::string &database, const std::s
 	}
 }
 
+// This will presumably be refactored/deleted/replaced with Sebastian's changes to RepoBSON
 repo::core::model::RepoBSON createRepoBSON(
 	fileservice::BlobFilesHandler &blobHandler,
 	const std::string &database,
