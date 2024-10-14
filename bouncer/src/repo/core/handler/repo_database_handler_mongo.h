@@ -101,7 +101,6 @@ namespace repo {
 				 * @param number of maximum simultaneous connections
 				 * @param username username for authentication
 				 * @param password for authentication
-				 * @param pwDigested true if password is digested
 				 * @return Returns the single instance
 				 */
 				static MongoDatabaseHandler* getHandler(
@@ -110,8 +109,7 @@ namespace repo {
 					const uint32_t    &maxConnections = 1,
 					const std::string &dbName = std::string(),
 					const std::string &username = std::string(),
-					const std::string &password = std::string(),
-					const bool        &pwDigested = false);
+					const std::string &password = std::string());
 
 				/**
 				 * Returns the instance of MongoDatabaseHandler
@@ -121,7 +119,6 @@ namespace repo {
 				 * @param number of maximum simultaneous connections
 				 * @param username username for authentication
 				 * @param password for authentication
-				 * @param pwDigested true if password is digested
 				 * @return Returns the single instance
 				 */
 				static MongoDatabaseHandler* getHandler(
@@ -131,8 +128,7 @@ namespace repo {
 					const uint32_t    &maxConnections = 1,
 					const std::string &dbName = std::string(),
 					const std::string &username = std::string(),
-					const std::string &password = std::string(),
-					const bool        &pwDigested = false);
+					const std::string &password = std::string());
 
 				/**
 				* Returns the instance of MongoDatabaseHandler
@@ -168,16 +164,14 @@ namespace repo {
 				* @param dbName name of the database to authenticate against
 				* @param username user name for authentication
 				* @param password password of the user
-				* @param pwDigested true if pw is digested
 				* @return returns the constructed BSON object, or 0 nullptr username is empty
 				*/
 				static repo::core::model::RepoBSON* createBSONCredentials(
 					const std::string &dbName,
 					const std::string &username,
-					const std::string &password,
-					const bool        &pwDigested = false)
+					const std::string &password)
 				{
-					mongo::BSONObj *mongoBSON = createAuthBSON(dbName, username, password, pwDigested);
+					mongo::BSONObj *mongoBSON = createAuthBSON(dbName, username, password);
 					return mongoBSON ? new repo::core::model::RepoBSON(*mongoBSON) : nullptr;
 				}
 
@@ -411,7 +405,7 @@ namespace repo {
 				std::unique_ptr<mongocxx::pool> clientPool;
 
 				/*!
-				 * Map holding database name as key and <username, password digest> as a
+				 * Map holding database name as key and <username, password> as a
 				 * value. User can be authenticated on any number of databases on a single
 				 * connection.
 				 */
@@ -438,15 +432,13 @@ namespace repo {
 				   * @param maxConnections max. number of connections to the database
 				   * @param username user name for authentication (optional)
 				   * @param password password of the user (optional)
-				   * @param pwDigested true if pw is digested (optional)
 				   */
 				MongoDatabaseHandler(
 					const std::string			  &dbAddress,
 					const uint32_t                &maxConnections,
 					const std::string             &dbName,
 					const std::string             &username = std::string(),
-					const std::string             &password = std::string(),
-					const bool                    &pwDigested = false);
+					const std::string             &password = std::string());
 
 
 				/**
@@ -454,14 +446,12 @@ namespace repo {
 				* @param database database to authenticate against
 				* @param username user name for authentication
 				* @param password password of the user
-				* @param pwDigested true if pw is digested
 				* @return returns the constructed BSON object, or 0 if username is empty
 				*/
 				static mongo::BSONObj* createAuthBSON(
 					const std::string &database,
 					const std::string &username,
-					const std::string &password,
-					const bool        &pwDigested);
+					const std::string &password);
 				/**
 				* Turns a list of fields that needs to be returned by the query into a bson
 				* object.

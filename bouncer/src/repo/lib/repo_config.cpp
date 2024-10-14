@@ -31,26 +31,22 @@ RepoConfig::RepoConfig(
 	const std::string &databaseAddr,
 	const int &port,
 	const std::string &username,
-	const std::string &password,
-	const bool pwDigested) : defaultStorage(FileStorageEngine::FS)
+	const std::string &password) : defaultStorage(FileStorageEngine::FS)
 {
 	dbConf.addr = databaseAddr;
 	dbConf.port = port;
 	dbConf.username = username;
-	dbConf.password = password;
-	dbConf.pwDigested = pwDigested;
+	dbConf.password = password;	
 }
 
 RepoConfig::RepoConfig(
 	const std::string &connString,
 	const std::string &username,
-	const std::string &password,
-	const bool pwDigested) : defaultStorage(FileStorageEngine::FS)
+	const std::string &password) : defaultStorage(FileStorageEngine::FS)
 {
 	dbConf.connString = connString;
 	dbConf.username = username;
 	dbConf.password = password;
-	dbConf.pwDigested = pwDigested;
 }
 
 void RepoConfig::configureFS(

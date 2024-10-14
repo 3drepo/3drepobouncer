@@ -65,7 +65,6 @@ TEST(MongoDatabaseHandlerTest, CreateBSONCredentials)
 	auto handler = getHandler();
 	ASSERT_TRUE(handler);
 	EXPECT_TRUE(handler->createBSONCredentials("testdb", "username", "password"));
-	EXPECT_TRUE(handler->createBSONCredentials("testdb", "username", "password", true));
 	EXPECT_FALSE(handler->createBSONCredentials("", "username", "password"));
 	EXPECT_FALSE(handler->createBSONCredentials("testdb", "", "password"));
 	EXPECT_FALSE(handler->createBSONCredentials("testdb", "username", ""));

@@ -63,14 +63,12 @@ namespace repo {
 			* @param databaseAd mongo database address:port
 			* @param username user name
 			* @param password password of the user
-			* @param pwDigested is the password provided in digested form (default: false)
 			* @return returns true upon success
 			*/
 			repo::core::model::RepoBSON* createCredBSON(
 				const std::string &databaseAd,
 				const std::string &username,
-				const std::string &password,
-				const bool        &pwDigested);
+				const std::string &password);
 
 			/**
 			* Create a federated scene with the given scene collections
@@ -348,7 +346,6 @@ namespace repo {
 			* @param maxConnections maxmimum number of concurrent connections allowed to the database
 			* @param username user name
 			* @param password password of the user
-			* @param pwDigested is the password provided in digested form (default: false)
 			* @return returns true upon success
 			*/
 			bool connectAndAuthenticateWithAdmin(
@@ -357,8 +354,7 @@ namespace repo {
 				const uint32_t    &port,
 				const uint32_t    &maxConnections,
 				const std::string &username,
-				const std::string &password,
-				const bool        &pwDigested = false
+				const std::string &password
 			);
 			/**
 			* Connect to the given database address/port and authenticat the user using Admin database
@@ -367,7 +363,6 @@ namespace repo {
 			* @param maxConnections maxmimum number of concurrent connections allowed to the database
 			* @param username user name
 			* @param password password of the user
-			* @param pwDigested is the password provided in digested form (default: false)
 			* @return returns true upon success
 			*/
 			bool connectAndAuthenticateWithAdmin(
@@ -375,8 +370,7 @@ namespace repo {
 				const std::string &connString,
 				const uint32_t    &maxConnections,
 				const std::string &username,
-				const std::string &password,
-				const bool        &pwDigested = false
+				const std::string &password
 			);
 		};
 	}

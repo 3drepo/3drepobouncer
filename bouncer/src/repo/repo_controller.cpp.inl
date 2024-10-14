@@ -48,7 +48,7 @@ public:
 		auto dbConf = config.getDatabaseConfig();
 		credentials = dbConf.username.empty() ?
 			nullptr :
-			core::handler::MongoDatabaseHandler::createBSONCredentials(dbConf.addr, dbConf.username, dbConf.password, dbConf.pwDigested);
+			core::handler::MongoDatabaseHandler::createBSONCredentials(dbConf.addr, dbConf.username, dbConf.password);
 
 		databaseAd = dbConf.addr;
 	}
@@ -103,7 +103,6 @@ public:
 	* @param port port number
 	* @param username user login name
 	* @param password user password
-	* @param pwDigested is given password digested (default: false)
 	* @return returns a void pointer to a token
 	*/
 	RepoToken* init(

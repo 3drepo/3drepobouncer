@@ -54,8 +54,7 @@ bool RepoManipulator::connectAndAuthenticateWithAdmin(
 	const uint32_t& port,
 	const uint32_t& maxConnections,
 	const std::string& username,
-	const std::string& password,
-	const bool& pwDigested
+	const std::string& password
 )
 {
 	//FIXME: we should have a database manager class that will instantiate new handlers/give existing handlers
@@ -63,7 +62,7 @@ bool RepoManipulator::connectAndAuthenticateWithAdmin(
 		repo::core::handler::MongoDatabaseHandler::getHandler(
 			errMsg, address, port, maxConnections,
 			repo::core::handler::MongoDatabaseHandler::getAdminDatabaseName(),
-			username, password, pwDigested);
+			username, password);
 
 	return handler != 0;
 }
@@ -73,8 +72,7 @@ bool RepoManipulator::connectAndAuthenticateWithAdmin(
 	const std::string& connString,
 	const uint32_t& maxConnections,
 	const std::string& username,
-	const std::string& password,
-	const bool& pwDigested
+	const std::string& password
 )
 {
 	//FIXME: we should have a database manager class that will instantiate new handlers/give existing handlers
@@ -82,7 +80,7 @@ bool RepoManipulator::connectAndAuthenticateWithAdmin(
 		repo::core::handler::MongoDatabaseHandler::getHandler(
 			errMsg, connString, maxConnections,
 			repo::core::handler::MongoDatabaseHandler::getAdminDatabaseName(),
-			username, password, pwDigested);
+			username, password);
 
 	return handler != 0;
 }
@@ -90,11 +88,10 @@ bool RepoManipulator::connectAndAuthenticateWithAdmin(
 repo::core::model::RepoBSON* RepoManipulator::createCredBSON(
 	const std::string& databaseAd,
 	const std::string& username,
-	const std::string& password,
-	const bool& pwDigested)
+	const std::string& password)
 {
 	core::model::RepoBSON* bson =
-		repo::core::handler::MongoDatabaseHandler::createBSONCredentials(databaseAd, username, password, pwDigested);
+		repo::core::handler::MongoDatabaseHandler::createBSONCredentials(databaseAd, username, password);
 
 	return bson;
 }
