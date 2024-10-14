@@ -88,7 +88,7 @@ void MongoDatabaseHandler::initWorker(
 }
 
 MongoDatabaseHandler::MongoDatabaseHandler(
-	const mongo::ConnectionString &dbAddress,
+	const std::string			  &dbAddress,
 	const uint32_t                &maxConnections,
 	const std::string             &dbName,
 	const std::string             &username,
@@ -100,27 +100,17 @@ MongoDatabaseHandler::MongoDatabaseHandler(
 	instance = mongocxx::instance{};
 
 	// Create URI
-	// TODO: Not sure this is an actual connection string. Need to dive deeper in this some other time
-	// TODO: Actual pool sizes need to be determined
-	std::string uriString = username + ":" + password + "@" + dbAddress + "/?minPoolSize=3&maxPoolSize=3";
-	mongocxx::uri uri{ dbAddress };
+	// TODO: Test needed whether this connection string is assembled in the correct format. I am only about 70% sure that it is.
+	// TODO: What to do with the digested pw?
+	// TODO: Is using maxConnections for the max pool size the correct way here?
+	bsoncxx::string::view_or_value uriString = username + ":" + password + "@" + dbAddress + "/?minPoolSize=3&maxPoolSize=" + std::to_string(maxConnections);
+	mongocxx::uri uri = mongocxx::uri(uriString);
 
 	// Create pool	
 	clientPool = std::unique_ptr <mongocxx::pool>(new mongocxx::pool(uri));	
+	
 }
 
-//MongoDatabaseHandler::MongoDatabaseHandler(
-//	const mongo::ConnectionString &dbAddress,
-//	const uint32_t                &maxConnections,
-//	const std::string             &dbName,
-//	const repo::core::model::RepoBSON  *cred) :
-//	AbstractDatabaseHandler(MAX_MONGO_BSON_SIZE)
-//{
-//	mongo::client::initialize();
-//	/*workerPool = new connectionPool::MongoConnectionPool(1, dbAddress, (mongo::BSONObj*)cred);*/
-//
-//	initWorker(dbAddress, cred);
-//}
 
 /**
 * A Deconstructor
@@ -781,20 +771,21 @@ MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
 	const bool        &pwDigested)
 {
 	if (!handler) {
-		std::string msg;
-		mongo::ConnectionString mongoConnectionString = mongo::ConnectionString::parse(connectionString, msg);
-		if (!msg.empty()) {
-			repoError << "Failed to construct connection string: " << msg;
-			return nullptr;
-		}
+		
 
 		//initialise the mongo client
-		repoTrace << "Handler not present for " << mongoConnectionString.toString() << " instantiating new handler...";
+		repoTrace << "Handler not present for " << connectionString << " instantiating new handler...";
 		try {
-			handler = new MongoDatabaseHandler(mongoConnectionString, maxConnections, dbName, username, password, pwDigested);
+			handler = new MongoDatabaseHandler(connectionString, maxConnections, dbName, username, password, pwDigested);
 		}
-		catch (mongo::DBException e)
-		{
+		catch (mongocxx::logic_error e) {
+			if (handler)
+				delete handler;
+			handler = 0;
+			errMsg = std::string(e.what());
+			repoError << "Error establishing Mongo Handler: " << errMsg;
+		}
+		catch (mongocxx::exception e) {
 			if (handler)
 				delete handler;
 			handler = 0;
@@ -820,20 +811,31 @@ MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
 	const std::string &password,
 	const bool        &pwDigested)
 {
-	std::ostringstream connectionString;
-
-	mongo::HostAndPort hostAndPort = mongo::HostAndPort(host, port >= 0 ? port : -1);
-
-	mongo::ConnectionString mongoConnectionString = mongo::ConnectionString(hostAndPort);
-
+		
+	std::string connectionString;
+	if (port >= 0)
+	{
+		connectionString = host +":" + std::to_string(port);
+	}
+	else {
+		repoWarning << "GetHandler called with invalid port provided. Connection is attempted without port.";
+		connectionString = host;
+	}
+	
 	if (!handler) {
 		//initialise the mongo client
-		repoTrace << "Handler not present for " << mongoConnectionString.toString() << " instantiating new handler...";
+		repoTrace << "Handler not present for " << connectionString << " instantiating new handler...";
 		try {
-			handler = new MongoDatabaseHandler(mongoConnectionString, maxConnections, dbName, username, password, pwDigested);
+			handler = new MongoDatabaseHandler(connectionString, maxConnections, dbName, username, password, pwDigested);
 		}
-		catch (mongo::DBException e)
-		{
+		catch (mongocxx::logic_error e) {
+			if (handler)
+				delete handler;
+			handler = 0;
+			errMsg = std::string(e.what());
+			repoError << "Error establishing Mongo Handler: " << errMsg;
+		}
+		catch (mongocxx::exception e) {
 			if (handler)
 				delete handler;
 			handler = 0;
@@ -857,20 +859,35 @@ MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
 	const std::string                 &dbName,
 	const repo::core::model::RepoBSON *credentials)
 {
-	std::ostringstream connectionString;
+	std::string connectionString;
+	if (port >= 0)
+	{
+		connectionString = host + ":" + std::to_string(port);
+	}
+	else {
+		repoWarning << "GetHandler called with invalid port provided. Connection is attempted without port.";
+		connectionString = host;
+	}
 
-	mongo::HostAndPort hostAndPort = mongo::HostAndPort(host, port >= 0 ? port : -1);
-
-	mongo::ConnectionString mongoConnectionString = mongo::ConnectionString(hostAndPort);
+	// Unpack credential object	
+	std::string username = credentials->getStringField("user");
+	std::string password = credentials->getStringField("pwd");
+	bool pwDigested = credentials->getBoolField("digestPassword");
 
 	if (!handler) {
 		//initialise the mongo client
-		repoTrace << "Handler not present for " << mongoConnectionString.toString() << " instantiating new handler...";
-		try {
-			handler = new MongoDatabaseHandler(mongoConnectionString, maxConnections, dbName, credentials);
+		repoTrace << "Handler not present for " << connectionString << " instantiating new handler...";
+		try {			
+			handler = new MongoDatabaseHandler(connectionString, maxConnections, dbName, username, password, pwDigested);
 		}
-		catch (mongo::DBException e)
-		{
+		catch (mongocxx::logic_error e) {
+			if (handler)
+				delete handler;
+			handler = 0;
+			errMsg = std::string(e.what());
+			repoError << "Error establishing Mongo Handler: " << errMsg;
+		}
+		catch (mongocxx::exception e) {
 			if (handler)
 				delete handler;
 			handler = 0;

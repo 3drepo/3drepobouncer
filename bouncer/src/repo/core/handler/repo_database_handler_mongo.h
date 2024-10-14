@@ -441,25 +441,13 @@ namespace repo {
 				   * @param pwDigested true if pw is digested (optional)
 				   */
 				MongoDatabaseHandler(
-					const mongo::ConnectionString &dbAddress,
+					const std::string			  &dbAddress,
 					const uint32_t                &maxConnections,
 					const std::string             &dbName,
 					const std::string             &username = std::string(),
 					const std::string             &password = std::string(),
 					const bool                    &pwDigested = false);
 
-				/**
-				* Constructor is private because this class follows the singleton pattern
-				* @param dbAddress ConnectionString that holds the address to the mongo database
-				* @param maxConnections max. number of connections to the database
-				* @param dbName authentication database
-				* @param cred credentials
-				*/
-				MongoDatabaseHandler(
-					const mongo::ConnectionString &dbAddress,
-					const uint32_t                &maxConnections,
-					const std::string             &dbName,
-					const model::RepoBSON         *cred);
 
 				/**
 				* Generates a mongo BSON object for authentication
