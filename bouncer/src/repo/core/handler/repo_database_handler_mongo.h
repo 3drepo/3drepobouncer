@@ -408,8 +408,6 @@ namespace repo {
 				 *	=================================== Private Fields ========================================
 				 */
 
-				 //				connectionPool::MongoConnectionPool *workerPool;
-				mongo::DBClientBase* worker;
 
 				mongocxx::instance instance;
 				std::unique_ptr<mongocxx::pool> clientPool;
@@ -420,11 +418,6 @@ namespace repo {
 				 * connection.
 				 */
 				std::map<std::string, std::pair<std::string, std::string> > databasesAuthentication;
-
-				void initWorker(
-					const mongo::ConnectionString &dbAddress,
-					const mongo::BSONObj *auth
-				);
 
 				mongo::ConnectionString dbAddress; /* !address of the database (host:port)*/
 
@@ -453,7 +446,6 @@ namespace repo {
 
 				/**
 				* Get large file off GridFS
-				* @param worker the worker to operate with
 				* @param database database that it is stored in
 				* @param collection collection that it is stored in
 				* @param fileName file name in GridFS
