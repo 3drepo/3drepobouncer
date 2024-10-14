@@ -305,23 +305,6 @@ bool MongoDatabaseHandler::dropDocument(
 	return success;
 }
 
-mongo::BSONObj MongoDatabaseHandler::fieldsToReturn(
-	const std::list<std::string>& fields,
-	bool excludeIdField)
-{
-	mongo::BSONObjBuilder fieldsToReturn;
-	std::list<std::string>::const_iterator it;
-	for (it = fields.begin(); it != fields.end(); ++it)
-	{
-		fieldsToReturn << *it << 1;
-		excludeIdField = excludeIdField && ID != *it;
-	}
-	if (excludeIdField)
-		fieldsToReturn << ID << 0;
-
-	return fieldsToReturn.obj();
-}
-
 std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria(
 	const std::string& database,
 	const std::string& collection,

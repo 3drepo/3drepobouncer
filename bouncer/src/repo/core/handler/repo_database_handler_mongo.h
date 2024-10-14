@@ -452,16 +452,6 @@ namespace repo {
 
 
 				/**
-				* Turns a list of fields that needs to be returned by the query into a bson
-				* object.
-				* @param list of field names to return
-				* @param ID field is excluded by default unless explicitly stated in the list.
-				*/
-				mongo::BSONObj fieldsToReturn(
-					const std::list<std::string>& fields,
-					bool excludeIdField = false);
-
-				/**
 				* Get large file off GridFS
 				* @param worker the worker to operate with
 				* @param database database that it is stored in
