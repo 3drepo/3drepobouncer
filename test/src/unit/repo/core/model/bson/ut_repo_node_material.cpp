@@ -40,6 +40,24 @@ std::vector<float> makeColour()
 	});
 }
 
+static repo_material_t makeRandomMaterialStruct()
+{
+	repo_material_t matProp;
+	for (int i = 0; i < 3; ++i)
+	{
+		matProp.ambient.push_back(rand() / 100.f);
+		matProp.diffuse.push_back(rand() / 100.f);
+		matProp.specular.push_back(rand() / 100.f);
+		matProp.emissive.push_back(rand() / 100.f);
+		matProp.opacity = rand() / 100.f;
+		matProp.shininess = rand() / 100.f;
+		matProp.shininessStrength = rand() / 100.f;
+		matProp.isWireframe = rand() % 2;
+		matProp.isTwoSided = rand() % 2;
+	}
+	return matProp;
+}
+
 static MaterialNode makeRandomMaterial(
 	repo_material_t &matProp)
 {

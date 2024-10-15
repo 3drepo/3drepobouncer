@@ -17,7 +17,7 @@
 
 #include "repo_bson_assets.h"
 #include "repo_bson_builder.h"
-#include "../../../lib/datastructure/repo_uuid.h"
+#include "repo/lib/datastructure/repo_uuid.h"
 
 using namespace repo::core::model;
 

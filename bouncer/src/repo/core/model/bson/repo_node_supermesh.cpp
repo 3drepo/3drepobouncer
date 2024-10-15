@@ -17,13 +17,12 @@
 
 #include "repo_node_supermesh.h"
 #include "repo_bson_builder.h"
-#include "../../../lib/repo_exception.h"
+#include "repo/lib/repo_exception.h"
 
 using namespace repo::core::model;
 
-SupermeshNode::SupermeshNode(RepoBSON bson,
-	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>& binMapping) 
-	: MeshNode(bson, binMapping)
+SupermeshNode::SupermeshNode(RepoBSON bson) 
+	: MeshNode(bson)
 {
 	deserialise(bson);
 }

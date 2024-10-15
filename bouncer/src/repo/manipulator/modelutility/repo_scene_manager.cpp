@@ -15,9 +15,9 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "repo_scene_manager.h"
-
-#include "../../core/model/bson/repo_bson_builder.h"
-#include "../../core/model/bson/repo_bson_ref.h"
+#include "repo/core/model/bson/repo_bson_builder.h"
+#include "repo/core/model/bson/repo_bson_ref.h"
+#include "repo/core/model/bson/repo_bson_teamspace.h"
 #include "../../error_codes.h"
 #include "../modeloptimizer/repo_optimizer_multipart.h"
 #include "../modelconvertor/export/repo_model_export_src.h"
@@ -27,9 +27,6 @@
 #ifdef REPO_ASSET_GENERATOR_SUPPORT
 #include <submodules/asset_generator/src/repo_model_export_repobundle.h>
 #endif
-
-#define REPO_USER_LABEL_VR_ENABLED					"vrEnabled"
-#define REPO_USER_LABEL_SRC_ENABLED					"srcEnabled"
 
 using namespace repo::manipulator::modelutility;
 
@@ -79,8 +76,7 @@ bool SceneManager::commitWebBuffers(
 
 	if (!resultBuffers.repoAssets.isEmpty())
 	{
-		if (success &= handler->upsertDocument(databaseName, projectName + "." + repoAssetsStashExt, resultBuffers.repoAssets,
-			true, errMsg))
+		if (success &= handler->upsertDocument(databaseName, projectName + "." + repoAssetsStashExt, resultBuffers.repoAssets, true, errMsg))
 		{
 			repoInfo << "Assets list added successfully.";
 		}
@@ -457,15 +453,9 @@ repo_web_buffers_t SceneManager::generateRepoBundleBuffer(
 }
 
 bool isAddOnEnabled(repo::core::handler::AbstractDatabaseHandler *handler, const std::string &database, const std::string addOn) {
-	auto teamspaceSetting = handler->findOneByCriteria(database, "teamspace", BSON("_id" << database));
-	if (teamspaceSetting.hasField("addOns")) {
-		auto addOns = teamspaceSetting.getObjectField("addOns");
-		if (addOns.hasField(addOn)) {
-			return addOns.getBoolField(addOn);
-		}
-	}
-
-	return false;
+	
+	auto teamspace = repo::core::model::RepoTeamspace(handler->findOneByCriteria(database, "teamspace", BSON("_id" << database)));
+	return teamspace.isAddOnEnabled(addOn);
 }
 
 bool SceneManager::isVrEnabled(

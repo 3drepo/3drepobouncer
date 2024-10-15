@@ -29,7 +29,6 @@
 #include <assimp/importerdesc.h>
 
 #include "../../../core/model/bson/repo_node_mesh.h"
-#include "../../../core/model/bson/repo_bson_builder.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "../../../lib/repo_utils.h"
 #include "../../../error_codes.h"
@@ -580,14 +579,10 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 	const std::string            &metadataName,
 	const std::vector<repo::lib::RepoUUID> &parents)
 {
-	repo::core::model::MetadataNode *metaNode;
-	std::unordered_map<std::string, repo::lib::RepoVariant> metaEntries;
-	std::string val;
+	repo::core::model::MetadataNode *metaNode = 0;
 	if (assimpMeta)
 	{
-		//build the metadata as a bson
-		repo::core::model::RepoBSONBuilder builder;
-
+		std::unordered_map<std::string, repo::lib::RepoVariant> metaEntries;
 		for (uint32_t i = 0; i < assimpMeta->mNumProperties; i++)
 		{
 			std::string key(assimpMeta->mKeys[i].C_Str());
@@ -611,7 +606,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 			}
 			else if (currentValue.mType == AI_AISTRING) {
 				// We do additional checks with the string, so we have to handle this separately from the rest
-				val = (static_cast<aiString*>(currentValue.mData))->C_Str();
+				std::string val = (static_cast<aiString*>(currentValue.mData))->C_Str();
 				if (val.compare(key)) {
 					metaEntries[key] = val;
 				}
@@ -916,14 +911,10 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 			//Update material parents
 			for (const auto &matPair : matParents)
 			{
-				/*if (matPair.second.size() > 0)
-				{
-				repo::core::model::RepoNode updatedMat = matPair.first->cloneAndAddParent(matPair.second);
-				matPair.first->swap(updatedMat);
-				}*/
-
-				for (const auto meshId : matPair.second)
+				for (const auto meshId : matPair.second) {
+					matPair.first->addParents(matPair.second);
 					meshToMat[meshId] = matPair.first;
+				}
 			}
 			matParents.clear();
 		}
@@ -992,11 +983,15 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 
 repo::core::model::RepoNode* AssimpModelImport::duplicateMesh(
 	repo::lib::RepoUUID                    &newParent,
-	repo::core::model::RepoNode &mesh,
+	repo::core::model::MeshNode &mesh,
 	const std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode *, repo::lib::RepoUUIDHasher>    &meshToMat,
 	std::unordered_map<repo::core::model::RepoNode *, std::vector<repo::lib::RepoUUID>> &matParents)
 {
-	auto newMesh = new repo::core::model::MeshNode(mesh.cloneAndAddParent(newParent, true, true, true));
+	auto newMesh = new repo::core::model::MeshNode(mesh);
+	newMesh->setUniqueId(repo::lib::RepoUUID::createUUID());
+	newMesh->setSharedID(repo::lib::RepoUUID::createUUID());
+	newMesh->setParents({ newParent });
+	
 	auto it = meshToMat.find(mesh.getSharedID());
 	if (it != meshToMat.end() && it->second)
 	{

@@ -19,8 +19,8 @@
 
 #include <boost/filesystem.hpp>
 
-#include "../../../lib/repo_log.h"
-#include "../../../lib/repo_exception.h"
+#include "repo/lib/repo_log.h"
+#include "repo/lib/repo_exception.h"
 
 using namespace repo::core::model;
 
@@ -32,7 +32,7 @@ MaterialNode RepoBSONFactory::makeMaterialNode(
 {
 	MaterialNode node;
 	node.setMaterialStruct(material);
-	node.changeName(name);
+	node.changeName(name, true); // Always give new material nodes a unique Id, as more than likely even identical materials should have different instances in a RepoNodeList
 	node.addParents(parents);
 	return node;
 }
@@ -228,32 +228,14 @@ RepoCalibration repo::core::model::RepoBSONFactory::makeRepoCalibration(
 	const std::vector<repo::lib::RepoVector2D>& horizontal2d,
 	const std::string& units)
 {
-	RepoBSONBuilder bsonBuilder;
-	bsonBuilder.append(REPO_LABEL_ID, repo::lib::RepoUUID::createUUID());
-	bsonBuilder.append(REPO_LABEL_PROJECT, projectId);
-	bsonBuilder.append(REPO_LABEL_DRAWING, drawingId.toString());
-	bsonBuilder.append(REPO_LABEL_REVISION, revisionId);
-	bsonBuilder.appendTimeStamp(REPO_LABEL_CREATEDAT);
-
-	if (horizontal2d.size() != 2 || horizontal3d.size() != 2)
-	{
-		throw repo::lib::RepoException("Incomplete calibration vectors supplied to makeRepoCalibration");
-	}
-
-	RepoBSONBuilder horizontalBuilder;
-	horizontalBuilder.appendArray< std::vector<float> >(REPO_LABEL_MODEL, {
-		horizontal3d[0].toStdVector(),
-		horizontal3d[1].toStdVector()
-		});
-	horizontalBuilder.appendArray< std::vector<float> >(REPO_LABEL_DRAWING, {
-		horizontal2d[0].toStdVector(),
-		horizontal2d[1].toStdVector()
-		});
-	bsonBuilder.append(REPO_LABEL_HORIZONTAL, horizontalBuilder.obj());
-
-	bsonBuilder.append(REPO_LABEL_UNITS, units);
-
-	return RepoCalibration(bsonBuilder.obj());
+	return RepoCalibration(
+		projectId,
+		drawingId,
+		revisionId,
+		horizontal3d,
+		horizontal2d,
+		units
+	);
 }
 
 ReferenceNode RepoBSONFactory::makeReferenceNode(

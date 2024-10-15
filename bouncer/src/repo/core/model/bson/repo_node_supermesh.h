@@ -26,8 +26,7 @@ namespace repo {
 			public:
 				SupermeshNode();
 
-				SupermeshNode(RepoBSON bson,
-					const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>& binMapping);
+				SupermeshNode(RepoBSON bson);
 
 			protected:
 				std::vector<repo_mesh_mapping_t> mappings;

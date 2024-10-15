@@ -20,6 +20,7 @@
 
 #pragma once
 #include "repo_node.h"
+#include "repo/core/model/repo_model_global.h"
 
 //------------------------------------------------------------------------------
 //
@@ -35,7 +36,7 @@
 namespace repo {
 	namespace core {
 		namespace model {
-			class REPO_API_EXPORT ReferenceNode :public RepoNode
+			class REPO_API_EXPORT ReferenceNode : public RepoNode
 			{
 			public:
 

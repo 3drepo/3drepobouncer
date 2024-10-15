@@ -25,13 +25,13 @@
 using namespace repo::core::model;
 
 TransformationNode::TransformationNode() :
-RepoNode()
+	RepoNode()
 {
 	// (The default matrix constructor initialises itself to identity)
 }
 
 TransformationNode::TransformationNode(RepoBSON bson) :
-RepoNode(bson)
+	RepoNode(bson)
 {
 	deserialise(bson);
 }

@@ -25,7 +25,8 @@
 #include "repo_database_handler_mongo.h"
 #include "fileservice/repo_file_manager.h"
 #include "fileservice/repo_blob_files_handler.h"
-#include "../../lib/repo_log.h"
+#include "repo/core/model/bson/repo_bson_builder.h"
+#include "repo/lib/repo_log.h"
 
 using namespace repo::core::handler;
 
@@ -177,11 +178,11 @@ void MongoDatabaseHandler::createCollection(const std::string &database, const s
 	}
 }
 
-void MongoDatabaseHandler::createIndex(const std::string &database, const std::string &collection, const mongo::BSONObj & obj)
+void MongoDatabaseHandler::createIndex(const std::string &database, const std::string &collection, const repo::core::model::RepoBSON& obj)
 {
 	if (!(database.empty() || collection.empty()))
 	{
-		repoInfo << "Creating index for :" << database << "." << collection << " : index: " << obj;
+		repoInfo << "Creating index for :" << database << "." << collection << " : index: " << obj.toString();
 		try {
 			worker->createIndex(database + "." + collection, obj);
 		}
@@ -841,4 +842,14 @@ bool MongoDatabaseHandler::upsertDocument(
 	}
 
 	return success;
+}
+
+repo::core::model::RepoBSON* MongoDatabaseHandler::createBSONCredentials(
+	const std::string& dbName,
+	const std::string& username,
+	const std::string& password,
+	const bool& pwDigested)
+{
+	mongo::BSONObj* mongoBSON = createAuthBSON(dbName, username, password, pwDigested);
+	return mongoBSON ? new repo::core::model::RepoBSON(*mongoBSON) : nullptr;
 }

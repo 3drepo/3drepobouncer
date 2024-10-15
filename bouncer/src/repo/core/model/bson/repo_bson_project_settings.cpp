@@ -19,54 +19,42 @@
 *  Project setting BSON
 */
 
-#include "repo_bson_builder.h"
 #include "repo_bson_project_settings.h"
-#include "../../../lib/repo_log.h"
+#include "repo_bson_builder.h"
+#include "repo/lib/repo_log.h"
 
 using namespace repo::core::model;
 
-RepoProjectSettings RepoProjectSettings::cloneAndClearStatus() const
+const std::string STATUS_OK = "ok";
+const std::string STATUS_ERROR = "error";
+
+RepoProjectSettings::RepoProjectSettings(RepoBSON bson)
 {
-	RepoBSONBuilder builder;
-	builder.appendTimeStamp(REPO_PROJECT_SETTINGS_LABEL_TIMESTAMP);
-	builder.append(REPO_PROJECT_SETTINGS_LABEL_STATUS, "ok");
-	builder.appendElementsUnique(*this);
-	return builder.obj();
+	id = bson.getStringField(REPO_LABEL_ID);
+	status = STATUS_OK;
+	if (bson.hasField(REPO_PROJECT_SETTINGS_LABEL_STATUS)) 
+	{
+		status = bson.getStringField(REPO_PROJECT_SETTINGS_LABEL_STATUS);
+	}
 }
 
-
-RepoProjectSettings RepoProjectSettings::cloneAndAddErrorStatus() const
+void RepoProjectSettings::setErrorStatus()
 {
-	RepoBSONBuilder builder;
-	builder.append(REPO_PROJECT_SETTINGS_LABEL_STATUS, "error");
-	builder.appendElementsUnique(*this);
-	return builder.obj();
+	status = STATUS_ERROR;
 }
 
-RepoProjectSettings RepoProjectSettings::cloneAndMergeProjectSettings
-(const RepoProjectSettings &proj) const
+void RepoProjectSettings::clearErrorStatus()
 {
-	RepoBSONBuilder newProjBuilder, propertiesBuilder;
+	status = STATUS_OK;
+}
 
-	auto currentProperties = getObjectField(REPO_LABEL_PROPERTIES);
-	propertiesBuilder.appendElements(proj.getObjectField(REPO_LABEL_PROPERTIES));
-
-	currentProperties = currentProperties.removeField(REPO_LABEL_PIN_SIZE);
-	currentProperties = currentProperties.removeField(REPO_LABEL_AVATAR_HEIGHT);
-	currentProperties = currentProperties.removeField(REPO_LABEL_VISIBILITY_LIMIT);
-	currentProperties = currentProperties.removeField(REPO_LABEL_SPEED);
-	currentProperties = currentProperties.removeField(REPO_LABEL_ZNEAR);
-	currentProperties = currentProperties.removeField(REPO_LABEL_ZFAR);
-
-	propertiesBuilder.appendElementsUnique(currentProperties);
-	newProjBuilder.append(REPO_LABEL_PROPERTIES, propertiesBuilder.obj());
-
-	newProjBuilder.appendElementsUnique(proj);
-
-	auto currentProjectSettings = removeField(REPO_LABEL_OWNER);
-	currentProjectSettings = currentProjectSettings.removeField(REPO_LABEL_TYPE);
-	currentProjectSettings = currentProjectSettings.removeField(REPO_LABEL_DESCRIPTION);
-	newProjBuilder.appendElementsUnique(currentProjectSettings);
-
-	return newProjBuilder.obj();
+RepoProjectSettings::operator RepoBSON() const
+{
+	RepoBSONBuilder builder;
+	builder.append(REPO_PROJECT_SETTINGS_LABEL_STATUS, status);
+	builder.append(REPO_LABEL_ID, id);
+	if (status == STATUS_OK) {
+		builder.appendTimeStamp(REPO_PROJECT_SETTINGS_LABEL_TIMESTAMP);
+	}
+	return builder.obj();
 }

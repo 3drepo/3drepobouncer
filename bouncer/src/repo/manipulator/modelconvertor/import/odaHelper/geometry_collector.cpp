@@ -396,13 +396,16 @@ void GeometryCollector::getMaterialAndTextureNodes(repo::core::model::RepoNodeSe
 			auto& materialNode = matPair.second.first;
 			auto& textureNode = matPair.second.second;
 
-			auto matNode = new repo::core::model::MaterialNode(materialNode.cloneAndAddParent(matToMeshes[matIdx]));
+			auto matNode = new repo::core::model::MaterialNode(materialNode);
+			matNode->addParents(matToMeshes[matIdx]);
 			materials.insert(matNode);
 
 			//FIXME: Mat shared ID is known at the point of creating texture node. We shouldn't be cloning here.
 			// SJF: the clone is also to get a pointer
 			if (!textureNode.isEmpty()) {
-				auto texNode = new repo::core::model::TextureNode(textureNode.cloneAndAddParent(matNode->getSharedID()));
+
+				auto texNode = new repo::core::model::TextureNode(textureNode);
+				texNode->addParent(matNode->getSharedID());
 				textures.insert(texNode);
 			}
 		}

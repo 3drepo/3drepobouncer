@@ -166,7 +166,7 @@ namespace repo {
 				*/
 				repo::core::model::RepoNode* duplicateMesh(
 					repo::lib::RepoUUID                    &newParent,
-					repo::core::model::RepoNode &mesh,
+					repo::core::model::MeshNode &mesh,
 					const std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode *, repo::lib::RepoUUIDHasher>    &meshToMat,
 					std::unordered_map<repo::core::model::RepoNode *, std::vector<repo::lib::RepoUUID>> &matParents);
 

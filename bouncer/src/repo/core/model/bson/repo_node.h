@@ -17,12 +17,18 @@
 
 #pragma once
 
-#include "repo_bson.h"
-#include "../../../lib/datastructure/repo_matrix.h"
+#include "repo/repo_bouncer_global.h"
+#include "repo/lib/datastructure/repo_matrix.h"
+#include "repo/lib/datastructure/repo_uuid.h"
+#include <vector>
+#include <set>
 
 namespace repo {
 	namespace core {
 		namespace model {
+
+			class RepoBSON;
+
 			enum class NodeType {
 				MATERIAL,
 				MESH,
@@ -52,9 +58,7 @@ namespace repo {
 				* not be called directly, because RepoNodes should always be
 				* initialised to their most specific subtype from RepoBSONs.
 				*/
-				RepoNode(RepoBSON bson,
-					const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping =
-					std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>());
+				RepoNode(RepoBSON bson);
 
 				/**
 				* Empty Constructor
@@ -66,11 +70,9 @@ namespace repo {
 				*/
 				virtual ~RepoNode();
 
-				std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> bigFiles;
-
 				RepoBSON getBSON() const;
 
-				operator RepoBSON() const { return getBSON(); }
+				operator RepoBSON() const;
 
 			protected:
 				virtual void deserialise(RepoBSON&);
@@ -92,38 +94,6 @@ namespace repo {
 					return false; 
 				}
 
-				/*
-				*	------------- Delusional modifiers --------------
-				*   These are like "setters" but not. We are actually
-				*   creating a new bson object with the changed field
-				*/
-
-				/**
-				* Create a new object with this object's values,
-				* and add another parent into this new object
-				* NOTE: this object is unchanged!
-				* @param parentID the shared uuid of the parent
-				* @param newUniqueID assign a new unique ID
-				* @param newSharedID assign a new shared ID
-				* @param overwrite overwrite the current parenting information
-				* @return new object with the field updated
-				*/
-				RepoNode cloneAndAddParent(
-					const repo::lib::RepoUUID &parent,
-					const bool     &newUniqueID = false,
-					const bool     &newSharedID = false,
-					const bool     &overwrite = false) const;
-
-				/**
-				* Create a new object with this object's values,
-				* and add other parents into this new object
-				* NOTE: this object is unchanged!
-				* @param parentID the shared uuid of the parent
-				* @return new object with the field updated
-				*/
-				RepoNode cloneAndAddParent(
-					const std::vector<repo::lib::RepoUUID> &parents) const;
-
 				void addParent(
 					const repo::lib::RepoUUID& parent
 				)
@@ -136,8 +106,13 @@ namespace repo {
 				{
 					for (auto id : parents) {
 						parentIds.insert(id);
-
 					}
+				}
+
+				void setParents(const std::vector<repo::lib::RepoUUID>& parents)
+				{
+					parentIds.clear();
+					addParents(parents);
 				}
 
 				void removeParent(

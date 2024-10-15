@@ -20,7 +20,9 @@
 
 #pragma once
 #include "repo_node.h"
-#include "../../../lib/datastructure/repo_variant.h"
+#include "repo/lib/datastructure/repo_variant.h"
+#include "repo/core/model/repo_model_global.h"
+#include <unordered_map>
 
 namespace repo {
 	namespace core {
@@ -35,7 +37,7 @@ namespace repo {
 #define REPO_NODE_LABEL_META_VALUE     			"value"
 			//------------------------------------------------------------------------------
 
-			class REPO_API_EXPORT MetadataNode :public RepoNode
+			class REPO_API_EXPORT MetadataNode : public RepoNode
 			{
 			public:
 
@@ -48,9 +50,7 @@ namespace repo {
 				* Construct a MetadataNode from a RepoBSON object
 				* @param RepoBSON object
 				*/
-				MetadataNode(RepoBSON bson,
-					const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping =
-					std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>());
+				MetadataNode(RepoBSON bson);
 
 				/**
 				* Default deconstructor

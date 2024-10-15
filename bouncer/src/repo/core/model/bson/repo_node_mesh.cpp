@@ -19,9 +19,11 @@
 *  Mesh node
 */
 
+#define NOMINMAX
+
 #include "repo_node_mesh.h"
 
-#include "../../../lib/repo_log.h"
+#include "repo/lib/repo_log.h"
 #include "repo_bson_builder.h"
 
 using namespace repo::core::model;
@@ -37,9 +39,8 @@ MeshNode::MeshNode() :
 	});
 }
 
-MeshNode::MeshNode(RepoBSON bson,
-	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>&binMapping) :
-	RepoNode(bson, binMapping)
+MeshNode::MeshNode(RepoBSON bson) :
+	RepoNode(bson)
 {
 	deserialise(bson);
 }

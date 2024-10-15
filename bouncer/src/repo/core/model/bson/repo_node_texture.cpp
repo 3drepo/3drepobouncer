@@ -20,7 +20,7 @@
 */
 
 #include "repo_node_texture.h"
-#include "../../../lib/repo_log.h"
+#include "repo/lib/repo_log.h"
 #include <boost/filesystem.hpp>
 #include "repo_bson_builder.h"
 
@@ -33,8 +33,8 @@ TextureNode::TextureNode() :
 	height = 0;
 }
 
-TextureNode::TextureNode(RepoBSON bson, const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>&binMapping) :
-	RepoNode(bson, binMapping)
+TextureNode::TextureNode(RepoBSON bson) :
+	RepoNode(bson)
 {
 	width = 0;
 	height = 0;

@@ -103,7 +103,7 @@ TEST(RepoNodeTest, Deserialise)
 	builder.append(REPO_NODE_REVISION_ID, revisionId);
 	builder.appendArray(REPO_NODE_LABEL_PARENTS, parentIds);
 
-	auto node = RepoNode(builder.obj(), {});
+	auto node = RepoNode(builder.obj());
 
 	EXPECT_EQ(node.getName(), name);
 	EXPECT_EQ(node.getSharedID(), sharedId);
@@ -125,7 +125,7 @@ TEST(RepoNodeTest, DeserialiseNoSharedIDOrParents)
 	builder.append(REPO_NODE_LABEL_NAME, name);
 	builder.append(REPO_NODE_LABEL_ID, uniqueId);
 
-	auto node = RepoNode(builder.obj(), {});
+	auto node = RepoNode(builder.obj());
 
 	EXPECT_EQ(node.getName(), name);
 	EXPECT_EQ(node.getUniqueID(), uniqueId);
@@ -144,7 +144,7 @@ TEST(RepoNodeTest, DeserialiseNoName)
 	RepoBSONBuilder builder;
 	builder.append(REPO_NODE_LABEL_ID, uniqueId);
 
-	auto node = RepoNode(builder.obj(), {});
+	auto node = RepoNode(builder.obj());
 
 	EXPECT_TRUE(node.getName().empty());
 	EXPECT_EQ(node.getUniqueID(), uniqueId);
@@ -271,114 +271,26 @@ TEST(RepoNodeTest, AddParentsTest)
 	EXPECT_THAT(node.getParentIDs(), UnorderedElementsAreArray(parentIds));
 }
 
-TEST(RepoNodeTest, CloneAndAddParentTest)
+TEST(RepoNodeTest, SetParentsTest)
 {
 	RepoNode node;
 
-	EXPECT_FALSE(node.getParentIDs().size());
+	auto parentIds1 = std::vector<repo::lib::RepoUUID>({
+		repo::lib::RepoUUID::createUUID(),
+		repo::lib::RepoUUID::createUUID(),
+		});
 
-	repo::lib::RepoUUID parent = repo::lib::RepoUUID::createUUID();
-	RepoNode nodeWithParent = node.cloneAndAddParent(parent);
+	node.addParents(parentIds1);
+	EXPECT_THAT(node.getParentIDs(), UnorderedElementsAreArray(parentIds1));
 
-	ASSERT_TRUE(nodeWithParent.getParentIDs().size());
-	EXPECT_NE(node, nodeWithParent);
+	auto parentIds2 = std::vector<repo::lib::RepoUUID>({
+	repo::lib::RepoUUID::createUUID(),
+	repo::lib::RepoUUID::createUUID(),
+		});
 
-	std::vector<repo::lib::RepoUUID> parentsOut = nodeWithParent.getParentIDs();
-
-	EXPECT_EQ(1, parentsOut.size());
-	EXPECT_EQ(parent, parentsOut[0]);
-
-	//Ensure same parent isn't added
-	RepoNode sameParentTest = nodeWithParent.cloneAndAddParent(parent);
-
-	parentsOut = sameParentTest.getParentIDs();
-
-	ASSERT_EQ(1, parentsOut.size());
-	EXPECT_EQ(parent, parentsOut[0]);
-
-	//Try to add a parent when there's already a vector
-	repo::lib::RepoUUID parent2 = repo::lib::RepoUUID::createUUID();
-
-	RepoNode secondParentNode = nodeWithParent.cloneAndAddParent(parent2);
-	EXPECT_THAT(secondParentNode.getParentIDs(), UnorderedElementsAre(parent, parent2));
-
-	//ensure extref files are retained
-	std::vector<uint8_t> file1;
-	std::vector<uint8_t> file2;
-
-	size_t fileSize = 32876;
-	file1.resize(fileSize);
-	file2.resize(fileSize);
-
-	std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>>> files;
-	files["field1"] = std::pair<std::string, std::vector<uint8_t>>("file1", file1);
-	files["field2"] = std::pair<std::string, std::vector<uint8_t>>("file2", file2);
-
-	RepoNode nodeWithFiles = RepoNode(node, files);
-
-	EXPECT_TRUE(((RepoBSON)nodeWithFiles).hasOversizeFiles());
-
-	RepoNode clonedNodeWithFiles = nodeWithFiles.cloneAndAddParent(parent);
-
-	auto bson = (RepoBSON)clonedNodeWithFiles;
-
-	EXPECT_TRUE(bson.hasOversizeFiles());
-	auto mappingOut = bson.getFilesMapping();
-	EXPECT_EQ(2, mappingOut.size());
-}
-
-TEST(RepoNodeTest, CloneAndAddParentsTest)
-{
-	RepoNode node;
-
-	EXPECT_FALSE(node.getParentIDs().size());
-
-	std::vector<repo::lib::RepoUUID> parentsIn;
-	size_t nParents = 10;
-	for (size_t i = 0; i < nParents; ++i)
-	{
-		parentsIn.push_back(repo::lib::RepoUUID::createUUID());
-	}
-	RepoNode nodeWithParent = node.cloneAndAddParent(parentsIn);
-	EXPECT_NE(node, nodeWithParent);
-	EXPECT_THAT(nodeWithParent.getParentIDs(), UnorderedElementsAreArray(parentsIn));
-
-	//Ensure same parent isn't added
-
-	RepoNode sameParentTest = nodeWithParent.cloneAndAddParent(parentsIn);
-	EXPECT_THAT(sameParentTest.getParentIDs(), UnorderedElementsAreArray(parentsIn));
-
-	//Try to add a parent when there's already a vector
-	std::vector<repo::lib::RepoUUID> parent2;
-	for (size_t i = 0; i < nParents; ++i)
-	{
-		auto parent = repo::lib::RepoUUID::createUUID();
-		parent2.push_back(parent);
-		parentsIn.push_back(parent);
-	}
-	RepoNode existingParentTest = sameParentTest.cloneAndAddParent(parent2);
-	EXPECT_THAT(existingParentTest.getParentIDs(), UnorderedElementsAreArray(parentsIn));
-
-	//ensure extref files are retained
-	std::vector<uint8_t> file1;
-	std::vector<uint8_t> file2;
-
-	size_t fileSize = 32876;
-	file1.resize(fileSize);
-	file2.resize(fileSize);
-
-	std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>>> files;
-	files["field1"] = std::pair<std::string, std::vector<uint8_t>>("file1", file1);
-	files["field2"] = std::pair<std::string, std::vector<uint8_t>>("file2", file2);
-
-	RepoNode nodeWithFiles = RepoNode(node, files);
-	RepoNode clonedNodeWithFiles = nodeWithFiles.cloneAndAddParent(parentsIn);
-
-	auto bson = (RepoBSON)clonedNodeWithFiles;
-
-	EXPECT_TRUE(bson.hasOversizeFiles());
-	auto mappingOut = bson.getFilesMapping();
-	EXPECT_EQ(2, mappingOut.size());
+	node.setParents(parentIds2);
+	 
+	EXPECT_THAT(node.getParentIDs(), UnorderedElementsAreArray(parentIds2));
 }
 
 TEST(RepoNodeTest, SetSharedIDTest)
@@ -463,4 +375,43 @@ TEST(RepoNodeTest, OperatorCompareTest)
 	EXPECT_EQ(uniqueID < uniqueID2, makeNode(uniqueID, sharedID, "14") < makeNode(uniqueID2, sharedID, "14"));
 	EXPECT_EQ(uniqueID < uniqueID2, makeNode(uniqueID, sharedID, "15") < makeNode(uniqueID2, sharedID, "15"));
 	EXPECT_EQ(uniqueID < uniqueID2, makeNode(uniqueID, sharedID, "16") < makeNode(uniqueID2, sharedID, "16"));
+}
+
+TEST(RepoNodeTest, RepoNodeSetTest)
+{
+	// Does the MaterialNode behave correctly when added to a RepoNodeSet?
+
+	auto node1 = new RepoNode();
+	auto node2 = new RepoNode();
+
+	node2->setUniqueId(node1->getUniqueID());
+
+	// Nodes have identical unique and sharedIds
+
+	repo::core::model::RepoNodeSet nodes;
+	nodes.insert(node1);
+	nodes.insert(node2);
+
+	EXPECT_THAT(nodes.size(), Eq(1));
+
+	// Changing the unique Id of node2 makes it different from node1
+
+	node2->setUniqueId(repo::lib::RepoUUID::createUUID());
+	nodes.insert(node2);
+	EXPECT_THAT(nodes.size(), Eq(2));
+
+	// A new node that is identical to node1 and should not be added
+
+	auto node3 = new RepoNode();
+	node3->setUniqueId(node1->getUniqueID());
+	nodes.insert(node3);
+	EXPECT_THAT(nodes.size(), Eq(2));
+
+	// But giving it a sharedId will allow it to be added
+	node3->setSharedID(repo::lib::RepoUUID::createUUID());
+	nodes.insert(node3);
+	EXPECT_THAT(nodes.size(), Eq(3));
+
+	// The current version of RepoNodeSet only considers the shared and uniqueIds,
+	// not the sEqual response.
 }

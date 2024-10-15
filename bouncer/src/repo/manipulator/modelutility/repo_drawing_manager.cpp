@@ -16,10 +16,10 @@
 */
 #include "repo_drawing_manager.h"
 
-#include "../../core/model/bson/repo_bson_builder.h"
-#include "../../core/model/bson/repo_bson_ref.h"
-#include "../../core/model/bson/repo_bson_factory.h"
-#include "../../error_codes.h"
+#include "repo/core/model/bson/repo_bson_ref.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/core/model/bson/repo_bson.h"
+#include "repo/error_codes.h"
 
 using namespace repo::manipulator::modelutility;
 
@@ -46,11 +46,12 @@ uint8_t DrawingManager::commitImage(
 	auto name = drawing.name.substr(0, drawing.name.size() - 3) + "svg"; // The name should be the drawing's original name with an updated extension
 
 	repo::core::handler::AbstractDatabaseHandler::Metadata metadata;
+	auto revId = revision.getUniqueID();
 	metadata[REPO_NODE_LABEL_NAME] = name;
 	metadata[REPO_LABEL_MEDIA_TYPE] = std::string(REPO_MEDIA_TYPE_SVG);
 	metadata[REPO_LABEL_MEDIA_TYPE] = revision.getProject();
 	metadata[REPO_LABEL_MODEL] = revision.getModel();
-	metadata[REPO_NODE_REVISION_ID] = revision.getUniqueID();
+	metadata[REPO_NODE_REVISION_ID] = revId;
 
 	fileManager->uploadFileAndCommit(
 		teamspace,

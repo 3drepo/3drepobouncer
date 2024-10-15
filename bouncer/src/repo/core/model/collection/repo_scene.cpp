@@ -366,7 +366,7 @@ void RepoScene::addMetadata(
 				}
 			}
 
-			*meta = meta->cloneAndAddParent(parents);
+			meta->addParents(parents);
 
 			graph.nodesByUniqueID[metaUniqueID] = meta;
 			graph.sharedIDtoUniqueID[metaSharedID] = metaUniqueID;
@@ -667,10 +667,10 @@ void RepoScene::addErrorStatusToProjectSettings(
 )
 {
 	RepoBSON criteria = BSON(REPO_LABEL_ID << projectName);
-	auto doc = RepoProjectSettings(handler->findOneByCriteria(databaseName, REPO_COLLECTION_SETTINGS, criteria));
-	auto updatedProjectsettings = doc.cloneAndAddErrorStatus();
+	auto projectsettings = RepoProjectSettings(handler->findOneByCriteria(databaseName, REPO_COLLECTION_SETTINGS, criteria));
+	projectsettings.setErrorStatus();
 	std::string errorMsg;
-	if (!handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, updatedProjectsettings, true, errorMsg))
+	if (!handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, projectsettings, false, errorMsg))
 	{
 		repoError << "Failed to update project settings: " << errorMsg;
 	}
@@ -681,10 +681,10 @@ void RepoScene::addTimestampToProjectSettings(
 )
 {
 	RepoBSON criteria = BSON(REPO_LABEL_ID << projectName);
-	auto doc = RepoProjectSettings(handler->findOneByCriteria(databaseName, REPO_COLLECTION_SETTINGS, criteria));
-	auto updatedProjectsettings = doc.cloneAndClearStatus();
+	auto projectsettings = RepoProjectSettings(handler->findOneByCriteria(databaseName, REPO_COLLECTION_SETTINGS, criteria));
+	projectsettings.clearErrorStatus();
 	std::string errorMsg;
-	if (!handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, updatedProjectsettings, true, errorMsg))
+	if (!handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, projectsettings, false, errorMsg))
 	{
 		repoError << "Failed to update project settings: " << errorMsg;
 	}

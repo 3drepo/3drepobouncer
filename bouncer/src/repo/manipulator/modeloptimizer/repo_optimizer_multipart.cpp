@@ -25,8 +25,7 @@
 #include "bvh/sweep_sah_builder.hpp"
 
 #include "repo_optimizer_multipart.h"
-#include "../../core/model/bson/repo_bson_factory.h"
-#include "../../core/model/bson/repo_bson_builder.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
 
 #include <algorithm>
 #include <chrono>

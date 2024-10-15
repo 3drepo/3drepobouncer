@@ -232,18 +232,12 @@ std::vector<repo::lib::RepoUUID> RepoBSON::getUUIDFieldArray(const std::string &
 	if (hasField(label))
 	{
 		RepoBSON array = getObjectField(label);
-
 		if (!array.isEmpty())
 		{
 			std::set<std::string> fields = array.getFieldNames();
-
 			std::set<std::string>::iterator it;
 			for (it = fields.begin(); it != fields.end(); ++it)
-				results.push_back(array.getUUIDField(*it));
-		}
-		else
-		{
-			repoDebug << "getUUIDFieldArray: field " << label << " is an empty bson or wrong type!";
+				results.push_back(array.getUUIDField(*it)); // If the item is the wrong type an exception will be thrown to the caller
 		}
 	}
 

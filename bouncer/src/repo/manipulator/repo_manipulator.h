@@ -49,7 +49,7 @@ namespace repo {
 			*/
 			uint8_t commitScene(
 				const std::string                     &databaseAd,
-				const repo::core::model::RepoBSON     *cred,
+				const std::string                     &user,
 				const std::string                     &bucketName,
 				const std::string                     &bucketRegion,
 				repo::core::model::RepoScene          *scene,
@@ -224,7 +224,6 @@ namespace repo {
 			std::vector<repo::core::model::RepoBSON>
 				getAllFromCollectionTailable(
 					const std::string                             &databaseAd,
-					const repo::core::model::RepoBSON             *cred,
 					const std::string                             &database,
 					const std::string                             &collection,
 					const uint64_t                                &skip = 0,

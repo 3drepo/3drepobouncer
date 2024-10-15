@@ -19,8 +19,9 @@
 
 #include <unordered_map>
 #include <cstdint>
-#include "../../repo_bouncer_global.h"
-#include "../../core/model/bson/repo_bson_assets.h"
+#include <memory>
+#include "repo/repo_bouncer_global.h"
+#include "repo/core/model/bson/repo_bson_assets.h"
 #include "repo_uuid.h"
 #include "repo_vector.h"
 #include <boost/crc.hpp>

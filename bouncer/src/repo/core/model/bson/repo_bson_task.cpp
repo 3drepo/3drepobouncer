@@ -17,7 +17,7 @@
 
 #include "repo_bson_task.h"
 #include "repo_bson_builder.h"
-#include "../../../lib/datastructure/repo_uuid.h"
+#include "repo/lib/datastructure/repo_uuid.h"
 
 #include <boost/lexical_cast.hpp>
 

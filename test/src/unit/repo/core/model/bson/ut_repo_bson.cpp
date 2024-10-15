@@ -18,12 +18,15 @@
 #include <cstdlib>
 
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest-matchers.h>
 
 #include <repo/core/model/bson/repo_bson.h>
 #include <repo/core/model/bson/repo_bson_builder.h>
 #include <repo/core/model/bson/repo_bson_project_settings.h>
 
 using namespace repo::core::model;
+using namespace testing;
 
 static auto mongoTestBSON = BSON("ice" << "lolly" << "amount" << 100.0);
 static const RepoBSON testBson = RepoBSON(BSON("ice" << "lolly" << "amount" << 100));
@@ -72,8 +75,12 @@ TEST(RepoBSONTest, GetField)
 	EXPECT_TRUE(emptyBson.getField("hello").eoo());
 }
 
-TEST(RepoBSONTest, GetBinaryAsVectorEmbedded)
+TEST(RepoBSONTest, GetBinDataGeneralAsVectorEmbedded)
 {
+	// RepoBSONBuilder no longer supports adding BinDataGeneral fields, however
+	// legacy documents may still have them, therefore RepoBSON should be able
+	// to return these fields if they exist.
+
 	mongo::BSONObjBuilder builder;
 
 	std::vector < uint8_t > in, out;
@@ -91,16 +98,11 @@ TEST(RepoBSONTest, GetBinaryAsVectorEmbedded)
 
 	EXPECT_TRUE(bson.getBinaryFieldAsVector("binDataTest", out));
 
-	EXPECT_EQ(in.size(), out.size());
-	for (size_t i = 0; i < size; ++i)
-	{
-		EXPECT_EQ(in[i], out[i]);
-	}
+	EXPECT_THAT(in, Eq(out));
 
-	//Invalid retrieval, but they shouldn't throw exception
-	EXPECT_FALSE(bson.getBinaryFieldAsVector("numTest", out));
-	EXPECT_FALSE(bson.getBinaryFieldAsVector("stringTest", out));
-	EXPECT_FALSE(bson.getBinaryFieldAsVector("doesn'tExist", out));
+	EXPECT_THROW({ bson.getBinaryFieldAsVector("numTest", out); }, repo::lib::RepoFieldTypeException);
+	EXPECT_THROW({ bson.getBinaryFieldAsVector("stringTest", out); }, repo::lib::RepoFieldTypeException);
+	EXPECT_THROW({ bson.getBinaryFieldAsVector("doesn'tExist", out); }, repo::lib::RepoFieldNotFoundException);
 }
 
 TEST(RepoBSONTest, GetBinaryAsVectorReferenced)
@@ -126,20 +128,12 @@ TEST(RepoBSONTest, GetBinaryAsVectorReferenced)
 	EXPECT_TRUE(bson.getBinaryFieldAsVector("binDataTest", out));
 	EXPECT_FALSE(bson.getBinaryFieldAsVector(fname, out)); //make sure fieldname/filename are not mixed up.
 
-	ASSERT_EQ(out.size(), in.size());
-	for (size_t i = 0; i < size; ++i)
-	{
-		EXPECT_EQ(in[i], out[i]);
-	}
+	EXPECT_THAT(in, Eq(out));
 
 	EXPECT_TRUE(bson2.getBinaryFieldAsVector("binDataTest", out));
 	EXPECT_FALSE(bson2.getBinaryFieldAsVector(fname, out)); //make sure fieldname/filename are not mixed up.
 
-	ASSERT_EQ(out.size(), in.size());
-	for (size_t i = 0; i < size; ++i)
-	{
-		EXPECT_EQ(in[i], out[i]);
-	}
+	EXPECT_THAT(in, Eq(out));
 }
 
 TEST(RepoBSONTest, AssignOperator)
@@ -533,48 +527,4 @@ TEST(RepoBSONTest, HasEmbeddedFieldTest)
 	RepoBSON expectTrue(BSON("field" << mongoTestBSON));
 	EXPECT_TRUE(expectTrue.hasEmbeddedField("field", "ice"));
 	EXPECT_FALSE(expectTrue.hasEmbeddedField("field", "NonExistent"));
-}
-
-TEST(RepoBSONTest, ProjectSettingsTest)
-{
-	// Project Settings can be read from an existing BSON, but not created anew
-
-	std::string projectName = "project";
-	std::string owner = "repo";
-	std::string type = "Structural";
-	std::string description = "testing project";
-
-	{
-		RepoBSONBuilder builder;
-		builder.append(REPO_LABEL_ID, projectName);
-		builder.append(REPO_LABEL_DESCRIPTION, description);
-		builder.append(REPO_LABEL_OWNER, owner);
-		builder.append(REPO_LABEL_TYPE, type);
-		builder.append(REPO_PROJECT_SETTINGS_LABEL_IS_FEDERATION, false);
-
-		RepoProjectSettings settings(builder.obj());
-
-		EXPECT_EQ(projectName, settings.getProjectName());
-		EXPECT_EQ(description, settings.getDescription());
-		EXPECT_EQ(owner, settings.getOwner());
-		EXPECT_EQ(type, settings.getType());
-		EXPECT_FALSE(settings.isFederate());
-	}
-
-	{
-		RepoBSONBuilder builder;
-		builder.append(REPO_LABEL_ID, projectName);
-		builder.append(REPO_LABEL_DESCRIPTION, description);
-		builder.append(REPO_LABEL_OWNER, owner);
-		builder.append(REPO_LABEL_TYPE, type);
-		builder.append(REPO_PROJECT_SETTINGS_LABEL_IS_FEDERATION, true);
-
-		RepoProjectSettings settings2(builder.obj());
-
-		EXPECT_EQ(projectName, settings2.getProjectName());
-		EXPECT_EQ(description, settings2.getDescription());
-		EXPECT_EQ(owner, settings2.getOwner());
-		EXPECT_EQ(type, settings2.getType());
-		EXPECT_TRUE(settings2.isFederate());
-	}
 }

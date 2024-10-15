@@ -15,15 +15,11 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/**
-*  Project setting BSON
-*/
-
 #pragma once
 
 #include "repo/repo_bouncer_global.h"
 #include <string>
-#include <ctime>
+#include <set>
 
 namespace repo {
 	namespace core {
@@ -31,39 +27,26 @@ namespace repo {
 			
 			class RepoBSON;
 
-			#define REPO_PROJECT_SETTINGS_LABEL_STATUS "status"
-			#define REPO_PROJECT_SETTINGS_LABEL_TIMESTAMP "timestamp"
+			#define REPO_USER_LABEL_VR_ENABLED					"vrEnabled"
+			#define REPO_USER_LABEL_SRC_ENABLED					"srcEnabled"
 
-			class REPO_API_EXPORT RepoProjectSettings
+			class REPO_API_EXPORT RepoTeamspace
 			{
 			public:
 
-				// RepoProjectSettings can only be initialised from an existing
-				// document, and should only be used with upsert
+				// RepoTeamspace provides access to the teamspace settings
+				// document. This is a read-only object.
 	
-				RepoProjectSettings(RepoBSON bson);
+				RepoTeamspace(RepoBSON bson);
 
-				~RepoProjectSettings() {}
+				~RepoTeamspace() {}
 
-				operator RepoBSON() const;
+				// Currently the only supported member is the addons
 
-				void setErrorStatus();
-
-				void clearErrorStatus();
-
-				const std::string& getProjectId() const 
-				{
-					return id;
-				}
-
-				const std::string& getStatus() const
-				{
-					return status;
-				}
+				bool isAddOnEnabled(const std::string& addOnName);
 
 			private:
-				std::string id;
-				std::string status;
+				std::set<std::string> addOns;
 			};
 		}// end namespace model
 	} // end namespace core

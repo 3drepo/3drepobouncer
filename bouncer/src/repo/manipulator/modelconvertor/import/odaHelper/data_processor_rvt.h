@@ -55,8 +55,7 @@
 
 #include <TB_ExLabelUtils/BmSampleLabelUtilsPE.h>
 
-#include "../../../../lib/datastructure/repo_structs.h"
-#include "../../../../core/model/bson/repo_bson_builder.h"
+#include "repo/lib/datastructure/repo_structs.h"
 #include "geometry_collector.h"
 #include "data_processor.h"
 

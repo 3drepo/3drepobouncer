@@ -20,7 +20,7 @@
 
 #pragma once
 #include "repo_node.h"
-#include "../../../lib/datastructure/repo_structs.h"
+#include "repo/lib/datastructure/repo_structs.h"
 
 namespace repo {
 	namespace core {
@@ -43,7 +43,7 @@ namespace repo {
 
 			//------------------------------------------------------------------------------
 
-			class REPO_API_EXPORT MaterialNode :public RepoNode
+			class REPO_API_EXPORT MaterialNode : public RepoNode
 			{
 			public:
 

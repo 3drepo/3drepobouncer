@@ -21,6 +21,7 @@
 
 #pragma once
 #include "repo_node_revision.h"
+#include "repo/core/model/repo_model_global.h"
 
 //------------------------------------------------------------------------------
 //

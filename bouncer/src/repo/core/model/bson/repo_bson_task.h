@@ -16,7 +16,11 @@
 */
 
 #pragma once
-#include "repo_bson.h"
+
+#include "repo/repo_bouncer_global.h"
+#include "repo/lib/datastructure/repo_uuid.h"
+#include <vector>
+#include <unordered_map>
 
 namespace repo {
 	namespace core {
@@ -36,6 +40,8 @@ namespace repo {
 			#define REPO_TASK_SHARED_IDS "shared_ids"
 			#define REPO_TASK_META_KEY "key"
 			#define REPO_TASK_META_VALUE "value"
+
+			class RepoBSON;
 
 			class REPO_API_EXPORT RepoTask
 			{

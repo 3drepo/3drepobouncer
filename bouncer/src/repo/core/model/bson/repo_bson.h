@@ -246,8 +246,7 @@ namespace repo {
 						}
 						else
 						{
-							repoError << "Trying to retrieve binary from a field that doesn't exist(" << field << ")";
-							return false;
+							throw repo::lib::RepoFieldNotFoundException(field);
 						}
 					}
 					else {
@@ -263,13 +262,14 @@ namespace repo {
 								memcpy(vec.data(), binData, length);
 								success = true;
 							}
-							else {
-								repoError << "RepoBSON::getBinaryFieldAsVector : "
-									<< "size of binary data (" << length << ") Unable to copy 0 bytes!";
+							else 
+							{
+								throw repo::lib::RepoFieldTypeException(field + "; has a length of zero bytes");
 							}
 						}
-						else {
-							repoError << "RepoBSON::getBinaryFieldAsVector : bson element type is not BinDataGeneral!";
+						else 
+						{
+							throw repo::lib::RepoFieldTypeException(field);
 						}
 					}
 

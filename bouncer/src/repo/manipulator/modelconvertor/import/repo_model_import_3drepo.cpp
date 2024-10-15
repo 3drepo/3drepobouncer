@@ -22,10 +22,9 @@
 #include <iostream>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
-#include "../../../core/model/bson/repo_bson_builder.h"
-#include "../../../core/model/bson/repo_bson_factory.h"
-#include "../../../lib/repo_log.h"
-#include "../../../error_codes.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/lib/repo_log.h"
+#include "repo/error_codes.h"
 
 using namespace repo::core::model;
 using namespace repo::manipulator::modelconvertor;
@@ -361,7 +360,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 
 	if (materialID >= 0)
 	{
-		matParents[materialID].push_back(sharedID);
+		matNodeList[materialID]->addParent(sharedID);
 	}
 
 	mesh_data_t result = { vertices, normals, uvChannels, faces, boundingBox, parentID, sharedID };
@@ -515,7 +514,6 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t& err)
 			{
 				parseMaterial(element.second);
 			}
-			matParents.resize(materials.size());
 			repoInfo << "Loaded: " << materials.size() << " materials";
 		}
 		else
@@ -642,13 +640,12 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t& errCod
 		createObject(jsonTree);
 	}
 
-	// Attach all the parents to the materials
-	repoInfo << "Attaching materials to parents";
+	// Change the container type of the materials for RepoScene's constructor
+	repoInfo << "Building materials list";
 	materials.clear();
 	for (int i = 0; i < matNodeList.size(); i++)
 	{
-		//TODO SJF: check if we actually need to clone here...
-		materials.insert(new repo::core::model::MaterialNode(matNodeList[i]->cloneAndAddParent(matParents[i])));
+		materials.insert(matNodeList[i]);
 	}
 
 	// Preparing reference files

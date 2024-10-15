@@ -20,9 +20,8 @@
 
 #pragma once
 #include "repo_node.h"
-
-#include "../../../repo_bouncer_global.h"
-#include "../../../lib/datastructure/repo_structs.h"
+#include "repo/repo_bouncer_global.h"
+#include "repo/lib/datastructure/repo_structs.h"
 
 namespace repo {
 	namespace core {
@@ -85,10 +84,7 @@ namespace repo {
 				* @param RepoBSON object
 				* @param binMapping binary mapping of fields that are too big to fit within the bson
 				*/
-				MeshNode(RepoBSON bson,
-					const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping =
-					std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>()
-				);
+				MeshNode(RepoBSON bson);
 
 				/**
 				* Default deconstructor

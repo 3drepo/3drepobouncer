@@ -24,12 +24,10 @@
 
 using namespace repo::core::model;
 
-RepoNode::RepoNode(RepoBSON bson,
-	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping) {
+RepoNode::RepoNode(RepoBSON bson) {
 	uniqueId = repo::lib::RepoUUID::createUUID();
 	sharedId = repo::lib::RepoUUID::defaultValue;
 	revId = repo::lib::RepoUUID::defaultValue;
-	bigFiles = binMapping;
 	deserialise(bson);
 }
 
@@ -40,6 +38,11 @@ RepoNode::RepoNode()
 	revId = repo::lib::RepoUUID::defaultValue;
 }
 
+RepoNode::operator RepoBSON() const
+{ 
+	return getBSON(); 
+}
+
 RepoBSON RepoNode::getBSON() const {
 	RepoBSONBuilder builder;
 	serialise(builder);
@@ -47,8 +50,14 @@ RepoBSON RepoNode::getBSON() const {
 }
 
 void RepoNode::deserialise(RepoBSON& bson) {
-	uniqueId = bson.getUUIDField(REPO_NODE_LABEL_ID);
-	name = bson.getStringField(REPO_NODE_LABEL_NAME);
+	if (bson.hasField(REPO_NODE_LABEL_ID)) 
+	{
+		uniqueId = bson.getUUIDField(REPO_NODE_LABEL_ID);
+	}
+	if (bson.hasField(REPO_NODE_LABEL_NAME)) 
+	{
+		name = bson.getStringField(REPO_NODE_LABEL_NAME);
+	}
 	if (bson.hasField(REPO_NODE_LABEL_SHARED_ID))
 	{
 		sharedId = bson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);
@@ -80,70 +89,10 @@ void RepoNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 	if (!revId.isDefaultValue()) {
 		builder.append(REPO_NODE_REVISION_ID, revId);
 	}
-	for (auto& pair : bigFiles) {
-		builder.appendLargeArray(pair.first, pair.second.second);
-	}
 }
 
 RepoNode::~RepoNode()
 {
-}
-
-RepoNode RepoNode::cloneAndAddParent(
-	const repo::lib::RepoUUID &parentID,
-	const bool     &newUniqueID,
-	const bool     &newSharedID,
-	const bool     &overwrite) const
-{
-	RepoBSONBuilder builder;
-
-	std::vector<repo::lib::RepoUUID> currentParents;
-	if (!overwrite)
-	{
-		currentParents = getParentIDs();
-	}
-
-	if (std::find(currentParents.begin(), currentParents.end(), parentID) == currentParents.end())
-		currentParents.push_back(parentID);
-	builder.appendArray(REPO_NODE_LABEL_PARENTS, currentParents);
-
-	if (newUniqueID)
-		builder.append(REPO_NODE_LABEL_ID, repo::lib::RepoUUID::createUUID());
-
-	if (newSharedID)
-		builder.append(REPO_NODE_LABEL_SHARED_ID, repo::lib::RepoUUID::createUUID());
-
-	builder.appendElementsUnique(getBSON());
-
-	return RepoNode(builder.obj(), bigFiles);
-}
-
-RepoNode RepoNode::cloneAndAddParent(
-	const std::vector<repo::lib::RepoUUID> &parentIDs) const
-{
-	if (!parentIDs.size()) return RepoNode(getBSON(), bigFiles);
-
-	RepoBSONBuilder builder;
-	RepoBSONBuilder arrayBuilder;
-	std::set<std::string> currentParents;
-	for (const auto &parent : getParentIDs()) {
-		currentParents.insert(parent.toString());
-	}
-
-	for (const auto &parent : parentIDs) {
-		currentParents.insert(parent.toString());
-	}
-
-	std::vector<repo::lib::RepoUUID> newParents;
-	for (const auto &parent : currentParents) {
-		newParents.push_back(repo::lib::RepoUUID(parent));
-	}
-
-	builder.appendArray(REPO_NODE_LABEL_PARENTS, newParents);
-
-	builder.appendElementsUnique(getBSON());
-
-	return RepoNode(builder.obj(), bigFiles);
 }
 
 NodeType RepoNode::getTypeAsEnum() const // todo: get rid of this in favour of RTTI

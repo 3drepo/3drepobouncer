@@ -11,9 +11,11 @@ set(TEST_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_builder.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_element.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_factory.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_project_settings.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_ref.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_sequence.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_task.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_teamspace.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node_drawing_revision.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node_material.cpp

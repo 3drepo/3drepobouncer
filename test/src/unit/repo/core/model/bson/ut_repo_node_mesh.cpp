@@ -564,12 +564,18 @@ TEST(MeshNodeTest, CopyConstructor)
 
 	auto b = a;
 	EXPECT_THAT(a.sEqual(b), IsTrue());
+	EXPECT_THAT(a.getParentIDs(), UnorderedElementsAreArray(b.getParentIDs()));
+	EXPECT_THAT(a.getSharedID(), b.getSharedID());
+	EXPECT_THAT(a.getUniqueID(), b.getUniqueID());
 
 	b.setFaces(makeFaces(MeshNode::Primitive::TRIANGLES));
 	EXPECT_THAT(a.sEqual(b), IsFalse());
 
 	auto c = new MeshNode(a);
 	EXPECT_THAT(a.sEqual(*c), IsTrue());
+	EXPECT_THAT(a.getParentIDs(), UnorderedElementsAreArray(c->getParentIDs()));
+	EXPECT_THAT(a.getSharedID(), c->getSharedID());
+	EXPECT_THAT(a.getUniqueID(), c->getUniqueID());
 
 	c->setFaces(makeFaces(MeshNode::Primitive::TRIANGLES));
 	EXPECT_THAT(a.sEqual(*c), IsFalse());
@@ -578,6 +584,9 @@ TEST(MeshNodeTest, CopyConstructor)
 
 	auto d = makeNewMeshNode();
 	EXPECT_THAT(a.sEqual(*d), IsTrue());
+	EXPECT_THAT(a.getParentIDs(), UnorderedElementsAreArray(d->getParentIDs()));
+	EXPECT_THAT(a.getSharedID(), d->getSharedID());
+	EXPECT_THAT(a.getUniqueID(), d->getUniqueID());
 
 	d->setFaces(makeFaces(MeshNode::Primitive::TRIANGLES));
 	EXPECT_THAT(a.sEqual(*d), IsFalse());
@@ -586,6 +595,9 @@ TEST(MeshNodeTest, CopyConstructor)
 
 	auto e = makeRefMeshNode();
 	EXPECT_THAT(a.sEqual(e), IsTrue());
+	EXPECT_THAT(a.getParentIDs(), UnorderedElementsAreArray(e.getParentIDs()));
+	EXPECT_THAT(a.getSharedID(), e.getSharedID());
+	EXPECT_THAT(a.getUniqueID(), e.getUniqueID());
 
 	e.setFaces(makeFaces(MeshNode::Primitive::TRIANGLES));
 	EXPECT_THAT(a.sEqual(e), IsFalse());

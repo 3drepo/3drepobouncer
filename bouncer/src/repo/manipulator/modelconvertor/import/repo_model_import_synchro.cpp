@@ -19,11 +19,10 @@
 #include <memory>
 #include "repo_model_import_synchro.h"
 
-#include "../../../core/model/bson/repo_bson_builder.h"
-#include "../../../core/model/bson/repo_bson_factory.h"
-#include "../../../lib/repo_log.h"
-#include "../../../lib/datastructure/repo_matrix.h"
-#include "../../../error_codes.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/lib/repo_log.h"
+#include "repo/lib/datastructure/repo_matrix.h"
+#include "repo/error_codes.h"
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -107,7 +106,7 @@ std::pair<repo::core::model::RepoNodeSet, repo::core::model::RepoNodeSet> Synchr
 		auto textBuff = mat.texture.texture;
 		if (textBuff.size()) {
 			auto textNode = new repo::core::model::TextureNode(repo::core::model::RepoBSONFactory::makeTextureNode("texture", (char*)textBuff.data(),
-				textBuff.size(), matEntry.second.texture.width, matEntry.second.texture.height).cloneAndAddParent(matNode->getSharedID()));
+				textBuff.size(), matEntry.second.texture.width, matEntry.second.texture.height, { matNode->getSharedID() }));
 			textNodes.insert(textNode);
 			repoIDToNode[textNode->getUniqueID()] = textNode;
 		}
@@ -393,13 +392,13 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 		if (synchroIDToRepoID.find(synchroParent) != synchroIDToRepoID.end()) {
 			parentSharedID = repoIDToNode[synchroIDToRepoID[synchroParent]]->getSharedID();
 		}
-		*repoIDToNode[nodeID] = repoIDToNode[nodeID]->cloneAndAddParent(parentSharedID);
+		repoIDToNode[nodeID]->addParent(parentSharedID);
 	}
 
 	for (auto entry : nodeToParents) {
 		auto nodeID = entry.first;
 		auto parents = entry.second;
-		*repoIDToNode[nodeID] = repoIDToNode[nodeID]->cloneAndAddParent(parents);
+		repoIDToNode[nodeID]->addParents(parents);
 	}
 
 	repo::core::model::RepoNodeSet dummy;

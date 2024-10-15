@@ -28,10 +28,11 @@
 #include <unordered_map>
 #include "repo/lib/datastructure/repo_variant.h"
 
-#include "../model/bson/repo_bson.h"
-
 namespace repo {
 	namespace core {
+		namespace model {
+			class RepoBSON;
+		}
 		namespace handler {
 			class AbstractDatabaseHandler {
 			public:
@@ -97,7 +98,7 @@ namespace repo {
 				* @param name name of the collection
 				* @param index BSONObj specifying the index
 				*/
-				virtual void createIndex(const std::string &database, const std::string &collection, const mongo::BSONObj & obj) = 0;
+				virtual void createIndex(const std::string &database, const std::string &collection, const repo::core::model::RepoBSON& obj) = 0;
 
 				/**
 				* Insert a single document in database.collection

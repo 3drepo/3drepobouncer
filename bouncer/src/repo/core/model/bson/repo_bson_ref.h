@@ -23,7 +23,6 @@
 
 #include "repo/repo_bouncer_global.h"
 #include "repo/lib/datastructure/repo_variant.h"
-
 #include <unordered_map>
 
 namespace repo {

@@ -16,8 +16,13 @@
 */
 
 #pragma once
+
+#include "repo/repo_bouncer_global.h"
+#include "repo/lib/datastructure/repo_structs.h"
+#include "repo/lib/datastructure/repo_uuid.h"
 #include <unordered_map>
-#include "repo_bson.h"
+#include <vector>
+#include <string>
 
 namespace repo {
 	namespace core {
@@ -34,6 +39,8 @@ namespace repo {
 #define REPO_SEQUENCE_LABEL_START_DATE "startDate"
 #define REPO_SEQUENCE_LABEL_END_DATE "endDate"
 #define REPO_SEQUENCE_LABEL_STATE "state"
+
+			class RepoBSON;
 
 			class REPO_API_EXPORT RepoSequence
 			{
