@@ -30,15 +30,14 @@
 #define strcasecmp _stricmp
 #endif
 
-#include <string>
-#include <mongo/bson/bson.h>
-#include "../../../lib/datastructure/repo_matrix.h"
-#include "../../../lib/datastructure/repo_uuid.h"
 #include "repo_bson.h"
-
-#include <boost/variant/static_visitor.hpp>
+#include "repo/lib/datastructure/repo_matrix.h"
+#include "repo/lib/datastructure/repo_uuid.h"
 #include "repo/lib/datastructure/repo_variant.h"
 
+#include <boost/variant/static_visitor.hpp>
+
+#include <string>
 #include <ctime>
 
 namespace repo {
@@ -50,7 +49,7 @@ namespace repo {
 				RepoBSONBuilder();
 				~RepoBSONBuilder();
 
-				using BinMapping = std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>;
+				using BinMapping = RepoBSON::BinMapping;
 
 				BinMapping& mapping()
 				{

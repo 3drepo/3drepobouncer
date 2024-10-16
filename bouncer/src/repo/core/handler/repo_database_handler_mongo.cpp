@@ -26,6 +26,7 @@
 #include "fileservice/repo_file_manager.h"
 #include "fileservice/repo_blob_files_handler.h"
 #include "repo/core/model/bson/repo_bson_builder.h"
+#include "repo/core/model/bson/repo_bson_element.h"
 #include "repo/lib/repo_log.h"
 
 using namespace repo::core::handler;
@@ -209,25 +210,28 @@ repo::core::model::RepoBSON createRepoBSON(
 	if (!ignoreExtFile) {
 		if (orgBson.hasFileReference()) {
 			auto ref = orgBson.getBinaryReference();
-
 			auto buffer = blobHandler.readToBuffer(fileservice::DataRef::deserialise(ref));
 			orgBson.initBinaryBuffer(buffer);
 		}
-		else if (orgBson.hasLegacyFileReference()) {
-			std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>> > binMap;
-			std::vector<std::pair<std::string, std::string>> extFileList = orgBson.getFileList();
-			for (const auto &pair : extFileList)
+		else if (orgBson.hasField(REPO_LABEL_OVERSIZED_FILES)) {
+			// The _extRef support has been deprecated, and collections should have been
+			// updated by the 5.4 migration scripts.
+			// In case we have any old documents remaining, this snippet can read the data,
+			// though the filenames will not be accessible.
+
+			auto extRefbson = orgBson.getObjectField(REPO_LABEL_OVERSIZED_FILES);
+			std::set<std::string> fieldNames = extRefbson.getFieldNames();
+			repo::core::model::RepoBSON::BinMapping map;
+			auto fileManager = fileservice::FileManager::getManager();
+			for (const auto& name : fieldNames)
 			{
-				auto fileManager = fileservice::FileManager::getManager();
-
-				auto file = fileManager->getFile(database, collection, pair.second);
-
-				binMap[pair.first] = std::pair<std::string, std::vector<uint8_t>>(pair.second, file);
+				auto fname = extRefbson.getStringField(name);
+				auto file = fileManager->getFile(database, collection, fname);
+				map[name] = file;
 			}
-			return repo::core::model::RepoBSON(obj, binMap);
+			return repo::core::model::RepoBSON(obj, map);
 		}
 	}
-
 	return orgBson;
 }
 

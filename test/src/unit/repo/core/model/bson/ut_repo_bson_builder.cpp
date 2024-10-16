@@ -125,39 +125,6 @@ TEST(RepoBSONBuilderTest, AppendRepoVectorT)
 
 }
 
-TEST(RepoBSONBuilderTest, AppendArrayPair)
-{
-	std::list<std::pair<std::string, std::string>> list;
-	int size = 10;
-	for (int i = 0; i < size; ++i)
-	{
-		std::pair<std::string, std::string> p(std::to_string(std::rand()), std::to_string(std::rand()));
-		list.push_back(p);
-	}
-	
-	RepoBSONBuilder builder;
-	builder.appendArrayPair("arrayPairTest", list, "first", "second");
-
-	RepoBSON testBson = builder.obj();
-
-	std::list<std::pair<std::string, std::string> > outList = testBson.getListStringPairField("arrayPairTest", "first", "second");
-
-	EXPECT_EQ(outList.size(), list.size());
-
-	auto inIt = list.begin();
-	auto outIt = outList.begin();
-
-	for (; inIt != list.end(); ++inIt, ++outIt)
-	{
-		EXPECT_EQ(outIt->first, inIt->first);
-		EXPECT_EQ(outIt->second, inIt->second);
-	}
-
-	//Ensure this doesn't crash and die.
-	builder.appendArrayPair("blah", std::list<std::pair<std::string, std::string> >(), "first", "second");
-
-}
-
 TEST(RepoBSONBuilderTest, appendBinary)
 {
 	size_t binSize = 1024 * 1024;
