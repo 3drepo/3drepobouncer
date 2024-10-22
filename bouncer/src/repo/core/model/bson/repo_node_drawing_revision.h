@@ -112,7 +112,7 @@ namespace repo {
 					return format;
 				}
 
-				void addImage(const lib::RepoUUID& imageRefNodeId) 
+				void addImage(const lib::RepoUUID& imageRefNodeId)
 				{
 					image = imageRefNodeId;
 				}

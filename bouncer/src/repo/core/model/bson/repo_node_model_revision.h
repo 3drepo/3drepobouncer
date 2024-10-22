@@ -83,7 +83,7 @@ namespace repo {
 				* Get the offset coordinates to translate the model
 				* @return return a vector of double (size of 3)
 				*/
-				std::vector<double> getCoordOffset() const 
+				std::vector<double> getCoordOffset() const
 				{
 					return offset;
 				}
@@ -116,7 +116,7 @@ namespace repo {
 					return tag;
 				}
 
-				void setTag(const std::string& tag) 
+				void setTag(const std::string& tag)
 				{
 					this->tag = tag;
 				}

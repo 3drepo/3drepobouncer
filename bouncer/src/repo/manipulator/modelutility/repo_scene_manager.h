@@ -189,7 +189,7 @@ namespace repo {
 				* an error and return an empty buffers object.
 				*/
 				repo_web_buffers_t generateRepoBundleBuffer(
-					repo::core::model::RepoScene* scene);				
+					repo::core::model::RepoScene* scene);
 			};
 		}
 	}

@@ -89,9 +89,9 @@ namespace repo {
 				* override this function.
 				* @return true if node is positionDependant.
 				*/
-				virtual bool positionDependant() 
-				{ 
-					return false; 
+				virtual bool positionDependant()
+				{
+					return false;
 				}
 
 				void addParent(
@@ -162,9 +162,9 @@ namespace repo {
 				* Get the shared ID from the object
 				* @return returns the shared ID of the object
 				*/
-				repo::lib::RepoUUID getSharedID() const 
-				{ 
-					return sharedId; 
+				repo::lib::RepoUUID getSharedID() const
+				{
+					return sharedId;
 				}
 
 				void setSharedID(const repo::lib::RepoUUID& sharedId)
@@ -191,8 +191,8 @@ namespace repo {
 				* Get the unique ID from the object
 				* @return returns the unique ID of the object
 				*/
-				repo::lib::RepoUUID getUniqueID() const 
-				{ 
+				repo::lib::RepoUUID getUniqueID() const
+				{
 					return uniqueId;
 				}
 
@@ -215,7 +215,7 @@ namespace repo {
 					return revId;
 				}
 
-				void setRevision(const repo::lib::RepoUUID& id) 
+				void setRevision(const repo::lib::RepoUUID& id)
 				{
 					revId = id;
 				}

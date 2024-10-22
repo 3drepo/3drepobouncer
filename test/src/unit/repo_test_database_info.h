@@ -18,8 +18,8 @@
 #pragma once
 #include <repo/core/handler/repo_database_handler_mongo.h>
 #include <repo/core/handler/fileservice/repo_file_manager.h>
+#include <repo/lib/datastructure/repo_vector.h>
 #include <repo/lib/repo_config.h>
-#include <repo/core/model/bson/repo_bson_builder.h>
 #include <boost/filesystem.hpp>
 
 //Test Database address
@@ -30,6 +30,7 @@ const static std::string REPO_GTEST_DBUSER = "testUser";
 const static std::string REPO_GTEST_DBPW = "3drepotest";
 const static std::string REPO_GTEST_DBNAME1 = "sampleDataReadOnly";
 const static std::string REPO_GTEST_DBNAME2 = "sampleDataReadOnly2";
+const static std::string REPO_GTEST_DBNAME3 = "sandbox";
 const static std::string REPO_GTEST_DBNAME1_PROJ = "3drepoBIM";
 const static std::string REPO_GTEST_DBNAME2_PROJ = "sphere";
 const static std::string REPO_GTEST_DBNAME1_FED = "fedTest";
@@ -260,16 +261,7 @@ static std::pair <std::pair<std::string, std::string>, mongo::BSONObj> getCollec
 	return results;
 }
 
-static std::pair<std::pair<std::string, std::string>, mongo::BSONObj> getDataForDropCase()
-{
-	std::pair<std::pair<std::string, std::string>, mongo::BSONObj> result;
-	result.first = { "sampleDataRW", "collectionToDrop" };
-	repo::core::model::RepoBSONBuilder builder;
-	builder.append("_id", repo::lib::RepoUUID("0ab45528-9258-421a-927c-c51bf40fc478"));
-	result.second = builder.mongoObj();
-
-	return result;
-}
+std::pair<std::pair<std::string, std::string>, repo::core::model::RepoBSON> getDataForDropCase();
 
 static std::pair<std::pair<std::string, std::string>, std::vector<std::string>> getGoldenForGetAllFromCollectionTailable()
 {

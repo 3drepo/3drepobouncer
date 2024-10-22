@@ -447,12 +447,12 @@ void DataProcessorRvt::processParameter(
 			if (tryConvertMetadataEntry(value, labelUtils, pDescParam, buildInEnum, v))
 			{
 				if (metadata.find(metaKey) != metadata.end() && !boost::apply_visitor(repo::lib::DuplicationVisitor(), metadata[metaKey], v)) {
-										
-					repoDebug 
-						<< "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " 
+
+					repoDebug
+						<< "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: "
 						<< metaKey << "value before: "
-						<< boost::apply_visitor(repo::lib::StringConversionVisitor(), metadata[metaKey]) 
-						<< " after: " 
+						<< boost::apply_visitor(repo::lib::StringConversionVisitor(), metadata[metaKey])
+						<< " after: "
 						<< boost::apply_visitor(repo::lib::StringConversionVisitor(), v);
 				}
 				metadata[metaKey] = v;

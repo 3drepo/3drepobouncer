@@ -18,12 +18,27 @@
 #include <cstdlib>
 
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest-matchers.h>
+#include "../../../../repo_test_utils.h"
+#include "../../../../repo_test_matchers.h"
+#include "../../../../repo_test_mesh_utils.h"
+#include "repo/lib/datastructure/repo_variant.h"
+#include "repo/lib/datastructure/repo_variant_utils.h"
 
 #include <repo/core/model/bson/repo_bson_builder.h>
 
 using namespace repo::core::model;
+using namespace testing;
 
-RepoBSON emptyBSON;
+repo::lib::RepoMatrix makeRepoMatrix()
+{
+	std::vector<float> d;
+	for (int i = 0; i < 16; i++) {
+		d.push_back(((float)rand() - (float)rand()) / (float)rand());
+	}
+	return repo::lib::RepoMatrix(d);
+}
 
 TEST(RepoBSONBuilderTest, ConstructBuilder)
 {
@@ -34,30 +49,153 @@ TEST(RepoBSONBuilderTest, ConstructBuilder)
 
 TEST(RepoBSONBuilderTest, AppendArray)
 {
-	std::vector<std::string> arr({"hello", "bye"});
-	auto arrBson = BSON("1" << arr[0] << "2" << arr[1]);
-	mongo::BSONObjBuilder mbuilder;
-	mbuilder.appendArray("arrayTest", arrBson);
-	RepoBSON b(mbuilder.obj());
+	{
+		// Test empty array. This should result in a no-op.
 
-	RepoBSONBuilder builder, builder2;
-	builder.appendArray("arrayTest", arr);
-	builder2.appendArray("arrayTest", RepoBSON(arrBson));
+		std::vector<std::string> empty;
+		RepoBSONBuilder builder;
+		builder.appendArray("array", empty);
+		RepoBSON bson(builder.obj());
+		EXPECT_THAT(bson.isEmpty(), IsTrue());
+	}
 
-	RepoBSON arrayRepoBson = builder.obj();
-	RepoBSON arrayRepoBson2 = builder2.obj();
+	{
+		// Test empty document. This should also result in a no-op.
 
-	EXPECT_EQ(arrayRepoBson.toString(), b.toString());
-	EXPECT_EQ(arrayRepoBson2.toString(), b.toString());
+		RepoBSONBuilder outer;
+		RepoBSONBuilder builder;
+		builder.appendArray("array", outer.obj());
+		RepoBSON bson(builder.obj());
+		EXPECT_THAT(bson.isEmpty(), IsTrue());
+	}
 
-	//Sanity check: make sure everything is not equal to empty bson.
-	EXPECT_NE(emptyBSON.toString(), arrayRepoBson.toString());
-	//Sanity check: make sure appending an empty bson/vector doesn't crash
-	RepoBSONBuilder testBuilder;
+	{
+		// Test an array with one entry - should still get an indexed object
 
-	testBuilder.appendArray("emptyTest", emptyBSON);
-	testBuilder.appendArray("emptyTest2", std::vector<std::string>());
-	
+		std::vector<std::string> one({ "one" });
+		RepoBSONBuilder builder;
+		builder.appendArray("array", one);
+		RepoBSON bson(builder.obj());
+
+		auto a = bson.getStringArray("array");
+		EXPECT_THAT(a.size(), Eq(1));
+		EXPECT_THAT(a[0], Eq(std::string("one")));
+	}
+
+	{
+		// A regular array
+
+		std::vector<std::string> arr({ "hello", "bye" });
+
+		RepoBSONBuilder builder;
+		builder.appendArray("array", arr);
+		RepoBSON bson(builder.obj());
+
+		auto a = bson.getStringArray("array");
+		EXPECT_THAT(a, Eq(arr));
+	}
+
+	{
+		// A regular array of a different type
+
+		std::vector<float> arr({ 1, 7, 10, 12382, 1238, 98981 });
+
+		RepoBSONBuilder builder;
+		builder.appendArray("array", arr);
+		RepoBSON bson(builder.obj());
+
+		auto a = bson.getFloatArray("array");
+		EXPECT_THAT(a, Eq(arr));
+	}
+
+	{
+		// A regular array of complex types - i.e. not basic primitive types, but
+		// ones we do have overloads for in RepoBSONBuilder. For example, UUIDs
+		// or matrices.
+
+		std::vector<repo::lib::RepoUUID> arr({
+			repo::lib::RepoUUID::createUUID(),
+			repo::lib::RepoUUID::createUUID(),
+			repo::lib::RepoUUID::createUUID(),
+			repo::lib::RepoUUID::createUUID(),
+			repo::lib::RepoUUID::createUUID(),
+			repo::lib::RepoUUID::createUUID(),
+			repo::lib::RepoUUID::createUUID(),
+		});
+
+		RepoBSONBuilder builder;
+		builder.appendArray("array", arr);
+		RepoBSON bson(builder.obj());
+
+		auto a = bson.getUUIDFieldArray("array");
+		EXPECT_THAT(a, Eq(arr));
+	}
+
+	{
+		// An array of mixed documents
+
+		RepoBSONBuilder a;
+		a.append("a", "a");
+
+		RepoBSONBuilder b;
+		b.append("b", 1);
+
+		RepoBSONBuilder c;
+		c.append("c", repo::lib::RepoUUID::createUUID());
+
+		RepoBSONBuilder d;
+		d.append("d", repo::lib::RepoMatrix());
+
+		std::vector<RepoBSON> arr({
+			a.obj(),
+			b.obj(),
+			c.obj(),
+			d.obj()
+		});
+
+		RepoBSONBuilder builder;
+		builder.appendArray("array", arr);
+		RepoBSON bson(builder.obj());
+
+		auto fieldArray = bson.getField("array").Array();
+
+		for (int i = 0; i < 4; i++)
+		{
+			EXPECT_THAT(arr[i], Eq(fieldArray[i].Object())); //(We can't directly match between a RepoBSON and RepoBSONElement without going via Object())
+		}
+	}
+
+	{
+		// An array document - this is basically a BSON where each field name is
+		// a sequence of increasing integers.
+
+		std::vector<repo::lib::RepoUUID> uuids({
+			repo::lib::RepoUUID::createUUID(),
+			repo::lib::RepoUUID::createUUID(),
+			repo::lib::RepoUUID::createUUID(),
+			repo::lib::RepoUUID::createUUID(),
+			repo::lib::RepoUUID::createUUID(),
+			repo::lib::RepoUUID::createUUID(),
+			repo::lib::RepoUUID::createUUID()
+		});
+
+		RepoBSONBuilder arrayBuilder;
+		for (size_t i = 0; i < uuids.size(); i++)
+		{
+			arrayBuilder.append(std::to_string(i), uuids[i]);
+		}
+		RepoBSONBuilder builder;
+		builder.appendArray("array", arrayBuilder.obj());
+		RepoBSON bson(builder.obj());
+		EXPECT_THAT(bson.getUUIDFieldArray("array"), Eq(uuids));
+
+		// Building an array document explicitly, and appending an array, should
+		// result in identical results.
+
+		RepoBSONBuilder builder2;
+		builder2.appendArray("array", uuids);
+		EXPECT_THAT(bson, Eq(builder2.obj()));
+	}
 }
 
 TEST(RepoBSONBuilderTest, AppendGeneric)
@@ -65,105 +203,122 @@ TEST(RepoBSONBuilderTest, AppendGeneric)
 	RepoBSONBuilder builder;
 
 	std::string stringT = "string";
+	bool boolT = false;
+	double doubleT = (double)rand() - (double)rand() / (double)rand();
+	float floatT = (float)rand() - (float)rand() / (float)rand();
 	int intT = 64;
 	long long longT = 123412452141L;
-	float floatT = 1.2345678;
-	repo::lib::RepoUUID idT = repo::lib::RepoUUID::createUUID();
-	repo::lib::RepoVector3D rvecT = { 0.1234f, 1.2345f, 2.34567f };
-	//TODO: add more if more comes up!
-
+	repo::lib::RepoUUID uuidT = repo::lib::RepoUUID::createUUID();
+	repo::lib::RepoVector3D repoVectorT = { 0.1234f, 1.2345f, 2.34567f };
+	repo::lib::RepoMatrix repoMatrixT = makeRepoMatrix();
+	tm tmT = getRandomTm();
 
 	builder.append("string", stringT);
+	builder.append("bool", boolT);
+	builder.append("double", doubleT);
+	builder.append("float", floatT);
 	builder.append("int", intT);
 	builder.append("long", longT);
-	builder.append("float", floatT);
-	builder.append("id", idT);
-	builder.append("repoVector", rvecT);
+	builder.append("uuid", uuidT);
+	builder.append("repoVector", repoVectorT);
+	builder.append("repoMatrix", repoMatrixT);
+	builder.append("tm", tmT);
 
 	RepoBSON bson = builder.obj();
 
-	EXPECT_EQ(bson.getStringField("string"), stringT);
-	EXPECT_EQ(bson.getField("int").Int(), intT);
-	EXPECT_EQ(bson.getField("long").Long(), longT);
-	EXPECT_EQ(bson.getField("float").Double(), floatT);
-	EXPECT_EQ(bson.getUUIDField("id"), idT);
-
-	std::vector<float> rvecOut = bson.getFloatArray("repoVector");
-	EXPECT_EQ(3, rvecOut.size());
-	EXPECT_EQ(rvecT.x, rvecOut[0]);
-	EXPECT_EQ(rvecT.y, rvecOut[1]);
-	EXPECT_EQ(rvecT.z, rvecOut[2]);
-	
+	EXPECT_THAT(bson.getStringField("string"), Eq(stringT));
+	EXPECT_THAT(bson.getBoolField("bool"), Eq(boolT));
+	EXPECT_THAT(bson.getDoubleField("double"), Eq(doubleT));
+	EXPECT_THAT(bson.getDoubleField("float"), Eq(floatT)); // Floats should be able to be read as doubles
+	EXPECT_THAT(bson.getIntField("int"), Eq(intT));
+	EXPECT_THAT(bson.getLongField("long"), Eq(longT));
+	EXPECT_THAT(bson.getUUIDField("uuid"), Eq(uuidT));
+	EXPECT_THAT(bson.getFloatVectorField("repoVector"), Eq(repoVectorT.toStdVector())); // RepoVectors through append should appear as arrays; use RepoVectorObject to get the document version
+	EXPECT_THAT(bson.getMatrixField("repoMatrix"), Eq(repoMatrixT));
+	EXPECT_THAT(bson.getTimeStampField("tm"), Eq(mktime(&tmT)));
 }
 
-TEST(RepoBSONBuilderTest, AppendUUID)
+TEST(RepoBSONBuilderTest, AppendRepoVectorObject)
 {
-	repo::lib::RepoUUID uuid = repo::lib::RepoUUID::createUUID();
+	// Tests where the builder can assemble a Vector Object (i.e. a document with
+	// x, y, z as field names instead of array indices).
+
+	repo::lib::RepoVector3D vector = makeRepoVector();
 	RepoBSONBuilder builder;
-	builder.append("uuidTest", uuid);
+	builder.appendVector3DObject("vector", vector);
 	RepoBSON bson = builder.obj();
-
-	EXPECT_EQ(uuid, bson.getUUIDField("uuidTest"));
-
+	EXPECT_THAT(bson.getVector3DField("vector"), Eq(vector));
 }
 
-TEST(RepoBSONBuilderTest, AppendRepoVectorT)
+TEST(RepoBSONBuilderTest, AppendTimeStamp)
 {
-	repo::lib::RepoVector3D vector3d = { 1.0, 2.0, 3.0 };
-	RepoBSONBuilder builder;
-	builder.append("vectorTest", vector3d);
-	RepoBSON bson = builder.obj();
-
-	std::vector<float> vectorOut = bson.getFloatArray("vectorTest");
-
-	EXPECT_EQ(3, vectorOut.size());
-
-	EXPECT_EQ(vectorOut[0], vector3d.x);
-	EXPECT_EQ(vectorOut[1], vector3d.y);
-	EXPECT_EQ(vectorOut[2], vector3d.z);
-
-
-}
-
-TEST(RepoBSONBuilderTest, appendBinary)
-{
-	size_t binSize = 1024 * 1024;
-	uint8_t *binaryData = (uint8_t*) malloc(binSize);
-
-	RepoBSONBuilder builder;
-
-	builder.appendBinary("binaryData", binaryData, binSize);
-	builder.appendBinary("binaryData2", binaryData, 0);
-
-	uint8_t *nothing = nullptr;
-	builder.appendBinary("binaryData3", nothing, 0);
-
-	RepoBSON bson = builder.obj();
-
-	//only "binaryData" should've been appended
-	EXPECT_TRUE(bson.hasField("binaryData"));
-	EXPECT_FALSE(bson.hasField("binaryData2"));
-	EXPECT_FALSE(bson.hasField("binaryData3"));
-
-	std::vector<uint8_t> binOut;
-	EXPECT_TRUE(bson.getBinaryFieldAsVector("binaryData", binOut));
-	EXPECT_EQ(binOut.size(), binSize);
-
-	for (size_t i = 0; i < binSize; ++i)
-	{
-		EXPECT_EQ(binOut[i], binaryData[i]);
-	}
-}
-
-TEST(RepoBSONBuilderTest, appendTimeStamp)
-{
-
 	RepoBSONBuilder builder;
 	builder.appendTimeStamp("ts");
-
 	RepoBSON bson = builder.obj();
+	EXPECT_THAT(bson.getTimeStampField("ts"), IsNow());
+}
 
-	EXPECT_TRUE(bson.hasField("ts"));
+TEST(RepoBSONBuilderTest, AppendTm)
+{
+	// Append time from a tm struct
 
-	EXPECT_EQ(bson.getField("ts").type(), ElementType::DATE );
+	auto tm = getRandomTm();
+
+	RepoBSONBuilder builder;
+	builder.appendTime("time", tm);
+	RepoBSON bson = builder.obj();
+	EXPECT_THAT(bson.getTimeStampField("ts"), mktime(&tm));
+}
+
+TEST(RepoBSONBuilderTest, AppendTime)
+{
+	// Append time from a unix epoch
+
+	auto tm = getRandomTm();
+	auto t = mktime(&tm);
+
+	RepoBSONBuilder builder;
+	builder.appendTime("time", t);
+	RepoBSON bson = builder.obj();
+	EXPECT_THAT(bson.getTimeStampField("ts"), t);
+}
+
+TEST(RepoBSONBuilderTest, AppendRepoVariant)
+{
+	RepoBSONBuilder builder;
+
+	repo::lib::RepoVariant vBool = false;
+	repo::lib::RepoVariant vInt = 10;
+	repo::lib::RepoVariant vLong = 101LL;
+	repo::lib::RepoVariant vDouble = 99.99;
+	repo::lib::RepoVariant vString = "string";
+	repo::lib::RepoVariant vTime = getRandomTm();
+	repo::lib::RepoVariant vUUID = repo::lib::RepoUUID::createUUID();
+
+	builder.appendRepoVariant("vBool", vBool);
+	builder.appendRepoVariant("vInt", vInt);
+	builder.appendRepoVariant("vLong", vLong);
+	builder.appendRepoVariant("vDouble", vDouble);
+	builder.appendRepoVariant("vString", vString);
+	builder.appendRepoVariant("vTime", vTime);
+	builder.appendRepoVariant("vUUID", vUUID);
+
+	RepoBSON bson(builder.obj());
+
+	EXPECT_THAT(bson.getBoolField("vBool"), Eq(boost::get<bool>(vBool)));
+	EXPECT_THAT(bson.getIntField("vInt"), Eq(boost::get<int>(vInt)));
+	EXPECT_THAT(bson.getLongField("vLong"), Eq(boost::get<long long>(vLong)));
+	EXPECT_THAT(bson.getDoubleField("vDouble"), Eq(boost::get<double>(vDouble)));
+	EXPECT_THAT(bson.getStringField("vString"), Eq(boost::get<std::string>(vString)));
+	EXPECT_THAT(bson.getTimeStampField("vTime"), Eq(mktime(&boost::get<tm>(vTime))));
+	EXPECT_THAT(bson.getUUIDField("vUUID"), Eq(boost::get<repo::lib::RepoUUID>(vUUID)));
+}
+
+TEST(RepoBSONBuilderTest, AppendLargeArray)
+{
+	RepoBSONBuilder builder;
+	auto bin = makeRandomBinary();
+	builder.appendLargeArray("bin", bin);
+	RepoBSON bson = builder.obj();
+	EXPECT_THAT(bson.getBinary("bin"), Eq(bin));
 }

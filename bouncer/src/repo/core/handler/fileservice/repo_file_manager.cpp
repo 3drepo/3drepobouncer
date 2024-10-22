@@ -85,7 +85,7 @@ bool FileManager::uploadFileAndCommit(
 
 			auto compresseddata = compressedstream.str();
 			fileContents = new std::vector<uint8_t>(compresseddata.begin(), compresseddata.end());
-			
+
 			fileMetadata["encoding"] = "gzip";
 		}
 		break;

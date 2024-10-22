@@ -34,28 +34,28 @@ std::vector<float> identity = {
 	1, 0, 0, 0,
 	0, 1, 0, 0,
 	0, 0, 1, 0,
-	0, 0, 0, 1 
+	0, 0, 0, 1
 };
 
-std::vector<float> notId = { 
+std::vector<float> notId = {
 	1, 2, 3, 4,
 	5, 6, 7, 8,
 	9, 0.3f, 10, 11,
-	5342, 31, 0.6f, 12 
+	5342, 31, 0.6f, 12
 };
 
 std::vector<float> idInBoundary ={
 	1, 0, 0, 0,
 	0, 1, 0, (float)1e-6,
 	0, 0, 1, 0,
-	0, (float)1e-6, (float)1e-6, 1 
+	0, (float)1e-6, (float)1e-6, 1
 };
 
 std::vector<float> notIdInBoundary = {
 	1, 0, 0, 0,
 	0, 1, 0, (float)2e-5,
 	0, 0, 2, 0,
-	0, (float)2e-5, (float)2e-5, 1 
+	0, (float)2e-5, (float)2e-5, 1
 };
 
 // This function is used by the CopyConstructor Test to return a stack-allocated

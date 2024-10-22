@@ -134,14 +134,14 @@ repo::core::model::MetadataNode* SynchroModelImport::createMetaNode(
 		//Check if it is a number, if it is, store it as a number
 
 		try {
-			v = boost::lexical_cast<long long>(value);			
+			v = boost::lexical_cast<long long>(value);
 		}
 		catch (boost::bad_lexical_cast&)
 		{
 			//not an int, try a double
 
 			try {
-				v = boost::lexical_cast<double>(value);				
+				v = boost::lexical_cast<double>(value);
 			}
 			catch (boost::bad_lexical_cast&)
 			{

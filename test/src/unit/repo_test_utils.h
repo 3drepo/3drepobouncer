@@ -22,6 +22,7 @@
 #include "repo_test_fileservice_info.h"
 #include "repo/lib/datastructure/repo_variant.h"
 #include "repo/lib/datastructure/repo_variant_utils.h"
+#include "repo/lib/datastructure/repo_vector3d.h"
 #include <fstream>
 
 static repo::RepoController::RepoToken* initController(repo::RepoController *controller) {
@@ -367,4 +368,13 @@ static bool projectHasMetaNodesWithPaths(std::string dbName, std::string project
 	}
 
 	return true;
+}
+
+namespace testing {
+
+	repo::lib::RepoVector3D makeRepoVector();
+
+	std::vector<uint8_t> makeRandomBinary(size_t size = 1000);
+
+	repo::core::model::RepoBSON makeRandomRepoBSON(int seed, size_t numBinFiles, size_t binFileSize = 1000);
 }

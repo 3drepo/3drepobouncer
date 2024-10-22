@@ -35,10 +35,10 @@
 
 using namespace repo::core::model;
 
-const std::vector<std::string> RepoScene::collectionsInProject = { 
+const std::vector<std::string> RepoScene::collectionsInProject = {
 	"scene",
 	"scene.files",
-	"scene.chunks", 
+	"scene.chunks",
 	"stash.3drepo",
 	"stash.3drepo.files",
 	"stash.3drepo.chunks",
@@ -445,11 +445,11 @@ bool RepoScene::addNodeToMaps(
 	//----------------------------------------------------------------------
 	//If the node has no parents it must be the rootnode
 	if (!node->getParentIDs().size()) {
-		if (!g.rootNode) 
+		if (!g.rootNode)
 		{
 			g.rootNode = dynamic_cast<TransformationNode*>(node);
 		}
-		else 
+		else
 		{
 			//root node already exist, check if they are the same node
 			if (g.rootNode == node) {
@@ -1115,7 +1115,9 @@ bool RepoScene::loadRevision(
 				statuses.push_back((int)status);
 			}
 			statusBSONBuilder.appendArray("$in", statuses);
-			statusCheck.push_back(BSON(REPO_NODE_REVISION_LABEL_INCOMPLETE << statusBSONBuilder.mongoObj()));
+			RepoBSONBuilder statusCheckBuilder;
+			statusCheckBuilder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, statusBSONBuilder.obj());
+			statusCheck.push_back(statusCheckBuilder.obj());
 			critBuilder.appendArray("$or", statusCheck);
 		}
 		else {

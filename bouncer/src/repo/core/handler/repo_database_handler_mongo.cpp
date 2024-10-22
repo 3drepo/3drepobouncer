@@ -288,7 +288,7 @@ bool MongoDatabaseHandler::dropDocument(
 		try {
 			if (success = !bson.isEmpty() && bson.hasField("_id"))
 			{
-				mongo::Query query = MONGO_QUERY("_id" << bson.getField("_id").toMongoElement());
+				mongo::Query query = MONGO_QUERY("_id" << bson.getField("_id"));
 				worker->remove(database + "." + collection, query, true);
 			}
 			else
@@ -459,7 +459,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 
 		auto fileManager = fileservice::FileManager::getManager();
 		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-		auto query = mongo::Query(queryBuilder.mongoObj());
+		auto query = mongo::Query(queryBuilder.obj());
 		if (!sortField.empty())
 			query = query.sort(sortField, -1);
 
@@ -491,7 +491,7 @@ repo::core::model::RepoBSON  MongoDatabaseHandler::findOneByUniqueID(
 		auto fileManager = fileservice::FileManager::getManager();
 		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
 		mongo::BSONObj bsonMongo = worker->findOne(getNamespace(database, collection),
-			mongo::Query(queryBuilder.mongoObj()));
+			mongo::Query(queryBuilder.obj()));
 
 		bson = createRepoBSON(blobHandler, database, collection, bsonMongo);
 	}
@@ -711,6 +711,11 @@ bool MongoDatabaseHandler::insertDocument(
 {
 	bool success = false;
 
+	if (obj.hasOversizeFiles())
+	{
+		throw repo::lib::RepoException("insertDocument cannot be used with BSONs holding binary files. Use insertManyDocuments instead.");
+	}
+
 	if (!database.empty() || collection.empty())
 	{
 		try {
@@ -792,6 +797,11 @@ bool MongoDatabaseHandler::upsertDocument(
 	std::string &errMsg)
 {
 	bool success = true;
+
+	if (obj.hasOversizeFiles())
+	{
+		throw repo::lib::RepoException("upsertDocument cannot be used with BSONs holding binary files.");
+	}
 
 	bool upsert = overwrite;
 	try {

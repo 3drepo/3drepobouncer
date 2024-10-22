@@ -111,19 +111,19 @@ namespace repo {
 					return extension;
 				}
 
-				uint32_t getWidth() const 
+				uint32_t getWidth() const
 				{
 					return width;
 				}
 
-				uint32_t getHeight() const 
+				uint32_t getHeight() const
 				{
 					return height;
 				}
 
 				bool isEmpty() const;
 
-				void setData(const std::vector<uint8_t>& data, size_t width, size_t height, std::string extension = "") 
+				void setData(const std::vector<uint8_t>& data, size_t width, size_t height, std::string extension = "")
 				{
 					this->data = data;
 					this->width = width;

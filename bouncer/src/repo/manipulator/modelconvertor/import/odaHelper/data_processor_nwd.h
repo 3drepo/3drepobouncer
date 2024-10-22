@@ -45,7 +45,7 @@ namespace repo {
 					}
 
 					void process(OdNwDatabasePtr pNwDb);
-					
+
 					static bool tryConvertMetadataProperty(std::string key, OdNwDataPropertyPtr& metaProperty, repo::lib::RepoVariant& v);
 
 				private:

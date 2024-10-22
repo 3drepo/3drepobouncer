@@ -48,7 +48,7 @@ void RevisionNode::deserialise(RepoBSON& bson)
 	{
 		status = (UploadStatus)bson.getIntField(REPO_NODE_REVISION_LABEL_INCOMPLETE);
 	}
-	if (bson.hasField(REPO_NODE_REVISION_LABEL_AUTHOR)) 
+	if (bson.hasField(REPO_NODE_REVISION_LABEL_AUTHOR))
 	{
 		author = bson.getStringField(REPO_NODE_REVISION_LABEL_AUTHOR);
 	}

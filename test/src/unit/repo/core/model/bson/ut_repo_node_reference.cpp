@@ -175,10 +175,10 @@ TEST(RefNodeTest, Methods)
 
 	node.setProjectRevision(projectRevision);
 	EXPECT_THAT(node.getProjectRevision(), Eq(projectRevision));
-	
+
 	node.setSharedID(sharedId);
 	EXPECT_THAT(node.getSharedID(), Eq(sharedId));
-	
+
 	node.changeName(name);
 	EXPECT_THAT(node.getName(), Eq(name));
 

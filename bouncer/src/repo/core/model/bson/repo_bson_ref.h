@@ -50,7 +50,7 @@ namespace repo {
 				using Metadata = std::unordered_map<std::string, repo::lib::RepoVariant>;
 
 				enum class RefType {
-					FS, 
+					FS,
 					UNKNOWN,
 				};
 

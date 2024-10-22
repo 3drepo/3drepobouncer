@@ -39,8 +39,8 @@ RepoNode::RepoNode()
 }
 
 RepoNode::operator RepoBSON() const
-{ 
-	return getBSON(); 
+{
+	return getBSON();
 }
 
 RepoBSON RepoNode::getBSON() const {
@@ -50,11 +50,11 @@ RepoBSON RepoNode::getBSON() const {
 }
 
 void RepoNode::deserialise(RepoBSON& bson) {
-	if (bson.hasField(REPO_NODE_LABEL_ID)) 
+	if (bson.hasField(REPO_NODE_LABEL_ID))
 	{
 		uniqueId = bson.getUUIDField(REPO_NODE_LABEL_ID);
 	}
-	if (bson.hasField(REPO_NODE_LABEL_NAME)) 
+	if (bson.hasField(REPO_NODE_LABEL_NAME))
 	{
 		name = bson.getStringField(REPO_NODE_LABEL_NAME);
 	}

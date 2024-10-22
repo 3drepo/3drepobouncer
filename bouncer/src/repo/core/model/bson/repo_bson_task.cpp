@@ -33,7 +33,7 @@ RepoTask::RepoTask(
 	const std::vector<repo::lib::RepoUUID>& resources,
 	const std::unordered_map<std::string, std::string>& metadata
 ):
-	name(name), 
+	name(name),
 	uniqueId(uniqueId),
 	parentId(parentId),
 	sequenceId(sequenceId),

@@ -95,9 +95,9 @@ namespace repo {
 				* override this function.
 				* @return true if node is positionDependant.
 				*/
-				virtual bool positionDependant() 
-				{ 
-					return true; 
+				virtual bool positionDependant()
+				{
+					return true;
 				}
 
 				/**

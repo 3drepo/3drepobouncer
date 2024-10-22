@@ -991,7 +991,7 @@ repo::core::model::RepoNode* AssimpModelImport::duplicateMesh(
 	newMesh->setUniqueId(repo::lib::RepoUUID::createUUID());
 	newMesh->setSharedID(repo::lib::RepoUUID::createUUID());
 	newMesh->setParents({ newParent });
-	
+
 	auto it = meshToMat.find(mesh.getSharedID());
 	if (it != meshToMat.end() && it->second)
 	{

@@ -111,7 +111,7 @@ namespace repo {
 					return material;
 				}
 
-				void setMaterialStruct(const repo_material_t& s) 
+				void setMaterialStruct(const repo_material_t& s)
 				{
 					material = s;
 				}

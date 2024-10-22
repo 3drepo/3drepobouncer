@@ -51,7 +51,7 @@ TEST(MultipartOptimizer, ApplyOptimizationTestEmpty)
 	delete empty2;
 }
 
-// The functions below compare the geometry of the original MeshNodes with the 
+// The functions below compare the geometry of the original MeshNodes with the
 // stash MeshNodes as a triangle soup. The geometry should be identical.
 
 
@@ -227,7 +227,7 @@ TEST(MultipartOptimizer, TestMultipleOversizedMeshes)
 	EXPECT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
 	EXPECT_TRUE(scene->hasRoot(OPTIMIZED_GRAPH));
 
-	// Mesh splitting is not determinsitic so we don't check the final mesh 
+	// Mesh splitting is not determinsitic so we don't check the final mesh
 	// count in this test
 
 	EXPECT_TRUE(compareMeshes(scene->getAllMeshes(DEFAULT_GRAPH), scene->getAllMeshes(OPTIMIZED_GRAPH)));
@@ -241,7 +241,7 @@ TEST(MultipartOptimizer, TestMultiplesMeshes)
 
 
 	// These vertex counts, along with the primitive size, are multiples of
-	// the max supermesh size and are designed to trip up supermeshing edge 
+	// the max supermesh size and are designed to trip up supermeshing edge
 	// cases
 
 	repo::core::model::RepoNodeSet meshes, trans, dummy;
@@ -313,7 +313,7 @@ TEST(MultipartOptimizer, TestTinyMeshes)
 	EXPECT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
 	EXPECT_TRUE(scene->hasRoot(OPTIMIZED_GRAPH));
 
-	// Make sure no supermesh has more than 5000 mappings (submeshes). We won't 
+	// Make sure no supermesh has more than 5000 mappings (submeshes). We won't
 	// see the effects in the unit test but when we try to commit the node
 	// it will fail.
 

@@ -32,7 +32,7 @@ RepoProjectSettings::RepoProjectSettings(RepoBSON bson)
 {
 	id = bson.getStringField(REPO_LABEL_ID);
 	status = STATUS_OK;
-	if (bson.hasField(REPO_PROJECT_SETTINGS_LABEL_STATUS)) 
+	if (bson.hasField(REPO_PROJECT_SETTINGS_LABEL_STATUS))
 	{
 		status = bson.getStringField(REPO_PROJECT_SETTINGS_LABEL_STATUS);
 	}

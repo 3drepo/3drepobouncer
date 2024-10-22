@@ -180,7 +180,7 @@ TEST(MeshNodeTest, GetMFormatTest)
 {
 	std::vector<repo::core::model::MeshNode> meshNodes;
 
-	// Create a set of mesh nodes with all possible variations, which should result 
+	// Create a set of mesh nodes with all possible variations, which should result
 	// in different formats
 
 	meshNodes.push_back(MeshNode()); // empty
@@ -233,11 +233,11 @@ TEST(MeshNodeTest, SEqualTest)
 	EXPECT_FALSE(mesh.sEqual(node));
 	EXPECT_TRUE(mesh.sEqual(mesh));
 
-	// Similar to the GetMFormatTest, meshes with different combinations of 
-	// attributes should not return equal. Different objects with the same 
+	// Similar to the GetMFormatTest, meshes with different combinations of
+	// attributes should not return equal. Different objects with the same
 	// configurations however should.
 
-	// Create two lists, with intra-list meshes being separate but equivalent, 
+	// Create two lists, with intra-list meshes being separate but equivalent,
 	// and inter-list meshes being different.
 
 	std::vector<repo::lib::RepoVector3D> emptyV, v;
@@ -259,7 +259,7 @@ TEST(MeshNodeTest, SEqualTest)
 
 		auto& meshNodes = meshNodesLists[i];
 
-		// Create a set of mesh nodes with all possible variations, which should result 
+		// Create a set of mesh nodes with all possible variations, which should result
 		// in different formats
 
 		meshNodes.push_back(MeshNode()); // empty
@@ -357,14 +357,14 @@ TEST(MeshNodeTest, CloneAndApplyTransformation)
 		1, 0, 0, 0,
 		0, 1, 0, 0,
 		0, 0, 1, 0,
-		0, 0, 0, 1 
+		0, 0, 0, 1
 	};
 
-	std::vector<float> notId = { 
+	std::vector<float> notId = {
 		0.1f, 0, 0, 0,
 		0, 0.5f, 0.12f, 0,
 		0.5f, 0, 0.1f, 0,
-		0, 0, 0, 1 
+		0, 0, 0, 1
 	};
 
 	auto mesh = makeMeshNode(3, true, 2);
@@ -394,7 +394,7 @@ TEST(MeshNodeTest, TransformBoundingBox)
 		{  0,  0, -1 },
 		{ -1, -1, -1 },
 		{  1,  1,  1 },
-	}); 
+	});
 
 	auto m = repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D({ 10, 0, 0 })) * repo::lib::RepoMatrix::rotationX(0.12f) * repo::lib::RepoMatrix::rotationY(0.8f) * repo::lib::RepoMatrix::rotationZ(1.02f);
 
@@ -471,7 +471,7 @@ TEST(MeshNodeTest, ApplyTransform)
 		vv = t * vv;
 	}
 
-	for (auto& nn : n) 
+	for (auto& nn : n)
 	{
 		nn = t.transformDirection(nn);
 	}

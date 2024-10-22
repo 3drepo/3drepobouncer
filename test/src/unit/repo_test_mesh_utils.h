@@ -15,7 +15,7 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/** 
+/**
 * Contains a set of helper facilities for creating and comparing meshes
 * for unit test implementations.
 */
@@ -109,7 +109,7 @@ namespace repo {
 					repo::core::model::RepoNodeSet stash);
 
 				void addFaces(
-					repo::core::model::MeshNode* mesh, 
+					repo::core::model::MeshNode* mesh,
 					std::vector<GenericFace>& faces);
 
 				/*

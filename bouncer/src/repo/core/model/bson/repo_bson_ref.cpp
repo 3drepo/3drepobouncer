@@ -87,7 +87,7 @@ void RepoRef::serialise(RepoBSONBuilder& builder) const
 	builder.append(REPO_REF_LABEL_TYPE, RepoRef::convertTypeAsString(type));
 	builder.append(REPO_REF_LABEL_LINK, link);
 	builder.append(REPO_REF_LABEL_SIZE, (unsigned int)size);
-	if (!name.empty()) 
+	if (!name.empty())
 	{
 		builder.append(REPO_NODE_LABEL_NAME, name);
 	}

@@ -203,7 +203,7 @@ TEST(RepoNodeTest, ChangeName)
 {
 	RepoNode node;
 	EXPECT_TRUE(node.getName().empty());
-	
+
 	auto name = "name";
 	node.changeName(name);
 	EXPECT_EQ(node.getName(), name);
@@ -289,7 +289,7 @@ TEST(RepoNodeTest, SetParentsTest)
 		});
 
 	node.setParents(parentIds2);
-	 
+
 	EXPECT_THAT(node.getParentIDs(), UnorderedElementsAreArray(parentIds2));
 }
 

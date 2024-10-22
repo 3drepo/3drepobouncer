@@ -321,13 +321,13 @@ void MeshNode::applyTransformation(
 }
 
 void MeshNode::transformBoundingBox(
-	std::vector<repo::lib::RepoVector3D>& bounds, 
+	std::vector<repo::lib::RepoVector3D>& bounds,
 	repo::lib::RepoMatrix matrix)
 {
-	// Compute the updated AABB by the method of the extrema of transformed 
+	// Compute the updated AABB by the method of the extrema of transformed
 	// corners.
 	// For completeness, there is a faster way described by Jim Avro in Graphics
-	// Gems (1990), but it requires the Translation and Rotation to be to be 
+	// Gems (1990), but it requires the Translation and Rotation to be to be
 	// separated (and the performance improvement would only be noticable if we
 	// were doing, e.g. realtime physics etc).
 
@@ -348,7 +348,7 @@ void MeshNode::transformBoundingBox(
 	min = lib::RepoVector3D(FLT_MAX, FLT_MAX, FLT_MAX);
 	max = lib::RepoVector3D(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
-	for (auto& c : corners) 
+	for (auto& c : corners)
 	{
 		min = lib::RepoVector3D::min(min, c);
 		max = lib::RepoVector3D::max(max, c);
@@ -358,14 +358,14 @@ void MeshNode::transformBoundingBox(
 std::vector<repo::lib::RepoVector3D> MeshNode::getBoundingBox(RepoBSON &bbArr)
 {
 	std::vector<repo::lib::RepoVector3D> bbox;
-	if (!bbArr.isEmpty() && bbArr.couldBeArray())
+	if (bbArr.nFields() == 2)
 	{
 		size_t nVec = bbArr.nFields();
 		bbox.reserve(nVec);
 		for (uint32_t i = 0; i < nVec; ++i)
 		{
 			auto bbVectorBson = bbArr.getObjectField(std::to_string(i));
-			if (!bbVectorBson.isEmpty() && bbVectorBson.couldBeArray())
+			if (!bbVectorBson.isEmpty())
 			{
 				int32_t nFields = bbVectorBson.nFields();
 
@@ -435,7 +435,7 @@ bool MeshNode::sEqual(const RepoNode &other) const
 
 	bool success = false;
 
-	if (otherMesh != nullptr) 
+	if (otherMesh != nullptr)
 	{
 		success = true;
 		success &= grouping == otherMesh->grouping;

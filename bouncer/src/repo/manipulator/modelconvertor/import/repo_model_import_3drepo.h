@@ -71,27 +71,27 @@ namespace repo {
 			{
 			private:
 
-				std::unordered_map<uint8_t, uint8_t> FILE_META_BYTE_LEN_BY_VERSION = 
-				{ 
-					{2, 56}, 
-					{3, 72}, 
-					{4, 72} 
+				std::unordered_map<uint8_t, uint8_t> FILE_META_BYTE_LEN_BY_VERSION =
+				{
+					{2, 56},
+					{3, 72},
+					{4, 72}
 				};
 
 				typedef struct
 				{
 					int64_t jsonSize	 = -1;	//!< Size of the entire JSON segment
 					int64_t dataSize	 = -1;	//!< Size of the entire binary footer segment
-					int64_t sizesStart	 = -1;	//!< Starting location of the JSON sizes array from the top of file in bytes 
+					int64_t sizesStart	 = -1;	//!< Starting location of the JSON sizes array from the top of file in bytes
 					int64_t sizesSize	 = -1;	//!< Length of the JSON sizes array in bytes
-					int64_t matStart	 = -1;	//!< Starting location of the JSON materials array from the top of the file in bytes 
+					int64_t matStart	 = -1;	//!< Starting location of the JSON materials array from the top of the file in bytes
 					int64_t matSize		 = -1;	//!< Size of the JSON materials array in bytes
 					int64_t numChildren	 = -1;	//!< Number of children of the root node
-					int64_t textureStart = -1;	//!< Starting location of the JSON textures array from the top of the file in bytes 
+					int64_t textureStart = -1;	//!< Starting location of the JSON textures array from the top of the file in bytes
 					int64_t textureSize  = -1;  //!< Size of the JSON textures array in bytes
 				} fileMeta;
 
-				struct mesh_data_t 
+				struct mesh_data_t
 				{
 					std::vector<repo::lib::RepoVector3D64> rawVertices;
 					std::vector<repo::lib::RepoVector3D> normals;
@@ -123,7 +123,7 @@ namespace repo {
 				 * trans_matrix_map
 				 * node_map
 				 * transformations
-				 * @param tree 
+				 * @param tree
 				*/
 				void createObject(const boost::property_tree::ptree& tree);
 
@@ -141,12 +141,12 @@ namespace repo {
 				// Error tags
 				bool missingTextures = false;
 				bool geometryImportError = false;
-				
+
 				// Intermediary variables used to keep track of node hierarchy
 				std::vector<repo::core::model::RepoNode *> node_map;				//!< List of all transform nodes in order of decoding
 				std::vector<repo::lib::RepoMatrix> trans_matrix_map;				//!< List of all transformation matrices in same order as node_map
 				std::vector<repo::core::model::MaterialNode *> matNodeList;			//!< Stores a list of materials
-				std::map<int, std::vector<repo::lib::RepoUUID>> textureIdToParents; //!< Maps a texture to the UUID of all the parents that reference it 
+				std::map<int, std::vector<repo::lib::RepoUUID>> textureIdToParents; //!< Maps a texture to the UUID of all the parents that reference it
 				std::vector<mesh_data_t> meshEntries;
 
 				// Variables directly used to instantiate the RepoScene

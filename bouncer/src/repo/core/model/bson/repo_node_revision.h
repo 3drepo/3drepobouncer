@@ -43,7 +43,7 @@ namespace repo {
 			public:
 				// Some of these statuses will no longer be set by bouncer, but
 				// may still exist in the database.
-				enum class UploadStatus { 
+				enum class UploadStatus {
 					COMPLETE = 0,
 					GEN_DEFAULT = 1,
 					GEN_REPO_STASH = 2,
@@ -98,7 +98,7 @@ namespace repo {
 					return status;
 				}
 
-				void updateStatus(const RevisionNode::UploadStatus& status) 
+				void updateStatus(const RevisionNode::UploadStatus& status)
 				{
 					this->status = status;
 				}
@@ -112,7 +112,7 @@ namespace repo {
 					return author;
 				}
 
-				void setAuthor(const std::string& author) 
+				void setAuthor(const std::string& author)
 				{
 					this->author = author;
 				}

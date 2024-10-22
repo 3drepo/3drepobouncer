@@ -43,7 +43,7 @@ TEST(FileManager, GetManager)
 TEST(FileManager, InstantiateManager)
 {
 	FileManager::disconnect();
-	EXPECT_THROW(FileManager::instantiateManager(repo::lib::RepoConfig::fromFile(getDataPath("config/withFS.json")), nullptr), repo::lib::RepoException);	
+	EXPECT_THROW(FileManager::instantiateManager(repo::lib::RepoConfig::fromFile(getDataPath("config/withFS.json")), nullptr), repo::lib::RepoException);
 }
 
 TEST(FileManager, UploadFileAndCommitStringId)
@@ -113,7 +113,7 @@ TEST(FileManager, deleteFileAndRef)
 	auto dbHandler = getHandler();
 	auto res = dbHandler->findOneByCriteria(db, col + "." + REPO_COLLECTION_EXT_REF, BSON("_id" << fileName));
 	EXPECT_TRUE(res.isEmpty());
-	
+
 	EXPECT_FALSE(repo::lib::doesFileExist(dataPathName));
 
 	EXPECT_FALSE(manager->deleteFileAndRef(db, col, fileName));

@@ -167,7 +167,7 @@ RepoRefT<IdType> RepoBSONFactory::makeRepoRef(
 	const RepoRef::RefType &type,
 	const std::string &link,
 	const uint32_t size,
-	const RepoRef::Metadata &metadata) 
+	const RepoRef::Metadata &metadata)
 {
 	if (type != RepoRef::RefType::FS)
 	{

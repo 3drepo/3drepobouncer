@@ -28,7 +28,7 @@ using namespace repo::manipulator::modelconvertor;
 namespace RepoModelImportUtils
 {
 	static std::unique_ptr<AbstractModelImport> ImportBIMFile(
-		std::string bimFilePath, 
+		std::string bimFilePath,
 		uint8_t& impModelErrCode)
 	{
 		ModelImportConfig config;

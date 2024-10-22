@@ -42,31 +42,6 @@ void repo::core::model::RepoBSONBuilder::appendRepoVariant(const std::string& la
 	boost::apply_visitor(AppendVisitor(*this, label), item);
 }
 
-void RepoBSONBuilder::appendArrayPair(
-	const std::string &label,
-	const std::list<std::pair<std::string, std::string> > &list,
-	const std::string &fstLabel,
-	const std::string &sndLabel
-	)
-{
-	if (list.size() > 0)
-	{
-		mongo::BSONArrayBuilder arrBuilder;
-		for (auto it = list.begin(); it != list.end(); ++it)
-		{
-			RepoBSONBuilder innerBuilder;
-			innerBuilder << fstLabel << it->first;
-			innerBuilder << sndLabel << it->second;
-			arrBuilder.append(innerBuilder.mongoObj());
-		}
-		append(label, arrBuilder.arr());
-	}
-	else
-	{
-		repoWarning << "Trying to append an empty array pair with label:" << label;
-	}
-}
-
 RepoBSON RepoBSONBuilder::obj()
 {
 	mongo::BSONObjBuilder build;
@@ -80,6 +55,15 @@ template<> void repo::core::model::RepoBSONBuilder::append<repo::lib::RepoUUID>
 )
 {
 	appendUUID(label, uuid);
+}
+
+template<> void repo::core::model::RepoBSONBuilder::append<tm>
+	(
+		const std::string& label,
+		const tm& time
+		)
+{
+	appendTime(label, time);
 }
 
 template<> void repo::core::model::RepoBSONBuilder::append<repo::lib::RepoVector3D>
@@ -128,4 +112,45 @@ void RepoBSONBuilder::appendLargeArray(std::string name, const void* data, size_
 	auto& buf = binMapping[name];
 	buf.resize(size);
 	memcpy(buf.data(), data, size);
+}
+
+void RepoBSONBuilder::appendTime(std::string label, const int64_t& ts) {
+	mongo::Date_t date = mongo::Date_t(ts * 1000); // Mongo expects time in ms
+	mongo::BSONObjBuilder::append(label, date);
+}
+
+void RepoBSONBuilder::appendTime(std::string label, const tm& t) {
+	tm tmCpy = t; // Copy because mktime can alter the struct
+	int64_t time = static_cast<int64_t>(mktime(&tmCpy));
+
+	// Check for a unsuccessful conversion
+	if (time == -1)
+	{
+		throw repo::lib::RepoException("Failed converting date to mongo compatible format. tm malformed or date pre 1970?");
+	}
+
+	// Convert from seconds to milliseconds
+	time = time * 1000;
+
+	// Append time
+	appendTime(label, time);
+}
+
+void RepoBSONBuilder::appendTimeStamp(std::string label) {
+	appendTime(label, time(NULL));
+}
+
+void RepoBSONBuilder::appendElements(RepoBSON bson) {
+	mongo::BSONObjBuilder::appendElements(bson);
+}
+
+void RepoBSONBuilder::appendElementsUnique(RepoBSON bson) {
+	mongo::BSONObjBuilder::appendElementsUnique(bson);
+}
+
+void RepoBSONBuilder::appendArray(
+	const std::string& label,
+	const RepoBSON& bson)
+{
+	mongo::BSONObjBuilder::appendArray(label, bson);
 }

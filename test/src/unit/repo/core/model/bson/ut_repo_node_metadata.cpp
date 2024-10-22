@@ -26,6 +26,7 @@
 #include <repo/core/model/bson/repo_bson_factory.h>
 
 #include "../../../../repo_test_utils.h"
+#include "../../../../repo_test_matchers.h"
 
 using namespace repo::core::model;
 using namespace testing;
@@ -61,19 +62,6 @@ std::unordered_map<std::string, repo::lib::RepoVariant> makeRandomMetadata(int s
 		data[getRandomString(rand() % 10 + 1)] = v;
 	}
 	return data;
-}
-
-/* 
- * Define local operators required for gtest to interact with RepoVariant.
- */
-static bool operator== (tm a, tm b)
-{
-	return difftime(std::mktime(&a), std::mktime(&b)) == 0;
-}
-
-static void operator<< (std::basic_ostream<char, std::char_traits<char>>& out, tm a)
-{
-	out << std::put_time(&a, "%d-%m-%Y %H-%M-%S");
 }
 
 MetadataNode makeRandomMetaNode(int seed = 0)
@@ -112,7 +100,7 @@ TEST(MetaNodeTest, Serialise)
 
 /*
  * Tests the construction of a MetadataNode from BSON. This is the reference
- * database schema and should be effectively idential to the serialise method. 
+ * database schema and should be effectively idential to the serialise method.
  */
 TEST(MetaNodeTest, Deserialise)
 {
@@ -200,7 +188,7 @@ TEST(MetaNodeTest, Sanitisation)
 	// Sanitisation should take place as soon as the key is added, so the state
 	// of the node at any given time matches what will be in the database
 
-	std::unordered_map<std::string, repo::lib::RepoVariant> before = { 
+	std::unordered_map<std::string, repo::lib::RepoVariant> before = {
 		{ "a", repo::lib::RepoVariant("b") },
 		{ "c$d", repo::lib::RepoVariant("e") },
 		{ "f..g",repo::lib::RepoVariant("h") }

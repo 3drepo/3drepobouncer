@@ -23,6 +23,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest-matchers.h>
 #include "../../../../repo_test_utils.h"
+#include "../../../../repo_test_matchers.h"
 #include "../../../../repo_test_mesh_utils.h"
 
 #include <repo/core/model/bson/repo_bson.h>
@@ -32,19 +33,6 @@
 
 using namespace repo::core::model;
 using namespace testing;
-
-namespace repo {
-	namespace core {
-		namespace model {
-			// This method takes precedence over all the other gtest Printers when printing
-			// RepoBSON. This is required as otherwise gtest will try and use begin/end,
-			// which are privately inherited and so inaccessible.
-			void PrintTo(const RepoBSON& point, std::ostream* os) {
-				*os << point.toString();
-			}
-		}
-	}
-}
 
 static auto mongoTestBSON = BSON("ice" << "lolly" << "amount" << 100.0);
 static const RepoBSON testBson = RepoBSON(BSON("ice" << "lolly" << "amount" << 100));
@@ -72,15 +60,6 @@ mongo::BSONObj makeBsonArray(std::vector<repo::lib::RepoUUID> uuids)
 	return arrbuilder.obj();
 }
 
-repo::lib::RepoVector3D makeRepoVector()
-{
-	repo::lib::RepoVector3D v;
-	v.x = (double)(rand() - rand()) / rand();
-	v.y = (double)(rand() - rand()) / rand();
-	v.z = (double)(rand() - rand()) / rand();
-	return v;
-}
-
 mongo::BSONObj makeRepoVectorObj(const repo::lib::RepoVector3D& v)
 {
 	mongo::BSONObjBuilder builder;
@@ -88,16 +67,6 @@ mongo::BSONObj makeRepoVectorObj(const repo::lib::RepoVector3D& v)
 	builder.append("y", v.y);
 	builder.append("z", v.z);
 	return builder.obj();
-}
-
-std::vector<uint8_t> makeRandomBinary() 
-{
-	std::vector<uint8_t> bin;
-	for (int i = 0; i < 1000; i++)
-	{
-		bin.push_back(rand() % 256);
-	}
-	return bin;
 }
 
 mongo::BSONObj makeBoundsObj(const repo::lib::RepoVector3D64& min, const repo::lib::RepoVector3D64& max)
@@ -150,6 +119,29 @@ TEST(RepoBSONTest, ConstructFromMongoSizeExceeds) {
 	catch (const std::exception &e) {
 		EXPECT_NE(std::string(e.what()).find("BufBuilder"), std::string::npos);
 	}
+}
+
+TEST(RepoBSONTest, Fields)
+{
+	// For historical reasons, nFields and hasField should return only the 'true'
+	// BSON fields and not bin mapped fields
+
+	RepoBSON::BinMapping map;
+	map["bin1"] = makeRandomBinary();
+
+	mongo::BSONObjBuilder builder;
+
+	builder.append("stringField", "string");
+	builder.append("doubleField", (double)0.123);
+
+	RepoBSON bson(builder.obj(), map);
+
+	EXPECT_THAT(bson.nFields(), Eq(2));
+
+	EXPECT_THAT(bson.hasField("stringField"), IsTrue());
+	EXPECT_THAT(bson.hasField("doubleField"), IsTrue());
+	EXPECT_THAT(bson.hasField("bin1"), IsFalse());
+	EXPECT_THAT(bson.hasBinField("bin1"), IsTrue());
 }
 
 TEST(RepoBSONTest, GetField)
@@ -464,6 +456,172 @@ TEST(RepoBSONTest, BinaryFilesUpdated)
 	EXPECT_THAT(bson2.getBinary("bin3"), Eq(additional["bin3"]));
 	EXPECT_THAT(bson2.getBinary("bin1"), Not(Eq(additional["bin1"])));
 	EXPECT_THAT(bson2.getBinary("bin2"), Not(Eq(additional["bin2"])));
+}
+
+TEST(RepoBSONTest, GetBinariesAsBuffer)
+{
+	RepoBSON::BinMapping map;
+	map["file1"] = makeRandomBinary();
+	map["file2"] = makeRandomBinary();
+	map["file3"] = makeRandomBinary();
+
+	RepoBSONBuilder builder;
+	RepoBSON bson(builder.obj(), map);
+
+	auto buf = bson.getBinariesAsBuffer();
+
+	// The first element of the pair should be a document describing the position
+	// in the buffer of each file.
+
+	auto elements = buf.first;
+
+	// And the second the concatenated buffer
+
+	auto buffer = buf.second;
+
+	for (auto f : map) {
+		auto originalName = f.first;
+		auto originalData = f.second;
+
+		auto range = elements.getObjectField(originalName);
+
+		auto start = range.getIntField(REPO_LABEL_BINARY_START);
+		auto size = range.getIntField(REPO_LABEL_BINARY_SIZE);
+
+		auto actualData = std::vector<uint8_t>(buffer.data() + start, buffer.data() + start + size);
+
+		EXPECT_THAT(actualData, Eq(originalData));
+	}
+}
+
+TEST(RepoBSONTest, ReplaceBinaryWithReference)
+{
+	// Create mockups of the Elements and Buffer ref documents
+
+	RepoBSONBuilder elementsBuilder;
+	int32_t counter = 0;
+	for (int i = 0; i < 10; i++)
+	{
+		RepoBSONBuilder rangeBuilder;
+		rangeBuilder.append(REPO_LABEL_BINARY_START, (int32_t)counter);
+		auto size = rand();
+		rangeBuilder.append(REPO_LABEL_BINARY_SIZE, (int32_t)size);
+		counter += size;
+		elementsBuilder.append(repo::lib::RepoUUID::createUUID().toString(), rangeBuilder.obj());
+	}
+	auto elemRef = elementsBuilder.obj();
+
+	RepoBSONBuilder fileRefBuilder;
+	fileRefBuilder.append(REPO_LABEL_BINARY_START, (int32_t)0);
+	fileRefBuilder.append(REPO_LABEL_BINARY_SIZE, (int32_t)rand());
+	fileRefBuilder.append(REPO_LABEL_BINARY_FILENAME, repo::lib::RepoUUID::createUUID().toString()); // File references use strings, even though they are all typically UUIDs now
+	auto fileRef = fileRefBuilder.obj();
+
+	RepoBSONBuilder builder;
+
+	auto s = "myString";
+	auto d = 123.456;
+	auto u = repo::lib::RepoUUID::createUUID();
+	auto v = std::vector<float>({ 1, 2, 3, 4, 5, 6, 7 });
+
+	builder.append("s", s);
+	builder.append("d", d);
+	builder.appendTimeStamp("now");
+	builder.append("uuid", u);
+	builder.appendArray("v", v);
+
+	RepoBSON::BinMapping map;
+	map["b1"] = makeRandomBinary();
+	map["b2"] = makeRandomBinary();
+
+	RepoBSON bson = RepoBSON(builder.obj(), map);
+
+	// To start with, the BSON should not have the reference entry. This is
+	// true whether the BSON has binary mappings or not.
+
+	EXPECT_THAT(bson.hasFileReference(), IsFalse());
+
+	// (Note that replaceBinaryWithReference doesn't actually use the mappings,
+	// which from this point are ignored.)
+
+	bson.replaceBinaryWithReference(fileRef, elemRef);
+
+	// Should now say that it has a _blobRef
+
+	EXPECT_THAT(bson.hasFileReference(), IsTrue());
+
+	// Replacing the binary reference should in practice add the _blobRef entry
+	// in place.
+
+	auto blobRef = bson.getObjectField(REPO_LABEL_BINARY_REFERENCE);
+	EXPECT_THAT(blobRef.getObjectField(REPO_LABEL_BINARY_ELEMENTS), Eq(elemRef));
+	EXPECT_THAT(blobRef.getObjectField(REPO_LABEL_BINARY_BUFFER), Eq(fileRef));
+
+	// All existing fields should be preserved.
+
+	EXPECT_THAT(bson.getStringField("s"), Eq(s));
+	EXPECT_THAT(bson.getDoubleField("d"), Eq(d));
+	EXPECT_THAT(bson.getTimeStampField("now"), IsNow());
+	EXPECT_THAT(bson.getUUIDField("u"), Eq(u));
+	EXPECT_THAT(bson.getFloatVectorField("v"), Eq(v));
+
+	// It should be possible to get the buffer via getBinaryReference too
+
+	EXPECT_THAT(bson.getBinaryReference(), Eq(fileRef));
+}
+
+
+TEST(RepoBSONTest, InitBinaryBuffer)
+{
+	// Create a mockup again, but this time based on an actual bin mapping
+
+	RepoBSON::BinMapping map;
+
+	map[repo::lib::RepoUUID::createUUID().toString()] = makeRandomBinary();
+	map[repo::lib::RepoUUID::createUUID().toString()] = makeRandomBinary();
+	map[repo::lib::RepoUUID::createUUID().toString()] = makeRandomBinary();
+	map[repo::lib::RepoUUID::createUUID().toString()] = makeRandomBinary();
+
+	RepoBSONBuilder originalBuilder;
+	RepoBSON original(originalBuilder.obj(), map);
+
+	auto buf = original.getBinariesAsBuffer();
+	auto elems = buf.first;
+	auto file = buf.second;
+
+	// Make a fileref out of the return buffer (though this won't actually be used
+	// because we will pass the buffer in directly).
+
+	RepoBSONBuilder fileRefBuilder;
+	fileRefBuilder.append(REPO_LABEL_BINARY_START, (int32_t)0);
+	fileRefBuilder.append(REPO_LABEL_BINARY_SIZE, (int32_t)file.size());
+	fileRefBuilder.append(REPO_LABEL_BINARY_FILENAME, repo::lib::RepoUUID::createUUID().toString()); // File references use strings, even though they are all typically UUIDs now
+	auto fileRef = fileRefBuilder.obj();
+
+	// Create a new BSON without the mappings, but give it the _blobRef
+
+	RepoBSONBuilder bsonBuilder;
+	RepoBSON bson(bsonBuilder.obj());
+
+	bson.replaceBinaryWithReference(fileRef, elems);
+
+	// Does not yet have the actual buffers, but now has the ability to read them
+
+	for(auto f : map)
+	{
+		EXPECT_THAT(bson.hasBinField(f.first), IsFalse());
+	}
+
+	// Read the file into the binary mapping
+
+	bson.initBinaryBuffer(file);
+
+	// Now the fields should be available
+
+	for (auto f : map)
+	{
+		EXPECT_THAT(bson.getBinary(f.first), Eq(f.second));
+	}
 }
 
 TEST(RepoBSONTest, GetFilesMapping)
@@ -1084,4 +1242,209 @@ TEST(RepoBSONTest, HasBinField)
 	EXPECT_THAT(bson.hasBinField("bin1"), IsTrue());
 	EXPECT_THAT(bson.hasBinField("bin2"), IsFalse());
 	EXPECT_THAT(bson.hasBinField("bin3"), IsFalse());
+}
+
+TEST(RepoBSONTest, EqualityOperator)
+{
+	// The equality operator should compare the serialised state,
+	// including the binary mappings
+
+	{
+		RepoBSON empty1;
+		RepoBSON empty2;
+		EXPECT_THAT(empty1, Eq(empty2));
+	}
+
+	{
+		RepoBSONBuilder a;
+		RepoBSONBuilder b;
+		a.append("f1", "1");
+		b.append("f1", "1");
+		EXPECT_THAT(a.obj(), Eq(b.obj()));
+
+		RepoBSONBuilder c;
+		c.append("f1", 1);
+		EXPECT_THAT(a.obj(), Not(Eq(c.obj())));
+
+		RepoBSONBuilder d;
+		d.append("f2", "1");
+		EXPECT_THAT(a.obj(), Not(Eq(c.obj())));
+	}
+
+	{
+		RepoBSONBuilder a;
+		RepoBSONBuilder b;
+		a.append("f1", (int)1);
+		b.append("f1", (int)1);
+		EXPECT_THAT(a.obj(), Eq(b.obj()));
+
+		RepoBSONBuilder c;
+		c.append("f1", "1");
+		EXPECT_THAT(a.obj(), Not(Eq(c.obj())));
+
+		RepoBSONBuilder d;
+		d.append("f2", (int)1);
+		EXPECT_THAT(a.obj(), Not(Eq(c.obj())));
+	}
+
+	{
+		RepoBSONBuilder a;
+		RepoBSONBuilder b;
+		a.append("f1", (double)1);
+		b.append("f1", (double)1);
+		EXPECT_THAT(a.obj(), Eq(b.obj()));
+
+		RepoBSONBuilder c;
+		c.append("f1", (int)1); // Equality operator should be sensitive to the type, even if the values would be interpreted identically
+		EXPECT_THAT(a.obj(), Not(Eq(c.obj())));
+
+		RepoBSONBuilder d;
+		d.append("f2", (double)1);
+		EXPECT_THAT(a.obj(), Not(Eq(c.obj())));
+	}
+
+	{
+		RepoBSONBuilder a;
+		RepoBSONBuilder b;
+		a.append("f1", (long long)1);
+		b.append("f1", (long long)1);
+		EXPECT_THAT(a.obj(), Eq(b.obj()));
+
+		RepoBSONBuilder c;
+		c.append("f1", (int)1); // Equality operator should be sensitive to the type, even if the values would be interpreted identically
+		EXPECT_THAT(a.obj(), Not(Eq(c.obj())));
+
+		RepoBSONBuilder d;
+		d.append("f2", (long long)1);
+		EXPECT_THAT(a.obj(), Not(Eq(c.obj())));
+	}
+
+	{
+		auto uuid = repo::lib::RepoUUID::createUUID();
+		RepoBSONBuilder a;
+		RepoBSONBuilder b;
+		a.append("f1", uuid);
+		b.append("f1", uuid);
+		EXPECT_THAT(a.obj(), Eq(b.obj()));
+
+		RepoBSONBuilder c;
+		c.append("f1", repo::lib::RepoUUID::createUUID());
+		EXPECT_THAT(a.obj(), Not(Eq(c.obj())));
+
+		RepoBSONBuilder d;
+		d.append("f2", uuid);
+		EXPECT_THAT(a.obj(), Not(Eq(c.obj())));
+	}
+
+	{
+		auto v = makeRepoVector();
+		RepoBSONBuilder a;
+		RepoBSONBuilder b;
+		a.append("f1", v);
+		b.append("f1", v);
+		EXPECT_THAT(a.obj(), Eq(b.obj()));
+
+		RepoBSONBuilder c;
+		c.append("f1", makeRepoVector());
+		EXPECT_THAT(a.obj(), Not(Eq(c.obj())));
+
+		RepoBSONBuilder d;
+		d.append("f2", v);
+		EXPECT_THAT(a.obj(), Not(Eq(c.obj())));
+	}
+
+	{
+		auto v = makeRepoVectorObj(makeRepoVector()); // This tests with sub-documents
+		RepoBSONBuilder a;
+		RepoBSONBuilder b;
+		a.append("f1", v);
+		b.append("f1", v);
+		EXPECT_THAT(a.obj(), Eq(b.obj()));
+
+		RepoBSONBuilder c;
+		c.append("f1", makeRepoVectorObj(makeRepoVector()));
+		EXPECT_THAT(a.obj(), Not(Eq(c.obj())));
+
+		RepoBSONBuilder d;
+		d.append("f2", v);
+		EXPECT_THAT(a.obj(), Not(Eq(c.obj())));
+	}
+
+	{
+		std::vector<int> arr({
+			rand(),
+			rand(),
+			rand(),
+			rand(),
+			rand(),
+			rand(),
+		});
+
+		auto v = makeRepoVectorObj(makeRepoVector()); // This tests with sub-documents
+		RepoBSONBuilder a;
+		RepoBSONBuilder b;
+		a.appendArray("f1", arr);
+		b.appendArray("f1", arr);
+		EXPECT_THAT(a.obj(), Eq(b.obj()));
+
+		RepoBSONBuilder c;
+		c.appendArray("f1", std::vector<int>({ rand(), rand() }));
+		EXPECT_THAT(a.obj(), Not(Eq(c.obj())));
+
+		RepoBSONBuilder d;
+		d.appendArray("f2", arr);
+		EXPECT_THAT(a.obj(), Not(Eq(c.obj())));
+	}
+
+	{
+		RepoBSONBuilder a;
+		RepoBSONBuilder b;
+		a.append("f1", true);
+		b.append("f1", true);
+		EXPECT_THAT(a.obj(), Eq(b.obj()));
+
+		RepoBSONBuilder c;
+		c.append("f1", false);
+		EXPECT_THAT(a.obj(), Not(Eq(c.obj())));
+
+		RepoBSONBuilder d;
+		d.append("f2", true);
+		EXPECT_THAT(a.obj(), Not(Eq(c.obj())));
+	}
+
+	{
+		auto t = getRandomTm();
+
+		RepoBSONBuilder a;
+		RepoBSONBuilder b;
+		a.append("f1", t);
+		b.append("f1", t);
+		EXPECT_THAT(a.obj(), Eq(b.obj()));
+
+		RepoBSONBuilder c;
+		c.append("f1", getRandomTm());
+		EXPECT_THAT(a.obj(), Not(Eq(c.obj())));
+
+		RepoBSONBuilder d;
+		d.append("f2", t);
+		EXPECT_THAT(a.obj(), Not(Eq(c.obj())));
+	}
+
+	{
+		auto bin = makeRandomBinary();
+
+		RepoBSONBuilder a;
+		RepoBSONBuilder b;
+		a.appendLargeArray("f1", bin);
+		b.appendLargeArray("f1", bin);
+		EXPECT_THAT(a.obj(), Eq(b.obj()));
+
+		RepoBSONBuilder c;
+		c.appendLargeArray("f1", makeRandomBinary());
+		EXPECT_THAT(a.obj(), Not(Eq(c.obj())));
+
+		RepoBSONBuilder d;
+		d.appendLargeArray("f2", bin);
+		EXPECT_THAT(a.obj(), Not(Eq(c.obj())));
+	}
 }

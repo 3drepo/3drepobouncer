@@ -24,7 +24,7 @@
 namespace repo {
 	namespace core {
 		namespace model {
-			
+
 			class RepoBSON;
 
 			#define REPO_USER_LABEL_VR_ENABLED					"vrEnabled"
@@ -36,7 +36,7 @@ namespace repo {
 
 				// RepoTeamspace provides access to the teamspace settings
 				// document. This is a read-only object.
-	
+
 				RepoTeamspace(RepoBSON bson);
 
 				~RepoTeamspace() {}

@@ -41,7 +41,7 @@ TEST(RepoTaskTest, Serialise)
 	long long startTime = std::time(0) - 1000;
 	long long endTime = std::time(0) + 1000;
 	auto sequenceId = repo::lib::RepoUUID::createUUID();
-	
+
 	std::unordered_map<std::string, std::string> data;
 	data[repo::lib::RepoUUID::createUUID().toString()] = repo::lib::RepoUUID::createUUID().toString();
 	data[repo::lib::RepoUUID::createUUID().toString()] = repo::lib::RepoUUID::createUUID().toString();

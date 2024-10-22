@@ -67,14 +67,14 @@ namespace repo {
 				using MeshMap = std::unordered_multimap<repo::lib::RepoUUID, repo::core::model::MeshNode, repo::lib::RepoUUIDHasher>;
 
 				/**
-				* Recursively enumerates scene to find all the instances of 
-				* MeshNodes that match the Id, and returns copies of them 
-				* with geometry baked to its world space location in the 
+				* Recursively enumerates scene to find all the instances of
+				* MeshNodes that match the Id, and returns copies of them
+				* with geometry baked to its world space location in the
 				* scene graph.
 				*/
 				bool getBakedMeshNodes(
-					const repo::core::model::RepoScene* scene, 
-					const repo::core::model::RepoNode* node, 
+					const repo::core::model::RepoScene* scene,
+					const repo::core::model::RepoNode* node,
 					repo::lib::RepoMatrix mat,
 					MeshMap &nodes);
 
@@ -96,11 +96,11 @@ namespace repo {
 				);
 
 				/*
-				* Splits a MeshNode into a set of mapped_mesh_ts based on face location, so 
+				* Splits a MeshNode into a set of mapped_mesh_ts based on face location, so
 				* each mapped_mesh_t has a vertex count below a certain size.
 				*/
 				void splitMesh(
-					const repo::core::model::RepoScene* scene, 
+					const repo::core::model::RepoScene* scene,
 					repo::core::model::MeshNode node,
 					std::vector<mapped_mesh_t> &mappedMeshes
 				);
@@ -115,8 +115,8 @@ namespace repo {
 
 				/**
 				* Builds a set of Supermesh MeshNodes, based on the UUIDs in meshGroup.
-				* The method may output an arbitrary number (including 1) supermeshes, 
-				* from an arbitrary number (including 1) UUIDs. If no UUIDs are provided, 
+				* The method may output an arbitrary number (including 1) supermeshes,
+				* from an arbitrary number (including 1) UUIDs. If no UUIDs are provided,
 				* no Supermeshes are created.
 				* Each Supermesh mapping re-maps its Material UUID to a new UUID, which
 				* is used to copy the materials. If an existing remapping exists, it is
@@ -175,7 +175,7 @@ namespace repo {
 				* nodes for use by the supermeshes.
 				* Multiple supermeshes may be created, depending on the composition
 				* of meshes.
-				* Supermeshes and duplicated materials are passed back via the 
+				* Supermeshes and duplicated materials are passed back via the
 				* mergedMeshes and matNodes arrays.
 				* The matIDs map is used to map between the original graph materials
 				* and the stash graph materials, in case this method is called multiple

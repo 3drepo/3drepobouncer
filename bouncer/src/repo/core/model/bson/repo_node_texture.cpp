@@ -62,7 +62,7 @@ void TextureNode::deserialise(RepoBSON& bson)
 		height = bson.getIntField(REPO_LABEL_HEIGHT);
 	}
 
-	if (bson.hasField(REPO_NODE_LABEL_EXTENSION)) 
+	if (bson.hasField(REPO_NODE_LABEL_EXTENSION))
 	{
 		extension = bson.getStringField(REPO_NODE_LABEL_EXTENSION);
 	}
@@ -75,7 +75,7 @@ void TextureNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 	builder.append(REPO_LABEL_WIDTH, width);
 	builder.append(REPO_LABEL_HEIGHT, height);
 
-	if (!extension.empty()) 
+	if (!extension.empty())
 	{
 		builder.append(REPO_NODE_LABEL_EXTENSION, extension);
 	}

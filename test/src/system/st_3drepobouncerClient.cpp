@@ -770,7 +770,7 @@ TEST(RepoClientTest, ProcessDrawing)
 	// Via the RepoRef object
 	EXPECT_EQ(imageRef.getType(), repo::core::model::RepoRef::RefType::FS);
 	EXPECT_EQ(imageRef.getFileName(), "test.svg"); // The image should have its file extension changed
-	
+
 	// And via the node directly
 	repo::core::model::RepoBSONBuilder builder;
 	builder.append(REPO_LABEL_ID, revision.getUUIDField("image"));
@@ -783,7 +783,7 @@ TEST(RepoClientTest, ProcessDrawing)
 	);
 
 	EXPECT_EQ(refNode.getStringField("type"), "fs");
-	EXPECT_EQ(refNode.getStringField("name"), "test.svg"); 
+	EXPECT_EQ(refNode.getStringField("name"), "test.svg");
 	EXPECT_EQ(refNode.getStringField("mimeType"), "image/svg+xml");
 	EXPECT_EQ(refNode.getUUIDField("project"), project);
 	EXPECT_EQ(refNode.getStringField("model"), model);

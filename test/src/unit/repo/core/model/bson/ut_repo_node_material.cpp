@@ -166,7 +166,7 @@ TEST(MaterialNodeTest, Serialise)
 	EXPECT_THAT(bson.hasField(REPO_NODE_LABEL_SHARED_ID), IsFalse());
 
 	// And that the constant type is written
-	
+
 	EXPECT_THAT(bson.getStringField(REPO_NODE_LABEL_TYPE), "material");
 
 	// And that the material struct is written

@@ -41,7 +41,7 @@ ModelRevisionNode::~ModelRevisionNode()
 
 void ModelRevisionNode::deserialise(RepoBSON& bson)
 {
-	if (bson.hasField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT)) 
+	if (bson.hasField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT))
 	{
 		offset = bson.getDoubleVectorField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT);
 	}

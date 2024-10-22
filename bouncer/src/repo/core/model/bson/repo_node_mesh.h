@@ -138,7 +138,7 @@ namespace repo {
 				/**
 				* Get the mesh primitive type (points, lines, triangles, quads) (triangles if not set).
 				*/
-				virtual MeshNode::Primitive getPrimitive() const 
+				virtual MeshNode::Primitive getPrimitive() const
 				{
 					return primitive;
 				}
@@ -152,8 +152,8 @@ namespace repo {
 				* override this function.
 				* @return true if node is positionDependant.
 				*/
-				virtual bool positionDependant() 
-				{ 
+				virtual bool positionDependant()
+				{
 					return true;
 				}
 
@@ -185,7 +185,7 @@ namespace repo {
 				void applyTransformation(
 					const repo::lib::RepoMatrix& matrix);
 
-				void setGrouping(const std::string& grouping) 
+				void setGrouping(const std::string& grouping)
 				{
 					this->grouping = grouping;
 				}
@@ -203,7 +203,7 @@ namespace repo {
 					return boundingBox;
 				}
 
-				void setBoundingBox(const std::vector<repo::lib::RepoVector3D>& bounds) 
+				void setBoundingBox(const std::vector<repo::lib::RepoVector3D>& bounds)
 				{
 					boundingBox = bounds;
 				}
@@ -227,7 +227,7 @@ namespace repo {
 				}
 
 				// get sepcific grouping for mesh batching (empty string if not specified)
-				std::string getGrouping() const 
+				std::string getGrouping() const
 				{
 					return grouping;
 				}
@@ -240,7 +240,7 @@ namespace repo {
 					return normals;
 				}
 
-				void setNormals(const std::vector<repo::lib::RepoVector3D>& normals) 
+				void setNormals(const std::vector<repo::lib::RepoVector3D>& normals)
 				{
 					this->normals = std::vector<repo::lib::RepoVector3D>(normals.begin(), normals.end());
 				}
@@ -273,7 +273,7 @@ namespace repo {
 					}
 				}
 
-				std::uint32_t getNumFaces() const 
+				std::uint32_t getNumFaces() const
 				{
 					return faces.size();
 				}

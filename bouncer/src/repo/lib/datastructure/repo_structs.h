@@ -48,7 +48,7 @@ typedef struct {
 	int32_t       triTo;
 }repo_mesh_mapping_t;
 
-static bool operator== (repo_mesh_mapping_t a, repo_mesh_mapping_t b) 
+static bool operator== (repo_mesh_mapping_t a, repo_mesh_mapping_t b)
 {
 	return
 		a.min == b.min &&

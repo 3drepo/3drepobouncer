@@ -111,7 +111,7 @@ namespace repo {
 					return revisionId;
 				}
 
-				void setProjectRevision(const repo::lib::RepoUUID& id) 
+				void setProjectRevision(const repo::lib::RepoUUID& id)
 				{
 					this->revisionId = id;
 				}

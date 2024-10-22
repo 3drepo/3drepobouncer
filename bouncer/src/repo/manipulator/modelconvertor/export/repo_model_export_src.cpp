@@ -191,9 +191,9 @@ repo_web_geo_files_t SRCModelExport::getSRCFilesAsBuffer() const
 				std::vector<uint8_t> compressed;
 				compressed.resize(4);
 				((uint32_t*)compressed.data())[0] = fullDataArray.size();
-				
+
 				compressed.insert(compressed.end(), std::istreambuf_iterator<char>(&out), std::istreambuf_iterator<char>());
-				
+
 				fullDataArray = compressed;
 #endif
 
@@ -361,7 +361,7 @@ bool SRCModelExport::generateTreeRepresentation(
 				continue;
 			}
 
-			if (mesh->getPrimitive() != repo::core::model::MeshNode::Primitive::TRIANGLES) 
+			if (mesh->getPrimitive() != repo::core::model::MeshNode::Primitive::TRIANGLES)
 			{
 				repoError << "SRCModelExport does not support primitive type " << (int)mesh->getPrimitive() << " on node " << node->getUniqueID() << ". Skipping...";
 				continue;

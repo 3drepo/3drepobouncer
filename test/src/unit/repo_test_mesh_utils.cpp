@@ -28,7 +28,7 @@
 using namespace repo::core::model;
 using namespace testing;
 
-MeshNode* repo::test::utils::mesh::createRandomMesh(const int nVertices, const bool hasUV, const int primitiveSize, const std::vector<repo::lib::RepoUUID>& parent) 
+MeshNode* repo::test::utils::mesh::createRandomMesh(const int nVertices, const bool hasUV, const int primitiveSize, const std::vector<repo::lib::RepoUUID>& parent)
 {
 	auto mesh = makeMeshNode(mesh_data(true, true, 0, primitiveSize, false, hasUV ? 1 : 0, nVertices));
 	mesh.addParents(parent);
@@ -388,7 +388,7 @@ repo::test::utils::mesh::mesh_data::mesh_data(
 repo::lib::RepoMatrix repo::test::utils::mesh::makeTransform(bool translation, bool rotation)
 {
 	repo::lib::RepoMatrix m;
-	
+
 	if (rotation)
 	{
 		m = m * repo::lib::RepoMatrix::rotationX((float)rand() / RAND_MAX) * repo::lib::RepoMatrix::rotationY((float)rand() / RAND_MAX) * repo::lib::RepoMatrix::rotationZ((float)rand() / RAND_MAX);
@@ -398,7 +398,7 @@ repo::lib::RepoMatrix repo::test::utils::mesh::makeTransform(bool translation, b
 	{
 		m = m * repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D(rand(), rand(), rand()));
 	}
-	
+
 	return m;
 }
 

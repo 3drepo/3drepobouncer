@@ -45,23 +45,19 @@ RepoBSON::RepoBSON(
 {
 }
 
-RepoBSON::RepoBSON() 
-	: mongo::BSONObj() 
+RepoBSON::RepoBSON()
+	: mongo::BSONObj()
 {
 }
 
-RepoBSON::RepoBSON(mongo::BSONObjBuilder& builder) 
-	: mongo::BSONObj(builder.obj()) 
+RepoBSON::RepoBSON(mongo::BSONObjBuilder& builder)
+	: mongo::BSONObj(builder.obj())
 {
 }
 
-RepoBSON::RepoBSON(const std::vector<char>& rawData) 
-	: mongo::BSONObj(rawData.data()) 
+RepoBSON::RepoBSON(const std::vector<char>& rawData)
+	: mongo::BSONObj(rawData.data())
 {
-}
-
-bool RepoBSON::couldBeArray() const {
-	return mongo::BSONObj::couldBeArray();
 }
 
 bool RepoBSON::hasField(const std::string& label) const {
@@ -131,11 +127,6 @@ std::set<std::string> RepoBSON::getFieldNames() const {
 	return fieldNames;
 }
 
-
-bool RepoBSON::isValid() const {
-	return mongo::BSONObj::isValid();
-}
-
 uint64_t RepoBSON::objsize() const {
 	return mongo::BSONObj::objsize();
 }
@@ -178,11 +169,6 @@ std::vector<std::string> RepoBSON::getFileList(const std::string& label) const
 		fileList.push_back(arraybson.getStringField(field));
 	}
 	return fileList;
-}
-
-RepoBSON RepoBSON::fromJSON(const std::string &json)
-{
-	return RepoBSON(mongo::fromjson(json));
 }
 
 std::pair<repo::core::model::RepoBSON, std::vector<uint8_t>> RepoBSON::getBinariesAsBuffer() const {
@@ -459,7 +445,7 @@ time_t RepoBSON::getTimeStampField(const std::string &label) const
 	{
 		auto field = getField(label);
 		if (field.type() == ElementType::DATE)
-			time = field.date().toTimeT();
+			time = field.TimeT();
 		else
 		{
 			repoError << "GetTimeStampField: field " << label << " is not of type Date!";

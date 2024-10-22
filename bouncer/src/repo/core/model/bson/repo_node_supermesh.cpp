@@ -21,13 +21,13 @@
 
 using namespace repo::core::model;
 
-SupermeshNode::SupermeshNode(RepoBSON bson) 
+SupermeshNode::SupermeshNode(RepoBSON bson)
 	: MeshNode(bson)
 {
 	deserialise(bson);
 }
 
-SupermeshNode::SupermeshNode() 
+SupermeshNode::SupermeshNode()
 	: MeshNode()
 {
 }

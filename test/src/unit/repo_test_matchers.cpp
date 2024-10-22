@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2018 3D Repo Ltd
+*  Copyright (C) 2024 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -15,31 +15,29 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
-#include <Gs/GsBaseInclude.h>
-#include <RxObjectImpl.h>
-#include <iostream>
-#include <Gs/GsBaseMaterialView.h>
-#include "geometry_collector.h"
+#define NOMINMAX
 
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest-matchers.h>
 
-namespace repo {
-	namespace manipulator {
-		namespace modelconvertor {
-			namespace odaHelper {
+#include "repo_test_matchers.h"
+#include "repo/core/model/bson/repo_bson.h"
 
-				class VectoriseDeviceDgn :
-					public OdGsBaseVectorizeDevice
-				{
-					GeometryCollector * geoCollector;
-				protected:
-					ODRX_USING_HEAP_OPERATORS(OdGsBaseVectorizeDevice);
-				public:
+using namespace repo::core::model;
+using namespace testing;
 
-					VectoriseDeviceDgn(){}
-					~VectoriseDeviceDgn(){}
-				}; // end OdaVectorizeDevice
-			}
-		}
-	}
+void repo::core::model::PrintTo(const repo::core::model::RepoBSON& point, std::ostream* os)
+{
+	*os << point.toString();
+}
+
+bool operator== (tm a, tm b)
+{
+	return difftime(std::mktime(&a), std::mktime(&b)) == 0;
+}
+
+void operator<< (std::basic_ostream<char, std::char_traits<char>>& out, tm a)
+{
+	out << std::put_time(&a, "%d-%m-%Y %H-%M-%S");
 }

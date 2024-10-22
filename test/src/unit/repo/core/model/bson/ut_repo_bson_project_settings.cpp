@@ -49,7 +49,7 @@ TEST(RepoProjectSettingsTest, Deserialise)
 		EXPECT_EQ(settings.getStatus(), "ok");
 	}
 
-	{		
+	{
 		RepoBSONBuilder builder;
 		builder.append(REPO_LABEL_ID, projectId);
 		builder.append(REPO_PROJECT_SETTINGS_LABEL_STATUS, "ok");
@@ -74,7 +74,7 @@ TEST(RepoProjectSettingsTest, Serialise)
 	RepoProjectSettings settings(builder.obj());
 
 	// Re-serialising with status OK should update the timestamp
-	
+
 	EXPECT_THAT(((RepoBSON)settings).getStringField(REPO_LABEL_ID), Eq(id));
 	EXPECT_THAT(((RepoBSON)settings).getStringField(REPO_PROJECT_SETTINGS_LABEL_STATUS), Eq("ok"));
 	EXPECT_THAT(((RepoBSON)settings).getTimeStampField(REPO_PROJECT_SETTINGS_LABEL_TIMESTAMP), IsNow());

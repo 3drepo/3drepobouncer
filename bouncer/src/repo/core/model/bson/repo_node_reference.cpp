@@ -70,7 +70,7 @@ void ReferenceNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 		builder.append(REPO_NODE_REFERENCE_LABEL_REVISION_ID, revisionId);
 	}
 
-	if (isUnique) 
+	if (isUnique)
 	{
 		builder.append(REPO_NODE_REFERENCE_LABEL_UNIQUE, isUnique);
 	}
@@ -90,7 +90,7 @@ bool ReferenceNode::sEqual(const RepoNode &other) const
 		return false;
 	}
 
-	if (databaseName != node.databaseName) 
+	if (databaseName != node.databaseName)
 	{
 		return false;
 	}
@@ -100,7 +100,7 @@ bool ReferenceNode::sEqual(const RepoNode &other) const
 		return false;
 	}
 
-	if (isUnique != node.isUnique) 
+	if (isUnique != node.isUnique)
 	{
 		return false;
 	}

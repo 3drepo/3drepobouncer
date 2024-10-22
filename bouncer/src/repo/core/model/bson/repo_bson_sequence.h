@@ -81,7 +81,7 @@ namespace repo {
 
 				operator RepoBSON() const;
 
-				const repo::lib::RepoUUID& getUniqueId() 
+				const repo::lib::RepoUUID& getUniqueId()
 				{
 					return uniqueId;
 				}

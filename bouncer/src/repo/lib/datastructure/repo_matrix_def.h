@@ -278,13 +278,13 @@ namespace repo {
 			}
 
 			template<class T>
-			static _RepoMatrix<T> translate(lib::_RepoVector3D<T> t) 
+			static _RepoMatrix<T> translate(lib::_RepoVector3D<T> t)
 			{
 				return _RepoMatrix<T>(std::vector<T>({
 					1, 0, 0, t.x,
 					0, 1, 0, t.y,
 					0, 0, 1, t.z,
-					0, 0, 0, 1 
+					0, 0, 0, 1
 				}));
 			}
 

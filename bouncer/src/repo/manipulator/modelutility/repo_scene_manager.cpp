@@ -219,7 +219,7 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 				{
 					repoTrace << "Loaded Scene";
 				}
-				else 
+				else
 				{
 					delete scene;
 					scene = nullptr;
@@ -453,7 +453,7 @@ repo_web_buffers_t SceneManager::generateRepoBundleBuffer(
 }
 
 bool isAddOnEnabled(repo::core::handler::AbstractDatabaseHandler *handler, const std::string &database, const std::string addOn) {
-	
+
 	auto teamspace = repo::core::model::RepoTeamspace(handler->findOneByCriteria(database, "teamspace", BSON("_id" << database)));
 	return teamspace.isAddOnEnabled(addOn);
 }

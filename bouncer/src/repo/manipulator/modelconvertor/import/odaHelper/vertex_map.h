@@ -31,7 +31,7 @@ namespace repo {
 			namespace odaHelper {
 
 				/*
-				 * Helper class for referencing existing vertices into indices. This class relies on the format checking in 
+				 * Helper class for referencing existing vertices into indices. This class relies on the format checking in
 				 * GeometryCollector, and is only for use within mesh_data_t.
 				 */
 				class VertexMap {

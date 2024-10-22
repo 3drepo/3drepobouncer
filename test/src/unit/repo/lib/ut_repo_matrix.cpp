@@ -47,7 +47,7 @@ TEST(RepoMatrixTest, constructorTest)
 	RepoMatrix matrix2(sourceMat1);
 	RepoMatrix matrix3(sourceMat2);
 	RepoMatrix matrix4(sourceMat3);
-	
+
 	for (int i = 0; i < 16; ++i)
 	{
 		sourceMat1.push_back((rand()%1000) / 1000.f);
@@ -56,7 +56,7 @@ TEST(RepoMatrixTest, constructorTest)
 		sourceMat3.push_back((rand() % 1000) / 1000.f);
 	}
 
-	RepoMatrix matrix7(sourceMat1), matrix5(sourceMat2), matrix6(sourceMat3);	
+	RepoMatrix matrix7(sourceMat1), matrix5(sourceMat2), matrix6(sourceMat3);
 }
 
 TEST(RepoMatrixTest, determinantTest)
@@ -141,7 +141,7 @@ TEST(RepoMatrixTest, invertTest)
 		-0.24128684401512146f, 1.0723860589812333f, -0.12194561470700879f, -13238.30859375000000000f,
 		0, 0, 0.28571426868438721f, 0,
 		0,	0,	0,	1 };
-	
+
 	EXPECT_TRUE(compareStdVectors(expectedRes, rand.invert().getData()));
 }
 
@@ -179,14 +179,14 @@ TEST(RepoMatrixTest, isIdentityTest)
 }
 
 TEST(RepoMatrixTest, toStringTest)
-{	
+{
 
 	std::vector<float> data;
 	std::stringstream ss, ssID;
-	
+
 	for (int i = 0; i < 16; ++i)
 	{
-		data.push_back((rand() % 1000) / 1000.f);	
+		data.push_back((rand() % 1000) / 1000.f);
 		ss << " " << data[i];
 
 		ssID << " " << (i % 5 == 0) ? 1.0f : 0.0f;
@@ -222,7 +222,7 @@ TEST(RepoMatrixTest, matVecTest)
 	RepoVector3D sampleVec(3.4653f, 2.543637f, 0.3253252f);
 	RepoMatrix id;
 	auto newVec = id * sampleVec;
-	
+
 	EXPECT_EQ(sampleVec.x, newVec.x);
 	EXPECT_EQ(sampleVec.y, newVec.y);
 	EXPECT_EQ(sampleVec.z, newVec.z);
@@ -234,7 +234,7 @@ TEST(RepoMatrixTest, matVecTest)
 	RepoMatrix rand(matValues);
 
 	auto newVec2 = rand * sampleVec;
-	
+
 	EXPECT_EQ(9.05382156372070310f, newVec2.x);
 	EXPECT_EQ(12349.26171875000000000f, newVec2.y);
 	EXPECT_EQ(2.87128829956054690f, newVec2.z);
@@ -262,7 +262,7 @@ TEST(RepoMatrixTest, matMatTest)
 	EXPECT_EQ(rand, RepoMatrix()*rand);
 	EXPECT_EQ(rand, rand*RepoMatrix());
 	auto resultRand = rand * rand2;
-	
+
 	std::vector<float> expectedRes =
 	{ 7.58868026733398440f, 31.31086158752441400f, 4.26119995117187500f, 100.26399993896484000f,
 	6174.84960937500000000f, 7418.59033203125000000f, 8651.98828125000000000f, 12666.83300781250000000f,

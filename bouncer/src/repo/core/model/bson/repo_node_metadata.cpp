@@ -111,7 +111,7 @@ bool MetadataNode::sEqual(const RepoNode &other) const
 
 	auto o = dynamic_cast<const MetadataNode&>(other);
 
-	if (metadataMap.size() != o.metadataMap.size()) 
+	if (metadataMap.size() != o.metadataMap.size())
 	{
 		return false;
 	}
@@ -123,7 +123,7 @@ bool MetadataNode::sEqual(const RepoNode &other) const
 		{
 			return false;
 		}
-	
+
 		if ((*it).second != m.second)
 		{
 			return false;

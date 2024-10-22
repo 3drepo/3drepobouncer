@@ -28,7 +28,7 @@
 namespace repo {
 	namespace core {
 		namespace model {
-			
+
 			class RepoBSON;
 
 			#define REPO_PROJECT_SETTINGS_LABEL_STATUS "status"
@@ -40,7 +40,7 @@ namespace repo {
 
 				// RepoProjectSettings can only be initialised from an existing
 				// document, and should only be used with upsert
-	
+
 				RepoProjectSettings(RepoBSON bson);
 
 				~RepoProjectSettings() {}
@@ -51,7 +51,7 @@ namespace repo {
 
 				void clearErrorStatus();
 
-				const std::string& getProjectId() const 
+				const std::string& getProjectId() const
 				{
 					return id;
 				}

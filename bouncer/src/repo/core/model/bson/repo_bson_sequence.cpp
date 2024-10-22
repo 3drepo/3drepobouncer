@@ -55,7 +55,7 @@ RepoSequence RepoSequence::cloneAndAddRevision(
 	return copy;
 }
 
-RepoSequence::operator RepoBSON() const 
+RepoSequence::operator RepoBSON() const
 {
 	RepoBSONBuilder builder;
 

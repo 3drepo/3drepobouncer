@@ -7,7 +7,10 @@
 add_subdirectory(repo)
 set(TEST_SOURCES
 	${TEST_SOURCES}
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_database_info.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_matchers.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_mesh_utils.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_utils.cpp
 	CACHE STRING "TEST_SOURCES" FORCE)
 
 set(TEST_HEADERS

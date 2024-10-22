@@ -62,7 +62,7 @@ TEST(MeshMapReorganiser, VeryLargeMesh)
 	auto ids = remapped.getSubmeshIds();
 	auto end = std::unique(ids.begin(), ids.end());
 	auto count = end - ids.begin();
-	EXPECT_EQ(count, 1); 
+	EXPECT_EQ(count, 1);
 
 	// The supermesh should be split into six chunks (with the same submesh ids)
 

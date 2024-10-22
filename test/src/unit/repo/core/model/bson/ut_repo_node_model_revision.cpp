@@ -107,7 +107,7 @@ TEST(ModelRevisionNodeTest, Serialise)
 	EXPECT_THAT(((RepoBSON)node).getTimeStampField(REPO_NODE_REVISION_LABEL_TIMESTAMP), Eq(0));
 	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT), IsFalse());
 	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_REVISION_LABEL_REF_FILE), IsFalse());
-	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_REVISION_LABEL_INCOMPLETE), IsFalse());	
+	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_REVISION_LABEL_INCOMPLETE), IsFalse());
 
 	node.setUniqueId(repo::lib::RepoUUID::createUUID());
 	EXPECT_THAT(((RepoBSON)node).getUUIDField(REPO_NODE_LABEL_ID), Eq(node.getUniqueID()));

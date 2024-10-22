@@ -198,7 +198,7 @@ TEST(RepoRefTest, Name)
 	EXPECT_THAT(b.getFileName(), IsEmpty());
 
 	// Another process has set the name field
-	
+
 	RepoBSONBuilder C;
 	C.append(REPO_REF_LABEL_SIZE, 1); // RepoRef expects all of these otherwise it will initialise to empty
 	C.append(REPO_REF_LABEL_LINK, "link");
@@ -216,8 +216,8 @@ TEST(RepoRefTest, Name)
 		RepoRef::RefType::FS,
 		"",
 		0,
-		{ 
-			{ REPO_NODE_LABEL_NAME, repo::lib::RepoVariant(std::string("metadataName")) } 
+		{
+			{ REPO_NODE_LABEL_NAME, repo::lib::RepoVariant(std::string("metadataName")) }
 		}
 	);
 
