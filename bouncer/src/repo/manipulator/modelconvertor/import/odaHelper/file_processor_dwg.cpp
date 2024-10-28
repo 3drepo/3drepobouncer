@@ -140,6 +140,8 @@ void FileProcessorDwg::importDrawing(OdDbDatabasePtr pDb)
 		dev->properties()->putAt(L"MinimalWidth", OdRxVariantValue(0.08));
 		dev->properties()->putAt(L"UseHLR", OdRxVariantValue(true));
 		dev->properties()->putAt(L"ColorPolicy", OdRxVariantValue((OdInt32)3)); // kDarken
+		dev->properties()->putAt(L"ExplodeShxTexts", OdRxVariantValue(false));
+
 		pDbGiContext->setPaletteBackground(ODRGB(255, 255, 255));
 
 		OdDbBaseDatabasePEPtr pBaseDatabase(pDb);
