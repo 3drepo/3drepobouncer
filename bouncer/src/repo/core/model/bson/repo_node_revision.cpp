@@ -33,7 +33,6 @@ RevisionNode::RevisionNode(RepoBSON bson) :
 RevisionNode::RevisionNode() :
 	RepoNode()
 {
-	status = UploadStatus::COMPLETE;
 	timestamp = 0;
 }
 
@@ -43,11 +42,6 @@ RevisionNode::~RevisionNode()
 
 void RevisionNode::deserialise(RepoBSON& bson)
 {
-	status = UploadStatus::COMPLETE;
-	if (bson.hasField(REPO_NODE_REVISION_LABEL_INCOMPLETE))
-	{
-		status = (UploadStatus)bson.getIntField(REPO_NODE_REVISION_LABEL_INCOMPLETE);
-	}
 	if (bson.hasField(REPO_NODE_REVISION_LABEL_AUTHOR))
 	{
 		author = bson.getStringField(REPO_NODE_REVISION_LABEL_AUTHOR);
@@ -55,14 +49,9 @@ void RevisionNode::deserialise(RepoBSON& bson)
 	timestamp = bson.getTimeStampField(REPO_NODE_REVISION_LABEL_TIMESTAMP);
 }
 
-
 void RevisionNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 {
 	RepoNode::serialise(builder);
-	if (status != UploadStatus::COMPLETE)
-	{
-		builder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, (uint32_t)status);
-	}
 	if (!author.empty()) {
 		builder.append(REPO_NODE_REVISION_LABEL_AUTHOR, author);
 	}

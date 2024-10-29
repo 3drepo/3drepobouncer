@@ -45,6 +45,10 @@ void DrawingRevisionNode::deserialise(RepoBSON& bson)
 	project = bson.getUUIDField(REPO_NODE_DRAWING_REVISION_LABEL_PROJECT);
 	model = bson.getStringField(REPO_NODE_DRAWING_REVISION_LABEL_MODEL);
 	format = bson.getStringField(REPO_NODE_LABEL_FORMAT);
+	if (bson.hasField(REPO_NODE_REVISION_LABEL_INCOMPLETE))
+	{
+		incomplete = bson.getBoolField(REPO_NODE_REVISION_LABEL_INCOMPLETE);
+	}
 }
 
 void DrawingRevisionNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
@@ -55,4 +59,8 @@ void DrawingRevisionNode::serialise(repo::core::model::RepoBSONBuilder& builder)
 	builder.append(REPO_NODE_DRAWING_REVISION_LABEL_MODEL, model);
 	builder.append(REPO_NODE_LABEL_FORMAT, format);
 	builder.append(REPO_LABEL_IMAGE, image);
+	if (incomplete)
+	{
+		builder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, incomplete);
+	}
 }

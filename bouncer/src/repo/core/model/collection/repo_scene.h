@@ -442,7 +442,7 @@ namespace repo {
 				bool loadRevision(
 					repo::core::handler::AbstractDatabaseHandler *handler,
 					std::string &errMsg,
-					const std::vector<RevisionNode::UploadStatus> &includeStatus = {});
+					const std::vector<ModelRevisionNode::UploadStatus> &includeStatus = {});
 
 				/**
 				* Load Scene into Scene graph object base on the

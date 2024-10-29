@@ -88,7 +88,7 @@ bool SceneManager::commitWebBuffers(
 
 	if (success)
 	{
-		scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
+		scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE);
 		if (addTimestampToSettings)
 		{
 			scene->addTimestampToProjectSettings(handler);
@@ -160,7 +160,7 @@ uint8_t SceneManager::commitScene(
 
 			if (success) {
 				errCode = REPOERR_OK;
-				scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
+				scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE);
 			}
 			else {
 				errCode = REPOERR_UPLOAD_FAILED;
@@ -188,7 +188,7 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 	const bool                                    &headRevision,
 	const bool                                    &ignoreRefScenes,
 	const bool                                    &skeletonFetch,
-	const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus)
+	const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus)
 {
 	repo::core::model::RepoScene* scene = nullptr;
 	if (handler)
@@ -367,7 +367,7 @@ bool SceneManager::generateAndCommitSelectionTree(
 	bool success = false;
 	if (success = scene && scene->isRevisioned() && handler)
 	{
-		scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_SEL_TREE);
+		scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::GEN_SEL_TREE);
 		SelectionTreeMaker treeMaker(scene);
 		auto buffer = treeMaker.getSelectionTreeAsBuffer();
 
@@ -404,7 +404,7 @@ bool SceneManager::generateAndCommitSelectionTree(
 			repoError << "Failed to generate selection tree: JSON file buffer is empty!";
 		}
 
-		if (success) scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
+		if (success) scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE);
 	}
 	else
 	{

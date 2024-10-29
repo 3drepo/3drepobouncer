@@ -45,6 +45,7 @@ TEST(DrawingRevisionNodeTest, Node)
 	builder.append("project", project);
 	builder.append("format", format);
 	builder.appendTimeStamp("timestamp");
+	builder.append("incomplete", true);
 	std::vector< repo::lib::RepoUUID> files;
 	files.push_back(file);
 	builder.appendArray("rFile", files);
@@ -58,6 +59,7 @@ TEST(DrawingRevisionNodeTest, Node)
 	EXPECT_EQ(revision.getProject(), project);
 	EXPECT_EQ(revision.getModel(), model);
 	EXPECT_EQ(revision.getFormat(), format);
+	EXPECT_EQ(revision.getIncomplete(), true);
 
 	// Check that the type information is correct
 

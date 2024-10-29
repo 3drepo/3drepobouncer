@@ -614,7 +614,7 @@ uint8_t RepoScene::commit(
 		}
 	}
 
-	if (success) updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
+	if (success) updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE);
 	//Create and Commit revision node
 	repoInfo << "Succes: " << success << " msg: " << errMsg;
 	return success ? REPOERR_OK : (errMsg.find("exceeds maxBsonObjectSize") != std::string::npos ? REPOERR_MAX_NODES_EXCEEDED : REPOERR_UPLOAD_FAILED);
@@ -726,7 +726,7 @@ bool RepoScene::commitRevisionNode(
 	newRevNode =
 		new ModelRevisionNode(RepoBSONFactory::makeRevisionNode(userName, branch, revId,
 			fileNames, parent, worldOffset, message, tag));
-	newRevNode->updateStatus(RevisionNode::UploadStatus::GEN_DEFAULT);
+	newRevNode->updateStatus(ModelRevisionNode::UploadStatus::GEN_DEFAULT);
 
 	if (newRevNode)
 	{
@@ -1091,7 +1091,7 @@ std::vector<std::string> RepoScene::getOriginalFiles() const
 bool RepoScene::loadRevision(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	std::string &errMsg,
-	const std::vector<RevisionNode::UploadStatus> &includeStatus) {
+	const std::vector<ModelRevisionNode::UploadStatus> &includeStatus) {
 	bool success = true;
 
 	if (!handler)
@@ -1566,7 +1566,7 @@ void RepoScene::shiftModel(
 
 bool RepoScene::updateRevisionStatus(
 	repo::core::handler::AbstractDatabaseHandler *handler,
-	const RevisionNode::UploadStatus &status)
+	const ModelRevisionNode::UploadStatus &status)
 {
 	bool success = false;
 	if (revNode)

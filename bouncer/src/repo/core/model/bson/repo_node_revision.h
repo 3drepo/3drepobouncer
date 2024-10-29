@@ -41,18 +41,6 @@ namespace repo {
 			class REPO_API_EXPORT RevisionNode : public RepoNode
 			{
 			public:
-				// Some of these statuses will no longer be set by bouncer, but
-				// may still exist in the database.
-				enum class UploadStatus {
-					COMPLETE = 0,
-					GEN_DEFAULT = 1,
-					GEN_REPO_STASH = 2,
-					GEN_WEB_STASH = 3,
-					GEN_SEL_TREE = 4,
-					MISSING_BUNDLES = 5,
-					UNKNOWN = 6,
-				};
-
 				RevisionNode();
 				RevisionNode(RepoBSON);
 
@@ -63,7 +51,6 @@ namespace repo {
 				void serialise(repo::core::model::RepoBSONBuilder&) const;
 
 			protected:
-				UploadStatus status;
 				std::string author;
 				time_t timestamp;
 
@@ -86,22 +73,9 @@ namespace repo {
 					return NodeType::REVISION;
 				}
 
-				// Though rFile is a common member between Revision nodes, the type
-				// changes, so getting the file should be implemented in the subclasses
-
-				/**
-				* Get the status of the upload for this revision
-				* @returns the upload status of the revision
-				*/
-				UploadStatus getUploadStatus() const
-				{
-					return status;
-				}
-
-				void updateStatus(const RevisionNode::UploadStatus& status)
-				{
-					this->status = status;
-				}
+				// Though rFile & incomplete are common members between Revision
+				// nodes, the type changes, so getting the file should be
+				// implemented in the subclasses
 
 				/**
 				* Get the author commited the revision

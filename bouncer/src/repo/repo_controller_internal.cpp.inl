@@ -156,7 +156,7 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::fetchScene(
 	const bool           &headRevision,
 	const bool           &ignoreRefScene,
 	const bool           &skeletonFetch,
-	const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus)
+	const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus)
 {
 	repo::core::model::RepoScene* scene = 0;
 	if (token)

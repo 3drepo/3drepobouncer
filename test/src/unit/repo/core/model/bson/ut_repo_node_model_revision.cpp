@@ -40,7 +40,7 @@ TEST(ModelRevisionNodeTest, Constructor)
 	EXPECT_THAT(node.getMessage(), IsEmpty());
 	EXPECT_THAT(node.getType(), Eq(REPO_NODE_TYPE_REVISION));
 	EXPECT_THAT(node.getTypeAsEnum(), Eq(NodeType::REVISION));
-	EXPECT_THAT((int)node.getUploadStatus(), Eq((int)RevisionNode::UploadStatus::COMPLETE));
+	EXPECT_THAT((int)node.getUploadStatus(), Eq((int)ModelRevisionNode::UploadStatus::COMPLETE));
 	EXPECT_THAT(node.getAuthor(), IsEmpty());
 	EXPECT_THAT(node.getTimestamp(), Eq(0));
 	EXPECT_THAT(node.getCoordOffset(), ElementsAre(0,0,0));
@@ -73,7 +73,7 @@ TEST(ModelRevisionNodeTest, Deserialise)
 	builder.appendTimeStamp(REPO_NODE_REVISION_LABEL_TIMESTAMP);
 	builder.appendArray(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT, offset);
 	builder.appendArray(REPO_NODE_REVISION_LABEL_REF_FILE, files);
-	builder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, (uint32_t)RevisionNode::UploadStatus::GEN_REPO_STASH);
+	builder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, (uint32_t)ModelRevisionNode::UploadStatus::GEN_REPO_STASH);
 
 	auto node = ModelRevisionNode(builder.obj());
 
@@ -85,7 +85,7 @@ TEST(ModelRevisionNodeTest, Deserialise)
 	EXPECT_THAT(node.getCoordOffset(), Eq(offset));
 	EXPECT_THAT(node.getOrgFiles(), Eq(files));
 	EXPECT_THAT(node.getTimestamp(), IsNow()); // Within a second or so of the current time...
-	EXPECT_THAT((uint32_t)node.getUploadStatus(), Eq((uint32_t)RevisionNode::UploadStatus::GEN_REPO_STASH));
+	EXPECT_THAT((uint32_t)node.getUploadStatus(), Eq((uint32_t)ModelRevisionNode::UploadStatus::GEN_REPO_STASH));
 }
 
 TEST(ModelRevisionNodeTest, DeserialiseEmpty)
@@ -167,17 +167,17 @@ TEST(ModelRevisionNodeTest, Serialise)
 	node.setFiles(files);
 	EXPECT_THAT(((RepoBSON)node).getStringArray(REPO_NODE_REVISION_LABEL_REF_FILE), Eq(node.getOrgFiles()));
 
-	node.updateStatus(RevisionNode::UploadStatus::COMPLETE);
+	node.updateStatus(ModelRevisionNode::UploadStatus::COMPLETE);
 	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_REVISION_LABEL_INCOMPLETE), IsFalse());
 
-	node.updateStatus(RevisionNode::UploadStatus::GEN_SEL_TREE);
-	EXPECT_THAT(((RepoBSON)node).getIntField(REPO_NODE_REVISION_LABEL_INCOMPLETE), Eq((int)RevisionNode::UploadStatus::GEN_SEL_TREE));
+	node.updateStatus(ModelRevisionNode::UploadStatus::GEN_SEL_TREE);
+	EXPECT_THAT(((RepoBSON)node).getIntField(REPO_NODE_REVISION_LABEL_INCOMPLETE), Eq((int)ModelRevisionNode::UploadStatus::GEN_SEL_TREE));
 
-	node.updateStatus(RevisionNode::UploadStatus::GEN_WEB_STASH);
-	EXPECT_THAT(((RepoBSON)node).getIntField(REPO_NODE_REVISION_LABEL_INCOMPLETE), Eq((int)RevisionNode::UploadStatus::GEN_WEB_STASH));
+	node.updateStatus(ModelRevisionNode::UploadStatus::GEN_WEB_STASH);
+	EXPECT_THAT(((RepoBSON)node).getIntField(REPO_NODE_REVISION_LABEL_INCOMPLETE), Eq((int)ModelRevisionNode::UploadStatus::GEN_WEB_STASH));
 
 	// When setting back to complete, the field should go away again
-	node.updateStatus(RevisionNode::UploadStatus::COMPLETE);
+	node.updateStatus(ModelRevisionNode::UploadStatus::COMPLETE);
 	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_REVISION_LABEL_INCOMPLETE), IsFalse());
 }
 

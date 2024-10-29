@@ -580,14 +580,14 @@ TEST(RepoSceneTest, updateRevisionStatus)
 {
 	RepoScene scene;
 
-	EXPECT_FALSE(scene.updateRevisionStatus(getHandler(), RevisionNode::UploadStatus::GEN_DEFAULT));
-	EXPECT_FALSE(scene.updateRevisionStatus(nullptr, RevisionNode::UploadStatus::GEN_DEFAULT));
+	EXPECT_FALSE(scene.updateRevisionStatus(getHandler(), ModelRevisionNode::UploadStatus::GEN_DEFAULT));
+	EXPECT_FALSE(scene.updateRevisionStatus(nullptr, ModelRevisionNode::UploadStatus::GEN_DEFAULT));
 
 	scene = RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ);
 	std::string errMsg;
 	scene.loadRevision(getHandler(), errMsg);
-	EXPECT_TRUE(scene.updateRevisionStatus(getHandler(), RevisionNode::UploadStatus::GEN_DEFAULT));
-	EXPECT_TRUE(scene.updateRevisionStatus(getHandler(), RevisionNode::UploadStatus::COMPLETE));
+	EXPECT_TRUE(scene.updateRevisionStatus(getHandler(), ModelRevisionNode::UploadStatus::GEN_DEFAULT));
+	EXPECT_TRUE(scene.updateRevisionStatus(getHandler(), ModelRevisionNode::UploadStatus::COMPLETE));
 }
 
 TEST(RepoSceneTest, abandonChild)

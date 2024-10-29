@@ -32,7 +32,8 @@ MaterialNode RepoBSONFactory::makeMaterialNode(
 {
 	MaterialNode node;
 	node.setMaterialStruct(material);
-	node.changeName(name, true); // Always give new material nodes a unique Id, as more than likely even identical materials should have different instances in a RepoNodeList
+	node.setSharedID(repo::lib::RepoUUID::createUUID());
+	node.changeName(name, true);
 	node.addParents(parents);
 	return node;
 }

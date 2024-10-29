@@ -55,6 +55,7 @@ namespace repo {
 				repo::lib::RepoUUID image;
 				std::string model;
 				std::string format;
+				bool incomplete;
 
 			protected:
 				void deserialise(RepoBSON&);
@@ -110,6 +111,16 @@ namespace repo {
 				std::string getFormat() const
 				{
 					return format;
+				}
+
+				bool getIncomplete() const
+				{
+					return incomplete;
+				}
+
+				void setIncomplete(bool incomplete)
+				{
+					this->incomplete = incomplete;
 				}
 
 				void addImage(const lib::RepoUUID& imageRefNodeId)

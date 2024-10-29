@@ -185,7 +185,7 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 	const bool& headRevision,
 	const bool& ignoreRefScene,
 	const bool& skeletonFetch,
-	const std::vector<repo::core::model::RevisionNode::UploadStatus>& includeStatus)
+	const std::vector<repo::core::model::ModelRevisionNode::UploadStatus>& includeStatus)
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);

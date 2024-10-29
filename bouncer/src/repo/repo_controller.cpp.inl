@@ -186,7 +186,7 @@ public:
 		const bool           &headRevision = true,
 		const bool           &ignoreRefScene = false,
 		const bool           &skeletonFetch = false,
-		const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus = {});
+		const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus = {});
 
 	/*
 	*	------- Database Operations (insert/delete/update) ---------

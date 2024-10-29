@@ -39,6 +39,18 @@ namespace repo {
 			class REPO_API_EXPORT ModelRevisionNode : public RevisionNode
 			{
 			public:
+				// Some of these statuses will no longer be set by bouncer, but
+				// may still exist in the database.
+				enum class UploadStatus {
+					COMPLETE = 0,
+					GEN_DEFAULT = 1,
+					GEN_REPO_STASH = 2,
+					GEN_WEB_STASH = 3,
+					GEN_SEL_TREE = 4,
+					MISSING_BUNDLES = 5,
+					UNKNOWN = 6,
+				};
+
 				/**
 				* Constructor
 				* Construct a RepoNode base on a RepoBSON object
@@ -67,11 +79,26 @@ namespace repo {
 					return NodeType::REVISION;
 				}
 
+				/**
+				* Get the status of the upload for this revision
+				* @returns the upload status of the revision
+				*/
+				UploadStatus getUploadStatus() const
+				{
+					return status;
+				}
+
+				void updateStatus(const ModelRevisionNode::UploadStatus& status)
+				{
+					this->status = status;
+				}
+
 			private:
 				std::vector<double> offset;
 				std::string message;
 				std::string tag;
 				std::vector<std::string> files;
+				UploadStatus status;
 
 			protected:
 				void deserialise(RepoBSON&);

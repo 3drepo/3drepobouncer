@@ -108,7 +108,7 @@ namespace repo {
 				const bool                                    &headRevision = false,
 				const bool                                    &ignoreRefScene = false,
 				const bool                                    &skeletonFetch = false,
-				const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus = {});
+				const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus = {});
 
 			/**
 			* Retrieve all RepoScene representations given a partially loaded scene.

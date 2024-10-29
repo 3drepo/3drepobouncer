@@ -34,6 +34,7 @@ ModelRevisionNode::ModelRevisionNode(RepoBSON bson) :
 ModelRevisionNode::ModelRevisionNode() :
 	RevisionNode()
 {
+	status = UploadStatus::COMPLETE;
 	offset = { 0, 0, 0 };
 }
 
@@ -43,6 +44,11 @@ ModelRevisionNode::~ModelRevisionNode()
 
 void ModelRevisionNode::deserialise(RepoBSON& bson)
 {
+	status = UploadStatus::COMPLETE;
+	if (bson.hasField(REPO_NODE_REVISION_LABEL_INCOMPLETE))
+	{
+		status = (UploadStatus)bson.getIntField(REPO_NODE_REVISION_LABEL_INCOMPLETE);
+	}
 	if (bson.hasField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT))
 	{
 		offset = bson.getDoubleVectorField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT);
@@ -65,14 +71,21 @@ void ModelRevisionNode::serialise(repo::core::model::RepoBSONBuilder& builder) c
 {
 	RevisionNode::serialise(builder);
 	builder.append(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT, offset); // This is never empty because it initialises to 0,0,0.
-	if (files.size()) {
+	if (files.size())
+	{
 		builder.appendArray(REPO_NODE_REVISION_LABEL_REF_FILE, files);
 	}
-	if (!message.empty()) {
+	if (!message.empty())
+	{
 		builder.append(REPO_NODE_REVISION_LABEL_MESSAGE, message);
 	}
-	if (!tag.empty()) {
+	if (!tag.empty())
+	{
 		builder.append(REPO_NODE_REVISION_LABEL_TAG, tag);
+	}
+	if (status != UploadStatus::COMPLETE)
+	{
+		builder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, (uint32_t)status);
 	}
 	builder.append(REPO_NODE_LABEL_SHARED_ID, sharedId); // By convention the ModelRevisionNode always has a SharedId member, even if zero
 }

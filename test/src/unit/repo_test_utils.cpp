@@ -112,7 +112,7 @@ bool testing::projectHasMetaNodesWithPaths(std::string dbName, std::string proje
 
 	if (token)
 	{
-		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, false, false, { repo::core::model::RevisionNode::UploadStatus::MISSING_BUNDLES });
+		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, false, false, { repo::core::model::ModelRevisionNode::UploadStatus::MISSING_BUNDLES });
 		if (scene)
 		{
 			auto metadata = scene->getAllMetadata(repo::core::model::RepoScene::GraphType::DEFAULT);
@@ -193,7 +193,7 @@ bool testing::projectHasGeometryWithMetadata(std::string dbName, std::string pro
 
 	if (token)
 	{
-		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, true, false, { repo::core::model::RevisionNode::UploadStatus::MISSING_BUNDLES });
+		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, true, false, { repo::core::model::ModelRevisionNode::UploadStatus::MISSING_BUNDLES });
 		if (scene)
 		{
 			auto metadata = scene->getAllMetadata(repo::core::model::RepoScene::GraphType::DEFAULT);
@@ -284,7 +284,7 @@ bool testing::projectSettingsCheck(
 
 	if (token)
 	{
-		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, true, true, { repo::core::model::RevisionNode::UploadStatus::MISSING_BUNDLES });
+		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, true, true, { repo::core::model::ModelRevisionNode::UploadStatus::MISSING_BUNDLES });
 		if (scene)
 		{
 			res = scene->getOwner() == owner && scene->getTag() == tag && scene->getMessage() == desc;
