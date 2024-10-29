@@ -60,7 +60,7 @@ std::vector<float> notIdInBoundary = {
 
 // This function is used by the CopyConstructor Test to return a stack-allocated
 // copy of a TransformationNode on the stack.
-TransformationNode makeRefNode()
+static TransformationNode makeRefNode()
 {
 	auto a = TransformationNode();
 	a.setSharedID(repo::lib::RepoUUID::createUUID());
@@ -71,7 +71,7 @@ TransformationNode makeRefNode()
 
 // This function is used by the CopyConstructor Test to return a heap-allocated
 // copy of a TransformationNode originally allocated on the stack.
-TransformationNode* makeNewNode()
+static TransformationNode* makeNewNode()
 {
 	auto a = makeRefNode();
 	return new TransformationNode(a);

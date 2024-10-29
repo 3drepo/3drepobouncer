@@ -85,10 +85,11 @@ TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
 
 	ASSERT_TRUE(metadata.size());
 
+	repo::lib::StringConversionVisitor stringify;
 	for(auto m : metadata)
 	{
 		auto key = m.first;
-		auto value = m.second.apply_visitor(repo::lib::StringConversionVisitor());
+		auto value = m.second.apply_visitor(stringify);
 
 		auto keyIt = std::find(keys.begin(), keys.end(), key);
 		ASSERT_NE(keyIt, keys.end());

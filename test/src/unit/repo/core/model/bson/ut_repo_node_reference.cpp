@@ -230,7 +230,7 @@ TEST(RefNodeTest, PositionDependantTest)
 
 // This function is used by the CopyConstructor Test to return a stack-allocated
 // copy of a MetadataNode on the stack.
-ReferenceNode makeRefNode()
+static ReferenceNode makeRefNode()
 {
 	auto a = ReferenceNode();
 	a.setSharedID(repo::lib::RepoUUID("e624aab0-f983-49fb-9263-1991288cb449"));
@@ -242,7 +242,7 @@ ReferenceNode makeRefNode()
 
 // This function is used by the CopyConstructor Test to return a heap-allocated
 // copy of a MetadataNode originally allocated on the stack.
-ReferenceNode* makeNewNode()
+static ReferenceNode* makeNewNode()
 {
 	auto a = makeRefNode();
 	return new ReferenceNode(a);

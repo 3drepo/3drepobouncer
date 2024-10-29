@@ -32,7 +32,7 @@ static const std::string typicalName = "3drepo";
 static const repo::lib::RepoUUID typicalUniqueID = repo::lib::RepoUUID::createUUID();
 static const repo::lib::RepoUUID typicalSharedID = repo::lib::RepoUUID::createUUID();
 
-RepoNode makeTypicalNode()
+static RepoNode makeTypicalNode()
 {
 	RepoBSONBuilder builder;
 
@@ -43,7 +43,7 @@ RepoNode makeTypicalNode()
 	return RepoNode(builder.obj());
 }
 
-RepoNode makeRandomNode()
+static RepoNode makeRandomNode()
 {
 	RepoBSONBuilder builder;
 
@@ -53,7 +53,7 @@ RepoNode makeRandomNode()
 	return RepoNode(builder.obj());
 }
 
-RepoNode makeNode(const repo::lib::RepoUUID &unqiueID, const repo::lib::RepoUUID &sharedID, const std::string &name = "")
+static RepoNode makeNode(const repo::lib::RepoUUID &unqiueID, const repo::lib::RepoUUID &sharedID, const std::string &name = "")
 {
 	RepoBSONBuilder builder;
 

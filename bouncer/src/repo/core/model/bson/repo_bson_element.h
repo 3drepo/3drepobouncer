@@ -40,6 +40,7 @@ namespace repo {
 				ARRAY, UUID, BINARY, BOOL, DATE,
 				OBJECTID, DOUBLE, INT, LONG, OBJECT, STRING, UNKNOWN
 			};
+			class RepoBSON; 
 			class REPO_API_EXPORT RepoBSONElement :
 				private mongo::BSONElement
 			{
@@ -94,9 +95,9 @@ namespace repo {
 
 				repo::lib::RepoVariant repoVariant() const;
 
-				inline bool operator==(const RepoBSONElement& other) const;
+				bool operator==(const RepoBSONElement& other) const;
 
-				inline bool operator!=(const RepoBSONElement other) const;
+				bool operator!=(const RepoBSONElement& other) const;
 
 				operator const std::string& () const;
 

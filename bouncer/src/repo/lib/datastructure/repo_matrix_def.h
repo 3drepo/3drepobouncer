@@ -244,7 +244,6 @@ namespace repo {
 				return _RepoMatrix<T>(result);
 			}
 
-			template<class T>
 			static _RepoMatrix<T> rotationX(T angle)
 			{
 				return _RepoMatrix<T>(std::vector<T>({
@@ -255,7 +254,6 @@ namespace repo {
 				}));
 			}
 
-			template<class T>
 			static _RepoMatrix<T> rotationY(T angle)
 			{
 				return _RepoMatrix<T>(std::vector<T>({
@@ -266,7 +264,6 @@ namespace repo {
 				}));
 			}
 
-			template<class T>
 			static _RepoMatrix<T> rotationZ(T angle)
 			{
 				return _RepoMatrix<T>(std::vector<T>({
@@ -277,7 +274,6 @@ namespace repo {
 				}));
 			}
 
-			template<class T>
 			static _RepoMatrix<T> translate(lib::_RepoVector3D<T> t)
 			{
 				return _RepoMatrix<T>(std::vector<T>({

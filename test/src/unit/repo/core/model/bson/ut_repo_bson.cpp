@@ -38,6 +38,12 @@ static auto mongoTestBSON = BSON("ice" << "lolly" << "amount" << 100.0);
 static const RepoBSON testBson = RepoBSON(BSON("ice" << "lolly" << "amount" << 100));
 static const RepoBSON emptyBson;
 
+// This is the same definition as in winnt.h, defined here for gcc. There is also
+// LLONG_MAX definition in climits - however we do *not* want any compiler
+// specifics here. Anything in and out of the database should be bit-equivalent
+// regardless of platform, so a concrete value is defined for testing.
+#define MAXLONGLONG (0x7fffffffffffffff)
+
 template<class T>
 mongo::BSONObj makeBsonArray(std::vector<T> a)
 {

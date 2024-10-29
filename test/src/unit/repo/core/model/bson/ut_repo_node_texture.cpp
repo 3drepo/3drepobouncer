@@ -267,7 +267,7 @@ TEST(TextureNodeTest, SEqualTest)
 
 // This function is used by the CopyConstructor Test to return a stack-allocated
 // copy of a TextureNode on the stack.
-TextureNode makeRefNode()
+static TextureNode makeRefNode()
 {
 	auto a = TextureNode();
 	a.setSharedID(repo::lib::RepoUUID("e624aab0-f983-49fb-9263-1991288cb449"));
@@ -279,7 +279,7 @@ TextureNode makeRefNode()
 
 // This function is used by the CopyConstructor Test to return a heap-allocated
 // copy of a TextureNode originally allocated on the stack.
-TextureNode* makeNewNode()
+static TextureNode* makeNewNode()
 {
 	auto a = makeRefNode();
 	return new TextureNode(a);

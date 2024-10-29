@@ -397,7 +397,7 @@ TEST(MeshNodeTest, TransformBoundingBox)
 		{  1,  1,  1 },
 	});
 
-	auto m = repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D({ 10, 0, 0 })) * repo::lib::RepoMatrix::rotationX(0.12f) * repo::lib::RepoMatrix::rotationY(0.8f) * repo::lib::RepoMatrix::rotationZ(1.02f);
+	auto m = repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D(10, 0, 0 )) * repo::lib::RepoMatrix::rotationX(0.12f) * repo::lib::RepoMatrix::rotationY(0.8f) * repo::lib::RepoMatrix::rotationZ(1.02f);
 
 	auto transformed = vertices;
 	EXPECT_THAT(vertices, ElementsAreArray(transformed));
@@ -540,7 +540,7 @@ TEST(MeshNodeTest, Modifiers)
 
 // This function is used by the CopyConstructor Test to return a heap-allocated
 // copy of a MeshNode originally allocated on the stack.
-MeshNode* makeNewMeshNode()
+static MeshNode* makeNewMeshNode()
 {
 	auto a = makeDeterministicMeshNode(3, true, 2);
 	return new MeshNode(a);
@@ -548,7 +548,7 @@ MeshNode* makeNewMeshNode()
 
 // This function is used by the CopyConstructor Test to return a stack-allocated
 // copy of a MeshNode on the stack.
-MeshNode makeRefMeshNode()
+static MeshNode makeRefMeshNode()
 {
 	auto m = makeDeterministicMeshNode(3, true, 2);
 	return m;

@@ -214,7 +214,7 @@ TEST(MetaNodeTest, Sanitisation)
 
 // This function is used by the CopyConstructor Test to return a heap-allocated
 // copy of a MetadataNode originally allocated on the stack.
-MetadataNode* makeNewMetaNode()
+static MetadataNode* makeNewMetaNode()
 {
 	auto a = makeRandomMetaNode();
 	return new MetadataNode(a);
@@ -222,7 +222,7 @@ MetadataNode* makeNewMetaNode()
 
 // This function is used by the CopyConstructor Test to return a stack-allocated
 // copy of a MetadataNode on the stack.
-MetadataNode makeRefMetaNode()
+static MetadataNode makeRefMetaNode()
 {
 	auto m = makeRandomMetaNode();
 	return m;

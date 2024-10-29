@@ -166,12 +166,12 @@ const char* RepoBSONElement::binData(int& length) const
 	return mongo::BSONElement::binData(length);
 }
 
-inline bool RepoBSONElement::operator==(const RepoBSONElement& other) const
+bool RepoBSONElement::operator==(const RepoBSONElement& other) const
 {
 	return mongo::BSONElement::operator==(other);
 }
 
-inline bool RepoBSONElement::operator!=(const RepoBSONElement other) const
+bool RepoBSONElement::operator!=(const RepoBSONElement& other) const
 {
 	return mongo::BSONElement::operator!=(other);
 }

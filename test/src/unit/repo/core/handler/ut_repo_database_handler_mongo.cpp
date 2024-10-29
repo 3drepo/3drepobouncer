@@ -17,6 +17,7 @@
 
 #include <repo/core/handler/repo_database_handler_mongo.h>
 #include <repo/core/model/bson/repo_bson.h>
+#include <repo/core/model/bson/repo_bson_element.h>
 #include <repo/core/model/bson/repo_node.h>
 #include <repo/core/model/bson/repo_bson_builder.h>
 

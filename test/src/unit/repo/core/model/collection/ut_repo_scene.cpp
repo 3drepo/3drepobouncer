@@ -81,7 +81,7 @@ static MetadataNode makeMetadataNode(
 	return RepoBSONFactory::makeMetaDataNode({}, name);
 }
 
-static MetadataNode makeMaterialNode(
+static MaterialNode makeMaterialNode(
 	const repo::lib::RepoUUID& parent)
 {
 	repo_material_t s;
@@ -90,7 +90,7 @@ static MetadataNode makeMaterialNode(
 	return m;
 }
 
-static MetadataNode makeTextureNode(
+static TextureNode makeTextureNode(
 	const repo::lib::RepoUUID& parent)
 {
 	return RepoBSONFactory::makeTextureNode("", 0, 0, 0, 0, { parent });
