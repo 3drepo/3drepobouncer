@@ -443,7 +443,6 @@ void DataProcessorRvt::processParameter(
 
 			repo::lib::RepoVariant v;
 
-
 			if (tryConvertMetadataEntry(value, labelUtils, pDescParam, buildInEnum, v))
 			{
 				if (metadata.find(metaKey) != metadata.end() && !boost::apply_visitor(repo::lib::DuplicationVisitor(), metadata[metaKey], v)) {

@@ -166,12 +166,6 @@ namespace repo {
 				*/
 				virtual bool sEqual(const RepoNode &other) const;
 
-				/*
-				*	------------- Delusional modifiers --------------
-				*   These are like "setters" but not. We are actually
-				*   creating a new bson object with the changed field
-				*/
-
 				/**
 				*  Create a new object with transformation applied to the node
 				* default behaviour is do nothing. Children object
