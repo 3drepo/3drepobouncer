@@ -185,7 +185,7 @@ TEST(RepoNodeTest, Serialise)
 	EXPECT_EQ(((RepoBSON)node).getUUIDField(REPO_NODE_LABEL_SHARED_ID), sharedId);
 
 	auto uniqueId = repo::lib::RepoUUID::createUUID();
-	node.setUniqueId(uniqueId);
+	node.setUniqueID(uniqueId);
 	EXPECT_EQ(((RepoBSON)node).getUUIDField(REPO_NODE_LABEL_ID), uniqueId);
 }
 
@@ -384,7 +384,7 @@ TEST(RepoNodeTest, RepoNodeSetTest)
 	auto node1 = new RepoNode();
 	auto node2 = new RepoNode();
 
-	node2->setUniqueId(node1->getUniqueID());
+	node2->setUniqueID(node1->getUniqueID());
 
 	// Nodes have identical unique and sharedIds
 
@@ -396,14 +396,14 @@ TEST(RepoNodeTest, RepoNodeSetTest)
 
 	// Changing the unique Id of node2 makes it different from node1
 
-	node2->setUniqueId(repo::lib::RepoUUID::createUUID());
+	node2->setUniqueID(repo::lib::RepoUUID::createUUID());
 	nodes.insert(node2);
 	EXPECT_THAT(nodes.size(), Eq(2));
 
 	// A new node that is identical to node1 and should not be added
 
 	auto node3 = new RepoNode();
-	node3->setUniqueId(node1->getUniqueID());
+	node3->setUniqueID(node1->getUniqueID());
 	nodes.insert(node3);
 	EXPECT_THAT(nodes.size(), Eq(2));
 

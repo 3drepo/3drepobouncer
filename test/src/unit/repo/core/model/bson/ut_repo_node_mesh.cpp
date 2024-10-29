@@ -159,8 +159,9 @@ TEST(MeshNodeTest, TypeTest)
 	EXPECT_EQ(REPO_NODE_TYPE_MESH, node.getType());
 	EXPECT_EQ(NodeType::MESH, node.getTypeAsEnum());
 
-	// It is expected that the value of these types can (and will) be cast to the numerical size of the primitive
-	// for control flow, so make sure this happens correctly.
+	// It is expected that the value of these types can (and will) be cast to the
+	// numerical size of the primitive for control flow, so make sure this happens
+	// correctly.
 
 	EXPECT_EQ(0, static_cast<int>(MeshNode::Primitive::UNKNOWN));
 	EXPECT_EQ(1, static_cast<int>(MeshNode::Primitive::POINTS));
@@ -187,27 +188,27 @@ TEST(MeshNodeTest, GetMFormatTest)
 
 	// Triangles, with and without normals, and with and without one UV channel
 
-	meshNodes.push_back(makeMeshNode(3, false, 0));
-	meshNodes.push_back(makeMeshNode(3, false, 1));
-	meshNodes.push_back(makeMeshNode(3, true, 0));
-	meshNodes.push_back(makeMeshNode(3, true, 1));
+	meshNodes.push_back(makeDeterministicMeshNode(3, false, 0));
+	meshNodes.push_back(makeDeterministicMeshNode(3, false, 1));
+	meshNodes.push_back(makeDeterministicMeshNode(3, true, 0));
+	meshNodes.push_back(makeDeterministicMeshNode(3, true, 1));
 
 	// (Different numbers of uv channels)
 
-	meshNodes.push_back(makeMeshNode(3, false, 2));
-	meshNodes.push_back(makeMeshNode(3, true, 2));
+	meshNodes.push_back(makeDeterministicMeshNode(3, false, 2));
+	meshNodes.push_back(makeDeterministicMeshNode(3, true, 2));
 
 	// (Different primtives)
 
-	meshNodes.push_back(makeMeshNode(2, false, 0));
-	meshNodes.push_back(makeMeshNode(2, false, 1));
-	meshNodes.push_back(makeMeshNode(2, true, 0));
-	meshNodes.push_back(makeMeshNode(2, true, 1));
+	meshNodes.push_back(makeDeterministicMeshNode(2, false, 0));
+	meshNodes.push_back(makeDeterministicMeshNode(2, false, 1));
+	meshNodes.push_back(makeDeterministicMeshNode(2, true, 0));
+	meshNodes.push_back(makeDeterministicMeshNode(2, true, 1));
 
 	// (Different numbers of uv channels)
 
-	meshNodes.push_back(makeMeshNode(2, false, 2));
-	meshNodes.push_back(makeMeshNode(2, true, 2));
+	meshNodes.push_back(makeDeterministicMeshNode(2, false, 2));
+	meshNodes.push_back(makeDeterministicMeshNode(2, true, 2));
 
 	// All formats should be distinct from eachother and the empty mesh
 
@@ -266,63 +267,63 @@ TEST(MeshNodeTest, SEqualTest)
 
 		// Triangles, with and without normals, and with and without one UV channel
 
-		meshNodes.push_back(makeMeshNode(3, false, 0));
-		meshNodes.push_back(makeMeshNode(3, false, 1));
-		meshNodes.push_back(makeMeshNode(3, true, 0));
-		meshNodes.push_back(makeMeshNode(3, true, 1));
+		meshNodes.push_back(makeDeterministicMeshNode(3, false, 0));
+		meshNodes.push_back(makeDeterministicMeshNode(3, false, 1));
+		meshNodes.push_back(makeDeterministicMeshNode(3, true, 0));
+		meshNodes.push_back(makeDeterministicMeshNode(3, true, 1));
 
 		// (Different numbers of uv channels)
 
-		meshNodes.push_back(makeMeshNode(3, false, 2));
-		meshNodes.push_back(makeMeshNode(3, true, 2));
+		meshNodes.push_back(makeDeterministicMeshNode(3, false, 2));
+		meshNodes.push_back(makeDeterministicMeshNode(3, true, 2));
 
 		// (Different primtives)
 
-		meshNodes.push_back(makeMeshNode(2, false, 0));
-		meshNodes.push_back(makeMeshNode(2, false, 1));
-		meshNodes.push_back(makeMeshNode(2, true, 0));
-		meshNodes.push_back(makeMeshNode(2, true, 1));
+		meshNodes.push_back(makeDeterministicMeshNode(2, false, 0));
+		meshNodes.push_back(makeDeterministicMeshNode(2, false, 1));
+		meshNodes.push_back(makeDeterministicMeshNode(2, true, 0));
+		meshNodes.push_back(makeDeterministicMeshNode(2, true, 1));
 
 		// (Different numbers of uv channels)
 
-		meshNodes.push_back(makeMeshNode(2, false, 2));
-		meshNodes.push_back(makeMeshNode(2, true, 2));
+		meshNodes.push_back(makeDeterministicMeshNode(2, false, 2));
+		meshNodes.push_back(makeDeterministicMeshNode(2, true, 2));
 
 		// (Different buffer contents)
 
-		// Each time a mesh_data is initialised, it will reset the random seed.
-		// So below, makeMeshNode will create an identical copy to above, and
-		// the entry will differ only by the calls to setVertices etc which
+		// Every time makeDeterministicMeshNode is called it resets the random
+		// seed, so the following should create identical copies to the above and
+		// each entry will differ only by the calls to setVertices, etc, which
 		// continue the random sequence.
 
-		meshNodes.push_back(makeMeshNode(3, false, 0));
+		meshNodes.push_back(makeDeterministicMeshNode(3, false, 0));
 		meshNodes[meshNodes.size() - 1].setVertices(makeVertices(100), true);
 
-		meshNodes.push_back(makeMeshNode(3, false, 0));
+		meshNodes.push_back(makeDeterministicMeshNode(3, false, 0));
 		meshNodes[meshNodes.size() - 1].setFaces(makeFaces(MeshNode::Primitive::TRIANGLES));
 
-		meshNodes.push_back(makeMeshNode(3, false, 1));
+		meshNodes.push_back(makeDeterministicMeshNode(3, false, 1));
 		meshNodes[meshNodes.size() - 1].setUVChannel(0, makeUVs(100));
 
-		meshNodes.push_back(makeMeshNode(3, true, 0));
+		meshNodes.push_back(makeDeterministicMeshNode(3, true, 0));
 		meshNodes[meshNodes.size() - 1].setNormals(makeNormals(100));
 
-		meshNodes.push_back(makeMeshNode(3, false, 2));
+		meshNodes.push_back(makeDeterministicMeshNode(3, false, 2));
 		meshNodes[meshNodes.size() - 1].setUVChannel(1, makeUVs(100));
 
-		meshNodes.push_back(makeMeshNode(2, false, 0));
+		meshNodes.push_back(makeDeterministicMeshNode(2, false, 0));
 		meshNodes[meshNodes.size() - 1].setVertices(makeVertices(100), true);
 
-		meshNodes.push_back(makeMeshNode(2, false, 0));
+		meshNodes.push_back(makeDeterministicMeshNode(2, false, 0));
 		meshNodes[meshNodes.size() - 1].setFaces(makeFaces(MeshNode::Primitive::LINES));
 
-		meshNodes.push_back(makeMeshNode(2, false, 1));
+		meshNodes.push_back(makeDeterministicMeshNode(2, false, 1));
 		meshNodes[meshNodes.size() - 1].setUVChannel(0, makeUVs(100));
 
-		meshNodes.push_back(makeMeshNode(2, true, 0));
+		meshNodes.push_back(makeDeterministicMeshNode(2, true, 0));
 		meshNodes[meshNodes.size() - 1].setNormals(makeNormals(100));
 
-		meshNodes.push_back(makeMeshNode(2, false, 2));
+		meshNodes.push_back(makeDeterministicMeshNode(2, false, 2));
 		meshNodes[meshNodes.size() - 1].setUVChannel(1, makeUVs(100));
 	}
 
@@ -367,7 +368,7 @@ TEST(MeshNodeTest, CloneAndApplyTransformation)
 		0, 0, 0, 1
 	};
 
-	auto mesh = makeMeshNode(3, true, 2);
+	auto mesh = makeDeterministicMeshNode(3, true, 2);
 	MeshNode unchangedMesh = mesh.cloneAndApplyTransformation(identity);
 
 	EXPECT_THAT(unchangedMesh.getVertices(), ElementsAreArray(mesh.getVertices()));
@@ -453,7 +454,7 @@ TEST(MeshNodeTest, TransformBoundingBox)
 
 TEST(MeshNodeTest, ApplyTransform)
 {
-	auto m = makeMeshNode(3, true, 1);
+	auto m = makeDeterministicMeshNode(3, true, 1);
 	auto t = makeTransform(true, true);
 
 	auto v = m.getVertices();
@@ -487,8 +488,8 @@ TEST(MeshNodeTest, Modifiers)
 	// Specify two reference meshes we intend to swap properties between.
 	// (It is expected that the constructors have already been tested)
 
-	auto m1 = makeMeshNode(3, true, 2);
-	auto m2 = makeMeshNode(2, true, 2);
+	auto m1 = makeDeterministicMeshNode(3, true, 2);
+	auto m2 = makeDeterministicMeshNode(2, true, 2);
 	m2.setVertices(makeVertices(m2.getNumVertices()),true);
 	m2.setNormals(makeNormals(m2.getNumVertices()));
 	m2.setFaces(makeFaces(m2.getPrimitive()));
@@ -541,7 +542,7 @@ TEST(MeshNodeTest, Modifiers)
 // copy of a MeshNode originally allocated on the stack.
 MeshNode* makeNewMeshNode()
 {
-	auto a = makeMeshNode(3, true, 2);
+	auto a = makeDeterministicMeshNode(3, true, 2);
 	return new MeshNode(a);
 }
 
@@ -549,7 +550,7 @@ MeshNode* makeNewMeshNode()
 // copy of a MeshNode on the stack.
 MeshNode makeRefMeshNode()
 {
-	auto m = makeMeshNode(3, true, 2);
+	auto m = makeDeterministicMeshNode(3, true, 2);
 	return m;
 }
 
@@ -557,10 +558,10 @@ TEST(MeshNodeTest, CopyConstructor)
 {
 	// Tests that the copy-constructor is behaving as expected
 	// We use the default shallow-copy copy constructor and it is assumed the
-	// callers know this. The most typical operation will be to turn a MeshNode
-	// stack allocated instance into a pointer.
+	// callers know this. (The most typical use-case will be to turn a MeshNode
+	// stack allocated instance into a pointer.)
 
-	auto a = makeMeshNode(3, true, 2);
+	auto a = makeDeterministicMeshNode(3, true, 2);
 
 	auto b = a;
 	EXPECT_THAT(a.sEqual(b), IsTrue());

@@ -44,6 +44,7 @@ TEST(DrawingRevisionNodeTest, Node)
 	builder.append("model", model);
 	builder.append("project", project);
 	builder.append("format", format);
+	builder.appendTimeStamp("timestamp");
 	std::vector< repo::lib::RepoUUID> files;
 	files.push_back(file);
 	builder.appendArray("rFile", files);

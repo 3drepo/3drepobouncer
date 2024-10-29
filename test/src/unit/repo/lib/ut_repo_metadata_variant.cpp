@@ -22,8 +22,8 @@
 
 #include "../../repo_test_utils.h"
 
-
 using namespace repo::lib;
+using namespace testing;
 
 // Test of basic assignments and retreival.
 TEST(RepoMetaVariantTest, AssignmentTest)
@@ -113,7 +113,7 @@ TEST(RepoMetaVariantTest, StringVisitor) {
 
 	auto uuid = repo::lib::RepoUUID::createUUID();
 	RepoVariant v6 = uuid;
-	std::string value6 = boost::apply_visitor(StringConversionVisitor(), v5);
+	std::string value6 = boost::apply_visitor(StringConversionVisitor(), v6);
 	EXPECT_EQ(value6, uuid.toString());
 }
 
@@ -186,7 +186,7 @@ TEST(RepoMetaVariantTest, CompareVisitor) {
 	EXPECT_FALSE(boost::apply_visitor(DuplicationVisitor(), v6a, v6b));
 
 	RepoVariant v7a = repo::lib::RepoUUID::createUUID();
-	RepoVariant v7b = v5a;
+	RepoVariant v7b = v7a;
 	RepoVariant v7c = repo::lib::RepoUUID::createUUID();
 	EXPECT_TRUE(boost::apply_visitor(DuplicationVisitor(), v7a, v7b));
 	EXPECT_FALSE(boost::apply_visitor(DuplicationVisitor(), v7a, v7c));

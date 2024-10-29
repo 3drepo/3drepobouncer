@@ -21,6 +21,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest-matchers.h>
 
+#include "repo_test_utils.h"
 #include "repo_test_mesh_utils.h"
 #include "repo/core/model/bson/repo_bson_factory.h"
 #include "repo/core/model/bson/repo_bson_builder.h"
@@ -258,8 +259,9 @@ MeshNode repo::test::utils::mesh::makeMeshNode(mesh_data data)
 	return MeshNode(meshNodeTestBSONFactory(data));
 }
 
-MeshNode repo::test::utils::mesh::makeMeshNode(int primitive, bool normals, int uvs)
+MeshNode repo::test::utils::mesh::makeDeterministicMeshNode(int primitive, bool normals, int uvs)
 {
+	restartRand();
 	return makeMeshNode(mesh_data(false, false, false, primitive, normals, uvs, 100));
 }
 
@@ -329,21 +331,19 @@ repo::test::utils::mesh::mesh_data::mesh_data(
 	int numVertices
 )
 {
-	std::srand(0);
-
 	if (name) {
 		this->name = "Named Mesh";
 	}
 
 	if (sharedId) {
-		this->sharedId = repo::lib::RepoUUID::createUUID();
+		this->sharedId = getRandUUID();
 	}
 
 	for (int i = 0; i < numParents; i++) {
-		parents.push_back(repo::lib::RepoUUID::createUUID());
+		parents.push_back(getRandUUID());
 	}
 
-	uniqueId = repo::lib::RepoUUID::createUUID();
+	uniqueId = getRandUUID();
 
 	repo::lib::RepoVector3D min = repo::lib::RepoVector3D(FLT_MAX, FLT_MAX, FLT_MAX);
 	repo::lib::RepoVector3D max = repo::lib::RepoVector3D(-FLT_MAX, -FLT_MAX, -FLT_MAX);

@@ -129,9 +129,6 @@ void RepoBSONBuilder::appendTime(std::string label, const tm& t) {
 		throw repo::lib::RepoException("Failed converting date to mongo compatible format. tm malformed or date pre 1970?");
 	}
 
-	// Convert from seconds to milliseconds
-	time = time * 1000;
-
 	// Append time
 	appendTime(label, time);
 }

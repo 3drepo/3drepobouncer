@@ -117,7 +117,7 @@ TEST(TextureNodeTest, Serialise)
 	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_LABEL_EXTENSION), IsFalse());
 	EXPECT_THAT(((RepoBSON)node).hasBinField(REPO_LABEL_DATA), IsFalse());
 
-	node.setUniqueId(repo::lib::RepoUUID::createUUID());
+	node.setUniqueID(repo::lib::RepoUUID::createUUID());
 	EXPECT_THAT(((RepoBSON)node).getUUIDField(REPO_NODE_LABEL_ID), node.getUniqueID());
 
 	node.setSharedID(repo::lib::RepoUUID::createUUID());
@@ -221,8 +221,6 @@ TEST(TextureNodeTest, Methods)
 	EXPECT_THAT(node.getRawData(), Eq(data1));
 }
 
-#pragma optimize("", off)
-
 TEST(TextureNodeTest, SEqualTest)
 {
 	TextureNode empty;
@@ -289,7 +287,7 @@ TextureNode* makeNewNode()
 
 TEST(TextureNodeTest, CopyConstructor)
 {
-	std::srand(0); // Ensure nodes generated from the functions above are identical
+	restartRand(); // Ensure nodes generated from the functions above are identical
 	auto a = makeRefNode();
 
 	auto b = a;
@@ -306,7 +304,7 @@ TEST(TextureNodeTest, CopyConstructor)
 
 	delete c;
 
-	std::srand(0);
+	restartRand();
 	auto d = makeNewNode();
 	EXPECT_THAT(a.sEqual(*d), IsTrue());
 
@@ -315,7 +313,7 @@ TEST(TextureNodeTest, CopyConstructor)
 
 	delete d;
 
-	std::srand(0);
+	restartRand();
 	auto e = makeRefNode();
 	EXPECT_THAT(a.sEqual(e), IsTrue());
 

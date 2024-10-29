@@ -28,8 +28,6 @@ using namespace repo::test::utils::mesh;
 using namespace repo::manipulator::modelutility;
 using namespace repo::manipulator::modeloptimizer;
 
-#pragma optimize("", off)
-
 TEST(MeshMapReorganiser, VeryLargeMesh)
 {
 	// This snippet creates a Supermesh using the Multipart Optimizer

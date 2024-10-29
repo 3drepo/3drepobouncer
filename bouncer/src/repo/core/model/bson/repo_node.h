@@ -58,7 +58,7 @@ namespace repo {
 				* not be called directly, because RepoNodes should always be
 				* initialised to their most specific subtype from RepoBSONs.
 				*/
-				RepoNode(RepoBSON bson);
+				RepoNode(const RepoBSON& bson);
 
 				/**
 				* Empty Constructor
@@ -75,7 +75,7 @@ namespace repo {
 				operator RepoBSON() const;
 
 			protected:
-				virtual void deserialise(RepoBSON&);
+				virtual void deserialise(const RepoBSON&);
 				virtual void serialise(class RepoBSONBuilder&) const;
 
 			public:
@@ -124,11 +124,13 @@ namespace repo {
 
 				void changeName(
 					const std::string& newName,
-					const bool& newUniqueID = true
+					const bool& newUniqueID = false
 				)
 				{
 					name = newName;
-					uniqueId = repo::lib::RepoUUID::createUUID();
+					if (newUniqueID) {
+						uniqueId = repo::lib::RepoUUID::createUUID();
+					}
 				}
 
 				virtual void applyTransformation(
@@ -196,7 +198,7 @@ namespace repo {
 					return uniqueId;
 				}
 
-				void setUniqueId(const repo::lib::RepoUUID& uniqueId)
+				void setUniqueID(const repo::lib::RepoUUID& uniqueId)
 				{
 					this->uniqueId = uniqueId;
 				}

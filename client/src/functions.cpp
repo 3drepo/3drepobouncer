@@ -17,6 +17,7 @@
 
 #include "functions.h"
 
+#include <repo/core/model/bson/repo_bson.h>
 #include <repo/core/model/bson/repo_bson_factory.h>
 
 #include <sstream>

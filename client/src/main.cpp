@@ -123,7 +123,7 @@ int main(int argc, char* argv[]) {
 			}
 		}
 		catch (const repo::lib::RepoException &e) {
-			repoLogError("Failed to read configuration from file: " + configPath + " : " + e.what());
+			repoLogError(std::string("3drepobouncerClient main: ") + e.what());
 			return REPOERR_INVALID_CONFIG_FILE;
 		}
 	}

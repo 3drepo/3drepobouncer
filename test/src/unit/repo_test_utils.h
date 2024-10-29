@@ -22,359 +22,97 @@
 #include "repo_test_fileservice_info.h"
 #include "repo/lib/datastructure/repo_variant.h"
 #include "repo/lib/datastructure/repo_variant_utils.h"
-#include "repo/lib/datastructure/repo_vector3d.h"
+#include "repo/lib/datastructure/repo_vector.h"
 #include <fstream>
 
-static repo::RepoController::RepoToken* initController(repo::RepoController *controller) {
-	repo::lib::RepoConfig config = { REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
-		REPO_GTEST_DBUSER, REPO_GTEST_DBPW };
-
-	config.configureFS("./", 2);
-	std::string errMsg;
-	return controller->init(errMsg, config);
-}
-
-static bool projectExists(
-	const std::string &db,
-	const std::string &project)
-{
-	auto handler = getHandler();
-	for (auto collection : handler->getCollections(db)) {
-		if (collection == (project + ".history")) {
-			return true;
-		}
-	}
-	return false;
-}
-
-static bool projectSettingsCheck(
-	const std::string  &dbName, const std::string  &projectName, const std::string  &owner, const std::string  &tag, const std::string  &desc)
-{
-	bool res = false;
-	repo::RepoController *controller = new repo::RepoController();
-	auto token = initController(controller);
-
-	if (token)
-	{
-		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, true, true, { repo::core::model::RevisionNode::UploadStatus::MISSING_BUNDLES });
-		if (scene)
-		{
-			res = scene->getOwner() == owner && scene->getTag() == tag && scene->getMessage() == desc;
-			delete scene;
-		}
-	}
-	controller->disconnectFromDatabase(token);
-	delete controller;
-	return res;
-}
-
-static bool projectHasValidRevision(
-	const std::string  &dbName, const std::string  &projectName)
-{
-	bool res = false;
-	repo::RepoController *controller = new repo::RepoController();
-	auto token = initController(controller);
-	if (token)
-	{
-		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, true);
-		if (res = scene)
-		{
-			delete scene;
-		}
-	}
-	controller->disconnectFromDatabase(token);
-	delete controller;
-	return res;
-}
-
-static bool fileExists(
-	const std::string &file)
-{
-	std::ifstream ofs(file);
-	const bool valid = ofs.good();
-	ofs.close();
-	return valid;
-}
-
-static bool filesCompare(
-	const std::string &fileA,
-	const std::string &fileB)
-{
-	bool match = false;
-	std::ifstream fA(fileA), fB(fileB);
-	if (fA.good() && fB.good())
-	{
-		std::string lineA, lineB;
-		bool endofA, endofB;
-		while ((endofA = (bool)std::getline(fA, lineA)) && (endofB = (bool)std::getline(fB, lineB)))
-		{
-			match = lineA == lineB;
-			if (!match)
-			{
-				std::cout << "Failed match. " << std::endl;
-				std::cout << "line A: " << lineA << std::endl;
-				std::cout << "line B: " << lineB << std::endl;
-				break;
-			}
-		}
-
-		if (!endofA)
-		{
-			//if endofA is false then end of B won't be found as getline wouldn't have ran for fB
-			endofB = (bool)std::getline(fB, lineB);
-		}
-
-		match &= (!endofA && !endofB);
-	}
-
-	return match;
-}
-
-static bool compareVectors(const repo_color4d_t &v1, const repo_color4d_t &v2)
-{
-	return v1.r == v2.r && v1.g == v2.g && v1.b == v2.b && v1.a == v2.a;
-}
-
-static bool compareVectors(const std::vector<repo_color4d_t> &v1, const std::vector<repo_color4d_t> &v2)
-{
-	if (v1.size() != v2.size()) return false;
-	bool match = true;
-	for (int i = 0; i < v1.size(); ++i)
-	{
-		match &= compareVectors(v1[i], v2[i]);
-	}
-
-	return match;
-}
-
-template <typename T>
-static bool compareStdVectors(const std::vector<T> &v1, const std::vector<T> &v2)
-{
-	bool identical;
-	if (identical = v1.size() == v2.size())
-	{
-		for (int i = 0; i < v1.size(); ++i)
-		{
-			identical &= v1[i] == v2[i];
-		}
-	}
-	return identical;
-}
-
-static bool compareMaterialStructs(const repo_material_t &m1, const repo_material_t &m2)
-{
-	return compareStdVectors(m1.ambient, m2.ambient)
-		&& compareStdVectors(m1.diffuse, m2.diffuse)
-		&& compareStdVectors(m1.specular, m2.specular)
-		&& compareStdVectors(m1.emissive, m2.emissive)
-		&& m1.opacity == m2.opacity
-		&& m1.shininess == m2.shininess
-		&& m1.shininessStrength == m2.shininessStrength
-		&& m1.lineWeight == m2.lineWeight
-		&& m1.isWireframe == m2.isWireframe
-		&& m1.isTwoSided == m2.isTwoSided;
-}
-
-static std::string getRandomString(const uint32_t &iLen)
-{
-	std::string sStr;
-	sStr.reserve(iLen);
-	char syms[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-	unsigned int Ind = 0;
-	srand(time(NULL) + rand());
-	for (int i = 0; i < iLen; ++i);
-	{
-		sStr.push_back(syms[rand() % 62]);
-	}
-
-	return sStr;
-}
-
-static tm getRandomTm()
-{
-	tm tm;
-	tm.tm_sec = rand() % 60;
-	tm.tm_min = rand() % 60;
-	tm.tm_hour = rand() % 24;
-	tm.tm_mday = 1 + (rand() % 30);
-	tm.tm_mon = rand() % 12;
-	tm.tm_year = 70 + (rand() % 100); // Converting to mongo date requires the date be after the Unix epoch (1970)
-	tm.tm_wday = rand() % 7;
-	tm.tm_yday = rand() % 366;
-	tm.tm_isdst = rand() % 2;
-	return tm;
-}
-
-// Searches all elements in a project for one with metadata matching the
-// key-value provided, and returns true if that element has geometry Keys and
-// Values are case-sensitive. Additionally, if a value is a string type, it will
-// be enclosed in double quotations, so include these in the value to test
-// against.
-static bool projectHasGeometryWithMetadata(std::string dbName, std::string projectName, std::string key, std::string value)
-{
-	bool res = false;
-	repo::RepoController* controller = new repo::RepoController();
-	auto token = initController(controller);
-
-	if (token)
-	{
-		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, true, false, { repo::core::model::RevisionNode::UploadStatus::MISSING_BUNDLES });
-		if (scene)
-		{
-			auto metadata = scene->getAllMetadata(repo::core::model::RepoScene::GraphType::DEFAULT);
-			auto meshes = scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT);
-
-			std::unordered_map<repo::lib::RepoUUID, repo::core::model::MeshNode*, repo::lib::RepoUUIDHasher > sharedIdToMeshNode;
-
-			for (auto m : meshes) {
-				auto meshNode = dynamic_cast<repo::core::model::MeshNode*>(m);
-				sharedIdToMeshNode[meshNode->getSharedID()] = meshNode;
-			}
-
-			for (auto m : metadata) {
-				auto metaDataNode = dynamic_cast<repo::core::model::MetadataNode*>(m);
-				auto metaDataArray = metaDataNode->getAllMetadata();
-				for (auto entry : metaDataArray)
-				{
-					auto aKey = entry.first;
-					std::string aValue = boost::apply_visitor(repo::lib::StringConversionVisitor(), entry.second);
-
-					// Note: the string conversion encloses values that are stored as strings in the DB with \"
-					// We will need to remove them to guarantee a correct comparison
-					std::string sanitisedValue;
-					if (aValue.length() > 2 && aValue.substr(0, 1) == "\"" && aValue.substr(aValue.length() - 1, 1) == "\"") {
-						sanitisedValue = aValue.substr(1, aValue.length() - 2);
-					} else {
-						sanitisedValue = aValue;
-					}
-
-
-					if (aKey == key && sanitisedValue == value)
-					{
-						// This metadata node contains the key-value pair we are looking for. Now
-						// check if there is geometry associated with it.
-
-						for (auto p : metaDataNode->getParentIDs())
-						{
-							if (sharedIdToMeshNode.find(p) != sharedIdToMeshNode.end())
-							{
-								if (sharedIdToMeshNode[p]->getNumVertices() >= 0)
-								{
-									res = true;
-									break;
-								}
-							}
-						}
-					}
-
-					if (res)
-					{
-						break;
-					}
-				}
-
-				if (res)
-				{
-					break;
-				}
-			}
-			delete scene;
-		}
-	}
-	controller->disconnectFromDatabase(token);
-	delete controller;
-	return res;
-}
-
-// Finds all meta nodes that match the metadata criteria, and compares their
-// position in the transformation tree to the list in expected.
-static bool projectHasMetaNodesWithPaths(std::string dbName, std::string projectName, std::string key, std::string value, std::vector<std::string> expected)
-{
-	repo::RepoController* controller = new repo::RepoController();
-	auto token = initController(controller);
-
-	std::vector<std::string> paths;
-
-	if (token)
-	{
-		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, false, false, { repo::core::model::RevisionNode::UploadStatus::MISSING_BUNDLES });
-		if (scene)
-		{
-			auto metadata = scene->getAllMetadata(repo::core::model::RepoScene::GraphType::DEFAULT);
-			auto transforms = scene->getAllTransformations(repo::core::model::RepoScene::GraphType::DEFAULT);
-
-			std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> sharedIdToNode;
-
-			for (auto m : transforms) {
-				sharedIdToNode[m->getSharedID()] = m;
-			}
-
-			for (auto m : metadata) {
-				auto metaDataNode = dynamic_cast<repo::core::model::MetadataNode*>(m);
-				auto metaDataArray = metaDataNode->getAllMetadata();
-				for (auto entry : metaDataArray)
-				{
-					auto aKey = entry.first;
-					std::string aValue = boost::apply_visitor(repo::lib::StringConversionVisitor(), entry.second);
-
-					if (aKey == key && aValue == value)
-					{
-						// This metadata node contains the key-value pair we are looking for. Now
-						// check its position in the tree.
-
-						auto path = metaDataNode->getName();
-						auto parents = metaDataNode->getParentIDs();
-
-						while (parents.size() > 0)
-						{
-							auto parent = sharedIdToNode[parents[0]];
-							path = parent->getName() + "->" + path;
-							parents = parent->getParentIDs();
-						}
-
-						paths.push_back(path);
-					}
-				}
-			}
-			delete scene;
-		}
-	}
-	controller->disconnectFromDatabase(token);
-	delete controller;
-
-	if (paths.size() != expected.size())
-	{
-		return false;
-	}
-
-	int found = 0;
-
-	for (auto p : expected)
-	{
-		for (size_t i = 0; i < paths.size(); i++)
-		{
-			if (paths[i] == p)
-			{
-				found++;
-				paths.erase(paths.begin() + i);
-				break;
-			}
-		}
-	}
-
-	if (found != expected.size())
-	{
-		return false;
-	}
-
-	return true;
-}
-
 namespace testing {
+
+	repo::RepoController::RepoToken* initController(
+		repo::RepoController* controller);
+
+	bool projectExists(
+		const std::string& db,
+		const std::string& project);
+
+	bool projectSettingsCheck(
+		const std::string& dbName,
+		const std::string& projectName,
+		const std::string& owner,
+		const std::string& tag,
+		const std::string& desc);
+
+	bool projectHasValidRevision(
+		const std::string& dbName,
+		const std::string& projectName);
+
+	bool fileExists(const std::string& file);
+
+	bool filesCompare(
+		const std::string& fileA,
+		const std::string& fileB);
+
+	bool compareMaterialStructs(
+		const repo_material_t& m1,
+		const repo_material_t& m2);
+
+	bool compareVectors(
+		const repo_color4d_t& v1,
+		const repo_color4d_t& v2);
+
+	bool compareVectors(
+		const std::vector<repo_color4d_t>& v1,
+		const std::vector<repo_color4d_t>& v2);
+
+	std::string getRandomString(const uint32_t& iLen);
+
+	tm getRandomTm();
+
+	// Searches all elements in a project for one with metadata matching the
+	// key-value provided, and returns true if that element has geometry. Keys
+	// and Values are case-sensitive.
+	bool projectHasGeometryWithMetadata(
+		std::string dbName,
+		std::string projectName,
+		std::string key,
+		std::string value);
+
+	// Finds all meta nodes that match the metadata criteria, and compares their
+	// position in the transformation tree to the list in expected.
+	bool projectHasMetaNodesWithPaths(
+		std::string dbName,
+		std::string projectName,
+		std::string key,
+		std::string value,
+		std::vector<std::string> expected);
 
 	repo::lib::RepoVector3D makeRepoVector();
 
 	std::vector<uint8_t> makeRandomBinary(size_t size = 1000);
 
-	repo::core::model::RepoBSON makeRandomRepoBSON(int seed, size_t numBinFiles, size_t binFileSize = 1000);
+	repo::core::model::RepoBSON makeRandomRepoBSON(
+		int seed,
+		size_t numBinFiles,
+		size_t binFileSize = 1000);
+
+	// Returns a UUID that is a function of the random seed. If the seed is reset
+	// with resetRand(), the sequence will restart.
+	repo::lib::RepoUUID getRandUUID();
+
+	// Resets the random seed. Use this instead of std::srand in order to restart
+	// the UUID sequence as well.
+	void restartRand();
+
+	template <typename T>
+	static bool compareStdVectors(const std::vector<T>& v1, const std::vector<T>& v2)
+	{
+		bool identical;
+		if (identical = v1.size() == v2.size())
+		{
+			for (int i = 0; i < v1.size(); ++i)
+			{
+				identical &= v1[i] == v2[i];
+			}
+		}
+		return identical;
+	}
 }

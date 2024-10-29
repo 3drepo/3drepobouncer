@@ -66,6 +66,5 @@ void RevisionNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 	if (!author.empty()) {
 		builder.append(REPO_NODE_REVISION_LABEL_AUTHOR, author);
 	}
-
 	builder.appendTime(REPO_NODE_REVISION_LABEL_TIMESTAMP, (int64_t)timestamp);
 }

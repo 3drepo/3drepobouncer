@@ -42,7 +42,9 @@ TransformationNode::~TransformationNode()
 
 void TransformationNode::deserialise(RepoBSON& bson)
 {
-	matrix = bson.getMatrixField(REPO_NODE_LABEL_MATRIX);
+	if (bson.hasField(REPO_NODE_LABEL_MATRIX)) {
+		matrix = bson.getMatrixField(REPO_NODE_LABEL_MATRIX);
+	}
 }
 
 void TransformationNode::serialise(repo::core::model::RepoBSONBuilder& builder) const

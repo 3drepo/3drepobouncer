@@ -82,6 +82,29 @@ TEST(RefNodeTest, Deserialise)
 	EXPECT_THAT(node.useSpecificRevision(), Eq(isUnique));
 }
 
+TEST(RefNodeTest, DeserialiseEmpty)
+{
+	auto project = repo::lib::RepoUUID::createUUID().toString(); // For legacy reasons the project reference is stored as a string
+	auto teamspace = "myTeamspace";
+
+	RepoBSONBuilder builder;
+
+	builder.append(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_REFERENCE);
+	builder.append(REPO_NODE_REFERENCE_LABEL_OWNER, teamspace);
+	builder.append(REPO_NODE_REFERENCE_LABEL_PROJECT, project);
+
+	auto node = ReferenceNode(builder.obj());
+
+	EXPECT_THAT(node.getUniqueID().isDefaultValue(), IsTrue());
+	EXPECT_THAT(node.getSharedID().isDefaultValue(), IsTrue());
+	EXPECT_THAT(node.getRevision().isDefaultValue(), IsTrue());
+	EXPECT_THAT(node.getName(), IsEmpty());
+	EXPECT_THAT(node.getProjectRevision().isDefaultValue(), IsTrue());
+	EXPECT_THAT(node.getDatabaseName(), Eq(teamspace));
+	EXPECT_THAT(node.getProjectId(), Eq(project));
+	EXPECT_THAT(node.useSpecificRevision(), IsFalse());
+}
+
 TEST(RefNodeTest, Serialise)
 {
 	auto node = ReferenceNode();
@@ -94,7 +117,7 @@ TEST(RefNodeTest, Serialise)
 	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_REFERENCE_LABEL_REVISION_ID), IsFalse());
 	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_REFERENCE_LABEL_UNIQUE), IsFalse());
 
-	node.setUniqueId(repo::lib::RepoUUID::createUUID());
+	node.setUniqueID(repo::lib::RepoUUID::createUUID());
 	EXPECT_THAT(((RepoBSON)node).getUUIDField(REPO_NODE_LABEL_ID), node.getUniqueID());
 
 	node.setSharedID(repo::lib::RepoUUID::createUUID());

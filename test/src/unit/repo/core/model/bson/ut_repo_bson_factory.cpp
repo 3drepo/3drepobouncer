@@ -18,12 +18,18 @@
 #include <cstdlib>
 
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest-matchers.h>
 #include "../../../../repo_test_utils.h"
+#include "../../../../repo_test_matchers.h"
+#include "../../../../repo_test_mesh_utils.h"
+
 #include <repo/core/model/bson/repo_bson_factory.h>
 #include <repo/core/model/bson/repo_bson_builder.h>
 #include <repo/lib/datastructure/repo_variant_utils.h>
 
 using namespace repo::core::model;
+using namespace testing;
 
 TEST(RepoBSONFactoryTest, MakeMaterialNodeTest)
 {
@@ -196,6 +202,22 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 	EXPECT_FALSE(mesh.getSharedID().isDefaultValue());
 
 	ASSERT_EQ(MeshNode::Primitive::UNKNOWN, mesh.getPrimitive());
+
+	// Create a mesh with an empty set of UV channels - empty channels should be
+	// ignored by makeMeshNode
+
+	mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, { });
+	EXPECT_THAT(mesh.getNumUVChannels(), Eq(0));
+	EXPECT_THAT(mesh.getUVChannelsSeparated(), IsEmpty());
+
+	mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, { {} });
+	EXPECT_THAT(mesh.getNumUVChannels(), Eq(0));
+	EXPECT_THAT(mesh.getUVChannelsSeparated(), IsEmpty());
+
+	mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, { {}, {} });
+	EXPECT_THAT(mesh.getNumUVChannels(), Eq(0));
+	EXPECT_THAT(mesh.getUVChannelsSeparated(), IsEmpty());
+
 }
 
 TEST(RepoBSONFactoryTest, MakeReferenceNodeTest)
@@ -242,8 +264,8 @@ TEST(RepoBSONFactoryTest, MakeRevisionNodeTest)
 	//fileNames changes after it gets into the bson, just check the size
 	EXPECT_EQ(files.size(), rev.getOrgFiles().size());
 
-	EXPECT_TRUE(compareStdVectors(parents, rev.getParentIDs()));
-	EXPECT_TRUE(compareStdVectors(offset, rev.getCoordOffset()));
+	EXPECT_THAT(rev.getParentIDs(), UnorderedElementsAreArray(parents));
+	EXPECT_THAT(rev.getCoordOffset(), Eq(offset));
 
 	//ensure no random parent being generated
 	std::vector<repo::lib::RepoUUID> emptyParents;
@@ -308,7 +330,7 @@ TEST(RepoBSONFactoryTest, MakeTransformationNodeTest)
 	auto matrix = trans2.getTransMatrix();
 
 	EXPECT_TRUE(compareStdVectors(transMatFlat, matrix.getData()));
-	EXPECT_TRUE(compareStdVectors(parents, trans2.getParentIDs()));
+	EXPECT_THAT(trans2.getParentIDs(), UnorderedElementsAreArray(parents));
 
 	//ensure random parents aren't thrown in
 	parents.clear();

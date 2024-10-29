@@ -530,17 +530,6 @@ repo::core::model::MeshNode AssimpModelImport::createMeshRepoNode(
 	*-----------------------------------------------------------------------------
 	*/
 
-	/*
-	*----------------------------- SHA-256 hash ----------------------------------
-	*/
-	//FIXME:
-
-	//vertexHash = hash(*vertices, boundingBox);
-
-	/*
-	*-----------------------------------------------------------------------------
-	*/
-
 	std::vector<std::vector<float>>  boundingBox;
 	std::vector<float> minBound, maxBound;
 	minBound.push_back(minVertex.x);
@@ -622,7 +611,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 
 repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecursive(
 	const aiNode                                                     *assimpNode,
-	const std::vector<repo::core::model::RepoNode>           &meshes,
+	const std::vector<repo::core::model::MeshNode>           &originalMeshes,
 	const std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode *, repo::lib::RepoUUIDHasher>    &meshToMat,
 	std::unordered_map<repo::core::model::RepoNode *, std::vector<repo::lib::RepoUUID>> &matParents,
 	repo::core::model::RepoNodeSet			                 &newMeshes,
@@ -675,10 +664,10 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 		for (unsigned int i = 0; i < assimpNode->mNumMeshes; ++i)
 		{
 			unsigned int meshIndex = assimpNode->mMeshes[i];
-			if (meshIndex < meshes.size())
+			if (meshIndex < originalMeshes.size())
 			{
-				auto mesh = dynamic_cast<const repo::core::model::MeshNode&>(meshes[meshIndex]);
-				if (!mesh.getNumVertices())
+				auto& mesh = originalMeshes[meshIndex];
+				if (mesh.getNumVertices())
 				{
 					newMeshes.insert(duplicateMesh(sharedId, mesh, meshToMat, matParents));
 				}
@@ -705,7 +694,7 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 		{
 			repo::core::model::RepoNodeSet childMetadata;
 			repo::core::model::RepoNodeSet childSet = createTransformationNodesRecursive(assimpNode->mChildren[i],
-				meshes, meshToMat, matParents, newMeshes, childMetadata, ++count, worldOffset, myShareID);
+				originalMeshes, meshToMat, matParents, newMeshes, childMetadata, ++count, worldOffset, myShareID);
 
 			transNodes.insert(childSet.begin(), childSet.end());
 			metadata.insert(childMetadata.begin(), childMetadata.end());
@@ -731,7 +720,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 		std::vector<repo::core::model::RepoNode *> originalOrderMaterial; //vector that keeps track original order for assimp indices
 		std::unordered_map<repo::core::model::RepoNode *, std::vector<repo::lib::RepoUUID>> matParents;//Tracks material parents
 		std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> meshToMat;
-		std::vector<repo::core::model::RepoNode> originalOrderMesh; //vector that keeps track original order for assimp indices
+		std::vector<repo::core::model::MeshNode> originalOrderMesh; //vector that keeps track original order for assimp indices
 		std::unordered_map<std::string, repo::core::model::RepoNode *> nameToTexture;
 
 		std::vector<std::vector<double>> sceneBbox = getSceneBoundingBox();
@@ -983,12 +972,12 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 
 repo::core::model::RepoNode* AssimpModelImport::duplicateMesh(
 	repo::lib::RepoUUID                    &newParent,
-	repo::core::model::MeshNode &mesh,
+	const repo::core::model::MeshNode &mesh,
 	const std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode *, repo::lib::RepoUUIDHasher>    &meshToMat,
 	std::unordered_map<repo::core::model::RepoNode *, std::vector<repo::lib::RepoUUID>> &matParents)
 {
 	auto newMesh = new repo::core::model::MeshNode(mesh);
-	newMesh->setUniqueId(repo::lib::RepoUUID::createUUID());
+	newMesh->setUniqueID(repo::lib::RepoUUID::createUUID());
 	newMesh->setSharedID(repo::lib::RepoUUID::createUUID());
 	newMesh->setParents({ newParent });
 

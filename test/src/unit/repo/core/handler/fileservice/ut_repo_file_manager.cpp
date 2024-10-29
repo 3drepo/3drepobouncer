@@ -116,5 +116,7 @@ TEST(FileManager, deleteFileAndRef)
 
 	EXPECT_FALSE(repo::lib::doesFileExist(dataPathName));
 
-	EXPECT_FALSE(manager->deleteFileAndRef(db, col, fileName));
+	// Calling getHandler above may change the file manager instance that is cached
+	// in manager, so get it again from then on.
+	EXPECT_FALSE(FileManager::getManager()->deleteFileAndRef(db, col, fileName));
 }

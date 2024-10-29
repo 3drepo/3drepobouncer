@@ -41,13 +41,21 @@ MetadataNode::~MetadataNode()
 
 void MetadataNode::deserialise(RepoBSON& bson)
 {
-	auto arr = bson.getObjectField(REPO_NODE_LABEL_METADATA);
-	auto names = arr.getFieldNames();
-	for (auto& n : names) {
-		auto field = arr.getObjectField(n);
-		auto key = field.getStringField(REPO_NODE_LABEL_META_KEY);
-		auto value = field.getField(REPO_NODE_LABEL_META_VALUE).repoVariant();
-		metadataMap[key] = value;
+	if (bson.hasField(REPO_NODE_LABEL_METADATA)) {
+		auto arr = bson.getObjectField(REPO_NODE_LABEL_METADATA);
+		auto names = arr.getFieldNames();
+		for (auto& n : names) {
+			auto field = arr.getObjectField(n);
+			auto key = field.getStringField(REPO_NODE_LABEL_META_KEY);
+			if (field.hasField(REPO_NODE_LABEL_META_VALUE))
+			{
+				metadataMap[key] = field.getField(REPO_NODE_LABEL_META_VALUE).repoVariant();
+			}
+			else
+			{
+				metadataMap[key] = ""; // The only type that can be null (and so result in a non-existend field) is the string, so initialise to the default of this
+			}
+		}
 	}
 }
 

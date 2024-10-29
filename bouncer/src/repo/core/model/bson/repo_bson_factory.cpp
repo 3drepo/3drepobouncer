@@ -71,7 +71,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 	MetadataNode node;
 	node.setSharedID(repo::lib::RepoUUID::createUUID()); // By convention, factory produced MetadataNodes have SharedIds
 	node.setMetadata(data);
-	node.changeName(name);
+	node.changeName(name, true);
 	node.addParents(parents);
 	return node;
 }
@@ -98,7 +98,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 	{
 		node.setUVChannel(i, uvChannels[i]);
 	}
-	node.changeName(name);
+	node.changeName(name, true);
 	node.addParents(parents);
 	return node;
 }
@@ -125,7 +125,7 @@ SupermeshNode RepoBSONFactory::makeSupermeshNode(
 	{
 		node.setUVChannel(i, uvChannels[i]);
 	}
-	node.changeName(name);
+	node.changeName(name, true);
 	node.setMeshMapping(mappings);
 	return node;
 }
@@ -154,7 +154,7 @@ SupermeshNode RepoBSONFactory::makeSupermeshNode(
 	{
 		node.setUVChannel(i, uvChannels[i]);
 	}
-	node.setUniqueId(id);
+	node.setUniqueID(id);
 	node.setSharedID(id);
 	node.setMeshMapping(mappings);
 	node.setSubmeshIds(mappingIds);
@@ -248,7 +248,7 @@ ReferenceNode RepoBSONFactory::makeReferenceNode(
 {
 	ReferenceNode node;
 	node.setSharedID(repo::lib::RepoUUID::createUUID());
-	node.changeName(name.empty() ? database + "." + project : name);
+	node.changeName(name.empty() ? database + "." + project : name, true);
 	node.setDatabaseName(database);
 	node.setProjectId(project);
 	node.setProjectRevision(revisionID);
@@ -269,7 +269,7 @@ ModelRevisionNode RepoBSONFactory::makeRevisionNode(
 )
 {
 	ModelRevisionNode node;
-	node.setUniqueId(id);
+	node.setUniqueID(id);
 	node.setSharedID(branch);
 	node.setFiles(files);
 	node.setAuthor(user);
@@ -308,7 +308,7 @@ TextureNode RepoBSONFactory::makeTextureNode(
 		ext
 	);
 	node.setSharedID(repo::lib::RepoUUID::createUUID()); // By convention TextureNode's get SharedIds as default
-	node.changeName(name);
+	node.changeName(name, true);
 	node.addParents(parentIDs);
 	return node;
 }
@@ -321,7 +321,7 @@ TransformationNode RepoBSONFactory::makeTransformationNode(
 {
 	TransformationNode node;
 	node.setSharedID(repo::lib::RepoUUID::createUUID());
-	node.changeName(name);
+	node.changeName(name, true);
 	node.addParents(parents);
 	node.setTransformation(transMatrix);
 	return node;

@@ -212,8 +212,6 @@ namespace repo {
 
 				uint64_t objsize() const;
 
-				RepoBSON removeField(const std::string& label) const;
-
 				std::string toString() const;
 
 				bool operator==(const RepoBSON other) const;

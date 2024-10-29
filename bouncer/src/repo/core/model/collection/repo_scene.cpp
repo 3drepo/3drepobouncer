@@ -1381,7 +1381,7 @@ bool RepoScene::populate(
 				}
 			}
 			else {
-				repoWarning << "Failed to load reference node for ref ID" << reference->getUniqueID() << ": " << errMsg;
+				repoWarning << "Failed to load reference node for ref ID " << reference->getUniqueID() << ": " << errMsg;
 			}
 		}
 	}

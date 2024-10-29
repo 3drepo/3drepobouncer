@@ -371,7 +371,7 @@ bool SRCModelExport::generateTreeRepresentation(
 				new repo::manipulator::modelutility::MeshMapReorganiser(mesh, SRC_MAX_VERTEX_LIMIT, SRC_MAX_TRIANGLE_LIMIT);
 
 			auto splittedMesh = reSplitter->getRemappedMesh();
-			if (success = !(splittedMesh.getNumVertices()))
+			if (success = splittedMesh.getNumVertices())
 			{
 				std::vector<uint16_t> facebuf = reSplitter->getSerialisedFaces();
 				std::vector<std::vector<float>> idMapBuf = reSplitter->getIDMapArrays();

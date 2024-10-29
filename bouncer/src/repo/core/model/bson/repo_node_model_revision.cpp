@@ -27,12 +27,14 @@ using namespace repo::core::model;
 ModelRevisionNode::ModelRevisionNode(RepoBSON bson) :
 	RevisionNode(bson)
 {
+	offset = { 0, 0, 0 };
 	deserialise(bson);
 }
 
 ModelRevisionNode::ModelRevisionNode() :
 	RevisionNode()
 {
+	offset = { 0, 0, 0 };
 }
 
 ModelRevisionNode::~ModelRevisionNode()
@@ -62,9 +64,7 @@ void ModelRevisionNode::deserialise(RepoBSON& bson)
 void ModelRevisionNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 {
 	RevisionNode::serialise(builder);
-	if (offset.size()) {
-		builder.append(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT, offset);
-	}
+	builder.append(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT, offset); // This is never empty because it initialises to 0,0,0.
 	if (files.size()) {
 		builder.appendArray(REPO_NODE_REVISION_LABEL_REF_FILE, files);
 	}
@@ -75,4 +75,21 @@ void ModelRevisionNode::serialise(repo::core::model::RepoBSONBuilder& builder) c
 		builder.append(REPO_NODE_REVISION_LABEL_TAG, tag);
 	}
 	builder.append(REPO_NODE_LABEL_SHARED_ID, sharedId); // By convention the ModelRevisionNode always has a SharedId member, even if zero
+}
+
+bool ModelRevisionNode::sEqual(const RepoNode& other) const
+{
+	auto otherMesh = dynamic_cast<const ModelRevisionNode*>(&other);
+
+	bool success = false;
+	if (otherMesh != nullptr)
+	{
+		success = true;
+		success &= offset == otherMesh->offset;
+		success &= message == otherMesh->message;
+		success &= tag == otherMesh->tag;
+		success &= files == otherMesh->files;
+	}
+
+	return success;
 }

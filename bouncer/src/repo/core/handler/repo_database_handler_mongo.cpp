@@ -288,7 +288,10 @@ bool MongoDatabaseHandler::dropDocument(
 		try {
 			if (success = !bson.isEmpty() && bson.hasField("_id"))
 			{
-				mongo::Query query = MONGO_QUERY("_id" << bson.getField("_id"));
+				mongo::BSONElement id;
+				bson.getObjectID(id);
+				mongo::Query query = MONGO_QUERY("_id" << id);
+
 				worker->remove(database + "." + collection, query, true);
 			}
 			else
@@ -849,6 +852,12 @@ bool MongoDatabaseHandler::upsertDocument(
 		}
 	}
 	catch (mongo::DBException &e)
+	{
+		success = false;
+		std::string errString(e.what());
+		errMsg += errString;
+	}
+	catch (repo::lib::RepoException& e)
 	{
 		success = false;
 		std::string errString(e.what());

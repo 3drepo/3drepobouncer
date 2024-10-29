@@ -33,6 +33,7 @@ RepoNode()
 ReferenceNode::ReferenceNode(RepoBSON bson) :
 RepoNode(bson)
 {
+	isUnique = false;
 	revisionId = repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH);
 	deserialise(bson);
 }
@@ -56,7 +57,6 @@ void ReferenceNode::deserialise(RepoBSON& bson)
 		isUnique = bson.getBoolField(REPO_NODE_REFERENCE_LABEL_UNIQUE);
 	}
 }
-
 
 void ReferenceNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 {

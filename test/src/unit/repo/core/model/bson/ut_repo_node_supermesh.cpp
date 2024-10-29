@@ -74,6 +74,20 @@ TEST(SupermeshNodeTest, Constructor)
 	EXPECT_THAT(node.getSubmeshIds(), IsEmpty());
 }
 
+bool operator== (const repo_mesh_mapping_t& a, const repo_mesh_mapping_t& b)
+{
+	return
+		a.min == b.min &&
+		a.max == b.max &&
+		a.mesh_id == b.mesh_id &&
+		a.shared_id == b.shared_id &&
+		a.material_id == b.material_id &&
+		a.vertFrom == b.vertFrom &&
+		a.vertTo == b.vertTo &&
+		a.triFrom == b.triFrom &&
+		a.triTo == b.triTo;
+}
+
 TEST(SupermeshNodeTest, Methods)
 {
 	SupermeshNode node;
@@ -91,8 +105,7 @@ TEST(SupermeshNodeTest, Methods)
 	});
 
 	node.setMeshMapping(mappings1);
-	EXPECT_THAT(node.getMeshMapping(), Eq(mappings1));
-
+	EXPECT_THAT(node.getMeshMapping(), ElementsAreArray(mappings1));
 
 	node.setMeshMapping(mappings2);
 	EXPECT_THAT(node.getMeshMapping(), Eq(mappings2));

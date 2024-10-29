@@ -123,10 +123,10 @@ namespace repo {
 				repo::core::model::MeshNode makeMeshNode(mesh_data);
 
 				/*
-				* Creates a random mesh with the given format. The RepoNode properties
-				* (uniqueId, sharedId, etc) are not initialised.
+				* Creates a random mesh with the given format using a repeated seed. The
+				* RepoNode properties (uniqueId, sharedId, etc) are not initialised.
 				*/
-				repo::core::model::MeshNode makeMeshNode(int primitive, bool normals, int uvs);
+				repo::core::model::MeshNode makeDeterministicMeshNode(int primitive, bool normals, int uvs);
 
 				/*
 				* Creates an arbitrary transform matrix

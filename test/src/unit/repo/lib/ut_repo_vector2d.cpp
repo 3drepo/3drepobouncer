@@ -23,6 +23,7 @@
 #include "../../repo_test_utils.h"
 
 using namespace repo::lib;
+using namespace testing;
 
 TEST(RepoVector2DTest, constructorTest)
 {
@@ -91,7 +92,6 @@ TEST(RepoVector2DTest, toStdVecTest)
 
 	EXPECT_TRUE(compareStdVectors(defaultVArr, defaultV.toStdVector()));
 	EXPECT_TRUE(compareStdVectors(randomVArr, randomV.toStdVector()));
-
 }
 
 

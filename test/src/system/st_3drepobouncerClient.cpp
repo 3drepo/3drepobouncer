@@ -30,6 +30,8 @@
 #include <repo/core/model/bson/repo_bson_builder.h>
 #include <unordered_set>
 
+using namespace testing;
+
 static std::string getSuccessFilePath()
 {
 	return getDataPath(simpleModel);
@@ -356,10 +358,10 @@ TEST(RepoClientTest, UploadTestDWG)
 	// References in the tree.
 	std::string dwgUploadNestedBlocks = produceUploadArgs(db, "dwgTestNestedBlocks", getDataPath(dwgNestedBlocks));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(dwgUploadNestedBlocks));
-	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "\"[423]\"", { "rootNode->0->Block Text->Block Text" }));
-	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "\"[50D]\"", { "rootNode->0->My Block->My Block", "rootNode->Layer1->My Block->My Block" }));
-	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "\"[4FA]\"", { "rootNode->0->My Outer Block->My Outer Block", "rootNode->Layer1->My Outer Block->My Outer Block", "rootNode->Layer3->My Outer Block->My Outer Block" }));
-	EXPECT_FALSE(projectHasGeometryWithMetadata(db, "dwgTestNestedBlocks", "Entity Handle::Value", "\"[534]\"")); // Even though this handle exists, it should be compressed in the tree.
+	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "[423]", { "rootNode->0->Block Text->Block Text" }));
+	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "[50D]", { "rootNode->0->My Block->My Block", "rootNode->Layer1->My Block->My Block" }));
+	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "[4FA]", { "rootNode->0->My Outer Block->My Outer Block", "rootNode->Layer1->My Outer Block->My Outer Block", "rootNode->Layer3->My Outer Block->My Outer Block" }));
+	EXPECT_FALSE(projectHasGeometryWithMetadata(db, "dwgTestNestedBlocks", "Entity Handle::Value", "[534]")); // Even though this handle exists, it should be compressed in the tree.
 
 	// This snippet checks if encrypted files are handled correctly.
 	std::string dwgUploadProtected = produceUploadArgs(db, "dwgTestProtected", getDataPath(dwgPasswordProtected));
@@ -694,6 +696,8 @@ TEST(RepoClientTest, ProcessDrawing)
 
 	repo::core::model::RepoBSONBuilder revisionBuilder;
 
+	// Create a mocked-up revision BSON
+
 	auto db = "testDrawing"; // This must match the database in processDrawingConfig
 	auto rid = repo::lib::RepoUUID("cad0c3fe-dd1d-4844-ad04-cfb75df26a63"); // This must match the revId in processDrawingConfig
 	auto model = repo::lib::RepoUUID::createUUID().toString();
@@ -705,6 +709,7 @@ TEST(RepoClientTest, ProcessDrawing)
 	revisionBuilder.append("project", project);
 	revisionBuilder.append("model", model);
 	revisionBuilder.append("format", ".dwg");
+	revisionBuilder.appendTimeStamp("timestamp");
 	revisionBuilder.appendArray("rFile", rFiles);
 
 	// Make sure that the file manager uses the same config as produceProcessDrawingArgs
@@ -716,7 +721,7 @@ TEST(RepoClientTest, ProcessDrawing)
 	std::vector<uint8_t> bin(std::istreambuf_iterator<char>{drawingFile}, {});
 
 	repo::core::handler::fileservice::FileManager::Metadata metadata;
-	metadata["name"] = "test.dwg";
+	metadata["name"] = std::string("test.dwg");
 
 	manager->uploadFileAndCommit(
 		db,
@@ -778,7 +783,7 @@ TEST(RepoClientTest, ProcessDrawing)
 
 	auto refNode = handler->findOneByCriteria(
 		db,
-		REPO_COLLECTION_DRAWINGS,
+		REPO_COLLECTION_DRAWINGS + std::string(".ref"),
 		criteria
 	);
 

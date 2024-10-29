@@ -217,6 +217,7 @@ repo::core::model::MeshNode* SynchroModelImport::createMeshNode(
 	auto matrix = repo::lib::RepoMatrix(trans);
 	auto instance = templateMesh.cloneAndApplyTransformation(matrix);
 	instance.addParent(parentID);
+	instance.setUniqueID(repo::lib::RepoUUID::createUUID());
 	instance.setSharedID(repo::lib::RepoUUID::createUUID());
 	return new repo::core::model::MeshNode(instance);
 }

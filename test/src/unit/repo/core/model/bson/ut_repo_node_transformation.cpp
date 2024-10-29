@@ -64,7 +64,7 @@ TransformationNode makeRefNode()
 {
 	auto a = TransformationNode();
 	a.setSharedID(repo::lib::RepoUUID::createUUID());
-	std::srand(0);
+	restartRand();
 	a.setTransformation(repo::test::utils::mesh::makeTransform(true, true));
 	return a;
 }
@@ -150,7 +150,7 @@ TEST(RepoTransformationNodeTest, Serialise)
 	EXPECT_THAT(((RepoBSON)node).getStringField(REPO_NODE_LABEL_TYPE), Eq(REPO_NODE_TYPE_TRANSFORMATION));
 	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_LABEL_NAME), IsFalse());
 
-	node.setUniqueId(repo::lib::RepoUUID::createUUID());
+	node.setUniqueID(repo::lib::RepoUUID::createUUID());
 	EXPECT_THAT(((RepoBSON)node).getUUIDField(REPO_NODE_LABEL_ID), node.getUniqueID());
 
 	node.setSharedID(repo::lib::RepoUUID::createUUID());
@@ -198,6 +198,17 @@ TEST(RepoTransformationNodeTest, Deserialise)
 	EXPECT_THAT(node.getName(), Eq(name));
 	EXPECT_THAT(node.getParentIDs(), UnorderedElementsAreArray(parents));
 	EXPECT_THAT(node.getTransMatrix(), Eq(m));
+}
+
+TEST(RepoTransformationNodeTest, DeserialiseEmpty)
+{
+	// Transformation nodes should deserialise OK with no matrix -
+	// the matrix will be the default in this case
+
+	RepoBSONBuilder builder;
+	auto node = TransformationNode(builder.obj());
+
+	EXPECT_THAT(node.getTransMatrix().isIdentity(), IsTrue());
 }
 
 TEST(RepoTransformationNodeTest, Factory)

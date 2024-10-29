@@ -27,31 +27,81 @@
 #include <repo/error_codes.h>
 
 #include "../../../../repo_test_utils.h"
+#include "../../../../repo_test_mesh_utils.h"
 #include "../../../../repo_test_database_info.h"
 #include "../../../../repo_test_fileservice_info.h"
 
 using namespace repo::core::model;
+using namespace testing;
 
 const static RepoScene::GraphType defaultG = RepoScene::GraphType::DEFAULT;
 
-static RepoBSON makeRandomNode(
-	const std::string &name = "")
+static TransformationNode makeTransformationNode(
+	const repo::lib::RepoUUID& parent,
+	const std::string& name = "")
 {
-	RepoNode node;
-	node.setSharedID(repo::lib::RepoUUID::createUUID());
-	node.changeName(name);
-	return node;
+	return RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), name, { parent });
 }
 
-static RepoBSON makeRandomNode(
-	const repo::lib::RepoUUID &parent,
-	const std::string &name = "")
+static TransformationNode makeTransformationNode(
+	const std::string& name = "")
 {
-	RepoNode node;
-	node.setSharedID(repo::lib::RepoUUID::createUUID());
-	node.addParent(parent);
-	node.changeName(name);
-	return node;
+	return RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), name);
+}
+
+static MeshNode makeMeshNode(
+	const repo::lib::RepoUUID& parent,
+	const std::string& name = "")
+{
+	auto m = repo::test::utils::mesh::makeMeshNode(repo::test::utils::mesh::mesh_data(
+		true,
+		true,
+		0,
+		3,
+		false,
+		0,
+		1024
+	));
+	m.changeName(name, true);
+	m.setSharedID(repo::lib::RepoUUID::createUUID());
+	m.addParent(parent);
+	return m;
+}
+
+static MetadataNode makeMetadataNode(
+	const repo::lib::RepoUUID& parent,
+	const std::string& name = "")
+{
+	return RepoBSONFactory::makeMetaDataNode({}, name, { parent });
+}
+
+static MetadataNode makeMetadataNode(
+	const std::string& name = "")
+{
+	return RepoBSONFactory::makeMetaDataNode({}, name);
+}
+
+static MetadataNode makeMaterialNode(
+	const repo::lib::RepoUUID& parent)
+{
+	repo_material_t s;
+	auto m = RepoBSONFactory::makeMaterialNode(s, "", { parent });
+	m.setSharedID(repo::lib::RepoUUID::createUUID());  // These unit tests will set the parent of texture nodes as material nodes
+	return m;
+}
+
+static MetadataNode makeTextureNode(
+	const repo::lib::RepoUUID& parent)
+{
+	return RepoBSONFactory::makeTextureNode("", 0, 0, 0, 0, { parent });
+}
+
+static ReferenceNode makeReferenceNode(
+	const repo::lib::RepoUUID& parent)
+{
+	auto r = RepoBSONFactory::makeReferenceNode("db", "project");
+	r.addParent(parent);
+	return r;
 }
 
 TEST(RepoSceneTest, Constructor)
@@ -63,15 +113,15 @@ TEST(RepoSceneTest, Constructor)
 	RepoScene scene2(files, empty, empty, empty, empty, empty, empty);
 }
 
-TEST(RepoSceneTest, ConstructOrhpanMeshScene)
+TEST(RepoSceneTest, ConstructOrphanMeshScene)
 {
 	RepoNodeSet empty, trans, meshes;
 	std::vector<std::string> files;
 
-	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 100 + 1)));
+	auto root = new TransformationNode(makeTransformationNode(getRandomString(rand() % 100 + 1)));
 	trans.insert(root);
 
-	auto t1 = new TransformationNode(makeRandomNode(root->getSharedID(), getRandomString(rand() % 100 + 1) + root->getName()));
+	auto t1 = new TransformationNode(makeTransformationNode(root->getSharedID(), getRandomString(rand() % 100 + 1) + root->getName()));
 	trans.insert(t1);
 
 	auto m1 = new MeshNode();
@@ -147,23 +197,19 @@ TEST(RepoSceneTest, AddMetadata)
 	RepoNodeSet metaNodes;
 	RepoNodeSet empty;
 
-	auto root = TransformationNode(makeRandomNode(getRandomString(rand() % 100 + 1)));
+	auto root = makeTransformationNode(getRandomString(rand() % 100 + 1));
 
-	auto t1 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 100 + 1) + root.getName()));
-	auto t2 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 100 + 1) + t1.getName()));
-	auto t3 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 100 + 1) + t2.getName()));
+	auto t1 = makeTransformationNode(root.getSharedID(), getRandomString(rand() % 100 + 1) + root.getName());
+	auto t2 = makeTransformationNode(root.getSharedID(), getRandomString(rand() % 100 + 1) + t1.getName());
+	auto t3 = makeTransformationNode(root.getSharedID(), getRandomString(rand() % 100 + 1) + t2.getName());
 
-	auto m1 = MeshNode(makeRandomNode(t1.getSharedID()));
-	auto m2 = MeshNode(makeRandomNode(t1.getSharedID()));
-	auto m3 = MeshNode(makeRandomNode(t2.getSharedID()));
+	auto m1 = makeMeshNode(t1.getSharedID());
+	auto m2 = makeMeshNode(t1.getSharedID());
+	auto m3 = makeMeshNode(t2.getSharedID());
 
-	auto mm1 = MetadataNode(makeRandomNode(t1.getName()));
-	auto mm2 = MetadataNode(makeRandomNode(t2.getName()));
-	auto mm3 = MetadataNode(makeRandomNode(t3.getName()));
-
-	repoTrace << "t1 name: " << t1.getName();
-	repoTrace << "t2 name: " << t2.getName();
-	repoTrace << "t3 name: " << t3.getName();
+	auto mm1 = makeMetadataNode(t1.getName());
+	auto mm2 = makeMetadataNode(t2.getName());
+	auto mm3 = makeMetadataNode(t3.getName());
 
 	transNodes.insert(new TransformationNode(t1));
 	transNodes.insert(new TransformationNode(t2));
@@ -184,11 +230,11 @@ TEST(RepoSceneTest, AddMetadata)
 	scene2.addMetadata(metaNodes, true, false); //no propagation check
 	auto scene2Meta = scene2.getAllMetadata(defaultG);
 	EXPECT_EQ(metaNodes.size(), scene2Meta.size());
-	for (const auto &s2meta : scene2Meta)
+	for (const auto& s2meta : scene2Meta)
 	{
 		auto parents = s2meta->getParentIDs();
 		EXPECT_EQ(1, parents.size());
-		for (const auto &parent : parents)
+		for (const auto& parent : parents)
 		{
 			auto node = scene2.getNodeBySharedID(RepoScene::GraphType::DEFAULT, parent);
 			EXPECT_EQ(NodeType::TRANSFORMATION, node->getTypeAsEnum());
@@ -217,11 +263,11 @@ TEST(RepoSceneTest, AddMetadata)
 
 	auto scene3Meta = scene3.getAllMetadata(defaultG);
 	EXPECT_EQ(metaNodes.size(), scene2Meta.size());
-	for (const auto &s3meta : scene3Meta)
+	for (const auto& s3meta : scene3Meta)
 	{
 		auto parents = s3meta->getParentIDs();
 		EXPECT_TRUE(parents.size() > 0);
-		for (const auto &parent : parents)
+		for (const auto& parent : parents)
 		{
 			auto node = scene3.getNodeBySharedID(RepoScene::GraphType::DEFAULT, parent);
 
@@ -249,15 +295,15 @@ TEST(RepoSceneTest, AddAndClearStashGraph)
 	RepoNodeSet meshNodes;
 	RepoNodeSet metaNodes;
 
-	auto root = TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto root = makeTransformationNode(getRandomString(rand() % 10 + 1));
 
-	auto t1 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 10 + 1)));
-	auto t2 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 10 + 1)));
-	auto t3 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 10 + 1)));
+	auto t1 = makeTransformationNode(root.getSharedID(), getRandomString(rand() % 100 + 1));
+	auto t2 = makeTransformationNode(root.getSharedID(), getRandomString(rand() % 100 + 1));
+	auto t3 = makeTransformationNode(root.getSharedID(), getRandomString(rand() % 100 + 1));
 
-	auto m1 = MeshNode(makeRandomNode(t1.getSharedID()));
-	auto m2 = MeshNode(makeRandomNode(t1.getSharedID()));
-	auto m3 = MeshNode(makeRandomNode(t2.getSharedID()));
+	auto m1 = makeMeshNode(t1.getSharedID());
+	auto m2 = makeMeshNode(t1.getSharedID());
+	auto m3 = makeMeshNode(t2.getSharedID());
 
 	auto rootNode = new TransformationNode(root);
 	transNodes.insert(rootNode);
@@ -308,12 +354,12 @@ TEST(RepoSceneTest, CommitScene)
 	RepoNodeSet transNodes;
 	RepoNodeSet meshNodes, empty;
 
-	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto root = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
 
-	auto t1 = new TransformationNode(makeRandomNode(root->getSharedID(), getRandomString(rand() % 10 + 1)));
+	auto t1 = new TransformationNode(makeTransformationNode(root->getSharedID(), getRandomString(rand() % 10 + 1)));
 
-	auto m1 = new MeshNode(makeRandomNode(t1->getSharedID()));
-	auto m2 = new MeshNode(makeRandomNode(t1->getSharedID()));
+	auto m1 = new MeshNode(makeMeshNode(t1->getSharedID()));
+	auto m2 = new MeshNode(makeMeshNode(t1->getSharedID()));
 
 	transNodes.insert(root);
 	transNodes.insert(t1);
@@ -393,12 +439,12 @@ TEST(RepoSceneTest, getRevisionProperties)
 	RepoNodeSet transNodes;
 	RepoNodeSet meshNodes, empty;
 
-	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto root = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
 
-	auto t1 = new TransformationNode(makeRandomNode(root->getSharedID(), getRandomString(rand() % 10 + 1)));
+	auto t1 = new TransformationNode(makeTransformationNode(root->getSharedID(), getRandomString(rand() % 10 + 1)));
 
-	auto m1 = new MeshNode(makeRandomNode(t1->getSharedID()));
-	auto m2 = new MeshNode(makeRandomNode(t1->getSharedID()));
+	auto m1 = new MeshNode(makeMeshNode(t1->getSharedID()));
+	auto m2 = new MeshNode(makeMeshNode(t1->getSharedID()));
 
 	transNodes.insert(root);
 	transNodes.insert(t1);
@@ -454,12 +500,12 @@ TEST(RepoSceneTest, getViewGraph)
 	RepoNodeSet transNodes, transNodes2;
 	RepoNodeSet meshNodes, meshNodes2, empty;
 
-	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto root = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
 
-	auto t1 = new TransformationNode(makeRandomNode(root->getSharedID(), getRandomString(rand() % 10 + 1)));
+	auto t1 = new TransformationNode(makeTransformationNode(root->getSharedID(), getRandomString(rand() % 10 + 1)));
 
-	auto m1 = new MeshNode(makeRandomNode(t1->getSharedID()));
-	auto m2 = new MeshNode(makeRandomNode(t1->getSharedID()));
+	auto m1 = new MeshNode(makeMeshNode(t1->getSharedID()));
+	auto m2 = new MeshNode(makeMeshNode(t1->getSharedID()));
 
 	transNodes.insert(root);
 	transNodes.insert(t1);
@@ -548,9 +594,9 @@ TEST(RepoSceneTest, abandonChild)
 {
 	RepoNodeSet transNodes, meshNodes, empty;
 
-	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto root = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
 
-	auto m1 = new MeshNode(makeRandomNode(root->getSharedID()));
+	auto m1 = new MeshNode(makeMeshNode(root->getSharedID()));
 
 	transNodes.insert(root);
 
@@ -589,10 +635,10 @@ TEST(RepoSceneTest, addInheritance)
 {
 	RepoNodeSet transNodes, meshNodes, empty;
 
-	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto root = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
 
-	auto m1 = new MeshNode(makeRandomNode(root->getSharedID()));
-	auto m2 = new MeshNode(makeRandomNode(root->getSharedID()));
+	auto m1 = new MeshNode(makeMeshNode(root->getSharedID()));
+	auto m2 = new MeshNode(makeMeshNode(root->getSharedID()));
 
 	transNodes.insert(root);
 	meshNodes.insert(m1);
@@ -621,10 +667,10 @@ TEST(RepoSceneTest, getChildrenAsNodes)
 {
 	RepoNodeSet transNodes, meshNodes, empty;
 
-	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto root = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
 
-	auto m1 = new MeshNode(makeRandomNode(root->getSharedID()));
-	auto m2 = new MeshNode(makeRandomNode(root->getSharedID()));
+	auto m1 = new MeshNode(makeMeshNode(root->getSharedID()));
+	auto m2 = new MeshNode(makeMeshNode(root->getSharedID()));
 
 	transNodes.insert(root);
 	meshNodes.insert(m1);
@@ -654,10 +700,10 @@ TEST(RepoSceneTest, getParentAsNodesFiltered)
 {
 	RepoNodeSet transNodes, meshNodes, empty;
 
-	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto root = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
 
-	auto m1 = new MeshNode(makeRandomNode(root->getSharedID()));
-	auto m2 = new MeshNode(makeRandomNode(root->getSharedID()));
+	auto m1 = new MeshNode(makeMeshNode(root->getSharedID()));
+	auto m2 = new MeshNode(makeMeshNode(root->getSharedID()));
 
 	transNodes.insert(root);
 	meshNodes.insert(m1);
@@ -698,12 +744,12 @@ TEST(RepoSceneTest, getTextureIDForMesh)
 
 	RepoNodeSet transNodes, meshNodes, empty, matNodes, texNodes;
 
-	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
-	auto m1 = new MeshNode(makeRandomNode(root->getSharedID()));
-	auto m2 = new MeshNode(makeRandomNode(root->getSharedID()));
-	auto mat1 = new MaterialNode(makeRandomNode(m1->getSharedID()));
-	auto mat2 = new MaterialNode(makeRandomNode(m2->getSharedID()));
-	auto tex1 = new TextureNode(makeRandomNode(mat1->getSharedID()));
+	auto root = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
+	auto m1 = new MeshNode(makeMeshNode(root->getSharedID()));
+	auto m2 = new MeshNode(makeMeshNode(root->getSharedID()));
+	auto mat1 = new MaterialNode(makeMaterialNode(m1->getSharedID()));
+	auto mat2 = new MaterialNode(makeMaterialNode(m2->getSharedID()));
+	auto tex1 = new TextureNode(makeTextureNode(mat1->getSharedID()));
 
 	transNodes.insert(root);
 	meshNodes.insert(m1);
@@ -737,16 +783,16 @@ TEST(RepoSceneTest, getAllNodes)
 
 	RepoNodeSet transNodes, meshNodes, metaNodes, matNodes, texNodes, refNodes;
 
-	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
-	meshNodes.insert(new MeshNode(makeRandomNode(root->getSharedID())));
-	meshNodes.insert(new MeshNode(makeRandomNode(root->getSharedID())));
-	matNodes.insert(new MaterialNode(makeRandomNode(root->getSharedID())));
-	matNodes.insert(new MaterialNode(makeRandomNode(root->getSharedID())));
-	texNodes.insert(new TextureNode(makeRandomNode(root->getSharedID())));
-	metaNodes.insert(new MetadataNode(makeRandomNode(root->getSharedID())));
-	metaNodes.insert(new MetadataNode(makeRandomNode(root->getSharedID())));
-	metaNodes.insert(new MetadataNode(makeRandomNode(root->getSharedID())));
-	refNodes.insert(new ReferenceNode(makeRandomNode(root->getSharedID())));
+	auto root = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
+	meshNodes.insert(new MeshNode(makeMeshNode(root->getSharedID())));
+	meshNodes.insert(new MeshNode(makeMeshNode(root->getSharedID())));
+	matNodes.insert(new MaterialNode(makeMaterialNode(root->getSharedID())));
+	matNodes.insert(new MaterialNode(makeMaterialNode(root->getSharedID())));
+	texNodes.insert(new TextureNode(makeTextureNode(root->getSharedID())));
+	metaNodes.insert(new MetadataNode(makeMetadataNode(root->getSharedID())));
+	metaNodes.insert(new MetadataNode(makeMetadataNode(root->getSharedID())));
+	metaNodes.insert(new MetadataNode(makeMetadataNode(root->getSharedID())));
+	refNodes.insert(new ReferenceNode(makeReferenceNode(root->getSharedID())));
 
 	transNodes.insert(root);
 
@@ -816,13 +862,13 @@ TEST(RepoSceneTest, getAllDescendantsByType)
 
 	RepoNodeSet transNodes, meshNodes, empty, matNodes, texNodes;
 
-	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
-	auto trans2 = new TransformationNode(makeRandomNode(root->getSharedID()));
-	auto m1 = new MeshNode(makeRandomNode(root->getSharedID()));
-	auto m2 = new MeshNode(makeRandomNode(trans2->getSharedID()));
-	auto mat1 = new MaterialNode(makeRandomNode(m1->getSharedID()));
-	auto mat2 = new MaterialNode(makeRandomNode(m2->getSharedID()));
-	auto tex1 = new TextureNode(makeRandomNode(mat1->getSharedID()));
+	auto root = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
+	auto trans2 = new TransformationNode(makeTransformationNode(root->getSharedID()));
+	auto m1 = new MeshNode(makeMeshNode(root->getSharedID()));
+	auto m2 = new MeshNode(makeMeshNode(trans2->getSharedID()));
+	auto mat1 = new MaterialNode(makeMaterialNode(m1->getSharedID()));
+	auto mat2 = new MaterialNode(makeMaterialNode(m2->getSharedID()));
+	auto tex1 = new TextureNode(makeTextureNode(mat1->getSharedID()));
 
 	transNodes.insert(root);
 	transNodes.insert(trans2);
@@ -870,13 +916,13 @@ TEST(RepoSceneTest, getNodeBySharedID)
 {
 	RepoNodeSet transNodes, meshNodes, empty, matNodes, texNodes;
 
-	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
-	auto trans2 = new TransformationNode(makeRandomNode(root->getSharedID()));
-	auto m1 = new MeshNode(makeRandomNode(root->getSharedID()));
-	auto m2 = new MeshNode(makeRandomNode(trans2->getSharedID()));
-	auto mat1 = new MaterialNode(makeRandomNode(m1->getSharedID()));
-	auto mat2 = new MaterialNode(makeRandomNode(m2->getSharedID()));
-	auto tex1 = new TextureNode(makeRandomNode(mat1->getSharedID()));
+	auto root = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
+	auto trans2 = new TransformationNode(makeTransformationNode(root->getSharedID()));
+	auto m1 = new MeshNode(makeMeshNode(root->getSharedID()));
+	auto m2 = new MeshNode(makeMeshNode(trans2->getSharedID()));
+	auto mat1 = new MaterialNode(makeMaterialNode(m1->getSharedID()));
+	auto mat2 = new MaterialNode(makeMaterialNode(m2->getSharedID()));
+	auto tex1 = new TextureNode(makeTextureNode(mat1->getSharedID()));
 
 	transNodes.insert(root);
 	transNodes.insert(trans2);
@@ -887,13 +933,13 @@ TEST(RepoSceneTest, getNodeBySharedID)
 	matNodes.insert(mat2);
 	texNodes.insert(tex1);
 
-	auto rootst = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
-	auto trans2st = new TransformationNode(makeRandomNode(rootst->getSharedID()));
-	auto m1st = new MeshNode(makeRandomNode(rootst->getSharedID()));
-	auto m2st = new MeshNode(makeRandomNode(trans2st->getSharedID()));
-	auto mat1st = new MaterialNode(makeRandomNode(m1st->getSharedID()));
-	auto mat2st = new MaterialNode(makeRandomNode(m2st->getSharedID()));
-	auto tex1st = new TextureNode(makeRandomNode(mat1st->getSharedID()));
+	auto rootst = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
+	auto trans2st = new TransformationNode(makeTransformationNode(rootst->getSharedID()));
+	auto m1st = new MeshNode(makeMeshNode(rootst->getSharedID()));
+	auto m2st = new MeshNode(makeMeshNode(trans2st->getSharedID()));
+	auto mat1st = new MaterialNode(makeMaterialNode(m1st->getSharedID()));
+	auto mat2st = new MaterialNode(makeMaterialNode(m2st->getSharedID()));
+	auto tex1st = new TextureNode(makeTextureNode(mat1st->getSharedID()));
 
 	transNodes.insert(rootst);
 	transNodes.insert(trans2st);
@@ -915,13 +961,13 @@ TEST(RepoSceneTest, getNodeByUniqueID)
 {
 	RepoNodeSet transNodes, meshNodes, empty, matNodes, texNodes;
 
-	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
-	auto trans2 = new TransformationNode(makeRandomNode(root->getSharedID()));
-	auto m1 = new MeshNode(makeRandomNode(root->getSharedID()));
-	auto m2 = new MeshNode(makeRandomNode(trans2->getSharedID()));
-	auto mat1 = new MaterialNode(makeRandomNode(m1->getSharedID()));
-	auto mat2 = new MaterialNode(makeRandomNode(m2->getSharedID()));
-	auto tex1 = new TextureNode(makeRandomNode(mat1->getSharedID()));
+	auto root = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
+	auto trans2 = new TransformationNode(makeTransformationNode(root->getSharedID()));
+	auto m1 = new MeshNode(makeMeshNode(root->getSharedID()));
+	auto m2 = new MeshNode(makeMeshNode(trans2->getSharedID()));
+	auto mat1 = new MaterialNode(makeMaterialNode(m1->getSharedID()));
+	auto mat2 = new MaterialNode(makeMaterialNode(m2->getSharedID()));
+	auto tex1 = new TextureNode(makeTextureNode(mat1->getSharedID()));
 
 	transNodes.insert(root);
 	transNodes.insert(trans2);
@@ -932,13 +978,13 @@ TEST(RepoSceneTest, getNodeByUniqueID)
 	matNodes.insert(mat2);
 	texNodes.insert(tex1);
 
-	auto rootst = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
-	auto trans2st = new TransformationNode(makeRandomNode(rootst->getSharedID()));
-	auto m1st = new MeshNode(makeRandomNode(rootst->getSharedID()));
-	auto m2st = new MeshNode(makeRandomNode(trans2st->getSharedID()));
-	auto mat1st = new MaterialNode(makeRandomNode(m1st->getSharedID()));
-	auto mat2st = new MaterialNode(makeRandomNode(m2st->getSharedID()));
-	auto tex1st = new TextureNode(makeRandomNode(mat1st->getSharedID()));
+	auto rootst = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
+	auto trans2st = new TransformationNode(makeTransformationNode(rootst->getSharedID()));
+	auto m1st = new MeshNode(makeMeshNode(rootst->getSharedID()));
+	auto m2st = new MeshNode(makeMeshNode(trans2st->getSharedID()));
+	auto mat1st = new MaterialNode(makeMaterialNode(m1st->getSharedID()));
+	auto mat2st = new MaterialNode(makeMaterialNode(m2st->getSharedID()));
+	auto tex1st = new TextureNode(makeTextureNode(mat1st->getSharedID()));
 
 	transNodes.insert(rootst);
 	transNodes.insert(trans2st);
@@ -963,8 +1009,8 @@ TEST(RepoSceneTest, hasRoot)
 	EXPECT_FALSE(scene.hasRoot(RepoScene::GraphType::OPTIMIZED));
 
 	RepoNodeSet transNodes, transNodesStash, empty;
-	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
-	auto rootStash = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto root = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
+	auto rootStash = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
 	transNodes.insert(root);
 	transNodesStash.insert(rootStash);
 
@@ -985,8 +1031,8 @@ TEST(RepoSceneTest, getRoot)
 	EXPECT_EQ(nullptr, scene.getRoot(RepoScene::GraphType::OPTIMIZED));
 
 	RepoNodeSet transNodes, transNodesStash, empty;
-	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
-	auto rootStash = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto root = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
+	auto rootStash = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
 	transNodes.insert(root);
 	transNodesStash.insert(rootStash);
 
@@ -1007,8 +1053,8 @@ TEST(RepoSceneTest, getItemsInCurrentGraph)
 	EXPECT_EQ(0, scene.getItemsInCurrentGraph(RepoScene::GraphType::OPTIMIZED));
 
 	RepoNodeSet transNodes, transNodesStash, empty;
-	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
-	auto rootStash = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto root = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
+	auto rootStash = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
 	transNodes.insert(root);
 	transNodesStash.insert(rootStash);
 
@@ -1063,26 +1109,26 @@ TEST(RepoSceneTest, addNodes)
 	scene.addNodes(newNodes);
 	EXPECT_EQ(0, scene.getItemsInCurrentGraph(defaultG));
 
-	newNodes.push_back(new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1))));
-	newNodes.push_back(new TransformationNode(makeRandomNode(newNodes.back()->getSharedID())));
-	newNodes.push_back(new MeshNode(makeRandomNode(newNodes.back()->getSharedID())));
-	newNodes.push_back(new MeshNode(makeRandomNode(newNodes.back()->getSharedID())));
-	newNodes.push_back(new MaterialNode(makeRandomNode(newNodes.back()->getSharedID())));
-	newNodes.push_back(new MaterialNode(makeRandomNode(newNodes.back()->getSharedID())));
-	newNodes.push_back(new TextureNode(makeRandomNode(newNodes.back()->getSharedID())));
+	newNodes.push_back(new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1))));
+	newNodes.push_back(new TransformationNode(makeTransformationNode(newNodes.back()->getSharedID())));
+	newNodes.push_back(new MeshNode(makeMeshNode(newNodes.back()->getSharedID())));
+	newNodes.push_back(new MeshNode(makeMeshNode(newNodes.back()->getSharedID())));
+	newNodes.push_back(new MaterialNode(makeMaterialNode(newNodes.back()->getSharedID())));
+	newNodes.push_back(new MaterialNode(makeMaterialNode(newNodes.back()->getSharedID())));
+	newNodes.push_back(new TextureNode(makeTextureNode(newNodes.back()->getSharedID())));
 
 	scene.addNodes(newNodes);
 	EXPECT_EQ(newNodes.size(), scene.getItemsInCurrentGraph(defaultG));
 
 	int currentSize = newNodes.size();
 	newNodes.clear();
-	newNodes.push_back(new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1))));
-	newNodes.push_back(new TransformationNode(makeRandomNode(newNodes.back()->getSharedID())));
-	newNodes.push_back(new MeshNode(makeRandomNode(newNodes.back()->getSharedID())));
-	newNodes.push_back(new MeshNode(makeRandomNode(newNodes.back()->getSharedID())));
-	newNodes.push_back(new MaterialNode(makeRandomNode(newNodes.back()->getSharedID())));
-	newNodes.push_back(new MaterialNode(makeRandomNode(newNodes.back()->getSharedID())));
-	newNodes.push_back(new TextureNode(makeRandomNode(newNodes.back()->getSharedID())));
+	newNodes.push_back(new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1))));
+	newNodes.push_back(new TransformationNode(makeTransformationNode(newNodes.back()->getSharedID())));
+	newNodes.push_back(new MeshNode(makeMeshNode(newNodes.back()->getSharedID())));
+	newNodes.push_back(new MeshNode(makeMeshNode(newNodes.back()->getSharedID())));
+	newNodes.push_back(new MaterialNode(makeMaterialNode(newNodes.back()->getSharedID())));
+	newNodes.push_back(new MaterialNode(makeMaterialNode(newNodes.back()->getSharedID())));
+	newNodes.push_back(new TextureNode(makeTextureNode(newNodes.back()->getSharedID())));
 
 	scene.addNodes(newNodes);
 	EXPECT_EQ(newNodes.size() + currentSize, scene.getItemsInCurrentGraph(defaultG));
@@ -1092,7 +1138,7 @@ TEST(RepoSceneTest, removeNode)
 {
 	RepoScene scene;
 	scene.removeNode(defaultG, repo::lib::RepoUUID::createUUID());
-	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto root = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
 	scene.addNodes({ root });
 	scene.removeNode(defaultG, root->getSharedID());
 	scene.removeNode(defaultG, root->getSharedID());

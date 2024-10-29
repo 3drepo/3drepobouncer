@@ -50,23 +50,28 @@ TEST(RepoBSONBuilderTest, ConstructBuilder)
 TEST(RepoBSONBuilderTest, AppendArray)
 {
 	{
-		// Test empty array. This should result in a no-op.
+		// Test empty array.
 
 		std::vector<std::string> empty;
 		RepoBSONBuilder builder;
 		builder.appendArray("array", empty);
 		RepoBSON bson(builder.obj());
-		EXPECT_THAT(bson.isEmpty(), IsTrue());
+		EXPECT_THAT(bson.isEmpty(), IsFalse());
+
+		// Array should be empty, so any cast will work
+		EXPECT_THAT(bson.getStringArray("array"), IsEmpty());
 	}
 
 	{
-		// Test empty document. This should also result in a no-op.
+		// Test empty document.
 
 		RepoBSONBuilder outer;
 		RepoBSONBuilder builder;
 		builder.appendArray("array", outer.obj());
 		RepoBSON bson(builder.obj());
-		EXPECT_THAT(bson.isEmpty(), IsTrue());
+		EXPECT_THAT(bson.isEmpty(), IsFalse());
+
+		EXPECT_THAT(bson.getObjectField("array").isEmpty(), IsTrue());
 	}
 
 	{
@@ -265,7 +270,7 @@ TEST(RepoBSONBuilderTest, AppendTm)
 	auto tm = getRandomTm();
 
 	RepoBSONBuilder builder;
-	builder.appendTime("time", tm);
+	builder.appendTime("ts", tm);
 	RepoBSON bson = builder.obj();
 	EXPECT_THAT(bson.getTimeStampField("ts"), mktime(&tm));
 }
@@ -278,7 +283,7 @@ TEST(RepoBSONBuilderTest, AppendTime)
 	auto t = mktime(&tm);
 
 	RepoBSONBuilder builder;
-	builder.appendTime("time", t);
+	builder.appendTime("ts", t);
 	RepoBSON bson = builder.obj();
 	EXPECT_THAT(bson.getTimeStampField("ts"), t);
 }
@@ -291,7 +296,7 @@ TEST(RepoBSONBuilderTest, AppendRepoVariant)
 	repo::lib::RepoVariant vInt = 10;
 	repo::lib::RepoVariant vLong = 101LL;
 	repo::lib::RepoVariant vDouble = 99.99;
-	repo::lib::RepoVariant vString = "string";
+	repo::lib::RepoVariant vString = std::string("string");
 	repo::lib::RepoVariant vTime = getRandomTm();
 	repo::lib::RepoVariant vUUID = repo::lib::RepoUUID::createUUID();
 

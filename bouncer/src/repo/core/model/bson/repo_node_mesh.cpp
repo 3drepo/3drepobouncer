@@ -256,8 +256,11 @@ std::vector<repo::lib::RepoVector2D> MeshNode::getUVChannelsSerialised() const
 
 void MeshNode::setUVChannel(size_t channel, std::vector<repo::lib::RepoVector2D> uvs)
 {
-	channels.resize(std::max(channels.size(), channel + 1));
-	channels[channel] = std::vector<repo::lib::RepoVector2D>(uvs.begin(), uvs.end());
+	if (uvs.size())
+	{
+		channels.resize(std::max(channels.size(), channel + 1));
+		channels[channel] = std::vector<repo::lib::RepoVector2D>(uvs.begin(), uvs.end());
+	}
 }
 
 void MeshNode::updateBoundingBox()

@@ -109,12 +109,12 @@ namespace repo {
 						const std::string                            &fileName
 					);
 
-					repo::core::model::RepoRef getFileRef(
+					repo::core::model::RepoRefT<std::string> getFileRef(
 						const std::string& databaseName,
 						const std::string& collectionNamePrefix,
 						const std::string& fileName);
 
-					repo::core::model::RepoRef getFileRef(
+					repo::core::model::RepoRefT<repo::lib::RepoUUID> getFileRef(
 						const std::string& databaseName,
 						const std::string& collectionNamePrefix,
 						const repo::lib::RepoUUID& id
@@ -153,14 +153,14 @@ namespace repo {
 						const std::string                            &databaseName,
 						const std::string                            &collectionNamePrefix);
 
-					repo::core::model::RepoRef makeRefNode(
+					repo::core::model::RepoRefT<repo::lib::RepoUUID> makeRefNode(
 						const repo::lib::RepoUUID& id,
 						const std::string& link,
 						const repo::core::model::RepoRef::RefType& type,
 						const uint32_t& size,
 						const repo::core::model::RepoRef::Metadata& metadata);
 
-					repo::core::model::RepoRef makeRefNode(
+					repo::core::model::RepoRefT<std::string> makeRefNode(
 						const std::string& id,
 						const std::string& link,
 						const repo::core::model::RepoRef::RefType& type,

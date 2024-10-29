@@ -38,6 +38,7 @@
 
 using namespace repo::lib;
 using namespace repo::manipulator::modelconvertor::odaHelper;
+using namespace testing;
 
 // First helper class for the test of the RVT Converter
 class OdExBimSystemServices : public ExSystemServices

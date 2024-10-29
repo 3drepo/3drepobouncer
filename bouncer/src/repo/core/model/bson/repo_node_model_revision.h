@@ -134,6 +134,8 @@ namespace repo {
 				{
 					this->files = files;
 				}
+
+				virtual bool sEqual(const RepoNode& other) const;
 			};
 		}// end namespace model
 	} // end namespace core

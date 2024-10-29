@@ -43,7 +43,7 @@ TEST(ModelRevisionNodeTest, Constructor)
 	EXPECT_THAT((int)node.getUploadStatus(), Eq((int)RevisionNode::UploadStatus::COMPLETE));
 	EXPECT_THAT(node.getAuthor(), IsEmpty());
 	EXPECT_THAT(node.getTimestamp(), Eq(0));
-	EXPECT_THAT(node.getCoordOffset(), IsEmpty());
+	EXPECT_THAT(node.getCoordOffset(), ElementsAre(0,0,0));
 	EXPECT_THAT(node.getTag(), IsEmpty());
 	EXPECT_THAT(node.getOrgFiles(), IsEmpty());
 }
@@ -88,6 +88,34 @@ TEST(ModelRevisionNodeTest, Deserialise)
 	EXPECT_THAT((uint32_t)node.getUploadStatus(), Eq((uint32_t)RevisionNode::UploadStatus::GEN_REPO_STASH));
 }
 
+TEST(ModelRevisionNodeTest, DeserialiseEmpty)
+{
+	// Make sure any default value fields are initialised correctly
+
+	RepoBSONBuilder builder;
+
+	auto id = repo::lib::RepoUUID::createUUID();
+	auto branch = repo::lib::RepoUUID::createUUID();
+
+	builder.append(REPO_NODE_LABEL_ID, id);
+	builder.append(REPO_NODE_LABEL_SHARED_ID, branch);
+	builder.append(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_REVISION);
+	builder.appendTimeStamp(REPO_NODE_REVISION_LABEL_TIMESTAMP); // Timestamp for revision nodes is not optional
+
+	auto node = ModelRevisionNode(builder.obj());
+
+	EXPECT_THAT(node.getUniqueID(), Eq(id));
+	EXPECT_THAT(node.getSharedID(), Eq(branch));
+	EXPECT_THAT(node.getAuthor(), IsEmpty());
+	EXPECT_THAT(node.getMessage(), IsEmpty());
+	EXPECT_THAT(node.getTag(), IsEmpty());
+	EXPECT_THAT(node.getCoordOffset(), ElementsAre(0,0,0));
+	EXPECT_THAT(node.getOrgFiles(), IsEmpty());
+	EXPECT_THAT(node.getTimestamp(), IsNow()); // Within a second or so of the current time...
+	EXPECT_THAT((uint32_t)node.getUploadStatus(), Eq((uint32_t)0));
+}
+
+
 TEST(ModelRevisionNodeTest, Serialise)
 {
 	auto user = "testUser";
@@ -105,11 +133,11 @@ TEST(ModelRevisionNodeTest, Serialise)
 	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_REVISION_LABEL_MESSAGE), IsFalse());
 	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_REVISION_LABEL_TAG), IsFalse());
 	EXPECT_THAT(((RepoBSON)node).getTimeStampField(REPO_NODE_REVISION_LABEL_TIMESTAMP), Eq(0));
-	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT), IsFalse());
+	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT), IsTrue());
 	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_REVISION_LABEL_REF_FILE), IsFalse());
 	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_REVISION_LABEL_INCOMPLETE), IsFalse());
 
-	node.setUniqueId(repo::lib::RepoUUID::createUUID());
+	node.setUniqueID(repo::lib::RepoUUID::createUUID());
 	EXPECT_THAT(((RepoBSON)node).getUUIDField(REPO_NODE_LABEL_ID), Eq(node.getUniqueID()));
 
 	node.setSharedID(repo::lib::RepoUUID::createUUID());

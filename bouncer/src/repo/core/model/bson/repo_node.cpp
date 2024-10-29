@@ -24,8 +24,8 @@
 
 using namespace repo::core::model;
 
-RepoNode::RepoNode(RepoBSON bson) {
-	uniqueId = repo::lib::RepoUUID::createUUID();
+RepoNode::RepoNode(const RepoBSON& bson) {
+	uniqueId = repo::lib::RepoUUID::defaultValue;
 	sharedId = repo::lib::RepoUUID::defaultValue;
 	revId = repo::lib::RepoUUID::defaultValue;
 	deserialise(bson);
@@ -49,7 +49,7 @@ RepoBSON RepoNode::getBSON() const {
 	return RepoBSON(builder.obj(), builder.mapping());
 }
 
-void RepoNode::deserialise(RepoBSON& bson) {
+void RepoNode::deserialise(const RepoBSON& bson) {
 	if (bson.hasField(REPO_NODE_LABEL_ID))
 	{
 		uniqueId = bson.getUUIDField(REPO_NODE_LABEL_ID);
@@ -95,7 +95,9 @@ RepoNode::~RepoNode()
 {
 }
 
-NodeType RepoNode::getTypeAsEnum() const // todo: get rid of this in favour of RTTI
+// In the future we should consider replacing this with RTTI
+
+NodeType RepoNode::getTypeAsEnum() const
 {
 	std::string type = getType();
 

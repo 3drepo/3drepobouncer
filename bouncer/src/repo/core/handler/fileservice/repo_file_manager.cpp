@@ -86,7 +86,7 @@ bool FileManager::uploadFileAndCommit(
 			auto compresseddata = compressedstream.str();
 			fileContents = new std::vector<uint8_t>(compresseddata.begin(), compresseddata.end());
 
-			fileMetadata["encoding"] = "gzip";
+			fileMetadata["encoding"] = std::string("gzip");
 		}
 		break;
 	}
@@ -122,6 +122,7 @@ bool FileManager::deleteFileAndRef(
 {
 	bool success = true;
 	repo::core::model::RepoBSON criteria = BSON(REPO_LABEL_ID << cleanFileName(fileName));
+
 	repo::core::model::RepoBSON node = dbHandler->findOneByCriteria(
 		databaseName,
 		collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
@@ -137,7 +138,7 @@ bool FileManager::deleteFileAndRef(
 	}
 	else
 	{
-		repo::core::model::RepoRef ref(node);
+		repo::core::model::RepoRefT<std::string> ref(node); // The argument is a string, so we are only considering this type of ref node.
 		const auto keyName = ref.getRefLink();
 		const auto type = ref.getType(); //Should return enum
 
@@ -164,7 +165,7 @@ bool FileManager::deleteFileAndRef(
 	return success;
 }
 
-repo::core::model::RepoRef FileManager::getFileRef(
+repo::core::model::RepoRefT<std::string> FileManager::getFileRef(
 	const std::string                            &databaseName,
 	const std::string                            &collectionNamePrefix,
 	const std::string                            &fileName) {
@@ -177,7 +178,7 @@ repo::core::model::RepoRef FileManager::getFileRef(
 		);
 }
 
-repo::core::model::RepoRef FileManager::getFileRef(
+repo::core::model::RepoRefT<repo::lib::RepoUUID> FileManager::getFileRef(
 	const std::string& databaseName,
 	const std::string& collectionNamePrefix,
 	const repo::lib::RepoUUID& id) {
@@ -336,7 +337,7 @@ bool FileManager::dropFileRef(
 	return success;
 }
 
-repo::core::model::RepoRef FileManager::makeRefNode(
+repo::core::model::RepoRefT<std::string> FileManager::makeRefNode(
 	const std::string& id,
 	const std::string& link,
 	const repo::core::model::RepoRef::RefType& type,
@@ -346,7 +347,7 @@ repo::core::model::RepoRef FileManager::makeRefNode(
 	return repo::core::model::RepoBSONFactory::makeRepoRef(cleanFileName(id), type, link, size, metadata);
 }
 
-repo::core::model::RepoRef FileManager::makeRefNode(
+repo::core::model::RepoRefT<repo::lib::RepoUUID> FileManager::makeRefNode(
 	const repo::lib::RepoUUID& id,
 	const std::string& link,
 	const repo::core::model::RepoRef::RefType& type,

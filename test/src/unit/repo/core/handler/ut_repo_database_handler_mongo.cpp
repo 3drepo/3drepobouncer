@@ -30,6 +30,12 @@
 using namespace repo::core::handler;
 using namespace testing;
 
+void initialiseFileManager()
+{
+	// Usually the fileManager will be initialised elsewhere, but if not it is
+	// necessary for many for many db operations.
+}
+
 TEST(MongoDatabaseHandlerTest, GetHandlerDisconnectHandler)
 {
 	std::string errMsg;
@@ -250,7 +256,9 @@ TEST(MongoDatabaseHandlerTest, InsertDocument)
 	ASSERT_TRUE(handler);
 	std::string errMsg;
 
-	repo::core::model::RepoBSON testCase = BSON("_id" << "testID" << "anotherField" << std::rand());
+	auto id = repo::lib::RepoUUID::createUUID();
+
+	repo::core::model::RepoBSON testCase = BSON("_id" << id.toString() << "anotherField" << std::rand());
 	std::string database = "sandbox";
 	std::string collection = "sbCollection";
 
@@ -377,10 +385,11 @@ TEST(MongoDatabaseHandlerTest, UpsertDocument)
 
 	auto existing = builder.obj();
 
-	auto collection = "upsertTestCollection";
-	handler->createCollection(REPO_GTEST_DBNAME3, collection);
-
 	std::string errMsg;
+
+	auto collection = "upsertTestCollection";
+	handler->dropCollection(REPO_GTEST_DBNAME3, collection, errMsg); // Should usually be empty but if this test has run before...
+	handler->createCollection(REPO_GTEST_DBNAME3, collection);
 
 	handler->insertDocument(REPO_GTEST_DBNAME3, collection, existing, errMsg);
 
@@ -455,6 +464,48 @@ TEST(MongoDatabaseHandlerTest, InsertDocumentBinary)
 	repo::lib::RepoException);
 }
 
+// This special matcher ignores the _blobRef entry when comparing the BSON
+// parts of two documents, but does consider the big files.
+
+MATCHER(InsertManyDocumentsBinaryBSONMatcher, "") {
+	const repo::core::model::RepoBSON& a = std::get<0>(arg);
+	const repo::core::model::RepoBSON& b = std::get<1>(arg);
+
+	std::set<std::string> fields;
+	for (auto f : a.getFieldNames())
+	{
+		fields.insert(f);
+	}
+	for (auto f : b.getFieldNames())
+	{
+		fields.insert(f);
+	}
+	fields.erase("_blobRef");
+
+	for (auto f : fields)
+	{
+		if (a.getField(f) != b.getField(f))
+		{
+			return false;
+		}
+	}
+
+	auto refa = a.getBinariesAsBuffer();
+	auto refb = b.getBinariesAsBuffer();
+
+	if (refa.first != refb.first)
+	{
+		return false;
+	}
+
+	if (refa.second != refb.second)
+	{
+		return false;
+	}
+
+	return true;
+}
+
 TEST(MongoDatabaseHandlerTest, InsertManyDocumentsBinary)
 {
 	// InsertManyDocuments is a special method that should batch multiple binary
@@ -485,6 +536,7 @@ TEST(MongoDatabaseHandlerTest, InsertManyDocumentsBinary)
 	for (size_t i = 0; i < sizes.size(); i++)
 	{
 		repo::core::model::RepoBSONBuilder builder;
+		builder.append(REPO_LABEL_ID, repo::lib::RepoUUID::createUUID());
 		builder.appendLargeArray("bin", testing::makeRandomBinary(sizes[i]));
 		documents.push_back(builder.obj());
 	}
@@ -496,13 +548,19 @@ TEST(MongoDatabaseHandlerTest, InsertManyDocumentsBinary)
 	std::string errMsg;
 
 	auto collection = "insertManyDocumentsBinary";
+	handler->dropCollection(REPO_GTEST_DBNAME3, collection, errMsg);
 	handler->createCollection(REPO_GTEST_DBNAME3, collection);
 	handler->insertManyDocuments(REPO_GTEST_DBNAME3, collection, documents, errMsg);
 
 	// Read back the documents; this should also populate the binary buffers
 
 	auto actual = handler->getAllFromCollectionTailable(REPO_GTEST_DBNAME3, collection);
-	EXPECT_THAT(actual, Eq(documents));
+
+	// The original documents won't have the _blobRef document as this isn't
+	// created until inside the handler, so we convert both sets to RepoBSONs
+	// for the semantic comparision.
+
+	EXPECT_THAT(actual, Pointwise(InsertManyDocumentsBinaryBSONMatcher(), documents));
 }
 
 TEST(MongoDatabaseHandlerTest, InsertManyDocumentsMetadata)
@@ -515,6 +573,7 @@ TEST(MongoDatabaseHandlerTest, InsertManyDocumentsMetadata)
 	for (size_t i = 0; i < 1; i++)
 	{
 		repo::core::model::RepoBSONBuilder builder;
+		builder.append(REPO_LABEL_ID, repo::lib::RepoUUID::createUUID());
 		builder.appendLargeArray("bin", testing::makeRandomBinary());
 		documents.push_back(builder.obj());
 	}
@@ -526,11 +585,12 @@ TEST(MongoDatabaseHandlerTest, InsertManyDocumentsMetadata)
 	repo::core::handler::AbstractDatabaseHandler::Metadata metadata;
 	metadata["x-uuid"] = repo::lib::RepoUUID::createUUID();
 	metadata["x-int"] = 1;
-	metadata["x-string"] = "my metadata string";
+	metadata["x-string"] = std::string("my metadata string");
 
 	auto collection = "InsertManyDocumentsMetadata";
+	handler->dropCollection(REPO_GTEST_DBNAME3, collection, errMsg);
 	handler->createCollection(REPO_GTEST_DBNAME3, collection);
-	handler->insertManyDocuments(REPO_GTEST_DBNAME3, collection, documents, errMsg);
+	handler->insertManyDocuments(REPO_GTEST_DBNAME3, collection, documents, errMsg, metadata);
 
 	// Read back the documents
 

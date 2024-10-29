@@ -145,12 +145,12 @@ TEST(MultipartOptimizer, TestMixedPrimitives)
 		case repo::core::model::MeshNode::Primitive::TRIANGLES:
 			ASSERT_EQ(nVertices * 3, meshNode->getVertices().size());
 			break;
-		case repo::core::model::MeshNode::Primitive::UNKNOWN: // Currently, points is an unsupported type, so while it is in the enum the factory will never set it
+		case repo::core::model::MeshNode::Primitive::POINTS:
 			ASSERT_EQ(nVertices * 1, meshNode->getVertices().size());
 			break;
 		default:
 			repoTrace << (int)meshNode->getPrimitive();
-			EXPECT_TRUE(false);
+			EXPECT_TRUE(false); // No other topologies should be encountered in this test.
 			break;
 		}
 	}

@@ -60,7 +60,7 @@ TEST(RepoBSONElementTest, TypeTest)
 	builder.append("array", std::vector<float>{1});
 	builder.append("uuid", uuid);
 	builder.append("bool", true);
-	builder.append("date", time_t);
+	builder.appendTime("date", time_t); // Must use appendTime here because time_t will be seen first as a int64_t unless explicitly converted to a mongo::Date_t
 	builder.append("double", (double)1);
 	builder.append("int", (int)1);
 	builder.append("long", (long long)1);

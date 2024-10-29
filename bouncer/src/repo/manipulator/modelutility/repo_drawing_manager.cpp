@@ -49,7 +49,7 @@ uint8_t DrawingManager::commitImage(
 	auto revId = revision.getUniqueID();
 	metadata[REPO_NODE_LABEL_NAME] = name;
 	metadata[REPO_LABEL_MEDIA_TYPE] = std::string(REPO_MEDIA_TYPE_SVG);
-	metadata[REPO_LABEL_MEDIA_TYPE] = revision.getProject();
+	metadata[REPO_LABEL_PROJECT] = revision.getProject();
 	metadata[REPO_LABEL_MODEL] = revision.getModel();
 	metadata[REPO_NODE_REVISION_ID] = revId;
 

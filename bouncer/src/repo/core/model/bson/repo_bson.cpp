@@ -17,6 +17,8 @@
 
 #include "repo_bson.h"
 
+#include <unordered_map>
+
 #include <mongo/client/dbclient.h>
 #include <mongo/bson/bson.h>
 
@@ -28,9 +30,9 @@ RepoBSON::RepoBSON(const RepoBSON &obj,
 	const BinMapping &binMapping) :
 	mongo::BSONObj(obj),
 	bigFiles(binMapping) {
-	auto existingFiles = obj.getFilesMapping();
 
-	for (const auto &pair : existingFiles) {
+	auto existingFiles = obj.getFilesMapping();
+	for (const auto& pair : existingFiles) {
 		if (bigFiles.find(pair.first) == bigFiles.end()) {
 			bigFiles[pair.first] = pair.second;
 		}
@@ -68,40 +70,47 @@ int RepoBSON::nFields() const {
 	return mongo::BSONObj::nFields();
 }
 
-RepoBSONElement RepoBSON::getField(const std::string& label) const
-{
-	return RepoBSONElement(mongo::BSONObj::getField(label));
-}
-
-bool RepoBSON::getBoolField(const std::string& label) const
-{
-	return mongo::BSONObj::getBoolField(label);
-}
-
-std::string RepoBSON::getStringField(const std::string& label) const {
+RepoBSONElement RepoBSON::getField(const std::string& label) const {
 	if (hasField(label))
 	{
-		auto f = getField(label);
-		if (f.type() == ElementType::STRING)
-		{
-			return f.String();
-		}
-		else
-		{
-			throw repo::lib::RepoFieldTypeException(label);
-		}
-	}
-	throw repo::lib::RepoFieldNotFoundException(label);
-}
-
-RepoBSON RepoBSON::getObjectField(const std::string& label) const {
-	if (hasField(label))
-	{
-		return mongo::BSONObj::getObjectField(label);
+		return RepoBSONElement(mongo::BSONObj::getField(label));
 	}
 	else
 	{
 		throw repo::lib::RepoFieldNotFoundException(label);
+	}
+}
+
+bool RepoBSON::getBoolField(const std::string& label) const {
+	try
+	{
+		return getField(label).Bool();
+	}
+	catch (std::exception)
+	{
+		throw repo::lib::RepoFieldTypeException(label);
+	}
+}
+
+std::string RepoBSON::getStringField(const std::string& label) const {
+	try
+	{
+		return getField(label).String();
+	}
+	catch (std::exception)
+	{
+		throw repo::lib::RepoFieldTypeException(label);
+	}
+}
+
+RepoBSON RepoBSON::getObjectField(const std::string& label) const {
+	try
+	{
+		return getField(label).Object();
+	}
+	catch (std::exception)
+	{
+		throw repo::lib::RepoFieldTypeException(label);
 	}
 }
 
@@ -114,11 +123,18 @@ std::vector<repo::lib::RepoVector3D> RepoBSON::getBounds3D(const std::string& la
 }
 
 bool RepoBSON::isEmpty() const {
-	return mongo::BSONObj::isEmpty();
+	return mongo::BSONObj::isEmpty() && !bigFiles.size();
 }
 
 int RepoBSON::getIntField(const std::string& label) const {
-	return mongo::BSONObj::getIntField(label);
+	try
+	{
+		return getField(label).Int();
+	}
+	catch (std::exception)
+	{
+		throw repo::lib::RepoFieldTypeException(label);
+	}
 }
 
 std::set<std::string> RepoBSON::getFieldNames() const {
@@ -131,16 +147,12 @@ uint64_t RepoBSON::objsize() const {
 	return mongo::BSONObj::objsize();
 }
 
-RepoBSON RepoBSON::removeField(const std::string& label) const {
-	return mongo::BSONObj::removeField(label);
-}
-
 std::string RepoBSON::toString() const {
 	return mongo::BSONObj::toString();
 }
 
 bool RepoBSON::operator==(const RepoBSON other) const {
-	return mongo::BSONObj::operator==((mongo::BSONObj)other);
+	return mongo::BSONObj::operator==((mongo::BSONObj)other) && bigFiles == other.bigFiles;
 }
 
 bool RepoBSON::operator!=(const RepoBSON other) const {
@@ -231,24 +243,26 @@ repo::lib::RepoUUID RepoBSON::getUUIDField(const std::string &label) const {
 }
 
 std::vector<float> RepoBSON::getFloatVectorField(const std::string& label) const {
-	std::vector<float> results;
-	if (hasField(label))
-	{
-		RepoBSON array = getObjectField(label);
-		if (!array.isEmpty())
+	try {
+		std::vector<float> results;
+		auto a = getObjectField(label);
+		results.reserve(a.nFields());
+		for (auto i = a.begin(); i.more(); )
 		{
-			std::set<std::string> fields = array.getFieldNames();
-			results.resize(fields.size());
-			std::set<std::string>::iterator it;
-			for (it = fields.begin(); it != fields.end(); ++it)
-				results.push_back(array.getDoubleField(*it));
+			try {
+				results.push_back((float)(i.next().Double()));
+			}
+			catch (std::exception e)
+			{
+				throw repo::lib::RepoFieldTypeException(label); // This version of the driver doesn't have specific exceptions so we guess based on the scope of the try block this is what it is
+			}
 		}
-		else
-		{
-			repoDebug << "getFloatVectorField: field " << label << " is an empty bson or wrong type!";
-		}
+		return results;
 	}
-	return results;
+	catch (std::exception)
+	{
+		throw repo::lib::RepoFieldTypeException(label);
+	}
 }
 
 repo::lib::RepoVector3D RepoBSON::getVector3DField(const std::string& label) const {
@@ -291,23 +305,26 @@ repo::lib::RepoMatrix RepoBSON::getMatrixField(const std::string& label) const {
 }
 
 std::vector<double> RepoBSON::getDoubleVectorField(const std::string& label) const {
-	std::vector<double> results;
-	if (hasField(label))
-	{
-		RepoBSON array = getObjectField(label);
-		if (!array.isEmpty())
+	try {
+		std::vector<double> results;
+		auto a = getObjectField(label);
+		results.reserve(a.nFields());
+		for (auto i = a.begin(); i.more(); )
 		{
-			std::set<std::string> fields = array.getFieldNames();
-			std::set<std::string>::iterator it;
-			for (it = fields.begin(); it != fields.end(); ++it)
-				results.push_back(array.getDoubleField(*it));
+			try {
+				results.push_back(i.next().Double());
+			}
+			catch (std::exception e)
+			{
+				throw repo::lib::RepoFieldTypeException(label); // This version of the driver doesn't have specific exceptions so we guess based on the scope of the try block this is what it is
+			}
 		}
-		else
-		{
-			repoDebug << "getVectorAsStdDouble: field " << label << " is an empty bson or wrong type!";
-		}
+		return results;
 	}
-	return results;
+	catch (std::exception)
+	{
+		throw repo::lib::RepoFieldTypeException(label);
+	}
 }
 
 std::vector<repo::lib::RepoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) const {
@@ -330,37 +347,22 @@ std::vector<repo::lib::RepoUUID> RepoBSON::getUUIDFieldArray(const std::string &
 
 const std::vector<uint8_t>& RepoBSON::getBinary(const std::string& field) const
 {
-	if (!hasField(field) || getField(field).type() == ElementType::STRING)
+	const auto& it = bigFiles.find(field);
+	if (it != bigFiles.end())
 	{
-		const auto& it = bigFiles.find(field);
-		if (it != bigFiles.end())
-		{
-			return it->second;
-		}
+		return it->second;
 	}
-	else {
-		RepoBSONElement bse = getField(field);
-		if (bse.type() == ElementType::BINARY && bse.binDataType() == mongo::BinDataGeneral)
-		{
-			bse.value();
-			int length;
-			auto binData = (const uint8_t*)bse.binData(length);
-			if (length > 0)
-			{
-				return std::vector<uint8_t>(binData, binData + length);
-			}
-			else
-			{
-				throw repo::lib::RepoFieldTypeException(field + "; has a length of zero bytes");
-			}
-		}
-		else
+	else
+	{
+		if (hasField(field))
 		{
 			throw repo::lib::RepoFieldTypeException(field);
 		}
+		else
+		{
+			throw repo::lib::RepoFieldNotFoundException(field);
+		}
 	}
-
-	throw repo::lib::RepoFieldNotFoundException(field);
 }
 
 repo::core::model::RepoBSON RepoBSON::getBinaryReference() const {
@@ -393,7 +395,7 @@ void RepoBSON::initBinaryBuffer(const std::vector<uint8_t> &buffer) {
 
 bool RepoBSON::hasBinField(const std::string &label) const
 {
-	return hasField(label) || bigFiles.find(label) != bigFiles.end();
+	return bigFiles.find(label) != bigFiles.end();
 }
 
 bool RepoBSON::hasFileReference() const {
@@ -408,16 +410,17 @@ std::vector<float> RepoBSON::getFloatArray(const std::string &label) const
 		RepoBSON array = getObjectField(label);
 		if (!array.isEmpty())
 		{
-			std::set<std::string> fields = array.getFieldNames();
-
-			// Pre allocate memory to speed up copying
-			results.reserve(fields.size());
-			for (auto field : fields)
-				results.push_back(array.getDoubleField(field));
-		}
-		else
-		{
-			repoError << "getFloatArray: field " << label << " is an empty bson or wrong type!";
+			results.reserve(array.nFields());
+			for (auto i = array.begin(); i.more(); )
+			{
+				try {
+					results.push_back(i.next().Double());
+				}
+				catch (std::exception e)
+				{
+					throw repo::lib::RepoFieldTypeException(label); // This version of the driver doesn't have specific exceptions so we guess based on the scope of the try block this is what it is
+				}
+			}
 		}
 	}
 	return results;
@@ -428,45 +431,68 @@ std::vector<std::string> RepoBSON::getStringArray(const std::string &label) cons
 	std::vector<std::string> results;
 	if (hasField(label))
 	{
-		std::vector<RepoBSONElement> array = getField(label).Array();
-		// Pre allocate memory to speed up copying
-		results.reserve(array.size());
-		for (auto element : array)
-			results.push_back(element.String());
+		RepoBSON array = getObjectField(label);
+		if (!array.isEmpty())
+		{
+			results.reserve(array.nFields());
+			for (auto i = array.begin(); i.more(); )
+			{
+				try {
+					results.push_back(i.next().String());
+				}
+				catch (std::exception e)
+				{
+					throw repo::lib::RepoFieldTypeException(label); // This version of the driver doesn't have specific exceptions so we guess based on the scope of the try block this is what it is
+				}
+			}
+		}
 	}
 	return results;
 }
 
 time_t RepoBSON::getTimeStampField(const std::string &label) const
 {
-	time_t time = 0;
-
 	if (hasField(label))
 	{
 		auto field = getField(label);
 		if (field.type() == ElementType::DATE)
-			time = field.TimeT();
+		{
+			return field.TimeT();
+		}
 		else
 		{
-			repoError << "GetTimeStampField: field " << label << " is not of type Date!";
+			throw repo::lib::RepoFieldTypeException(label);
 		}
 	}
-	return time;
+	else
+	{
+		throw repo::lib::RepoFieldNotFoundException(label);
+	}
 }
 
 double RepoBSON::getDoubleField(const std::string &label) const {
-	double ret = 0.0;
-	if (mongo::BSONObj::hasField(label)) {
-		auto field = mongo::BSONObj::getField(label);
-		if (field.type() == mongo::BSONType::NumberDouble)
-			ret = field.Double();
+	try
+	{
+		return getField(label).Double();
 	}
-
-	return ret;
+	catch (std::exception)
+	{
+		throw repo::lib::RepoFieldTypeException(label);
+	}
 }
 
 long long RepoBSON::getLongField(const std::string& label) const
 {
-	auto field = mongo::BSONObj::getField(label);
-	return field.Long();
+	try
+	{
+		auto f = getField(label);
+		if (f.type() == repo::core::model::ElementType::INT) { // We can convert integers to longs OK
+			return f.Int();
+		}
+		return getField(label).Long();
+	}
+	catch (std::exception)
+	{
+		throw repo::lib::RepoFieldTypeException(label);
+	}
 }

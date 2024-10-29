@@ -31,9 +31,11 @@
 using namespace repo::core::model;
 using namespace testing;
 
-std::unordered_map<std::string, repo::lib::RepoVariant> makeRandomMetadata(int seed = 0)
+std::unordered_map<std::string, repo::lib::RepoVariant> makeRandomMetadata(bool resetSeed = true)
 {
-	std::srand(seed);
+	if (resetSeed) {
+		restartRand();
+	}
 	std::unordered_map<std::string, repo::lib::RepoVariant> data;
 	uint32_t nItems = rand() % 100 + 1;
 	for (int i = 0; i < nItems; ++i)
@@ -64,9 +66,9 @@ std::unordered_map<std::string, repo::lib::RepoVariant> makeRandomMetadata(int s
 	return data;
 }
 
-MetadataNode makeRandomMetaNode(int seed = 0)
+MetadataNode makeRandomMetaNode(bool resetSeed = true)
 {
-	auto m = makeRandomMetadata(seed);
+	auto m = makeRandomMetadata(resetSeed);
 	std::vector<std::string> keys;
 	std::vector<repo::lib::RepoVariant> values;
 	for (auto& p : m) {
@@ -175,8 +177,8 @@ TEST(MetaNodeTest, SEqualTest)
 	MetadataNode empty;
 	EXPECT_TRUE(empty.sEqual(empty));
 
-	auto metaNode = makeRandomMetaNode(0);
-	auto metaNode2 = makeRandomMetaNode(1);
+	auto metaNode = makeRandomMetaNode();
+	auto metaNode2 = makeRandomMetaNode(false);
 
 	EXPECT_TRUE(metaNode.sEqual(metaNode));
 	EXPECT_FALSE(metaNode.sEqual(empty));
@@ -263,4 +265,40 @@ TEST(MetaNodeTest, CopyConstructor)
 
 	e.setMetadata(other);
 	EXPECT_THAT(a.sEqual(e), IsFalse());
+}
+
+TEST(MetaNodeTest, EmptyValues)
+{
+	// In at least some versions of bouncer, fields will null values were not
+	// written to the documents, meaning it is possible to get a metadata entry
+	// without a value.
+
+	// The only type for which it is possible to have a null value is the
+	// string. Therefore, when deserialising, MetadataNode should read missing
+	// keys as empty strings.
+
+	// For future reference, the std variant does have the concept of a
+	// monostate. This should be considered further however, since null metadata
+	// is not something explicitly supported, and we know unambiguously how the
+	// document ended up without a value (an empty string).
+
+	RepoBSONBuilder builder;
+	builder.append(REPO_NODE_LABEL_ID, repo::lib::RepoUUID::createUUID());
+	builder.append(REPO_NODE_LABEL_SHARED_ID, repo::lib::RepoUUID::createUUID());
+	builder.append(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_METADATA);
+
+	std::vector<RepoBSON> metaEntries;
+	{
+		RepoBSONBuilder metaEntryBuilder;
+		metaEntryBuilder.append(REPO_NODE_LABEL_META_KEY, "myKey");
+		metaEntries.push_back(metaEntryBuilder.obj());
+	}
+	builder.appendArray(REPO_NODE_LABEL_METADATA, metaEntries);
+
+	MetadataNode node(builder.obj());
+
+	auto metadata = node.getAllMetadata();
+	auto& value = metadata["myKey"];
+
+	EXPECT_THAT(value, Eq(repo::lib::RepoVariant("")));
 }
