@@ -31,12 +31,6 @@
 using namespace repo::core::handler;
 using namespace testing;
 
-void initialiseFileManager()
-{
-	// Usually the fileManager will be initialised elsewhere, but if not it is
-	// necessary for many for many db operations.
-}
-
 TEST(MongoDatabaseHandlerTest, GetHandlerDisconnectHandler)
 {
 	std::string errMsg;
