@@ -236,7 +236,7 @@ namespace repo {
 
 				void setNormals(const std::vector<repo::lib::RepoVector3D>& normals)
 				{
-					this->normals = std::vector<repo::lib::RepoVector3D>(normals.begin(), normals.end());
+					this->normals = normals;
 				}
 
 				std::vector<repo::lib::RepoVector2D> getUVChannelsSerialised() const;

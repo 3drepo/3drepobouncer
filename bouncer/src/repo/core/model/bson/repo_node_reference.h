@@ -117,8 +117,7 @@ namespace repo {
 				}
 
 				/**
-				* Retrieve the project this reference node is referring to
-				* @return returns the project name for this reference
+				* Retrieve the teamspace of the project this reference node is referring to
 				*/
 				std::string getDatabaseName() const
 				{
@@ -132,7 +131,6 @@ namespace repo {
 
 				/**
 				* Retrieve the project this reference node is referring to
-				* @return returns the project name for this reference
 				*/
 				std::string getProjectId() const
 				{

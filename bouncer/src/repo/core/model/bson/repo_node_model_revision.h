@@ -115,7 +115,7 @@ namespace repo {
 					return offset;
 				}
 
-				void setCoordOffset(std::vector<double> offset)
+				void setCoordOffset(const std::vector<double>& offset)
 				{
 					this->offset = offset;
 				}
