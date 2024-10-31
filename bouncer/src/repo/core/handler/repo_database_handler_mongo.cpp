@@ -808,9 +808,6 @@ bool MongoDatabaseHandler::upsertDocument(
 
 	bool upsert = overwrite;
 	try {
-		repo::core::model::RepoBSONBuilder queryBuilder;
-		queryBuilder.append(ID, obj.getField(ID));
-
 		mongo::BSONElement bsonID;
 		obj.getObjectID(bsonID);
 		mongo::Query existQuery = MONGO_QUERY("_id" << bsonID);
