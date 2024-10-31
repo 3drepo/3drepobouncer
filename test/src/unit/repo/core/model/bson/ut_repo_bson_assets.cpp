@@ -98,3 +98,23 @@ TEST(RepoAssetsTest, Serialise)
 	}
 	EXPECT_THAT(actual, Eq(metadata));
 }
+
+TEST(RepoAssetsTest, SerialiseEmpty)
+{
+	auto bson = (RepoBSON)RepoBSONFactory::makeRepoBundleAssets(
+		repo::lib::RepoUUID::defaultValue,
+		{},
+		"",
+		"",
+		{},
+		{},
+		{}
+	);
+
+	EXPECT_THAT(bson.getUUIDField(REPO_LABEL_ID), Eq(repo::lib::RepoUUID::defaultValue));
+	EXPECT_THAT(bson.hasField(REPO_ASSETS_LABEL_ASSETS), IsFalse()); 
+	EXPECT_THAT(bson.hasField(REPO_ASSETS_LABEL_JSONFILES), IsFalse());
+	EXPECT_THAT(bson.hasField(REPO_LABEL_DATABASE), IsFalse());
+	EXPECT_THAT(bson.hasField(REPO_LABEL_MODEL), IsFalse());
+	EXPECT_THAT(bson.getDoubleVectorField(REPO_ASSETS_LABEL_OFFSET), ElementsAre(0,0,0));
+}

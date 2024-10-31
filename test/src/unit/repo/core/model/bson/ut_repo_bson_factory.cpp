@@ -52,6 +52,12 @@ TEST(RepoBSONFactoryTest, MakeMaterialNodeTest)
 	EXPECT_EQ(name, material.getName());
 	EXPECT_EQ(material.getTypeAsEnum(), NodeType::MATERIAL);
 
+	// MaterialNodes should have their unique and shared Id's initialised, as they
+	// will sometimes parent texture nodes.
+
+	EXPECT_THAT(material.getUniqueID(), Not(Eq(repo::lib::RepoUUID::defaultValue)));
+	EXPECT_THAT(material.getSharedID(), Not(Eq(repo::lib::RepoUUID::defaultValue)));
+
 	auto matOut = material.getMaterialStruct();
 
 	EXPECT_TRUE(compareMaterialStructs(mat_struct, matOut));

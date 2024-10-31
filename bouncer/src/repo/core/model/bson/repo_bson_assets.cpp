@@ -60,11 +60,10 @@ RepoAssets::operator RepoBSON() const
 	if (!model.empty())
 		builder.append(REPO_LABEL_MODEL, model);
 
-	if (offset.norm())
-		builder.appendArray(REPO_ASSETS_LABEL_OFFSET, offset.toStdVector());
-
 	if (repoJsonFiles.size())
 		builder.appendArray(REPO_ASSETS_LABEL_JSONFILES, repoJsonFiles);
+
+	builder.appendArray(REPO_ASSETS_LABEL_OFFSET, offset.toStdVector());
 
 	// Metadata is provided in an array with the same indexing as asset names.
 	// The metadata schema uses the object (instead of array) encoding of

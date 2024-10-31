@@ -133,9 +133,8 @@ repo::core::model::RepoScene* RepoManipulator::createFederatedScene(
 		refNodes.insert(copy);
 	}
 	//federate scene has no referenced files
-	std::vector<std::string> empty;
 	repo::core::model::RepoScene* scene =
-		new repo::core::model::RepoScene(empty, emptySet, emptySet, emptySet, emptySet, emptySet, transNodes, refNodes);
+		new repo::core::model::RepoScene({}, emptySet, emptySet, emptySet, emptySet, emptySet, transNodes, refNodes);
 
 	return scene;
 }

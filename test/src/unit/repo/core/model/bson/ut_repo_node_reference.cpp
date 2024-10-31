@@ -114,7 +114,7 @@ TEST(RefNodeTest, Serialise)
 	EXPECT_THAT(((RepoBSON)node).getStringField(REPO_NODE_LABEL_TYPE), Eq(REPO_NODE_TYPE_REFERENCE));
 	EXPECT_THAT(((RepoBSON)node).getStringField(REPO_NODE_REFERENCE_LABEL_OWNER), IsEmpty());
 	EXPECT_THAT(((RepoBSON)node).getStringField(REPO_NODE_REFERENCE_LABEL_PROJECT), IsEmpty());
-	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_REFERENCE_LABEL_REVISION_ID), IsFalse());
+	EXPECT_THAT(((RepoBSON)node).getUUIDField(REPO_NODE_REFERENCE_LABEL_REVISION_ID), Eq(repo::lib::RepoUUID::defaultValue));
 	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_REFERENCE_LABEL_UNIQUE), IsFalse());
 
 	node.setUniqueID(repo::lib::RepoUUID::createUUID());

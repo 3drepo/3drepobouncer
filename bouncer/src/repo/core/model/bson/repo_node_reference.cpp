@@ -28,6 +28,7 @@ ReferenceNode::ReferenceNode() :
 RepoNode()
 {
 	isUnique = false;
+	revisionId = repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH);
 }
 
 ReferenceNode::ReferenceNode(RepoBSON bson) :
@@ -46,12 +47,10 @@ void ReferenceNode::deserialise(RepoBSON& bson)
 {
 	databaseName = bson.getStringField(REPO_NODE_REFERENCE_LABEL_OWNER);
 	projectId = bson.getStringField(REPO_NODE_REFERENCE_LABEL_PROJECT);
-
 	if (bson.hasField(REPO_NODE_REFERENCE_LABEL_REVISION_ID))
 	{
 		revisionId = bson.getUUIDField(REPO_NODE_REFERENCE_LABEL_REVISION_ID);
 	}
-
 	if (bson.hasField(REPO_NODE_REFERENCE_LABEL_UNIQUE))
 	{
 		isUnique = bson.getBoolField(REPO_NODE_REFERENCE_LABEL_UNIQUE);
@@ -61,15 +60,9 @@ void ReferenceNode::deserialise(RepoBSON& bson)
 void ReferenceNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 {
 	RepoNode::serialise(builder);
-
 	builder.append(REPO_NODE_REFERENCE_LABEL_OWNER, databaseName);
 	builder.append(REPO_NODE_REFERENCE_LABEL_PROJECT, projectId);
-
-	if (revisionId != repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH))
-	{
-		builder.append(REPO_NODE_REFERENCE_LABEL_REVISION_ID, revisionId);
-	}
-
+	builder.append(REPO_NODE_REFERENCE_LABEL_REVISION_ID, revisionId); // Downstream users expect the rid, even if its pointing to the master branch
 	if (isUnique)
 	{
 		builder.append(REPO_NODE_REFERENCE_LABEL_UNIQUE, isUnique);
