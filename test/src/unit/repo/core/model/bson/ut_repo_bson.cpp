@@ -1344,7 +1344,7 @@ TEST(RepoBSONTest, EqualityOperator)
 
 		RepoBSONBuilder d;
 		d.append("f2", uuid);
-		EXPECT_THAT(a, Not(Eq(c.obj())));
+		EXPECT_THAT(a, Not(Eq(d.obj())));
 	}
 
 	{
@@ -1364,7 +1364,7 @@ TEST(RepoBSONTest, EqualityOperator)
 
 		RepoBSONBuilder d;
 		d.append("f2", v);
-		EXPECT_THAT(a, Not(Eq(c.obj())));
+		EXPECT_THAT(a, Not(Eq(d.obj())));
 	}
 
 	{
@@ -1384,7 +1384,7 @@ TEST(RepoBSONTest, EqualityOperator)
 
 		RepoBSONBuilder d;
 		d.append("f2", v);
-		EXPECT_THAT(a, Not(Eq(c.obj())));
+		EXPECT_THAT(a, Not(Eq(d.obj())));
 	}
 
 	{
@@ -1413,7 +1413,7 @@ TEST(RepoBSONTest, EqualityOperator)
 
 		RepoBSONBuilder d;
 		d.appendArray("f2", arr);
-		EXPECT_THAT(a, Not(Eq(c.obj())));
+		EXPECT_THAT(a, Not(Eq(d.obj())));
 	}
 
 	{
