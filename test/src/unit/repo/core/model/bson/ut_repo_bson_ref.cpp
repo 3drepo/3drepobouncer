@@ -237,15 +237,17 @@ TEST(RepoRefTest, InvalidIdType)
 
 	builder.append(REPO_LABEL_ID, 0); // An integer is not a valid Id type
 
+	auto obj = builder.obj();
+
 	// Attempting to read a node with broken schema should not fail silently
 
 	EXPECT_THROW({
-		auto ref = RepoRefT<repo::lib::RepoUUID>(builder.obj());
+		auto ref = RepoRefT<repo::lib::RepoUUID>(obj);
 	},
 	repo::lib::RepoBSONException);
 
 	EXPECT_THROW({
-		auto ref = RepoRefT<std::string>(builder.obj());
+		auto ref = RepoRefT<std::string>(obj);
 	},
 	repo::lib::RepoBSONException);
 }
