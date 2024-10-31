@@ -136,4 +136,7 @@ TEST(RepoSequenceTest, Revision)
 	auto rid = repo::lib::RepoUUID::createUUID();
 	sequence = sequence.cloneAndAddRevision(rid);
 	EXPECT_THAT(((RepoBSON)sequence).getUUIDField(REPO_SEQUENCE_LABEL_REV_ID), Eq(rid));
+	EXPECT_THAT(((RepoBSON)sequence).hasField(REPO_SEQUENCE_LABEL_NAME), IsTrue());
+	EXPECT_THAT(((RepoBSON)sequence).getLongField(REPO_SEQUENCE_LABEL_START_DATE), Eq(0LL));
+	EXPECT_THAT(((RepoBSON)sequence).getLongField(REPO_SEQUENCE_LABEL_END_DATE), Eq(0LL));
 }
