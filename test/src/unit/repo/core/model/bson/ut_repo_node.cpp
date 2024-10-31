@@ -202,11 +202,16 @@ TEST(RepoNodeTest, PositionDependantTest)
 TEST(RepoNodeTest, ChangeName)
 {
 	RepoNode node;
+	auto uuid = node.getUniqueID();
 	EXPECT_TRUE(node.getName().empty());
 
 	auto name = "name";
 	node.changeName(name);
 	EXPECT_EQ(node.getName(), name);
+	EXPECT_EQ(node.getUniqueID(), uuid);
+
+	node.changeName(name, true);
+	EXPECT_THAT(node.getUniqueID(), Not(Eq(uuid)));
 }
 
 TEST(RepoNodeTest, AddParentTest)
@@ -215,13 +220,14 @@ TEST(RepoNodeTest, AddParentTest)
 
 	auto parentIds = std::vector<repo::lib::RepoUUID>({
 		repo::lib::RepoUUID::createUUID(),
+		repo::lib::RepoUUID::createUUID(),
 	});
 
 	node.addParent(parentIds[0]);
+	node.addParent(parentIds[1]);
 	EXPECT_THAT(node.getParentIDs(), UnorderedElementsAreArray(parentIds));
 
 	auto parentId = repo::lib::RepoUUID::createUUID();
-
 	parentIds.push_back(parentId);
 	node.addParent(parentId);
 	EXPECT_THAT(node.getParentIDs(), UnorderedElementsAreArray(parentIds));
@@ -229,7 +235,9 @@ TEST(RepoNodeTest, AddParentTest)
 	// Make sure we don't add the same parent multiple times
 
 	node.addParent(parentId);
+	EXPECT_THAT(node.getParentIDs(), UnorderedElementsAreArray(parentIds));
 
+	node.addParent(parentIds[0]);
 	EXPECT_THAT(node.getParentIDs(), UnorderedElementsAreArray(parentIds));
 }
 
