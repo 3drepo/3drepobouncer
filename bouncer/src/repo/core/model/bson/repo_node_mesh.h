@@ -128,7 +128,6 @@ namespace repo {
 				std::string grouping;
 				MeshNode::Primitive primitive;
 				std::vector<repo::lib::RepoVector3D> boundingBox;
-				std::vector<uint32_t> serializedFaces;
 				std::vector<repo_face_t> faces;
 				std::vector<repo::lib::RepoVector3D> vertices;
 				std::vector<repo::lib::RepoVector3D> normals;
@@ -285,15 +284,6 @@ namespace repo {
 				void updateBoundingBox();
 
 				static void transformBoundingBox(std::vector<repo::lib::RepoVector3D>& bounds, repo::lib::RepoMatrix matrix);
-
-			private:
-				/**
-				* Retrieve a vector of faces (serialised) from the bson object
-				*/
-				std::vector<uint32_t> getFacesSerialized() const
-				{
-					return serializedFaces;
-				}
 			};
 		} //namespace model
 	} //namespace core
