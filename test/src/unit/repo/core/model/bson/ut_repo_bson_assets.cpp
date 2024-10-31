@@ -112,7 +112,7 @@ TEST(RepoAssetsTest, SerialiseEmpty)
 	);
 
 	EXPECT_THAT(bson.getUUIDField(REPO_LABEL_ID), Eq(repo::lib::RepoUUID::defaultValue));
-	EXPECT_THAT(bson.hasField(REPO_ASSETS_LABEL_ASSETS), IsFalse()); 
+	EXPECT_THAT(bson.hasField(REPO_ASSETS_LABEL_ASSETS), IsFalse());
 	EXPECT_THAT(bson.hasField(REPO_ASSETS_LABEL_JSONFILES), IsFalse());
 	EXPECT_THAT(bson.hasField(REPO_LABEL_DATABASE), IsFalse());
 	EXPECT_THAT(bson.hasField(REPO_LABEL_MODEL), IsFalse());
