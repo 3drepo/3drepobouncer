@@ -235,11 +235,7 @@ void RepoScene::addInheritance(
 		}
 
 		//add parent to children
-		std::vector<repo::lib::RepoUUID> parents = childNode->getParentIDs();
-		if (std::find(parents.begin(), parents.end(), parentShareID) == parents.end())
-		{
-			childNode->addParent(parentShareID);
-		}
+		childNode->addParent(parentShareID);
 	}
 }
 
