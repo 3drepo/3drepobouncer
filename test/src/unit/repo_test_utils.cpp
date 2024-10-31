@@ -406,15 +406,11 @@ bool testing::compareVectors(const std::vector<repo_color4d_t>& v1, const std::v
 
 tm testing::getRandomTm()
 {
+	// Do this instead of building a tm struct directly, because the struct
+	// has day entries etc that can be quite tricky to get right...
 	tm tm;
-	tm.tm_sec = rand() % 60;
-	tm.tm_min = rand() % 60;
-	tm.tm_hour = rand() % 24;
-	tm.tm_mday = 1 + (rand() % 30);
-	tm.tm_mon = rand() % 12;
-	tm.tm_year = 70 + (rand() % 100); // Converting to mongo date requires the date be after the Unix epoch (1970)
-	tm.tm_wday = rand() % 7;
-	tm.tm_yday = rand() % 366;
-	tm.tm_isdst = rand() % 2;
+	time_t ten_years = 365 * 12 * 30 * 24 * 60;
+	auto t = time(0) + ((time_t)rand() % ten_years) - ((time_t)rand() % ten_years);
+	localtime_r(&t, &tm);
 	return tm;
 }
