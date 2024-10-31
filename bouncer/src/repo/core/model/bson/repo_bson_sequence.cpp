@@ -63,6 +63,10 @@ RepoSequence::operator RepoBSON() const
 	builder.append(REPO_SEQUENCE_LABEL_NAME, name);
 	builder.append(REPO_SEQUENCE_LABEL_START_DATE, (long long)firstFrame);
 	builder.append(REPO_SEQUENCE_LABEL_END_DATE, (long long)lastFrame);
+	if (!revisionId.isDefaultValue())
+	{
+		builder.append(REPO_SEQUENCE_LABEL_REV_ID, revisionId);
+	}
 
 	std::vector<RepoBSON> frames;
 
