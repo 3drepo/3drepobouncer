@@ -30,11 +30,6 @@
 using namespace repo::core::model;
 using namespace testing;
 
-TEST(RepoTaskTest, Constructor)
-{
-
-}
-
 TEST(RepoTaskTest, Serialise)
 {
 	auto name = "name";
