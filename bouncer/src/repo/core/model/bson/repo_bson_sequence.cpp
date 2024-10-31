@@ -83,7 +83,7 @@ RepoSequence::operator RepoBSON() const
 	return builder.obj();
 }
 
-bool RepoSequence::checkSize()
+bool RepoSequence::isSizeOK()
 {
 	RepoBSON bson = *this;
 	if (bson.objsize() > REPO_MAX_OBJ_SIZE)

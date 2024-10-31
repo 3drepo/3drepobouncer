@@ -86,7 +86,7 @@ namespace repo {
 					return uniqueId;
 				}
 
-				bool checkSize();
+				bool isSizeOK();
 
 			private:
 
