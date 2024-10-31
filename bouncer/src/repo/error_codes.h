@@ -93,5 +93,3 @@
 #define REPOERR_FILE_IS_ENCRYPTED 37
 //When image processing failed (only used by bouncer_worker)
 #define REPOERR_IMAGE_PROCESSING_FAILED 38
-//When the control flow reaches the outer exception handler in main
-#define REPOERR_UNHANDLED_EXCEPTION

@@ -133,7 +133,7 @@ int main(int argc, char* argv[]) {
 		}
 		catch (const repo::lib::RepoException &e) {
 			repoLogError(std::string("Exception in performOperation: ") + e.what());
-			return REPOERR_UNHANDLED_EXCEPTION;
+			return REPOERR_UNKNOWN_ERR;
 		}
 	}
 	else
