@@ -28,6 +28,7 @@ add_executable(3drepobouncerTest ${TEST_SOURCES} ${SOURCES})
 target_link_libraries(
 	3drepobouncerTest
 	gtest
+	gmock
 	${Boost_LIBRARIES}
 	${MONGO_CXX_DRIVER_LIBRARIES}
 	${ASSIMP_LIBRARIES}

@@ -49,7 +49,7 @@ namespace repo {
 			*/
 			uint8_t commitScene(
 				const std::string                     &databaseAd,
-				const repo::core::model::RepoBSON     *cred,
+				const std::string                     &user,
 				const std::string                     &bucketName,
 				const std::string                     &bucketRegion,
 				repo::core::model::RepoScene          *scene,
@@ -106,7 +106,7 @@ namespace repo {
 				const bool                                    &headRevision = false,
 				const bool                                    &ignoreRefScene = false,
 				const bool                                    &skeletonFetch = false,
-				const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus = {});
+				const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus = {});
 
 			/**
 			* Retrieve all RepoScene representations given a partially loaded scene.
@@ -222,7 +222,6 @@ namespace repo {
 			std::vector<repo::core::model::RepoBSON>
 				getAllFromCollectionTailable(
 					const std::string                             &databaseAd,
-					const repo::core::model::RepoBSON             *cred,
 					const std::string                             &database,
 					const std::string                             &collection,
 					const uint64_t                                &skip = 0,

@@ -106,7 +106,7 @@ mongo::DBClientBase* MongoConnectionPool::pop()
 			//Failed to reconnect to the database push the worker back and return a nullpointer
 			repoError << "Failed to reconnect to the mongo database. Retries exhausted";
 			push(worker);
-			worker = nullptr; 
+			worker = nullptr;
 		}
 	}
 

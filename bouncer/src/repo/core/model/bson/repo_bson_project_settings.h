@@ -20,143 +20,50 @@
 */
 
 #pragma once
-#include "repo_bson.h"
+
+#include "repo/repo_bouncer_global.h"
+#include <string>
+#include <ctime>
 
 namespace repo {
 	namespace core {
 		namespace model {
-			// TODO: make into header only
 
-			#define REPO_PROJECT_SETTINGS_LABEL_IS_FEDERATION "federate"
-			#define REPO_PROJECT_SETTINGS_LABEL_TIMESTAMP "timestamp"
+			class RepoBSON;
+
 			#define REPO_PROJECT_SETTINGS_LABEL_STATUS "status"
-			class REPO_API_EXPORT RepoProjectSettings : public RepoBSON
+			#define REPO_PROJECT_SETTINGS_LABEL_TIMESTAMP "timestamp"
+
+			class REPO_API_EXPORT RepoProjectSettings
 			{
 			public:
 
-				RepoProjectSettings() : RepoBSON() {}
+				// RepoProjectSettings can only be initialised from an existing
+				// document, and should only be used with upsert
 
-				RepoProjectSettings(RepoBSON bson) : RepoBSON(bson){}
+				RepoProjectSettings(RepoBSON bson);
 
 				~RepoProjectSettings() {}
 
-				/**
-				* Clone and merge new project settings into the existing info
-				* @proj new info that needs ot be added/updated
-				* @return returns a new project settings with fields updated
-				*/
-				RepoProjectSettings cloneAndClearStatus() const;
+				operator RepoBSON() const;
 
-				RepoProjectSettings cloneAndAddErrorStatus() const;
-				
+				void setErrorStatus();
 
-				/**
-				* Clone and merge new project settings into the existing info
-				* @proj new info that needs ot be added/updated
-				* @return returns a new project settings with fields updated
-				*/
-				RepoProjectSettings cloneAndMergeProjectSettings(const RepoProjectSettings &proj) const;
+				void clearErrorStatus();
 
-				/**
-				 * Get the avatar height if present or default value if not.
-				 * @brief getAvatarHeight
-				 * @return returns avatar height as double.
-				 */
-				double getAvatarHeight() const
+				const std::string& getProjectId() const
 				{
-					return getEmbeddedDouble(
-						REPO_LABEL_PROPERTIES,
-						REPO_LABEL_AVATAR_HEIGHT,
-						(double)REPO_DEFAULT_PROJECT_AVATAR_HEIGHT);
+					return id;
 				}
 
-				/**
-				* Get the description of the project for this settings
-				* @return returns project description as string
-				*/
-				std::string getDescription() const
+				const std::string& getStatus() const
 				{
-					return getStringField(REPO_LABEL_DESCRIPTION);
+					return status;
 				}
 
-				/**
-				* @return returns true if the project setting is for a federated project
-				*/
-				bool isFederate() const
-				{
-					return getBoolField(REPO_PROJECT_SETTINGS_LABEL_IS_FEDERATION);
-				}
-
-				/**
-				* Get the owner of the project for this settings
-				* @return returns owner name as string
-				*/
-				std::string getOwner() const
-				{
-					return getStringField(REPO_LABEL_OWNER);
-				}
-
-				double getPinSize() const
-				{
-					return getEmbeddedDouble(
-						REPO_LABEL_PROPERTIES,
-						REPO_LABEL_PIN_SIZE,
-						REPO_DEFAULT_PROJECT_PIN_SIZE);
-				}
-
-				/**
-				* Get the name of the project for this settings
-				* @return returns project name as string
-				*/
-				std::string getProjectName() const
-				{
-					return getStringField(REPO_LABEL_ID);
-				}
-
-				double getSpeed() const
-				{
-					return getEmbeddedDouble(
-						REPO_LABEL_PROPERTIES,
-						REPO_LABEL_SPEED,
-						REPO_DEFAULT_PROJECT_SPEED);
-				}
-
-				/**
-				* Get the type of the project for this settings
-				* @return returns project type as string
-				*/
-				std::string getType() const
-				{
-					return getStringField(REPO_LABEL_TYPE);
-				}
-
-				double getVisibilityLimit() const
-				{
-					return getEmbeddedDouble(
-						REPO_LABEL_PROPERTIES,
-						REPO_LABEL_VISIBILITY_LIMIT,
-						REPO_DEFAULT_PROJECT_VISIBILITY_LIMIT);
-				}
-
-				double getZFar() const
-				{
-					return getEmbeddedDouble(
-						REPO_LABEL_PROPERTIES,
-						REPO_LABEL_ZFAR,
-						REPO_DEFAULT_PROJECT_ZFAR);
-				}
-
-				/**
-				* Get the zNear of the project for this settings
-				* @return returns project zNear as double
-				*/
-				double getZNear() const
-				{
-					return getEmbeddedDouble(
-						REPO_LABEL_PROPERTIES,
-						REPO_LABEL_ZNEAR,
-						REPO_DEFAULT_PROJECT_ZNEAR);
-				}
+			private:
+				std::string id;
+				std::string status;
 			};
 		}// end namespace model
 	} // end namespace core

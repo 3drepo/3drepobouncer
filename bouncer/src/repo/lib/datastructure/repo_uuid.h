@@ -18,7 +18,9 @@
 #pragma once
 
 #include <boost/uuid/uuid.hpp>
-#include "../../core/model/bson/repo_bson_element.h"
+#include "repo/repo_bouncer_global.h"
+#include <vector>
+#include <ostream>
 
 namespace repo {
 	namespace lib {
@@ -33,7 +35,6 @@ namespace repo {
 			RepoUUID(const std::string &stringRep = defaultValue);
 
 			static RepoUUID createUUID();
-			static RepoUUID fromBSONElement(const repo::core::model::RepoBSONElement &ele);
 
 			/**
 			* Get the underlying binary data from the UUID
@@ -54,8 +55,6 @@ namespace repo {
 			std::string toString() const;
 
 			static const std::string defaultValue;
-
-			RepoUUID& operator=(const RepoUUID& uuid);
 
 			const boost::uuids::uuid& getInternalID() const { return id; }
 

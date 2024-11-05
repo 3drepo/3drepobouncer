@@ -148,6 +148,7 @@ option (REPO_BUILD_TOOLS "If the Command Line Tool is built in addition to the l
 option (REPO_BUILD_TESTS "If the test suite for the core bouncer logic is built in addition to the library" OFF)
 option (REPO_NO_GZIP "If zlib is not compiled into boost" OFF)
 option (REPO_ASSET_GENERATOR_SUPPORT "If the AssetGenerator is present and compiled into the library" ON)
+option (REPO_SVG_EXPORT_SUPPORT "If the customised Svg Exporter is present and compiled into the library" ON)
 
 
 #Build IFCUtils
@@ -163,6 +164,11 @@ endif()
 if (REPO_ASSET_GENERATOR_SUPPORT)
 	add_definitions(-DREPO_ASSET_GENERATOR_SUPPORT)
 	add_subdirectory(submodules/asset_generator)
+endif()
+
+if (ODA_SUPPORT AND REPO_SVG_EXPORT_SUPPORT) # (The Svg exporter is an ODA extension so ODA is required)
+	add_definitions(-DREPO_SVG_EXPORT_SUPPORT)
+	add_subdirectory(submodules/svgexport)
 endif()
 
 #bouncer library

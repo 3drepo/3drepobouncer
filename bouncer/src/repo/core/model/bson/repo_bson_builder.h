@@ -30,15 +30,14 @@
 #define strcasecmp _stricmp
 #endif
 
-#include <string>
-#include <mongo/bson/bson.h>
-#include "../../../lib/datastructure/repo_matrix.h"
-#include "../../../lib/datastructure/repo_uuid.h"
 #include "repo_bson.h"
-
-#include <boost/variant/static_visitor.hpp>
+#include "repo/lib/datastructure/repo_matrix.h"
+#include "repo/lib/datastructure/repo_uuid.h"
 #include "repo/lib/datastructure/repo_variant.h"
 
+#include <boost/variant/static_visitor.hpp>
+
+#include <string>
 #include <ctime>
 
 namespace repo {
@@ -50,9 +49,35 @@ namespace repo {
 				RepoBSONBuilder();
 				~RepoBSONBuilder();
 
+				using BinMapping = RepoBSON::BinMapping;
+
+				BinMapping& mapping()
+				{
+					return binMapping;
+				}
+
+			private:
+				BinMapping binMapping;
+
+			public:
+
+				// (Keep the templated definition in the header so the compiler
+				// can create concrete classes with the templated types when they
+				// are used)
+
+				template<typename T>
+				void appendLargeArray(std::string name, const std::vector<T>& data)
+				{
+					appendLargeArray(name, &data[0], data.size() * sizeof(data[0]));
+				}
+
+				void appendLargeArray(std::string name, const void* data, size_t size);
+
 				/**
-				* Append a vector as object into the bson
-				* This function creates an embedded RepoBSON and append that object as an array into the builder
+				* Append a vector as object into the bson. BSON arrays are
+				* documents where each field is a monotonically increasing
+				* integer. This method creates such a document and inserts
+				* it into the builder.
 				* @param label label of the array
 				* @param vec vector to append
 				*/
@@ -68,17 +93,12 @@ namespace repo {
 				}
 
 				void appendArray(
-					const std::string &label,
-					const RepoBSON &bson)
-				{
-					mongo::BSONObjBuilder::appendArray(label, bson);
-				}
+					const std::string& label,
+					const RepoBSON& bson);
 
-				
 				void appendRepoVariant(
 					const std::string& label,
 					const repo::lib::RepoVariant& item);
-
 
 				template<class T>
 				void append(
@@ -88,91 +108,15 @@ namespace repo {
 					mongo::BSONObjBuilder::append(label, item);
 				}
 
-				/**
-				* Append a list of pairs into an arraybson of objects
-				* @param label label to append the array against
-				* @param list list of pairs to append
-				* @param fstLabel label for #1 in the pair
-				* @param sndLabel label for #2 in the pair
-				*/
-				void appendArrayPair(
-					const std::string &label,
-					const std::list<std::pair<std::string, std::string> > &list,
-					const std::string &fstLabel,
-					const std::string &sndLabel
-					);
+				void appendElements(RepoBSON bson);
 
-				/*!
-				* Appends a pointer to some memory as binary mongo::BinDataGeneral type array.
-				* Appends given data as a binary data blob into a given builder. Also
-				* appends the count of the elements and the byte count of the array if
-				* labels are specified
-				* @param label Label for this element
-				* @param data the data itself
-				* @param byteCount size of data in bytes
-				* @param byteCountLabel label to store byteCount
-				* @param countLabel count label to store count
-				*/
-				template <class T>
-				void appendBinary(
-					const std::string &label,
-					const T           *data,
-					const uint32_t  &byteCount)
-				{
-					if (data && 0 < byteCount)
-					{
-						// Store data as a binary blob
-						try{
-							appendBinData(
-								label, byteCount, mongo::BinDataGeneral,
-								(void *)data);
-						}
-						catch (std::exception &e)
-						{
-							repoError << "Failed: " << e.what();
-							exit(-1);
-						}
-					}
-					else
-					{
-						repoWarning << "Trying to append a binary of size 0 into a bson. Skipping..";
-					}
-				}
+				void appendElementsUnique(RepoBSON bson);
 
-				void appendElements(RepoBSON bson) {
-					mongo::BSONObjBuilder::appendElements(bson);
-				}
+				void appendTimeStamp(std::string label);
 
-				void appendElementsUnique(RepoBSON bson) {
-					mongo::BSONObjBuilder::appendElementsUnique(bson);
-				}
+				void appendTime(std::string label, const int64_t& ts);
 
-				void appendTimeStamp(std::string label){
-					appendTime(label, time(NULL) * 1000);
-				}
-
-				void appendTime(std::string label, const int64_t &ts){
-					mongo::Date_t date = mongo::Date_t(ts);
-					mongo::BSONObjBuilder::append(label, date);
-				}
-				
-				void appendTime(std::string label, const tm& t) {
-					tm tmCpy = t; // Copy because mktime can alter the struct
-					int64_t time = static_cast<int64_t>(mktime(&tmCpy));
-
-					// Check for a unsuccessful conversion
-					if (time == -1)
-					{
-						repoError << "Failed converting date to mongo compatible format. tm malformed or date pre 1970?";
-						exit(-1);
-					}
-
-					// Convert from seconds to milliseconds
-					time = time * 1000;
-
-					// Append time
-					appendTime(label, time);
-				}
+				void appendTime(std::string label, const tm& t);
 
 				/**
 				* Appends a Vector but as an object, instead of an array.
@@ -187,19 +131,6 @@ namespace repo {
 				* @return returns a RepoBSON object with the fields given.
 				*/
 				RepoBSON obj();
-
-				mongo::BSONObj mongoObj() { return mongo::BSONObjBuilder::obj();  }
-
-				/**
-				* Builds the BSON object as a temporary instance. This allows the caller to
-				* peak at the contents of the builder, but the object will become invalid
-				* as soon as the builder is modified or released. These temporary objects do
-				* not contain the bin mappings.
-				*/
-				RepoBSON tempObj()
-				{
-					return RepoBSON(mongo::BSONObjBuilder::asTempObj());
-				}
 
 			private:
 				/**
@@ -245,27 +176,35 @@ namespace repo {
 						builder.appendTime(label, t);
 					}
 
+					void operator()(const repo::lib::RepoUUID& u) const {
+						builder.appendUUID(label, u); // Use the explicit version becaues the specialisation is declared later
+					}
+
 				private:
 					RepoBSONBuilder& builder;
 					std::string label;
 				};
 			};
 
-
 			// Template specialization
-			template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoUUID > (
+			template<> REPO_API_EXPORT void RepoBSONBuilder::append<repo::lib::RepoUUID>(
 				const std::string &label,
 				const repo::lib::RepoUUID &uuid
 			);
 
-			template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoVector3D > (
+			template<> REPO_API_EXPORT void RepoBSONBuilder::append<repo::lib::RepoVector3D>(
 				const std::string &label,
 				const repo::lib::RepoVector3D &vec
 			);
 
-			template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoMatrix > (
+			template<> REPO_API_EXPORT void RepoBSONBuilder::append<repo::lib::RepoMatrix>(
 				const std::string &label,
 				const repo::lib::RepoMatrix &mat
+			);
+
+			template<> REPO_API_EXPORT void RepoBSONBuilder::append<tm>(
+				const std::string& label,
+				const tm& mat
 			);
 		}// end namespace model
 	} // end namespace core

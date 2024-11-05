@@ -17,6 +17,7 @@
 
 #include "functions.h"
 
+#include <repo/core/model/bson/repo_bson.h>
 #include <repo/core/model/bson/repo_bson_factory.h>
 
 #include <sstream>
@@ -93,7 +94,7 @@ int32_t performOperation(
 			errCode = REPOERR_UNKNOWN_ERR;
 		}
 	}
-	if (command.command == cmdProcessDrawing)
+	else if (command.command == cmdProcessDrawing)
 	{
 		try {
 			errCode = processDrawing(controller, token, command);
@@ -307,8 +308,7 @@ int32_t generateStash(
 	{
 		auto revs = controller->getAllFromCollectionContinuous(token, dbName, project + ".history");
 		for (const auto& rev : revs) {
-			auto revNode = (const repo::core::model::RevisionNode)rev;
-			auto revId = revNode.getUniqueID();
+			auto revId = repo::core::model::RepoNode(rev).getUniqueID();
 			success &= _generateStash(controller, token, type, dbName, project, false, revId.toString());
 		}
 	}

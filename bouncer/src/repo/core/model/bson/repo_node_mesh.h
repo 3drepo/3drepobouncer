@@ -20,9 +20,8 @@
 
 #pragma once
 #include "repo_node.h"
-
-#include "../../../repo_bouncer_global.h"
-#include "../../../lib/datastructure/repo_structs.h"
+#include "repo/repo_bouncer_global.h"
+#include "repo/lib/datastructure/repo_structs.h"
 
 namespace repo {
 	namespace core {
@@ -85,18 +84,21 @@ namespace repo {
 				* @param RepoBSON object
 				* @param binMapping binary mapping of fields that are too big to fit within the bson
 				*/
-				MeshNode(RepoBSON bson,
-					const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping =
-					std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>()
-				);
+				MeshNode(RepoBSON bson);
 
 				/**
 				* Default deconstructor
 				*/
 				~MeshNode();
 
+			protected:
+				virtual void deserialise(RepoBSON&);
+				virtual void serialise(repo::core::model::RepoBSONBuilder&) const;
+
+			public:
+
 				/**
-				* Returns a number, indicating it's mesh format
+				* Returns a number, indicating the mesh's format
 				* maximum of 32 bit, each bit represent the presents of the following
 				*  vertices faces normals colors #uvs #primitive
 				* where vertices is the LSB
@@ -122,10 +124,23 @@ namespace repo {
 					return NodeType::MESH;
 				}
 
+			protected:
+				std::string grouping;
+				MeshNode::Primitive primitive;
+				std::vector<repo::lib::RepoVector3D> boundingBox;
+				std::vector<repo_face_t> faces;
+				std::vector<repo::lib::RepoVector3D> vertices;
+				std::vector<repo::lib::RepoVector3D> normals;
+				std::vector<std::vector<repo::lib::RepoVector2D>> channels;
+
+			public:
 				/**
 				* Get the mesh primitive type (points, lines, triangles, quads) (triangles if not set).
 				*/
-				virtual MeshNode::Primitive getPrimitive() const;
+				virtual MeshNode::Primitive getPrimitive() const
+				{
+					return primitive;
+				}
 
 				/**
 				* Check if the node is position dependant.
@@ -136,7 +151,10 @@ namespace repo {
 				* override this function.
 				* @return true if node is positionDependant.
 				*/
-				virtual bool positionDependant() { return true; }
+				virtual bool positionDependant()
+				{
+					return true;
+				}
 
 				/**
 				* Check if the node is semantically equal to another
@@ -147,12 +165,6 @@ namespace repo {
 				*/
 				virtual bool sEqual(const RepoNode &other) const;
 
-				/*
-				*	------------- Delusional modifiers --------------
-				*   These are like "setters" but not. We are actually
-				*   creating a new bson object with the changed field
-				*/
-
 				/**
 				*  Create a new object with transformation applied to the node
 				* default behaviour is do nothing. Children object
@@ -160,10 +172,16 @@ namespace repo {
 				* @param matrix transformation matrix to apply.
 				* @return returns a new object with transformation applied.
 				*/
-				virtual RepoNode cloneAndApplyTransformation(
+				MeshNode cloneAndApplyTransformation(
 					const repo::lib::RepoMatrix &matrix) const;
 
-				MeshNode cloneAndNoteGrouping(const std::string &group) const;
+				void applyTransformation(
+					const repo::lib::RepoMatrix& matrix);
+
+				void setGrouping(const std::string& grouping)
+				{
+					this->grouping = grouping;
+				}
 
 				/**
 				* --------- Convenience functions -----------
@@ -173,49 +191,99 @@ namespace repo {
 				* Retrieve the bounding box of this mesh
 				* @return returns a vector of size 2, containing the bounding box.
 				*/
-				std::vector<repo::lib::RepoVector3D> getBoundingBox() const;
+				std::vector<repo::lib::RepoVector3D> getBoundingBox() const
+				{
+					return boundingBox;
+				}
+
+				void setBoundingBox(const std::vector<repo::lib::RepoVector3D>& bounds)
+				{
+					boundingBox = bounds;
+				}
 
 				static std::vector<repo::lib::RepoVector3D> getBoundingBox(RepoBSON &bbArr);
 
 				/**
 				* Retrieve a vector of faces from the bson object
 				*/
-				std::vector<repo_face_t> getFaces() const;
+				std::vector<repo_face_t> getFaces() const
+				{
+					return faces;
+				}
+
+				void setFaces(const std::vector<repo_face_t>& faces)
+				{
+					this->faces = std::vector<repo_face_t>(faces.begin(), faces.end());
+					if (this->faces.size()) {
+						primitive = (Primitive)this->faces[0].size();
+					}
+				}
 
 				// get sepcific grouping for mesh batching (empty string if not specified)
-				std::string getGrouping() const;
+				std::string getGrouping() const
+				{
+					return grouping;
+				}
 
 				/**
 				* Retrieve a vector of vertices from the bson object
 				*/
-				std::vector<repo::lib::RepoVector3D> getNormals() const;
+				const std::vector<repo::lib::RepoVector3D>& getNormals() const
+				{
+					return normals;
+				}
 
-				/**
-				* Retrieve a vector of UV Channels from the bson object
-				*/
-				std::vector<repo::lib::RepoVector2D> getUVChannels() const;
+				void setNormals(const std::vector<repo::lib::RepoVector3D>& normals)
+				{
+					this->normals = normals;
+				}
+
+				std::vector<repo::lib::RepoVector2D> getUVChannelsSerialised() const;
 
 				/**
 				* Retrieve a vector of UV Channels, separated by channels
 				*/
-				std::vector<std::vector<repo::lib::RepoVector2D>> getUVChannelsSeparated() const;
+				std::vector<std::vector<repo::lib::RepoVector2D>> getUVChannelsSeparated() const
+				{
+					return channels;
+				}
+
+				void setUVChannel(size_t channel, std::vector<repo::lib::RepoVector2D> uvs);
 
 				/**
 				* Retrieve a vector of vertices from the bson object
 				*/
-				std::vector<repo::lib::RepoVector3D> getVertices() const;
+				const std::vector<repo::lib::RepoVector3D>& getVertices() const
+				{
+					return vertices;
+				}
 
-				std::uint32_t getNumFaces() const;
+				void setVertices(const std::vector<repo::lib::RepoVector3D>& vertices, bool updateBoundingBox = false)
+				{
+					this->vertices = std::vector<repo::lib::RepoVector3D>(vertices.begin(), vertices.end());
+					if (updateBoundingBox) {
+						this->updateBoundingBox();
+					}
+				}
 
-				std::uint32_t getNumVertices() const;
+				std::uint32_t getNumFaces() const
+				{
+					return faces.size();
+				}
 
-				std::uint32_t getNumUVChannels() const;
+				std::uint32_t getNumVertices() const
+				{
+					return vertices.size();
+				}
 
-			private:
-				/**
-				* Retrieve a vector of faces (serialised) from the bson object
-				*/
-				std::vector<uint32_t> getFacesSerialized() const;
+				std::uint32_t getNumUVChannels() const
+				{
+					return channels.size();
+				}
+
+				void updateBoundingBox();
+
+				static void transformBoundingBox(std::vector<repo::lib::RepoVector3D>& bounds, repo::lib::RepoMatrix matrix);
 			};
 		} //namespace model
 	} //namespace core

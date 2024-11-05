@@ -26,6 +26,7 @@
 #include "repo_bson_sequence.h"
 #include "repo_bson_task.h"
 #include "repo_bson_assets.h"
+#include "repo_bson_calibration.h"
 #include "repo_node.h"
 #include "repo_node_metadata.h"
 #include "repo_node_material.h"
@@ -35,7 +36,6 @@
 #include "repo_node_model_revision.h"
 #include "repo_node_texture.h"
 #include "repo_node_transformation.h"
-#include "repo_bson_builder.h"
 
 #include "repo/lib/datastructure/repo_variant.h"
 
@@ -55,12 +55,12 @@ namespace repo {
 				*/
 
 				template<typename IdType>
-				static RepoRef makeRepoRef(
+				static RepoRefT<IdType> makeRepoRef(
 					const IdType &id,
 					const RepoRef::RefType &type,
 					const std::string &link,
 					const uint32_t size,
-					const repo::core::model::RepoBSON &metadata = repo::core::model::RepoBSON());
+					const RepoRef::Metadata& metadata = {});
 
 				/**
 				* Create a RepoBundles list BSON
@@ -84,42 +84,28 @@ namespace repo {
 					const std::vector<std::string>& repoJsonFiles,
 					const std::vector<RepoSupermeshMetadata> metadata);
 
+				/**
+				* Create a Drawing Calibration BSON
+				* @param projectId uuid of the project
+				* @param drawingId uuid of the drawing
+				* @param revisionId uuid of the revision
+				* @param horizontal3d two reference points in the 3d space
+				* @param horizontal2d two reference points in the 2d space
+				* @param units the units used for the values.
+				* @return returns a RepoCalibration
+				*/
+				static RepoCalibration makeRepoCalibration(
+					const repo::lib::RepoUUID& projectId,
+					const repo::lib::RepoUUID& drawingId,
+					const repo::lib::RepoUUID& revisionId,
+					const std::vector<repo::lib::RepoVector3D>& horizontal3d,
+					const std::vector<repo::lib::RepoVector2D>& horizontal2d,
+					const std::string& units
+				);
+
 				/*
 				* -------------------- REPO NODES ------------------------
 				*/
-
-				/**
-				* Appends default information onto a RepoBSONBuilder and returns
-				* an object constructed by the builder.
-				*/
-				static RepoBSON appendDefaults(
-					const std::string &type,
-					const unsigned int api = REPO_NODE_API_LEVEL_0,
-					const repo::lib::RepoUUID &sharedId = repo::lib::RepoUUID::createUUID(),
-					const std::string &name = std::string(),
-					const std::vector<repo::lib::RepoUUID> &parents = std::vector<repo::lib::RepoUUID>(),
-					const repo::lib::RepoUUID &uniqueID = repo::lib::RepoUUID::createUUID());
-
-				/**
-				* Append default information onto the a RepoBSONBuilder
-				* This is used for children nodes to create their BSONs.
-				* @param type type of node
-				* @param api api level of this node
-				* @param shareID shared ID of this node
-				* @param name name of the node
-				* @param parents vector of shared IDs of this node's parents
-				* @param uniqueID specify unique ID for the object (do not use unless you are
-				*			sure you know what you're doing!)
-				* @ return return a bson object with the default parameters
-				*/
-				static void appendDefaults(
-					RepoBSONBuilder& builder,
-					const std::string& type,
-					const unsigned int api = REPO_NODE_API_LEVEL_0,
-					const repo::lib::RepoUUID& sharedId = repo::lib::RepoUUID::createUUID(),
-					const std::string& name = std::string(),
-					const std::vector<repo::lib::RepoUUID>& parents = std::vector<repo::lib::RepoUUID>(),
-					const repo::lib::RepoUUID& uniqueID = repo::lib::RepoUUID::createUUID());
 
 				/**
 				* Create a Material Node
@@ -305,20 +291,6 @@ namespace repo {
 					const repo::lib::RepoUUID &parent = repo::lib::RepoUUID::createUUID(),
 					const repo::lib::RepoUUID &id = repo::lib::RepoUUID::createUUID()
 				);
-
-			private:
-				/*
-				* The following methods are used internally by the makeMeshNode and
-				* make SupermeshNode methods.
-				*/
-
-				static void appendBounds(class RepoBSONBinMappingBuilder& builder, const std::vector<std::vector<float>>& boundingBox);
-				static void appendVertices(class RepoBSONBinMappingBuilder& builder, const std::vector<repo::lib::RepoVector3D>& vertices);
-				static void appendFaces(class RepoBSONBinMappingBuilder& builder, const std::vector<repo_face_t>& faces);
-				static void appendNormals(class RepoBSONBinMappingBuilder& builder, const std::vector<repo::lib::RepoVector3D>& normals);
-				static void appendColors(class RepoBSONBinMappingBuilder& builder, const std::vector<repo_color4d_t>& colors);
-				static void appendUVChannels(class RepoBSONBinMappingBuilder& builder, const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels);
-				static void appendSubmeshIds(class RepoBSONBinMappingBuilder& builder, const std::vector<float>& submeshIds);
 			};
 		} //namespace model
 	} //namespace core

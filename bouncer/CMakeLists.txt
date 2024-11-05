@@ -3,10 +3,9 @@
 add_subdirectory(src)
 
 set(VERSION_MAJOR 5)
-set(VERSION_MINOR 11_4)
+set(VERSION_MINOR 12_0)
 
 include_directories(
-	${Boost_INCLUDE_DIRS}
 	${MONGO_CXX_DRIVER_MONGO_INCLUDE_DIR}
 	${MONGO_CXX_DRIVER_BSON_INCLUDE_DIR}
 	${ASSIMP_INCLUDE_DIR}
@@ -26,8 +25,7 @@ add_library(3drepobouncer SHARED ${SOURCES})
 set_target_properties(3drepobouncer PROPERTIES RELEASE_POSTFIX "_${VERSION_MAJOR}_${VERSION_MINOR}")
 set_target_properties(3drepobouncer PROPERTIES DEBUG_POSTFIX "_${VERSION_MAJOR}_${VERSION_MINOR}_d")
 
-target_link_libraries(
-	3drepobouncer
+target_link_libraries(3drepobouncer
 	${Boost_LIBRARIES}
 	${MONGO_CXX_DRIVER_LIBRARIES}
 	${ASSIMP_LIBRARIES}

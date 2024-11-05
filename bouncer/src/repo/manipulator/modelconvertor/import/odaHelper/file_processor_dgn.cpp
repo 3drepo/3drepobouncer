@@ -286,12 +286,11 @@ void FileProcessorDgn::importModel(OdDbBaseDatabase *pDb,
 
 void FileProcessorDgn::importDrawing(OdDgDatabasePtr pDb, const ODCOLORREF* pPallete, int numColors, OdDgElementId view)
 {
-	// This method creates an SVG output device, which is a type of rasteriser,
-	// provided by ODA. To use it, a Gi (graphics interface) context is created
-	// for the specific database type, and bound to the device. When the device
-	// is updated, the SVG is written to the stream assigned to "Output".
+	// SvgExport is the name of the 3DRepo variant of the SVG exporter module.
+	// The actual module name searched for will have an SDK and compiler version
+	// suffix, depending on platform. This is handled by CMake.
 
-	OdGsModulePtr pModule = ::odrxDynamicLinker()->loadModule(OdSvgExportModuleName, false);
+	OdGsModulePtr pModule = ::odrxDynamicLinker()->loadModule(L"SvgExport", false);
 	OdGsDevicePtr dev = pModule->createDevice();
 	if (!dev.isNull())
 	{
@@ -340,28 +339,17 @@ void FileProcessorDgn::importDrawing(OdDgDatabasePtr pDb, const ODCOLORREF* pPal
 		// betweeen the SVG and world coordinate systems.
 		// The graphics system (Gs) view https://docs.opendesign.com/tv/gs_OdGsView.html
 		// is used to derive points that map between the WCS of the drawing and
-		// the svg file.
+		// the svg file for autocalibration.
 
 		const OdGsView* pGsView = pDeviceSvg->viewAt(0);
+		updateDrawingHorizontalCalibration(pGsView, drawingCollector->calibration);
 
-		auto worldToDeviceMatrix = pGsView->worldToDeviceMatrix();
-		auto objectToDeviceMatrix = pGsView->objectToDeviceMatrix();
+		// And set the calibration units
 
-		// Pick three points (two vectors) to describe the map. The transform
-		// can be computed from these each time from then on.
-
-		OdGePoint3d a(0, 0, 0);
-		OdGePoint3d b(1, 0, 0);
-		OdGePoint3d c(0, 1, 0);
-
-		// The following vector contains the points in the SVG file corresponding
-		// to the 3D coordinates above. Add these to the appropriate schema when
-		// it is ready...
-
-		std::vector<OdGePoint3d> points;
-		points.push_back(worldToDeviceMatrix * a);
-		points.push_back(worldToDeviceMatrix * b);
-		points.push_back(worldToDeviceMatrix * c);
+		OdDgElementId elementActId = pDb->getActiveModelId();
+		OdDgModelPtr pModel = elementActId.safeOpenObject();
+		repo::manipulator::modelconvertor::ModelUnits units = determineModelUnits(pModel->getMasterUnit());
+		drawingCollector->calibration.units = repo::manipulator::modelconvertor::toUnitsString(units);
 
 		// The call to update is what will create the svg in the memory stream
 
@@ -369,21 +357,10 @@ void FileProcessorDgn::importDrawing(OdDgDatabasePtr pDb, const ODCOLORREF* pPal
 
 		// Finally copy the contents of the stream to the collector's buffer
 
-		// Copy the SVG contents into a string
-
-		std::vector<char> buffer;
+		std::vector<uint8_t> buffer;
 		buffer.resize(stream->tell());
 		stream->seek(0, OdDb::FilerSeekType::kSeekFromStart);
 		stream->getBytes(buffer.data(), stream->length());
-		std::string svg(buffer.data(), buffer.size());
-
-		// Perform any further necessary manipulations. In this case we add the width
-		// and height attributes.
-
-		svg.insert(61, "width=\"1024\" height=\"768\" "); // 61 is just after the svg tag. This offset is fixed for exporter version.
-
-		// Provide the string to the collector as a vector
-
-		std::copy(svg.c_str(), svg.c_str() + svg.length(), std::back_inserter(drawingCollector->data));
+		drawingCollector->data = buffer;
 	}
 }
