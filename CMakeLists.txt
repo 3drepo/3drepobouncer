@@ -25,7 +25,9 @@ project("3drepobouncer")
 cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -std=c++14 -pthread")
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -std=c++20 -pthread")
 if(${APPLE})
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -framework Foundation")
 endif()
@@ -67,13 +69,6 @@ add_definitions(-DBOOST_OPTIONAL_USE_OLD_DEFINITION_OF_NONE)
 
 if(NOT ${Boost_FOUND})
 	message(FATAL_ERROR "Cannot find boost")
-endif()
-
-
-#================MONGO SETTINGS=======================
-find_package(Mongo REQUIRED)
-if(NOT ${MONGO_FOUND})
-	message(FATAL_ERROR "Cannot find mongo cxx driver")
 endif()
 
 #================MONGO CXX DRIVER SETTINGS=======================

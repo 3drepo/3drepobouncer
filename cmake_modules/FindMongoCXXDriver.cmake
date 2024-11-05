@@ -29,21 +29,17 @@ if(DEFINED ENV{MONGO_CXX_DRIVER_ROOT})
 	find_path(MONGO_CXX_DRIVER_BSON_INCLUDE_DIR bsoncxx/types.hpp
 		${MONGO_CXX_DRIVER_ROOT}/include/bsoncxx/v_noabi
 		)    
-	find_library(MONGO_CXX_DRIVER_LIBRARIES_RELEASE NAMES mongocxx-v_noabi-rhs-md
+	find_library(MONGO_CXX_DRIVER_LIBRARIES_RELEASE
+		NAMES
+			mongocxx-v_noabi-rhs-md
+			mongocxx-v_noabi-rhs-x64-v143-md.lib
 		PATHS
-		${MONGO_CXX_DRIVER_ROOT}/lib
+			${MONGO_CXX_DRIVER_ROOT}/lib
 	)	
 	
-	find_library(MONGO_CXX_DRIVER_LIBRARIES_DEBUG NAMES mongocxx-v_noabi-dhs-mdd
-		PATHS
-		${MONGO_CXX_DRIVER_ROOT}/debug/lib
-	)
-
 	set(MONGO_CXX_DRIVER_LIBRARIES
-		debug ${MONGO_CXX_DRIVER_LIBRARIES_DEBUG}
 		optimized ${MONGO_CXX_DRIVER_LIBRARIES_RELEASE}
-		debug ${MONGO_CXX_DRIVER_LIBRARIES_DEBUG}
-		)
+	)
 endif()
 
 if(MONGO_CXX_DRIVER_MONGO_INCLUDE_DIR AND MONGO_CXX_DRIVER_BSON_INCLUDE_DIR AND MONGO_CXX_DRIVER_LIBRARIES)
