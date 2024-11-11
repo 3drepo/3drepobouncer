@@ -54,8 +54,6 @@ namespace repo {
 					UNKNOWN,
 				};
 
-				RepoRef();
-
 				// Only FS type is currently supported
 				RepoRef(
 					const std::string& link,
@@ -78,8 +76,6 @@ namespace repo {
 				size_t getFileSize() const;
 
 				RefType getType() const;
-
-				bool isEmpty() const;
 
 			protected:
 

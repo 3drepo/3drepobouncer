@@ -174,8 +174,9 @@ repo::core::model::RepoRefT<std::string> FileManager::getFileRef(
 		dbHandler->findOneByCriteria(
 			databaseName,
 			collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
-			criteria)
-		);
+			criteria
+		)
+	);
 }
 
 repo::core::model::RepoRefT<repo::lib::RepoUUID> FileManager::getFileRef(
@@ -189,8 +190,9 @@ repo::core::model::RepoRefT<repo::lib::RepoUUID> FileManager::getFileRef(
 		dbHandler->findOneByCriteria(
 			databaseName,
 			collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
-			criteria)
-		);
+			criteria
+		)
+	);
 }
 
 template<typename IdType>
@@ -243,28 +245,18 @@ std::ifstream FileManager::getFileStream(
 ) {
 	std::ifstream fs;
 	auto ref = getFileRef(databaseName, collectionNamePrefix, fileName);
-	if (ref.isEmpty())
-	{
-		repoTrace << "Failed: cannot find file ref "
-			<< cleanFileName(fileName) << " from "
-			<< databaseName << "/"
-			<< collectionNamePrefix << "." << REPO_COLLECTION_EXT_REF;
-	}
-	else
-	{
-		const auto keyName = ref.getRefLink();
-		const auto type = ref.getType(); //Should return enum
+	const auto keyName = ref.getRefLink();
+	const auto type = ref.getType(); //Should return enum
 
-		switch (type) {
-			case repo::core::model::RepoRef::RefType::FS:
-			{
-				repoTrace << "Getting file (" << keyName << ") from FS";
-				fs = fsHandler->getFileStream(databaseName, collectionNamePrefix, keyName);
-			}
-			break;
-		default:
-			repoError << "Trying to read a file from " << repo::core::model::RepoRef::convertTypeAsString(type) << " but connection to this service is not configured.";
-		}
+	switch (type) {
+	case repo::core::model::RepoRef::RefType::FS:
+	{
+		repoTrace << "Getting file (" << keyName << ") from FS";
+		fs = fsHandler->getFileStream(databaseName, collectionNamePrefix, keyName);
+	}
+	break;
+	default:
+		repoError << "Trying to read a file from " << repo::core::model::RepoRef::convertTypeAsString(type) << " but connection to this service is not configured.";
 	}
 
 	return fs;

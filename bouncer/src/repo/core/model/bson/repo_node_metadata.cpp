@@ -53,7 +53,7 @@ void MetadataNode::deserialise(RepoBSON& bson)
 			}
 			else
 			{
-				metadataMap[key] = ""; // The only type that can be null (and so result in a non-existend field) is the string, so initialise to the default of this
+				metadataMap[key] = ""; // The only type that can be null (and so result in a non-existent field) is the string, so initialise to the default of this
 			}
 		}
 	}

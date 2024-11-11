@@ -213,24 +213,6 @@ repo::core::model::RepoBSON createRepoBSON(
 			auto buffer = blobHandler.readToBuffer(fileservice::DataRef::deserialise(ref));
 			orgBson.initBinaryBuffer(buffer);
 		}
-		else if (orgBson.hasField(REPO_LABEL_OVERSIZED_FILES)) {
-			// The _extRef support has been deprecated, and collections should have been
-			// updated by the 5.4 migration scripts.
-			// In case we have any old documents remaining, this snippet can read the data,
-			// though the filenames will not be accessible.
-
-			auto extRefbson = orgBson.getObjectField(REPO_LABEL_OVERSIZED_FILES);
-			std::set<std::string> fieldNames = extRefbson.getFieldNames();
-			repo::core::model::RepoBSON::BinMapping map;
-			auto fileManager = fileservice::FileManager::getManager();
-			for (const auto& name : fieldNames)
-			{
-				auto fname = extRefbson.getStringField(name);
-				auto file = fileManager->getFile(database, collection, fname);
-				map[name] = file;
-			}
-			return repo::core::model::RepoBSON(obj, map);
-		}
 	}
 	return orgBson;
 }

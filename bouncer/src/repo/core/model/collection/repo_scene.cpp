@@ -625,8 +625,9 @@ bool RepoScene::commitSequence(
 	bool success = true;
 	if (frameStates.size()) {
 		auto sequenceCol = projectName + "." + REPO_COLLECTION_SEQUENCE;
+		sequence.setRevision(revID);
 		if (handler->insertDocument(
-			databaseName, sequenceCol, (RepoBSON)sequence.cloneAndAddRevision(revID), err)) {
+			databaseName, sequenceCol, sequence, err)) {
 			for (const auto &state : frameStates) {
 				if (!manager->uploadFileAndCommit(databaseName, sequenceCol, state.first, state.second)) {
 					repoError << "Failed to commit a sequence state.";

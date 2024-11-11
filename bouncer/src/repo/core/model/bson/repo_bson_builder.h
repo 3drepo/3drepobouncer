@@ -167,9 +167,7 @@ namespace repo {
 					}
 
 					void operator()(const std::string& s) const {
-						// Filter out empty strings
-						if (s != "")
-							builder.append(label, s);
+						builder.append(label, s);
 					}
 
 					void operator()(const tm& t) const {

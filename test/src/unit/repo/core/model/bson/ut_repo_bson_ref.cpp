@@ -37,10 +37,12 @@ TEST(RepoRefTest, ConvertTypeAsString)
 
 TEST(RepoRefTest, Constructor)
 {
-	auto ref = RepoRef();
+	auto ref = RepoRef("link", 1);
 
-	EXPECT_THAT(ref.isEmpty(), IsTrue());
-	EXPECT_THAT(ref.getRefLink(), IsEmpty());
+	EXPECT_THAT(ref.getRefLink(), Eq("link"));
+	EXPECT_THAT(ref.getFileSize(), Eq(1));
+	EXPECT_THAT(ref.getFileName(), IsEmpty());
+	EXPECT_THAT(ref.getType(), Eq(RepoRef::RefType::FS));
 }
 
 TEST(RepoRefTest, Factory)
@@ -186,7 +188,7 @@ TEST(RepoRefTest, Name)
 
 	// Names should be empty by default.
 
-	auto a = RepoRef();
+	auto a = RepoRef("link", 1);
 	EXPECT_THAT(a.getFileName(), IsEmpty());
 
 	RepoBSONBuilder B;
