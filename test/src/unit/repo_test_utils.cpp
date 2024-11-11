@@ -22,6 +22,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest-matchers.h>
+#include <time.h>
 
 using namespace repo::core::model;
 using namespace testing;
@@ -408,9 +409,8 @@ tm testing::getRandomTm()
 {
 	// Do this instead of building a tm struct directly, because the struct
 	// has day entries etc that can be quite tricky to get right...
-	tm tm;
 	time_t ten_years = 365 * 12 * 30 * 24 * 60;
 	auto t = time(0) + ((time_t)rand() % ten_years) - ((time_t)rand() % ten_years);
-	localtime_r(&t, &tm);
+	tm tm = *localtime(&t);
 	return tm;
 }

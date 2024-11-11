@@ -176,8 +176,10 @@ TEST(RepoRefTest, DeserialiseUUID)
 TEST(RepoRefTest, DeserialiseEmpty)
 {
 	repo::core::model::RepoBSONBuilder builder;
-	auto ref = RepoRef(builder.obj()); // building this should not throw an exception
-	EXPECT_THAT(ref.isEmpty(), IsTrue());
+	EXPECT_THROW({
+		auto ref = RepoRef(builder.obj()); // building this should not throw an exception
+	},
+	repo::lib::RepoBSONException);
 }
 
 TEST(RepoRefTest, Name)
@@ -192,22 +194,20 @@ TEST(RepoRefTest, Name)
 	EXPECT_THAT(a.getFileName(), IsEmpty());
 
 	RepoBSONBuilder B;
-	B.append(REPO_REF_LABEL_SIZE, 1); // RepoRef expects all of these otherwise it will initialise to empty
+	B.append(REPO_REF_LABEL_SIZE, 1);
 	B.append(REPO_REF_LABEL_LINK, "link");
 	B.append(REPO_REF_LABEL_TYPE, "fs");
 	auto b = RepoRef(B.obj());
-	EXPECT_THAT(b.isEmpty(), IsFalse());
 	EXPECT_THAT(b.getFileName(), IsEmpty());
 
 	// Another process has set the name field
 
 	RepoBSONBuilder C;
-	C.append(REPO_REF_LABEL_SIZE, 1); // RepoRef expects all of these otherwise it will initialise to empty
+	C.append(REPO_REF_LABEL_SIZE, 1);
 	C.append(REPO_REF_LABEL_LINK, "link");
 	C.append(REPO_REF_LABEL_TYPE, "fs");
 	C.append(REPO_NODE_LABEL_NAME, "myName");
 	auto c = RepoRef(C.obj());
-	EXPECT_THAT(c.isEmpty(), IsFalse());
 	EXPECT_THAT(c.getFileName(), "myName");
 
 	// It is also possible to set a name if the metadata key matches the field
