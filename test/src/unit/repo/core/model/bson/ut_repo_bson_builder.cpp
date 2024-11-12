@@ -297,6 +297,7 @@ TEST(RepoBSONBuilderTest, AppendRepoVariant)
 	repo::lib::RepoVariant vLong = 101LL;
 	repo::lib::RepoVariant vDouble = 99.99;
 	repo::lib::RepoVariant vString = std::string("string");
+	repo::lib::RepoVariant vEmptyString = std::string("");
 	repo::lib::RepoVariant vTime = getRandomTm();
 	repo::lib::RepoVariant vUUID = repo::lib::RepoUUID::createUUID();
 
@@ -305,6 +306,7 @@ TEST(RepoBSONBuilderTest, AppendRepoVariant)
 	builder.appendRepoVariant("vLong", vLong);
 	builder.appendRepoVariant("vDouble", vDouble);
 	builder.appendRepoVariant("vString", vString);
+	builder.appendRepoVariant("vEmptyString", vEmptyString);
 	builder.appendRepoVariant("vTime", vTime);
 	builder.appendRepoVariant("vUUID", vUUID);
 
@@ -315,6 +317,7 @@ TEST(RepoBSONBuilderTest, AppendRepoVariant)
 	EXPECT_THAT(bson.getLongField("vLong"), Eq(boost::get<long long>(vLong)));
 	EXPECT_THAT(bson.getDoubleField("vDouble"), Eq(boost::get<double>(vDouble)));
 	EXPECT_THAT(bson.getStringField("vString"), Eq(boost::get<std::string>(vString)));
+	EXPECT_THAT(bson.getStringField("vEmptyString"), Eq(std::string("")));
 	EXPECT_THAT(bson.getTimeStampField("vTime"), Eq(mktime(&boost::get<tm>(vTime))));
 	EXPECT_THAT(bson.getUUIDField("vUUID"), Eq(boost::get<repo::lib::RepoUUID>(vUUID)));
 }
