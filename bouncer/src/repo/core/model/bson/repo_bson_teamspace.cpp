@@ -21,13 +21,13 @@
 
 using namespace repo::core::model;
 
-#define REPO_USER_LABEL_ADDONS "addOns"
+#define REPO_TEAMSPACE_LEVEL_ADDONS "addOns"
 
 RepoTeamspace::RepoTeamspace(RepoBSON bson)
 {
-	if (bson.hasField(REPO_USER_LABEL_ADDONS))
+	if (bson.hasField(REPO_TEAMSPACE_LEVEL_ADDONS))
 	{
-		auto addons = bson.getObjectField(REPO_USER_LABEL_ADDONS);
+		auto addons = bson.getObjectField(REPO_TEAMSPACE_LEVEL_ADDONS);
 		for (const auto& name : addons.getFieldNames())
 		{
 			auto addon = addons.getField(name);

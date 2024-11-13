@@ -33,12 +33,6 @@ std::string RepoRef::convertTypeAsString(const RefType &type) {
 	}
 }
 
-RepoRef::RepoRef()
-{
-	size = 0;
-	type = RefType::UNKNOWN;
-}
-
 RepoRef::RepoRef(
 	const std::string& link,
 	const size_t& size,
@@ -54,24 +48,16 @@ RepoRef::RepoRef(
 RepoRef::RepoRef(RepoBSON bson)
 {
 	type = RefType::UNKNOWN;
-	try {
-		size = bson.getIntField(REPO_REF_LABEL_SIZE);
-		link = bson.getStringField(REPO_REF_LABEL_LINK);
-		if (bson.hasField(REPO_NODE_LABEL_NAME))
-		{
-			name = bson.getStringField(REPO_NODE_LABEL_NAME);
-		}
-		auto typeStr = bson.getStringField(REPO_REF_LABEL_TYPE);
-		if (typeStr == REPO_REF_TYPE_FS)
-			type = RefType::FS;
-	}
-	catch (repo::lib::RepoBSONException)
+	size = bson.getIntField(REPO_REF_LABEL_SIZE);
+	link = bson.getStringField(REPO_REF_LABEL_LINK);
+	if (bson.hasField(REPO_NODE_LABEL_NAME))
 	{
-		// A failure of the required properties should result in an empty node
-		size = 0;
-		link = "";
-		name = "";
-		type = RefType::UNKNOWN;
+		name = bson.getStringField(REPO_NODE_LABEL_NAME);
+	}
+	auto typeStr = bson.getStringField(REPO_REF_LABEL_TYPE);
+	if (typeStr == REPO_REF_TYPE_FS)
+	{
+		type = RefType::FS;
 	}
 }
 
@@ -119,11 +105,6 @@ template<class IdType>
 IdType RepoRefT<IdType>::getId() const
 {
 	return id;
-}
-
-bool RepoRef::isEmpty() const
-{
-	return link.empty() || size == 0 || type == RefType::UNKNOWN;
 }
 
 /* Explicit specialisations so we use the correct methods from RepoBSON */

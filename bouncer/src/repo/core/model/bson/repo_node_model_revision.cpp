@@ -92,16 +92,15 @@ void ModelRevisionNode::serialise(repo::core::model::RepoBSONBuilder& builder) c
 
 bool ModelRevisionNode::sEqual(const RepoNode& other) const
 {
-	auto otherMesh = dynamic_cast<const ModelRevisionNode*>(&other);
+	auto otherRevision = dynamic_cast<const ModelRevisionNode*>(&other);
 
 	bool success = false;
-	if (otherMesh != nullptr)
+	if (otherRevision != nullptr)
 	{
-		success = true;
-		success &= offset == otherMesh->offset;
-		success &= message == otherMesh->message;
-		success &= tag == otherMesh->tag;
-		success &= files == otherMesh->files;
+		success = offset == otherRevision->offset;
+		success &= message == otherRevision->message;
+		success &= tag == otherRevision->tag;
+		success &= files == otherRevision->files;
 	}
 
 	return success;

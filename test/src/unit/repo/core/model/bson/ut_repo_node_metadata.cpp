@@ -269,18 +269,8 @@ TEST(MetaNodeTest, CopyConstructor)
 
 TEST(MetaNodeTest, EmptyValues)
 {
-	// In at least some versions of bouncer, fields will null values were not
-	// written to the documents, meaning it is possible to get a metadata entry
-	// without a value.
-
-	// The only type for which it is possible to have a null value is the
-	// string. Therefore, when deserialising, MetadataNode should read missing
-	// keys as empty strings.
-
-	// For future reference, the std variant does have the concept of a
-	// monostate. This should be considered further however, since null metadata
-	// is not something explicitly supported, and we know unambiguously how the
-	// document ended up without a value (an empty string).
+	// Check that empty strings are supported. Currently only the string type
+	// has the concept of an empty value.
 
 	RepoBSONBuilder builder;
 	builder.append(REPO_NODE_LABEL_ID, repo::lib::RepoUUID::createUUID());
@@ -290,7 +280,8 @@ TEST(MetaNodeTest, EmptyValues)
 	std::vector<RepoBSON> metaEntries;
 	{
 		RepoBSONBuilder metaEntryBuilder;
-		metaEntryBuilder.append(REPO_NODE_LABEL_META_KEY, "myKey");
+		metaEntryBuilder.append(REPO_NODE_LABEL_META_KEY, std::string("myKey"));
+		metaEntryBuilder.append(REPO_NODE_LABEL_META_VALUE, std::string(""));
 		metaEntries.push_back(metaEntryBuilder.obj());
 	}
 	builder.appendArray(REPO_NODE_LABEL_METADATA, metaEntries);
@@ -300,5 +291,5 @@ TEST(MetaNodeTest, EmptyValues)
 	auto metadata = node.getAllMetadata();
 	auto& value = metadata["myKey"];
 
-	EXPECT_THAT(value, Eq(repo::lib::RepoVariant("")));
+	EXPECT_THAT(value, Eq(repo::lib::RepoVariant(std::string(""))));
 }

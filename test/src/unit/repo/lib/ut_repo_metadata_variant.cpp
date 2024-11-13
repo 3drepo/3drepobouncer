@@ -48,6 +48,11 @@ TEST(RepoMetaVariantTest, AssignmentTest)
 	std::string value4 = boost::get<std::string>(v4);
 	EXPECT_EQ(value4, "3d Repo");
 
+	// Empty strings should be stored OK
+	RepoVariant v4_1 = std::string("");
+	std::string value4_1 = boost::get<std::string>(v4_1);
+	EXPECT_EQ(value4_1, "");
+
 	tm tmPre;
 	tmPre.tm_sec = 1;
 	tmPre.tm_min = 2;

@@ -46,13 +46,9 @@ RepoSequence::RepoSequence(
 {
 }
 
-RepoSequence RepoSequence::cloneAndAddRevision(
-	const repo::lib::RepoUUID &rid
-) const {
-
-	RepoSequence copy = *this;
-	copy.revisionId = rid;
-	return copy;
+void RepoSequence::setRevision(const repo::lib::RepoUUID& rid)
+{
+	this->revisionId = rid;
 }
 
 RepoSequence::operator RepoBSON() const
@@ -86,9 +82,5 @@ RepoSequence::operator RepoBSON() const
 bool RepoSequence::isSizeOK()
 {
 	RepoBSON bson = *this;
-	if (bson.objsize() > REPO_MAX_OBJ_SIZE)
-	{
-		return false;
-	}
-	return true;
+	return bson.objsize() <= REPO_MAX_OBJ_SIZE;
 }

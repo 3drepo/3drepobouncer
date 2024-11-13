@@ -75,7 +75,7 @@ namespace repo {
 					const std::vector<FrameData>& frames
 				);
 
-				RepoSequence cloneAndAddRevision(const repo::lib::RepoUUID& rid) const;
+				void setRevision(const repo::lib::RepoUUID& rid);
 
 				~RepoSequence() {}
 

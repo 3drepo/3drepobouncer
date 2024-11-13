@@ -906,18 +906,6 @@ namespace repo {
 				);
 
 				/**
-				* Commit a project settings base on the
-				* changes on this scene
-				* @param errMsg error message if this failed
-				* @param userName user name of the owner
-				* @return returns true upon success
-				*/
-				bool commitProjectSettings(
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					std::string &errMsg,
-					const std::string &userName);
-
-				/**
 				* Commit a revision node into project.revExt base on the
 				* changes on this scene
 				* @param errMsg error message if this failed
