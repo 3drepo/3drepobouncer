@@ -52,8 +52,6 @@ RepoController::_RepoControllerImpl::~_RepoControllerImpl()
 		if (man)
 			delete man;
 	}
-
-	repo::core::handler::MongoDatabaseHandler::disconnectHandler();
 }
 
 RepoController::RepoToken* RepoController::_RepoControllerImpl::init(
@@ -64,16 +62,13 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::init(
 	RepoToken *token = nullptr;
 	if (config.validate()) {
 		manipulator::RepoManipulator* worker = workerPool.pop();
-
-		auto dbConf = config.getDatabaseConfig();
-
-		//FIXME : this should just use the dbConf struct...
 		const bool success = worker->init(errMsg, config, numDBConnections);
 
 		if (success)
 		{
-			const std::string dbFullAd = dbConf.connString.empty() ? dbConf.addr + ":" + std::to_string(dbConf.port) : dbConf.connString;
 			token = new RepoController::RepoToken(config);
+			auto dbConf = config.getDatabaseConfig();
+			const std::string dbFullAd = dbConf.connString.empty() ? dbConf.addr + ":" + std::to_string(dbConf.port) : dbConf.connString;
 			repoInfo << "Successfully connected to the " << dbFullAd;
 			if (!dbConf.username.empty())
 				repoInfo << dbConf.username << " is authenticated to " << dbFullAd;
@@ -104,10 +99,8 @@ uint8_t RepoController::_RepoControllerImpl::commitScene(
 			if (token)
 			{
 				manipulator::RepoManipulator* worker = workerPool.pop();
-				errCode = worker->commitScene(token->databaseAd,
-					token->getCredentials()->getStringField("user"),
-					token->bucketName,
-					token->bucketRegion,
+				errCode = worker->commitScene(
+					token->getDatabaseUsername(),
 					scene,
 					owner.empty() ? "ANONYMOUS USER" : owner,
 					tag,
@@ -132,22 +125,6 @@ uint8_t RepoController::_RepoControllerImpl::commitScene(
 	return errCode;
 }
 
-void RepoController::_RepoControllerImpl::disconnectFromDatabase(const RepoController::RepoToken* token)
-{
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-
-		worker->disconnectFromDatabase(token->databaseAd);
-
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to disconnect from database with an invalid token!";
-	}
-}
-
 repo::core::model::RepoScene* RepoController::_RepoControllerImpl::fetchScene(
 	const RepoController::RepoToken      *token,
 	const std::string    &database,
@@ -163,7 +140,7 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::fetchScene(
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 
-		scene = worker->fetchScene(token->databaseAd, token->getCredentials(),
+		scene = worker->fetchScene(
 			database, collection, repo::lib::RepoUUID(uuid), headRevision, ignoreRefScene, skeletonFetch, includeStatus);
 
 		workerPool.push(worker);
@@ -188,14 +165,10 @@ bool RepoController::_RepoControllerImpl::generateAndCommitSelectionTree(
 		if (scene->isRevisioned() && !scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
 		{
 			repoInfo << "Unoptimised scene not loaded, trying loading unoptimised scene...";
-			worker->fetchScene(token->databaseAd, token->getCredentials(), scene);
+			worker->fetchScene( scene);
 		}
 
-		success = worker->generateAndCommitSelectionTree(token->databaseAd,
-			token->getCredentials(),
-			token->bucketName,
-			token->bucketRegion,
-			scene);
+		success = worker->generateAndCommitSelectionTree(scene);
 		workerPool.push(worker);
 	}
 
@@ -217,8 +190,7 @@ RepoController::_RepoControllerImpl::getAllFromCollectionContinuous(
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 
-		vector = worker->getAllFromCollectionTailable(token->databaseAd,
-			database, collection, skip, limit);
+		vector = worker->getAllFromCollectionTailable(database, collection, skip, limit);
 
 		workerPool.push(worker);
 	}
@@ -249,7 +221,7 @@ RepoController::_RepoControllerImpl::getAllFromCollectionContinuous(
 	if (token)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		vector = worker->getAllFromCollectionTailable(token->databaseAd, token->getCredentials(),
+		vector = worker->getAllFromCollectionTailable(
 			database, collection, fields, sortField, sortOrder, skip, limit);
 
 		workerPool.push(worker);
@@ -306,11 +278,7 @@ bool RepoController::_RepoControllerImpl::generateAndCommitRepoBundlesBuffer(
 	if (success = token && scene)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		success = worker->generateAndCommitRepoBundlesBuffer(token->databaseAd,
-			token->getCredentials(),
-			token->bucketName,
-			token->bucketRegion,
-			scene);
+		success = worker->generateAndCommitRepoBundlesBuffer(scene);
 		workerPool.push(worker);
 	}
 	else
@@ -328,11 +296,7 @@ bool RepoController::_RepoControllerImpl::generateAndCommitSRCBuffer(
 	if (success = token && scene)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		success = worker->generateAndCommitSRCBuffer(token->databaseAd,
-			token->getCredentials(),
-			token->bucketName,
-			token->bucketRegion,
-			scene);
+		success = worker->generateAndCommitSRCBuffer(scene);
 		workerPool.push(worker);
 	}
 	else
@@ -413,7 +377,7 @@ bool RepoController::_RepoControllerImpl::isVREnabled(const RepoToken *token,
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 
-		result = worker->isVREnabled(token->databaseAd, token->getCredentials(), scene);
+		result = worker->isVREnabled(scene);
 		workerPool.push(worker);
 	}
 	else {
@@ -455,7 +419,7 @@ RepoController::_RepoControllerImpl::processDrawingRevision(
 	const std::string &imagePath)
 {
 	manipulator::RepoManipulator* worker = workerPool.pop();
-	worker->processDrawingRevision(token->databaseAd, teamspace, revision, err, imagePath);
+	worker->processDrawingRevision(teamspace, revision, err, imagePath);
 	workerPool.push(worker);
 }
 
@@ -472,7 +436,7 @@ void RepoController::_RepoControllerImpl::reduceTransformations(
 		//any uncommited changes.
 		repoInfo << "Unoptimised scene not loaded, trying loading unoptimised scene...";
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		worker->fetchScene(token->databaseAd, token->getCredentials(), scene);
+		worker->fetchScene(scene);
 		workerPool.push(worker);
 	}
 

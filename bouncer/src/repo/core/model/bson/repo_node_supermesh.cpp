@@ -52,9 +52,9 @@ void SupermeshNode::deserialise(RepoBSON& bson)
 			mapping.triFrom = mappingObj.getIntField(REPO_NODE_MESH_LABEL_TRIANGLE_FROM);
 			mapping.triTo = mappingObj.getIntField(REPO_NODE_MESH_LABEL_TRIANGLE_TO);
 
-			RepoBSON boundingBox = mappingObj.getObjectField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
+			mappingObj.getBounds3D(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
 
-			std::vector<repo::lib::RepoVector3D> bboxVec = MeshNode::getBoundingBox(boundingBox);
+			auto bboxVec = mappingObj.getBounds3D(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
 			mapping.min.x = bboxVec[0].x;
 			mapping.min.y = bboxVec[0].y;
 			mapping.min.z = bboxVec[0].z;

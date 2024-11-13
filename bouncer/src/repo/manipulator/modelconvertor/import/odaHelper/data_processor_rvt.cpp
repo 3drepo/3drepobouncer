@@ -192,7 +192,7 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 		return absolutePath.generic_string();
 
 	// Sometimes the texture path has subdirectories like "./mat/1" remove it and see if we can find it.
-	auto altPath = boost::filesystem::absolute(texturePath.leaf(), env);
+	auto altPath = boost::filesystem::absolute(texturePath.filename(), env);
 	if (repo::lib::doesFileExist(altPath))
 		return altPath.generic_string();
 

@@ -14,11 +14,6 @@
 *  You should have received a copy of the GNU Affero General Public License
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- * Abstract database handler which all database handler needs to inherit from
- * WARNING: Do not expect any database handlers to be thread safe. It is currently
- * assumed that singleton object is instantiated before any threads are created!
- */
 
 #pragma once
 
@@ -210,7 +205,7 @@ namespace repo {
 				virtual std::vector<repo::core::model::RepoBSON> findAllByUniqueIDs(
 					const std::string& database,
 					const std::string& collection,
-					const repo::core::model::RepoBSON& uuid,
+					const std::vector<repo::lib::RepoUUID> uuid,
 					const bool ignoreExtFiles = false) = 0;
 
 				/**

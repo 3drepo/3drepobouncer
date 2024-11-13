@@ -16,13 +16,18 @@
 */
 
 #include "repo_bson_element.h"
-#include "../../../lib/datastructure/repo_variant.h"
-#include "../../../lib/repo_exception.h"
+#include "repo/lib/datastructure/repo_variant.h"
+#include "repo/lib/repo_exception.h"
+#include "repo/core/model/bson/repo_bson.h"
 
-#include <mongo/bson/bson.h>
-#include <repo/core/model/bson/repo_bson.h>
+#include <bsoncxx/document/element.hpp>
+#include <bsoncxx/document/view.hpp>
+#include <bsoncxx/array/element.hpp>
+#include <bsoncxx/types.hpp>
+#include <bsoncxx/types/value.hpp>
 
 using namespace repo::core::model;
+using namespace bsoncxx::document;
 
 RepoBSONElement::~RepoBSONElement()
 {
@@ -31,43 +36,48 @@ RepoBSONElement::~RepoBSONElement()
 ElementType RepoBSONElement::type() const
 {
 	ElementType elementType;
-	switch (mongo::BSONElement::type())
+	switch (element::type())
 	{
-	case mongo::Array: // array
+	case bsoncxx::type::k_array: // array
 		elementType = ElementType::ARRAY;
 		break;
-	case mongo::BinData: // binary data
-		if (mongo::bdtUUID == binDataType() || mongo::newUUID == binDataType())
+	case bsoncxx::type::k_binary: // binary data
 		{
-			elementType = ElementType::UUID;
-		}
-		else
-		{
-			elementType = ElementType::BINARY;
+			const auto& b = element::get_binary();
+			switch (b.sub_type)
+			{
+			case bsoncxx::binary_sub_type::k_uuid:
+			case bsoncxx::binary_sub_type::k_uuid_deprecated:
+				elementType = ElementType::UUID;
+				break;
+			default:
+				elementType = ElementType::BINARY;
+				break;
+			}
 		}
 		break;
-	case mongo::Bool:
+	case bsoncxx::type::k_bool:
 		elementType = ElementType::BOOL;
 		break;
-	case mongo::Date:
+	case bsoncxx::type::k_date:
 		elementType = ElementType::DATE;
 		break;
-	case mongo::jstOID: // ObjectId
+	case bsoncxx::type::k_oid: // ObjectId
 		elementType = ElementType::OBJECTID;
 		break;
-	case mongo::NumberDouble: // double precision floating point value
+	case bsoncxx::type::k_double: // double precision floating point value
 		elementType = ElementType::DOUBLE;
 		break;
-	case mongo::NumberInt: // 32 bit signed integer
+	case bsoncxx::type::k_int32: // 32 bit signed integer
 		elementType = ElementType::INT;
 		break;
-	case mongo::NumberLong: // 64 bit signed integer
+	case bsoncxx::type::k_int64: // 64 bit signed integer
 		elementType = ElementType::LONG;
 		break;
-	case mongo::Object: // embedded object
+	case bsoncxx::type::k_document: // embedded object
 		elementType = ElementType::OBJECT;
 		break;
-	case mongo::String: // character string, stored in utf8
+	case bsoncxx::type::k_string: // character string, stored in utf8
 		elementType = ElementType::STRING;
 		break;
 		//case JSTypeMax : /** max type that is not MaxKey */
@@ -121,102 +131,87 @@ repo::lib::RepoVariant RepoBSONElement::repoVariant() const
 
 std::string RepoBSONElement::String() const
 {
-	return mongo::BSONElement::String();
+	const auto& b = element::get_string();
+	return std::string(b.value.data(), b.value.size());
 }
 
 time_t RepoBSONElement::TimeT() const
 {
-	return mongo::BSONElement::Date().toTimeT();
+	// By convention, this API considers time_t as seconds since the unix epoch
+	return std::chrono::duration_cast<std::chrono::seconds>(element::get_date().value).count();
 }
 
 tm RepoBSONElement::Tm() const
 {
 	tm buf;
-	mongo::BSONElement::Date().toTm(&buf);
+	time_t time = TimeT();
+	gmtime_s(&buf, &time);
 	return buf;
 }
 
 bool RepoBSONElement::Bool() const
 {
-	return mongo::BSONElement::Bool();
+	return element::get_bool();
 }
 
 int RepoBSONElement::Int() const
 {
-	return mongo::BSONElement::Int();
+	return element::get_int32();
 }
 
 long long RepoBSONElement::Long() const
 {
-	return mongo::BSONElement::Long();
+	return element::get_int64();
 }
 
 double RepoBSONElement::Double() const
 {
-	return mongo::BSONElement::Double();
+	return element::get_double();
 }
 
 size_t RepoBSONElement::size() const
 {
-	return mongo::BSONElement::size();
+	return element::length();
 }
 
 const char* RepoBSONElement::binData(int& length) const
 {
-	return mongo::BSONElement::binData(length);
+	const auto& b = element::get_binary();
+	length = b.size;
+	return (const char*)b.bytes;
 }
 
 bool RepoBSONElement::operator==(const RepoBSONElement& other) const
 {
-	return mongo::BSONElement::operator==(other);
+	return element::get_value() == other.get_value();
 }
 
 bool RepoBSONElement::operator!=(const RepoBSONElement& other) const
 {
-	return mongo::BSONElement::operator!=(other);
+	return element::get_value() != other.get_value();
 }
 
 std::string RepoBSONElement::toString() const
 {
-	return mongo::BSONElement::toString();
+	return "";
 }
 
 bool RepoBSONElement::eoo() const
 {
-	return mongo::BSONElement::eoo();
+	return element::type() == bsoncxx::type::k_null;
 }
 
 bool RepoBSONElement::isNull() const
 {
-	return mongo::BSONElement::isNull();
+	return element::type() == bsoncxx::type::k_null;
 }
 
 RepoBSON RepoBSONElement::Object() const
 {
-	return RepoBSON(mongo::BSONElement::embeddedObject(), {});
+	return RepoBSON(get_document().value, {});
 }
 
 RepoBSONElement::operator const std::string& () const
 {
 	return toString();
-}
-
-std::vector<RepoBSONElement> RepoBSONElement::Array()
-{
-	//FIXME: potentially slow.
-	//This is done so we can hide mongo representation from the bouncer world.
-	std::vector<RepoBSONElement> arr;
-
-	if (!eoo())
-	{
-		std::vector<mongo::BSONElement> mongoArr = mongo::BSONElement::Array();
-		arr.reserve(mongoArr.size());
-
-		for (auto const& ele : mongoArr)
-		{
-			arr.push_back(RepoBSONElement(ele));
-		}
-	}
-
-	return arr;
 }

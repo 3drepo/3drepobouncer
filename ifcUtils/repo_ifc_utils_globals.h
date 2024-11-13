@@ -22,6 +22,17 @@
 #include <string>
 #include <repo/lib/datastructure/repo_variant.h>
 
+/*
+* This directive is necessary as somewhere IfcOpenShell brings in Boost's 
+* w32_regex_traits.hpp file, which breaks if Windows.h is not already
+* included. IfcOpenShell has a fix for building IfcOpenShell itself, but
+* the hpp ends up included here so we need it too.
+* https://github.com/IfcOpenShell/IfcOpenShell/issues/2361
+*/
+#ifdef _MSC_VER
+#include <Windows.h>
+#endif
+
 #if defined(_WIN32) || defined(_WIN64)
 #   define IFC_UTILS_DECL_EXPORT __declspec(dllexport)
 #   define IFC_UTILS_DECL_IMPORT __declspec(dllimport)

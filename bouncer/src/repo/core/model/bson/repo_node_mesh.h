@@ -201,8 +201,6 @@ namespace repo {
 					boundingBox = bounds;
 				}
 
-				static std::vector<repo::lib::RepoVector3D> getBoundingBox(RepoBSON &bbArr);
-
 				/**
 				* Retrieve a vector of faces from the bson object
 				*/

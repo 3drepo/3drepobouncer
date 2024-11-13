@@ -288,22 +288,13 @@ TEST(MongoDatabaseHandlerTest, FindAllByUniqueIDs)
 	ASSERT_TRUE(handler);
 	std::string errMsg;
 
-	repo::core::model::RepoBSONBuilder builder;
-
-	for (int i = 0; i < uuidsToSearch.size(); ++i)
-	{
-		builder.append(std::to_string(i), uuidsToSearch[i]);
-	}
-
-	repo::core::model::RepoBSON search = builder.obj();
-
-	auto results = handler->findAllByUniqueIDs(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".scene", search);
+	auto results = handler->findAllByUniqueIDs(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".scene", uuidsToSearch);
 
 	EXPECT_EQ(uuidsToSearch.size(), results.size());
 
-	EXPECT_EQ(0, handler->findAllByUniqueIDs(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ, repo::core::model::RepoBSON()).size());
-	EXPECT_EQ(0, handler->findAllByUniqueIDs(REPO_GTEST_DBNAME1, "", search).size());
-	EXPECT_EQ(0, handler->findAllByUniqueIDs("", REPO_GTEST_DBNAME1_PROJ, search).size());
+	EXPECT_EQ(0, handler->findAllByUniqueIDs(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ, {}).size());
+	EXPECT_EQ(0, handler->findAllByUniqueIDs(REPO_GTEST_DBNAME1, "", uuidsToSearch).size());
+	EXPECT_EQ(0, handler->findAllByUniqueIDs("", REPO_GTEST_DBNAME1_PROJ, uuidsToSearch).size());
 }
 
 TEST(MongoDatabaseHandlerTest, FindAllByCriteria)

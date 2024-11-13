@@ -29,8 +29,32 @@
 #include "repo/core/model/bson/repo_bson_element.h"
 #include "repo/lib/repo_log.h"
 
+#include <mongocxx/client.hpp>
+#include <mongocxx/instance.hpp>
+#include <mongocxx/stdx.hpp>
+#include <mongocxx/uri.hpp>
+#include <mongocxx/pool.hpp>
+#include <mongocxx/exception/operation_exception.hpp>
+#include <mongocxx/exception/bulk_write_exception.hpp>
+#include <mongocxx/exception/query_exception.hpp>
+#include <mongocxx/exception/logic_error.hpp>
+#include <bsoncxx/document/view_or_value.hpp>
+#include <bsoncxx/builder/basic/document.hpp>
+#include <bsoncxx/builder/basic/document.hpp>
+#include <bsoncxx/json.hpp>
+
 using namespace repo::core::handler;
+using namespace repo::core::handler::fileservice;
 using namespace bsoncxx::builder::basic;
+
+// mongocxx requires an instance to be created before using the driver, which
+// must remain alive until all other mongocxx objects are destroyed. Only one
+// instance must be created in a given program, even if the multiple instances
+// have non-overlapping lifetimes. This pointer is initialised the first time
+// a MongoDatabaseHandler is constructed, and destroyed when it goes out of
+// scope (on the program exit).
+
+std::unique_ptr<mongocxx::instance> instance;
 
 static uint64_t MAX_MONGO_BSON_SIZE = 16777216L;
 static uint64_t MAX_PARALLEL_BSON = 10000;
@@ -47,11 +71,6 @@ const std::list<std::string> repo::core::handler::MongoDatabaseHandler::ADMIN_ON
 "hostManager", "readAnyDatabase", "readWriteAnyDatabase", "restore", "root",
 "userAdminAnyDatabase" };
 
-//------------------------------------------------------------------------------
-
-MongoDatabaseHandler* MongoDatabaseHandler::handler = NULL;
-
-
 MongoDatabaseHandler::MongoDatabaseHandler(
 	const std::string			  &dbAddress,
 	const uint32_t                &maxConnections,
@@ -60,31 +79,25 @@ MongoDatabaseHandler::MongoDatabaseHandler(
 	const std::string             &password) :
 	AbstractDatabaseHandler(MAX_MONGO_BSON_SIZE)
 {
-	// Create instance
-	instance = mongocxx::instance{};
-
-	// Create URI
-	// TODO: Test needed whether this connection string is assembled in the correct format. I am only about 70% sure that it is.
-	// TODO: Is using maxConnections for the max pool size the correct way here?
-	bsoncxx::string::view_or_value uriString = username + ":" + password + "@" + dbAddress + "/?minPoolSize=3&maxPoolSize=" + std::to_string(maxConnections);
-	mongocxx::uri uri = mongocxx::uri(uriString);
-
-	// Create pool	
-	clientPool = std::unique_ptr <mongocxx::pool>(new mongocxx::pool(uri));	
-	
+	if (!instance) { // This global pointer should only be initialised once
+		instance = std::make_unique<mongocxx::instance>();
+	}
+	mongocxx::uri uri(std::string("mongodb://") + username + ":" + password + "@" + dbAddress + "/?minPoolSize=3&maxPoolSize=" + std::to_string(maxConnections));
+	clientPool = std::make_unique<mongocxx::pool>(uri);
 }
 
-
-/**
-* A Deconstructor
-*/
 MongoDatabaseHandler::~MongoDatabaseHandler()
 {
-	// TODO: Might not be necessary. Example just lets it get out of scope.
-	clientPool->~pool();
+}
 
-	// Same for instance.
+void MongoDatabaseHandler::setFileManager(std::shared_ptr<FileManager> manager)
+{
+	this->fileManager = manager;
+}
 
+std::shared_ptr<FileManager> MongoDatabaseHandler::getFileManager()
+{
+	return this->fileManager.lock();
 }
 
 bool MongoDatabaseHandler::caseInsensitiveStringCompare(
@@ -98,19 +111,11 @@ void MongoDatabaseHandler::createCollection(const std::string &database, const s
 {
 	if (!(database.empty() || name.empty()))
 	{
-		// First, acquire client from pool
-		auto client = clientPool->acquire();
-
-		// Convert into bsoncxx string format
-		auto dbString = bsoncxx::string::view_or_value(database);
-		auto nameString = bsoncxx::string::view_or_value(name);
-
-		// Get database
-		auto dbObj = client->database(dbString);
-
-		// Create collection
-		try {
-			dbObj.create_collection(nameString);
+		try 
+		{
+			auto client = clientPool->acquire();
+			auto db = client->database(database);
+			db.create_collection(name);
 		}
 		catch (mongocxx::operation_exception e) {
 			repoError << "Failed to create collection ("
@@ -123,29 +128,19 @@ void MongoDatabaseHandler::createCollection(const std::string &database, const s
 	}
 }
 
-void MongoDatabaseHandler::createIndex(const std::string &database, const std::string &collection, const bsoncxx::document::view_or_value& obj)
+void MongoDatabaseHandler::createIndex(const std::string &database, const std::string &collection, const repo::core::model::RepoBSON& obj)
 {
 	if (!(database.empty() || collection.empty()))
 	{
-		// First, acquire client from pool
 		auto client = clientPool->acquire();
+		auto db = client->database(database);
+		auto col = db.collection(collection);
 
-		// Convert into bsoncxx string format
-		auto dbString = bsoncxx::string::view_or_value(database);
-		auto colString = bsoncxx::string::view_or_value(collection);
+		repoInfo << "Creating index for :" << database << "." << collection << " : index: " << obj.toString();
 
-		// Get database
-		auto dbObj = client->database(dbString);
-
-		// Get collection
-		auto colObj = dbObj.collection(colString);
-
-		// TODO: Can the new driver's obj be printed like that?
-		repoInfo << "Creating index for :" << database << "." << collection << " : index: " << obj;
-
-		try {			
-			colObj.create_index(obj);
-			//worker->createIndex(database + "." + collection, obj);			
+		try 
+		{
+			col.create_index(obj.view());
 		}
 		catch (mongocxx::operation_exception e)
 		{
@@ -159,12 +154,17 @@ void MongoDatabaseHandler::createIndex(const std::string &database, const std::s
 	}
 }
 
-// This will presumably be refactored/deleted/replaced with Sebastian's changes to RepoBSON
+
+/*
+ * This helper function resolves the binary files for a given document.Any
+ * document that might have file mappings should be passed through here
+ * before being returned as a RepoBSON.
+ */
 repo::core::model::RepoBSON createRepoBSON(
 	fileservice::BlobFilesHandler &blobHandler,
 	const std::string &database,
 	const std::string &collection,
-	const mongo::BSONObj &obj,
+	const bsoncxx::document::view& obj,
 	const bool ignoreExtFile = false)
 {
 	repo::core::model::RepoBSON orgBson = repo::core::model::RepoBSON(obj);
@@ -183,41 +183,16 @@ repo::core::model::RepoBSON createRepoBSON(
 			auto extRefbson = orgBson.getObjectField(REPO_LABEL_OVERSIZED_FILES);
 			std::set<std::string> fieldNames = extRefbson.getFieldNames();
 			repo::core::model::RepoBSON::BinMapping map;
-			auto fileManager = fileservice::FileManager::getManager();
 			for (const auto& name : fieldNames)
 			{
 				auto fname = extRefbson.getStringField(name);
-				auto file = fileManager->getFile(database, collection, fname);
+				auto file = blobHandler.getFileManager()->getFile(database, collection, fname);
 				map[name] = file;
 			}
 			return repo::core::model::RepoBSON(obj, map);
 		}
 	}
 	return orgBson;
-}
-
-/// <summary>
-/// Mock function as a standin for whatever magic Sebastian uses to get the documents out of RepoBSON.
-/// Not to be used. Just to signal where the conversion might occur.
-/// </summary>
-/// <param name="bson">A BSON to be "converted"</param>
-/// <returns>A document in the driver's format</returns>
-bsoncxx::document::value RepoBSONToDocument(repo::core::model::RepoBSON bson) {
-	return make_document(5);
-}
-
-void MongoDatabaseHandler::disconnectHandler()
-{
-	if (handler)
-	{
-		repoInfo << "Disconnecting from database...";
-		delete handler;
-		handler = nullptr;
-	}
-	else
-	{
-		repoTrace << "Attempting to disconnect a handler without ever instantiating it!";
-	}
 }
 
 bool MongoDatabaseHandler::dropCollection(
@@ -229,18 +204,9 @@ bool MongoDatabaseHandler::dropCollection(
 
 	if (!database.empty() || collection.empty())
 	{
-		// First, acquire client from pool
 		auto client = clientPool->acquire();
-
-		// Convert into bsoncxx string format
-		auto dbString = bsoncxx::string::view_or_value(database);
-		auto colString = bsoncxx::string::view_or_value(collection);
-
-		// Get database
-		auto dbObj = client->database(dbString);
-
-		// Get collection
-		auto colObj = dbObj.collection(colString);
+		auto dbObj = client->database(database);
+		auto colObj = dbObj.collection(collection);
 
 		try {
 			colObj.drop();
@@ -273,28 +239,15 @@ bool MongoDatabaseHandler::dropDocument(
 
 	if (!database.empty() && !collection.empty())
 	{
-		// First, acquire client from pool
 		auto client = clientPool->acquire();
-
-		// Convert into bsoncxx string format
-		auto dbString = bsoncxx::string::view_or_value(database);
-		auto colString = bsoncxx::string::view_or_value(collection);
-
-		// Get database
-		auto dbObj = client->database(dbString);
-
-		// Get collection
-		auto colObj = dbObj.collection(colString);
+		auto db = client->database(database);
+		auto col = db.collection(collection);
 
 		try {
 			if (success = !bson.isEmpty() && bson.hasField("_id"))
 			{
-				auto queryDoc = make_document(kvp("_id", bson.getField("_id")));
-				colObj.delete_one(queryDoc);
-			//	mongo::BSONElement id;
-			//	bson.getObjectID(id);
-			//	mongo::Query query = MONGO_QUERY("_id" << id);
-			//	worker->remove(database + "." + collection, query, true);
+				bsoncxx::document::value queryDoc = make_document(kvp("_id", bson.getField("_id")));
+				col.delete_one(queryDoc.view());
 			}
 			else
 			{
@@ -324,38 +277,17 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 
 	if (!criteria.isEmpty())
 	{
-		// First, acquire client from pool
 		auto client = clientPool->acquire();
-
-		// Convert into bsoncxx string format
-		auto dbString = bsoncxx::string::view_or_value(database);
-		auto colString = bsoncxx::string::view_or_value(collection);
-
-		// Get database
-		auto dbObj = client->database(dbString);
-
-		// Get collection
-		auto colObj = dbObj.collection(colString);
+		auto db = client->database(database);
+		auto col = db.collection(collection);
 
 		try {		
 
-			auto fileManager = fileservice::FileManager::getManager();
-			fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
+			fileservice::BlobFilesHandler blobHandler(getFileManager(), database, collection);
 			
-			// Assemble query
-			auto fieldNames = criteria.getFieldNames();
-			std::vector<std::tuple<std::string, repo::core::model::RepoBSONElement>> kvps;
-			for (auto fieldName : fieldNames) {
-				auto kvp = bsoncxx::builder::basic::kvp(fieldName, criteria.getField(fieldName));
-				kvps.push_back(kvp);
-			}
-			auto queryDoc = bsoncxx::builder::basic::make_document(kvps);
-
 			// Find all documents
-			auto cursor = colObj.find(queryDoc);
-
-			for (auto doc : cursor) {
-				// TODO: createRepoBSON will presumably be refactored with Sebastian's changes to RepoBSON
+			auto cursor = col.find(criteria.view());
+			for (auto& doc : cursor) {
 				data.push_back(createRepoBSON(blobHandler, database, collection, doc));
 			}
 		}
@@ -373,51 +305,23 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 	const repo::core::model::RepoBSON& criteria,
 	const std::string& sortField)
 {
-	repo::core::model::RepoBSON data;
-
 	if (!criteria.isEmpty())
 	{
-		// First, acquire client from pool
 		auto client = clientPool->acquire();
-
-		// Convert into bsoncxx string format
-		auto dbString = bsoncxx::string::view_or_value(database);
-		auto colString = bsoncxx::string::view_or_value(collection);
-
-		// Get database
-		auto dbObj = client->database(dbString);
-
-		// Get collection
-		auto colObj = dbObj.collection(colString);
+		auto db = client->database(database);
+		auto col = db.collection(collection);
 
 		try {
-
-			auto fileManager = fileservice::FileManager::getManager();
-			fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-
-			// Assemble query
-			auto fieldNames = criteria.getFieldNames();
-			std::vector<std::tuple<std::string, repo::core::model::RepoBSONElement>> kvps;
-			for (auto fieldName : fieldNames) {
-				auto kvp = bsoncxx::builder::basic::kvp(fieldName, criteria.getField(fieldName));
-				kvps.push_back(kvp);
-			}
-			auto queryDoc = bsoncxx::builder::basic::make_document(kvps);
+			fileservice::BlobFilesHandler blobHandler(getFileManager(), database, collection);
 			
 			mongocxx::options::find options{};
 			options.sort(make_document(kvp(sortField, -1)));
 
 			// Find document
-			auto findResult = colObj.find_one(queryDoc, options);
-
+			auto findResult = col.find_one(criteria.view(), options);
 			if (findResult.has_value()) {
-				auto doc = findResult.value();
-
-				// TODO: createRepoBSON will presumably be refactored with Sebastian's changes to RepoBSON
-				data = createRepoBSON(blobHandler, database, collection, doc);
+				return createRepoBSON(blobHandler, database, collection, findResult.value());
 			}
-
-			
 		}
 		catch (mongocxx::query_exception e)
 		{
@@ -425,7 +329,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 		}
 	}
 
-	return data;
+	return repo::core::model::RepoBSON(make_document());
 }
 
 std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueIDs(
@@ -433,40 +337,34 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 	const std::string& collection,
 	const std::vector<repo::lib::RepoUUID> uuids,
 	const bool ignoreExtFiles) {
+
 	std::vector<repo::core::model::RepoBSON> data;
 
-	
 	int fieldsCount = uuids.size();
 	if (fieldsCount > 0)
 	{
 		try {
-
-			// First, acquire client from pool
 			auto client = clientPool->acquire();
-
-			// Convert into bsoncxx string format
-			auto dbString = bsoncxx::string::view_or_value(database);
-			auto colString = bsoncxx::string::view_or_value(collection);
-
-			// Get database
-			auto dbObj = client->database(dbString);
-
-			// Get collection
-			auto colObj = dbObj.collection(colString);
-
+			auto dbObj = client->database(database);
+			auto col = dbObj.collection(collection);
 
 			uint64_t retrieved = 0;			
-			auto fileManager = fileservice::FileManager::getManager();
-			fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
+			fileservice::BlobFilesHandler blobHandler(getFileManager(), database, collection);
+
+			// To search for UUIDs, convert them to strings for the query document
+
+			bsoncxx::builder::basic::array uids;
+			for (auto& u : uuids) {
+				uids.append(u.toString());
+			}
 
 			// TODO: Once this compiles someone REALLY needs to check whether this works as I understand it.
 			// The documentation is a bit ambigous on this.
-			auto queryDoc = make_document(kvp(ID, make_document(kvp("$in", uuids))));
-			auto cursor = colObj.find(queryDoc);
+			auto queryDoc = make_document(kvp(ID, make_document(kvp("$in", uids))));
+			auto cursor = col.find(queryDoc.view());
 
 			for (auto doc : cursor) {
-				// TODO: createRepoBSON will presumably be refactored with Sebastian's changes to RepoBSON
-				data = createRepoBSON(blobHandler, database, collection, doc);
+				data.push_back(createRepoBSON(blobHandler, database, collection, doc));
 				retrieved++;
 			}
 
@@ -490,44 +388,29 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 	const repo::lib::RepoUUID& uuid,
 	const std::string& sortField)
 {
-	repo::core::model::RepoBSON bson;
-
 	try
 	{
-		// First, acquire client from pool
 		auto client = clientPool->acquire();
-
-		// Convert into bsoncxx string format
-		auto dbString = bsoncxx::string::view_or_value(database);
-		auto colString = bsoncxx::string::view_or_value(collection);
-
-		// Get database
-		auto dbObj = client->database(dbString);
-
-		// Get collection
-		auto colObj = dbObj.collection(colString);
+		auto db = client->database(database);
+		auto col = db.collection(collection);
 
 		// Build Query
-		auto queryDoc = make_document(kvp("shared_id", uuid));
+		repo::core::model::RepoBSONBuilder builder;
+		builder.append("shared_id", uuid);
+		auto queryDoc = builder.obj();
 
 		// Create options
 		mongocxx::options::find options{};
 		options.sort(make_document(kvp(sortField, -1)));
 
-		auto fileManager = fileservice::FileManager::getManager();
-		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
+		fileservice::BlobFilesHandler blobHandler(getFileManager(), database, collection);
 		
 		// Find document
-		auto findResult = colObj.find_one(queryDoc, options);
+		auto findResult = col.find_one(queryDoc.view(), options);
 
 		if (findResult.has_value()) {
 			auto doc = findResult.value();
-	//	auto query = mongo::Query(queryBuilder.obj());
-	//	if (!sortField.empty())
-	//		query = query.sort(sortField, -1);
-
-			// TODO: createRepoBSON will presumably be refactored with Sebastian's changes to RepoBSON
-			bson = createRepoBSON(blobHandler, database, collection, doc);
+			return createRepoBSON(blobHandler, database, collection, doc);
 		}
 
 	}
@@ -536,56 +419,37 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 		repoError << "Error querying the database: " << std::string(e.what());
 	}
 
-	return bson;
+	return repo::core::model::RepoBSON(make_document());
 }
 
 repo::core::model::RepoBSON  MongoDatabaseHandler::findOneByUniqueID(
 	const std::string& database,
 	const std::string& collection,
 	const repo::lib::RepoUUID& uuid) {
-	repo::core::model::RepoBSON bson;
 
 	try
 	{
-		// First, acquire client from pool
 		auto client = clientPool->acquire();
+		auto db = client->database(database);
+		auto col = db.collection(collection);
 
-		// Convert into bsoncxx string format
-		auto dbString = bsoncxx::string::view_or_value(database);
-		auto colString = bsoncxx::string::view_or_value(collection);
+		repo::core::model::RepoBSONBuilder builder;
+		builder.append(ID, uuid);
+		auto queryDoc = builder.obj();
 
-		// Get database
-		auto dbObj = client->database(dbString);
-
-		// Get collection
-		auto colObj = dbObj.collection(colString);
-
-		// Build Query
-		auto queryDoc = make_document(kvp(ID, uuid));
-
-
-		auto fileManager = fileservice::FileManager::getManager();
-		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-		
-		// Find document
-		auto findResult = colObj.find_one(queryDoc);
+		auto findResult = col.find_one(queryDoc.view());
 
 		if (findResult.has_value()) {
-			auto doc = findResult.value();
-
-			// TODO: createRepoBSON will presumably be refactored with Sebastian's changes to RepoBSON
-			bson = createRepoBSON(blobHandler, database, collection, doc);
+			fileservice::BlobFilesHandler blobHandler(getFileManager(), database, collection);
+			return createRepoBSON(blobHandler, database, collection, findResult.value());
 		}
-	//	mongo::BSONObj bsonMongo = worker->findOne(getNamespace(database, collection),
-	//		mongo::Query(queryBuilder.obj()));
-
 	}
 	catch (mongocxx::query_exception& e)
 	{
 		repoError << e.what();
 	}
 
-	return bson;
+	return repo::core::model::RepoBSON(make_document());
 }
 
 std::vector<repo::core::model::RepoBSON>
@@ -602,45 +466,34 @@ MongoDatabaseHandler::getAllFromCollectionTailable(
 
 	try
 	{
-		// First, acquire client from pool
 		auto client = clientPool->acquire();
+		auto db = client->database(database);
+		auto col = db.collection(collection);
 
-		// Convert into bsoncxx string format
-		auto dbString = bsoncxx::string::view_or_value(database);
-		auto colString = bsoncxx::string::view_or_value(collection);
-
-		// Get database
-		auto dbObj = client->database(dbString);
-
-		// Get collection
-		auto colObj = dbObj.collection(colString);
-
-		// Create options
 		mongocxx::options::find options{};
-		if(!sortField.empty())
+		if (!sortField.empty()) 
+		{
 			options.sort(make_document(kvp(sortField, sortOrder)));
+		}
 		options.limit(limit);
 		options.skip(skip);
-		
-		// If only certain fields are to be returned, prepare projection and add it to the options
-		if (fields.size() > 0) {
-			std::vector<std::tuple<std::string, int>> kvps;
-			for (std::string field : fields) {
-				auto pair = kvp(field, 1);
-				kvps.push_back(pair);
+
+		// Append the projection (as a document) - this should go onto the options
+		if (fields.size() > 0)
+		{
+			bsoncxx::builder::basic::document projection;
+			for (auto& n : fields)
+			{
+				projection.append(kvp(n, 1));
 			}
-			auto projDoc = make_document(kvps);
-			options.projection(bsoncxx::v_noabi::document::view_or_value(projDoc));
+			options.projection(projection.extract());
 		}
 
-		auto fileManager = fileservice::FileManager::getManager();
-		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
+		fileservice::BlobFilesHandler blobHandler(getFileManager(), database, collection);
 
-		// Execute query
-		auto cursor = colObj.find({}, options);
+		auto cursor = col.find({}, options);
 
 		for (auto doc : cursor) {
-			// TODO: createRepoBSON will presumably be refactored with Sebastian's changes to RepoBSON
 			bsons.push_back(createRepoBSON(blobHandler, database, collection, doc));
 		}
 	}
@@ -659,16 +512,10 @@ std::list<std::string> MongoDatabaseHandler::getCollections(
 
 	try
 	{
-		// First, acquire client from pool
 		auto client = clientPool->acquire();
-
-		// Convert into bsoncxx string format
-		auto dbString = bsoncxx::string::view_or_value(database);
-
-		// Get database
-		auto dbObj = client->database(dbString);
+		auto db = client->database(database);
 		
-		auto collectionsVector = dbObj.list_collection_names();
+		auto collectionsVector = db.list_collection_names();
 
 		collections = std::list<std::string>(collectionsVector.begin(), collectionsVector.end());
 	}
@@ -685,9 +532,7 @@ std::vector<uint8_t> MongoDatabaseHandler::getBigFile(
 	const std::string &collection,
 	const std::string &fileName)
 {
-	auto fileManager = fileservice::FileManager::getManager();
-
-	return fileManager->getFile(database, collection, fileName);
+	return getFileManager()->getFile(database, collection, fileName);
 }
 
 std::string MongoDatabaseHandler::getProjectFromCollection(const std::string &ns, const std::string &projectExt)
@@ -702,47 +547,17 @@ std::string MongoDatabaseHandler::getProjectFromCollection(const std::string &ns
 	return project;
 }
 
-MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
-	std::string       &errMsg,
+std::shared_ptr<MongoDatabaseHandler> MongoDatabaseHandler::getHandler(
 	const std::string &connectionString,
 	const uint32_t    &maxConnections,
 	const std::string &dbName,
 	const std::string &username,
 	const std::string &password)
 {
-	if (!handler) {
-		
-
-		//initialise the mongo client
-		repoTrace << "Handler not present for " << connectionString << " instantiating new handler...";
-		try {
-			handler = new MongoDatabaseHandler(connectionString, maxConnections, dbName, username, password);
-		}
-		catch (mongocxx::logic_error e) {
-			if (handler)
-				delete handler;
-			handler = 0;
-			errMsg = std::string(e.what());
-			repoError << "Error establishing Mongo Handler: " << errMsg;
-		}
-		catch (mongocxx::exception e) {
-			if (handler)
-				delete handler;
-			handler = 0;
-			errMsg = std::string(e.what());
-			repoError << "Error establishing Mongo Handler: " << errMsg;
-		}
-	}
-	else
-	{
-		repoTrace << "Found handler, returning existing handler";
-	}
-
-	return handler;
+	return std::make_shared<MongoDatabaseHandler>(connectionString, maxConnections, dbName, username, password);
 }
 
-MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
-	std::string       &errMsg,
+std::shared_ptr<MongoDatabaseHandler> MongoDatabaseHandler::getHandler(
 	const std::string &host,
 	const int         &port,
 	const uint32_t    &maxConnections,
@@ -760,85 +575,7 @@ MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
 		repoWarning << "GetHandler called with invalid port provided. Connection is attempted without port.";
 		connectionString = host;
 	}
-	
-	if (!handler) {
-		//initialise the mongo client
-		repoTrace << "Handler not present for " << connectionString << " instantiating new handler...";
-		try {
-			handler = new MongoDatabaseHandler(connectionString, maxConnections, dbName, username, password);
-		}
-		catch (mongocxx::logic_error e) {
-			if (handler)
-				delete handler;
-			handler = 0;
-			errMsg = std::string(e.what());
-			repoError << "Error establishing Mongo Handler: " << errMsg;
-		}
-		catch (mongocxx::exception e) {
-			if (handler)
-				delete handler;
-			handler = 0;
-			errMsg = std::string(e.what());
-			repoError << "Error establishing Mongo Handler: " << errMsg;
-		}
-	}
-	else
-	{
-		repoTrace << "Found handler, returning existing handler";
-	}
-
-	return handler;
-}
-
-MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
-	std::string                       &errMsg,
-	const std::string                 &host,
-	const int                         &port,
-	const uint32_t                    &maxConnections,
-	const std::string                 &dbName,
-	const repo::core::model::RepoBSON *credentials)
-{
-	std::string connectionString;
-	if (port >= 0)
-	{
-		connectionString = host + ":" + std::to_string(port);
-	}
-	else {
-		repoWarning << "GetHandler called with invalid port provided. Connection is attempted without port.";
-		connectionString = host;
-	}
-
-	// Unpack credential object	
-	std::string username = credentials->getStringField("user");
-	std::string password = credentials->getStringField("pwd");
-
-	if (!handler) {
-		//initialise the mongo client
-		repoTrace << "Handler not present for " << connectionString << " instantiating new handler...";
-		try {			
-			handler = new MongoDatabaseHandler(connectionString, maxConnections, dbName, username, password);
-		}
-		catch (mongocxx::logic_error e) {
-			if (handler)
-				delete handler;
-			handler = 0;
-			errMsg = std::string(e.what());
-			repoError << "Error establishing Mongo Handler: " << errMsg;
-		}
-		catch (mongocxx::exception e) {
-			if (handler)
-				delete handler;
-			handler = 0;
-			errMsg = std::string(e.what());
-			repoError << "Error establishing Mongo Handler: " << errMsg;
-		}
-	}
-	else
-	{
-		repoTrace << "Found handler, returning existing handler";
-	}
-
-	return handler;
+	return std::make_shared<MongoDatabaseHandler>(connectionString, maxConnections, dbName, username, password);
 }
 
 std::string MongoDatabaseHandler::getNamespace(
@@ -863,24 +600,13 @@ bool MongoDatabaseHandler::insertDocument(
 
 	if (!database.empty() || collection.empty())
 	{
-		// First, acquire client from pool
 		auto client = clientPool->acquire();
+		auto db = client->database(database);
+		auto col = db.collection(collection);
 
-		// Convert into bsoncxx string format
-		auto dbString = bsoncxx::string::view_or_value(database);
-		auto colString = bsoncxx::string::view_or_value(collection);
-
-		// Get database
-		auto dbObj = client->database(dbString);
-
-		// Get collection
-		auto colObj = dbObj.collection(colString);
-
-		// Convert RepoBSON into the mongo format
-		auto doc = RepoBSONToDocument(obj);
-
-		try {
-			colObj.insert_one(doc);			
+		try 
+		{
+			col.insert_one(obj.view());
 			success = true;
 		}
 		catch (mongocxx::bulk_write_exception &e)
@@ -909,27 +635,16 @@ bool MongoDatabaseHandler::insertManyDocuments(
 	if (!database.empty() || collection.empty())
 	{
 		try {
-
-			// First, acquire client from pool
 			auto client = clientPool->acquire();
+			auto db = client->database(database);
+			auto col = db.collection(collection);
 
-			// Convert into bsoncxx string format
-			auto dbString = bsoncxx::string::view_or_value(database);
-			auto colString = bsoncxx::string::view_or_value(collection);
-
-			// Get database
-			auto dbObj = client->database(dbString);
-
-			// Get collection
-			auto colObj = dbObj.collection(colString);
-
-			auto fileManager = fileservice::FileManager::getManager();
-			fileservice::BlobFilesHandler blobHandler(fileManager, database, collection, binaryStorageMetadata);
+			fileservice::BlobFilesHandler blobHandler(getFileManager(), database, collection, binaryStorageMetadata);
 
 			for (int i = 0; i < objs.size(); i += MAX_PARALLEL_BSON) {
 				std::vector<repo::core::model::RepoBSON>::const_iterator it = objs.begin() + i;
 				std::vector<repo::core::model::RepoBSON>::const_iterator last = i + MAX_PARALLEL_BSON >= objs.size() ? objs.end() : it + MAX_PARALLEL_BSON;
-				std::vector<bsoncxx::document::value> toCommit;
+				std::vector<bsoncxx::document::view_or_value> toCommit;
 				do {
 					auto node = *it;
 					auto data = node.getBinariesAsBuffer();
@@ -937,17 +652,12 @@ bool MongoDatabaseHandler::insertManyDocuments(
 						auto ref = blobHandler.insertBinary(data.second);
 						node.replaceBinaryWithReference(ref.serialise(), data.first);
 					}
-
-					// Convert RepoBSON into the mongo format
-					auto doc = RepoBSONToDocument(node);
-
-					toCommit.push_back(doc);
+					toCommit.push_back(node.view()); // Get the view to commit - this must be done before the method returns in case the original RepoBSON goes out of scope
 
 				} while (++it != last);
 
 				repoInfo << "Inserting " << toCommit.size() << " documents...";
-
-				colObj.insert_many(toCommit);				
+				col.insert_many(toCommit);				
 			}
 
 			blobHandler.finished();
@@ -985,45 +695,26 @@ bool MongoDatabaseHandler::upsertDocument(
 
 	bool upsert = overwrite;
 	try {
-
-		// First, acquire client from pool
 		auto client = clientPool->acquire();
+		auto db = client->database(database);
+		auto col = db.collection(collection);
 
-		// Convert into bsoncxx string format
-		auto dbString = bsoncxx::string::view_or_value(database);
-		auto colString = bsoncxx::string::view_or_value(collection);
-
-	//	mongo::BSONElement bsonID;
-	//	obj.getObjectID(bsonID);
-	//	mongo::Query existQuery = MONGO_QUERY("_id" << bsonID);
-	//	mongo::BSONObj bsonMongo = worker->findOne(database + "." + collection, existQuery);
-
-		// Get database
-		auto dbObj = client->database(dbString);
-
-		// Get collection
-		auto colObj = dbObj.collection(colString);
-
-		// Build Query
 		auto queryDoc = make_document(kvp(ID, obj.getField(ID)));
 
-		// Find document
-		auto docExist = colObj.find_one(queryDoc);
-
-		if (!docExist.has_value())
+		auto existing = col.find_one(queryDoc.view());
+		if (!existing.has_value())
 		{
-			//document doens't exist, insert the document
 			upsert = true;
 		}
 
-		// Convert RepoBSON into the mongo format
-		auto doc = RepoBSONToDocument(obj);
-
 		if (upsert) {
-			colObj.insert_one(queryDoc, doc);
+			col.insert_one(obj.view());
 		}
 		else {
-			colObj.update_one(queryDoc, doc);
+			col.update_one(
+				queryDoc.view(), 
+				make_document(kvp("$set", obj.view()))
+			);
 		}
 	}
 	catch (mongocxx::bulk_write_exception e)
@@ -1046,14 +737,4 @@ bool MongoDatabaseHandler::upsertDocument(
 	}
 
 	return success;
-}
-
-repo::core::model::RepoBSON* MongoDatabaseHandler::createBSONCredentials(
-	const std::string& dbName,
-	const std::string& username,
-	const std::string& password,
-	const bool& pwDigested)
-{
-	mongo::BSONObj* mongoBSON = createAuthBSON(dbName, username, password, pwDigested);
-	return mongoBSON ? new repo::core::model::RepoBSON(*mongoBSON) : nullptr;
 }

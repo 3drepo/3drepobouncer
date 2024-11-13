@@ -17,10 +17,17 @@
 
 #include "repo_bson_builder.h"
 
+#include <bsoncxx/types.hpp>
+#include <bsoncxx/types/value.hpp>
+#include <bsoncxx/builder/basic/array.hpp>
+#include <bsoncxx/builder/basic/document.hpp>
+#include <bsoncxx/builder/basic/kvp.hpp>
+
 using namespace repo::core::model;
+using namespace bsoncxx::builder::basic;
 
 RepoBSONBuilder::RepoBSONBuilder()
-	:mongo::BSONObjBuilder()
+	:document()
 {
 }
 
@@ -33,7 +40,17 @@ void RepoBSONBuilder::appendUUID(
 	const repo::lib::RepoUUID &uuid)
 {
 	auto uuidData = uuid.data();
-	appendBinData(label, uuidData.size(), mongo::bdtUUID, (char*)uuidData.data());
+
+	bsoncxx::types::b_binary binary {
+		bsoncxx::binary_sub_type::k_uuid_deprecated, // Todo:: This is the same enum as before - to double check if this works or if we can use 
+		uuidData.size(),
+		uuidData.data()
+	};
+
+	document::append(kvp(
+		label,
+		binary
+	));
 }
 
 void repo::core::model::RepoBSONBuilder::appendRepoVariant(const std::string& label, const repo::lib::RepoVariant& item)
@@ -44,8 +61,7 @@ void repo::core::model::RepoBSONBuilder::appendRepoVariant(const std::string& la
 
 RepoBSON RepoBSONBuilder::obj()
 {
-	mongo::BSONObjBuilder build;
-	return RepoBSON(mongo::BSONObjBuilder::obj(), binMapping);
+	return RepoBSON(document::extract(), binMapping);
 }
 
 template<> void repo::core::model::RepoBSONBuilder::append<repo::lib::RepoUUID>
@@ -57,13 +73,28 @@ template<> void repo::core::model::RepoBSONBuilder::append<repo::lib::RepoUUID>
 	appendUUID(label, uuid);
 }
 
-template<> void repo::core::model::RepoBSONBuilder::append<tm>
-	(
-		const std::string& label,
-		const tm& time
-		)
+template<> void repo::core::model::RepoBSONBuilder::append<tm>(
+	const std::string& label,
+	const tm& time
+)
 {
 	appendTime(label, time);
+}
+
+template<> void repo::core::model::RepoBSONBuilder::append<RepoBSON>(
+	const std::string& label,
+	const RepoBSON& obj
+)
+{
+	append(label, obj.view());
+}
+
+template<> void repo::core::model::RepoBSONBuilder::append<std::vector<float>>(
+	const std::string& label,
+	const std::vector<float>& vector
+	)
+{
+	appendArray(label, vector);
 }
 
 template<> void repo::core::model::RepoBSONBuilder::append<repo::lib::RepoVector3D>
@@ -81,17 +112,17 @@ template<> void repo::core::model::RepoBSONBuilder::append<repo::lib::RepoMatrix
 	const repo::lib::RepoMatrix &mat
 )
 {
-	RepoBSONBuilder rows;
+	bsoncxx::builder::basic::array rows{};
 	auto data = mat.getData();
 	for (uint32_t i = 0; i < 4; ++i)
 	{
-		RepoBSONBuilder columns;
+		bsoncxx::builder::basic::array columns;
 		for (uint32_t j = 0; j < 4; ++j){
-			columns << std::to_string(j) << data[i * 4 + j];
+			columns.append(data[i * 4 + j]);
 		}
-		rows.appendArray(std::to_string(i), columns.obj());
+		rows.append(columns.extract());
 	}
-	appendArray(label, rows.obj());;
+	document::append(kvp(label, rows.extract()));
 }
 
 void RepoBSONBuilder::appendVector3DObject(
@@ -99,11 +130,11 @@ void RepoBSONBuilder::appendVector3DObject(
 	const repo::lib::RepoVector3D& vec
 )
 {
-	mongo::BSONObjBuilder objBuilder;
-	objBuilder.append("x", vec.x);
-	objBuilder.append("y", vec.y);
-	objBuilder.append("z", vec.z);
-	append(label, objBuilder.obj());
+	document objBuilder;
+	objBuilder.append(kvp("x", vec.x));
+	objBuilder.append(kvp("y", vec.y));
+	objBuilder.append(kvp("z", vec.z));
+	append(label, objBuilder.extract());
 }
 
 void RepoBSONBuilder::appendLargeArray(std::string name, const void* data, size_t size)
@@ -114,9 +145,10 @@ void RepoBSONBuilder::appendLargeArray(std::string name, const void* data, size_
 	memcpy(buf.data(), data, size);
 }
 
-void RepoBSONBuilder::appendTime(std::string label, const int64_t& ts) {
-	mongo::Date_t date = mongo::Date_t(ts * 1000); // Mongo expects time in ms
-	mongo::BSONObjBuilder::append(label, date);
+void RepoBSONBuilder::appendTime(std::string label, const int64_t& ts) 
+{
+	bsoncxx::types::b_date date(std::chrono::milliseconds(ts * 1000)); 
+	document::append(kvp(label, date));
 }
 
 void RepoBSONBuilder::appendTime(std::string label, const tm& t) {
@@ -138,16 +170,41 @@ void RepoBSONBuilder::appendTimeStamp(std::string label) {
 }
 
 void RepoBSONBuilder::appendElements(RepoBSON bson) {
-	mongo::BSONObjBuilder::appendElements(bson);
+	for (auto& element : bson) {
+		document::append(kvp(element.key(), element.get_value()));
+	}
 }
 
 void RepoBSONBuilder::appendElementsUnique(RepoBSON bson) {
-	mongo::BSONObjBuilder::appendElementsUnique(bson);
+	auto view = document::view();
+	for (auto& element : bson) {
+		if (view.find(element.key()) == view.end()) {
+			document::append(kvp(element.key(), element.get_value()));
+		}
+	}
 }
 
 void RepoBSONBuilder::appendArray(
 	const std::string& label,
 	const RepoBSON& bson)
 {
-	mongo::BSONObjBuilder::appendArray(label, bson);
+	document::append(kvp(label, bson.view()));
+}
+
+template<typename T>
+RepoBSON RepoBSONBuilder::makeBson(const std::string& label, const T& value)
+{
+	RepoBSONBuilder builder;
+	builder.append(label, value);
+	return builder.obj();
+}
+
+RepoBSON RepoBSONBuilder::makeIndex(std::vector<std::pair<const std::string&, int>> indices)
+{
+	RepoBSONBuilder builder;
+	for (const auto& i : indices)
+	{
+		builder.append(i.first, i.second);
+	}
+	return builder.obj();
 }

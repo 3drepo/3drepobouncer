@@ -78,7 +78,7 @@ namespace repo {
 					{4, 72}
 				};
 
-				typedef struct
+				struct fileMeta
 				{
 					int64_t jsonSize	 = -1;	//!< Size of the entire JSON segment
 					int64_t dataSize	 = -1;	//!< Size of the entire binary footer segment
@@ -89,7 +89,7 @@ namespace repo {
 					int64_t numChildren	 = -1;	//!< Number of children of the root node
 					int64_t textureStart = -1;	//!< Starting location of the JSON textures array from the top of the file in bytes
 					int64_t textureSize  = -1;  //!< Size of the JSON textures array in bytes
-				} fileMeta;
+				};
 
 				struct mesh_data_t
 				{

@@ -59,8 +59,7 @@ void MeshNode::deserialise(RepoBSON& bson)
 	if (bson.hasField(REPO_NODE_MESH_LABEL_PRIMITIVE))
 		primitive = static_cast<MeshNode::Primitive>(bson.getIntField(REPO_NODE_MESH_LABEL_PRIMITIVE));
 
-	RepoBSON bbArr = bson.getObjectField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
-	boundingBox = getBoundingBox(bbArr);
+	boundingBox = bson.getBounds3D(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
 
 	if (bson.hasBinField(REPO_NODE_MESH_LABEL_FACES) && bson.hasField(REPO_NODE_MESH_LABEL_FACES_COUNT))
 	{
@@ -151,7 +150,7 @@ void appendVertices(RepoBSONBuilder& builder, const std::vector<repo::lib::RepoV
 {
 	if (vertices.size() > 0)
 	{
-		builder.append(REPO_NODE_MESH_LABEL_VERTICES_COUNT, (uint32_t)(vertices.size()));
+		builder.append(REPO_NODE_MESH_LABEL_VERTICES_COUNT, (int32_t)(vertices.size()));
 		builder.appendLargeArray(REPO_NODE_MESH_LABEL_VERTICES, vertices);
 	}
 }
@@ -160,7 +159,7 @@ void appendFaces(RepoBSONBuilder& builder, const std::vector<repo_face_t>& faces
 {
 	if (faces.size() > 0)
 	{
-		builder.append(REPO_NODE_MESH_LABEL_FACES_COUNT, (uint32_t)(faces.size()));
+		builder.append(REPO_NODE_MESH_LABEL_FACES_COUNT, (int32_t)(faces.size()));
 
 		// In API LEVEL 1, faces are stored as
 		// [n1, v1, v2, ..., n2, v1, v2...]
@@ -223,7 +222,7 @@ void appendUVChannels(RepoBSONBuilder& builder, size_t numChannels, const std::v
 		if (concatenated.size() > 0)
 		{
 			// Could be unsigned __int64 if BSON had such construct (the closest is only __int64)
-			builder.append(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT, (uint32_t)numChannels);
+			builder.append(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT, (int32_t)numChannels);
 			builder.appendLargeArray(REPO_NODE_MESH_LABEL_UV_CHANNELS, concatenated);
 		}
 	}
@@ -356,48 +355,6 @@ void MeshNode::transformBoundingBox(
 		min = lib::RepoVector3D::min(min, c);
 		max = lib::RepoVector3D::max(max, c);
 	}
-}
-
-std::vector<repo::lib::RepoVector3D> MeshNode::getBoundingBox(RepoBSON &bbArr)
-{
-	std::vector<repo::lib::RepoVector3D> bbox;
-	if (bbArr.nFields() == 2)
-	{
-		size_t nVec = bbArr.nFields();
-		bbox.reserve(nVec);
-		for (uint32_t i = 0; i < nVec; ++i)
-		{
-			auto bbVectorBson = bbArr.getObjectField(std::to_string(i));
-			if (!bbVectorBson.isEmpty())
-			{
-				int32_t nFields = bbVectorBson.nFields();
-
-				if (nFields >= 3)
-				{
-					repo::lib::RepoVector3D vector;
-					vector.x = bbVectorBson.getDoubleField("0");
-					vector.y = bbVectorBson.getDoubleField("1");
-					vector.z = bbVectorBson.getDoubleField("2");
-
-					bbox.push_back(vector);
-				}
-				else
-				{
-					repoError << "Insufficient amount of elements within bounding box! #fields: " << nFields;
-				}
-			}
-			else
-			{
-				repoError << "Failed to get a vector for bounding box!";
-			}
-		}
-	}
-	else
-	{
-		repoError << "Failed to fetch bounding box from Mesh Node!";
-	}
-
-	return bbox;
 }
 
 uint32_t MeshNode::getMFormat(const bool isTransparent, const bool isInvisibleDefault) const

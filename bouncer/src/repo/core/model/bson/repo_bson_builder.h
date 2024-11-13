@@ -34,16 +34,16 @@
 #include "repo/lib/datastructure/repo_matrix.h"
 #include "repo/lib/datastructure/repo_uuid.h"
 #include "repo/lib/datastructure/repo_variant.h"
-
 #include <boost/variant/static_visitor.hpp>
-
 #include <string>
 #include <ctime>
+#include <bsoncxx/builder/basic/document.hpp>
+#include <bsoncxx/builder/basic/array.hpp>
 
 namespace repo {
 	namespace core {
 		namespace model {
-			class REPO_API_EXPORT RepoBSONBuilder : private mongo::BSONObjBuilder
+			class REPO_API_EXPORT RepoBSONBuilder : private bsoncxx::builder::basic::document
 			{
 			public:
 				RepoBSONBuilder();
@@ -89,7 +89,7 @@ namespace repo {
 					RepoBSONBuilder array;
 					for (unsigned int i = 0; i < vec.size(); ++i)
 						array.append(std::to_string(i), vec[i]);
-					mongo::BSONObjBuilder::appendArray(label, array.obj());
+					append(label, array.obj());
 				}
 
 				void appendArray(
@@ -105,7 +105,15 @@ namespace repo {
 					const std::string& label,
 					const T& item)
 				{
-					mongo::BSONObjBuilder::append(label, item);
+					bsoncxx::builder::basic::document::append(bsoncxx::builder::basic::kvp(label, item));
+				}
+
+				template<class V>
+				void append(
+					const std::string& label,
+					const std::vector<V> items)
+				{
+					appendArray(label, items);
 				}
 
 				void appendElements(RepoBSON bson);
@@ -131,6 +139,19 @@ namespace repo {
 				* @return returns a RepoBSON object with the fields given.
 				*/
 				RepoBSON obj();
+
+				/*
+				* Make a RepoBSON with one element. This convenience function operates like
+				* make_document, but taking all the types supported by RepoBSONBuilder.
+				*/
+				template<typename T>
+				static RepoBSON makeBson(const std::string& label, const T& value);
+
+				/*
+				* Make a RepoBSON where each value is either 1 or -1, for RepoBSONs to be
+				* used as arguments to createIndex.
+				*/
+				static RepoBSON makeIndex(std::vector<std::pair<const std::string&, int>> indices);
 
 			private:
 				/**
@@ -206,6 +227,12 @@ namespace repo {
 				const std::string& label,
 				const tm& mat
 			);
+
+			template<> REPO_API_EXPORT void RepoBSONBuilder::append<RepoBSON>(
+				const std::string& label,
+				const RepoBSON& obj
+			);
+
 		}// end namespace model
 	} // end namespace core
 } // end namespace repo

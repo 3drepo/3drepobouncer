@@ -20,18 +20,16 @@
 */
 #include "repo_scene.h"
 
-#include <boost/assign.hpp>
-#include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 #include <fstream>
 
-#include "../../../lib/repo_log.h"
-#include "../../../error_codes.h"
-#include "../bson/repo_bson_builder.h"
-#include "../bson/repo_bson_factory.h"
-#include "../bson/repo_bson_project_settings.h"
+#include "repo/lib/repo_log.h"
+#include "repo/error_codes.h"
+#include "repo/core/model/bson/repo_bson_builder.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/core/model/bson/repo_bson_project_settings.h"
 
 using namespace repo::core::model;
 
@@ -662,7 +660,7 @@ void RepoScene::addErrorStatusToProjectSettings(
 	repo::core::handler::AbstractDatabaseHandler *handler
 )
 {
-	RepoBSON criteria = BSON(REPO_LABEL_ID << projectName);
+	RepoBSON criteria = RepoBSONBuilder::makeBson(REPO_LABEL_ID, projectName);
 	auto projectsettings = RepoProjectSettings(handler->findOneByCriteria(databaseName, REPO_COLLECTION_SETTINGS, criteria));
 	projectsettings.setErrorStatus();
 	std::string errorMsg;
@@ -676,7 +674,7 @@ void RepoScene::addTimestampToProjectSettings(
 	repo::core::handler::AbstractDatabaseHandler *handler
 )
 {
-	RepoBSON criteria = BSON(REPO_LABEL_ID << projectName);
+	RepoBSON criteria = RepoBSONBuilder::makeBson(REPO_LABEL_ID, projectName);
 	auto projectsettings = RepoProjectSettings(handler->findOneByCriteria(databaseName, REPO_COLLECTION_SETTINGS, criteria));
 	projectsettings.clearErrorStatus();
 	std::string errorMsg;
@@ -726,11 +724,11 @@ bool RepoScene::commitRevisionNode(
 
 	if (newRevNode)
 	{
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, BSON(REPO_NODE_REVISION_LABEL_TIMESTAMP << -1));
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON(REPO_NODE_REVISION_ID << 1 << "metadata.key" << 1 << "metadata.value" << 1));
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON("metadata.key" << 1 << "metadata.value" << 1));
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON(REPO_NODE_REVISION_ID << 1 << REPO_NODE_LABEL_SHARED_ID << 1 << REPO_LABEL_TYPE << 1));
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON(REPO_NODE_LABEL_SHARED_ID << 1));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, RepoBSONBuilder::makeIndex({ { REPO_NODE_REVISION_LABEL_TIMESTAMP, -1} }));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, RepoBSONBuilder::makeIndex({ {REPO_NODE_REVISION_ID, 1}, {"metadata.key", 1}, {"metadata.value", 1} }));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, RepoBSONBuilder::makeIndex({ {"metadata.key", 1}, {"metadata.value", 1} }));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, RepoBSONBuilder::makeIndex({ {REPO_NODE_REVISION_ID, 1}, {REPO_NODE_LABEL_SHARED_ID, 1}, {REPO_LABEL_TYPE, 1} }));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, RepoBSONBuilder::makeIndex({ {REPO_NODE_LABEL_SHARED_ID, 1} }));
 
 		for (size_t i = 0; i < refFiles.size(); i++)
 		{
@@ -764,7 +762,7 @@ bool RepoScene::commitRevisionNode(
 				repoError << "Failed to open reference file " << refFiles[i];
 			}
 		}
-	}
+		}
 	else
 	{
 		errMsg += "Failed to instantiate a new revision object!";
@@ -1104,7 +1102,9 @@ bool RepoScene::loadRevision(
 		if (includeStatus.size()) {
 			RepoBSONBuilder statusBSONBuilder;
 			std::vector<RepoBSON> statusCheck = {
-			BSON(REPO_NODE_REVISION_LABEL_INCOMPLETE << BSON("$exists" << false))
+				RepoBSONBuilder::makeBson(REPO_NODE_REVISION_LABEL_INCOMPLETE,
+					RepoBSONBuilder::makeBson("$exists", false)
+				)
 			};
 			std::vector<int> statuses;
 			for (const auto &status : includeStatus) {
@@ -1117,7 +1117,7 @@ bool RepoScene::loadRevision(
 			critBuilder.appendArray("$or", statusCheck);
 		}
 		else {
-			critBuilder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, BSON("$exists" << false));
+			critBuilder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, RepoBSONBuilder::makeBson("$exists", false));
 		}
 
 		critBuilder.append(REPO_NODE_LABEL_SHARED_ID, branch);

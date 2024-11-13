@@ -34,7 +34,7 @@
 #endif
 
 #include <unordered_map>
-
+#include <set>
 #include "repo/repo_bouncer_global.h"
 #include "repo/core/model/repo_model_global.h"
 #include "repo/lib/repo_log.h"
@@ -44,7 +44,7 @@
 #include "repo/lib/repo_exception.h"
 #include "repo/core/model/bson/repo_bson_element.h"
 
-#include <mongo/bson/bson.h>
+#include <bsoncxx/document/value.hpp>
 
 #define REPO_BSON_MAX_BYTE_SIZE 16770000 //max size is 16MB,but leave a bit for buffer
 
@@ -58,7 +58,7 @@ namespace repo {
 			//TODO: Eventually we should inherit from a generic BSON object.
 			//work seems to have been started in here:https://github.com/jbenet/bson-cpp
 			//alternatively we can use a c++ wrapper on https://github.com/mongodb/libbson
-			class REPO_API_EXPORT RepoBSON : private mongo::BSONObj
+			class REPO_API_EXPORT RepoBSON : private bsoncxx::document::value
 			{
 				friend class RepoBSONBuilder;
 				friend class repo::core::handler::MongoDatabaseHandler;
@@ -66,11 +66,6 @@ namespace repo {
 			public:
 
 				using BinMapping = std::unordered_map<std::string, std::vector<uint8_t>>;
-
-				/**
-				* Default empty constructor.
-				*/
-				RepoBSON();
 
 				/**
 				* Constructor from Mongo BSON object.
@@ -83,20 +78,14 @@ namespace repo {
 				* Constructor from Mongo BSON object.
 				* @param mongo BSON object
 				*/
-				RepoBSON(const mongo::BSONObj &obj,
+				RepoBSON(const bsoncxx::document::view &obj,
 					const BinMapping& binMapping = {});
 
 				/**
-				* Constructor from Mongo BSON object builder.
-				* @param mongo BSON object builder
+				* This constructor must exist for various container types,
+				* but should be avoided in practice.
 				*/
-				RepoBSON(mongo::BSONObjBuilder& builder);
-
-				/**
-				* Constructor from raw data buffer.
-				* @param rawData raw data
-				*/
-				RepoBSON(const std::vector<char>& rawData);
+				RepoBSON();
 
 				/**
 				* Default empty deconstructor.
@@ -110,8 +99,6 @@ namespace repo {
 				RepoBSON& operator=(RepoBSON otherCopy);
 
 				bool hasField(const std::string& label) const;
-
-				int nFields() const;
 
 				/**
 				* returns a field from the BSON

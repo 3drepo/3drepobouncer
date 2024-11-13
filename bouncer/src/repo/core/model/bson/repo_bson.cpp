@@ -16,19 +16,19 @@
 */
 
 #include "repo_bson.h"
-
 #include <unordered_map>
-
-#include <mongo/client/dbclient.h>
-#include <mongo/bson/bson.h>
-
 #include "repo/lib/repo_exception.h"
+#include "repo/core/model/bson/repo_bson_builder.h"
+
+#include <bsoncxx/json.hpp>
+#include <bsoncxx/document/value.hpp>
+#include <bsoncxx/exception/exception.hpp>
 
 using namespace repo::core::model;
 
 RepoBSON::RepoBSON(const RepoBSON &obj,
 	const BinMapping &binMapping) :
-	mongo::BSONObj(obj),
+	bsoncxx::document::value(obj.view()),
 	bigFiles(binMapping) {
 
 	auto existingFiles = obj.getFilesMapping();
@@ -40,40 +40,29 @@ RepoBSON::RepoBSON(const RepoBSON &obj,
 }
 
 RepoBSON::RepoBSON(
-	const mongo::BSONObj &obj,
+	const bsoncxx::document::view &obj,
 	const BinMapping &binMapping)
-	: mongo::BSONObj(obj),
+	: bsoncxx::document::value(obj),
 	bigFiles(binMapping)
 {
 }
 
 RepoBSON::RepoBSON()
-	: mongo::BSONObj()
+	: bsoncxx::document::value(bsoncxx::builder::basic::make_document())
 {
 }
 
-RepoBSON::RepoBSON(mongo::BSONObjBuilder& builder)
-	: mongo::BSONObj(builder.obj())
+bool RepoBSON::hasField(const std::string& label) const
 {
+	return bsoncxx::document::value::find(label) != bsoncxx::document::value::end();
 }
 
-RepoBSON::RepoBSON(const std::vector<char>& rawData)
-	: mongo::BSONObj(rawData.data())
+RepoBSONElement RepoBSON::getField(const std::string& label) const
 {
-}
-
-bool RepoBSON::hasField(const std::string& label) const {
-	return mongo::BSONObj::hasField(label);
-}
-
-int RepoBSON::nFields() const {
-	return mongo::BSONObj::nFields();
-}
-
-RepoBSONElement RepoBSON::getField(const std::string& label) const {
-	if (hasField(label))
+	auto value = bsoncxx::document::value::find(label);
+	if (value != bsoncxx::document::value::end())
 	{
-		return RepoBSONElement(mongo::BSONObj::getField(label));
+		return RepoBSONElement(*value);
 	}
 	else
 	{
@@ -81,94 +70,108 @@ RepoBSONElement RepoBSON::getField(const std::string& label) const {
 	}
 }
 
-bool RepoBSON::getBoolField(const std::string& label) const {
+bool RepoBSON::getBoolField(const std::string& label) const
+{
 	try
 	{
 		return getField(label).Bool();
 	}
-	catch (std::exception)
+	catch (bsoncxx::exception)
 	{
 		throw repo::lib::RepoFieldTypeException(label);
 	}
 }
 
-std::string RepoBSON::getStringField(const std::string& label) const {
+std::string RepoBSON::getStringField(const std::string& label) const
+{
 	try
 	{
 		return getField(label).String();
 	}
-	catch (std::exception)
+	catch (bsoncxx::exception)
 	{
 		throw repo::lib::RepoFieldTypeException(label);
 	}
 }
 
-RepoBSON RepoBSON::getObjectField(const std::string& label) const {
+RepoBSON RepoBSON::getObjectField(const std::string& label) const
+{
 	try
 	{
 		return getField(label).Object();
 	}
-	catch (std::exception)
+	catch (bsoncxx::exception)
 	{
 		throw repo::lib::RepoFieldTypeException(label);
 	}
 }
 
-std::vector<repo::lib::RepoVector3D> RepoBSON::getBounds3D(const std::string& label) {
+std::vector<repo::lib::RepoVector3D> RepoBSON::getBounds3D(const std::string& label)
+{
 	auto field = getObjectField(label);
 	return std::vector< lib::RepoVector3D>({
 		lib::RepoVector3D(field.getFloatVectorField("0")),
 		lib::RepoVector3D(field.getFloatVectorField("1")),
-		});
+	});
 }
 
-bool RepoBSON::isEmpty() const {
-	return mongo::BSONObj::isEmpty() && !bigFiles.size();
+bool RepoBSON::isEmpty() const
+{
+	return bsoncxx::document::value::empty() && !bigFiles.size();
 }
 
-int RepoBSON::getIntField(const std::string& label) const {
+int RepoBSON::getIntField(const std::string& label) const
+{
 	try
 	{
 		return getField(label).Int();
 	}
-	catch (std::exception)
+	catch (bsoncxx::exception)
 	{
 		throw repo::lib::RepoFieldTypeException(label);
 	}
 }
 
-std::set<std::string> RepoBSON::getFieldNames() const {
+std::set<std::string> RepoBSON::getFieldNames() const
+{
 	std::set<std::string> fieldNames;
-	mongo::BSONObj::getFieldNames(fieldNames);
+	for (auto& f : *this) {
+		std::string n(f.key().data(), f.key().size());
+		fieldNames.insert(n);
+	}
 	return fieldNames;
 }
 
-uint64_t RepoBSON::objsize() const {
-	return mongo::BSONObj::objsize();
+uint64_t RepoBSON::objsize() const
+{
+	return bsoncxx::document::value::length();
 }
 
-std::string RepoBSON::toString() const {
-	return mongo::BSONObj::toString();
+std::string RepoBSON::toString() const
+{
+	return bsoncxx::to_json(*this);
 }
 
-bool RepoBSON::operator==(const RepoBSON other) const {
-	return mongo::BSONObj::operator==((mongo::BSONObj)other) && bigFiles == other.bigFiles;
+bool RepoBSON::operator==(const RepoBSON other) const
+{
+	return this->view() == other.view() && bigFiles == other.bigFiles;
 }
 
-bool RepoBSON::operator!=(const RepoBSON other) const {
-	return mongo::BSONObj::operator!=((mongo::BSONObj)other);
+bool RepoBSON::operator!=(const RepoBSON other) const
+{
+	return this->view() != other.view() || bigFiles != other.bigFiles;
 }
 
-
-RepoBSON& RepoBSON::operator=(RepoBSON otherCopy) {
-	swap(otherCopy);
+RepoBSON& RepoBSON::operator=(RepoBSON otherCopy)
+{
+	bsoncxx::document::value::reset(otherCopy.view());
+	bigFiles = otherCopy.bigFiles;
 	return *this;
 }
 
 void RepoBSON::swap(RepoBSON otherCopy)
 {
-	mongo::BSONObj::swap(otherCopy);
-	bigFiles = otherCopy.bigFiles;
+	*this = otherCopy;
 }
 
 std::vector<std::string> RepoBSON::getFileList(const std::string& label) const
@@ -183,20 +186,22 @@ std::vector<std::string> RepoBSON::getFileList(const std::string& label) const
 	return fileList;
 }
 
-std::pair<repo::core::model::RepoBSON, std::vector<uint8_t>> RepoBSON::getBinariesAsBuffer() const {
+std::pair<repo::core::model::RepoBSON, std::vector<uint8_t>> RepoBSON::getBinariesAsBuffer() const
+{
 	std::pair<repo::core::model::RepoBSON, std::vector<uint8_t>> res;
 	if (bigFiles.size()) {
 		std::vector<uint8_t> &buffer = res.second;
-		mongo::BSONObjBuilder elemsBuilder;
 
+		RepoBSONBuilder elemsBuilder;
 		for (const auto &entry : bigFiles) {
-			mongo::BSONObjBuilder entryBuilder;
-
-			entryBuilder << REPO_LABEL_BINARY_START << (unsigned int)buffer.size();
+			RepoBSONBuilder entryBuilder;
+			
+			entryBuilder.append(REPO_LABEL_BINARY_START, (int32_t)buffer.size());
+			
 			buffer.insert(buffer.end(), entry.second.begin(), entry.second.end());
-			entryBuilder << REPO_LABEL_BINARY_SIZE << (unsigned int)entry.second.size();
+			entryBuilder.append(REPO_LABEL_BINARY_SIZE, (int32_t)entry.second.size());
 
-			elemsBuilder << entry.first << entryBuilder.obj();
+			elemsBuilder.append(entry.first, entryBuilder.obj());
 		}
 
 		res.first = elemsBuilder.obj();
@@ -205,21 +210,26 @@ std::pair<repo::core::model::RepoBSON, std::vector<uint8_t>> RepoBSON::getBinari
 	return res;
 }
 
-void RepoBSON::replaceBinaryWithReference(const repo::core::model::RepoBSON &fileRef, const repo::core::model::RepoBSON &elemRef) {
-	mongo::BSONObjBuilder objBuilder;
-	objBuilder << REPO_LABEL_BINARY_ELEMENTS << (mongo::BSONObj)elemRef;
-	objBuilder << REPO_LABEL_BINARY_BUFFER << (mongo::BSONObj)fileRef;
+void RepoBSON::replaceBinaryWithReference(
+	const repo::core::model::RepoBSON &fileRef, 
+	const repo::core::model::RepoBSON &elemRef
+)
+{
+	RepoBSONBuilder objBuilder;
+	objBuilder.append(REPO_LABEL_BINARY_ELEMENTS, elemRef);
+	objBuilder.append(REPO_LABEL_BINARY_BUFFER, fileRef);
 
 	auto obj = objBuilder.obj();
 
-	mongo::BSONObjBuilder builder;
+	RepoBSONBuilder builder;
 	builder.append(REPO_LABEL_BINARY_REFERENCE, obj);
 	builder.appendElementsUnique(*this);
 
 	*this = builder.obj();
 }
 
-repo::lib::RepoUUID RepoBSON::getUUIDField(const std::string &label) const {
+repo::lib::RepoUUID RepoBSON::getUUIDField(const std::string &label) const
+{
 	if (hasField(label))
 	{
 		auto f = getField(label);
@@ -242,30 +252,25 @@ repo::lib::RepoUUID RepoBSON::getUUIDField(const std::string &label) const {
 	}
 }
 
-std::vector<float> RepoBSON::getFloatVectorField(const std::string& label) const {
-	try {
-		std::vector<float> results;
-		auto a = getObjectField(label);
-		results.reserve(a.nFields());
-		for (auto i = a.begin(); i.more(); )
-		{
-			try {
-				results.push_back((float)(i.next().Double()));
-			}
-			catch (std::exception e)
-			{
-				throw repo::lib::RepoFieldTypeException(label); // This version of the driver doesn't have specific exceptions so we guess based on the scope of the try block this is what it is
-			}
-		}
-		return results;
-	}
-	catch (std::exception)
+std::vector<float> RepoBSON::getFloatVectorField(const std::string& label) const
+{
+	std::vector<float> results;
+	auto a = getObjectField(label);
+	for (auto& f : a)
 	{
-		throw repo::lib::RepoFieldTypeException(label);
+		try {
+			results.push_back(f.get_double());
+		}
+		catch (bsoncxx::exception)
+		{
+			throw repo::lib::RepoFieldTypeException(label); // Will get a bsoncxx exception in case of a cast error - otherwise the exception should bubble up
+		}
 	}
+	return results;
 }
 
-repo::lib::RepoVector3D RepoBSON::getVector3DField(const std::string& label) const {
+repo::lib::RepoVector3D RepoBSON::getVector3DField(const std::string& label) const
+{
 	auto f = getObjectField(label);
 	repo::lib::RepoVector3D v;
 	v.x = f.getDoubleField("x");
@@ -274,10 +279,10 @@ repo::lib::RepoVector3D RepoBSON::getVector3DField(const std::string& label) con
 	return v;
 }
 
-repo::lib::RepoMatrix RepoBSON::getMatrixField(const std::string& label) const {
-
-	std::vector<mongo::BSONElement> rows;
-	std::vector<mongo::BSONElement> cols;
+repo::lib::RepoMatrix RepoBSON::getMatrixField(const std::string& label) const
+{
+	std::vector<RepoBSONElement> rows;
+	std::vector<RepoBSONElement> cols;
 
 	std::vector<float> transformationMatrix;
 
@@ -287,8 +292,11 @@ repo::lib::RepoMatrix RepoBSON::getMatrixField(const std::string& label) const {
 
 	// matrix is stored as array of arrays, row first
 
-	auto matrixObj = getField(label).embeddedObject();
+	auto matrixObj = getField(label).Object();
 
+
+
+	/*
 	matrixObj.elems(rows);
 	for (size_t rowInd = 0; rowInd < 4; rowInd++)
 	{
@@ -300,36 +308,31 @@ repo::lib::RepoMatrix RepoBSON::getMatrixField(const std::string& label) const {
 			transArr[index] = cols[colInd].number();
 		}
 	}
+	*/
 
 	return repo::lib::RepoMatrix(transformationMatrix);
 }
 
-std::vector<double> RepoBSON::getDoubleVectorField(const std::string& label) const {
-	try {
-		std::vector<double> results;
-		auto a = getObjectField(label);
-		results.reserve(a.nFields());
-		for (auto i = a.begin(); i.more(); )
-		{
-			try {
-				results.push_back(i.next().Double());
-			}
-			catch (std::exception e)
-			{
-				throw repo::lib::RepoFieldTypeException(label); // This version of the driver doesn't have specific exceptions so we guess based on the scope of the try block this is what it is
-			}
-		}
-		return results;
-	}
-	catch (std::exception)
+std::vector<double> RepoBSON::getDoubleVectorField(const std::string& label) const
+{
+	std::vector<double> results;
+	auto a = getObjectField(label);
+	for (auto& f : a)
 	{
-		throw repo::lib::RepoFieldTypeException(label);
+		try {
+			results.push_back(f.get_double());
+		}
+		catch (bsoncxx::exception)
+		{
+			throw repo::lib::RepoFieldTypeException(label); // Will get a bsoncxx exception in case of a cast error - otherwise the exception should bubble up
+		}
 	}
+	return results;
 }
 
-std::vector<repo::lib::RepoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) const {
+std::vector<repo::lib::RepoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) const 
+{
 	std::vector<repo::lib::RepoUUID> results;
-
 	if (hasField(label))
 	{
 		RepoBSON array = getObjectField(label);
@@ -341,7 +344,6 @@ std::vector<repo::lib::RepoUUID> RepoBSON::getUUIDFieldArray(const std::string &
 				results.push_back(array.getUUIDField(*it)); // If the item is the wrong type an exception will be thrown to the caller
 		}
 	}
-
 	return results;
 }
 
@@ -365,7 +367,8 @@ const std::vector<uint8_t>& RepoBSON::getBinary(const std::string& field) const
 	}
 }
 
-repo::core::model::RepoBSON RepoBSON::getBinaryReference() const {
+repo::core::model::RepoBSON RepoBSON::getBinaryReference() const
+{
 	repo::core::model::RepoBSON res;
 	if (hasField(REPO_LABEL_BINARY_REFERENCE))
 	{
@@ -376,7 +379,8 @@ repo::core::model::RepoBSON RepoBSON::getBinaryReference() const {
 	return res;
 }
 
-void RepoBSON::initBinaryBuffer(const std::vector<uint8_t> &buffer) {
+void RepoBSON::initBinaryBuffer(const std::vector<uint8_t> &buffer)
+{
 	if (hasField(REPO_LABEL_BINARY_REFERENCE))
 	{
 		RepoBSON extRefbson = getObjectField(REPO_LABEL_BINARY_REFERENCE);
@@ -398,7 +402,8 @@ bool RepoBSON::hasBinField(const std::string &label) const
 	return bigFiles.find(label) != bigFiles.end();
 }
 
-bool RepoBSON::hasFileReference() const {
+bool RepoBSON::hasFileReference() const
+{
 	return hasField(REPO_LABEL_BINARY_REFERENCE);
 }
 
@@ -410,15 +415,14 @@ std::vector<float> RepoBSON::getFloatArray(const std::string &label) const
 		RepoBSON array = getObjectField(label);
 		if (!array.isEmpty())
 		{
-			results.reserve(array.nFields());
-			for (auto i = array.begin(); i.more(); )
+			for (auto& f : array)
 			{
 				try {
-					results.push_back(i.next().Double());
+					results.push_back(f.get_double());
 				}
-				catch (std::exception e)
+				catch (bsoncxx::exception)
 				{
-					throw repo::lib::RepoFieldTypeException(label); // This version of the driver doesn't have specific exceptions so we guess based on the scope of the try block this is what it is
+					throw repo::lib::RepoFieldTypeException(label); // Will get a bsoncxx exception in case of a cast error - otherwise the exception should bubble up
 				}
 			}
 		}
@@ -432,18 +436,15 @@ std::vector<std::string> RepoBSON::getStringArray(const std::string &label) cons
 	if (hasField(label))
 	{
 		RepoBSON array = getObjectField(label);
-		if (!array.isEmpty())
+		for (const auto& f : array)
 		{
-			results.reserve(array.nFields());
-			for (auto i = array.begin(); i.more(); )
+			try {
+				auto view = f.get_string().value;
+				results.push_back(std::string(view.data(), view.size()));
+			}
+			catch (bsoncxx::exception)
 			{
-				try {
-					results.push_back(i.next().String());
-				}
-				catch (std::exception e)
-				{
-					throw repo::lib::RepoFieldTypeException(label); // This version of the driver doesn't have specific exceptions so we guess based on the scope of the try block this is what it is
-				}
+				throw repo::lib::RepoFieldTypeException(label); // This version of the driver doesn't have specific exceptions so we guess based on the scope of the try block this is what it is
 			}
 		}
 	}
@@ -452,30 +453,22 @@ std::vector<std::string> RepoBSON::getStringArray(const std::string &label) cons
 
 time_t RepoBSON::getTimeStampField(const std::string &label) const
 {
-	if (hasField(label))
-	{
-		auto field = getField(label);
-		if (field.type() == ElementType::DATE)
-		{
-			return field.TimeT();
-		}
-		else
-		{
-			throw repo::lib::RepoFieldTypeException(label);
-		}
+	try{
+		return  getField(label).TimeT();
 	}
-	else
+	catch(bsoncxx::exception)
 	{
-		throw repo::lib::RepoFieldNotFoundException(label);
+		throw repo::lib::RepoFieldTypeException(label);
 	}
 }
 
-double RepoBSON::getDoubleField(const std::string &label) const {
+double RepoBSON::getDoubleField(const std::string &label) const
+{
 	try
 	{
 		return getField(label).Double();
 	}
-	catch (std::exception)
+	catch (bsoncxx::exception)
 	{
 		throw repo::lib::RepoFieldTypeException(label);
 	}
@@ -491,7 +484,7 @@ long long RepoBSON::getLongField(const std::string& label) const
 		}
 		return getField(label).Long();
 	}
-	catch (std::exception)
+	catch (bsoncxx::exception)
 	{
 		throw repo::lib::RepoFieldTypeException(label);
 	}

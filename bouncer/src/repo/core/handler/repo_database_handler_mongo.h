@@ -32,24 +32,11 @@
 #define strcasecmp _stricmp
 #endif
 
-// New driver includes
-#include <bsoncxx/builder/basic/document.hpp>
-#include <bsoncxx/json.hpp>
-#include <mongocxx/client.hpp>
-#include <mongocxx/instance.hpp>
-#include <mongocxx/stdx.hpp>
-#include <mongocxx/uri.hpp>
-#include <mongocxx/pool.hpp>
-#include <mongocxx/exception/operation_exception.hpp>
-#include <mongocxx/exception/bulk_write_exception.hpp>
-#include <mongocxx/exception/query_exception.hpp>
-#include <mongocxx/exception/logic_error.hpp>
-#include <bsoncxx/builder/basic/document.hpp>
-
-
 #include "repo_database_handler_abstract.h"
-#include "connectionpool/repo_connection_pool_mongo.h"
 #include "repo/lib/repo_stack.h"
+
+#include <mongocxx/client-fwd.hpp>
+#include <mongocxx/pool-fwd.hpp>
 
 namespace repo {
 	namespace core {
@@ -59,6 +46,7 @@ namespace repo {
 		namespace handler {
 			namespace fileservice{
 				class Metadata; // Forward declaration for alias
+				class FileManager;
 			}
 			class MongoDatabaseHandler : public AbstractDatabaseHandler {
 				enum class OPERATION { DROP, INSERT, UPDATE };
@@ -76,24 +64,21 @@ namespace repo {
 				//! Built in admin database roles. See http://docs.mongodb.org/manual/reference/built-in-roles/
 				static const std::list<std::string> ADMIN_ONLY_DATABASE_ROLES;
 
-				/*
-				 *	=============================================================================================
-				 */
-
-				 /*
-				  *	=================================== Public Functions ========================================
-				  */
-
-				  /**
-				   * A Deconstructor
-				   */
-				~MongoDatabaseHandler();
-
 				/**
-				* Disconnects the handler and resets the instance
-				* Must call this before trying to reconnect to another database!
+				* @param dbAddress ConnectionString that holds the address to the mongo database
+				* @param maxConnections max. number of connections to the database
+				* @param username user name for authentication (optional)
+				* @param password password of the user (optional)
 				*/
-				static void disconnectHandler();
+				MongoDatabaseHandler(
+					const std::string& dbAddress,
+					const uint32_t& maxConnections,
+					const std::string& dbName,
+					const std::string& username = std::string(),
+					const std::string& password = std::string()
+				);
+
+				~MongoDatabaseHandler();
 
 				/**
 				 * Returns the instance of MongoDatabaseHandler
@@ -105,8 +90,7 @@ namespace repo {
 				 * @param password for authentication
 				 * @return Returns the single instance
 				 */
-				static MongoDatabaseHandler* getHandler(
-					std::string &errMsg,
+				static std::shared_ptr<MongoDatabaseHandler> getHandler(
 					const std::string &connectionString,
 					const uint32_t    &maxConnections = 1,
 					const std::string &dbName = std::string(),
@@ -123,57 +107,13 @@ namespace repo {
 				 * @param password for authentication
 				 * @return Returns the single instance
 				 */
-				static MongoDatabaseHandler* getHandler(
-					std::string &errMsg,
+				static std::shared_ptr<MongoDatabaseHandler> getHandler(
 					const std::string &host,
 					const int         &port,
 					const uint32_t    &maxConnections = 1,
 					const std::string &dbName = std::string(),
 					const std::string &username = std::string(),
 					const std::string &password = std::string());
-
-				/**
-				* Returns the instance of MongoDatabaseHandler
-				* @param errMsg error message if this fails
-				* @param host hostname of the database
-				* @param port port number
-				* @param number of maximum simultaneous connections
-				* @param dbName authentication database
-				* @param credentials user credentials
-				* @return Returns the single instance
-				*/
-				static MongoDatabaseHandler* getHandler(
-					std::string           &errMsg,
-					const std::string     &host,
-					const int             &port,
-					const uint32_t        &maxConnections,
-					const std::string     &dbName = std::string(),
-					const model::RepoBSON *credentials = nullptr);
-
-				/**
-				* Returns the instance of MongoDatabaseHandler
-				* @param host string containing "databaseAddress:port"
-				* @return Returns null if there is no instance available
-				*/
-				static MongoDatabaseHandler* getHandler(
-					const std::string &host)
-				{
-					return handler;
-				}
-
-				/**
-				* Generates a BSON object containing user credentials
-				* @param dbName name of the database to authenticate against
-				* @param username user name for authentication
-				* @param password password of the user
-				* @return returns the constructed BSON object, or 0 nullptr username is empty
-				*/
-				static repo::core::model::RepoBSON* createBSONCredentials(
-					const std::string& dbName,
-					const std::string& username,
-					const std::string& password,
-					const bool& pwDigested = false
-				);
 
 				/*
 				*	------------- Database info lookup --------------
@@ -236,7 +176,7 @@ namespace repo {
 				* @param name name of the collection
 				* @param index BSONObj specifying the index
 				*/
-				virtual void createIndex(const std::string &database, const std::string &collection, const bsoncxx::document::view_or_value& obj);
+				virtual void createIndex(const std::string &database, const std::string &collection, const repo::core::model::RepoBSON& obj);
 
 				/**
 				* Remove a collection from the database
@@ -380,52 +320,25 @@ namespace repo {
 					const std::string& collection,
 					const repo::lib::RepoUUID& uuid);
 
-				/*
-				 *	=============================================================================================
-				 */
-
-			protected:
-				/*
-				*	=================================== Protected Fields ========================================
-				*/
-				static MongoDatabaseHandler *handler; /* !the single instance of this class*/
-				/*
-				*	=============================================================================================
-				*/
+				void setFileManager(std::shared_ptr<repo::core::handler::fileservice::FileManager> manager);
 
 			private:
-				/*
-				 *	=================================== Private Fields ========================================
-				 */
 
-
-				mongocxx::instance instance;
+				// We can work with either clients or pool as the top level, connection
+				// specific, container for getting connections. pool pool is threadsafe, 
+				// but acquring a client is implied to not be cheap, so for now cache a 
+				//client on starting up.
 				std::unique_ptr<mongocxx::pool> clientPool;
 
-
+				std::weak_ptr<repo::core::handler::fileservice::FileManager> fileManager;
 
 				/*
-				 *	=============================================================================================
-				 */
-
-				 /*
-				  *	=================================== Private Functions ========================================
-				  */
-
-				  /**
-				   * Constructor is private because this class follows the singleton pattern
-				   * @param dbAddress ConnectionString that holds the address to the mongo database
-				   * @param maxConnections max. number of connections to the database
-				   * @param username user name for authentication (optional)
-				   * @param password password of the user (optional)
-				   */
-				MongoDatabaseHandler(
-					const std::string			  &dbAddress,
-					const uint32_t                &maxConnections,
-					const std::string             &dbName,
-					const std::string             &username = std::string(),
-					const std::string             &password = std::string());
-
+				* Returns the FileManager previously set with setFileManager. This method
+				* does not check if the pointer is valid beforehand - it is assumed the
+				* lifetime of this handler and its corresponding manager are maintained
+				* correctly outside.
+				*/
+				std::shared_ptr < repo::core::handler::fileservice::FileManager> getFileManager();
 
 				/**
 				* Get large file off GridFS

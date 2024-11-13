@@ -24,13 +24,13 @@
 #if defined(_WIN32) || defined(_WIN64)
 #include <WinSock2.h>
 #include <Windows.h>
-
 #endif
-#include <mongo/bson/bson.h>
 
-#include "../../../repo_bouncer_global.h"
-#include "../../../lib/repo_log.h"
-#include "../../../lib/datastructure/repo_variant.h"
+#include "repo/repo_bouncer_global.h"
+#include "repo/lib/repo_log.h"
+#include "repo/lib/datastructure/repo_variant.h"
+
+#include <bsoncxx/document/element.hpp>
 
 namespace repo {
 	namespace core {
@@ -41,24 +41,17 @@ namespace repo {
 				OBJECTID, DOUBLE, INT, LONG, OBJECT, STRING, UNKNOWN
 			};
 			class RepoBSON; 
-			class REPO_API_EXPORT RepoBSONElement :
-				private mongo::BSONElement
+			class REPO_API_EXPORT RepoBSONElement : private bsoncxx::document::element
 			{
 				friend class RepoBSONBuilder;
 				friend class RepoBSON;
 
 			public:
-
-				/**
-				* Default constructor
-				*/
-				RepoBSONElement() : mongo::BSONElement() {}
-
 				/**
 				* Construct a RepoBSONElement base on a mongo element
 				* @param mongo BSON element
 				*/
-				RepoBSONElement(mongo::BSONElement ele) : mongo::BSONElement(ele) {}
+				RepoBSONElement(bsoncxx::document::element ele) : bsoncxx::document::element(ele) {}
 
 				/**
 				* Destructor
@@ -70,8 +63,6 @@ namespace repo {
 				* @return returns the type of the element using enum Type specified above
 				*/
 				ElementType type() const;
-
-				std::vector<RepoBSONElement> Array();
 
 				std::string String() const;
 
