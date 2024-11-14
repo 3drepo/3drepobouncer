@@ -49,6 +49,15 @@ if(REPO_BUILD_COVERAGE)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 --coverage")
 endif()
 
+if (WIN32 AND ODA_SUPPORT)
+	# OdaCommon.h will conditionally define _WIN32_WINNT, if not already.
+	# This can cause conflicts with Boost, if two object files end up targetting
+	# a different ABI as a result.
+	add_definitions(
+		-D_WIN32_WINNT=0x0A00
+	)
+endif()
+
 #================BOOST SETTINGS=======================
 set(Boost_NO_BOOST_CMAKE ON)
 #add_definitions(-DBOOST_ALL_NO_LIB)
@@ -63,7 +72,7 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 unset(Boost_INCLUDE_DIR CACHE)
 unset(Boost_LIBRARY_DIRS CACHE)
 if(WIN32)
-	find_package(Boost REQUIRED COMPONENTS system thread chrono log log_setup filesystem program_options regex zlib bzip2 iostreams date_time)
+	find_package(Boost REQUIRED COMPONENTS system thread chrono log log_setup filesystem program_options regex zlib bzip2 iostreams date_time locale)
 else()
 	find_package(Boost REQUIRED COMPONENTS system thread chrono log log_setup filesystem program_options regex iostreams date_time)
 endif()

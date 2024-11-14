@@ -105,14 +105,6 @@ public:
 		const lib::RepoConfig  &config
 	);
 
-	/**
-	* Disconnect the controller from a database connection
-	* and destroys the token
-	* FIXME: CURRENTLY NOT THREAD SAFE! POTENTIALLY DANGEROUS
-	* @param token token to the database
-	*/
-	void disconnectFromDatabase(const RepoToken* token);
-
 	/*
 	*	------------- Database info lookup --------------
 	*/

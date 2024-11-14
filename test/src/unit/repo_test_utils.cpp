@@ -153,7 +153,6 @@ bool testing::projectHasMetaNodesWithPaths(std::string dbName, std::string proje
 			delete scene;
 		}
 	}
-	controller->disconnectFromDatabase(token);
 	delete controller;
 
 	if (paths.size() != expected.size())
@@ -256,7 +255,6 @@ bool testing::projectHasGeometryWithMetadata(std::string dbName, std::string pro
 			delete scene;
 		}
 	}
-	controller->disconnectFromDatabase(token);
 	delete controller;
 	return res;
 }
@@ -290,7 +288,6 @@ bool testing::projectSettingsCheck(
 			delete scene;
 		}
 	}
-	controller->disconnectFromDatabase(token);
 	delete controller;
 	return res;
 }
@@ -309,7 +306,6 @@ bool testing::projectHasValidRevision(
 			delete scene;
 		}
 	}
-	controller->disconnectFromDatabase(token);
 	delete controller;
 	return res;
 }
