@@ -32,7 +32,7 @@
 using namespace repo::core::handler::fileservice;
 
 FileManager::FileManager(
-	const repo::lib::RepoConfig& config, 
+	const repo::lib::RepoConfig& config,
 	std::weak_ptr<AbstractDatabaseHandler> handler)
 	:dbHandler(handler)
 {

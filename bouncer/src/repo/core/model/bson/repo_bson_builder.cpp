@@ -42,7 +42,7 @@ void RepoBSONBuilder::appendUUID(
 	auto uuidData = uuid.data();
 
 	bsoncxx::types::b_binary binary {
-		bsoncxx::binary_sub_type::k_uuid_deprecated, // Todo:: This is the same enum as before - to double check if this works or if we can use 
+		bsoncxx::binary_sub_type::k_uuid_deprecated, // Todo:: This is the same enum as before - to double check if this works or if we can use
 		uuidData.size(),
 		uuidData.data()
 	};
@@ -145,9 +145,9 @@ void RepoBSONBuilder::appendLargeArray(std::string name, const void* data, size_
 	memcpy(buf.data(), data, size);
 }
 
-void RepoBSONBuilder::appendTime(std::string label, const int64_t& ts) 
+void RepoBSONBuilder::appendTime(std::string label, const int64_t& ts)
 {
-	bsoncxx::types::b_date date(std::chrono::milliseconds(ts * 1000)); 
+	bsoncxx::types::b_date date(std::chrono::milliseconds(ts * 1000));
 	document::append(kvp(label, date));
 }
 

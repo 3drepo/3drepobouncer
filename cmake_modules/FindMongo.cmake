@@ -13,7 +13,7 @@
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#attempt to find MONGO C++ driver 
+#attempt to find MONGO C++ driver
 #if MONGO is found, MONGO_FOUND is set to true
 #MONGO_INCLUDE_DIR will point to the include folder of the installation
 #MONGO_LIBRARIES will point to the libraries
@@ -24,12 +24,12 @@ if(DEFINED ENV{MONGO_ROOT})
 	message(STATUS "$MONGO_ROOT defined: ${MONGO_ROOT}")
 	find_path(MONGO_INCLUDE_DIR mongo/client/dbclient.h
 		${MONGO_ROOT}/include
-		)    
+		)
 	find_library(MONGO_LIBRARIES_RELEASE NAMES mongoclient
 		PATHS
 		${MONGO_ROOT}/lib
-	)	
-	
+	)
+
 	find_library(MONGO_LIBRARIES_DEBUG NAMES mongoclient-gd mongoclient
 		PATHS
 		${MONGO_ROOT}/lib
@@ -73,7 +73,7 @@ if(MONGO_INCLUDE_DIR AND MONGO_LIBRARIES)
 	message(STATUS "MONGO installation found.")
 	message(STATUS "MONGO_INCLUDE_DIR: ${MONGO_INCLUDE_DIR}")
 	message(STATUS "MONGO_LIBRARIES: ${MONGO_LIBRARIES}")
-	
+
 else(MONGO_INCLUDE_DIR AND MONGO_LIBRARIES)
 #cannot find mongo anywhere!
 	set(MONGO_FOUND FALSE)

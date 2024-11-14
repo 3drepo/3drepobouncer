@@ -111,7 +111,7 @@ void MongoDatabaseHandler::createCollection(const std::string &database, const s
 {
 	if (!(database.empty() || name.empty()))
 	{
-		try 
+		try
 		{
 			auto client = clientPool->acquire();
 			auto db = client->database(database);
@@ -138,7 +138,7 @@ void MongoDatabaseHandler::createIndex(const std::string &database, const std::s
 
 		repoInfo << "Creating index for :" << database << "." << collection << " : index: " << obj.toString();
 
-		try 
+		try
 		{
 			col.create_index(obj.view());
 		}
@@ -264,10 +264,10 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 		auto db = client->database(database);
 		auto col = db.collection(collection);
 
-		try {		
+		try {
 
 			fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-			
+
 			// Find all documents
 			auto cursor = col.find(criteria.view());
 			for (auto& doc : cursor) {
@@ -296,7 +296,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 
 		try {
 			fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-			
+
 			mongocxx::options::find options{};
 			options.sort(make_document(kvp(sortField, -1)));
 
@@ -331,7 +331,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 			auto dbObj = client->database(database);
 			auto col = dbObj.collection(collection);
 
-			uint64_t retrieved = 0;			
+			uint64_t retrieved = 0;
 			fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
 
 			// To search for UUIDs, convert them to strings for the query document
@@ -387,7 +387,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 		options.sort(make_document(kvp(sortField, -1)));
 
 		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-		
+
 		// Find document
 		auto findResult = col.find_one(queryDoc.view(), options);
 
@@ -454,7 +454,7 @@ MongoDatabaseHandler::getAllFromCollectionTailable(
 		auto col = db.collection(collection);
 
 		mongocxx::options::find options{};
-		if (!sortField.empty()) 
+		if (!sortField.empty())
 		{
 			options.sort(make_document(kvp(sortField, sortOrder)));
 		}
@@ -497,7 +497,7 @@ std::list<std::string> MongoDatabaseHandler::getCollections(
 	{
 		auto client = clientPool->acquire();
 		auto db = client->database(database);
-		
+
 		auto collectionsVector = db.list_collection_names();
 
 		collections = std::list<std::string>(collectionsVector.begin(), collectionsVector.end());
@@ -548,7 +548,7 @@ std::shared_ptr<MongoDatabaseHandler> MongoDatabaseHandler::getHandler(
 	const std::string &username,
 	const std::string &password)
 {
-		
+
 	std::string connectionString;
 	if (port >= 0)
 	{
@@ -587,7 +587,7 @@ bool MongoDatabaseHandler::insertDocument(
 		auto db = client->database(database);
 		auto col = db.collection(collection);
 
-		try 
+		try
 		{
 			col.insert_one(obj.view());
 			success = true;
@@ -640,7 +640,7 @@ bool MongoDatabaseHandler::insertManyDocuments(
 				} while (++it != last);
 
 				repoInfo << "Inserting " << toCommit.size() << " documents...";
-				col.insert_many(toCommit);				
+				col.insert_many(toCommit);
 			}
 
 			blobHandler.finished();
@@ -695,7 +695,7 @@ bool MongoDatabaseHandler::upsertDocument(
 		}
 		else {
 			col.update_one(
-				queryDoc.view(), 
+				queryDoc.view(),
 				make_document(kvp("$set", obj.view()))
 			);
 		}

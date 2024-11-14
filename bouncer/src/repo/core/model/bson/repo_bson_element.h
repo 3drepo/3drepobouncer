@@ -40,7 +40,7 @@ namespace repo {
 				ARRAY, UUID, BINARY, BOOL, DATE,
 				OBJECTID, DOUBLE, INT, LONG, OBJECT, STRING, UNKNOWN
 			};
-			class RepoBSON; 
+			class RepoBSON;
 			class REPO_API_EXPORT RepoBSONElement : private bsoncxx::document::element
 			{
 				friend class RepoBSONBuilder;

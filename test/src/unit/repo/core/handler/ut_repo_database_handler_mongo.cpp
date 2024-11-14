@@ -35,7 +35,7 @@ TEST(MongoDatabaseHandlerTest, GetHandler)
 {
 	{
 		auto handler = MongoDatabaseHandler::getHandler(
-			REPO_GTEST_DBADDRESS, 
+			REPO_GTEST_DBADDRESS,
 			REPO_GTEST_DBPORT,
 			1,
 			REPO_GTEST_AUTH_DATABASE,
@@ -47,7 +47,7 @@ TEST(MongoDatabaseHandlerTest, GetHandler)
 
 	{
 		auto handler = MongoDatabaseHandler::getHandler(
-			"blah", 
+			"blah",
 			REPO_GTEST_DBPORT,
 			1,
 			REPO_GTEST_AUTH_DATABASE,
@@ -57,7 +57,7 @@ TEST(MongoDatabaseHandlerTest, GetHandler)
 
 	{
 		auto handler = MongoDatabaseHandler::getHandler(
-			REPO_GTEST_DBADDRESS, 
+			REPO_GTEST_DBADDRESS,
 			0001,
 			1,
 			REPO_GTEST_AUTH_DATABASE,
@@ -69,7 +69,7 @@ TEST(MongoDatabaseHandlerTest, GetHandler)
 	{
 		//Check can connect without authentication
 		auto handler = MongoDatabaseHandler::getHandler(
-			REPO_GTEST_DBADDRESS, 
+			REPO_GTEST_DBADDRESS,
 			REPO_GTEST_DBPORT
 		);
 		EXPECT_TRUE(handler);

@@ -195,9 +195,9 @@ std::pair<repo::core::model::RepoBSON, std::vector<uint8_t>> RepoBSON::getBinari
 		RepoBSONBuilder elemsBuilder;
 		for (const auto &entry : bigFiles) {
 			RepoBSONBuilder entryBuilder;
-			
+
 			entryBuilder.append(REPO_LABEL_BINARY_START, (int32_t)buffer.size());
-			
+
 			buffer.insert(buffer.end(), entry.second.begin(), entry.second.end());
 			entryBuilder.append(REPO_LABEL_BINARY_SIZE, (int32_t)entry.second.size());
 
@@ -211,7 +211,7 @@ std::pair<repo::core::model::RepoBSON, std::vector<uint8_t>> RepoBSON::getBinari
 }
 
 void RepoBSON::replaceBinaryWithReference(
-	const repo::core::model::RepoBSON &fileRef, 
+	const repo::core::model::RepoBSON &fileRef,
 	const repo::core::model::RepoBSON &elemRef
 )
 {
@@ -330,7 +330,7 @@ std::vector<double> RepoBSON::getDoubleVectorField(const std::string& label) con
 	return results;
 }
 
-std::vector<repo::lib::RepoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) const 
+std::vector<repo::lib::RepoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) const
 {
 	std::vector<repo::lib::RepoUUID> results;
 	if (hasField(label))

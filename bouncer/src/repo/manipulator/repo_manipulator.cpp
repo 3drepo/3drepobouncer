@@ -58,11 +58,11 @@ bool RepoManipulator::connectAndAuthenticateWithAdmin(
 )
 {
 	dbHandler = repo::core::handler::MongoDatabaseHandler::getHandler(
-		address, 
-		port, 
+		address,
+		port,
 		maxConnections,
 		repo::core::handler::MongoDatabaseHandler::getAdminDatabaseName(),
-		username, 
+		username,
 		password
 	);
 
@@ -77,10 +77,10 @@ bool RepoManipulator::connectAndAuthenticateWithAdmin(
 )
 {
 	dbHandler = repo::core::handler::MongoDatabaseHandler::getHandler(
-		connString, 
+		connString,
 		maxConnections,
 		repo::core::handler::MongoDatabaseHandler::getAdminDatabaseName(),
-		username, 
+		username,
 		password
 	);
 
@@ -190,7 +190,7 @@ bool RepoManipulator::generateAndCommitSRCBuffer(
 	repo_web_buffers_t buffers;
 	return generateAndCommitWebViewBuffer(
 		scene,
-		buffers, 
+		buffers,
 		modelconvertor::WebExportType::SRC
 	);
 }

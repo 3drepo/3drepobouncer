@@ -36,7 +36,7 @@ RepoConfig::RepoConfig(
 	dbConf.addr = databaseAddr;
 	dbConf.port = port;
 	dbConf.username = username;
-	dbConf.password = password;	
+	dbConf.password = password;
 }
 
 RepoConfig::RepoConfig(

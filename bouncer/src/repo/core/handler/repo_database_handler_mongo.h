@@ -324,8 +324,8 @@ namespace repo {
 			private:
 
 				// We can work with either clients or pool as the top level, connection
-				// specific, container for getting connections. pool pool is threadsafe, 
-				// but acquring a client is implied to not be cheap, so for now cache a 
+				// specific, container for getting connections. pool pool is threadsafe,
+				// but acquring a client is implied to not be cheap, so for now cache a
 				//client on starting up.
 				std::unique_ptr<mongocxx::pool> clientPool;
 

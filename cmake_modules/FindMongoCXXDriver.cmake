@@ -13,7 +13,7 @@
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#attempt to find MONGO C++ driver 
+#attempt to find MONGO C++ driver
 #if MONGO CXX Driver is found, MONGO_CXX_DRIVER_FOUND is set to true
 #MONGO_CXX_DRIVER_MONGO_INCLUDE_DIR will point to the include folder of the installation
 #MONGO_CXX_DRIVER_BSON_INCLUDE_DIR will point to the include folder of the bson installation
@@ -25,18 +25,18 @@ if(DEFINED ENV{MONGO_CXX_DRIVER_ROOT})
 	message(STATUS "$MONGO_CXX_DRIVER_ROOT defined: ${MONGO_CXX_DRIVER_ROOT}")
 	find_path(MONGO_CXX_DRIVER_MONGO_INCLUDE_DIR mongocxx/instance.hpp
 		${MONGO_CXX_DRIVER_ROOT}/include/mongocxx/v_noabi
-		)    
+		)
 	find_path(MONGO_CXX_DRIVER_BSON_INCLUDE_DIR bsoncxx/types.hpp
 		${MONGO_CXX_DRIVER_ROOT}/include/bsoncxx/v_noabi
-		)    
+		)
 	find_library(MONGO_CXX_DRIVER_LIBRARIES_RELEASE
 		NAMES
 			mongocxx-v_noabi-rhs-md
 			mongocxx-v_noabi-rhs-x64-v143-md.lib
 		PATHS
 			${MONGO_CXX_DRIVER_ROOT}/lib
-	)	
-	
+	)
+
 	set(MONGO_CXX_DRIVER_LIBRARIES
 		optimized ${MONGO_CXX_DRIVER_LIBRARIES_RELEASE}
 	)
@@ -80,7 +80,7 @@ if(MONGO_CXX_DRIVER_MONGO_INCLUDE_DIR AND MONGO_CXX_DRIVER_BSON_INCLUDE_DIR AND 
 	message(STATUS "MONGO_CXX_DRIVER_MONGO_INCLUDE_DIR: ${MONGO_CXX_DRIVER_MONGO_INCLUDE_DIR}")
 	message(STATUS "MONGO_CXX_DRIVER_BSON_INCLUDE_DIR: ${MONGO_CXX_DRIVER_BSON_INCLUDE_DIR}")
 	message(STATUS "MONGO_CXX_DRIVER_LIBRARIES: ${MONGO_CXX_DRIVER_LIBRARIES}")
-	
+
 else(MONGO_CXX_DRIVER_MONGO_INCLUDE_DIR AND MONGO_CXX_DRIVER_BSON_INCLUDE_DIR AND MONGO_CXX_DRIVER_LIBRARIES)
 #cannot find mongo anywhere!
 	set(MONGO_CXX_DRIVER_FOUND FALSE)

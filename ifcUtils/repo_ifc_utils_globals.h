@@ -23,7 +23,7 @@
 #include <repo/lib/datastructure/repo_variant.h>
 
 /*
-* This directive is necessary as somewhere IfcOpenShell brings in Boost's 
+* This directive is necessary as somewhere IfcOpenShell brings in Boost's
 * w32_regex_traits.hpp file, which breaks if Windows.h is not already
 * included. IfcOpenShell has a fix for building IfcOpenShell itself, but
 * the hpp ends up included here so we need it too.
