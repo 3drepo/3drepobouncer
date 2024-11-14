@@ -31,7 +31,10 @@
 
 using namespace repo::core::handler::fileservice;
 
-FileManager::FileManager(const repo::lib::RepoConfig& config)
+FileManager::FileManager(
+	const repo::lib::RepoConfig& config, 
+	std::weak_ptr<AbstractDatabaseHandler> handler)
+	:dbHandler(handler)
 {
 	auto fsConfig = config.getFSConfig();
 	if (fsConfig.configured) {
@@ -40,11 +43,6 @@ FileManager::FileManager(const repo::lib::RepoConfig& config)
 	else {
 		throw repo::lib::RepoException("Filestore configuration must be provided.");
 	}
-}
-
-void FileManager::setDbHandler(std::shared_ptr<AbstractDatabaseHandler> handler)
-{
-	this->dbHandler = handler;
 }
 
 std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> FileManager::getDbHandler()

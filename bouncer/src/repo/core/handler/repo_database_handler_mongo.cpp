@@ -97,7 +97,7 @@ void MongoDatabaseHandler::setFileManager(std::shared_ptr<FileManager> manager)
 
 std::shared_ptr<FileManager> MongoDatabaseHandler::getFileManager()
 {
-	return this->fileManager.lock();
+	return this->fileManager;
 }
 
 bool MongoDatabaseHandler::caseInsensitiveStringCompare(
@@ -266,7 +266,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 
 		try {		
 
-			fileservice::BlobFilesHandler blobHandler(getFileManager(), database, collection);
+			fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
 			
 			// Find all documents
 			auto cursor = col.find(criteria.view());
@@ -295,7 +295,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 		auto col = db.collection(collection);
 
 		try {
-			fileservice::BlobFilesHandler blobHandler(getFileManager(), database, collection);
+			fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
 			
 			mongocxx::options::find options{};
 			options.sort(make_document(kvp(sortField, -1)));
@@ -332,7 +332,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 			auto col = dbObj.collection(collection);
 
 			uint64_t retrieved = 0;			
-			fileservice::BlobFilesHandler blobHandler(getFileManager(), database, collection);
+			fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
 
 			// To search for UUIDs, convert them to strings for the query document
 
@@ -386,7 +386,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 		mongocxx::options::find options{};
 		options.sort(make_document(kvp(sortField, -1)));
 
-		fileservice::BlobFilesHandler blobHandler(getFileManager(), database, collection);
+		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
 		
 		// Find document
 		auto findResult = col.find_one(queryDoc.view(), options);
@@ -423,7 +423,7 @@ repo::core::model::RepoBSON  MongoDatabaseHandler::findOneByUniqueID(
 		auto findResult = col.find_one(queryDoc.view());
 
 		if (findResult.has_value()) {
-			fileservice::BlobFilesHandler blobHandler(getFileManager(), database, collection);
+			fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
 			return createRepoBSON(blobHandler, database, collection, findResult.value());
 		}
 	}
@@ -472,7 +472,7 @@ MongoDatabaseHandler::getAllFromCollectionTailable(
 			options.projection(projection.extract());
 		}
 
-		fileservice::BlobFilesHandler blobHandler(getFileManager(), database, collection);
+		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
 
 		auto cursor = col.find({}, options);
 
@@ -515,7 +515,7 @@ std::vector<uint8_t> MongoDatabaseHandler::getBigFile(
 	const std::string &collection,
 	const std::string &fileName)
 {
-	return getFileManager()->getFile(database, collection, fileName);
+	return fileManager->getFile(database, collection, fileName);
 }
 
 std::string MongoDatabaseHandler::getProjectFromCollection(const std::string &ns, const std::string &projectExt)
@@ -622,7 +622,7 @@ bool MongoDatabaseHandler::insertManyDocuments(
 			auto db = client->database(database);
 			auto col = db.collection(collection);
 
-			fileservice::BlobFilesHandler blobHandler(getFileManager(), database, collection, binaryStorageMetadata);
+			fileservice::BlobFilesHandler blobHandler(fileManager, database, collection, binaryStorageMetadata);
 
 			for (int i = 0; i < objs.size(); i += MAX_PARALLEL_BSON) {
 				std::vector<repo::core::model::RepoBSON>::const_iterator it = objs.begin() + i;

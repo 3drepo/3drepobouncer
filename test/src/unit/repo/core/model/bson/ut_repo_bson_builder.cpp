@@ -162,11 +162,10 @@ TEST(RepoBSONBuilderTest, AppendArray)
 		builder.appendArray("array", arr);
 		RepoBSON bson(builder.obj());
 
-		auto fieldArray = bson.getField("array").Array();
-
+		auto fieldArray = bson.getObjectField("array");
 		for (int i = 0; i < 4; i++)
 		{
-			EXPECT_THAT(arr[i], Eq(fieldArray[i].Object())); //(We can't directly match between a RepoBSON and RepoBSONElement without going via Object())
+			EXPECT_THAT(arr[i], Eq(fieldArray.getObjectField(std::to_string(i)))); //(We can't directly match between a RepoBSON and RepoBSONElement without going via Object())
 		}
 	}
 

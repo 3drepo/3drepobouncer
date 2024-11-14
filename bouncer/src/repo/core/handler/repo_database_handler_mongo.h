@@ -81,8 +81,7 @@ namespace repo {
 				~MongoDatabaseHandler();
 
 				/**
-				 * Returns the instance of MongoDatabaseHandler
-				 * @param errMsg error message if this fails
+				 * Returns a new instance of MongoDatabaseHandler
 				 * @param host hostname of the database
 				 * @param port port number
 				 * @param number of maximum simultaneous connections
@@ -98,14 +97,12 @@ namespace repo {
 					const std::string &password = std::string());
 
 				/**
-				 * Returns the instance of MongoDatabaseHandler
-				 * @param errMsg error message if this fails
+				 * Returns a new instance of MongoDatabaseHandler
 				 * @param host hostname of the database
 				 * @param port port number
 				 * @param number of maximum simultaneous connections
 				 * @param username username for authentication
 				 * @param password for authentication
-				 * @return Returns the single instance
 				 */
 				static std::shared_ptr<MongoDatabaseHandler> getHandler(
 					const std::string &host,
@@ -322,6 +319,8 @@ namespace repo {
 
 				void setFileManager(std::shared_ptr<repo::core::handler::fileservice::FileManager> manager);
 
+				std::shared_ptr<repo::core::handler::fileservice::FileManager> getFileManager();
+
 			private:
 
 				// We can work with either clients or pool as the top level, connection
@@ -330,15 +329,10 @@ namespace repo {
 				//client on starting up.
 				std::unique_ptr<mongocxx::pool> clientPool;
 
-				std::weak_ptr<repo::core::handler::fileservice::FileManager> fileManager;
-
-				/*
-				* Returns the FileManager previously set with setFileManager. This method
-				* does not check if the pointer is valid beforehand - it is assumed the
-				* lifetime of this handler and its corresponding manager are maintained
-				* correctly outside.
-				*/
-				std::shared_ptr < repo::core::handler::fileservice::FileManager> getFileManager();
+				// The fileManager is used in the storage of certain member types, such
+				// as large vectors of binary data. It must be set using setFileManager
+				// before documents containing such members are uploaded.
+				std::shared_ptr<repo::core::handler::fileservice::FileManager> fileManager;
 
 				/**
 				* Get large file off GridFS

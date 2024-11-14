@@ -35,7 +35,7 @@ namespace repo {
 					/**
 					 * Default constructor
 					 */
-					FileManager(const repo::lib::RepoConfig& config);
+					FileManager(const repo::lib::RepoConfig& config, std::weak_ptr<AbstractDatabaseHandler> handler);
 
 					/**
 					 * A Deconstructor
@@ -115,8 +115,6 @@ namespace repo {
 					std::string getFilePath(
 						const repo::core::model::RepoRef& refNode
 					);
-
-					void setDbHandler(std::shared_ptr<AbstractDatabaseHandler> handler);
 
 				private:
 					/**

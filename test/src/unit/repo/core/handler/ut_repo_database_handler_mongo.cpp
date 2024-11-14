@@ -31,52 +31,49 @@
 using namespace repo::core::handler;
 using namespace testing;
 
-TEST(MongoDatabaseHandlerTest, GetHandlerDisconnectHandler)
+TEST(MongoDatabaseHandlerTest, GetHandler)
 {
-	std::string errMsg;
-	MongoDatabaseHandler* handler =
-		MongoDatabaseHandler::getHandler(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
+	{
+		auto handler = MongoDatabaseHandler::getHandler(
+			REPO_GTEST_DBADDRESS, 
+			REPO_GTEST_DBPORT,
 			1,
 			REPO_GTEST_AUTH_DATABASE,
-			REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+			REPO_GTEST_DBUSER, REPO_GTEST_DBPW
+		);
 
-	EXPECT_TRUE(handler);
-	EXPECT_TRUE(errMsg.empty());
+		EXPECT_TRUE(handler);
+	}
 
-	EXPECT_TRUE(MongoDatabaseHandler::getHandler(REPO_GTEST_DBADDRESS));
-	MongoDatabaseHandler::disconnectHandler();
+	{
+		auto handler = MongoDatabaseHandler::getHandler(
+			"blah", 
+			REPO_GTEST_DBPORT,
+			1,
+			REPO_GTEST_AUTH_DATABASE,
+			REPO_GTEST_DBUSER, REPO_GTEST_DBPW
+		);
+	}
 
-	EXPECT_FALSE(MongoDatabaseHandler::getHandler(REPO_GTEST_DBADDRESS));
+	{
+		auto handler = MongoDatabaseHandler::getHandler(
+			REPO_GTEST_DBADDRESS, 
+			0001,
+			1,
+			REPO_GTEST_AUTH_DATABASE,
+			REPO_GTEST_DBUSER, REPO_GTEST_DBPW
+		);
+		EXPECT_FALSE(handler);
+	}
 
-	MongoDatabaseHandler *wrongAdd = MongoDatabaseHandler::getHandler(errMsg, "blah", REPO_GTEST_DBPORT,
-		1,
-		REPO_GTEST_AUTH_DATABASE,
-		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
-
-	EXPECT_FALSE(wrongAdd);
-	MongoDatabaseHandler *wrongPort = MongoDatabaseHandler::getHandler(errMsg, REPO_GTEST_DBADDRESS, 0001,
-		1,
-		REPO_GTEST_AUTH_DATABASE,
-		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
-	EXPECT_FALSE(wrongPort);
-
-	//Check can connect without authentication
-	MongoDatabaseHandler *noauth = MongoDatabaseHandler::getHandler(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT);
-
-	EXPECT_TRUE(noauth);
-	MongoDatabaseHandler::disconnectHandler();
-	//ensure no crash when disconnecting the disconnected
-	MongoDatabaseHandler::disconnectHandler();
-}
-
-TEST(MongoDatabaseHandlerTest, CreateBSONCredentials)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	EXPECT_TRUE(handler->createBSONCredentials("testdb", "username", "password"));
-	EXPECT_FALSE(handler->createBSONCredentials("", "username", "password"));
-	EXPECT_FALSE(handler->createBSONCredentials("testdb", "", "password"));
-	EXPECT_FALSE(handler->createBSONCredentials("testdb", "username", ""));
+	{
+		//Check can connect without authentication
+		auto handler = MongoDatabaseHandler::getHandler(
+			REPO_GTEST_DBADDRESS, 
+			REPO_GTEST_DBPORT
+		);
+		EXPECT_TRUE(handler);
+	}
 }
 
 TEST(MongoDatabaseHandlerTest, GetAllFromCollectionTailable)
@@ -234,7 +231,7 @@ TEST(MongoDatabaseHandlerTest, DropDocument)
 	EXPECT_TRUE(handler->dropDocument(testCase.second, testCase.first.first, testCase.first.second, errMsg));
 	EXPECT_TRUE(errMsg.empty());
 	//test empty bson
-	EXPECT_FALSE(handler->dropDocument(mongo::BSONObj(), testCase.first.first, testCase.first.second, errMsg));
+	EXPECT_FALSE(handler->dropDocument(repo::core::model::RepoBSON(), testCase.first.first, testCase.first.second, errMsg));
 	EXPECT_FALSE(errMsg.empty());
 	errMsg.clear();
 	EXPECT_FALSE(handler->dropDocument(testCase.second, testCase.first.first, "", errMsg));
@@ -252,7 +249,11 @@ TEST(MongoDatabaseHandlerTest, InsertDocument)
 
 	auto id = repo::lib::RepoUUID::createUUID();
 
-	repo::core::model::RepoBSON testCase = BSON("_id" << id.toString() << "anotherField" << std::rand());
+	repo::core::model::RepoBSONBuilder builder;
+	builder.append("_id", id);
+	builder.append("anotherField", std::rand());
+
+	repo::core::model::RepoBSON testCase = builder.obj();
 	std::string database = "sandbox";
 	std::string collection = "sbCollection";
 
@@ -260,7 +261,6 @@ TEST(MongoDatabaseHandlerTest, InsertDocument)
 	EXPECT_TRUE(errMsg.empty());
 	errMsg.clear();
 
-	//The following will of cousre fail if findOneByCriteria is failing
 	repo::core::model::RepoBSON result = handler->findOneByCriteria(database, collection, testCase);
 	EXPECT_FALSE(result.isEmpty());
 
@@ -303,7 +303,7 @@ TEST(MongoDatabaseHandlerTest, FindAllByCriteria)
 	ASSERT_TRUE(handler);
 	std::string errMsg;
 
-	repo::core::model::RepoBSON search = BSON("type" << "mesh");
+	repo::core::model::RepoBSON search = repo::core::model::RepoBSONBuilder::makeBson("type", "mesh");
 
 	auto results = handler->findAllByCriteria(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".scene", search);
 
@@ -407,7 +407,7 @@ TEST(MongoDatabaseHandlerTest, UpsertDocument)
 
 	auto document = documents[0];
 
-	EXPECT_THAT(document.nFields(), Eq(4));
+	EXPECT_THAT(nFields(document), Eq(4));
 
 	EXPECT_THAT(document.getUUIDField("_id"), Eq(id));
 	EXPECT_THAT(document.getStringField("field1"), Eq(existing.getStringField("field1"))); // The unchanged value

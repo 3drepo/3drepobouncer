@@ -313,7 +313,6 @@ namespace repo {
 			);
 
 			std::shared_ptr<repo::core::handler::MongoDatabaseHandler> dbHandler;
-			std::shared_ptr<repo::core::handler::fileservice::FileManager> fileManager;
 		};
 	}
 }

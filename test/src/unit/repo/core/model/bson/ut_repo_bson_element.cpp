@@ -32,20 +32,8 @@
 using namespace repo::core::model;
 using namespace testing;
 
-/**
-* Construct from mongo builder and mongo bson should give me the same bson
-*/
-TEST(RepoBSONElementTest, ConstructorTest)
-{
-	RepoBSONElement empty;
-	EXPECT_THAT(empty.eoo(), IsTrue());
-}
-
 TEST(RepoBSONElementTest, TypeTest)
 {
-	RepoBSONElement empty;
-	EXPECT_EQ(ElementType::UNKNOWN, empty.type());
-
 	RepoBSONBuilder objectBuilder;
 	objectBuilder.append("name", "subobject");
 	auto object = objectBuilder.obj();
@@ -112,23 +100,19 @@ TEST(RepoBSONElementTest, TypeTest)
 
 TEST(RepoBSONElementTest, ArrayTest)
 {
-	RepoBSONElement empty;
-
-	auto elementArrEmpty = empty.Array();
-
-	EXPECT_EQ(0, elementArrEmpty.size());
-
-	std::vector<int> intVect = { 1, 2, 3, 4, 5, 6, 7, 8 };
+	std::vector<int> intVect = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
 
 	RepoBSONBuilder builder;
 	builder.appendArray("intArr", intVect);
-
 	auto bson = builder.obj();
-	auto intEleArr = bson.getField("intArr").Array();
-	ASSERT_EQ(intEleArr.size(), intVect.size());
-	for (int i = 0; i < intEleArr.size(); ++i)
+
+	auto intEleArr = bson.getObjectField("intArr");
+
+	ASSERT_EQ(nFields(intEleArr), intVect.size());
+	for (int i = 0; i < intVect.size(); ++i)
 	{
-		EXPECT_EQ(ElementType::INT, intEleArr[i].type());
-		EXPECT_EQ(intEleArr[i].Int(), intVect[i]);
+		auto e = intEleArr.getField(std::to_string(i));
+		EXPECT_EQ(ElementType::INT, e.type());
+		EXPECT_EQ(e.Int(), intVect[i]);
 	}
 }

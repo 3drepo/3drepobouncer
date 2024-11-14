@@ -80,7 +80,7 @@ TEST(RepoTaskTest, Serialise)
 	// This test doesn't contain any metadata that may be converted to integers or
 	// doubles, so a direct comparison will work
 
-	EXPECT_THAT(metaField.nFields(), Eq(data.size()));
+	EXPECT_THAT(nFields(metaField), Eq(data.size()));
 	for (auto& n : metaField.getFieldNames()) {
 		auto entry = metaField.getObjectField(n);
 		auto key = entry.getStringField(REPO_TASK_META_KEY);

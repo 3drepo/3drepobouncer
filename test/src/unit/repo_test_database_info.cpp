@@ -15,8 +15,6 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define NOMINMAX
-
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest-matchers.h>
@@ -27,7 +25,7 @@
 using namespace repo::core::model;
 using namespace testing;
 
- std::pair<std::pair<std::string, std::string>, repo::core::model::RepoBSON> getDataForDropCase()
+std::pair<std::pair<std::string, std::string>, repo::core::model::RepoBSON> getDataForDropCase()
 {
 	std::pair<std::pair<std::string, std::string>, repo::core::model::RepoBSON> result;
 	result.first = { "sampleDataRW", "collectionToDrop" };
@@ -38,56 +36,55 @@ using namespace testing;
 	return result;
 }
 
- repo::core::handler::MongoDatabaseHandler* getHandler()
- {
-	 std::string errMsg;
+std::shared_ptr<repo::core::handler::MongoDatabaseHandler> getHandler()
+{
+	auto handler = repo::core::handler::MongoDatabaseHandler::getHandler(
+		REPO_GTEST_DBADDRESS,
+		REPO_GTEST_DBPORT,
+		1,
+		REPO_GTEST_AUTH_DATABASE,
+		REPO_GTEST_DBUSER,
+		REPO_GTEST_DBPW
+	);
 
-	 auto handler = repo::core::handler::MongoDatabaseHandler::getHandler(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
-		 1,
-		 REPO_GTEST_AUTH_DATABASE,
-		 REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+	auto config = repo::lib::RepoConfig::fromFile(getDataPath("config/withFS.json"));
+	config.configureFS(getDataPath("fileShare"));
+	handler->setFileManager(std::make_shared<repo::core::handler::fileservice::FileManager>(config, handler));
+	return handler;
+}
 
-	 // Always re-instantiate the file manager when the handler changes
+std::string getClientExePath()
+{
+	char* pathChr = getenv("REPO_CLIENT_PATH");
+	std::string returnPath = clientExe;
 
-	 auto config = repo::lib::RepoConfig::fromFile(getDataPath("config/withFS.json"));
-	 config.configureFS(getDataPath("fileShare"));
-	 repo::core::handler::fileservice::FileManager::instantiateManager(config, handler);
+	if (pathChr)
+	{
+		std::string path = pathChr;
+		path.erase(std::remove(path.begin(), path.end(), '"'), path.end());
+		boost::filesystem::path fileDir(path);
+		auto fullPath = fileDir / boost::filesystem::path(clientExe);
+		returnPath = fullPath.string();
+	}
+	return returnPath;
+}
 
-	 return handler;
- }
+std::string getDataPath(
+	const std::string& file)
+{
+	char* pathChr = getenv("REPO_MODEL_PATH");
+	std::string returnPath = simpleModel;
 
- std::string getClientExePath()
- {
-	 char* pathChr = getenv("REPO_CLIENT_PATH");
-	 std::string returnPath = clientExe;
-
-	 if (pathChr)
-	 {
-		 std::string path = pathChr;
-		 path.erase(std::remove(path.begin(), path.end(), '"'), path.end());
-		 boost::filesystem::path fileDir(path);
-		 auto fullPath = fileDir / boost::filesystem::path(clientExe);
-		 returnPath = fullPath.string();
-	 }
-	 return returnPath;
- }
-
- std::string getDataPath(
-	 const std::string& file)
- {
-	 char* pathChr = getenv("REPO_MODEL_PATH");
-	 std::string returnPath = simpleModel;
-
-	 if (pathChr)
-	 {
-		 std::string path = pathChr;
-		 path.erase(std::remove(path.begin(), path.end(), '"'), path.end());
-		 boost::filesystem::path fileDir(path);
-		 auto fullPath = fileDir / boost::filesystem::path(file);
-		 returnPath = fullPath.string();
-	 }
-	 return returnPath;
- }
+	if (pathChr)
+	{
+		std::string path = pathChr;
+		path.erase(std::remove(path.begin(), path.end(), '"'), path.end());
+		boost::filesystem::path fileDir(path);
+		auto fullPath = fileDir / boost::filesystem::path(file);
+		returnPath = fullPath.string();
+	}
+	return returnPath;
+}
 
  std::string getConnConfig() {
 	 return getDataPath(connectionConfig);
@@ -146,30 +143,7 @@ using namespace testing;
 			 repo::lib::RepoVector3D(30.05025100708007800f, 60.69493103027343800f, 30.00000953674316400f) };
  }
 
- std::pair <std::pair<std::string, std::string>, mongo::BSONObj> getCollectionStats()
- {
-	 std::pair <std::pair<std::string, std::string>, mongo::BSONObj> results;
 
-	 results.first = { REPO_GTEST_DBNAME1, "3drepoBIM.scene" };
-	 results.second = BSON("ns" << "sampleDataReadOnly.3drepoBIM.scene"
-		 << "count" << 14
-		 //<< "size" << 18918176
-		 //<< "avgObjSize" <<  1351298
-		 //<< "storageSize" << 33562624
-		 //<< "numExtents" << 2
-		 << "nindexes" << 1
-		 //<< "lastExtentSize" << 33554432
-		 //<< "paddingFactor" << 1.0000000000000000
-		 //<< "systemFlags" << 1
-		 //<< "userFlags" << 1
-		 /*<< "totalIndexSize" << 8176
-		 << "indexSizes"
-		 << BSON("_id_" << 8176)*/
-		 << "ok" << 1.0000000000000000
-	 );
-
-	 return results;
- }
 
 std::pair<std::pair<std::string, std::string>, std::vector<std::string>> getGoldenForGetAllFromCollectionTailable()
 {

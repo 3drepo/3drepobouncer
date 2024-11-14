@@ -148,7 +148,7 @@ uint8_t RepoManipulator::commitScene(
 	}
 
 	modelutility::SceneManager sceneManager;
-	return sceneManager.commitScene(scene, projOwner, tag, desc, revId, dbHandler.get(), fileManager.get());
+	return sceneManager.commitScene(scene, projOwner, tag, desc, revId, dbHandler.get(), dbHandler->getFileManager().get());
 }
 
 repo::core::model::RepoScene* RepoManipulator::fetchScene(
@@ -200,7 +200,7 @@ bool RepoManipulator::generateAndCommitSelectionTree(
 )
 {
 	modelutility::SceneManager SceneManager;
-	return SceneManager.generateAndCommitSelectionTree(scene, dbHandler.get(), fileManager.get());
+	return SceneManager.generateAndCommitSelectionTree(scene, dbHandler.get(), dbHandler->getFileManager().get());
 }
 
 bool RepoManipulator::generateStashGraph(
@@ -220,7 +220,7 @@ bool RepoManipulator::generateAndCommitWebViewBuffer(
 	if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED)) {
 		SceneManager.generateStashGraph(scene);
 	}
-	return SceneManager.generateWebViewBuffers(scene, exType, buffers, dbHandler.get(), fileManager.get());
+	return SceneManager.generateWebViewBuffers(scene, exType, buffers, dbHandler.get(), dbHandler->getFileManager().get());
 }
 
 repo_web_buffers_t RepoManipulator::generateSRCBuffer(
@@ -326,12 +326,12 @@ void RepoManipulator::processDrawingRevision(
 	// a locally accessible filesystem.
 
 	auto refNodeId = fileNodeIds[0]; // We do not expect drawing revision nodes to have multiple rFile entries
-	auto refNode = fileManager->getFileRef(
+	auto refNode = dbHandler->getFileManager()->getFileRef(
 		teamspace,
 		REPO_COLLECTION_DRAWINGS,
 		refNodeId
 	);
-	auto fullpath = fileManager->getFilePath(refNode);
+	auto fullpath = dbHandler->getFileManager()->getFilePath(refNode);
 
 	// The DrawingImportManager will select the correct importer to convert the
 	// drawing, and return the contents along with calibration and any other
@@ -359,7 +359,7 @@ void RepoManipulator::processDrawingRevision(
 	}
 
 	if (error == REPOERR_OK) {
-		error = manager.commitImage(dbHandler.get(), fileManager.get(), teamspace, revisionNode, drawing);
+		error = manager.commitImage(dbHandler.get(), dbHandler->getFileManager().get(), teamspace, revisionNode, drawing);
 	}
 }
 
@@ -378,11 +378,7 @@ bool RepoManipulator::init(
 	}
 
 	if (success) {
-		// Create the file manager to go with the database handler, and hook them
-		// up to eachother
-		fileManager = std::make_shared<repo::core::handler::fileservice::FileManager>(config);
-		fileManager->setDbHandler(dbHandler);
-		dbHandler->setFileManager(fileManager);
+		dbHandler->setFileManager(std::make_shared<repo::core::handler::fileservice::FileManager>(config, dbHandler));
 	}
 
 	return success;

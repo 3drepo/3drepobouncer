@@ -15,8 +15,6 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define NOMINMAX
-
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest-matchers.h>
@@ -170,13 +168,13 @@ RepoBSON repo::test::utils::mesh::meshNodeTestBSONFactory(mesh_data data)
 
 	if (data.vertices.size() > 0)
 	{
-		builder.append(REPO_NODE_MESH_LABEL_VERTICES_COUNT, (uint32_t)(data.vertices.size()));
+		builder.append(REPO_NODE_MESH_LABEL_VERTICES_COUNT, (int32_t)(data.vertices.size()));
 		builder.appendLargeArray(REPO_NODE_MESH_LABEL_VERTICES, data.vertices);
 	}
 
 	if (data.faces.size() > 0)
 	{
-		builder.append(REPO_NODE_MESH_LABEL_FACES_COUNT, (uint32_t)(data.faces.size()));
+		builder.append(REPO_NODE_MESH_LABEL_FACES_COUNT, (int32_t)(data.faces.size()));
 
 		// In API LEVEL 1, faces are stored as
 		// [n1, v1, v2, ..., n2, v1, v2...]
@@ -246,7 +244,7 @@ RepoBSON repo::test::utils::mesh::meshNodeTestBSONFactory(mesh_data data)
 		if (concatenated.size() > 0)
 		{
 			// Could be unsigned __int64 if BSON had such construct (the closest is only __int64)
-			builder.append(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT, (uint32_t)(data.uvChannels.size()));
+			builder.append(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT, (int32_t)(data.uvChannels.size()));
 			builder.appendLargeArray(REPO_NODE_MESH_LABEL_UV_CHANNELS, concatenated);
 		}
 	}

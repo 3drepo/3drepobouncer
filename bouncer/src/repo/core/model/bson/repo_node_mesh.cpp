@@ -19,8 +19,6 @@
 *  Mesh node
 */
 
-#define NOMINMAX
-
 #include "repo_node_mesh.h"
 
 #include "repo/lib/repo_log.h"

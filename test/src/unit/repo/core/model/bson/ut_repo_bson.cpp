@@ -15,8 +15,6 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define NOMINMAX
-
 #include <cstdlib>
 
 #include <gtest/gtest.h>
@@ -31,11 +29,23 @@
 #include <repo/core/model/bson/repo_bson_builder.h>
 #include <repo/core/model/bson/repo_bson_project_settings.h>
 
+#include <bsoncxx/builder/stream/document.hpp>
+#include <bsoncxx/builder/basic/array.hpp>
+#include <bsoncxx/json.hpp>
+
+
 using namespace repo::core::model;
 using namespace testing;
 
-static auto mongoTestBSON = BSON("ice" << "lolly" << "amount" << 100.0);
-static const RepoBSON testBson = RepoBSON(BSON("ice" << "lolly" << "amount" << 100));
+bsoncxx::document::value makeTestBSON()
+{
+	bsoncxx::builder::stream::document builder;
+	builder << "ice" << "lolly" << "amount" << 100.0;
+	return builder.extract();
+}
+
+static auto mongoTestBSON = makeTestBSON();
+static const RepoBSON testBson = RepoBSON(makeTestBSON());
 static const RepoBSON emptyBson;
 
 // This is the same definition as in winnt.h, defined here for gcc. There is also
@@ -45,53 +55,59 @@ static const RepoBSON emptyBson;
 #define MAXLONGLONG (0x7fffffffffffffff)
 
 template<class T>
-mongo::BSONObj makeBsonArray(std::vector<T> a)
+bsoncxx::array::value makeBsonArray(std::vector<T> a)
 {
-	mongo::BSONObjBuilder arrbuilder;
+	bsoncxx::builder::basic::array arrbuilder;
 	for (auto i = 0; i < a.size(); i++)
 	{
-		arrbuilder.append(std::to_string(i), a[i]);
+		arrbuilder.append(a[i]);
 	}
-	return arrbuilder.obj();
+	return arrbuilder.extract();
 }
 
 template<>
-mongo::BSONObj makeBsonArray(std::vector<repo::lib::RepoUUID> uuids)
+bsoncxx::array::value makeBsonArray(std::vector<repo::lib::RepoUUID> uuids)
 {
-	mongo::BSONObjBuilder arrbuilder;
+	bsoncxx::builder::basic::array arrbuilder;
 	for (auto i = 0; i < uuids.size(); i++)
 	{
-		arrbuilder.appendBinData(std::to_string(i), uuids[i].data().size(), mongo::bdtUUID, (char*)uuids[i].data().data());
+		arrbuilder.append(
+			bsoncxx::types::b_binary{
+				bsoncxx::binary_sub_type::k_uuid_deprecated, // This is the same as mongo::bdtUUID
+				(uint32_t)uuids[i].data().size(),
+				uuids[i].data().data()
+			}
+		);
 	}
-	return arrbuilder.obj();
+	return arrbuilder.extract();
 }
 
-mongo::BSONObj makeRepoVectorObj(const repo::lib::RepoVector3D& v)
+bsoncxx::document::value makeRepoVectorObj(const repo::lib::RepoVector3D& v)
 {
-	mongo::BSONObjBuilder builder;
-	builder.append("x", v.x);
-	builder.append("y", v.y);
-	builder.append("z", v.z);
-	return builder.obj();
+	bsoncxx::builder::basic::document builder;
+	builder.append(bsoncxx::builder::basic::kvp("x", v.x));
+	builder.append(bsoncxx::builder::basic::kvp("y", v.y));
+	builder.append(bsoncxx::builder::basic::kvp("z", v.z));
+	return builder.extract();
 }
 
-mongo::BSONObj makeBoundsObj(const repo::lib::RepoVector3D64& min, const repo::lib::RepoVector3D64& max)
+bsoncxx::document::value makeBoundsObj(const repo::lib::RepoVector3D64& min, const repo::lib::RepoVector3D64& max)
 {
-	mongo::BSONObjBuilder builder;
-	builder.append("0", makeBsonArray(min.toStdVector()));
-	builder.append("1", makeBsonArray(max.toStdVector()));
-	return builder.obj();
+	bsoncxx::builder::basic::document builder;
+	builder.append(bsoncxx::builder::basic::kvp("0", makeBsonArray(min.toStdVector())));
+	builder.append(bsoncxx::builder::basic::kvp("1", makeBsonArray(max.toStdVector())));
+	return builder.extract();
 }
 
-mongo::BSONObj makeMatrixObj(const repo::lib::RepoMatrix& m)
+bsoncxx::document::value makeMatrixObj(const repo::lib::RepoMatrix& m)
 {
 	auto d = m.getData();
-	mongo::BSONObjBuilder builder;
-	builder.append("0", makeBsonArray(std::vector<float>({ d[0], d[1], d[2], d[3]})));
-	builder.append("1", makeBsonArray(std::vector<float>({ d[4], d[5], d[6], d[7] })));
-	builder.append("2", makeBsonArray(std::vector<float>({ d[8], d[9], d[10], d[11] })));
-	builder.append("3", makeBsonArray(std::vector<float>({ d[12], d[13], d[14], d[15] })));
-	return builder.obj();
+	bsoncxx::builder::basic::document builder;
+	builder.append(bsoncxx::builder::basic::kvp("0", makeBsonArray(std::vector<float>({ d[0], d[1], d[2], d[3]}))));
+	builder.append(bsoncxx::builder::basic::kvp("1", makeBsonArray(std::vector<float>({ d[4], d[5], d[6], d[7] }))));
+	builder.append(bsoncxx::builder::basic::kvp("2", makeBsonArray(std::vector<float>({ d[8], d[9], d[10], d[11] }))));
+	builder.append(bsoncxx::builder::basic::kvp("3", makeBsonArray(std::vector<float>({ d[12], d[13], d[14], d[15] }))));
+	return builder.extract();
 }
 
 /**
@@ -99,14 +115,17 @@ mongo::BSONObj makeMatrixObj(const repo::lib::RepoMatrix& m)
 */
 TEST(RepoBSONTest, ConstructFromMongo)
 {
-	mongo::BSONObj mongoObj = BSON("ice" << "lolly" << "amount" << 100);
-	mongo::BSONObjBuilder builder;
+	bsoncxx::document::value mongoObj = makeTestBSON();
+	bsoncxx::builder::stream::document builder;
 	builder << "ice" << "lolly";
 	builder << "amount" << 100;
 
+	bsoncxx::builder::stream::document different;
+	different << "something" << "different";
+
 	RepoBSON bson1(mongoObj);
 	RepoBSON bson2(builder);
-	RepoBSON bsonDiff(BSON("something" << "different"));
+	RepoBSON bsonDiff(different);
 
 	EXPECT_EQ(bson1, bson2);
 	EXPECT_EQ(bson1.toString(), bson2.toString());
@@ -117,10 +136,16 @@ TEST(RepoBSONTest, ConstructFromMongoSizeExceeds) {
 	std::string msgData;
 	msgData.resize(1024 * 1024 * 65);
 
-	ASSERT_ANY_THROW(BSON("message" << msgData));
+	ASSERT_ANY_THROW({
+		bsoncxx::builder::stream::document builder;
+		builder << "message" << msgData;
+		auto bson = builder.extract();
+	});
 
 	try {
-		BSON("message" << msgData);
+		bsoncxx::builder::stream::document builder;
+		builder << "message" << msgData;
+		auto bson = builder.extract();
 	}
 	catch (const std::exception &e) {
 		EXPECT_NE(std::string(e.what()).find("BufBuilder"), std::string::npos);
@@ -129,20 +154,18 @@ TEST(RepoBSONTest, ConstructFromMongoSizeExceeds) {
 
 TEST(RepoBSONTest, Fields)
 {
-	// For historical reasons, nFields and hasField should return only the 'true'
+	// For historical reasons, hasField should return only the 'true'
 	// BSON fields and not bin mapped fields
 
 	RepoBSON::BinMapping map;
 	map["bin1"] = makeRandomBinary();
 
-	mongo::BSONObjBuilder builder;
+	bsoncxx::builder::basic::document builder;
 
-	builder.append("stringField", "string");
-	builder.append("doubleField", (double)0.123);
+	builder.append(bsoncxx::builder::basic::kvp("stringField", "string"));
+	builder.append(bsoncxx::builder::basic::kvp("doubleField", (double)0.123));
 
-	RepoBSON bson(builder.obj(), map);
-
-	EXPECT_THAT(bson.nFields(), Eq(2));
+	RepoBSON bson(builder.extract(), map);
 
 	EXPECT_THAT(bson.hasField("stringField"), IsTrue());
 	EXPECT_THAT(bson.hasField("doubleField"), IsTrue());
@@ -199,38 +222,51 @@ TEST(RepoBSONTest, GetUUIDField)
 
 	// Test legacy uuid
 	{
-		mongo::BSONObjBuilder builder;
-		builder.appendBinData("uuid", uuid.data().size(), mongo::bdtUUID, (char*)uuid.data().data());
-
-		RepoBSON bson = RepoBSON(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("uuid", bsoncxx::types::b_binary{
+				bsoncxx::binary_sub_type::k_uuid_deprecated, // This is the same as mongo::bdtUUID
+				(uint32_t)uuid.data().size(),
+				(uint8_t*)uuid.data().data()
+			}
+		));
+		RepoBSON bson = RepoBSON(builder.extract());
 		EXPECT_EQ(uuid, bson.getUUIDField("uuid"));
 		EXPECT_THROW({ bson.getUUIDField("empty"); }, repo::lib::RepoFieldNotFoundException);
 	}
 
 	// Test new UUID
 	{
-		mongo::BSONObjBuilder builder;
-		builder.appendBinData("uuid", uuid.data().size(), mongo::newUUID, (char*)uuid.data().data());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("uuid", bsoncxx::types::b_binary{
+				bsoncxx::binary_sub_type::k_uuid, // This is the same as mongo::newUUID
+				(uint32_t)uuid.data().size(),
+				(uint8_t*)uuid.data().data()
+			}
+		));
 
-		RepoBSON bson = RepoBSON(builder.obj());
+		RepoBSON bson = RepoBSON(builder.extract());
 		EXPECT_EQ(uuid, bson.getUUIDField("uuid"));
 		EXPECT_THROW({ bson.getUUIDField("empty"); }, repo::lib::RepoFieldNotFoundException);
 	}
 
 	// Test type checking
 	{
-		mongo::BSONObjBuilder builder;
-		builder.appendBinData("uuid", uuid.data().size(), mongo::bdtCustom, (char*)uuid.data().data());
-
-		RepoBSON bson = RepoBSON(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("uuid", bsoncxx::types::b_binary{
+				bsoncxx::binary_sub_type::k_user, // This is the same as mongo::bdtCustom
+				(uint32_t)uuid.data().size(),
+				(uint8_t*)uuid.data().data()
+			}
+		));
+		RepoBSON bson = RepoBSON(builder.extract());
 		EXPECT_THROW({ bson.getUUIDField("uuid"); }, repo::lib::RepoFieldTypeException);
 	}
 
 	{
-		mongo::BSONObjBuilder builder;
-		builder.append("uuid", uuid.toString());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("uuid", uuid.toString()));
 
-		RepoBSON bson = RepoBSON(builder.obj());
+		RepoBSON bson = RepoBSON(builder.extract());
 		EXPECT_THROW({ bson.getUUIDField("uuid"); }, repo::lib::RepoFieldTypeException);
 	}
 }
@@ -244,9 +280,9 @@ TEST(RepoBSONTest, GetUUIDFieldArray)
 		repo::lib::RepoUUID::createUUID()
 	};
 
-	mongo::BSONObjBuilder builder;
-	builder.appendArray("uuids", makeBsonArray(uuids));
-	RepoBSON bson = builder.obj();
+	bsoncxx::builder::basic::document builder;
+	builder.append(bsoncxx::builder::basic::kvp("uuids", makeBsonArray(uuids)));
+	RepoBSON bson = RepoBSON(builder.extract());
 	EXPECT_THAT(bson.getUUIDFieldArray("uuids"), ElementsAreArray(uuids)); // We expect the order to be preserved here
 
 	// The getUUIDFieldArray doesn't throw, but returns an empty array if the
@@ -266,10 +302,10 @@ TEST(RepoBSONTest, GetFloatArray)
 			arr.push_back((float)rand() / 100.);
 		}
 
-		mongo::BSONObjBuilder builder;
-		builder.appendArray("array", makeBsonArray(arr));
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("array", makeBsonArray(arr)));
 
-		RepoBSON bson = builder.obj();
+		RepoBSON bson = RepoBSON(builder.extract());
 
 		EXPECT_THAT(bson.getFloatArray("array"), ElementsAreArray(arr));
 		EXPECT_THAT(bson.getFloatArray("none"), IsEmpty());
@@ -279,7 +315,7 @@ TEST(RepoBSONTest, GetFloatArray)
 
 	{
 		std::vector<std::string> arr;
-		mongo::BSONObjBuilder builder;
+		bsoncxx::builder::basic::document builder;
 
 		arr.reserve(size);
 		for (size_t i = 0; i < size; ++i)
@@ -287,9 +323,9 @@ TEST(RepoBSONTest, GetFloatArray)
 			arr.push_back(std::to_string((float)rand() / 100.));
 		}
 
-		builder.appendArray("array", makeBsonArray(arr));
+		builder.append(bsoncxx::builder::basic::kvp("array", makeBsonArray(arr)));
 
-		RepoBSON bson = builder.obj();
+		RepoBSON bson = RepoBSON(builder.extract());
 
 		EXPECT_THROW({ bson.getFloatArray("array"); }, repo::lib::RepoFieldTypeException);
 		EXPECT_THAT(bson.getFloatArray("none"), IsEmpty());
@@ -298,28 +334,29 @@ TEST(RepoBSONTest, GetFloatArray)
 
 TEST(RepoBSONTest, GetTimeStampField)
 {
-	auto posixTimestamp = time(NULL);
+	auto now = std::chrono::system_clock::now();
+	bsoncxx::types::b_date date(now);
 
-	// By convention, Date_t takes a posix timestamp in milliseconds
-	mongo::Date_t date = mongo::Date_t(posixTimestamp * 1000);
+	// For comparison, get the date in posix ticks (seconds since the unix epoch)
+	auto posixTimestamp = std::chrono::system_clock::to_time_t(now);
 
 	{
-		mongo::BSONObjBuilder builder;
-		builder.append("ts", date);
-		RepoBSON bson = builder.obj();
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("ts", date));
+		RepoBSON bson = RepoBSON(builder.extract());
 		EXPECT_THAT(bson.getTimeStampField("ts"), Eq(posixTimestamp));
 	}
 
 	{
-		mongo::BSONObjBuilder builder;
-		builder.append("ts", "hello");
-		RepoBSON bson = builder.obj();
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("ts", "hello"));
+		RepoBSON bson = RepoBSON(builder.extract());
 		EXPECT_THROW({ bson.getTimeStampField("ts"); }, repo::lib::RepoFieldTypeException);
 	}
 
 	{
-		mongo::BSONObjBuilder builder;
-		RepoBSON bson = builder.obj();
+		bsoncxx::builder::basic::document builder;
+		RepoBSON bson = RepoBSON(builder.extract());
 		EXPECT_THROW({ bson.getTimeStampField("ts"); }, repo::lib::RepoFieldNotFoundException);
 	}
 }
@@ -416,8 +453,8 @@ TEST(RepoBSONTest, BinaryFilesUpdated)
 	// Checks that providing a mapping along with a RepoBSON that already has a
 	// big files array will join the two, and prefer the *new* mapping
 
-	mongo::BSONObjBuilder builder;
-	builder.append("field", "value");
+	bsoncxx::builder::basic::document builder;
+	builder.append(bsoncxx::builder::basic::kvp("field", "value"));
 
 	RepoBSON::BinMapping existing;
 	existing["bin1"] = makeRandomBinary();
@@ -427,7 +464,7 @@ TEST(RepoBSONTest, BinaryFilesUpdated)
 	additional["bin2"] = makeRandomBinary();
 	additional["bin3"] = makeRandomBinary();
 
-	RepoBSON bson(builder.obj(), existing);
+	RepoBSON bson(builder.extract(), existing);
 
 	EXPECT_THAT(bson.getBinary("bin1"), Eq(existing["bin1"]));
 	EXPECT_THAT(bson.getBinary("bin2"), Eq(existing["bin2"]));
@@ -635,23 +672,23 @@ TEST(RepoBSONTest, HasOversizeFiles)
 TEST(RepoBSONTest, GetBoolField)
 {
 	{
-		mongo::BSONObjBuilder builder;
-		builder.append("bool", true);
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("bool", true));
+		RepoBSON bson(builder.extract());
 		EXPECT_THAT(bson.getBoolField("bool"), Eq(true));
 	}
 
 	{
-		mongo::BSONObjBuilder builder;
-		builder.append("bool", false);
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("bool", false));
+		RepoBSON bson(builder.extract());
 		EXPECT_THAT(bson.getBoolField("bool"), Eq(false)); // Get the value false - not throwing based on not finding the field
 	}
 
 	{
-		mongo::BSONObjBuilder builder;
-		builder.append("bool", "string");
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("bool", "string"));
+		RepoBSON bson(builder.extract());
 		EXPECT_THROW({ bson.getBoolField("bool"); }, repo::lib::RepoFieldTypeException);
 		EXPECT_THROW({ bson.getBoolField("none"); }, repo::lib::RepoFieldNotFoundException);
 	}
@@ -660,23 +697,23 @@ TEST(RepoBSONTest, GetBoolField)
 TEST(RepoBSONTest, GetStringField)
 {
 	{
-		mongo::BSONObjBuilder builder;
-		builder.append("string", "value");
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("string", "value"));
+		RepoBSON bson(builder.extract());
 		EXPECT_THAT(bson.getStringField("string"), Eq("value"));
 	}
 
 	{
-		mongo::BSONObjBuilder builder;
-		builder.append("string", "");
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("string", ""));
+		RepoBSON bson(builder.extract());
 		EXPECT_THAT(bson.getStringField("string"), Eq("")); // Get the 'empty' value - not throwing based on an empty field
 	}
 
 	{
-		mongo::BSONObjBuilder builder;
-		builder.append("string", true);
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("string", true));
+		RepoBSON bson(builder.extract());
 		EXPECT_THROW({ bson.getStringField("string"); }, repo::lib::RepoFieldTypeException);
 		EXPECT_THROW({ bson.getStringField("none"); }, repo::lib::RepoFieldNotFoundException);
 	}
@@ -686,17 +723,18 @@ TEST(RepoBSONTest, GetObjectField)
 {
 	// A single object
 	{
-		mongo::BSONObjBuilder sub;
-		sub.append("string", "value");
-		sub.append("int", 0);
-		auto subObj = sub.obj();
+		bsoncxx::builder::basic::document sub;
+		sub.append(bsoncxx::builder::basic::kvp("string", "value"));
+		sub.append(bsoncxx::builder::basic::kvp("int", 0));
+		auto subObj = sub.extract();
+		auto subObjString = bsoncxx::to_json(subObj);
 
-		mongo::BSONObjBuilder builder;
-		builder.append("object", subObj);
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("object", subObj));
 
-		RepoBSON bson(builder.obj());
+		RepoBSON bson(builder.extract());
 
-		EXPECT_THAT(bson.getObjectField("object").toString(), Eq(subObj.toString()));
+		EXPECT_THAT(bson.getObjectField("object").toString(), Eq(subObjString));
 	}
 
 	// A simple array (as an object)
@@ -709,10 +747,10 @@ TEST(RepoBSONTest, GetObjectField)
 			repo::lib::RepoUUID::createUUID().toString(),
 		};
 
-		mongo::BSONObjBuilder builder;
-		builder.append("object", makeBsonArray(strings));
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("object", makeBsonArray(strings)));
 
-		RepoBSON bson(builder.obj());
+		RepoBSON bson(builder.extract());
 		auto o = bson.getObjectField("object");
 
 		for (int i = 0; i < strings.size(); i++)
@@ -723,38 +761,38 @@ TEST(RepoBSONTest, GetObjectField)
 
 	// A complex array of objects
 	{
-		mongo::BSONObjBuilder obj1;
+		bsoncxx::builder::basic::document obj1;
 		std::vector<std::string> strings = {
 			repo::lib::RepoUUID::createUUID().toString(),
 			repo::lib::RepoUUID::createUUID().toString(),
 			repo::lib::RepoUUID::createUUID().toString(),
 		};
-		obj1.appendArray("array", makeBsonArray(strings));
-		obj1.append("field", "value");
+		obj1.append(bsoncxx::builder::basic::kvp("array", makeBsonArray(strings)));
+		obj1.append(bsoncxx::builder::basic::kvp("field", "value"));
 
-		mongo::BSONObjBuilder obj2;
+		bsoncxx::builder::basic::document obj2;
 		std::vector<repo::lib::RepoUUID> uuids = {
 			repo::lib::RepoUUID::createUUID(),
 			repo::lib::RepoUUID::createUUID(),
 			repo::lib::RepoUUID::createUUID(),
 		};
-		obj2.appendArray("array", makeBsonArray(uuids));
-		obj2.append("field", "value");
+		obj2.append(bsoncxx::builder::basic::kvp("array", makeBsonArray(uuids)));
+		obj2.append(bsoncxx::builder::basic::kvp("field", "value"));
 
-		mongo::BSONObjBuilder obj3;
-		obj3.append("field", "value");
-		obj3.append("field2", 0);
+		bsoncxx::builder::basic::document obj3;
+		obj3.append(bsoncxx::builder::basic::kvp("field", "value"));
+		obj3.append(bsoncxx::builder::basic::kvp("field2", 0));
 
-		std::vector<mongo::BSONObj> objs = {
-			obj1.obj(),
-			obj2.obj(),
-			obj3.obj()
+		std::vector<bsoncxx::document::value> objs = {
+			obj1.extract(),
+			obj2.extract(),
+			obj3.extract()
 		};
 
-		mongo::BSONObjBuilder builder;
-		builder.appendArray("object", makeBsonArray(objs));
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("object", makeBsonArray(objs)));
 
-		RepoBSON bson(builder.obj());
+		RepoBSON bson(builder.extract());
 		auto o = bson.getObjectField("object");
 
 		EXPECT_THAT(o.getObjectField("0").getStringArray("array"), Eq(strings));
@@ -767,33 +805,33 @@ TEST(RepoBSONTest, GetObjectField)
 
 	// A nested hierarchy of objects
 	{
-		mongo::BSONObjBuilder obj1;
+		bsoncxx::builder::basic::document obj1;
 		std::vector<std::string> strings = {
 			repo::lib::RepoUUID::createUUID().toString(),
 			repo::lib::RepoUUID::createUUID().toString(),
 			repo::lib::RepoUUID::createUUID().toString(),
 		};
-		obj1.appendArray("array", makeBsonArray(strings));
-		obj1.append("field", "value");
+		obj1.append(bsoncxx::builder::basic::kvp("array", makeBsonArray(strings)));
+		obj1.append(bsoncxx::builder::basic::kvp("field", "value"));
 
-		mongo::BSONObjBuilder obj2;
+		bsoncxx::builder::basic::document obj2;
 		std::vector<repo::lib::RepoUUID> uuids = {
 			repo::lib::RepoUUID::createUUID(),
 			repo::lib::RepoUUID::createUUID(),
 			repo::lib::RepoUUID::createUUID(),
 		};
-		obj2.appendArray("array", makeBsonArray(uuids));
-		obj2.append("field", "value");
-		obj2.append("obj1", obj1.obj());
+		obj2.append(bsoncxx::builder::basic::kvp("array", makeBsonArray(uuids)));
+		obj2.append(bsoncxx::builder::basic::kvp("field", "value"));
+		obj2.append(bsoncxx::builder::basic::kvp("obj1", obj1.extract()));
 
-		mongo::BSONObjBuilder obj3;
-		obj3.append("field", "value");
-		obj3.append("obj2", obj2.obj());
+		bsoncxx::builder::basic::document obj3;
+		obj3.append(bsoncxx::builder::basic::kvp("field", "value"));
+		obj3.append(bsoncxx::builder::basic::kvp("obj2", obj2.extract()));
 
-		mongo::BSONObjBuilder builder;
-		builder.append("object", obj3.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("object", obj3.extract()));
 
-		RepoBSON bson(builder.obj());
+		RepoBSON bson(builder.extract());
 		auto o3 = bson.getObjectField("object");
 
 		EXPECT_THAT(o3.getStringField("field"), Eq("value"));
@@ -804,8 +842,8 @@ TEST(RepoBSONTest, GetObjectField)
 	}
 
 	{
-		mongo::BSONObjBuilder builder;
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		RepoBSON bson(builder.extract());
 		EXPECT_THROW({ bson.getObjectField("object"); }, repo::lib::RepoFieldNotFoundException);
 	}
 
@@ -814,9 +852,9 @@ TEST(RepoBSONTest, GetObjectField)
 	// primitive and object types, they should use getField to return a
 	// RepoBSONElement.
 	{
-		mongo::BSONObjBuilder builder;
-		builder.append("object", "string");
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("object", "string"));
+		RepoBSON bson(builder.extract());
 		EXPECT_THROW({ bson.getObjectField("object"); }, repo::lib::RepoFieldTypeException);
 	}
 }
@@ -832,10 +870,10 @@ TEST(RepoBSONTest, GetBounds3D)
 
 	auto bounds = makeBoundsObj(min, max);
 
-	mongo::BSONObjBuilder builder;
-	builder.append("bounds", bounds);
+	bsoncxx::builder::basic::document builder;
+	builder.append(bsoncxx::builder::basic::kvp("bounds", bounds));
 
-	RepoBSON bson(builder.obj());
+	RepoBSON bson(builder.extract());
 
 	auto expected = std::vector<repo::lib::RepoVector3D>({
 		repo::lib::RepoVector3D((float)min.x, (float)min.y, (float)min.z),
@@ -849,10 +887,10 @@ TEST(RepoBSONTest, GetVector3DField)
 {
 	// RepoVectors are encoded by component names instead of indices
 
-	mongo::BSONObjBuilder builder;
+	bsoncxx::builder::basic::document builder;
 	auto v = makeRepoVector();
-	builder.append("vector", makeRepoVectorObj(v));
-	RepoBSON bson(builder.obj());
+	builder.append(bsoncxx::builder::basic::kvp("vector", makeRepoVectorObj(v)));
+	RepoBSON bson(builder.extract());
 	EXPECT_THAT(bson.getVector3DField("vector"), Eq(v));
 }
 
@@ -861,9 +899,9 @@ TEST(RepoBSONTest, GetMatrixField)
 	// Matrices are encoded as row-major, nested arrays
 	auto m = repo::test::utils::mesh::makeTransform(true, true);
 
-	mongo::BSONObjBuilder builder;
-	builder.append("matrix", makeMatrixObj(m));
-	RepoBSON bson(builder.obj());
+	bsoncxx::builder::basic::document builder;
+	builder.append(bsoncxx::builder::basic::kvp("matrix", makeMatrixObj(m)));
+	RepoBSON bson(builder.extract());
 	EXPECT_THAT(bson.getMatrixField("matrix"), Eq(m));
 }
 
@@ -879,9 +917,9 @@ TEST(RepoBSONTest, GetFloatVector)
 			arr.push_back(rand() / 1.23);
 		}
 
-		mongo::BSONObjBuilder builder;
-		builder.append("vector", makeBsonArray(arr));
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("vector", makeBsonArray(arr)));
+		RepoBSON bson(builder.extract());
 
 		EXPECT_THAT(bson.getFloatVectorField("vector"), Eq(arr));
 	}
@@ -896,9 +934,9 @@ TEST(RepoBSONTest, GetFloatVector)
 			arr.push_back(rand() / 1.23);
 		}
 
-		mongo::BSONObjBuilder builder;
-		builder.append("vector", makeBsonArray(arr));
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("vector", makeBsonArray(arr)));
+		RepoBSON bson(builder.extract());
 
 		EXPECT_THAT(bson.getFloatVectorField("vector"), ElementsAreArray(arr));
 	}
@@ -911,9 +949,9 @@ TEST(RepoBSONTest, GetFloatVector)
 		arr.push_back(DBL_MAX);
 		arr.push_back(DBL_MIN);
 
-		mongo::BSONObjBuilder builder;
-		builder.append("vector", makeBsonArray(arr));
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("vector", makeBsonArray(arr)));
+		RepoBSON bson(builder.extract());
 
 		EXPECT_THAT(bson.getFloatVectorField("vector"), ElementsAreArray(arr));
 	}
@@ -925,16 +963,16 @@ TEST(RepoBSONTest, GetFloatVector)
 		std::vector<std::string> arr;
 		arr.push_back(repo::lib::RepoUUID::createUUID().toString());
 
-		mongo::BSONObjBuilder builder;
-		builder.append("vector", makeBsonArray(arr));
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("vector", makeBsonArray(arr)));
+		RepoBSON bson(builder.extract());
 
 		EXPECT_THROW({ bson.getFloatVectorField("vector"); }, repo::lib::RepoFieldTypeException);
 	}
 
 	{
-		mongo::BSONObjBuilder builder;
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		RepoBSON bson(builder.extract());
 		EXPECT_THROW({ bson.getFloatVectorField("vector"); }, repo::lib::RepoFieldNotFoundException);
 	}
 
@@ -955,9 +993,9 @@ TEST(RepoBSONTest, GetDoubleVectorField)
 		arr.push_back(FLT_MIN);
 		arr.push_back(FLT_MAX);
 
-		mongo::BSONObjBuilder builder;
-		builder.append("vector", makeBsonArray(arr));
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("vector", makeBsonArray(arr)));
+		RepoBSON bson(builder.extract());
 
 		EXPECT_THAT(bson.getDoubleVectorField("vector"), ElementsAreArray(arr));
 	}
@@ -971,9 +1009,9 @@ TEST(RepoBSONTest, GetDoubleVectorField)
 		arr.push_back(DBL_MIN);
 		arr.push_back(DBL_MAX);
 
-		mongo::BSONObjBuilder builder;
-		builder.append("vector", makeBsonArray(arr));
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("vector", makeBsonArray(arr)));
+		RepoBSON bson(builder.extract());
 
 		EXPECT_THAT(bson.getDoubleVectorField("vector"), Eq(arr));
 	}
@@ -988,9 +1026,9 @@ TEST(RepoBSONTest, GetDoubleVectorField)
 			arr.push_back(rand());
 		}
 
-		mongo::BSONObjBuilder builder;
-		builder.append("vector", makeBsonArray(arr));
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("vector", makeBsonArray(arr)));
+		RepoBSON bson(builder.extract());
 
 		EXPECT_THROW({ bson.getDoubleVectorField("vector"); }, repo::lib::RepoFieldTypeException);
 	}
@@ -1002,16 +1040,16 @@ TEST(RepoBSONTest, GetDoubleVectorField)
 		std::vector<std::string> arr;
 		arr.push_back(repo::lib::RepoUUID::createUUID().toString());
 
-		mongo::BSONObjBuilder builder;
-		builder.append("vector", makeBsonArray(arr));
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("vector", makeBsonArray(arr)));
+		RepoBSON bson(builder.extract());
 
 		EXPECT_THROW({ bson.getDoubleVectorField("vector"); }, repo::lib::RepoFieldTypeException);
 	}
 
 	{
-		mongo::BSONObjBuilder builder;
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		RepoBSON bson(builder.extract());
 		EXPECT_THROW({ bson.getDoubleVectorField("vector"); }, repo::lib::RepoFieldNotFoundException);
 	}
 }
@@ -1027,30 +1065,30 @@ TEST(RepoBSONTest, GetFileList)
 	};
 
 	{
-		mongo::BSONObjBuilder builder;
-		builder.append("rFile", makeBsonArray(files));
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("rFile", makeBsonArray(files)));
+		RepoBSON bson(builder.extract());
 		EXPECT_THAT(bson.getFileList("rFile"), Eq(files));
 	}
 
 	// If there is no field, this method should throw an exception
 	{
-		mongo::BSONObjBuilder builder;
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		RepoBSON bson(builder.extract());
 		EXPECT_THROW({ bson.getFileList("rFile"); }, repo::lib::RepoFieldNotFoundException);
 	}
 
 	// Or if it is the wrong type
 	{
-		mongo::BSONObjBuilder builder;
+		bsoncxx::builder::basic::document builder;
 
-		builder.append("rFile", makeBsonArray(std::vector<int>({
+		builder.append(bsoncxx::builder::basic::kvp("rFile", makeBsonArray(std::vector<int>({
 			1,
 			2,
 			3
-		})));
+		}))));
 
-		RepoBSON bson(builder.obj());
+		RepoBSON bson(builder.extract());
 		EXPECT_THROW({ bson.getFileList("rFile"); }, repo::lib::RepoFieldTypeException);
 	}
 }
@@ -1059,41 +1097,41 @@ TEST(RepoBSONTest, GetDoubleField)
 {
 	{
 		double d = 1.229348;
-		mongo::BSONObjBuilder builder;
-		builder.append("double", d);
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("double", d));
+		RepoBSON bson(builder.extract());
 		EXPECT_THAT(bson.getDoubleField("double"), Eq(d));
 	}
 
 	// Double field should also return floats (but not integers).
 	{
 		float d = 1.229348;
-		mongo::BSONObjBuilder builder;
-		builder.append("double", d);
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("double", d));
+		RepoBSON bson(builder.extract());
 		EXPECT_THAT(bson.getDoubleField("double"), Eq(d));
 	}
 
 	// This is because doubles can contain floats losslessly, but not do the same
 	// for integers.
 	{
-		mongo::BSONObjBuilder builder;
-		builder.append("double", (long long)1);
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("double", (long long)1));
+		RepoBSON bson(builder.extract());
 		EXPECT_THROW({ bson.getDoubleField("double"); }, repo::lib::RepoFieldTypeException);
 	}
 
 	{
-		mongo::BSONObjBuilder builder;
-		builder.append("double", (double)0);
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("double", (double)0));
+		RepoBSON bson(builder.extract());
 		EXPECT_THAT(bson.getDoubleField("double"), Eq(0));
 	}
 
 	{
-		mongo::BSONObjBuilder builder;
-		builder.append("double", true);
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("double", true));
+		RepoBSON bson(builder.extract());
 		EXPECT_THROW({ bson.getDoubleField("double"); }, repo::lib::RepoFieldTypeException);
 		EXPECT_THROW({ bson.getDoubleField("none"); }, repo::lib::RepoFieldNotFoundException);
 	}
@@ -1102,23 +1140,23 @@ TEST(RepoBSONTest, GetDoubleField)
 TEST(RepoBSONTest, GetLongField)
 {
 	{
-		mongo::BSONObjBuilder builder;
-		builder.append("long", (long long)MAXLONGLONG);
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("long", (long long)MAXLONGLONG));
+		RepoBSON bson(builder.extract());
 		EXPECT_THAT(bson.getLongField("long"), Eq(MAXLONGLONG));
 	}
 
 	{
-		mongo::BSONObjBuilder builder;
-		builder.append("long", 0);
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("long", 0));
+		RepoBSON bson(builder.extract());
 		EXPECT_THAT(bson.getLongField("long"), Eq(0));
 	}
 
 	{
-		mongo::BSONObjBuilder builder;
-		builder.append("long", true);
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("long", true));
+		RepoBSON bson(builder.extract());
 		EXPECT_THROW({ bson.getLongField("long"); }, repo::lib::RepoFieldTypeException);
 		EXPECT_THROW({ bson.getLongField("none"); }, repo::lib::RepoFieldNotFoundException);
 	}
@@ -1127,25 +1165,25 @@ TEST(RepoBSONTest, GetLongField)
 TEST(RepoBSONTest, IsEmpty)
 {
 	{
-		mongo::BSONObjBuilder builder;
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		RepoBSON bson(builder.extract());
 		EXPECT_THAT(bson.isEmpty(), IsTrue());
 	}
 
 	// Only regular fields
 	{
-		mongo::BSONObjBuilder builder;
-		builder.append("field", "value");
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("field", "value"));
+		RepoBSON bson(builder.extract());
 		EXPECT_THAT(bson.isEmpty(), IsFalse());
 	}
 
 	// Only big files
 	{
-		mongo::BSONObjBuilder builder;
+		bsoncxx::builder::basic::document builder;
 		RepoBSON::BinMapping map;
 		map["bin"] = makeRandomBinary();
-		RepoBSON bson(builder.obj(), map);
+		RepoBSON bson(builder.extract(), map);
 		EXPECT_THAT(bson.isEmpty(), IsFalse());
 	}
 }
@@ -1153,23 +1191,23 @@ TEST(RepoBSONTest, IsEmpty)
 TEST(RepoBSONTest, GetIntField)
 {
 	{
-		mongo::BSONObjBuilder builder;
-		builder.append("int", (int)INT_MIN);
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("int", (int)INT_MIN));
+		RepoBSON bson(builder.extract());
 		EXPECT_THAT(bson.getIntField("int"), Eq(INT_MIN));
 	}
 
 	{
-		mongo::BSONObjBuilder builder;
-		builder.append("int", 0);
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("int", 0));
+		RepoBSON bson(builder.extract());
 		EXPECT_THAT(bson.getIntField("int"), Eq(0));
 	}
 
 	{
-		mongo::BSONObjBuilder builder;
-		builder.append("int", true);
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("int", true));
+		RepoBSON bson(builder.extract());
 		EXPECT_THROW({ bson.getIntField("int"); }, repo::lib::RepoFieldTypeException);
 		EXPECT_THROW({ bson.getIntField("none"); }, repo::lib::RepoFieldNotFoundException);
 	}
@@ -1184,31 +1222,31 @@ TEST(RepoBSONTest, GetStringArray)
 	};
 
 	{
-		mongo::BSONObjBuilder builder;
-		builder.appendArray("strings", makeBsonArray(files));
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		builder.append(bsoncxx::builder::basic::kvp("strings", makeBsonArray(files)));
+		RepoBSON bson(builder.extract());
 		EXPECT_THAT(bson.getStringArray("strings"), Eq(files));
 	}
 
 	// In contrast to the other array methods, if there is no field, this method
 	// should return an empty array and *not throw*
 	{
-		mongo::BSONObjBuilder builder;
-		RepoBSON bson(builder.obj());
+		bsoncxx::builder::basic::document builder;
+		RepoBSON bson(builder.extract());
 		EXPECT_THAT(bson.getStringArray("strings"), IsEmpty());
 	}
 
 	// Or if it is the wrong type
 	{
-		mongo::BSONObjBuilder builder;
+		bsoncxx::builder::basic::document builder;
 
-		builder.append("strings", makeBsonArray(std::vector<int>({
+		builder.append(bsoncxx::builder::basic::kvp("strings", makeBsonArray(std::vector<int>({
 			1,
 			2,
 			3
-			})));
+			}))));
 
-		RepoBSON bson(builder.obj());
+		RepoBSON bson(builder.extract());
 		EXPECT_THROW({ bson.getStringArray("strings"); }, repo::lib::RepoFieldTypeException);
 	}
 }
@@ -1218,10 +1256,10 @@ TEST(RepoBSONTest, HasBinField)
 	RepoBSON::BinMapping map;
 	map["bin1"] = makeRandomBinary();
 
-	mongo::BSONObjBuilder builder;
-	builder.append("bin2", 1000);
+	bsoncxx::builder::basic::document builder;
+	builder.append(bsoncxx::builder::basic::kvp("bin2", 1000));
 
-	RepoBSON bson(builder.obj(), map);
+	RepoBSON bson(builder.extract(), map);
 
 	EXPECT_THAT(bson.hasBinField("bin1"), IsTrue());
 	EXPECT_THAT(bson.hasBinField("bin2"), IsFalse());
@@ -1294,7 +1332,7 @@ TEST(RepoBSONTest, EqualityOperator)
 		/*
 		RepoBSONBuilder c;
 		c.append("f1", (int)1); // Equality operator should be sensitive to the type, even if the values would be interpreted identically
-		EXPECT_THAT(a, Not(Eq(c.obj())));
+		EXPECT_THAT(a, Not(Eq(c.extract())));
 		*/
 
 		RepoBSONBuilder d;
@@ -1319,7 +1357,7 @@ TEST(RepoBSONTest, EqualityOperator)
 		/*
 		RepoBSONBuilder c;
 		c.append("f1", (int)1); // Equality operator should be sensitive to the type, even if the values would be interpreted identically
-		EXPECT_THAT(a, Not(Eq(c.obj())));
+		EXPECT_THAT(a, Not(Eq(c.extract())));
 		*/
 
 		RepoBSONBuilder d;

@@ -22,8 +22,6 @@
 
 #pragma once
 
-#define NOMINMAX
-
 #include <string>
 
 #include <assimp/Importer.hpp>

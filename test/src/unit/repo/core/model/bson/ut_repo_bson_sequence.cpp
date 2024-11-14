@@ -63,7 +63,7 @@ TEST(RepoSequenceTest, Serialise)
 	EXPECT_THAT(bson.getStringField(REPO_SEQUENCE_LABEL_NAME), IsEmpty());
 	EXPECT_THAT(bson.getLongField(REPO_SEQUENCE_LABEL_START_DATE), Eq(0));
 	EXPECT_THAT(bson.getLongField(REPO_SEQUENCE_LABEL_END_DATE), Eq(0));
-	EXPECT_THAT(bson.getObjectField(REPO_SEQUENCE_LABEL_FRAMES).nFields(), Eq(0));
+	EXPECT_THAT(nFields(bson.getObjectField(REPO_SEQUENCE_LABEL_FRAMES)), Eq(0));
 }
 
 TEST(RepoSequenceTest, Factory)

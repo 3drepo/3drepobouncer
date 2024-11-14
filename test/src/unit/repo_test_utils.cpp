@@ -15,8 +15,6 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define NOMINMAX
-
 #include "repo_test_utils.h"
 
 #include <gtest/gtest.h>
@@ -413,4 +411,9 @@ tm testing::getRandomTm()
 	auto t = time(0) + ((time_t)rand() % ten_years) - ((time_t)rand() % ten_years);
 	tm tm = *localtime(&t);
 	return tm;
+}
+
+int testing::nFields(const repo::core::model::RepoBSON& bson)
+{
+	return bson.getFieldNames().size();
 }

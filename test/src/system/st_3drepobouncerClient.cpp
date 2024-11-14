@@ -713,7 +713,7 @@ TEST(RepoClientTest, ProcessDrawing)
 	revisionBuilder.appendArray("rFile", rFiles);
 
 	// Make sure that the file manager uses the same config as produceProcessDrawingArgs
-	auto manager = repo::core::handler::fileservice::FileManager::instantiateManager(repo::lib::RepoConfig::fromFile(getConnConfig()), handler);
+	auto manager = handler->getFileManager();
 
 	// Get a DWG as a blob
 	auto path = getDataPath(dwgDrawing);

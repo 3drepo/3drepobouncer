@@ -454,7 +454,7 @@ std::vector<std::string> RepoBSON::getStringArray(const std::string &label) cons
 time_t RepoBSON::getTimeStampField(const std::string &label) const
 {
 	try{
-		return  getField(label).TimeT();
+		return getField(label).TimeT();
 	}
 	catch(bsoncxx::exception)
 	{

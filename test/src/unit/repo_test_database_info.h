@@ -120,10 +120,6 @@ const static std::string genFedDB = "genFedTest";
 const static std::string genFedNoSubProName = "noSubPro";
 const static std::string genFedSuccessName = "fedTest";
 
-const static mongo::BSONObj REPO_GTEST_DROPROLETEST = BSON("db" << REPO_GTEST_DBNAME_ROLEUSERTEST << "role" << "dropRoleTest");
-const static mongo::BSONObj REPO_GTEST_DROPUSERTEST = BSON("db" << "admin" << "user" << "dropUserTest");
-const static mongo::BSONObj REPO_GTEST_UPDATEROLETEST = BSON("db" << REPO_GTEST_DBNAME_ROLEUSERTEST << "role" << "updateRole");
-const static mongo::BSONObj REPO_GTEST_UPDATEUSERTEST = BSON("db" << "admin" << "user" << "updateUserTest");
 const static std::vector<repo::lib::RepoUUID> uuidsToSearch = { repo::lib::RepoUUID("0ab45528-9258-421a-927c-c51bf40fc478"), repo::lib::RepoUUID("126f9de3-c942-4d66-862a-16cc4f11841b") };
 
 const static std::pair<std::string, std::string> REPO_GTEST_DROPCOL_TESTCASE = { "sampleDataRW", "collectionToDrop" };
@@ -138,7 +134,7 @@ repo::lib::RepoConfig getConfig();
 
 std::string getDataPath(const std::string& file);
 
-repo::core::handler::MongoDatabaseHandler* getHandler();
+std::shared_ptr<repo::core::handler::MongoDatabaseHandler> getHandler();
 
 std::vector<repo::lib::RepoVector3D> getGoldenDataForBBoxTest();
 
@@ -153,8 +149,6 @@ std::unordered_map<std::string, uint32_t> getCollectionCounts(
 std::vector<std::string> getCollectionList(
 	const std::string& databaseName
 );
-
-std::pair <std::pair<std::string, std::string>, mongo::BSONObj> getCollectionStats();
 
 std::pair<std::pair<std::string, std::string>, repo::core::model::RepoBSON> getDataForDropCase();
 

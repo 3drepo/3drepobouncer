@@ -341,13 +341,15 @@ TEST(RepoSceneTest, CommitScene)
 	std::string errMsg;
 	std::string commitUser = "me";
 
+	auto handler = getHandler();
+
 	//Commiting an empty scene should fail (fails on empty project/database name)
-	EXPECT_EQ(REPOERR_UPLOAD_FAILED, scene.commit(getHandler(), getFileManager(), errMsg, commitUser));
+	EXPECT_EQ(REPOERR_UPLOAD_FAILED, scene.commit(handler.get(), handler->getFileManager().get(), errMsg, commitUser));
 	EXPECT_FALSE(errMsg.empty());
 	errMsg.clear();
 
 	scene.setDatabaseAndProjectName("sceneCommit", "test1");
-	EXPECT_EQ(REPOERR_UPLOAD_FAILED, scene.commit(getHandler(), getFileManager(), errMsg, commitUser));
+	EXPECT_EQ(REPOERR_UPLOAD_FAILED, scene.commit(handler.get(), handler->getFileManager().get(), errMsg, commitUser));
 	EXPECT_FALSE(errMsg.empty());
 	errMsg.clear();
 
@@ -376,7 +378,7 @@ TEST(RepoSceneTest, CommitScene)
 	std::string commitMsg = "this is a commit message for this commit.";
 	std::string commitTag = "test";
 
-	EXPECT_EQ(REPOERR_OK, scene2.commit(getHandler(), getFileManager(), errMsg, commitUser, commitMsg, commitTag));
+	EXPECT_EQ(REPOERR_OK, scene2.commit(handler.get(), handler->getFileManager().get(), errMsg, commitUser, commitMsg, commitTag));
 	EXPECT_TRUE(errMsg.empty());
 
 	EXPECT_TRUE(scene2.isRevisioned());
@@ -453,9 +455,11 @@ TEST(RepoSceneTest, getRevisionProperties)
 	meshNodes.insert(m2);
 	std::vector<double> offset({ rand() / 1000., rand() / 1000., rand() / 1000. });
 
+	auto handler = getHandler();
+
 	RepoScene scene2(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
 	scene2.setDatabaseAndProjectName("sceneCommit", "test2");
-	ASSERT_EQ(REPOERR_OK, scene2.commit(getHandler(), getFileManager(), errMsg, commitUser, commitMessage, commitTag));
+	ASSERT_EQ(REPOERR_OK, scene2.commit(handler.get(), handler->getFileManager().get(), errMsg, commitUser, commitMessage, commitTag));
 
 	scene2.setWorldOffset(offset);
 	EXPECT_EQ(scene2.getOwner(), commitUser);
@@ -527,14 +531,15 @@ TEST(RepoSceneTest, getViewGraph)
 
 TEST(RepoSceneTest, loadRevision)
 {
+	auto handler = getHandler();
 	std::string errMsg;
-	EXPECT_FALSE(RepoScene().loadRevision(getHandler(), errMsg));
+	EXPECT_FALSE(RepoScene().loadRevision(handler.get(), errMsg));
 	EXPECT_FALSE(errMsg.empty());
 	errMsg.clear();
-	EXPECT_TRUE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadRevision(getHandler(), errMsg));
+	EXPECT_TRUE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadRevision(handler.get(), errMsg));
 	EXPECT_TRUE(errMsg.empty());
 	errMsg.clear();
-	EXPECT_FALSE(RepoScene("nonexistantDatabase", "NonExistantProject").loadRevision(getHandler(), errMsg));
+	EXPECT_FALSE(RepoScene("nonexistantDatabase", "NonExistantProject").loadRevision(handler.get(), errMsg));
 	EXPECT_FALSE(errMsg.empty());
 	errMsg.clear();
 	EXPECT_FALSE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadRevision(nullptr, errMsg));
@@ -544,14 +549,15 @@ TEST(RepoSceneTest, loadRevision)
 
 TEST(RepoSceneTest, loadScene)
 {
+	auto handler = getHandler();
 	std::string errMsg;
-	EXPECT_FALSE(RepoScene().loadScene(getHandler(), errMsg));
+	EXPECT_FALSE(RepoScene().loadScene(handler.get(), errMsg));
 	EXPECT_FALSE(errMsg.empty());
 	errMsg.clear();
-	EXPECT_TRUE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadScene(getHandler(), errMsg));
+	EXPECT_TRUE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadScene(handler.get(), errMsg));
 	EXPECT_TRUE(errMsg.empty());
 	errMsg.clear();
-	EXPECT_FALSE(RepoScene("nonexistantDatabase", "NonExistantProject").loadScene(getHandler(), errMsg));
+	EXPECT_FALSE(RepoScene("nonexistantDatabase", "NonExistantProject").loadScene(handler.get(), errMsg));
 	EXPECT_FALSE(errMsg.empty());
 	errMsg.clear();
 	EXPECT_FALSE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadScene(nullptr, errMsg));
@@ -561,14 +567,15 @@ TEST(RepoSceneTest, loadScene)
 
 TEST(RepoSceneTest, loadStash)
 {
+	auto handler = getHandler();
 	std::string errMsg;
-	EXPECT_FALSE(RepoScene().loadStash(getHandler(), errMsg));
+	EXPECT_FALSE(RepoScene().loadStash(handler.get(), errMsg));
 	EXPECT_FALSE(errMsg.empty());
 	errMsg.clear();
-	EXPECT_TRUE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadStash(getHandler(), errMsg));
+	EXPECT_TRUE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadStash(handler.get(), errMsg));
 	EXPECT_TRUE(errMsg.empty());
 	errMsg.clear();
-	EXPECT_FALSE(RepoScene("nonexistantDatabase", "NonExistantProject").loadStash(getHandler(), errMsg));
+	EXPECT_FALSE(RepoScene("nonexistantDatabase", "NonExistantProject").loadStash(handler.get(), errMsg));
 	EXPECT_FALSE(errMsg.empty());
 	errMsg.clear();
 	EXPECT_FALSE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadStash(nullptr, errMsg));
@@ -578,16 +585,17 @@ TEST(RepoSceneTest, loadStash)
 
 TEST(RepoSceneTest, updateRevisionStatus)
 {
+	auto handler = getHandler();
 	RepoScene scene;
 
-	EXPECT_FALSE(scene.updateRevisionStatus(getHandler(), ModelRevisionNode::UploadStatus::GEN_DEFAULT));
+	EXPECT_FALSE(scene.updateRevisionStatus(handler.get(), ModelRevisionNode::UploadStatus::GEN_DEFAULT));
 	EXPECT_FALSE(scene.updateRevisionStatus(nullptr, ModelRevisionNode::UploadStatus::GEN_DEFAULT));
 
 	scene = RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ);
 	std::string errMsg;
-	scene.loadRevision(getHandler(), errMsg);
-	EXPECT_TRUE(scene.updateRevisionStatus(getHandler(), ModelRevisionNode::UploadStatus::GEN_DEFAULT));
-	EXPECT_TRUE(scene.updateRevisionStatus(getHandler(), ModelRevisionNode::UploadStatus::COMPLETE));
+	scene.loadRevision(handler.get(), errMsg);
+	EXPECT_TRUE(scene.updateRevisionStatus(handler.get(), ModelRevisionNode::UploadStatus::GEN_DEFAULT));
+	EXPECT_TRUE(scene.updateRevisionStatus(handler.get(), ModelRevisionNode::UploadStatus::COMPLETE));
 }
 
 TEST(RepoSceneTest, abandonChild)
@@ -723,11 +731,12 @@ TEST(RepoSceneTest, getParentAsNodesFiltered)
 
 TEST(RepoSceneTest, getSceneFromReference)
 {
+	auto handler = getHandler();
 	RepoScene scene;
 	EXPECT_FALSE(scene.getSceneFromReference(defaultG, repo::lib::RepoUUID::createUUID()));
 	scene = RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_FED);
 	std::string errMsg;
-	scene.loadScene(getHandler(), errMsg);
+	scene.loadScene(handler.get(), errMsg);
 	ASSERT_TRUE(errMsg.empty());
 
 	auto references = scene.getAllReferences(defaultG);
@@ -902,12 +911,13 @@ TEST(RepoSceneTest, getAllDescendantsByType)
 
 TEST(RepoSceneTest, getSceneBoundingBox)
 {
+	auto handler = getHandler();
 	RepoScene scene;
 	EXPECT_EQ(0, scene.getSceneBoundingBox().size());
 
 	std::string errMsg;
 	RepoScene scene2(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ);
-	scene2.loadScene(getHandler(), errMsg);
+	scene2.loadScene(handler.get(), errMsg);
 	auto bb = scene2.getSceneBoundingBox();
 	EXPECT_TRUE(compareStdVectors(bb, getGoldenDataForBBoxTest()));
 }
@@ -1092,9 +1102,10 @@ TEST(RepoSceneTest, getOriginalFiles)
 		EXPECT_TRUE(std::find(orgFilesOut.begin(), orgFilesOut.end(), orgFiles[i]) != orgFilesOut.end());
 	}
 
+	auto handler = getHandler();
 	auto scene4 = RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ);
 	std::string errMsg;
-	scene4.loadScene(getHandler(), errMsg);
+	scene4.loadScene(handler.get(), errMsg);
 	ASSERT_TRUE(errMsg.empty());
 	auto orgFilesOut2 = scene4.getOriginalFiles();
 	EXPECT_EQ(1, orgFilesOut2.size());
@@ -1148,12 +1159,13 @@ TEST(RepoSceneTest, removeNode)
 
 TEST(RepoSceneTest, resetChangeSet)
 {
+	auto handler = getHandler();
 	RepoScene scene;
 	scene.resetChangeSet();
 
 	auto scene2 = RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ);
 	std::string errMsg;
-	scene2.loadScene(getHandler(), errMsg);
+	scene2.loadScene(handler.get(), errMsg);
 	EXPECT_TRUE(scene2.isRevisioned());
 	scene2.resetChangeSet();
 	EXPECT_FALSE(scene2.isRevisioned());

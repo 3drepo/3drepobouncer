@@ -115,4 +115,10 @@ namespace testing {
 		}
 		return identical;
 	}
+
+	// Gets the number of fields in a RepoBSON - this is a test utility rather than
+	// a RepoBSON method because it is best not to count methods at all, as usually
+	// the same result for whatever reason there is to count them can be achieved
+	// by iterating them directly, which is more performant.
+	int nFields(const repo::core::model::RepoBSON& bson);
 }

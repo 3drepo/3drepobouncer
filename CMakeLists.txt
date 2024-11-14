@@ -33,7 +33,10 @@ if(${APPLE})
 endif()
 
 if(${WIN32})
-	add_definitions( -DWIN32_LEAN_AND_MEAN )
+	add_definitions(
+		-DWIN32_LEAN_AND_MEAN
+		-DNOMINMAX
+	)
 endif()
 
 option (REPO_BUILD_COVERAGE "Building with coverage report" OFF)
