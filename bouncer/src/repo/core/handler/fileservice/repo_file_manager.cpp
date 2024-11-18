@@ -50,20 +50,6 @@ std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> FileManager::getDb
 	return dbHandler.lock();
 }
 
-repo::core::model::RepoBSON FileManager::makeCriteria(const std::string& id)
-{
-	repo::core::model::RepoBSONBuilder builder;
-	builder.append(REPO_LABEL_ID, id);
-	return builder.obj();
-}
-
-repo::core::model::RepoBSON FileManager::makeCriteria(const repo::lib::RepoUUID& id)
-{
-	repo::core::model::RepoBSONBuilder builder;
-	builder.append(REPO_LABEL_ID, id);
-	return builder.obj();
-}
-
 template<typename IdType>
 bool FileManager::uploadFileAndCommit(
 	const std::string                            &databaseName,
@@ -140,10 +126,10 @@ bool FileManager::deleteFileAndRef(
 {
 	bool success = true;
 
-	repo::core::model::RepoBSON node = getDbHandler()->findOneByCriteria(
+	repo::core::model::RepoBSON node = getDbHandler()->findOneByUniqueID(
 		databaseName,
 		collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
-		makeCriteria(cleanFileName(fileName))
+		cleanFileName(fileName)
 	);
 
 	if (node.isEmpty())
@@ -188,10 +174,10 @@ repo::core::model::RepoRefT<std::string> FileManager::getFileRef(
 	const std::string                            &collectionNamePrefix,
 	const std::string                            &fileName) {
 	return repo::core::model::RepoRefT<std::string>(
-		getDbHandler()->findOneByCriteria(
+		getDbHandler()->findOneByUniqueID(
 			databaseName,
 			collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
-			makeCriteria(cleanFileName(fileName))
+			cleanFileName(fileName)
 		)
 	);
 }
@@ -201,10 +187,10 @@ repo::core::model::RepoRefT<repo::lib::RepoUUID> FileManager::getFileRef(
 	const std::string& collectionNamePrefix,
 	const repo::lib::RepoUUID& id) {
 	return repo::core::model::RepoRefT<repo::lib::RepoUUID>(
-		getDbHandler()->findOneByCriteria(
+		getDbHandler()->findOneByUniqueID(
 			databaseName,
 			collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
-			makeCriteria(id)
+			id
 		)
 	);
 }

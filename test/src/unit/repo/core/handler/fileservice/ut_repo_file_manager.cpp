@@ -102,8 +102,7 @@ TEST(FileManager, deleteFileAndRef)
 
 	EXPECT_TRUE(manager->deleteFileAndRef(db, col, fileName));
 
-	auto criteria = repo::core::model::RepoBSONBuilder::makeBson("_id", fileName);
-	auto res = handler->findOneByCriteria(db, col + "." + REPO_COLLECTION_EXT_REF, criteria);
+	auto res = handler->findOneByUniqueID(db, col + "." + REPO_COLLECTION_EXT_REF, fileName);
 	EXPECT_TRUE(res.isEmpty());
 
 	EXPECT_FALSE(repo::lib::doesFileExist(dataPathName));

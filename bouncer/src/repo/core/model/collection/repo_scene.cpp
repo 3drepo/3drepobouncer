@@ -30,6 +30,7 @@
 #include "repo/core/model/bson/repo_bson_builder.h"
 #include "repo/core/model/bson/repo_bson_factory.h"
 #include "repo/core/model/bson/repo_bson_project_settings.h"
+#include "repo/core/handler/database/repo_expressions.h"
 
 using namespace repo::core::model;
 
@@ -661,8 +662,7 @@ void RepoScene::addErrorStatusToProjectSettings(
 	repo::core::handler::AbstractDatabaseHandler *handler
 )
 {
-	RepoBSON criteria = RepoBSONBuilder::makeBson(REPO_LABEL_ID, projectName);
-	auto projectsettings = RepoProjectSettings(handler->findOneByCriteria(databaseName, REPO_COLLECTION_SETTINGS, criteria));
+	auto projectsettings = RepoProjectSettings(handler->findOneByUniqueID(databaseName, REPO_COLLECTION_SETTINGS, projectName));
 	projectsettings.setErrorStatus();
 	std::string errorMsg;
 	if (!handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, projectsettings, false, errorMsg))
@@ -675,8 +675,7 @@ void RepoScene::addTimestampToProjectSettings(
 	repo::core::handler::AbstractDatabaseHandler *handler
 )
 {
-	RepoBSON criteria = RepoBSONBuilder::makeBson(REPO_LABEL_ID, projectName);
-	auto projectsettings = RepoProjectSettings(handler->findOneByCriteria(databaseName, REPO_COLLECTION_SETTINGS, criteria));
+	auto projectsettings = RepoProjectSettings(handler->findOneByUniqueID(databaseName, REPO_COLLECTION_SETTINGS, projectName));
 	projectsettings.clearErrorStatus();
 	std::string errorMsg;
 	if (!handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, projectsettings, false, errorMsg))
@@ -725,11 +724,13 @@ bool RepoScene::commitRevisionNode(
 
 	if (newRevNode)
 	{
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, RepoBSONBuilder::makeIndex({ { REPO_NODE_REVISION_LABEL_TIMESTAMP, -1} }));
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, RepoBSONBuilder::makeIndex({ {REPO_NODE_REVISION_ID, 1}, {"metadata.key", 1}, {"metadata.value", 1} }));
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, RepoBSONBuilder::makeIndex({ {"metadata.key", 1}, {"metadata.value", 1} }));
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, RepoBSONBuilder::makeIndex({ {REPO_NODE_REVISION_ID, 1}, {REPO_NODE_LABEL_SHARED_ID, 1}, {REPO_LABEL_TYPE, 1} }));
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, RepoBSONBuilder::makeIndex({ {REPO_NODE_LABEL_SHARED_ID, 1} }));
+		using namespace core::handler::database::index;
+
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, Descending({ REPO_NODE_REVISION_LABEL_TIMESTAMP }));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ REPO_NODE_REVISION_ID, "metadata.key", "metadata.value" }));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ "metadata.key", "metadata.value" }));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ REPO_NODE_REVISION_ID, REPO_NODE_LABEL_SHARED_ID, REPO_LABEL_TYPE }));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ REPO_NODE_LABEL_SHARED_ID }));
 
 		for (size_t i = 0; i < refFiles.size(); i++)
 		{
@@ -1098,33 +1099,36 @@ bool RepoScene::loadRevision(
 	RepoBSON bson;
 	repoTrace << "loading revision : " << databaseName << "." << projectName << " head Revision: " << headRevision;
 	if (headRevision) {
-		RepoBSONBuilder critBuilder;
 
-		if (includeStatus.size()) {
-			RepoBSONBuilder statusBSONBuilder;
-			std::vector<RepoBSON> statusCheck = {
-				RepoBSONBuilder::makeBson(REPO_NODE_REVISION_LABEL_INCOMPLETE,
-					RepoBSONBuilder::makeBson("$exists", false)
-				)
-			};
+		using namespace repo::core::handler::database;
+
+		query::RepoQueryBuilder query;
+		if (includeStatus.size())
+		{
 			std::vector<int> statuses;
-			for (const auto &status : includeStatus) {
-				statuses.push_back((int)status);
-			}
-			statusBSONBuilder.appendArray("$in", statuses);
-			RepoBSONBuilder statusCheckBuilder;
-			statusCheckBuilder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, statusBSONBuilder.obj());
-			statusCheck.push_back(statusCheckBuilder.obj());
-			critBuilder.appendArray("$or", statusCheck);
+			std::transform(includeStatus.begin(), includeStatus.end(), std::back_inserter(statuses), [](auto s) { return (int)s; } );
+			query.append(
+				query::Or(
+					query::Eq(REPO_NODE_REVISION_LABEL_INCOMPLETE, statuses),
+					query::Exists(REPO_NODE_REVISION_LABEL_INCOMPLETE, false)
+				)
+			);
 		}
-		else {
-			critBuilder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, RepoBSONBuilder::makeBson("$exists", false));
+		else
+		{
+			query.append(
+				query::Exists(REPO_NODE_REVISION_LABEL_INCOMPLETE, false)
+			);
 		}
+		query.append(query::Eq(REPO_NODE_LABEL_SHARED_ID, branch));
 
-		critBuilder.append(REPO_NODE_LABEL_SHARED_ID, branch);
+		bson = handler->findOneByCriteria(
+			databaseName,
+			projectName + "." + REPO_COLLECTION_HISTORY,
+			query,
+			REPO_NODE_REVISION_LABEL_TIMESTAMP
+		);
 
-		bson = handler->findOneByCriteria(databaseName, projectName + "." +
-			REPO_COLLECTION_HISTORY, critBuilder.obj(), REPO_NODE_REVISION_LABEL_TIMESTAMP);
 		repoTrace << "Fetching head of revision from branch " << branch;
 	}
 	else {
@@ -1160,10 +1164,9 @@ bool RepoScene::loadScene(
 		if (!loadRevision(handler, errMsg)) return false;
 	}
 
-	RepoBSONBuilder builder;
-	builder.append(REPO_NODE_STASH_REF, revNode->getUniqueID());
 	std::vector<RepoBSON> nodes = handler->findAllByCriteria(
-		databaseName, projectName + "." + REPO_COLLECTION_SCENE, builder.obj());
+		databaseName, projectName + "." + REPO_COLLECTION_SCENE, core::handler::database::query::Eq(REPO_NODE_STASH_REF, revNode->getUniqueID())
+	);
 
 	repoInfo << "# of nodes in this unoptimised scene = " << nodes.size();
 
@@ -1184,11 +1187,9 @@ bool RepoScene::loadStash(
 		if (!loadRevision(handler, errMsg)) return false;
 	}
 
-	//Get the relevant nodes from the scene graph using the unique IDs stored in this revision node
-	RepoBSONBuilder builder;
-	builder.append(REPO_NODE_STASH_REF, revNode->getUniqueID());
-
-	std::vector<RepoBSON> nodes = handler->findAllByCriteria(databaseName, projectName + "." + REPO_COLLECTION_STASH_REPO, builder.obj());
+	std::vector<RepoBSON> nodes = handler->findAllByCriteria(
+		databaseName, projectName + "." + REPO_COLLECTION_STASH_REPO, core::handler::database::query::Eq(REPO_NODE_STASH_REF, revNode->getUniqueID())
+	);
 	if (success = nodes.size())
 	{
 		repoInfo << "# of nodes in this stash scene = " << nodes.size();

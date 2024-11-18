@@ -140,19 +140,6 @@ namespace repo {
 				*/
 				RepoBSON obj();
 
-				/*
-				* Make a RepoBSON with one element. This convenience function operates like
-				* make_document, but taking all the types supported by RepoBSONBuilder.
-				*/
-				template<typename T>
-				static RepoBSON makeBson(const std::string& label, const T& value);
-
-				/*
-				* Make a RepoBSON where each value is either 1 or -1, for RepoBSONs to be
-				* used as arguments to createIndex.
-				*/
-				static RepoBSON makeIndex(std::vector<std::pair<const std::string&, int>> indices);
-
 			private:
 				/**
 				* @brief Append a UUID into the builder

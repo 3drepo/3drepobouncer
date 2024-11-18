@@ -173,7 +173,7 @@ namespace repo {
 				* @param name name of the collection
 				* @param index BSONObj specifying the index
 				*/
-				virtual void createIndex(const std::string &database, const std::string &collection, const repo::core::model::RepoBSON& obj);
+				virtual void createIndex(const std::string &database, const std::string &collection, const database::index::RepoIndex& index);
 
 				/**
 				* Remove a collection from the database
@@ -272,7 +272,7 @@ namespace repo {
 				std::vector<repo::core::model::RepoBSON> findAllByCriteria(
 					const std::string& database,
 					const std::string& collection,
-					const repo::core::model::RepoBSON& criteria);
+					const database::query::RepoQuery& criteria);
 
 				/**
 				* Given a search criteria,  find one documents that passes this query
@@ -285,7 +285,7 @@ namespace repo {
 				repo::core::model::RepoBSON findOneByCriteria(
 					const std::string& database,
 					const std::string& collection,
-					const repo::core::model::RepoBSON& criteria,
+					const database::query::RepoQuery& criteria,
 					const std::string& sortField = ""
 				);
 
@@ -306,9 +306,9 @@ namespace repo {
 					const std::string& sortField);
 
 				/**
-				*Retrieves the document matching given Unique ID (SID), sorting is descending
+				*Retrieves the document matching given Unique ID
 				* @param database name of database
-				* @param collection name of collectoin
+				* @param collection name of collection
 				* @param uuid share id
 				* @return returns the matching bson object
 				*/
@@ -316,6 +316,19 @@ namespace repo {
 					const std::string& database,
 					const std::string& collection,
 					const repo::lib::RepoUUID& uuid);
+
+				/**
+				*Retrieves the document matching given Unique ID, where the type of the Id
+				* is a string.
+				* @param database name of database
+				* @param collection name of collection
+				* @param uuid share id
+				* @return returns the matching bson object
+				*/
+				repo::core::model::RepoBSON findOneByUniqueID(
+					const std::string& database,
+					const std::string& collection,
+					const std::string& id);
 
 				void setFileManager(std::shared_ptr<repo::core::handler::fileservice::FileManager> manager);
 

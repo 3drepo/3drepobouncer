@@ -28,6 +28,7 @@
 #include "repo/core/model/bson/repo_bson_builder.h"
 #include "repo/core/model/bson/repo_bson_element.h"
 #include "repo/lib/repo_log.h"
+#include "database/repo_expressions.h"
 
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
@@ -128,13 +129,14 @@ void MongoDatabaseHandler::createCollection(const std::string &database, const s
 	}
 }
 
-void MongoDatabaseHandler::createIndex(const std::string &database, const std::string &collection, const repo::core::model::RepoBSON& obj)
+void MongoDatabaseHandler::createIndex(const std::string &database, const std::string &collection, const database::index::RepoIndex& index)
 {
 	if (!(database.empty() || collection.empty()))
 	{
 		auto client = clientPool->acquire();
 		auto db = client->database(database);
 		auto col = db.collection(collection);
+		auto obj = (repo::core::model::RepoBSON)index;
 
 		repoInfo << "Creating index for :" << database << "." << collection << " : index: " << obj.toString();
 
@@ -254,10 +256,10 @@ bool MongoDatabaseHandler::dropDocument(
 std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria(
 	const std::string& database,
 	const std::string& collection,
-	const repo::core::model::RepoBSON& criteria)
+	const database::query::RepoQuery& filter)
 {
 	std::vector<repo::core::model::RepoBSON> data;
-
+	repo::core::model::RepoBSON criteria = filter;
 	if (!criteria.isEmpty())
 	{
 		auto client = clientPool->acquire();
@@ -285,9 +287,10 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 	const std::string& database,
 	const std::string& collection,
-	const repo::core::model::RepoBSON& criteria,
+	const database::query::RepoQuery& filter,
 	const std::string& sortField)
 {
+	repo::core::model::RepoBSON criteria = filter;
 	if (!criteria.isEmpty())
 	{
 		auto client = clientPool->acquire();
@@ -295,14 +298,15 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 		auto col = db.collection(collection);
 
 		try {
-			fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-
 			mongocxx::options::find options{};
-			options.sort(make_document(kvp(sortField, -1)));
+			if (!sortField.empty()) {
+				options.sort(make_document(kvp(sortField, -1)));
+			}
 
 			// Find document
 			auto findResult = col.find_one(criteria.view(), options);
 			if (findResult.has_value()) {
+				fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
 				return createRepoBSON(blobHandler, database, collection, findResult.value());
 			}
 		}
@@ -351,7 +355,6 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 				retrieved++;
 			}
 
-
 			if (fieldsCount != retrieved) {
 				repoWarning << "Number of documents(" << retrieved << ") retreived by findAllByUniqueIDs did not match the number of unique IDs(" << fieldsCount << ")!";
 			}
@@ -371,68 +374,26 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 	const repo::lib::RepoUUID& uuid,
 	const std::string& sortField)
 {
-	try
-	{
-		auto client = clientPool->acquire();
-		auto db = client->database(database);
-		auto col = db.collection(collection);
-
-		// Build Query
-		repo::core::model::RepoBSONBuilder builder;
-		builder.append("shared_id", uuid);
-		auto queryDoc = builder.obj();
-
-		// Create options
-		mongocxx::options::find options{};
-		options.sort(make_document(kvp(sortField, -1)));
-
-		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-
-		// Find document
-		auto findResult = col.find_one(queryDoc.view(), options);
-
-		if (findResult.has_value()) {
-			auto doc = findResult.value();
-			return createRepoBSON(blobHandler, database, collection, doc);
-		}
-
-	}
-	catch (mongocxx::query_exception e)
-	{
-		repoError << "Error querying the database: " << std::string(e.what());
-	}
-
-	return repo::core::model::RepoBSON(make_document());
+	return findOneByCriteria(database, collection, database::query::Eq(std::string("shared_id"), uuid), sortField);
 }
 
 repo::core::model::RepoBSON  MongoDatabaseHandler::findOneByUniqueID(
 	const std::string& database,
 	const std::string& collection,
-	const repo::lib::RepoUUID& uuid) {
+	const repo::lib::RepoUUID& id)
+{
+	return findOneByCriteria(database, collection, database::query::Eq(ID, id));
+}
 
-	try
-	{
-		auto client = clientPool->acquire();
-		auto db = client->database(database);
-		auto col = db.collection(collection);
-
-		repo::core::model::RepoBSONBuilder builder;
-		builder.append(ID, uuid);
-		auto queryDoc = builder.obj();
-
-		auto findResult = col.find_one(queryDoc.view());
-
-		if (findResult.has_value()) {
-			fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-			return createRepoBSON(blobHandler, database, collection, findResult.value());
-		}
-	}
-	catch (mongocxx::query_exception& e)
-	{
-		repoError << e.what();
-	}
-
-	return repo::core::model::RepoBSON(make_document());
+repo::core::model::RepoBSON  MongoDatabaseHandler::findOneByUniqueID(
+	const std::string& database,
+	const std::string& collection,
+	const std::string& id)
+{
+	repo::core::model::RepoBSONBuilder builder;
+	builder.append(ID, id);
+	auto queryDoc = builder.obj();
+	return findOneByCriteria(database, collection, database::query::Eq(ID, id));
 }
 
 std::vector<repo::core::model::RepoBSON>

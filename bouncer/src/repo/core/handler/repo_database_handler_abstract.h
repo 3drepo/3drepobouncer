@@ -29,6 +29,14 @@ namespace repo {
 			class RepoBSON;
 		}
 		namespace handler {
+			namespace database {
+				namespace query {
+					class RepoQuery;
+				}
+				namespace index{
+					class RepoIndex;
+				}
+			}
 			class AbstractDatabaseHandler {
 			public:
 				/**
@@ -93,7 +101,7 @@ namespace repo {
 				* @param name name of the collection
 				* @param index BSONObj specifying the index
 				*/
-				virtual void createIndex(const std::string &database, const std::string &collection, const repo::core::model::RepoBSON& obj) = 0;
+				virtual void createIndex(const std::string &database, const std::string &collection, const database::index::RepoIndex&) = 0;
 
 				/**
 				* Insert a single document in database.collection
@@ -179,7 +187,7 @@ namespace repo {
 				virtual std::vector<repo::core::model::RepoBSON> findAllByCriteria(
 					const std::string& database,
 					const std::string& collection,
-					const repo::core::model::RepoBSON& criteria) = 0;
+					const database::query::RepoQuery& criteria) = 0;
 
 				/**
 				* Given a search criteria,  find one documents that passes this query
@@ -192,7 +200,7 @@ namespace repo {
 				virtual repo::core::model::RepoBSON findOneByCriteria(
 					const std::string& database,
 					const std::string& collection,
-					const repo::core::model::RepoBSON& criteria,
+					const database::query::RepoQuery& criteria,
 					const std::string& sortField = "") = 0;
 
 				/**
@@ -224,7 +232,7 @@ namespace repo {
 					const std::string& sortField) = 0;
 
 				/**
-				*Retrieves the document matching given Unique ID (SID), sorting is descending
+				*Retrieves the document matching given Unique ID, where the type of the id field is a UUID
 				* @param database name of database
 				* @param collection name of collection
 				* @param uuid share id
@@ -233,7 +241,19 @@ namespace repo {
 				virtual repo::core::model::RepoBSON findOneByUniqueID(
 					const std::string& database,
 					const std::string& collection,
-					const repo::lib::RepoUUID& uuid) = 0;
+					const repo::lib::RepoUUID& id) = 0;
+
+				/**
+				*Retrieves the document matching given Unique ID, where the type of the Id field is a string
+				* @param database name of database
+				* @param collection name of collection
+				* @param uuid share id
+				* @return returns the matching bson object
+				*/
+				virtual repo::core::model::RepoBSON findOneByUniqueID(
+					const std::string& database,
+					const std::string& collection,
+					const std::string& id) = 0;
 
 			protected:
 				/**

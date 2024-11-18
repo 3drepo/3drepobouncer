@@ -190,21 +190,3 @@ void RepoBSONBuilder::appendArray(
 {
 	document::append(kvp(label, bson.view()));
 }
-
-template<typename T>
-RepoBSON RepoBSONBuilder::makeBson(const std::string& label, const T& value)
-{
-	RepoBSONBuilder builder;
-	builder.append(label, value);
-	return builder.obj();
-}
-
-RepoBSON RepoBSONBuilder::makeIndex(std::vector<std::pair<const std::string&, int>> indices)
-{
-	RepoBSONBuilder builder;
-	for (const auto& i : indices)
-	{
-		builder.append(i.first, i.second);
-	}
-	return builder.obj();
-}

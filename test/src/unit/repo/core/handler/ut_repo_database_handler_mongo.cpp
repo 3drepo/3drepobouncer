@@ -16,6 +16,7 @@
 */
 
 #include <repo/core/handler/repo_database_handler_mongo.h>
+#include <repo/core/handler/database/repo_expressions.h>
 #include <repo/core/model/bson/repo_bson.h>
 #include <repo/core/model/bson/repo_bson_element.h>
 #include <repo/core/model/bson/repo_node.h>
@@ -249,9 +250,16 @@ TEST(MongoDatabaseHandlerTest, InsertDocument)
 
 	auto id = repo::lib::RepoUUID::createUUID();
 
+	using namespace repo::core::handler::database;
+
+	query::RepoQueryBuilder query;
+	query.append(query::Eq("_id", id));
+	query.append(query::Eq("anotherField", std::rand()));
+
 	repo::core::model::RepoBSONBuilder builder;
-	builder.append("_id", id);
-	builder.append("anotherField", std::rand());
+	query.visit(builder);
+
+	// This test should be rewritten since this is not the way to use query objects anymore!
 
 	repo::core::model::RepoBSON testCase = builder.obj();
 	std::string database = "sandbox";
@@ -261,7 +269,7 @@ TEST(MongoDatabaseHandlerTest, InsertDocument)
 	EXPECT_TRUE(errMsg.empty());
 	errMsg.clear();
 
-	repo::core::model::RepoBSON result = handler->findOneByCriteria(database, collection, testCase);
+	repo::core::model::RepoBSON result = handler->findOneByCriteria(database, collection, query);
 	EXPECT_FALSE(result.isEmpty());
 
 	std::set<std::string> fields = result.getFieldNames();
@@ -303,13 +311,14 @@ TEST(MongoDatabaseHandlerTest, FindAllByCriteria)
 	ASSERT_TRUE(handler);
 	std::string errMsg;
 
-	repo::core::model::RepoBSON search = repo::core::model::RepoBSONBuilder::makeBson("type", "mesh");
+	using namespace repo::core::handler::database;
 
-	auto results = handler->findAllByCriteria(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".scene", search);
+	query::Eq search("type", std::string("mesh"));
+	auto results = handler->findAllByCriteria(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".scene", query::Eq("type", std::string("mesh")));
 
 	EXPECT_EQ(4, results.size());
 
-	EXPECT_EQ(0, handler->findAllByCriteria(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".scene", repo::core::model::RepoBSON()).size());
+	EXPECT_EQ(0, handler->findAllByCriteria(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".scene", query::RepoQueryBuilder()).size());
 	EXPECT_EQ(0, handler->findAllByCriteria("", REPO_GTEST_DBNAME1_PROJ + ".scene", search).size());
 	EXPECT_EQ(0, handler->findAllByCriteria(REPO_GTEST_DBNAME1, "", search).size());
 }
@@ -319,18 +328,17 @@ TEST(MongoDatabaseHandlerTest, FindOneByCriteria)
 	auto handler = getHandler();
 	ASSERT_TRUE(handler);
 	std::string errMsg;
-	repo::core::model::RepoBSONBuilder builder;
 
-	builder.append("_id", uuidsToSearch[0]);
+	using namespace repo::core::handler::database;
 
-	repo::core::model::RepoBSON search = builder.obj();
+	query::Eq search("_id", uuidsToSearch[0]);
 
 	auto results = handler->findOneByCriteria(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".scene", search);
 
 	EXPECT_FALSE(results.isEmpty());
-	EXPECT_EQ(results.getField("_id"), search.getField("_id"));
+	EXPECT_EQ(results.getUUIDField("_id"), uuidsToSearch[0]);
 
-	EXPECT_TRUE(handler->findOneByCriteria(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".scene", repo::core::model::RepoBSON()).isEmpty());
+	EXPECT_TRUE(handler->findOneByCriteria(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".scene", query::RepoQueryBuilder()).isEmpty());
 	EXPECT_TRUE(handler->findOneByCriteria("", REPO_GTEST_DBNAME1_PROJ + ".scene", search).isEmpty());
 	EXPECT_TRUE(handler->findOneByCriteria(REPO_GTEST_DBNAME1, "", search).isEmpty());
 }
@@ -587,13 +595,11 @@ TEST(MongoDatabaseHandlerTest, InsertManyDocumentsMetadata)
 	// write it.
 
 	auto ref = actual.getBinaryReference();
-	repo::core::model::RepoBSONBuilder criteriaBuilder;
-	criteriaBuilder.append(REPO_LABEL_ID, ref.getStringField(REPO_LABEL_BINARY_FILENAME));
 
-	auto refNode = handler->findOneByCriteria(
+	auto refNode = handler->findOneByUniqueID(
 		REPO_GTEST_DBNAME3,
 		collection + std::string(".") + REPO_COLLECTION_EXT_REF,
-		criteriaBuilder.obj()
+		ref.getStringField(REPO_LABEL_BINARY_FILENAME)
 	);
 
 	EXPECT_THAT(refNode.getUUIDField("x-uuid"), Eq(boost::get<repo::lib::RepoUUID>(metadata["x-uuid"])));

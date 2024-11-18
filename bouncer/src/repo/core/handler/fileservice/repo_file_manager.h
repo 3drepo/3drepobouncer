@@ -149,13 +149,6 @@ namespace repo {
 						const uint32_t& size,
 						const repo::core::model::RepoRef::Metadata& metadata);
 
-					/*
-					* Helper functions to return a RepoBSON used as search critera for find.
-					* Will find documents for which the Id field has the specified value.
-					*/
-					repo::core::model::RepoBSON makeCriteria(const std::string& id);
-					repo::core::model::RepoBSON makeCriteria(const repo::lib::RepoUUID& id);
-
 					/**
 					 * Add ref entry for file to database.
 					 */
