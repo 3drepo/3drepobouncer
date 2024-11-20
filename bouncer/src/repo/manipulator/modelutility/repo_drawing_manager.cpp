@@ -64,14 +64,7 @@ uint8_t DrawingManager::commitImage(
 
 	revision.addImage(drawingRefNodeId);
 
-	std::string error;
-	handler->upsertDocument(teamspace, REPO_COLLECTION_DRAWINGS, revision, false, error);
-
-	if (error.size())
-	{
-		repoError << "Error committing drawing: " << error;
-		return REPOERR_UPLOAD_FAILED;
-	}
+	handler->upsertDocument(teamspace, REPO_COLLECTION_DRAWINGS, revision, false);
 
 	// Retreive and process calibration - drawing processors do not have to return a calibration,
 	// in which case the vectors will be empty.
@@ -88,13 +81,7 @@ uint8_t DrawingManager::commitImage(
 			calibration.units
 		);
 
-		handler->insertDocument(teamspace, REPO_COLLECTION_CALIBRATIONS, calibrationBSON, error);
-
-		if (error.size())
-		{
-			repoError << "Error committing calibration: " << error;
-			return REPOERR_UPLOAD_FAILED;
-		}
+		handler->insertDocument(teamspace, REPO_COLLECTION_CALIBRATIONS, calibrationBSON);
 	}
 
 	return REPOERR_OK;

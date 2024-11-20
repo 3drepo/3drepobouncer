@@ -111,11 +111,10 @@ namespace repo {
 				* @param errMsg error message should it fail
 				* @return returns true upon success
 				*/
-				virtual bool insertDocument(
+				virtual void insertDocument(
 					const std::string &database,
 					const std::string &collection,
-					const repo::core::model::RepoBSON &obj,
-					std::string &errMsg) = 0;
+					const repo::core::model::RepoBSON &obj) = 0;
 
 				/**
 				* Insert multiple document in database.collection
@@ -125,11 +124,10 @@ namespace repo {
 				* @param errMsg error message should it fail
 				* @return returns true upon success
 				*/
-				virtual bool insertManyDocuments(
+				virtual void insertManyDocuments(
 					const std::string &database,
 					const std::string &collection,
 					const std::vector<repo::core::model::RepoBSON> &obj,
-					std::string &errMsg,
 					const Metadata& metadata = {}) = 0;
 
 				/**
@@ -142,12 +140,11 @@ namespace repo {
 				* @param errMsg error message should it fail
 				* @return returns true upon success
 				*/
-				virtual bool upsertDocument(
+				virtual void upsertDocument(
 					const std::string &database,
 					const std::string &collection,
 					const repo::core::model::RepoBSON &obj,
-					const bool        &overwrite,
-					std::string &errMsg) = 0;
+					const bool        &overwrite) = 0;
 
 				/**
 				* Remove a collection from the database
@@ -155,10 +152,9 @@ namespace repo {
 				* @param collection name of the collection to drop
 				* @param errMsg name of the collection to drop
 				*/
-				virtual bool dropCollection(
+				virtual void dropCollection(
 					const std::string &database,
-					const std::string &collection,
-					std::string &errMsg) = 0;
+					const std::string &collection) = 0;
 
 				/**
 				* Remove a document from the mongo database
@@ -167,11 +163,10 @@ namespace repo {
 				* @param collection name of the collection the document is in
 				* @param errMsg name of the database to drop
 				*/
-				virtual bool dropDocument(
+				virtual void dropDocument(
 					const repo::core::model::RepoBSON bson,
 					const std::string &database,
-					const std::string &collection,
-					std::string &errMsg) = 0;
+					const std::string &collection) = 0;
 
 				/*
 				*	------------- Query operations --------------

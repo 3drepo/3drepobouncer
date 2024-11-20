@@ -64,6 +64,12 @@ namespace repo {
 				//! Built in admin database roles. See http://docs.mongodb.org/manual/reference/built-in-roles/
 				static const std::list<std::string> ADMIN_ONLY_DATABASE_ROLES;
 
+				struct ConnectionOptions
+				{
+					uint32_t maxConnections = 1;
+					uint32_t timeout = 10000; // Common timeout for socket, connection and server selection, in milliseconds
+				};
+
 				/**
 				* @param dbAddress ConnectionString that holds the address to the mongo database
 				* @param maxConnections max. number of connections to the database
@@ -72,10 +78,9 @@ namespace repo {
 				*/
 				MongoDatabaseHandler(
 					const std::string& dbAddress,
-					const uint32_t& maxConnections,
-					const std::string& dbName,
-					const std::string& username = std::string(),
-					const std::string& password = std::string()
+					const std::string& username,
+					const std::string& password,
+					const ConnectionOptions& options = ConnectionOptions()
 				);
 
 				~MongoDatabaseHandler();
@@ -91,10 +96,10 @@ namespace repo {
 				 */
 				static std::shared_ptr<MongoDatabaseHandler> getHandler(
 					const std::string &connectionString,
-					const uint32_t    &maxConnections = 1,
-					const std::string &dbName = std::string(),
-					const std::string &username = std::string(),
-					const std::string &password = std::string());
+					const std::string& username,
+					const std::string& password,
+					const ConnectionOptions& options = ConnectionOptions()
+				);
 
 				/**
 				 * Returns a new instance of MongoDatabaseHandler
@@ -107,10 +112,10 @@ namespace repo {
 				static std::shared_ptr<MongoDatabaseHandler> getHandler(
 					const std::string &host,
 					const int         &port,
-					const uint32_t    &maxConnections = 1,
-					const std::string &dbName = std::string(),
-					const std::string &username = std::string(),
-					const std::string &password = std::string());
+					const std::string &username,
+					const std::string &password,
+					const ConnectionOptions& options = ConnectionOptions()
+				);
 
 				/*
 				*	------------- Database info lookup --------------
@@ -147,15 +152,6 @@ namespace repo {
 				*/
 				std::list<std::string> getCollections(const std::string &database);
 
-				/**
-				* Return the name of admin database
-				* @return name of admin database
-				*/
-				static std::string getAdminDatabaseName()
-				{
-					return ADMIN_DATABASE;
-				}
-
 				/*
 				*	------------- Database operations (insert/delete/update) --------------
 				*/
@@ -181,10 +177,9 @@ namespace repo {
 				* @param collection name of the collection to drop
 				* @param errMsg name of the collection to drop
 				*/
-				bool dropCollection(
+				void dropCollection(
 					const std::string &database,
-					const std::string &collection,
-					std::string &errMsg);
+					const std::string &collection);
 
 				/**
 				* Remove a document from the mongo database
@@ -193,11 +188,10 @@ namespace repo {
 				* @param collection name of the collection the document is in
 				* @param errMsg name of the database to drop
 				*/
-				bool dropDocument(
+				void dropDocument(
 					const repo::core::model::RepoBSON bson,
 					const std::string &database,
-					const std::string &collection,
-					std::string &errMsg);
+					const std::string &collection);
 
 				/**
 				 * Insert a single document in database.collection
@@ -207,11 +201,10 @@ namespace repo {
 				 * @param errMsg error message should it fail
 				 * @return returns true upon success
 				 */
-				bool insertDocument(
+				void insertDocument(
 					const std::string &database,
 					const std::string &collection,
-					const repo::core::model::RepoBSON &obj,
-					std::string &errMsg);
+					const repo::core::model::RepoBSON &obj);
 
 				/**
 				* Insert multiple document in database.collection
@@ -221,11 +214,10 @@ namespace repo {
 				* @param errMsg error message should it fail
 				* @return returns true upon success
 				*/
-				virtual bool insertManyDocuments(
+				virtual void insertManyDocuments(
 					const std::string &database,
 					const std::string &collection,
 					const std::vector<repo::core::model::RepoBSON> &obj,
-					std::string &errMsg,
 					const Metadata& metadata = {});
 
 				/**
@@ -238,12 +230,11 @@ namespace repo {
 				* @param errMsg error message should it fail
 				* @return returns true upon success
 				*/
-				bool upsertDocument(
+				void upsertDocument(
 					const std::string &database,
 					const std::string &collection,
 					const repo::core::model::RepoBSON &obj,
-					const bool        &overwrite,
-					std::string &errMsg);
+					const bool        &overwrite);
 
 				/*
 				*	------------- Query operations --------------

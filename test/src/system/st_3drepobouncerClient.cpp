@@ -650,10 +650,9 @@ TEST(RepoClientTest, GenStashTest)
 
 	// Drop collections from the existing imports so we know any changes are due to this test.
 
-	std::string error;
-	handler->dropCollection("genStashTest", "cube.stash.repobundles", error);
-	handler->dropCollection("genStashTest", "cube.stash.repobundles.ref", error);
-	handler->dropCollection("genStashTest", "cube.stash.json_mpc.ref", error);
+	handler->dropCollection("genStashTest", "cube.stash.repobundles");
+	handler->dropCollection("genStashTest", "cube.stash.repobundles.ref");
+	handler->dropCollection("genStashTest", "cube.stash.json_mpc.ref");
 
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("genStashTest", "cube", "repo")));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("genStashTest", "cube", "src")));
@@ -734,8 +733,7 @@ TEST(RepoClientTest, ProcessDrawing)
 		db,
 		REPO_COLLECTION_DRAWINGS,
 		revisionBuilder.obj(),
-		true,
-		err
+		true
 	);
 
 	EXPECT_EQ(err.size(), 0);

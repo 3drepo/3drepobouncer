@@ -149,7 +149,7 @@ uint64_t RepoBSON::objsize() const
 
 std::string RepoBSON::toString() const
 {
-	return bsoncxx::to_json(*this);
+	return bsoncxx::to_json(this->view());
 }
 
 bool RepoBSON::operator==(const RepoBSON other) const

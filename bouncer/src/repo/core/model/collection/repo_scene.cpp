@@ -621,41 +621,24 @@ bool RepoScene::commitSequence(
 	const repo::lib::RepoUUID &revID,
 	std::string &err
 ) {
-	bool success = true;
 	if (frameStates.size()) {
 		auto sequenceCol = projectName + "." + REPO_COLLECTION_SEQUENCE;
 		sequence.setRevision(revID);
-		if (handler->insertDocument(
-			databaseName, sequenceCol, sequence, err)) {
-			for (const auto &state : frameStates) {
-				if (!manager->uploadFileAndCommit(databaseName, sequenceCol, state.first, state.second)) {
-					repoError << "Failed to commit a sequence state.";
-					success = false;
-				}
-			}
-		}
-		else {
-			repoError << "Failed to commit sequence bson: " << err;
-			return false;
+		handler->insertDocument(databaseName, sequenceCol, sequence);
+		for (const auto& state : frameStates) {
+			manager->uploadFileAndCommit(databaseName, sequenceCol, state.first, state.second);
 		}
 
 		auto taskCol = projectName + "." + REPO_COLLECTION_TASK;
 		for (const auto &task : tasks) {
-			if (!handler->insertDocument(databaseName, taskCol, task, err)) {
-				repoError << "Failed to commit task bson: " << err;
-				return false;
-			}
+			handler->insertDocument(databaseName, taskCol, task);
 		}
 
 		if (taskList.size()) {
-			if (!manager->uploadFileAndCommit(databaseName, taskCol, sequence.getUniqueId().toString(), taskList)) {
-				repoError << "Failed to commit a task list";
-				success = false;
-			}
+			manager->uploadFileAndCommit(databaseName, taskCol, sequence.getUniqueId().toString(), taskList);
 		}
 	}
-
-	return success;
+	return true;
 }
 
 void RepoScene::addErrorStatusToProjectSettings(
@@ -665,10 +648,7 @@ void RepoScene::addErrorStatusToProjectSettings(
 	auto projectsettings = RepoProjectSettings(handler->findOneByUniqueID(databaseName, REPO_COLLECTION_SETTINGS, projectName));
 	projectsettings.setErrorStatus();
 	std::string errorMsg;
-	if (!handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, projectsettings, false, errorMsg))
-	{
-		repoError << "Failed to update project settings: " << errorMsg;
-	}
+	handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, projectsettings, false);
 }
 
 void RepoScene::addTimestampToProjectSettings(
@@ -678,10 +658,7 @@ void RepoScene::addTimestampToProjectSettings(
 	auto projectsettings = RepoProjectSettings(handler->findOneByUniqueID(databaseName, REPO_COLLECTION_SETTINGS, projectName));
 	projectsettings.clearErrorStatus();
 	std::string errorMsg;
-	if (!handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, projectsettings, false, errorMsg))
-	{
-		repoError << "Failed to update project settings: " << errorMsg;
-	}
+	handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, projectsettings, false);
 }
 
 bool RepoScene::commitRevisionNode(
@@ -772,7 +749,7 @@ bool RepoScene::commitRevisionNode(
 	}
 
 	if (success)
-		return handler->upsertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, *newRevNode, true, errMsg);
+		handler->upsertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, *newRevNode, true);
 
 	return success;
 }
@@ -804,7 +781,9 @@ bool RepoScene::commitNodes(
 		nodes.push_back(*node);
 	}
 
-	return handler->insertManyDocuments(databaseName, projectName + "." + ext, nodes, errMsg);
+	handler->insertManyDocuments(databaseName, projectName + "." + ext, nodes);
+
+	return true;
 }
 
 bool RepoScene::commitSceneChanges(
@@ -1570,16 +1549,7 @@ bool RepoScene::updateRevisionStatus(
 	if (revNode)
 	{
 		revNode->updateStatus(status);
-		if (handler)
-		{
-			std::string errMsg;
-			success = handler->upsertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, *revNode, true, errMsg);
-		}
-		else
-		{
-			repoError << "Cannot update revision status without a database handler";
-		}
-
+		handler->upsertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, *revNode, true);
 		repoInfo << "rev node status is: " << (int)revNode->getUploadStatus();
 	}
 	else

@@ -193,7 +193,11 @@ TEST(RepoBSONTest, AssignOperator)
 
 	EXPECT_THAT(testBson.hasOversizeFiles(), IsFalse()); // Sanity check the source test bson is as we think it is
 
-	RepoBSON test = testBson;
+	RepoBSON test = makeRandomRepoBSON(0, 0, 0);
+	EXPECT_THAT(test, Not(Eq(testBson)));
+
+	// Assign to existing object (and overwrite it)
+	test = testBson;
 	EXPECT_THAT(test, Eq(testBson));
 
 	RepoBSON::BinMapping map;
@@ -210,8 +214,7 @@ TEST(RepoBSONTest, AssignOperator)
 	RepoBSON test3 = test2;
 	EXPECT_THAT(test3, Eq(test2));
 
-	// The references are not the same (though, both being immutable, they might
-	// as well be...)
+	// The references are not the same
 
 	EXPECT_THAT(&test3 == &test2, IsFalse());
 }

@@ -76,14 +76,7 @@ bool SceneManager::commitWebBuffers(
 
 	if (!resultBuffers.repoAssets.isEmpty())
 	{
-		if (success &= handler->upsertDocument(databaseName, projectName + "." + repoAssetsStashExt, resultBuffers.repoAssets, true, errMsg))
-		{
-			repoInfo << "Assets list added successfully.";
-		}
-		else
-		{
-			repoError << "Failed to add assets list: " << errMsg;;
-		}
+		handler->upsertDocument(databaseName, projectName + "." + repoAssetsStashExt, resultBuffers.repoAssets, true);
 	}
 
 	if (success)

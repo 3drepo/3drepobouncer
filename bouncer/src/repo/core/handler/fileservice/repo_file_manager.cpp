@@ -284,21 +284,19 @@ bool FileManager::dropFileRef(
 	const std::string                            &databaseName,
 	const std::string                            &collectionNamePrefix)
 {
-	std::string errMsg;
-	bool success = true;
-
 	std::string collectionName = collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF;
 
-	if (success = getDbHandler()->dropDocument(bson, databaseName, collectionName, errMsg))
-	{
-		repoInfo << "File ref for " << collectionName << " dropped.";
+	try {
+		getDbHandler()->dropDocument(bson, databaseName, collectionName);
 	}
-	else
+	catch (std::exception e)
 	{
-		repoError << "Failed to drop " << collectionName << " file ref: " << errMsg;;
+		repoError << "Failed to drop " << collectionName << " file ref: " << e.what();
+		return false;
 	}
 
-	return success;
+	repoInfo << "File ref for " << collectionName << " dropped.";
+	return true;
 }
 
 repo::core::model::RepoRefT<std::string> FileManager::makeRefNode(
@@ -331,18 +329,10 @@ bool FileManager::upsertFileRef(
 	const uint32_t                               &size,
 	const repo::core::model::RepoRef::Metadata   &metadata)
 {
-	std::string errMsg;
-	bool success = true;
-
 	auto refObj = makeRefNode(id, link, type, size, metadata);
 	std::string collectionName = collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF;
-	success = getDbHandler()->upsertDocument(databaseName, collectionName, refObj, true, errMsg);
-	if (!success)
-	{
-		repoError << "Failed to add " << collectionName << " file ref: " << errMsg;;
-	}
-
-	return success;
+	getDbHandler()->upsertDocument(databaseName, collectionName, refObj, true);
+	return true;
 }
 
 // Explicit instantations for the two possible fileName types

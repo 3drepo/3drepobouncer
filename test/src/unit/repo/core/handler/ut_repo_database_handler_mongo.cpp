@@ -32,110 +32,263 @@
 using namespace repo::core::handler;
 using namespace testing;
 
+TEST(MongoDatabaseHandlerTest, CheckTestDatabase)
+{
+	// This 'test' checks for the existence of the golden collection. If it is
+	// not found, rebuilds it, allowing it to be manually inspected and commited.
+	// Afterwards however this immediately fails, preventing the suite from passing
+	// in an automated context until the tests run against a database restored
+	// using the proper mechanism.
+
+	auto handler = getHandler();
+	auto existing = handler->getCollections(REPO_GTEST_DBNAME4);
+	if (!std::count(existing.begin(), existing.end(), std::string(REPO_GTEST_COLNAME_GOLDEN1)))
+	{
+		auto records = getGoldenData();
+
+		using namespace repo::core::model;
+
+		std::vector<RepoBSON> documents;
+		for (auto& record : records)
+		{
+			RepoBSONBuilder builder;
+			builder.append("_id", record._id);
+			builder.append("name", record.name);
+			builder.append("counter", record.counter);
+			builder.appendLargeArray("myData1", record.myData1);
+			builder.appendLargeArray("myData2", record.myData2);
+			documents.push_back(builder.obj());
+		}
+
+		handler->createCollection(REPO_GTEST_DBNAME4, REPO_GTEST_COLNAME_GOLDEN1);
+		handler->insertManyDocuments(REPO_GTEST_DBNAME4, REPO_GTEST_COLNAME_GOLDEN1, documents);
+
+		FAIL() << "Cannot load " << REPO_GTEST_DBNAME4 << "." << REPO_GTEST_COLNAME_GOLDEN1 << ". The dataset will be rebuilt but must be manually inspected and commited after.";
+	}
+}
+
 TEST(MongoDatabaseHandlerTest, GetHandler)
 {
+	// Set a low timeout for the tests so we aren't waiting around too long for them to fail!
+	MongoDatabaseHandler::ConnectionOptions options;
+	options.timeout = 1000;
+
 	{
 		auto handler = MongoDatabaseHandler::getHandler(
 			REPO_GTEST_DBADDRESS,
 			REPO_GTEST_DBPORT,
-			1,
-			REPO_GTEST_AUTH_DATABASE,
-			REPO_GTEST_DBUSER, REPO_GTEST_DBPW
+			REPO_GTEST_DBUSER,
+			REPO_GTEST_DBPW,
+			options
 		);
-
 		EXPECT_TRUE(handler);
+		EXPECT_THAT(handler->getCollections("admin"), Not(IsEmpty()));
 	}
 
+	// The expected exception will be thrown after the serverSelectionTimeoutMS, which is 5000
 	{
 		auto handler = MongoDatabaseHandler::getHandler(
 			"blah",
 			REPO_GTEST_DBPORT,
-			1,
-			REPO_GTEST_AUTH_DATABASE,
-			REPO_GTEST_DBUSER, REPO_GTEST_DBPW
+			REPO_GTEST_DBUSER,
+			REPO_GTEST_DBPW,
+			options
 		);
+		EXPECT_TRUE(handler);
+		EXPECT_THROW(handler->getCollections("admin"), std::system_error);
 	}
 
+	// The expected exception will be thrown after the serverSelectionTimeoutMS, which is 5000
 	{
 		auto handler = MongoDatabaseHandler::getHandler(
 			REPO_GTEST_DBADDRESS,
 			0001,
-			1,
-			REPO_GTEST_AUTH_DATABASE,
-			REPO_GTEST_DBUSER, REPO_GTEST_DBPW
-		);
-		EXPECT_FALSE(handler);
-	}
-
-	{
-		//Check can connect without authentication
-		auto handler = MongoDatabaseHandler::getHandler(
-			REPO_GTEST_DBADDRESS,
-			REPO_GTEST_DBPORT
+			REPO_GTEST_DBUSER,
+			REPO_GTEST_DBPW,
+			options
 		);
 		EXPECT_TRUE(handler);
+		EXPECT_THROW(handler->getCollections("admin"), std::system_error);
 	}
+}
+
+// Equality operator for use by GetAllFromCollectionTailable
+
+bool operator== (const repo::core::model::RepoBSON& a, const  GoldenDocument& b)
+{
+	return
+		a.getUUIDField("_id") == b._id &&
+		a.getIntField("counter") == b.counter &&
+		a.getStringField("name") == b.name &&
+		a.getBinary("myData1") == b.myData1 &&
+		a.getBinary("myData2") == b.myData2;
+}
+
+// A set of matchers dedicated to the GetAllFromCollectionTailable test
+// until ranges are supported in gmock,
+// https://github.com/google/googletest/issues/4512
+
+MATCHER_P(GetAllFromCollectionTailable_CounterIsIncreasing, start, "")
+{
+	for (auto& b : arg)
+	{
+		auto counter = b.getIntField("counter");
+		if (counter < *start) {
+			return false;
+		}
+		*start = counter;
+	}
+	return true;
+}
+
+MATCHER_P(GetAllFromCollectionTailable_CounterIsDecreasing, start, "")
+{
+	for (auto& b : arg)
+	{
+		auto counter = b.getIntField("counter");
+		if (counter > *start) {
+			return false;
+		}
+		*start = counter;
+	}
+	return true;
 }
 
 TEST(MongoDatabaseHandlerTest, GetAllFromCollectionTailable)
 {
 	auto handler = getHandler();
 	ASSERT_TRUE(handler);
-	auto goldenData = getGoldenForGetAllFromCollectionTailable();
+	auto goldenData = getGoldenData();
 
-	std::vector<repo::core::model::RepoBSON> bsons = handler->getAllFromCollectionTailable(
-		goldenData.first.first, goldenData.first.second);
-
-	ASSERT_EQ(bsons.size(), goldenData.second.size());
-
-	//Test limit and skip
-	std::vector<repo::core::model::RepoBSON> bsonsLimitSkip = handler->getAllFromCollectionTailable(
-		goldenData.first.first, goldenData.first.second, 1, 1);
-
-	ASSERT_EQ(bsonsLimitSkip.size(), 1);
-
-	EXPECT_EQ(bsonsLimitSkip[0], bsons[1]);
-
-	//test projection
-	auto bsonsProjected = handler->getAllFromCollectionTailable(
-		goldenData.first.first, goldenData.first.second, 0, 0, { "_id", "shared_id" });
-
-	std::vector<repo::lib::RepoUUID> ids;
-
-	ASSERT_EQ(bsonsProjected.size(), bsons.size());
-	for (int i = 0; i < bsons.size(); ++i)
-	{
-		ids.push_back(bsons[i].getUUIDField("_id"));
-		EXPECT_EQ(bsons[i].getUUIDField("_id"), bsonsProjected[i].getUUIDField("_id"));
-		EXPECT_EQ(bsons[i].getUUIDField("shared_id"), bsonsProjected[i].getUUIDField("shared_id"));
+	std::unordered_map<repo::lib::RepoUUID, GoldenDocument, repo::lib::RepoUUIDHasher> lookup;
+	for (auto d : goldenData) {
+		lookup[d._id] = d;
 	}
 
-	//test sort
-	auto bsonsSorted = handler->getAllFromCollectionTailable(
-		goldenData.first.first, goldenData.first.second, 0, 0, {}, "_id", -1);
+	auto db = REPO_GTEST_DBNAME4;
+	auto col = REPO_GTEST_COLNAME_GOLDEN1;
 
-	std::sort(ids.begin(), ids.end());
+	// Check that we can get all the documents, intact, including restoring the
+	// binary buffers.
+	// As there are a limited number of documents, we should have no problem
+	// getting all of them in one call.
 
-	ASSERT_EQ(bsonsSorted.size(), ids.size());
-	for (int i = 0; i < bsons.size(); ++i)
+	// Note that, as a rule, the insertion order is left up to the database
+	// handler (to choose what is most performant), so the first set of tests
+	// must not assume the return order is the same as the golden set.
+
 	{
-		EXPECT_EQ(bsonsSorted[i].getUUIDField("_id"), ids[bsons.size() - i - 1]);
+		auto bsons = handler->getAllFromCollectionTailable(db, col);
+		EXPECT_THAT(bsons, UnorderedElementsAreArray(goldenData));
 	}
 
-	bsonsSorted = handler->getAllFromCollectionTailable(
-		goldenData.first.first, goldenData.first.second, 0, 0, {}, "_id", 1);
-
-	ASSERT_EQ(bsonsSorted.size(), ids.size());
-	for (int i = 0; i < bsons.size(); ++i)
+	// Test the skipping and limiting behaviour
 	{
-		EXPECT_EQ(bsonsSorted[i].getUUIDField("_id"), ids[i]);
+		auto bsons1 = handler->getAllFromCollectionTailable(db, col, 0, 25);
+		auto bsons2 = handler->getAllFromCollectionTailable(db, col, 25, 25);
+
+		// Sets should be disjoint to eachother
+
+		EXPECT_THAT(bsons1, Not(AnyElementsOverlap(bsons2)));
+
+		// But both be subsets of the golden data
+
+		EXPECT_THAT(bsons1, IsSubsetOf(goldenData));
+		EXPECT_THAT(bsons2, IsSubsetOf(goldenData));
+
+		// And the combined set should match exactly
+
+		std::vector<repo::core::model::RepoBSON> combined;
+		std::copy(bsons1.begin(), bsons1.end(), std::back_inserter(combined));
+		std::copy(bsons2.begin(), bsons2.end(), std::back_inserter(combined));
+		EXPECT_THAT(combined, UnorderedElementsAreArray(goldenData));
 	}
 
-	//check error handling - make sure it doesn't crash
-	EXPECT_EQ(0, handler->getAllFromCollectionTailable("", "").size());
-	EXPECT_EQ(0, handler->getAllFromCollectionTailable("", "blah").size());
-	EXPECT_EQ(0, handler->getAllFromCollectionTailable("blah", "").size());
-	EXPECT_EQ(0, handler->getAllFromCollectionTailable("blah", "blah").size());
+	// Reading over the end shouldn't result in an error
+	{
+		auto bsons = handler->getAllFromCollectionTailable(db, col, 40, 100);
+		EXPECT_THAT(bsons.size(), Eq(10));
+		EXPECT_THAT(bsons, IsSubsetOf(goldenData));
+	}
+
+
+	// Test the projection.
+	// The behaviour of Mongo is that _id is always returned, so there is no
+	// need to specify it explicitly.
+	{
+		auto projected = handler->getAllFromCollectionTailable(db, col, 0, 0, { "name" });
+
+		// Check that only the field names (and _id) requested have been returned
+
+		EXPECT_THAT(projected, Each(GetFieldNames(UnorderedElementsAre("_id", "name"))));
+
+		// And that the names are associated with the correct id
+
+		for (auto& b : projected)
+		{
+			EXPECT_THAT(b.getStringField("name"), Eq(lookup[b.getUUIDField("_id")].name));
+		}
+
+		// We shouldn't have any binaries, because we didn't include the _blob field in
+		// the projection (currently, this is not automatically included, though it could
+		// be in the future).
+
+		EXPECT_THAT(projected, Each(Not(HasBinaryFields())));
+	}
+
+	// Projection with multiple field names
+	{
+		auto projected = handler->getAllFromCollectionTailable(db, col, 0, 0, { "name", "counter" });
+		EXPECT_THAT(projected, Each(GetFieldNames(UnorderedElementsAre("_id", "name", "counter"))));
+		for (auto& b : projected)
+		{
+			EXPECT_THAT(b.getStringField("name"), Eq(lookup[b.getUUIDField("_id")].name));
+			EXPECT_THAT(b.getIntField("counter"), Eq(lookup[b.getUUIDField("_id")].counter));
+		}
+	}
+
+	// Test sort
+	{
+		auto sorted = handler->getAllFromCollectionTailable(db, col, 0, 0, {}, "counter", 1);
+
+		// Counter should be increasing
+
+		auto previous = 0;
+		EXPECT_THAT(sorted, GetAllFromCollectionTailable_CounterIsIncreasing(&previous));
+
+		// And the other fields should match
+
+		EXPECT_THAT(sorted, UnorderedElementsAreArray(goldenData));
+	}
+
+	// Sort should also work with both skip and limit
+	{
+		auto previous = 0;
+
+		auto sorted1 = handler->getAllFromCollectionTailable(db, col, 0, 10, {}, "counter", 1);
+		EXPECT_THAT(sorted1, GetAllFromCollectionTailable_CounterIsIncreasing(&previous));
+
+		auto sorted2 = handler->getAllFromCollectionTailable(db, col, 10, 10, {}, "counter", 1);
+		EXPECT_THAT(sorted2, GetAllFromCollectionTailable_CounterIsIncreasing(&previous));
+
+		auto sorted3 = handler->getAllFromCollectionTailable(db, col, 20, 10, {}, "counter", 1);
+		EXPECT_THAT(sorted3, GetAllFromCollectionTailable_CounterIsIncreasing(&previous));
+
+		auto sorted4 = handler->getAllFromCollectionTailable(db, col, 30, 100, {}, "counter", 1); // And over the end
+		EXPECT_THAT(sorted4, GetAllFromCollectionTailable_CounterIsIncreasing(&previous));
+	}
+
+	// Check that sort order works
+	{
+		auto previous = INT_MAX;
+		auto sorted = handler->getAllFromCollectionTailable(db, col, 0, 0, {}, "counter",  -1);
+		EXPECT_THAT(sorted, GetAllFromCollectionTailable_CounterIsDecreasing(&previous));
+	}
+
+	{
+		auto documents = handler->getAllFromCollectionTailable(db, "blah");
+		EXPECT_THAT(documents, IsEmpty());
+	}
 }
 
 TEST(MongoDatabaseHandlerTest, GetCollections)
@@ -144,48 +297,20 @@ TEST(MongoDatabaseHandlerTest, GetCollections)
 	ASSERT_TRUE(handler);
 
 	auto goldenData = getCollectionList(REPO_GTEST_DBNAME1);
-
 	auto collections = handler->getCollections(REPO_GTEST_DBNAME1);
 
-	//Some version gives you system.indexes but some others don't
-	ASSERT_EQ(goldenData.size(), collections.size());
-
-	std::sort(goldenData.begin(), goldenData.end());
-	collections.sort();
-
-	auto colIt = collections.begin();
-	auto gdIt = goldenData.begin();
-	for (; colIt != collections.end(); ++colIt, ++gdIt)
-	{
-		EXPECT_EQ(*colIt, *gdIt);
-	}
+	EXPECT_THAT(collections, UnorderedElementsAreArray(goldenData));
 
 	goldenData = getCollectionList(REPO_GTEST_DBNAME2);
 	collections = handler->getCollections(REPO_GTEST_DBNAME2);
 
-	ASSERT_EQ(goldenData.size(), collections.size());
+	EXPECT_THAT(collections, UnorderedElementsAreArray(goldenData));
 
-	std::sort(goldenData.begin(), goldenData.end());
-	collections.sort();
+	// Nonexistent databases should return an empty array, but invalid database
+	// names are not supported arguments.
 
-	colIt = collections.begin();
-	gdIt = goldenData.begin();
-	for (; colIt != collections.end(); ++colIt, ++gdIt)
-	{
-		EXPECT_EQ(*colIt, *gdIt);
-	}
-
-	//check error handling - make sure it doesn't crash
-	EXPECT_EQ(0, handler->getCollections("").size());
-	EXPECT_EQ(0, handler->getCollections("blahblah").size());
-}
-
-TEST(MongoDatabaseHandlerTest, GetAdminDatabaseName)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	//This should not be an empty string
-	EXPECT_FALSE(handler->getAdminDatabaseName().empty());
+	EXPECT_THROW(handler->getCollections(""), std::system_error);
+	EXPECT_THAT(handler->getCollections("blahblah"), IsEmpty());
 }
 
 TEST(MongoDatabaseHandlerTest, CreateCollection)
@@ -193,116 +318,155 @@ TEST(MongoDatabaseHandlerTest, CreateCollection)
 	auto handler = getHandler();
 	ASSERT_TRUE(handler);
 
-	//no exception
-	handler->createCollection("this_database", "newCollection");
-	handler->createCollection("this_database", "");
-	handler->createCollection("", "newCollection");
+	auto name = repo::lib::RepoUUID::createUUID().toString();
+	handler->createCollection(REPO_GTEST_DBNAME4, name);
+	EXPECT_THAT(handler->getCollections(REPO_GTEST_DBNAME4), IsSupersetOf({ name }));
+
+	// Existing database
+	EXPECT_THROW(handler->createCollection(REPO_GTEST_DBNAME4, name), std::exception);
+
+	// Invalid name
+	EXPECT_THROW(handler->createCollection(REPO_GTEST_DBNAME4, ""), std::exception);
+
+	// Nonexistent database (should create)
+	auto db = repo::lib::RepoUUID::createUUID().toString();
+	handler->createCollection(db, name);
+	EXPECT_THAT(handler->getCollections(db), IsSupersetOf({name}));
 }
 
 TEST(MongoDatabaseHandlerTest, DropCollection)
 {
 	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	std::string errMsg;
-	//no exception
-	EXPECT_TRUE(handler->dropCollection(REPO_GTEST_DROPCOL_TESTCASE.first, REPO_GTEST_DROPCOL_TESTCASE.second, errMsg));
-	EXPECT_TRUE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_FALSE(handler->dropCollection(REPO_GTEST_DROPCOL_TESTCASE.first, REPO_GTEST_DROPCOL_TESTCASE.second, errMsg));
-	EXPECT_TRUE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_FALSE(handler->dropCollection(REPO_GTEST_DROPCOL_TESTCASE.first, "", errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_FALSE(handler->dropCollection("", REPO_GTEST_DROPCOL_TESTCASE.second, errMsg));
-	EXPECT_FALSE(errMsg.empty());
+
+	handler->dropCollection(REPO_GTEST_DROPCOL_TESTCASE.first, REPO_GTEST_DROPCOL_TESTCASE.second);
+	EXPECT_THAT(handler->getCollections(REPO_GTEST_DROPCOL_TESTCASE.first), Not(IsSupersetOf({ REPO_GTEST_DROPCOL_TESTCASE.second })));
+
+	// Performing the same operation should succeed, as a noop
+	handler->dropCollection(REPO_GTEST_DROPCOL_TESTCASE.first, REPO_GTEST_DROPCOL_TESTCASE.second);
+	EXPECT_THAT(handler->getCollections(REPO_GTEST_DROPCOL_TESTCASE.first), Not(IsSupersetOf({ REPO_GTEST_DROPCOL_TESTCASE.second })));
+
+	// Invalid names will result in an exception
+
+	EXPECT_THROW(handler->dropCollection(REPO_GTEST_DROPCOL_TESTCASE.first, ""), std::exception);
+	EXPECT_THROW(handler->dropCollection("", REPO_GTEST_DROPCOL_TESTCASE.second), std::exception);
+}
+
+MATCHER_P(DropDocument_UnorderedNamesAre, names, "")
+{
+	std::vector<std::string> names;
+	std::transform(arg.begin(), arg.end(), std::back_inserter(names), [](const repo::core::model::RepoBSON& b) {
+		return b.getStringField("name");
+	});
+	return ExplainMatchResult(UnorderedElementsAreArray(names), names, result_listener);
 }
 
 TEST(MongoDatabaseHandlerTest, DropDocument)
 {
 	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	std::string errMsg;
 
-	auto testCase = getDataForDropCase();
+	auto db = REPO_GTEST_DBNAME4;
+	auto col = "dropCollection";
 
-	EXPECT_TRUE(handler->dropDocument(testCase.second, testCase.first.first, testCase.first.second, errMsg));
-	EXPECT_TRUE(errMsg.empty());
-	//Dropping something that doesn't exist apparently returns true...
-	EXPECT_TRUE(handler->dropDocument(testCase.second, testCase.first.first, testCase.first.second, errMsg));
-	EXPECT_TRUE(errMsg.empty());
-	//test empty bson
-	EXPECT_FALSE(handler->dropDocument(repo::core::model::RepoBSON(), testCase.first.first, testCase.first.second, errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_FALSE(handler->dropDocument(testCase.second, testCase.first.first, "", errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_FALSE(handler->dropDocument(testCase.second, "", testCase.first.first, errMsg));
-	EXPECT_FALSE(errMsg.empty());
+	// These names are also the document Ids (where the UUIDs are actual UUID types)
+
+	auto names = std::vector<std::string>({
+		"95577a50-1632-4c4c-90bd-e32087efba6a",
+		"myDocument",
+		"78f52f96-4208-48bf-8003-b38ecb70209c",
+		"myDocument2"
+	});
+
+	// Check the collection is intact
+	EXPECT_THAT(handler->getAllFromCollectionTailable(db, col), DropDocument_UnorderedNamesAre(names));
+
+	{
+		repo::core::model::RepoBSONBuilder builder;
+		builder.append("_id", repo::lib::RepoUUID("95577a50-1632-4c4c-90bd-e32087efba6a"));
+		auto q = builder.obj();
+
+		handler->dropDocument(q, db, col);
+
+		// The rest of the collection is intact
+
+		std::remove(names.begin(), names.end(), "95577a50-1632-4c4c-90bd-e32087efba6a");
+		EXPECT_THAT(handler->getAllFromCollectionTailable(db, col), DropDocument_UnorderedNamesAre(names));
+
+		// Dropping a document a second time is a noop
+
+		handler->dropDocument(q, db, col);
+		EXPECT_THAT(handler->getAllFromCollectionTailable(db, col), DropDocument_UnorderedNamesAre(names));
+	}
+
+	// Providing a document without an Id should result in exception
+	EXPECT_THROW(handler->dropDocument(repo::core::model::RepoBSON(), db, col), repo::lib::RepoException);
+
+	// Check dropping documents works when Id is a string
+	{
+		repo::core::model::RepoBSONBuilder builder;
+		builder.append("_id", "myDocument");
+		auto q = builder.obj();
+
+		handler->dropDocument(q, db, col);
+
+		std::remove(names.begin(), names.end(), "myDocument");
+		EXPECT_THAT(handler->getAllFromCollectionTailable(db, col), DropDocument_UnorderedNamesAre(names));
+
+		// Dropping a document a second time is a noop
+
+		handler->dropDocument(q, db, col);
+		EXPECT_THAT(handler->getAllFromCollectionTailable(db, col), DropDocument_UnorderedNamesAre(names));
+
+	}
+
+	// Invalid names will result in an exception
+	{
+		repo::core::model::RepoBSONBuilder builder;
+		auto q = builder.obj();
+
+		EXPECT_THROW(handler->dropDocument(q, db, ""), std::exception);
+		EXPECT_THROW(handler->dropDocument(q, "", col), std::exception);
+	}
 }
 
 TEST(MongoDatabaseHandlerTest, InsertDocument)
 {
 	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	std::string errMsg;
 
-	auto id = repo::lib::RepoUUID::createUUID();
-
-	using namespace repo::core::handler::database;
-
-	query::RepoQueryBuilder query;
-	query.append(query::Eq("_id", id));
-	query.append(query::Eq("anotherField", std::rand()));
-
-	repo::core::model::RepoBSONBuilder builder;
-	query.visit(builder);
-
-	// This test should be rewritten since this is not the way to use query objects anymore!
-
-	repo::core::model::RepoBSON testCase = builder.obj();
 	std::string database = "sandbox";
 	std::string collection = "sbCollection";
 
-	EXPECT_TRUE(handler->insertDocument(database, collection, testCase, errMsg));
-	EXPECT_TRUE(errMsg.empty());
-	errMsg.clear();
+	// Create a random document to insert
+	auto id = repo::lib::RepoUUID::createUUID();
+	repo::core::model::RepoBSONBuilder builder;
+	builder.append("_id", id);
+	builder.append("myField", "myValue");
+	auto bson = builder.obj();
 
-	repo::core::model::RepoBSON result = handler->findOneByCriteria(database, collection, query);
-	EXPECT_FALSE(result.isEmpty());
+	handler->insertDocument(database, collection, bson);
 
-	std::set<std::string> fields = result.getFieldNames();
-	for (const auto &fname : fields)
-	{
-		ASSERT_TRUE(testCase.hasField(fname));
-		EXPECT_EQ(result.getField(fname), testCase.getField(fname));
-	}
+	// Can we get the document back?
 
-	EXPECT_FALSE(handler->insertDocument("", "insertCollection", repo::core::model::RepoBSON(), errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_FALSE(handler->insertDocument("testingInsert", "", repo::core::model::RepoBSON(), errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_FALSE(handler->insertDocument("", "", repo::core::model::RepoBSON(), errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
+	EXPECT_THAT(handler->findOneByUniqueID(database, collection, id), Eq(bson));
+
+	// Invalid names will result in an exception
+	EXPECT_THROW(handler->insertDocument("", collection, repo::core::model::RepoBSON()), std::exception);
+	EXPECT_THROW(handler->insertDocument(database, "", repo::core::model::RepoBSON()), std::exception);
 }
 
 TEST(MongoDatabaseHandlerTest, FindAllByUniqueIDs)
 {
 	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	std::string errMsg;
 
 	auto results = handler->findAllByUniqueIDs(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".scene", uuidsToSearch);
 
+
+
 	EXPECT_EQ(uuidsToSearch.size(), results.size());
 
-	EXPECT_EQ(0, handler->findAllByUniqueIDs(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ, {}).size());
-	EXPECT_EQ(0, handler->findAllByUniqueIDs(REPO_GTEST_DBNAME1, "", uuidsToSearch).size());
-	EXPECT_EQ(0, handler->findAllByUniqueIDs("", REPO_GTEST_DBNAME1_PROJ, uuidsToSearch).size());
+	EXPECT_THAT(handler->findAllByUniqueIDs(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ, {}), IsEmpty());
+
+	EXPECT_THROW(handler->findAllByUniqueIDs(REPO_GTEST_DBNAME1, "", uuidsToSearch), std::exception);
+	EXPECT_THROW(handler->findAllByUniqueIDs("", REPO_GTEST_DBNAME1_PROJ, uuidsToSearch), std::exception);
 }
 
 TEST(MongoDatabaseHandlerTest, FindAllByCriteria)
@@ -367,7 +531,6 @@ TEST(MongoDatabaseHandlerTest, UpsertDocument)
 	// Attempt to update an existing document using a partial BSON
 
 	auto handler = getHandler();
-	ASSERT_TRUE(handler);
 
 	auto id = repo::lib::RepoUUID::createUUID();
 
@@ -378,20 +541,17 @@ TEST(MongoDatabaseHandlerTest, UpsertDocument)
 
 	auto existing = builder.obj();
 
-	std::string errMsg;
-
 	auto collection = "upsertTestCollection";
-	handler->dropCollection(REPO_GTEST_DBNAME3, collection, errMsg); // Should usually be empty but if this test has run before...
+	handler->dropCollection(REPO_GTEST_DBNAME3, collection); // Should usually be empty but if this test has run before...
 	handler->createCollection(REPO_GTEST_DBNAME3, collection);
 
-	handler->insertDocument(REPO_GTEST_DBNAME3, collection, existing, errMsg);
+	handler->insertDocument(REPO_GTEST_DBNAME3, collection, existing);
 
 	// Reading the document back, it should be identical
 
 	auto documents = handler->getAllFromCollectionTailable(REPO_GTEST_DBNAME3, collection);
 
-	EXPECT_THAT(documents.size(), Eq(1));
-	EXPECT_THAT(documents[0], Eq(existing));
+	EXPECT_THAT(documents, UnorderedElementsAre(existing));
 
 	// Create a partial document that adds a field, and updates a field
 
@@ -402,7 +562,7 @@ TEST(MongoDatabaseHandlerTest, UpsertDocument)
 
 	auto update = updateBuilder.obj();
 
-	handler->upsertDocument(REPO_GTEST_DBNAME3, collection, update, false, errMsg); // Should use _id as the primary key
+	handler->upsertDocument(REPO_GTEST_DBNAME3, collection, update, false); // Should use _id as the primary key
 
 	documents = handler->getAllFromCollectionTailable(REPO_GTEST_DBNAME3, collection);
 
@@ -416,9 +576,22 @@ TEST(MongoDatabaseHandlerTest, UpsertDocument)
 	auto document = documents[0];
 
 	EXPECT_THAT(nFields(document), Eq(4));
-
 	EXPECT_THAT(document.getUUIDField("_id"), Eq(id));
 	EXPECT_THAT(document.getStringField("field1"), Eq(existing.getStringField("field1"))); // The unchanged value
+	EXPECT_THAT(document.getIntField("field2"), Eq(update.getIntField("field2"))); // The updated value
+	EXPECT_THAT(document.getUUIDField("field3"), Eq(update.getUUIDField("field3"))); // The new value
+
+	// If overwrite is set to true, then the new document should displace the
+	// old one, meaning any fields missing in the new document should be
+	// removed.
+
+	handler->upsertDocument(REPO_GTEST_DBNAME3, collection, update, true);
+	documents = handler->getAllFromCollectionTailable(REPO_GTEST_DBNAME3, collection);
+	document = documents[0];
+
+	EXPECT_THAT(nFields(document), Eq(3));
+	EXPECT_THAT(document.getUUIDField("_id"), Eq(id));
+	EXPECT_THAT(document.hasField("field1"), IsFalse()); // The previous document value that does not exist in the new one
 	EXPECT_THAT(document.getIntField("field2"), Eq(update.getIntField("field2"))); // The updated value
 	EXPECT_THAT(document.getUUIDField("field3"), Eq(update.getUUIDField("field3"))); // The new value
 }
@@ -428,14 +601,11 @@ TEST(MongoDatabaseHandlerTest, UpsertDocumentBinary)
 	// Upserting is not supported for BSONS with bin mappings
 
 	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	std::string errMsg;
-
 	repo::core::model::RepoBSONBuilder builder;
 	builder.appendLargeArray("bin", testing::makeRandomBinary());
 
 	EXPECT_THROW({
-		handler->upsertDocument(REPO_GTEST_DBNAME3, "sbCollection", builder.obj(), false, errMsg);
+		handler->upsertDocument(REPO_GTEST_DBNAME3, "sbCollection", builder.obj(), false);
 	},
 	repo::lib::RepoException);
 }
@@ -445,14 +615,11 @@ TEST(MongoDatabaseHandlerTest, InsertDocumentBinary)
 	// Inserting is not supported for BSONS with bin mappings
 
 	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	std::string errMsg;
-
 	repo::core::model::RepoBSONBuilder builder;
 	builder.appendLargeArray("bin", testing::makeRandomBinary());
 
 	EXPECT_THROW({
-		handler->insertDocument(REPO_GTEST_DBNAME3, "sbCollection", builder.obj(), errMsg);
+		handler->insertDocument(REPO_GTEST_DBNAME3, "sbCollection", builder.obj());
 	},
 	repo::lib::RepoException);
 }
@@ -538,12 +705,11 @@ TEST(MongoDatabaseHandlerTest, InsertManyDocumentsBinary)
 
 	auto handler = getHandler();
 	ASSERT_TRUE(handler);
-	std::string errMsg;
 
 	auto collection = "insertManyDocumentsBinary";
-	handler->dropCollection(REPO_GTEST_DBNAME3, collection, errMsg);
+	handler->dropCollection(REPO_GTEST_DBNAME3, collection);
 	handler->createCollection(REPO_GTEST_DBNAME3, collection);
-	handler->insertManyDocuments(REPO_GTEST_DBNAME3, collection, documents, errMsg);
+	handler->insertManyDocuments(REPO_GTEST_DBNAME3, collection, documents);
 
 	// Read back the documents; this should also populate the binary buffers
 
@@ -581,9 +747,9 @@ TEST(MongoDatabaseHandlerTest, InsertManyDocumentsMetadata)
 	metadata["x-string"] = std::string("my metadata string");
 
 	auto collection = "InsertManyDocumentsMetadata";
-	handler->dropCollection(REPO_GTEST_DBNAME3, collection, errMsg);
+	handler->dropCollection(REPO_GTEST_DBNAME3, collection);
 	handler->createCollection(REPO_GTEST_DBNAME3, collection);
-	handler->insertManyDocuments(REPO_GTEST_DBNAME3, collection, documents, errMsg, metadata);
+	handler->insertManyDocuments(REPO_GTEST_DBNAME3, collection, documents, metadata);
 
 	// Read back the documents
 

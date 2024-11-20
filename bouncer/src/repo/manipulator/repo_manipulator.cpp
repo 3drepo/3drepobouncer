@@ -57,16 +57,16 @@ bool RepoManipulator::connectAndAuthenticateWithAdmin(
 	const std::string& password
 )
 {
+	repo::core::handler::MongoDatabaseHandler::ConnectionOptions options;
+	options.maxConnections = maxConnections;
 	dbHandler = repo::core::handler::MongoDatabaseHandler::getHandler(
 		address,
 		port,
-		maxConnections,
-		repo::core::handler::MongoDatabaseHandler::getAdminDatabaseName(),
 		username,
-		password
+		password,
+		options
 	);
-
-	return dbHandler != 0;
+	return true;
 }
 
 bool RepoManipulator::connectAndAuthenticateWithAdmin(
@@ -76,15 +76,15 @@ bool RepoManipulator::connectAndAuthenticateWithAdmin(
 	const std::string& password
 )
 {
+	repo::core::handler::MongoDatabaseHandler::ConnectionOptions options;
+	options.maxConnections = maxConnections;
 	dbHandler = repo::core::handler::MongoDatabaseHandler::getHandler(
 		connString,
-		maxConnections,
-		repo::core::handler::MongoDatabaseHandler::getAdminDatabaseName(),
 		username,
-		password
+		password,
+		options
 	);
-
-	return dbHandler != 0;
+	return true;
 }
 
 repo::core::model::RepoScene* RepoManipulator::createFederatedScene(

@@ -31,6 +31,7 @@ const static std::string REPO_GTEST_DBPW = "3drepotest";
 const static std::string REPO_GTEST_DBNAME1 = "sampleDataReadOnly";
 const static std::string REPO_GTEST_DBNAME2 = "sampleDataReadOnly2";
 const static std::string REPO_GTEST_DBNAME3 = "sandbox";
+const static std::string REPO_GTEST_DBNAME4 = "testMongoDatabaseHandler";
 const static std::string REPO_GTEST_DBNAME1_PROJ = "3drepoBIM";
 const static std::string REPO_GTEST_DBNAME2_PROJ = "sphere";
 const static std::string REPO_GTEST_DBNAME1_FED = "fedTest";
@@ -38,6 +39,7 @@ const static std::string REPO_GTEST_DBNAME_ROLEUSERTEST = "sampleDataRWRolesUser
 const static std::string REPO_GTEST_DBNAME_FILE_MANAGER = "testFileManager";
 
 const static std::string REPO_GTEST_COLNAME_FILE_MANAGER = "testFileUpload";
+const static std::string REPO_GTEST_COLNAME_GOLDEN1 = "golden1";
 
 const static std::string connectionConfig = "config/config.json";
 
@@ -150,6 +152,13 @@ std::vector<std::string> getCollectionList(
 	const std::string& databaseName
 );
 
-std::pair<std::pair<std::string, std::string>, repo::core::model::RepoBSON> getDataForDropCase();
+struct GoldenDocument
+{
+	repo::lib::RepoUUID _id;
+	int32_t counter;
+	std::string name;
+	std::vector<uint8_t> myData1;
+	std::vector<uint8_t> myData2;
+};
 
-std::pair<std::pair<std::string, std::string>, std::vector<std::string>> getGoldenForGetAllFromCollectionTailable();
+std::vector<GoldenDocument> getGoldenData();
