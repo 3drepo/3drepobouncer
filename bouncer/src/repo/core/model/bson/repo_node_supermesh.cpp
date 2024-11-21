@@ -34,46 +34,10 @@ SupermeshNode::SupermeshNode()
 
 void SupermeshNode::deserialise(RepoBSON& bson)
 {
-	RepoBSON mapArray = bson.getObjectField(REPO_NODE_MESH_LABEL_MERGE_MAP);
-	if (!mapArray.isEmpty())
-	{
-		std::set<std::string> fields = mapArray.getFieldNames();
-		mappings.resize(fields.size());
-		for (const auto& name : fields)
-		{
-			repo_mesh_mapping_t mapping;
-			RepoBSON mappingObj = mapArray.getObjectField(name);
-
-			mapping.mesh_id = mappingObj.getUUIDField(REPO_NODE_MESH_LABEL_MAP_ID);
-			mapping.shared_id = mappingObj.getUUIDField(REPO_NODE_MESH_LABEL_MAP_SHARED_ID);
-			mapping.material_id = mappingObj.getUUIDField(REPO_NODE_MESH_LABEL_MATERIAL_ID);
-			mapping.vertFrom = mappingObj.getIntField(REPO_NODE_MESH_LABEL_VERTEX_FROM);
-			mapping.vertTo = mappingObj.getIntField(REPO_NODE_MESH_LABEL_VERTEX_TO);
-			mapping.triFrom = mappingObj.getIntField(REPO_NODE_MESH_LABEL_TRIANGLE_FROM);
-			mapping.triTo = mappingObj.getIntField(REPO_NODE_MESH_LABEL_TRIANGLE_TO);
-
-			mappingObj.getBounds3D(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
-
-			auto bboxVec = mappingObj.getBounds3D(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
-			mapping.min.x = bboxVec[0].x;
-			mapping.min.y = bboxVec[0].y;
-			mapping.min.z = bboxVec[0].z;
-
-			mapping.max.x = bboxVec[1].x;
-			mapping.max.y = bboxVec[1].y;
-			mapping.max.z = bboxVec[1].z;
-
-			mappings[std::stoi(name)] = mapping;
-		}
-	}
-
-	if (bson.hasBinField(REPO_NODE_MESH_LABEL_SUBMESH_IDS))
-	{
-		bson.getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_SUBMESH_IDS, submeshIds);
-	}
+	throw repo::lib::RepoException("Supermesh Nodes cannot be deserialised");
 }
 
 void SupermeshNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 {
-	throw repo::lib::RepoException("Supermesh Nodes cannot not be serialised");
+	throw repo::lib::RepoException("Supermesh Nodes cannot be serialised");
 }
