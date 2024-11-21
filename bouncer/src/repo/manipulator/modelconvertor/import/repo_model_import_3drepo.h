@@ -97,7 +97,7 @@ namespace repo {
 					std::vector<repo::lib::RepoVector3D> normals;
 					std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
 					std::vector<repo_face_t> faces;
-					std::vector<std::vector<double>> boundingBox;
+					repo::lib::RepoBounds boundingBox;
 					repo::lib::RepoUUID parent;
 					repo::lib::RepoUUID sharedID;
 				};
@@ -154,7 +154,7 @@ namespace repo {
 				repo::core::model::RepoNodeSet metadata;
 				repo::core::model::RepoNodeSet transformations;
 				repo::core::model::RepoNodeSet textures;
-				std::vector<double> offset;
+				std::optional<repo::lib::RepoVector3D64> offset;
 
 			public:
 

@@ -22,6 +22,7 @@
 #include "repo_node.h"
 #include "repo/repo_bouncer_global.h"
 #include "repo/lib/datastructure/repo_structs.h"
+#include "repo/lib/datastructure/repo_bounds.h"
 
 namespace repo {
 	namespace core {
@@ -127,7 +128,7 @@ namespace repo {
 			protected:
 				std::string grouping;
 				MeshNode::Primitive primitive;
-				std::vector<repo::lib::RepoVector3D> boundingBox;
+				repo::lib::RepoBounds boundingBox;
 				std::vector<repo_face_t> faces;
 				std::vector<repo::lib::RepoVector3D> vertices;
 				std::vector<repo::lib::RepoVector3D> normals;
@@ -191,12 +192,12 @@ namespace repo {
 				* Retrieve the bounding box of this mesh
 				* @return returns a vector of size 2, containing the bounding box.
 				*/
-				std::vector<repo::lib::RepoVector3D> getBoundingBox() const
+				repo::lib::RepoBounds getBoundingBox() const
 				{
 					return boundingBox;
 				}
 
-				void setBoundingBox(const std::vector<repo::lib::RepoVector3D>& bounds)
+				void setBoundingBox(const repo::lib::RepoBounds& bounds)
 				{
 					boundingBox = bounds;
 				}
@@ -281,7 +282,7 @@ namespace repo {
 
 				void updateBoundingBox();
 
-				static void transformBoundingBox(std::vector<repo::lib::RepoVector3D>& bounds, repo::lib::RepoMatrix matrix);
+				static void transformBoundingBox(repo::lib::RepoBounds& bounds, repo::lib::RepoMatrix matrix);
 			};
 		} //namespace model
 	} //namespace core

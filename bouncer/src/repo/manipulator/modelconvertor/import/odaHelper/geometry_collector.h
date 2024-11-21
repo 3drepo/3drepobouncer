@@ -22,6 +22,7 @@
 #include "repo/core/model/bson/repo_bson_factory.h"
 #include "repo/lib/datastructure/repo_structs.h"
 #include "repo/lib/datastructure/repo_variant.h"
+#include "repo/lib/datastructure/repo_bounds.h"
 #include "helper_functions.h"
 #include "vertex_map.h"
 
@@ -36,7 +37,7 @@ namespace repo {
 			namespace odaHelper {
 				struct mesh_data_t {
 					std::vector<repo_face_t> faces;
-					std::vector<std::vector<float>> boundingBox;
+					repo::lib::RepoBounds boundingBox;
 					VertexMap vertexMap;
 					std::string name;
 					std::string layerName;

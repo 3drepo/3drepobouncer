@@ -24,10 +24,10 @@
 #include <bsoncxx/builder/basic/kvp.hpp>
 
 using namespace repo::core::model;
-using namespace bsoncxx::builder::basic;
+using namespace bsoncxx::builder;
 
 RepoBSONBuilder::RepoBSONBuilder()
-	:document()
+	:core(false)
 {
 }
 
@@ -39,18 +39,7 @@ void RepoBSONBuilder::appendUUID(
 	const std::string &label,
 	const repo::lib::RepoUUID &uuid)
 {
-	auto uuidData = uuid.data();
-
-	bsoncxx::types::b_binary binary {
-		bsoncxx::binary_sub_type::k_uuid_deprecated, // Todo:: This is the same enum as before - to double check if this works or if we can use
-		uuidData.size(),
-		uuidData.data()
-	};
-
-	document::append(kvp(
-		label,
-		binary
-	));
+	append(label, uuid);
 }
 
 void repo::core::model::RepoBSONBuilder::appendRepoVariant(const std::string& label, const repo::lib::RepoVariant& item)
@@ -61,68 +50,51 @@ void repo::core::model::RepoBSONBuilder::appendRepoVariant(const std::string& la
 
 RepoBSON RepoBSONBuilder::obj()
 {
-	return RepoBSON(document::extract(), binMapping);
+	return RepoBSON(core::extract_document(), binMapping);
 }
 
-template<> void repo::core::model::RepoBSONBuilder::append<repo::lib::RepoUUID>
-(
-	const std::string &label,
-	const repo::lib::RepoUUID &uuid
-)
+void repo::core::model::RepoBSONBuilder::append(const repo::lib::RepoUUID& uuid)
 {
-	appendUUID(label, uuid);
+	auto uuidData = uuid.data();
+	bsoncxx::types::b_binary binary{
+		bsoncxx::binary_sub_type::k_uuid,
+		uuidData.size(),
+		uuidData.data()
+	};
+	append(binary);
 }
 
-template<> void repo::core::model::RepoBSONBuilder::append<tm>(
-	const std::string& label,
-	const tm& time
-)
+void repo::core::model::RepoBSONBuilder::append(const repo::lib::RepoBounds& bounds)
 {
-	appendTime(label, time);
+	open_array();
+	append(bounds.min().toStdVector());
+	append(bounds.max().toStdVector());
+	close_array();
 }
 
-template<> void repo::core::model::RepoBSONBuilder::append<RepoBSON>(
-	const std::string& label,
-	const RepoBSON& obj
-)
+void repo::core::model::RepoBSONBuilder::append(const repo::lib::RepoVector3D& vec)
 {
-	append(label, obj.view());
+	append(vec.toStdVector());
 }
 
-template<> void repo::core::model::RepoBSONBuilder::append<std::vector<float>>(
-	const std::string& label,
-	const std::vector<float>& vector
-	)
-{
-	appendArray(label, vector);
-}
-
-template<> void repo::core::model::RepoBSONBuilder::append<repo::lib::RepoVector3D>
-(
-	const std::string &label,
-	const repo::lib::RepoVector3D &vec
-)
-{
-	appendArray(label, vec.toStdVector());
-}
-
-template<> void repo::core::model::RepoBSONBuilder::append<repo::lib::RepoMatrix>
-(
-	const std::string &label,
-	const repo::lib::RepoMatrix &mat
-)
+void repo::core::model::RepoBSONBuilder::append(const repo::lib::RepoMatrix& mat)
 {
 	bsoncxx::builder::basic::array rows{};
 	auto data = mat.getData();
 	for (uint32_t i = 0; i < 4; ++i)
 	{
 		bsoncxx::builder::basic::array columns;
-		for (uint32_t j = 0; j < 4; ++j){
+		for (uint32_t j = 0; j < 4; ++j) {
 			columns.append(data[i * 4 + j]);
 		}
 		rows.append(columns.extract());
 	}
-	document::append(kvp(label, rows.extract()));
+	core::append(rows.extract());
+}
+
+void repo::core::model::RepoBSONBuilder::append(const RepoBSON& obj)
+{
+	append(obj.view());
 }
 
 void RepoBSONBuilder::appendVector3DObject(
@@ -130,6 +102,7 @@ void RepoBSONBuilder::appendVector3DObject(
 	const repo::lib::RepoVector3D& vec
 )
 {
+	using namespace bsoncxx::builder::basic;
 	document objBuilder;
 	objBuilder.append(kvp("x", vec.x));
 	objBuilder.append(kvp("y", vec.y));
@@ -148,7 +121,8 @@ void RepoBSONBuilder::appendLargeArray(std::string name, const void* data, size_
 void RepoBSONBuilder::appendTime(std::string label, const int64_t& ts)
 {
 	bsoncxx::types::b_date date(std::chrono::milliseconds(ts * 1000));
-	document::append(kvp(label, date));
+	key_owned(label);
+	append(date);
 }
 
 void RepoBSONBuilder::appendTime(std::string label, const tm& t) {
@@ -170,23 +144,15 @@ void RepoBSONBuilder::appendTimeStamp(std::string label) {
 }
 
 void RepoBSONBuilder::appendElements(RepoBSON bson) {
-	for (auto& element : bson) {
-		document::append(kvp(element.key(), element.get_value()));
-	}
+	core::concatenate(bson.view());
 }
 
 void RepoBSONBuilder::appendElementsUnique(RepoBSON bson) {
-	auto view = document::view();
+	auto view = core::view_document();
 	for (auto& element : bson) {
 		if (view.find(element.key()) == view.end()) {
-			document::append(kvp(element.key(), element.get_value()));
+			key_view(element.key());
+			append(element.get_value());
 		}
 	}
-}
-
-void RepoBSONBuilder::appendArray(
-	const std::string& label,
-	const RepoBSON& bson)
-{
-	document::append(kvp(label, bson.view()));
 }

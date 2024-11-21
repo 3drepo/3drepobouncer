@@ -902,9 +902,9 @@ std::string RepoScene::getBranchName() const
 	return branchName;
 }
 
-std::vector<repo::lib::RepoVector3D> RepoScene::getSceneBoundingBox() const
+repo::lib::RepoBounds RepoScene::getSceneBoundingBox() const
 {
-	std::vector<repo::lib::RepoVector3D> bbox;
+	repo::lib::RepoBounds bbox;
 	GraphType gType = stashGraph.rootNode ? GraphType::OPTIMIZED : GraphType::DEFAULT;
 
 	std::vector<float> identity = {
@@ -921,7 +921,7 @@ void RepoScene::getSceneBoundingBoxInternal(
 	const GraphType            &gType,
 	const RepoNode             *node,
 	const repo::lib::RepoMatrix   &mat,
-	std::vector<repo::lib::RepoVector3D> &bbox) const
+	repo::lib::RepoBounds &bbox) const
 {
 	if (node)
 	{
@@ -943,30 +943,7 @@ void RepoScene::getSceneBoundingBoxInternal(
 			const MeshNode *mesh = dynamic_cast<const MeshNode*>(node);
 			auto newmBBox = mesh->getBoundingBox();
 			MeshNode::transformBoundingBox(newmBBox, mat);
-
-			if (bbox.size())
-			{
-				if (newmBBox[0].x < bbox[0].x)
-					bbox[0].x = newmBBox[0].x;
-				if (newmBBox[0].y < bbox[0].y)
-					bbox[0].y = newmBBox[0].y;
-				if (newmBBox[0].z < bbox[0].z)
-					bbox[0].z = newmBBox[0].z;
-
-				if (newmBBox[1].x > bbox[1].x)
-					bbox[1].x = newmBBox[1].x;
-				if (newmBBox[1].y > bbox[1].y)
-					bbox[1].y = newmBBox[1].y;
-				if (newmBBox[1].z > bbox[1].z)
-					bbox[1].z = newmBBox[1].z;
-			}
-			else
-			{
-				//no bbox yet
-				bbox.push_back(newmBBox[0]);
-				bbox.push_back(newmBBox[1]);
-			}
-
+			bbox.encapsulate(newmBBox);
 			break;
 		}
 		case NodeType::REFERENCE:
@@ -976,30 +953,7 @@ void RepoScene::getSceneBoundingBoxInternal(
 			if (refSceneIt != graph.referenceToScene.end())
 			{
 				const RepoScene *refScene = refSceneIt->second;
-				const std::vector<repo::lib::RepoVector3D> refSceneBbox = refScene->getSceneBoundingBox();
-
-				if (bbox.size())
-				{
-					if (refSceneBbox[0].x < bbox[0].x)
-						bbox[0].x = refSceneBbox[0].x;
-					if (refSceneBbox[0].y < bbox[0].y)
-						bbox[0].y = refSceneBbox[0].y;
-					if (refSceneBbox[0].z < bbox[0].z)
-						bbox[0].z = refSceneBbox[0].z;
-
-					if (refSceneBbox[1].x > bbox[1].x)
-						bbox[1].x = refSceneBbox[1].x;
-					if (refSceneBbox[1].y > bbox[1].y)
-						bbox[1].y = refSceneBbox[1].y;
-					if (refSceneBbox[1].z > bbox[1].z)
-						bbox[1].z = refSceneBbox[1].z;
-				}
-				else
-				{
-					//no bbox yet
-					bbox.push_back(refSceneBbox[0]);
-					bbox.push_back(refSceneBbox[1]);
-				}
+				bbox.encapsulate(refScene->getSceneBoundingBox());
 			}
 			break;
 		}

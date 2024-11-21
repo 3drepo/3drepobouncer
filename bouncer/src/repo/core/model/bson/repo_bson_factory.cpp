@@ -81,7 +81,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 	const std::vector<repo::lib::RepoVector3D>& vertices,
 	const std::vector<repo_face_t>& faces,
 	const std::vector<repo::lib::RepoVector3D>& normals,
-	const std::vector<std::vector<float>>& boundingBox,
+	const repo::lib::RepoBounds& boundingBox,
 	const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
 	const std::string& name,
 	const std::vector<repo::lib::RepoUUID>& parents)
@@ -89,10 +89,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 	MeshNode node;
 	node.setSharedID(repo::lib::RepoUUID::createUUID());
 	node.setVertices(vertices);
-	node.setBoundingBox({
-		repo::lib::RepoVector3D(boundingBox[0]),
-		repo::lib::RepoVector3D(boundingBox[1]),
-	});
+	node.setBoundingBox(boundingBox);
 	node.setFaces(faces);
 	node.setNormals(normals);
 	for (size_t i = 0; i < uvChannels.size(); i++)
@@ -108,7 +105,7 @@ SupermeshNode RepoBSONFactory::makeSupermeshNode(
 	const std::vector<repo::lib::RepoVector3D>& vertices,
 	const std::vector<repo_face_t>& faces,
 	const std::vector<repo::lib::RepoVector3D>& normals,
-	const std::vector<std::vector<float>>& boundingBox,
+	const repo::lib::RepoBounds& boundingBox,
 	const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
 	const std::string& name,
 	const std::vector<repo_mesh_mapping_t>& mappings
@@ -118,10 +115,7 @@ SupermeshNode RepoBSONFactory::makeSupermeshNode(
 	node.setVertices(vertices);
 	node.setFaces(faces);
 	node.setNormals(normals);
-	node.setBoundingBox({
-		repo::lib::RepoVector3D(boundingBox[0]),
-		repo::lib::RepoVector3D(boundingBox[1]),
-	});
+	node.setBoundingBox(boundingBox);
 	for (size_t i = 0; i < uvChannels.size(); i++)
 	{
 		node.setUVChannel(i, uvChannels[i]);
@@ -135,7 +129,7 @@ SupermeshNode RepoBSONFactory::makeSupermeshNode(
 	const std::vector<repo::lib::RepoVector3D>& vertices,
 	const std::vector<repo_face_t>& faces,
 	const std::vector<repo::lib::RepoVector3D>& normals,
-	const std::vector<std::vector<float>>& boundingBox,
+	const repo::lib::RepoBounds& boundingBox,
 	const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
 	const std::vector<repo_mesh_mapping_t>& mappings,
 	const repo::lib::RepoUUID& id,
@@ -147,10 +141,7 @@ SupermeshNode RepoBSONFactory::makeSupermeshNode(
 	node.setVertices(vertices);
 	node.setFaces(faces);
 	node.setNormals(normals);
-	node.setBoundingBox({
-		repo::lib::RepoVector3D(boundingBox[0]),
-		repo::lib::RepoVector3D(boundingBox[1]),
-		});
+	node.setBoundingBox(boundingBox);
 	for (size_t i = 0; i < uvChannels.size(); i++)
 	{
 		node.setUVChannel(i, uvChannels[i]);

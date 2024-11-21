@@ -106,13 +106,26 @@ RepoBSON RepoBSON::getObjectField(const std::string& label) const
 	}
 }
 
-std::vector<repo::lib::RepoVector3D> RepoBSON::getBounds3D(const std::string& label)
+repo::lib::RepoBounds RepoBSON::getBoundsField(const std::string& label) const
 {
-	auto field = getObjectField(label);
-	return std::vector< lib::RepoVector3D>({
-		lib::RepoVector3D(field.getFloatVectorField("0")),
-		lib::RepoVector3D(field.getFloatVectorField("1")),
-	});
+	const auto& field = getField(label);
+	const bsoncxx::array::view &outer = field.get_array();
+
+	repo::lib::RepoVector3D64 min;
+	repo::lib::RepoVector3D64 max;
+
+	const bsoncxx::array::view& _min = outer[0].get_array();
+	const bsoncxx::array::view& _max = outer[1].get_array();
+
+	min.x = _min[0].get_double();
+	min.y = _min[1].get_double();
+	min.z = _min[2].get_double();
+
+	max.x = _max[0].get_double();
+	max.y = _max[1].get_double();
+	max.z = _max[2].get_double();
+
+	return repo::lib::RepoBounds(min, max);
 }
 
 bool RepoBSON::isEmpty() const
@@ -281,34 +294,24 @@ repo::lib::RepoVector3D RepoBSON::getVector3DField(const std::string& label) con
 
 repo::lib::RepoMatrix RepoBSON::getMatrixField(const std::string& label) const
 {
-	std::vector<RepoBSONElement> rows;
-	std::vector<RepoBSONElement> cols;
-
 	std::vector<float> transformationMatrix;
-
-	uint32_t rowInd = 0, colInd = 0;
 	transformationMatrix.resize(16);
 	float* transArr = &transformationMatrix.at(0);
 
 	// matrix is stored as array of arrays, row first
 
-	auto matrixObj = getField(label).Object();
-
-
-
-	/*
-	matrixObj.elems(rows);
-	for (size_t rowInd = 0; rowInd < 4; rowInd++)
+	auto matrixObj = getField(label);
+	const bsoncxx::array::view& rows = matrixObj.get_array();
+	for (uint32_t rowInd = 0; rowInd < 4; rowInd++)
 	{
-		cols.clear();
-		rows[rowInd].embeddedObject().elems(cols);
-		for (size_t colInd = 0; colInd < 4; colInd++)
+		const bsoncxx::array::view& cols = rows[rowInd].get_array();
+		for (uint32_t colInd = 0; colInd < 4; colInd++)
 		{
+			const auto& e = cols[colInd];
 			uint32_t index = rowInd * 4 + colInd;
-			transArr[index] = cols[colInd].number();
+			transArr[index] = e.get_double();
 		}
 	}
-	*/
 
 	return repo::lib::RepoMatrix(transformationMatrix);
 }

@@ -31,10 +31,6 @@ MeshNode::MeshNode() :
 {
 	grouping = "";
 	primitive = MeshNode::Primitive::TRIANGLES;
-	boundingBox = std::vector<repo::lib::RepoVector3D>({
-		repo::lib::RepoVector3D(),
-		repo::lib::RepoVector3D()
-	});
 }
 
 MeshNode::MeshNode(RepoBSON bson) :
@@ -57,7 +53,7 @@ void MeshNode::deserialise(RepoBSON& bson)
 	if (bson.hasField(REPO_NODE_MESH_LABEL_PRIMITIVE))
 		primitive = static_cast<MeshNode::Primitive>(bson.getIntField(REPO_NODE_MESH_LABEL_PRIMITIVE));
 
-	boundingBox = bson.getBounds3D(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
+	boundingBox = bson.getBoundsField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
 
 	if (bson.hasBinField(REPO_NODE_MESH_LABEL_FACES) && bson.hasField(REPO_NODE_MESH_LABEL_FACES_COUNT))
 	{
@@ -131,17 +127,9 @@ void MeshNode::deserialise(RepoBSON& bson)
 	}
 }
 
-void appendBounds(RepoBSONBuilder& builder, const std::vector<repo::lib::RepoVector3D>& boundingBox)
+void appendBounds(RepoBSONBuilder& builder, const repo::lib::RepoBounds& boundingBox)
 {
-	if (boundingBox.size() > 0)
-	{
-		RepoBSONBuilder arrayBuilder;
-		for (int i = 0; i < boundingBox.size(); i++)
-		{
-			arrayBuilder.append(std::to_string(i), boundingBox[i]);
-		}
-		builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, arrayBuilder.obj());
-	}
+	builder.append(REPO_NODE_MESH_LABEL_BOUNDING_BOX, boundingBox);
 }
 
 void appendVertices(RepoBSONBuilder& builder, const std::vector<repo::lib::RepoVector3D>& vertices)
@@ -262,17 +250,9 @@ void MeshNode::setUVChannel(size_t channel, std::vector<repo::lib::RepoVector2D>
 
 void MeshNode::updateBoundingBox()
 {
-	boundingBox.resize(2);
-
-	auto& min = boundingBox[0];
-	auto& max = boundingBox[1];
-
-	min = repo::lib::RepoVector3D(FLT_MAX, FLT_MAX, FLT_MAX);
-	max = repo::lib::RepoVector3D(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-
+	boundingBox = repo::lib::RepoBounds(); // reset the bounding box
 	for (auto& v : vertices) {
-		min = repo::lib::RepoVector3D::min(min, v);
-		max = repo::lib::RepoVector3D::max(max, v);
+		boundingBox.encapsulate(v);
 	}
 }
 
@@ -289,15 +269,11 @@ void MeshNode::applyTransformation(
 {
 	if (!matrix.isIdentity())
 	{
-		auto& min = boundingBox[0];
-		auto& max = boundingBox[1];
-		min = lib::RepoVector3D(FLT_MAX, FLT_MAX, FLT_MAX);
-		max = lib::RepoVector3D(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+		boundingBox = repo::lib::RepoBounds();
 
 		for (auto& v : vertices) {
 			v = matrix * v;
-			min = lib::RepoVector3D::min(min, v);
-			max = lib::RepoVector3D::max(max, v);
+			boundingBox.encapsulate(v);
 		}
 
 		if (normals.size())
@@ -321,7 +297,7 @@ void MeshNode::applyTransformation(
 }
 
 void MeshNode::transformBoundingBox(
-	std::vector<repo::lib::RepoVector3D>& bounds,
+	repo::lib::RepoBounds& bounds,
 	repo::lib::RepoMatrix matrix)
 {
 	// Compute the updated AABB by the method of the extrema of transformed
@@ -331,27 +307,21 @@ void MeshNode::transformBoundingBox(
 	// separated (and the performance improvement would only be noticable if we
 	// were doing, e.g. realtime physics etc).
 
-	std::vector<lib::RepoVector3D> corners = {
-		matrix * lib::RepoVector3D(bounds[0].x, bounds[0].y, bounds[0].z),
-		matrix * lib::RepoVector3D(bounds[0].x, bounds[0].y, bounds[1].z),
-		matrix * lib::RepoVector3D(bounds[0].x, bounds[1].y, bounds[0].z),
-		matrix * lib::RepoVector3D(bounds[0].x, bounds[1].y, bounds[1].z),
-		matrix * lib::RepoVector3D(bounds[1].x, bounds[0].y, bounds[0].z),
-		matrix * lib::RepoVector3D(bounds[1].x, bounds[0].y, bounds[1].z),
-		matrix * lib::RepoVector3D(bounds[1].x, bounds[1].y, bounds[0].z),
-		matrix * lib::RepoVector3D(bounds[1].x, bounds[1].y, bounds[1].z),
+	std::vector<lib::RepoVector3D64> corners = {
+		matrix * lib::RepoVector3D64(bounds.min().x, bounds.min().y, bounds.min().z),
+		matrix * lib::RepoVector3D64(bounds.min().x, bounds.min().y, bounds.max().z),
+		matrix * lib::RepoVector3D64(bounds.min().x, bounds.max().y, bounds.min().z),
+		matrix * lib::RepoVector3D64(bounds.min().x, bounds.max().y, bounds.max().z),
+		matrix * lib::RepoVector3D64(bounds.max().x, bounds.min().y, bounds.min().z),
+		matrix * lib::RepoVector3D64(bounds.max().x, bounds.min().y, bounds.max().z),
+		matrix * lib::RepoVector3D64(bounds.max().x, bounds.max().y, bounds.min().z),
+		matrix * lib::RepoVector3D64(bounds.max().x, bounds.max().y, bounds.max().z),
 	};
 
-	auto& min = bounds[0];
-	auto& max = bounds[1];
-
-	min = lib::RepoVector3D(FLT_MAX, FLT_MAX, FLT_MAX);
-	max = lib::RepoVector3D(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-
+	bounds = repo::lib::RepoBounds();
 	for (auto& c : corners)
 	{
-		min = lib::RepoVector3D::min(min, c);
-		max = lib::RepoVector3D::max(max, c);
+		bounds.encapsulate(c);
 	}
 }
 

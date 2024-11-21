@@ -41,6 +41,7 @@
 #include "repo/lib/datastructure/repo_uuid.h"
 #include "repo/lib/datastructure/repo_vector.h"
 #include "repo/lib/datastructure/repo_matrix.h"
+#include "repo/lib/datastructure/repo_bounds.h"
 #include "repo/lib/repo_exception.h"
 #include "repo/core/model/bson/repo_bson_element.h"
 
@@ -113,7 +114,7 @@ namespace repo {
 
 				RepoBSON getObjectField(const std::string& label) const;
 
-				std::vector<lib::RepoVector3D> getBounds3D(const std::string& label);
+				repo::lib::RepoBounds getBoundsField(const std::string& label) const;
 
 				lib::RepoVector3D getVector3DField(const std::string& label) const;
 
