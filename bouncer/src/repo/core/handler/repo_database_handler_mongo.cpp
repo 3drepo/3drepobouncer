@@ -269,55 +269,6 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 	return repo::core::model::RepoBSON(make_document());
 }
 
-std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueIDs(
-	const std::string& database,
-	const std::string& collection,
-	const std::vector<repo::lib::RepoUUID> uuids,
-	const bool ignoreExtFiles) {
-
-	std::vector<repo::core::model::RepoBSON> data;
-
-	int fieldsCount = uuids.size();
-	if (fieldsCount > 0)
-	{
-		try {
-			auto client = clientPool->acquire();
-			auto dbObj = client->database(database);
-			auto col = dbObj.collection(collection);
-
-			uint64_t retrieved = 0;
-			fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-
-			// To search for UUIDs, convert them to strings for the query document
-
-			bsoncxx::builder::basic::array uids;
-			for (auto& u : uuids) {
-				uids.append(u.toString());
-			}
-
-			// TODO: Once this compiles someone REALLY needs to check whether this works as I understand it.
-			// The documentation is a bit ambigous on this.
-			auto queryDoc = make_document(kvp(ID, make_document(kvp("$in", uids))));
-			auto cursor = col.find(queryDoc.view());
-
-			for (auto doc : cursor) {
-				data.push_back(createRepoBSON(blobHandler, database, collection, doc));
-				retrieved++;
-			}
-
-			if (fieldsCount != retrieved) {
-				repoWarning << "Number of documents(" << retrieved << ") retreived by findAllByUniqueIDs did not match the number of unique IDs(" << fieldsCount << ")!";
-			}
-		}
-		catch (mongocxx::logic_error e)
-		{
-			repoError << e.what();
-		}
-	}
-
-	return data;
-}
-
 repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 	const std::string& database,
 	const std::string& collection,

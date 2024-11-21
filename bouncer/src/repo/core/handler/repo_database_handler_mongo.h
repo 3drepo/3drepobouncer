@@ -241,19 +241,6 @@ namespace repo {
 				*/
 
 				/**
-				* Given a list of unique IDs, find all the documents associated to them
-				* @param name of database
-				* @param name of collection
-				* @param array of uuids in a BSON object
-				* @return a vector of RepoBSON objects associated with the UUIDs given
-				*/
-				std::vector<repo::core::model::RepoBSON> findAllByUniqueIDs(
-					const std::string& database,
-					const std::string& collection,
-					const std::vector<repo::lib::RepoUUID> uuids,
-					const bool ignoreExtFiles = false);
-
-				/**
 				* Given a search criteria,  find all the documents that passes this query
 				* @param database name of database
 				* @param collection name of collection
