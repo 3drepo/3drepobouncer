@@ -19,6 +19,7 @@
 #include <repo/core/handler/repo_database_handler_mongo.h>
 #include <repo/core/handler/fileservice/repo_file_manager.h>
 #include <repo/lib/datastructure/repo_vector.h>
+#include <repo/lib/datastructure/repo_bounds.h>
 #include <repo/lib/repo_config.h>
 #include <boost/filesystem.hpp>
 
@@ -122,8 +123,6 @@ const static std::string genFedDB = "genFedTest";
 const static std::string genFedNoSubProName = "noSubPro";
 const static std::string genFedSuccessName = "fedTest";
 
-const static std::vector<repo::lib::RepoUUID> uuidsToSearch = { repo::lib::RepoUUID("0ab45528-9258-421a-927c-c51bf40fc478"), repo::lib::RepoUUID("126f9de3-c942-4d66-862a-16cc4f11841b") };
-
 const static std::pair<std::string, std::string> REPO_GTEST_DROPCOL_TESTCASE = { "sampleDataRW", "collectionToDrop" };
 const static std::string REPO_GTEST_RAWFILE_FETCH_TEST = "gridFSFile";
 const static size_t REPO_GTEST_RAWFILE_FETCH_SIZE = 1024;
@@ -138,7 +137,7 @@ std::string getDataPath(const std::string& file);
 
 std::shared_ptr<repo::core::handler::MongoDatabaseHandler> getHandler();
 
-std::vector<repo::lib::RepoVector3D> getGoldenDataForBBoxTest();
+repo::lib::RepoBounds getGoldenDataForBBoxTest();
 
 /*
 * Get expected #items in collection count within testCases

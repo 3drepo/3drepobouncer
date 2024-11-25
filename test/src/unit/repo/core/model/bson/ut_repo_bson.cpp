@@ -91,22 +91,22 @@ bsoncxx::document::value makeRepoVectorObj(const repo::lib::RepoVector3D& v)
 	return builder.extract();
 }
 
-bsoncxx::document::value makeBoundsObj(const repo::lib::RepoVector3D64& min, const repo::lib::RepoVector3D64& max)
+bsoncxx::array::value makeBoundsObj(const repo::lib::RepoVector3D64& min, const repo::lib::RepoVector3D64& max)
 {
-	bsoncxx::builder::basic::document builder;
-	builder.append(bsoncxx::builder::basic::kvp("0", makeBsonArray(min.toStdVector())));
-	builder.append(bsoncxx::builder::basic::kvp("1", makeBsonArray(max.toStdVector())));
+	bsoncxx::builder::basic::array builder;
+	builder.append(makeBsonArray(min.toStdVector()));
+	builder.append(makeBsonArray(max.toStdVector()));
 	return builder.extract();
 }
 
-bsoncxx::document::value makeMatrixObj(const repo::lib::RepoMatrix& m)
+bsoncxx::array::value makeMatrixObj(const repo::lib::RepoMatrix& m)
 {
 	auto d = m.getData();
-	bsoncxx::builder::basic::document builder;
-	builder.append(bsoncxx::builder::basic::kvp("0", makeBsonArray(std::vector<float>({ d[0], d[1], d[2], d[3]}))));
-	builder.append(bsoncxx::builder::basic::kvp("1", makeBsonArray(std::vector<float>({ d[4], d[5], d[6], d[7] }))));
-	builder.append(bsoncxx::builder::basic::kvp("2", makeBsonArray(std::vector<float>({ d[8], d[9], d[10], d[11] }))));
-	builder.append(bsoncxx::builder::basic::kvp("3", makeBsonArray(std::vector<float>({ d[12], d[13], d[14], d[15] }))));
+	bsoncxx::builder::basic::array builder;
+	builder.append(makeBsonArray(std::vector<float>({ d[0], d[1], d[2], d[3]})));
+	builder.append(makeBsonArray(std::vector<float>({ d[4], d[5], d[6], d[7] })));
+	builder.append(makeBsonArray(std::vector<float>({ d[8], d[9], d[10], d[11] })));
+	builder.append(makeBsonArray(std::vector<float>({ d[12], d[13], d[14], d[15] })));
 	return builder.extract();
 }
 
@@ -118,7 +118,7 @@ TEST(RepoBSONTest, ConstructFromMongo)
 	bsoncxx::document::value mongoObj = makeTestBSON();
 	bsoncxx::builder::stream::document builder;
 	builder << "ice" << "lolly";
-	builder << "amount" << 100;
+	builder << "amount" << 100.0;
 
 	bsoncxx::builder::stream::document different;
 	different << "something" << "different";
@@ -130,26 +130,6 @@ TEST(RepoBSONTest, ConstructFromMongo)
 	EXPECT_EQ(bson1, bson2);
 	EXPECT_EQ(bson1.toString(), bson2.toString());
 	EXPECT_NE(bson1, bsonDiff);
-}
-
-TEST(RepoBSONTest, ConstructFromMongoSizeExceeds) {
-	std::string msgData;
-	msgData.resize(1024 * 1024 * 65);
-
-	ASSERT_ANY_THROW({
-		bsoncxx::builder::stream::document builder;
-		builder << "message" << msgData;
-		auto bson = builder.extract();
-	});
-
-	try {
-		bsoncxx::builder::stream::document builder;
-		builder << "message" << msgData;
-		auto bson = builder.extract();
-	}
-	catch (const std::exception &e) {
-		EXPECT_NE(std::string(e.what()).find("BufBuilder"), std::string::npos);
-	}
 }
 
 TEST(RepoBSONTest, Fields)
@@ -179,7 +159,7 @@ TEST(RepoBSONTest, GetField)
 	EXPECT_NE(testBson.getField("ice"), testBson.getField("amount"));
 
 	EXPECT_EQ("lolly", testBson.getStringField("ice"));
-	EXPECT_EQ(100, testBson.getIntField("amount"));
+	EXPECT_EQ(100, testBson.getDoubleField("amount"));
 
 	EXPECT_THROW({
 		emptyBson.getField("hello");
@@ -544,7 +524,7 @@ TEST(RepoBSONTest, ReplaceBinaryWithReference)
 	auto s = "myString";
 	auto d = 123.456;
 	auto u = repo::lib::RepoUUID::createUUID();
-	auto v = std::vector<float>({ 1, 2, 3, 4, 5, 6, 7 });
+	auto v = std::vector<double>({ 1, 2, 3, 4, 5, 6, 7 });
 
 	builder.append("s", s);
 	builder.append("d", d);
@@ -585,7 +565,7 @@ TEST(RepoBSONTest, ReplaceBinaryWithReference)
 	EXPECT_THAT(bson.getDoubleField("d"), Eq(d));
 	EXPECT_THAT(bson.getTimeStampField("now"), IsNow());
 	EXPECT_THAT(bson.getUUIDField("u"), Eq(u));
-	EXPECT_THAT(bson.getFloatVectorField("v"), Eq(v));
+	EXPECT_THAT(bson.getDoubleVectorField("v"), Eq(v));
 
 	// It should be possible to get the buffer via getBinaryReference too
 
@@ -722,7 +702,7 @@ TEST(RepoBSONTest, GetStringField)
 	}
 }
 
-TEST(RepoBSONTest, GetObjectField)
+TEST(RepoBSONTest, GetObjectField) // Also tests GetObjectArray
 {
 	// A single object
 	{
@@ -738,28 +718,6 @@ TEST(RepoBSONTest, GetObjectField)
 		RepoBSON bson(builder.extract());
 
 		EXPECT_THAT(bson.getObjectField("object").toString(), Eq(subObjString));
-	}
-
-	// A simple array (as an object)
-	{
-		std::vector<std::string> strings = {
-			repo::lib::RepoUUID::createUUID().toString(),
-			repo::lib::RepoUUID::createUUID().toString(),
-			repo::lib::RepoUUID::createUUID().toString(),
-			repo::lib::RepoUUID::createUUID().toString(),
-			repo::lib::RepoUUID::createUUID().toString(),
-		};
-
-		bsoncxx::builder::basic::document builder;
-		builder.append(bsoncxx::builder::basic::kvp("object", makeBsonArray(strings)));
-
-		RepoBSON bson(builder.extract());
-		auto o = bson.getObjectField("object");
-
-		for (int i = 0; i < strings.size(); i++)
-		{
-			EXPECT_THAT(o.getStringField(std::to_string(i)), Eq(strings[i]));
-		}
 	}
 
 	// A complex array of objects
@@ -796,14 +754,14 @@ TEST(RepoBSONTest, GetObjectField)
 		builder.append(bsoncxx::builder::basic::kvp("object", makeBsonArray(objs)));
 
 		RepoBSON bson(builder.extract());
-		auto o = bson.getObjectField("object");
+		auto objects = bson.getObjectArray("object");
 
-		EXPECT_THAT(o.getObjectField("0").getStringArray("array"), Eq(strings));
-		EXPECT_THAT(o.getObjectField("0").getStringField("field"), Eq("value"));
-		EXPECT_THAT(o.getObjectField("1").getUUIDFieldArray("array"), Eq(uuids));
-		EXPECT_THAT(o.getObjectField("1").getStringField("field"), Eq("value"));
-		EXPECT_THAT(o.getObjectField("2").getStringField("field"), Eq("value"));
-		EXPECT_THAT(o.getObjectField("2").getIntField("field2"), Eq(0));
+		EXPECT_THAT(objects[0].getStringArray("array"), Eq(strings));
+		EXPECT_THAT(objects[0].getStringField("field"), Eq("value"));
+		EXPECT_THAT(objects[1].getUUIDFieldArray("array"), Eq(uuids));
+		EXPECT_THAT(objects[1].getStringField("field"), Eq("value"));
+		EXPECT_THAT(objects[2].getStringField("field"), Eq("value"));
+		EXPECT_THAT(objects[2].getIntField("field2"), Eq(0));
 	}
 
 	// A nested hierarchy of objects
@@ -878,12 +836,7 @@ TEST(RepoBSONTest, GetBounds3D)
 
 	RepoBSON bson(builder.extract());
 
-	auto expected = std::vector<repo::lib::RepoVector3D>({
-		repo::lib::RepoVector3D((float)min.x, (float)min.y, (float)min.z),
-		repo::lib::RepoVector3D((float)max.x, (float)max.y, (float)max.z),
-	});
-
-	EXPECT_THAT(bson.getBounds3D("bounds"), Eq(expected));
+	EXPECT_THAT(bson.getBoundsField("bounds"), Eq(repo::lib::RepoBounds(min, max)));
 }
 
 TEST(RepoBSONTest, GetVector3DField)
@@ -908,7 +861,7 @@ TEST(RepoBSONTest, GetMatrixField)
 	EXPECT_THAT(bson.getMatrixField("matrix"), Eq(m));
 }
 
-TEST(RepoBSONTest, GetFloatVector)
+TEST(RepoBSONTest, GetDoubleVector)
 {
 	// This is typically used to intiialise a 2d or 3d vector, though for now
 	// this is not enforced and it will return fields of arbitrary length
@@ -924,7 +877,7 @@ TEST(RepoBSONTest, GetFloatVector)
 		builder.append(bsoncxx::builder::basic::kvp("vector", makeBsonArray(arr)));
 		RepoBSON bson(builder.extract());
 
-		EXPECT_THAT(bson.getFloatVectorField("vector"), Eq(arr));
+		EXPECT_THAT(bson.getDoubleVectorField("vector"), ElementsAreArray(arr));
 	}
 
 	// Undernath, this retrieves values as doubles, so it should also work for
@@ -941,7 +894,7 @@ TEST(RepoBSONTest, GetFloatVector)
 		builder.append(bsoncxx::builder::basic::kvp("vector", makeBsonArray(arr)));
 		RepoBSON bson(builder.extract());
 
-		EXPECT_THAT(bson.getFloatVectorField("vector"), ElementsAreArray(arr));
+		EXPECT_THAT(bson.getDoubleVectorField("vector"), ElementsAreArray(arr));
 	}
 
 	// The cast means it will silently fail if the doubles are outside the range
@@ -956,7 +909,7 @@ TEST(RepoBSONTest, GetFloatVector)
 		builder.append(bsoncxx::builder::basic::kvp("vector", makeBsonArray(arr)));
 		RepoBSON bson(builder.extract());
 
-		EXPECT_THAT(bson.getFloatVectorField("vector"), ElementsAreArray(arr));
+		EXPECT_THAT(bson.getDoubleVectorField("vector"), ElementsAreArray(arr));
 	}
 
 	// As these are intended to be used with vectors, they differ in the usual way
@@ -970,13 +923,13 @@ TEST(RepoBSONTest, GetFloatVector)
 		builder.append(bsoncxx::builder::basic::kvp("vector", makeBsonArray(arr)));
 		RepoBSON bson(builder.extract());
 
-		EXPECT_THROW({ bson.getFloatVectorField("vector"); }, repo::lib::RepoFieldTypeException);
+		EXPECT_THROW({ bson.getDoubleVectorField("vector"); }, repo::lib::RepoFieldTypeException);
 	}
 
 	{
 		bsoncxx::builder::basic::document builder;
 		RepoBSON bson(builder.extract());
-		EXPECT_THROW({ bson.getFloatVectorField("vector"); }, repo::lib::RepoFieldNotFoundException);
+		EXPECT_THROW({ bson.getDoubleVectorField("vector"); }, repo::lib::RepoFieldNotFoundException);
 	}
 
 }

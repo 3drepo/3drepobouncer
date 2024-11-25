@@ -163,7 +163,9 @@ namespace repo {
 				/*
 				* Computes the bounding box for a set of vertices
 				*/
-				std::vector< repo::lib::RepoVector3D> getBoundingBox(std::vector< repo::lib::RepoVector3D> vertices);
+				repo::lib::RepoBounds getBoundingBox(std::vector< repo::lib::RepoVector3D> vertices);
+				repo::lib::RepoBounds getBoundingBox(std::vector< repo::lib::RepoVector3D64> vertices);
+
 			}
 		}
 	}

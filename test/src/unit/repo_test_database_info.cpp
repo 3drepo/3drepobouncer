@@ -134,10 +134,12 @@ std::vector<std::string> getCollectionList(
 	}
 }
 
-std::vector<repo::lib::RepoVector3D> getGoldenDataForBBoxTest()
+repo::lib::RepoBounds getGoldenDataForBBoxTest()
 {
-	return{ repo::lib::RepoVector3D(-30.00954627990722700f, -15.00000476837158200f, -0.00000199999999495f),
-			repo::lib::RepoVector3D(30.05025100708007800f, 60.69493103027343800f, 30.00000953674316400f) };
+	return repo::lib::RepoBounds(
+		repo::lib::RepoVector3D(-30.00954627990722700f, -15.00000476837158200f, -0.00000199999999495f),
+		repo::lib::RepoVector3D(30.05025100708007800f, 60.69493103027343800f, 30.00000953674316400f)
+	);
 }
 
 /* A set of preallocated & valid UUIDs used to produce golden data sets */

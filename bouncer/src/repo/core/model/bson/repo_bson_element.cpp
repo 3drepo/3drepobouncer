@@ -25,6 +25,7 @@
 #include <bsoncxx/array/element.hpp>
 #include <bsoncxx/types.hpp>
 #include <bsoncxx/types/value.hpp>
+#include <bsoncxx/exception/exception.hpp>
 
 using namespace repo::core::model;
 using namespace bsoncxx::document;
@@ -169,16 +170,21 @@ double RepoBSONElement::Double() const
 	return element::get_double();
 }
 
+repo::lib::RepoUUID RepoBSONElement::UUID() const
+{
+	const auto& b = element::get_binary();
+	if (b.sub_type == bsoncxx::binary_sub_type::k_uuid || b.sub_type == bsoncxx::binary_sub_type::k_uuid_deprecated)
+	{
+		boost::uuids::uuid id;
+		memcpy(id.data, b.bytes, b.size);
+		return repo::lib::RepoUUID(id);
+	}
+	throw repo::lib::RepoFieldTypeException("Cannot convert UUID because the binary has the wrong subtype");
+}
+
 size_t RepoBSONElement::size() const
 {
 	return element::length();
-}
-
-const char* RepoBSONElement::binData(int& length) const
-{
-	const auto& b = element::get_binary();
-	length = b.size;
-	return (const char*)b.bytes;
 }
 
 bool RepoBSONElement::operator==(const RepoBSONElement& other) const
@@ -191,27 +197,7 @@ bool RepoBSONElement::operator!=(const RepoBSONElement& other) const
 	return element::get_value() != other.get_value();
 }
 
-std::string RepoBSONElement::toString() const
-{
-	return "";
-}
-
-bool RepoBSONElement::eoo() const
-{
-	return element::type() == bsoncxx::type::k_null;
-}
-
-bool RepoBSONElement::isNull() const
-{
-	return element::type() == bsoncxx::type::k_null;
-}
-
 RepoBSON RepoBSONElement::Object() const
 {
 	return RepoBSON(get_document().value, {});
-}
-
-RepoBSONElement::operator const std::string& () const
-{
-	return toString();
 }

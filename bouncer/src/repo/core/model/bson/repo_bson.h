@@ -56,9 +56,6 @@ namespace repo {
 		}
 
 		namespace model {
-			//TODO: Eventually we should inherit from a generic BSON object.
-			//work seems to have been started in here:https://github.com/jbenet/bson-cpp
-			//alternatively we can use a c++ wrapper on https://github.com/mongodb/libbson
 			class REPO_API_EXPORT RepoBSON : private bsoncxx::document::value
 			{
 				friend class RepoBSONBuilder;
@@ -114,13 +111,13 @@ namespace repo {
 
 				RepoBSON getObjectField(const std::string& label) const;
 
+				std::vector<RepoBSON> getObjectArray(const std::string& label) const;
+
 				repo::lib::RepoBounds getBoundsField(const std::string& label) const;
 
 				lib::RepoVector3D getVector3DField(const std::string& label) const;
 
 				repo::lib::RepoMatrix getMatrixField(const std::string& label) const;
-
-				std::vector<float> getFloatVectorField(const std::string& label) const;
 
 				std::vector<double> getDoubleVectorField(const std::string& label) const;
 
@@ -242,6 +239,13 @@ namespace repo {
 				const std::vector<uint8_t>& getBinary(const std::string& label) const;
 
 			protected:
+
+				/*
+				* Convenience function for converting a variant array into a
+				* concrete array
+				*/
+				template<typename T>
+				std::vector<T> getArray(const std::string& label, T(&f)(const bsoncxx::array::element& e)) const;
 
 				/**
 				* Override the swap operator to perform the swap just like mongo bson

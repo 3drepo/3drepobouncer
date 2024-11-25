@@ -63,18 +63,6 @@ TEST(RepoBSONBuilderTest, AppendArray)
 	}
 
 	{
-		// Test empty document.
-
-		RepoBSONBuilder outer;
-		RepoBSONBuilder builder;
-		builder.appendArray("array", outer.obj());
-		RepoBSON bson(builder.obj());
-		EXPECT_THAT(bson.isEmpty(), IsFalse());
-
-		EXPECT_THAT(bson.getObjectField("array").isEmpty(), IsTrue());
-	}
-
-	{
 		// Test an array with one entry - should still get an indexed object
 
 		std::vector<std::string> one({ "one" });
@@ -162,43 +150,12 @@ TEST(RepoBSONBuilderTest, AppendArray)
 		builder.appendArray("array", arr);
 		RepoBSON bson(builder.obj());
 
-		auto fieldArray = bson.getObjectField("array");
-		for (int i = 0; i < 4; i++)
-		{
-			EXPECT_THAT(arr[i], Eq(fieldArray.getObjectField(std::to_string(i)))); //(We can't directly match between a RepoBSON and RepoBSONElement without going via Object())
-		}
-	}
+		auto documents = bson.getObjectArray("array");
 
-	{
-		// An array document - this is basically a BSON where each field name is
-		// a sequence of increasing integers.
-
-		std::vector<repo::lib::RepoUUID> uuids({
-			repo::lib::RepoUUID::createUUID(),
-			repo::lib::RepoUUID::createUUID(),
-			repo::lib::RepoUUID::createUUID(),
-			repo::lib::RepoUUID::createUUID(),
-			repo::lib::RepoUUID::createUUID(),
-			repo::lib::RepoUUID::createUUID(),
-			repo::lib::RepoUUID::createUUID()
-		});
-
-		RepoBSONBuilder arrayBuilder;
-		for (size_t i = 0; i < uuids.size(); i++)
-		{
-			arrayBuilder.append(std::to_string(i), uuids[i]);
-		}
-		RepoBSONBuilder builder;
-		builder.appendArray("array", arrayBuilder.obj());
-		RepoBSON bson(builder.obj());
-		EXPECT_THAT(bson.getUUIDFieldArray("array"), Eq(uuids));
-
-		// Building an array document explicitly, and appending an array, should
-		// result in identical results.
-
-		RepoBSONBuilder builder2;
-		builder2.appendArray("array", uuids);
-		EXPECT_THAT(bson, Eq(builder2.obj()));
+		EXPECT_THAT(documents[0].getStringField("a"), Eq("a"));
+		EXPECT_THAT(documents[1].getIntField("b"), Eq(1));
+		EXPECT_THAT(documents[2].getUUIDField("c").isDefaultValue(), IsFalse());
+		EXPECT_THAT(documents[3].getMatrixField("d").isIdentity(), IsTrue());
 	}
 }
 
@@ -237,7 +194,7 @@ TEST(RepoBSONBuilderTest, AppendGeneric)
 	EXPECT_THAT(bson.getIntField("int"), Eq(intT));
 	EXPECT_THAT(bson.getLongField("long"), Eq(longT));
 	EXPECT_THAT(bson.getUUIDField("uuid"), Eq(uuidT));
-	EXPECT_THAT(bson.getFloatVectorField("repoVector"), Eq(repoVectorT.toStdVector())); // RepoVectors through append should appear as arrays; use RepoVectorObject to get the document version
+	EXPECT_THAT(bson.getDoubleVectorField("repoVector"), ElementsAreArray(repoVectorT.toStdVector())); // RepoVectors through append should appear as arrays; use RepoVectorObject to get the document version
 	EXPECT_THAT(bson.getMatrixField("repoMatrix"), Eq(repoMatrixT));
 	EXPECT_THAT(bson.getTimeStampField("tm"), Eq(mktime(&tmT)));
 }

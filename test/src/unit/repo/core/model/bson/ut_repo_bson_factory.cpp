@@ -129,10 +129,10 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 		normals.push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f });
 		uvChannels[0].push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f });
 	}
-	std::vector<std::vector<float>> boundingBox;
-	boundingBox.resize(2);
-	boundingBox[0] = { std::rand() / 100.f, std::rand() / 100.f, std::rand() / 100.f };
-	boundingBox[1] = { std::rand() / 100.f, std::rand() / 100.f, std::rand() / 100.f };
+	repo::lib::RepoBounds boundingBox(
+		repo::lib::RepoVector3D64(std::rand() / 100.f, std::rand() / 100.f, std::rand() / 100.f),
+		repo::lib::RepoVector3D64(std::rand() / 100.f, std::rand() / 100.f, std::rand() / 100.f)
+	);
 
 	std::string name = "meshTest";
 
@@ -154,12 +154,7 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 	ASSERT_EQ(MeshNode::Primitive::TRIANGLES, mesh.getPrimitive());
 
 	auto bbox = mesh.getBoundingBox();
-	ASSERT_EQ(boundingBox.size(), bbox.size());
-	ASSERT_EQ(3, boundingBox[0].size());
-	ASSERT_EQ(3, boundingBox[1].size());
-
-	EXPECT_EQ(bbox[0], repo::lib::RepoVector3D(boundingBox[0][0], boundingBox[0][1], boundingBox[0][2]));
-	EXPECT_EQ(bbox[1], repo::lib::RepoVector3D(boundingBox[1][0], boundingBox[1][1], boundingBox[1][2]));
+	EXPECT_THAT(bbox, Eq(boundingBox));
 
 	faces.clear();
 	for (uint32_t i = 0; i < nCount; ++i)
@@ -186,12 +181,7 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 	EXPECT_TRUE(compareStdVectors(uvChannels, uvOut));
 
 	bbox = mesh.getBoundingBox();
-	ASSERT_EQ(boundingBox.size(), bbox.size());
-	ASSERT_EQ(3, boundingBox[0].size());
-	ASSERT_EQ(3, boundingBox[1].size());
-
-	EXPECT_EQ(bbox[0], repo::lib::RepoVector3D(boundingBox[0][0], boundingBox[0][1], boundingBox[0][2]));
-	EXPECT_EQ(bbox[1], repo::lib::RepoVector3D(boundingBox[1][0], boundingBox[1][1], boundingBox[1][2]));
+	EXPECT_THAT(bbox, Eq(boundingBox));
 
 	// Re-create the mesh but with an unsupported primitive type. If the mesh does not have a type set, the API should return triangles,
 	// but if the primitive has *attempted* to be inferred and failed, the type should report as unknown.

@@ -26,6 +26,43 @@
 
 using namespace repo::core::model;
 
+// Conversion functions for the getArray method
+
+double elementToDouble(const bsoncxx::array::element& e)
+{
+	return e.get_double();
+}
+
+float elementToFloat(const bsoncxx::array::element& e)
+{
+	return e.get_double();
+}
+
+std::string elementToString(const bsoncxx::array::element& e)
+{
+	auto view = e.get_string().value;
+	return std::string(view.data(), view.size());
+}
+
+RepoBSON elementToRepoBSON(const bsoncxx::array::element& e)
+{
+	return RepoBSON(e.get_document().value, {});
+}
+
+repo::lib::RepoUUID elementToRepoUUID(const bsoncxx::array::element& e)
+{
+	if (e.type() == bsoncxx::type::k_binary) // (We can't use RepoBSONElement here, even as a view, because array views are not the same as document views)
+	{
+		const auto& b = e.get_binary();
+		if (b.sub_type == bsoncxx::binary_sub_type::k_uuid || b.sub_type == bsoncxx::binary_sub_type::k_uuid_deprecated) {
+			boost::uuids::uuid id;
+			memcpy(id.data, b.bytes, b.size);
+			return repo::lib::RepoUUID(id);
+		}
+	}
+	throw repo::lib::RepoBSONException("Cannot convert binary field to RepoUUID because it has the wrong subtype");
+}
+
 RepoBSON::RepoBSON(const RepoBSON &obj,
 	const BinMapping &binMapping) :
 	bsoncxx::document::value(obj.view()),
@@ -104,6 +141,11 @@ RepoBSON RepoBSON::getObjectField(const std::string& label) const
 	{
 		throw repo::lib::RepoFieldTypeException(label);
 	}
+}
+
+std::vector<RepoBSON> RepoBSON::getObjectArray(const std::string& label) const
+{
+	return getArray(label, elementToRepoBSON);
 }
 
 repo::lib::RepoBounds RepoBSON::getBoundsField(const std::string& label) const
@@ -189,14 +231,7 @@ void RepoBSON::swap(RepoBSON otherCopy)
 
 std::vector<std::string> RepoBSON::getFileList(const std::string& label) const
 {
-	std::vector<std::string> fileList;
-	RepoBSON arraybson = getObjectField(label);
-	std::set<std::string> fields = arraybson.getFieldNames();
-	for (const auto& field : fields)
-	{
-		fileList.push_back(arraybson.getStringField(field));
-	}
-	return fileList;
+	return getArray(label, elementToString);
 }
 
 std::pair<repo::core::model::RepoBSON, std::vector<uint8_t>> RepoBSON::getBinariesAsBuffer() const
@@ -243,43 +278,14 @@ void RepoBSON::replaceBinaryWithReference(
 
 repo::lib::RepoUUID RepoBSON::getUUIDField(const std::string &label) const
 {
-	if (hasField(label))
+	try
 	{
-		auto f = getField(label);
-		if (f.type() == repo::core::model::ElementType::UUID)
-		{
-			boost::uuids::uuid id;
-			int len = static_cast<int>(f.size() * sizeof(uint8_t));
-			const char* binData = f.binData(len);
-			memcpy(id.data, binData, len);
-			return repo::lib::RepoUUID(id);
-		}
-		else
-		{
-			throw repo::lib::RepoFieldTypeException(label);
-		}
+		return getField(label).UUID();
 	}
-	else
+	catch (bsoncxx::exception)
 	{
-		throw repo::lib::RepoFieldNotFoundException(label);
+		throw repo::lib::RepoFieldTypeException(label);
 	}
-}
-
-std::vector<float> RepoBSON::getFloatVectorField(const std::string& label) const
-{
-	std::vector<float> results;
-	auto a = getObjectField(label);
-	for (auto& f : a)
-	{
-		try {
-			results.push_back(f.get_double());
-		}
-		catch (bsoncxx::exception)
-		{
-			throw repo::lib::RepoFieldTypeException(label); // Will get a bsoncxx exception in case of a cast error - otherwise the exception should bubble up
-		}
-	}
-	return results;
 }
 
 repo::lib::RepoVector3D RepoBSON::getVector3DField(const std::string& label) const
@@ -318,36 +324,20 @@ repo::lib::RepoMatrix RepoBSON::getMatrixField(const std::string& label) const
 
 std::vector<double> RepoBSON::getDoubleVectorField(const std::string& label) const
 {
-	std::vector<double> results;
-	auto a = getObjectField(label);
-	for (auto& f : a)
-	{
-		try {
-			results.push_back(f.get_double());
-		}
-		catch (bsoncxx::exception)
-		{
-			throw repo::lib::RepoFieldTypeException(label); // Will get a bsoncxx exception in case of a cast error - otherwise the exception should bubble up
-		}
-	}
-	return results;
+	return getArray(label, elementToDouble);
 }
 
 std::vector<repo::lib::RepoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) const
 {
-	std::vector<repo::lib::RepoUUID> results;
-	if (hasField(label))
+	try
 	{
-		RepoBSON array = getObjectField(label);
-		if (!array.isEmpty())
-		{
-			std::set<std::string> fields = array.getFieldNames();
-			std::set<std::string>::iterator it;
-			for (it = fields.begin(); it != fields.end(); ++it)
-				results.push_back(array.getUUIDField(*it)); // If the item is the wrong type an exception will be thrown to the caller
-		}
+		return getArray(label, elementToRepoUUID);
 	}
-	return results;
+	catch (repo::lib::RepoFieldNotFoundException)
+	{
+		// Current convention is that a missing array is the same as an empty array
+	}
+	return {};
 }
 
 const std::vector<uint8_t>& RepoBSON::getBinary(const std::string& field) const
@@ -413,22 +403,13 @@ bool RepoBSON::hasFileReference() const
 std::vector<float> RepoBSON::getFloatArray(const std::string &label) const
 {
 	std::vector<float> results;
-	if (hasField(label))
+	try
 	{
-		RepoBSON array = getObjectField(label);
-		if (!array.isEmpty())
-		{
-			for (auto& f : array)
-			{
-				try {
-					results.push_back(f.get_double());
-				}
-				catch (bsoncxx::exception)
-				{
-					throw repo::lib::RepoFieldTypeException(label); // Will get a bsoncxx exception in case of a cast error - otherwise the exception should bubble up
-				}
-			}
-		}
+		return getArray(label, elementToFloat);
+	}
+	catch (repo::lib::RepoFieldNotFoundException)
+	{
+		// Current convention is that a missing array is the same as an empty array
 	}
 	return results;
 }
@@ -436,22 +417,15 @@ std::vector<float> RepoBSON::getFloatArray(const std::string &label) const
 std::vector<std::string> RepoBSON::getStringArray(const std::string &label) const
 {
 	std::vector<std::string> results;
-	if (hasField(label))
+	try
 	{
-		RepoBSON array = getObjectField(label);
-		for (const auto& f : array)
-		{
-			try {
-				auto view = f.get_string().value;
-				results.push_back(std::string(view.data(), view.size()));
-			}
-			catch (bsoncxx::exception)
-			{
-				throw repo::lib::RepoFieldTypeException(label); // This version of the driver doesn't have specific exceptions so we guess based on the scope of the try block this is what it is
-			}
-		}
+		return getArray(label, elementToString);
 	}
-	return results;
+	catch (repo::lib::RepoFieldNotFoundException)
+	{
+		// Current convention is that a missing array is the same as an empty array
+	}
+	return {};
 }
 
 time_t RepoBSON::getTimeStampField(const std::string &label) const
@@ -491,4 +465,27 @@ long long RepoBSON::getLongField(const std::string& label) const
 	{
 		throw repo::lib::RepoFieldTypeException(label);
 	}
+}
+
+template<typename T>
+std::vector<T> RepoBSON::getArray(const std::string& label, T(&convert_element)(const bsoncxx::array::element& e)) const
+{
+	std::vector<T> results;
+	const auto& field = getField(label);
+	const bsoncxx::array::view& array = field.get_array();
+	for (const auto& f : array)
+	{
+		try {
+			results.push_back(convert_element(f));
+		}
+		catch (bsoncxx::exception)
+		{
+			throw repo::lib::RepoFieldTypeException(label); // This version of the driver doesn't have specific exceptions so we guess based on the scope of the try block this is what it is
+		}
+		catch (repo::lib::RepoBSONException)
+		{
+			throw repo::lib::RepoFieldTypeException(label);
+		}
+	}
+	return results;
 }

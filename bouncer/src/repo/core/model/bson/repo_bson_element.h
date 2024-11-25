@@ -82,21 +82,13 @@ namespace repo {
 
 				size_t size() const;
 
-				const char* binData(int& length) const;
+				repo::lib::RepoUUID UUID() const;
 
 				repo::lib::RepoVariant repoVariant() const;
 
 				bool operator==(const RepoBSONElement& other) const;
 
 				bool operator!=(const RepoBSONElement& other) const;
-
-				operator const std::string& () const;
-
-				std::string toString() const;
-
-				bool eoo() const;
-
-				bool isNull() const;
 			};
 		}// end namespace model
 	} // end namespace core

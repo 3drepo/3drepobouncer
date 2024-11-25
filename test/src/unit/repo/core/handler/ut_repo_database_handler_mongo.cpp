@@ -29,6 +29,8 @@
 #include "../../../repo_test_utils.h"
 #include "../../../repo_test_database_info.h"
 
+#include <mongocxx/exception/exception.hpp>
+
 using namespace repo::core::handler;
 using namespace testing;
 
@@ -423,8 +425,8 @@ TEST(MongoDatabaseHandlerTest, DropDocument)
 		repo::core::model::RepoBSONBuilder builder;
 		auto q = builder.obj();
 
-		EXPECT_THROW(handler->dropDocument(q, db, ""), std::exception);
-		EXPECT_THROW(handler->dropDocument(q, "", col), std::exception);
+		EXPECT_ANY_THROW(handler->dropDocument(q, db, ""));
+		EXPECT_ANY_THROW(handler->dropDocument(q, "", col));
 	}
 }
 
@@ -453,21 +455,9 @@ TEST(MongoDatabaseHandlerTest, InsertDocument)
 	EXPECT_THROW(handler->insertDocument(database, "", repo::core::model::RepoBSON()), std::exception);
 }
 
-TEST(MongoDatabaseHandlerTest, FindAllByUniqueIDs)
-{
-	auto handler = getHandler();
-
-	auto results = handler->findAllByUniqueIDs(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".scene", uuidsToSearch);
-
-
-
-	EXPECT_EQ(uuidsToSearch.size(), results.size());
-
-	EXPECT_THAT(handler->findAllByUniqueIDs(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ, {}), IsEmpty());
-
-	EXPECT_THROW(handler->findAllByUniqueIDs(REPO_GTEST_DBNAME1, "", uuidsToSearch), std::exception);
-	EXPECT_THROW(handler->findAllByUniqueIDs("", REPO_GTEST_DBNAME1_PROJ, uuidsToSearch), std::exception);
-}
+// The FindBy tests use a set of imports in the testMongoDatabaseHandler database.
+// A number of these documents have flags manually set which uniquely identify them
+// and ensure that there are no false positives.
 
 TEST(MongoDatabaseHandlerTest, FindAllByCriteria)
 {
@@ -483,47 +473,196 @@ TEST(MongoDatabaseHandlerTest, FindAllByCriteria)
 	EXPECT_EQ(4, results.size());
 
 	EXPECT_EQ(0, handler->findAllByCriteria(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".scene", query::RepoQueryBuilder()).size());
-	EXPECT_EQ(0, handler->findAllByCriteria("", REPO_GTEST_DBNAME1_PROJ + ".scene", search).size());
-	EXPECT_EQ(0, handler->findAllByCriteria(REPO_GTEST_DBNAME1, "", search).size());
+	EXPECT_THROW(handler->findAllByCriteria("", REPO_GTEST_DBNAME1_PROJ + ".scene", search).size(), std::exception);
+	EXPECT_THROW(handler->findAllByCriteria(REPO_GTEST_DBNAME1, "", search).size(), std::exception);
 }
 
 TEST(MongoDatabaseHandlerTest, FindOneByCriteria)
 {
 	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-	std::string errMsg;
+	auto db = REPO_GTEST_DBNAME4;
 
 	using namespace repo::core::handler::database;
 
-	query::Eq search("_id", uuidsToSearch[0]);
+	// Use the query types to return a document from the middle of a set by id
+	{
+		auto col = "cube.scene";
+		auto id = repo::lib::RepoUUID("c9bed762-9b63-4307-824d-40261ce7f022");
+		query::Eq search("_id", id);
+		auto result = handler->findOneByCriteria(db, col, search);
 
-	auto results = handler->findOneByCriteria(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".scene", search);
+		EXPECT_THAT(result.getStringField("type"), Eq("mesh"));
+		EXPECT_THAT(result.getBinary("faces"), Not(IsEmpty()));
+	}
 
-	EXPECT_FALSE(results.isEmpty());
-	EXPECT_EQ(results.getUUIDField("_id"), uuidsToSearch[0]);
+	// Query by id as a string
+	{
+		auto col = "cube.scene";
+		auto id = std::string("9ecbebbc-c24d-4da5-b69b-388abfcfe314");
+		query::Eq search("_id", id);
+		auto result = handler->findOneByCriteria(db, col, search);
 
-	EXPECT_TRUE(handler->findOneByCriteria(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".scene", query::RepoQueryBuilder()).isEmpty());
-	EXPECT_TRUE(handler->findOneByCriteria("", REPO_GTEST_DBNAME1_PROJ + ".scene", search).isEmpty());
-	EXPECT_TRUE(handler->findOneByCriteria(REPO_GTEST_DBNAME1, "", search).isEmpty());
+		EXPECT_THAT(result.getStringField("type"), Eq("mesh"));
+		EXPECT_THAT(result.getBinary("faces"), Not(IsEmpty()));
+	}
+
+	// Check the sort field
+	{
+		auto col = "cube.history";
+		auto id = repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH);
+		query::Eq search("shared_id", id);
+		auto result = handler->findOneByCriteria(db, col, search, "timestamp");
+
+		EXPECT_THAT(result.getUUIDField("_id"), Eq(repo::lib::RepoUUID("57f09047-ead5-453b-96ab-d90a582127bf")));
+	}
+
+	// Use of Or operator - should return the document with the highest timestamp
+	// of the two provided
+	{
+		auto q = query::Or(
+			query::Eq("_id", repo::lib::RepoUUID("3a28e39d-e901-4ca7-9453-9b9dde38d916")),
+			query::Eq("_id", repo::lib::RepoUUID("e664b837-45aa-4ad3-b2da-6efcce6438e2"))
+		);
+		repo::core::model::RepoBSONBuilder builder;
+		q.visit(builder);
+		auto s = builder.obj().toString();
+
+		auto col = "cube.history";
+		auto result = handler->findOneByCriteria(db, col,
+			query::Or(
+				query::Eq("_id", repo::lib::RepoUUID("3a28e39d-e901-4ca7-9453-9b9dde38d916")),
+				query::Eq("_id", repo::lib::RepoUUID("e664b837-45aa-4ad3-b2da-6efcce6438e2"))
+			),
+			"timestamp");
+
+		EXPECT_THAT(result.getUUIDField("_id"), Eq(repo::lib::RepoUUID("3a28e39d-e901-4ca7-9453-9b9dde38d916")));
+	}
+
+	// Whether a field exists
+	{
+		auto col = "cube.history";
+		auto result1 = handler->findOneByCriteria(db, col,
+			query::Exists("x", true),
+			"timestamp");
+
+		EXPECT_THAT(result1.getUUIDField("_id"), Eq(repo::lib::RepoUUID("57f09047-ead5-453b-96ab-d90a582127bf")));
+
+		auto result2 = handler->findOneByCriteria(db, col,
+			query::Exists("x", false),
+			"timestamp");
+
+		EXPECT_THAT(result2.getUUIDField("_id"), Eq(repo::lib::RepoUUID("0d35ee3d-03a8-433a-922a-ec2488d2aa90")));
+	}
+
+	// Composite queries
+	{
+		auto col = "cube.history";
+		auto query = query::RepoQueryBuilder();
+
+		query.append(query::Eq("shared_id", repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH)));
+		EXPECT_THAT(
+			handler->findOneByCriteria(db, col, query, "timestamp").getUUIDField("_id"),
+			Eq(repo::lib::RepoUUID("57f09047-ead5-453b-96ab-d90a582127bf"))
+		);
+
+		query.append(query::Exists("incomplete", false));
+		EXPECT_THAT(
+			handler->findOneByCriteria(db, col, query, "timestamp").getUUIDField("_id"),
+			Eq(repo::lib::RepoUUID("460cf713-faa8-41a9-9680-e2f659b0aeda"))
+		);
+
+		query.append(query::Exists("x", true));
+		EXPECT_THAT(
+			handler->findOneByCriteria(db, col, query, "timestamp").getUUIDField("_id"),
+			Eq(repo::lib::RepoUUID("e664b837-45aa-4ad3-b2da-6efcce6438e2"))
+		);
+	}
+
+	{
+		auto col = "cube.history";
+		auto query = query::RepoQueryBuilder();
+
+		query.append(query::Or(
+			query::Exists("incomplete", false),
+			query::Eq(std::string("incomplete"), std::vector<int>({ 4, 5 }))
+		));
+		EXPECT_THAT(
+			handler->findOneByCriteria(db, col, query, "timestamp").getUUIDField("_id"),
+			Eq(repo::lib::RepoUUID("0d35ee3d-03a8-433a-922a-ec2488d2aa90"))
+		);
+
+		query.append(query::Exists("x", false));
+		EXPECT_THAT(
+			handler->findOneByCriteria(db, col, query, "timestamp").getUUIDField("_id"),
+			Eq(repo::lib::RepoUUID("0d35ee3d-03a8-433a-922a-ec2488d2aa90"))
+		);
+
+		query.append(query::Exists("y", true));
+		EXPECT_THAT(
+			handler->findOneByCriteria(db, col, query, "timestamp").getUUIDField("_id"),
+			Eq(repo::lib::RepoUUID("460cf713-faa8-41a9-9680-e2f659b0aeda"))
+		);
+	}
+}
+
+TEST(MongoDatabaseHandlerTest, FindOneByUniqueID)
+{
+	auto handler = getHandler();
+	auto db = REPO_GTEST_DBNAME4;
+	auto col = "cube.scene";
+
+	// Find a document from the middle of a set based on the Id as a UUID
+	{
+		auto id = repo::lib::RepoUUID("f6d60d2c-5e78-4725-86c1-05b2fcff44fa");
+		auto document = handler->findOneByUniqueID(db, col, id);
+
+		EXPECT_THAT(document.getUUIDField("_id"), Eq(id));
+		EXPECT_THAT(document.getStringField("x"), Eq("document4"));
+		EXPECT_THAT(document.getBinary("faces"), Not(IsEmpty())); // Check that the binary data is loaded too
+	}
+
+	// Find a document from the middle of a set based on the Id as a string
+	{
+		auto id = "9ecbebbc-c24d-4da5-b69b-388abfcfe314";
+		auto document = handler->findOneByUniqueID(db, col, id);
+
+		EXPECT_THAT(document.getStringField("_id"), Eq(id));
+		EXPECT_THAT(document.getStringField("x"), Eq("document6"));
+		EXPECT_THAT(document.getBinary("faces"), Not(IsEmpty()));
+	}
+
+	// Searching for a non-existent Id should return an empty document
+	{
+		auto document = handler->findOneByUniqueID(db, col, repo::lib::RepoUUID("2f0036f2-9eae-4f41-aad9-c8c55abdb63e"));
+		EXPECT_THAT(document.isEmpty(), IsTrue());
+	}
 }
 
 TEST(MongoDatabaseHandlerTest, FindOneBySharedID)
 {
 	auto handler = getHandler();
-	ASSERT_TRUE(handler);
+	auto db = REPO_GTEST_DBNAME4;
+	auto col = "cube.history";
 
-	repo::core::model::RepoNode result = handler->findOneBySharedID(REPO_GTEST_DBNAME_ROLEUSERTEST, "sampleProject.history", repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH), "timestamp");
-	EXPECT_FALSE(result.getUniqueID().isDefaultValue());
-	EXPECT_EQ(result.getSharedID(), repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH));
+	// Find a document from the middle of a set based on it's unique shared Id
+	{
+		auto document = handler->findOneBySharedID(db, col, repo::lib::RepoUUID("c4e48663-d9a0-44e6-afb2-489c3f336833"), "timestamp");
+		EXPECT_THAT(document.getUUIDField("_id"), Eq(repo::lib::RepoUUID("3a28e39d-e901-4ca7-9453-9b9dde38d916")));
+		EXPECT_THAT(document.getStringField("x"), Eq("document1"));
+	}
 
-	result = handler->findOneBySharedID(REPO_GTEST_DBNAME_ROLEUSERTEST, "sampleProject.history", repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH), "");
-	EXPECT_FALSE(result.getUniqueID().isDefaultValue());
-	EXPECT_EQ(result.getSharedID(), repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH));
+	// Finding a shared UUID based on field ordering. The sort field by default
+	// should be descending, so it should be the last document in the collection
+	{
+		auto document = handler->findOneBySharedID(db, col, repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH), "timestamp");
+		EXPECT_THAT(document.getUUIDField("_id"), Eq(repo::lib::RepoUUID("57f09047-ead5-453b-96ab-d90a582127bf")));
+	}
 
-	result = handler->findOneBySharedID("", "sampleProject", repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH), "timestamp");
-	EXPECT_TRUE(result.getUniqueID().isDefaultValue());
-	result = handler->findOneBySharedID(REPO_GTEST_DBNAME_ROLEUSERTEST, "", repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH), "timestamp");
-	EXPECT_TRUE(result.getUniqueID().isDefaultValue());
+	// Searching for a non-existent Id should return an empty document
+	{
+		auto document = handler->findOneBySharedID(db, col, repo::lib::RepoUUID("2f0036f2-9eae-4f41-aad9-c8c55abdb63e"), "timestamp");
+		EXPECT_THAT(document.isEmpty(), IsTrue());
+	}
 }
 
 TEST(MongoDatabaseHandlerTest, UpsertDocument)

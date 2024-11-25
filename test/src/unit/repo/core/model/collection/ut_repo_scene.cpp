@@ -18,6 +18,7 @@
 #include <cstdlib>
 
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 #include <repo/core/model/bson/repo_node_mesh.h>
 #include <repo/core/model/bson/repo_node_texture.h>
@@ -912,14 +913,11 @@ TEST(RepoSceneTest, getAllDescendantsByType)
 TEST(RepoSceneTest, getSceneBoundingBox)
 {
 	auto handler = getHandler();
-	RepoScene scene;
-	EXPECT_EQ(0, scene.getSceneBoundingBox().size());
-
 	std::string errMsg;
-	RepoScene scene2(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ);
-	scene2.loadScene(handler.get(), errMsg);
-	auto bb = scene2.getSceneBoundingBox();
-	EXPECT_TRUE(compareStdVectors(bb, getGoldenDataForBBoxTest()));
+	RepoScene scene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ);
+	scene.loadScene(handler.get(), errMsg);
+	auto bb = scene.getSceneBoundingBox();
+	EXPECT_THAT(bb, Eq(getGoldenDataForBBoxTest()));
 }
 
 TEST(RepoSceneTest, getNodeBySharedID)

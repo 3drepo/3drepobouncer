@@ -6,6 +6,7 @@
 
 set(TEST_SOURCES
 	${TEST_SOURCES}
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bounds.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_config.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_matrix.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_metadata_variant.cpp

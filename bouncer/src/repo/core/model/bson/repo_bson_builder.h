@@ -116,9 +116,15 @@ namespace repo {
 
 				void appendTimeStamp(std::string label);
 
+				void appendTime(std::string label, const tm& t);
+
+				// The following two methods consider a int64_t as a posix timestamp (the
+				// number of seconds) since the unix epoch. The field type will be a mongo
+				// date object.
+
 				void appendTime(std::string label, const int64_t& ts);
 
-				void appendTime(std::string label, const tm& t);
+				void appendTime(const int64_t& ts);
 
 				/**
 				* Appends a Vector but as an object, instead of an array.
@@ -153,6 +159,8 @@ namespace repo {
 					}
 					core::close_array();
 				}
+
+				void append(const tm& tm);
 
 				void append(const repo::lib::RepoUUID& uuid);
 

@@ -37,7 +37,8 @@ RepoBSONBuilder::~RepoBSONBuilder()
 
 void RepoBSONBuilder::appendUUID(
 	const std::string &label,
-	const repo::lib::RepoUUID &uuid)
+	const repo::lib::RepoUUID &uuid
+)
 {
 	append(label, uuid);
 }
@@ -51,6 +52,26 @@ void repo::core::model::RepoBSONBuilder::appendRepoVariant(const std::string& la
 RepoBSON RepoBSONBuilder::obj()
 {
 	return RepoBSON(core::extract_document(), binMapping);
+}
+
+void repo::core::model::RepoBSONBuilder::appendTime(const int64_t& ts)
+{
+	bsoncxx::types::b_date date(std::chrono::milliseconds(ts * 1000));
+	append(date);
+}
+
+void repo::core::model::RepoBSONBuilder::append(const tm& t)
+{
+	tm tmCpy = t; // Copy because mktime can alter the struct
+	int64_t time = static_cast<int64_t>(mktime(&tmCpy));
+
+	// Check for a unsuccessful conversion
+	if (time == -1)
+	{
+		throw repo::lib::RepoException("Failed converting date to mongo compatible format. tm malformed or date pre 1970?");
+	}
+
+	appendTime(time);
 }
 
 void repo::core::model::RepoBSONBuilder::append(const repo::lib::RepoUUID& uuid)
@@ -120,34 +141,28 @@ void RepoBSONBuilder::appendLargeArray(std::string name, const void* data, size_
 
 void RepoBSONBuilder::appendTime(std::string label, const int64_t& ts)
 {
-	bsoncxx::types::b_date date(std::chrono::milliseconds(ts * 1000));
 	key_owned(label);
-	append(date);
+	appendTime(ts);
 }
 
-void RepoBSONBuilder::appendTime(std::string label, const tm& t) {
-	tm tmCpy = t; // Copy because mktime can alter the struct
-	int64_t time = static_cast<int64_t>(mktime(&tmCpy));
-
-	// Check for a unsuccessful conversion
-	if (time == -1)
-	{
-		throw repo::lib::RepoException("Failed converting date to mongo compatible format. tm malformed or date pre 1970?");
-	}
-
-	// Append time
-	appendTime(label, time);
+void RepoBSONBuilder::appendTime(std::string label, const tm& t)
+{
+	key_owned(label);
+	append(t);
 }
 
-void RepoBSONBuilder::appendTimeStamp(std::string label) {
+void RepoBSONBuilder::appendTimeStamp(std::string label)
+{
 	appendTime(label, time(NULL));
 }
 
-void RepoBSONBuilder::appendElements(RepoBSON bson) {
+void RepoBSONBuilder::appendElements(RepoBSON bson)
+{
 	core::concatenate(bson.view());
 }
 
-void RepoBSONBuilder::appendElementsUnique(RepoBSON bson) {
+void RepoBSONBuilder::appendElementsUnique(RepoBSON bson)
+{
 	auto view = core::view_document();
 	for (auto& element : bson) {
 		if (view.find(element.key()) == view.end()) {

@@ -97,22 +97,3 @@ TEST(RepoBSONElementTest, TypeTest)
 	EXPECT_THAT(boost::get<long long>(bson.getField("long").repoVariant()), Eq((long long)1));
 	EXPECT_THAT(boost::get<std::string>(bson.getField("string").repoVariant()), Eq("a string"));
 }
-
-TEST(RepoBSONElementTest, ArrayTest)
-{
-	std::vector<int> intVect = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
-
-	RepoBSONBuilder builder;
-	builder.appendArray("intArr", intVect);
-	auto bson = builder.obj();
-
-	auto intEleArr = bson.getObjectField("intArr");
-
-	ASSERT_EQ(nFields(intEleArr), intVect.size());
-	for (int i = 0; i < intVect.size(); ++i)
-	{
-		auto e = intEleArr.getField(std::to_string(i));
-		EXPECT_EQ(ElementType::INT, e.type());
-		EXPECT_EQ(e.Int(), intVect[i]);
-	}
-}

@@ -192,9 +192,10 @@ void MongoDatabaseHandler::dropDocument(
 	auto db = client->database(database);
 	auto col = db.collection(collection);
 
-	if (!bson.isEmpty() && bson.hasField("_id"))
+	auto value = bson.find("_id");
+	if (value != bson.end())
 	{
-		bsoncxx::document::value queryDoc = make_document(kvp("_id", bson.getField("_id")));
+		bsoncxx::document::value queryDoc = make_document(kvp("_id", (*value).get_value()));
 		col.delete_one(queryDoc.view());
 	}
 	else
