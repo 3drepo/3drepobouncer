@@ -324,13 +324,18 @@ TEST(MongoDatabaseHandlerTest, CreateCollection)
 	handler->createCollection(REPO_GTEST_DBNAME4, name);
 	EXPECT_THAT(handler->getCollections(REPO_GTEST_DBNAME4), IsSupersetOf({ name }));
 
-	// Existing database
-	EXPECT_THROW(handler->createCollection(REPO_GTEST_DBNAME4, name), std::exception);
+	// Existing collection - must be a noop since a common task is to create things
+	// like the .issues collection, when committing a scene.
+
+	handler->createCollection(REPO_GTEST_DBNAME4, name);
+	EXPECT_THAT(handler->getCollections(REPO_GTEST_DBNAME4), IsSupersetOf({ name }));
 
 	// Invalid name
+
 	EXPECT_THROW(handler->createCollection(REPO_GTEST_DBNAME4, ""), std::exception);
 
-	// Nonexistent database (should create)
+	// Nonexistent database (should create the database and collection on demand)
+
 	auto db = repo::lib::RepoUUID::createUUID().toString();
 	handler->createCollection(db, name);
 	EXPECT_THAT(handler->getCollections(db), IsSupersetOf({name}));
@@ -473,8 +478,8 @@ TEST(MongoDatabaseHandlerTest, FindAllByCriteria)
 	EXPECT_EQ(4, results.size());
 
 	EXPECT_EQ(0, handler->findAllByCriteria(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".scene", query::RepoQueryBuilder()).size());
-	EXPECT_THROW(handler->findAllByCriteria("", REPO_GTEST_DBNAME1_PROJ + ".scene", search).size(), std::exception);
-	EXPECT_THROW(handler->findAllByCriteria(REPO_GTEST_DBNAME1, "", search).size(), std::exception);
+	EXPECT_ANY_THROW(handler->findAllByCriteria("", REPO_GTEST_DBNAME1_PROJ + ".scene", search));
+	EXPECT_ANY_THROW(handler->findAllByCriteria(REPO_GTEST_DBNAME1, "", search));
 }
 
 TEST(MongoDatabaseHandlerTest, FindOneByCriteria)
@@ -588,7 +593,7 @@ TEST(MongoDatabaseHandlerTest, FindOneByCriteria)
 		));
 		EXPECT_THAT(
 			handler->findOneByCriteria(db, col, query, "timestamp").getUUIDField("_id"),
-			Eq(repo::lib::RepoUUID("0d35ee3d-03a8-433a-922a-ec2488d2aa90"))
+			Eq(repo::lib::RepoUUID("57f09047-ead5-453b-96ab-d90a582127bf"))
 		);
 
 		query.append(query::Exists("x", false));
@@ -667,9 +672,19 @@ TEST(MongoDatabaseHandlerTest, FindOneBySharedID)
 
 TEST(MongoDatabaseHandlerTest, UpsertDocument)
 {
-	// Attempt to update an existing document using a partial BSON
-
 	auto handler = getHandler();
+
+	auto collection = "upsertTestCollection";
+
+	// Add a couple of documents to the empty collection; these should
+	// never be changed by the upsert operations.
+
+	auto doc1 = makeRandomRepoBSON(0, 0, 0);
+	auto doc2 = makeRandomRepoBSON(1, 0, 0);
+
+	handler->insertManyDocuments(REPO_GTEST_DBNAME3, collection, { doc1, doc2 });
+
+	// Attempt to update an existing document using a partial BSON
 
 	auto id = repo::lib::RepoUUID::createUUID();
 
@@ -677,12 +692,7 @@ TEST(MongoDatabaseHandlerTest, UpsertDocument)
 	builder.append("_id", id);
 	builder.append("field1", "myString");
 	builder.append("field2", 0);
-
 	auto existing = builder.obj();
-
-	auto collection = "upsertTestCollection";
-	handler->dropCollection(REPO_GTEST_DBNAME3, collection); // Should usually be empty but if this test has run before...
-	handler->createCollection(REPO_GTEST_DBNAME3, collection);
 
 	handler->insertDocument(REPO_GTEST_DBNAME3, collection, existing);
 
@@ -690,35 +700,37 @@ TEST(MongoDatabaseHandlerTest, UpsertDocument)
 
 	auto documents = handler->getAllFromCollectionTailable(REPO_GTEST_DBNAME3, collection);
 
-	EXPECT_THAT(documents, UnorderedElementsAre(existing));
+	EXPECT_THAT(documents, UnorderedElementsAre(existing, doc1, doc2));
 
 	// Create a partial document that adds a field, and updates a field
+
+	auto auuid = repo::lib::RepoUUID::createUUID();
 
 	repo::core::model::RepoBSONBuilder updateBuilder;
 	updateBuilder.append("_id", id);
 	updateBuilder.append("field2", 123);
-	updateBuilder.append("field3", repo::lib::RepoUUID::createUUID());
-
+	updateBuilder.append("field3", auuid);
 	auto update = updateBuilder.obj();
 
 	handler->upsertDocument(REPO_GTEST_DBNAME3, collection, update, false); // Should use _id as the primary key
 
 	documents = handler->getAllFromCollectionTailable(REPO_GTEST_DBNAME3, collection);
 
-	// There should only be one document in the collection still, because it
-	// should have been updated in place.
+	// There should still only be three documents in the collection, because the
+	// document should have been updated in place.
 
-	EXPECT_THAT(documents.size(), Eq(1));
+	EXPECT_THAT(documents.size(), Eq(3));
 
 	// This time the document should be a combination of both previous BSONs
 
-	auto document = documents[0];
+	repo::core::model::RepoBSONBuilder expectedBuilder;
+	expectedBuilder.append("_id", id); // Id (must be) shared by both
+	expectedBuilder.append("field1", "myString"); // Original document field, which is unchanged
+	expectedBuilder.append("field2", 123); // Updated field value changed
+	expectedBuilder.append("field3", auuid); // Field that only exists on update
+	auto expected = expectedBuilder.obj();
 
-	EXPECT_THAT(nFields(document), Eq(4));
-	EXPECT_THAT(document.getUUIDField("_id"), Eq(id));
-	EXPECT_THAT(document.getStringField("field1"), Eq(existing.getStringField("field1"))); // The unchanged value
-	EXPECT_THAT(document.getIntField("field2"), Eq(update.getIntField("field2"))); // The updated value
-	EXPECT_THAT(document.getUUIDField("field3"), Eq(update.getUUIDField("field3"))); // The new value
+	EXPECT_THAT(documents, UnorderedElementsAre(expected, doc1, doc2));
 
 	// If overwrite is set to true, then the new document should displace the
 	// old one, meaning any fields missing in the new document should be
@@ -726,13 +738,8 @@ TEST(MongoDatabaseHandlerTest, UpsertDocument)
 
 	handler->upsertDocument(REPO_GTEST_DBNAME3, collection, update, true);
 	documents = handler->getAllFromCollectionTailable(REPO_GTEST_DBNAME3, collection);
-	document = documents[0];
 
-	EXPECT_THAT(nFields(document), Eq(3));
-	EXPECT_THAT(document.getUUIDField("_id"), Eq(id));
-	EXPECT_THAT(document.hasField("field1"), IsFalse()); // The previous document value that does not exist in the new one
-	EXPECT_THAT(document.getIntField("field2"), Eq(update.getIntField("field2"))); // The updated value
-	EXPECT_THAT(document.getUUIDField("field3"), Eq(update.getUUIDField("field3"))); // The new value
+	EXPECT_THAT(documents, UnorderedElementsAre(update, doc1, doc2));
 }
 
 TEST(MongoDatabaseHandlerTest, UpsertDocumentBinary)

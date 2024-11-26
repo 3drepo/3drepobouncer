@@ -76,9 +76,13 @@ void repo::core::model::RepoBSONBuilder::append(const tm& t)
 
 void repo::core::model::RepoBSONBuilder::append(const repo::lib::RepoUUID& uuid)
 {
+	// k_uuid_deprecated has the same value as the previous enum (0x3); the new
+	// and legacy types are not equivalent for the purposes of comparison, so
+	// this must remain consistent unless a migration is performed.
+
 	auto uuidData = uuid.data();
 	bsoncxx::types::b_binary binary{
-		bsoncxx::binary_sub_type::k_uuid,
+		bsoncxx::binary_sub_type::k_uuid_deprecated,
 		uuidData.size(),
 		uuidData.data()
 	};

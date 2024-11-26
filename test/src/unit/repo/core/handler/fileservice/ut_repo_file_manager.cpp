@@ -43,8 +43,8 @@ TEST(FileManager, UploadFileAndCommitStringId)
 	// We should be able to do this when the filename is both a string
 	// and a UUID. This test tests the string version.
 
-	auto manager = getHandler()->getFileManager();
-	ASSERT_TRUE(manager);
+	auto handler = getHandler();
+	auto manager = handler->getFileManager();
 	auto db = "testFileManager";
 	std::string col = "fileUpload";
 
@@ -69,7 +69,8 @@ TEST(FileManager, UploadFileAndCommitUUIDId)
 	// We should be able to do this when the filename is both a string
 	// and a UUID. This test tests the UUID version.
 
-	auto manager = getHandler()->getFileManager();
+	auto handler = getHandler();
+	auto manager = handler->getFileManager();
 	ASSERT_TRUE(manager);
 	auto db = "testFileManager";
 	std::string col = "fileUpload";

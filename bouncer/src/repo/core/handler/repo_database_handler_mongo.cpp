@@ -119,7 +119,15 @@ void MongoDatabaseHandler::createCollection(const std::string &database, const s
 {
 	auto client = clientPool->acquire();
 	auto db = client->database(database);
-	db.create_collection(name);
+	if (!db.has_collection(name)) {
+
+		// This is an explicit operation that will throw if a collection already
+		// exists. Note that for writing documents, collections are created
+		// explicitly so this is only needed to create empty collections, such as
+		// the issues list.
+
+		db.create_collection(name);
+	}
 }
 
 void MongoDatabaseHandler::createIndex(const std::string &database, const std::string &collection, const database::index::RepoIndex& index)
@@ -209,6 +217,10 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 	const std::string& collection,
 	const database::query::RepoQuery& filter)
 {
+	if (database.empty() || collection.empty()) {
+		throw new repo::lib::RepoException("Invalid database or collection name"); // This particular access mode is fatal if we let the invalid params get to mongo
+	}
+
 	std::vector<repo::core::model::RepoBSON> data;
 	repo::core::model::RepoBSON criteria = filter;
 	if (!criteria.isEmpty())
@@ -217,19 +229,12 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 		auto db = client->database(database);
 		auto col = db.collection(collection);
 
-		try {
+		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
 
-			fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-
-			// Find all documents
-			auto cursor = col.find(criteria.view());
-			for (auto& doc : cursor) {
-				data.push_back(createRepoBSON(blobHandler, database, collection, doc));
-			}
-		}
-		catch (mongocxx::logic_error e)
-		{
-			repoError << "Error in MongoDatabaseHandler::findAllByCriteria: " << e.what();
+		// Find all documents
+		auto cursor = col.find(criteria.view());
+		for (auto& doc : cursor) {
+			data.push_back(createRepoBSON(blobHandler, database, collection, doc));
 		}
 	}
 	return data;
@@ -241,6 +246,13 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 	const database::query::RepoQuery& filter,
 	const std::string& sortField)
 {
+	// non-existent databases and collections are OK, but invalid ones should
+	// not be passed to mongo
+	if (database.empty() || database.empty())
+	{
+		return {};
+	}
+
 	repo::core::model::RepoBSON criteria = filter;
 	if (!criteria.isEmpty())
 	{
@@ -248,26 +260,20 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 		auto db = client->database(database);
 		auto col = db.collection(collection);
 
-		try {
-			mongocxx::options::find options{};
-			if (!sortField.empty()) {
-				options.sort(make_document(kvp(sortField, -1)));
-			}
-
-			// Find document
-			auto findResult = col.find_one(criteria.view(), options);
-			if (findResult.has_value()) {
-				fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-				return createRepoBSON(blobHandler, database, collection, findResult.value());
-			}
+		mongocxx::options::find options{};
+		if (!sortField.empty()) {
+			options.sort(make_document(kvp(sortField, -1)));
 		}
-		catch (mongocxx::query_exception e)
-		{
-			repoError << "Error in MongoDatabaseHandler::findOneByCriteria: " << e.what();
+
+		// Find document
+		auto findResult = col.find_one(criteria.view(), options);
+		if (findResult.has_value()) {
+			fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
+			return createRepoBSON(blobHandler, database, collection, findResult.value());
 		}
 	}
 
-	return repo::core::model::RepoBSON(make_document());
+	return {};
 }
 
 repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
@@ -471,6 +477,8 @@ void MongoDatabaseHandler::upsertDocument(
 
 	if (overwrite)
 	{
+		query.append(kvp(ID, obj.find(ID)->get_value()));
+
 		mongocxx::options::replace options{};
 		options.upsert(true);
 
@@ -491,7 +499,7 @@ void MongoDatabaseHandler::upsertDocument(
 
 		for (const auto& e : obj)
 		{
-			if (e.key() == "_id")
+			if (e.key() == ID)
 			{
 				query.append(kvp(e.key(), e.get_value()));
 				setOnInsert.append(kvp(e.key(), e.get_value()));

@@ -75,14 +75,13 @@ TEST(RepoTaskTest, Serialise)
 	EXPECT_THAT(resourcesField.getUUIDFieldArray(REPO_TASK_SHARED_IDS), UnorderedElementsAreArray(resources));
 
 	EXPECT_THAT(task.hasField(REPO_TASK_LABEL_DATA), IsTrue());
-	auto metaField = task.getObjectField(REPO_TASK_LABEL_DATA);
+	auto metaField = task.getObjectArray(REPO_TASK_LABEL_DATA);
 
 	// This test doesn't contain any metadata that may be converted to integers or
 	// doubles, so a direct comparison will work
 
-	EXPECT_THAT(nFields(metaField), Eq(data.size()));
-	for (auto& n : metaField.getFieldNames()) {
-		auto entry = metaField.getObjectField(n);
+	EXPECT_THAT(metaField.size(), Eq(data.size()));
+	for (auto& entry : metaField) {
 		auto key = entry.getStringField(REPO_TASK_META_KEY);
 		auto value = entry.getStringField(REPO_TASK_META_VALUE);
 		EXPECT_THAT(data[key], Eq(value));
@@ -126,9 +125,8 @@ TEST(RepoTaskTest, Serialise)
 
 	std::unordered_map<std::string, std::string> actual;
 
-	metaField = task.getObjectField(REPO_TASK_LABEL_DATA);
-	for (auto& n : metaField.getFieldNames()) {
-		auto entry = metaField.getObjectField(n);
+	metaField = task.getObjectArray(REPO_TASK_LABEL_DATA);
+	for (auto& entry : metaField) {
 		auto key = entry.getStringField(REPO_TASK_META_KEY);
 		auto value = entry.getStringField(REPO_TASK_META_VALUE);
 		actual[key] = value;
@@ -157,9 +155,8 @@ TEST(RepoTaskTest, Serialise)
 	data["double_min"] = "2.2250738585072014e-308";
 	data["double_max"] = "1.7976931348623158e+308";
 
-	metaField = task.getObjectField(REPO_TASK_LABEL_DATA);
-	for (auto& n : metaField.getFieldNames()) {
-		auto entry = metaField.getObjectField(n);
+	metaField = task.getObjectArray(REPO_TASK_LABEL_DATA);
+	for (auto& entry : metaField) {
 		auto key = entry.getStringField(REPO_TASK_META_KEY);
 
 		if (key == "string") {

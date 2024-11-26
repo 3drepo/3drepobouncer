@@ -1505,6 +1505,7 @@ bool RepoScene::updateRevisionStatus(
 		revNode->updateStatus(status);
 		handler->upsertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, *revNode, true);
 		repoInfo << "rev node status is: " << (int)revNode->getUploadStatus();
+		success = true;
 	}
 	else
 	{

@@ -60,7 +60,11 @@ endif()
 
 #================BOOST SETTINGS=======================
 set(Boost_NO_BOOST_CMAKE ON)
-#add_definitions(-DBOOST_ALL_NO_LIB)
+# focal currently uses cmake 3.16, which is too old to use newer Boost's CONFIGs.
+# For now we can ignore the warnings as FindBoost still works, but we need to decide
+# for subsequent versions whether to continue to use Boost (and fix this properly)
+# or not and drop this entirely.
+set(Boost_NO_WARN_NEW_VERSIONS ON)
 add_definitions(-DBOOST_ALL_DYN_LINK)
 add_definitions(-DBOOST_LOG_DYN_LINK)
 add_definitions(-DBOOST_PROGRAM_OPTIONS_DYN_LINK)

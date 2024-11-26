@@ -66,6 +66,13 @@ bool RepoManipulator::connectAndAuthenticateWithAdmin(
 		password,
 		options
 	);
+	try {
+		dbHandler->getCollections("admin"); // Test the connection to the database
+	}
+	catch (std::runtime_error)
+	{
+		return false;
+	}
 	return true;
 }
 
@@ -84,6 +91,13 @@ bool RepoManipulator::connectAndAuthenticateWithAdmin(
 		password,
 		options
 	);
+	try {
+		dbHandler->getCollections("admin"); // Test the connection to the database
+	}
+	catch (std::runtime_error)
+	{
+		return false;
+	}
 	return true;
 }
 

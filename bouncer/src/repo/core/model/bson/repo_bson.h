@@ -242,10 +242,12 @@ namespace repo {
 
 				/*
 				* Convenience function for converting a variant array into a
-				* concrete array
+				* concrete array. If missingIsEmpty is true, then a document
+				* without the field at all will return an empty array, otherwise
+				* a FieldNotFound exception will be thrown.
 				*/
 				template<typename T>
-				std::vector<T> getArray(const std::string& label, T(&f)(const bsoncxx::array::element& e)) const;
+				std::vector<T> getArray(const std::string& label, T(&f)(const bsoncxx::array::element& e), bool missingIsEmpty) const;
 
 				/**
 				* Override the swap operator to perform the swap just like mongo bson

@@ -82,11 +82,9 @@ TEST(RepoAssetsTest, Serialise)
 	EXPECT_THAT(bson.getDoubleVectorField(REPO_ASSETS_LABEL_OFFSET), Eq(offset.toStdVector()));
 
 	std::vector<RepoSupermeshMetadata> actual;
-	auto mf = bson.getObjectField(REPO_ASSETS_LABEL_METADATA);
-	auto names = mf.getFieldNames();
-	for (auto& n : names)
+	auto md = bson.getObjectArray(REPO_ASSETS_LABEL_METADATA);
+	for (auto& o : md)
 	{
-		auto o = mf.getObjectField(n);
 		RepoSupermeshMetadata m;
 		m.max = o.getVector3DField(REPO_ASSETS_LABEL_MAX);
 		m.min = o.getVector3DField(REPO_ASSETS_LABEL_MIN);

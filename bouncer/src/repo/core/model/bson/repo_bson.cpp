@@ -145,7 +145,7 @@ RepoBSON RepoBSON::getObjectField(const std::string& label) const
 
 std::vector<RepoBSON> RepoBSON::getObjectArray(const std::string& label) const
 {
-	return getArray(label, elementToRepoBSON);
+	return getArray(label, elementToRepoBSON, false);
 }
 
 repo::lib::RepoBounds RepoBSON::getBoundsField(const std::string& label) const
@@ -231,7 +231,7 @@ void RepoBSON::swap(RepoBSON otherCopy)
 
 std::vector<std::string> RepoBSON::getFileList(const std::string& label) const
 {
-	return getArray(label, elementToString);
+	return getArray(label, elementToString, false);
 }
 
 std::pair<repo::core::model::RepoBSON, std::vector<uint8_t>> RepoBSON::getBinariesAsBuffer() const
@@ -324,20 +324,12 @@ repo::lib::RepoMatrix RepoBSON::getMatrixField(const std::string& label) const
 
 std::vector<double> RepoBSON::getDoubleVectorField(const std::string& label) const
 {
-	return getArray(label, elementToDouble);
+	return getArray(label, elementToDouble, false);
 }
 
 std::vector<repo::lib::RepoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) const
 {
-	try
-	{
-		return getArray(label, elementToRepoUUID);
-	}
-	catch (repo::lib::RepoFieldNotFoundException)
-	{
-		// Current convention is that a missing array is the same as an empty array
-	}
-	return {};
+	return getArray(label, elementToRepoUUID, true);
 }
 
 const std::vector<uint8_t>& RepoBSON::getBinary(const std::string& field) const
@@ -402,30 +394,12 @@ bool RepoBSON::hasFileReference() const
 
 std::vector<float> RepoBSON::getFloatArray(const std::string &label) const
 {
-	std::vector<float> results;
-	try
-	{
-		return getArray(label, elementToFloat);
-	}
-	catch (repo::lib::RepoFieldNotFoundException)
-	{
-		// Current convention is that a missing array is the same as an empty array
-	}
-	return results;
+	return getArray(label, elementToFloat, true);
 }
 
 std::vector<std::string> RepoBSON::getStringArray(const std::string &label) const
 {
-	std::vector<std::string> results;
-	try
-	{
-		return getArray(label, elementToString);
-	}
-	catch (repo::lib::RepoFieldNotFoundException)
-	{
-		// Current convention is that a missing array is the same as an empty array
-	}
-	return {};
+	return getArray(label, elementToString, true);
 }
 
 time_t RepoBSON::getTimeStampField(const std::string &label) const
@@ -468,24 +442,35 @@ long long RepoBSON::getLongField(const std::string& label) const
 }
 
 template<typename T>
-std::vector<T> RepoBSON::getArray(const std::string& label, T(&convert_element)(const bsoncxx::array::element& e)) const
+std::vector<T> RepoBSON::getArray(
+	const std::string& label,
+	T(&convert_element)(const bsoncxx::array::element& e),
+	bool missingIsEmpty
+) const
 {
-	std::vector<T> results;
-	const auto& field = getField(label);
-	const bsoncxx::array::view& array = field.get_array();
-	for (const auto& f : array)
+	auto value = bsoncxx::document::value::find(label);
+	if (value != bsoncxx::document::value::end())
 	{
-		try {
-			results.push_back(convert_element(f));
-		}
-		catch (bsoncxx::exception)
+		std::vector<T> results;
+		const bsoncxx::array::view& array = value->get_array();
+		for (const auto& f : array)
 		{
-			throw repo::lib::RepoFieldTypeException(label); // This version of the driver doesn't have specific exceptions so we guess based on the scope of the try block this is what it is
+			try {
+				results.push_back(convert_element(f));
+			}
+			catch (std::exception) // expect mongocxx or repo::lib exceptions, because we will further handle non-native types such as UUIDs
+			{
+				throw repo::lib::RepoFieldTypeException(label);
+			}
 		}
-		catch (repo::lib::RepoBSONException)
-		{
-			throw repo::lib::RepoFieldTypeException(label);
-		}
+		return results;
 	}
-	return results;
+	else if (missingIsEmpty)
+	{
+		return {};
+	}
+	else
+	{
+		throw repo::lib::RepoFieldNotFoundException(label);
+	}
 }
