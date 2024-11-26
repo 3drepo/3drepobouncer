@@ -20,8 +20,8 @@
 #include <repo/lib/repo_log.h>
 #include "../../../../repo_test_utils.h"
 
-
 using namespace repo::manipulator::modelconvertor;
+using namespace testing;
 
 namespace RepoModelImportUtils
 {

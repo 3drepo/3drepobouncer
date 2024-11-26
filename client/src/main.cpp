@@ -106,6 +106,15 @@ int main(int argc, char* argv[]) {
 	{
 		std::string errMsg;
 		try {
+			// Validate the config file
+			try {
+				repo::lib::RepoConfig::fromFile(configPath);
+			}
+			catch (std::exception& e) {
+				repoLogError("Failed to read configuration from file: " + configPath + " : " + e.what());
+				return REPOERR_INVALID_CONFIG_FILE;
+			}
+
 			auto config = repo::lib::RepoConfig::fromFile(configPath);
 			repo::RepoController::RepoToken* token = controller->init(errMsg, config);
 			if (token)
@@ -123,8 +132,8 @@ int main(int argc, char* argv[]) {
 			}
 		}
 		catch (const repo::lib::RepoException &e) {
-			repoLogError("Failed to read configuration from file: " + configPath + " : " + e.what());
-			return REPOERR_INVALID_CONFIG_FILE;
+			repoLogError(std::string("Exception in performOperation: ") + e.what());
+			return REPOERR_UNKNOWN_ERR;
 		}
 	}
 	else

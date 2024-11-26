@@ -30,6 +30,8 @@
 
 #include "../../../repo_bouncer_global.h"
 #include "../../../lib/repo_log.h"
+#include "../../../lib/datastructure/repo_variant.h"
+
 namespace repo {
 	namespace core {
 		namespace model {
@@ -38,6 +40,7 @@ namespace repo {
 				ARRAY, UUID, BINARY, BOOL, DATE,
 				OBJECTID, DOUBLE, INT, LONG, OBJECT, STRING, UNKNOWN
 			};
+			class RepoBSON; 
 			class REPO_API_EXPORT RepoBSONElement :
 				private mongo::BSONElement
 			{
@@ -68,85 +71,41 @@ namespace repo {
 				*/
 				ElementType type() const;
 
-				std::vector<RepoBSONElement> Array()
-				{
-					//FIXME: potentially slow.
-					//This is done so we can hide mongo representation from the bouncer world.
-					std::vector<RepoBSONElement> arr;
+				std::vector<RepoBSONElement> Array();
 
-					if (!eoo())
-					{
-						std::vector<mongo::BSONElement> mongoArr = mongo::BSONElement::Array();
-						arr.reserve(mongoArr.size());
+				std::string String() const;
 
-						for (auto const &ele : mongoArr)
-						{
-							arr.push_back(RepoBSONElement(ele));
-						}
-					}
+				RepoBSON Object() const;
 
-					return arr;
-				}
+				time_t TimeT() const;
 
-				std::string String() const{
-					return mongo::BSONElement::String();
-				}
+				tm Tm() const;
 
-				mongo::BSONObj embeddedObject() const {
-					return mongo::BSONElement::embeddedObject();
-				}
+				bool Bool() const;
 
-				mongo::Date_t date() const {
-					return mongo::BSONElement::date();
-				}
+				int Int() const;
 
-				bool Bool() const {
-					return mongo::BSONElement::Bool();
-				}
+				long long Long() const;
 
-				int Int() const{
-					return mongo::BSONElement::Int();
-				}
+				double Double() const;
 
-				long long Long() const {
-					return mongo::BSONElement::Long();
-				}
+				size_t size() const;
 
-				double Double() const {
-					return mongo::BSONElement::Double();
-				}
+				const char* binData(int& length) const;
 
-				size_t size() const {
-					return mongo::BSONElement::size();
-				}
+				repo::lib::RepoVariant repoVariant() const;
 
-				const char* binData(int &length) const {
-					return mongo::BSONElement::binData(length);
-				}
-				
-				mongo::BSONElement toMongoElement() const {
-					return *this;
-				}
+				bool operator==(const RepoBSONElement& other) const;
 
-				inline bool operator==(const RepoBSONElement & other) const {
-					return mongo::BSONElement::operator==(other);
-				}
+				bool operator!=(const RepoBSONElement& other) const;
 
-				inline bool operator!=(const RepoBSONElement other) const {
-					return mongo::BSONElement::operator!=(other);
-				}
+				operator const std::string& () const;
 
-				std::string toString() const {
-					return mongo::BSONElement::toString();
-				}
+				std::string toString() const;
 
-				bool eoo() const {
-					return mongo::BSONElement::eoo();
-				}
+				bool eoo() const;
 
-				bool isNull() const {
-					return mongo::BSONElement::isNull();
-				}
+				bool isNull() const;
 			};
 		}// end namespace model
 	} // end namespace core

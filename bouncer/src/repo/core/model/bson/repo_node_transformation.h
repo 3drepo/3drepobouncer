@@ -20,6 +20,7 @@
 
 #pragma once
 #include "repo_node.h"
+#include "repo/core/model/repo_model_global.h"
 
 namespace repo {
 	namespace core {
@@ -33,7 +34,7 @@ namespace repo {
 #define REPO_NODE_LABEL_MATRIX						"matrix"
 			//------------------------------------------------------------------------------
 
-			class REPO_API_EXPORT TransformationNode :public RepoNode
+			class REPO_API_EXPORT TransformationNode : public RepoNode
 			{
 			public:
 
@@ -53,6 +54,12 @@ namespace repo {
 				*/
 				~TransformationNode();
 
+			protected:
+				virtual void deserialise(RepoBSON&);
+				virtual void serialise(class RepoBSONBuilder&) const;
+
+			public:
+
 				/**
 				* Check if the transformation matrix is the identity matrix
 				* This checks with a small epsilon to counter floating point inaccuracies
@@ -60,11 +67,6 @@ namespace repo {
 				* @return returns true if it is the identity matrix
 				*/
 				bool isIdentity(const float &eps = 10e-5) const;
-				/**
-				* Create an Identity matrix
-				* @return returns a 4 by 4 identity matrix
-				*/
-				static std::vector<std::vector<float>> identityMat();
 
 				/**
 				* Get the type of node
@@ -93,7 +95,10 @@ namespace repo {
 				* override this function.
 				* @return true if node is positionDependant.
 				*/
-				virtual bool positionDependant() { return true; }
+				virtual bool positionDependant()
+				{
+					return true;
+				}
 
 				/**
 				* Check if the node is semantically equal to another
@@ -104,39 +109,25 @@ namespace repo {
 				*/
 				virtual bool sEqual(const RepoNode &other) const;
 
-				/*
-				*	------------- Delusional modifiers --------------
-				*   These are like "setters" but not. We are actually
-				*   creating a new bson object with the changed field
-				*/
+				void applyTransformation(
+					const repo::lib::RepoMatrix& matrix);
 
-				/**
-				*  Create a new object with transformation applied to the node
-				* default behaviour is do nothing. Children object
-				* needs to override this function to perform their own specific behaviour.
-				* @param matrix transformation matrix to apply.
-				* @return returns a new object with transformation applied.
-				*/
-				virtual RepoNode cloneAndApplyTransformation(
-					const repo::lib::RepoMatrix &matrix) const;
+				void setTransformation(
+					const repo::lib::RepoMatrix& matrix);
 
-				/**
-				* Create a new object with the same values, but the transformation being reset
-				* identity matrix
-				* @return returns a new transformation node with identity matrix
-				*/
-				virtual TransformationNode cloneAndResetMatrix() const;
+			private:
+				repo::lib::RepoMatrix matrix;
 
-				/**
-				* --------- Convenience functions -----------
-				*/
-
+			public:
 				/**
 				* Get the 4 by 4 transformation matrix
 				* @param true if row major (row is the fast dimension)
 				* @return returns the 4 by 4 matrix as a vector
 				*/
-				repo::lib::RepoMatrix getTransMatrix(const bool &rowMajor) const;
+				repo::lib::RepoMatrix getTransMatrix() const
+				{
+					return matrix;
+				}
 			};
 		} //namespace model
 	} //namespace core

@@ -18,7 +18,6 @@
 #include "lib/repo_license.h"
 #include "manipulator/repo_manipulator.h"
 #include "repo_controller.h"
-#include "core/model/bson/repo_bson_builder.h"
 #include "core/handler/repo_database_handler_mongo.h"
 
 using namespace repo;
@@ -187,7 +186,7 @@ public:
 		const bool           &headRevision = true,
 		const bool           &ignoreRefScene = false,
 		const bool           &skeletonFetch = false,
-		const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus = {});
+		const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus = {});
 
 	/*
 	*	------- Database Operations (insert/delete/update) ---------

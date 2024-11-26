@@ -28,6 +28,7 @@
 #include "../bson/repo_bson_sequence.h"
 #include "../bson/repo_bson_task.h"
 #include "../bson/repo_node.h"
+#include "../bson/repo_node_transformation.h"
 #include "../bson/repo_node_model_revision.h"
 
 typedef std::unordered_map<repo::lib::RepoUUID, std::vector<repo::core::model::RepoNode*>, repo::lib::RepoUUIDHasher> ParentMap;
@@ -48,7 +49,7 @@ namespace repo {
 					RepoNodeSet transformations; //!< Transformations
 					RepoNodeSet unknowns; //!< Unknown types
 
-					RepoNode *rootNode;
+					TransformationNode *rootNode;
 					//! A lookup map for the all nodes the graph contains.
 					std::unordered_map<repo::lib::RepoUUID, RepoNode*, repo::lib::RepoUUIDHasher> nodesByUniqueID;
 					std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher> sharedIDtoUniqueID; //** mapping of shared ID to Unique ID
@@ -77,7 +78,7 @@ namespace repo {
 				* the graph itself is not loaded until loadScene() is called!
 				*
 				* @param database name  of the database
-				* @param projectName name of the project
+				* @param projectId name of the project
 				*/
 				RepoScene(
 					const std::string                                  &database = std::string(),
@@ -441,7 +442,7 @@ namespace repo {
 				bool loadRevision(
 					repo::core::handler::AbstractDatabaseHandler *handler,
 					std::string &errMsg,
-					const std::vector<RevisionNode::UploadStatus> &includeStatus = {});
+					const std::vector<ModelRevisionNode::UploadStatus> &includeStatus = {});
 
 				/**
 				* Load Scene into Scene graph object base on the
@@ -825,42 +826,6 @@ namespace repo {
 				void addNodes(const std::vector<RepoNode *> &nodes);
 
 				/**
-				* Modify a node with the information within the new node.
-				* This will also update revision related information within
-				* the scene (if necessary)
-				* @param sharedID of the node to modify
-				* @param newNode modified version node
-				* @param overwrite if true, overwrite the node with modified version,
-				*        otherwise just update with its contents (default: false)
-				*/
-
-				void modifyNode(
-					const GraphType                   &gtype,
-					const repo::lib::RepoUUID                    &sharedID,
-					RepoNode						  *newNode,
-					const bool                        &overwrite = false)
-				{
-					modifyNode(gtype, getNodeBySharedID(gtype, sharedID), newNode, overwrite);
-				}
-
-				/**
-				* Modify a node with the information within the new node.
-				* This will also update revision related information within
-				* the scene (if necessary)
-				* @param sharedID of the node to modify
-				* @param node node to change
-				* @param newNode modified node(or modifications)
-				* @param overwrite if true, overwrite the node with modified version,
-				*        otherwise just update with its contents (default: false)
-				*/
-
-				void modifyNode(
-					const GraphType                   &gtype,
-					RepoNode						  *node,
-					RepoNode                          *newNode,
-					const bool                       &overwrite = false);
-
-				/**
 				* Remove a node from the scene
 				* WARNING: Ensure all relationships are patched up,
 				* or you may end up with orphaned nodes/disjoint trees!
@@ -939,18 +904,6 @@ namespace repo {
 					const repo::lib::RepoUUID &revID,
 					std::string &err
 				);
-
-				/**
-				* Commit a project settings base on the
-				* changes on this scene
-				* @param errMsg error message if this failed
-				* @param userName user name of the owner
-				* @return returns true upon success
-				*/
-				bool commitProjectSettings(
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					std::string &errMsg,
-					const std::string &userName);
 
 				/**
 				* Commit a revision node into project.revExt base on the

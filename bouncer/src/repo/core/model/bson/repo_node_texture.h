@@ -20,6 +20,7 @@
 
 #pragma once
 #include "repo_node.h"
+#include "repo/core/model/repo_model_global.h"
 
 namespace repo {
 	namespace core {
@@ -30,8 +31,6 @@ namespace repo {
 			//
 			//------------------------------------------------------------------------------
 #define REPO_NODE_TYPE_TEXTURE				"texture"
-#define REPO_NODE_LABEL_BIT_DEPTH			"bit_depth"
-#define REPO_NODE_LABEL_DATA_BYTE_COUNT		"data_byte_count"
 			//------------------------------------------------------------------------------
 
 			class REPO_API_EXPORT TextureNode : public RepoNode
@@ -47,13 +46,18 @@ namespace repo {
 				* Construct a TextureNode from a RepoBSON object
 				* @param RepoBSON object
 				*/
-				TextureNode(RepoBSON bson,
-					const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>&binMapping = std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>());
+				TextureNode(RepoBSON bson);
 
 				/**
 				* Default deconstructor
 				*/
 				~TextureNode();
+
+			protected:
+				virtual void deserialise(RepoBSON&);
+				virtual void serialise(class RepoBSONBuilder&) const;
+
+			public:
 
 				/**
 				* Get the type of node
@@ -86,13 +90,46 @@ namespace repo {
 				* --------- Convenience functions -----------
 				*/
 
+			private:
+				std::vector<uint8_t> data;
+				std::string extension;
+				uint32_t width;
+				uint32_t height;
+
+			public:
 				/**
 				* Retrieve texture image as raw data
 				* @return returns a pointer to the image (represented as char)
 				*/
-				std::vector<char> getRawData() const;
+				const std::vector<uint8_t>& getRawData() const
+				{
+					return data;
+				}
 
-				std::string getFileExtension() const;
+				std::string getFileExtension() const
+				{
+					return extension;
+				}
+
+				uint32_t getWidth() const
+				{
+					return width;
+				}
+
+				uint32_t getHeight() const
+				{
+					return height;
+				}
+
+				bool isEmpty() const;
+
+				void setData(const std::vector<uint8_t>& data, size_t width, size_t height, std::string extension = "")
+				{
+					this->data = data;
+					this->width = width;
+					this->height = height;
+					this->extension = extension;
+				}
 			};
 		} //namespace model
 	} //namespace core

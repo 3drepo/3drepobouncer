@@ -7,13 +7,16 @@
 set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_binmapping_builder.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_assets.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_builder.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_calibration.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_element.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_factory.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_project_settings.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_ref.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_sequence.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_task.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_teamspace.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_drawing_revision.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_material.cpp
@@ -31,7 +34,6 @@ set(HEADERS
 	${HEADERS}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_assets.h
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_binmapping_builder.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_builder.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_calibration.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_element.h
@@ -40,6 +42,7 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_ref.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_sequence.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_task.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_teamspace.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_drawing_revision.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_material.h

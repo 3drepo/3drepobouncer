@@ -389,7 +389,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 	setMetadataValue("Item", "Internal Type", ItemInternalType, metadata);
 	setMetadataValue("Item", "Hidden", ItemHidden, metadata);
 	setMetadataValue("Item", "Layer", ItemLayer, metadata);
-	if (hasGuid) {		
+	if (hasGuid) {
 		setMetadataValue("Item", "GUID", ItemGuid, metadata);
 	}
 
@@ -443,7 +443,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 		{
 			OdArray<OdNwDataPropertyPtr> properties;
 			propertiesAttribute->getProperties(properties);
-			
+
 			for (unsigned int j = 0; j < properties.length(); j++)
 			{
 				auto& prop = properties[j];
@@ -451,7 +451,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 
 				repo::lib::RepoVariant v;
 				if (DataProcessorNwd:: tryConvertMetadataProperty(key, prop, v))
-					setMetadataValueVariant(category, key, v, metadata);				
+					setMetadataValueVariant(category, key, v, metadata);
 			}
 		}
 
