@@ -5,7 +5,7 @@ const path = require("path");
  * ============== Constant Declarations - edit as necessary ==============
  */
 const verbose = true;
-const exts = [".tx", ".txv", ".dll", ".so"];
+const exts = [".tx", ".txv", ".dll", ".so", "._noabi"];
 
 const externalLibraries = [
 	{
