@@ -425,7 +425,7 @@ double RepoBSON::getDoubleField(const std::string &label) const
 	}
 }
 
-long long RepoBSON::getLongField(const std::string& label) const
+int64_t RepoBSON::getLongField(const std::string& label) const
 {
 	try
 	{

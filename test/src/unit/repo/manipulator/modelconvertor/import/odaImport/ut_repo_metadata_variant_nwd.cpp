@@ -119,7 +119,7 @@ TEST(RepoMetaVariantConverterNWDTest, Int32Test)
 
 	// Check results
 	EXPECT_TRUE(success);
-	EXPECT_EQ(boost::get<long long>(v), -2147483648ll);
+	EXPECT_EQ(boost::get<int64_t>(v), -2147483648ll);
 
 	// Teardown
 	TeardownOdEnvForNWD();

@@ -20,29 +20,27 @@
 #MONGO_CXX_DRIVER_LIBRARIES will point to the libraries
 
 
-if(DEFINED ENV{MONGO_CXX_DRIVER_ROOT})
-	set(MONGO_CXX_DRIVER_ROOT $ENV{MONGO_CXX_DRIVER_ROOT})
+if(DEFINED ENV{MONGO_ROOT})
+	set(MONGO_CXX_DRIVER_ROOT $ENV{MONGO_ROOT})
 	message(STATUS "$MONGO_CXX_DRIVER_ROOT defined: ${MONGO_CXX_DRIVER_ROOT}")
 	find_path(MONGO_CXX_DRIVER_MONGO_INCLUDE_DIR mongocxx/instance.hpp
 		${MONGO_CXX_DRIVER_ROOT}/include/mongocxx/v_noabi
-		)
+	)
+	
 	find_path(MONGO_CXX_DRIVER_BSON_INCLUDE_DIR bsoncxx/types.hpp
 		${MONGO_CXX_DRIVER_ROOT}/include/bsoncxx/v_noabi
-		)
+	)
+	
 	find_library(MONGO_CXX_DRIVER
 		NAMES
-			mongocxx-v_noabi-rhs-md
-			mongocxx-v_noabi-rhs-x64-v143-md
-			mongocxx-v_noabi-rhs-x64-v142-md
+			mongocxx
 		PATHS
 			${MONGO_CXX_DRIVER_ROOT}/lib
 	)
 
 	find_library(MONGO_CXX_BSON
 		NAMES
-			bsoncxx-v_noabi-rhs-md
-			bsoncxx-v_noabi-rhs-x64-v143-md
-			bsoncxx-v_noabi-rhs-x64-v142-md
+			bsoncxx
 		PATHS
 			${MONGO_CXX_DRIVER_ROOT}/lib
 	)
@@ -61,7 +59,7 @@ else(MONGO_CXX_DRIVER_MONGO_INCLUDE_DIR AND MONGO_CXX_DRIVER_BSON_INCLUDE_DIR AN
 		/usr/include
 		/usr/local/include
 		/opt/local/include
-    )
+    	)
 
 	find_path(MONGO_CXX_DRIVER_MONGO_INCLUDE_DIR bsoncxx/v_noabi/bsoncxx/types.hpp
 		/usr/include
@@ -71,24 +69,23 @@ else(MONGO_CXX_DRIVER_MONGO_INCLUDE_DIR AND MONGO_CXX_DRIVER_BSON_INCLUDE_DIR AN
 
 	find_library(MONGO_CXX_DRIVER
 		NAMES
-			mongocxx-v_noabi-rhs-md
-    	PATHS
+			mongocxx
+    		PATHS
 			/usr/lib
 			/usr/local/lib
 			/opt/local/lib
 			/usr/lib64
-    )
+	)
 
 	find_library(MONGO_CXX_BSON
 		NAMES
-			bsoncxx-v_noabi-rhs-md
-			bsoncxx-v_noabi-rhs-x64-v143-md
+			bsoncxx
 		PATHS
 			/usr/lib
 			/usr/local/lib
 			/opt/local/lib
 			/usr/lib64
-    )
+    	)
 
 	set(MONGO_CXX_DRIVER_LIBRARIES
 		${MONGO_CXX_DRIVER}
@@ -107,5 +104,5 @@ if(MONGO_CXX_DRIVER_MONGO_INCLUDE_DIR AND MONGO_CXX_DRIVER_BSON_INCLUDE_DIR AND 
 else(MONGO_CXX_DRIVER_MONGO_INCLUDE_DIR AND MONGO_CXX_DRIVER_BSON_INCLUDE_DIR AND MONGO_CXX_DRIVER_LIBRARIES)
 #cannot find mongo anywhere!
 	set(MONGO_CXX_DRIVER_FOUND FALSE)
-	message(STATUS "MONGO CXX DRIVER not found. Please set MONGO_CXX_DRIVER_ROOT to your installation directory")
+	message(STATUS "MONGO CXX DRIVER not found. Please set MONGO_ROOT to your installation directory containing both C and CXX drivers")
 endif(MONGO_CXX_DRIVER_MONGO_INCLUDE_DIR AND MONGO_CXX_DRIVER_BSON_INCLUDE_DIR AND MONGO_CXX_DRIVER_LIBRARIES)

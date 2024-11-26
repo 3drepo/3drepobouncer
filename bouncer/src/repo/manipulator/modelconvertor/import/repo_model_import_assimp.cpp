@@ -55,7 +55,7 @@ bool AssimpModelImport::tryConvertMetadataEntry(aiMetadataEntry& assimpMetaEntry
 		case AI_UINT64:
 		{
 			uint64_t value = *(static_cast<uint64_t*>(assimpMetaEntry.mData));
-			v = static_cast<long long>(value); // Potentially losing precision here, but mongo does not accept uint64_t
+			v = static_cast<int64_t>(value); // Potentially losing precision here, but mongo does not accept uint64_t
 			break;
 		}
 		case AI_FLOAT:

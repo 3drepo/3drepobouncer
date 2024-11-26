@@ -24,7 +24,7 @@
 #include <bsoncxx/document/view.hpp>
 #include <bsoncxx/array/element.hpp>
 #include <bsoncxx/types.hpp>
-#include <bsoncxx/types/value.hpp>
+#include <bsoncxx/types/bson_value/value.hpp>
 #include <bsoncxx/exception/exception.hpp>
 
 using namespace repo::core::model;
@@ -144,9 +144,8 @@ time_t RepoBSONElement::TimeT() const
 
 tm RepoBSONElement::Tm() const
 {
-	tm buf;
 	time_t time = TimeT();
-	gmtime_s(&buf, &time);
+	tm buf = *gmtime(&time);
 	return buf;
 }
 
@@ -160,7 +159,7 @@ int RepoBSONElement::Int() const
 	return element::get_int32();
 }
 
-long long RepoBSONElement::Long() const
+int64_t RepoBSONElement::Long() const
 {
 	return element::get_int64();
 }

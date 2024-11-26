@@ -1072,7 +1072,7 @@ TEST(RepoBSONTest, GetDoubleField)
 	// for integers.
 	{
 		bsoncxx::builder::basic::document builder;
-		builder.append(bsoncxx::builder::basic::kvp("double", (long long)1));
+		builder.append(bsoncxx::builder::basic::kvp("double", (int64_t)1));
 		RepoBSON bson(builder.extract());
 		EXPECT_THROW({ bson.getDoubleField("double"); }, repo::lib::RepoFieldTypeException);
 	}
@@ -1097,7 +1097,7 @@ TEST(RepoBSONTest, GetLongField)
 {
 	{
 		bsoncxx::builder::basic::document builder;
-		builder.append(bsoncxx::builder::basic::kvp("long", (long long)MAXLONGLONG));
+		builder.append(bsoncxx::builder::basic::kvp("long", (int64_t)MAXLONGLONG));
 		RepoBSON bson(builder.extract());
 		EXPECT_THAT(bson.getLongField("long"), Eq(MAXLONGLONG));
 	}
@@ -1298,12 +1298,12 @@ TEST(RepoBSONTest, EqualityOperator)
 
 	{
 		RepoBSONBuilder _a;
-		_a.append("f1", (long long)1);
+		_a.append("f1", (int64_t)1);
 		auto a = _a.obj();
 		EXPECT_THAT(a.isEmpty(), IsFalse());
 
 		RepoBSONBuilder b;
-		b.append("f1", (long long)1);
+		b.append("f1", (int64_t)1);
 		EXPECT_THAT(a, Eq(b.obj()));
 
 		// This case is commented out for the moment. The Mongo Driver is sensitive
@@ -1317,7 +1317,7 @@ TEST(RepoBSONTest, EqualityOperator)
 		*/
 
 		RepoBSONBuilder d;
-		d.append("f2", (long long)1);
+		d.append("f2", (int64_t)1);
 		EXPECT_THAT(a, Not(Eq(d.obj())));
 	}
 

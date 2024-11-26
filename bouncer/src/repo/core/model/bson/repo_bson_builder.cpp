@@ -18,7 +18,7 @@
 #include "repo_bson_builder.h"
 
 #include <bsoncxx/types.hpp>
-#include <bsoncxx/types/value.hpp>
+#include <bsoncxx/types/bson_value/value.hpp>
 #include <bsoncxx/builder/basic/array.hpp>
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/builder/basic/kvp.hpp>

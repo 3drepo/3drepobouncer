@@ -33,8 +33,8 @@ using namespace testing;
 TEST(RepoTaskTest, Serialise)
 {
 	auto name = "name";
-	long long startTime = std::time(0) - 1000;
-	long long endTime = std::time(0) + 1000;
+	int64_t startTime = std::time(0) - 1000;
+	int64_t endTime = std::time(0) + 1000;
 	auto sequenceId = repo::lib::RepoUUID::createUUID();
 
 	std::unordered_map<std::string, std::string> data;
@@ -144,7 +144,7 @@ TEST(RepoTaskTest, Serialise)
 	EXPECT_THAT(actual, Eq(expected));
 
 	// Check metadata types - RepoTask should attempt a lexical cast of metadata
-	// values, storing them as long longs or doubles where possible
+	// values, storing them as int64_ts or doubles where possible
 
 	data.clear();
 	data["string"] = "I am a string";

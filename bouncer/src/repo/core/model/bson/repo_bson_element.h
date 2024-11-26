@@ -76,7 +76,7 @@ namespace repo {
 
 				int Int() const;
 
-				long long Long() const;
+				int64_t Long() const;
 
 				double Double() const;
 

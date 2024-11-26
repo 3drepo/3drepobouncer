@@ -64,7 +64,7 @@ namespace repo {
 				return std::to_string(i);
 			}
 
-			std::string operator()(long long& ll) const {
+			std::string operator()(int64_t& ll) const {
 				return std::to_string(ll);
 			}
 

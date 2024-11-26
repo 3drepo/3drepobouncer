@@ -129,7 +129,7 @@ namespace repo {
 					class REPO_API_EXPORT RepoIndex
 					{
 					protected:
-						friend class MongoDatabaseHandler;
+						friend class repo::core::handler::MongoDatabaseHandler;
 						virtual operator model::RepoBSON() const = 0;
 					};
 

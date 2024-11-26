@@ -96,7 +96,7 @@ TEST(RepoSequenceTest, Factory)
 	EXPECT_THAT(bson.getUUIDField(REPO_LABEL_ID), Eq(id));
 	EXPECT_THAT(bson.getStringField(REPO_SEQUENCE_LABEL_NAME), Eq(name));
 
-	// The bounding dates are Unix epochs encoded as long long
+	// The bounding dates are Unix epochs encoded as int64_t
 
 	EXPECT_THAT(bson.getLongField(REPO_SEQUENCE_LABEL_START_DATE), Eq(start));
 	EXPECT_THAT(bson.getLongField(REPO_SEQUENCE_LABEL_END_DATE), Eq(end));

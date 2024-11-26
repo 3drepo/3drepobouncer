@@ -73,7 +73,7 @@ repo::core::model::RepoBSON testing::makeRandomRepoBSON(int seed, size_t numBinF
 
 	builder.append(prefix + std::to_string(counter++), std::to_string(rand()));
 	builder.append(prefix + std::to_string(counter++), (int)rand());
-	builder.append(prefix + std::to_string(counter++), (long long)rand());
+	builder.append(prefix + std::to_string(counter++), (int64_t)rand());
 	builder.append(prefix + std::to_string(counter++), (double)rand() / (double)rand());
 	builder.append(prefix + std::to_string(counter++), (float)rand() / (double)rand());
 	builder.append(prefix + std::to_string(counter++), getRandUUID());

@@ -25,6 +25,6 @@
 
 namespace repo {
 	namespace lib {
-		typedef boost::variant<bool, int, long long, double, std::string, tm, RepoUUID> RepoVariant;
+		typedef boost::variant<bool, int, int64_t, double, std::string, tm, RepoUUID> RepoVariant;
 	}
 }

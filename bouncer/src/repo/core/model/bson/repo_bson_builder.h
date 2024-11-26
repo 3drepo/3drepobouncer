@@ -197,7 +197,7 @@ namespace repo {
 						builder.append(label, i);
 					}
 
-					void operator()(const long long& ll) const {
+					void operator()(const int64_t& ll) const {
 						builder.append(label, ll);
 					}
 

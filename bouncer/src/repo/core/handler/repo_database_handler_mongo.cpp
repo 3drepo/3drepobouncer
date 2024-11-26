@@ -32,7 +32,6 @@
 
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
-#include <mongocxx/stdx.hpp>
 #include <mongocxx/uri.hpp>
 #include <mongocxx/pool.hpp>
 #include <mongocxx/exception/operation_exception.hpp>

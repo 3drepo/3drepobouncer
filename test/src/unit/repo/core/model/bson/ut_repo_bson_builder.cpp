@@ -168,7 +168,7 @@ TEST(RepoBSONBuilderTest, AppendGeneric)
 	double doubleT = (double)rand() - (double)rand() / (double)rand();
 	float floatT = (float)rand() - (float)rand() / (float)rand();
 	int intT = 64;
-	long long longT = 123412452141L;
+	int64_t longT = 123412452141L;
 	repo::lib::RepoUUID uuidT = repo::lib::RepoUUID::createUUID();
 	repo::lib::RepoVector3D repoVectorT = { 0.1234f, 1.2345f, 2.34567f };
 	repo::lib::RepoMatrix repoMatrixT = makeRepoMatrix();
@@ -250,7 +250,7 @@ TEST(RepoBSONBuilderTest, AppendRepoVariant)
 
 	repo::lib::RepoVariant vBool = false;
 	repo::lib::RepoVariant vInt = 10;
-	repo::lib::RepoVariant vLong = 101LL;
+	repo::lib::RepoVariant vLong = (int64_t)101LL;
 	repo::lib::RepoVariant vDouble = 99.99;
 	repo::lib::RepoVariant vString = std::string("string");
 	repo::lib::RepoVariant vEmptyString = std::string("");
@@ -270,7 +270,7 @@ TEST(RepoBSONBuilderTest, AppendRepoVariant)
 
 	EXPECT_THAT(bson.getBoolField("vBool"), Eq(boost::get<bool>(vBool)));
 	EXPECT_THAT(bson.getIntField("vInt"), Eq(boost::get<int>(vInt)));
-	EXPECT_THAT(bson.getLongField("vLong"), Eq(boost::get<long long>(vLong)));
+	EXPECT_THAT(bson.getLongField("vLong"), Eq(boost::get<int64_t>(vLong)));
 	EXPECT_THAT(bson.getDoubleField("vDouble"), Eq(boost::get<double>(vDouble)));
 	EXPECT_THAT(bson.getStringField("vString"), Eq(boost::get<std::string>(vString)));
 	EXPECT_THAT(bson.getStringField("vEmptyString"), Eq(std::string("")));

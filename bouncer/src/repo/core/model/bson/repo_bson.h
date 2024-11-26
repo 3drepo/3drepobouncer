@@ -125,7 +125,7 @@ namespace repo {
 
 				double getDoubleField(const std::string &label) const;
 
-				long long getLongField(const std::string& label) const;
+				int64_t getLongField(const std::string& label) const;
 
 				bool isEmpty() const;
 

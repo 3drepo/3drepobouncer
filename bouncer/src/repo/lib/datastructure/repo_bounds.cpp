@@ -16,6 +16,7 @@
 */
 
 #include "repo_bounds.h"
+#include <cfloat>
 
 using namespace repo::lib;
 

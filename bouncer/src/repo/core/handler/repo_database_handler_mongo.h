@@ -68,6 +68,8 @@ namespace repo {
 				{
 					uint32_t maxConnections = 1;
 					uint32_t timeout = 10000; // Common timeout for socket, connection and server selection, in milliseconds
+
+					ConnectionOptions(){} // Explicit default constructor required for gcc
 				};
 
 				/**

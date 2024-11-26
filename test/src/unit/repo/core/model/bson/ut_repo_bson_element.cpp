@@ -51,7 +51,7 @@ TEST(RepoBSONElementTest, TypeTest)
 	builder.appendTime("date", time_t); // Must use appendTime here because time_t will be seen first as a int64_t unless explicitly converted to a mongo::Date_t
 	builder.append("double", (double)1);
 	builder.append("int", (int)1);
-	builder.append("long", (long long)1);
+	builder.append("long", (int64_t)1);
 	builder.append("object", object);
 	builder.append("string", "a string");
 
@@ -72,7 +72,7 @@ TEST(RepoBSONElementTest, TypeTest)
 	EXPECT_THAT(bson.getField("date").Tm(), Eq(time_tm));
 	EXPECT_THAT(bson.getField("double").Double(), Eq((double)1));
 	EXPECT_THAT(bson.getField("int").Int(), Eq((int)1));
-	EXPECT_THAT(bson.getField("long").Long(), Eq((long long)1));
+	EXPECT_THAT(bson.getField("long").Long(), Eq((int64_t)1));
 	EXPECT_THAT(bson.getField("object").Object(), Eq(object));
 	EXPECT_THAT(bson.getField("string").String(), Eq("a string"));
 
@@ -94,6 +94,6 @@ TEST(RepoBSONElementTest, TypeTest)
 	EXPECT_THAT(boost::get<tm>(bson.getField("date").repoVariant()), Eq(time_tm));
 	EXPECT_THAT(boost::get<double>(bson.getField("double").repoVariant()), Eq((double)1));
 	EXPECT_THAT(boost::get<int>(bson.getField("int").repoVariant()), Eq((int)1));
-	EXPECT_THAT(boost::get<long long>(bson.getField("long").repoVariant()), Eq((long long)1));
+	EXPECT_THAT(boost::get<int64_t>(bson.getField("long").repoVariant()), Eq((int64_t)1));
 	EXPECT_THAT(boost::get<std::string>(bson.getField("string").repoVariant()), Eq("a string"));
 }
