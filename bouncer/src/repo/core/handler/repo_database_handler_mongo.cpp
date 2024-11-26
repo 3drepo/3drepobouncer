@@ -184,10 +184,13 @@ void MongoDatabaseHandler::dropCollection(
 	const std::string &database,
 	const std::string &collection)
 {
-	auto client = clientPool->acquire();
-	auto dbObj = client->database(database);
-	auto colObj = dbObj.collection(collection);
-	colObj.drop();
+	if (!database.empty() && !collection.empty())
+	{
+		auto client = clientPool->acquire();
+		auto dbObj = client->database(database);
+		auto colObj = dbObj.collection(collection);
+		colObj.drop();
+	}
 }
 
 void MongoDatabaseHandler::dropDocument(
@@ -195,6 +198,11 @@ void MongoDatabaseHandler::dropDocument(
 	const std::string &database,
 	const std::string &collection)
 {
+	if (database.empty() || collection.empty())
+	{
+		return;
+	}
+
 	auto client = clientPool->acquire();
 	auto db = client->database(database);
 	auto col = db.collection(collection);
@@ -216,13 +224,9 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 	const std::string& collection,
 	const database::query::RepoQuery& filter)
 {
-	if (database.empty() || collection.empty()) {
-		throw new repo::lib::RepoException("Invalid database or collection name"); // This particular access mode is fatal if we let the invalid params get to mongo
-	}
-
 	std::vector<repo::core::model::RepoBSON> data;
 	repo::core::model::RepoBSON criteria = filter;
-	if (!criteria.isEmpty())
+	if (!criteria.isEmpty() && !database.empty() && !collection.empty())
 	{
 		auto client = clientPool->acquire();
 		auto db = client->database(database);
@@ -245,15 +249,8 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 	const database::query::RepoQuery& filter,
 	const std::string& sortField)
 {
-	// non-existent databases and collections are OK, but invalid ones should
-	// not be passed to mongo
-	if (database.empty() || database.empty())
-	{
-		return {};
-	}
-
 	repo::core::model::RepoBSON criteria = filter;
-	if (!criteria.isEmpty())
+	if (!criteria.isEmpty() && !database.empty() && !collection.empty())
 	{
 		auto client = clientPool->acquire();
 		auto db = client->database(database);
@@ -271,7 +268,6 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 			return createRepoBSON(blobHandler, database, collection, findResult.value());
 		}
 	}
-
 	return {};
 }
 
@@ -314,6 +310,13 @@ MongoDatabaseHandler::getAllFromCollectionTailable(
 	const int									  &sortOrder)
 {
 
+	std::vector<repo::core::model::RepoBSON> bsons;
+
+	if (database.empty() || collection.empty())
+	{
+		return bsons;
+	}
+
 	auto client = clientPool->acquire();
 	auto db = client->database(database);
 	auto col = db.collection(collection);
@@ -337,7 +340,6 @@ MongoDatabaseHandler::getAllFromCollectionTailable(
 		options.projection(projection.extract());
 	}
 
-	std::vector<repo::core::model::RepoBSON> bsons;
 
 	fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
 
@@ -352,6 +354,10 @@ MongoDatabaseHandler::getAllFromCollectionTailable(
 std::list<std::string> MongoDatabaseHandler::getCollections(
 	const std::string &database)
 {
+	if (database.empty())
+	{
+		return {};
+	}
 	auto client = clientPool->acquire();
 	auto db = client->database(database);
 	auto collectionsVector = db.list_collection_names();

@@ -311,7 +311,7 @@ TEST(MongoDatabaseHandlerTest, GetCollections)
 	// Nonexistent databases should return an empty array, but invalid database
 	// names are not supported arguments.
 
-	EXPECT_THROW(handler->getCollections(""), std::system_error);
+	EXPECT_THAT(handler->getCollections(""), IsEmpty());
 	EXPECT_THAT(handler->getCollections("blahblah"), IsEmpty());
 }
 
@@ -352,10 +352,10 @@ TEST(MongoDatabaseHandlerTest, DropCollection)
 	handler->dropCollection(REPO_GTEST_DROPCOL_TESTCASE.first, REPO_GTEST_DROPCOL_TESTCASE.second);
 	EXPECT_THAT(handler->getCollections(REPO_GTEST_DROPCOL_TESTCASE.first), Not(IsSupersetOf({ REPO_GTEST_DROPCOL_TESTCASE.second })));
 
-	// Invalid names will result in an exception
+	// Invalid names are the same as addressing an empty database or collection
 
-	EXPECT_THROW(handler->dropCollection(REPO_GTEST_DROPCOL_TESTCASE.first, ""), std::exception);
-	EXPECT_THROW(handler->dropCollection("", REPO_GTEST_DROPCOL_TESTCASE.second), std::exception);
+	EXPECT_NO_THROW(handler->dropCollection(REPO_GTEST_DROPCOL_TESTCASE.first, ""));
+	EXPECT_NO_THROW(handler->dropCollection("", REPO_GTEST_DROPCOL_TESTCASE.second));
 }
 
 MATCHER_P(DropDocument_UnorderedNamesAre, names, "")
@@ -425,13 +425,14 @@ TEST(MongoDatabaseHandlerTest, DropDocument)
 
 	}
 
-	// Invalid names will result in an exception
+	// Invalid names are a noop to match the behaviour of calling drop on a non-
+	// existent collection
 	{
 		repo::core::model::RepoBSONBuilder builder;
 		auto q = builder.obj();
 
-		EXPECT_ANY_THROW(handler->dropDocument(q, db, ""));
-		EXPECT_ANY_THROW(handler->dropDocument(q, "", col));
+		EXPECT_NO_THROW(handler->dropDocument(q, db, ""));
+		EXPECT_NO_THROW(handler->dropDocument(q, "", col));
 	}
 }
 
@@ -477,9 +478,9 @@ TEST(MongoDatabaseHandlerTest, FindAllByCriteria)
 
 	EXPECT_EQ(4, results.size());
 
-	EXPECT_EQ(0, handler->findAllByCriteria(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".scene", query::RepoQueryBuilder()).size());
-	EXPECT_ANY_THROW(handler->findAllByCriteria("", REPO_GTEST_DBNAME1_PROJ + ".scene", search));
-	EXPECT_ANY_THROW(handler->findAllByCriteria(REPO_GTEST_DBNAME1, "", search));
+	EXPECT_THAT(handler->findAllByCriteria(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".scene", query::RepoQueryBuilder()), IsEmpty());
+	EXPECT_THAT(handler->findAllByCriteria("", REPO_GTEST_DBNAME1_PROJ + ".scene", search), IsEmpty());
+	EXPECT_THAT(handler->findAllByCriteria(REPO_GTEST_DBNAME1, "", search), IsEmpty());
 }
 
 TEST(MongoDatabaseHandlerTest, FindOneByCriteria)
