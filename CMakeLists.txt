@@ -27,8 +27,11 @@ cmake_minimum_required(VERSION 2.8)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-# For gcc 9, the flag must be c++2a; it should be c++20 on 11 and greater. This has no effect on Windows.
+
+# For gcc 9, the flag must be c++2a; it should be c++20 on 11 and greater. This
+# has no effect on Windows, which will be driven by CMAKE_CXX_STANDARD.
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -std=c++2a -pthread")
+
 if(${APPLE})
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -framework Foundation")
 endif()
@@ -38,6 +41,12 @@ if(${WIN32})
 		-DWIN32_LEAN_AND_MEAN
 		-DNOMINMAX
 	)
+
+	# This flag tells MSVC to interpret everything as utf8 - the default behaviour
+	# will sometimes interpret files as one of Windows' local encodings, which is
+	# a problem because our source files define string literals that are meant to
+	# be unicode.
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /utf-8")
 endif()
 
 option (REPO_BUILD_COVERAGE "Building with coverage report" OFF)
