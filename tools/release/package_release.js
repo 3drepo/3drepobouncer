@@ -5,13 +5,13 @@ const path = require("path");
  * ============== Constant Declarations - edit as necessary ==============
  */
 const verbose = true;
-const exts = [".tx", ".txv", ".dll", ".so", "._noabi"];
+const exts = [".tx", ".txv", ".dll", ".so"];
 
 const externalLibraries = [
 	{
 		rootEnvVar: "MONGO_ROOT",
 		subPath: ["lib"],
-		extensions: exts
+		extensions: [...exts, "._noabi", ".0"]
 	},
 	{
 		rootEnvVar: "ASSIMP_ROOT",
