@@ -39,6 +39,11 @@
 #include "modeloptimizer/repo_optimizer_trans_reduction.h"
 #include "repo_manipulator.h"
 
+// The 'admin' database for checking a connection - this can be any database
+// against which getCollections is cheap and for which permissions are
+// representative.
+#define ADMIN "admin"
+
 using namespace repo::manipulator;
 
 RepoManipulator::RepoManipulator()
@@ -67,7 +72,7 @@ bool RepoManipulator::connectAndAuthenticateWithAdmin(
 		options
 	);
 	try {
-		dbHandler->getCollections("admin"); // Test the connection to the database
+		dbHandler->getCollections(ADMIN); // Test the connection to the database
 	}
 	catch (std::runtime_error)
 	{
@@ -92,7 +97,7 @@ bool RepoManipulator::connectAndAuthenticateWithAdmin(
 		options
 	);
 	try {
-		dbHandler->getCollections("admin"); // Test the connection to the database
+		dbHandler->getCollections(ADMIN); // Test the connection to the database
 	}
 	catch (std::runtime_error)
 	{

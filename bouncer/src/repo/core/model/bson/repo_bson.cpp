@@ -26,43 +26,6 @@
 
 using namespace repo::core::model;
 
-// Conversion functions for the getArray method
-
-double elementToDouble(const bsoncxx::array::element& e)
-{
-	return e.get_double();
-}
-
-float elementToFloat(const bsoncxx::array::element& e)
-{
-	return e.get_double();
-}
-
-std::string elementToString(const bsoncxx::array::element& e)
-{
-	auto view = e.get_string().value;
-	return std::string(view.data(), view.size());
-}
-
-RepoBSON elementToRepoBSON(const bsoncxx::array::element& e)
-{
-	return RepoBSON(e.get_document().value, {});
-}
-
-repo::lib::RepoUUID elementToRepoUUID(const bsoncxx::array::element& e)
-{
-	if (e.type() == bsoncxx::type::k_binary) // (We can't use RepoBSONElement here, even as a view, because array views are not the same as document views)
-	{
-		const auto& b = e.get_binary();
-		if (b.sub_type == bsoncxx::binary_sub_type::k_uuid || b.sub_type == bsoncxx::binary_sub_type::k_uuid_deprecated) {
-			boost::uuids::uuid id;
-			memcpy(id.data, b.bytes, b.size);
-			return repo::lib::RepoUUID(id);
-		}
-	}
-	throw repo::lib::RepoBSONException("Cannot convert binary field to RepoUUID because it has the wrong subtype");
-}
-
 RepoBSON::RepoBSON(const RepoBSON &obj,
 	const BinMapping &binMapping) :
 	bsoncxx::document::value(obj.view()),
@@ -145,7 +108,7 @@ RepoBSON RepoBSON::getObjectField(const std::string& label) const
 
 std::vector<RepoBSON> RepoBSON::getObjectArray(const std::string& label) const
 {
-	return getArray(label, elementToRepoBSON, false);
+	return getArray<RepoBSON>(label, false);
 }
 
 repo::lib::RepoBounds RepoBSON::getBoundsField(const std::string& label) const
@@ -231,7 +194,7 @@ void RepoBSON::swap(RepoBSON otherCopy)
 
 std::vector<std::string> RepoBSON::getFileList(const std::string& label) const
 {
-	return getArray(label, elementToString, false);
+	return getArray<std::string>(label, false);
 }
 
 std::pair<repo::core::model::RepoBSON, std::vector<uint8_t>> RepoBSON::getBinariesAsBuffer() const
@@ -324,12 +287,12 @@ repo::lib::RepoMatrix RepoBSON::getMatrixField(const std::string& label) const
 
 std::vector<double> RepoBSON::getDoubleVectorField(const std::string& label) const
 {
-	return getArray(label, elementToDouble, false);
+	return getArray<double>(label, false);
 }
 
 std::vector<repo::lib::RepoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) const
 {
-	return getArray(label, elementToRepoUUID, true);
+	return getArray<repo::lib::RepoUUID>(label, true);
 }
 
 const std::vector<uint8_t>& RepoBSON::getBinary(const std::string& field) const
@@ -394,12 +357,12 @@ bool RepoBSON::hasFileReference() const
 
 std::vector<float> RepoBSON::getFloatArray(const std::string &label) const
 {
-	return getArray(label, elementToFloat, true);
+	return getArray<float>(label, true);
 }
 
 std::vector<std::string> RepoBSON::getStringArray(const std::string &label) const
 {
-	return getArray(label, elementToString, true);
+	return getArray<std::string>(label, true);
 }
 
 time_t RepoBSON::getTimeStampField(const std::string &label) const
@@ -441,10 +404,50 @@ int64_t RepoBSON::getLongField(const std::string& label) const
 	}
 }
 
+// These specialisations perform the concrete type conversion for the getArray
+// method.
+
+template<typename T>
+T getValue(const bsoncxx::array::element& e);
+
+template<> std::string getValue<std::string>(const bsoncxx::array::element& e)
+{
+	auto view = e.get_string().value;
+	return std::string(view.data(), view.size());
+}
+
+template<> double getValue<double>(const bsoncxx::array::element& e)
+{
+	return e.get_double();
+}
+
+template<> float getValue<float>(const bsoncxx::array::element& e)
+{
+	return e.get_double();
+}
+
+template<> RepoBSON getValue<RepoBSON>(const bsoncxx::array::element& e)
+{
+	return RepoBSON(e.get_document().value, {});
+}
+
+template<> repo::lib::RepoUUID getValue<repo::lib::RepoUUID>(const bsoncxx::array::element& e)
+{
+	if (e.type() == bsoncxx::type::k_binary) // (We can't use RepoBSONElement here, even as a view, because array views are not the same as document views)
+	{
+		const auto& b = e.get_binary();
+		if (b.sub_type == bsoncxx::binary_sub_type::k_uuid || b.sub_type == bsoncxx::binary_sub_type::k_uuid_deprecated) {
+			boost::uuids::uuid id;
+			memcpy(id.data, b.bytes, b.size);
+			return repo::lib::RepoUUID(id);
+		}
+	}
+	throw repo::lib::RepoBSONException("Cannot convert binary field to RepoUUID because it has the wrong subtype");
+}
+
 template<typename T>
 std::vector<T> RepoBSON::getArray(
 	const std::string& label,
-	T(&convert_element)(const bsoncxx::array::element& e),
 	bool missingIsEmpty
 ) const
 {
@@ -456,7 +459,7 @@ std::vector<T> RepoBSON::getArray(
 		for (const auto& f : array)
 		{
 			try {
-				results.push_back(convert_element(f));
+				results.push_back(getValue<T>(f));
 			}
 			catch (std::exception) // expect mongocxx or repo::lib exceptions, because we will further handle non-native types such as UUIDs
 			{

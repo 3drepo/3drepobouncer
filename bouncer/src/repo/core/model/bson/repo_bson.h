@@ -247,7 +247,7 @@ namespace repo {
 				* a FieldNotFound exception will be thrown.
 				*/
 				template<typename T>
-				std::vector<T> getArray(const std::string& label, T(&f)(const bsoncxx::array::element& e), bool missingIsEmpty) const;
+				std::vector<T> getArray(const std::string& label, bool missingIsEmpty) const;
 
 				/**
 				* Override the swap operator to perform the swap just like mongo bson
