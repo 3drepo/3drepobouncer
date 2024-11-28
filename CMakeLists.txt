@@ -165,6 +165,13 @@ if (LICENSE_CHECK )
 	add_definitions(-DLICENSE_AUTH_TOKEN="${LICENSE_AUTH_TOKEN}")
 	add_definitions(-DLICENSE_PRODUCT_ID=${LICENSE_PRODUCT_ID})
 	add_definitions(-DLICENSE_TIMEOUT_SECONDS=${LICENSE_TIMEOUT_SECONDS})
+	
+	# Cryptolens uses a third-party library, optional. This can be replaced
+	# with std::optional on newer versions of C++. However the shared
+	# library currently only exports symbols for the non-standard version.
+	# Until this changes, the following definition tells the Cryptolens code
+	# in bouncer to continue to link using the non-standard version.
+	add_definitions(-Doptional_CONFIG_SELECT_OPTIONAL=optional_OPTIONAL_NONSTD)
 
 endif()
 
