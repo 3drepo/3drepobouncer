@@ -18,7 +18,7 @@
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
-const { object, string, number } = require('yup');
+const { object, string, number, lazy } = require('yup');
 const { exitApplication } = require('./utils');
 const params = require('./processParams');
 
@@ -27,10 +27,10 @@ const Config = {};
 const rabbitmq = object({
 	host: string().required(),
 	sharedDir: string().required(),
-	worker_queue: string(),
-	callback_queue: string(),
-	model_queue: string(),
-	drawing_queue: string(),
+	worker_queue: string().default('jobq'),
+	callback_queue: string().default('callbackq'),
+	model_queue: string().default('modelq'),
+	drawing_queue: string().default('drawingq'),
 	task_prefetch: number().default(4),
 	model_prefetch: number().default(1),
 	drawing_prefetch: number().default(1),
@@ -40,9 +40,19 @@ const rabbitmq = object({
 	maxWaitTimeMS: number().default(5 * 60 * 1000),
 });
 
+// This schema considers an object as a set of key-value pairs, where each
+// value should be a string.
+const envars = lazy((kvpObject) => {
+	const kvpSchema = {};
+	for(const key of Object.keys(kvpObject)) {
+		kvpSchema[key] = string();
+	}
+	return object(kvpSchema);
+});
+
 const bouncer = object({
 	path: string().required(),
-	envars: object(),
+	envars,
 	log_dir: string(),
 });
 
@@ -56,27 +66,24 @@ const logging = object({
 		'verbose',
 		'debug',
 		'silly',
-	]).default('error'),
+	]).default('info'),
 });
 
 const processMonitoring = object({
 	memoryIntervalMS: number().default(100),
 });
 
-const db = object({
-	dbhost: string(),
-	dbport: number().min(1).max(65536),
-});
-
 const schema = object({
 	timeoutMS: number().default(180 * 60 * 1000),
-	logLocation: string(),
 	umask: number(),
 	repoLicense: string(),
+	instanceId: string().when('repoLicense', { // This entry ensures that if repoLicense is defined, so is the instanceId
+		is: true,
+		then: (sch) => sch.default(uuidv4()),
+	}),
 	rabbitmq,
 	logging,
 	processMonitoring,
-	db,
 	bouncer,
 });
 
@@ -85,23 +92,14 @@ const init = () => {
 	try {
 		Config.configPath = params.config || path.resolve(__dirname, '../../config.json');
 		let config = JSON.parse(fs.readFileSync(Config.configPath));
-		config = schema.cast(config);
-		config = schema.validateSync(config);
-
-		// If a license is set, we should specify a unique Id for this worker.
-		// Always initialise a new one, so there is no confusion between instances.
-		if (config.repoLicense) {
-			config.instanceId = uuidv4();
-		}
+		config = schema.validateSync(config, {
+			stripUnknown: true,
+		});
 
 		// Set the fallbacks for log file directories (all log directories are
 		// ultimately optional).
 		if (!config.taskLogDir) {
 			config.taskLogDir = config.rabbitmq.sharedDir;
-		}
-
-		if (!config.workerLogPath) {
-			config.workerLogPath = config.logLocation;
 		}
 
 		// Set the file creation permission mode mask (i.e. what permissions are
