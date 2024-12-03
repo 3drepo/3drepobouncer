@@ -18,9 +18,9 @@
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const { object, string, number } = require('yup');
 const { exitApplication } = require('./utils');
 const params = require('./processParams');
-const { object, string, number } = require('yup');
 
 const Config = {};
 
@@ -44,19 +44,19 @@ const bouncer = object({
 	path: string().required(),
 	envars: object(),
 	log_dir: string(),
-})
+});
 
 const logging = object({
 	taskLogDir: string(),
 	workerLogPath: string(),
-	logLevel: string().oneOf([ //Options are the six winston log levels https://www.npmjs.com/package/winston/v/2.4.6#logging-levels
-		"error",
-		"warn",
-		"info",
-		"verbose",
-		"debug",
-		"silly"
-	]).default("error"),
+	logLevel: string().oneOf([ // Options are the six winston log levels https://www.npmjs.com/package/winston/v/2.4.6#logging-levels
+		'error',
+		'warn',
+		'info',
+		'verbose',
+		'debug',
+		'silly',
+	]).default('error'),
 });
 
 const processMonitoring = object({
