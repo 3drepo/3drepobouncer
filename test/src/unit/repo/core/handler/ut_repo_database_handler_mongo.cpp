@@ -30,6 +30,7 @@
 #include "../../../repo_test_database_info.h"
 
 #include <mongocxx/exception/exception.hpp>
+#include <mongocxx/exception/operation_exception.hpp>
 
 using namespace repo::core::handler;
 using namespace testing;
@@ -70,7 +71,8 @@ TEST(MongoDatabaseHandlerTest, CheckTestDatabase)
 
 TEST(MongoDatabaseHandlerTest, GetHandler)
 {
-	// Set a low timeout for the tests so we aren't waiting around too long for them to fail!
+	// Set a low timeout for the tests so we aren't waiting around too long for
+	// them to fail!
 	MongoDatabaseHandler::ConnectionOptions options;
 	options.timeout = 1000;
 
@@ -83,10 +85,12 @@ TEST(MongoDatabaseHandlerTest, GetHandler)
 			options
 		);
 		EXPECT_TRUE(handler);
-		EXPECT_THAT(handler->getCollections("admin"), Not(IsEmpty()));
+		EXPECT_NO_THROW(handler->testConnection());
 	}
 
-	// The expected exception will be thrown after the serverSelectionTimeoutMS, which is 5000
+	// The expected exception will be thrown after the serverSelectionTimeoutMS,
+	// which is 5000. We expect the exception to accurately describe the problem
+	// (that the database is unavailable).
 	{
 		auto handler = MongoDatabaseHandler::getHandler(
 			"blah",
@@ -96,10 +100,11 @@ TEST(MongoDatabaseHandlerTest, GetHandler)
 			options
 		);
 		EXPECT_TRUE(handler);
-		EXPECT_THROW(handler->getCollections("admin"), std::system_error);
+		EXPECT_THROW(handler->testConnection(), mongocxx::operation_exception);
 	}
 
-	// The expected exception will be thrown after the serverSelectionTimeoutMS, which is 5000
+	// The expected exception will be thrown after the serverSelectionTimeoutMS,
+	// which is 5000.
 	{
 		auto handler = MongoDatabaseHandler::getHandler(
 			REPO_GTEST_DBADDRESS,
@@ -109,7 +114,20 @@ TEST(MongoDatabaseHandlerTest, GetHandler)
 			options
 		);
 		EXPECT_TRUE(handler);
-		EXPECT_THROW(handler->getCollections("admin"), std::system_error);
+		EXPECT_THROW(handler->testConnection(), mongocxx::operation_exception);
+	}
+
+	// In this case the exception should say that the authentication has failed
+	{
+		auto handler = MongoDatabaseHandler::getHandler(
+			REPO_GTEST_DBADDRESS,
+			REPO_GTEST_DBPORT,
+			"invaliduser",
+			REPO_GTEST_DBPW,
+			options
+		);
+		EXPECT_TRUE(handler);
+		EXPECT_THROW(handler->testConnection(), mongocxx::operation_exception);
 	}
 }
 

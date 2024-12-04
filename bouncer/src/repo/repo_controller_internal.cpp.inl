@@ -63,18 +63,13 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::init(
 	RepoToken *token = nullptr;
 	if (config.validate()) {
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		const bool success = worker->init(errMsg, config, numDBConnections);
-
-		if (success)
-		{
-			token = new RepoController::RepoToken(config);
-			auto dbConf = config.getDatabaseConfig();
-			const std::string dbFullAd = dbConf.connString.empty() ? dbConf.addr + ":" + std::to_string(dbConf.port) : dbConf.connString;
-			repoInfo << "Successfully connected to the " << dbFullAd;
-			if (!dbConf.username.empty())
-				repoInfo << dbConf.username << " is authenticated to " << dbFullAd;
-		}
-
+		worker->init(errMsg, config, numDBConnections);
+		token = new RepoController::RepoToken(config);
+		auto dbConf = config.getDatabaseConfig();
+		const std::string dbFullAd = dbConf.connString.empty() ? dbConf.addr + ":" + std::to_string(dbConf.port) : dbConf.connString;
+		repoInfo << "Successfully connected to the " << dbFullAd;
+		if (!dbConf.username.empty())
+			repoInfo << dbConf.username << " is authenticated to " << dbFullAd;
 		workerPool.push(worker);
 	}
 	else {

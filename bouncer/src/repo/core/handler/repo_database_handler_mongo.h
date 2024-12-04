@@ -307,6 +307,18 @@ namespace repo {
 
 				std::shared_ptr<repo::core::handler::fileservice::FileManager> getFileManager();
 
+				/**
+				* This method performs an arbitrary operation against the database to check
+				* if the connection is available and authenticated. The method is synchronous,
+				* and will throw an exception describing the failure mode if there is one. If
+				* it returns successfully, it means it was possible to communicate with the
+				* database for at least that instant.
+				* A successful check once does not mean the connection cannot be lost in the
+				* future - this check is used mainly to verify the database configuration,
+				* before bouncer gets a long way into an expensive job.
+				*/
+				void testConnection();
+
 			private:
 
 				// We can work with either clients or pool as the top level, connection

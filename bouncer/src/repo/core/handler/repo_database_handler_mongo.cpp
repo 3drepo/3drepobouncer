@@ -70,6 +70,11 @@ const std::list<std::string> repo::core::handler::MongoDatabaseHandler::ADMIN_ON
 "hostManager", "readAnyDatabase", "readWriteAnyDatabase", "restore", "root",
 "userAdminAnyDatabase" };
 
+// The 'admin' database for checking a connection - this can be any database
+// against which getCollections is cheap and for which permissions are
+// representative.
+#define ADMIN "admin"
+
 MongoDatabaseHandler::MongoDatabaseHandler(
 	const std::string& dbAddress,
 	const std::string& username,
@@ -95,6 +100,15 @@ MongoDatabaseHandler::MongoDatabaseHandler(
 
 MongoDatabaseHandler::~MongoDatabaseHandler()
 {
+}
+
+void MongoDatabaseHandler::testConnection()
+{
+	// The current version of this test is to enumerate the admins database, which
+	// should always be available, require similar permissions to being able to
+	// create collections etc, but should not have too many entries that waste
+	// time returning.
+	getCollections(ADMIN);
 }
 
 void MongoDatabaseHandler::setFileManager(std::shared_ptr<FileManager> manager)

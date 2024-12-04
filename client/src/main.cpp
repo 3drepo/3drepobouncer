@@ -131,9 +131,25 @@ int main(int argc, char* argv[]) {
 				return REPOERR_AUTH_FAILED;
 			}
 		}
-		catch (const repo::lib::RepoException &e) {
+		catch (const repo::lib::RepoException &e)
+		{
 			repoLogError(std::string("Exception in performOperation: ") + e.what());
 			return REPOERR_UNKNOWN_ERR;
+		}
+		catch (const std::system_error& e)
+		{
+			repoLogError(e.what());
+
+			// Using the system error codes we can possibly return a little more
+			// information about what happened in the return value.
+			switch (e.code().value())
+			{
+				case 13053:
+				case 11:
+					return REPOERR_AUTH_FAILED;
+				default:
+					return REPOERR_UNKNOWN_ERR;
+			}
 		}
 	}
 	else

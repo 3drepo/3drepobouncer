@@ -289,7 +289,7 @@ namespace repo {
 			* @param password password of the user
 			* @return returns true upon success
 			*/
-			bool connectAndAuthenticateWithAdmin(
+			void connectAndAuthenticateWithAdmin(
 				const std::string &address,
 				const uint32_t    &port,
 				const uint32_t    &maxConnections,
@@ -305,7 +305,7 @@ namespace repo {
 			* @param password password of the user
 			* @return returns true upon success
 			*/
-			bool connectAndAuthenticateWithAdmin(
+			void connectAndAuthenticateWithAdmin(
 				const std::string &connString,
 				const uint32_t    &maxConnections,
 				const std::string &username,

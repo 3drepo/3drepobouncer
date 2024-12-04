@@ -39,10 +39,7 @@
 #include "modeloptimizer/repo_optimizer_trans_reduction.h"
 #include "repo_manipulator.h"
 
-// The 'admin' database for checking a connection - this can be any database
-// against which getCollections is cheap and for which permissions are
-// representative.
-#define ADMIN "admin"
+
 
 using namespace repo::manipulator;
 
@@ -54,7 +51,7 @@ RepoManipulator::~RepoManipulator()
 {
 }
 
-bool RepoManipulator::connectAndAuthenticateWithAdmin(
+void RepoManipulator::connectAndAuthenticateWithAdmin(
 	const std::string& address,
 	const uint32_t& port,
 	const uint32_t& maxConnections,
@@ -71,17 +68,10 @@ bool RepoManipulator::connectAndAuthenticateWithAdmin(
 		password,
 		options
 	);
-	try {
-		dbHandler->getCollections(ADMIN); // Test the connection to the database
-	}
-	catch (std::runtime_error)
-	{
-		return false;
-	}
-	return true;
+	dbHandler->testConnection();
 }
 
-bool RepoManipulator::connectAndAuthenticateWithAdmin(
+void RepoManipulator::connectAndAuthenticateWithAdmin(
 	const std::string& connString,
 	const uint32_t& maxConnections,
 	const std::string& username,
@@ -96,14 +86,7 @@ bool RepoManipulator::connectAndAuthenticateWithAdmin(
 		password,
 		options
 	);
-	try {
-		dbHandler->getCollections(ADMIN); // Test the connection to the database
-	}
-	catch (std::runtime_error)
-	{
-		return false;
-	}
-	return true;
+	dbHandler->testConnection();
 }
 
 repo::core::model::RepoScene* RepoManipulator::createFederatedScene(
@@ -388,19 +371,14 @@ bool RepoManipulator::init(
 	const int& nDbConnections
 ) {
 	auto dbConf = config.getDatabaseConfig();
-	bool success = true;
 	if (dbConf.connString.empty()) {
-		success = connectAndAuthenticateWithAdmin(dbConf.addr, dbConf.port, nDbConnections, dbConf.username, dbConf.password);
+		connectAndAuthenticateWithAdmin(dbConf.addr, dbConf.port, nDbConnections, dbConf.username, dbConf.password);
 	}
 	else {
-		success = connectAndAuthenticateWithAdmin(dbConf.connString, nDbConnections, dbConf.username, dbConf.password);
+		connectAndAuthenticateWithAdmin(dbConf.connString, nDbConnections, dbConf.username, dbConf.password);
 	}
-
-	if (success) {
-		dbHandler->setFileManager(std::make_shared<repo::core::handler::fileservice::FileManager>(config, dbHandler));
-	}
-
-	return success;
+	dbHandler->setFileManager(std::make_shared<repo::core::handler::fileservice::FileManager>(config, dbHandler));
+	return true;
 }
 
 bool RepoManipulator::isVREnabled(const repo::core::model::RepoScene* scene) const
