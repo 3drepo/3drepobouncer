@@ -44,7 +44,7 @@ const rabbitmq = object({
 // value should be a string.
 const envars = lazy((kvpObject) => {
 	const kvpSchema = {};
-	for(const key of Object.keys(kvpObject)) {
+	for (const key of Object.keys(kvpObject)) {
 		kvpSchema[key] = string();
 	}
 	return object(kvpSchema);
