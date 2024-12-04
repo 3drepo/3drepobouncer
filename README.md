@@ -27,11 +27,11 @@ Doxygen documentation can be found [here](http://3drepo.github.io/3drepobouncer/
 Dependencies
 ------------
 3DRepoBouncer relies on the following libraries:
-* [Boost Library v1.55.0 - v1.60.0](http://www.boost.org/)
+* [Boost Library v1.59.0 - v1.86.0](http://www.boost.org/)
 See also [pre-built binaries for Windows](http://sourceforge.net/projects/boost/files/boost-binaries/)
 and [modular Boost](https://svn.boost.org/trac/boost/wiki/ModularBoost)
 on [GitHub](https://github.com/boostorg)
-* [Mongo CXX Driver Legacy v1.0+](https://github.com/mongodb/mongo-cxx-driver)
+* [Mongo CXX Driver v3.11+](https://www.mongodb.com/docs/languages/cpp/cpp-driver/)
 See [3D Repo guide for compiling MongoDB](https://github.com/3drepo/3drepobouncer/wiki/Compiling-MongoDB-CXX-Driver)
 * [ASSIMP](https://github.com/assimp/assimp)
 See [3D Repo guide for compiling ASSIMP](https://github.com/3drepo/3drepobouncer/wiki/Compiling-ASSIMP)
