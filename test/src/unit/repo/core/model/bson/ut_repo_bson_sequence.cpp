@@ -63,7 +63,7 @@ TEST(RepoSequenceTest, Serialise)
 	EXPECT_THAT(bson.getStringField(REPO_SEQUENCE_LABEL_NAME), IsEmpty());
 	EXPECT_THAT(bson.getLongField(REPO_SEQUENCE_LABEL_START_DATE), Eq(0));
 	EXPECT_THAT(bson.getLongField(REPO_SEQUENCE_LABEL_END_DATE), Eq(0));
-	EXPECT_THAT(bson.getObjectField(REPO_SEQUENCE_LABEL_FRAMES).nFields(), Eq(0));
+	EXPECT_THAT(bson.getObjectArray(REPO_SEQUENCE_LABEL_FRAMES).size(), Eq(0));
 }
 
 TEST(RepoSequenceTest, Factory)
@@ -96,23 +96,23 @@ TEST(RepoSequenceTest, Factory)
 	EXPECT_THAT(bson.getUUIDField(REPO_LABEL_ID), Eq(id));
 	EXPECT_THAT(bson.getStringField(REPO_SEQUENCE_LABEL_NAME), Eq(name));
 
-	// The bounding dates are Unix epochs encoded as long long
+	// The bounding dates are Unix epochs encoded as int64_t
 
 	EXPECT_THAT(bson.getLongField(REPO_SEQUENCE_LABEL_START_DATE), Eq(start));
 	EXPECT_THAT(bson.getLongField(REPO_SEQUENCE_LABEL_END_DATE), Eq(end));
 
-	auto framesField = bson.getObjectField(REPO_SEQUENCE_LABEL_FRAMES);
+	auto framesField = bson.getObjectArray(REPO_SEQUENCE_LABEL_FRAMES);
 
 	// For individual Frames, the underlying type is a Timestamp
 
-	EXPECT_THAT(framesField.getObjectField("0").getStringField(REPO_SEQUENCE_LABEL_STATE), Eq(f1.ref));
-	EXPECT_THAT(framesField.getObjectField("0").getTimeStampField(REPO_SEQUENCE_LABEL_DATE), Eq(f1.timestamp));
+	EXPECT_THAT(framesField[0].getStringField(REPO_SEQUENCE_LABEL_STATE), Eq(f1.ref));
+	EXPECT_THAT(framesField[0].getTimeStampField(REPO_SEQUENCE_LABEL_DATE), Eq(f1.timestamp));
 
-	EXPECT_THAT(framesField.getObjectField("1").getStringField(REPO_SEQUENCE_LABEL_STATE), Eq(f2.ref));
-	EXPECT_THAT(framesField.getObjectField("1").getTimeStampField(REPO_SEQUENCE_LABEL_DATE), Eq(f2.timestamp));
+	EXPECT_THAT(framesField[1].getStringField(REPO_SEQUENCE_LABEL_STATE), Eq(f2.ref));
+	EXPECT_THAT(framesField[1].getTimeStampField(REPO_SEQUENCE_LABEL_DATE), Eq(f2.timestamp));
 
-	EXPECT_THAT(framesField.getObjectField("2").getStringField(REPO_SEQUENCE_LABEL_STATE), Eq(f3.ref));
-	EXPECT_THAT(framesField.getObjectField("2").getTimeStampField(REPO_SEQUENCE_LABEL_DATE), Eq(f3.timestamp));
+	EXPECT_THAT(framesField[2].getStringField(REPO_SEQUENCE_LABEL_STATE), Eq(f3.ref));
+	EXPECT_THAT(framesField[2].getTimeStampField(REPO_SEQUENCE_LABEL_DATE), Eq(f3.timestamp));
 }
 
 TEST(RepoSequenceTest, Empty)

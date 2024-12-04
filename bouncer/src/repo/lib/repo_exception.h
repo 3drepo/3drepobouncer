@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2019 3D Repo Ltd
+*  Copyright (C) 2024 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -18,39 +18,53 @@
 #pragma once
 
 #include <string>
+#include <exception>
+#include "repo/error_codes.h"
+#include "repo/repo_bouncer_global.h"
+
 namespace repo {
 	namespace lib {
-		class RepoException : std::exception {
+		REPO_API_EXPORT class RepoException : public std::exception {
 		public:
-			RepoException(const std::string& msg) : errMsg(msg) {};
+			RepoException(const std::string& msg);
 
-			char const* what() const throw() { return errMsg.c_str(); }
-		private:
+			char const* what() const throw();
+
+			/*
+			 * Returns the code from error_codes.h, that best describes this exception.
+			 * The default is REPOERR_UNKNOWN_ERR, if not set by a subclass.
+			 */
+			REPO_API_EXPORT int repoCode() const;
+
+			/*
+			* Returns a string describing this exception and all nested exceptions, if
+			* any. Use this instead of 'what' in the outermost exception handlers.
+			*/
+			REPO_API_EXPORT std::string printFull() const;
+
+		protected:
+			int errorCode;
 			const std::string errMsg;
 		};
 
-		class RepoInvalidLicenseException : public RepoException {
+		REPO_API_EXPORT class RepoInvalidLicenseException : public RepoException {
 		public:
-			RepoInvalidLicenseException(const std::string& msg)
-				: RepoException(msg) {};
+			RepoInvalidLicenseException(const std::string& msg);
 		};
 
-		class RepoBSONException : public RepoException {
+		REPO_API_EXPORT class RepoBSONException : public RepoException {
 		public:
-			RepoBSONException(const std::string& msg)
-				: RepoException(msg) {}
+			RepoBSONException(const std::string& msg);
 		};
 
-		class RepoFieldNotFoundException : public RepoBSONException {
+		REPO_API_EXPORT class RepoFieldNotFoundException : public RepoBSONException {
 		public:
-			RepoFieldNotFoundException(const std::string& fieldName)
-				: RepoBSONException("BSON does not have the field: " + fieldName) {}
+			RepoFieldNotFoundException(const std::string& fieldName);
 		};
 
-		class RepoFieldTypeException : public RepoBSONException {
+		REPO_API_EXPORT class RepoFieldTypeException : public RepoBSONException {
 		public:
-			RepoFieldTypeException(const std::string& fieldName)
-				: RepoBSONException("BSON field " + fieldName + " attempting to be read as a different type") {}
+			RepoFieldTypeException(const std::string& fieldName);
 		};
 	}
 }

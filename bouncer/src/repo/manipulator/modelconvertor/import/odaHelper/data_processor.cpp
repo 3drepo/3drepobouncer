@@ -21,7 +21,7 @@
 #include <toString.h>
 #include <DgLevelTableRecord.h>
 
-#include "../../../../core/model/bson/repo_bson_factory.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
 #include "data_processor.h"
 
 using namespace repo::manipulator::modelconvertor::odaHelper;

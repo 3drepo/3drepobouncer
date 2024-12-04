@@ -74,10 +74,10 @@ RepoAssets::operator RepoBSON() const
 	for (auto& meta : metadata)
 	{
 		RepoBSONBuilder metadataBuilder;
-		metadataBuilder.append(REPO_ASSETS_LABEL_NUMVERTICES, (unsigned int)meta.numVertices);
-		metadataBuilder.append(REPO_ASSETS_LABEL_NUMFACES, (unsigned int)meta.numFaces);
-		metadataBuilder.append(REPO_ASSETS_LABEL_NUMUVCHANNELS, (unsigned int)meta.numUVChannels);
-		metadataBuilder.append(REPO_ASSETS_LABEL_PRIMITIVE, (unsigned int)meta.primitive);
+		metadataBuilder.append(REPO_ASSETS_LABEL_NUMVERTICES, (int32_t)meta.numVertices);
+		metadataBuilder.append(REPO_ASSETS_LABEL_NUMFACES, (int32_t)meta.numFaces);
+		metadataBuilder.append(REPO_ASSETS_LABEL_NUMUVCHANNELS, (int32_t)meta.numUVChannels);
+		metadataBuilder.append(REPO_ASSETS_LABEL_PRIMITIVE, (int32_t)meta.primitive);
 		metadataBuilder.appendVector3DObject(REPO_ASSETS_LABEL_MIN, meta.min);
 		metadataBuilder.appendVector3DObject(REPO_ASSETS_LABEL_MAX, meta.max);
 		metadataNodes.push_back(metadataBuilder.obj());

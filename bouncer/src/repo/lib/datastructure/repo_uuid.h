@@ -17,8 +17,9 @@
 
 #pragma once
 
-#include <boost/uuid/uuid.hpp>
 #include "repo/repo_bouncer_global.h"
+#include <boost/uuid/uuid.hpp>
+#include <iterator>
 #include <vector>
 #include <ostream>
 
@@ -40,7 +41,7 @@ namespace repo {
 			* Get the underlying binary data from the UUID
 			* @returns the UUID in binary format
 			*/
-			std::vector<uint8_t> data() const { return std::vector<uint8_t>(std::begin(id.data), std::end(id.data)); }
+			std::vector<uint8_t> data() const { return std::vector<uint8_t>(id.begin(), id.end()); }
 
 			bool isDefaultValue() const {
 				return toString() == defaultValue;

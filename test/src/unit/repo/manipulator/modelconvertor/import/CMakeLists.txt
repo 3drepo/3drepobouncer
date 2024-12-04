@@ -11,6 +11,7 @@ set(TEST_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_metadata_variant_assimp.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_model_import_3drepo.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_model_import_assimp.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_model_import_ifc.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_model_import_synchro.cpp
 	CACHE STRING "TEST_SOURCES" FORCE)
 

@@ -70,8 +70,8 @@ namespace repo {
 					const std::string& name,
 					const repo::lib::RepoUUID& uniqueId,
 					const repo::lib::RepoUUID& revisionId,
-					const long long& firstFrameTimestamp,
-					const long long& lastFrameTimestamp,
+					const int64_t& firstFrameTimestamp,
+					const int64_t& lastFrameTimestamp,
 					const std::vector<FrameData>& frames
 				);
 
@@ -94,8 +94,8 @@ namespace repo {
 				repo::lib::RepoUUID revisionId;
 				repo::lib::RepoUUID uniqueId;
 				std::string name;
-				long long firstFrame;
-				long long lastFrame;
+				int64_t firstFrame;
+				int64_t lastFrame;
 			};
 		}// end namespace model
 	} // end namespace core

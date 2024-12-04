@@ -80,29 +80,14 @@ bool IFCUtilsGeometry::generateGeometry(
 		std::vector<repo::lib::RepoVector3D> vertices, normals;
 		std::vector<repo::lib::RepoVector2D> uvs;
 		std::vector<repo_face_t> faces;
-		std::vector<std::vector<float>> boundingBox;
+		repo::lib::RepoBounds boundingBox;
 		for (int j = 0; j < allVertices[i].size(); j += 3)
 		{
 			vertices.push_back({ (float)(allVertices[i][j] - offset[0]), (float)(allVertices[i][j + 1] - offset[1]), (float)(allVertices[i][j + 2] - offset[2]) });
 			if (allNormals[i].size())
 				normals.push_back({ (float)allNormals[i][j], (float)allNormals[i][j + 1], (float)allNormals[i][j + 2] });
 
-			auto vertex = vertices.back();
-			if (j == 0)
-			{
-				boundingBox.push_back({ vertex.x, vertex.y, vertex.z });
-				boundingBox.push_back({ vertex.x, vertex.y, vertex.z });
-			}
-			else
-			{
-				boundingBox[0][0] = boundingBox[0][0] > vertex.x ? vertex.x : boundingBox[0][0];
-				boundingBox[0][1] = boundingBox[0][1] > vertex.y ? vertex.y : boundingBox[0][1];
-				boundingBox[0][2] = boundingBox[0][2] > vertex.z ? vertex.z : boundingBox[0][2];
-
-				boundingBox[1][0] = boundingBox[1][0] < vertex.x ? vertex.x : boundingBox[1][0];
-				boundingBox[1][1] = boundingBox[1][1] < vertex.y ? vertex.y : boundingBox[1][1];
-				boundingBox[1][2] = boundingBox[1][2] < vertex.z ? vertex.z : boundingBox[1][2];
-			}
+			boundingBox.encapsulate(vertices.back());
 		}
 
 		for (int j = 0; j < allUVs[i].size(); j += 2)

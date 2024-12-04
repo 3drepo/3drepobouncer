@@ -73,7 +73,7 @@ TEST(ModelRevisionNodeTest, Deserialise)
 	builder.appendTimeStamp(REPO_NODE_REVISION_LABEL_TIMESTAMP);
 	builder.appendArray(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT, offset);
 	builder.appendArray(REPO_NODE_REVISION_LABEL_REF_FILE, files);
-	builder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, (uint32_t)ModelRevisionNode::UploadStatus::GEN_REPO_STASH);
+	builder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, (int32_t)ModelRevisionNode::UploadStatus::GEN_REPO_STASH);
 
 	auto node = ModelRevisionNode(builder.obj());
 
@@ -85,7 +85,7 @@ TEST(ModelRevisionNodeTest, Deserialise)
 	EXPECT_THAT(node.getCoordOffset(), Eq(offset));
 	EXPECT_THAT(node.getOrgFiles(), Eq(files));
 	EXPECT_THAT(node.getTimestamp(), IsNow()); // Within a second or so of the current time...
-	EXPECT_THAT((uint32_t)node.getUploadStatus(), Eq((uint32_t)ModelRevisionNode::UploadStatus::GEN_REPO_STASH));
+	EXPECT_THAT((uint32_t)node.getUploadStatus(), Eq((int32_t)ModelRevisionNode::UploadStatus::GEN_REPO_STASH));
 }
 
 TEST(ModelRevisionNodeTest, DeserialiseEmpty)

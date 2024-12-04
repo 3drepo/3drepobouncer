@@ -119,6 +119,30 @@ namespace testing {
 	{
 		return ((time_t)arg > std::time(0) - (time_t)1) && ((time_t)arg < std::time(0) + (time_t)1);
 	}
+
+	//Verifies that two arrays have at least one element in common
+	MATCHER_P(AnyElementsOverlap, a, "")
+	{
+		for (auto& r : arg)
+		{
+			if (std::find(a.begin(), a.end(), r) != a.end()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	//Runs the specified matcher on the result of the getFieldNames() method
+	MATCHER_P(GetFieldNames, matcher, "")
+	{
+		return ExplainMatchResult(matcher, arg.getFieldNames(), result_listener);
+	}
+
+	//Checks the value of the hasOversizeFiles() method
+	MATCHER(HasBinaryFields, "")
+	{
+		return arg.hasOversizeFiles();
+	}
 }
 
 namespace repo {

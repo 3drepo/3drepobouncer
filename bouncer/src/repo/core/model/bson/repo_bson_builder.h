@@ -33,17 +33,19 @@
 #include "repo_bson.h"
 #include "repo/lib/datastructure/repo_matrix.h"
 #include "repo/lib/datastructure/repo_uuid.h"
+#include "repo/lib/datastructure/repo_bounds.h"
 #include "repo/lib/datastructure/repo_variant.h"
-
 #include <boost/variant/static_visitor.hpp>
-
 #include <string>
 #include <ctime>
+#include <bsoncxx/builder/core.hpp>
+#include <bsoncxx/builder/basic/document.hpp>
+#include <bsoncxx/builder/basic/array.hpp>
 
 namespace repo {
 	namespace core {
 		namespace model {
-			class REPO_API_EXPORT RepoBSONBuilder : private mongo::BSONObjBuilder
+			class REPO_API_EXPORT RepoBSONBuilder : private bsoncxx::builder::core
 			{
 			public:
 				RepoBSONBuilder();
@@ -74,10 +76,7 @@ namespace repo {
 				void appendLargeArray(std::string name, const void* data, size_t size);
 
 				/**
-				* Append a vector as object into the bson. BSON arrays are
-				* documents where each field is a monotonically increasing
-				* integer. This method creates such a document and inserts
-				* it into the builder.
+				* Append a vector as a bson array.
 				* @param label label of the array
 				* @param vec vector to append
 				*/
@@ -86,27 +85,30 @@ namespace repo {
 					const std::string &label,
 					const std::vector<T> &vec)
 				{
-					RepoBSONBuilder array;
-					for (unsigned int i = 0; i < vec.size(); ++i)
-						array.append(std::to_string(i), vec[i]);
-					mongo::BSONObjBuilder::appendArray(label, array.obj());
+					core::key_owned(label);
+					append(vec);
 				}
-
-				void appendArray(
-					const std::string& label,
-					const RepoBSON& bson);
-
-				void appendRepoVariant(
-					const std::string& label,
-					const repo::lib::RepoVariant& item);
 
 				template<class T>
 				void append(
 					const std::string& label,
 					const T& item)
 				{
-					mongo::BSONObjBuilder::append(label, item);
+					core::key_owned(label);
+					append(item);
 				}
+
+				template<class V>
+				void append(
+					const std::string& label,
+					const std::vector<V> items)
+				{
+					appendArray(label, items);
+				}
+
+				void appendRepoVariant(
+					const std::string& label,
+					const repo::lib::RepoVariant& item);
 
 				void appendElements(RepoBSON bson);
 
@@ -114,9 +116,15 @@ namespace repo {
 
 				void appendTimeStamp(std::string label);
 
+				void appendTime(std::string label, const tm& t);
+
+				// The following two methods consider a int64_t as a posix timestamp (the
+				// number of seconds) since the unix epoch. The field type will be a mongo
+				// date object.
+
 				void appendTime(std::string label, const int64_t& ts);
 
-				void appendTime(std::string label, const tm& t);
+				void appendTime(const int64_t& ts);
 
 				/**
 				* Appends a Vector but as an object, instead of an array.
@@ -133,6 +141,37 @@ namespace repo {
 				RepoBSON obj();
 
 			private:
+				// This exists so the base method (which has a return type) counts as
+				// an overload alongside those for the special types below.
+				template<typename T>
+				void append(const T& item)
+				{
+					core::append(item);
+				}
+
+				template<typename T>
+				void append(const std::vector<T> items)
+				{
+					core::open_array();
+					for (const auto& v : items)
+					{
+						append(v);
+					}
+					core::close_array();
+				}
+
+				void append(const tm& tm);
+
+				void append(const repo::lib::RepoUUID& uuid);
+
+				void append(const repo::lib::RepoBounds& bounds);
+
+				void append(const repo::lib::RepoVector3D& vec);
+
+				void append(const repo::lib::RepoMatrix& mat);
+
+				void append(const RepoBSON& obj);
+
 				/**
 				* @brief Append a UUID into the builder
 				* This is a is a wrapper around appendBinData from mongo as
@@ -158,7 +197,7 @@ namespace repo {
 						builder.append(label, i);
 					}
 
-					void operator()(const long long& ll) const {
+					void operator()(const int64_t& ll) const {
 						builder.append(label, ll);
 					}
 
@@ -175,7 +214,7 @@ namespace repo {
 					}
 
 					void operator()(const repo::lib::RepoUUID& u) const {
-						builder.appendUUID(label, u); // Use the explicit version becaues the specialisation is declared later
+						builder.appendUUID(label, u);
 					}
 
 				private:
@@ -183,27 +222,6 @@ namespace repo {
 					std::string label;
 				};
 			};
-
-			// Template specialization
-			template<> REPO_API_EXPORT void RepoBSONBuilder::append<repo::lib::RepoUUID>(
-				const std::string &label,
-				const repo::lib::RepoUUID &uuid
-			);
-
-			template<> REPO_API_EXPORT void RepoBSONBuilder::append<repo::lib::RepoVector3D>(
-				const std::string &label,
-				const repo::lib::RepoVector3D &vec
-			);
-
-			template<> REPO_API_EXPORT void RepoBSONBuilder::append<repo::lib::RepoMatrix>(
-				const std::string &label,
-				const repo::lib::RepoMatrix &mat
-			);
-
-			template<> REPO_API_EXPORT void RepoBSONBuilder::append<tm>(
-				const std::string& label,
-				const tm& mat
-			);
 		}// end namespace model
 	} // end namespace core
 } // end namespace repo

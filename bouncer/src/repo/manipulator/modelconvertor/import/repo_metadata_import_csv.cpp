@@ -56,7 +56,7 @@ std::vector<repo::lib::RepoVariant> repo::manipulator::modelconvertor::MetadataI
 
 		//Check if it is a number, if it is, store it as a number
 		try {
-			v = boost::lexical_cast<long long>(value);
+			v = boost::lexical_cast<int64_t>(value);
 		}
 		catch (boost::bad_lexical_cast&)
 		{

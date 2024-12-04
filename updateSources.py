@@ -20,7 +20,7 @@ def createCMakeList(dirName, files, subDirList, sourceName, headerName):
 	headers = {}
 
 	isOdaRequired = os.path.basename(dirName) == "odaHelper" or os.path.basename(dirName) == "odaImport"
-	
+
 	for fname in sorted(files):
 		if fname.lower().endswith('.cpp') or fname.lower().endswith('.cpp.inl'):
 			sources[cppInd] = fname

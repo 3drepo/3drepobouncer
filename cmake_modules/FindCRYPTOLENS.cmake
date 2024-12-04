@@ -26,21 +26,21 @@
 #     - Debug
 #     - Release
 #
-# start the search by looking for the lib in the 
+# start the search by looking for the lib in the
 # root DIR of of CRYPTOLENS
 if(DEFINED ENV{CRYPTOLENS_ROOT})
 	set(CRYPTOLENS_ROOT $ENV{CRYPTOLENS_ROOT})
 	message(STATUS "$CRYPTOLENS_ROOT defined: ${CRYPTOLENS_ROOT}")
 	find_path(CRYPTOLENS_INCLUDE_DIR cryptolens/core.hpp
 		${CRYPTOLENS_ROOT}/include
-	)  
-	find_library(CRYPTOLENS_LIBRARIES_RELEASE 
+	)
+	find_library(CRYPTOLENS_LIBRARIES_RELEASE
 		NAMES cryptolens
 		PATHS
 		${CRYPTOLENS_ROOT}/lib/Release
 		${CRYPTOLENS_ROOT}/lib
-	)	
-	find_library(CRYPTOLENS_LIBRARIES_DEBUG 
+	)
+	find_library(CRYPTOLENS_LIBRARIES_DEBUG
 		NAMES cryptolens
 		PATHS
 		${CRYPTOLENS_ROOT}/lib/Debug

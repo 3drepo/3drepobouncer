@@ -67,11 +67,6 @@ void RepoController::destroyToken(RepoController::RepoToken* token)
 	if (token) delete token;
 }
 
-void RepoController::disconnectFromDatabase(const RepoController::RepoToken* token)
-{
-	impl->disconnectFromDatabase(token);
-}
-
 repo::core::model::RepoScene* RepoController::fetchScene(
 	const RepoController::RepoToken      *token,
 	const std::string    &database,

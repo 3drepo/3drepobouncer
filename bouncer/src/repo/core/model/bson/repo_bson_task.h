@@ -51,8 +51,8 @@ namespace repo {
 					const repo::lib::RepoUUID& uniqueId,
 					const repo::lib::RepoUUID& parentId,
 					const repo::lib::RepoUUID& sequenceId,
-					const long long& startTime,
-					const long long& endTime,
+					const int64_t& startTime,
+					const int64_t& endTime,
 					const std::vector<repo::lib::RepoUUID>& resources,
 					const std::unordered_map<std::string, std::string>& metdata
 				);
@@ -67,8 +67,8 @@ namespace repo {
 				repo::lib::RepoUUID uniqueId;
 				repo::lib::RepoUUID parentId;
 				repo::lib::RepoUUID sequenceId;
-				long long startTime;
-				long long endTime;
+				int64_t startTime;
+				int64_t endTime;
 				std::vector<repo::lib::RepoUUID> resources;
 				std::unordered_map<std::string, std::string> metadata;
 			};

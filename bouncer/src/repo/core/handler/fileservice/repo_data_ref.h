@@ -30,8 +30,8 @@ namespace repo {
 					friend class BlobFilesHandler;
 				private:
 					const std::string fileName;
-					const unsigned int startPos;
-					const unsigned int size;
+					const int32_t startPos;
+					const int32_t size;
 				public:
 					DataRef(const std::string &fileName, const unsigned int &startPos, const unsigned int &size)
 						: fileName(fileName), startPos(startPos), size(size) {}

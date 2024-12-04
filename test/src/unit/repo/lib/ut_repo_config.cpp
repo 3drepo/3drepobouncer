@@ -61,14 +61,12 @@ TEST(RepoConfigTest, dbConfigTest)
 {
 	std::string db = "database", user = "username", password = "password";
 	int port = 10000;
-	bool pwDigested = true;
-	RepoConfig config = { db, port, user, password, pwDigested };
+	RepoConfig config = { db, port, user, password };
 	auto dbData = config.getDatabaseConfig();
 	EXPECT_EQ(dbData.addr, db);
 	EXPECT_EQ(dbData.port, port);
 	EXPECT_EQ(dbData.username, user);
 	EXPECT_EQ(dbData.password, password);
-	EXPECT_EQ(dbData.pwDigested, pwDigested);
 
 	EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::FS);
 }
@@ -76,8 +74,7 @@ TEST(RepoConfigTest, dbConfigTest)
 repo::lib::RepoConfig createConfig() {
 	std::string db = "database", user = "username", password = "password";
 	int port = 10000;
-	bool pwDigested = true;
-	RepoConfig config = { db, port, user, password, pwDigested };
+	RepoConfig config = { db, port, user, password };
 
 	return config;
 }

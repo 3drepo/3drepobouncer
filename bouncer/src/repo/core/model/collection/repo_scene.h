@@ -23,13 +23,14 @@
 
 #include <unordered_map>
 
-#include "../../handler/repo_database_handler_abstract.h"
-#include "../../handler/fileservice/repo_file_manager.h"
-#include "../bson/repo_bson_sequence.h"
-#include "../bson/repo_bson_task.h"
-#include "../bson/repo_node.h"
-#include "../bson/repo_node_transformation.h"
-#include "../bson/repo_node_model_revision.h"
+#include "repo/core/handler/repo_database_handler_abstract.h"
+#include "repo/core/handler/fileservice/repo_file_manager.h"
+#include "repo/core/model/bson/repo_bson_sequence.h"
+#include "repo/core/model/bson/repo_bson_task.h"
+#include "repo/core/model/bson/repo_node.h"
+#include "repo/core/model/bson/repo_node_transformation.h"
+#include "repo/core/model/bson/repo_node_model_revision.h"
+#include "repo/lib/datastructure/repo_bounds.h"
 
 typedef std::unordered_map<repo::lib::RepoUUID, std::vector<repo::core::model::RepoNode*>, repo::lib::RepoUUIDHasher> ParentMap;
 
@@ -707,7 +708,7 @@ namespace repo {
 				* Get a bounding box for the entire scene
 				* @return returns bounding box for the whole graph.
 				*/
-				std::vector<repo::lib::RepoVector3D> getSceneBoundingBox() const;
+				repo::lib::RepoBounds getSceneBoundingBox() const;
 
 				/**
 				* Get all ID of nodes which are added since last revision
@@ -947,7 +948,7 @@ namespace repo {
 					const GraphType            &gType,
 					const RepoNode             *node,
 					const repo::lib::RepoMatrix   &mat,
-					std::vector<repo::lib::RepoVector3D> &bbox) const;
+					repo::lib::RepoBounds&bbox) const;
 
 				/**
 				* populate the collections (cameras, meshes etc) with the given nodes

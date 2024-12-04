@@ -14,11 +14,6 @@
 *  You should have received a copy of the GNU Affero General Public License
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- * Abstract database handler which all database handler needs to inherit from
- * WARNING: Do not expect any database handlers to be thread safe. It is currently
- * assumed that singleton object is instantiated before any threads are created!
- */
 
 #pragma once
 
@@ -34,6 +29,14 @@ namespace repo {
 			class RepoBSON;
 		}
 		namespace handler {
+			namespace database {
+				namespace query {
+					class RepoQuery;
+				}
+				namespace index{
+					class RepoIndex;
+				}
+			}
 			class AbstractDatabaseHandler {
 			public:
 				/**
@@ -86,19 +89,12 @@ namespace repo {
 				*/
 
 				/**
-				* Create a collection with the name specified
-				* @param database name of the database
-				* @param name name of the collection
-				*/
-				virtual void createCollection(const std::string &database, const std::string &name) = 0;
-
-				/**
 				* Create an index within the given collection
 				* @param database name of the database
 				* @param name name of the collection
 				* @param index BSONObj specifying the index
 				*/
-				virtual void createIndex(const std::string &database, const std::string &collection, const repo::core::model::RepoBSON& obj) = 0;
+				virtual void createIndex(const std::string &database, const std::string &collection, const database::index::RepoIndex&) = 0;
 
 				/**
 				* Insert a single document in database.collection
@@ -108,11 +104,10 @@ namespace repo {
 				* @param errMsg error message should it fail
 				* @return returns true upon success
 				*/
-				virtual bool insertDocument(
+				virtual void insertDocument(
 					const std::string &database,
 					const std::string &collection,
-					const repo::core::model::RepoBSON &obj,
-					std::string &errMsg) = 0;
+					const repo::core::model::RepoBSON &obj) = 0;
 
 				/**
 				* Insert multiple document in database.collection
@@ -122,11 +117,10 @@ namespace repo {
 				* @param errMsg error message should it fail
 				* @return returns true upon success
 				*/
-				virtual bool insertManyDocuments(
+				virtual void insertManyDocuments(
 					const std::string &database,
 					const std::string &collection,
 					const std::vector<repo::core::model::RepoBSON> &obj,
-					std::string &errMsg,
 					const Metadata& metadata = {}) = 0;
 
 				/**
@@ -139,12 +133,11 @@ namespace repo {
 				* @param errMsg error message should it fail
 				* @return returns true upon success
 				*/
-				virtual bool upsertDocument(
+				virtual void upsertDocument(
 					const std::string &database,
 					const std::string &collection,
 					const repo::core::model::RepoBSON &obj,
-					const bool        &overwrite,
-					std::string &errMsg) = 0;
+					const bool        &overwrite) = 0;
 
 				/**
 				* Remove a collection from the database
@@ -152,10 +145,9 @@ namespace repo {
 				* @param collection name of the collection to drop
 				* @param errMsg name of the collection to drop
 				*/
-				virtual bool dropCollection(
+				virtual void dropCollection(
 					const std::string &database,
-					const std::string &collection,
-					std::string &errMsg) = 0;
+					const std::string &collection) = 0;
 
 				/**
 				* Remove a document from the mongo database
@@ -164,11 +156,10 @@ namespace repo {
 				* @param collection name of the collection the document is in
 				* @param errMsg name of the database to drop
 				*/
-				virtual bool dropDocument(
+				virtual void dropDocument(
 					const repo::core::model::RepoBSON bson,
 					const std::string &database,
-					const std::string &collection,
-					std::string &errMsg) = 0;
+					const std::string &collection) = 0;
 
 				/*
 				*	------------- Query operations --------------
@@ -184,7 +175,7 @@ namespace repo {
 				virtual std::vector<repo::core::model::RepoBSON> findAllByCriteria(
 					const std::string& database,
 					const std::string& collection,
-					const repo::core::model::RepoBSON& criteria) = 0;
+					const database::query::RepoQuery& criteria) = 0;
 
 				/**
 				* Given a search criteria,  find one documents that passes this query
@@ -197,21 +188,8 @@ namespace repo {
 				virtual repo::core::model::RepoBSON findOneByCriteria(
 					const std::string& database,
 					const std::string& collection,
-					const repo::core::model::RepoBSON& criteria,
+					const database::query::RepoQuery& criteria,
 					const std::string& sortField = "") = 0;
-
-				/**
-				* Given a list of unique IDs, find all the documents associated to them
-				* @param name of database
-				* @param name of collection
-				* @param array of uuids in a BSON object
-				* @return a vector of RepoBSON objects associated with the UUIDs given
-				*/
-				virtual std::vector<repo::core::model::RepoBSON> findAllByUniqueIDs(
-					const std::string& database,
-					const std::string& collection,
-					const repo::core::model::RepoBSON& uuid,
-					const bool ignoreExtFiles = false) = 0;
 
 				/**
 				*Retrieves the first document matching given Shared ID (SID), sorting is descending
@@ -229,7 +207,7 @@ namespace repo {
 					const std::string& sortField) = 0;
 
 				/**
-				*Retrieves the document matching given Unique ID (SID), sorting is descending
+				*Retrieves the document matching given Unique ID, where the type of the id field is a UUID
 				* @param database name of database
 				* @param collection name of collection
 				* @param uuid share id
@@ -238,7 +216,19 @@ namespace repo {
 				virtual repo::core::model::RepoBSON findOneByUniqueID(
 					const std::string& database,
 					const std::string& collection,
-					const repo::lib::RepoUUID& uuid) = 0;
+					const repo::lib::RepoUUID& id) = 0;
+
+				/**
+				*Retrieves the document matching given Unique ID, where the type of the Id field is a string
+				* @param database name of database
+				* @param collection name of collection
+				* @param uuid share id
+				* @return returns the matching bson object
+				*/
+				virtual repo::core::model::RepoBSON findOneByUniqueID(
+					const std::string& database,
+					const std::string& collection,
+					const std::string& id) = 0;
 
 			protected:
 				/**

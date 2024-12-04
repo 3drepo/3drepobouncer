@@ -144,7 +144,7 @@ TEST(RepoRefTest, DeserialiseString)
 	builder.append(REPO_LABEL_ID, id);
 	builder.append(REPO_REF_LABEL_TYPE, RepoRef::convertTypeAsString(type));
 	builder.append(REPO_REF_LABEL_LINK, link);
-	builder.append(REPO_REF_LABEL_SIZE, (unsigned int)size);
+	builder.append(REPO_REF_LABEL_SIZE, (int32_t)size);
 
 	auto ref = RepoRef(builder.obj());
 
@@ -164,7 +164,7 @@ TEST(RepoRefTest, DeserialiseUUID)
 	builder.append(REPO_LABEL_ID, id);
 	builder.append(REPO_REF_LABEL_TYPE, RepoRef::convertTypeAsString(type));
 	builder.append(REPO_REF_LABEL_LINK, link);
-	builder.append(REPO_REF_LABEL_SIZE, (unsigned int)size);
+	builder.append(REPO_REF_LABEL_SIZE, (int32_t)size);
 
 	auto ref = RepoRef(builder.obj());
 
@@ -235,7 +235,7 @@ TEST(RepoRefTest, InvalidIdType)
 	repo::core::model::RepoBSONBuilder builder;
 	builder.append(REPO_REF_LABEL_TYPE, RepoRef::convertTypeAsString(RepoRef::RefType::FS));
 	builder.append(REPO_REF_LABEL_LINK, "link");
-	builder.append(REPO_REF_LABEL_SIZE, (unsigned int)0);
+	builder.append(REPO_REF_LABEL_SIZE, (int32_t)0);
 
 	builder.append(REPO_LABEL_ID, 0); // An integer is not a valid Id type
 
@@ -259,7 +259,7 @@ TEST(RepoRefTest, MismatchedIdTypeUUID)
 	repo::core::model::RepoBSONBuilder builder;
 	builder.append(REPO_REF_LABEL_TYPE, RepoRef::convertTypeAsString(RepoRef::RefType::FS));
 	builder.append(REPO_REF_LABEL_LINK, "link");
-	builder.append(REPO_REF_LABEL_SIZE, (unsigned int)0);
+	builder.append(REPO_REF_LABEL_SIZE, (int32_t)0);
 	builder.append(REPO_LABEL_ID, repo::lib::RepoUUID::createUUID());
 
 	// Reading a string indexed document as a UUID indexed document is not
@@ -277,7 +277,7 @@ TEST(RepoRefTest, MismatchedIdTypeString)
 	repo::core::model::RepoBSONBuilder builder;
 	builder.append(REPO_REF_LABEL_TYPE, RepoRef::convertTypeAsString(RepoRef::RefType::FS));
 	builder.append(REPO_REF_LABEL_LINK, "link");
-	builder.append(REPO_REF_LABEL_SIZE, (unsigned int)0);
+	builder.append(REPO_REF_LABEL_SIZE, (int32_t)0);
 	builder.append(REPO_LABEL_ID, repo::lib::RepoUUID::createUUID().toString());
 
 	// Reading a UUID indexed document, as a string indexed document, while

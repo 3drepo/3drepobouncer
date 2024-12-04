@@ -32,11 +32,11 @@
 #include <boost/bimap.hpp>
 
 #include "repo_model_import_abstract.h"
-#include "../../../core/model/collection/repo_scene.h"
-#include "../../../core/model/bson/repo_node_material.h"
-#include "../../../core/model/bson/repo_node_mesh.h"
-#include "../../../core/model/bson/repo_node_metadata.h"
-#include "../../../core/model/bson/repo_node_transformation.h"
+#include "repo/core/model/collection/repo_scene.h"
+#include "repo/core/model/bson/repo_node_material.h"
+#include "repo/core/model/bson/repo_node_mesh.h"
+#include "repo/core/model/bson/repo_node_metadata.h"
+#include "repo/core/model/bson/repo_node_transformation.h"
 
 #include "repo/lib/datastructure/repo_variant.h"
 

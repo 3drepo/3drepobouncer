@@ -4,3 +4,13 @@
 #If you really need to overwrite this file, be aware that it will be overwritten if updateSources.py is executed.
 
 
+set(SOURCES
+	${SOURCES}
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_expressions.cpp
+	CACHE STRING "SOURCES" FORCE)
+
+set(HEADERS
+	${HEADERS}
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_expressions.h
+	CACHE STRING "HEADERS" FORCE)
+

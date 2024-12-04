@@ -20,17 +20,23 @@
 #include <string>
 
 #include "repo_file_handler_abstract.h"
-#include "../repo_database_handler_abstract.h"
-#include "../../model/bson/repo_bson_ref.h"
-#include "../../../lib/repo_config.h"
+#include "repo/core/model/bson/repo_bson_ref.h"
+#include "repo/lib/repo_config.h"
 
 namespace repo {
 	namespace core {
 		namespace handler {
+			class AbstractDatabaseHandler;
 			namespace fileservice {
 				class FileManager
 				{
 				public:
+
+					/**
+					 * Default constructor
+					 */
+					FileManager(const repo::lib::RepoConfig& config, std::weak_ptr<AbstractDatabaseHandler> handler);
+
 					/**
 					 * A Deconstructor
 					 */
@@ -40,24 +46,6 @@ namespace repo {
 					// do not need to know about RepoRef, so it has its own type
 					// alias in case they diverge.
 					using Metadata = repo::core::model::RepoRef::Metadata;
-
-					/*
-					* Returns file handler.
-					* Get file manager instance
-					* Throws RepoException if this is called before instantiateMananger is called.
-					*/
-					static FileManager* getManager();
-
-					static void disconnect() {
-						if (manager)
-							delete manager;
-						manager = nullptr;
-					}
-
-					static FileManager* instantiateManager(
-						const repo::lib::RepoConfig &config,
-						repo::core::handler::AbstractDatabaseHandler *dbHandler
-					);
 
 					/*
 					* Possible options for static compression of stored files
@@ -130,12 +118,6 @@ namespace repo {
 
 				private:
 					/**
-					 * Default constructor
-					 */
-					FileManager(const repo::lib::RepoConfig &config,
-						repo::core::handler::AbstractDatabaseHandler *dbHandler);
-
-					/**
 					 * Cleans given filename by removing teamspace and model strings.
 					 * e.g. cleanFileName("/teamspaceA/modelB/file.obj")
 					 *        => "file.obj"
@@ -180,9 +162,10 @@ namespace repo {
 						const uint32_t                               &size,
 						const repo::core::model::RepoRef::Metadata   &metadata);
 
-					static FileManager* manager;
-					repo::core::handler::AbstractDatabaseHandler *dbHandler;
-					std::shared_ptr<AbstractFileHandler> defaultHandler, fsHandler;
+					std::shared_ptr<AbstractDatabaseHandler> getDbHandler();
+
+					std::weak_ptr<AbstractDatabaseHandler> dbHandler;
+					std::shared_ptr<AbstractFileHandler> fsHandler;
 				};
 			}
 		}

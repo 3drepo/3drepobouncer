@@ -190,19 +190,7 @@ void GeometryCollector::addFace(
 
 		if (vertexReference.added)
 		{
-			if (meshData->boundingBox.size()) {
-				meshData->boundingBox[0][0] = meshData->boundingBox[0][0] > v.x ? (float)v.x : meshData->boundingBox[0][0];
-				meshData->boundingBox[0][1] = meshData->boundingBox[0][1] > v.y ? (float)v.y : meshData->boundingBox[0][1];
-				meshData->boundingBox[0][2] = meshData->boundingBox[0][2] > v.z ? (float)v.z : meshData->boundingBox[0][2];
-
-				meshData->boundingBox[1][0] = meshData->boundingBox[1][0] < v.x ? (float)v.x : meshData->boundingBox[1][0];
-				meshData->boundingBox[1][1] = meshData->boundingBox[1][1] < v.y ? (float)v.y : meshData->boundingBox[1][1];
-				meshData->boundingBox[1][2] = meshData->boundingBox[1][2] < v.z ? (float)v.z : meshData->boundingBox[1][2];
-			}
-			else {
-				meshData->boundingBox.push_back({ (float)v.x, (float)v.y, (float)v.z });
-				meshData->boundingBox.push_back({ (float)v.x, (float)v.y, (float)v.z });
-			}
+			meshData->boundingBox.encapsulate(v);
 
 			if (minMeshBox.size()) {
 				minMeshBox[0] = v.x < minMeshBox[0] ? v.x : minMeshBox[0];
@@ -239,7 +227,6 @@ repo::core::model::TransformationNode* GeometryCollector::ensureParentNodeExists
 
 repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core::model::TransformationNode& root) {
 	repo::core::model::RepoNodeSet res;
-	auto dummyOutline = std::vector<std::vector<float>>();
 
 	std::unordered_map<std::string, repo::core::model::TransformationNode*> layerToTrans;
 

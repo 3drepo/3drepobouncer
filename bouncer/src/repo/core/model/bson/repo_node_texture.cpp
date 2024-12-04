@@ -72,8 +72,8 @@ void TextureNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 {
 	RepoNode::serialise(builder);
 
-	builder.append(REPO_LABEL_WIDTH, width);
-	builder.append(REPO_LABEL_HEIGHT, height);
+	builder.append(REPO_LABEL_WIDTH, (int32_t)width);
+	builder.append(REPO_LABEL_HEIGHT, (int32_t)height);
 
 	if (!extension.empty())
 	{

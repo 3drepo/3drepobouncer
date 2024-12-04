@@ -34,17 +34,18 @@
 #endif
 
 #include <unordered_map>
-
+#include <set>
 #include "repo/repo_bouncer_global.h"
 #include "repo/core/model/repo_model_global.h"
 #include "repo/lib/repo_log.h"
 #include "repo/lib/datastructure/repo_uuid.h"
 #include "repo/lib/datastructure/repo_vector.h"
 #include "repo/lib/datastructure/repo_matrix.h"
+#include "repo/lib/datastructure/repo_bounds.h"
 #include "repo/lib/repo_exception.h"
 #include "repo/core/model/bson/repo_bson_element.h"
 
-#include <mongo/bson/bson.h>
+#include <bsoncxx/document/value.hpp>
 
 #define REPO_BSON_MAX_BYTE_SIZE 16770000 //max size is 16MB,but leave a bit for buffer
 
@@ -55,10 +56,7 @@ namespace repo {
 		}
 
 		namespace model {
-			//TODO: Eventually we should inherit from a generic BSON object.
-			//work seems to have been started in here:https://github.com/jbenet/bson-cpp
-			//alternatively we can use a c++ wrapper on https://github.com/mongodb/libbson
-			class REPO_API_EXPORT RepoBSON : private mongo::BSONObj
+			class REPO_API_EXPORT RepoBSON : private bsoncxx::document::value
 			{
 				friend class RepoBSONBuilder;
 				friend class repo::core::handler::MongoDatabaseHandler;
@@ -66,11 +64,6 @@ namespace repo {
 			public:
 
 				using BinMapping = std::unordered_map<std::string, std::vector<uint8_t>>;
-
-				/**
-				* Default empty constructor.
-				*/
-				RepoBSON();
 
 				/**
 				* Constructor from Mongo BSON object.
@@ -83,20 +76,14 @@ namespace repo {
 				* Constructor from Mongo BSON object.
 				* @param mongo BSON object
 				*/
-				RepoBSON(const mongo::BSONObj &obj,
+				RepoBSON(const bsoncxx::document::view &obj,
 					const BinMapping& binMapping = {});
 
 				/**
-				* Constructor from Mongo BSON object builder.
-				* @param mongo BSON object builder
+				* This constructor must exist for various container types,
+				* but should be avoided in practice.
 				*/
-				RepoBSON(mongo::BSONObjBuilder& builder);
-
-				/**
-				* Constructor from raw data buffer.
-				* @param rawData raw data
-				*/
-				RepoBSON(const std::vector<char>& rawData);
+				RepoBSON();
 
 				/**
 				* Default empty deconstructor.
@@ -111,8 +98,6 @@ namespace repo {
 
 				bool hasField(const std::string& label) const;
 
-				int nFields() const;
-
 				/**
 				* returns a field from the BSON
 				* @param label name of the field to retrieve
@@ -126,13 +111,13 @@ namespace repo {
 
 				RepoBSON getObjectField(const std::string& label) const;
 
-				std::vector<lib::RepoVector3D> getBounds3D(const std::string& label);
+				std::vector<RepoBSON> getObjectArray(const std::string& label) const;
+
+				repo::lib::RepoBounds getBoundsField(const std::string& label) const;
 
 				lib::RepoVector3D getVector3DField(const std::string& label) const;
 
 				repo::lib::RepoMatrix getMatrixField(const std::string& label) const;
-
-				std::vector<float> getFloatVectorField(const std::string& label) const;
 
 				std::vector<double> getDoubleVectorField(const std::string& label) const;
 
@@ -140,7 +125,7 @@ namespace repo {
 
 				double getDoubleField(const std::string &label) const;
 
-				long long getLongField(const std::string& label) const;
+				int64_t getLongField(const std::string& label) const;
 
 				bool isEmpty() const;
 
@@ -254,6 +239,15 @@ namespace repo {
 				const std::vector<uint8_t>& getBinary(const std::string& label) const;
 
 			protected:
+
+				/*
+				* Convenience function for converting a variant array into a
+				* concrete array. If missingIsEmpty is true, then a document
+				* without the field at all will return an empty array, otherwise
+				* a FieldNotFound exception will be thrown.
+				*/
+				template<typename T>
+				std::vector<T> getArray(const std::string& label, bool missingIsEmpty) const;
 
 				/**
 				* Override the swap operator to perform the swap just like mongo bson

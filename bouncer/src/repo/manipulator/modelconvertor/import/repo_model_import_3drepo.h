@@ -78,7 +78,7 @@ namespace repo {
 					{4, 72}
 				};
 
-				typedef struct
+				struct fileMeta
 				{
 					int64_t jsonSize	 = -1;	//!< Size of the entire JSON segment
 					int64_t dataSize	 = -1;	//!< Size of the entire binary footer segment
@@ -89,7 +89,7 @@ namespace repo {
 					int64_t numChildren	 = -1;	//!< Number of children of the root node
 					int64_t textureStart = -1;	//!< Starting location of the JSON textures array from the top of the file in bytes
 					int64_t textureSize  = -1;  //!< Size of the JSON textures array in bytes
-				} fileMeta;
+				};
 
 				struct mesh_data_t
 				{
@@ -97,7 +97,7 @@ namespace repo {
 					std::vector<repo::lib::RepoVector3D> normals;
 					std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
 					std::vector<repo_face_t> faces;
-					std::vector<std::vector<double>> boundingBox;
+					repo::lib::RepoBounds boundingBox;
 					repo::lib::RepoUUID parent;
 					repo::lib::RepoUUID sharedID;
 				};
@@ -154,7 +154,7 @@ namespace repo {
 				repo::core::model::RepoNodeSet metadata;
 				repo::core::model::RepoNodeSet transformations;
 				repo::core::model::RepoNodeSet textures;
-				std::vector<double> offset;
+				std::optional<repo::lib::RepoVector3D64> offset;
 
 			public:
 

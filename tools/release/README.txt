@@ -4,7 +4,7 @@ This is the internal library used for 3D Repo GUI.
 
 ====================== Directory Listing ========================
  > bin
-      3drepobouncerClient - Command line tool to utilise 
+      3drepobouncerClient - Command line tool to utilise
       the client (and its required DLLs)
  > include
       header files for 3drepobouncer library
@@ -18,7 +18,7 @@ This is the internal library used for 3D Repo GUI.
 command line program provided which expose a small amount of
 features within the library, designed for server deployment
 
-To exploit the full features of the library as a user, please 
+To exploit the full features of the library as a user, please
 download a copy of our desktop client - 3D Repo GUI.
 
 =========================== Contact ==============================

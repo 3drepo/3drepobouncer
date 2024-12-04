@@ -33,7 +33,6 @@ namespace repo {
 				std::string connString;
 				std::string username;
 				std::string password;
-				bool pwDigested = false;
 			};
 
 			struct fs_config_t {
@@ -48,27 +47,23 @@ namespace repo {
 			* @params port database port
 			* @params username username to login with
 			* @params password password to login with
-			* @param pwDigested true if password given is digested.
 			*/
 			REPO_API_EXPORT RepoConfig(
 				const std::string &databaseAddr,
 				const int &port,
 				const std::string &username,
-				const std::string &password,
-				const bool pwDigested = false);
+				const std::string &password);
 
 			/**
 			* Instantiate Repo Config with a database connection
 			* @params connString connection string
 			* @params username username to login with
 			* @params password password to login with
-			* @param pwDigested true if password given is digested.
 			*/
 			REPO_API_EXPORT RepoConfig(
 				const std::string &connString,
 				const std::string &username,
-				const std::string &password,
-				const bool pwDigested = false);
+				const std::string &password);
 
 			/**
 			* Instantiate RepoConfig given a JSON configuration file.

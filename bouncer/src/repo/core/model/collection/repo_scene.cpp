@@ -20,18 +20,17 @@
 */
 #include "repo_scene.h"
 
-#include <boost/assign.hpp>
-#include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 #include <fstream>
 
-#include "../../../lib/repo_log.h"
-#include "../../../error_codes.h"
-#include "../bson/repo_bson_builder.h"
-#include "../bson/repo_bson_factory.h"
-#include "../bson/repo_bson_project_settings.h"
+#include "repo/lib/repo_log.h"
+#include "repo/error_codes.h"
+#include "repo/core/model/bson/repo_bson_builder.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/core/model/bson/repo_bson_project_settings.h"
+#include "repo/core/handler/database/repo_expressions.h"
 
 using namespace repo::core::model;
 
@@ -578,8 +577,6 @@ uint8_t RepoScene::commit(
 		//commited the revision node, commit the modification on the scene
 		if (success &= commitSceneChanges(handler, revId, errMsg))
 		{
-			handler->createCollection(databaseName, projectName + "." + REPO_COLLECTION_ISSUES);
-
 			//Succeed in commiting everything.
 			//Update Revision Node and reset state.
 
@@ -622,69 +619,42 @@ bool RepoScene::commitSequence(
 	const repo::lib::RepoUUID &revID,
 	std::string &err
 ) {
-	bool success = true;
 	if (frameStates.size()) {
 		auto sequenceCol = projectName + "." + REPO_COLLECTION_SEQUENCE;
 		sequence.setRevision(revID);
-		if (handler->insertDocument(
-			databaseName, sequenceCol, sequence, err)) {
-			for (const auto &state : frameStates) {
-				if (!manager->uploadFileAndCommit(databaseName, sequenceCol, state.first, state.second)) {
-					repoError << "Failed to commit a sequence state.";
-					success = false;
-				}
-			}
-		}
-		else {
-			repoError << "Failed to commit sequence bson: " << err;
-			return false;
+		handler->insertDocument(databaseName, sequenceCol, sequence);
+		for (const auto& state : frameStates) {
+			manager->uploadFileAndCommit(databaseName, sequenceCol, state.first, state.second);
 		}
 
 		auto taskCol = projectName + "." + REPO_COLLECTION_TASK;
 		for (const auto &task : tasks) {
-			if (!handler->insertDocument(databaseName, taskCol, task, err)) {
-				repoError << "Failed to commit task bson: " << err;
-				return false;
-			}
+			handler->insertDocument(databaseName, taskCol, task);
 		}
 
 		if (taskList.size()) {
-			if (!manager->uploadFileAndCommit(databaseName, taskCol, sequence.getUniqueId().toString(), taskList)) {
-				repoError << "Failed to commit a task list";
-				success = false;
-			}
+			manager->uploadFileAndCommit(databaseName, taskCol, sequence.getUniqueId().toString(), taskList);
 		}
 	}
-
-	return success;
+	return true;
 }
 
 void RepoScene::addErrorStatusToProjectSettings(
 	repo::core::handler::AbstractDatabaseHandler *handler
 )
 {
-	RepoBSON criteria = BSON(REPO_LABEL_ID << projectName);
-	auto projectsettings = RepoProjectSettings(handler->findOneByCriteria(databaseName, REPO_COLLECTION_SETTINGS, criteria));
+	auto projectsettings = RepoProjectSettings(handler->findOneByUniqueID(databaseName, REPO_COLLECTION_SETTINGS, projectName));
 	projectsettings.setErrorStatus();
-	std::string errorMsg;
-	if (!handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, projectsettings, false, errorMsg))
-	{
-		repoError << "Failed to update project settings: " << errorMsg;
-	}
+	handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, projectsettings, false);
 }
 
 void RepoScene::addTimestampToProjectSettings(
 	repo::core::handler::AbstractDatabaseHandler *handler
 )
 {
-	RepoBSON criteria = BSON(REPO_LABEL_ID << projectName);
-	auto projectsettings = RepoProjectSettings(handler->findOneByCriteria(databaseName, REPO_COLLECTION_SETTINGS, criteria));
+	auto projectsettings = RepoProjectSettings(handler->findOneByUniqueID(databaseName, REPO_COLLECTION_SETTINGS, projectName));
 	projectsettings.clearErrorStatus();
-	std::string errorMsg;
-	if (!handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, projectsettings, false, errorMsg))
-	{
-		repoError << "Failed to update project settings: " << errorMsg;
-	}
+	handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, projectsettings, false);
 }
 
 bool RepoScene::commitRevisionNode(
@@ -727,11 +697,13 @@ bool RepoScene::commitRevisionNode(
 
 	if (newRevNode)
 	{
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, BSON(REPO_NODE_REVISION_LABEL_TIMESTAMP << -1));
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON(REPO_NODE_REVISION_ID << 1 << "metadata.key" << 1 << "metadata.value" << 1));
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON("metadata.key" << 1 << "metadata.value" << 1));
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON(REPO_NODE_REVISION_ID << 1 << REPO_NODE_LABEL_SHARED_ID << 1 << REPO_LABEL_TYPE << 1));
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON(REPO_NODE_LABEL_SHARED_ID << 1));
+		using namespace core::handler::database::index;
+
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, Descending({ REPO_NODE_REVISION_LABEL_TIMESTAMP }));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ REPO_NODE_REVISION_ID, "metadata.key", "metadata.value" }));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ "metadata.key", "metadata.value" }));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ REPO_NODE_REVISION_ID, REPO_NODE_LABEL_SHARED_ID, REPO_LABEL_TYPE }));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ REPO_NODE_LABEL_SHARED_ID }));
 
 		for (size_t i = 0; i < refFiles.size(); i++)
 		{
@@ -765,7 +737,7 @@ bool RepoScene::commitRevisionNode(
 				repoError << "Failed to open reference file " << refFiles[i];
 			}
 		}
-	}
+		}
 	else
 	{
 		errMsg += "Failed to instantiate a new revision object!";
@@ -773,7 +745,7 @@ bool RepoScene::commitRevisionNode(
 	}
 
 	if (success)
-		return handler->upsertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, *newRevNode, true, errMsg);
+		handler->upsertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, *newRevNode, true);
 
 	return success;
 }
@@ -805,7 +777,9 @@ bool RepoScene::commitNodes(
 		nodes.push_back(*node);
 	}
 
-	return handler->insertManyDocuments(databaseName, projectName + "." + ext, nodes, errMsg);
+	handler->insertManyDocuments(databaseName, projectName + "." + ext, nodes);
+
+	return true;
 }
 
 bool RepoScene::commitSceneChanges(
@@ -924,9 +898,9 @@ std::string RepoScene::getBranchName() const
 	return branchName;
 }
 
-std::vector<repo::lib::RepoVector3D> RepoScene::getSceneBoundingBox() const
+repo::lib::RepoBounds RepoScene::getSceneBoundingBox() const
 {
-	std::vector<repo::lib::RepoVector3D> bbox;
+	repo::lib::RepoBounds bbox;
 	GraphType gType = stashGraph.rootNode ? GraphType::OPTIMIZED : GraphType::DEFAULT;
 
 	std::vector<float> identity = {
@@ -943,7 +917,7 @@ void RepoScene::getSceneBoundingBoxInternal(
 	const GraphType            &gType,
 	const RepoNode             *node,
 	const repo::lib::RepoMatrix   &mat,
-	std::vector<repo::lib::RepoVector3D> &bbox) const
+	repo::lib::RepoBounds &bbox) const
 {
 	if (node)
 	{
@@ -965,30 +939,7 @@ void RepoScene::getSceneBoundingBoxInternal(
 			const MeshNode *mesh = dynamic_cast<const MeshNode*>(node);
 			auto newmBBox = mesh->getBoundingBox();
 			MeshNode::transformBoundingBox(newmBBox, mat);
-
-			if (bbox.size())
-			{
-				if (newmBBox[0].x < bbox[0].x)
-					bbox[0].x = newmBBox[0].x;
-				if (newmBBox[0].y < bbox[0].y)
-					bbox[0].y = newmBBox[0].y;
-				if (newmBBox[0].z < bbox[0].z)
-					bbox[0].z = newmBBox[0].z;
-
-				if (newmBBox[1].x > bbox[1].x)
-					bbox[1].x = newmBBox[1].x;
-				if (newmBBox[1].y > bbox[1].y)
-					bbox[1].y = newmBBox[1].y;
-				if (newmBBox[1].z > bbox[1].z)
-					bbox[1].z = newmBBox[1].z;
-			}
-			else
-			{
-				//no bbox yet
-				bbox.push_back(newmBBox[0]);
-				bbox.push_back(newmBBox[1]);
-			}
-
+			bbox.encapsulate(newmBBox);
 			break;
 		}
 		case NodeType::REFERENCE:
@@ -998,30 +949,7 @@ void RepoScene::getSceneBoundingBoxInternal(
 			if (refSceneIt != graph.referenceToScene.end())
 			{
 				const RepoScene *refScene = refSceneIt->second;
-				const std::vector<repo::lib::RepoVector3D> refSceneBbox = refScene->getSceneBoundingBox();
-
-				if (bbox.size())
-				{
-					if (refSceneBbox[0].x < bbox[0].x)
-						bbox[0].x = refSceneBbox[0].x;
-					if (refSceneBbox[0].y < bbox[0].y)
-						bbox[0].y = refSceneBbox[0].y;
-					if (refSceneBbox[0].z < bbox[0].z)
-						bbox[0].z = refSceneBbox[0].z;
-
-					if (refSceneBbox[1].x > bbox[1].x)
-						bbox[1].x = refSceneBbox[1].x;
-					if (refSceneBbox[1].y > bbox[1].y)
-						bbox[1].y = refSceneBbox[1].y;
-					if (refSceneBbox[1].z > bbox[1].z)
-						bbox[1].z = refSceneBbox[1].z;
-				}
-				else
-				{
-					//no bbox yet
-					bbox.push_back(refSceneBbox[0]);
-					bbox.push_back(refSceneBbox[1]);
-				}
+				bbox.encapsulate(refScene->getSceneBoundingBox());
 			}
 			break;
 		}
@@ -1100,31 +1028,36 @@ bool RepoScene::loadRevision(
 	RepoBSON bson;
 	repoTrace << "loading revision : " << databaseName << "." << projectName << " head Revision: " << headRevision;
 	if (headRevision) {
-		RepoBSONBuilder critBuilder;
 
-		if (includeStatus.size()) {
-			RepoBSONBuilder statusBSONBuilder;
-			std::vector<RepoBSON> statusCheck = {
-			BSON(REPO_NODE_REVISION_LABEL_INCOMPLETE << BSON("$exists" << false))
-			};
+		using namespace repo::core::handler::database;
+
+		query::RepoQueryBuilder query;
+		if (includeStatus.size())
+		{
 			std::vector<int> statuses;
-			for (const auto &status : includeStatus) {
-				statuses.push_back((int)status);
-			}
-			statusBSONBuilder.appendArray("$in", statuses);
-			RepoBSONBuilder statusCheckBuilder;
-			statusCheckBuilder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, statusBSONBuilder.obj());
-			statusCheck.push_back(statusCheckBuilder.obj());
-			critBuilder.appendArray("$or", statusCheck);
+			std::transform(includeStatus.begin(), includeStatus.end(), std::back_inserter(statuses), [](auto s) { return (int)s; } );
+			query.append(
+				query::Or(
+					query::Eq(REPO_NODE_REVISION_LABEL_INCOMPLETE, statuses),
+					query::Exists(REPO_NODE_REVISION_LABEL_INCOMPLETE, false)
+				)
+			);
 		}
-		else {
-			critBuilder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, BSON("$exists" << false));
+		else
+		{
+			query.append(
+				query::Exists(REPO_NODE_REVISION_LABEL_INCOMPLETE, false)
+			);
 		}
+		query.append(query::Eq(REPO_NODE_LABEL_SHARED_ID, branch));
 
-		critBuilder.append(REPO_NODE_LABEL_SHARED_ID, branch);
+		bson = handler->findOneByCriteria(
+			databaseName,
+			projectName + "." + REPO_COLLECTION_HISTORY,
+			query,
+			REPO_NODE_REVISION_LABEL_TIMESTAMP
+		);
 
-		bson = handler->findOneByCriteria(databaseName, projectName + "." +
-			REPO_COLLECTION_HISTORY, critBuilder.obj(), REPO_NODE_REVISION_LABEL_TIMESTAMP);
 		repoTrace << "Fetching head of revision from branch " << branch;
 	}
 	else {
@@ -1160,10 +1093,9 @@ bool RepoScene::loadScene(
 		if (!loadRevision(handler, errMsg)) return false;
 	}
 
-	RepoBSONBuilder builder;
-	builder.append(REPO_NODE_STASH_REF, revNode->getUniqueID());
 	std::vector<RepoBSON> nodes = handler->findAllByCriteria(
-		databaseName, projectName + "." + REPO_COLLECTION_SCENE, builder.obj());
+		databaseName, projectName + "." + REPO_COLLECTION_SCENE, core::handler::database::query::Eq(REPO_NODE_STASH_REF, revNode->getUniqueID())
+	);
 
 	repoInfo << "# of nodes in this unoptimised scene = " << nodes.size();
 
@@ -1184,11 +1116,9 @@ bool RepoScene::loadStash(
 		if (!loadRevision(handler, errMsg)) return false;
 	}
 
-	//Get the relevant nodes from the scene graph using the unique IDs stored in this revision node
-	RepoBSONBuilder builder;
-	builder.append(REPO_NODE_STASH_REF, revNode->getUniqueID());
-
-	std::vector<RepoBSON> nodes = handler->findAllByCriteria(databaseName, projectName + "." + REPO_COLLECTION_STASH_REPO, builder.obj());
+	std::vector<RepoBSON> nodes = handler->findAllByCriteria(
+		databaseName, projectName + "." + REPO_COLLECTION_STASH_REPO, core::handler::database::query::Eq(REPO_NODE_STASH_REF, revNode->getUniqueID())
+	);
 	if (success = nodes.size())
 	{
 		repoInfo << "# of nodes in this stash scene = " << nodes.size();
@@ -1569,17 +1499,9 @@ bool RepoScene::updateRevisionStatus(
 	if (revNode)
 	{
 		revNode->updateStatus(status);
-		if (handler)
-		{
-			std::string errMsg;
-			success = handler->upsertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, *revNode, true, errMsg);
-		}
-		else
-		{
-			repoError << "Cannot update revision status without a database handler";
-		}
-
+		handler->upsertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, *revNode, true);
 		repoInfo << "rev node status is: " << (int)revNode->getUploadStatus();
+		success = true;
 	}
 	else
 	{

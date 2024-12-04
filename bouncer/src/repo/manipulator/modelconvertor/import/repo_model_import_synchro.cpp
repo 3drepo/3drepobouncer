@@ -22,6 +22,7 @@
 #include "repo/core/model/bson/repo_bson_factory.h"
 #include "repo/lib/repo_log.h"
 #include "repo/lib/datastructure/repo_matrix.h"
+#include "repo/lib/datastructure/repo_bounds.h"
 #include "repo/error_codes.h"
 
 using namespace repo::manipulator::modelconvertor;
@@ -134,7 +135,7 @@ repo::core::model::MetadataNode* SynchroModelImport::createMetaNode(
 		//Check if it is a number, if it is, store it as a number
 
 		try {
-			v = boost::lexical_cast<long long>(value);
+			v = boost::lexical_cast<int64_t>(value);
 		}
 		catch (boost::bad_lexical_cast&)
 		{
@@ -169,7 +170,7 @@ std::unordered_map<std::string, repo::core::model::MeshNode> SynchroModelImport:
 	for (const auto meshEntry : reader->getMeshes()) {
 		auto meshDetails = meshEntry.second;
 
-		std::vector<std::vector<float>> bbox;
+		repo::lib::RepoBounds bbox;
 		std::vector<repo::lib::RepoVector3D> vertices, normals;
 		std::vector<repo::lib::RepoVector2D> uvs;
 		std::vector<repo_face_t> faces;
@@ -178,18 +179,7 @@ std::unordered_map<std::string, repo::core::model::MeshNode> SynchroModelImport:
 				normals.push_back({ (float)meshDetails.normals[i].x, (float)meshDetails.normals[i].y, (float)meshDetails.normals[i].z });
 			}
 			vertices.push_back({ (float)meshDetails.vertices[i].x, (float)meshDetails.vertices[i].y, (float)meshDetails.vertices[i].z });
-			if (bbox.size()) {
-				bbox[0][0] = meshDetails.vertices[i].x < bbox[0][0] ? meshDetails.vertices[i].x : bbox[0][0];
-				bbox[0][1] = meshDetails.vertices[i].y < bbox[0][1] ? meshDetails.vertices[i].y : bbox[0][1];
-				bbox[0][2] = meshDetails.vertices[i].z < bbox[0][2] ? meshDetails.vertices[i].z : bbox[0][2];
-
-				bbox[1][0] = meshDetails.vertices[i].x < bbox[1][0] ? meshDetails.vertices[i].x : bbox[1][0];
-				bbox[1][1] = meshDetails.vertices[i].y < bbox[1][1] ? meshDetails.vertices[i].y : bbox[1][1];
-				bbox[1][2] = meshDetails.vertices[i].z < bbox[1][2] ? meshDetails.vertices[i].z : bbox[1][2];
-			}
-			else {
-				bbox = { { vertices[i].x , vertices[i].y, vertices[i].z },{ vertices[i].x , vertices[i].y, vertices[i].z } };
-			}
+			bbox.encapsulate(repo::lib::RepoVector3D64(meshDetails.vertices[i].x, meshDetails.vertices[i].y, meshDetails.vertices[i].z));
 		}
 
 		for (int i = 0; i < meshDetails.faces.size(); i += 3) {

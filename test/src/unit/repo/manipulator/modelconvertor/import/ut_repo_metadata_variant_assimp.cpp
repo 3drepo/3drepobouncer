@@ -73,7 +73,7 @@ TEST(RepoMetaVariantConverterAssimpTest, UInt64)
 
 	RepoVariant vMin;
 	EXPECT_TRUE(AssimpModelImport::tryConvertMetadataEntry(metaMin, vMin));
-	EXPECT_EQ(boost::get<long long>(vMin), 0);
+	EXPECT_EQ(boost::get<int64_t>(vMin), 0);
 
 	// Uint64 (max)
 	uint64_t dataMax = 9223372036854775807ll;
@@ -83,7 +83,7 @@ TEST(RepoMetaVariantConverterAssimpTest, UInt64)
 
 	RepoVariant vMax;
 	EXPECT_TRUE(AssimpModelImport::tryConvertMetadataEntry(metaMax, vMax));
-	EXPECT_EQ(boost::get<long long>(vMax), 9223372036854775807ll);
+	EXPECT_EQ(boost::get<int64_t>(vMax), 9223372036854775807ll);
 }
 
 TEST(RepoMetaVariantConverterAssimpTest, Float)

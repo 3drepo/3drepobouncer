@@ -85,7 +85,7 @@ void ModelRevisionNode::serialise(repo::core::model::RepoBSONBuilder& builder) c
 	}
 	if (status != UploadStatus::COMPLETE)
 	{
-		builder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, (uint32_t)status);
+		builder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, (int32_t)status);
 	}
 	builder.append(REPO_NODE_LABEL_SHARED_ID, sharedId); // By convention the ModelRevisionNode always has a SharedId member, even if zero
 }

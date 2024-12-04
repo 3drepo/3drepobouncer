@@ -136,11 +136,8 @@ void MultipartOptimizer::appendMesh(
 	meshMap.shared_id = node.getSharedID();
 
 	auto bbox = node.getBoundingBox();
-	if (bbox.size() >= 2)
-	{
-		meshMap.min = bbox[0];
-		meshMap.max = bbox[1];
-	}
+	meshMap.min = (repo::lib::RepoVector3D)bbox.min();
+	meshMap.max = (repo::lib::RepoVector3D)bbox.max();
 
 	std::vector<repo::lib::RepoVector3D> submVertices = node.getVertices();
 	std::vector<repo::lib::RepoVector3D> submNormals = node.getNormals();
@@ -194,38 +191,6 @@ void MultipartOptimizer::appendMesh(
 	{
 		repoError << "Failed merging meshes: Vertices or faces cannot be null!";
 	}
-}
-
-void updateMin(repo::lib::RepoVector3D& min, const repo::lib::RepoVector3D v)
-{
-	if (v.x < min.x) {
-		min.x = v.x;
-	}
-	if (v.y < min.y) {
-		min.y = v.y;
-	}
-	if (v.z < min.z) {
-		min.z = v.z;
-	}
-}
-
-void updateMax(repo::lib::RepoVector3D& max, const repo::lib::RepoVector3D v)
-{
-	if (v.x > max.x) {
-		max.x = v.x;
-	}
-	if (v.y > max.y) {
-		max.y = v.y;
-	}
-	if (v.z > max.z) {
-		max.z = v.z;
-	}
-}
-
-void updateMinMax(repo::lib::RepoVector3D& min, repo::lib::RepoVector3D& max, const repo::lib::RepoVector3D v)
-{
-	updateMin(min, v);
-	updateMax(max, v);
 }
 
 // Constructs a bounding volumne hierarchy of all the Faces in the MeshNode
@@ -551,12 +516,13 @@ void MultipartOptimizer::splitMesh(
 		mapping.vertTo = mapped.vertices.size();
 		mapping.triFrom = 0;
 		mapping.triTo = mapped.faces.size();
-		mapping.min = mapped.vertices[0];
-		mapping.max = mapped.vertices[0];
+		repo::lib::RepoBounds bounds;
 		for (const auto v : mapped.vertices)
 		{
-			updateMinMax(mapping.min, mapping.max, v);
+			bounds.encapsulate(v);
 		}
+		mapping.min = (repo::lib::RepoVector3D)bounds.min();
+		mapping.max = (repo::lib::RepoVector3D)bounds.max();
 		mapping.mesh_id = node.getUniqueID();
 		mapping.shared_id = node.getSharedID();
 		mapping.material_id = getMaterialID(scene, &node);
@@ -633,22 +599,20 @@ repo::core::model::SupermeshNode* MultipartOptimizer::createSupermeshNode(
 
 	//workout bbox from meshMapping
 	auto meshMapping = mapped.meshMapping;
-	std::vector<repo::lib::RepoVector3D> bbox;
-	bbox.push_back(meshMapping[0].min);
-	bbox.push_back(meshMapping[0].max);
+
+
+	repo::lib::RepoBounds bbox(meshMapping[0].min, meshMapping[0].max);
 	for (int i = 1; i < meshMapping.size(); ++i)
 	{
-		updateMin(bbox[0], meshMapping[i].min);
-		updateMax(bbox[1], meshMapping[i].max);
+		bbox.encapsulate(meshMapping[i].min);
+		bbox.encapsulate(meshMapping[i].max);
 	}
-
-	std::vector<std::vector<float>> bboxVec = { { bbox[0].x, bbox[0].y, bbox[0].z }, { bbox[1].x, bbox[1].y, bbox[1].z } };
 
 	auto supermesh = repo::core::model::RepoBSONFactory::makeSupermeshNode(
 		mapped.vertices,
 		mapped.faces,
 		mapped.normals,
-		bboxVec,
+		bbox,
 		mapped.uvChannels,
 		isGrouped ? "grouped" : "",
 		meshMapping);
@@ -795,8 +759,8 @@ Bvh buildBoundsBvh(
 	for (const auto& node : meshes)
 	{
 		auto bounds = node.getBoundingBox();
-		auto min = BvhVector3(bounds[0].x, bounds[0].y, bounds[0].z);
-		auto max = BvhVector3(bounds[1].x, bounds[1].y, bounds[1].z);
+		auto min = BvhVector3(bounds.min().x, bounds.min().y, bounds.min().z);
+		auto max = BvhVector3(bounds.max().x, bounds.max().y, bounds.max().z);
 		boundingBoxes.push_back(bvh::BoundingBox<Scalar>(min, max));
 	}
 
@@ -983,9 +947,9 @@ std::vector<std::vector<repo::core::model::MeshNode>> MultipartOptimizer::cluste
 		mesh.node = meshes[i];
 		auto bounds = mesh.node.getBoundingBox();
 		auto numVertices = mesh.node.getNumVertices();
-		auto width = bounds[1].x - bounds[0].x;
-		auto height = bounds[1].y - bounds[0].y;
-		auto length = bounds[1].z - bounds[0].z;
+		auto width = bounds.size().x;
+		auto height = bounds.size().y;
+		auto length = bounds.size().z;
 		auto metric = (float)numVertices / (width + height + length);
 		mesh.efficiency = metric;
 	}

@@ -50,7 +50,7 @@ std::unordered_map<std::string, repo::lib::RepoVariant> makeRandomMetadata(bool 
 			v = (int)(rand());
 			break;
 		case 2:
-			v = (long long)(rand());
+			v = (int64_t)(rand());
 			break;
 		case 3:
 			v = (double)(rand());
