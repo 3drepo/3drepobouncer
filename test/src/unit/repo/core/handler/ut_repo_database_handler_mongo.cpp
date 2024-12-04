@@ -100,7 +100,7 @@ TEST(MongoDatabaseHandlerTest, GetHandler)
 			options
 		);
 		EXPECT_TRUE(handler);
-		EXPECT_THROW(handler->testConnection(), mongocxx::operation_exception);
+		EXPECT_THROW(handler->testConnection(), std::exception); // (We actually expect a nested RepoException subclass)
 	}
 
 	// The expected exception will be thrown after the serverSelectionTimeoutMS,
@@ -114,7 +114,7 @@ TEST(MongoDatabaseHandlerTest, GetHandler)
 			options
 		);
 		EXPECT_TRUE(handler);
-		EXPECT_THROW(handler->testConnection(), mongocxx::operation_exception);
+		EXPECT_THROW(handler->testConnection(), std::exception);
 	}
 
 	// In this case the exception should say that the authentication has failed
@@ -127,7 +127,7 @@ TEST(MongoDatabaseHandlerTest, GetHandler)
 			options
 		);
 		EXPECT_TRUE(handler);
-		EXPECT_THROW(handler->testConnection(), mongocxx::operation_exception);
+		EXPECT_THROW(handler->testConnection(), std::exception);
 	}
 }
 
