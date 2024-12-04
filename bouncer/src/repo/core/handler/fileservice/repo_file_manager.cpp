@@ -289,9 +289,9 @@ bool FileManager::dropFileRef(
 	try {
 		getDbHandler()->dropDocument(bson, databaseName, collectionName);
 	}
-	catch (std::exception e)
+	catch (const repo::lib::RepoException& e)
 	{
-		repoError << "Failed to drop " << collectionName << " file ref: " << e.what();
+		repoError << e.printFull();
 		return false;
 	}
 
@@ -329,9 +329,17 @@ bool FileManager::upsertFileRef(
 	const uint32_t                               &size,
 	const repo::core::model::RepoRef::Metadata   &metadata)
 {
-	auto refObj = makeRefNode(id, link, type, size, metadata);
-	std::string collectionName = collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF;
-	getDbHandler()->upsertDocument(databaseName, collectionName, refObj, true);
+	try
+	{
+		auto refObj = makeRefNode(id, link, type, size, metadata);
+		std::string collectionName = collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF;
+		getDbHandler()->upsertDocument(databaseName, collectionName, refObj, true);
+	}
+	catch (const repo::lib::RepoException& e)
+	{
+		repoError << e.printFull(); // Let the explicit error handling take over from here
+		return false;
+	}
 	return true;
 }
 

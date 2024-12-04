@@ -28,6 +28,7 @@
 #include "repo/core/model/bson/repo_bson_builder.h"
 #include "repo/core/model/bson/repo_bson_element.h"
 #include "repo/lib/repo_log.h"
+#include "repo/lib/repo_exception.h"
 #include "database/repo_expressions.h"
 
 #include <mongocxx/client.hpp>
@@ -75,6 +76,49 @@ const std::list<std::string> repo::core::handler::MongoDatabaseHandler::ADMIN_ON
 // representative.
 #define ADMIN "admin"
 
+class MongoDatabaseHandler::MongoDatabaseHandlerException : public repo::lib::RepoException
+{
+public:
+	MongoDatabaseHandlerException(const MongoDatabaseHandler& handler, const std::string& method, const std::string& db, const std::string collection)
+		: RepoException("MongoDatabaseHandler exception: in " + method + " on: " + db + "." + collection + getUri(handler))
+	{
+		errorCode = REPOERR_AUTH_FAILED; //If no outer exception sets the return code, signal this is database operation/connection problem.
+	}
+
+	MongoDatabaseHandlerException(const MongoDatabaseHandler& handler, const std::string& method, const std::string& db)
+		: RepoException("MongoDatabaseHandler exception: in " + method + " on: " + db + getUri(handler))
+	{
+		errorCode = REPOERR_AUTH_FAILED;
+	}
+
+	MongoDatabaseHandlerException(const MongoDatabaseHandler& handler, const std::string& msg)
+		: RepoException("MongoDatabaseHandler exception: " + msg + getUri(handler))
+	{
+		errorCode = REPOERR_AUTH_FAILED;
+	}
+
+	MongoDatabaseHandlerException(const std::string& msg)
+		: RepoException("MongoDatabaseHandler exception: " + msg)
+	{
+		errorCode = REPOERR_AUTH_FAILED;
+	}
+
+private:
+	std::string getUri(const MongoDatabaseHandler& handler)
+	{
+		try
+		{
+			auto pool = handler.clientPool->acquire();
+			auto uri = pool->uri();
+			return std::string(" Uri: ") + uri.to_string();
+		}
+		catch (...)
+		{
+			return std::string(" Uri: Unable to get URI");
+		}
+	}
+};
+
 MongoDatabaseHandler::MongoDatabaseHandler(
 	const std::string& dbAddress,
 	const std::string& username,
@@ -104,11 +148,17 @@ MongoDatabaseHandler::~MongoDatabaseHandler()
 
 void MongoDatabaseHandler::testConnection()
 {
-	// The current version of this test is to enumerate the admins database, which
-	// should always be available, require similar permissions to being able to
-	// create collections etc, but should not have too many entries that waste
-	// time returning.
-	getCollections(ADMIN);
+	try {
+		// The current version of this test is to enumerate the admins database, which
+		// should always be available, require similar permissions to being able to
+		// create collections etc, but should not have too many entries that waste
+		// time returning.
+		getCollections(ADMIN);
+	}
+	catch (...)
+	{
+		std::throw_with_nested(MongoDatabaseHandlerException("testConnection() failed.")); // (The nested exception will print the URI)
+	}
 }
 
 void MongoDatabaseHandler::setFileManager(std::shared_ptr<FileManager> manager)
@@ -128,33 +178,27 @@ bool MongoDatabaseHandler::caseInsensitiveStringCompare(
 	return strcasecmp(s1.c_str(), s2.c_str()) <= 0;
 }
 
-void MongoDatabaseHandler::createIndex(const std::string &database, const std::string &collection, const database::index::RepoIndex& index)
+void MongoDatabaseHandler::createIndex(const std::string& database, const std::string& collection, const database::index::RepoIndex& index)
 {
-	if (!(database.empty() || collection.empty()))
+	try
 	{
-		auto client = clientPool->acquire();
-		auto db = client->database(database);
-		auto col = db.collection(collection);
-		auto obj = (repo::core::model::RepoBSON)index;
-
-		repoInfo << "Creating index for :" << database << "." << collection << " : index: " << obj.toString();
-
-		try
+		if (!(database.empty() || collection.empty()))
 		{
+			auto client = clientPool->acquire();
+			auto db = client->database(database);
+			auto col = db.collection(collection);
+			auto obj = (repo::core::model::RepoBSON)index;
+
+			repoInfo << "Creating index for :" << database << "." << collection << " : index: " << obj.toString();
+
 			col.create_index(obj.view());
 		}
-		catch (mongocxx::operation_exception e)
-		{
-			repoError << "Failed to create index (" << database << "." << collection << ":" << e.what();
-			throw e;
-		}
 	}
-	else
+	catch (...)
 	{
-		repoError << "Failed to create index: database(value: " << database << ")/collection(value: " << collection << ") name is empty!";
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "createIndex", database, collection));
 	}
 }
-
 
 /*
  * This helper function resolves the binary files for a given document.Any
@@ -183,12 +227,19 @@ void MongoDatabaseHandler::dropCollection(
 	const std::string &database,
 	const std::string &collection)
 {
-	if (!database.empty() && !collection.empty())
+	try
 	{
-		auto client = clientPool->acquire();
-		auto dbObj = client->database(database);
-		auto colObj = dbObj.collection(collection);
-		colObj.drop();
+		if (!database.empty() && !collection.empty())
+		{
+			auto client = clientPool->acquire();
+			auto dbObj = client->database(database);
+			auto colObj = dbObj.collection(collection);
+			colObj.drop();
+		}
+	}
+	catch (...)
+	{
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "dropCollection", database, collection));
 	}
 }
 
@@ -197,24 +248,31 @@ void MongoDatabaseHandler::dropDocument(
 	const std::string &database,
 	const std::string &collection)
 {
-	if (database.empty() || collection.empty())
+	try
 	{
-		return;
-	}
+		if (database.empty() || collection.empty())
+		{
+			return;
+		}
 
-	auto client = clientPool->acquire();
-	auto db = client->database(database);
-	auto col = db.collection(collection);
+		auto client = clientPool->acquire();
+		auto db = client->database(database);
+		auto col = db.collection(collection);
 
-	auto value = bson.find("_id");
-	if (value != bson.end())
-	{
-		bsoncxx::document::value queryDoc = make_document(kvp("_id", (*value).get_value()));
-		col.delete_one(queryDoc.view());
+		auto value = bson.find("_id");
+		if (value != bson.end())
+		{
+			bsoncxx::document::value queryDoc = make_document(kvp("_id", (*value).get_value()));
+			col.delete_one(queryDoc.view());
+		}
+		else
+		{
+			throw repo::lib::RepoException("Cannot drop a document without an _id field");
+		}
 	}
-	else
+	catch (...)
 	{
-		throw repo::lib::RepoException("Cannot drop a document without an _id field");
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "dropDocument", database, collection));
 	}
 }
 
@@ -223,23 +281,30 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 	const std::string& collection,
 	const database::query::RepoQuery& filter)
 {
-	std::vector<repo::core::model::RepoBSON> data;
-	repo::core::model::RepoBSON criteria = filter;
-	if (!criteria.isEmpty() && !database.empty() && !collection.empty())
+	try
 	{
-		auto client = clientPool->acquire();
-		auto db = client->database(database);
-		auto col = db.collection(collection);
+		std::vector<repo::core::model::RepoBSON> data;
+		repo::core::model::RepoBSON criteria = filter;
+		if (!criteria.isEmpty() && !database.empty() && !collection.empty())
+		{
+			auto client = clientPool->acquire();
+			auto db = client->database(database);
+			auto col = db.collection(collection);
 
-		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
+			fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
 
-		// Find all documents
-		auto cursor = col.find(criteria.view());
-		for (auto& doc : cursor) {
-			data.push_back(createRepoBSON(blobHandler, database, collection, doc));
+			// Find all documents
+			auto cursor = col.find(criteria.view());
+			for (auto& doc : cursor) {
+				data.push_back(createRepoBSON(blobHandler, database, collection, doc));
+			}
 		}
+		return data;
 	}
-	return data;
+	catch (...)
+	{
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "findAllByCriteria", database, collection));
+	}
 }
 
 repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
@@ -248,26 +313,33 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 	const database::query::RepoQuery& filter,
 	const std::string& sortField)
 {
-	repo::core::model::RepoBSON criteria = filter;
-	if (!criteria.isEmpty() && !database.empty() && !collection.empty())
+	try
 	{
-		auto client = clientPool->acquire();
-		auto db = client->database(database);
-		auto col = db.collection(collection);
+		repo::core::model::RepoBSON criteria = filter;
+		if (!criteria.isEmpty() && !database.empty() && !collection.empty())
+		{
+			auto client = clientPool->acquire();
+			auto db = client->database(database);
+			auto col = db.collection(collection);
 
-		mongocxx::options::find options{};
-		if (!sortField.empty()) {
-			options.sort(make_document(kvp(sortField, -1)));
-		}
+			mongocxx::options::find options{};
+			if (!sortField.empty()) {
+				options.sort(make_document(kvp(sortField, -1)));
+			}
 
-		// Find document
-		auto findResult = col.find_one(criteria.view(), options);
-		if (findResult.has_value()) {
-			fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-			return createRepoBSON(blobHandler, database, collection, findResult.value());
+			// Find document
+			auto findResult = col.find_one(criteria.view(), options);
+			if (findResult.has_value()) {
+				fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
+				return createRepoBSON(blobHandler, database, collection, findResult.value());
+			}
 		}
+		return {};
 	}
-	return {};
+	catch (...)
+	{
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "findOneByCriteria", database, collection));
+	}
 }
 
 repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
@@ -308,59 +380,72 @@ MongoDatabaseHandler::getAllFromCollectionTailable(
 	const std::string							  &sortField,
 	const int									  &sortOrder)
 {
-
-	std::vector<repo::core::model::RepoBSON> bsons;
-
-	if (database.empty() || collection.empty())
+	try
 	{
+		std::vector<repo::core::model::RepoBSON> bsons;
+
+		if (database.empty() || collection.empty())
+		{
+			return bsons;
+		}
+
+		auto client = clientPool->acquire();
+		auto db = client->database(database);
+		auto col = db.collection(collection);
+
+		mongocxx::options::find options{};
+		if (!sortField.empty())
+		{
+			options.sort(make_document(kvp(sortField, sortOrder)));
+		}
+		options.limit(limit);
+		options.skip(skip);
+
+		// Append the projection (as a document) - this should go onto the options
+		if (fields.size() > 0)
+		{
+			bsoncxx::builder::basic::document projection;
+			for (auto& n : fields)
+			{
+				projection.append(kvp(n, 1));
+			}
+			options.projection(projection.extract());
+		}
+
+
+		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
+
+		auto cursor = col.find({}, options);
+		for (auto doc : cursor) {
+			bsons.push_back(createRepoBSON(blobHandler, database, collection, doc));
+		}
+
 		return bsons;
 	}
-
-	auto client = clientPool->acquire();
-	auto db = client->database(database);
-	auto col = db.collection(collection);
-
-	mongocxx::options::find options{};
-	if (!sortField.empty())
+	catch (...)
 	{
-		options.sort(make_document(kvp(sortField, sortOrder)));
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "getAllFromCollectionTailable", database, collection));
 	}
-	options.limit(limit);
-	options.skip(skip);
-
-	// Append the projection (as a document) - this should go onto the options
-	if (fields.size() > 0)
-	{
-		bsoncxx::builder::basic::document projection;
-		for (auto& n : fields)
-		{
-			projection.append(kvp(n, 1));
-		}
-		options.projection(projection.extract());
-	}
-
-
-	fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-
-	auto cursor = col.find({}, options);
-	for (auto doc : cursor) {
-		bsons.push_back(createRepoBSON(blobHandler, database, collection, doc));
-	}
-
-	return bsons;
 }
 
 std::list<std::string> MongoDatabaseHandler::getCollections(
 	const std::string &database)
 {
-	if (database.empty())
+	try
 	{
-		return {};
+		if (database.empty())
+		{
+			return {};
+		}
+		auto client = clientPool->acquire();
+		auto db = client->database(database);
+		auto collectionsVector = db.list_collection_names();
+		return std::list<std::string>(collectionsVector.begin(), collectionsVector.end());
 	}
-	auto client = clientPool->acquire();
-	auto db = client->database(database);
-	auto collectionsVector = db.list_collection_names();
-	return std::list<std::string>(collectionsVector.begin(), collectionsVector.end());
+	catch (...)
+	{
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "getCollections", database));
+	}
 }
 
 std::vector<uint8_t> MongoDatabaseHandler::getBigFile(
@@ -416,17 +501,22 @@ void MongoDatabaseHandler::insertDocument(
 	const std::string &collection,
 	const repo::core::model::RepoBSON &obj)
 {
-	bool success = false;
-
-	if (obj.hasOversizeFiles())
+	try
 	{
-		throw repo::lib::RepoException("insertDocument cannot be used with BSONs holding binary files. Use insertManyDocuments instead.");
-	}
+		if (obj.hasOversizeFiles())
+		{
+			throw repo::lib::RepoException("insertDocument cannot be used with BSONs holding binary files. Use insertManyDocuments instead.");
+		}
 
-	auto client = clientPool->acquire();
-	auto db = client->database(database);
-	auto col = db.collection(collection);
-	col.insert_one(obj.view());
+		auto client = clientPool->acquire();
+		auto db = client->database(database);
+		auto col = db.collection(collection);
+		col.insert_one(obj.view());
+	}
+	catch (...)
+	{
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "insertDocument", database, collection));
+	}
 }
 
 void MongoDatabaseHandler::insertManyDocuments(
@@ -435,31 +525,38 @@ void MongoDatabaseHandler::insertManyDocuments(
 	const std::vector<repo::core::model::RepoBSON> &objs,
 	const Metadata& binaryStorageMetadata)
 {
-	auto client = clientPool->acquire();
-	auto db = client->database(database);
-	auto col = db.collection(collection);
+	try
+	{
+		auto client = clientPool->acquire();
+		auto db = client->database(database);
+		auto col = db.collection(collection);
 
-	fileservice::BlobFilesHandler blobHandler(fileManager, database, collection, binaryStorageMetadata);
+		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection, binaryStorageMetadata);
 
-	for (int i = 0; i < objs.size(); i += MAX_PARALLEL_BSON) {
-		std::vector<repo::core::model::RepoBSON>::const_iterator it = objs.begin() + i;
-		std::vector<repo::core::model::RepoBSON>::const_iterator last = i + MAX_PARALLEL_BSON >= objs.size() ? objs.end() : it + MAX_PARALLEL_BSON;
-		std::vector<bsoncxx::document::value> toCommit;
-		do {
-			auto node = *it;
-			auto data = node.getBinariesAsBuffer();
-			if (data.second.size()) {
-				auto ref = blobHandler.insertBinary(data.second);
-				node.replaceBinaryWithReference(ref.serialise(), data.first);
-			}
-			toCommit.push_back(node);
-		} while (++it != last);
+		for (int i = 0; i < objs.size(); i += MAX_PARALLEL_BSON) {
+			std::vector<repo::core::model::RepoBSON>::const_iterator it = objs.begin() + i;
+			std::vector<repo::core::model::RepoBSON>::const_iterator last = i + MAX_PARALLEL_BSON >= objs.size() ? objs.end() : it + MAX_PARALLEL_BSON;
+			std::vector<bsoncxx::document::value> toCommit;
+			do {
+				auto node = *it;
+				auto data = node.getBinariesAsBuffer();
+				if (data.second.size()) {
+					auto ref = blobHandler.insertBinary(data.second);
+					node.replaceBinaryWithReference(ref.serialise(), data.first);
+				}
+				toCommit.push_back(node);
+			} while (++it != last);
 
-		repoInfo << "Inserting " << toCommit.size() << " documents...";
-		col.insert_many(toCommit);
+			repoInfo << "Inserting " << toCommit.size() << " documents...";
+			col.insert_many(toCommit);
+		}
+
+		blobHandler.finished();
 	}
-
-	blobHandler.finished();
+	catch (...)
+	{
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "insertManyDocuments", database, collection));
+	}
 }
 
 void MongoDatabaseHandler::upsertDocument(
@@ -468,64 +565,71 @@ void MongoDatabaseHandler::upsertDocument(
 	const repo::core::model::RepoBSON &obj,
 	const bool        &overwrite)
 {
-	if (obj.hasOversizeFiles())
+	try
 	{
-		throw repo::lib::RepoException("upsertDocument cannot be used with BSONs holding binary files.");
-	}
-
-	auto client = clientPool->acquire();
-	auto db = client->database(database);
-	auto col = db.collection(collection);
-
-	bsoncxx::builder::basic::document query;
-
-	if (overwrite)
-	{
-		query.append(kvp(ID, obj.find(ID)->get_value()));
-
-		mongocxx::options::replace options{};
-		options.upsert(true);
-
-		col.replace_one(
-			query.view(),
-			obj.view(),
-			options
-		);
-	}
-	else
-	{
-		// The following snippet makes the update document, which consists of
-		// a command to set all mutable fields, and set the immutable _id field
-		// only when performing an insert.
-
-		bsoncxx::builder::basic::document set;
-		bsoncxx::builder::basic::document setOnInsert;
-
-		for (const auto& e : obj)
+		if (obj.hasOversizeFiles())
 		{
-			if (e.key() == ID)
-			{
-				query.append(kvp(e.key(), e.get_value()));
-				setOnInsert.append(kvp(e.key(), e.get_value()));
-			}
-			else
-			{
-				set.append(kvp(e.key(), e.get_value()));
-			}
+			throw repo::lib::RepoException("upsertDocument cannot be used with BSONs holding binary files.");
 		}
 
-		auto update = make_document(
-			kvp("$set", set.view()),
-			kvp("$setOnInsert", setOnInsert.view())
-		);
+		auto client = clientPool->acquire();
+		auto db = client->database(database);
+		auto col = db.collection(collection);
 
-		mongocxx::options::update options{};
-		options.upsert(true);
+		bsoncxx::builder::basic::document query;
 
-		col.update_one(
-			query.view(),
-			update.view(),
-			options
-		);
+		if (overwrite)
+		{
+			query.append(kvp(ID, obj.find(ID)->get_value()));
+
+			mongocxx::options::replace options{};
+			options.upsert(true);
+
+			col.replace_one(
+				query.view(),
+				obj.view(),
+				options
+			);
+		}
+		else
+		{
+			// The following snippet makes the update document, which consists of
+			// a command to set all mutable fields, and set the immutable _id field
+			// only when performing an insert.
+
+			bsoncxx::builder::basic::document set;
+			bsoncxx::builder::basic::document setOnInsert;
+
+			for (const auto& e : obj)
+			{
+				if (e.key() == ID)
+				{
+					query.append(kvp(e.key(), e.get_value()));
+					setOnInsert.append(kvp(e.key(), e.get_value()));
+				}
+				else
+				{
+					set.append(kvp(e.key(), e.get_value()));
+				}
+			}
+
+			auto update = make_document(
+				kvp("$set", set.view()),
+				kvp("$setOnInsert", setOnInsert.view())
+			);
+
+			mongocxx::options::update options{};
+			options.upsert(true);
+
+			col.update_one(
+				query.view(),
+				update.view(),
+				options
+			);
+		}
+	}
+	catch (...)
+	{
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "upsertDocument", database, collection));
 	}
 }

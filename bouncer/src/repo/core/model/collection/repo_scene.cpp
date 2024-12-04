@@ -645,7 +645,6 @@ void RepoScene::addErrorStatusToProjectSettings(
 {
 	auto projectsettings = RepoProjectSettings(handler->findOneByUniqueID(databaseName, REPO_COLLECTION_SETTINGS, projectName));
 	projectsettings.setErrorStatus();
-	std::string errorMsg;
 	handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, projectsettings, false);
 }
 
@@ -655,7 +654,6 @@ void RepoScene::addTimestampToProjectSettings(
 {
 	auto projectsettings = RepoProjectSettings(handler->findOneByUniqueID(databaseName, REPO_COLLECTION_SETTINGS, projectName));
 	projectsettings.clearErrorStatus();
-	std::string errorMsg;
 	handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, projectsettings, false);
 }
 

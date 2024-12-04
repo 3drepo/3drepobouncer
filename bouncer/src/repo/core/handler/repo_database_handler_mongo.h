@@ -50,6 +50,7 @@ namespace repo {
 			}
 			class MongoDatabaseHandler : public AbstractDatabaseHandler {
 				enum class OPERATION { DROP, INSERT, UPDATE };
+
 			public:
 				/*
 				*	=================================== Public Fields ========================================
@@ -369,6 +370,9 @@ namespace repo {
 				* @return returns true if string 1 matches (or is greater than) string 2
 				*/
 				static bool caseInsensitiveStringCompare(const std::string& s1, const std::string& s2);
+
+				class MongoDatabaseHandlerException;
+				friend MongoDatabaseHandlerException;
 
 				/*
 				*	=========================================================================================

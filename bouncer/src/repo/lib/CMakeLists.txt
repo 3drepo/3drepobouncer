@@ -9,6 +9,7 @@ set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_broadcaster.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_config.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_exception.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_license.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_log.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_property_tree.cpp
