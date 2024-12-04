@@ -159,13 +159,6 @@ namespace repo {
 				*/
 
 				/**
-				* Create a collection with the name specified
-				* @param database name of the database
-				* @param name name of the collection
-				*/
-				virtual void createCollection(const std::string &database, const std::string &name);
-
-				/**
 				* Create an index within the given collection
 				* @param database name of the database
 				* @param name name of the collection

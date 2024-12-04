@@ -62,7 +62,6 @@ TEST(MongoDatabaseHandlerTest, CheckTestDatabase)
 			documents.push_back(builder.obj());
 		}
 
-		handler->createCollection(REPO_GTEST_DBNAME4, REPO_GTEST_COLNAME_GOLDEN1);
 		handler->insertManyDocuments(REPO_GTEST_DBNAME4, REPO_GTEST_COLNAME_GOLDEN1, documents);
 
 		FAIL() << "Cannot load " << REPO_GTEST_DBNAME4 << "." << REPO_GTEST_COLNAME_GOLDEN1 << ". The dataset will be rebuilt but must be manually inspected and commited after.";
@@ -313,32 +312,6 @@ TEST(MongoDatabaseHandlerTest, GetCollections)
 
 	EXPECT_THAT(handler->getCollections(""), IsEmpty());
 	EXPECT_THAT(handler->getCollections("blahblah"), IsEmpty());
-}
-
-TEST(MongoDatabaseHandlerTest, CreateCollection)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-
-	auto name = repo::lib::RepoUUID::createUUID().toString();
-	handler->createCollection(REPO_GTEST_DBNAME4, name);
-	EXPECT_THAT(handler->getCollections(REPO_GTEST_DBNAME4), IsSupersetOf({ name }));
-
-	// Existing collection - must be a noop since a common task is to create things
-	// like the .issues collection, when committing a scene.
-
-	handler->createCollection(REPO_GTEST_DBNAME4, name);
-	EXPECT_THAT(handler->getCollections(REPO_GTEST_DBNAME4), IsSupersetOf({ name }));
-
-	// Invalid name
-
-	EXPECT_THROW(handler->createCollection(REPO_GTEST_DBNAME4, ""), std::exception);
-
-	// Nonexistent database (should create the database and collection on demand)
-
-	auto db = repo::lib::RepoUUID::createUUID().toString();
-	handler->createCollection(db, name);
-	EXPECT_THAT(handler->getCollections(db), IsSupersetOf({name}));
 }
 
 TEST(MongoDatabaseHandlerTest, DropCollection)
@@ -855,7 +828,6 @@ TEST(MongoDatabaseHandlerTest, InsertManyDocumentsBinary)
 
 	auto collection = "insertManyDocumentsBinary";
 	handler->dropCollection(REPO_GTEST_DBNAME3, collection);
-	handler->createCollection(REPO_GTEST_DBNAME3, collection);
 	handler->insertManyDocuments(REPO_GTEST_DBNAME3, collection, documents);
 
 	// Read back the documents; this should also populate the binary buffers
@@ -895,7 +867,6 @@ TEST(MongoDatabaseHandlerTest, InsertManyDocumentsMetadata)
 
 	auto collection = "InsertManyDocumentsMetadata";
 	handler->dropCollection(REPO_GTEST_DBNAME3, collection);
-	handler->createCollection(REPO_GTEST_DBNAME3, collection);
 	handler->insertManyDocuments(REPO_GTEST_DBNAME3, collection, documents, metadata);
 
 	// Read back the documents

@@ -114,21 +114,6 @@ bool MongoDatabaseHandler::caseInsensitiveStringCompare(
 	return strcasecmp(s1.c_str(), s2.c_str()) <= 0;
 }
 
-void MongoDatabaseHandler::createCollection(const std::string &database, const std::string &name)
-{
-	auto client = clientPool->acquire();
-	auto db = client->database(database);
-	if (!db.has_collection(name)) {
-
-		// This is an explicit operation that will throw if a collection already
-		// exists. Note that for writing documents, collections are created
-		// explicitly so this is only needed to create empty collections, such as
-		// the issues list.
-
-		db.create_collection(name);
-	}
-}
-
 void MongoDatabaseHandler::createIndex(const std::string &database, const std::string &collection, const database::index::RepoIndex& index)
 {
 	if (!(database.empty() || collection.empty()))

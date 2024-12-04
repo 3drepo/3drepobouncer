@@ -577,8 +577,6 @@ uint8_t RepoScene::commit(
 		//commited the revision node, commit the modification on the scene
 		if (success &= commitSceneChanges(handler, revId, errMsg))
 		{
-			handler->createCollection(databaseName, projectName + "." + REPO_COLLECTION_ISSUES);
-
 			//Succeed in commiting everything.
 			//Update Revision Node and reset state.
 
