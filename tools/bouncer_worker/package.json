@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@elastic/elasticsearch": "7.17.14",
-    "amqplib": "0.10.3",
+    "amqplib": "0.10.4",
     "crypto-js": "4.1.1",
     "moment": "2.29.1",
     "nodemon": "3.1.4",
