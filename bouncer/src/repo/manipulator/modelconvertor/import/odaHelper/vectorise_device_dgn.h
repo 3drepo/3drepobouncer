@@ -38,7 +38,7 @@ namespace repo {
 
 					VectoriseDeviceDgn(){}
 					~VectoriseDeviceDgn(){}
-				}; // end OdaVectorizeDevice			
+				}; // end OdaVectorizeDevice
 			}
 		}
 	}

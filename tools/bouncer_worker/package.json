@@ -16,14 +16,15 @@
   "dependencies": {
     "@elastic/elasticsearch": "7.17.14",
     "amqplib": "0.10.3",
-    "crypto-js": "4.1.1",
-    "moment": "2.29.1",
+    "crypto-js": "4.2.0",
+    "moment": "2.30.1",
     "nodemon": "3.1.7",
-    "systeminformation": "5.6.20",
+    "systeminformation": "5.23.5",
     "tree-kill": "1.2.2",
     "uuid": "8.3.2",
     "winston": "3.3.3",
-    "yargs": "16.2.0"
+    "yargs": "16.2.0",
+    "yup": "1.4.0"
   },
   "devDependencies": {
     "eslint": "7.10.0",

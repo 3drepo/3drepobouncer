@@ -28,6 +28,7 @@
 #include "../../bouncer/src/repo/error_codes.h"
 
 using namespace repo::manipulator::modelconvertor;
+using namespace testing;
 
 TEST(DrawingImportManager, ImportDGN)
 {

@@ -20,6 +20,9 @@
 
 #pragma once
 #include "repo_node.h"
+#include "repo/lib/datastructure/repo_variant.h"
+#include "repo/core/model/repo_model_global.h"
+#include <unordered_map>
 
 namespace repo {
 	namespace core {
@@ -34,7 +37,7 @@ namespace repo {
 #define REPO_NODE_LABEL_META_VALUE     			"value"
 			//------------------------------------------------------------------------------
 
-			class REPO_API_EXPORT MetadataNode :public RepoNode
+			class REPO_API_EXPORT MetadataNode : public RepoNode
 			{
 			public:
 
@@ -47,14 +50,27 @@ namespace repo {
 				* Construct a MetadataNode from a RepoBSON object
 				* @param RepoBSON object
 				*/
-				MetadataNode(RepoBSON bson,
-					const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping =
-					std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>());
+				MetadataNode(RepoBSON bson);
 
 				/**
 				* Default deconstructor
 				*/
 				~MetadataNode();
+
+			protected:
+				std::unordered_map<std::string, repo::lib::RepoVariant> metadataMap;
+
+			protected:
+				virtual void deserialise(RepoBSON&);
+				virtual void serialise(class RepoBSONBuilder&) const;
+
+			public:
+				const std::unordered_map<std::string, repo::lib::RepoVariant>& getAllMetadata() const
+				{
+					return metadataMap;
+				}
+
+				void setMetadata(const std::unordered_map<std::string, repo::lib::RepoVariant>&);
 
 				/**
 				* Get the type of node
@@ -82,14 +98,6 @@ namespace repo {
 				* @param returns true if equal, false otherwise
 				*/
 				virtual bool sEqual(const RepoNode &other) const;
-
-				/**
-				* Append the given metadata to the list of currently existing metadata
-				* @param metadata the metadata to add
-				* @return returns a cloned version with updated metadata
-				*/
-				MetadataNode cloneAndAddMetadata(
-					const RepoBSON &metadata) const;
 			};
 		} //namespace model
 	} //namespace core

@@ -80,7 +80,7 @@ repo::core::model::RepoScene* RepoController::fetchScene(
 	const bool           &headRevision,
 	const bool           &ignoreRefScene,
 	const bool           &skeletonFetch,
-	const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus)
+	const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus)
 {
 	return impl->fetchScene(token, database, collection, uuid, headRevision, ignoreRefScene, skeletonFetch, includeStatus);
 }

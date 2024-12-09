@@ -18,100 +18,94 @@
 #include <cstdlib>
 
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest-matchers.h>
 
 #include <repo/core/model/bson/repo_node_transformation.h>
 #include <repo/core/model/bson/repo_bson_builder.h>
+#include <repo/core/model/bson/repo_bson_factory.h>
 #include "../../../../repo_test_utils.h"
+#include "../../../../repo_test_mesh_utils.h"
 
 using namespace repo::core::model;
+using namespace testing;
 
-std::vector<float> identity =
-{ 1, 0, 0, 0,
-0, 1, 0, 0,
-0, 0, 1, 0,
-0, 0, 0, 1 };
+std::vector<float> identity = {
+	1, 0, 0, 0,
+	0, 1, 0, 0,
+	0, 0, 1, 0,
+	0, 0, 0, 1
+};
 
-std::vector<float> notId =
-{ 1, 2, 3, 4,
-5, 6, 7, 8,
-9, 0.3f, 10, 11,
-5342, 31, 0.6f, 12 };
+std::vector<float> notId = {
+	1, 2, 3, 4,
+	5, 6, 7, 8,
+	9, 0.3f, 10, 11,
+	5342, 31, 0.6f, 12
+};
 
-std::vector<float> idInBoundary =
-{ 1, 0, 0, 0,
-0, 1, 0, (float)1e-6,
-0, 0, 1, 0,
-0, (float)1e-6, (float)1e-6, 1 };
+std::vector<float> idInBoundary ={
+	1, 0, 0, 0,
+	0, 1, 0, (float)1e-6,
+	0, 0, 1, 0,
+	0, (float)1e-6, (float)1e-6, 1
+};
 
-std::vector<float> notIdInBoundary = { 1, 0, 0, 0,
-0, 1, 0, (float)2e-5,
-0, 0, 2, 0,
-0, (float)2e-5, (float)2e-5, 1 };
+std::vector<float> notIdInBoundary = {
+	1, 0, 0, 0,
+	0, 1, 0, (float)2e-5,
+	0, 0, 2, 0,
+	0, (float)2e-5, (float)2e-5, 1
+};
 
-TransformationNode makeTransformationNode(
-	const std::vector<float> &matrix)
+// This function is used by the CopyConstructor Test to return a stack-allocated
+// copy of a TransformationNode on the stack.
+static TransformationNode makeRefNode()
 {
-	RepoBSONBuilder bsonBuilder;
-	RepoBSONBuilder rows;
-	for (uint32_t i = 0; i < 4; ++i)
-	{
-		RepoBSONBuilder columns;
-		for (uint32_t j = 0; j < 4; ++j) {
-			columns.append(std::to_string(j), matrix[i * 4 + j]);
-		}
-		rows.appendArray(std::to_string(i), columns.obj());
-	}
-	bsonBuilder.appendArray(REPO_NODE_LABEL_MATRIX, rows.obj());
+	auto a = TransformationNode();
+	a.setSharedID(repo::lib::RepoUUID::createUUID());
+	restartRand();
+	a.setTransformation(repo::test::utils::mesh::makeTransform(true, true));
+	return a;
+}
 
-	return bsonBuilder.obj();
+// This function is used by the CopyConstructor Test to return a heap-allocated
+// copy of a TransformationNode originally allocated on the stack.
+static TransformationNode* makeNewNode()
+{
+	auto a = makeRefNode();
+	return new TransformationNode(a);
 }
 
 TEST(RepoTransformationNodeTest, Constructor)
 {
 	auto empty = TransformationNode();
-
-	EXPECT_TRUE(empty.isEmpty());
-	EXPECT_EQ(NodeType::TRANSFORMATION, empty.getTypeAsEnum());
-
-	auto repoBson = RepoBSON(BSON("test" << "blah" << "test2" << 2));
-
-	auto fromRepoBSON = TransformationNode(repoBson);
-	EXPECT_EQ(NodeType::TRANSFORMATION, fromRepoBSON.getTypeAsEnum());
-	EXPECT_EQ(fromRepoBSON.nFields(), repoBson.nFields());
-	EXPECT_EQ(0, fromRepoBSON.getFileList().size());
+	EXPECT_THAT(empty.getTypeAsEnum(), Eq(NodeType::TRANSFORMATION));
+	EXPECT_THAT(empty.getType(), Eq(REPO_NODE_TYPE_TRANSFORMATION));
+	EXPECT_THAT(empty.getTransMatrix().isIdentity(), IsTrue());
+	EXPECT_THAT(empty.isIdentity(), IsTrue());
+	EXPECT_THAT(empty.getUniqueID().isDefaultValue(), IsFalse());
+	EXPECT_THAT(empty.getSharedID().isDefaultValue(), IsTrue());
 }
 
 TEST(RepoTransformationNodeTest, IdentityTest)
 {
-	auto empty = TransformationNode();
-	EXPECT_TRUE(empty.isIdentity());
+	auto node = TransformationNode();
+	EXPECT_THAT(node.isIdentity(), IsTrue());
 
-	EXPECT_TRUE(makeTransformationNode(identity).isIdentity());
-	EXPECT_TRUE(makeTransformationNode(idInBoundary).isIdentity());
-	EXPECT_FALSE(makeTransformationNode(notId).isIdentity());
-	EXPECT_FALSE(makeTransformationNode(notIdInBoundary).isIdentity());
-}
+	node.setTransformation(repo::lib::RepoMatrix(idInBoundary));
+	EXPECT_THAT(node.isIdentity(), IsTrue());
 
-TEST(RepoTransformationNodeTest, IdentityTest2)
-{
-	auto identity = TransformationNode::identityMat();
+	node.setTransformation(repo::lib::RepoMatrix(notId));
+	EXPECT_THAT(node.isIdentity(), IsFalse());
 
-	ASSERT_EQ(4, identity.size());
-	for (int i = 0; i < 4; ++i)
-	{
-		ASSERT_EQ(4, identity[i].size());
-		for (int j = 0; j < 4; ++j)
-		{
-			float expectedOutcome = i % 4 == j ? 1 : 0;
-			EXPECT_EQ(expectedOutcome, identity[i][j]);
-		}
-	}
+	node.setTransformation(repo::lib::RepoMatrix(notIdInBoundary));
+	EXPECT_THAT(node.isIdentity(), IsFalse());
 }
 
 TEST(RepoTransformationNodeTest, TypeTest)
 {
 	TransformationNode node = TransformationNode();
-
 	EXPECT_EQ(REPO_NODE_TYPE_TRANSFORMATION, node.getType());
 	EXPECT_EQ(NodeType::TRANSFORMATION, node.getTypeAsEnum());
 }
@@ -119,7 +113,6 @@ TEST(RepoTransformationNodeTest, TypeTest)
 TEST(RepoTransformationNodeTest, PositionDependantTest)
 {
 	TransformationNode node = TransformationNode();
-	//transformation node should always be position dependant
 	EXPECT_TRUE(node.positionDependant());
 }
 
@@ -128,9 +121,14 @@ TEST(RepoTransformationNodeTest, SEqualTest)
 	auto empty1 = TransformationNode();
 	auto empty2 = TransformationNode();
 
-	auto notEmpty1 = makeTransformationNode(notId);
-	auto notEmpty2 = makeTransformationNode(notId);
-	auto notEmpty3 = makeTransformationNode(identity);
+	TransformationNode notEmpty1;
+	notEmpty1.setTransformation(notId);
+
+	TransformationNode notEmpty2;
+	notEmpty2.setTransformation(notId);
+
+	TransformationNode notEmpty3;
+	notEmpty3.setTransformation(identity);
 
 	EXPECT_TRUE(empty1.sEqual(empty2));
 	EXPECT_TRUE(empty2.sEqual(empty1));
@@ -143,41 +141,162 @@ TEST(RepoTransformationNodeTest, SEqualTest)
 	EXPECT_FALSE(empty1.sEqual(notEmpty2));
 }
 
-TEST(RepoTransformationNodeTest, CloneAndApplyTransformationTest)
+TEST(RepoTransformationNodeTest, Serialise)
 {
-	auto empty = TransformationNode();
+	TransformationNode node;
 
-	TransformationNode modifiedEmpty = empty.cloneAndApplyTransformation(notId);
+	EXPECT_THAT(((RepoBSON)node).getUUIDField(REPO_NODE_LABEL_ID).isDefaultValue(), IsFalse());
+	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_LABEL_SHARED_ID), IsFalse());
+	EXPECT_THAT(((RepoBSON)node).getStringField(REPO_NODE_LABEL_TYPE), Eq(REPO_NODE_TYPE_TRANSFORMATION));
+	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_LABEL_NAME), IsFalse());
 
-	EXPECT_EQ(empty.getTransMatrix(false), repo::lib::RepoMatrix(identity));
-	EXPECT_EQ(modifiedEmpty.getTransMatrix(false), repo::lib::RepoMatrix(notId));
+	node.setUniqueID(repo::lib::RepoUUID::createUUID());
+	EXPECT_THAT(((RepoBSON)node).getUUIDField(REPO_NODE_LABEL_ID), node.getUniqueID());
 
-	auto filled = makeTransformationNode(notId);
-	TransformationNode modifiedFilled = filled.cloneAndApplyTransformation(std::vector<float>());
+	node.setSharedID(repo::lib::RepoUUID::createUUID());
+	EXPECT_THAT(((RepoBSON)node).getUUIDField(REPO_NODE_LABEL_SHARED_ID), node.getSharedID());
 
-	EXPECT_EQ(modifiedFilled.getTransMatrix(false), repo::lib::RepoMatrix(notId));
+	node.setRevision(repo::lib::RepoUUID::createUUID());
+	EXPECT_THAT(((RepoBSON)node).getUUIDField(REPO_NODE_REVISION_ID), node.getRevision());
+
+	node.changeName("name");
+	EXPECT_THAT(((RepoBSON)node).getStringField(REPO_NODE_LABEL_NAME), node.getName());
+
+	EXPECT_THAT(((RepoBSON)node).getMatrixField(REPO_NODE_LABEL_MATRIX), Eq(repo::lib::RepoMatrix()));
+
+	node.setTransformation(repo::test::utils::mesh::makeTransform(true, true));
+	EXPECT_THAT(((RepoBSON)node).getMatrixField(REPO_NODE_LABEL_MATRIX), Eq(node.getTransMatrix()));
+}
+
+TEST(RepoTransformationNodeTest, Deserialise)
+{
+	auto uniqueId = repo::lib::RepoUUID::createUUID();
+	auto sharedId = repo::lib::RepoUUID::createUUID();
+	auto name = "myName";
+	auto revisionId = repo::lib::RepoUUID::createUUID();
+	auto m = repo::test::utils::mesh::makeTransform(true, true);
+	auto parents = std::vector<repo::lib::RepoUUID>({
+		repo::lib::RepoUUID::createUUID(),
+		repo::lib::RepoUUID::createUUID(),
+	});
+
+	RepoBSONBuilder builder;
+
+	builder.append(REPO_NODE_LABEL_ID, uniqueId);
+	builder.append(REPO_NODE_LABEL_SHARED_ID, sharedId);
+	builder.append(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_TRANSFORMATION);
+	builder.appendArray(REPO_NODE_LABEL_PARENTS, parents);
+	builder.append(REPO_NODE_LABEL_NAME, name);
+	builder.append(REPO_NODE_REVISION_ID, revisionId);
+	builder.append(REPO_NODE_LABEL_MATRIX, m);
+
+	auto node = TransformationNode(builder.obj());
+
+	EXPECT_THAT(node.getUniqueID(), Eq(uniqueId));
+	EXPECT_THAT(node.getSharedID(), Eq(sharedId));
+	EXPECT_THAT(node.getRevision(), Eq(revisionId));
+	EXPECT_THAT(node.getName(), Eq(name));
+	EXPECT_THAT(node.getParentIDs(), UnorderedElementsAreArray(parents));
+	EXPECT_THAT(node.getTransMatrix(), Eq(m));
+}
+
+TEST(RepoTransformationNodeTest, DeserialiseEmpty)
+{
+	// Transformation nodes should deserialise OK with no matrix -
+	// the matrix will be the default in this case
+
+	RepoBSONBuilder builder;
+	auto node = TransformationNode(builder.obj());
+
+	EXPECT_THAT(node.getTransMatrix().isIdentity(), IsTrue());
+}
+
+TEST(RepoTransformationNodeTest, Factory)
+{
+	auto node = RepoBSONFactory::makeTransformationNode();
+
+	EXPECT_THAT(node.getName(), Eq("<transformation>"));
+	EXPECT_THAT(node.getUniqueID().isDefaultValue(), IsFalse());
+	EXPECT_THAT(node.getSharedID().isDefaultValue(), IsFalse());
+	EXPECT_THAT(node.getTransMatrix(), Eq(repo::lib::RepoMatrix()));
+
+	auto m = repo::test::utils::mesh::makeTransform(true, true);
+
+	node = RepoBSONFactory::makeTransformationNode(m);
+
+	EXPECT_THAT(node.getName(), Eq("<transformation>"));
+	EXPECT_THAT(node.getUniqueID().isDefaultValue(), IsFalse());
+	EXPECT_THAT(node.getSharedID().isDefaultValue(), IsFalse());
+	EXPECT_THAT(node.getTransMatrix(), Eq(m));
+
+	node = RepoBSONFactory::makeTransformationNode(m, "myName");
+
+	EXPECT_THAT(node.getName(), Eq("myName"));
+	EXPECT_THAT(node.getUniqueID().isDefaultValue(), IsFalse());
+	EXPECT_THAT(node.getSharedID().isDefaultValue(), IsFalse());
+	EXPECT_THAT(node.getTransMatrix(), Eq(m));
+
+	auto parents = std::vector < repo::lib::RepoUUID>({
+			repo::lib::RepoUUID::createUUID()
+		});
+
+	node = RepoBSONFactory::makeTransformationNode(m, "myName", parents);
+
+	EXPECT_THAT(node.getName(), Eq("myName"));
+	EXPECT_THAT(node.getUniqueID().isDefaultValue(), IsFalse());
+	EXPECT_THAT(node.getSharedID().isDefaultValue(), IsFalse());
+	EXPECT_THAT(node.getTransMatrix(), Eq(m));
+	EXPECT_THAT(node.getParentIDs(), UnorderedElementsAreArray(parents));
 }
 
 TEST(RepoTransformationNodeTest, GetTransMatrixTest)
 {
-	TransformationNode empty = TransformationNode();
-	EXPECT_EQ(repo::lib::RepoMatrix(identity), empty.getTransMatrix(false));
+	TransformationNode node;
+	EXPECT_THAT(node.getTransMatrix(), Eq(repo::lib::RepoMatrix()));
 
-	TransformationNode notEmpty = makeTransformationNode(notId);
-	EXPECT_EQ(repo::lib::RepoMatrix(notId), notEmpty.getTransMatrix(false));
+	auto m = repo::test::utils::mesh::makeTransform(true, true);
+	node.setTransformation(m);
+	EXPECT_THAT(node.getTransMatrix(), Eq(m));
 
-	//check transpose is done correctly
-	auto notIdTransposed = notEmpty.getTransMatrix(true);
+	m = repo::test::utils::mesh::makeTransform(true, true);
+	node.setTransformation(m);
+	EXPECT_THAT(node.getTransMatrix(), Eq(m));
 
-	auto notIdTransData = notIdTransposed.getData();
-	ASSERT_EQ(notId.size(), notIdTransData.size());
-	for (int i = 0; i < 4; ++i)
-	{
-		for (int j = 0; j < 4; ++j)
-		{
-			int index = i * 4 + j;
-			int transIndex = j * 4 + i;
-			EXPECT_EQ(notId[index], notIdTransData[transIndex]);
-		}
-	}
+	node = TransformationNode();
+	m = repo::test::utils::mesh::makeTransform(true, true);
+	node.applyTransformation(m); // Applying a matrix to an Identity transform should result in that same matrix
+	EXPECT_THAT(node.getTransMatrix(), Eq(m));
+}
+
+TEST(RepoTransformationNodeTest, CopyConstructor)
+{
+	auto a = makeRefNode();
+
+	auto b = a;
+	EXPECT_THAT(a.sEqual(b), IsTrue());
+
+	b.setTransformation(repo::test::utils::mesh::makeTransform(true,true));
+	EXPECT_THAT(a.sEqual(b), IsFalse());
+
+	auto c = new TransformationNode(a);
+	EXPECT_THAT(a.sEqual(*c), IsTrue());
+
+	c->setTransformation(repo::test::utils::mesh::makeTransform(true, true));
+	EXPECT_THAT(a.sEqual(*c), IsFalse());
+
+	delete c;
+
+	auto d = makeNewNode();
+	EXPECT_THAT(a.sEqual(*d), IsTrue());
+
+	d->setTransformation(repo::test::utils::mesh::makeTransform(true, true));
+	EXPECT_THAT(a.sEqual(*d), IsFalse());
+
+	delete d;
+
+	auto e = makeRefNode();
+	EXPECT_THAT(a.sEqual(e), IsTrue());
+
+	e.setTransformation(repo::test::utils::mesh::makeTransform(true, true));
+	EXPECT_THAT(a.sEqual(e), IsFalse());
 }
