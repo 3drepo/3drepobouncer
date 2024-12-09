@@ -18,57 +18,99 @@
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const { object, string, number, lazy } = require('yup');
 const { exitApplication } = require('./utils');
 const params = require('./processParams');
 
 const Config = {};
 
-/* eslint-disable no-param-reassign */
-const applyDefaultValuesIfUndefined = (config) => {
-	config.timeoutMS = config.timeoutMS || 180 * 60 * 1000;
+const rabbitmq = object({
+	host: string().required(),
+	sharedDir: string().required(),
+	worker_queue: string().default('jobq'),
+	callback_queue: string().default('callbackq'),
+	model_queue: string().default('modelq'),
+	drawing_queue: string().default('drawingq'),
+	task_prefetch: number().default(4),
+	model_prefetch: number().default(1),
+	drawing_prefetch: number().default(1),
+	pollingIntervalMS: number().default(10 * 1000),
+	maxRetries: number().default(3),
+	waitBeforeShutdownMS: number().default(60000),
+	maxWaitTimeMS: number().default(5 * 60 * 1000),
+});
 
-	// rabbitmq configurations
-	config.rabbitmq.maxRetries = config.rabbitmq.maxRetries || 3;
-	config.rabbitmq.task_prefetch = config.rabbitmq.task_prefetch || 4;
-	config.rabbitmq.model_prefetch = config.rabbitmq.model_prefetch || 1;
-	config.rabbitmq.drawing_prefetch = config.rabbitmq.drawing_prefetch || 1;
-	config.rabbitmq.pollingIntervalMS = config.rabbitmq.pollingIntervalMS || 10 * 1000;
-	config.rabbitmq.maxWaitTimeMS = config.rabbitmq.maxWaitTimeMS || 5 * 60 * 1000;
-	config.rabbitmq.waitBeforeShutdownMS = config.rabbitmq.waitBeforeShutdownMS || 60000;
-
-	// logging related
-	config.logging = config.logging || {};
-	config.logging.taskLogDir = config.logging.taskLogDir || config.bouncer.log_dir || config.rabbitmq.sharedDir;
-	config.logging.workerLogPath = config.logging.workerLogPath || config.logLocation;
-	config.logging.logLevel = config.logging.logLevel || 'info';
-
-	// processMonitoring
-	config.processMonitoring = config.processMonitoring || {};
-	config.processMonitoring.memoryIntervalMS = config.processMonitoring.memoryIntervalMS || 100;
-
-	// create connection string for db
-	if (!config.db.connectionString) {
-		config.db.connectionString = `mongodb://${config.db.dbhost}:${config.db.dbport}`;
+// This schema considers an object as a set of key-value pairs, where each
+// value should be a string.
+const envars = lazy((kvpObject) => {
+	const kvpSchema = {};
+	for (const key of Object.keys(kvpObject)) {
+		kvpSchema[key] = string();
 	}
+	return object(kvpSchema);
+});
 
-	if (config.repoLicense) {
-		config.instanceId = uuidv4();
-	}
-};
-/* eslint-enable no-param-reassign */
+const bouncer = object({
+	path: string().required(),
+	envars,
+	log_dir: string(),
+});
+
+const logging = object({
+	taskLogDir: string(),
+	workerLogPath: string(),
+	logLevel: string().oneOf([ // Options are the six winston log levels https://www.npmjs.com/package/winston/v/2.4.6#logging-levels
+		'error',
+		'warn',
+		'info',
+		'verbose',
+		'debug',
+		'silly',
+	]).default('info'),
+});
+
+const processMonitoring = object({
+	memoryIntervalMS: number().default(100),
+});
+
+const schema = object({
+	timeoutMS: number().default(180 * 60 * 1000),
+	umask: number(),
+	repoLicense: string(),
+	instanceId: string().when('repoLicense', { // This entry ensures that if repoLicense is defined, so is the instanceId
+		is: true,
+		then: (sch) => sch.default(uuidv4()),
+	}),
+	rabbitmq,
+	logging,
+	processMonitoring,
+	bouncer,
+});
 
 // eslint-disable-next-line consistent-return
 const init = () => {
 	try {
 		Config.configPath = params.config || path.resolve(__dirname, '../../config.json');
-		const config = JSON.parse(fs.readFileSync(Config.configPath));
-		applyDefaultValuesIfUndefined(config);
+		let config = JSON.parse(fs.readFileSync(Config.configPath));
+		config = schema.validateSync(config, {
+			stripUnknown: true,
+		});
+
+		// Set the fallbacks for log file directories (all log directories are
+		// ultimately optional).
+		if (!config.taskLogDir) {
+			config.taskLogDir = config.rabbitmq.sharedDir;
+		}
+
+		// Set the file creation permission mode mask (i.e. what permissions are
+		// *not* set) for any files created by this process or its descendents.
 		if (config.umask) {
 			// can't use logger -> circular dependency.
 			// eslint-disable-next-line no-console
 			console.log(`Setting umask: ${config.umask}`);
 			process.umask(config.umask);
 		}
+
 		Config.config = config;
 	} catch (err) {
 		// can't use logger -> circular dependency.

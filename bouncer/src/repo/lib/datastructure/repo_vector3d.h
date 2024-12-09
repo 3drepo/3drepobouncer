@@ -47,7 +47,7 @@ namespace repo{
 			{
 				std::stringstream ss;
 				ss.precision(17);
-				
+
 				ss << std::fixed << x << std::fixed << y << std::fixed << z;
 				auto stringified = ss.str();
 
@@ -100,6 +100,11 @@ namespace repo{
 				}
 			}
 
+			T norm() const
+			{
+				return std::sqrt(x * x + y * y + z * z);
+			}
+
 			inline _RepoVector3D<T>& operator=(const _RepoVector3D<T> &other)
 			{
 				x = other.x;
@@ -109,7 +114,7 @@ namespace repo{
 			}
 
 			inline _RepoVector3D<T> operator+(const _RepoVector3D<T> &other)
-			{							
+			{
 				return _RepoVector3D<T>(x + other.x, y + other.y, z + other.z);
 			}
 

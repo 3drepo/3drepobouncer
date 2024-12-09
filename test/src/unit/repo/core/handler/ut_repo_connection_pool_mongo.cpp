@@ -27,7 +27,7 @@ mongo::BSONObj* createCredentialsBSON(
 	const std::string &database,
 	const std::string &user,
 	const std::string &pw
-)	
+)
 {
 	std::string passwordDigest = mongo::DBClientWithCommands::createPasswordDigest(user, pw);
 	return new mongo::BSONObj(BSON("user" << user <<
@@ -38,11 +38,11 @@ mongo::BSONObj* createCredentialsBSON(
 
 TEST(MongoConnectionPoolTest, constructorTest)
 {
-	
+
 	mongo::client::initialize();
 	EXPECT_THROW(MongoConnectionPool(1, mongo::ConnectionString(mongo::HostAndPort("unknownAddress", 27017)), nullptr), mongo::DBException);
 	EXPECT_THROW(MongoConnectionPool(1, mongo::ConnectionString(mongo::HostAndPort(REPO_GTEST_DBADDRESS, 12345)), nullptr), mongo::DBException);
-	
+
 	auto correctCred = createCredentialsBSON(REPO_GTEST_AUTH_DATABASE, REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
 	auto badCred = createCredentialsBSON(REPO_GTEST_AUTH_DATABASE, REPO_GTEST_DBUSER, "325325");
 	auto badCred2 = createCredentialsBSON(REPO_GTEST_AUTH_DATABASE, "dlsfkj", REPO_GTEST_DBPW);

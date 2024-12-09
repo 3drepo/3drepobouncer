@@ -18,6 +18,7 @@
 #pragma once
 #include "repo_controller.cpp.inl"
 #include "error_codes.h"
+#include "repo/core/model/bson/repo_bson.h"
 
 #include "manipulator/modelconvertor/import/repo_model_import_assimp.h"
 
@@ -104,7 +105,7 @@ uint8_t RepoController::_RepoControllerImpl::commitScene(
 			{
 				manipulator::RepoManipulator* worker = workerPool.pop();
 				errCode = worker->commitScene(token->databaseAd,
-					token->getCredentials(),
+					token->getCredentials()->getStringField("user"),
 					token->bucketName,
 					token->bucketRegion,
 					scene,
@@ -155,7 +156,7 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::fetchScene(
 	const bool           &headRevision,
 	const bool           &ignoreRefScene,
 	const bool           &skeletonFetch,
-	const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus)
+	const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus)
 {
 	repo::core::model::RepoScene* scene = 0;
 	if (token)
@@ -216,7 +217,7 @@ RepoController::_RepoControllerImpl::getAllFromCollectionContinuous(
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 
-		vector = worker->getAllFromCollectionTailable(token->databaseAd, token->getCredentials(),
+		vector = worker->getAllFromCollectionTailable(token->databaseAd,
 			database, collection, skip, limit);
 
 		workerPool.push(worker);

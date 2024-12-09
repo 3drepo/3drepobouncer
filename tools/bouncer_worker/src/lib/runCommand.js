@@ -12,8 +12,8 @@ const run = (
 	{ codesAsSuccess = [], verbose = true, logLabel },
 	processInformation,
 ) => new Promise((resolve, reject) => {
-	if (verbose) logger.info(`Executing command: ${exe} ${params.join(' ')}`, logLabel);
-	const cmdExec = spawn(exe, params, { shell: true });
+	if (verbose) logger.info(`Executing command: "${exe}" ${params.join(' ')}`, logLabel);
+	const cmdExec = spawn(`"${exe}"`, params, { shell: true });
 	if (processInformation) processMonitor.startMonitor(processInformation);
 	let isTimeout = false;
 	let hasTerminated = false;

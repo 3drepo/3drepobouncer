@@ -82,6 +82,10 @@ namespace repo {
 				strftime(buffer, sizeof(buffer), "%d-%m-%Y %H-%M-%S", &t);
 				return std::string(buffer);
 			}
+
+			std::string operator()(const repo::lib::RepoUUID& u) const {
+				return u.toString();
+			}
 		};
 	}
 }

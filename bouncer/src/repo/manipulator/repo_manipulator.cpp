@@ -23,12 +23,13 @@
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 
-#include "../core/handler/repo_database_handler_mongo.h"
-#include "../core/handler/fileservice/repo_file_manager.h"
-#include "../core/model/bson/repo_bson_factory.h"
-#include "../error_codes.h"
-#include "../lib/repo_log.h"
-#include "../lib/repo_config.h"
+#include "repo/core/handler/repo_database_handler_mongo.h"
+#include "repo/core/handler/fileservice/repo_file_manager.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/core/model/bson/repo_bson.h"
+#include "repo/error_codes.h"
+#include "repo/lib/repo_log.h"
+#include "repo/lib/repo_config.h"
 #include "modelconvertor/import/repo_drawing_import_manager.h"
 #include "modelconvertor/import/repo_model_import_manager.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
@@ -127,21 +128,20 @@ repo::core::model::RepoScene* RepoManipulator::createFederatedScene(
 			parentNode = groupNameToNode[pair.second];
 		}
 
-		refNodes.insert(new repo::core::model::ReferenceNode(
-			pair.first.cloneAndAddParent(parentNode->getSharedID())
-		));
+		auto copy = new repo::core::model::ReferenceNode(pair.first);
+		copy->addParent(parentNode->getSharedID());
+		refNodes.insert(copy);
 	}
 	//federate scene has no referenced files
-	std::vector<std::string> empty;
 	repo::core::model::RepoScene* scene =
-		new repo::core::model::RepoScene(empty, emptySet, emptySet, emptySet, emptySet, emptySet, transNodes, refNodes);
+		new repo::core::model::RepoScene({}, emptySet, emptySet, emptySet, emptySet, emptySet, transNodes, refNodes);
 
 	return scene;
 }
 
 uint8_t RepoManipulator::commitScene(
 	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
+	const std::string& user,
 	const std::string& bucketName,
 	const std::string& bucketRegion,
 	repo::core::model::RepoScene* scene,
@@ -154,7 +154,7 @@ uint8_t RepoManipulator::commitScene(
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	auto manager = repo::core::handler::fileservice::FileManager::getManager();
-	std::string projOwner = owner.empty() ? cred->getStringField("user") : owner;
+	std::string projOwner = owner.empty() ? user : owner;
 
 	//Check if database exists
 	std::string dbName = scene->getDatabaseName();
@@ -184,7 +184,7 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 	const bool& headRevision,
 	const bool& ignoreRefScene,
 	const bool& skeletonFetch,
-	const std::vector<repo::core::model::RevisionNode::UploadStatus>& includeStatus)
+	const std::vector<repo::core::model::ModelRevisionNode::UploadStatus>& includeStatus)
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
@@ -285,7 +285,6 @@ repo_web_buffers_t RepoManipulator::generateSRCBuffer(
 std::vector<repo::core::model::RepoBSON>
 RepoManipulator::getAllFromCollectionTailable(
 	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
 	const std::string& database,
 	const std::string& collection,
 	const uint64_t& skip,
