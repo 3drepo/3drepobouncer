@@ -25,6 +25,7 @@
 
 using namespace repo::lib;
 using namespace repo::manipulator::modelconvertor;
+using namespace testing;
 
 TEST(RepoMetaVariantConverterAssimpTest, Boolean)
 {

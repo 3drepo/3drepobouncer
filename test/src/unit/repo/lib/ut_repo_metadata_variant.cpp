@@ -22,8 +22,8 @@
 
 #include "../../repo_test_utils.h"
 
-
 using namespace repo::lib;
+using namespace testing;
 
 // Test of basic assignments and retreival.
 TEST(RepoMetaVariantTest, AssignmentTest)
@@ -48,6 +48,11 @@ TEST(RepoMetaVariantTest, AssignmentTest)
 	std::string value4 = boost::get<std::string>(v4);
 	EXPECT_EQ(value4, "3d Repo");
 
+	// Empty strings should be stored OK
+	RepoVariant v4_1 = std::string("");
+	std::string value4_1 = boost::get<std::string>(v4_1);
+	EXPECT_EQ(value4_1, "");
+
 	tm tmPre;
 	tmPre.tm_sec = 1;
 	tmPre.tm_min = 2;
@@ -69,6 +74,11 @@ TEST(RepoMetaVariantTest, AssignmentTest)
 	EXPECT_EQ(value5.tm_wday, tmPre.tm_wday);
 	EXPECT_EQ(value5.tm_yday, tmPre.tm_yday);
 	EXPECT_EQ(value5.tm_isdst, tmPre.tm_isdst);
+
+	auto uuid = repo::lib::RepoUUID::createUUID();
+	RepoVariant v6 = uuid;
+	repo::lib::RepoUUID value6 = boost::get<repo::lib::RepoUUID>(v6);
+	EXPECT_EQ(value6, uuid);
 }
 
 TEST(RepoMetaVariantTest, StringVisitor) {
@@ -105,6 +115,11 @@ TEST(RepoMetaVariantTest, StringVisitor) {
 	RepoVariant v5 = tmPre;
 	std::string value5 = boost::apply_visitor(StringConversionVisitor(), v5);
 	EXPECT_EQ(value5, "04-06-1976 03-02-01");
+
+	auto uuid = repo::lib::RepoUUID::createUUID();
+	RepoVariant v6 = uuid;
+	std::string value6 = boost::apply_visitor(StringConversionVisitor(), v6);
+	EXPECT_EQ(value6, uuid.toString());
 }
 
 TEST(RepoMetaVariantTest, CompareVisitor) {
@@ -173,6 +188,11 @@ TEST(RepoMetaVariantTest, CompareVisitor) {
 	tm6b.tm_isdst = 0;
 	RepoVariant v6a = tm6a;
 	RepoVariant v6b = tm6b;
-
 	EXPECT_FALSE(boost::apply_visitor(DuplicationVisitor(), v6a, v6b));
+
+	RepoVariant v7a = repo::lib::RepoUUID::createUUID();
+	RepoVariant v7b = v7a;
+	RepoVariant v7c = repo::lib::RepoUUID::createUUID();
+	EXPECT_TRUE(boost::apply_visitor(DuplicationVisitor(), v7a, v7b));
+	EXPECT_FALSE(boost::apply_visitor(DuplicationVisitor(), v7a, v7c));
 }

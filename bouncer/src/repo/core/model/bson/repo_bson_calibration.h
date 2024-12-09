@@ -17,21 +17,41 @@
 
 #pragma once
 
-#include "repo_bson.h"
+#include "repo/repo_bouncer_global.h"
+#include "repo/lib/datastructure/repo_uuid.h"
+#include "repo/lib/datastructure/repo_vector.h"
+#include <vector>
 
 namespace repo {
 	namespace core {
 		namespace model {
 
-			class REPO_API_EXPORT RepoCalibration : public RepoBSON
+			class RepoBSON;
+
+			class REPO_API_EXPORT RepoCalibration
 			{
 			public:
+				RepoCalibration(
+					const repo::lib::RepoUUID& projectId,
+					const repo::lib::RepoUUID& drawingId,
+					const repo::lib::RepoUUID& revisionId,
+					const std::vector<repo::lib::RepoVector3D>& horizontal3d,
+					const std::vector<repo::lib::RepoVector2D>& horizontal2d,
+					const std::string& units
+				);
 
-				RepoCalibration() : RepoBSON() {}
-
-				RepoCalibration(RepoBSON bson) : RepoBSON(bson) {}
+				operator RepoBSON() const;
 
 				~RepoCalibration() {}
+
+			private:
+				repo::lib::RepoUUID id;
+				repo::lib::RepoUUID projectId;
+				repo::lib::RepoUUID drawingId;
+				repo::lib::RepoUUID revisionId;
+				std::vector<repo::lib::RepoVector3D> horizontal3d;
+				std::vector<repo::lib::RepoVector2D> horizontal2d;
+				std::string units;
 			};
 		}// end namespace model
 	} // end namespace core

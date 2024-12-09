@@ -21,18 +21,15 @@
 
 #pragma once
 
-#include "repo_bson.h"
 #include "repo/core/model/repo_model_global.h"
 #include "repo/lib/datastructure/repo_vector.h"
+#include "repo/lib/datastructure/repo_uuid.h"
 
 namespace repo {
 	namespace core {
 		namespace model {
-			//------------------------------------------------------------------------------
-			//
-			// Fields that define information about the assets that make up a container
-			//
-			//------------------------------------------------------------------------------
+			class RepoBSON;	// Forward declaration of RepoBSON for operator
+
 			class REPO_API_EXPORT RepoSupermeshMetadata
 			{
 			public:
@@ -44,15 +41,45 @@ namespace repo {
 				repo::lib::RepoVector3D max;
 			};
 
-			class REPO_API_EXPORT RepoAssets : public RepoBSON
+			class REPO_API_EXPORT RepoAssets
 			{
 			public:
 
-				RepoAssets() : RepoBSON() {}
+				RepoAssets();
 
-				RepoAssets(RepoBSON bson) : RepoBSON(bson) {}
+				RepoAssets(
+					const repo::lib::RepoUUID& revisionId,
+					const std::string& database,
+					const std::string& model,
+					const repo::lib::RepoVector3D64& offset,
+					const std::vector<std::string>& repoBundleFiles,
+					const std::vector<std::string>& repoJsonFiles,
+					const std::vector<RepoSupermeshMetadata>& metadata);
 
 				~RepoAssets() {}
+
+				operator RepoBSON() const;
+
+				const std::vector<std::string> getBundleFiles() const
+				{
+					return repoBundleFiles;
+				}
+
+				const std::vector<std::string> getJsonFiles() const
+				{
+					return repoJsonFiles;
+				}
+
+				bool isEmpty() const;
+
+			private:
+				repo::lib::RepoUUID revisionId;
+				std::string database;
+				std::string model;
+				repo::lib::RepoVector3D64 offset;
+				std::vector<std::string> repoBundleFiles;
+				std::vector<std::string> repoJsonFiles;
+				std::vector<RepoSupermeshMetadata> metadata;
 			};
 		}// end namespace model
 	} // end namespace core

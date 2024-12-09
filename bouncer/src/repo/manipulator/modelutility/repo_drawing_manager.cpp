@@ -16,10 +16,10 @@
 */
 #include "repo_drawing_manager.h"
 
-#include "../../core/model/bson/repo_bson_builder.h"
-#include "../../core/model/bson/repo_bson_ref.h"
-#include "../../core/model/bson/repo_bson_factory.h"
-#include "../../error_codes.h"
+#include "repo/core/model/bson/repo_bson_ref.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/core/model/bson/repo_bson.h"
+#include "repo/error_codes.h"
 
 using namespace repo::manipulator::modelutility;
 
@@ -38,34 +38,34 @@ uint8_t DrawingManager::commitImage(
 	repo::core::handler::AbstractDatabaseHandler* handler,
 	repo::core::handler::fileservice::FileManager* fileManager,
 	const std::string& teamspace,
-	const DrawingRevisionNode& revision,
-	DrawingImageInfo& drawing
+	DrawingRevisionNode& revision,
+	const DrawingImageInfo& drawing
 )
 {
 	auto drawingRefNodeId = repo::lib::RepoUUID::createUUID();
 	auto name = drawing.name.substr(0, drawing.name.size() - 3) + "svg"; // The name should be the drawing's original name with an updated extension
 
-	repo::core::model::RepoBSONBuilder metadata;
+	repo::core::handler::AbstractDatabaseHandler::Metadata metadata;
 	auto revId = revision.getUniqueID();
-	metadata.append(REPO_NODE_LABEL_NAME, name);
-	metadata.append(REPO_LABEL_MEDIA_TYPE, REPO_MEDIA_TYPE_SVG);
-	metadata.append(REPO_LABEL_PROJECT, revision.getProject());
-	metadata.append(REPO_LABEL_MODEL, revision.getModel());
-	metadata.append(REPO_NODE_REVISION_ID, revId);
+	metadata[REPO_NODE_LABEL_NAME] = name;
+	metadata[REPO_LABEL_MEDIA_TYPE] = std::string(REPO_MEDIA_TYPE_SVG);
+	metadata[REPO_LABEL_PROJECT] = revision.getProject();
+	metadata[REPO_LABEL_MODEL] = revision.getModel();
+	metadata[REPO_NODE_REVISION_ID] = revId;
 
 	fileManager->uploadFileAndCommit(
 		teamspace,
 		REPO_COLLECTION_DRAWINGS,
 		drawingRefNodeId,
 		drawing.data,
-		metadata.obj(),
+		metadata,
 		repo::core::handler::fileservice::FileManager::Encoding::Gzip
 	);
 
-	auto updated = revision.cloneAndAddImage(drawingRefNodeId);
+	revision.addImage(drawingRefNodeId);
 
 	std::string error;
-	handler->upsertDocument(teamspace, REPO_COLLECTION_DRAWINGS, updated, false, error);
+	handler->upsertDocument(teamspace, REPO_COLLECTION_DRAWINGS, revision, false, error);
 
 	if (error.size())
 	{

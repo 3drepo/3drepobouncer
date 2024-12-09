@@ -14,45 +14,71 @@
 *  You should have received a copy of the GNU Affero General Public License
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
-* Repo Node - A node representation of RepoBSON
-*/
 
 #pragma once
 
-#include "repo_bson.h"
-#include "../../../lib/datastructure/repo_matrix.h"
+#include "repo/repo_bouncer_global.h"
+#include "repo/lib/datastructure/repo_matrix.h"
+#include "repo/lib/datastructure/repo_uuid.h"
+#include <vector>
+#include <set>
 
 namespace repo {
 	namespace core {
 		namespace model {
+
+			class RepoBSON;
+
 			enum class NodeType {
-				CAMERA, MATERIAL, MESH, METADATA, REFERENCE,
-				REVISION, TEXTURE, TRANSFORMATION, UNKNOWN
+				MATERIAL,
+				MESH,
+				METADATA,
+				REFERENCE,
+				REVISION,
+				TEXTURE,
+				TRANSFORMATION,
+				UNKNOWN,
 			};
 
-			class REPO_API_EXPORT RepoNode : public RepoBSON
+			/**
+			* RepoNode is the base class for Repo database Nodes - classes
+			* corresponding to specific types of document that are written
+			* to the database and filesystem. These types are dynamic at
+			* runtime and used to build representations of scenes and other
+			* assets. They are then commited to the database by turning them
+			* into immutable RepoBSON objects.
+			*/
+			class REPO_API_EXPORT RepoNode
 			{
 			public:
 
 				/**
 				* Constructor
-				* Construct a RepoNode base on a RepoBSON object
-				*
+				* Construct a RepoNode base on a RepoBSON object. This should
+				* not be called directly, because RepoNodes should always be
+				* initialised to their most specific subtype from RepoBSONs.
 				*/
-				RepoNode(RepoBSON bson,
-					const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping =
-					std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>());
+				RepoNode(const RepoBSON& bson);
 
 				/**
 				* Empty Constructor
 				*/
-				RepoNode() : RepoBSON() {};
+				RepoNode();
 
 				/**
 				* Default Deconstructor
 				*/
 				virtual ~RepoNode();
+
+				RepoBSON getBSON() const;
+
+				operator RepoBSON() const;
+
+			protected:
+				virtual void deserialise(const RepoBSON&);
+				virtual void serialise(class RepoBSONBuilder&) const;
+
+			public:
 
 				/**
 				* Check if the node is position dependant.
@@ -63,130 +89,90 @@ namespace repo {
 				* override this function.
 				* @return true if node is positionDependant.
 				*/
-				virtual bool positionDependant() { return false; }
-
-				/*
-				*	------------- Delusional modifiers --------------
-				*   These are like "setters" but not. We are actually
-				*   creating a new bson object with the changed field
-				*/
-
-				/**
-				* Create a new object with this object's values,
-				* changing the unique and shared id.
-				* NOTE: this object is unchanged!
-				* @return new object with the field updated
-				*/
-				RepoNode cloneAndChangeIdentity() const;
-
-				/**
-				* Create a new object with this object's values,
-				* and add another parent into this new object
-				* NOTE: this object is unchanged!
-				* @param parentID the shared uuid of the parent
-				* @param newUniqueID assign a new unique ID
-				* @param newSharedID assign a new shared ID
-				* @param overwrite overwrite the current parenting information
-				* @return new object with the field updated
-				*/
-				RepoNode cloneAndAddParent(
-					const repo::lib::RepoUUID &parent,
-					const bool     &newUniqueID = false,
-					const bool     &newSharedID = false,
-					const bool     &overwrite = false) const;
-
-				/**
-				* Create a new object with this object's values,
-				* and add another parent into this new object
-				* NOTE: this object is unchanged!
-				* @param parentID the shared uuid of the parent
-				* @param newUniqueID assign a new unique ID
-				* @param newSharedID assign a new shared ID
-				* @param overwrite overwrite the current parenting information
-				* @return new object with the field updated
-				*/
-				RepoNode cloneAndAddRevId(
-					const repo::lib::RepoUUID &revId) const;
-
-				/**
-				* Create a new object with this object's values,
-				* and add other parents into this new object
-				* NOTE: this object is unchanged!
-				* @param parentID the shared uuid of the parent
-				* @return new object with the field updated
-				*/
-				RepoNode cloneAndAddParent(
-					const std::vector<repo::lib::RepoUUID> &parents) const;
-
-				/**
-				*  Create a new object with transformation applied to the node
-				* default behaviour is do nothing. Children object
-				* needs to override this function to perform their own specific behaviour.
-				* @param matrix transformation matrix to apply.
-				* @return returns a new object with transformation applied.
-				*/
-				virtual RepoNode cloneAndApplyTransformation(
-					const repo::lib::RepoMatrix &matrix) const
+				virtual bool positionDependant()
 				{
-					return RepoNode(*this, bigFiles);
+					return false;
 				}
 
-				/**
-				* Create a new object with this object's values,
-				* but a different name
-				* @param newName new name
-				* @return returns an object with the change
-				*/
-				RepoNode cloneAndChangeName(
-					const std::string &newName,
-					const bool &newUniqueID = true
-				) const
+				void addParent(
+					const repo::lib::RepoUUID& parent
+				)
 				{
-					return cloneAndAddFields(new RepoBSON(BSON(REPO_NODE_LABEL_NAME << newName)), newUniqueID);
+					parentIds.insert(parent);
 				}
 
-				/**
-				* Create a new object with this object's values,
-				* and remove a parent into this new object
-				* NOTE: this object is unchanged!
-				* @param parentID the shared uuid of the parent
-				* @param newUniqueID generate a new unique ID if set to true
-				* @returns new object with the field updated
-				*/
-				RepoNode cloneAndRemoveParent(
-					const repo::lib::RepoUUID &parent,
-					const bool     &newUniqueID = true) const;
+				void addParents(
+					const std::vector<repo::lib::RepoUUID>& parents)
+				{
+					for (auto id : parents) {
+						parentIds.insert(id);
+					}
+				}
 
-				/**
-				* Create a new object with fields within the
-				* change node (excluding parentID, unique ID and shared ID)
-				* NOTE this object is unchanged!
-				* @param changes a repobson containing the fields to change
-				* @param newUniqueID generate a new unique ID if set to true
-				* @return returns a new object with fields updated
-				*/
-				virtual RepoNode cloneAndAddFields(
-					const RepoBSON *changes,
-					const bool     &newUniqueID = true) const;
+				void setParents(const std::vector<repo::lib::RepoUUID>& parents)
+				{
+					parentIds.clear();
+					addParents(parents);
+				}
+
+				void removeParent(
+					const repo::lib::RepoUUID& parent
+				)
+				{
+					parentIds.erase(parent);
+				}
+
+				void changeName(
+					const std::string& newName,
+					const bool& newUniqueID = false
+				)
+				{
+					name = newName;
+					if (newUniqueID) {
+						uniqueId = repo::lib::RepoUUID::createUUID();
+					}
+				}
+
+				virtual void applyTransformation(
+					const repo::lib::RepoMatrix& matrix)
+				{
+					// This is a no-op for most types
+				}
 
 				/*
 				*	------------- Convenience getters --------------
 				*/
 
+			protected:
+				std::string name;
+				repo::lib::RepoUUID uniqueId;
+				repo::lib::RepoUUID sharedId;
+				std::set<repo::lib::RepoUUID> parentIds;
+				repo::lib::RepoUUID revId;
+
+			public:
 				/**
 				* Get the name of the node
 				* @return returns name or "" if no name
 				*/
 				std::string getName() const
 				{
-					return std::string(getStringField(REPO_NODE_LABEL_NAME));
+					return name;
 				}
 
 				/**
 				* Get the shared ID from the object
 				* @return returns the shared ID of the object
 				*/
-				repo::lib::RepoUUID getSharedID() const { return getUUIDField(REPO_NODE_LABEL_SHARED_ID); }
+				repo::lib::RepoUUID getSharedID() const
+				{
+					return sharedId;
+				}
+
+				void setSharedID(const repo::lib::RepoUUID& sharedId)
+				{
+					this->sharedId = sharedId;
+				}
 
 				/**
 				* Get the type of node
@@ -194,7 +180,7 @@ namespace repo {
 				*/
 				virtual std::string getType() const
 				{
-					return getStringField(REPO_NODE_LABEL_TYPE);
+					return "";
 				}
 
 				/**
@@ -207,13 +193,34 @@ namespace repo {
 				* Get the unique ID from the object
 				* @return returns the unique ID of the object
 				*/
-				repo::lib::RepoUUID getUniqueID() const { return getUUIDField(REPO_NODE_LABEL_ID); }
+				repo::lib::RepoUUID getUniqueID() const
+				{
+					return uniqueId;
+				}
+
+				void setUniqueID(const repo::lib::RepoUUID& uniqueId)
+				{
+					this->uniqueId = uniqueId;
+				}
 
 				/**
 				* Get the list of parent IDs
 				* @return returns a set of parent IDs
 				*/
-				std::vector<repo::lib::RepoUUID> getParentIDs() const;
+				std::vector<repo::lib::RepoUUID> getParentIDs() const
+				{
+					return std::vector<repo::lib::RepoUUID>(parentIds.begin(), parentIds.end());
+				}
+
+				const repo::lib::RepoUUID& getRevision() const
+				{
+					return revId;
+				}
+
+				void setRevision(const repo::lib::RepoUUID& id)
+				{
+					revId = id;
+				}
 
 				/*
 				*	------------- Compare operations --------------
@@ -222,6 +229,11 @@ namespace repo {
 				bool operator==(const RepoNode& other) const
 				{
 					return getUniqueID() == other.getUniqueID() && getSharedID() == other.getSharedID();
+				}
+
+				bool operator!=(const RepoNode& other) const
+				{
+					return getUniqueID() != other.getUniqueID() || getSharedID() != other.getSharedID() || parentIds != other.parentIds;
 				}
 
 				//! Returns true if the other node is greater than this one, false otherwise.
@@ -238,20 +250,16 @@ namespace repo {
 				}
 
 				/**
-				* Check if the node is semantically equal to another
-				* Different node should have a different interpretation of what
-				* this means.
+				* Checks if two nodes are semantically equivalent. Semantically equivalent
+				* means they would have say the same geometry for MeshNodes, or the same
+				* metadata for MetadataNodes, or the same matrix for TransformationNodes.
+				* The meaning will depend on the subclass. This method does not consider
+				* 'meta' properties such as the shared or unique Ids, or Revision.
+				* The default implementation will throw an exception.
 				* @param other node to compare with
 				* @param returns true if equal, false otherwise
 				*/
-				virtual bool sEqual(const RepoNode &other) const
-				{
-					//On a node level, it is impossible to tell if
-					//one node is semantically the same as other.
-					//One does not expect this to be ever called
-					repoWarning << "sEqual() is called for RepoNode* this is not expected!";
-					return false; //returns false just incase.
-				}
+				virtual bool sEqual(const RepoNode& other) const;
 
 				//! Returns true if the other node is greater than this one, false otherwise.
 				bool operator>(const RepoNode& other) const
@@ -265,17 +273,8 @@ namespace repo {
 						return sharedID > other.getSharedID();
 					}
 				}
-
-			protected:
-
-				/*
-				*	------------- node fields --------------
-				*/
-
-				//FIXME: Convenience fields, should these really exist?
-
-				std::string type; //!< Compulsory type of this document.
 			};
+
 			/*!
 			* Comparator definition to enable std::set to store pointers to abstract nodes
 			* so that they are compared based on their value rather than their integer

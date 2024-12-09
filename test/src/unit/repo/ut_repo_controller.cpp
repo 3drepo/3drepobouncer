@@ -24,6 +24,7 @@
 #include "../repo_test_utils.h"
 
 using namespace repo;
+using namespace testing;
 
 static std::shared_ptr<RepoController> getController()
 {

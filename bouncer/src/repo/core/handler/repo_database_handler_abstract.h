@@ -25,15 +25,17 @@
 #include <list>
 #include <map>
 #include <string>
-
-#include "../model/bson/repo_bson.h"
+#include <unordered_map>
+#include "repo/lib/datastructure/repo_variant.h"
 
 namespace repo {
 	namespace core {
+		namespace model {
+			class RepoBSON;
+		}
 		namespace handler {
 			class AbstractDatabaseHandler {
 			public:
-
 				/**
 				 * A Deconstructor
 				 */
@@ -44,6 +46,8 @@ namespace repo {
 				* @return returns size limit in bytes.
 				*/
 				uint64_t documentSizeLimit() { return maxDocumentSize; }
+
+				using Metadata = std::unordered_map<std::string, repo::lib::RepoVariant>;
 
 				/*
 				*	------------- Database info lookup --------------
@@ -94,7 +98,7 @@ namespace repo {
 				* @param name name of the collection
 				* @param index BSONObj specifying the index
 				*/
-				virtual void createIndex(const std::string &database, const std::string &collection, const mongo::BSONObj & obj) = 0;
+				virtual void createIndex(const std::string &database, const std::string &collection, const repo::core::model::RepoBSON& obj) = 0;
 
 				/**
 				* Insert a single document in database.collection
@@ -123,7 +127,7 @@ namespace repo {
 					const std::string &collection,
 					const std::vector<repo::core::model::RepoBSON> &obj,
 					std::string &errMsg,
-					const repo::core::model::RepoBSON &metadata = repo::core::model::RepoBSON()) = 0;
+					const Metadata& metadata = {}) = 0;
 
 				/**
 				* Update/insert a single document in database.collection

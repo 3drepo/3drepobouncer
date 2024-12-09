@@ -33,6 +33,7 @@
 
 using namespace repo::lib;
 using namespace repo::manipulator::modelconvertor::odaHelper;
+using namespace testing;
 
 // First helper class for the test of the NWD Converter
 class OdExNwSystemServices : public ExSystemServices

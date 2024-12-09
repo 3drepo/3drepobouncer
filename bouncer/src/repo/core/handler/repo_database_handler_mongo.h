@@ -36,13 +36,17 @@
 
 #include "repo_database_handler_abstract.h"
 #include "connectionpool/repo_connection_pool_mongo.h"
-#include "../model/bson/repo_bson.h"
-#include "../model/bson/repo_bson_builder.h"
-#include "../../lib/repo_stack.h"
+#include "repo/lib/repo_stack.h"
 
 namespace repo {
 	namespace core {
+		namespace model {
+			class RepoBSON; // Forward declaration for document type
+		}
 		namespace handler {
+			namespace fileservice{
+				class Metadata; // Forward declaration for alias
+			}
 			class MongoDatabaseHandler : public AbstractDatabaseHandler {
 				enum class OPERATION { DROP, INSERT, UPDATE };
 			public:
@@ -157,14 +161,10 @@ namespace repo {
 				* @return returns the constructed BSON object, or 0 nullptr username is empty
 				*/
 				static repo::core::model::RepoBSON* createBSONCredentials(
-					const std::string &dbName,
-					const std::string &username,
-					const std::string &password,
-					const bool        &pwDigested = false)
-				{
-					mongo::BSONObj *mongoBSON = createAuthBSON(dbName, username, password, pwDigested);
-					return mongoBSON ? new repo::core::model::RepoBSON(*mongoBSON) : nullptr;
-				}
+					const std::string& dbName,
+					const std::string& username,
+					const std::string& password,
+					const bool& pwDigested = false);
 
 				/*
 				*	------------- Database info lookup --------------
@@ -227,7 +227,7 @@ namespace repo {
 				* @param name name of the collection
 				* @param index BSONObj specifying the index
 				*/
-				virtual void createIndex(const std::string &database, const std::string &collection, const mongo::BSONObj & obj);
+				virtual void createIndex(const std::string &database, const std::string &collection, const repo::core::model::RepoBSON& obj);
 
 				/**
 				* Remove a collection from the database
@@ -280,7 +280,7 @@ namespace repo {
 					const std::string &collection,
 					const std::vector<repo::core::model::RepoBSON> &obj,
 					std::string &errMsg,
-					const repo::core::model::RepoBSON &metadata = repo::core::model::RepoBSON());
+					const Metadata& metadata = {});
 
 				/**
 				* Update/insert a single document in database.collection

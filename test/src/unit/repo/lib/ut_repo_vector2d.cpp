@@ -23,6 +23,7 @@
 #include "../../repo_test_utils.h"
 
 using namespace repo::lib;
+using namespace testing;
 
 TEST(RepoVector2DTest, constructorTest)
 {
@@ -59,7 +60,7 @@ TEST(RepoVector2DTest, assignmentOpTest)
 	float x = (rand() % 1000) / 1000.f;
 	float y = (rand() % 1000) / 1000.f;
 	RepoVector2D randomV(x, y);
-	
+
 	defaultV = randomV;
 	EXPECT_EQ(randomV.x, defaultV.x);
 	EXPECT_EQ(randomV.y, defaultV.y);
@@ -91,7 +92,6 @@ TEST(RepoVector2DTest, toStdVecTest)
 
 	EXPECT_TRUE(compareStdVectors(defaultVArr, defaultV.toStdVector()));
 	EXPECT_TRUE(compareStdVectors(randomVArr, randomV.toStdVector()));
-	
 }
 
 

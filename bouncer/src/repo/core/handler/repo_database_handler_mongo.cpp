@@ -25,7 +25,9 @@
 #include "repo_database_handler_mongo.h"
 #include "fileservice/repo_file_manager.h"
 #include "fileservice/repo_blob_files_handler.h"
-#include "../../lib/repo_log.h"
+#include "repo/core/model/bson/repo_bson_builder.h"
+#include "repo/core/model/bson/repo_bson_element.h"
+#include "repo/lib/repo_log.h"
 
 using namespace repo::core::handler;
 
@@ -177,11 +179,11 @@ void MongoDatabaseHandler::createCollection(const std::string &database, const s
 	}
 }
 
-void MongoDatabaseHandler::createIndex(const std::string &database, const std::string &collection, const mongo::BSONObj & obj)
+void MongoDatabaseHandler::createIndex(const std::string &database, const std::string &collection, const repo::core::model::RepoBSON& obj)
 {
 	if (!(database.empty() || collection.empty()))
 	{
-		repoInfo << "Creating index for :" << database << "." << collection << " : index: " << obj;
+		repoInfo << "Creating index for :" << database << "." << collection << " : index: " << obj.toString();
 		try {
 			worker->createIndex(database + "." + collection, obj);
 		}
@@ -208,25 +210,10 @@ repo::core::model::RepoBSON createRepoBSON(
 	if (!ignoreExtFile) {
 		if (orgBson.hasFileReference()) {
 			auto ref = orgBson.getBinaryReference();
-
 			auto buffer = blobHandler.readToBuffer(fileservice::DataRef::deserialise(ref));
 			orgBson.initBinaryBuffer(buffer);
 		}
-		else if (orgBson.hasLegacyFileReference()) {
-			std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>> > binMap;
-			std::vector<std::pair<std::string, std::string>> extFileList = orgBson.getFileList();
-			for (const auto &pair : extFileList)
-			{
-				auto fileManager = fileservice::FileManager::getManager();
-
-				auto file = fileManager->getFile(database, collection, pair.second);
-
-				binMap[pair.first] = std::pair<std::string, std::vector<uint8_t>>(pair.second, file);
-			}
-			return repo::core::model::RepoBSON(obj, binMap);
-		}
 	}
-
 	return orgBson;
 }
 
@@ -283,7 +270,10 @@ bool MongoDatabaseHandler::dropDocument(
 		try {
 			if (success = !bson.isEmpty() && bson.hasField("_id"))
 			{
-				mongo::Query query = MONGO_QUERY("_id" << bson.getField("_id").toMongoElement());
+				mongo::BSONElement id;
+				bson.getObjectID(id);
+				mongo::Query query = MONGO_QUERY("_id" << id);
+
 				worker->remove(database + "." + collection, query, true);
 			}
 			else
@@ -454,7 +444,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 
 		auto fileManager = fileservice::FileManager::getManager();
 		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-		auto query = mongo::Query(queryBuilder.mongoObj());
+		auto query = mongo::Query(queryBuilder.obj());
 		if (!sortField.empty())
 			query = query.sort(sortField, -1);
 
@@ -486,7 +476,7 @@ repo::core::model::RepoBSON  MongoDatabaseHandler::findOneByUniqueID(
 		auto fileManager = fileservice::FileManager::getManager();
 		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
 		mongo::BSONObj bsonMongo = worker->findOne(getNamespace(database, collection),
-			mongo::Query(queryBuilder.mongoObj()));
+			mongo::Query(queryBuilder.obj()));
 
 		bson = createRepoBSON(blobHandler, database, collection, bsonMongo);
 	}
@@ -706,6 +696,11 @@ bool MongoDatabaseHandler::insertDocument(
 {
 	bool success = false;
 
+	if (obj.hasOversizeFiles())
+	{
+		throw repo::lib::RepoException("insertDocument cannot be used with BSONs holding binary files. Use insertManyDocuments instead.");
+	}
+
 	if (!database.empty() || collection.empty())
 	{
 		try {
@@ -731,7 +726,7 @@ bool MongoDatabaseHandler::insertManyDocuments(
 	const std::string &collection,
 	const std::vector<repo::core::model::RepoBSON> &objs,
 	std::string &errMsg,
-	const repo::core::model::RepoBSON &binaryStorageMetadata)
+	const Metadata& binaryStorageMetadata)
 {
 	bool success = false;
 
@@ -788,11 +783,13 @@ bool MongoDatabaseHandler::upsertDocument(
 {
 	bool success = true;
 
+	if (obj.hasOversizeFiles())
+	{
+		throw repo::lib::RepoException("upsertDocument cannot be used with BSONs holding binary files.");
+	}
+
 	bool upsert = overwrite;
 	try {
-		repo::core::model::RepoBSONBuilder queryBuilder;
-		queryBuilder.append(ID, obj.getField(ID));
-
 		mongo::BSONElement bsonID;
 		obj.getObjectID(bsonID);
 		mongo::Query existQuery = MONGO_QUERY("_id" << bsonID);
@@ -839,6 +836,22 @@ bool MongoDatabaseHandler::upsertDocument(
 		std::string errString(e.what());
 		errMsg += errString;
 	}
+	catch (repo::lib::RepoException& e)
+	{
+		success = false;
+		std::string errString(e.what());
+		errMsg += errString;
+	}
 
 	return success;
+}
+
+repo::core::model::RepoBSON* MongoDatabaseHandler::createBSONCredentials(
+	const std::string& dbName,
+	const std::string& username,
+	const std::string& password,
+	const bool& pwDigested)
+{
+	mongo::BSONObj* mongoBSON = createAuthBSON(dbName, username, password, pwDigested);
+	return mongoBSON ? new repo::core::model::RepoBSON(*mongoBSON) : nullptr;
 }

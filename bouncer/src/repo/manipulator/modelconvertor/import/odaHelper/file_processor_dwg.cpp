@@ -196,7 +196,7 @@ repo::manipulator::modelconvertor::ModelUnits FileProcessorDwg::determineModelUn
 uint8_t FileProcessorDwg::readFile()
 {
 	uint8_t nRes = 0; // Return value for the function
-	try 
+	try
 	{
 		odInitialize(&svcs);
 		odgsInitialize();

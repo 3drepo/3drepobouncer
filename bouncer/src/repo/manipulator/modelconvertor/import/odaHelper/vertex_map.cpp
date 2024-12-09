@@ -27,7 +27,7 @@ VertexMap::result_t VertexMap::find(const repo::lib::RepoVector3D64& position)
 	boost::hash_combine(hash, position.x);
 	boost::hash_combine(hash, position.y);
 	boost::hash_combine(hash, position.z);
-	
+
 	auto matching = map.equal_range(hash);
 
 	result_t result;
@@ -48,7 +48,7 @@ VertexMap::result_t VertexMap::find(const repo::lib::RepoVector3D64& position)
 	map.insert(std::pair<size_t, size_t>(hash, idx));
 
 	result.index = idx;
-	result.added = true;	
+	result.added = true;
 
 	return result;
 }
@@ -71,7 +71,7 @@ VertexMap::result_t VertexMap::find(const repo::lib::RepoVector3D64& position, c
 	{
 		if (vertices[it->second] == position)
 		{
-			if (normals[it->second] == normal) 
+			if (normals[it->second] == normal)
 			{
 				result.index = it->second;
 				result.added = false;
@@ -115,7 +115,7 @@ VertexMap::result_t VertexMap::find(const repo::lib::RepoVector3D64& position, c
 		{
 			if (normals[it->second] == normal)
 			{
-				if (uvs[it->second] == uv) 
+				if (uvs[it->second] == uv)
 				{
 					result.index = it->second;
 					result.added = false;

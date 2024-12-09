@@ -21,12 +21,66 @@
 
 using namespace repo::core::model;
 
-RepoSequence RepoSequence::cloneAndAddRevision(
-	const repo::lib::RepoUUID &rid
-) const {
-	RepoBSONBuilder builder;
-	builder.append(REPO_SEQUENCE_LABEL_REV_ID, rid);
+RepoSequence::RepoSequence()
+{
+	uniqueId = repo::lib::RepoUUID::createUUID();
+	revisionId = repo::lib::RepoUUID::defaultValue;
+	firstFrame = 0;
+	lastFrame = 0;
+}
 
-	auto bson = builder.obj();
-	return cloneAndAddFields(&bson);
+RepoSequence::RepoSequence(
+	const std::string& name,
+	const repo::lib::RepoUUID& uniqueId,
+	const repo::lib::RepoUUID& revisionId,
+	const long long& firstFrameTimestamp,
+	const long long& lastFrameTimestamp,
+	const std::vector<FrameData>& frames
+)
+	:name(name),
+	uniqueId(uniqueId),
+	revisionId(revisionId),
+	firstFrame(firstFrameTimestamp),
+	lastFrame(lastFrameTimestamp),
+	frameData(frames)
+{
+}
+
+void RepoSequence::setRevision(const repo::lib::RepoUUID& rid)
+{
+	this->revisionId = rid;
+}
+
+RepoSequence::operator RepoBSON() const
+{
+	RepoBSONBuilder builder;
+
+	builder.append(REPO_LABEL_ID, uniqueId);
+	builder.append(REPO_SEQUENCE_LABEL_NAME, name);
+	builder.append(REPO_SEQUENCE_LABEL_START_DATE, (long long)firstFrame);
+	builder.append(REPO_SEQUENCE_LABEL_END_DATE, (long long)lastFrame);
+	if (!revisionId.isDefaultValue())
+	{
+		builder.append(REPO_SEQUENCE_LABEL_REV_ID, revisionId);
+	}
+
+	std::vector<RepoBSON> frames;
+
+	for (const auto& frameEntry : frameData) {
+		RepoBSONBuilder bsonBuilder;
+		bsonBuilder.appendTime(REPO_SEQUENCE_LABEL_DATE, frameEntry.timestamp);
+		bsonBuilder.append(REPO_SEQUENCE_LABEL_STATE, frameEntry.ref);
+
+		frames.push_back(bsonBuilder.obj());
+	}
+
+	builder.appendArray(REPO_SEQUENCE_LABEL_FRAMES, frames);
+
+	return builder.obj();
+}
+
+bool RepoSequence::isSizeOK()
+{
+	RepoBSON bson = *this;
+	return bson.objsize() <= REPO_MAX_OBJ_SIZE;
 }

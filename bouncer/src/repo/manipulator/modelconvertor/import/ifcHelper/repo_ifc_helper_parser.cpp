@@ -43,9 +43,9 @@ void convertTreeToNodes(
 
 		if (meshes.find(tree.guid) != meshes.end()) {
 			for (auto &mesh : meshes[tree.guid]) {
-				*mesh = mesh->cloneAndAddParent(transNode->getSharedID());
+				mesh->addParent(transNode->getSharedID()); // In the IFC importer, meshes are already created per-instance and so are updated in-place
 				if (tree.isIfcSpace || tree.meshTakeName && mesh->getName().empty()) {
-					*mesh = mesh->cloneAndChangeName(tree.name);
+					mesh->changeName(tree.name);
 					metaParents.push_back(mesh->getSharedID());
 				}
 			}
