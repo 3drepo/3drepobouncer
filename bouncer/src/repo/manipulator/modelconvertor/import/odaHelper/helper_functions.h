@@ -21,7 +21,7 @@
 #include <SharedPtr.h>
 #include <OdString.h>
 
-// OdBmCropRegionInfo uses min/max in its initialiser list, so remove any 
+// OdBmCropRegionInfo uses min/max in its initialiser list, so remove any
 // conflicting definitions (e.g. from mongo) before it's included
 #undef min
 #undef max
@@ -46,7 +46,7 @@ namespace repo {
 				std::string convertToStdString(const OdString &value);
 
 				template <class T>
-				struct _RepoVector3DSortComparator 
+				struct _RepoVector3DSortComparator
 				{
 					bool operator()(const T& vec1, const T& vec2) const
 					{
@@ -69,7 +69,7 @@ namespace repo {
 				using RepoVector3D64SortComparator = _RepoVector3DSortComparator < repo::lib::RepoVector3D64 >;
 
 				//.. NOTE: this function iterates over database views
-				//.. we already have a couple of functions that uses this iteration 
+				//.. we already have a couple of functions that uses this iteration
 				//.. so in order to reduce code duplication we are using iteration with an action callback
 				void forEachBmDBView(OdBmDatabasePtr database, std::function<void(OdBmDBViewPtr viewPtr)> func);
 

@@ -16,7 +16,11 @@
 */
 
 #pragma once
-#include "repo_bson.h"
+
+#include "repo/repo_bouncer_global.h"
+#include "repo/lib/datastructure/repo_uuid.h"
+#include <vector>
+#include <unordered_map>
 
 namespace repo {
 	namespace core {
@@ -37,17 +41,36 @@ namespace repo {
 			#define REPO_TASK_META_KEY "key"
 			#define REPO_TASK_META_VALUE "value"
 
-			class REPO_API_EXPORT RepoTask : public RepoBSON
+			class RepoBSON;
+
+			class REPO_API_EXPORT RepoTask
 			{
-			public:				
+			public:
+				RepoTask(
+					const std::string& name,
+					const repo::lib::RepoUUID& uniqueId,
+					const repo::lib::RepoUUID& parentId,
+					const repo::lib::RepoUUID& sequenceId,
+					const long long& startTime,
+					const long long& endTime,
+					const std::vector<repo::lib::RepoUUID>& resources,
+					const std::unordered_map<std::string, std::string>& metdata
+				);
 
-				
-				RepoTask() : RepoBSON() {}
+				~RepoTask() {}
 
-				RepoTask(RepoBSON bson) : RepoBSON(bson){}
+				operator RepoBSON() const;
 
-				~RepoTask() {}		
+			private:
 
+				std::string name;
+				repo::lib::RepoUUID uniqueId;
+				repo::lib::RepoUUID parentId;
+				repo::lib::RepoUUID sequenceId;
+				long long startTime;
+				long long endTime;
+				std::vector<repo::lib::RepoUUID> resources;
+				std::unordered_map<std::string, std::string> metadata;
 			};
 		}// end namespace model
 	} // end namespace core

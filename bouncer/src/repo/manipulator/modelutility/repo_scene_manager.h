@@ -73,7 +73,7 @@ namespace repo {
 					const bool                                    &headRevision = true,
 					const bool                                    &ignoreRefScenes = false,
 					const bool                                    &skeletonFetch = false,
-					const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus = {});
+					const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus = {});
 
 				repo::core::model::RepoScene* fetchScene(
 					repo::core::handler::AbstractDatabaseHandler *handler,
@@ -189,7 +189,7 @@ namespace repo {
 				* an error and return an empty buffers object.
 				*/
 				repo_web_buffers_t generateRepoBundleBuffer(
-					repo::core::model::RepoScene* scene);				
+					repo::core::model::RepoScene* scene);
 			};
 		}
 	}

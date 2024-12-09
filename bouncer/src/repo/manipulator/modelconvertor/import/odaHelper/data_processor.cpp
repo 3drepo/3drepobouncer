@@ -67,7 +67,7 @@ void DataProcessor::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* p
 	std::vector<repo::lib::RepoVector3D64> vertices;
 	std::vector<repo::lib::RepoVector2D> uv;
 	repo::lib::RepoVector3D64 normal;
-	
+
 	convertTo3DRepoTriangle(p3Vertices, vertices, normal, uv);
 
 	if (vertices.size()) {

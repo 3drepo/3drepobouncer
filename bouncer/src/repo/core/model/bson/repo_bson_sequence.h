@@ -16,8 +16,13 @@
 */
 
 #pragma once
+
+#include "repo/repo_bouncer_global.h"
+#include "repo/lib/datastructure/repo_structs.h"
+#include "repo/lib/datastructure/repo_uuid.h"
 #include <unordered_map>
-#include "repo_bson.h"
+#include <vector>
+#include <string>
 
 namespace repo {
 	namespace core {
@@ -35,22 +40,62 @@ namespace repo {
 #define REPO_SEQUENCE_LABEL_END_DATE "endDate"
 #define REPO_SEQUENCE_LABEL_STATE "state"
 
-			class REPO_API_EXPORT RepoSequence : public RepoBSON
+			class RepoBSON;
+
+			class REPO_API_EXPORT RepoSequence
 			{
 			public:
 
 				struct FrameData {
 					uint64_t timestamp;
 					std::string ref;
+
+					FrameData(const std::string& ref, uint64_t timestamp)
+					{
+						this->timestamp = timestamp;
+						this->ref = ref;
+					}
+
+					FrameData()
+					{
+						timestamp = 0;
+					}
+
+					bool operator== (const FrameData& b) const;
 				};
 
-				RepoSequence() : RepoBSON() {}
+				RepoSequence();
 
-				RepoSequence(RepoBSON bson) : RepoBSON(bson) {}
+				RepoSequence(
+					const std::string& name,
+					const repo::lib::RepoUUID& uniqueId,
+					const repo::lib::RepoUUID& revisionId,
+					const long long& firstFrameTimestamp,
+					const long long& lastFrameTimestamp,
+					const std::vector<FrameData>& frames
+				);
 
-				RepoSequence cloneAndAddRevision(const repo::lib::RepoUUID &rid) const;
+				void setRevision(const repo::lib::RepoUUID& rid);
 
 				~RepoSequence() {}
+
+				operator RepoBSON() const;
+
+				const repo::lib::RepoUUID& getUniqueId()
+				{
+					return uniqueId;
+				}
+
+				bool isSizeOK();
+
+			private:
+
+				std::vector<FrameData> frameData;
+				repo::lib::RepoUUID revisionId;
+				repo::lib::RepoUUID uniqueId;
+				std::string name;
+				long long firstFrame;
+				long long lastFrame;
 			};
 		}// end namespace model
 	} // end namespace core

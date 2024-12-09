@@ -19,11 +19,10 @@
 #include <memory>
 #include "repo_model_import_synchro.h"
 
-#include "../../../core/model/bson/repo_bson_builder.h"
-#include "../../../core/model/bson/repo_bson_factory.h"
-#include "../../../lib/repo_log.h"
-#include "../../../lib/datastructure/repo_matrix.h"
-#include "../../../error_codes.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/lib/repo_log.h"
+#include "repo/lib/datastructure/repo_matrix.h"
+#include "repo/error_codes.h"
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -107,7 +106,7 @@ std::pair<repo::core::model::RepoNodeSet, repo::core::model::RepoNodeSet> Synchr
 		auto textBuff = mat.texture.texture;
 		if (textBuff.size()) {
 			auto textNode = new repo::core::model::TextureNode(repo::core::model::RepoBSONFactory::makeTextureNode("texture", (char*)textBuff.data(),
-				textBuff.size(), matEntry.second.texture.width, matEntry.second.texture.height).cloneAndAddParent(matNode->getSharedID()));
+				textBuff.size(), matEntry.second.texture.width, matEntry.second.texture.height, { matNode->getSharedID() }));
 			textNodes.insert(textNode);
 			repoIDToNode[textNode->getUniqueID()] = textNode;
 		}
@@ -135,14 +134,14 @@ repo::core::model::MetadataNode* SynchroModelImport::createMetaNode(
 		//Check if it is a number, if it is, store it as a number
 
 		try {
-			v = boost::lexical_cast<long long>(value);			
+			v = boost::lexical_cast<long long>(value);
 		}
 		catch (boost::bad_lexical_cast&)
 		{
 			//not an int, try a double
 
 			try {
-				v = boost::lexical_cast<double>(value);				
+				v = boost::lexical_cast<double>(value);
 			}
 			catch (boost::bad_lexical_cast&)
 			{
@@ -216,8 +215,11 @@ repo::core::model::MeshNode* SynchroModelImport::createMeshNode(
 	//trans[7] -= offset[1];
 	//trans[11] -= offset[2];
 	auto matrix = repo::lib::RepoMatrix(trans);
-	return new repo::core::model::MeshNode(
-		templateMesh.cloneAndApplyTransformation(matrix).cloneAndAddParent(parentID, true, true));
+	auto instance = templateMesh.cloneAndApplyTransformation(matrix);
+	instance.addParent(parentID);
+	instance.setUniqueID(repo::lib::RepoUUID::createUUID());
+	instance.setSharedID(repo::lib::RepoUUID::createUUID());
+	return new repo::core::model::MeshNode(instance);
 }
 
 std::vector<repo::lib::RepoUUID> SynchroModelImport::findRecursiveMeshSharedIDs(
@@ -391,13 +393,13 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 		if (synchroIDToRepoID.find(synchroParent) != synchroIDToRepoID.end()) {
 			parentSharedID = repoIDToNode[synchroIDToRepoID[synchroParent]]->getSharedID();
 		}
-		*repoIDToNode[nodeID] = repoIDToNode[nodeID]->cloneAndAddParent(parentSharedID);
+		repoIDToNode[nodeID]->addParent(parentSharedID);
 	}
 
 	for (auto entry : nodeToParents) {
 		auto nodeID = entry.first;
 		auto parents = entry.second;
-		*repoIDToNode[nodeID] = repoIDToNode[nodeID]->cloneAndAddParent(parents);
+		repoIDToNode[nodeID]->addParents(parents);
 	}
 
 	repo::core::model::RepoNodeSet dummy;
@@ -851,10 +853,10 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 			if (!matrix.isIdentity()) {
 				resourceIDLastTrans[resourceID] = matrix;
 				for (const auto transId : resourceIDsToTransIDs[resourceID]) {
-					auto node = (repo::core::model::TransformationNode*) scene->getNodeByUniqueID(
-						repo::core::model::RepoScene::GraphType::DEFAULT, transId);
-
-					node->swap(node->cloneAndApplyTransformation(matrix.getData()));
+					auto node = dynamic_cast<repo::core::model::TransformationNode*>(
+						scene->getNodeByUniqueID(repo::core::model::RepoScene::GraphType::DEFAULT, transId)
+					);
+					node->applyTransformation(matrix.getData());
 				}
 
 				auto matInverse = matrix.invert();
@@ -901,15 +903,17 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 		repoInfo << "transforming Mesh: " << transformingResources.size();
 		for (const auto &resourceID : transformingResources) {
 			for (const auto &mesh : resourceIDsToSharedIDs[resourceID]) {
-				auto meshNode = (repo::core::model::MeshNode*) scene->getNodeBySharedID(repo::core::model::RepoScene::GraphType::DEFAULT, mesh);
-				meshNode->swap(meshNode->cloneAndNoteGrouping(resourceID));
+				auto meshNode = dynamic_cast<repo::core::model::MeshNode*>(
+					scene->getNodeBySharedID(repo::core::model::RepoScene::GraphType::DEFAULT, mesh)
+				);
+				meshNode->setGrouping(resourceID);
 			}
 		}
 
 		std::string animationName = animation.name.empty() ? DEFAULT_SEQUENCE_NAME : animation.name;
 		auto sequence = repo::core::model::RepoBSONFactory::makeSequence(frameData, animationName, sequenceID, firstFrame, lastFrame);
 
-		if (sequence.objsize() > REPO_MAX_OBJ_SIZE) {
+		if (!sequence.isSizeOK()) {
 			errMsg = REPOERR_SYNCHRO_SEQUENCE_TOO_BIG;
 			delete scene;
 			scene = nullptr;

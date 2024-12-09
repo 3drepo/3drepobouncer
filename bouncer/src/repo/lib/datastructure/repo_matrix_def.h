@@ -195,6 +195,15 @@ namespace repo {
 				return iden;
 			}
 
+			repo::lib::RepoVector3D transformDirection(const repo::lib::RepoVector3D& vec) const
+			{
+				repo::lib::RepoVector3D result;
+				result.x = data[0] * vec.x + data[1] * vec.y + data[2] * vec.z;
+				result.y = data[4] * vec.x + data[5] * vec.y + data[6] * vec.z;
+				result.z = data[8] * vec.x + data[9] * vec.y + data[10] * vec.z;
+				return result;
+			}
+
 			std::string toString() const {
 				std::stringstream ss;
 				for (int i = 0; i < data.size(); ++i)
@@ -233,6 +242,46 @@ namespace repo {
 				result[14] = data[11];
 
 				return _RepoMatrix<T>(result);
+			}
+
+			static _RepoMatrix<T> rotationX(T angle)
+			{
+				return _RepoMatrix<T>(std::vector<T>({
+					1, 0, 0, 0,
+					0, cos(angle), -sin(angle), 0,
+					0, sin(angle), cos(angle), 0,
+					0, 0, 0, 1
+				}));
+			}
+
+			static _RepoMatrix<T> rotationY(T angle)
+			{
+				return _RepoMatrix<T>(std::vector<T>({
+					cos(angle), 0, sin(angle), 0,
+					0, 1, 0, 0,
+					-sin(angle), 0, cos(angle), 0,
+					0, 0, 0, 1
+				}));
+			}
+
+			static _RepoMatrix<T> rotationZ(T angle)
+			{
+				return _RepoMatrix<T>(std::vector<T>({
+					cos(angle), -sin(angle), 0, 0,
+					sin(angle), cos(angle), 0, 0,
+					0, 0, 1, 0,
+					0, 0, 0, 1
+				}));
+			}
+
+			static _RepoMatrix<T> translate(lib::_RepoVector3D<T> t)
+			{
+				return _RepoMatrix<T>(std::vector<T>({
+					1, 0, 0, t.x,
+					0, 1, 0, t.y,
+					0, 0, 1, t.z,
+					0, 0, 0, 1
+				}));
 			}
 
 		private:
