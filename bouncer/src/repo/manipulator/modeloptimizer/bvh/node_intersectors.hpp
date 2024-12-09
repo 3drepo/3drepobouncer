@@ -109,7 +109,7 @@ struct FastNodeIntersector : public NodeIntersector<Bvh, FastNodeIntersector<Bvh
     Vector3<Scalar> inverse_direction;
 
     FastNodeIntersector(const Ray<Scalar>& ray)
-        : NodeIntersector<Bvh, FastNodeIntersector<Bvh>>(ray) 
+        : NodeIntersector<Bvh, FastNodeIntersector<Bvh>>(ray)
     {
         inverse_direction = ray.direction.safe_inverse();
         scaled_origin     = -ray.origin * inverse_direction;

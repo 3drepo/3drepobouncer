@@ -15,7 +15,7 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "repo_data_ref.h"
-#include "../../../lib/datastructure/repo_uuid.h"
+#include "repo/core/model/bson/repo_bson_builder.h"
 
 using namespace repo::core::handler::fileservice;
 

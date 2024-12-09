@@ -156,12 +156,11 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 						}
 					}
 
-					//change mesh name FIXME: this is a bit hacky.
 					if (absorbTrans || (mesh->getName().empty() && trans->getName().find(IFC_TYPE_SPACE_LABEL) != std::string::npos))
 					{
-						repo::core::model::MeshNode newMesh = mesh->cloneAndChangeName(trans->getName(), false);
-						scene->modifyNode(gType, mesh, &newMesh);
+						mesh->changeName(trans->getName());
 					}
+
 					if (absorbTrans)
 					{
 						repo::core::model::TransformationNode *granTrans =
@@ -187,7 +186,7 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 									if (!isIdentity && node->positionDependant()) {
 										//Parent is not the identity matrix, we need to reapply the transformation if
 										//the node is position dependant
-										node->swap(node->cloneAndApplyTransformation(trans->getTransMatrix(false)));
+										node->applyTransformation(trans->getTransMatrix());
 									}
 
 									if (node->getTypeAsEnum() != repo::core::model::NodeType::METADATA)

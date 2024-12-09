@@ -30,6 +30,8 @@
 #include <repo/core/model/bson/repo_bson_builder.h>
 #include <unordered_set>
 
+using namespace testing;
+
 static std::string getSuccessFilePath()
 {
 	return getDataPath(simpleModel);
@@ -356,10 +358,10 @@ TEST(RepoClientTest, UploadTestDWG)
 	// References in the tree.
 	std::string dwgUploadNestedBlocks = produceUploadArgs(db, "dwgTestNestedBlocks", getDataPath(dwgNestedBlocks));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(dwgUploadNestedBlocks));
-	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "\"[423]\"", { "rootNode->0->Block Text->Block Text" }));
-	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "\"[50D]\"", { "rootNode->0->My Block->My Block", "rootNode->Layer1->My Block->My Block" }));
-	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "\"[4FA]\"", { "rootNode->0->My Outer Block->My Outer Block", "rootNode->Layer1->My Outer Block->My Outer Block", "rootNode->Layer3->My Outer Block->My Outer Block" }));
-	EXPECT_FALSE(projectHasGeometryWithMetadata(db, "dwgTestNestedBlocks", "Entity Handle::Value", "\"[534]\"")); // Even though this handle exists, it should be compressed in the tree.
+	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "[423]", { "rootNode->0->Block Text->Block Text" }));
+	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "[50D]", { "rootNode->0->My Block->My Block", "rootNode->Layer1->My Block->My Block" }));
+	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "[4FA]", { "rootNode->0->My Outer Block->My Outer Block", "rootNode->Layer1->My Outer Block->My Outer Block", "rootNode->Layer3->My Outer Block->My Outer Block" }));
+	EXPECT_FALSE(projectHasGeometryWithMetadata(db, "dwgTestNestedBlocks", "Entity Handle::Value", "[534]")); // Even though this handle exists, it should be compressed in the tree.
 
 	// This snippet checks if encrypted files are handled correctly.
 	std::string dwgUploadProtected = produceUploadArgs(db, "dwgTestProtected", getDataPath(dwgPasswordProtected));
@@ -694,6 +696,8 @@ TEST(RepoClientTest, ProcessDrawing)
 
 	repo::core::model::RepoBSONBuilder revisionBuilder;
 
+	// Create a mocked-up revision BSON
+
 	auto db = "testDrawing"; // This must match the database in processDrawingConfig
 	auto rid = repo::lib::RepoUUID("cad0c3fe-dd1d-4844-ad04-cfb75df26a63"); // This must match the revId in processDrawingConfig
 	auto model = repo::lib::RepoUUID::createUUID().toString();
@@ -705,6 +709,7 @@ TEST(RepoClientTest, ProcessDrawing)
 	revisionBuilder.append("project", project);
 	revisionBuilder.append("model", model);
 	revisionBuilder.append("format", ".dwg");
+	revisionBuilder.appendTimeStamp("timestamp");
 	revisionBuilder.appendArray("rFile", rFiles);
 
 	// Make sure that the file manager uses the same config as produceProcessDrawingArgs
@@ -715,15 +720,15 @@ TEST(RepoClientTest, ProcessDrawing)
 	std::ifstream drawingFile{ path, std::ios::binary };
 	std::vector<uint8_t> bin(std::istreambuf_iterator<char>{drawingFile}, {});
 
-	repo::core::model::RepoBSONBuilder metadata;
-	metadata.append("name", "test.dwg");
+	repo::core::handler::fileservice::FileManager::Metadata metadata;
+	metadata["name"] = std::string("test.dwg");
 
 	manager->uploadFileAndCommit(
 		db,
 		REPO_COLLECTION_DRAWINGS,
 		rFile, // Take care that drawing source ref node Ids are always UUIDs
 		bin,
-		metadata.obj()
+		metadata
 	);
 
 	std::string err;
@@ -767,10 +772,25 @@ TEST(RepoClientTest, ProcessDrawing)
 
 	// Check that the document is correctly populated
 
-	EXPECT_EQ(imageRef.getStringField("type"), "fs");
-	EXPECT_EQ(imageRef.getStringField("name"), "test.svg"); // The image should have its file extension changed
-	EXPECT_EQ(imageRef.getStringField("mimeType"), "image/svg+xml");
-	EXPECT_EQ(imageRef.getUUIDField("project"), project);
-	EXPECT_EQ(imageRef.getStringField("model"), model);
-	EXPECT_EQ(imageRef.getUUIDField("rev_id"), rid);
+	// Via the RepoRef object
+	EXPECT_EQ(imageRef.getType(), repo::core::model::RepoRef::RefType::FS);
+	EXPECT_EQ(imageRef.getFileName(), "test.svg"); // The image should have its file extension changed
+
+	// And via the node directly
+	repo::core::model::RepoBSONBuilder builder;
+	builder.append(REPO_LABEL_ID, revision.getUUIDField("image"));
+	auto criteria = builder.obj();
+
+	auto refNode = handler->findOneByCriteria(
+		db,
+		REPO_COLLECTION_DRAWINGS + std::string(".ref"),
+		criteria
+	);
+
+	EXPECT_EQ(refNode.getStringField("type"), "fs");
+	EXPECT_EQ(refNode.getStringField("name"), "test.svg");
+	EXPECT_EQ(refNode.getStringField("mimeType"), "image/svg+xml");
+	EXPECT_EQ(refNode.getUUIDField("project"), project);
+	EXPECT_EQ(refNode.getStringField("model"), model);
+	EXPECT_EQ(refNode.getUUIDField("rev_id"), rid);
 }

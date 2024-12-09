@@ -19,10 +19,11 @@
 
 #include <string>
 
-#include "../../../core/model/bson/repo_bson_builder.h"
-
 namespace repo {
 	namespace core {
+		namespace model {
+			class RepoBSON;
+		}
 		namespace handler {
 			namespace fileservice {
 				class DataRef {

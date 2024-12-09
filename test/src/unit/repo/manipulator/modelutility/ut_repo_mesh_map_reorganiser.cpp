@@ -17,6 +17,7 @@
 
 #include <gtest/gtest.h>
 #include <cstdlib>
+#include <repo/core/model/bson/repo_bson_factory.h>
 #include <repo/manipulator/modelutility/repo_mesh_map_reorganiser.h>
 #include <repo/manipulator/modeloptimizer/repo_optimizer_multipart.h>
 #include <limits>
@@ -26,8 +27,6 @@
 using namespace repo::test::utils::mesh;
 using namespace repo::manipulator::modelutility;
 using namespace repo::manipulator::modeloptimizer;
-
-#pragma optimize("", off)
 
 TEST(MeshMapReorganiser, VeryLargeMesh)
 {
@@ -61,7 +60,7 @@ TEST(MeshMapReorganiser, VeryLargeMesh)
 	auto ids = remapped.getSubmeshIds();
 	auto end = std::unique(ids.begin(), ids.end());
 	auto count = end - ids.begin();
-	EXPECT_EQ(count, 1); 
+	EXPECT_EQ(count, 1);
 
 	// The supermesh should be split into six chunks (with the same submesh ids)
 
