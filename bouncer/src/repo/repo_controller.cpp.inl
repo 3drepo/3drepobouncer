@@ -18,7 +18,8 @@
 #include "lib/repo_license.h"
 #include "manipulator/repo_manipulator.h"
 #include "repo_controller.h"
-#include "core/handler/repo_database_handler_mongo.h"
+#include "repo/core/handler/repo_database_handler_abstract.h"
+#include "repo/lib/repo_stack.h"
 
 using namespace repo;
 
@@ -45,19 +46,10 @@ public:
 		alias(alias)
 	{
 		auto dbConf = config.getDatabaseConfig();
-		credentials = dbConf.username.empty() ?
-			nullptr :
-			core::handler::MongoDatabaseHandler::createBSONCredentials(dbConf.addr, dbConf.username, dbConf.password, dbConf.pwDigested);
-
 		databaseAd = dbConf.addr;
 	}
 
 	~RepoToken() {
-	}
-
-	const repo::core::model::RepoBSON* getCredentials() const
-	{
-		return credentials;
 	}
 
 	bool valid() const
@@ -65,9 +57,13 @@ public:
 		return config.validate();
 	}
 
+	std::string getDatabaseUsername() const
+	{
+		return config.getDatabaseConfig().username;
+	}
+
 private:
 	const lib::RepoConfig config;
-	const core::model::RepoBSON *credentials;
 	std::string alias;
 	std::string databaseAd, bucketRegion, bucketName, databaseName = REPO_ADMIN; //FIXME: workaround, to be removed.
 };
@@ -102,21 +98,12 @@ public:
 	* @param port port number
 	* @param username user login name
 	* @param password user password
-	* @param pwDigested is given password digested (default: false)
 	* @return returns a void pointer to a token
 	*/
 	RepoToken* init(
 		std::string       &errMsg,
 		const lib::RepoConfig  &config
 	);
-
-	/**
-	* Disconnect the controller from a database connection
-	* and destroys the token
-	* FIXME: CURRENTLY NOT THREAD SAFE! POTENTIALLY DANGEROUS
-	* @param token token to the database
-	*/
-	void disconnectFromDatabase(const RepoToken* token);
 
 	/*
 	*	------------- Database info lookup --------------

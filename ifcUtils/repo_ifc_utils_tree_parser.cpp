@@ -22,8 +22,6 @@
 #undef INCLUDE_HEADER
 #undef _INCLUDE_HEADER
 
-#include <boost/algorithm/string/predicate.hpp>
-
 #include "repo_ifc_utils_constants.h"
 #include <repo/lib/repo_utils.h>
 #include <repo/lib/datastructure/repo_variant.h>
@@ -464,13 +462,13 @@ std::string determineUnitsLabel(
 	if (unitName == "yard") return "yd";
 	if (unitName == "mile") return "mi";
 	if (unitName == "acre") return "ac";
-	if (unitName == "square inch") return u8"in²";
-	if (unitName == "square foot") return u8"ft²";
-	if (unitName == "square yard") return u8"yd²";
-	if (unitName == "square mile") return u8"mi²";
-	if (unitName == "cubie inch") return u8"in³";
-	if (unitName == "cubic foot") return u8"ft³";
-	if (unitName == "cubic yard") return u8"yd³";
+	if (unitName == "square inch") return "in²";
+	if (unitName == "square foot") return "ft²";
+	if (unitName == "square yard") return "yd²";
+	if (unitName == "square mile") return "mi²";
+	if (unitName == "cubie inch") return "in³";
+	if (unitName == "cubic foot") return "ft³";
+	if (unitName == "cubic yard") return "yd³";
 	if (unitName == "litre") return "l";
 	if (unitName == "fluid ounce uk") return "fl oz(UK)";
 	if (unitName == "fluid ounce us") return "fl oz(US)";
@@ -478,7 +476,7 @@ std::string determineUnitsLabel(
 	if (unitName == "pint us") return "pint(UK)";
 	if (unitName == "gallon uk") return "gal(UK)";
 	if (unitName == "gallon us") return "gal(UK)";
-	if (unitName == "degree") return u8"°";
+	if (unitName == "degree") return "°";
 	if (unitName == "ounce") return "oz";
 	if (unitName == "pound") return "lb";
 	if (unitName == "ton uk") return "t(UK)";
@@ -499,9 +497,9 @@ std::string determineUnitsLabel(
 	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_COULOMB:
 		return "C";
 	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_CUBIC_METRE:
-		return u8"m³";
+		return "m³";
 	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_DEGREE_CELSIUS:
-		return u8"°C";
+		return "°C";
 	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_FARAD:
 		return "F";
 	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_GRAM:
@@ -527,7 +525,7 @@ std::string determineUnitsLabel(
 	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_NEWTON:
 		return "N";
 	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_OHM:
-		return u8"Ω";
+		return "Ω";
 	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_PASCAL:
 		return "Pa";
 	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_RADIAN:
@@ -539,7 +537,7 @@ std::string determineUnitsLabel(
 	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_SIEVERT:
 		return "Sv";
 	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_SQUARE_METRE:
-		return u8"m²";
+		return "m²";
 	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_STERADIAN:
 		return "sr";
 	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_TESLA:
@@ -581,7 +579,7 @@ std::string determinePrefix(
 	case IfcSchema::IfcSIPrefix::Value::IfcSIPrefix_MILLI:
 		return "m";
 	case IfcSchema::IfcSIPrefix::Value::IfcSIPrefix_MICRO:
-		return u8"µ";
+		return "µ";
 	case IfcSchema::IfcSIPrefix::Value::IfcSIPrefix_NANO:
 		return "n";
 	case IfcSchema::IfcSIPrefix::Value::IfcSIPrefix_PICO:
@@ -599,20 +597,20 @@ std::string getSuperScriptAsString(int value) {
 	auto valueStr = std::to_string(value);
 	std::stringstream ss;
 	std::string symbolMapping[] = {
-		u8"⁰",
-		u8"¹",
-		u8"²",
-		u8"³",
-		u8"⁴",
-		u8"⁵",
-		u8"⁶",
-		u8"⁷",
-		u8"⁸",
-		u8"⁹"
+		"⁰",
+		"¹",
+		"²",
+		"³",
+		"⁴",
+		"⁵",
+		"⁶",
+		"⁷",
+		"⁸",
+		"⁹"
 	};
 	for (const auto &chr : valueStr) {
 		if (chr == '-') {
-			ss << u8"⁻";
+			ss << "⁻";
 		}
 		else {
 			int digit = atoi(&chr);

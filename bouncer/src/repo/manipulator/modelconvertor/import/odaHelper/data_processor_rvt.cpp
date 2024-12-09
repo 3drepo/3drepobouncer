@@ -73,13 +73,13 @@ bool DataProcessorRvt::tryConvertMetadataEntry(OdTfVariant& metaEntry, OdBmLabel
 				(metaEntry.getInt32()) ? v = true : v = false;
 			} else{
 				OdInt32 value = metaEntry.getInt32();
-				v = static_cast<long long>(value);
+				v = static_cast<int64_t>(value);
 			}
 			break;
 		}
 		case OdVariant::kInt64: {
 			OdInt64 value = metaEntry.getInt64();
-			v = static_cast<long long>(value);
+			v = static_cast<int64_t>(value);
 			break;
 		}
 		case OdVariant::kDouble: {
@@ -192,7 +192,7 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 		return absolutePath.generic_string();
 
 	// Sometimes the texture path has subdirectories like "./mat/1" remove it and see if we can find it.
-	auto altPath = boost::filesystem::absolute(texturePath.leaf(), env);
+	auto altPath = boost::filesystem::absolute(texturePath.filename(), env);
 	if (repo::lib::doesFileExist(altPath))
 		return altPath.generic_string();
 
@@ -503,7 +503,7 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 std::unordered_map<std::string, repo::lib::RepoVariant> DataProcessorRvt::fillMetadata(OdBmElementPtr element)
 {
 	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
-	metadata[REVIT_ELEMENT_ID] = static_cast<long long>((OdUInt64)element->objectId().getHandle());
+	metadata[REVIT_ELEMENT_ID] = static_cast<int64_t>((OdUInt64)element->objectId().getHandle());
 
 	try
 	{

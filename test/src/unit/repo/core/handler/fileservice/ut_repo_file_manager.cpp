@@ -25,25 +25,15 @@
 
 using namespace repo::core::handler::fileservice;
 
-static FileManager* getManagerDefaultFS()
-{
-	FileManager::disconnect();
-	auto config = repo::lib::RepoConfig::fromFile(getDataPath("config/withFS.json"));
-	config.configureFS(getDataPath("fileShare"));
-	return FileManager::instantiateManager(config, getHandler());
-}
-
-TEST(FileManager, GetManager)
-{
-	FileManager::disconnect();
-	EXPECT_THROW(FileManager::getManager(), repo::lib::RepoException);
-	EXPECT_NO_THROW(getManagerDefaultFS());
-}
-
 TEST(FileManager, InstantiateManager)
 {
-	FileManager::disconnect();
-	EXPECT_THROW(FileManager::instantiateManager(repo::lib::RepoConfig::fromFile(getDataPath("config/withFS.json")), nullptr), repo::lib::RepoException);
+	auto empty = std::weak_ptr<repo::core::handler::AbstractDatabaseHandler>();
+
+	// FileManager must be initialised with the fs config
+	EXPECT_THROW({
+		new FileManager(repo::lib::RepoConfig::fromFile(getDataPath("config/withS3.json")), empty);
+	},
+	repo::lib::RepoException);
 }
 
 TEST(FileManager, UploadFileAndCommitStringId)
@@ -53,8 +43,8 @@ TEST(FileManager, UploadFileAndCommitStringId)
 	// We should be able to do this when the filename is both a string
 	// and a UUID. This test tests the string version.
 
-	auto manager = getManagerDefaultFS();
-	ASSERT_TRUE(manager);
+	auto handler = getHandler();
+	auto manager = handler->getFileManager();
 	auto db = "testFileManager";
 	std::string col = "fileUpload";
 
@@ -79,7 +69,8 @@ TEST(FileManager, UploadFileAndCommitUUIDId)
 	// We should be able to do this when the filename is both a string
 	// and a UUID. This test tests the UUID version.
 
-	auto manager = getManagerDefaultFS();
+	auto handler = getHandler();
+	auto manager = handler->getFileManager();
 	ASSERT_TRUE(manager);
 	auto db = "testFileManager";
 	std::string col = "fileUpload";
@@ -100,7 +91,9 @@ TEST(FileManager, UploadFileAndCommitUUIDId)
 
 TEST(FileManager, deleteFileAndRef)
 {
-	auto manager = getManagerDefaultFS();
+	auto handler = getHandler();
+	auto manager = handler->getFileManager();
+
 	ASSERT_TRUE(manager);
 	auto db = "testFileManager";
 	std::string col = "testFileUpload";
@@ -110,13 +103,11 @@ TEST(FileManager, deleteFileAndRef)
 
 	EXPECT_TRUE(manager->deleteFileAndRef(db, col, fileName));
 
-	auto dbHandler = getHandler();
-	auto res = dbHandler->findOneByCriteria(db, col + "." + REPO_COLLECTION_EXT_REF, BSON("_id" << fileName));
+	auto res = handler->findOneByUniqueID(db, col + "." + REPO_COLLECTION_EXT_REF, fileName);
 	EXPECT_TRUE(res.isEmpty());
 
 	EXPECT_FALSE(repo::lib::doesFileExist(dataPathName));
 
-	// Calling getHandler above may change the file manager instance that is cached
-	// in manager, so get it again from then on.
-	EXPECT_FALSE(FileManager::getManager()->deleteFileAndRef(db, col, fileName));
+	// Deleting a file a second time should not do anything, but not throw either
+	EXPECT_FALSE(manager->deleteFileAndRef(db, col, fileName));
 }

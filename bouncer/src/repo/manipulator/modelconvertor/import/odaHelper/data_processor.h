@@ -25,7 +25,7 @@
 
 #include "geometry_collector.h"
 #include "vectorise_device_dgn.h"
-#include "../../../../core/model/bson/repo_node_mesh.h"
+#include "repo/core/model/bson/repo_node_mesh.h"
 
 namespace repo {
 	namespace manipulator {

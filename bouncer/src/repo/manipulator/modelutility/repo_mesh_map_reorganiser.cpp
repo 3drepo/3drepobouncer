@@ -145,14 +145,6 @@ repo::core::model::SupermeshNode MeshMapReorganiser::getRemappedMesh() const
 {
 	if (reMapSuccess)
 	{
-		auto bbox = mesh->getBoundingBox();
-		std::vector<std::vector<float>> bboxArr;
-		if (bbox.size())
-		{
-			bboxArr.push_back({ bbox[0].x, bbox[0].y, bbox[0].z });
-			bboxArr.push_back({ bbox[1].x, bbox[1].y, bbox[1].z });
-		}
-
 		auto submeshIds = getIDMapArrays();
 		std::vector<float> newIds;
 		for (auto& buf : submeshIds)
@@ -164,7 +156,7 @@ repo::core::model::SupermeshNode MeshMapReorganiser::getRemappedMesh() const
 			newVertices,
 			newFaces,
 			newNormals,
-			bboxArr,
+			mesh->getBoundingBox(),
 			newUVs,
 			reMappedMappings,
 			mesh->getUniqueID(),

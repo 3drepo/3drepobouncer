@@ -55,7 +55,7 @@ bool AssimpModelImport::tryConvertMetadataEntry(aiMetadataEntry& assimpMetaEntry
 		case AI_UINT64:
 		{
 			uint64_t value = *(static_cast<uint64_t*>(assimpMetaEntry.mData));
-			v = static_cast<long long>(value); // Potentially losing precision here, but mongo does not accept uint64_t
+			v = static_cast<int64_t>(value); // Potentially losing precision here, but mongo does not accept uint64_t
 			break;
 		}
 		case AI_FLOAT:
@@ -427,7 +427,6 @@ repo::core::model::MeshNode AssimpModelImport::createMeshRepoNode(
 	std::vector<repo::lib::RepoVector3D> normals;
 	std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
 	std::vector<repo_color4d_t> colors;
-	std::vector<std::vector<float>>   outline;
 
 	/*
 	 *--------------------- Vertices (always present) -----------------------------
@@ -530,18 +529,7 @@ repo::core::model::MeshNode AssimpModelImport::createMeshRepoNode(
 	*-----------------------------------------------------------------------------
 	*/
 
-	std::vector<std::vector<float>>  boundingBox;
-	std::vector<float> minBound, maxBound;
-	minBound.push_back(minVertex.x);
-	minBound.push_back(minVertex.y);
-	minBound.push_back(minVertex.z);
-
-	maxBound.push_back(maxVertex.x);
-	maxBound.push_back(maxVertex.y);
-	maxBound.push_back(maxVertex.z);
-
-	boundingBox.push_back(minBound);
-	boundingBox.push_back(maxBound);
+	repo::lib::RepoBounds boundingBox(minVertex, maxVertex);
 
 	meshNode = repo::core::model::MeshNode(repo::core::model::RepoBSONFactory::makeMeshNode(
 		vertices, faces, normals, boundingBox, uvChannels));

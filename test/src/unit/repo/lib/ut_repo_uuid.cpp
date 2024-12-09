@@ -31,13 +31,8 @@ static boost::uuids::random_generator gen;
 
 TEST(RepoUUIDTest, constructorTest)
 {
-	auto generatedID = RepoUUID::createUUID();
-	mongo::BSONObjBuilder builder;
-
 	boost::uuids::uuid id = gen();
-	builder.appendBinData("uuid", id.size(), mongo::bdtUUID, (char*)id.data);
-	auto bson = builder.obj();
-	auto fromBsonEle(bson.getField("uuid"));
+	auto generatedID = RepoUUID::createUUID();
 
 	RepoUUID fromDefault;
 

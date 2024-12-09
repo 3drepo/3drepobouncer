@@ -33,8 +33,8 @@ RepoSequence::RepoSequence(
 	const std::string& name,
 	const repo::lib::RepoUUID& uniqueId,
 	const repo::lib::RepoUUID& revisionId,
-	const long long& firstFrameTimestamp,
-	const long long& lastFrameTimestamp,
+	const int64_t& firstFrameTimestamp,
+	const int64_t& lastFrameTimestamp,
 	const std::vector<FrameData>& frames
 )
 	:name(name),
@@ -57,8 +57,8 @@ RepoSequence::operator RepoBSON() const
 
 	builder.append(REPO_LABEL_ID, uniqueId);
 	builder.append(REPO_SEQUENCE_LABEL_NAME, name);
-	builder.append(REPO_SEQUENCE_LABEL_START_DATE, (long long)firstFrame);
-	builder.append(REPO_SEQUENCE_LABEL_END_DATE, (long long)lastFrame);
+	builder.append(REPO_SEQUENCE_LABEL_START_DATE, (int64_t)firstFrame);
+	builder.append(REPO_SEQUENCE_LABEL_END_DATE, (int64_t)lastFrame);
 	if (!revisionId.isDefaultValue())
 	{
 		builder.append(REPO_SEQUENCE_LABEL_REV_ID, revisionId);

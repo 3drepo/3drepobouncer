@@ -76,14 +76,7 @@ bool SceneManager::commitWebBuffers(
 
 	if (!resultBuffers.repoAssets.isEmpty())
 	{
-		if (success &= handler->upsertDocument(databaseName, projectName + "." + repoAssetsStashExt, resultBuffers.repoAssets, true, errMsg))
-		{
-			repoInfo << "Assets list added successfully.";
-		}
-		else
-		{
-			repoError << "Failed to add assets list: " << errMsg;;
-		}
+		handler->upsertDocument(databaseName, projectName + "." + repoAssetsStashExt, resultBuffers.repoAssets, true);
 	}
 
 	if (success)
@@ -454,7 +447,7 @@ repo_web_buffers_t SceneManager::generateRepoBundleBuffer(
 
 bool isAddOnEnabled(repo::core::handler::AbstractDatabaseHandler *handler, const std::string &database, const std::string addOn) {
 
-	auto teamspace = repo::core::model::RepoTeamspace(handler->findOneByCriteria(database, "teamspace", BSON("_id" << database)));
+	auto teamspace = repo::core::model::RepoTeamspace(handler->findOneByUniqueID(database, "teamspace", database));
 	return teamspace.isAddOnEnabled(addOn);
 }
 
