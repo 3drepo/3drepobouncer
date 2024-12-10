@@ -53,8 +53,8 @@ namespace repo {
 					repo::core::handler::AbstractDatabaseHandler* handler,
 					repo::core::handler::fileservice::FileManager* fileManager,
 					const std::string& teamspace,
-					const DrawingRevisionNode& revision,
-					DrawingImageInfo& drawing
+					DrawingRevisionNode& revision,
+					const DrawingImageInfo& drawing
 				);
 			};
 		}

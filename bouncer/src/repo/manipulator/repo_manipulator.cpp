@@ -23,23 +23,23 @@
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 
-#include "../core/handler/repo_database_handler_mongo.h"
-#include "../core/handler/fileservice/repo_file_manager.h"
-#include "../core/model/bson/repo_bson_factory.h"
-#include "../error_codes.h"
-#include "../lib/repo_log.h"
-#include "../lib/repo_config.h"
-#include "diff/repo_diff_name.h"
-#include "diff/repo_diff_sharedid.h"
+#include "repo/core/handler/repo_database_handler_mongo.h"
+#include "repo/core/handler/fileservice/repo_file_manager.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/core/model/bson/repo_bson.h"
+#include "repo/error_codes.h"
+#include "repo/lib/repo_log.h"
+#include "repo/lib/repo_config.h"
 #include "modelconvertor/import/repo_drawing_import_manager.h"
 #include "modelconvertor/import/repo_model_import_manager.h"
-#include "modelconvertor/export/repo_model_export_assimp.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
 #include "modelutility/repo_scene_manager.h"
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
 #include "modelutility/repo_drawing_manager.h"
 #include "modeloptimizer/repo_optimizer_trans_reduction.h"
 #include "repo_manipulator.h"
+
+
 
 using namespace repo::manipulator;
 
@@ -51,55 +51,42 @@ RepoManipulator::~RepoManipulator()
 {
 }
 
-bool RepoManipulator::connectAndAuthenticateWithAdmin(
-	std::string& errMsg,
+void RepoManipulator::connectAndAuthenticateWithAdmin(
 	const std::string& address,
 	const uint32_t& port,
 	const uint32_t& maxConnections,
 	const std::string& username,
-	const std::string& password,
-	const bool& pwDigested
+	const std::string& password
 )
 {
-	//FIXME: we should have a database manager class that will instantiate new handlers/give existing handlers
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(
-			errMsg, address, port, maxConnections,
-			repo::core::handler::MongoDatabaseHandler::getAdminDatabaseName(),
-			username, password, pwDigested);
-
-	return handler != 0;
+	repo::core::handler::MongoDatabaseHandler::ConnectionOptions options;
+	options.maxConnections = maxConnections;
+	dbHandler = repo::core::handler::MongoDatabaseHandler::getHandler(
+		address,
+		port,
+		username,
+		password,
+		options
+	);
+	dbHandler->testConnection();
 }
 
-bool RepoManipulator::connectAndAuthenticateWithAdmin(
-	std::string& errMsg,
+void RepoManipulator::connectAndAuthenticateWithAdmin(
 	const std::string& connString,
 	const uint32_t& maxConnections,
 	const std::string& username,
-	const std::string& password,
-	const bool& pwDigested
+	const std::string& password
 )
 {
-	//FIXME: we should have a database manager class that will instantiate new handlers/give existing handlers
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(
-			errMsg, connString, maxConnections,
-			repo::core::handler::MongoDatabaseHandler::getAdminDatabaseName(),
-			username, password, pwDigested);
-
-	return handler != 0;
-}
-
-repo::core::model::RepoBSON* RepoManipulator::createCredBSON(
-	const std::string& databaseAd,
-	const std::string& username,
-	const std::string& password,
-	const bool& pwDigested)
-{
-	core::model::RepoBSON* bson =
-		repo::core::handler::MongoDatabaseHandler::createBSONCredentials(databaseAd, username, password, pwDigested);
-
-	return bson;
+	repo::core::handler::MongoDatabaseHandler::ConnectionOptions options;
+	options.maxConnections = maxConnections;
+	dbHandler = repo::core::handler::MongoDatabaseHandler::getHandler(
+		connString,
+		username,
+		password,
+		options
+	);
+	dbHandler->testConnection();
 }
 
 repo::core::model::RepoScene* RepoManipulator::createFederatedScene(
@@ -130,23 +117,19 @@ repo::core::model::RepoScene* RepoManipulator::createFederatedScene(
 			parentNode = groupNameToNode[pair.second];
 		}
 
-		refNodes.insert(new repo::core::model::ReferenceNode(
-			pair.first.cloneAndAddParent(parentNode->getSharedID())
-		));
+		auto copy = new repo::core::model::ReferenceNode(pair.first);
+		copy->addParent(parentNode->getSharedID());
+		refNodes.insert(copy);
 	}
 	//federate scene has no referenced files
-	std::vector<std::string> empty;
 	repo::core::model::RepoScene* scene =
-		new repo::core::model::RepoScene(empty, emptySet, emptySet, emptySet, emptySet, emptySet, transNodes, refNodes);
+		new repo::core::model::RepoScene({}, emptySet, emptySet, emptySet, emptySet, emptySet, transNodes, refNodes);
 
 	return scene;
 }
 
 uint8_t RepoManipulator::commitScene(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& bucketName,
-	const std::string& bucketRegion,
+	const std::string& user,
 	repo::core::model::RepoScene* scene,
 	const std::string& owner,
 	const std::string& tag,
@@ -154,10 +137,8 @@ uint8_t RepoManipulator::commitScene(
 	const repo::lib::RepoUUID& revId)
 {
 	repoLog("Manipulator: Committing model to database");
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	auto manager = repo::core::handler::fileservice::FileManager::getManager();
-	std::string projOwner = owner.empty() ? cred->getStringField("user") : owner;
+
+	std::string projOwner = owner.empty() ? user : owner;
 
 	//Check if database exists
 	std::string dbName = scene->getDatabaseName();
@@ -169,313 +150,59 @@ uint8_t RepoManipulator::commitScene(
 	}
 
 	modelutility::SceneManager sceneManager;
-	return sceneManager.commitScene(scene, projOwner, tag, desc, revId, handler, manager);
-}
-
-void RepoManipulator::compareScenes(
-	repo::core::model::RepoScene* base,
-	repo::core::model::RepoScene* compare,
-	repo_diff_result_t& baseResults,
-	repo_diff_result_t& compResults,
-	const repo::DiffMode& diffMode,
-	const repo::core::model::RepoScene::GraphType& gType)
-{
-	diff::AbstractDiff* diff = nullptr;
-
-	switch (diffMode)
-	{
-	case repo::DiffMode::DIFF_BY_ID:
-		diff = new diff::DiffBySharedID(base, compare, gType);
-		break;
-	case repo::DiffMode::DIFF_BY_NAME:
-		diff = new diff::DiffByName(base, compare, gType);
-		break;
-	default:
-		repoError << "Unknown diff mode: " << (int)diffMode;
-	}
-
-	if (diff)
-	{
-		std::string msg;
-
-		if (diff->isOk(msg))
-		{
-			baseResults = diff->getrepo_diff_result_tForBase();
-			compResults = diff->getrepo_diff_result_tForComp();
-		}
-		else
-		{
-			repoError << "Error on scene comparator: " << msg;
-		}
-
-		delete diff;
-	}
-	else
-	{
-		repoError << "Failed to instantiate 3D Diff comparator (unsupported diff mode/out of memory?)";
-	}
-}
-
-uint64_t RepoManipulator::countItemsInCollection(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& database,
-	const std::string& collection,
-	std::string& errMsg)
-{
-	uint64_t numItems;
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-
-	if (handler)
-		numItems = handler->countItemsInCollection(database, collection, errMsg);
-
-	return numItems;
-}
-
-void RepoManipulator::disconnectFromDatabase(const std::string& databaseAd)
-{
-	//FIXME: can only kill mongo here, but this is suppose to be a quick fix
-	core::handler::MongoDatabaseHandler::disconnectHandler();
-}
-
-bool RepoManipulator::dropCollection(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& databaseName,
-	const std::string& collectionName,
-	std::string& errMsg
-)
-{
-	bool success = false;
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-		success = handler->dropCollection(databaseName, collectionName, errMsg);
-	else
-		errMsg = "Unable to locate database handler for " + databaseAd + ". Try reauthenticating.";
-
-	return success;
-}
-
-bool RepoManipulator::dropDatabase(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& databaseName,
-	std::string& errMsg
-)
-{
-	bool success = false;
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-	{
-		success = handler->dropDatabase(databaseName, errMsg);
-
-		//remove all roles belonging to this database
-		repo::core::model::RepoBSON criteria = BSON(REPO_ROLE_LABEL_DATABASE << databaseName);
-		for (const auto role : handler->findAllByCriteria(REPO_ADMIN, REPO_SYSTEM_ROLES, criteria))
-		{
-			removeRole(databaseAd, cred, repo::core::model::RepoRole(role));
-		}
-
-		//remove privileges associated with this db
-		std::string fieldName = REPO_ROLE_LABEL_PRIVILEGES + std::string(".") + REPO_ROLE_LABEL_RESOURCE + "." + REPO_ROLE_LABEL_DATABASE;
-		repo::core::model::RepoBSON criteria2 = BSON(fieldName << databaseName);
-		for (const auto role : handler->findAllByCriteria(REPO_ADMIN, REPO_SYSTEM_ROLES, criteria2))
-		{
-			auto roleBson = repo::core::model::RepoRole(role);
-			auto privileges = roleBson.getPrivileges();
-			int index = 0;
-			while (index < privileges.size())
-			{
-				if (privileges[index].database == databaseName)
-				{
-					privileges.erase(privileges.begin() + index);
-				}
-				else
-				{
-					index++;
-				}
-			}
-
-			if (privileges.size())
-			{
-				updateRole(databaseAd, cred, roleBson.cloneAndUpdatePrivileges(privileges));
-			}
-			else
-			{
-				removeRole(databaseAd, cred, roleBson);
-			}
-		}
-	}
-	else
-		errMsg = "Unable to locate database handler for " + databaseAd + ". Try reauthenticating.";
-
-	return success;
-}
-
-std::list<std::string> RepoManipulator::fetchDatabases(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred
-)
-{
-	std::list<std::string> list;
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-		list = handler->getDatabases();
-
-	return list;
-}
-
-std::list<std::string> RepoManipulator::fetchCollections(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& database
-)
-{
-	std::list<std::string> list;
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-		list = handler->getCollections(database);
-
-	return list;
+	return sceneManager.commitScene(scene, projOwner, tag, desc, revId, dbHandler.get(), dbHandler->getFileManager().get());
 }
 
 repo::core::model::RepoScene* RepoManipulator::fetchScene(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
 	const std::string& database,
 	const std::string& project,
 	const repo::lib::RepoUUID& uuid,
 	const bool& headRevision,
 	const bool& ignoreRefScene,
 	const bool& skeletonFetch,
-	const std::vector<repo::core::model::RevisionNode::UploadStatus>& includeStatus)
+	const std::vector<repo::core::model::ModelRevisionNode::UploadStatus>& includeStatus)
 {
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	modelutility::SceneManager sceneManager;
-	return sceneManager.fetchScene(handler, database, project, uuid, headRevision, ignoreRefScene, skeletonFetch, includeStatus);
+	return sceneManager.fetchScene(dbHandler.get(), database, project, uuid, headRevision, ignoreRefScene, skeletonFetch, includeStatus);
 }
 
 void RepoManipulator::fetchScene(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
 	repo::core::model::RepoScene* scene,
 	const bool& ignoreRefScene,
 	const bool& skeletonFetch)
 {
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	modelutility::SceneManager sceneManager;
-	return sceneManager.fetchScene(handler, scene);
-}
-
-repo::core::model::RepoRole RepoManipulator::findRole(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& dbName,
-	const std::string& roleName
-)
-{
-	repo::core::model::RepoRole role;
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (!handler)
-	{
-		repoError << "Failed to retrieve database handler to perform the operation!";
-	}
-	else
-	{
-		repo::core::model::RepoBSONBuilder builder;
-		builder.append(REPO_LABEL_ROLE, roleName);
-
-		role = repo::core::model::RepoRole(
-			handler->findOneByCriteria(REPO_ADMIN, REPO_SYSTEM_ROLES, builder.obj()));
-	}
-
-	return role;
-}
-
-repo::core::model::RepoUser RepoManipulator::findUser(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& username
-)
-{
-	repo::core::model::RepoUser user;
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (!handler)
-	{
-		repoError << "Failed to retrieve database handler to perform the operation!";
-	}
-	else
-	{
-		repo::core::model::RepoBSONBuilder builder;
-		builder.append(REPO_LABEL_USER, username);
-
-		user = repo::core::model::RepoUser(
-			handler->findOneByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, builder.obj()));
-	}
-
-	return user;
+	return sceneManager.fetchScene(dbHandler.get(), scene);
 }
 
 bool RepoManipulator::generateAndCommitRepoBundlesBuffer(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& bucketName,
-	const std::string& bucketRegion,
 	repo::core::model::RepoScene* scene)
 {
 	repo_web_buffers_t buffers;
-	return generateAndCommitWebViewBuffer(databaseAd, cred, bucketName, bucketRegion, scene,
-		buffers, modelconvertor::WebExportType::REPO);
-}
-
-bool RepoManipulator::generateAndCommitGLTFBuffer(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& bucketName,
-	const std::string& bucketRegion,
-	repo::core::model::RepoScene* scene)
-{
-	repo_web_buffers_t buffers;
-	return generateAndCommitWebViewBuffer(databaseAd, cred, bucketName, bucketRegion, scene,
-		buffers, modelconvertor::WebExportType::GLTF);
+	return generateAndCommitWebViewBuffer(
+		scene,
+		buffers,
+		modelconvertor::WebExportType::REPO
+	);
 }
 
 bool RepoManipulator::generateAndCommitSRCBuffer(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& bucketName,
-	const std::string& bucketRegion,
 	repo::core::model::RepoScene* scene)
 {
 	repo_web_buffers_t buffers;
-	return generateAndCommitWebViewBuffer(databaseAd, cred, bucketName, bucketRegion, scene,
-		buffers, modelconvertor::WebExportType::SRC);
+	return generateAndCommitWebViewBuffer(
+		scene,
+		buffers,
+		modelconvertor::WebExportType::SRC
+	);
 }
 
 bool RepoManipulator::generateAndCommitSelectionTree(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& bucketName,
-	const std::string& bucketRegion,
 	repo::core::model::RepoScene* scene
 )
 {
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	auto manager = repo::core::handler::fileservice::FileManager::getManager();
-
 	modelutility::SceneManager SceneManager;
-
-	return SceneManager.generateAndCommitSelectionTree(scene, handler, manager);
+	return SceneManager.generateAndCommitSelectionTree(scene, dbHandler.get(), dbHandler->getFileManager().get());
 }
 
 bool RepoManipulator::generateStashGraph(
@@ -487,31 +214,15 @@ bool RepoManipulator::generateStashGraph(
 }
 
 bool RepoManipulator::generateAndCommitWebViewBuffer(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& bucketName,
-	const std::string& bucketRegion,
 	repo::core::model::RepoScene* scene,
 	repo_web_buffers_t& buffers,
 	const modelconvertor::WebExportType& exType)
 {
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	auto manager = repo::core::handler::fileservice::FileManager::getManager();
 	modelutility::SceneManager SceneManager;
 	if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED)) {
 		SceneManager.generateStashGraph(scene);
 	}
-	return SceneManager.generateWebViewBuffers(scene, exType, buffers, handler, manager);
-}
-
-repo_web_buffers_t RepoManipulator::generateGLTFBuffer(
-	repo::core::model::RepoScene* scene)
-{
-	repo_web_buffers_t buffers;
-	modelutility::SceneManager SceneManager;
-	SceneManager.generateWebViewBuffers(scene, modelconvertor::WebExportType::GLTF, buffers, nullptr);
-	return buffers;
+	return SceneManager.generateWebViewBuffers(scene, exType, buffers, dbHandler.get(), dbHandler->getFileManager().get());
 }
 
 repo_web_buffers_t RepoManipulator::generateSRCBuffer(
@@ -525,25 +236,16 @@ repo_web_buffers_t RepoManipulator::generateSRCBuffer(
 
 std::vector<repo::core::model::RepoBSON>
 RepoManipulator::getAllFromCollectionTailable(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
 	const std::string& database,
 	const std::string& collection,
 	const uint64_t& skip,
 	const uint32_t& limit)
 {
-	std::vector<repo::core::model::RepoBSON> vector;
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-		vector = handler->getAllFromCollectionTailable(database, collection, skip, limit);
-	return vector;
+	return dbHandler->getAllFromCollectionTailable(database, collection, skip, limit);
 }
 
 std::vector<repo::core::model::RepoBSON>
 RepoManipulator::getAllFromCollectionTailable(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
 	const std::string& database,
 	const std::string& collection,
 	const std::list<std::string>& fields,
@@ -552,40 +254,7 @@ RepoManipulator::getAllFromCollectionTailable(
 	const uint64_t& skip,
 	const uint32_t& limit)
 {
-	std::vector<repo::core::model::RepoBSON> vector;
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-		vector = handler->getAllFromCollectionTailable(database, collection, skip, limit, fields, sortField, sortOrder);
-	return vector;
-}
-
-std::map<std::string, std::list<std::string>>
-RepoManipulator::getDatabasesWithProjects(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::list<std::string>& databases)
-{
-	std::map<std::string, std::list<std::string>> list;
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-		list = handler->getDatabasesWithProjects(databases);
-
-	return list;
-}
-
-std::list<std::string> RepoManipulator::getAdminDatabaseRoles(
-	const std::string& databaseAd)
-{
-	std::list<std::string> roles;
-
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-		roles = handler->getAdminDatabaseRoles();
-
-	return roles;
+	return dbHandler->getAllFromCollectionTailable(database, collection, skip, limit, fields, sortField, sortOrder);
 }
 
 std::shared_ptr<repo_partitioning_tree_t>
@@ -596,27 +265,6 @@ RepoManipulator::getScenePartitioning(
 {
 	modelutility::RDTreeSpatialPartitioner partitioner(scene, maxDepth);
 	return partitioner.partitionScene();
-}
-
-std::list<std::string> RepoManipulator::getStandardDatabaseRoles(
-	const std::string& databaseAd)
-{
-	std::list<std::string> roles;
-
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-		roles = handler->getStandardDatabaseRoles();
-
-	return roles;
-}
-
-std::string RepoManipulator::getNameOfAdminDatabase(
-	const std::string& databaseAd) const
-{
-	//FIXME: at the moment we only have mongo. But if we have
-	//different database types then this would not work
-	return  repo::core::handler::MongoDatabaseHandler::getAdminDatabaseName();
 }
 
 repo::core::model::RepoNodeSet
@@ -656,19 +304,15 @@ RepoManipulator::loadSceneFromFile(
 }
 
 void RepoManipulator::processDrawingRevision(
-	const std::string databaseAd,
 	const std::string& teamspace,
 	const repo::lib::RepoUUID revision,
 	uint8_t& error,
 	const std::string& imagePath)
 {
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-
 	// get the drawing node that holds the ref
 
 	auto manager = repo::manipulator::modelutility::DrawingManager();
-	auto revisionNode = manager.fetchRevision(handler, teamspace, revision);
+	auto revisionNode = manager.fetchRevision(dbHandler.get(), teamspace, revision);
 
 	auto fileNodeIds = revisionNode.getFiles();
 
@@ -683,14 +327,13 @@ void RepoManipulator::processDrawingRevision(
 	// have overloads for memory streams, so resolve the ref node to a path on
 	// a locally accessible filesystem.
 
-	auto fileManager = repo::core::handler::fileservice::FileManager::getManager();
 	auto refNodeId = fileNodeIds[0]; // We do not expect drawing revision nodes to have multiple rFile entries
-	auto refNode = fileManager->getFileRef(
+	auto refNode = dbHandler->getFileManager()->getFileRef(
 		teamspace,
 		REPO_COLLECTION_DRAWINGS,
 		refNodeId
 	);
-	auto fullpath = fileManager->getFilePath(refNode);
+	auto fullpath = dbHandler->getFileManager()->getFilePath(refNode);
 
 	// The DrawingImportManager will select the correct importer to convert the
 	// drawing, and return the contents along with calibration and any other
@@ -718,32 +361,8 @@ void RepoManipulator::processDrawingRevision(
 	}
 
 	if (error == REPOERR_OK) {
-		error = manager.commitImage(handler, fileManager, teamspace, revisionNode, drawing);
+		error = manager.commitImage(dbHandler.get(), dbHandler->getFileManager().get(), teamspace, revisionNode, drawing);
 	}
-}
-
-bool RepoManipulator::hasCollection(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& dbName,
-	const std::string& project)
-{
-	std::list<std::string> dList = { dbName };
-	auto databaseList = getDatabasesWithProjects(databaseAd, cred, dList);
-	if (!databaseList.size()) return false;
-	auto collectionList = databaseList.begin()->second;
-	auto findIt = std::find(collectionList.begin(), collectionList.end(), project);
-	return findIt != collectionList.end();
-}
-
-bool RepoManipulator::hasDatabase(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& dbName)
-{
-	auto databaseList = fetchDatabases(databaseAd, cred);
-	auto findIt = std::find(databaseList.begin(), databaseList.end(), dbName);
-	return findIt != databaseList.end();
 }
 
 bool RepoManipulator::init(
@@ -752,79 +371,20 @@ bool RepoManipulator::init(
 	const int& nDbConnections
 ) {
 	auto dbConf = config.getDatabaseConfig();
-	bool success = true;
 	if (dbConf.connString.empty()) {
-		success = connectAndAuthenticateWithAdmin(errMsg, dbConf.addr, dbConf.port, nDbConnections, dbConf.username, dbConf.password);
+		connectAndAuthenticateWithAdmin(dbConf.addr, dbConf.port, nDbConnections, dbConf.username, dbConf.password);
 	}
 	else {
-		success = connectAndAuthenticateWithAdmin(errMsg, dbConf.connString, nDbConnections, dbConf.username, dbConf.password);
+		connectAndAuthenticateWithAdmin(dbConf.connString, nDbConnections, dbConf.username, dbConf.password);
 	}
-
-	if (success) {
-		repo::core::handler::AbstractDatabaseHandler* handler =
-			repo::core::handler::MongoDatabaseHandler::getHandler(dbConf.addr);
-		success = (bool)repo::core::handler::fileservice::FileManager::instantiateManager(config, handler);
-	}
-
-	return success;
+	dbHandler->setFileManager(std::make_shared<repo::core::handler::fileservice::FileManager>(config, dbHandler));
+	return true;
 }
 
-void RepoManipulator::insertRole(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const repo::core::model::RepoRole& role)
-{
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-	{
-		std::string errMsg;
-		if (handler->insertRole(role, errMsg))
-		{
-			repoInfo << "Role added successfully.";
-		}
-		else
-		{
-			repoError << "Failed to add role : " << errMsg;
-		}
-	}
-}
-
-void RepoManipulator::insertUser(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const repo::core::model::RepoUser& user)
-{
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-	{
-		std::string errMsg;
-		if (handler->insertUser(user, errMsg))
-		{
-			repoInfo << "User added successfully.";
-		}
-		else
-		{
-			repoError << "Failed to add user : " << errMsg;
-		}
-	}
-}
-
-bool RepoManipulator::isVREnabled(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const repo::core::model::RepoScene* scene) const
+bool RepoManipulator::isVREnabled(const repo::core::model::RepoScene* scene) const
 {
 	modelutility::SceneManager manager;
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	bool isVREnabled = false;
-	if (handler)
-	{
-		isVREnabled = manager.isVrEnabled(scene, handler);
-	}
-	return isVREnabled;
+	return manager.isVrEnabled(scene, dbHandler.get());
 }
 
 void RepoManipulator::reduceTransformations(
@@ -848,275 +408,5 @@ void RepoManipulator::reduceTransformations(
 	}
 	else {
 		repoError << "RepoController::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";
-	}
-}
-
-void RepoManipulator::removeDocument(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& databaseName,
-	const std::string& collectionName,
-	const repo::core::model::RepoBSON& bson)
-{
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-	{
-		std::string errMsg;
-		if (handler->dropDocument(bson, databaseName, collectionName, errMsg))
-		{
-			repoInfo << "Document removed successfully.";
-		}
-		else
-		{
-			repoError << "Failed to remove document : " << errMsg;
-		}
-	}
-}
-
-bool RepoManipulator::removeProject(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& databaseName,
-	const std::string& projectName,
-	std::string& errMsg
-)
-{
-	bool success = true;
-	//Remove entry from project settings
-	repo::core::model::RepoBSON criteria = BSON(REPO_LABEL_ID << projectName);
-	removeDocument(databaseAd, cred, databaseName, REPO_COLLECTION_SETTINGS, criteria);
-
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-
-	//Remove all the collections
-	for (const auto& ext : repo::core::model::RepoScene::getProjectExtensions())
-	{
-		std::string collectionName = projectName + "." + ext;
-		bool droppedCol = dropCollection(databaseAd, cred, databaseName, collectionName, errMsg);
-		//if drop collection failed with no errMsg = failed because the collection didn't exist  should be considered as a success
-		if (!(!droppedCol && errMsg.empty()))
-		{
-			success &= droppedCol;
-		}
-
-		//find all roles with a privilege of this collection and remove it
-		repo::core::model::RepoBSON privCriteria = BSON("privileges" <<
-			BSON("$elemMatch" <<
-				BSON("resource" << BSON("db" << databaseName << "collection" << collectionName))
-			)
-		);
-
-		//FIXME: should get this from handler to ensure it's correct for non mongo databases (future proof)
-		auto results = handler->findAllByCriteria(REPO_ADMIN, REPO_SYSTEM_ROLES, privCriteria);
-
-		for (const auto& roleBSON : results)
-		{
-			repo::core::model::RepoRole role = repo::core::model::RepoRole(roleBSON);
-			auto privilegesMap = role.getPrivilegesMapped();
-			privilegesMap.erase(databaseName + "." + collectionName);
-
-			std::vector<repo::core::model::RepoPrivilege> privilegesUpdated;
-			boost::copy(
-				privilegesMap | boost::adaptors::map_values,
-				std::back_inserter(privilegesUpdated));
-			role = role.cloneAndUpdatePrivileges(privilegesUpdated);
-
-			success &= handler->updateRole(role, errMsg);
-		}
-		if (!success) break;
-	}
-
-	return success;
-}
-
-void RepoManipulator::removeRole(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const repo::core::model::RepoRole& role)
-{
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-	{
-		std::string errMsg;
-		if (handler->dropRole(role, errMsg))
-		{
-			repoInfo << "Role removed successfully.";
-		}
-		else
-		{
-			repoError << "Failed to remove role : " << errMsg;
-		}
-	}
-}
-
-void RepoManipulator::removeUser(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const repo::core::model::RepoUser& user)
-{
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-	{
-		std::string errMsg;
-		if (handler->dropUser(user, errMsg))
-		{
-			repoInfo << "User removed successfully.";
-		}
-		else
-		{
-			repoError << "Failed to remove user : " << errMsg;
-		}
-	}
-}
-
-bool RepoManipulator::saveOriginalFiles(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const repo::core::model::RepoScene* scene,
-	const std::string& directory)
-{
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	auto manager = repo::core::handler::fileservice::FileManager::getManager();
-	bool success = false;
-	if (handler && scene)
-	{
-		std::string errMsg;
-
-		const std::vector<std::string> files = scene->getOriginalFiles();
-		if (success = files.size() > 0)
-		{
-			boost::filesystem::path dir(directory);
-
-			for (const std::string& file : files)
-			{
-				std::vector<uint8_t> rawFile = manager->getFile(scene->getDatabaseName(),
-					scene->getProjectName() + "." + REPO_COLLECTION_RAW, file);
-
-				if (rawFile.size() > 0)
-				{
-					boost::filesystem::path filePath(file);
-					boost::filesystem::path fullPath = dir / filePath;
-
-					std::ofstream out(fullPath.string(), std::ofstream::binary);
-					if (out.good())
-					{
-						out.write((char*)rawFile.data(), rawFile.size());
-						out.close();
-					}
-					else
-					{
-						repoError << " Failed to open file to write: " << fullPath.string();
-						success = false;
-					}
-				}
-				else
-				{
-					repoWarning << "Unable to read file " << file << " from the database. Skipping...";
-				}
-			}
-		}
-	}
-
-	return success;
-}
-
-bool RepoManipulator::saveOriginalFiles(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& database,
-	const std::string& project,
-	const std::string& directory)
-{
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	bool success = false;
-	auto scene = new repo::core::model::RepoScene(database, project);
-	std::string errMsg;
-	if (scene && scene->loadRevision(handler, errMsg))
-	{
-		success = saveOriginalFiles(databaseAd, cred, scene, directory);
-	}
-	else
-	{
-		repoError << "Failed to fetch project from the database!" << (errMsg.empty() ? "" : errMsg);
-	}
-	return success;
-}
-
-bool RepoManipulator::saveSceneToFile(
-	const std::string& filePath,
-	const repo::core::model::RepoScene* scene)
-{
-	modelconvertor::AssimpModelExport modelExport(scene);
-	return modelExport.exportToFile(filePath);
-}
-
-void RepoManipulator::updateRole(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const repo::core::model::RepoRole& role)
-{
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-	{
-		std::string errMsg;
-		if (handler->updateRole(role, errMsg))
-		{
-			repoInfo << "Role updated successfully.";
-		}
-		else
-		{
-			repoError << "Failed to update role : " << errMsg;
-		}
-	}
-}
-
-void RepoManipulator::updateUser(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const repo::core::model::RepoUser& user)
-{
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-	{
-		std::string errMsg;
-		if (handler->updateUser(user, errMsg))
-		{
-			repoInfo << "User updated successfully.";
-		}
-		else
-		{
-			repoError << "Failed to update user : " << errMsg;
-		}
-	}
-}
-
-void RepoManipulator::upsertDocument(
-	const std::string& databaseAd,
-	const repo::core::model::RepoBSON* cred,
-	const std::string& databaseName,
-	const std::string& collectionName,
-	const repo::core::model::RepoBSON& bson)
-{
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-	{
-		std::string errMsg;
-		if (handler->upsertDocument(databaseName, collectionName, bson, true, errMsg))
-		{
-			repoInfo << "Document updated successfully.";
-		}
-		else
-		{
-			repoError << "Failed to remove document : " << errMsg;
-		}
 	}
 }

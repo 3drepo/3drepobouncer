@@ -30,31 +30,6 @@ GeometryCollector::~GeometryCollector()
 {
 }
 
-repo::core::model::CameraNode generateCameraNode(camera_t camera, repo::lib::RepoUUID parentID)
-{
-	auto node = repo::core::model::RepoBSONFactory::makeCameraNode(camera.aspectRatio, camera.farClipPlane, camera.nearClipPlane, camera.FOV, camera.eye, camera.pos, camera.up, camera.name);
-	node = node.cloneAndAddParent(parentID);
-	return node;
-}
-
-void GeometryCollector::addCameraNode(camera_t node)
-{
-	cameras.push_back(node);
-}
-
-repo::core::model::RepoNodeSet GeometryCollector::getCameraNodes(repo::lib::RepoUUID parentID)
-{
-	repo::core::model::RepoNodeSet camerasNodeSet;
-	for (auto& camera : cameras)
-		camerasNodeSet.insert(new repo::core::model::CameraNode(generateCameraNode(camera, parentID)));
-	return camerasNodeSet;
-}
-
-bool GeometryCollector::hasCameraNodes()
-{
-	return cameras.size();
-}
-
 repo::core::model::TransformationNode GeometryCollector::createRootNode()
 {
 	return repo::core::model::RepoBSONFactory::makeTransformationNode(rootMatrix, "rootNode");
@@ -215,19 +190,7 @@ void GeometryCollector::addFace(
 
 		if (vertexReference.added)
 		{
-			if (meshData->boundingBox.size()) {
-				meshData->boundingBox[0][0] = meshData->boundingBox[0][0] > v.x ? (float)v.x : meshData->boundingBox[0][0];
-				meshData->boundingBox[0][1] = meshData->boundingBox[0][1] > v.y ? (float)v.y : meshData->boundingBox[0][1];
-				meshData->boundingBox[0][2] = meshData->boundingBox[0][2] > v.z ? (float)v.z : meshData->boundingBox[0][2];
-
-				meshData->boundingBox[1][0] = meshData->boundingBox[1][0] < v.x ? (float)v.x : meshData->boundingBox[1][0];
-				meshData->boundingBox[1][1] = meshData->boundingBox[1][1] < v.y ? (float)v.y : meshData->boundingBox[1][1];
-				meshData->boundingBox[1][2] = meshData->boundingBox[1][2] < v.z ? (float)v.z : meshData->boundingBox[1][2];
-			}
-			else {
-				meshData->boundingBox.push_back({ (float)v.x, (float)v.y, (float)v.z });
-				meshData->boundingBox.push_back({ (float)v.x, (float)v.y, (float)v.z });
-			}
+			meshData->boundingBox.encapsulate(v);
 
 			if (minMeshBox.size()) {
 				minMeshBox[0] = v.x < minMeshBox[0] ? v.x : minMeshBox[0];
@@ -264,10 +227,8 @@ repo::core::model::TransformationNode* GeometryCollector::ensureParentNodeExists
 
 repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core::model::TransformationNode& root) {
 	repo::core::model::RepoNodeSet res;
-	auto dummyOutline = std::vector<std::vector<float>>();
 
 	std::unordered_map<std::string, repo::core::model::TransformationNode*> layerToTrans;
-	std::unordered_map < repo::core::model::MetadataNode*, std::vector<repo::lib::RepoUUID>>  metaNodeToParents;
 
 	int numEntries = 0;
 	for (const auto& meshGroupEntry : meshData) {
@@ -346,13 +307,12 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 						auto itPtr = elementToMetaNode.find(meshGroupEntry.first);
 						auto metaParent = partialObject ? parentId : meshNode.getSharedID();
 						if (itPtr == elementToMetaNode.end()) {
-							auto metaNode = createMetaNode(meshGroupEntry.first, {}, idToMeta[meshGroupEntry.first]);
+							auto metaNode = createMetaNode(meshGroupEntry.first, metaParent, idToMeta[meshGroupEntry.first]);
 							elementToMetaNode[meshGroupEntry.first] = metaNode;
 							metaNodes.insert(metaNode);
-							metaNodeToParents[metaNode] = { metaParent };
 						}
 						else {
-							metaNodeToParents[itPtr->second].push_back(metaParent);
+							itPtr->second->addParent(metaParent);
 						}
 					}
 
@@ -365,11 +325,6 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 				}
 			}
 		}
-	}
-	for (auto &metaEntry : metaNodeToParents) {
-		auto metaNode = metaEntry.first;
-		auto parentSet = metaEntry.second;
-		*metaNode = metaNode->cloneAndAddParent(parentSet);
 	}
 
 	transNodes.insert(new repo::core::model::TransformationNode(root));
@@ -397,7 +352,7 @@ repo::core::model::TransformationNode*  GeometryCollector::createTransNode(
 			elementToMetaNode[id] = metaNode;
 		}
 		else {
-			*elementToMetaNode[id] = elementToMetaNode[id]->cloneAndAddParent(transNode->getSharedID());
+			elementToMetaNode[id]->addParent(transNode->getSharedID());
 		}
 	}
 	return transNode;
@@ -428,12 +383,16 @@ void GeometryCollector::getMaterialAndTextureNodes(repo::core::model::RepoNodeSe
 			auto& materialNode = matPair.second.first;
 			auto& textureNode = matPair.second.second;
 
-			auto matNode = new repo::core::model::MaterialNode(materialNode.cloneAndAddParent(matToMeshes[matIdx]));
+			auto matNode = new repo::core::model::MaterialNode(materialNode);
+			matNode->addParents(matToMeshes[matIdx]);
 			materials.insert(matNode);
 
 			//FIXME: Mat shared ID is known at the point of creating texture node. We shouldn't be cloning here.
+			// SJF: the clone is also to get a pointer
 			if (!textureNode.isEmpty()) {
-				auto texNode = new repo::core::model::TextureNode(textureNode.cloneAndAddParent(matNode->getSharedID()));
+
+				auto texNode = new repo::core::model::TextureNode(textureNode);
+				texNode->addParent(matNode->getSharedID());
 				textures.insert(texNode);
 			}
 		}

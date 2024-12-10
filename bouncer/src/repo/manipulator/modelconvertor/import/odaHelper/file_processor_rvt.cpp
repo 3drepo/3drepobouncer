@@ -75,7 +75,7 @@ const std::vector<LevelOfDetailParams> LOD_PARAMETERS ({
 	LevelOfDetailParams(360, 0.1),
 	LevelOfDetailParams(360, 0.01),
 	LevelOfDetailParams(360, 0.005),
-	LevelOfDetailParams(360, 0.0005),	
+	LevelOfDetailParams(360, 0.0005),
 });
 
 class StubDeviceModuleRvt : public OdGsBaseModule

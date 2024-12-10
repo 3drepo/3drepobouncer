@@ -35,6 +35,10 @@
 
 #include "data_processor_dwg.h"
 
+#include <DbObjectIterator.h>
+#include <DbBlockTable.h>
+#include <DbBlockTableRecord.h>
+
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
 class VectoriseDeviceDwg : public OdGsBaseVectorizeDevice
@@ -84,7 +88,7 @@ private:
 };
 ODRX_DEFINE_PSEUDO_STATIC_MODULE(DeviceModuleDwg);
 
-void importModel(OdDbDatabasePtr pDb, GeometryCollector* collector)
+void FileProcessorDwg::importModel(OdDbDatabasePtr pDb)
 {
 	// Create the vectorizer device that will render the DWG database. This will
 	// use the GeometryCollector underneath.
@@ -108,9 +112,13 @@ void importModel(OdDbDatabasePtr pDb, GeometryCollector* collector)
 	pGsModule.release();
 }
 
-void importDrawing(OdDbDatabasePtr pDb, repo::manipulator::modelutility::DrawingImageInfo* collector)
+void FileProcessorDwg::importDrawing(OdDbDatabasePtr pDb)
 {
-	OdGsModulePtr pModule = ::odrxDynamicLinker()->loadModule(OdSvgExportModuleName, false);
+	// SvgExport is the name of the 3DRepo variant of the SVG exporter module.
+	// The actual module name searched for will have an SDK and compiler version
+	// suffix, depending on platform. This is handled by CMake.
+
+	OdGsModulePtr pModule = ::odrxDynamicLinker()->loadModule(L"SvgExport", false);
 	OdGsDevicePtr dev = pModule->createDevice();
 	if (!dev.isNull())
 	{
@@ -129,7 +137,11 @@ void importDrawing(OdDbDatabasePtr pDb, repo::manipulator::modelutility::Drawing
 
 		pDbGiContext->setPlotGeneration(true);
 		pDbGiContext->setHatchAsPolygon(OdGiDefaultContext::kHatchPolygon);
-		dev->properties()->putAt(L"MinimalWidth", OdRxVariantValue(0.01));
+		dev->properties()->putAt(L"MinimalWidth", OdRxVariantValue(0.08));
+		dev->properties()->putAt(L"UseHLR", OdRxVariantValue(true));
+		dev->properties()->putAt(L"ColorPolicy", OdRxVariantValue((OdInt32)3)); // kDarken
+		dev->properties()->putAt(L"ExplodeShxTexts", OdRxVariantValue(false));
+
 		pDbGiContext->setPaletteBackground(ODRGB(255, 255, 255));
 
 		OdDbBaseDatabasePEPtr pBaseDatabase(pDb);
@@ -142,33 +154,49 @@ void importDrawing(OdDbDatabasePtr pDb, repo::manipulator::modelutility::Drawing
 
 		pHelperDevice->onSize(OdGsDCRect(0, 1024, 768, 0));
 
-		// Here we can extract the calibration in the same way as file_processor_dgn when ready...
+		// This section extracts the view information which can be used to map
+		// between the SVG and world coordinate systems. The graphics system (Gs) view
+		// https://docs.opendesign.com/tv/gs_OdGsView.html is used to derive points
+		// that map between the WCS of the drawing and the space the SVG primitives
+		// are defined for the purpose of autocalibration.
+
+		const OdGsView* pGsView = pDeviceSvg->viewAt(0);
+		updateDrawingHorizontalCalibration(pGsView, drawingCollector->calibration);
+		repo::manipulator::modelconvertor::ModelUnits units = determineModelUnits(pDb->getINSUNITS());
+		drawingCollector->calibration.units = repo::manipulator::modelconvertor::toUnitsString(units);
+
+		// Render the SVG
 
 		pHelperDevice->update();
 
-		// Copy the SVG contents into a string
+		// And assign the contents to the collector's buffer
 
-		std::vector<char> buffer;
+		std::vector<uint8_t> buffer;
 		buffer.resize(stream->tell());
 		stream->seek(0, OdDb::FilerSeekType::kSeekFromStart);
 		stream->getBytes(buffer.data(), stream->length());
-		std::string svg(buffer.data(), buffer.size());
+		drawingCollector->data = buffer;
+	}
+}
 
-		// Perform any further necessary manipulations. In this case we add the width
-		// and height attributes.
-
-		svg.insert(61, "width=\"1024\" height=\"768\" "); // 61 is just after the svg tag. This offset is fixed for exporter version.
-
-		// Provide the string to the collector as a vector
-
-		std::copy(svg.c_str(), svg.c_str() + svg.length(), std::back_inserter(collector->data));
+repo::manipulator::modelconvertor::ModelUnits FileProcessorDwg::determineModelUnits(const OdDb::UnitsValue units){
+	switch (units) {
+		case OdDb::kUnitsMeters: return ModelUnits::METRES;
+		case OdDb::kUnitsDecimeters: return ModelUnits::DECIMETRES;
+		case OdDb::kUnitsCentimeters: return ModelUnits::CENTIMETRES;
+		case OdDb::kUnitsMillimeters: return ModelUnits::MILLIMETRES;
+		case OdDb::kUnitsFeet: return ModelUnits::FEET;
+		case OdDb::kUnitsInches: return ModelUnits::INCHES;
+		default:
+			repoWarning << "Unrecognised unit measure: " << (int)units;
+			return ModelUnits::UNKNOWN;
 	}
 }
 
 uint8_t FileProcessorDwg::readFile()
 {
 	uint8_t nRes = 0; // Return value for the function
-	try 
+	try
 	{
 		odInitialize(&svcs);
 		odgsInitialize();
@@ -187,12 +215,12 @@ uint8_t FileProcessorDwg::readFile()
 
 		if (collector)
 		{
-			importModel(pDb, collector);
+			importModel(pDb);
 		}
 
 		if (drawingCollector)
 		{
-			importDrawing(pDb, drawingCollector);
+			importDrawing(pDb);
 		}
 
 		pDb.release();

@@ -17,105 +17,27 @@
 
 #include "repo_node_supermesh.h"
 #include "repo_bson_builder.h"
+#include "repo/lib/repo_exception.h"
 
 using namespace repo::core::model;
 
-RepoBSON SupermeshNode::meshMappingAsBSON(const repo_mesh_mapping_t& mapping)
+SupermeshNode::SupermeshNode(RepoBSON bson)
+	: MeshNode(bson)
 {
-	RepoBSONBuilder builder;
-	builder.append(REPO_NODE_MESH_LABEL_MAP_ID, mapping.mesh_id);
-	builder.append(REPO_NODE_MESH_LABEL_MAP_SHARED_ID, mapping.shared_id);
-	builder.append(REPO_NODE_MESH_LABEL_MATERIAL_ID, mapping.material_id);
-	builder.append(REPO_NODE_MESH_LABEL_VERTEX_FROM, mapping.vertFrom);
-	builder.append(REPO_NODE_MESH_LABEL_VERTEX_TO, mapping.vertTo);
-	builder.append(REPO_NODE_MESH_LABEL_TRIANGLE_FROM, mapping.triFrom);
-	builder.append(REPO_NODE_MESH_LABEL_TRIANGLE_TO, mapping.triTo);
-
-	RepoBSONBuilder bbBuilder;
-	bbBuilder.append("0", mapping.min);
-	bbBuilder.append("1", mapping.max);
-
-	builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, bbBuilder.obj());
-
-	return builder.obj();
+	deserialise(bson);
 }
 
-SupermeshNode SupermeshNode::cloneAndUpdateMeshMapping(
-	const std::vector<repo_mesh_mapping_t>& vec,
-	const bool& overwrite)
+SupermeshNode::SupermeshNode()
+	: MeshNode()
 {
-	RepoBSONBuilder builder, mapbuilder;
-	uint32_t index = 0;
-	std::vector<repo_mesh_mapping_t> mappings;
-	RepoBSON mapArray = getObjectField(REPO_NODE_MESH_LABEL_MERGE_MAP);
-	if (!overwrite && !mapArray.isEmpty())
-	{
-		//if map array isn't empty, find the next index it needs to slot in
-		std::set<std::string> fields = mapArray.getFieldNames();
-		index = fields.size();
-	}
-
-	for (uint32_t i = 0; i < vec.size(); ++i)
-	{
-		mapbuilder.append(std::to_string(index + i), meshMappingAsBSON(vec[i]));
-	}
-	//append the rest of the array onto this new map bson
-	if (!overwrite) mapbuilder.appendElementsUnique(mapArray);
-
-	builder.appendArray(REPO_NODE_MESH_LABEL_MERGE_MAP, mapbuilder.obj());
-
-	//append the rest of the mesh onto this new bson
-	builder.appendElementsUnique(*this);
-
-	return SupermeshNode(builder.obj(), bigFiles);
 }
 
-
-std::vector<float> SupermeshNode::getSubmeshIds() const
+void SupermeshNode::deserialise(RepoBSON& bson)
 {
-	std::vector<float> submeshIds = std::vector<float>();
-	if (hasBinField(REPO_NODE_MESH_LABEL_SUBMESH_IDS))
-	{
-		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_SUBMESH_IDS, submeshIds);
-	}
-
-	return submeshIds;
+	throw repo::lib::RepoException("Supermesh Nodes cannot be deserialised");
 }
 
-std::vector<repo_mesh_mapping_t> SupermeshNode::getMeshMapping() const
+void SupermeshNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 {
-	std::vector<repo_mesh_mapping_t> mappings;
-	RepoBSON mapArray = getObjectField(REPO_NODE_MESH_LABEL_MERGE_MAP);
-	if (!mapArray.isEmpty())
-	{
-		std::set<std::string> fields = mapArray.getFieldNames();
-		mappings.resize(fields.size());
-		for (const auto& name : fields)
-		{
-			repo_mesh_mapping_t mapping;
-			RepoBSON mappingObj = mapArray.getObjectField(name);
-
-			mapping.mesh_id = mappingObj.getUUIDField(REPO_NODE_MESH_LABEL_MAP_ID);
-			mapping.shared_id = mappingObj.getUUIDField(REPO_NODE_MESH_LABEL_MAP_SHARED_ID);
-			mapping.material_id = mappingObj.getUUIDField(REPO_NODE_MESH_LABEL_MATERIAL_ID);
-			mapping.vertFrom = mappingObj.getIntField(REPO_NODE_MESH_LABEL_VERTEX_FROM);
-			mapping.vertTo = mappingObj.getIntField(REPO_NODE_MESH_LABEL_VERTEX_TO);
-			mapping.triFrom = mappingObj.getIntField(REPO_NODE_MESH_LABEL_TRIANGLE_FROM);
-			mapping.triTo = mappingObj.getIntField(REPO_NODE_MESH_LABEL_TRIANGLE_TO);
-
-			RepoBSON boundingBox = mappingObj.getObjectField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
-
-			std::vector<repo::lib::RepoVector3D> bboxVec = MeshNode::getBoundingBox(boundingBox);
-			mapping.min.x = bboxVec[0].x;
-			mapping.min.y = bboxVec[0].y;
-			mapping.min.z = bboxVec[0].z;
-
-			mapping.max.x = bboxVec[1].x;
-			mapping.max.y = bboxVec[1].y;
-			mapping.max.z = bboxVec[1].z;
-
-			mappings[std::stoi(name)] = mapping;
-		}
-	}
-	return mappings;
+	throw repo::lib::RepoException("Supermesh Nodes cannot be serialised");
 }

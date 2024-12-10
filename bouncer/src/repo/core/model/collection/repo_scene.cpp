@@ -20,23 +20,41 @@
 */
 #include "repo_scene.h"
 
-#include <boost/assign.hpp>
-#include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 #include <fstream>
 
-#include "../../../lib/repo_log.h"
-#include "../../../error_codes.h"
-#include "../bson/repo_bson_builder.h"
-#include "../bson/repo_bson_factory.h"
+#include "repo/lib/repo_log.h"
+#include "repo/error_codes.h"
+#include "repo/core/model/bson/repo_bson_builder.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/core/model/bson/repo_bson_project_settings.h"
+#include "repo/core/handler/database/repo_expressions.h"
 
 using namespace repo::core::model;
 
-const std::vector<std::string> RepoScene::collectionsInProject = { "scene", "scene.files", "scene.chunks", "stash.3drepo", "stash.3drepo.files", "stash.3drepo.chunks", "stash.x3d", "stash.x3d.files",
-"stash.json_mpc.files", "stash.json_mpc.chunks", "stash.x3d.chunks", "stash.gltf", "stash.gltf.files", "stash.gltf.chunks", "stash.src", "stash.src.files", "stash.src.chunks", "history",
-"history.files", "history.chunks", "issues", "wayfinder", "groups", "sequences", "tasks" };
+const std::vector<std::string> RepoScene::collectionsInProject = {
+	"scene",
+	"scene.files",
+	"scene.chunks",
+	"stash.3drepo",
+	"stash.3drepo.files",
+	"stash.3drepo.chunks",
+	"stash.json_mpc.files",
+	"stash.json_mpc.chunks",
+	"stash.src",
+	"stash.src.files",
+	"stash.src.chunks",
+	"history",
+	"history.files",
+	"history.chunks",
+	"issues",
+	"wayfinder",
+	"groups",
+	"sequences",
+	"tasks",
+};
 
 static bool nameCheck(const char &c)
 {
@@ -103,7 +121,6 @@ RepoScene::RepoScene(
 
 RepoScene::RepoScene(
 	const std::vector<std::string> &refFiles,
-	const RepoNodeSet              &cameras,
 	const RepoNodeSet              &meshes,
 	const RepoNodeSet              &materials,
 	const RepoNodeSet              &metadata,
@@ -123,7 +140,7 @@ RepoScene::RepoScene(
 	graph.rootNode = nullptr;
 	stashGraph.rootNode = nullptr;
 	branch = repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH);
-	populateAndUpdate(GraphType::DEFAULT, cameras, meshes, materials, metadata, textures, transformations, references, unknowns);
+	populateAndUpdate(GraphType::DEFAULT, meshes, materials, metadata, textures, transformations, references, unknowns);
 }
 
 RepoScene::~RepoScene()
@@ -180,14 +197,7 @@ void RepoScene::abandonChild(
 
 	if (modifyChild)
 	{
-		//We only need a new unique ID if this graph is revisioned,
-		//And the child node in question is not a added/modified node already
-		bool needNewId = !unRevisioned
-			&& (newAdded.find(childSharedID) == newAdded.end()
-				|| newModified.find(childSharedID) == newModified.end());
-
-		auto nodeWithoutParent = child->cloneAndRemoveParent(parent, needNewId);
-		this->modifyNode(gType, child, &nodeWithoutParent, true);
+		child->removeParent(parent);
 	}
 }
 
@@ -197,10 +207,7 @@ void RepoScene::addInheritance(
 	RepoNode        *childNode,
 	const bool      &noUpdate)
 {
-	repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
-	//stash has no sense of version control, so only default graph needs to track changes
-	bool trackChanges = !noUpdate && gType == GraphType::DEFAULT;
-
+	repoGraphInstance& g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 	if (parentNode && childNode)
 	{
 		repo::lib::RepoUUID parentShareID = parentNode->getSharedID();
@@ -227,24 +234,7 @@ void RepoScene::addInheritance(
 		}
 
 		//add parent to children
-		std::vector<repo::lib::RepoUUID> parents = childNode->getParentIDs();
-		//TODO: use sets for performance?
-		auto parentInd = std::find(parents.begin(), parents.end(), parentShareID);
-		if (parentInd == parents.end())
-		{
-			RepoNode childWithParent = childNode->cloneAndAddParent(parentShareID);
-
-			if (trackChanges)
-			{
-				//this is considered a change on the node, we need to make a new node with new uniqueID
-				modifyNode(GraphType::DEFAULT, childNode, &childWithParent);
-			}
-			else
-			{
-				//not tracking, just swap the content
-				childNode->swap(childWithParent);
-			}
-		}
+		childNode->addParent(parentShareID);
 	}
 }
 
@@ -255,9 +245,6 @@ void RepoScene::addInheritance(
 	const bool      &noUpdate)
 {
 	repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
-	//stash has no sense of version control, so only default graph needs to track changes
-	bool trackChanges = !noUpdate && gType == GraphType::DEFAULT;
-
 	if (parentNodes.size() && childNode)
 	{
 		auto parentArr = childNode->getParentIDs();
@@ -293,18 +280,8 @@ void RepoScene::addInheritance(
 
 		if (parentShareIDs.size())
 		{
-			RepoNode childWithParent = childNode->cloneAndAddParent(std::vector<repo::lib::RepoUUID>(parentShareIDs.begin(), parentShareIDs.end()));
-
-			if (trackChanges)
-			{
-				//this is considered a change on the node, we need to make a new node with new uniqueID
-				modifyNode(GraphType::DEFAULT, childNode, &childWithParent);
-			}
-			else
-			{
-				//not tracking, just swap the content
-				childNode->swap(childWithParent);
-			}
+			auto parents = std::vector<repo::lib::RepoUUID>(parentShareIDs.begin(), parentShareIDs.end());
+			childNode->addParents(parents);
 		}
 	}
 }
@@ -384,7 +361,7 @@ void RepoScene::addMetadata(
 				}
 			}
 
-			*meta = meta->cloneAndAddParent(parents);
+			meta->addParents(parents);
 
 			graph.nodesByUniqueID[metaUniqueID] = meta;
 			graph.sharedIDtoUniqueID[metaSharedID] = metaUniqueID;
@@ -462,27 +439,33 @@ bool RepoScene::addNodeToMaps(
 	repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 	//----------------------------------------------------------------------
 	//If the node has no parents it must be the rootnode
-	if (!node->hasField(REPO_NODE_LABEL_PARENTS)) {
+	if (!node->getParentIDs().size()) {
 		if (!g.rootNode)
-			g.rootNode = node;
-		else {
+		{
+			g.rootNode = dynamic_cast<TransformationNode*>(node);
+		}
+		else
+		{
 			//root node already exist, check if they are the same node
 			if (g.rootNode == node) {
 				//for some reason 2 instance of the root node reside in this scene graph - probably not game breaking.
 				repoWarning << "2 instance of the (same) root node found";
 			}
-			else {
+			else
+			{
 				//found 2 nodes with no parents...
 				//they could be straggling materials. Only give an error if both are transformation
 				//NOTE: this will fall apart if we ever allow root node to be something other than a transformation.
 
 				if (node->getTypeAsEnum() == NodeType::TRANSFORMATION &&
 					g.rootNode->getTypeAsEnum() == NodeType::TRANSFORMATION)
+				{
 					repoError << "2 candidate for root node found. This is possibly an invalid Scene Graph.";
+				}
 
 				if (node->getTypeAsEnum() == NodeType::TRANSFORMATION)
 				{
-					g.rootNode = node;
+					g.rootNode = dynamic_cast<TransformationNode*>(node);
 				}
 			}
 		}
@@ -519,13 +502,12 @@ bool RepoScene::addNodeToMaps(
 }
 
 void RepoScene::addStashGraph(
-	const RepoNodeSet &cameras,
 	const RepoNodeSet &meshes,
 	const RepoNodeSet &materials,
 	const RepoNodeSet &textures,
 	const RepoNodeSet &transformations)
 {
-	populateAndUpdate(GraphType::OPTIMIZED, cameras, meshes, materials, RepoNodeSet(),
+	populateAndUpdate(GraphType::OPTIMIZED, meshes, materials, RepoNodeSet(),
 		textures, transformations, RepoNodeSet(), RepoNodeSet());
 }
 
@@ -537,7 +519,6 @@ void RepoScene::clearStash()
 			delete pair.second;
 	}
 
-	stashGraph.cameras.clear();
 	stashGraph.meshes.clear();
 	stashGraph.materials.clear();
 	stashGraph.metadata.clear();
@@ -585,52 +566,48 @@ uint8_t RepoScene::commit(
 		return REPOERR_UPLOAD_FAILED;
 	}
 
-	if (success &= commitProjectSettings(handler, errMsg, userName))
+	repoInfo << "Commiting revision...";
+	ModelRevisionNode* newRevNode = 0;
+	if (!message.empty())
+		commitMsg = message;
+
+	if (success &= commitRevisionNode(handler, manager, errMsg, newRevNode, userName, commitMsg, tag, revId))
 	{
-		repoInfo << "Commited project settings, commiting revision...";
-		ModelRevisionNode *newRevNode = 0;
-		if (!message.empty())
-			commitMsg = message;
-
-		if (success &= commitRevisionNode(handler, manager, errMsg, newRevNode, userName, commitMsg, tag, revId))
+		repoInfo << "Commited revision node, commiting scene nodes...";
+		//commited the revision node, commit the modification on the scene
+		if (success &= commitSceneChanges(handler, revId, errMsg))
 		{
-			repoInfo << "Commited revision node, commiting scene nodes...";
-			//commited the revision node, commit the modification on the scene
-			if (success &= commitSceneChanges(handler, revId, errMsg))
+			//Succeed in commiting everything.
+			//Update Revision Node and reset state.
+
+			if (revNode)
 			{
-				handler->createCollection(databaseName, projectName + "." + REPO_COLLECTION_ISSUES);
-
-				//Succeed in commiting everything.
-				//Update Revision Node and reset state.
-
-				if (revNode)
-				{
-					delete revNode;
-				}
-
-				revNode = newRevNode;
-				revision = newRevNode->getUniqueID();
-
-				newAdded.clear();
-				newRemoved.clear();
-				newModified.clear();
-				commitMsg.clear();
-
-				refFiles.clear();
-				for (RepoNode* node : toRemove)
-				{
-					delete node;
-				}
-				toRemove.clear();
-				unRevisioned = false;
+				delete revNode;
 			}
-			if (success && frameStates.size()) {
-				repoInfo << "Commited Scene nodes, committing sequence";
-				commitSequence(handler, manager, newRevNode->getUniqueID(), errMsg);
+
+			revNode = newRevNode;
+			revision = newRevNode->getUniqueID();
+
+			newAdded.clear();
+			newRemoved.clear();
+			newModified.clear();
+			commitMsg.clear();
+
+			refFiles.clear();
+			for (RepoNode* node : toRemove)
+			{
+				delete node;
 			}
+			toRemove.clear();
+			unRevisioned = false;
+		}
+		if (success && frameStates.size()) {
+			repoInfo << "Commited Scene nodes, committing sequence";
+			commitSequence(handler, manager, newRevNode->getUniqueID(), errMsg);
 		}
 	}
-	if (success) updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
+
+	if (success) updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE);
 	//Create and Commit revision node
 	repoInfo << "Succes: " << success << " msg: " << errMsg;
 	return success ? REPOERR_OK : (errMsg.find("exceeds maxBsonObjectSize") != std::string::npos ? REPOERR_MAX_NODES_EXCEEDED : REPOERR_UPLOAD_FAILED);
@@ -642,98 +619,42 @@ bool RepoScene::commitSequence(
 	const repo::lib::RepoUUID &revID,
 	std::string &err
 ) {
-	bool success = true;
 	if (frameStates.size()) {
 		auto sequenceCol = projectName + "." + REPO_COLLECTION_SEQUENCE;
-		if (handler->insertDocument(
-			databaseName, sequenceCol, sequence.cloneAndAddRevision(revID), err)) {
-			for (const auto &state : frameStates) {
-				if (!manager->uploadFileAndCommit(databaseName, sequenceCol, state.first, state.second)) {
-					repoError << "Failed to commit a sequence state.";
-					success = false;
-				}
-			}
-		}
-		else {
-			repoError << "Failed to commit sequence bson: " << err;
-			return false;
+		sequence.setRevision(revID);
+		handler->insertDocument(databaseName, sequenceCol, sequence);
+		for (const auto& state : frameStates) {
+			manager->uploadFileAndCommit(databaseName, sequenceCol, state.first, state.second);
 		}
 
 		auto taskCol = projectName + "." + REPO_COLLECTION_TASK;
 		for (const auto &task : tasks) {
-			if (!handler->insertDocument(databaseName, taskCol, task, err)) {
-				repoError << "Failed to commit task bson: " << err;
-				return false;
-			}
+			handler->insertDocument(databaseName, taskCol, task);
 		}
 
 		if (taskList.size()) {
-			if (!manager->uploadFileAndCommit(databaseName, taskCol, sequence.getUUIDField(REPO_LABEL_ID).toString(), taskList)) {
-				repoError << "Failed to commit a task list";
-				success = false;
-			}
+			manager->uploadFileAndCommit(databaseName, taskCol, sequence.getUniqueId().toString(), taskList);
 		}
 	}
-
-	return success;
+	return true;
 }
 
 void RepoScene::addErrorStatusToProjectSettings(
 	repo::core::handler::AbstractDatabaseHandler *handler
 )
 {
-	RepoBSON criteria = BSON(REPO_LABEL_ID << projectName);
-	auto doc = RepoProjectSettings(handler->findOneByCriteria(databaseName, REPO_COLLECTION_SETTINGS, criteria));
-	auto updatedProjectsettings = doc.cloneAndAddErrorStatus();
-	std::string errorMsg;
-	if (!handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, updatedProjectsettings, true, errorMsg))
-	{
-		repoError << "Failed to update project settings: " << errorMsg;
-	}
+	auto projectsettings = RepoProjectSettings(handler->findOneByUniqueID(databaseName, REPO_COLLECTION_SETTINGS, projectName));
+	projectsettings.setErrorStatus();
+	handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, projectsettings, false);
 }
 
 void RepoScene::addTimestampToProjectSettings(
 	repo::core::handler::AbstractDatabaseHandler *handler
 )
 {
-	RepoBSON criteria = BSON(REPO_LABEL_ID << projectName);
-	auto doc = RepoProjectSettings(handler->findOneByCriteria(databaseName, REPO_COLLECTION_SETTINGS, criteria));
-	auto updatedProjectsettings = doc.cloneAndClearStatus();
-	std::string errorMsg;
-	if (!handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, updatedProjectsettings, true, errorMsg))
-	{
-		repoError << "Failed to update project settings: " << errorMsg;
-	}
-}
-
-bool RepoScene::commitProjectSettings(
-	repo::core::handler::AbstractDatabaseHandler *handler,
-	std::string &errMsg,
-	const std::string &userName)
-{
-	RepoProjectSettings projectSettings =
-		RepoBSONFactory::makeRepoProjectSettings(projectName, userName, graph.references.size());
-
-	bool success = handler->insertDocument(
-		databaseName, REPO_COLLECTION_SETTINGS, projectSettings, errMsg);
-
-	if (!success)
-	{
-		//check that the error occurred because of duplicated index (i.e. there's already an entry for projects)
-		RepoBSON criteria = BSON(REPO_LABEL_ID << projectName);
-
-		RepoBSON doc = handler->findOneByCriteria(databaseName, REPO_COLLECTION_SETTINGS, criteria);
-
-		//If it already exist, that's fine.
-		success = !doc.isEmpty();
-		if (success)
-		{
-			repoTrace << "This project already has a project settings entry, skipping project settings commit...";
-			errMsg.clear();
-		}
-	}
-
-	return success;
+	auto projectsettings = RepoProjectSettings(handler->findOneByUniqueID(databaseName, REPO_COLLECTION_SETTINGS, projectName));
+	projectsettings.clearErrorStatus();
+	handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, projectsettings, false);
 }
 
 bool RepoScene::commitRevisionNode(
@@ -759,54 +680,37 @@ bool RepoScene::commitRevisionNode(
 
 	repoTrace << "Committing Revision Node....";
 
+	// The user may import the same filename with different content, so prefix
+	// the filename used for the ref node with the revision id
+
 	std::vector<std::string> fileNames;
 	for (const std::string &name : refFiles)
 	{
 		boost::filesystem::path filePath(name);
-		fileNames.push_back(sanitizeName(filePath.filename().string()));
+		fileNames.push_back(revId.toString() + sanitizeName(filePath.filename().string()));
 	}
 
 	newRevNode =
 		new ModelRevisionNode(RepoBSONFactory::makeRevisionNode(userName, branch, revId,
 			fileNames, parent, worldOffset, message, tag));
-	*newRevNode = newRevNode->cloneAndUpdateStatus(RevisionNode::UploadStatus::GEN_DEFAULT);
+	newRevNode->updateStatus(ModelRevisionNode::UploadStatus::GEN_DEFAULT);
 
 	if (newRevNode)
 	{
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, BSON(REPO_NODE_REVISION_LABEL_TIMESTAMP << -1));
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON(REPO_NODE_REVISION_ID << 1 << "metadata.key" << 1 << "metadata.value" << 1));
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON("metadata.key" << 1 << "metadata.value" << 1));
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON(REPO_NODE_REVISION_ID << 1 << REPO_NODE_LABEL_SHARED_ID << 1 << REPO_LABEL_TYPE << 1));
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON(REPO_NODE_LABEL_SHARED_ID << 1));
-		//Creation of the revision node will append unique id onto the filename (e.g. <uniqueID>chair.obj)
-		//we need to store the file in GridFS under the new name
-		std::vector<std::string> newRefFileNames = newRevNode->getOrgFiles();
+		using namespace core::handler::database::index;
+
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, Descending({ REPO_NODE_REVISION_LABEL_TIMESTAMP }));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ REPO_NODE_REVISION_ID, "metadata.key", "metadata.value" }));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ "metadata.key", "metadata.value" }));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ REPO_NODE_REVISION_ID, REPO_NODE_LABEL_SHARED_ID, REPO_LABEL_TYPE }));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ REPO_NODE_LABEL_SHARED_ID }));
+
 		for (size_t i = 0; i < refFiles.size(); i++)
 		{
 			std::ifstream file(refFiles[i], std::ios::binary);
-
 			if (file.is_open())
 			{
-				//newRefFileNames should be at the same index as the refFile. but double check this!
-				std::string gridFSName = newRefFileNames[i];
-				if (gridFSName.find(fileNames[i]) == std::string::npos)
-				{
-					//fileNames[i] is not a substring of newName, try to find it
-					for (const std::string &name : newRefFileNames)
-					{
-						if (gridFSName.find(fileNames[i]) != std::string::npos)
-						{
-							gridFSName = name;
-						}
-					}
-
-					if (gridFSName == newRefFileNames[i])
-					{
-						//could not find the matching name (theoretically this should never happen). Skip this file.
-						repoError << "Cannot find matching file name for : " << refFiles[i] << " skipping...";
-						continue;
-					}
-				}
+				std::string fsName = fileNames[i];
 
 				file.seekg(0, std::ios::end);
 				std::streamsize size = file.tellg();
@@ -815,9 +719,9 @@ bool RepoScene::commitRevisionNode(
 				std::vector<uint8_t> rawFile(size);
 				if (file.read((char*)rawFile.data(), size))
 				{
-					if (!(success = manager->uploadFileAndCommit(databaseName, projectName + "." + REPO_COLLECTION_RAW, gridFSName, rawFile)))
+					if (!(success = manager->uploadFileAndCommit(databaseName, projectName + "." + REPO_COLLECTION_RAW, fsName, rawFile)))
 					{
-						errMsg = "Failed to save original file into file storage: " + gridFSName;
+						errMsg = "Failed to save original file into file storage: " + fsName;
 						repoError << errMsg;
 					}
 				}
@@ -833,7 +737,7 @@ bool RepoScene::commitRevisionNode(
 				repoError << "Failed to open reference file " << refFiles[i];
 			}
 		}
-	}
+		}
 	else
 	{
 		errMsg += "Failed to instantiate a new revision object!";
@@ -841,7 +745,7 @@ bool RepoScene::commitRevisionNode(
 	}
 
 	if (success)
-		return handler->upsertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, *newRevNode, true, errMsg);
+		handler->upsertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, *newRevNode, true);
 
 	return success;
 }
@@ -863,30 +767,19 @@ bool RepoScene::commitNodes(
 	size_t total = nodesToCommit.size();
 
 	repoInfo << "Committing " << total << " nodes...";
-	std::vector< repo::core::model::RepoBSON> nodes;
 
+	std::vector< repo::core::model::RepoBSON> nodes;
 	for (const repo::lib::RepoUUID &id : nodesToCommit)
 	{
 		const repo::lib::RepoUUID uniqueID = gType == GraphType::OPTIMIZED ? id : g.sharedIDtoUniqueID[id];
 		RepoNode *node = g.nodesByUniqueID[uniqueID];
-
-		RepoNode shrunkNode = node->cloneAndAddRevId(revId).cloneAndShrink();
-		if (shrunkNode.objsize() > handler->documentSizeLimit())
-		{
-			success = false;
-			errMsg += "Node '" + node->getUniqueID().toString() + "' over 16MB in size is not committed.";
-		}
-		else
-		{
-			node->swap(shrunkNode);
-			nodes.push_back(*node);
-		}
+		node->setRevision(revId);
+		nodes.push_back(*node);
 	}
-	RepoBSONBuilder builder;
 
-	builder.append(REPO_NODE_REVISION_ID, revId);
+	handler->insertManyDocuments(databaseName, projectName + "." + ext, nodes);
 
-	return handler->insertManyDocuments(databaseName, projectName + "." + ext, nodes, errMsg, builder.obj());
+	return true;
 }
 
 bool RepoScene::commitSceneChanges(
@@ -1005,9 +898,9 @@ std::string RepoScene::getBranchName() const
 	return branchName;
 }
 
-std::vector<repo::lib::RepoVector3D> RepoScene::getSceneBoundingBox() const
+repo::lib::RepoBounds RepoScene::getSceneBoundingBox() const
 {
-	std::vector<repo::lib::RepoVector3D> bbox;
+	repo::lib::RepoBounds bbox;
 	GraphType gType = stashGraph.rootNode ? GraphType::OPTIMIZED : GraphType::DEFAULT;
 
 	std::vector<float> identity = {
@@ -1024,7 +917,7 @@ void RepoScene::getSceneBoundingBoxInternal(
 	const GraphType            &gType,
 	const RepoNode             *node,
 	const repo::lib::RepoMatrix   &mat,
-	std::vector<repo::lib::RepoVector3D> &bbox) const
+	repo::lib::RepoBounds &bbox) const
 {
 	if (node)
 	{
@@ -1033,7 +926,7 @@ void RepoScene::getSceneBoundingBoxInternal(
 		case NodeType::TRANSFORMATION:
 		{
 			const TransformationNode *trans = dynamic_cast<const TransformationNode*>(node);
-			auto matTransformed = mat * trans->getTransMatrix(false);
+			auto matTransformed = mat * trans->getTransMatrix();
 
 			for (const auto & child : getChildrenAsNodes(gType, trans->getSharedID()))
 			{
@@ -1044,33 +937,9 @@ void RepoScene::getSceneBoundingBoxInternal(
 		case NodeType::MESH:
 		{
 			const MeshNode *mesh = dynamic_cast<const MeshNode*>(node);
-			//FIXME: can we figure this out from the existing bounding box?
-			MeshNode transedMesh = mesh->cloneAndApplyTransformation(mat);
-			auto newmBBox = transedMesh.getBoundingBox();
-
-			if (bbox.size())
-			{
-				if (newmBBox[0].x < bbox[0].x)
-					bbox[0].x = newmBBox[0].x;
-				if (newmBBox[0].y < bbox[0].y)
-					bbox[0].y = newmBBox[0].y;
-				if (newmBBox[0].z < bbox[0].z)
-					bbox[0].z = newmBBox[0].z;
-
-				if (newmBBox[1].x > bbox[1].x)
-					bbox[1].x = newmBBox[1].x;
-				if (newmBBox[1].y > bbox[1].y)
-					bbox[1].y = newmBBox[1].y;
-				if (newmBBox[1].z > bbox[1].z)
-					bbox[1].z = newmBBox[1].z;
-			}
-			else
-			{
-				//no bbox yet
-				bbox.push_back(newmBBox[0]);
-				bbox.push_back(newmBBox[1]);
-			}
-
+			auto newmBBox = mesh->getBoundingBox();
+			MeshNode::transformBoundingBox(newmBBox, mat);
+			bbox.encapsulate(newmBBox);
 			break;
 		}
 		case NodeType::REFERENCE:
@@ -1080,30 +949,7 @@ void RepoScene::getSceneBoundingBoxInternal(
 			if (refSceneIt != graph.referenceToScene.end())
 			{
 				const RepoScene *refScene = refSceneIt->second;
-				const std::vector<repo::lib::RepoVector3D> refSceneBbox = refScene->getSceneBoundingBox();
-
-				if (bbox.size())
-				{
-					if (refSceneBbox[0].x < bbox[0].x)
-						bbox[0].x = refSceneBbox[0].x;
-					if (refSceneBbox[0].y < bbox[0].y)
-						bbox[0].y = refSceneBbox[0].y;
-					if (refSceneBbox[0].z < bbox[0].z)
-						bbox[0].z = refSceneBbox[0].z;
-
-					if (refSceneBbox[1].x > bbox[1].x)
-						bbox[1].x = refSceneBbox[1].x;
-					if (refSceneBbox[1].y > bbox[1].y)
-						bbox[1].y = refSceneBbox[1].y;
-					if (refSceneBbox[1].z > bbox[1].z)
-						bbox[1].z = refSceneBbox[1].z;
-				}
-				else
-				{
-					//no bbox yet
-					bbox.push_back(refSceneBbox[0]);
-					bbox.push_back(refSceneBbox[1]);
-				}
+				bbox.encapsulate(refScene->getSceneBoundingBox());
 			}
 			break;
 		}
@@ -1170,7 +1016,7 @@ std::vector<std::string> RepoScene::getOriginalFiles() const
 bool RepoScene::loadRevision(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	std::string &errMsg,
-	const std::vector<RevisionNode::UploadStatus> &includeStatus) {
+	const std::vector<ModelRevisionNode::UploadStatus> &includeStatus) {
 	bool success = true;
 
 	if (!handler)
@@ -1182,29 +1028,36 @@ bool RepoScene::loadRevision(
 	RepoBSON bson;
 	repoTrace << "loading revision : " << databaseName << "." << projectName << " head Revision: " << headRevision;
 	if (headRevision) {
-		RepoBSONBuilder critBuilder;
 
-		if (includeStatus.size()) {
-			RepoBSONBuilder statusBSONBuilder;
-			std::vector<RepoBSON> statusCheck = {
-			BSON(REPO_NODE_REVISION_LABEL_INCOMPLETE << BSON("$exists" << false))
-			};
+		using namespace repo::core::handler::database;
+
+		query::RepoQueryBuilder query;
+		if (includeStatus.size())
+		{
 			std::vector<int> statuses;
-			for (const auto &status : includeStatus) {
-				statuses.push_back((int)status);
-			}
-			statusBSONBuilder.appendArray("$in", statuses);
-			statusCheck.push_back(BSON(REPO_NODE_REVISION_LABEL_INCOMPLETE << statusBSONBuilder.mongoObj()));
-			critBuilder.appendArray("$or", statusCheck);
+			std::transform(includeStatus.begin(), includeStatus.end(), std::back_inserter(statuses), [](auto s) { return (int)s; } );
+			query.append(
+				query::Or(
+					query::Eq(REPO_NODE_REVISION_LABEL_INCOMPLETE, statuses),
+					query::Exists(REPO_NODE_REVISION_LABEL_INCOMPLETE, false)
+				)
+			);
 		}
-		else {
-			critBuilder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, BSON("$exists" << false));
+		else
+		{
+			query.append(
+				query::Exists(REPO_NODE_REVISION_LABEL_INCOMPLETE, false)
+			);
 		}
+		query.append(query::Eq(REPO_NODE_LABEL_SHARED_ID, branch));
 
-		critBuilder.append(REPO_NODE_LABEL_SHARED_ID, branch);
+		bson = handler->findOneByCriteria(
+			databaseName,
+			projectName + "." + REPO_COLLECTION_HISTORY,
+			query,
+			REPO_NODE_REVISION_LABEL_TIMESTAMP
+		);
 
-		bson = handler->findOneByCriteria(databaseName, projectName + "." +
-			REPO_COLLECTION_HISTORY, critBuilder.obj(), REPO_NODE_REVISION_LABEL_TIMESTAMP);
 		repoTrace << "Fetching head of revision from branch " << branch;
 	}
 	else {
@@ -1240,10 +1093,9 @@ bool RepoScene::loadScene(
 		if (!loadRevision(handler, errMsg)) return false;
 	}
 
-	RepoBSONBuilder builder;
-	builder.append(REPO_NODE_STASH_REF, revNode->getUniqueID());
 	std::vector<RepoBSON> nodes = handler->findAllByCriteria(
-		databaseName, projectName + "." + REPO_COLLECTION_SCENE, builder.obj());
+		databaseName, projectName + "." + REPO_COLLECTION_SCENE, core::handler::database::query::Eq(REPO_NODE_STASH_REF, revNode->getUniqueID())
+	);
 
 	repoInfo << "# of nodes in this unoptimised scene = " << nodes.size();
 
@@ -1264,11 +1116,9 @@ bool RepoScene::loadStash(
 		if (!loadRevision(handler, errMsg)) return false;
 	}
 
-	//Get the relevant nodes from the scene graph using the unique IDs stored in this revision node
-	RepoBSONBuilder builder;
-	builder.append(REPO_NODE_STASH_REF, revNode->getUniqueID());
-
-	std::vector<RepoBSON> nodes = handler->findAllByCriteria(databaseName, projectName + "." + REPO_COLLECTION_STASH_REPO, builder.obj());
+	std::vector<RepoBSON> nodes = handler->findAllByCriteria(
+		databaseName, projectName + "." + REPO_COLLECTION_STASH_REPO, core::handler::database::query::Eq(REPO_NODE_STASH_REF, revNode->getUniqueID())
+	);
 	if (success = nodes.size())
 	{
 		repoInfo << "# of nodes in this stash scene = " << nodes.size();
@@ -1280,47 +1130,6 @@ bool RepoScene::loadStash(
 	}
 
 	return  success;
-}
-
-void RepoScene::modifyNode(
-	const GraphType                   &gtype,
-	RepoNode                          *nodeToChange,
-	RepoNode                          *newNode,
-	const bool						  &overwrite)
-{
-	if (!nodeToChange || !newNode)
-	{
-		repoError << "Failed to modify node in scene (node is nullptr)";
-		return;
-	}
-	repoGraphInstance &g = gtype == GraphType::OPTIMIZED ? stashGraph : graph;
-
-	repo::lib::RepoUUID sharedID = nodeToChange->getSharedID();
-	repo::lib::RepoUUID uniqueID = nodeToChange->getUniqueID();
-
-	RepoNode updatedNode;
-
-	//generate new UUID if it  is not in list, otherwise use the current one.
-	bool isInList = gtype == GraphType::OPTIMIZED ||
-		(newAdded.find(sharedID) != newAdded.end() || newModified.find(sharedID) != newModified.end());
-	updatedNode = overwrite ? *newNode : RepoNode(nodeToChange->cloneAndAddFields(newNode, !isInList));
-
-	repo::lib::RepoUUID newUniqueID = updatedNode.getUniqueID();
-
-	if (gtype == GraphType::DEFAULT && !isInList)
-	{
-		newModified.insert(sharedID);
-		newCurrent.erase(uniqueID);
-		newCurrent.insert(newUniqueID);
-	}
-
-	//update shared to unique ID  and uniqueID to node mapping
-
-	g.sharedIDtoUniqueID[sharedID] = newUniqueID;
-	g.nodesByUniqueID.erase(uniqueID);
-	g.nodesByUniqueID[newUniqueID] = nodeToChange;
-
-	nodeToChange->swap(updatedNode);
 }
 
 void RepoScene::removeNode(
@@ -1361,9 +1170,6 @@ void RepoScene::removeNode(
 		//remove from the nodes sets
 		switch (node->getTypeAsEnum())
 		{
-		case NodeType::CAMERA:
-			g.cameras.erase(node);
-			break;
 		case NodeType::MATERIAL:
 			g.materials.erase(node);
 			break;
@@ -1448,11 +1254,6 @@ bool RepoScene::populate(
 			node = new TextureNode(obj);
 			g.textures.insert(node);
 		}
-		else if (REPO_NODE_TYPE_CAMERA == nodeType)
-		{
-			node = new CameraNode(obj);
-			g.cameras.insert(node);
-		}
 		else if (REPO_NODE_TYPE_REFERENCE == nodeType)
 		{
 			node = new ReferenceNode(obj);
@@ -1486,11 +1287,11 @@ bool RepoScene::populate(
 			//construct a new RepoScene with the information from reference node and append this g to the Scene
 			std::string spDbName = reference->getDatabaseName();
 			if (spDbName.empty()) spDbName = databaseName;
-			RepoScene *refg = new RepoScene(spDbName, reference->getProjectName());
+			RepoScene *refg = new RepoScene(spDbName, reference->getProjectId());
 			if (reference->useSpecificRevision())
-				refg->setRevision(reference->getRevisionID());
+				refg->setRevision(reference->getProjectRevision());
 			else
-				refg->setBranch(reference->getRevisionID());
+				refg->setBranch(reference->getProjectRevision());
 
 			if (!loadExtFiles) {
 				refg->skipLoadingExtFiles();
@@ -1507,7 +1308,7 @@ bool RepoScene::populate(
 				}
 			}
 			else {
-				repoWarning << "Failed to load reference node for ref ID" << reference->getUniqueID() << ": " << errMsg;
+				repoWarning << "Failed to load reference node for ref ID " << reference->getUniqueID() << ": " << errMsg;
 			}
 		}
 	}
@@ -1559,7 +1360,6 @@ bool RepoScene::populate(
 
 void RepoScene::populateAndUpdate(
 	const GraphType   &gType,
-	const RepoNodeSet &cameras,
 	const RepoNodeSet &meshes,
 	const RepoNodeSet &materials,
 	const RepoNodeSet &metadata,
@@ -1570,7 +1370,6 @@ void RepoScene::populateAndUpdate(
 {
 	std::string errMsg;
 	repoGraphInstance &instance = gType == GraphType::OPTIMIZED ? stashGraph : graph;
-	addNodeToScene(gType, cameras, errMsg, &(instance.cameras));
 	addNodeToScene(gType, meshes, errMsg, &(instance.meshes));
 	addNodeToScene(gType, materials, errMsg, &(instance.materials));
 	addNodeToScene(gType, metadata, errMsg, &(instance.metadata));
@@ -1591,8 +1390,7 @@ void RepoScene::applyScaleFactor(const float &scale) {
 			0, 0, 0, 1
 		};
 
-		TransformationNode newRoot = rootTrans->cloneAndApplyTransformation(repo::lib::RepoMatrix(scalingMatrix));
-		modifyNode(GraphType::DEFAULT, rootTrans->getSharedID(), &newRoot);
+		rootTrans->applyTransformation(repo::lib::RepoMatrix(scalingMatrix));
 
 		//Clear the stash as bounding boxes in mesh mappings are no longer valid like this.
 		clearStash();
@@ -1622,8 +1420,7 @@ void RepoScene::reorientateDirectXModel()
 			0, -1, 0, 0,
 			0, 0, 0, 1 };
 
-		TransformationNode newRoot = rootTrans->cloneAndApplyTransformation(repo::lib::RepoMatrix(rotationMatrix));
-		modifyNode(GraphType::DEFAULT, rootTrans->getSharedID(), &newRoot);
+		rootTrans->applyTransformation(repo::lib::RepoMatrix(rotationMatrix));
 
 		//Clear the stash as bounding boxes in mesh mappings are no longer valid like this.
 		clearStash();
@@ -1685,39 +1482,26 @@ void RepoScene::shiftModel(
 		0, 0, 0, 1 };
 	if (graph.rootNode)
 	{
-		auto translatedRoot = graph.rootNode->cloneAndApplyTransformation(transMat);
-		graph.rootNode->swap(translatedRoot);
+		graph.rootNode->applyTransformation(transMat);
 	}
 
 	if (stashGraph.rootNode)
 	{
-		auto translatedRoot = stashGraph.rootNode->cloneAndApplyTransformation(transMat);
-		stashGraph.rootNode->swap(translatedRoot);
+		stashGraph.rootNode->applyTransformation(transMat);
 	}
 }
 
 bool RepoScene::updateRevisionStatus(
 	repo::core::handler::AbstractDatabaseHandler *handler,
-	const RevisionNode::UploadStatus &status)
+	const ModelRevisionNode::UploadStatus &status)
 {
 	bool success = false;
 	if (revNode)
 	{
-		auto updatedRev = revNode->cloneAndUpdateStatus(status);
-
-		if (handler)
-		{
-			//update revision node
-			std::string errMsg;
-			success = handler->upsertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, updatedRev, true, errMsg);
-		}
-		else
-		{
-			repoError << "Cannot update revision status without a database handler";
-		}
-
-		revNode->swap(updatedRev);
+		revNode->updateStatus(status);
+		handler->upsertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, *revNode, true);
 		repoInfo << "rev node status is: " << (int)revNode->getUploadStatus();
+		success = true;
 	}
 	else
 	{

@@ -4,3 +4,6 @@
 [submodule "submodules/asset_generator"]
 	path = submodules/asset_generator
 	url = https://github.com/3drepo/AssetGenerator.git
+[submodule "submodules/svgexport"]
+	path = submodules/svgexport
+	url = https://github.com/3drepo/SVGExporter

@@ -38,6 +38,7 @@
 
 using namespace repo::lib;
 using namespace repo::manipulator::modelconvertor::odaHelper;
+using namespace testing;
 
 // First helper class for the test of the RVT Converter
 class OdExBimSystemServices : public ExSystemServices
@@ -225,7 +226,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int32asIntTest) {
 
 	// Check result
 	EXPECT_TRUE(success);
-	EXPECT_EQ(boost::get<long long>(v), -2147483648ll);
+	EXPECT_EQ(boost::get<int64_t>(v), -2147483648ll);
 
 	// Teardown
 	TeardownOdEnvForRvt(pDB);
@@ -248,7 +249,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int64Test) {
 
 	// Check result
 	EXPECT_TRUE(success);
-	EXPECT_EQ(boost::get<long long>(v), -9223372036854775808ll);
+	EXPECT_EQ(boost::get<int64_t>(v), -9223372036854775808ll);
 }
 
 TEST(RepoMetaVariantConverterRevitTest, DoubleTest) {

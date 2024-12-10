@@ -17,10 +17,17 @@
 
 #include "repo_bson_builder.h"
 
+#include <bsoncxx/types.hpp>
+#include <bsoncxx/types/bson_value/value.hpp>
+#include <bsoncxx/builder/basic/array.hpp>
+#include <bsoncxx/builder/basic/document.hpp>
+#include <bsoncxx/builder/basic/kvp.hpp>
+
 using namespace repo::core::model;
+using namespace bsoncxx::builder;
 
 RepoBSONBuilder::RepoBSONBuilder()
-	:mongo::BSONObjBuilder()
+	:core(false)
 {
 }
 
@@ -30,10 +37,10 @@ RepoBSONBuilder::~RepoBSONBuilder()
 
 void RepoBSONBuilder::appendUUID(
 	const std::string &label,
-	const repo::lib::RepoUUID &uuid)
+	const repo::lib::RepoUUID &uuid
+)
 {
-	auto uuidData = uuid.data();
-	appendBinData(label, uuidData.size(), mongo::bdtUUID, (char*)uuidData.data());
+	append(label, uuid);
 }
 
 void repo::core::model::RepoBSONBuilder::appendRepoVariant(const std::string& label, const repo::lib::RepoVariant& item)
@@ -42,72 +49,77 @@ void repo::core::model::RepoBSONBuilder::appendRepoVariant(const std::string& la
 	boost::apply_visitor(AppendVisitor(*this, label), item);
 }
 
-void RepoBSONBuilder::appendArrayPair(
-	const std::string &label,
-	const std::list<std::pair<std::string, std::string> > &list,
-	const std::string &fstLabel,
-	const std::string &sndLabel
-	)
-{
-	if (list.size() > 0)
-	{
-		mongo::BSONArrayBuilder arrBuilder;
-		for (auto it = list.begin(); it != list.end(); ++it)
-		{
-			RepoBSONBuilder innerBuilder;
-			innerBuilder << fstLabel << it->first;
-			innerBuilder << sndLabel << it->second;
-			arrBuilder.append(innerBuilder.mongoObj());
-		}
-		append(label, arrBuilder.arr());
-	}
-	else
-	{
-		repoWarning << "Trying to append an empty array pair with label:" << label;
-	}
-}
-
 RepoBSON RepoBSONBuilder::obj()
 {
-	mongo::BSONObjBuilder build;
-	return RepoBSON(mongo::BSONObjBuilder::obj());
+	return RepoBSON(core::extract_document(), binMapping);
 }
 
-template<> void repo::core::model::RepoBSONBuilder::append<repo::lib::RepoUUID>
-(
-	const std::string &label,
-	const repo::lib::RepoUUID &uuid
-)
+void repo::core::model::RepoBSONBuilder::appendTime(const int64_t& ts)
 {
-	appendUUID(label, uuid);
+	bsoncxx::types::b_date date(std::chrono::milliseconds(ts * 1000));
+	append(date);
 }
 
-template<> void repo::core::model::RepoBSONBuilder::append<repo::lib::RepoVector3D>
-(
-	const std::string &label,
-	const repo::lib::RepoVector3D &vec
-)
+void repo::core::model::RepoBSONBuilder::append(const tm& t)
 {
-	appendArray(label, vec.toStdVector());
+	tm tmCpy = t; // Copy because mktime can alter the struct
+	int64_t time = static_cast<int64_t>(mktime(&tmCpy));
+
+	// Check for a unsuccessful conversion
+	if (time == -1)
+	{
+		throw repo::lib::RepoException("Failed converting date to mongo compatible format. tm malformed or date pre 1970?");
+	}
+
+	appendTime(time);
 }
 
-template<> void repo::core::model::RepoBSONBuilder::append<repo::lib::RepoMatrix>
-(
-	const std::string &label,
-	const repo::lib::RepoMatrix &mat
-)
+void repo::core::model::RepoBSONBuilder::append(const repo::lib::RepoUUID& uuid)
 {
-	RepoBSONBuilder rows;
+	// k_uuid_deprecated has the same value as the previous enum (0x3); the new
+	// and legacy types are not equivalent for the purposes of comparison, so
+	// this must remain consistent unless a migration is performed.
+
+	auto uuidData = uuid.data();
+	bsoncxx::types::b_binary binary{
+		bsoncxx::binary_sub_type::k_uuid_deprecated,
+		uuidData.size(),
+		uuidData.data()
+	};
+	append(binary);
+}
+
+void repo::core::model::RepoBSONBuilder::append(const repo::lib::RepoBounds& bounds)
+{
+	open_array();
+	append(bounds.min().toStdVector());
+	append(bounds.max().toStdVector());
+	close_array();
+}
+
+void repo::core::model::RepoBSONBuilder::append(const repo::lib::RepoVector3D& vec)
+{
+	append(vec.toStdVector());
+}
+
+void repo::core::model::RepoBSONBuilder::append(const repo::lib::RepoMatrix& mat)
+{
+	bsoncxx::builder::basic::array rows{};
 	auto data = mat.getData();
 	for (uint32_t i = 0; i < 4; ++i)
 	{
-		RepoBSONBuilder columns;
-		for (uint32_t j = 0; j < 4; ++j){
-			columns << std::to_string(j) << data[i * 4 + j];
+		bsoncxx::builder::basic::array columns;
+		for (uint32_t j = 0; j < 4; ++j) {
+			columns.append(data[i * 4 + j]);
 		}
-		rows.appendArray(std::to_string(i), columns.obj());
+		rows.append(columns.extract());
 	}
-	appendArray(label, rows.obj());;
+	core::append(rows.extract());
+}
+
+void repo::core::model::RepoBSONBuilder::append(const RepoBSON& obj)
+{
+	append(obj.view());
 }
 
 void RepoBSONBuilder::appendVector3DObject(
@@ -115,9 +127,51 @@ void RepoBSONBuilder::appendVector3DObject(
 	const repo::lib::RepoVector3D& vec
 )
 {
-	mongo::BSONObjBuilder objBuilder;
-	objBuilder.append("x", vec.x);
-	objBuilder.append("y", vec.y);
-	objBuilder.append("z", vec.z);
-	append(label, objBuilder.obj());
+	using namespace bsoncxx::builder::basic;
+	document objBuilder;
+	objBuilder.append(kvp("x", vec.x));
+	objBuilder.append(kvp("y", vec.y));
+	objBuilder.append(kvp("z", vec.z));
+	append(label, objBuilder.extract());
+}
+
+void RepoBSONBuilder::appendLargeArray(std::string name, const void* data, size_t size)
+{
+	binMapping[name] = std::vector<uint8_t>();
+	auto& buf = binMapping[name];
+	buf.resize(size);
+	memcpy(buf.data(), data, size);
+}
+
+void RepoBSONBuilder::appendTime(std::string label, const int64_t& ts)
+{
+	key_owned(label);
+	appendTime(ts);
+}
+
+void RepoBSONBuilder::appendTime(std::string label, const tm& t)
+{
+	key_owned(label);
+	append(t);
+}
+
+void RepoBSONBuilder::appendTimeStamp(std::string label)
+{
+	appendTime(label, time(NULL));
+}
+
+void RepoBSONBuilder::appendElements(RepoBSON bson)
+{
+	core::concatenate(bson.view());
+}
+
+void RepoBSONBuilder::appendElementsUnique(RepoBSON bson)
+{
+	auto view = core::view_document();
+	for (auto& element : bson) {
+		if (view.find(element.key()) == view.end()) {
+			key_view(element.key());
+			append(element.get_value());
+		}
+	}
 }

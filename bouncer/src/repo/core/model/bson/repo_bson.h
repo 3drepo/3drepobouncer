@@ -33,14 +33,19 @@
 #define strcasecmp _stricmp
 #endif
 
-#include <mongo/bson/bson.h>
 #include <unordered_map>
+#include <set>
+#include "repo/repo_bouncer_global.h"
+#include "repo/core/model/repo_model_global.h"
+#include "repo/lib/repo_log.h"
+#include "repo/lib/datastructure/repo_uuid.h"
+#include "repo/lib/datastructure/repo_vector.h"
+#include "repo/lib/datastructure/repo_matrix.h"
+#include "repo/lib/datastructure/repo_bounds.h"
+#include "repo/lib/repo_exception.h"
+#include "repo/core/model/bson/repo_bson_element.h"
 
-#include "../../../lib/repo_log.h"
-#include "../../../repo_bouncer_global.h"
-#include "../repo_model_global.h"
-#include "../../../lib/datastructure/repo_uuid.h"
-#include "repo_bson_element.h"
+#include <bsoncxx/document/value.hpp>
 
 #define REPO_BSON_MAX_BYTE_SIZE 16770000 //max size is 16MB,but leave a bit for buffer
 
@@ -51,47 +56,34 @@ namespace repo {
 		}
 
 		namespace model {
-			//TODO: Eventually we should inherit from a generic BSON object.
-			//work seems to have been started in here:https://github.com/jbenet/bson-cpp
-			//alternatively we can use a c++ wrapper on https://github.com/mongodb/libbson
-			class REPO_API_EXPORT RepoBSON : public mongo::BSONObj
+			class REPO_API_EXPORT RepoBSON : private bsoncxx::document::value
 			{
 				friend class RepoBSONBuilder;
 				friend class repo::core::handler::MongoDatabaseHandler;
+
 			public:
 
-				/**
-				* Default empty constructor.
-				*/
-				RepoBSON() : mongo::BSONObj() {}
+				using BinMapping = std::unordered_map<std::string, std::vector<uint8_t>>;
 
 				/**
 				* Constructor from Mongo BSON object.
 				* @param mongo BSON object
 				*/
 				RepoBSON(const RepoBSON &obj,
-					const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping =
-					std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>());
+					const BinMapping& binMapping = {});
 
 				/**
 				* Constructor from Mongo BSON object.
 				* @param mongo BSON object
 				*/
-				RepoBSON(const mongo::BSONObj &obj,
-					const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping =
-					std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>());
+				RepoBSON(const bsoncxx::document::view &obj,
+					const BinMapping& binMapping = {});
 
 				/**
-				* Constructor from Mongo BSON object builder.
-				* @param mongo BSON object builder
+				* This constructor must exist for various container types,
+				* but should be avoided in practice.
 				*/
-				RepoBSON(mongo::BSONObjBuilder &builder) : mongo::BSONObj(builder.obj()) {}
-
-				/**
-				* Constructor from raw data buffer.
-				* @param rawData raw data
-				*/
-				RepoBSON(const std::vector<char> &rawData) : mongo::BSONObj(rawData.data()) {}
+				RepoBSON();
 
 				/**
 				* Default empty deconstructor.
@@ -99,73 +91,43 @@ namespace repo {
 				virtual ~RepoBSON() {}
 
 				/**
-				* Construct a repobson from a json string
-				*/
-				static RepoBSON fromJSON(const std::string &json);
-
-				/**
 				* Override the equals operator to perform the swap just like mongo bson
 				* but also retrieve the mapping information
 				*/
-				RepoBSON& operator=(RepoBSON otherCopy) {
-					swap(otherCopy);
-					return *this;
-				}
-				/**
-				* Override the swap operator to perform the swap just like mongo bson
-				* but also carry over the mapping information
-				*/
-				void swap(RepoBSON otherCopy)
-				{
-					mongo::BSONObj::swap(otherCopy);
-					bigFiles = otherCopy.bigFiles;
-				}
+				RepoBSON& operator=(RepoBSON otherCopy);
 
-				bool couldBeArray() const {
-					return mongo::BSONObj::couldBeArray();
-				}
-
-				bool hasField(const std::string &label) const {
-					return mongo::BSONObj::hasField(label);
-				}
-
-				int nFields() const {
-					return mongo::BSONObj::nFields();
-				}
-
-				/**
-				* Returns the current time in the form of int64 timestamp
-				*/
-				static int64_t getCurrentTimestamp();
+				bool hasField(const std::string& label) const;
 
 				/**
 				* returns a field from the BSON
 				* @param label name of the field to retrieve
 				* @return returns a RepoBSONElement
 				*/
-				RepoBSONElement getField(const std::string &label) const
-				{
-					return RepoBSONElement(mongo::BSONObj::getField(label));
-				}
+				class RepoBSONElement getField(const std::string& label) const;
 
-				bool getBoolField(const std::string &label) const
-				{
-					return mongo::BSONObj::getBoolField(label);
-				}
+				bool getBoolField(const std::string& label) const;
 
-				std::string getStringField(const std::string &label) const {
-					return mongo::BSONObj::getStringField(label);
-				}
+				std::string getStringField(const std::string& label) const;
 
-				RepoBSON getObjectField(const std::string &label) const {
-					return mongo::BSONObj::getObjectField(label);
-				}
+				RepoBSON getObjectField(const std::string& label) const;
+
+				std::vector<RepoBSON> getObjectArray(const std::string& label) const;
+
+				repo::lib::RepoBounds getBoundsField(const std::string& label) const;
+
+				lib::RepoVector3D getVector3DField(const std::string& label) const;
+
+				repo::lib::RepoMatrix getMatrixField(const std::string& label) const;
+
+				std::vector<double> getDoubleVectorField(const std::string& label) const;
+
+				std::vector<std::string> getFileList(const std::string& label) const;
 
 				double getDoubleField(const std::string &label) const;
 
-				bool isEmpty() const {
-					return mongo::BSONObj::isEmpty();
-				}
+				int64_t getLongField(const std::string& label) const;
+
+				bool isEmpty() const;
 
 				/**
 				* get a binary field in the form of vector of T
@@ -179,49 +141,12 @@ namespace repo {
 					std::vector<T> &vec) const
 
 				{
-					bool success = false;
-
-					if (!hasField(field) || getField(field).type() == ElementType::STRING)
-					{
-						//Try to get it from file mapping.
-						std::vector<uint8_t> bin = getBigBinary(field);
-						if (bin.size() > 0)
-						{
-							vec.resize(bin.size() / sizeof(T));
-							memcpy(vec.data(), &bin[0], bin.size());
-							success = true;
-						}
-						else
-						{
-							repoError << "Trying to retrieve binary from a field that doesn't exist(" << field << ")";
-							return false;
-						}
-					}
-					else {
-						RepoBSONElement bse = getField(field);
-						if (bse.type() == ElementType::BINARY && bse.binDataType() == mongo::BinDataGeneral)
-						{
-							bse.value();
-							int length;
-							const char *binData = bse.binData(length);
-							if (length > 0)
-							{
-								vec.resize(length / sizeof(T));
-								memcpy(vec.data(), binData, length);
-								success = true;
-							}
-							else {
-								repoError << "RepoBSON::getBinaryFieldAsVector : "
-									<< "size of binary data (" << length << ") Unable to copy 0 bytes!";
-							}
-						}
-						else {
-							repoError << "RepoBSON::getBinaryFieldAsVector : bson element type is not BinDataGeneral!";
-						}
-					}
-
-					return success;
+					auto& buf = getBinary(field);
+					vec.resize(buf.size() / sizeof(T));
+					memcpy(vec.data(), buf.data(), buf.size());
+					return true;
 				}
+
 				/**
 				* Overload of getField function to retreve repo::lib::RepoUUID
 				* @param label name of the field
@@ -243,9 +168,7 @@ namespace repo {
 				*/
 				std::vector<float> getFloatArray(const std::string &label) const;
 
-				int getIntField(const std::string &label) const {
-					return mongo::BSONObj::getIntField(label);
-				}
+				int getIntField(const std::string& label) const;
 
 				/**
 				* Get an array of fields given an element label
@@ -259,38 +182,9 @@ namespace repo {
 				* @param label name of the element
 				* @return returns timestamp as int64, return -1 if not found
 				*/
-				int64_t getTimeStampField(const std::string &label) const;
+				time_t getTimeStampField(const std::string &label) const;
 
-				std::set<std::string> getFieldNames() const {
-					std::set<std::string> fieldNames;
-					mongo::BSONObj::getFieldNames(fieldNames);
-					return fieldNames;
-				}
-
-				/**
-				* Get a field as a List of string pairs
-				* This is for scenarios were there is an element that is an array of objects
-				* and you want to get 2 fields within all the objects.
-				* @param arrLabel the element where this data is stored
-				* @param fstLabel label for #1 in pair
-				* @param sndLabel label for #2 in pair
-				* @return a List of pairs of strings
-				*/
-				std::list<std::pair<std::string, std::string> > getListStringPairField(
-					const std::string &arrLabel,
-					const std::string &fstLabel,
-					const std::string &sndLabel) const;
-
-				//! Gets double from embedded sub-object based on name fields.
-				double getEmbeddedDouble(
-					const std::string &embeddedObjName,
-					const std::string &fieldName,
-					const double &defaultValue = 0) const;
-
-				//! Returns true if embedded object contains given fieldName.
-				bool hasEmbeddedField(
-					const std::string &embeddedObjName,
-					const std::string &fieldName) const;
+				std::set<std::string> getFieldNames() const;
 
 				/**
 				* Checks if a binary field exists within the RepoBSON
@@ -301,32 +195,13 @@ namespace repo {
 				*/
 				bool hasBinField(const std::string &label) const;
 
-				virtual RepoBSON cloneAndAddFields(
-					const RepoBSON *changes) const;
+				uint64_t objsize() const;
 
-				bool isValid() const {
-					return mongo::BSONObj::isValid();
-				}
+				std::string toString() const;
 
-				uint64_t objsize() const {
-					return mongo::BSONObj::objsize();
-				}
+				bool operator==(const RepoBSON other) const;
 
-				RepoBSON removeField(const std::string &label) const {
-					return mongo::BSONObj::removeField(label);
-				}
-
-				std::string toString() const {
-					return mongo::BSONObj::toString();
-				}
-
-				inline bool operator==(const RepoBSON other) const {
-					return mongo::BSONObj::operator==((mongo::BSONObj)other);
-				}
-
-				inline bool operator!=(const RepoBSON other) const {
-					return mongo::BSONObj::operator!=((mongo::BSONObj)other);
-				}
+				bool operator!=(const RepoBSON other) const;
 
 			public:
 
@@ -335,26 +210,10 @@ namespace repo {
 				*/
 
 				/**
-				* Clone and attempt the shrink the bson by offloading binary files to big
-				* file storage
-				* @return returns the shrunk BSON
-				*/
-				RepoBSON cloneAndShrink() const;
-
-				std::vector<uint8_t> getBigBinary(const std::string &key) const;
-
-				/**
-				* Get the list of file names for the big files
-				* needs to be stored for this bson
-				* @return returns a list of {field name, file name} needed to be stored
-				*/
-				std::vector<std::pair<std::string, std::string>> getFileList() const;
-
-				/**
 				* Get the mapping files from the bson object
 				* @return returns the map of external (gridFS) files
 				*/
-				std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t> > > getFilesMapping() const
+				const BinMapping& getFilesMapping() const
 				{
 					return bigFiles;
 				}
@@ -375,12 +234,28 @@ namespace repo {
 				repo::core::model::RepoBSON getBinaryReference() const;
 				void initBinaryBuffer(const std::vector<uint8_t> &buffer);
 
-				bool hasLegacyFileReference() const;
 				bool hasFileReference() const;
+
+				const std::vector<uint8_t>& getBinary(const std::string& label) const;
 
 			protected:
 
-				std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t> > > bigFiles;
+				/*
+				* Convenience function for converting a variant array into a
+				* concrete array. If missingIsEmpty is true, then a document
+				* without the field at all will return an empty array, otherwise
+				* a FieldNotFound exception will be thrown.
+				*/
+				template<typename T>
+				std::vector<T> getArray(const std::string& label, bool missingIsEmpty) const;
+
+				/**
+				* Override the swap operator to perform the swap just like mongo bson
+				* but also carry over the mapping information
+				*/
+				void swap(RepoBSON otherCopy);
+
+				BinMapping bigFiles;
 			}; // end
 		}// end namespace model
 	} // end namespace core

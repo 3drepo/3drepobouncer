@@ -14,28 +14,31 @@
 *  You should have received a copy of the GNU Affero General Public License
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-/**
- * Abstract database handler which all database handler needs to inherit from
- * WARNING: Do not expect any database handlers to be thread safe. It is currently
- * assumed that singleton object is instantiated before any threads are created!
- */
 
 #pragma once
 
 #include <list>
 #include <map>
 #include <string>
-
-#include "../model/bson/repo_bson.h"
-#include "../model/bson/repo_bson_role.h"
-#include "../model/bson/repo_bson_user.h"
+#include <unordered_map>
+#include "repo/lib/datastructure/repo_variant.h"
 
 namespace repo {
 	namespace core {
+		namespace model {
+			class RepoBSON;
+		}
 		namespace handler {
+			namespace database {
+				namespace query {
+					class RepoQuery;
+				}
+				namespace index{
+					class RepoIndex;
+				}
+			}
 			class AbstractDatabaseHandler {
 			public:
-
 				/**
 				 * A Deconstructor
 				 */
@@ -47,34 +50,11 @@ namespace repo {
 				*/
 				uint64_t documentSizeLimit() { return maxDocumentSize; }
 
-				///**
-				//* Generates a BSON object containing user credentials
-				//* @param username user name for authentication
-				//* @param password password of the user
-				//* @param pwDigested true if pw is digested
-				//* @return returns the constructed BSON object, or 0 if username is empty
-				//*/
-				//sta repo::core::model::RepoBSON* createBSONCredentials(
-				//	const std::string &dbAddress,
-				//	const std::string &username,
-				//	const std::string &password,
-				//	const bool        &pwDigested = false) = 0;
+				using Metadata = std::unordered_map<std::string, repo::lib::RepoVariant>;
 
 				/*
 				*	------------- Database info lookup --------------
 				*/
-
-				/**
-				* Count the number of documents within the collection
-				* @param database name of database
-				* @param collection name of collection
-				* @param errMsg errMsg if failed
-				* @return number of documents within the specified collection
-				*/
-				virtual uint64_t countItemsInCollection(
-					const std::string &database,
-					const std::string &collection,
-					std::string &errMsg) = 0;
 
 				/**
 				* Retrieve documents from a specified collection
@@ -104,51 +84,9 @@ namespace repo {
 				*/
 				virtual std::list<std::string> getCollections(const std::string &database) = 0;
 
-				/**
-				* Get a list of all available databases, alphabetically sorted by default.
-				* @param sort the database
-				* @return returns a list of database names
-				*/
-				virtual std::list<std::string> getDatabases(const bool &sorted = true) = 0;
-
-				/** get the associated projects for the list of database.
-				* @param list of database
-				* @return returns a map of database -> list of projects
-				*/
-				virtual std::map<std::string, std::list<std::string> > getDatabasesWithProjects(
-					const std::list<std::string> &databases,
-					const std::string &projectExt = "scene") = 0;
-
-				/**
-				* Get a list of projects associated with a given database (aka company account).
-				* @param list of database
-				* @param extension that indicates it is a project (.scene)
-				* @return list of projects for the database
-				*/
-				virtual std::list<std::string> getProjects(const std::string &database, const std::string &projectExt) = 0;
-
-				/**
-				* Return a list of Admin database roles
-				* @return a vector of Admin database roles
-				*/
-				virtual std::list<std::string> getAdminDatabaseRoles() = 0;
-
-				/**
-				* Return a list of standard database roles
-				* @return a vector of standard database roles
-				*/
-				virtual  std::list<std::string> getStandardDatabaseRoles() = 0;
-
 				/*
 				*	------------- Database operations (insert/delete/update) --------------
 				*/
-
-				/**
-				* Create a collection with the name specified
-				* @param database name of the database
-				* @param name name of the collection
-				*/
-				virtual void createCollection(const std::string &database, const std::string &name) = 0;
 
 				/**
 				* Create an index within the given collection
@@ -156,7 +94,7 @@ namespace repo {
 				* @param name name of the collection
 				* @param index BSONObj specifying the index
 				*/
-				virtual void createIndex(const std::string &database, const std::string &collection, const mongo::BSONObj & obj) = 0;
+				virtual void createIndex(const std::string &database, const std::string &collection, const database::index::RepoIndex&) = 0;
 
 				/**
 				* Insert a single document in database.collection
@@ -166,11 +104,10 @@ namespace repo {
 				* @param errMsg error message should it fail
 				* @return returns true upon success
 				*/
-				virtual bool insertDocument(
+				virtual void insertDocument(
 					const std::string &database,
 					const std::string &collection,
-					const repo::core::model::RepoBSON &obj,
-					std::string &errMsg) = 0;
+					const repo::core::model::RepoBSON &obj) = 0;
 
 				/**
 				* Insert multiple document in database.collection
@@ -180,41 +117,11 @@ namespace repo {
 				* @param errMsg error message should it fail
 				* @return returns true upon success
 				*/
-				virtual bool insertManyDocuments(
+				virtual void insertManyDocuments(
 					const std::string &database,
 					const std::string &collection,
 					const std::vector<repo::core::model::RepoBSON> &obj,
-					std::string &errMsg,
-					const repo::core::model::RepoBSON &metadata = repo::core::model::RepoBSON()) = 0;
-
-				/**
-				* Insert big raw file in binary format (using GridFS)
-				* @param database name
-				* @param collection name
-				* @param fileName to insert (has to be unique)
-				* @param bin raw binary of the file
-				* @param errMsg error message if it fails
-				* @param contentType the MIME type of the object (optional)
-				* @return returns true upon success
-				*/
-				virtual bool insertRawFile(
-					const std::string          &database,
-					const std::string          &collection,
-					const std::string          &fileName,
-					const std::vector<uint8_t> &bin,
-					std::string          &errMsg,
-					const std::string          &contentType = "binary/octet-stream"
-				) = 0;
-
-				/**
-				* Insert a role into the database
-				* @param role role bson to insert
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				virtual bool insertRole(
-					const repo::core::model::RepoRole       &role,
-					std::string                             &errmsg) = 0;
+					const Metadata& metadata = {}) = 0;
 
 				/**
 				* Update/insert a single document in database.collection
@@ -226,22 +133,11 @@ namespace repo {
 				* @param errMsg error message should it fail
 				* @return returns true upon success
 				*/
-				virtual bool upsertDocument(
+				virtual void upsertDocument(
 					const std::string &database,
 					const std::string &collection,
 					const repo::core::model::RepoBSON &obj,
-					const bool        &overwrite,
-					std::string &errMsg) = 0;
-
-				/**
-				* Insert a user into the database
-				* @param user user bson to insert
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				virtual bool insertUser(
-					const repo::core::model::RepoUser &user,
-					std::string                             &errmsg) = 0;
+					const bool        &overwrite) = 0;
 
 				/**
 				* Remove a collection from the database
@@ -249,19 +145,9 @@ namespace repo {
 				* @param collection name of the collection to drop
 				* @param errMsg name of the collection to drop
 				*/
-				virtual bool dropCollection(
+				virtual void dropCollection(
 					const std::string &database,
-					const std::string &collection,
-					std::string &errMsg) = 0;
-
-				/**
-				* Remove a database from the database instance
-				* @param database name of the database to drop
-				* @param errMsg name of the database to drop
-				*/
-				virtual bool dropDatabase(
-					const std::string &database,
-					std::string &errMsg) = 0;
+					const std::string &collection) = 0;
 
 				/**
 				* Remove a document from the mongo database
@@ -270,77 +156,11 @@ namespace repo {
 				* @param collection name of the collection the document is in
 				* @param errMsg name of the database to drop
 				*/
-				virtual bool dropDocument(
+				virtual void dropDocument(
 					const repo::core::model::RepoBSON bson,
 					const std::string &database,
-					const std::string &collection,
-					std::string &errMsg) = 0;
+					const std::string &collection) = 0;
 
-				/**
-				* Remove all documents satisfying a certain criteria
-				* @param criteria document to remove
-				* @param database the database the collection resides in
-				* @param collection name of the collection the document is in
-				* @param errMsg name of the database to drop
-				*/
-				virtual bool dropDocuments(
-					const repo::core::model::RepoBSON criteria,
-					const std::string &database,
-					const std::string &collection,
-					std::string &errMsg) = 0;
-
-				/**
-				* Remove a file from raw file storage (gridFS)
-				* @param database the database the collection resides in
-				* @param collection name of the collection the document is in
-				* @param filename name of the file
-				* @param errMsg name of the database to drop
-				*/
-				virtual bool dropRawFile(
-					const std::string &database,
-					const std::string &collection,
-					const std::string &fileName,
-					std::string &errMsg) = 0;
-
-				/**
-				* Remove a role from the database
-				* @param role user bson to remove
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				virtual bool dropRole(
-					const repo::core::model::RepoRole &role,
-					std::string                       &errmsg) = 0;
-
-				/**
-				* Remove a user from the database
-				* @param user user bson to remove
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				virtual bool dropUser(
-					const repo::core::model::RepoUser &user,
-					std::string                             &errmsg) = 0;
-
-				/**
-				* Update a role in the database
-				* @param role role bson to update
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				virtual bool updateRole(
-					const repo::core::model::RepoRole       &role,
-					std::string                             &errmsg) = 0;
-
-				/**
-				* Update a user in the database
-				* @param user user bson to update
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				virtual bool updateUser(
-					const repo::core::model::RepoUser &user,
-					std::string                             &errmsg) = 0;
 				/*
 				*	------------- Query operations --------------
 				*/
@@ -355,7 +175,7 @@ namespace repo {
 				virtual std::vector<repo::core::model::RepoBSON> findAllByCriteria(
 					const std::string& database,
 					const std::string& collection,
-					const repo::core::model::RepoBSON& criteria) = 0;
+					const database::query::RepoQuery& criteria) = 0;
 
 				/**
 				* Given a search criteria,  find one documents that passes this query
@@ -368,21 +188,8 @@ namespace repo {
 				virtual repo::core::model::RepoBSON findOneByCriteria(
 					const std::string& database,
 					const std::string& collection,
-					const repo::core::model::RepoBSON& criteria,
+					const database::query::RepoQuery& criteria,
 					const std::string& sortField = "") = 0;
-
-				/**
-				* Given a list of unique IDs, find all the documents associated to them
-				* @param name of database
-				* @param name of collection
-				* @param array of uuids in a BSON object
-				* @return a vector of RepoBSON objects associated with the UUIDs given
-				*/
-				virtual std::vector<repo::core::model::RepoBSON> findAllByUniqueIDs(
-					const std::string& database,
-					const std::string& collection,
-					const repo::core::model::RepoBSON& uuid,
-					const bool ignoreExtFiles = false) = 0;
 
 				/**
 				*Retrieves the first document matching given Shared ID (SID), sorting is descending
@@ -400,7 +207,7 @@ namespace repo {
 					const std::string& sortField) = 0;
 
 				/**
-				*Retrieves the document matching given Unique ID (SID), sorting is descending
+				*Retrieves the document matching given Unique ID, where the type of the id field is a UUID
 				* @param database name of database
 				* @param collection name of collection
 				* @param uuid share id
@@ -409,20 +216,19 @@ namespace repo {
 				virtual repo::core::model::RepoBSON findOneByUniqueID(
 					const std::string& database,
 					const std::string& collection,
-					const repo::lib::RepoUUID& uuid) = 0;
+					const repo::lib::RepoUUID& id) = 0;
 
 				/**
-				* Get raw binary file from database
+				*Retrieves the document matching given Unique ID, where the type of the Id field is a string
 				* @param database name of database
 				* @param collection name of collection
-				* @param fname name of the file
-				* @return return the raw binary as a vector of uint8_t (if found)
+				* @param uuid share id
+				* @return returns the matching bson object
 				*/
-				virtual std::vector<uint8_t> getRawFile(
+				virtual repo::core::model::RepoBSON findOneByUniqueID(
 					const std::string& database,
 					const std::string& collection,
-					const std::string& fname
-				) = 0;
+					const std::string& id) = 0;
 
 			protected:
 				/**

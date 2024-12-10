@@ -32,12 +32,11 @@
 #include <boost/bimap.hpp>
 
 #include "repo_model_import_abstract.h"
-#include "../../../core/model/collection/repo_scene.h"
-#include "../../../core/model/bson/repo_node_camera.h"
-#include "../../../core/model/bson/repo_node_material.h"
-#include "../../../core/model/bson/repo_node_mesh.h"
-#include "../../../core/model/bson/repo_node_metadata.h"
-#include "../../../core/model/bson/repo_node_transformation.h"
+#include "repo/core/model/collection/repo_scene.h"
+#include "repo/core/model/bson/repo_node_material.h"
+#include "repo/core/model/bson/repo_node_mesh.h"
+#include "repo/core/model/bson/repo_node_metadata.h"
+#include "repo/core/model/bson/repo_node_transformation.h"
 
 #include "repo/lib/datastructure/repo_variant.h"
 
@@ -99,14 +98,6 @@ namespace repo {
 				repo::core::model::RepoScene* convertAiSceneToRepoScene();
 
 				/**
-				* Create a Camera Node given the information in ASSIMP objects
-				* @param assimp camera object
-				* @return returns a pointer to the created camera node
-				*/
-				repo::core::model::CameraNode* createCameraRepoNode(
-					const aiCamera *assimpCamera,
-					const std::vector<double> &offset);
-				/**
 				* Create a Material Node given the information in ASSIMP objects
 				* NOTE: textures must've been populated at this point to populate references
 				* @param material assimp material object
@@ -158,8 +149,7 @@ namespace repo {
 				*/
 				repo::core::model::RepoNodeSet createTransformationNodesRecursive(
 					const aiNode                                                         *assimpNode,
-					const std::unordered_map<std::string, repo::core::model::RepoNode *> &cameras,
-					const std::vector<repo::core::model::RepoNode >                      &meshes,
+					const std::vector<repo::core::model::MeshNode >                      &originalMeshes,
 					const std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode *, repo::lib::RepoUUIDHasher>    &meshToMat,
 					std::unordered_map<repo::core::model::RepoNode *, std::vector<repo::lib::RepoUUID>> &matParents,
 					repo::core::model::RepoNodeSet                                       &newMeshes,
@@ -176,7 +166,7 @@ namespace repo {
 				*/
 				repo::core::model::RepoNode* duplicateMesh(
 					repo::lib::RepoUUID                    &newParent,
-					repo::core::model::RepoNode &mesh,
+					const repo::core::model::MeshNode &mesh,
 					const std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode *, repo::lib::RepoUUIDHasher>    &meshToMat,
 					std::unordered_map<repo::core::model::RepoNode *, std::vector<repo::lib::RepoUUID>> &matParents);
 

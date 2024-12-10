@@ -33,6 +33,7 @@
 
 using namespace repo::lib;
 using namespace repo::manipulator::modelconvertor::odaHelper;
+using namespace testing;
 
 // First helper class for the test of the NWD Converter
 class OdExNwSystemServices : public ExSystemServices
@@ -118,7 +119,7 @@ TEST(RepoMetaVariantConverterNWDTest, Int32Test)
 
 	// Check results
 	EXPECT_TRUE(success);
-	EXPECT_EQ(boost::get<long long>(v), -2147483648ll);
+	EXPECT_EQ(boost::get<int64_t>(v), -2147483648ll);
 
 	// Teardown
 	TeardownOdEnvForNWD();

@@ -55,8 +55,7 @@
 
 #include <TB_ExLabelUtils/BmSampleLabelUtilsPE.h>
 
-#include "../../../../lib/datastructure/repo_structs.h"
-#include "../../../../core/model/bson/repo_bson_builder.h"
+#include "repo/lib/datastructure/repo_structs.h"
 #include "geometry_collector.h"
 #include "data_processor.h"
 
@@ -106,8 +105,6 @@ namespace repo {
 						std::vector<repo::lib::RepoVector2D>& uvOut) override;
 
 				private:
-					void getCameras(OdBmDatabasePtr database);
-					camera_t convertCamera(OdBmDBViewPtr view);
 					std::string determineTexturePath(const std::string& inputPath);
 					void establishProjectTranslation(OdBmDatabase* pDb);
 					void fillTexture(OdBmMaterialElemPtr materialPtr, repo_material_t& material, bool& missingTexture);

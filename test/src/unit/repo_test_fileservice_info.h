@@ -25,13 +25,3 @@
 #include "repo_test_database_info.h"
 
 using namespace repo::core::handler::fileservice;
-
-static FileManager* getFileManager()
-{
-	try {
-		return FileManager::getManager();
-	}
-	catch (const repo::lib::RepoException) {
-		return FileManager::instantiateManager(repo::lib::RepoConfig::fromFile(getDataPath("config/config.json")), getHandler());
-	}
-}

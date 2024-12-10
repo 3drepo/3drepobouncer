@@ -32,21 +32,25 @@
 #define strcasecmp _stricmp
 #endif
 
-#include <mongo/client/dbclient.h>
-
 #include "repo_database_handler_abstract.h"
-#include "connectionpool/repo_connection_pool_mongo.h"
-#include "../model/bson/repo_bson.h"
-#include "../model/bson/repo_bson_builder.h"
-#include "../model/bson/repo_bson_role.h"
-#include "../model/bson/repo_bson_user.h"
-#include "../../lib/repo_stack.h"
+#include "repo/lib/repo_stack.h"
+
+#include <mongocxx/client-fwd.hpp>
+#include <mongocxx/pool-fwd.hpp>
 
 namespace repo {
 	namespace core {
+		namespace model {
+			class RepoBSON; // Forward declaration for document type
+		}
 		namespace handler {
+			namespace fileservice{
+				class Metadata; // Forward declaration for alias
+				class FileManager;
+			}
 			class MongoDatabaseHandler : public AbstractDatabaseHandler {
 				enum class OPERATION { DROP, INSERT, UPDATE };
+
 			public:
 				/*
 				*	=================================== Public Fields ========================================
@@ -61,128 +65,64 @@ namespace repo {
 				//! Built in admin database roles. See http://docs.mongodb.org/manual/reference/built-in-roles/
 				static const std::list<std::string> ADMIN_ONLY_DATABASE_ROLES;
 
-				/*
-				 *	=============================================================================================
-				 */
+				struct ConnectionOptions
+				{
+					uint32_t maxConnections = 1;
+					uint32_t timeout = 10000; // Common timeout for socket, connection and server selection, in milliseconds
 
-				 /*
-				  *	=================================== Public Functions ========================================
-				  */
+					ConnectionOptions(){} // Explicit default constructor required for gcc
+				};
 
-				  /**
-				   * A Deconstructor
-				   */
+				/**
+				* @param dbAddress ConnectionString that holds the address to the mongo database
+				* @param maxConnections max. number of connections to the database
+				* @param username user name for authentication (optional)
+				* @param password password of the user (optional)
+				*/
+				MongoDatabaseHandler(
+					const std::string& dbAddress,
+					const std::string& username,
+					const std::string& password,
+					const ConnectionOptions& options = ConnectionOptions()
+				);
+
 				~MongoDatabaseHandler();
 
 				/**
-				* Disconnects the handler and resets the instance
-				* Must call this before trying to reconnect to another database!
-				*/
-				static void disconnectHandler();
-
-				/**
-				 * Returns the instance of MongoDatabaseHandler
-				 * @param errMsg error message if this fails
+				 * Returns a new instance of MongoDatabaseHandler
 				 * @param host hostname of the database
 				 * @param port port number
 				 * @param number of maximum simultaneous connections
 				 * @param username username for authentication
 				 * @param password for authentication
-				 * @param pwDigested true if password is digested
 				 * @return Returns the single instance
 				 */
-				static MongoDatabaseHandler* getHandler(
-					std::string &errMsg,
+				static std::shared_ptr<MongoDatabaseHandler> getHandler(
 					const std::string &connectionString,
-					const uint32_t    &maxConnections = 1,
-					const std::string &dbName = std::string(),
-					const std::string &username = std::string(),
-					const std::string &password = std::string(),
-					const bool        &pwDigested = false);
+					const std::string& username,
+					const std::string& password,
+					const ConnectionOptions& options = ConnectionOptions()
+				);
 
 				/**
-				 * Returns the instance of MongoDatabaseHandler
-				 * @param errMsg error message if this fails
+				 * Returns a new instance of MongoDatabaseHandler
 				 * @param host hostname of the database
 				 * @param port port number
 				 * @param number of maximum simultaneous connections
 				 * @param username username for authentication
 				 * @param password for authentication
-				 * @param pwDigested true if password is digested
-				 * @return Returns the single instance
 				 */
-				static MongoDatabaseHandler* getHandler(
-					std::string &errMsg,
+				static std::shared_ptr<MongoDatabaseHandler> getHandler(
 					const std::string &host,
 					const int         &port,
-					const uint32_t    &maxConnections = 1,
-					const std::string &dbName = std::string(),
-					const std::string &username = std::string(),
-					const std::string &password = std::string(),
-					const bool        &pwDigested = false);
-
-				/**
-				* Returns the instance of MongoDatabaseHandler
-				* @param errMsg error message if this fails
-				* @param host hostname of the database
-				* @param port port number
-				* @param number of maximum simultaneous connections
-				* @param dbName authentication database
-				* @param credentials user credentials
-				* @return Returns the single instance
-				*/
-				static MongoDatabaseHandler* getHandler(
-					std::string           &errMsg,
-					const std::string     &host,
-					const int             &port,
-					const uint32_t        &maxConnections,
-					const std::string     &dbName = std::string(),
-					const model::RepoBSON *credentials = nullptr);
-
-				/**
-				* Returns the instance of MongoDatabaseHandler
-				* @param host string containing "databaseAddress:port"
-				* @return Returns null if there is no instance available
-				*/
-				static MongoDatabaseHandler* getHandler(
-					const std::string &host)
-				{
-					return handler;
-				}
-
-				/**
-				* Generates a BSON object containing user credentials
-				* @param dbName name of the database to authenticate against
-				* @param username user name for authentication
-				* @param password password of the user
-				* @param pwDigested true if pw is digested
-				* @return returns the constructed BSON object, or 0 nullptr username is empty
-				*/
-				static repo::core::model::RepoBSON* createBSONCredentials(
-					const std::string &dbName,
 					const std::string &username,
 					const std::string &password,
-					const bool        &pwDigested = false)
-				{
-					mongo::BSONObj *mongoBSON = createAuthBSON(dbName, username, password, pwDigested);
-					return mongoBSON ? new repo::core::model::RepoBSON(*mongoBSON) : nullptr;
-				}
+					const ConnectionOptions& options = ConnectionOptions()
+				);
 
 				/*
 				*	------------- Database info lookup --------------
 				*/
-
-				/**
-				* Count the number of documents within the collection
-				* @param database name of database
-				* @param collection name of collection
-				* @param errMsg errMsg if failed
-				* @return number of documents within the specified collection
-				*/
-				uint64_t countItemsInCollection(
-					const std::string &database,
-					const std::string &collection,
-					std::string &errMsg);
 
 				/**
 				* Retrieve documents from a specified collection
@@ -215,66 +155,9 @@ namespace repo {
 				*/
 				std::list<std::string> getCollections(const std::string &database);
 
-				/**
-				 * Get a list of all available databases, alphabetically sorted by default.
-				 * @param sort the database
-				 * @return returns a list of database names
-				 */
-				std::list<std::string> getDatabases(const bool &sorted = true);
-
-				/** get the associated projects for the list of database.
-				 * @param list of database
-				 * @return returns a map of database -> list of projects
-				 */
-				std::map<std::string, std::list<std::string> > getDatabasesWithProjects(
-					const std::list<std::string> &databases,
-					const std::string &projectExt = "history");
-
-				/**
-				 * Get a list of projects associated with a given database (aka company account).
-				 * It will filter out any collections without that isn't *.projectExt
-				 * @param list of database
-				 * @param extension that determines it is a project (scene)
-				 * @return list of projects for the database
-				 */
-				std::list<std::string> getProjects(const std::string &database, const std::string &projectExt);
-
-				/**
-				* Return a list of Admin database roles
-				* @return a vector of Admin database roles
-				*/
-				std::list<std::string> getAdminDatabaseRoles()
-				{
-					return ADMIN_ONLY_DATABASE_ROLES;
-				}
-
-				/**
-				* Return the name of admin database
-				* @return name of admin database
-				*/
-				static std::string getAdminDatabaseName()
-				{
-					return ADMIN_DATABASE;
-				}
-
-				/**
-				* Return a list of standard database roles
-				* @return a vector of standard database roles
-				*/
-				std::list<std::string> getStandardDatabaseRoles()
-				{
-					return ANY_DATABASE_ROLES;
-				}
 				/*
 				*	------------- Database operations (insert/delete/update) --------------
 				*/
-
-				/**
-				* Create a collection with the name specified
-				* @param database name of the database
-				* @param name name of the collection
-				*/
-				virtual void createCollection(const std::string &database, const std::string &name);
 
 				/**
 				* Create an index within the given collection
@@ -282,7 +165,7 @@ namespace repo {
 				* @param name name of the collection
 				* @param index BSONObj specifying the index
 				*/
-				virtual void createIndex(const std::string &database, const std::string &collection, const mongo::BSONObj & obj);
+				virtual void createIndex(const std::string &database, const std::string &collection, const database::index::RepoIndex& index);
 
 				/**
 				* Remove a collection from the database
@@ -290,19 +173,9 @@ namespace repo {
 				* @param collection name of the collection to drop
 				* @param errMsg name of the collection to drop
 				*/
-				bool dropCollection(
+				void dropCollection(
 					const std::string &database,
-					const std::string &collection,
-					std::string &errMsg);
-
-				/**
-				* Remove a database from the mongo database
-				* @param database name of the database to drop
-				* @param errMsg name of the database to drop
-				*/
-				bool dropDatabase(
-					const std::string &database,
-					std::string &errMsg);
+					const std::string &collection);
 
 				/**
 				* Remove a document from the mongo database
@@ -311,63 +184,10 @@ namespace repo {
 				* @param collection name of the collection the document is in
 				* @param errMsg name of the database to drop
 				*/
-				bool dropDocument(
+				void dropDocument(
 					const repo::core::model::RepoBSON bson,
 					const std::string &database,
-					const std::string &collection,
-					std::string &errMsg);
-
-				/**
-				* Remove all documents satisfying a certain criteria
-				* @param criteria document to remove
-				* @param database the database the collection resides in
-				* @param collection name of the collection the document is in
-				* @param errMsg name of the database to drop
-				*/
-				bool dropDocuments(
-					const repo::core::model::RepoBSON criteria,
-					const std::string &database,
-					const std::string &collection,
-					std::string &errMsg);
-
-				/**
-				* Remove a file from raw file storage (gridFS)
-				* @param database the database the collection resides in
-				* @param collection name of the collection the document is in
-				* @param filename name of the file
-				* @param errMsg name of the database to drop
-				*/
-				bool dropRawFile(
-					const std::string &database,
-					const std::string &collection,
-					const std::string &fileName,
-					std::string &errMsg);
-
-				/**
-				* Remove a role from the database
-				* @param role user bson to remove
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				bool dropRole(
-					const repo::core::model::RepoRole &role,
-					std::string                             &errmsg)
-				{
-					return performRoleCmd(OPERATION::DROP, role, errmsg);
-				}
-
-				/**
-				* Remove a user from the database
-				* @param user user bson to remove
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				bool dropUser(
-					const repo::core::model::RepoUser &user,
-					std::string                             &errmsg)
-				{
-					return performUserCmd(OPERATION::DROP, user, errmsg);
-				}
+					const std::string &collection);
 
 				/**
 				 * Insert a single document in database.collection
@@ -377,11 +197,10 @@ namespace repo {
 				 * @param errMsg error message should it fail
 				 * @return returns true upon success
 				 */
-				bool insertDocument(
+				void insertDocument(
 					const std::string &database,
 					const std::string &collection,
-					const repo::core::model::RepoBSON &obj,
-					std::string &errMsg);
+					const repo::core::model::RepoBSON &obj);
 
 				/**
 				* Insert multiple document in database.collection
@@ -391,57 +210,11 @@ namespace repo {
 				* @param errMsg error message should it fail
 				* @return returns true upon success
 				*/
-				virtual bool insertManyDocuments(
+				virtual void insertManyDocuments(
 					const std::string &database,
 					const std::string &collection,
 					const std::vector<repo::core::model::RepoBSON> &obj,
-					std::string &errMsg,
-					const repo::core::model::RepoBSON &metadata = repo::core::model::RepoBSON());
-
-				/**
-				* Insert big raw file in binary format (using GridFS)
-				* @param database name
-				* @param collection name
-				* @param fileName to insert (has to be unique)
-				* @param bin raw binary of the file
-				* @param errMsg error message if it fails
-				* @param contentType the MIME type of the object (optional)
-				* @return returns true upon success
-				*/
-				bool insertRawFile(
-					const std::string          &database,
-					const std::string          &collection,
-					const std::string          &fileName,
-					const std::vector<uint8_t> &bin,
-					std::string          &errMsg,
-					const std::string          &contentType = "binary/octet-stream"
-				);
-
-				/**
-				* Insert a role into the database
-				* @param role role bson to insert
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				bool insertRole(
-					const repo::core::model::RepoRole       &role,
-					std::string                             &errmsg)
-				{
-					return performRoleCmd(OPERATION::INSERT, role, errmsg);
-				}
-
-				/**
-				* Insert a user into the database
-				* @param user user bson to insert
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				bool insertUser(
-					const repo::core::model::RepoUser &user,
-					std::string                             &errmsg)
-				{
-					return performUserCmd(OPERATION::INSERT, user, errmsg);
-				}
+					const Metadata& metadata = {});
 
 				/**
 				* Update/insert a single document in database.collection
@@ -453,55 +226,15 @@ namespace repo {
 				* @param errMsg error message should it fail
 				* @return returns true upon success
 				*/
-				bool upsertDocument(
+				void upsertDocument(
 					const std::string &database,
 					const std::string &collection,
 					const repo::core::model::RepoBSON &obj,
-					const bool        &overwrite,
-					std::string &errMsg);
-
-				/**
-				* Update a role in the database
-				* @param role role bson to update
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				bool updateRole(
-					const repo::core::model::RepoRole       &role,
-					std::string                             &errmsg)
-				{
-					return performRoleCmd(OPERATION::UPDATE, role, errmsg);
-				}
-
-				/**
-				* Update a user in the database
-				* @param user user bson to update
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				bool updateUser(
-					const repo::core::model::RepoUser &user,
-					std::string                             &errmsg)
-				{
-					return performUserCmd(OPERATION::UPDATE, user, errmsg);
-				}
+					const bool        &overwrite);
 
 				/*
 				*	------------- Query operations --------------
 				*/
-
-				/**
-				* Given a list of unique IDs, find all the documents associated to them
-				* @param name of database
-				* @param name of collection
-				* @param array of uuids in a BSON object
-				* @return a vector of RepoBSON objects associated with the UUIDs given
-				*/
-				std::vector<repo::core::model::RepoBSON> findAllByUniqueIDs(
-					const std::string& database,
-					const std::string& collection,
-					const repo::core::model::RepoBSON& uuids,
-					const bool ignoreExtFiles = false);
 
 				/**
 				* Given a search criteria,  find all the documents that passes this query
@@ -513,7 +246,7 @@ namespace repo {
 				std::vector<repo::core::model::RepoBSON> findAllByCriteria(
 					const std::string& database,
 					const std::string& collection,
-					const repo::core::model::RepoBSON& criteria);
+					const database::query::RepoQuery& criteria);
 
 				/**
 				* Given a search criteria,  find one documents that passes this query
@@ -526,7 +259,7 @@ namespace repo {
 				repo::core::model::RepoBSON findOneByCriteria(
 					const std::string& database,
 					const std::string& collection,
-					const repo::core::model::RepoBSON& criteria,
+					const database::query::RepoQuery& criteria,
 					const std::string& sortField = ""
 				);
 
@@ -547,9 +280,9 @@ namespace repo {
 					const std::string& sortField);
 
 				/**
-				*Retrieves the document matching given Unique ID (SID), sorting is descending
+				*Retrieves the document matching given Unique ID
 				* @param database name of database
-				* @param collection name of collectoin
+				* @param collection name of collection
 				* @param uuid share id
 				* @return returns the matching bson object
 				*/
@@ -559,123 +292,49 @@ namespace repo {
 					const repo::lib::RepoUUID& uuid);
 
 				/**
-				* Get raw binary file from database
+				*Retrieves the document matching given Unique ID, where the type of the Id
+				* is a string.
 				* @param database name of database
 				* @param collection name of collection
-				* @param fname name of the file
-				* @return return the raw binary as a vector of uint8_t (if found)
+				* @param uuid share id
+				* @return returns the matching bson object
 				*/
-				std::vector<uint8_t> getRawFile(
+				repo::core::model::RepoBSON findOneByUniqueID(
 					const std::string& database,
 					const std::string& collection,
-					const std::string& fname
-				);
+					const std::string& id);
 
-				/*
-				 *	=============================================================================================
-				 */
+				void setFileManager(std::shared_ptr<repo::core::handler::fileservice::FileManager> manager);
 
-			protected:
-				/*
-				*	=================================== Protected Fields ========================================
+				std::shared_ptr<repo::core::handler::fileservice::FileManager> getFileManager();
+
+				/**
+				* This method performs an arbitrary operation against the database to check
+				* if the connection is available and authenticated. The method is synchronous,
+				* and will throw an exception describing the failure mode if there is one. If
+				* it returns successfully, it means it was possible to communicate with the
+				* database for at least that instant.
+				* A successful check once does not mean the connection cannot be lost in the
+				* future - this check is used mainly to verify the database configuration,
+				* before bouncer gets a long way into an expensive job.
 				*/
-				static MongoDatabaseHandler *handler; /* !the single instance of this class*/
-				/*
-				*	=============================================================================================
-				*/
+				void testConnection();
 
 			private:
-				/*
-				 *	=================================== Private Fields ========================================
-				 */
 
-				 //				connectionPool::MongoConnectionPool *workerPool;
-				mongo::DBClientBase* worker;
+				// We can work with either clients or pool as the top level, connection
+				// specific, container for getting connections. pool pool is threadsafe,
+				// but acquring a client is implied to not be cheap, so for now cache a
+				//client on starting up.
+				std::unique_ptr<mongocxx::pool> clientPool;
 
-				/*!
-				 * Map holding database name as key and <username, password digest> as a
-				 * value. User can be authenticated on any number of databases on a single
-				 * connection.
-				 */
-				std::map<std::string, std::pair<std::string, std::string> > databasesAuthentication;
-
-				void initWorker(
-					const mongo::ConnectionString &dbAddress,
-					const mongo::BSONObj *auth
-				);
-
-				mongo::ConnectionString dbAddress; /* !address of the database (host:port)*/
-
-				/*
-				 *	=============================================================================================
-				 */
-
-				 /*
-				  *	=================================== Private Functions ========================================
-				  */
-
-				  /**
-				   * Constructor is private because this class follows the singleton pattern
-				   * @param dbAddress ConnectionString that holds the address to the mongo database
-				   * @param maxConnections max. number of connections to the database
-				   * @param username user name for authentication (optional)
-				   * @param password password of the user (optional)
-				   * @param pwDigested true if pw is digested (optional)
-				   */
-				MongoDatabaseHandler(
-					const mongo::ConnectionString &dbAddress,
-					const uint32_t                &maxConnections,
-					const std::string             &dbName,
-					const std::string             &username = std::string(),
-					const std::string             &password = std::string(),
-					const bool                    &pwDigested = false);
-
-				/**
-				* Constructor is private because this class follows the singleton pattern
-				* @param dbAddress ConnectionString that holds the address to the mongo database
-				* @param maxConnections max. number of connections to the database
-				* @param dbName authentication database
-				* @param cred credentials
-				*/
-				MongoDatabaseHandler(
-					const mongo::ConnectionString &dbAddress,
-					const uint32_t                &maxConnections,
-					const std::string             &dbName,
-					const model::RepoBSON         *cred);
-
-				/**
-				* Generates a mongo BSON object for authentication
-				* @param database database to authenticate against
-				* @param username user name for authentication
-				* @param password password of the user
-				* @param pwDigested true if pw is digested
-				* @return returns the constructed BSON object, or 0 if username is empty
-				*/
-				static mongo::BSONObj* createAuthBSON(
-					const std::string &database,
-					const std::string &username,
-					const std::string &password,
-					const bool        &pwDigested);
-				/**
-				* Turns a list of fields that needs to be returned by the query into a bson
-				* object.
-				* @param list of field names to return
-				* @param ID field is excluded by default unless explicitly stated in the list.
-				*/
-				mongo::BSONObj fieldsToReturn(
-					const std::list<std::string>& fields,
-					bool excludeIdField = false);
-
-				/**
-				 * Extract collection name from namespace (db.collection)
-				 * @param namespace as string
-				 * @return returns a string with just the collection name
-				 */
-				std::string getCollectionFromNamespace(const std::string &ns);
+				// The fileManager is used in the storage of certain member types, such
+				// as large vectors of binary data. It must be set using setFileManager
+				// before documents containing such members are uploaded.
+				std::shared_ptr<repo::core::handler::fileservice::FileManager> fileManager;
 
 				/**
 				* Get large file off GridFS
-				* @param worker the worker to operate with
 				* @param database database that it is stored in
 				* @param collection collection that it is stored in
 				* @param fileName file name in GridFS
@@ -705,36 +364,15 @@ namespace repo {
 				std::string getProjectFromCollection(const std::string &ns, const std::string &projectExt);
 
 				/**
-				* Perform command on the user
-				* @param op (insert, drop or update)
-				* @param role user to modify
-				* @param errMsg error message if failed
-				* @return returns true upon success
-				*/
-				bool performRoleCmd(
-					const OPERATION                         &op,
-					const repo::core::model::RepoRole       &role,
-					std::string                             &errMsg);
-
-				/**
-				* Perform command on the user
-				* @param op (insert, drop or update)
-				* @param user user to modify
-				* @param errMsg error message if failed
-				* @return returns true upon success
-				*/
-				bool performUserCmd(
-					const OPERATION                         &op,
-					const repo::core::model::RepoUser &user,
-					std::string                       &errMsg);
-
-				/**
 				* Compares two strings.
 				* @param string 1
 				* @param string 2
 				* @return returns true if string 1 matches (or is greater than) string 2
 				*/
 				static bool caseInsensitiveStringCompare(const std::string& s1, const std::string& s2);
+
+				class MongoDatabaseHandlerException;
+				friend MongoDatabaseHandlerException;
 
 				/*
 				*	=========================================================================================

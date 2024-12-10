@@ -73,7 +73,7 @@ namespace repo {
 					const bool                                    &headRevision = true,
 					const bool                                    &ignoreRefScenes = false,
 					const bool                                    &skeletonFetch = false,
-					const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus = {});
+					const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus = {});
 
 				repo::core::model::RepoScene* fetchScene(
 					repo::core::handler::AbstractDatabaseHandler *handler,
@@ -173,15 +173,6 @@ namespace repo {
 
 			private:
 				/**
-				* Generate a gltf encoding in the form of a buffer for the given scene
-				* This requires the stash to have been generated already
-				* @param scene the scene to generate the gltf encoding from
-				* @return returns a buffer in the form of a byte vector mapped to its filename
-				*/
-				repo_web_buffers_t generateGLTFBuffer(
-					repo::core::model::RepoScene *scene);
-
-				/**
 				* Generate a SRC encoding in the form of a buffer for the given scene
 				* This requires the stash to have been generated already
 				* @param scene the scene to generate the src encoding from
@@ -198,7 +189,7 @@ namespace repo {
 				* an error and return an empty buffers object.
 				*/
 				repo_web_buffers_t generateRepoBundleBuffer(
-					repo::core::model::RepoScene* scene);				
+					repo::core::model::RepoScene* scene);
 			};
 		}
 	}

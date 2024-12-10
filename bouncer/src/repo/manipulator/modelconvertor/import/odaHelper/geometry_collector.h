@@ -17,11 +17,12 @@
 
 #pragma once
 
-#include "../../../../error_codes.h"
+#include "repo/error_codes.h"
 #include "../repo_model_units.h"
-#include "../../../../core/model/bson/repo_bson_factory.h"
-#include "../../../../lib/datastructure/repo_structs.h"
-#include "../../../../lib/datastructure/repo_variant.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/lib/datastructure/repo_structs.h"
+#include "repo/lib/datastructure/repo_variant.h"
+#include "repo/lib/datastructure/repo_bounds.h"
 #include "helper_functions.h"
 #include "vertex_map.h"
 
@@ -34,21 +35,9 @@ namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
-				struct camera_t
-				{
-					float aspectRatio;
-					float farClipPlane;
-					float nearClipPlane;
-					float FOV;
-					repo::lib::RepoVector3D eye;
-					repo::lib::RepoVector3D pos;
-					repo::lib::RepoVector3D up;
-					std::string name;
-				};
-
 				struct mesh_data_t {
 					std::vector<repo_face_t> faces;
-					std::vector<std::vector<float>> boundingBox;
+					repo::lib::RepoBounds boundingBox;
 					VertexMap vertexMap;
 					std::string name;
 					std::string layerName;
@@ -196,12 +185,6 @@ namespace repo {
 					}
 
 					/**
-					* Change current meta node to the one provided
-					* @param meta node
-					*/
-					void setCurrentMeta(const std::map<std::string, repo::lib::RepoVariant>& meta);
-
-					/**
 					* Get all meta nodes collected.
 					* @return returns a vector of meta nodes
 					*/
@@ -212,23 +195,6 @@ namespace repo {
 					* @param transformation matrix for rootNode
 					*/
 					void setRootMatrix(repo::lib::RepoMatrix matrix);
-
-					/**
-					* Set additional camera for scene
-					* @param camera node
-					*/
-					void addCameraNode(repo::manipulator::modelconvertor::odaHelper::camera_t node);
-
-					/**
-					* Returns true if cameras are available
-					*/
-					bool hasCameraNodes();
-
-					/**
-					* Get cameras for scene
-					* @return cameras
-					*/
-					repo::core::model::RepoNodeSet getCameraNodes(repo::lib::RepoUUID parentID);
 
 					/**
 					* Create transformation root node
@@ -268,7 +234,6 @@ namespace repo {
 					bool missingTextures = false;
 					int errorCode = REPOERR_OK;
 					repo::lib::RepoMatrix rootMatrix;
-					std::vector<repo::manipulator::modelconvertor::odaHelper::camera_t> cameras;
 
 					/**
 					* Add a face to the current mesh. This method should only be called by one of the overloads above.

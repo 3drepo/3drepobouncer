@@ -15,12 +15,11 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "repo_scene_manager.h"
-
-#include "../../core/model/bson/repo_bson_builder.h"
-#include "../../core/model/bson/repo_bson_ref.h"
+#include "repo/core/model/bson/repo_bson_builder.h"
+#include "repo/core/model/bson/repo_bson_ref.h"
+#include "repo/core/model/bson/repo_bson_teamspace.h"
 #include "../../error_codes.h"
 #include "../modeloptimizer/repo_optimizer_multipart.h"
-#include "../modelconvertor/export/repo_model_export_gltf.h"
 #include "../modelconvertor/export/repo_model_export_src.h"
 #include "../modeloptimizer/repo_optimizer_multipart.h"
 #include "../modelutility/repo_maker_selection_tree.h"
@@ -77,20 +76,12 @@ bool SceneManager::commitWebBuffers(
 
 	if (!resultBuffers.repoAssets.isEmpty())
 	{
-		if (success &= handler->upsertDocument(databaseName, projectName + "." + repoAssetsStashExt, resultBuffers.repoAssets,
-			true, errMsg))
-		{
-			repoInfo << "Assets list added successfully.";
-		}
-		else
-		{
-			repoError << "Failed to add assets list: " << errMsg;;
-		}
+		handler->upsertDocument(databaseName, projectName + "." + repoAssetsStashExt, resultBuffers.repoAssets, true);
 	}
 
 	if (success)
 	{
-		scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
+		scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE);
 		if (addTimestampToSettings)
 		{
 			scene->addTimestampToProjectSettings(handler);
@@ -162,7 +153,7 @@ uint8_t SceneManager::commitScene(
 
 			if (success) {
 				errCode = REPOERR_OK;
-				scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
+				scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE);
 			}
 			else {
 				errCode = REPOERR_UPLOAD_FAILED;
@@ -190,7 +181,7 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 	const bool                                    &headRevision,
 	const bool                                    &ignoreRefScenes,
 	const bool                                    &skeletonFetch,
-	const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus)
+	const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus)
 {
 	repo::core::model::RepoScene* scene = nullptr;
 	if (handler)
@@ -221,7 +212,7 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 				{
 					repoTrace << "Loaded Scene";
 				}
-				else 
+				else
 				{
 					delete scene;
 					scene = nullptr;
@@ -328,10 +319,6 @@ bool SceneManager::generateWebViewBuffers(
 
 		switch (exType)
 		{
-		case repo::manipulator::modelconvertor::WebExportType::GLTF:
-			geoStashExt = REPO_COLLECTION_STASH_GLTF;
-			resultBuffers = generateGLTFBuffer(scene);
-			break;
 		case repo::manipulator::modelconvertor::WebExportType::SRC:
 			geoStashExt = REPO_COLLECTION_STASH_SRC;
 			resultBuffers = generateSRCBuffer(scene);
@@ -365,22 +352,6 @@ bool SceneManager::generateWebViewBuffers(
 	return success;
 }
 
-repo_web_buffers_t SceneManager::generateGLTFBuffer(
-	repo::core::model::RepoScene *scene)
-{
-	repo_web_buffers_t result;
-	repo::manipulator::modelconvertor::GLTFModelExport gltfExport(scene);
-	if (gltfExport.isOk())
-	{
-		repoTrace << "Conversion succeed.. exporting as buffer..";
-		result = gltfExport.getAllFilesExportedAsBuffer();
-	}
-	else
-		repoError << "Export to GLTF failed.";
-
-	return result;
-}
-
 bool SceneManager::generateAndCommitSelectionTree(
 	repo::core::model::RepoScene                           *scene,
 	repo::core::handler::AbstractDatabaseHandler           *handler,
@@ -389,7 +360,7 @@ bool SceneManager::generateAndCommitSelectionTree(
 	bool success = false;
 	if (success = scene && scene->isRevisioned() && handler)
 	{
-		scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_SEL_TREE);
+		scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::GEN_SEL_TREE);
 		SelectionTreeMaker treeMaker(scene);
 		auto buffer = treeMaker.getSelectionTreeAsBuffer();
 
@@ -426,7 +397,7 @@ bool SceneManager::generateAndCommitSelectionTree(
 			repoError << "Failed to generate selection tree: JSON file buffer is empty!";
 		}
 
-		if (success) scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
+		if (success) scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE);
 	}
 	else
 	{
@@ -475,15 +446,9 @@ repo_web_buffers_t SceneManager::generateRepoBundleBuffer(
 }
 
 bool isAddOnEnabled(repo::core::handler::AbstractDatabaseHandler *handler, const std::string &database, const std::string addOn) {
-	auto teamspaceSetting = handler->findOneByCriteria(database, "teamspace", BSON("_id" << database));
-	if (teamspaceSetting.hasField("addOns")) {
-		auto addOns = teamspaceSetting.getObjectField("addOns");
-		if (addOns.hasField(addOn)) {
-			return addOns.getBoolField(addOn);
-		}
-	}
 
-	return false;
+	auto teamspace = repo::core::model::RepoTeamspace(handler->findOneByUniqueID(database, "teamspace", database));
+	return teamspace.isAddOnEnabled(addOn);
 }
 
 bool SceneManager::isVrEnabled(

@@ -42,7 +42,6 @@
 #define REPO_SYSTEM_ROLES           "system.roles"      //!< Roles collection
 
 #define REPO_LABEL_ID               "_id"
-#define REPO_LABEL_OVERSIZED_FILES  "_extRef" // legacy schema for referencing external binaries inside bson (deprecated after ISSUE #626)
 #define REPO_LABEL_BINARY_REFERENCE  "_blobRef" // New version of REPO_LABEL_OVERSIZED_FILES see ISSUE #626
 #define REPO_LABEL_BINARY_ELEMENTS  "elements" // part of REPO_LABEL_BINARY_REFERENCE
 #define REPO_LABEL_BINARY_BUFFER    "buffer" // part of REPO_LABEL_BINARY_REFERENCE
@@ -81,6 +80,13 @@
 // Vertex/triangle map propeties
 #define REPO_LABEL_MERGED_NODES     "merged_nodes"
 
+// Drawing calibration properties
+#define REPO_LABEL_DRAWING			"drawing"
+#define REPO_LABEL_REVISION			"rev_id"
+#define REPO_LABEL_CREATEDAT		"createdAt"
+#define	REPO_LABEL_HORIZONTAL		"horizontal"
+#define	REPO_LABEL_UNITS			"units"
+
 #define REPO_COMMAND_UPDATE         "update"
 #define REPO_COMMAND_UPDATES        "updates"
 #define REPO_COMMAND_DELETE         "delete"
@@ -96,15 +102,16 @@
 #define REPO_COLLECTION_SCENE           "scene"
 #define REPO_COLLECTION_STASH_REPO      "stash.3drepo"
 #define REPO_COLLECTION_STASH_SRC       "stash.src"
-#define REPO_COLLECTION_STASH_GLTF      "stash.gltf"
-#define REPO_COLLECTION_STASH_X3D       "stash.x3d"
+#define REPO_COLLECTION_STASH_GLTF      "stash.gltf" // This collection is no longer used but may still exist in the database
+#define REPO_COLLECTION_STASH_X3D       "stash.x3d" // This collection is no longer used but may still exist in the database
 #define REPO_COLLECTION_STASH_JSON      "stash.json_mpc"
-#define REPO_COLLECTION_STASH_UNITY     "stash.unity3d" // This collection is no longer used but may still exist in the databse
+#define REPO_COLLECTION_STASH_UNITY     "stash.unity3d" // This collection is no longer used but may still exist in the database
 #define REPO_COLLECTION_STASH_BUNDLE    "stash.repobundles"
 #define REPO_COLLECTION_EXT_REF         "ref"
 #define REPO_COLLECTION_SEQUENCE        "sequences"
 #define REPO_COLLECTION_TASK            "activities"
 #define REPO_COLLECTION_DRAWINGS		"drawings.history"
+#define REPO_COLLECTION_CALIBRATIONS	"drawings.calibrations"
 
 #define REPO_COLLECTION_SETTINGS            "settings"
 
@@ -187,7 +194,6 @@
 
 #define REPO_NODE_TYPE_ANIMATION		"animation"
 #define REPO_NODE_TYPE_BONE				"bone"
-#define REPO_NODE_TYPE_CAMERA			"camera"
 #define REPO_NODE_TYPE_COMMENT			"comment"
 #define REPO_NODE_TYPE_LIGHT			"light"
 #define REPO_NODE_TYPE_LOCK				"lock"
@@ -215,3 +221,4 @@
 #define REPO_ASSETS_LABEL_PRIMITIVE		"primitive"
 #define REPO_ASSETS_LABEL_MIN			"min"
 #define REPO_ASSETS_LABEL_MAX			"max"
+#define REPO_ASSETS_LABEL_METADATA      "metadata"

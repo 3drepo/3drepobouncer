@@ -17,6 +17,7 @@
 
 #include <gtest/gtest.h>
 #include <cstdlib>
+#include <repo/core/model/bson/repo_bson_factory.h>
 #include <repo/manipulator/modelutility/repo_mesh_map_reorganiser.h>
 #include <repo/manipulator/modeloptimizer/repo_optimizer_multipart.h>
 #include <limits>
@@ -26,8 +27,6 @@
 using namespace repo::test::utils::mesh;
 using namespace repo::manipulator::modelutility;
 using namespace repo::manipulator::modeloptimizer;
-
-#pragma optimize("", off)
 
 TEST(MeshMapReorganiser, VeryLargeMesh)
 {
@@ -39,7 +38,7 @@ TEST(MeshMapReorganiser, VeryLargeMesh)
 	repo::core::model::RepoNodeSet meshes, trans;
 	trans.insert(root);
 	meshes.insert(createRandomMesh(327890, false, 3, { rootID }));
-	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, {}, meshes, {}, {}, {}, trans);
+	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, {}, {}, {}, trans);
 	opt.apply(scene);
 
 	auto supermesh = (repo::core::model::SupermeshNode*)*scene->getAllSupermeshes(repo::core::model::RepoScene::GraphType::OPTIMIZED).begin();
@@ -61,7 +60,7 @@ TEST(MeshMapReorganiser, VeryLargeMesh)
 	auto ids = remapped.getSubmeshIds();
 	auto end = std::unique(ids.begin(), ids.end());
 	auto count = end - ids.begin();
-	EXPECT_EQ(count, 1); 
+	EXPECT_EQ(count, 1);
 
 	// The supermesh should be split into six chunks (with the same submesh ids)
 
@@ -107,7 +106,7 @@ TEST(MeshMapReorganiser, MultipleTinyMeshes)
 		meshes.insert(createRandomMesh(NUM_VERTICES, false, 3, { rootID }));
 	}
 
-	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, {}, meshes, {}, {}, {}, trans);
+	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, {}, {}, {}, trans);
 	opt.apply(scene);
 
 	auto supermesh = (repo::core::model::SupermeshNode*)*scene->getAllSupermeshes(repo::core::model::RepoScene::GraphType::OPTIMIZED).begin();
@@ -187,7 +186,7 @@ TEST(MeshMapReorganiser, InterleavedMixedSplit)
 
 	const int NUM_SUBMESHES = 6;
 
-	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, {}, meshes, {}, {}, {}, trans);
+	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, {}, {}, {}, trans);
 	opt.apply(scene);
 
 	auto supermesh = (repo::core::model::SupermeshNode*)*scene->getAllSupermeshes(repo::core::model::RepoScene::GraphType::OPTIMIZED).begin();
