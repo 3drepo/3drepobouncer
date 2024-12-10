@@ -32,20 +32,8 @@
 using namespace repo::core::model;
 using namespace testing;
 
-/**
-* Construct from mongo builder and mongo bson should give me the same bson
-*/
-TEST(RepoBSONElementTest, ConstructorTest)
-{
-	RepoBSONElement empty;
-	EXPECT_THAT(empty.eoo(), IsTrue());
-}
-
 TEST(RepoBSONElementTest, TypeTest)
 {
-	RepoBSONElement empty;
-	EXPECT_EQ(ElementType::UNKNOWN, empty.type());
-
 	RepoBSONBuilder objectBuilder;
 	objectBuilder.append("name", "subobject");
 	auto object = objectBuilder.obj();
@@ -63,7 +51,7 @@ TEST(RepoBSONElementTest, TypeTest)
 	builder.appendTime("date", time_t); // Must use appendTime here because time_t will be seen first as a int64_t unless explicitly converted to a mongo::Date_t
 	builder.append("double", (double)1);
 	builder.append("int", (int)1);
-	builder.append("long", (long long)1);
+	builder.append("long", (int64_t)1);
 	builder.append("object", object);
 	builder.append("string", "a string");
 
@@ -84,7 +72,7 @@ TEST(RepoBSONElementTest, TypeTest)
 	EXPECT_THAT(bson.getField("date").Tm(), Eq(time_tm));
 	EXPECT_THAT(bson.getField("double").Double(), Eq((double)1));
 	EXPECT_THAT(bson.getField("int").Int(), Eq((int)1));
-	EXPECT_THAT(bson.getField("long").Long(), Eq((long long)1));
+	EXPECT_THAT(bson.getField("long").Long(), Eq((int64_t)1));
 	EXPECT_THAT(bson.getField("object").Object(), Eq(object));
 	EXPECT_THAT(bson.getField("string").String(), Eq("a string"));
 
@@ -106,29 +94,6 @@ TEST(RepoBSONElementTest, TypeTest)
 	EXPECT_THAT(boost::get<tm>(bson.getField("date").repoVariant()), Eq(time_tm));
 	EXPECT_THAT(boost::get<double>(bson.getField("double").repoVariant()), Eq((double)1));
 	EXPECT_THAT(boost::get<int>(bson.getField("int").repoVariant()), Eq((int)1));
-	EXPECT_THAT(boost::get<long long>(bson.getField("long").repoVariant()), Eq((long long)1));
+	EXPECT_THAT(boost::get<int64_t>(bson.getField("long").repoVariant()), Eq((int64_t)1));
 	EXPECT_THAT(boost::get<std::string>(bson.getField("string").repoVariant()), Eq("a string"));
-}
-
-TEST(RepoBSONElementTest, ArrayTest)
-{
-	RepoBSONElement empty;
-
-	auto elementArrEmpty = empty.Array();
-
-	EXPECT_EQ(0, elementArrEmpty.size());
-
-	std::vector<int> intVect = { 1, 2, 3, 4, 5, 6, 7, 8 };
-
-	RepoBSONBuilder builder;
-	builder.appendArray("intArr", intVect);
-
-	auto bson = builder.obj();
-	auto intEleArr = bson.getField("intArr").Array();
-	ASSERT_EQ(intEleArr.size(), intVect.size());
-	for (int i = 0; i < intEleArr.size(); ++i)
-	{
-		EXPECT_EQ(ElementType::INT, intEleArr[i].type());
-		EXPECT_EQ(intEleArr[i].Int(), intVect[i]);
-	}
 }

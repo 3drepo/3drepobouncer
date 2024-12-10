@@ -42,10 +42,8 @@ MetadataNode::~MetadataNode()
 void MetadataNode::deserialise(RepoBSON& bson)
 {
 	if (bson.hasField(REPO_NODE_LABEL_METADATA)) {
-		auto arr = bson.getObjectField(REPO_NODE_LABEL_METADATA);
-		auto names = arr.getFieldNames();
-		for (auto& n : names) {
-			auto field = arr.getObjectField(n);
+		auto metadata = bson.getObjectArray(REPO_NODE_LABEL_METADATA);
+		for (auto& field : metadata) {
 			auto key = field.getStringField(REPO_NODE_LABEL_META_KEY);
 			metadataMap[key] = field.getField(REPO_NODE_LABEL_META_VALUE).repoVariant();
 		}

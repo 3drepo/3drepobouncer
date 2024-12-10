@@ -106,15 +106,6 @@ int main(int argc, char* argv[]) {
 	{
 		std::string errMsg;
 		try {
-			// Validate the config file
-			try {
-				repo::lib::RepoConfig::fromFile(configPath);
-			}
-			catch (std::exception& e) {
-				repoLogError("Failed to read configuration from file: " + configPath + " : " + e.what());
-				return REPOERR_INVALID_CONFIG_FILE;
-			}
-
 			auto config = repo::lib::RepoConfig::fromFile(configPath);
 			repo::RepoController::RepoToken* token = controller->init(errMsg, config);
 			if (token)
@@ -131,8 +122,14 @@ int main(int argc, char* argv[]) {
 				return REPOERR_AUTH_FAILED;
 			}
 		}
-		catch (const repo::lib::RepoException &e) {
-			repoLogError(std::string("Exception in performOperation: ") + e.what());
+		catch (const repo::lib::RepoException &e)
+		{
+			repoError << e.printFull();
+			return e.repoCode();
+		}
+		catch (const std::exception& e) // We expect all exceptions to be nested inside a RepoException, so this is only really a last ditch fallback
+		{
+			repoError << e.what() << std::endl;
 			return REPOERR_UNKNOWN_ERR;
 		}
 	}

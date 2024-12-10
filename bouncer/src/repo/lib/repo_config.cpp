@@ -25,32 +25,39 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/filesystem.hpp>
+
 using namespace repo::lib;
+
+class RepoConfigException : public RepoException
+{
+public:
+	RepoConfigException(const std::string& msg)
+		: RepoException(msg)
+	{
+		errorCode = REPOERR_INVALID_CONFIG_FILE;
+	}
+};
 
 RepoConfig::RepoConfig(
 	const std::string &databaseAddr,
 	const int &port,
 	const std::string &username,
-	const std::string &password,
-	const bool pwDigested) : defaultStorage(FileStorageEngine::FS)
+	const std::string &password) : defaultStorage(FileStorageEngine::FS)
 {
 	dbConf.addr = databaseAddr;
 	dbConf.port = port;
 	dbConf.username = username;
 	dbConf.password = password;
-	dbConf.pwDigested = pwDigested;
 }
 
 RepoConfig::RepoConfig(
 	const std::string &connString,
 	const std::string &username,
-	const std::string &password,
-	const bool pwDigested) : defaultStorage(FileStorageEngine::FS)
+	const std::string &password) : defaultStorage(FileStorageEngine::FS)
 {
 	dbConf.connString = connString;
 	dbConf.username = username;
 	dbConf.password = password;
-	dbConf.pwDigested = pwDigested;
 }
 
 void RepoConfig::configureFS(
@@ -66,47 +73,48 @@ void RepoConfig::configureFS(
 }
 
 RepoConfig RepoConfig::fromFile(const std::string &filePath) {
-	boost::property_tree::ptree jsonTree;
-	try {
+	try
+	{
+		boost::property_tree::ptree jsonTree;
 		boost::property_tree::read_json(filePath, jsonTree);
+
+		//Read database configurations
+		auto dbTree = jsonTree.get_child_optional("db");
+		if (!dbTree) {
+			throw RepoException("Cannot find entry 'db' within configuration file.");
+		}
+
+		auto dbAddr = dbTree->get<std::string>("dbhost", "");
+		auto dbPort = dbTree->get<int>("dbport", -1);
+		auto dbConn = dbTree->get<std::string>("connectionString", "");
+		auto username = dbTree->get<std::string>("username", "");
+		auto password = dbTree->get<std::string>("password", "");
+
+		auto useHostAndPort = !dbAddr.empty() && dbPort > 0;
+		if (!useHostAndPort && dbConn.empty()) {
+			throw RepoException("Database address and port not specified within configuration file.");
+		}
+
+		repo::lib::RepoConfig config = useHostAndPort ? RepoConfig(dbAddr, dbPort, username, password) : RepoConfig(dbConn, username, password);
+
+		auto useAsDefault = jsonTree.get<std::string>("defaultStorage", "");
+
+		//Read FS configuirations if found
+		auto fsTree = jsonTree.get_child_optional("fs");
+
+		if (fsTree) {
+			auto path = fsTree->get<std::string>("path", "");
+			auto level = fsTree->get<int>("level", REPO_CONFIG_FS_DEFAULT_LEVEL);
+			if (!path.empty())
+				config.configureFS(path, level, useAsDefault == "fs" || useAsDefault.empty());
+		}
+
+		return config;
 	}
-	catch (const std::exception &e) {
-		throw RepoException("Failed to read configuration file [" + filePath + "] : " + e.what());
+	catch (...)
+	{
+		std::throw_with_nested(RepoConfigException("Exception reading RepoConfig: " + filePath));
 	}
-
-	//Read database configurations
-	auto dbTree = jsonTree.get_child_optional("db");
-
-	if (!dbTree) {
-		throw RepoException("Cannot find entry 'db' within configuration file.");
-	}
-
-	auto dbAddr = dbTree->get<std::string>("dbhost", "");
-	auto dbPort = dbTree->get<int>("dbport", -1);
-	auto dbConn = dbTree->get<std::string>("connectionString", "");
-	auto username = dbTree->get<std::string>("username", "");
-	auto password = dbTree->get<std::string>("password", "");
-
-	auto useHostAndPort = !dbAddr.empty() && dbPort > 0;
-	if (!useHostAndPort && dbConn.empty()) {
-		throw RepoException("Database address and port not specified within configuration file.");
-	}
-
-	repo::lib::RepoConfig config = useHostAndPort ? RepoConfig(dbAddr, dbPort, username, password) : RepoConfig(dbConn, username, password);
-
-	auto useAsDefault = jsonTree.get<std::string>("defaultStorage", "");
-
-	//Read FS configuirations if found
-	auto fsTree = jsonTree.get_child_optional("fs");
-
-	if (fsTree) {
-		auto path = fsTree->get<std::string>("path", "");
-		auto level = fsTree->get<int>("level", REPO_CONFIG_FS_DEFAULT_LEVEL);
-		if (!path.empty())
-			config.configureFS(path, level, useAsDefault == "fs" || useAsDefault.empty());
-	}
-
-	return config;
 }
 
 bool RepoConfig::validate() const {

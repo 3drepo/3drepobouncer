@@ -3,11 +3,12 @@
 add_subdirectory(src)
 
 set(VERSION_MAJOR 5)
-set(VERSION_MINOR 12_1)
+set(VERSION_MINOR 13_0)
 
 include_directories(
-	${Boost_INCLUDE_DIRS}
-	${MONGO_INCLUDE_DIR}
+	${MONGO_CXX_DRIVER_MONGO_INCLUDE_DIR}
+	${MONGO_CXX_DRIVER_BSON_INCLUDE_DIR}
+	${Boost_INCLUDE_DIR}
 	${ASSIMP_INCLUDE_DIR}
 	${OCCT_INCLUDE_DIR}
 	${IFCOPENSHELL_INCLUDE_DIR}
@@ -15,8 +16,10 @@ include_directories(
 	${SYNCHRO_READER_INCLUDE_DIR}
 	${AWSSDK_INCLUDE_DIR}
 	${CRYPTOLENS_INCLUDE_DIR}
-src ../
+	src
+	../
 )
+
 add_definitions(-DREPO_API_LIBRARY)
 
 add_library(3drepobouncer SHARED ${SOURCES})
@@ -25,7 +28,7 @@ set_target_properties(3drepobouncer PROPERTIES DEBUG_POSTFIX "_${VERSION_MAJOR}_
 
 target_link_libraries(3drepobouncer
 	${Boost_LIBRARIES}
-	${MONGO_LIBRARIES}
+	${MONGO_CXX_DRIVER_LIBRARIES}
 	${ASSIMP_LIBRARIES}
 	${OCCT_LIBRARIES}
 	${IFCOPENSHELL_PARSERLIB}
@@ -43,4 +46,3 @@ target_link_libraries(3drepobouncer
 
 install(DIRECTORY src/ DESTINATION include FILES_MATCHING PATTERN "*.h")
 install(TARGETS 3drepobouncer DESTINATION lib)
-

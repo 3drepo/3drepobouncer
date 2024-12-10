@@ -28,8 +28,8 @@ RepoTask::RepoTask(
 	const repo::lib::RepoUUID& uniqueId,
 	const repo::lib::RepoUUID& parentId,
 	const repo::lib::RepoUUID& sequenceId,
-	const long long& startTime,
-	const long long& endTime,
+	const int64_t& startTime,
+	const int64_t& endTime,
 	const std::vector<repo::lib::RepoUUID>& resources,
 	const std::unordered_map<std::string, std::string>& metadata
 ):
@@ -62,8 +62,8 @@ RepoTask::operator RepoBSON() const
 
 	builder.append(REPO_LABEL_ID, uniqueId);
 	builder.append(REPO_TASK_LABEL_NAME, name);
-	builder.append(REPO_TASK_LABEL_START, (long long)startTime);
-	builder.append(REPO_TASK_LABEL_END, (long long)endTime);
+	builder.append(REPO_TASK_LABEL_START, (int64_t)startTime);
+	builder.append(REPO_TASK_LABEL_END, (int64_t)endTime);
 	builder.append(REPO_TASK_LABEL_SEQ_ID, sequenceId);
 
 	if (!parentId.isDefaultValue())
@@ -87,7 +87,7 @@ RepoTask::operator RepoBSON() const
 
 			metaBuilder.append(REPO_TASK_META_KEY, key);
 			try {
-				long long valueInt = boost::lexical_cast<long long>(value);
+				int64_t valueInt = boost::lexical_cast<int64_t>(value);
 				metaBuilder.append(REPO_TASK_META_VALUE, valueInt);
 			}
 			catch (boost::bad_lexical_cast&)

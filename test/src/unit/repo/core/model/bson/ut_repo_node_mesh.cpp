@@ -106,7 +106,7 @@ TEST(MeshNodeTest, Serialise)
 	EXPECT_THAT(((RepoBSON)node).getStringField(REPO_NODE_LABEL_NAME), Eq(node.getName()));
 
 	node.setVertices(makeVertices(100), true);
-	EXPECT_THAT(((RepoBSON)node).getBounds3D(REPO_NODE_MESH_LABEL_BOUNDING_BOX), ElementsAreArray(node.getBoundingBox()));
+	EXPECT_THAT(((RepoBSON)node).getBoundsField(REPO_NODE_MESH_LABEL_BOUNDING_BOX), Eq(node.getBoundingBox()));
 	EXPECT_THAT(((RepoBSON)node).getIntField(REPO_NODE_MESH_LABEL_VERTICES_COUNT), Eq(node.getNumVertices()));
 	std::vector<repo::lib::RepoVector3D> vertices;
 	((RepoBSON)node).getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_VERTICES, vertices);
@@ -377,7 +377,7 @@ TEST(MeshNodeTest, CloneAndApplyTransformation)
 	MeshNode changedMesh = mesh.cloneAndApplyTransformation(notId);
 	EXPECT_THAT(changedMesh.getVertices(), Not(ElementsAreArray(mesh.getVertices())));
 	EXPECT_THAT(changedMesh.getNormals(), Not(ElementsAreArray(mesh.getNormals())));
-	EXPECT_THAT(changedMesh.getBoundingBox(), Not(ElementsAreArray(mesh.getBoundingBox())));
+	EXPECT_THAT(changedMesh.getBoundingBox(), Not(Eq(mesh.getBoundingBox())));
 
 	MeshNode empty;
 	MeshNode newEmpty = empty.cloneAndApplyTransformation(identity);
@@ -386,7 +386,11 @@ TEST(MeshNodeTest, CloneAndApplyTransformation)
 
 TEST(MeshNodeTest, TransformBoundingBox)
 {
-	auto vertices = std::vector<repo::lib::RepoVector3D>({
+	// Do this whole test using 64 bit vectors so we don't worry about
+	// false positives due to quantisation error. Any real use that
+	// uses floats should be aware of this.
+
+	auto vertices = std::vector<repo::lib::RepoVector3D64>({
 		{  1,  0,  0 },
 		{  0,  1,  0 },
 		{  0,  0,  1 },
@@ -418,14 +422,14 @@ TEST(MeshNodeTest, TransformBoundingBox)
 	// It should always encompass the AABB however (never allow a false negative
 	// in a bounds test).
 
-	EXPECT_THAT(bb[0], VectorLe(tight[0]));
-	EXPECT_THAT(bb[1], VectorGe(tight[1]));
+	EXPECT_THAT(bb.min(), VectorLe(tight.min()));
+	EXPECT_THAT(bb.max(), VectorGe(tight.max()));
 
 	// The exception to this is when the AABB is a perfect fit (i.e. there is
 	// at least one vertex in every corner).
 	// Check this case as well.
 
-	vertices = std::vector<repo::lib::RepoVector3D>({
+	vertices = std::vector<repo::lib::RepoVector3D64>({
 		{  0,  0,  0 },
 		{  0,  0,  1 },
 		{  0,  1,  1 },
