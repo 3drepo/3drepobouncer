@@ -15,8 +15,6 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define NOMINMAX
-
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest-matchers.h>
@@ -159,24 +157,18 @@ RepoBSON repo::test::utils::mesh::meshNodeTestBSONFactory(mesh_data data)
 
 	if (data.boundingBox.size() > 0)
 	{
-		RepoBSONBuilder arrayBuilder;
-		for (int i = 0; i < data.boundingBox.size(); i++)
-		{
-			arrayBuilder.appendArray(std::to_string(i), data.boundingBox[i]);
-		}
-
-		builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, arrayBuilder.obj());
+		builder.append(REPO_NODE_MESH_LABEL_BOUNDING_BOX, data.boundingBox);
 	}
 
 	if (data.vertices.size() > 0)
 	{
-		builder.append(REPO_NODE_MESH_LABEL_VERTICES_COUNT, (uint32_t)(data.vertices.size()));
+		builder.append(REPO_NODE_MESH_LABEL_VERTICES_COUNT, (int32_t)(data.vertices.size()));
 		builder.appendLargeArray(REPO_NODE_MESH_LABEL_VERTICES, data.vertices);
 	}
 
 	if (data.faces.size() > 0)
 	{
-		builder.append(REPO_NODE_MESH_LABEL_FACES_COUNT, (uint32_t)(data.faces.size()));
+		builder.append(REPO_NODE_MESH_LABEL_FACES_COUNT, (int32_t)(data.faces.size()));
 
 		// In API LEVEL 1, faces are stored as
 		// [n1, v1, v2, ..., n2, v1, v2...]
@@ -246,7 +238,7 @@ RepoBSON repo::test::utils::mesh::meshNodeTestBSONFactory(mesh_data data)
 		if (concatenated.size() > 0)
 		{
 			// Could be unsigned __int64 if BSON had such construct (the closest is only __int64)
-			builder.append(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT, (uint32_t)(data.uvChannels.size()));
+			builder.append(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT, (int32_t)(data.uvChannels.size()));
 			builder.appendLargeArray(REPO_NODE_MESH_LABEL_UV_CHANNELS, concatenated);
 		}
 	}
@@ -309,16 +301,24 @@ std::vector<repo_face_t> repo::test::utils::mesh::makeFaces(MeshNode::Primitive 
 	return faces;
 }
 
-std::vector<repo::lib::RepoVector3D> repo::test::utils::mesh::getBoundingBox(std::vector< repo::lib::RepoVector3D> vertices)
+repo::lib::RepoBounds repo::test::utils::mesh::getBoundingBox(std::vector< repo::lib::RepoVector3D> vertices)
 {
-	repo::lib::RepoVector3D min = repo::lib::RepoVector3D(FLT_MAX, FLT_MAX, FLT_MAX);
-	repo::lib::RepoVector3D max = repo::lib::RepoVector3D(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	repo::lib::RepoBounds bounds;
 	for (auto& v : vertices)
 	{
-		min = repo::lib::RepoVector3D::min(min, v);
-		max = repo::lib::RepoVector3D::max(max, v);
+		bounds.encapsulate(v);
 	}
-	return std::vector<repo::lib::RepoVector3D>({ min, max });
+	return bounds;
+}
+
+repo::lib::RepoBounds repo::test::utils::mesh::getBoundingBox(std::vector<repo::lib::RepoVector3D64> vertices)
+{
+	repo::lib::RepoBounds bounds;
+	for (auto& v : vertices)
+	{
+		bounds.encapsulate(v);
+	}
+	return bounds;
 }
 
 repo::test::utils::mesh::mesh_data::mesh_data(

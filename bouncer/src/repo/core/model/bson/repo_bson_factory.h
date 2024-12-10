@@ -166,7 +166,7 @@ namespace repo {
 					const std::vector<repo::lib::RepoVector3D>& vertices,
 					const std::vector<repo_face_t>& faces,
 					const std::vector<repo::lib::RepoVector3D>& normals,
-					const std::vector<std::vector<float>>& boundingBox,
+					const repo::lib::RepoBounds& boundingBox,
 					const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels = {},
 					const std::string& name = std::string(),
 					const std::vector<repo::lib::RepoUUID>& parents = {});
@@ -175,7 +175,7 @@ namespace repo {
 					const std::vector<repo::lib::RepoVector3D>& vertices,
 					const std::vector<repo_face_t>& faces,
 					const std::vector<repo::lib::RepoVector3D>& normals,
-					const std::vector<std::vector<float>>& boundingBox,
+					const repo::lib::RepoBounds& boundingBox,
 					const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
 					const std::string& name,
 					const std::vector<repo_mesh_mapping_t>& mappings
@@ -185,7 +185,7 @@ namespace repo {
 					const std::vector<repo::lib::RepoVector3D>& vertices,
 					const std::vector<repo_face_t>& faces,
 					const std::vector<repo::lib::RepoVector3D>& normals,
-					const std::vector<std::vector<float>>& boundingBox,
+					const repo::lib::RepoBounds& boundingBox,
 					const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
 					const std::vector<repo_mesh_mapping_t>& mappings,
 					const repo::lib::RepoUUID& id,

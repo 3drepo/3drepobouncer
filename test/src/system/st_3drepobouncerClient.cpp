@@ -28,6 +28,7 @@
 #include "../unit/repo_test_database_info.h"
 #include "../unit/repo_test_utils.h"
 #include <repo/core/model/bson/repo_bson_builder.h>
+#include <repo/core/handler/database/repo_expressions.h>
 #include <unordered_set>
 
 using namespace testing;
@@ -649,10 +650,9 @@ TEST(RepoClientTest, GenStashTest)
 
 	// Drop collections from the existing imports so we know any changes are due to this test.
 
-	std::string error;
-	handler->dropCollection("genStashTest", "cube.stash.repobundles", error);
-	handler->dropCollection("genStashTest", "cube.stash.repobundles.ref", error);
-	handler->dropCollection("genStashTest", "cube.stash.json_mpc.ref", error);
+	handler->dropCollection("genStashTest", "cube.stash.repobundles");
+	handler->dropCollection("genStashTest", "cube.stash.repobundles.ref");
+	handler->dropCollection("genStashTest", "cube.stash.json_mpc.ref");
 
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("genStashTest", "cube", "repo")));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("genStashTest", "cube", "src")));
@@ -671,17 +671,14 @@ TEST(RepoClientTest, GenStashTest)
 
 	// Now check for the tree
 
-	repo::core::model::RepoBSONBuilder revisionCriteria;
-	revisionCriteria.append("type", "revision");
+	using namespace repo::core::handler::database;
 
-	auto revisions = handler->findAllByCriteria("genStashTest", "cube.history", revisionCriteria.obj());
+	auto revisions = handler->findAllByCriteria("genStashTest", "cube.history", query::Eq("type", std::string("revision")));
 
 	EXPECT_EQ(revisions.size(), 1);
 
 	auto revisionId = revisions[0].getUUIDField("_id").toString();
-	repo::core::model::RepoBSONBuilder builder;
-	builder.append("_id", revisionId + "/fulltree.json");
-	auto documents = handler->findAllByCriteria("genStashTest", "cube.stash.json_mpc.ref", builder.obj());
+	auto documents = handler->findAllByCriteria("genStashTest", "cube.stash.json_mpc.ref", query::Eq("_id", revisionId + "/fulltree.json"));
 	EXPECT_EQ(documents.size(), 1);
 
 	delete controller;
@@ -713,7 +710,7 @@ TEST(RepoClientTest, ProcessDrawing)
 	revisionBuilder.appendArray("rFile", rFiles);
 
 	// Make sure that the file manager uses the same config as produceProcessDrawingArgs
-	auto manager = repo::core::handler::fileservice::FileManager::instantiateManager(repo::lib::RepoConfig::fromFile(getConnConfig()), handler);
+	auto manager = handler->getFileManager();
 
 	// Get a DWG as a blob
 	auto path = getDataPath(dwgDrawing);
@@ -736,8 +733,7 @@ TEST(RepoClientTest, ProcessDrawing)
 		db,
 		REPO_COLLECTION_DRAWINGS,
 		revisionBuilder.obj(),
-		true,
-		err
+		true
 	);
 
 	EXPECT_EQ(err.size(), 0);
@@ -776,15 +772,10 @@ TEST(RepoClientTest, ProcessDrawing)
 	EXPECT_EQ(imageRef.getType(), repo::core::model::RepoRef::RefType::FS);
 	EXPECT_EQ(imageRef.getFileName(), "test.svg"); // The image should have its file extension changed
 
-	// And via the node directly
-	repo::core::model::RepoBSONBuilder builder;
-	builder.append(REPO_LABEL_ID, revision.getUUIDField("image"));
-	auto criteria = builder.obj();
-
-	auto refNode = handler->findOneByCriteria(
+	auto refNode = handler->findOneByUniqueID(
 		db,
 		REPO_COLLECTION_DRAWINGS + std::string(".ref"),
-		criteria
+		revision.getUUIDField("image")
 	);
 
 	EXPECT_EQ(refNode.getStringField("type"), "fs");

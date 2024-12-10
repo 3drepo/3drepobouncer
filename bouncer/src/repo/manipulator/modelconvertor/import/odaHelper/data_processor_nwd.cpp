@@ -168,7 +168,7 @@ void setMetadataValue(const std::string& category, const std::string& key, const
 void setMetadataValue(const std::string& category, const OdString& key, const OdUInt64& uint, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	std::string keyString = convertToStdString(key);
-	repo::lib::RepoVariant v = static_cast<long long>(uint); // Potentially losing precision here, but mongo does not accept uint64
+	repo::lib::RepoVariant v = static_cast<int64_t>(uint); // Potentially losing precision here, but mongo does not accept uint64
 	setMetadataValueVariant(category, keyString, v, metadata);
 }
 
@@ -198,7 +198,7 @@ bool DataProcessorNwd::tryConvertMetadataProperty(std::string key, OdNwDataPrope
 		case NwDataType::dt_INT32: {
 			OdNwVariant odvar;
 			metaProperty->getValue(odvar);
-			v = static_cast<long long>(odvar.getInt32()); // Incoming is long, convert it to long long since int won't fit.
+			v = static_cast<int64_t>(odvar.getInt32()); // Incoming is long, convert it to long long since int won't fit.
 			break;
 		}
 		case NwDataType::dt_BOOL: {

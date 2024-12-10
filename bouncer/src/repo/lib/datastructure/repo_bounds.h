@@ -15,16 +15,38 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #pragma once
 
-#include <string>
-#include "boost/variant.hpp"
-#include <ctime>
-#include "repo_uuid.h"
+#include "repo/repo_bouncer_global.h"
+#include <repo/lib/datastructure/repo_vector.h>
 
 namespace repo {
 	namespace lib {
-		typedef boost::variant<bool, int, int64_t, double, std::string, tm, RepoUUID> RepoVariant;
+
+		/*
+		* Represents a bounding box in 3D
+		*/
+		REPO_API_EXPORT class RepoBounds
+		{
+		public:
+			RepoBounds();
+			RepoBounds(const RepoVector3D64& min, const RepoVector3D64& max);
+			RepoBounds(const RepoVector3D& min, const RepoVector3D& max);
+
+			// Expands the bounds to include the point
+			void encapsulate(const RepoVector3D64& p);
+			void encapsulate(const RepoBounds& other);
+
+			bool operator==(const RepoBounds& other) const;
+
+			const RepoVector3D64& min() const;
+			const RepoVector3D64& max() const;
+
+			RepoVector3D64 size() const;
+
+		private:
+			RepoVector3D64 bmin;
+			RepoVector3D64 bmax;
+		};
 	}
 }

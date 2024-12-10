@@ -16,10 +16,12 @@
 */
 #include <regex>
 #include "repo_file_manager.h"
-#include "../../../lib/repo_exception.h"
-#include "../../model/repo_model_global.h"
-#include "../../model/bson/repo_bson_builder.h"
-#include "../../model/bson/repo_bson_factory.h"
+#include "repo/core/handler/repo_database_handler_abstract.h"
+#include "repo/lib/repo_exception.h"
+#include "repo/core/model/repo_model_global.h"
+#include "repo/core/model/bson/repo_bson.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/core/model/bson/repo_bson_builder.h"
 #include "repo_file_handler_fs.h"
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
@@ -29,21 +31,23 @@
 
 using namespace repo::core::handler::fileservice;
 
-FileManager* FileManager::manager = nullptr;
-
-FileManager* FileManager::getManager() {
-	if (!manager) throw repo::lib::RepoException("Trying to get File manager before it's instantiated!");
-
-	return manager;
+FileManager::FileManager(
+	const repo::lib::RepoConfig& config,
+	std::weak_ptr<AbstractDatabaseHandler> handler)
+	:dbHandler(handler)
+{
+	auto fsConfig = config.getFSConfig();
+	if (fsConfig.configured) {
+		fsHandler = std::make_shared<FSFileHandler>(fsConfig.dir, fsConfig.nLevel);
+	}
+	else {
+		throw repo::lib::RepoException("Filestore configuration must be provided.");
+	}
 }
 
-FileManager* FileManager::instantiateManager(
-	const repo::lib::RepoConfig &config,
-	repo::core::handler::AbstractDatabaseHandler *dbHandler
-) {
-	if (manager) disconnect();
-
-	return manager = new FileManager(config, dbHandler);
+std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> FileManager::getDbHandler()
+{
+	return dbHandler.lock();
 }
 
 template<typename IdType>
@@ -91,14 +95,14 @@ bool FileManager::uploadFileAndCommit(
 		break;
 	}
 
-	auto linkName = defaultHandler->uploadFile(databaseName, collectionNamePrefix, fileUUID.toString(), *fileContents);
+	auto linkName = fsHandler->uploadFile(databaseName, collectionNamePrefix, fileUUID.toString(), *fileContents);
 	if (success = !linkName.empty()) {
 		success = upsertFileRef(
 			databaseName,
 			collectionNamePrefix,
 			id,
 			linkName,
-			defaultHandler->getType(),
+			fsHandler->getType(),
 			fileContents->size(),
 			fileMetadata);
 	}
@@ -121,12 +125,12 @@ bool FileManager::deleteFileAndRef(
 	const std::string                            &fileName)
 {
 	bool success = true;
-	repo::core::model::RepoBSON criteria = BSON(REPO_LABEL_ID << cleanFileName(fileName));
 
-	repo::core::model::RepoBSON node = dbHandler->findOneByCriteria(
+	repo::core::model::RepoBSON node = getDbHandler()->findOneByUniqueID(
 		databaseName,
 		collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
-		criteria);
+		cleanFileName(fileName)
+	);
 
 	if (node.isEmpty())
 	{
@@ -169,12 +173,11 @@ repo::core::model::RepoRefT<std::string> FileManager::getFileRef(
 	const std::string                            &databaseName,
 	const std::string                            &collectionNamePrefix,
 	const std::string                            &fileName) {
-	repo::core::model::RepoBSON criteria = BSON(REPO_LABEL_ID << cleanFileName(fileName));
 	return repo::core::model::RepoRefT<std::string>(
-		dbHandler->findOneByCriteria(
+		getDbHandler()->findOneByUniqueID(
 			databaseName,
 			collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
-			criteria
+			cleanFileName(fileName)
 		)
 	);
 }
@@ -183,14 +186,11 @@ repo::core::model::RepoRefT<repo::lib::RepoUUID> FileManager::getFileRef(
 	const std::string& databaseName,
 	const std::string& collectionNamePrefix,
 	const repo::lib::RepoUUID& id) {
-	repo::core::model::RepoBSONBuilder builder;
-	builder.append(REPO_LABEL_ID, id);
-	auto criteria = builder.obj();
 	return repo::core::model::RepoRefT<repo::lib::RepoUUID>(
-		dbHandler->findOneByCriteria(
+		getDbHandler()->findOneByUniqueID(
 			databaseName,
 			collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
-			criteria
+			id
 		)
 	);
 }
@@ -264,24 +264,6 @@ std::string FileManager::getFilePath(
 	return fsHandler->getFilePath(ref.getRefLink());
 }
 
-FileManager::FileManager(
-	const repo::lib::RepoConfig &config,
-	repo::core::handler::AbstractDatabaseHandler *dbHandler
-) : dbHandler(dbHandler) {
-	if (!dbHandler)
-		throw repo::lib::RepoException("Trying to instantiate FileManager with a nullptr to database!");
-
-	auto fsConfig = config.getFSConfig();
-	if (fsConfig.configured) {
-		fsHandler = std::make_shared<FSFileHandler>(fsConfig.dir, fsConfig.nLevel);
-		if (config.getDefaultStorageEngine() == repo::lib::RepoConfig::FileStorageEngine::FS)
-			defaultHandler = fsHandler;
-	}
-	else {
-		throw repo::lib::RepoException("Filestore configuration must be provided.");
-	}
-}
-
 std::string FileManager::cleanFileName(
 	const std::string &fileName)
 {
@@ -302,21 +284,19 @@ bool FileManager::dropFileRef(
 	const std::string                            &databaseName,
 	const std::string                            &collectionNamePrefix)
 {
-	std::string errMsg;
-	bool success = true;
-
 	std::string collectionName = collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF;
 
-	if (success = dbHandler->dropDocument(bson, databaseName, collectionName, errMsg))
-	{
-		repoInfo << "File ref for " << collectionName << " dropped.";
+	try {
+		getDbHandler()->dropDocument(bson, databaseName, collectionName);
 	}
-	else
+	catch (const repo::lib::RepoException& e)
 	{
-		repoError << "Failed to drop " << collectionName << " file ref: " << errMsg;;
+		repoError << e.printFull();
+		return false;
 	}
 
-	return success;
+	repoInfo << "File ref for " << collectionName << " dropped.";
+	return true;
 }
 
 repo::core::model::RepoRefT<std::string> FileManager::makeRefNode(
@@ -349,18 +329,18 @@ bool FileManager::upsertFileRef(
 	const uint32_t                               &size,
 	const repo::core::model::RepoRef::Metadata   &metadata)
 {
-	std::string errMsg;
-	bool success = true;
-
-	auto refObj = makeRefNode(id, link, type, size, metadata);
-	std::string collectionName = collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF;
-	success = dbHandler->upsertDocument(databaseName, collectionName, refObj, true, errMsg);
-	if (!success)
+	try
 	{
-		repoError << "Failed to add " << collectionName << " file ref: " << errMsg;;
+		auto refObj = makeRefNode(id, link, type, size, metadata);
+		std::string collectionName = collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF;
+		getDbHandler()->upsertDocument(databaseName, collectionName, refObj, true);
 	}
-
-	return success;
+	catch (const repo::lib::RepoException& e)
+	{
+		repoError << e.printFull(); // Let the explicit error handling take over from here
+		return false;
+	}
+	return true;
 }
 
 // Explicit instantations for the two possible fileName types

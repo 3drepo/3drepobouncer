@@ -19,6 +19,7 @@
 #include <repo/core/handler/repo_database_handler_mongo.h>
 #include <repo/core/handler/fileservice/repo_file_manager.h>
 #include <repo/lib/datastructure/repo_vector.h>
+#include <repo/lib/datastructure/repo_bounds.h>
 #include <repo/lib/repo_config.h>
 #include <boost/filesystem.hpp>
 
@@ -31,6 +32,7 @@ const static std::string REPO_GTEST_DBPW = "3drepotest";
 const static std::string REPO_GTEST_DBNAME1 = "sampleDataReadOnly";
 const static std::string REPO_GTEST_DBNAME2 = "sampleDataReadOnly2";
 const static std::string REPO_GTEST_DBNAME3 = "sandbox";
+const static std::string REPO_GTEST_DBNAME4 = "testMongoDatabaseHandler";
 const static std::string REPO_GTEST_DBNAME1_PROJ = "3drepoBIM";
 const static std::string REPO_GTEST_DBNAME2_PROJ = "sphere";
 const static std::string REPO_GTEST_DBNAME1_FED = "fedTest";
@@ -38,6 +40,7 @@ const static std::string REPO_GTEST_DBNAME_ROLEUSERTEST = "sampleDataRWRolesUser
 const static std::string REPO_GTEST_DBNAME_FILE_MANAGER = "testFileManager";
 
 const static std::string REPO_GTEST_COLNAME_FILE_MANAGER = "testFileUpload";
+const static std::string REPO_GTEST_COLNAME_GOLDEN1 = "golden1";
 
 const static std::string connectionConfig = "config/config.json";
 
@@ -120,12 +123,6 @@ const static std::string genFedDB = "genFedTest";
 const static std::string genFedNoSubProName = "noSubPro";
 const static std::string genFedSuccessName = "fedTest";
 
-const static mongo::BSONObj REPO_GTEST_DROPROLETEST = BSON("db" << REPO_GTEST_DBNAME_ROLEUSERTEST << "role" << "dropRoleTest");
-const static mongo::BSONObj REPO_GTEST_DROPUSERTEST = BSON("db" << "admin" << "user" << "dropUserTest");
-const static mongo::BSONObj REPO_GTEST_UPDATEROLETEST = BSON("db" << REPO_GTEST_DBNAME_ROLEUSERTEST << "role" << "updateRole");
-const static mongo::BSONObj REPO_GTEST_UPDATEUSERTEST = BSON("db" << "admin" << "user" << "updateUserTest");
-const static std::vector<repo::lib::RepoUUID> uuidsToSearch = { repo::lib::RepoUUID("0ab45528-9258-421a-927c-c51bf40fc478"), repo::lib::RepoUUID("126f9de3-c942-4d66-862a-16cc4f11841b") };
-
 const static std::pair<std::string, std::string> REPO_GTEST_DROPCOL_TESTCASE = { "sampleDataRW", "collectionToDrop" };
 const static std::string REPO_GTEST_RAWFILE_FETCH_TEST = "gridFSFile";
 const static size_t REPO_GTEST_RAWFILE_FETCH_SIZE = 1024;
@@ -138,9 +135,9 @@ repo::lib::RepoConfig getConfig();
 
 std::string getDataPath(const std::string& file);
 
-repo::core::handler::MongoDatabaseHandler* getHandler();
+std::shared_ptr<repo::core::handler::MongoDatabaseHandler> getHandler();
 
-std::vector<repo::lib::RepoVector3D> getGoldenDataForBBoxTest();
+repo::lib::RepoBounds getGoldenDataForBBoxTest();
 
 /*
 * Get expected #items in collection count within testCases
@@ -154,8 +151,13 @@ std::vector<std::string> getCollectionList(
 	const std::string& databaseName
 );
 
-std::pair <std::pair<std::string, std::string>, mongo::BSONObj> getCollectionStats();
+struct GoldenDocument
+{
+	repo::lib::RepoUUID _id;
+	int32_t counter;
+	std::string name;
+	std::vector<uint8_t> myData1;
+	std::vector<uint8_t> myData2;
+};
 
-std::pair<std::pair<std::string, std::string>, repo::core::model::RepoBSON> getDataForDropCase();
-
-std::pair<std::pair<std::string, std::string>, std::vector<std::string>> getGoldenForGetAllFromCollectionTailable();
+std::vector<GoldenDocument> getGoldenData();

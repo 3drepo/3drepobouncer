@@ -27,11 +27,11 @@ Doxygen documentation can be found [here](http://3drepo.github.io/3drepobouncer/
 Dependencies
 ------------
 3DRepoBouncer relies on the following libraries:
-* [Boost Library v1.55.0 - v1.60.0](http://www.boost.org/)  
+* [Boost Library v1.59.0 - v1.86.0](http://www.boost.org/)
 See also [pre-built binaries for Windows](http://sourceforge.net/projects/boost/files/boost-binaries/)
 and [modular Boost](https://svn.boost.org/trac/boost/wiki/ModularBoost)
 on [GitHub](https://github.com/boostorg)
-* [Mongo CXX Driver Legacy v1.0+](https://github.com/mongodb/mongo-cxx-driver)
+* [Mongo CXX Driver v3.11+](https://www.mongodb.com/docs/languages/cpp/cpp-driver/)
 See [3D Repo guide for compiling MongoDB](https://github.com/3drepo/3drepobouncer/wiki/Compiling-MongoDB-CXX-Driver)
 * [ASSIMP](https://github.com/assimp/assimp)
 See [3D Repo guide for compiling ASSIMP](https://github.com/3drepo/3drepobouncer/wiki/Compiling-ASSIMP)
@@ -60,11 +60,11 @@ The following instruction is for compiling a 64bit library using Visual Studio 1
 In command line prompt:
 set the following environmental variables to the directories of your installations:
 * `$env:BOOST_ROOT = path_to_boost`
-* `$env:BOOST_LIBRARYDIR = path_to_boost_libraries (i.e path_to_boost\lib64-msvc-12.0)` (NOT REQUIRED if libraries are in `$BOOST_ROOT/lib`) 
+* `$env:BOOST_LIBRARYDIR = path_to_boost_libraries (i.e path_to_boost\lib64-msvc-12.0)` (NOT REQUIRED if libraries are in `$BOOST_ROOT/lib`)
 * `$env:MONGO_ROOT = path_to_mongo_cxx_driver`
 * `$env:ASSIMP_ROOT = path_to_assimp`
 * `$env:OCCT_ROOT = path_to_occt`
-* `$env:OCCT_LIB_DIR = path_to_occt_libraries (e.g path_to_occt\win64\vc14\lib)` (NOT REQUIRED if libraries are in `$OCCT_ROOT/lib`) 
+* `$env:OCCT_LIB_DIR = path_to_occt_libraries (e.g path_to_occt\win64\vc14\lib)` (NOT REQUIRED if libraries are in `$OCCT_ROOT/lib`)
 * `$env:IFCOPENSHELL_ROOT = path_to_ifcOpenShell`
 
 You will also require the following if you are building with `ODA_SUPPORT` checked:

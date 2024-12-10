@@ -33,6 +33,14 @@
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_abstract.h"
 
 namespace repo {
+	namespace core {
+	namespace handler {
+		class MongoDatabaseHandler;
+	namespace fileservice {
+		class FileManager;
+	}
+	}
+	}
 	namespace manipulator {
 		class RepoManipulator
 		{
@@ -48,29 +56,12 @@ namespace repo {
 			* @param owner specify the owner of the scene (by default it is the user authorised to commit)
 			*/
 			uint8_t commitScene(
-				const std::string                     &databaseAd,
 				const std::string                     &user,
-				const std::string                     &bucketName,
-				const std::string                     &bucketRegion,
 				repo::core::model::RepoScene          *scene,
 				const std::string                     &owner = "",
 				const std::string                     &tag = "",
 				const std::string                     &desc = "",
 				const repo::lib::RepoUUID             &revId = repo::lib::RepoUUID::createUUID());
-
-			/**
-			* Create a bson object storing user credentials
-			* @param databaseAd mongo database address:port
-			* @param username user name
-			* @param password password of the user
-			* @param pwDigested is the password provided in digested form (default: false)
-			* @return returns true upon success
-			*/
-			repo::core::model::RepoBSON* createCredBSON(
-				const std::string &databaseAd,
-				const std::string &username,
-				const std::string &password,
-				const bool        &pwDigested);
 
 			/**
 			* Create a federated scene with the given scene collections
@@ -81,15 +72,7 @@ namespace repo {
 				const std::map<repo::core::model::ReferenceNode, std::string> &fedMap);
 
 			/**
-			* Disconnects from the given database host
-			* @param databaseAd database address:port
-			*/
-			void disconnectFromDatabase(const std::string &databaseAd);
-
-			/**
 			* Retrieve a RepoScene with a specific revision loaded.
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
 			* @param database the database the collection resides in
 			* @param project name of the project
 			* @param uuid if headRevision, uuid represents the branch id,
@@ -100,11 +83,9 @@ namespace repo {
 			* @return returns a pointer to a repoScene.
 			*/
 			repo::core::model::RepoScene* fetchScene(
-				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON             *cred,
 				const std::string                             &database,
 				const std::string                             &collection,
-				const repo::lib::RepoUUID                                &uuid,
+				const repo::lib::RepoUUID                     &uuid,
 				const bool                                    &headRevision = false,
 				const bool                                    &ignoreRefScene = false,
 				const bool                                    &skeletonFetch = false,
@@ -112,14 +93,9 @@ namespace repo {
 
 			/**
 			* Retrieve all RepoScene representations given a partially loaded scene.
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
 			* @param scene scene to fully load
 			*/
-
 			void fetchScene(
-				const std::string                         &databaseAd,
-				const repo::core::model::RepoBSON         *cred,
 				repo::core::model::RepoScene              *scene,
 				const bool                                &ignoreRefScene = false,
 				const bool                                &skeletonFetch = false);
@@ -128,67 +104,43 @@ namespace repo {
 			* Generate and commit scene's selection tree in JSON format
 			* The generated data will be
 			* also commited to the database/project set within the scene
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
 			* @param scene scene to optimise
 			* @param return true upon success
 			*/
 			bool generateAndCommitSelectionTree(
-				const std::string                     &databaseAd,
-				const repo::core::model::RepoBSON     *cred,
-				const std::string                     &bucketName,
-				const std::string                     &bucketRegion,
 				repo::core::model::RepoScene          *scene
 			);
 
 			/**
 			* Generate and commit a `exType` encoding for the given scene
 			* This requires the stash to have been generated already
-			* @param databaseAd database address:portdatabase
-			* @param cred user credentials in bson form
 			* @param scene the scene to generate the src encoding from
 			* @param buffers buffers that are geneated and commited
 			* @param exType the type of export it is
 			* @return returns true upon success
 			*/
 			bool generateAndCommitWebViewBuffer(
-				const std::string                     &databaseAd,
-				const repo::core::model::RepoBSON     *cred,
-				const std::string                     &bucketName,
-				const std::string                     &bucketRegion,
 				repo::core::model::RepoScene          *scene,
 				repo_web_buffers_t                    &buffers,
 				const modelconvertor::WebExportType   &exType);
 
 			/**
 			* Generate and commit RepoBundles for the given scene
-			* @param databaseAd database address:portdatabase
-			* @param cred user credentials in bson form
 			* @param scene the scene to generate the repobundles encoding from
 			* @return returns true upon success
 			*/
 
 			bool generateAndCommitRepoBundlesBuffer(
-				const std::string& databaseAd,
-				const repo::core::model::RepoBSON* cred,
-				const std::string& bucketName,
-				const std::string& bucketRegion,
 				repo::core::model::RepoScene* scene);
 
 			/**
 			* Generate and commit a SRC encoding for the given scene
 			* This requires the stash to have been generated already
-			* @param databaseAd database address:portdatabase
-			* @param cred user credentials in bson form
 			* @param scene the scene to generate the src encoding from
 			* @return returns true upon success
 			*/
 			bool generateAndCommitSRCBuffer(
-				const std::string                     &databaseAd,
-				const repo::core::model::RepoBSON     *cred,
-				const std::string                     &bucketName,
-				const std::string                     &bucketRegion,
-				repo::core::model::RepoScene          *scene);
+				repo::core::model::RepoScene *scene);
 
 			/**
 			* Generate a SRC encoding in the form of a buffer for the given scene
@@ -214,8 +166,6 @@ namespace repo {
 			* due to limitations of the transfer protocol this might need
 			* to be called multiple times, utilising the skip index to skip
 			* the first n items.
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
 			* @param collection name of collection
 			* @param skip specify how many documents to skip
 			* @param limit limits the max amount of documents to retrieve (0 = no limit)
@@ -223,7 +173,6 @@ namespace repo {
 			*/
 			std::vector<repo::core::model::RepoBSON>
 				getAllFromCollectionTailable(
-					const std::string                             &databaseAd,
 					const std::string                             &database,
 					const std::string                             &collection,
 					const uint64_t                                &skip = 0,
@@ -234,8 +183,6 @@ namespace repo {
 			* due to limitations of the transfer protocol this might need
 			* to be called multiple times, utilising the skip index to skip
 			* the first n items.
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
 			* @param collection name of collection
 			* @param fields fields to get back from the database
 			* @param sortField field to sort upon
@@ -246,8 +193,6 @@ namespace repo {
 			*/
 			std::vector<repo::core::model::RepoBSON>
 				getAllFromCollectionTailable(
-					const std::string                             &databaseAd,
-					const repo::core::model::RepoBSON             *cred,
 					const std::string                             &database,
 					const std::string                             &collection,
 					const std::list<std::string>				  &fields,
@@ -280,14 +225,10 @@ namespace repo {
 
 			/**
 			* Check if a given scene is VR Enabled
-			* @param databaseAd database address:portdatabase
-			* @param cred user credentials in bson form
 			* @param scene the given scene
 			* @return returns true if the scene is VR enabled
 			*/
 			bool isVREnabled(
-				const std::string                       &databaseAd,
-				const repo::core::model::RepoBSON       *cred,
 				const repo::core::model::RepoScene      *scene) const;
 
 			/**
@@ -320,7 +261,6 @@ namespace repo {
 			* Initialise the image of a drawing revision from its rfile
 			*/
 			void processDrawingRevision(
-				const std::string databaseAd,
 				const std::string& teamspace,
 				const lib::RepoUUID revision,
 				uint8_t& error,
@@ -347,17 +287,14 @@ namespace repo {
 			* @param maxConnections maxmimum number of concurrent connections allowed to the database
 			* @param username user name
 			* @param password password of the user
-			* @param pwDigested is the password provided in digested form (default: false)
 			* @return returns true upon success
 			*/
-			bool connectAndAuthenticateWithAdmin(
-				std::string       &errMsg,
+			void connectAndAuthenticateWithAdmin(
 				const std::string &address,
 				const uint32_t    &port,
 				const uint32_t    &maxConnections,
 				const std::string &username,
-				const std::string &password,
-				const bool        &pwDigested = false
+				const std::string &password
 			);
 			/**
 			* Connect to the given database address/port and authenticat the user using Admin database
@@ -366,17 +303,16 @@ namespace repo {
 			* @param maxConnections maxmimum number of concurrent connections allowed to the database
 			* @param username user name
 			* @param password password of the user
-			* @param pwDigested is the password provided in digested form (default: false)
 			* @return returns true upon success
 			*/
-			bool connectAndAuthenticateWithAdmin(
-				std::string       &errMsg,
+			void connectAndAuthenticateWithAdmin(
 				const std::string &connString,
 				const uint32_t    &maxConnections,
 				const std::string &username,
-				const std::string &password,
-				const bool        &pwDigested = false
+				const std::string &password
 			);
+
+			std::shared_ptr<repo::core::handler::MongoDatabaseHandler> dbHandler;
 		};
 	}
 }
