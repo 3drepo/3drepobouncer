@@ -34,6 +34,7 @@ if(DEFINED ENV{MONGO_ROOT})
 	find_library(MONGO_CXX_DRIVER
 		NAMES
 			mongocxx
+			mongocxx-v_noabi-rhs-x64-v142-md
 		PATHS
 			${MONGO_CXX_DRIVER_ROOT}/lib
 	)
@@ -41,6 +42,7 @@ if(DEFINED ENV{MONGO_ROOT})
 	find_library(MONGO_CXX_BSON
 		NAMES
 			bsoncxx
+			bsoncxx-v_noabi-rhs-x64-v142-md
 		PATHS
 			${MONGO_CXX_DRIVER_ROOT}/lib
 	)

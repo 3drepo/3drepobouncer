@@ -129,6 +129,38 @@ TEST(MongoDatabaseHandlerTest, GetHandler)
 		EXPECT_TRUE(handler);
 		EXPECT_THROW(handler->testConnection(), std::exception);
 	}
+
+	// This case tests when we provide a connection string, including existing
+	// options. The test should succeed.
+	{
+		// This connection string includes an option, but expects the username and
+		// password to be provided.
+		std::string connectionString = "mongodb://" + REPO_GTEST_DBADDRESS + ":" + std::to_string(REPO_GTEST_DBPORT) + "/?authSource=admin";
+		auto handler = MongoDatabaseHandler::getHandler(
+			connectionString,
+			REPO_GTEST_DBUSER,
+			REPO_GTEST_DBPW,
+			options
+		);
+		EXPECT_TRUE(handler);
+		EXPECT_NO_THROW(handler->testConnection());
+	}
+
+	// This case tests when we provide a connection string, including existing
+	// options. The test should succeed.
+	{
+		// This connection string includes the username and password,
+		// so those in the config should be ignored.
+		std::string connectionString = "mongodb://" + REPO_GTEST_DBUSER + ":" + REPO_GTEST_DBPW + "@" + REPO_GTEST_DBADDRESS + ":" + "27017" + "/?authSource=admin";
+		auto handler = MongoDatabaseHandler::getHandler(
+			connectionString,
+			"invalidUser",
+			"invalidPassword",
+			options
+		);
+		EXPECT_TRUE(handler);
+		EXPECT_NO_THROW(handler->testConnection());
+	}
 }
 
 // Equality operator for use by GetAllFromCollectionTailable
