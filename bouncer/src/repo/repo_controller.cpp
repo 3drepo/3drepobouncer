@@ -195,6 +195,13 @@ void RepoController::reduceTransformations(
 	impl->reduceTransformations(token, scene);
 }
 
+void RepoController::updateRevisionStatus(
+	repo::core::model::RepoScene* scene,
+	const repo::core::model::ModelRevisionNode::UploadStatus& status)
+{
+	impl->updateRevisionStatus(scene, status);
+}
+
 bool RepoController::isVREnabled(const RepoController::RepoToken *token,
 	const repo::core::model::RepoScene *scene)
 {

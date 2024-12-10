@@ -410,3 +410,11 @@ void RepoManipulator::reduceTransformations(
 		repoError << "RepoController::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";
 	}
 }
+
+void RepoManipulator::updateRevisionStatus(
+	repo::core::model::RepoScene* scene,
+	const ModelRevisionNode::UploadStatus& status
+)
+{
+	scene->updateRevisionStatus(dbHandler.get(), status);
+}

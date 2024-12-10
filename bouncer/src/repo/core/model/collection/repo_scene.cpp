@@ -607,8 +607,11 @@ uint8_t RepoScene::commit(
 		}
 	}
 
-	if (success) updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE);
-	//Create and Commit revision node
+	// Create and Commit revision node. The new node will have a status of
+	// GEN_DEFAULT. The caller should perform the final steps to generate
+	// the stash and reset the upload status before the scene will become
+	// visible.
+
 	repoInfo << "Succes: " << success << " msg: " << errMsg;
 	return success ? REPOERR_OK : (errMsg.find("exceeds maxBsonObjectSize") != std::string::npos ? REPOERR_MAX_NODES_EXCEEDED : REPOERR_UPLOAD_FAILED);
 }

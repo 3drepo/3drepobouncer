@@ -457,6 +457,15 @@ void RepoController::_RepoControllerImpl::reduceTransformations(
 	}
 }
 
+void RepoController::_RepoControllerImpl::updateRevisionStatus(
+	repo::core::model::RepoScene* scene,
+	const repo::core::model::ModelRevisionNode::UploadStatus& status)
+{
+	manipulator::RepoManipulator* worker = workerPool.pop();
+	worker->updateRevisionStatus(scene, status);
+	workerPool.push(worker);
+}
+
 std::string RepoController::_RepoControllerImpl::getVersion()
 {
 	std::stringstream ss;
