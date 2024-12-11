@@ -552,7 +552,6 @@ std::vector<float> toRepoColour(const OdGiMaterialColor& c)
 void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiMaterialTraitsData& materialData, repo_material_t& material)
 {
 	OdGiMaterialColor colour;
-	OdGiMaterialMap map;
 
 	materialData.shadingDiffuse(colour);
 	material.diffuse = toRepoColour(colour);
@@ -563,8 +562,13 @@ void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiM
 	materialData.shadingAmbient(colour);
 	material.ambient = toRepoColour(colour);
 
+	OdGiMaterialMap map;
 	materialData.emission(colour, map);
 	material.emissive = toRepoColour(colour);
+
+	double opacity;
+	materialData.shadingOpacity(opacity);
+	material.opacity = opacity;
 
 	if (!materialPtr.isNull())
 		material.shininess = (float)materialPtr->getMaterial()->getShininess() / 255.0f;
