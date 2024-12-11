@@ -109,8 +109,15 @@ private:
 		try
 		{
 			auto pool = handler.clientPool->acquire();
-			auto uri = pool->uri();
-			return std::string(" Uri: ") + uri.to_string();
+			auto uri = pool->uri().to_string();
+			auto to = uri.find("@");
+			if (to != std::string::npos)
+			{
+				for (auto i = uri.find("://") + 3; i < to; i++) {
+					uri[i] = '*';
+				}
+			}
+			return std::string(" Uri: ") + uri;
 		}
 		catch (...)
 		{
@@ -120,7 +127,7 @@ private:
 };
 
 MongoDatabaseHandler::MongoDatabaseHandler(
-	const std::string& dbAddress,
+	const std::string& connectionString,
 	const std::string& username,
 	const std::string& password,
 	const ConnectionOptions& options) :
@@ -129,16 +136,28 @@ MongoDatabaseHandler::MongoDatabaseHandler(
 	if (!instance) { // This global pointer should only be initialised once
 		instance = std::make_unique<mongocxx::instance>();
 	}
-	mongocxx::uri uri(
-		std::string("mongodb://") +
-		username + ":" +
-		password + "@" +
-		dbAddress + "/?" +
-		"maxConnecting=" + std::to_string(options.maxConnections) +
+
+	auto s = connectionString; // (A copy of the string we can modify)
+
+	// The only valid use of @  in a Mongo connection string is to delimit
+	// credentials (special characters are percent encoded).
+
+	if (s.find("@") == std::string::npos && !username.empty() && !password.empty())
+	{
+		// The connection string doesn't have credentials, so add them here if
+		// provided in separate config members. It is permissable to have no
+		// username and password, if, for example, TLS is configured instead.
+
+		s.insert(s.find("://") + 3, username + ":" + password + "@");
+	}
+
+	std::string optionsPrefix = s.find("?") == std::string::npos ? "/?" : "&";
+	s += optionsPrefix + "maxConnecting=" + std::to_string(options.maxConnections) +
 		"&socketTimeoutMS=" + std::to_string(options.timeout) +
 		"&serverSelectionTimeoutMS=" + std::to_string(options.timeout) +
-		"&connectTimeoutMS=" + std::to_string(options.timeout)
-	);
+		"&connectTimeoutMS=" + std::to_string(options.timeout);
+
+	mongocxx::uri uri(s);
 	clientPool = std::make_unique<mongocxx::pool>(uri);
 }
 
@@ -486,7 +505,7 @@ std::shared_ptr<MongoDatabaseHandler> MongoDatabaseHandler::getHandler(
 	const ConnectionOptions& options
 )
 {
-	return getHandler(host + ":" + std::to_string(port), username, password, options);
+	return getHandler("mongodb://" + host + ":" + std::to_string(port), username, password, options);
 }
 
 std::string MongoDatabaseHandler::getNamespace(
