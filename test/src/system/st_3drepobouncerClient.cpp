@@ -492,6 +492,12 @@ TEST(RepoClientTest, UploadTestNWD2025)
 	std::string nwdUpload = produceUploadArgs(db, "nwdTest2025", getDataPath(nwdModel2025));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(nwdUpload));
 	EXPECT_TRUE(projectExists(db, "nwdTest2025"));
+
+	// Do some checks on the file to make sure we are getting the tree and
+	// metadata in the right place.
+
+	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "nwdTest2025", "Element::Id", "309347", { "rootNode->sample2025.nwd->Level 0->Planting->Planting_RPC_Tree_Deciduous->Hawthorn-7.4_Meters->Planting_RPC_Tree_Deciduous->Planting_RPC_Tree_Deciduous" })); // Note the additional "Planting_RPC_Tree_Deciduous" at the end of this path corresponds to the Metadata Node name 
+	EXPECT_TRUE(projectHasGeometryWithMetadata(db, "nwdTest2025", "Element::Id", "309347"));
 }
 
 TEST(RepoClientTest, UploadTestNWDProtected)
