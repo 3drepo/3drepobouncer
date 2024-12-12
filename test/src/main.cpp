@@ -16,9 +16,11 @@
 */
 
 #include <gtest/gtest.h>
+#include <repo/repo_global_manager.h>
 
 int main(int argc, char *argv[])
 {
 	::testing::InitGoogleTest(&argc, argv);
+	repo::RepoGlobalManager globals;
 	return RUN_ALL_TESTS();
 }

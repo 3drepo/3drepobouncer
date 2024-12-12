@@ -15,29 +15,30 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "repo_oda_system_services.h"
-#include "repo/repo_global_manager.h"
-
-// Although it is OK to call odActivate multiple times, we do not want
-// odCleanUpStaticData to be called more than once.
+#include "repo_global_manager.h"
+#include "repo/lib/repo_exception.h"
+#include <stack>
 
 static bool initialised = false;
+static std::stack<std::unique_ptr<repo::RepoGlobalManager::Destructor>> destructors;
 
-struct RepoSystemServicesDestructor : repo::RepoGlobalManager::Destructor
+REPO_API_EXPORT repo::RepoGlobalManager::RepoGlobalManager()
 {
-	operator void()
-	{
-		odCleanUpStaticData();
+	if (initialised) {
+		throw new repo::lib::RepoException("Global manager already constructed.");
 	}
-};
+	initialised = true;
+}
 
-RepoSystemServices::RepoSystemServices()
+REPO_API_EXPORT repo::RepoGlobalManager::~RepoGlobalManager()
 {
-	if (!initialised) {
-		odActivate(
-			#include "OdActivationInfo"
-		);
-		repo::RepoGlobalManager::addDestructor(std::make_unique<RepoSystemServicesDestructor>());
-		initialised = true;
+	while (!destructors.empty()) {
+		destructors.top()->operator void();
+		destructors.pop();
 	}
+}
+
+void repo::RepoGlobalManager::addDestructor(std::unique_ptr<Destructor> d)
+{
+	destructors.push(std::move(d));
 }
