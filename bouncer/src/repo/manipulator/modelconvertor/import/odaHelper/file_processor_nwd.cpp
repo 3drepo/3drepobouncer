@@ -18,6 +18,7 @@
 // 3D repo
 #include "file_processor_nwd.h"
 #include "data_processor_nwd.h"
+#include "repo_oda_system_services.h"
 
 #include "../repo_model_units.h"
 
@@ -26,7 +27,6 @@
 #include <RxDynamicModule.h>
 #include <DynamicLinker.h>
 #include <StaticRxObject.h>
-#include <ExSystemServices.h>
 #include <NwHostAppServices.h>
 #include <NwDatabase.h>
 
@@ -35,7 +35,7 @@ using ModelUnits = repo::manipulator::modelconvertor::ModelUnits;
 
 static OdString sNwDbModuleName = L"TNW_Db";
 
-class OdExNwSystemServices : public ExSystemServices
+class OdExNwSystemServices : public RepoSystemServices
 {
 public:
 	OdExNwSystemServices() {}

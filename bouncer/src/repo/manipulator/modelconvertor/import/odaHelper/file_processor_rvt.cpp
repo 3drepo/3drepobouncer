@@ -27,7 +27,6 @@
 #include <Database/Managers/BmUnitsTracking.h>
 #include <DynamicLinker.h>
 #include <ExBimHostAppServices.h>
-#include <ExSystemServices.h>
 #include <ModelerGeometry/BmModelerModule.h>
 #include <OdaCommon.h>
 #include <RxDynamicModule.h>
@@ -42,6 +41,7 @@
 //3d repo bouncer
 #include "file_processor_rvt.h"
 #include "data_processor_rvt.h"
+#include "repo_oda_system_services.h"
 
 //help
 #include "vectorise_device_rvt.h"
@@ -104,10 +104,10 @@ protected:
 };
 ODRX_DEFINE_PSEUDO_STATIC_MODULE(StubDeviceModuleRvt);
 
-class RepoRvtServices : public ExSystemServices, public OdExBimHostAppServices
+class RepoRvtServices : public RepoSystemServices, public OdExBimHostAppServices
 {
 protected:
-	ODRX_USING_HEAP_OPERATORS(ExSystemServices);
+	ODRX_USING_HEAP_OPERATORS(RepoSystemServices);
 };
 
 OdString Get3DLayout(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimDatabase)
