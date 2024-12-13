@@ -29,7 +29,7 @@
 #include <GiContextForDbDatabase.h>
 #include <../Exports/2dExport/Include/2dExportDevice.h>
 
-#include "../../../../lib/repo_exception.h"
+#include "repo/lib/repo_exception.h"
 #include "../repo_model_units.h"
 #include "file_processor_dgn.h"
 #include "data_processor_dgn.h"

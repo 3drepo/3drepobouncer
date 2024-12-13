@@ -20,12 +20,6 @@
 #include <string>
 #include <SharedPtr.h>
 #include <OdString.h>
-
-// OdBmCropRegionInfo uses min/max in its initialiser list, so remove any
-// conflicting definitions (e.g. from mongo) before it's included
-#undef min
-#undef max
-
 #include <OdaCommon.h>
 #include <BimCommon.h>
 #include <DbBaseDatabase.h>
@@ -35,7 +29,7 @@
 #include <Database/Entities/BmDBDrawing.h>
 #include <Database/Enums/BmViewTypeEnum.h>
 
-#include "../../../../lib/datastructure/repo_structs.h"
+#include "repo/lib/datastructure/repo_structs.h"
 
 namespace repo {
 	namespace manipulator {

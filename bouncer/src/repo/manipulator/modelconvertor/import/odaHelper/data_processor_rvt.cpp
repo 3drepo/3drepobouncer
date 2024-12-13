@@ -246,7 +246,7 @@ void DataProcessorRvt::convertTo3DRepoMaterial(
 			materialElem = OdBmMaterialElem::cast(objectPtr);
 	}
 
-	fillMaterial(materialElem, matColors, material);
+	fillMaterial(materialElem, materialData, material);
 	fillTexture(materialElem, material, missingTexture);
 }
 
@@ -424,7 +424,7 @@ void DataProcessorRvt::processParameter(
 		auto metaKey = convertToStdString(pDescParam->getCaption());
 
 		if (!ignoreParam(metaKey)) {
-			auto paramGroup = labelUtils->getLabelFor(OdBm::BuiltInParameterGroup::Enum(groupId));
+			auto paramGroup = labelUtils->getLabelForGroup(groupId);
 			if (!paramGroup.isEmpty()) {
 				metaKey = convertToStdString(paramGroup) + "::" + metaKey;
 			}
@@ -544,17 +544,34 @@ std::unordered_map<std::string, repo::lib::RepoVariant> DataProcessorRvt::fillMe
 	return metadata;
 }
 
-void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const MaterialColours& matColors, repo_material_t& material)
+std::vector<float> toRepoColour(const OdGiMaterialColor& c)
 {
-	const float norm = 255.f;
+	return { c.color().red() / 255.0f, c.color().green() / 255.0f, c.color().blue() / 255.0f, 1.0f };
+}
 
-	material.specular = { matColors.colorSpecular.red() / norm, matColors.colorSpecular.green() / norm, matColors.colorSpecular.blue() / norm, 1.0f };
-	material.ambient = { matColors.colorAmbient.red() / norm, matColors.colorAmbient.green() / norm, matColors.colorAmbient.blue() / norm, 1.0f };
-	material.emissive = { matColors.colorEmissive.red() / norm, matColors.colorEmissive.green() / norm, matColors.colorEmissive.blue() / norm, 1.0f };
-	material.diffuse = material.emissive;
+void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiMaterialTraitsData& materialData, repo_material_t& material)
+{
+	OdGiMaterialColor colour;
+
+	materialData.shadingDiffuse(colour);
+	material.diffuse = toRepoColour(colour);
+
+	materialData.shadingSpecular(colour);
+	material.specular = toRepoColour(colour);
+
+	materialData.shadingAmbient(colour);
+	material.ambient = toRepoColour(colour);
+
+	OdGiMaterialMap map;
+	materialData.emission(colour, map);
+	material.emissive = toRepoColour(colour);
+
+	double opacity;
+	materialData.shadingOpacity(opacity);
+	material.opacity = opacity;
 
 	if (!materialPtr.isNull())
-		material.shininess = (float)materialPtr->getMaterial()->getShininess() / norm;
+		material.shininess = (float)materialPtr->getMaterial()->getShininess() / 255.0f;
 }
 
 void DataProcessorRvt::fillTexture(OdBmMaterialElemPtr materialPtr, repo_material_t& material, bool& missingTexture)
@@ -587,6 +604,14 @@ void DataProcessorRvt::fillTexture(OdBmMaterialElemPtr materialPtr, repo_materia
 	std::string validTextureName = determineTexturePath(textureName);
 	if (validTextureName.empty() && !textureName.empty())
 		missingTexture = true;
+
+	if (!missingTexture) {
+		// If a material property uses a map, then set the colour to white, as our default
+		// behaviour is to multiply in the shader, and Revit's is to replace it.
+		// (Revit's Appearance dialog does have a Tint option, but its more for use during
+		// ray-tracing.)
+		material.diffuse = { 1,1,1,1 };
+	}
 
 	material.texturePath = validTextureName;
 }

@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2015 3D Repo Ltd
+*  Copyright (C) 2024 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -15,12 +15,31 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <gtest/gtest.h>
-#include <repo/repo_global_manager.h>
+#include "repo_oda_system_services.h"
+#include "repo/repo_global_manager.h"
 
-int main(int argc, char *argv[])
+#include <iostream>
+
+// Although it is OK to call odActivate multiple times, we do not want
+// odCleanUpStaticData to be called more than once.
+
+static bool initialised = false;
+
+struct RepoSystemServicesDestructor : repo::RepoGlobalManager::Destructor
 {
-	::testing::InitGoogleTest(&argc, argv);
-	repo::RepoGlobalManager globals;
-	return RUN_ALL_TESTS();
+	operator void()
+	{
+		odCleanUpStaticData();
+	}
+};
+
+RepoSystemServices::RepoSystemServices()
+{
+	if (!initialised) {
+		odActivate(
+			#include "OdActivationInfo"
+		);
+		repo::RepoGlobalManager::addDestructor(std::make_unique<RepoSystemServicesDestructor>());
+		initialised = true;
+	}
 }
