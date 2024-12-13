@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include "../../../../core/model/bson/repo_node_mesh.h"
-#include "../../../../manipulator/modelutility/repo_drawing.h"
+#include "repo/core/model/bson/repo_node_mesh.h"
+#include "repo/manipulator/modelutility/repo_drawing.h"
 
 #include <OdaCommon.h>
 #include <DgDatabase.h>
@@ -33,15 +33,16 @@
 
 #include "geometry_collector.h"
 #include "file_processor.h"
+#include "repo_oda_system_services.h"
 
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
-				class RepoDgnServices : public OdExDgnSystemServices, public OdExDgnHostAppServices
+				class RepoDgnServices : public RepoSystemServices, public OdExDgnHostAppServices
 				{
 				protected:
-					ODRX_USING_HEAP_OPERATORS(OdExDgnSystemServices);
+					ODRX_USING_HEAP_OPERATORS(RepoDgnServices);
 				};
 
 				class FileProcessorDgn : public FileProcessor
