@@ -21,6 +21,7 @@
 
 #include <repo/lib/datastructure/repo_variant.h>
 #include <repo/manipulator/modelconvertor/import/odaHelper/data_processor_rvt.h>
+#include <repo/manipulator/modelconvertor/import/odaHelper/repo_oda_system_services.h>
 
 #include "Gs/GsBaseModule.h"
 #include "DynamicLinker.h"
@@ -41,7 +42,7 @@ using namespace repo::manipulator::modelconvertor::odaHelper;
 using namespace testing;
 
 // First helper class for the test of the RVT Converter
-class OdExBimSystemServices : public ExSystemServices
+class OdExBimSystemServices : public RepoSystemServices
 {
 public:
 	OdExBimSystemServices() {}
