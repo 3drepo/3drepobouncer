@@ -35,7 +35,7 @@ namespace repo {
 				class RepoDwgServices : public RepoSystemServices, public ExHostAppServices
 				{
 				protected:
-					ODRX_USING_HEAP_OPERATORS(RepoDwgServices);
+					ODRX_USING_HEAP_OPERATORS(RepoSystemServices);
 				};
 
 				class FileProcessorDwg : public FileProcessor

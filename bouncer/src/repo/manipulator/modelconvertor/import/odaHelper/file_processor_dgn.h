@@ -42,7 +42,7 @@ namespace repo {
 				class RepoDgnServices : public RepoSystemServices, public OdExDgnHostAppServices
 				{
 				protected:
-					ODRX_USING_HEAP_OPERATORS(RepoDgnServices);
+					ODRX_USING_HEAP_OPERATORS(RepoSystemServices);
 				};
 
 				class FileProcessorDgn : public FileProcessor

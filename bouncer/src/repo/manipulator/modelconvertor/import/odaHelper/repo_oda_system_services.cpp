@@ -18,6 +18,8 @@
 #include "repo_oda_system_services.h"
 #include "repo/repo_global_manager.h"
 
+#include <iostream>
+
 // Although it is OK to call odActivate multiple times, we do not want
 // odCleanUpStaticData to be called more than once.
 
