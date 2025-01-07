@@ -80,7 +80,7 @@ namespace repo {
 				* @param password password of the user (optional)
 				*/
 				MongoDatabaseHandler(
-					const std::string& dbAddress,
+					const std::string& connectionString,
 					const std::string& username,
 					const std::string& password,
 					const ConnectionOptions& options = ConnectionOptions()
