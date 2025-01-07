@@ -115,9 +115,6 @@ uint8_t SceneManager::commitScene(
 					repoError << "failed to commit selection tree";
 			}
 
-			success = false;
-
-
 			if (success && !isFederation)
 			{
 				if (shouldGenerateSrcFiles(scene, handler))
