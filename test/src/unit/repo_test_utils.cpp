@@ -108,6 +108,8 @@ void testing::restartRand(int seed)
 	uuidPoolCounter = seed;
 }
 
+
+
 bool testing::projectHasMetaNodesWithPaths(std::string dbName, std::string projectName, std::string key, std::string value, std::vector<std::string> expected)
 {
 	repo::RepoController* controller = new repo::RepoController();
@@ -122,10 +124,15 @@ bool testing::projectHasMetaNodesWithPaths(std::string dbName, std::string proje
 		{
 			auto metadata = scene->getAllMetadata(repo::core::model::RepoScene::GraphType::DEFAULT);
 			auto transforms = scene->getAllTransformations(repo::core::model::RepoScene::GraphType::DEFAULT);
+			auto meshes = scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT);
 
 			std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> sharedIdToNode;
 
 			for (auto m : transforms) {
+				sharedIdToNode[m->getSharedID()] = m;
+			}
+
+			for (auto m : meshes) {
 				sharedIdToNode[m->getSharedID()] = m;
 			}
 
