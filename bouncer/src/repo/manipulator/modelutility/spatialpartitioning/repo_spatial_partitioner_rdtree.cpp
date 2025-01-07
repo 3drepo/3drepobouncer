@@ -75,23 +75,15 @@ std::vector<repo_mesh_entry_t> RDTreeSpatialPartitioner::createMeshEntries()
 				entries.resize(entries.size() + 1);
 				entries.back().id = mesh->getUniqueID();
 				auto bbox = mesh->getBoundingBox();
-				if (bbox.size() == 2)
-				{
-					entries.back().min[0] = bbox[0].x;
-					entries.back().min[1] = bbox[0].y;
-					entries.back().min[2] = bbox[0].z;
-					entries.back().max[0] = bbox[1].x;
-					entries.back().max[1] = bbox[1].y;
-					entries.back().max[2] = bbox[1].z;
-					entries.back().mid[0] = (entries.back().max[0] + entries.back().min[0]) / 2.;
-					entries.back().mid[1] = (entries.back().max[1] + entries.back().min[1]) / 2.;
-					entries.back().mid[2] = (entries.back().max[2] + entries.back().min[2]) / 2.;
-				}
-				else
-				{
-					repoWarning << "Could not find bounding box for " << mesh->getUniqueID() << ". Skipping...";
-					entries.pop_back();
-				}
+				entries.back().min[0] = bbox.min().x;
+				entries.back().min[1] = bbox.min().y;
+				entries.back().min[2] = bbox.min().z;
+				entries.back().max[0] = bbox.max().x;
+				entries.back().max[1] = bbox.max().y;
+				entries.back().max[2] = bbox.max().z;
+				entries.back().mid[0] = (entries.back().max[0] + entries.back().min[0]) / 2.;
+				entries.back().mid[1] = (entries.back().max[1] + entries.back().min[1]) / 2.;
+				entries.back().mid[2] = (entries.back().max[2] + entries.back().min[2]) / 2.;
 			}
 		}
 		else
@@ -187,8 +179,8 @@ std::shared_ptr<repo_partitioning_tree_t> RDTreeSpatialPartitioner::partitionSce
 			auto bbox = scene->getSceneBoundingBox();
 
 			std::vector<std::vector<float>> currentSection = {
-				{ bbox[0].x, bbox[0].y, bbox[0].z },
-				{ bbox[1].x, bbox[1].y, bbox[1].z }
+				((repo::lib::RepoVector3D)bbox.min()).toStdVector(),
+				((repo::lib::RepoVector3D)bbox.max()).toStdVector()
 			};
 
 			pTree = createPartition(meshEntries, repo::PartitioningTreeType::PARTITION_X, 0, 0, currentSection);

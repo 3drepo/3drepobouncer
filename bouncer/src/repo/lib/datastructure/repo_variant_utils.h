@@ -64,7 +64,7 @@ namespace repo {
 				return std::to_string(i);
 			}
 
-			std::string operator()(long long& ll) const {
+			std::string operator()(int64_t& ll) const {
 				return std::to_string(ll);
 			}
 
@@ -81,6 +81,10 @@ namespace repo {
 
 				strftime(buffer, sizeof(buffer), "%d-%m-%Y %H-%M-%S", &t);
 				return std::string(buffer);
+			}
+
+			std::string operator()(const repo::lib::RepoUUID& u) const {
+				return u.toString();
 			}
 		};
 	}

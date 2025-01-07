@@ -42,7 +42,6 @@
 #define REPO_SYSTEM_ROLES           "system.roles"      //!< Roles collection
 
 #define REPO_LABEL_ID               "_id"
-#define REPO_LABEL_OVERSIZED_FILES  "_extRef" // legacy schema for referencing external binaries inside bson (deprecated after ISSUE #626)
 #define REPO_LABEL_BINARY_REFERENCE  "_blobRef" // New version of REPO_LABEL_OVERSIZED_FILES see ISSUE #626
 #define REPO_LABEL_BINARY_ELEMENTS  "elements" // part of REPO_LABEL_BINARY_REFERENCE
 #define REPO_LABEL_BINARY_BUFFER    "buffer" // part of REPO_LABEL_BINARY_REFERENCE
@@ -222,3 +221,4 @@
 #define REPO_ASSETS_LABEL_PRIMITIVE		"primitive"
 #define REPO_ASSETS_LABEL_MIN			"min"
 #define REPO_ASSETS_LABEL_MAX			"max"
+#define REPO_ASSETS_LABEL_METADATA      "metadata"

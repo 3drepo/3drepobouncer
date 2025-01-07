@@ -11,7 +11,7 @@ const externalLibraries = [
 	{
 		rootEnvVar: "MONGO_ROOT",
 		subPath: ["lib"],
-		extensions: exts
+		extensions: [...exts, "._noabi", ".0"]
 	},
 	{
 		rootEnvVar: "ASSIMP_ROOT",

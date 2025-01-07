@@ -21,7 +21,7 @@
 #include <toString.h>
 #include <DgLevelTableRecord.h>
 
-#include "../../../../core/model/bson/repo_bson_factory.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
 #include "data_processor.h"
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
@@ -67,7 +67,7 @@ void DataProcessor::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* p
 	std::vector<repo::lib::RepoVector3D64> vertices;
 	std::vector<repo::lib::RepoVector2D> uv;
 	repo::lib::RepoVector3D64 normal;
-	
+
 	convertTo3DRepoTriangle(p3Vertices, vertices, normal, uv);
 
 	if (vertices.size()) {

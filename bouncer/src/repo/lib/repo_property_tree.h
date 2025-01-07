@@ -26,6 +26,7 @@
 #include "datastructure/repo_uuid.h"
 #include "datastructure/repo_vector.h"
 #include "datastructure/repo_structs.h"
+#include <set>
 
 namespace repo {
 	namespace lib {

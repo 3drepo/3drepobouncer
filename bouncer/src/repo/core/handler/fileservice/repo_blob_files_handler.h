@@ -20,8 +20,8 @@
 #include <string>
 #include <fstream>
 
-#include "./repo_file_manager.h"
-#include "./repo_data_ref.h"
+#include "repo_file_manager.h"
+#include "repo_data_ref.h"
 
 namespace repo {
 	namespace core {
@@ -37,16 +37,18 @@ namespace repo {
 					~BlobFilesHandler();
 
 					BlobFilesHandler(
-						FileManager *fileManager,
+						std::shared_ptr<FileManager> fileManager,
 						const std::string &database,
 						const std::string &collection,
-						const repo::core::model::RepoBSON &metadata = repo::core::model::RepoBSON()
+						const FileManager::Metadata &metadata = {}
 					) : manager(fileManager), database(database), collection(collection), metadata(metadata) {};
 
 					void finished() { commitActiveFile(); }
 
 					DataRef insertBinary(const std::vector<uint8_t> &data);
 					std::vector<uint8_t> readToBuffer(const DataRef &ref);
+
+					std::shared_ptr<FileManager> getFileManager();
 
 				private:
 					struct fileEntry
@@ -60,10 +62,10 @@ namespace repo {
 
 					std::istream fetchStream(const std::string &name);
 
-					FileManager* manager;
+					std::shared_ptr<FileManager> manager;
 					const std::string database, collection;
 					std::shared_ptr<fileEntry> activeFile; //mem address we're currently writing to
-					const repo::core::model::RepoBSON metadata;
+					const FileManager::Metadata& metadata;
 
 					std::map<std::string, std::ifstream> readStreams;
 				};

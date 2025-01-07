@@ -19,18 +19,19 @@
 
 #include <string>
 
-#include "../../../core/model/bson/repo_bson_builder.h"
-
 namespace repo {
 	namespace core {
+		namespace model {
+			class RepoBSON;
+		}
 		namespace handler {
 			namespace fileservice {
 				class DataRef {
 					friend class BlobFilesHandler;
 				private:
 					const std::string fileName;
-					const unsigned int startPos;
-					const unsigned int size;
+					const int32_t startPos;
+					const int32_t size;
 				public:
 					DataRef(const std::string &fileName, const unsigned int &startPos, const unsigned int &size)
 						: fileName(fileName), startPos(startPos), size(size) {}

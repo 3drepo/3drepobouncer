@@ -21,6 +21,7 @@
 
 #pragma once
 #include "repo_node_revision.h"
+#include "repo/core/model/repo_model_global.h"
 
 //------------------------------------------------------------------------------
 //
@@ -48,6 +49,20 @@ namespace repo {
 				DrawingRevisionNode();
 				~DrawingRevisionNode();
 
+			private:
+				std::vector<repo::lib::RepoUUID> files;
+				repo::lib::RepoUUID project;
+				repo::lib::RepoUUID image;
+				std::string model;
+				std::string format;
+				bool incomplete;
+
+			protected:
+				void deserialise(RepoBSON&);
+				void serialise(repo::core::model::RepoBSONBuilder&) const;
+
+			public:
+
 				/**
 				* Get the type of node
 				* @return returns the type as a string
@@ -73,20 +88,45 @@ namespace repo {
 				/**
 				* Returns the list of files uploaded for this revision
 				*/
-				std::vector<lib::RepoUUID> getFiles() const;
+				std::vector<lib::RepoUUID> getFiles() const
+				{
+					return files;
+				}
 
-				lib::RepoUUID getProject() const;
+				lib::RepoUUID getProject() const
+				{
+					return project;
+				}
 
-				std::string getModel() const;
+				std::string getModel() const
+				{
+					return model;
+				}
 
 				/**
 				* Returns the format of the drawing referenced by rFile. This
 				* must be a format supported by DrawingImportManager, and all
 				* lowercase.
 				*/
-				std::string getFormat() const;
+				std::string getFormat() const
+				{
+					return format;
+				}
 
-				DrawingRevisionNode cloneAndAddImage(lib::RepoUUID imageRefNodeId) const;
+				bool getIncomplete() const
+				{
+					return incomplete;
+				}
+
+				void setIncomplete(bool incomplete)
+				{
+					this->incomplete = incomplete;
+				}
+
+				void addImage(const lib::RepoUUID& imageRefNodeId)
+				{
+					image = imageRefNodeId;
+				}
 			};
 		}// end namespace model
 	} // end namespace core

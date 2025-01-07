@@ -24,12 +24,14 @@
 #if defined(_WIN32) || defined(_WIN64)
 #include <WinSock2.h>
 #include <Windows.h>
-
 #endif
-#include <mongo/bson/bson.h>
 
-#include "../../../repo_bouncer_global.h"
-#include "../../../lib/repo_log.h"
+#include "repo/repo_bouncer_global.h"
+#include "repo/lib/repo_log.h"
+#include "repo/lib/datastructure/repo_variant.h"
+
+#include <bsoncxx/document/element.hpp>
+
 namespace repo {
 	namespace core {
 		namespace model {
@@ -38,24 +40,18 @@ namespace repo {
 				ARRAY, UUID, BINARY, BOOL, DATE,
 				OBJECTID, DOUBLE, INT, LONG, OBJECT, STRING, UNKNOWN
 			};
-			class REPO_API_EXPORT RepoBSONElement :
-				private mongo::BSONElement
+			class RepoBSON;
+			class REPO_API_EXPORT RepoBSONElement : private bsoncxx::document::element
 			{
 				friend class RepoBSONBuilder;
 				friend class RepoBSON;
 
 			public:
-
-				/**
-				* Default constructor
-				*/
-				RepoBSONElement() : mongo::BSONElement() {}
-
 				/**
 				* Construct a RepoBSONElement base on a mongo element
 				* @param mongo BSON element
 				*/
-				RepoBSONElement(mongo::BSONElement ele) : mongo::BSONElement(ele) {}
+				RepoBSONElement(bsoncxx::document::element ele) : bsoncxx::document::element(ele) {}
 
 				/**
 				* Destructor
@@ -68,85 +64,31 @@ namespace repo {
 				*/
 				ElementType type() const;
 
-				std::vector<RepoBSONElement> Array()
-				{
-					//FIXME: potentially slow.
-					//This is done so we can hide mongo representation from the bouncer world.
-					std::vector<RepoBSONElement> arr;
+				std::string String() const;
 
-					if (!eoo())
-					{
-						std::vector<mongo::BSONElement> mongoArr = mongo::BSONElement::Array();
-						arr.reserve(mongoArr.size());
+				RepoBSON Object() const;
 
-						for (auto const &ele : mongoArr)
-						{
-							arr.push_back(RepoBSONElement(ele));
-						}
-					}
+				time_t TimeT() const;
 
-					return arr;
-				}
+				tm Tm() const;
 
-				std::string String() const{
-					return mongo::BSONElement::String();
-				}
+				bool Bool() const;
 
-				mongo::BSONObj embeddedObject() const {
-					return mongo::BSONElement::embeddedObject();
-				}
+				int Int() const;
 
-				mongo::Date_t date() const {
-					return mongo::BSONElement::date();
-				}
+				int64_t Long() const;
 
-				bool Bool() const {
-					return mongo::BSONElement::Bool();
-				}
+				double Double() const;
 
-				int Int() const{
-					return mongo::BSONElement::Int();
-				}
+				size_t size() const;
 
-				long long Long() const {
-					return mongo::BSONElement::Long();
-				}
+				repo::lib::RepoUUID UUID() const;
 
-				double Double() const {
-					return mongo::BSONElement::Double();
-				}
+				repo::lib::RepoVariant repoVariant() const;
 
-				size_t size() const {
-					return mongo::BSONElement::size();
-				}
+				bool operator==(const RepoBSONElement& other) const;
 
-				const char* binData(int &length) const {
-					return mongo::BSONElement::binData(length);
-				}
-				
-				mongo::BSONElement toMongoElement() const {
-					return *this;
-				}
-
-				inline bool operator==(const RepoBSONElement & other) const {
-					return mongo::BSONElement::operator==(other);
-				}
-
-				inline bool operator!=(const RepoBSONElement other) const {
-					return mongo::BSONElement::operator!=(other);
-				}
-
-				std::string toString() const {
-					return mongo::BSONElement::toString();
-				}
-
-				bool eoo() const {
-					return mongo::BSONElement::eoo();
-				}
-
-				bool isNull() const {
-					return mongo::BSONElement::isNull();
-				}
+				bool operator!=(const RepoBSONElement& other) const;
 			};
 		}// end namespace model
 	} // end namespace core

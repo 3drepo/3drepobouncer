@@ -74,14 +74,6 @@ namespace repo {
 			const lib::RepoConfig  &config
 		);
 
-		/**
-		* Disconnect the controller from a database connection
-		* and destroys the token
-		* FIXME: CURRENTLY NOT THREAD SAFE! POTENTIALLY DANGEROUS
-		* @param token token to the database
-		*/
-		void disconnectFromDatabase(const RepoToken* token);
-
 		/*
 		*	------------- Token operations --------------
 		*/
@@ -181,7 +173,7 @@ namespace repo {
 			const bool           &headRevision = true,
 			const bool           &ignoreRefScene = false,
 			const bool           &skeletonFetch = false,
-			const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus = {});
+			const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus = {});
 
 		/*
 		*	------- Database Operations (insert/delete/update) ---------

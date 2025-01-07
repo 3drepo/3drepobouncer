@@ -44,7 +44,7 @@ TEST(FSFileHandlerTest, deleteFile)
 	EXPECT_TRUE(handler.deleteFile("a", "b", "deleteTest"));
 	EXPECT_FALSE(repo::lib::doesFileExist(pathToFile));
 	EXPECT_FALSE(handler.deleteFile("a", "b", "ThisFileDoesNotExist"));
-	
+
 }
 
 TEST(FSFileHandlerTest, writeFile)

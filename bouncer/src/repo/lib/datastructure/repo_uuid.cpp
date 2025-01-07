@@ -28,7 +28,7 @@ using namespace repo::lib;
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
-const std::string RepoUUID::defaultValue = "00000000-0000-0000-0000-000000000000";
+REPO_API_EXPORT const std::string RepoUUID::defaultValue = "00000000-0000-0000-0000-000000000000";
 
 /*!
 * Returns a valid uuid representation of a given string. If empty, returns
@@ -95,25 +95,6 @@ RepoUUID::RepoUUID(const std::string &stringRep)
 {
 }
 
-RepoUUID RepoUUID::fromBSONElement(const repo::core::model::RepoBSONElement &ele)
-{
-	boost::uuids::uuid id;
-	
-	if (ele.type() == repo::core::model::ElementType::UUID)
-	{
-		int len = static_cast<int>(ele.size() * sizeof(uint8_t));
-		const char *binData = ele.binData(len);
-		memcpy(id.data, binData, len);
-		return RepoUUID(id);
-	}
-	else
-	{
-		repoError << "Field  is not of type UUID! Bin data: " << (int)ele.type();
-		return createUUID();  // failsafe
-	}
-
-}
-
 RepoUUID RepoUUID::createUUID()
 {
 	static boost::uuids::random_generator gen;
@@ -123,11 +104,4 @@ RepoUUID RepoUUID::createUUID()
 std::string RepoUUID::toString() const
 {
 	return boost::lexical_cast<std::string>(id);
-}
-
-RepoUUID& RepoUUID::operator =(const RepoUUID& uuid)
-{
-	id = uuid.id;
-	return *this;
-
 }

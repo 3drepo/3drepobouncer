@@ -81,7 +81,6 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 					case repo::core::model::NodeType::MESH:
 						meshIds.push_back(child->getUniqueID().toString());
 					case repo::core::model::NodeType::TRANSFORMATION:
-					case repo::core::model::NodeType::CAMERA:
 					case repo::core::model::NodeType::REFERENCE:
 					{
 						bool hiddenChild = false;
@@ -105,7 +104,7 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 			if (auto refNode = dynamic_cast<const repo::core::model::ReferenceNode*>(currentNode))
 			{
 				auto refDb = refNode->getDatabaseName();
-				name = (scene->getDatabaseName() == refDb ? "" : (refDb + "/")) + refNode->getProjectName();
+				name = (scene->getDatabaseName() == refDb ? "" : (refDb + "/")) + refNode->getProjectId();
 			}
 		}
 
