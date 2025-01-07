@@ -17,7 +17,6 @@
 
 #include <repo/lib/repo_listener_stdout.h>
 #include <repo/lib/repo_exception.h>
-#include <repo/repo_global_manager.h>
 #include "functions.h"
 
 static const uint32_t minArgs = 3;  //exe configFile command
@@ -74,7 +73,6 @@ void logCommand(int argc, char* argv[])
 }
 
 int main(int argc, char* argv[]) {
-	repo::RepoGlobalManager globals; // To be destroyed at the point we return from main
 	std::shared_ptr<repo::RepoController> controller = instantiateController();
 	if (argc < minArgs) {
 		if (argc == 2 && isSpecialCommand(argv[1]))

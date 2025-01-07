@@ -15,30 +15,28 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "repo_global_manager.h"
-#include "repo/lib/repo_exception.h"
-#include <stack>
+#include "repo_system_services.h"
+
+#include <iostream>
+
+// Usage of ODA should be bounded by calls to odActivate and
+// odCleanUpStaticData. odCleanUpStaticData however can only be called once in
+// the lifetime of a process.
+// In practice, because we don't make assumptions about how many times ODA may
+// be used, odCleanUpStaticData is never called, and we rely on the operating
+// system to handle any resources the ODA activation system may leak.
+// 
+// The ODA system services themselves, expressed as RxSystemServicesImpl and
+// other classes, should be cleaned up as normal.
 
 static bool initialised = false;
-static std::stack<std::unique_ptr<repo::RepoGlobalManager::Destructor>> destructors;
 
-REPO_API_EXPORT repo::RepoGlobalManager::RepoGlobalManager()
+RepoSystemServices::RepoSystemServices()
 {
-	if (initialised) {
-		throw new repo::lib::RepoException("Global manager already constructed.");
+	if (!initialised) {
+		odActivate(
+			#include "OdActivationInfo"
+		);
+		initialised = true;
 	}
-	initialised = true;
-}
-
-REPO_API_EXPORT repo::RepoGlobalManager::~RepoGlobalManager()
-{
-	while (!destructors.empty()) {
-		destructors.top()->operator void();
-		destructors.pop();
-	}
-}
-
-void repo::RepoGlobalManager::addDestructor(std::unique_ptr<Destructor> d)
-{
-	destructors.push(std::move(d));
 }

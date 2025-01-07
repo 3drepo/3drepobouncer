@@ -21,7 +21,7 @@
 
 #include <repo/lib/datastructure/repo_variant.h>
 #include <repo/manipulator/modelconvertor/import/odaHelper/data_processor_nwd.h>
-#include <repo/manipulator/modelconvertor/import/odaHelper/repo_oda_system_services.h>
+#include <repo/manipulator/modelconvertor/import/odaHelper/repo_system_services.h>
 
 #include <OdaCommon.h>
 #include <Attribute/NwPropertyAttribute.h>
