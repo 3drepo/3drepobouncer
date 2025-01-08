@@ -25,16 +25,17 @@
 
 #include "file_processor.h"
 #include "geometry_collector.h"
+#include "repo_system_services.h"
 
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
 
-				class RepoDwgServices : public ExSystemServices, public ExHostAppServices
+				class RepoDwgServices : public RepoSystemServices, public ExHostAppServices
 				{
 				protected:
-					ODRX_USING_HEAP_OPERATORS(ExSystemServices);
+					ODRX_USING_HEAP_OPERATORS(RepoSystemServices);
 				};
 
 				class FileProcessorDwg : public FileProcessor

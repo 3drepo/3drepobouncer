@@ -24,11 +24,9 @@
 #include <Database/BmUnitUtils.h>
 #include <Database/Entities/BmDBDrawing.h>
 #include <Database/Entities/BmUnitsElem.h>
-#include <Database/GiContextForBmDatabase.h>
 #include <Database/Managers/BmUnitsTracking.h>
 #include <DynamicLinker.h>
 #include <ExBimHostAppServices.h>
-#include <ExSystemServices.h>
 #include <ModelerGeometry/BmModelerModule.h>
 #include <OdaCommon.h>
 #include <RxDynamicModule.h>
@@ -43,6 +41,7 @@
 //3d repo bouncer
 #include "file_processor_rvt.h"
 #include "data_processor_rvt.h"
+#include "repo_system_services.h"
 
 //help
 #include "vectorise_device_rvt.h"
@@ -105,10 +104,10 @@ protected:
 };
 ODRX_DEFINE_PSEUDO_STATIC_MODULE(StubDeviceModuleRvt);
 
-class RepoRvtServices : public ExSystemServices, public OdExBimHostAppServices
+class RepoRvtServices : public RepoSystemServices, public OdExBimHostAppServices
 {
 protected:
-	ODRX_USING_HEAP_OPERATORS(ExSystemServices);
+	ODRX_USING_HEAP_OPERATORS(RepoSystemServices);
 };
 
 OdString Get3DLayout(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimDatabase)
@@ -194,7 +193,7 @@ void setupUnitsFormat(OdBmDatabasePtr pDb, double accuracy)
 	}
 }
 
-void setupRenderMode(OdBmDatabasePtr database, OdGsDevicePtr device, OdGiContextForBmDatabasePtr bimContext, OdGsView::RenderMode renderMode)
+void setupRenderMode(OdBmDatabasePtr database, OdGsDevicePtr device, OdGiDefaultContextPtr bimContext, OdGsView::RenderMode renderMode)
 {
 	OdGsBmDBDrawingHelperPtr drawingHelper = OdGsBmDBDrawingHelper::setupDBDrawingViews(database->getActiveDBDrawingId(), device, bimContext);
 	auto view = drawingHelper->activeView();
@@ -230,13 +229,12 @@ uint8_t FileProcessorRvt::readFile()
 			else {
 				pDbPE->setCurrentLayout(pDb, layout);
 
-				OdGiContextForBmDatabasePtr pBimContext = OdGiContextForBmDatabase::createObject();
+				OdGiDefaultContextPtr pBimContext = pDbPE->createGiContext(pDb);
 				OdGsModulePtr pGsModule = ODRX_STATIC_MODULE_ENTRY_POINT(StubDeviceModuleRvt)(OD_T("StubDeviceModuleRvt"));
 
 				((StubDeviceModuleRvt*)pGsModule.get())->init(collector, pDb);
 				OdGsDevicePtr pDevice = pGsModule->createDevice();
 
-				pBimContext->setDatabase(pDb);
 				pDevice = pDbPE->setupActiveLayoutViews(pDevice, pBimContext);
 
 				// NOTE: Render mode can be kFlatShaded, kGouraudShaded, kFlatShadedWithWireframe, kGouraudShadedWithWireframe
