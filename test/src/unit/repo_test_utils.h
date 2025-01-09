@@ -121,4 +121,32 @@ namespace testing {
 	// the same result for whatever reason there is to count them can be achieved
 	// by iterating them directly, which is more performant.
 	int nFields(const repo::core::model::RepoBSON& bson);
+
+	std::string produceGenStashArgs(
+		const std::string& database,
+		const std::string& project,
+		const std::string& type);
+
+	std::string produceGetFileArgs(
+		const std::string& file,
+		const std::string& database,
+		const std::string& project);
+
+	std::string produceCreateFedArgs(
+		const std::string& file,
+		const std::string& owner = std::string());
+
+	std::string produceUploadFileArgs(
+		const std::string& filePath);
+
+	std::string produceProcessDrawingArgs(
+		const std::string& filePath);
+
+	std::string produceUploadArgs(
+		const std::string& database,
+		const std::string& project,
+		const std::string& filePath,
+		const std::string& configPath = getConnConfig());
+
+	int runProcess(const std::string& cmd);
 }

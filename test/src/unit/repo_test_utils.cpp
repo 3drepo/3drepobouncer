@@ -108,8 +108,6 @@ void testing::restartRand(int seed)
 	uuidPoolCounter = seed;
 }
 
-
-
 bool testing::projectHasMetaNodesWithPaths(std::string dbName, std::string projectName, std::string key, std::string value, std::vector<std::string> expected)
 {
 	repo::RepoController* controller = new repo::RepoController();
@@ -425,4 +423,104 @@ tm testing::getRandomTm()
 int testing::nFields(const repo::core::model::RepoBSON& bson)
 {
 	return bson.getFieldNames().size();
+}
+
+std::string produceCleanArgs(
+	const std::string& database,
+	const std::string& project,
+	const std::string& dbAdd = REPO_GTEST_DBADDRESS,
+	const int& port = REPO_GTEST_DBPORT,
+	const std::string& username = REPO_GTEST_DBUSER,
+	const std::string& password = REPO_GTEST_DBPW
+)
+{
+	return  getClientExePath() + " "
+		+ getConnConfig()
+		+ " clean "
+		+ database + " "
+		+ project;
+}
+
+std::string testing::produceGenStashArgs(
+	const std::string& database,
+	const std::string& project,
+	const std::string& type
+)
+{
+	return  getClientExePath() + " "
+		+ getConnConfig()
+		+ " genStash "
+		+ database + " "
+		+ project + " "
+		+ type;
+}
+
+std::string testing::produceGetFileArgs(
+	const std::string& file,
+	const std::string& database,
+	const std::string& project
+)
+{
+	return  getClientExePath() + " "
+		+ getConnConfig()
+		+ " getFile "
+		+ database + " "
+		+ project + " \""
+		+ file + "\"";
+}
+
+std::string testing::produceCreateFedArgs(
+	const std::string& file,
+	const std::string& owner
+)
+{
+	return  getClientExePath() + " "
+		+ getConnConfig()
+		+ " genFed \""
+		+ file + "\" "
+		+ owner;
+}
+
+std::string testing::produceUploadFileArgs(
+	const std::string& filePath
+) {
+	return  getClientExePath() + " "
+		+ getConnConfig()
+		+ " import -f \""
+		+ filePath + "\"";
+}
+
+std::string testing::produceProcessDrawingArgs(
+	const std::string& filePath
+)
+{
+	return  getClientExePath() + " "
+		+ getConnConfig()
+		+ " processDrawing \""
+		+ filePath + "\"";
+}
+
+std::string testing::produceUploadArgs(
+	const std::string& database,
+	const std::string& project,
+	const std::string& filePath,
+	const std::string& configPath)
+{
+	return  getClientExePath()
+		+ " " + configPath
+		+ " import \""
+		+ filePath + "\" "
+		+ database + " " + project;
+}
+
+int testing::runProcess(
+	const std::string& cmd)
+{
+	int status = system(cmd.c_str());
+#ifndef _WIN32
+	//Linux, use WIFEXITED(status) to get the real exit code
+	return WEXITSTATUS(status);
+#else
+	return status;
+#endif
 }
