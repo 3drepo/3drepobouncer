@@ -17,9 +17,6 @@
 
 #pragma once
 
-#include "../../../../core/model/bson/repo_node_mesh.h"
-#include "geometry_collector.h"
-
 #include <vector>
 #include <string>
 
@@ -29,7 +26,8 @@
 #include <NwVariant.h>
 #include <NwName.h>
 
-#include <repo/lib/datastructure/repo_variant.h>
+#include "repo/lib/datastructure/repo_variant.h"
+#include "repo/manipulator/modelutility/repo_scene_builder.h"
 
 #include <boost/filesystem.hpp>
 
@@ -40,8 +38,9 @@ namespace repo {
 				class DataProcessorNwd
 				{
 				public:
-					DataProcessorNwd(GeometryCollector* collector) {
-						this->collector = collector;
+					DataProcessorNwd(modelutility::RepoSceneBuilder* builder)
+						:builder(builder)
+					{
 					}
 
 					void process(OdNwDatabasePtr pNwDb);
@@ -49,7 +48,7 @@ namespace repo {
 					static bool tryConvertMetadataProperty(std::string key, OdNwDataPropertyPtr& metaProperty, repo::lib::RepoVariant& v);
 
 				private:
-					GeometryCollector* collector;
+					modelutility::RepoSceneBuilder* builder;
 				};
 			}
 		}

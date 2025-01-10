@@ -52,6 +52,16 @@ namespace repo {
 			RepoInvalidLicenseException(const std::string& msg);
 		};
 
+		REPO_API_EXPORT class RepoGeometryProcessingException : public RepoException {
+		public:
+			RepoGeometryProcessingException(const std::string& msg);
+		};
+
+		REPO_API_EXPORT class RepoImporterUnavailable : public RepoException {
+		public:
+			RepoImporterUnavailable(const std::string& message, int code);
+		};
+
 		REPO_API_EXPORT class RepoBSONException : public RepoException {
 		public:
 			RepoBSONException(const std::string& msg);

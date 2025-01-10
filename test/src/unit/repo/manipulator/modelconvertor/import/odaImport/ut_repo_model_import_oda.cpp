@@ -25,6 +25,8 @@
 #include "boost/filesystem.hpp"
 #include "../../bouncer/src/repo/error_codes.h"
 
+#include <repo/manipulator/modelutility/repo_scene_builder.h>
+
 using namespace repo::manipulator::modelconvertor;
 using namespace repo::core::model;
 using namespace testing;
@@ -133,6 +135,17 @@ namespace ODAModelImportUtils
 		return modelConvertor;
 	}
 
+	void ImportFileWithoutOptimisations(std::string filePath, std::string database, std::string project)
+	{
+		uint8_t errCode;
+		auto importer = ODAModelImportUtils::ImportFile(filePath, errCode);
+		auto scene = importer->generateRepoScene(errCode);
+		scene->setDatabaseAndProjectName(database, project);
+		auto handler = getHandler();
+		std::string errMsg;
+		scene->commit(handler.get(), handler->getFileManager().get(), errMsg, "unit tests", "", "");
+	}
+
 	/*
 	* This class compares two scene graphs to check if they have the same content.
 	* The class considers only deterministic fields, such as names and geometry,
@@ -161,7 +174,16 @@ namespace ODAModelImportUtils
 		*/
 		double boundingBoxTolerance = 0.000001;
 
+		/*
+		* Don't consider vertices when comparing MeshNodes - this only applies to
+		* vertices themselves, other flags exist for UVs and Normals, etc.
+		*/
+		bool ignoreVertices = false;
 
+		/*
+		* Do not consider key-value pairs when comparing metadata nodes. Correspdonding
+		* metadata does with the same names must still exist.
+		*/
 		bool ignoreMetadataContent = false;
 
 		struct Node
@@ -523,7 +545,7 @@ namespace ODAModelImportUtils
 				throw ComparisonException(expected, actual, "Faces do not match");
 			}
 
-			if (expected->getVertices() != actual->getVertices())
+			if (!ignoreVertices && expected->getVertices() != actual->getVertices())
 			{
 				throw ComparisonException(expected, actual, "Vertices do not match");
 			}
@@ -591,21 +613,25 @@ TEST(ODAModelImport, CheckReferenceDatabases)
 
 TEST(ODAModelImport, Sample2025NWD)
 {
-	uint8_t errCode = 0;
-	/*
-	auto importer = ODAModelImportUtils::ImportFile(getDataPath("sample2025.nwd"), errCode);
-	auto scene = importer->generateRepoScene(errCode);
-	scene->setDatabaseAndProjectName("ODAModelImportTest", "Sample2025NWDODA");
 	auto handler = getHandler();
-	std::string errMsg;
-	scene->commit(handler.get(), handler->getFileManager().get(), errMsg, "unit tests", "", "");
-	*/
 
+	repo::manipulator::modelutility::RepoSceneBuilder builder(
+		handler,
+		"ODAModelImportTest",
+		"Sample2025NWDODARSB"
+	);
+
+	ModelImportConfig config;
+	auto modelConvertor = std::unique_ptr<OdaModelImport>(new OdaModelImport(config));
+	modelConvertor->importModel(getDataPath("sample2025.nwd"), &builder);
+
+	builder.finalise();
+	
 	ODAModelImportUtils::SceneComparer comparer;
-	comparer.ignoreMetadataContent;
+	comparer.ignoreMetadataContent = true;
+	comparer.ignoreVertices = true;
 
-	//EXPECT_THAT(comparer.compare(DBNAME, "Sample2025NWD", "ODAModelImport", "Sample2025NWD2"), IsSuccess());
-	EXPECT_THAT(comparer.compare(DBNAME, "Sample2025NWDODA", "ODAModelImportTest", "Sample2025NWDODA"), IsSuccess());
+	EXPECT_THAT(comparer.compare(DBNAME, "Sample2025NWDODA", "ODAModelImportTest", "Sample2025NWDODARSB"), IsSuccess());
 }
 
 // todo::

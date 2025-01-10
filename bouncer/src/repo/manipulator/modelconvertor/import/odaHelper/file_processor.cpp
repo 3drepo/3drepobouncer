@@ -30,7 +30,8 @@ FileProcessor::FileProcessor(const std::string &inputFile, GeometryCollector *ge
 	: file(inputFile),
 	collector(geoCollector),
 	importConfig(config),
-	drawingCollector(nullptr)
+	drawingCollector(nullptr),
+	repoSceneBuilder(nullptr)
 {
 }
 
@@ -38,7 +39,17 @@ FileProcessor::FileProcessor(const std::string& inputFile, repo::manipulator::mo
 	: file(inputFile),
 	collector(nullptr),
 	importConfig({}),
-	drawingCollector(collector)
+	drawingCollector(collector),
+	repoSceneBuilder(nullptr)
+{
+}
+
+FileProcessor::FileProcessor(const std::string& inputFile, repo::manipulator::modelutility::RepoSceneBuilder* builder)
+	: file(inputFile),
+	collector(nullptr),
+	importConfig({}),
+	drawingCollector(nullptr),
+	repoSceneBuilder(builder)
 {
 }
 

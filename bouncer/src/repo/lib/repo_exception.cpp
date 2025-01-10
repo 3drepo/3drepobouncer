@@ -76,3 +76,15 @@ RepoInvalidLicenseException::RepoInvalidLicenseException(const std::string& msg)
 {
 	errorCode = ERRCODE_REPO_LICENCE_INVALID;
 };
+
+RepoGeometryProcessingException::RepoGeometryProcessingException(const std::string& msg)
+	: RepoException(msg)
+{
+	errorCode = REPOERR_GEOMETRY_ERROR;
+}
+
+RepoImporterUnavailable::RepoImporterUnavailable(const std::string& msg, int code)
+	: RepoException(msg)
+{
+	errorCode = code;
+}

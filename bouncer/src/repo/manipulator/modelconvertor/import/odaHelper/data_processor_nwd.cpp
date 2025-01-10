@@ -20,6 +20,11 @@
 #include "helper_functions.h"
 #include "data_processor_nwd.h"
 
+#include "repo/manipulator/modelutility/repo_scene_builder.h"
+#include "repo/manipulator/modelconvertor/import/odaHelper/repo_mesh_builder.h"
+#include "repo/core/model/bson/repo_node_transformation.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
+
 // ODA
 #include <OdaCommon.h>
 #include <RxDynamicModule.h>
@@ -75,6 +80,7 @@
 #include <boost/algorithm/string.hpp>
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
+using namespace repo::core::model;
 
 static std::vector<std::string> ignoredCategories = { "Material", "Geometry", "Autodesk Material", "Revit Material" };
 static std::vector<std::string> ignoredKeys = { "Item::Source File Name" };
@@ -86,7 +92,8 @@ struct RepoNwTraversalContext {
 	OdNwPartitionPtr partition;
 	OdNwModelItemPtr parent;
 	std::string parentLayerId;
-	GeometryCollector* collector;
+	repo::manipulator::modelutility::RepoSceneBuilder* sceneBuilder;
+	std::shared_ptr<repo::core::model::TransformationNode> parentNode;
 };
 
 repo::lib::RepoVector3D64 convertPoint(OdGePoint3d pnt, OdGeMatrix3d& transform)
@@ -591,8 +598,8 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 
 	repo_material_t repoMaterial;
 	processMaterial(pComp, repoMaterial);
-	context.collector->setCurrentMaterial(repoMaterial);
 
+	RepoMeshBuilder meshBuilder({ context.parentNode->getSharedID() });
 	OdNwObjectIdArray aCompFragIds;
 	pComp->getFragments(aCompFragIds);
 	for (OdNwObjectIdArray::const_iterator itFrag = aCompFragIds.begin(); itFrag != aCompFragIds.end(); ++itFrag)
@@ -635,7 +642,7 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 						vertices.push_back(convertPoint(aVertexes[index + 1], transformMatrix));
 						index++;
 
-						context.collector->addFace(vertices);
+						meshBuilder.addFace(vertices);
 					}
 
 					index++;
@@ -677,7 +684,7 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 						uvs.push_back(convertPoint(aUvs[triangle->pointIndex3]));
 					}
 
-					context.collector->addFace(vertices, normal, uvs);
+					meshBuilder.addFace(vertices, normal, uvs);
 				}
 
 				continue;
@@ -686,6 +693,17 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 			// The full set of types that the OdNwGeometry could be are described
 			// here: https://docs.opendesign.com/bimnv/OdNwGeometry.html
 		}
+	}
+
+	std::vector<repo::core::model::MeshNode> nodes;
+	meshBuilder.extractMeshes(nodes);
+
+	auto material = repo::core::model::RepoBSONFactory::makeMaterialNode(repoMaterial);
+	context.sceneBuilder->addNode(material);
+	for (auto& mesh : nodes)
+	{
+		material.addParent(mesh.getSharedID());
+		context.sceneBuilder->addNode(mesh);
 	}
 
 	return eOk;
@@ -747,7 +765,7 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 	{
 		context.partition = pPartition;
 
-		// When "changing file", remove the path from the name fo the purposes of
+		// When "changing file", remove the path from the name for the purposes of
 		// building the tree.
 
 		if (!levelName.empty())
@@ -774,8 +792,10 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 	{
 		// If we're building a composite object, Keep the layer the same.
 		if (!inCompositeObject) {
-			context.collector->setLayer(levelId, levelName, context.parentLayerId);
-			context.parentLayerId = levelId; // Track the ancestry manually so we can skip nodes at will when building the output tree
+
+			// Otherwise add a new layer for this node
+
+			context.parentNode = context.sceneBuilder->addNode(RepoBSONFactory::makeTransformationNode({}, levelName, { context.parentNode->getSharedID() }));
 
 			// GetIcon distinguishes the type of node. This corresponds to the icon seen in
 			// the Selection Tree View in Navisworks.
@@ -796,18 +816,15 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 			processAttributes(pNode, context, metadata);
 			processAttributes(context.parent, context, metadata);
 
-			context.collector->setMetadata(levelId, metadata);
+			context.sceneBuilder->addNode(RepoBSONFactory::makeMetaDataNode(metadata, context.parentNode->getName(), { context.parentNode->getSharedID() }));
 		}
 
 		if (pNode->hasGeometry())
 		{
-			context.collector->setMeshGroup(inCompositeObject ? context.parentLayerId : levelId); // Group and Layer names must match, so the mesh is flagged as a partial object and different primitives are combined in the tree view
-			context.collector->setNextMeshName(levelName);
+			// Create meshes, parented to the current node in the context
 
 			processGeometry(pNode, context);
 		}
-
-		context.collector->stopMeshEntry();
 	}
 
 	OdNwObjectIdArray aNodeChildren;
@@ -840,8 +857,9 @@ void DataProcessorNwd::process(OdNwDatabasePtr pNwDb)
 	{
 		OdNwModelItemPtr pModelItemRoot = OdNwModelItem::cast(modelItemRootId.safeOpenObject());
 		RepoNwTraversalContext context;
-		context.collector = this->collector;
+		context.sceneBuilder = this->builder;
 		context.layer = pModelItemRoot;
+		context.parentNode = context.sceneBuilder->addNode(RepoBSONFactory::makeTransformationNode({}, "rootNode"));
 		traverseSceneGraph(pModelItemRoot, context);
 	}
 }

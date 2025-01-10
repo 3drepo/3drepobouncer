@@ -92,3 +92,17 @@ bool OdaModelImport::importModel(std::string filePath, uint8_t &err)
 	return false;
 #endif
 }
+
+void OdaModelImport::importModel(std::string filePath, modelutility::RepoSceneBuilder* builder)
+{
+#ifdef ODA_SUPPORT
+	this->filePath = filePath;
+	repoInfo << " ==== Importing with Teigha Library [" << filePath << "] ====";
+	odaProcessor = odaHelper::FileProcessor::getFileProcessor(filePath, &geoCollector, settings);
+	odaProcessor->repoSceneBuilder = builder;
+	shouldReduce = odaProcessor->shouldApplyReduction;
+	odaProcessor->readFile();
+#else
+	throw repo::lib::RepoImporterUnavailable("ODA support has not been compiled in. Please rebuild with ODA_SUPPORT ON", REPOERR_ODA_UNAVAILABLE);
+#endif
+}

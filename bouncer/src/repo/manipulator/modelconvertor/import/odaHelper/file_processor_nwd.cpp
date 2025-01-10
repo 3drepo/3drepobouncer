@@ -93,7 +93,7 @@ uint8_t FileProcessorNwd::readFile()
 			collector->units = ModelUnits::UNKNOWN;
 		}
 
-		DataProcessorNwd dataProcessor(collector);
+		DataProcessorNwd dataProcessor(repoSceneBuilder);
 		dataProcessor.process(pNwDb);
 	}
 	catch (OdError& e)

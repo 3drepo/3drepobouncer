@@ -18,7 +18,9 @@
 #pragma once
 
 #include "repo_model_import_abstract.h"
-#include "../../../core/model/bson/repo_node_mesh.h"
+
+#include "repo/manipulator/modelutility/repo_scene_builder.h"
+
 #include <vector>
 
 #ifdef ODA_SUPPORT
@@ -59,6 +61,7 @@ namespace repo {
 				* @return returns true upon success
 				*/
 				virtual bool importModel(std::string filePath, uint8_t &err);
+				void importModel(std::string filePath, modelutility::RepoSceneBuilder* builder);
 
 				virtual bool applyReduction() const { return shouldReduce; }
 				virtual bool requireReorientation() const { return true; }

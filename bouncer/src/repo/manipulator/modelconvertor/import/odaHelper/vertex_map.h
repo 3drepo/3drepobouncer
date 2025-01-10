@@ -17,13 +17,9 @@
 
 #pragma once
 
-#include "../../../../error_codes.h"
-#include "../../../../core/model/bson/repo_bson_factory.h"
-#include "../../../../lib/datastructure/repo_structs.h"
-#include "helper_functions.h"
-#include <fstream>
+#include "repo/lib/datastructure/repo_vector.h"
 #include <vector>
-#include <string>
+#include <map>
 
 namespace repo {
 	namespace manipulator {
