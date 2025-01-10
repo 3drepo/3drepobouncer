@@ -265,12 +265,12 @@ bool _generateStash(
 			success = controller->generateAndCommitSelectionTree(token, scene);
 		}
 
-		delete scene;
-	}
+		if (success)
+		{
+			controller->updateRevisionStatus(scene, repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE);
+		}
 
-	if (success)
-	{
-		controller->updateRevisionStatus(scene, repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE);
+		delete scene;
 	}
 
 	return success;
