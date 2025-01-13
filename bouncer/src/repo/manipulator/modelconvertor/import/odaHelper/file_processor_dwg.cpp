@@ -28,8 +28,8 @@
 #include <GiContextForDbDatabase.h>
 #include <../Exports/2dExport/Include/2dExportDevice.h>
 
-#include "../../../../error_codes.h"
-#include "../../../../lib/repo_exception.h"
+#include "repo/error_codes.h"
+#include "repo/lib/repo_exception.h"
 
 #include <vector>
 
