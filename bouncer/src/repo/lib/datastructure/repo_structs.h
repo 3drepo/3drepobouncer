@@ -19,8 +19,9 @@
 
 #include <unordered_map>
 #include <cstdint>
-#include "../../repo_bouncer_global.h"
-#include "../../core/model/bson/repo_bson_assets.h"
+#include <memory>
+#include "repo/repo_bouncer_global.h"
+#include "repo/core/model/bson/repo_bson_assets.h"
 #include "repo_uuid.h"
 #include "repo_vector.h"
 #include <boost/crc.hpp>
@@ -99,7 +100,7 @@ struct repo_diff_result_t {
 	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher > correspondence;
 };
 
-typedef struct {
+struct repo_material_t {
 	std::vector<float> ambient;
 	std::vector<float> diffuse;
 	std::vector<float> specular;
@@ -139,7 +140,7 @@ typedef struct {
 		crc32.process_bytes(stringified.c_str(), stringified.size());
 		return crc32.checksum();
 	}
-}repo_material_t;
+};
 
 struct repo_color4d_t {
 	float r;

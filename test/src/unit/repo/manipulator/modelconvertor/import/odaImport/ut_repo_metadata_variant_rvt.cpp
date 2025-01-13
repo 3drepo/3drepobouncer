@@ -21,6 +21,7 @@
 
 #include <repo/lib/datastructure/repo_variant.h>
 #include <repo/manipulator/modelconvertor/import/odaHelper/data_processor_rvt.h>
+#include <repo/manipulator/modelconvertor/import/odaHelper/repo_system_services.h>
 
 #include "Gs/GsBaseModule.h"
 #include "DynamicLinker.h"
@@ -38,9 +39,10 @@
 
 using namespace repo::lib;
 using namespace repo::manipulator::modelconvertor::odaHelper;
+using namespace testing;
 
 // First helper class for the test of the RVT Converter
-class OdExBimSystemServices : public ExSystemServices
+class OdExBimSystemServices : public RepoSystemServices
 {
 public:
 	OdExBimSystemServices() {}
@@ -181,7 +183,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int32AsBoolTest) {
 	OdBm::BuiltInParameter::Enum param;
 
 	// Configure paramDef
-	paramDef = OdBmParamDefHelper::createParamDef(OdBmSpecTypeId::Boolean::kYesNo, OdBm::StorageType::Integer);
+	paramDef = OdBmParamDefHelper::createParamDef(OdBmSpecTypeId::Boolean::kYesNo);
 
 	// Create data
 	OdInt32 data = 0;
@@ -216,7 +218,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int32asIntTest) {
 	OdTfVariant variant = OdTfVariant(data);
 
 	// Configure paramDef (to anything but kYesNo)
-	paramDef = OdBmParamDefHelper::createParamDef(OdBmSpecTypeId::Int::kInteger, OdBm::StorageType::Integer);
+	paramDef = OdBmParamDefHelper::createParamDef(OdBmSpecTypeId::Int::kInteger);
 
 
 	// Convert
@@ -225,7 +227,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int32asIntTest) {
 
 	// Check result
 	EXPECT_TRUE(success);
-	EXPECT_EQ(boost::get<long long>(v), -2147483648ll);
+	EXPECT_EQ(boost::get<int64_t>(v), -2147483648ll);
 
 	// Teardown
 	TeardownOdEnvForRvt(pDB);
@@ -248,7 +250,7 @@ TEST(RepoMetaVariantConverterRevitTest, Int64Test) {
 
 	// Check result
 	EXPECT_TRUE(success);
-	EXPECT_EQ(boost::get<long long>(v), -9223372036854775808ll);
+	EXPECT_EQ(boost::get<int64_t>(v), -9223372036854775808ll);
 }
 
 TEST(RepoMetaVariantConverterRevitTest, DoubleTest) {

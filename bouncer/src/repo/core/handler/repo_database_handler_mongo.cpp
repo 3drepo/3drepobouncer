@@ -25,9 +25,37 @@
 #include "repo_database_handler_mongo.h"
 #include "fileservice/repo_file_manager.h"
 #include "fileservice/repo_blob_files_handler.h"
-#include "../../lib/repo_log.h"
+#include "repo/core/model/bson/repo_bson_builder.h"
+#include "repo/core/model/bson/repo_bson_element.h"
+#include "repo/lib/repo_log.h"
+#include "repo/lib/repo_exception.h"
+#include "database/repo_expressions.h"
+
+#include <mongocxx/client.hpp>
+#include <mongocxx/instance.hpp>
+#include <mongocxx/uri.hpp>
+#include <mongocxx/pool.hpp>
+#include <mongocxx/exception/operation_exception.hpp>
+#include <mongocxx/exception/bulk_write_exception.hpp>
+#include <mongocxx/exception/query_exception.hpp>
+#include <mongocxx/exception/logic_error.hpp>
+#include <bsoncxx/document/value.hpp>
+#include <bsoncxx/document/view_or_value.hpp>
+#include <bsoncxx/builder/basic/document.hpp>
+#include <bsoncxx/json.hpp>
 
 using namespace repo::core::handler;
+using namespace repo::core::handler::fileservice;
+using namespace bsoncxx::builder::basic;
+
+// mongocxx requires an instance to be created before using the driver, which
+// must remain alive until all other mongocxx objects are destroyed. Only one
+// instance must be created in a given program, even if the multiple instances
+// have non-overlapping lifetimes. This pointer is initialised the first time
+// a MongoDatabaseHandler is constructed, and destroyed when it goes out of
+// scope (on the program exit).
+
+std::unique_ptr<mongocxx::instance> instance;
 
 static uint64_t MAX_MONGO_BSON_SIZE = 16777216L;
 static uint64_t MAX_PARALLEL_BSON = 10000;
@@ -35,7 +63,6 @@ static uint64_t MAX_PARALLEL_BSON = 10000;
 
 const std::string repo::core::handler::MongoDatabaseHandler::ID = "_id";
 const std::string repo::core::handler::MongoDatabaseHandler::UUID = "uuid";
-const std::string repo::core::handler::MongoDatabaseHandler::ADMIN_DATABASE = "admin";
 const std::string repo::core::handler::MongoDatabaseHandler::SYSTEM_ROLES_COLLECTION = "system.roles";
 const std::list<std::string> repo::core::handler::MongoDatabaseHandler::ANY_DATABASE_ROLES =
 { "dbAdmin", "dbOwner", "read", "readWrite", "userAdmin" };
@@ -44,91 +71,123 @@ const std::list<std::string> repo::core::handler::MongoDatabaseHandler::ADMIN_ON
 "hostManager", "readAnyDatabase", "readWriteAnyDatabase", "restore", "root",
 "userAdminAnyDatabase" };
 
-//------------------------------------------------------------------------------
+// The 'admin' database for checking a connection - this can be any database
+// against which getCollections is cheap and for which permissions are
+// representative.
+#define ADMIN "admin"
 
-MongoDatabaseHandler* MongoDatabaseHandler::handler = NULL;
-
-void MongoDatabaseHandler::initWorker(
-	const mongo::ConnectionString &dbAddress,
-	const mongo::BSONObj *auth
-) {
-	/*
-	 * Updated in ISSUE #626 to just have a single instance of worker
-	 * With filesManager being handled by this handler we're running into a lot of issues regarding pool resources.
-	 * The way we use 3drepobouncer now means it's always a single threaded applciation, we essentially
-	 * never run more than one db ops at any one time anyway so it will be logistically easier to do this
-	 * To support multi threading again, we should really refactor the files manager out of here
-	 */
-
-	std::string errMsg;
-	worker = dbAddress.connect(errMsg);
-
-	if (worker)
+class MongoDatabaseHandler::MongoDatabaseHandlerException : public repo::lib::RepoException
+{
+public:
+	MongoDatabaseHandlerException(const MongoDatabaseHandler& handler, const std::string& method, const std::string& db, const std::string collection)
+		: RepoException("MongoDatabaseHandler exception: in " + method + " on: " + db + "." + collection + getUri(handler))
 	{
-		repoDebug << "Connected to database, trying authentication..";
+		errorCode = REPOERR_AUTH_FAILED; //If no outer exception sets the return code, signal this is database operation/connection problem.
+	}
 
-		if (auth)
+	MongoDatabaseHandlerException(const MongoDatabaseHandler& handler, const std::string& method, const std::string& db)
+		: RepoException("MongoDatabaseHandler exception: in " + method + " on: " + db + getUri(handler))
+	{
+		errorCode = REPOERR_AUTH_FAILED;
+	}
+
+	MongoDatabaseHandlerException(const MongoDatabaseHandler& handler, const std::string& msg)
+		: RepoException("MongoDatabaseHandler exception: " + msg + getUri(handler))
+	{
+		errorCode = REPOERR_AUTH_FAILED;
+	}
+
+	MongoDatabaseHandlerException(const std::string& msg)
+		: RepoException("MongoDatabaseHandler exception: " + msg)
+	{
+		errorCode = REPOERR_AUTH_FAILED;
+	}
+
+private:
+	std::string getUri(const MongoDatabaseHandler& handler)
+	{
+		try
 		{
-			repoTrace << auth->toString();
-			if (!worker->auth(auth->getStringField("db"), auth->getStringField("user"), auth->getStringField("pwd"), errMsg, auth->getField("digestPassword").boolean()))
+			auto pool = handler.clientPool->acquire();
+			auto uri = pool->uri().to_string();
+			auto to = uri.find("@");
+			if (to != std::string::npos)
 			{
-				throw mongo::DBException(errMsg, mongo::ErrorCodes::AuthenticationFailed);
+				for (auto i = uri.find("://") + 3; i < to; i++) {
+					uri[i] = '*';
+				}
 			}
+			return std::string(" Uri: ") + uri;
 		}
-		else
+		catch (...)
 		{
-			repoWarning << "No credentials found. User is not authenticated against the database!";
+			return std::string(" Uri: Unable to get URI");
 		}
 	}
-	else {
-		throw mongo::DBException(errMsg, mongo::ErrorCodes::AuthenticationFailed);
+};
+
+MongoDatabaseHandler::MongoDatabaseHandler(
+	const std::string& connectionString,
+	const std::string& username,
+	const std::string& password,
+	const ConnectionOptions& options) :
+	AbstractDatabaseHandler(MAX_MONGO_BSON_SIZE)
+{
+	if (!instance) { // This global pointer should only be initialised once
+		instance = std::make_unique<mongocxx::instance>();
 	}
+
+	auto s = connectionString; // (A copy of the string we can modify)
+
+	// The only valid use of @  in a Mongo connection string is to delimit
+	// credentials (special characters are percent encoded).
+
+	if (s.find("@") == std::string::npos && !username.empty() && !password.empty())
+	{
+		// The connection string doesn't have credentials, so add them here if
+		// provided in separate config members. It is permissable to have no
+		// username and password, if, for example, TLS is configured instead.
+
+		s.insert(s.find("://") + 3, username + ":" + password + "@");
+	}
+
+	std::string optionsPrefix = s.find("?") == std::string::npos ? "/?" : "&";
+	s += optionsPrefix + "maxConnecting=" + std::to_string(options.maxConnections) +
+		"&socketTimeoutMS=" + std::to_string(options.timeout) +
+		"&serverSelectionTimeoutMS=" + std::to_string(options.timeout) +
+		"&connectTimeoutMS=" + std::to_string(options.timeout);
+
+	mongocxx::uri uri(s);
+	clientPool = std::make_unique<mongocxx::pool>(uri);
 }
 
-MongoDatabaseHandler::MongoDatabaseHandler(
-	const mongo::ConnectionString &dbAddress,
-	const uint32_t                &maxConnections,
-	const std::string             &dbName,
-	const std::string             &username,
-	const std::string             &password,
-	const bool                    &pwDigested) :
-	AbstractDatabaseHandler(MAX_MONGO_BSON_SIZE)
-{
-	mongo::client::initialize();
-
-	auto cred = createAuthBSON(dbName, username, password, pwDigested);
-	//workerPool = new connectionPool::MongoConnectionPool(1, dbAddress, cred);
-
-	initWorker(dbAddress, cred);
-}
-
-MongoDatabaseHandler::MongoDatabaseHandler(
-	const mongo::ConnectionString &dbAddress,
-	const uint32_t                &maxConnections,
-	const std::string             &dbName,
-	const repo::core::model::RepoBSON  *cred) :
-	AbstractDatabaseHandler(MAX_MONGO_BSON_SIZE)
-{
-	mongo::client::initialize();
-	/*workerPool = new connectionPool::MongoConnectionPool(1, dbAddress, (mongo::BSONObj*)cred);*/
-
-	initWorker(dbAddress, cred);
-}
-
-/**
-* A Deconstructor
-*/
 MongoDatabaseHandler::~MongoDatabaseHandler()
 {
-	//if (workerPool) {
-	//
-	//	delete workerPool;
-	//}
+}
 
-	if (worker) {
-		delete worker;
+void MongoDatabaseHandler::testConnection()
+{
+	try {
+		// The current version of this test is to enumerate the admins database, which
+		// should always be available, require similar permissions to being able to
+		// create collections etc, but should not have too many entries that waste
+		// time returning.
+		getCollections(ADMIN);
 	}
-	mongo::client::shutdown();
+	catch (...)
+	{
+		std::throw_with_nested(MongoDatabaseHandlerException("testConnection() failed.")); // (The nested exception will print the URI)
+	}
+}
+
+void MongoDatabaseHandler::setFileManager(std::shared_ptr<FileManager> manager)
+{
+	this->fileManager = manager;
+}
+
+std::shared_ptr<FileManager> MongoDatabaseHandler::getFileManager()
+{
+	return this->fileManager;
 }
 
 bool MongoDatabaseHandler::caseInsensitiveStringCompare(
@@ -138,304 +197,168 @@ bool MongoDatabaseHandler::caseInsensitiveStringCompare(
 	return strcasecmp(s1.c_str(), s2.c_str()) <= 0;
 }
 
-mongo::BSONObj* MongoDatabaseHandler::createAuthBSON(
-	const std::string &database,
-	const std::string &username,
-	const std::string &password,
-	const bool        &pwDigested)
+void MongoDatabaseHandler::createIndex(const std::string& database, const std::string& collection, const database::index::RepoIndex& index)
 {
-	mongo::BSONObj* authBson = nullptr;
-	if (!username.empty() && !database.empty() && !password.empty())
+	try
 	{
-		std::string passwordDigest = pwDigested ?
-			password : mongo::DBClientWithCommands::createPasswordDigest(username, password);
-		authBson = new mongo::BSONObj(BSON("user" << username <<
-			"db" << database <<
-			"pwd" << passwordDigest <<
-			"digestPassword" << false));
-	}
-
-	return authBson;
-}
-
-void MongoDatabaseHandler::createCollection(const std::string &database, const std::string &name)
-{
-	if (!(database.empty() || name.empty()))
-	{
-		try {
-			worker->createCollection(database + "." + name);
-		}
-		catch (mongo::DBException& e)
+		if (!(database.empty() || collection.empty()))
 		{
-			repoError << "Failed to create collection ("
-				<< database << "." << name << ":" << e.what();
+			auto client = clientPool->acquire();
+			auto db = client->database(database);
+			auto col = db.collection(collection);
+			auto obj = (repo::core::model::RepoBSON)index;
+
+			repoInfo << "Creating index for :" << database << "." << collection << " : index: " << obj.toString();
+
+			col.create_index(obj.view());
 		}
 	}
-	else
+	catch (...)
 	{
-		repoError << "Failed to create collection: database(value: " << database << ")/collection(value: " << name << ") name is empty!";
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "createIndex", database, collection));
 	}
 }
 
-void MongoDatabaseHandler::createIndex(const std::string &database, const std::string &collection, const mongo::BSONObj & obj)
-{
-	if (!(database.empty() || collection.empty()))
-	{
-		repoInfo << "Creating index for :" << database << "." << collection << " : index: " << obj;
-		try {
-			worker->createIndex(database + "." + collection, obj);
-		}
-		catch (mongo::DBException& e)
-		{
-			repoError << "Failed to create index ("
-				<< database << "." << collection << ":" << e.what();
-		}
-	}
-	else
-	{
-		repoError << "Failed to create index: database(value: " << database << ")/collection(value: " << collection << ") name is empty!";
-	}
-}
-
+/*
+ * This helper function resolves the binary files for a given document.Any
+ * document that might have file mappings should be passed through here
+ * before being returned as a RepoBSON.
+ */
 repo::core::model::RepoBSON createRepoBSON(
 	fileservice::BlobFilesHandler &blobHandler,
 	const std::string &database,
 	const std::string &collection,
-	const mongo::BSONObj &obj,
+	const bsoncxx::document::view& obj,
 	const bool ignoreExtFile = false)
 {
 	repo::core::model::RepoBSON orgBson = repo::core::model::RepoBSON(obj);
 	if (!ignoreExtFile) {
 		if (orgBson.hasFileReference()) {
 			auto ref = orgBson.getBinaryReference();
-
 			auto buffer = blobHandler.readToBuffer(fileservice::DataRef::deserialise(ref));
 			orgBson.initBinaryBuffer(buffer);
 		}
-		else if (orgBson.hasLegacyFileReference()) {
-			std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>> > binMap;
-			std::vector<std::pair<std::string, std::string>> extFileList = orgBson.getFileList();
-			for (const auto &pair : extFileList)
-			{
-				auto fileManager = fileservice::FileManager::getManager();
-
-				auto file = fileManager->getFile(database, collection, pair.second);
-
-				binMap[pair.first] = std::pair<std::string, std::vector<uint8_t>>(pair.second, file);
-			}
-			return repo::core::model::RepoBSON(obj, binMap);
-		}
 	}
-
 	return orgBson;
 }
 
-void MongoDatabaseHandler::disconnectHandler()
-{
-	if (handler)
-	{
-		repoInfo << "Disconnecting from database...";
-		delete handler;
-		handler = nullptr;
-	}
-	else
-	{
-		repoTrace << "Attempting to disconnect a handler without ever instantiating it!";
-	}
-}
-
-bool MongoDatabaseHandler::dropCollection(
+void MongoDatabaseHandler::dropCollection(
 	const std::string &database,
-	const std::string &collection,
-	std::string &errMsg)
+	const std::string &collection)
 {
-	bool success = false;
-
-	if (!database.empty() || collection.empty())
+	try
 	{
-		try {
-			success = worker->dropCollection(database + "." + collection);
-		}
-		catch (mongo::DBException& e)
+		if (!database.empty() && !collection.empty())
 		{
-			errMsg = "Failed to drop collection ("
-				+ database + "." + collection + ":" + e.what();
+			auto client = clientPool->acquire();
+			auto dbObj = client->database(database);
+			auto colObj = dbObj.collection(collection);
+			colObj.drop();
 		}
 	}
-	else
+	catch (...)
 	{
-		errMsg = "Failed to drop collection: either database (value: " + database + ") or collection (value: " + collection + ") is empty";
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "dropCollection", database, collection));
 	}
-
-	return success;
 }
 
-bool MongoDatabaseHandler::dropDocument(
+void MongoDatabaseHandler::dropDocument(
 	const repo::core::model::RepoBSON bson,
 	const std::string &database,
-	const std::string &collection,
-	std::string &errMsg)
+	const std::string &collection)
 {
-	bool success = false;
-
-	if (!database.empty() && !collection.empty())
+	try
 	{
-		try {
-			if (success = !bson.isEmpty() && bson.hasField("_id"))
-			{
-				mongo::Query query = MONGO_QUERY("_id" << bson.getField("_id").toMongoElement());
-				worker->remove(database + "." + collection, query, true);
-			}
-			else
-			{
-				errMsg = "Failed to drop document: id not found";
-			}
-		}
-		catch (mongo::DBException& e)
+		if (database.empty() || collection.empty())
 		{
-			errMsg = "Failed to drop document :" + std::string(e.what());
-			success = false;
+			return;
+		}
+
+		auto client = clientPool->acquire();
+		auto db = client->database(database);
+		auto col = db.collection(collection);
+
+		auto value = bson.find("_id");
+		if (value != bson.end())
+		{
+			bsoncxx::document::value queryDoc = make_document(kvp("_id", (*value).get_value()));
+			col.delete_one(queryDoc.view());
+		}
+		else
+		{
+			throw repo::lib::RepoException("Cannot drop a document without an _id field");
 		}
 	}
-	else
+	catch (...)
 	{
-		errMsg = "Failed to drop document: either database (value: " + database + ") or collection (value: " + collection + ") is empty";
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "dropDocument", database, collection));
 	}
-
-	return success;
-}
-
-mongo::BSONObj MongoDatabaseHandler::fieldsToReturn(
-	const std::list<std::string>& fields,
-	bool excludeIdField)
-{
-	mongo::BSONObjBuilder fieldsToReturn;
-	std::list<std::string>::const_iterator it;
-	for (it = fields.begin(); it != fields.end(); ++it)
-	{
-		fieldsToReturn << *it << 1;
-		excludeIdField = excludeIdField && ID != *it;
-	}
-	if (excludeIdField)
-		fieldsToReturn << ID << 0;
-
-	return fieldsToReturn.obj();
 }
 
 std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria(
 	const std::string& database,
 	const std::string& collection,
-	const repo::core::model::RepoBSON& criteria)
+	const database::query::RepoQuery& filter)
 {
-	std::vector<repo::core::model::RepoBSON> data;
-
-	if (!criteria.isEmpty())
+	try
 	{
-		try {
-			uint64_t retrieved = 0;
-			std::auto_ptr<mongo::DBClientCursor> cursor;
+		std::vector<repo::core::model::RepoBSON> data;
+		repo::core::model::RepoBSON criteria = filter;
+		if (!criteria.isEmpty() && !database.empty() && !collection.empty())
+		{
+			auto client = clientPool->acquire();
+			auto db = client->database(database);
+			auto col = db.collection(collection);
 
-			auto fileManager = fileservice::FileManager::getManager();
 			fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
 
-			do
-			{
-				repoTrace << "Querying " << database << "." << collection << " with : " << criteria.toString();
-				cursor = worker->query(
-					database + "." + collection,
-					criteria,
-					0,
-					retrieved);
-
-				for (; cursor.get() && cursor->more(); ++retrieved)
-				{
-					data.push_back(createRepoBSON(blobHandler, database, collection, cursor->nextSafe().copy()));
-				}
-			} while (cursor.get() && cursor->more());
+			// Find all documents
+			auto cursor = col.find(criteria.view());
+			for (auto& doc : cursor) {
+				data.push_back(createRepoBSON(blobHandler, database, collection, doc));
+			}
 		}
-		catch (mongo::DBException& e)
-		{
-			repoError << "Error in MongoDatabaseHandler::findAllByCriteria: " << e.what();
-		}
+		return data;
 	}
-	return data;
+	catch (...)
+	{
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "findAllByCriteria", database, collection));
+	}
 }
 
 repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 	const std::string& database,
 	const std::string& collection,
-	const repo::core::model::RepoBSON& criteria,
+	const database::query::RepoQuery& filter,
 	const std::string& sortField)
 {
-	repo::core::model::RepoBSON data;
-
-	if (!criteria.isEmpty())
+	try
 	{
-		try {
-			uint64_t retrieved = 0;
-
-			auto query = mongo::Query(criteria);
-			if (!sortField.empty())
-				query = query.sort(sortField, -1);
-
-			data = repo::core::model::RepoBSON(worker->findOne(
-				database + "." + collection,
-				query));
-		}
-		catch (mongo::DBException& e)
+		repo::core::model::RepoBSON criteria = filter;
+		if (!criteria.isEmpty() && !database.empty() && !collection.empty())
 		{
-			repoError << "Error in MongoDatabaseHandler::findOneByCriteria: " << e.what();
-		}
-	}
+			auto client = clientPool->acquire();
+			auto db = client->database(database);
+			auto col = db.collection(collection);
 
-	return data;
-}
+			mongocxx::options::find options{};
+			if (!sortField.empty()) {
+				options.sort(make_document(kvp(sortField, -1)));
+			}
 
-std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueIDs(
-	const std::string& database,
-	const std::string& collection,
-	const repo::core::model::RepoBSON& uuids,
-	const bool ignoreExtFiles) {
-	std::vector<repo::core::model::RepoBSON> data;
-
-	mongo::BSONArray array = mongo::BSONArray(uuids);
-	int fieldsCount = array.nFields();
-	if (fieldsCount > 0)
-	{
-		try {
-			uint64_t retrieved = 0;
-			std::auto_ptr<mongo::DBClientCursor> cursor;
-
-			do
-			{
-				auto fileManager = fileservice::FileManager::getManager();
+			// Find document
+			auto findResult = col.find_one(criteria.view(), options);
+			if (findResult.has_value()) {
 				fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-				mongo::BSONObjBuilder query;
-				query << ID << BSON("$in" << array);
-
-				cursor = worker->query(
-					database + "." + collection,
-					query.obj(),
-					0,
-					retrieved);
-
-				for (; cursor.get() && cursor->more(); ++retrieved)
-				{
-					data.push_back(createRepoBSON(blobHandler, database, collection, cursor->nextSafe().copy(), ignoreExtFiles));
-				}
-			} while (cursor.get() && cursor->more());
-
-			if (fieldsCount != retrieved) {
-				repoWarning << "Number of documents(" << retrieved << ") retreived by findAllByUniqueIDs did not match the number of unique IDs(" << fieldsCount << ")!";
+				return createRepoBSON(blobHandler, database, collection, findResult.value());
 			}
 		}
-		catch (mongo::DBException& e)
-		{
-			repoError << e.what();
-		}
+		return {};
 	}
-
-	return data;
+	catch (...)
+	{
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "findOneByCriteria", database, collection));
+	}
 }
 
 repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
@@ -444,58 +367,26 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 	const repo::lib::RepoUUID& uuid,
 	const std::string& sortField)
 {
-	repo::core::model::RepoBSON bson;
-
-	try
-	{
-		repo::core::model::RepoBSONBuilder queryBuilder;
-		queryBuilder.append("shared_id", uuid);
-		//----------------------------------------------------------------------
-
-		auto fileManager = fileservice::FileManager::getManager();
-		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-		auto query = mongo::Query(queryBuilder.mongoObj());
-		if (!sortField.empty())
-			query = query.sort(sortField, -1);
-
-		mongo::BSONObj bsonMongo = worker->findOne(
-			getNamespace(database, collection),
-			query);
-
-		bson = createRepoBSON(blobHandler, database, collection, bsonMongo);
-	}
-	catch (mongo::DBException& e)
-	{
-		repoError << "Error querying the database: " << std::string(e.what());
-	}
-
-	return bson;
+	return findOneByCriteria(database, collection, database::query::Eq(std::string("shared_id"), uuid), sortField);
 }
 
 repo::core::model::RepoBSON  MongoDatabaseHandler::findOneByUniqueID(
 	const std::string& database,
 	const std::string& collection,
-	const repo::lib::RepoUUID& uuid) {
-	repo::core::model::RepoBSON bson;
+	const repo::lib::RepoUUID& id)
+{
+	return findOneByCriteria(database, collection, database::query::Eq(ID, id));
+}
 
-	try
-	{
-		repo::core::model::RepoBSONBuilder queryBuilder;
-		queryBuilder.append(ID, uuid);
-
-		auto fileManager = fileservice::FileManager::getManager();
-		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-		mongo::BSONObj bsonMongo = worker->findOne(getNamespace(database, collection),
-			mongo::Query(queryBuilder.mongoObj()));
-
-		bson = createRepoBSON(blobHandler, database, collection, bsonMongo);
-	}
-	catch (mongo::DBException& e)
-	{
-		repoError << e.what();
-	}
-
-	return bson;
+repo::core::model::RepoBSON  MongoDatabaseHandler::findOneByUniqueID(
+	const std::string& database,
+	const std::string& collection,
+	const std::string& id)
+{
+	repo::core::model::RepoBSONBuilder builder;
+	builder.append(ID, id);
+	auto queryDoc = builder.obj();
+	return findOneByCriteria(database, collection, database::query::Eq(ID, id));
 }
 
 std::vector<repo::core::model::RepoBSON>
@@ -508,50 +399,72 @@ MongoDatabaseHandler::getAllFromCollectionTailable(
 	const std::string							  &sortField,
 	const int									  &sortOrder)
 {
-	std::vector<repo::core::model::RepoBSON> bsons;
-
 	try
 	{
-		mongo::BSONObj tmp = fieldsToReturn(fields);
+		std::vector<repo::core::model::RepoBSON> bsons;
 
-		std::auto_ptr<mongo::DBClientCursor> cursor = worker->query(
-			database + "." + collection,
-			sortField.empty() ? mongo::Query() : mongo::Query().sort(sortField, sortOrder),
-			limit,
-			skip,
-			fields.size() > 0 ? &tmp : nullptr);
-
-		auto fileManager = fileservice::FileManager::getManager();
-		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-		while (cursor.get() && cursor->more())
+		if (database.empty() || collection.empty())
 		{
-			//have to copy since the bson info gets cleaned up when cursor gets out of scope
-			bsons.push_back(createRepoBSON(blobHandler, database, collection, cursor->nextSafe().copy()));
+			return bsons;
 		}
-	}
-	catch (mongo::DBException& e)
-	{
-		repoError << "Failed retrieving bsons from mongo: " << e.what();
-	}
 
-	return bsons;
+		auto client = clientPool->acquire();
+		auto db = client->database(database);
+		auto col = db.collection(collection);
+
+		mongocxx::options::find options{};
+		if (!sortField.empty())
+		{
+			options.sort(make_document(kvp(sortField, sortOrder)));
+		}
+		options.limit(limit);
+		options.skip(skip);
+
+		// Append the projection (as a document) - this should go onto the options
+		if (fields.size() > 0)
+		{
+			bsoncxx::builder::basic::document projection;
+			for (auto& n : fields)
+			{
+				projection.append(kvp(n, 1));
+			}
+			options.projection(projection.extract());
+		}
+
+
+		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
+
+		auto cursor = col.find({}, options);
+		for (auto doc : cursor) {
+			bsons.push_back(createRepoBSON(blobHandler, database, collection, doc));
+		}
+
+		return bsons;
+	}
+	catch (...)
+	{
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "getAllFromCollectionTailable", database, collection));
+	}
 }
 
 std::list<std::string> MongoDatabaseHandler::getCollections(
 	const std::string &database)
 {
-	std::list<std::string> collections;
-
 	try
 	{
-		collections = worker->getCollectionNames(database);
+		if (database.empty())
+		{
+			return {};
+		}
+		auto client = clientPool->acquire();
+		auto db = client->database(database);
+		auto collectionsVector = db.list_collection_names();
+		return std::list<std::string>(collectionsVector.begin(), collectionsVector.end());
 	}
-	catch (mongo::DBException& e)
+	catch (...)
 	{
-		repoError << e.what();
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "getCollections", database));
 	}
-
-	return collections;
 }
 
 std::vector<uint8_t> MongoDatabaseHandler::getBigFile(
@@ -559,8 +472,6 @@ std::vector<uint8_t> MongoDatabaseHandler::getBigFile(
 	const std::string &collection,
 	const std::string &fileName)
 {
-	auto fileManager = fileservice::FileManager::getManager();
-
 	return fileManager->getFile(database, collection, fileName);
 }
 
@@ -576,119 +487,25 @@ std::string MongoDatabaseHandler::getProjectFromCollection(const std::string &ns
 	return project;
 }
 
-MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
-	std::string       &errMsg,
+std::shared_ptr<MongoDatabaseHandler> MongoDatabaseHandler::getHandler(
 	const std::string &connectionString,
-	const uint32_t    &maxConnections,
-	const std::string &dbName,
-	const std::string &username,
-	const std::string &password,
-	const bool        &pwDigested)
+	const std::string& username,
+	const std::string& password,
+	const ConnectionOptions& options
+)
 {
-	if (!handler) {
-		std::string msg;
-		mongo::ConnectionString mongoConnectionString = mongo::ConnectionString::parse(connectionString, msg);
-		if (!msg.empty()) {
-			repoError << "Failed to construct connection string: " << msg;
-			return nullptr;
-		}
-
-		//initialise the mongo client
-		repoTrace << "Handler not present for " << mongoConnectionString.toString() << " instantiating new handler...";
-		try {
-			handler = new MongoDatabaseHandler(mongoConnectionString, maxConnections, dbName, username, password, pwDigested);
-		}
-		catch (mongo::DBException e)
-		{
-			if (handler)
-				delete handler;
-			handler = 0;
-			errMsg = std::string(e.what());
-			repoError << "Error establishing Mongo Handler: " << errMsg;
-		}
-	}
-	else
-	{
-		repoTrace << "Found handler, returning existing handler";
-	}
-
-	return handler;
+	return std::make_shared<MongoDatabaseHandler>(connectionString, username, password, options);
 }
 
-MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
-	std::string       &errMsg,
+std::shared_ptr<MongoDatabaseHandler> MongoDatabaseHandler::getHandler(
 	const std::string &host,
 	const int         &port,
-	const uint32_t    &maxConnections,
-	const std::string &dbName,
-	const std::string &username,
-	const std::string &password,
-	const bool        &pwDigested)
+	const std::string& username,
+	const std::string& password,
+	const ConnectionOptions& options
+)
 {
-	std::ostringstream connectionString;
-
-	mongo::HostAndPort hostAndPort = mongo::HostAndPort(host, port >= 0 ? port : -1);
-
-	mongo::ConnectionString mongoConnectionString = mongo::ConnectionString(hostAndPort);
-
-	if (!handler) {
-		//initialise the mongo client
-		repoTrace << "Handler not present for " << mongoConnectionString.toString() << " instantiating new handler...";
-		try {
-			handler = new MongoDatabaseHandler(mongoConnectionString, maxConnections, dbName, username, password, pwDigested);
-		}
-		catch (mongo::DBException e)
-		{
-			if (handler)
-				delete handler;
-			handler = 0;
-			errMsg = std::string(e.what());
-			repoError << "Error establishing Mongo Handler: " << errMsg;
-		}
-	}
-	else
-	{
-		repoTrace << "Found handler, returning existing handler";
-	}
-
-	return handler;
-}
-
-MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
-	std::string                       &errMsg,
-	const std::string                 &host,
-	const int                         &port,
-	const uint32_t                    &maxConnections,
-	const std::string                 &dbName,
-	const repo::core::model::RepoBSON *credentials)
-{
-	std::ostringstream connectionString;
-
-	mongo::HostAndPort hostAndPort = mongo::HostAndPort(host, port >= 0 ? port : -1);
-
-	mongo::ConnectionString mongoConnectionString = mongo::ConnectionString(hostAndPort);
-
-	if (!handler) {
-		//initialise the mongo client
-		repoTrace << "Handler not present for " << mongoConnectionString.toString() << " instantiating new handler...";
-		try {
-			handler = new MongoDatabaseHandler(mongoConnectionString, maxConnections, dbName, credentials);
-		}
-		catch (mongo::DBException e)
-		{
-			if (handler)
-				delete handler;
-			handler = 0;
-			errMsg = std::string(e.what());
-			repoError << "Error establishing Mongo Handler: " << errMsg;
-		}
-	}
-	else
-	{
-		repoTrace << "Found handler, returning existing handler";
-	}
-
-	return handler;
+	return getHandler("mongodb://" + host + ":" + std::to_string(port), username, password, options);
 }
 
 std::string MongoDatabaseHandler::getNamespace(
@@ -698,147 +515,140 @@ std::string MongoDatabaseHandler::getNamespace(
 	return database + "." + collection;
 }
 
-bool MongoDatabaseHandler::insertDocument(
+void MongoDatabaseHandler::insertDocument(
 	const std::string &database,
 	const std::string &collection,
-	const repo::core::model::RepoBSON &obj,
-	std::string &errMsg)
+	const repo::core::model::RepoBSON &obj)
 {
-	bool success = false;
-
-	if (!database.empty() || collection.empty())
+	try
 	{
-		try {
-			worker->insert(getNamespace(database, collection), obj);
-			success = true;
-		}
-		catch (mongo::DBException &e)
+		if (obj.hasOversizeFiles())
 		{
-			std::string errString(e.what());
-			errMsg += errString;
+			throw repo::lib::RepoException("insertDocument cannot be used with BSONs holding binary files. Use insertManyDocuments instead.");
 		}
-	}
-	else
-	{
-		errMsg = "Unable to insert Document, database(value : " + database + ")/collection(value : " + collection + ") name was not specified";
-	}
 
-	return success;
+		auto client = clientPool->acquire();
+		auto db = client->database(database);
+		auto col = db.collection(collection);
+		col.insert_one(obj.view());
+	}
+	catch (...)
+	{
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "insertDocument", database, collection));
+	}
 }
 
-bool MongoDatabaseHandler::insertManyDocuments(
+void MongoDatabaseHandler::insertManyDocuments(
 	const std::string &database,
 	const std::string &collection,
 	const std::vector<repo::core::model::RepoBSON> &objs,
-	std::string &errMsg,
-	const repo::core::model::RepoBSON &binaryStorageMetadata)
+	const Metadata& binaryStorageMetadata)
 {
-	bool success = false;
-
-	if (!database.empty() || collection.empty())
+	try
 	{
-		try {
-			auto fileManager = fileservice::FileManager::getManager();
+		auto client = clientPool->acquire();
+		auto db = client->database(database);
+		auto col = db.collection(collection);
 
-			fileservice::BlobFilesHandler blobHandler(fileManager, database, collection, binaryStorageMetadata);
+		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection, binaryStorageMetadata);
 
-			for (int i = 0; i < objs.size(); i += MAX_PARALLEL_BSON) {
-				std::vector<repo::core::model::RepoBSON>::const_iterator it = objs.begin() + i;
-				std::vector<repo::core::model::RepoBSON>::const_iterator last = i + MAX_PARALLEL_BSON >= objs.size() ? objs.end() : it + MAX_PARALLEL_BSON;
-				std::vector<mongo::BSONObj> toCommit;
-				do {
-					auto node = *it;
-					auto data = node.getBinariesAsBuffer();
-					if (data.second.size()) {
-						auto ref = blobHandler.insertBinary(data.second);
-						node.replaceBinaryWithReference(ref.serialise(), data.first);
-					}
-					toCommit.push_back(node);
-				} while (++it != last);
+		for (int i = 0; i < objs.size(); i += MAX_PARALLEL_BSON) {
+			std::vector<repo::core::model::RepoBSON>::const_iterator it = objs.begin() + i;
+			std::vector<repo::core::model::RepoBSON>::const_iterator last = i + MAX_PARALLEL_BSON >= objs.size() ? objs.end() : it + MAX_PARALLEL_BSON;
+			std::vector<bsoncxx::document::value> toCommit;
+			do {
+				auto node = *it;
+				auto data = node.getBinariesAsBuffer();
+				if (data.second.size()) {
+					auto ref = blobHandler.insertBinary(data.second);
+					node.replaceBinaryWithReference(ref.serialise(), data.first);
+				}
+				toCommit.push_back(node);
+			} while (++it != last);
 
-				repoInfo << "Inserting " << toCommit.size() << " documents...";
-				worker->insert(getNamespace(database, collection), toCommit);
-			}
-
-			blobHandler.finished();
-
-			success = true;
+			repoInfo << "Inserting " << toCommit.size() << " documents...";
+			col.insert_many(toCommit);
 		}
 
-		catch (mongo::DBException &e)
-		{
-			std::string errString(e.what());
-			errMsg += errString;
-		}
+		blobHandler.finished();
 	}
-	else
+	catch (...)
 	{
-		errMsg = "Unable to insert Document, database(value : " + database + ")/collection(value : " + collection + ") name was not specified";
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "insertManyDocuments", database, collection));
 	}
-
-	return success;
 }
 
-bool MongoDatabaseHandler::upsertDocument(
+void MongoDatabaseHandler::upsertDocument(
 	const std::string &database,
 	const std::string &collection,
 	const repo::core::model::RepoBSON &obj,
-	const bool        &overwrite,
-	std::string &errMsg)
+	const bool        &overwrite)
 {
-	bool success = true;
-
-	bool upsert = overwrite;
-	try {
-		repo::core::model::RepoBSONBuilder queryBuilder;
-		queryBuilder.append(ID, obj.getField(ID));
-
-		mongo::BSONElement bsonID;
-		obj.getObjectID(bsonID);
-		mongo::Query existQuery = MONGO_QUERY("_id" << bsonID);
-		mongo::BSONObj bsonMongo = worker->findOne(database + "." + collection, existQuery);
-
-		if (bsonMongo.isEmpty())
+	try
+	{
+		if (obj.hasOversizeFiles())
 		{
-			//document doens't exist, insert the document
-			upsert = true;
+			throw repo::lib::RepoException("upsertDocument cannot be used with BSONs holding binary files.");
 		}
 
-		if (upsert)
+		auto client = clientPool->acquire();
+		auto db = client->database(database);
+		auto col = db.collection(collection);
+
+		bsoncxx::builder::basic::document query;
+
+		if (overwrite)
 		{
-			mongo::Query query;
-			query = BSON(REPO_LABEL_ID << bsonID);
-			repoTrace << "query = " << query.toString();
-			worker->update(getNamespace(database, collection), query, obj, true);
+			query.append(kvp(ID, obj.find(ID)->get_value()));
+
+			mongocxx::options::replace options{};
+			options.upsert(true);
+
+			col.replace_one(
+				query.view(),
+				obj.view(),
+				options
+			);
 		}
 		else
 		{
-			//only update fields
-			mongo::BSONObjBuilder builder;
-			builder << REPO_COMMAND_UPDATE << collection;
+			// The following snippet makes the update document, which consists of
+			// a command to set all mutable fields, and set the immutable _id field
+			// only when performing an insert.
 
-			mongo::BSONObjBuilder updateBuilder;
-			updateBuilder << REPO_COMMAND_Q << BSON(REPO_LABEL_ID << bsonID);
-			updateBuilder << REPO_COMMAND_U << BSON("$set" << ((mongo::BSONObj)obj).removeField(ID));
-			updateBuilder << REPO_COMMAND_UPSERT << true;
+			bsoncxx::builder::basic::document set;
+			bsoncxx::builder::basic::document setOnInsert;
 
-			builder << REPO_COMMAND_UPDATES << BSON_ARRAY(updateBuilder.obj());
-			mongo::BSONObj info;
-			worker->runCommand(database, builder.obj(), info);
-
-			if (info.hasField("writeErrors"))
+			for (const auto& e : obj)
 			{
-				repoError << info.getField("writeErrors").Array().at(0).embeddedObject().getStringField("errmsg");
-				success = false;
+				if (e.key() == ID)
+				{
+					query.append(kvp(e.key(), e.get_value()));
+					setOnInsert.append(kvp(e.key(), e.get_value()));
+				}
+				else
+				{
+					set.append(kvp(e.key(), e.get_value()));
+				}
 			}
+
+			auto update = make_document(
+				kvp("$set", set.view()),
+				kvp("$setOnInsert", setOnInsert.view())
+			);
+
+			mongocxx::options::update options{};
+			options.upsert(true);
+
+			col.update_one(
+				query.view(),
+				update.view(),
+				options
+			);
 		}
 	}
-	catch (mongo::DBException &e)
+	catch (...)
 	{
-		success = false;
-		std::string errString(e.what());
-		errMsg += errString;
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "upsertDocument", database, collection));
 	}
-
-	return success;
 }

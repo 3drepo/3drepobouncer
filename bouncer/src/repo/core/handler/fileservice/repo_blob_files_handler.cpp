@@ -75,3 +75,8 @@ std::vector<uint8_t> BlobFilesHandler::readToBuffer(const DataRef &ref) {
 
 	return res;
 }
+
+std::shared_ptr<FileManager>  BlobFilesHandler::getFileManager()
+{
+	return manager;
+}

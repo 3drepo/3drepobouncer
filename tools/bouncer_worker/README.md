@@ -51,7 +51,7 @@ Bouncer worker takes in a JSON file with the following parameters.
   "timeoutMS": //number of ms to spend on a task before timing out (default: 3hours)
   "logging" : {
   	"logLevel": //Only show logging of this severity level or above (default: info)
-    "taskLogDir": //Path to where the individual task logs should go for each tasks (Used to be in bouncer.log_dir). (default: rabbitmq.sharedDir[recommended])
+    "taskLogDir": //Path to where the individual task logs should go for each tasks. If not set will default to default: rabbitmq.sharedDir [recommended].
     "workerLogPath": //Where bouncer worker will write it log. If it is not specified, it will not log to file.
   },
   "rabbitmq": {
@@ -71,7 +71,7 @@ Bouncer worker takes in a JSON file with the following parameters.
   },
   "bouncer": {
     "path": //path to 3drepobouncerClient
-    "envar": { } //additional envars to set whilst running 3drepobouncerClient
+    "envars": { } //additional envars to set whilst running 3drepobouncerClient
   },
   "db": {
     "dbhost": //hostname of mongo database
@@ -83,10 +83,6 @@ Bouncer worker takes in a JSON file with the following parameters.
     //fs configuration is entirely optional.
     "path" : //path to fileshare
     "level": //number of levels to split
-  },
-  "unity": {
-    "project": //location of AssetBundleCreator project
-    "batPath": //path to buildBundle script.
   },
   "repoLicense": //license string for license check (only required on builds that are license enforced)
 }
