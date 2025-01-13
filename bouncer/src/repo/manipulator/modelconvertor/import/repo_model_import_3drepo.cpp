@@ -22,10 +22,9 @@
 #include <iostream>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
-#include "../../../core/model/bson/repo_bson_builder.h"
-#include "../../../core/model/bson/repo_bson_factory.h"
-#include "../../../lib/repo_log.h"
-#include "../../../error_codes.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/lib/repo_log.h"
+#include "repo/error_codes.h"
 
 using namespace repo::core::model;
 using namespace repo::manipulator::modelconvertor;
@@ -223,7 +222,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 	std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
 	std::vector<repo_face_t> faces;
 
-	std::vector<std::vector<double> > boundingBox;
+	repo::lib::RepoBounds bounds;
 
 	const bool needTransform = !trans.isIdentity();
 	repo::lib::RepoMatrix normalTrans;
@@ -240,9 +239,6 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 
 		normalTrans = repo::lib::RepoMatrix(data);
 	}
-
-	std::vector<double> minBBox;
-	std::vector<double> maxBBox;
 
 	for (ptree::const_iterator props = mesh.begin(); props != mesh.end(); props++)
 	{
@@ -264,21 +260,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 					tmpVec = { tmpVerticesDouble[i * 3] ,  tmpVerticesDouble[i * 3 + 1] , tmpVerticesDouble[i * 3 + 2] };
 					if (needTransform) tmpVec = trans * tmpVec;
 
-					if (minBBox.size()) {
-						if (tmpVec.x < minBBox[0]) minBBox[0] = tmpVec.x;
-						if (tmpVec.y < minBBox[1]) minBBox[1] = tmpVec.y;
-						if (tmpVec.z < minBBox[2]) minBBox[2] = tmpVec.z;
-					}
-					else
-						minBBox = { tmpVec.x, tmpVec.y, tmpVec.z };
-
-					if (maxBBox.size()) {
-						if (tmpVec.x > maxBBox[0]) maxBBox[0] = tmpVec.x;
-						if (tmpVec.y > maxBBox[1]) maxBBox[1] = tmpVec.y;
-						if (tmpVec.z > maxBBox[2]) maxBBox[2] = tmpVec.z;
-					}
-					else
-						maxBBox = { tmpVec.x, tmpVec.y, tmpVec.z };
+					bounds.encapsulate(tmpVec);
 
 					vertices.push_back(tmpVec);
 				}
@@ -346,25 +328,21 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 		}
 	}
 
-	boundingBox.push_back(minBBox);
-	boundingBox.push_back(maxBBox);
-
-	if (offset.size()) {
-		for (int i = 0; i < offset.size(); ++i)
-			offset[i] = offset[i] > minBBox[i] ? minBBox[i] : offset[i];
+	if (offset) {
+		offset = repo::lib::RepoVector3D64::min(offset.value(), bounds.min());
 	}
 	else {
-		offset = minBBox;
+		offset = bounds.min();
 	}
 
 	const auto sharedID = repo::lib::RepoUUID::createUUID();
 
 	if (materialID >= 0)
 	{
-		matParents[materialID].push_back(sharedID);
+		matNodeList[materialID]->addParent(sharedID);
 	}
 
-	mesh_data_t result = { vertices, normals, uvChannels, faces, boundingBox, parentID, sharedID };
+	mesh_data_t result = { vertices, normals, uvChannels, faces, bounds, parentID, sharedID };
 	return result;
 }
 
@@ -428,7 +406,7 @@ void RepoModelImport::createObject(const ptree& tree)
 
 		for (auto& meta : metas)
 		{
-			*meta = meta->cloneAndAddParent(metaParentIDs);
+			meta->addParents(metaParentIDs);
 		}
 	}
 }
@@ -515,7 +493,6 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t& err)
 			{
 				parseMaterial(element.second);
 			}
-			matParents.resize(materials.size());
 			repoInfo << "Loaded: " << materials.size() << " materials";
 		}
 		else
@@ -642,14 +619,12 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t& errCod
 		createObject(jsonTree);
 	}
 
-	// Attach all the parents to the materials
-	repoInfo << "Attaching materials to parents";
+	// Change the container type of the materials for RepoScene's constructor
+	repoInfo << "Building materials list";
 	materials.clear();
 	for (int i = 0; i < matNodeList.size(); i++)
 	{
-		repo::core::model::MaterialNode* tmpMaterial = new repo::core::model::MaterialNode();
-		*tmpMaterial = matNodeList[i]->cloneAndAddParent(matParents[i]);
-		materials.insert(tmpMaterial);
+		materials.insert(matNodeList[i]);
 	}
 
 	// Preparing reference files
@@ -661,23 +636,21 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t& errCod
 
 	// Processing meshes
 	repo::core::model::RepoNodeSet meshes;
-	if (!offset.size()) { offset = { 0, 0, 0 }; }
+	if (!offset) offset = repo::lib::RepoVector3D64(0, 0, 0);
 	for (const auto& entry : meshEntries) {
 		std::vector<repo::lib::RepoVector3D> vertices;
-		std::vector<std::vector<float>> boundingBox;
 		// Offsetting all the verts by the world offset to reduce the magnitude
 		// of their values so they can be cast to floats (widely used in 3D libs)
 		for (const auto& v : entry.rawVertices) {
-			repo::lib::RepoVector3D v32 = { (float)(v.x - offset[0]), (float)(v.y - offset[1]), (float)(v.z - offset[2]) };
+			repo::lib::RepoVector3D v32 = (repo::lib::RepoVector3D)(v - offset.value());
 			vertices.push_back(v32);
 		}
-		for (const auto& bbArr : entry.boundingBox) {
-			std::vector<float> bb;
-			for (int i = 0; i < bbArr.size(); ++i) {
-				bb.push_back((float)bbArr[i] - offset[i]);
-			}
-			boundingBox.push_back(bb);
-		}
+
+		repo::lib::RepoBounds boundingBox(
+			entry.boundingBox.min() - offset.value(),
+			entry.boundingBox.max() - offset.value()
+		);
+
 		auto mesh = repo::core::model::RepoBSONFactory::makeMeshNode(
 			vertices,
 			entry.faces,
@@ -686,16 +659,14 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t& errCod
 			entry.uvChannels,
 			std::string(),
 			{ entry.parent });
-		repo::core::model::RepoBSONBuilder builder;
-		builder.append(REPO_NODE_LABEL_SHARED_ID, entry.sharedID);
-		auto changes = builder.obj();
-		meshes.insert(new repo::core::model::MeshNode(mesh.cloneAndAddFields(&changes, false)));
+		mesh.setSharedID(entry.sharedID);
+		meshes.insert(new repo::core::model::MeshNode(mesh));
 	}
 
 	// Generate scene
 	repo::core::model::RepoScene* scenePtr = new repo::core::model::RepoScene(
 		fileVect, meshes, materials, metadata, textures, transformations);
-	scenePtr->setWorldOffset(offset);
+	scenePtr->setWorldOffset({ offset.value().x, offset.value().y, offset.value().z });
 
 	// Error handling
 	if (missingTextures)

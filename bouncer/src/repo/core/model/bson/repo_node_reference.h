@@ -20,6 +20,7 @@
 
 #pragma once
 #include "repo_node.h"
+#include "repo/core/model/repo_model_global.h"
 
 //------------------------------------------------------------------------------
 //
@@ -35,7 +36,7 @@
 namespace repo {
 	namespace core {
 		namespace model {
-			class REPO_API_EXPORT ReferenceNode :public RepoNode
+			class REPO_API_EXPORT ReferenceNode : public RepoNode
 			{
 			public:
 
@@ -54,6 +55,12 @@ namespace repo {
 				* Default deconstructor
 				*/
 				~ReferenceNode();
+
+			protected:
+				void deserialise(RepoBSON&);
+				void serialise(repo::core::model::RepoBSONBuilder&) const;
+
+			public:
 
 				/**
 				* Get the type of node
@@ -86,47 +93,69 @@ namespace repo {
 				*	------------- Convenience getters --------------
 				*/
 
+			private:
+
+				repo::lib::RepoUUID revisionId;
+				std::string databaseName;
+				std::string projectId; // For legacy reasons this is stored as a string
+				bool isUnique;
+
+			public:
+
 				/**
-				* Retrieve the UUID of the revision this reference node is referring to
-				* if it doesn't exist, return master branch id
-				* @return returns the UUID for this reference
+				* The UUID of the revision of the container this ReferenceNode refers to.
+				* If it doesn't exist, returns master branch id.
 				*/
-				repo::lib::RepoUUID getRevisionID() const{
-					if (hasField(REPO_NODE_REFERENCE_LABEL_REVISION_ID))
-						return getUUIDField(REPO_NODE_REFERENCE_LABEL_REVISION_ID);
-					else
-						return repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH);
+				repo::lib::RepoUUID getProjectRevision() const
+				{
+					return revisionId;
+				}
+
+				void setProjectRevision(const repo::lib::RepoUUID& id)
+				{
+					this->revisionId = id;
+				}
+
+				/**
+				* Retrieve the teamspace of the project this reference node is referring to
+				*/
+				std::string getDatabaseName() const
+				{
+					return databaseName;
+				}
+
+				void setDatabaseName(const std::string& name)
+				{
+					this->databaseName = name;
 				}
 
 				/**
 				* Retrieve the project this reference node is referring to
-				* @return returns the project name for this reference
 				*/
-				std::string getDatabaseName() const{
-					return getStringField(REPO_NODE_REFERENCE_LABEL_OWNER);
+				std::string getProjectId() const
+				{
+					return projectId;
+				}
+
+				void setProjectId(const std::string& name)
+				{
+					this->projectId = name;
 				}
 
 				/**
-				* Retrieve the project this reference node is referring to
-				* @return returns the project name for this reference
-				*/
-				std::string getProjectName() const{
-					return getStringField(REPO_NODE_REFERENCE_LABEL_PROJECT);
-				}
-
-				/**
-				* Indicates if the Revision ID from getRevisionID()
+				* Indicates if the Revision ID from getProjectRevision()
 				* is a branch ID (false) or a specific revision(true)
 				* @return returns true if it is a uuid of a specific
 				* revision, otherwise it's a branch uuid
 				*/
 				bool useSpecificRevision() const
 				{
-					bool isUnique = false; //defaults to false.
-					if (hasField(REPO_NODE_REFERENCE_LABEL_UNIQUE))
-						isUnique = getBoolField(REPO_NODE_REFERENCE_LABEL_UNIQUE);
-
 					return isUnique;
+				}
+
+				void setUseSpecificRevision(bool isSpecificRevision)
+				{
+					this->isUnique = isSpecificRevision;
 				}
 			};
 		} //namespace model

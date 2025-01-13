@@ -29,61 +29,105 @@ RepoNode()
 {
 }
 
-MetadataNode::MetadataNode(RepoBSON bson,
-	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping) :
-	RepoNode(bson, binMapping)
+MetadataNode::MetadataNode(RepoBSON bson) :
+	RepoNode(bson)
 {
+	deserialise(bson);
 }
 
 MetadataNode::~MetadataNode()
 {
 }
 
-MetadataNode MetadataNode::cloneAndAddMetadata(
-	const RepoBSON &metadata) const
+void MetadataNode::deserialise(RepoBSON& bson)
 {
-	RepoBSONBuilder metaBuilder, bsonBuilder;
-	metaBuilder.appendElements(metadata);
-	if (hasField(REPO_NODE_LABEL_METADATA))
-	{
-		auto metaBson = getObjectField(REPO_NODE_LABEL_METADATA);
-		if (!metaBson.isEmpty())
-			metaBuilder.appendElementsUnique(metaBson);
+	if (bson.hasField(REPO_NODE_LABEL_METADATA)) {
+		auto metadata = bson.getObjectArray(REPO_NODE_LABEL_METADATA);
+		for (auto& field : metadata) {
+			auto key = field.getStringField(REPO_NODE_LABEL_META_KEY);
+			metadataMap[key] = field.getField(REPO_NODE_LABEL_META_VALUE).repoVariant();
+		}
+	}
+}
+
+bool keyCheck(const char& c)
+{
+	return c == '$' || c == '.';
+}
+
+std::string sanitiseKey(const std::string& key)
+{
+	std::string cleanedKey(key);
+	std::replace_if(cleanedKey.begin(), cleanedKey.end(), keyCheck, ':');
+	return cleanedKey;
+}
+
+void MetadataNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
+{
+	RepoNode::serialise(builder);
+
+	std::vector<RepoBSON> metaEntries;
+	for (const auto& entry : metadataMap) {
+		std::string key = entry.first;
+		repo::lib::RepoVariant value = entry.second;
+		if (!key.empty())
+		{
+			RepoBSONBuilder metaEntryBuilder;
+			metaEntryBuilder.append(REPO_NODE_LABEL_META_KEY, key);
+			metaEntryBuilder.appendRepoVariant(REPO_NODE_LABEL_META_VALUE, value);
+
+			metaEntries.push_back(metaEntryBuilder.obj());
+		}
 	}
 
-	bsonBuilder.append(REPO_NODE_LABEL_METADATA, metaBuilder.obj());
-	bsonBuilder.appendElementsUnique(*this);
-	return MetadataNode(bsonBuilder.obj(), bigFiles);
+	builder.appendArray(REPO_NODE_LABEL_METADATA, metaEntries);
+}
+
+void MetadataNode::setMetadata(const std::unordered_map<std::string, repo::lib::RepoVariant>& map)
+{
+	for (const auto& pair : map) {
+		auto key = sanitiseKey(pair.first);
+		auto value = pair.second;
+		metadataMap[key] = value;
+	}
+}
+
+/* Define the equality operator for tm, for sEqual below.
+ * This static definition is only for this object.
+ */
+
+static bool operator== (tm a, tm b)
+{
+	return memcmp(&a, &b, sizeof(tm)) == 0;
 }
 
 bool MetadataNode::sEqual(const RepoNode &other) const
 {
-	if (other.getTypeAsEnum() != NodeType::METADATA || other.getParentIDs().size() != getParentIDs().size())
+	if (other.getTypeAsEnum() != NodeType::METADATA)
 	{
 		return false;
 	}
 
-	std::set<std::string> fieldNames = getFieldNames(), otherFieldNames = other.getFieldNames();
-	bool match = false;
-	if (match = ( fieldNames.size() == otherFieldNames.size()))
-	{
-		for (const std::string &fieldName : fieldNames)
-		{
-			auto it = otherFieldNames.find(fieldName);
-			if (match = (it != otherFieldNames.end()))
-			{
-				RepoBSONElement element = getField(fieldName);
-				RepoBSONElement otherElement = other.getField(fieldName);
+	auto o = dynamic_cast<const MetadataNode&>(other);
 
-				if (match = (element.type() == otherElement.type()))
-				{
-					//it'll get complicated to check the actual value, so just
-					//rely on element comparison..?
-					match = element == otherElement;
-				}
-			}
-			if (!match) break;
+	if (metadataMap.size() != o.metadataMap.size())
+	{
+		return false;
+	}
+
+	for (auto& m : metadataMap)
+	{
+		auto it = o.metadataMap.find(m.first);
+		if (it == o.metadataMap.end())
+		{
+			return false;
+		}
+
+		if ((*it).second != m.second)
+		{
+			return false;
 		}
 	}
-	return match;
+
+	return true;
 }

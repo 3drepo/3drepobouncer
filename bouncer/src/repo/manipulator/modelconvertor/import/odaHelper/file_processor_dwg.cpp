@@ -28,8 +28,8 @@
 #include <GiContextForDbDatabase.h>
 #include <../Exports/2dExport/Include/2dExportDevice.h>
 
-#include "../../../../error_codes.h"
-#include "../../../../lib/repo_exception.h"
+#include "repo/error_codes.h"
+#include "repo/lib/repo_exception.h"
 
 #include <vector>
 
@@ -196,7 +196,7 @@ repo::manipulator::modelconvertor::ModelUnits FileProcessorDwg::determineModelUn
 uint8_t FileProcessorDwg::readFile()
 {
 	uint8_t nRes = 0; // Return value for the function
-	try 
+	try
 	{
 		odInitialize(&svcs);
 		odgsInitialize();

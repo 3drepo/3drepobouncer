@@ -15,9 +15,9 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "repo_scene_manager.h"
-
-#include "../../core/model/bson/repo_bson_builder.h"
-#include "../../core/model/bson/repo_bson_ref.h"
+#include "repo/core/model/bson/repo_bson_builder.h"
+#include "repo/core/model/bson/repo_bson_ref.h"
+#include "repo/core/model/bson/repo_bson_teamspace.h"
 #include "../../error_codes.h"
 #include "../modeloptimizer/repo_optimizer_multipart.h"
 #include "../modelconvertor/export/repo_model_export_src.h"
@@ -27,9 +27,6 @@
 #ifdef REPO_ASSET_GENERATOR_SUPPORT
 #include <submodules/asset_generator/src/repo_model_export_repobundle.h>
 #endif
-
-#define REPO_USER_LABEL_VR_ENABLED					"vrEnabled"
-#define REPO_USER_LABEL_SRC_ENABLED					"srcEnabled"
 
 using namespace repo::manipulator::modelutility;
 
@@ -79,20 +76,12 @@ bool SceneManager::commitWebBuffers(
 
 	if (!resultBuffers.repoAssets.isEmpty())
 	{
-		if (success &= handler->upsertDocument(databaseName, projectName + "." + repoAssetsStashExt, resultBuffers.repoAssets,
-			true, errMsg))
-		{
-			repoInfo << "Assets list added successfully.";
-		}
-		else
-		{
-			repoError << "Failed to add assets list: " << errMsg;;
-		}
+		handler->upsertDocument(databaseName, projectName + "." + repoAssetsStashExt, resultBuffers.repoAssets, true);
 	}
 
 	if (success)
 	{
-		scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
+		scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE);
 		if (addTimestampToSettings)
 		{
 			scene->addTimestampToProjectSettings(handler);
@@ -164,7 +153,7 @@ uint8_t SceneManager::commitScene(
 
 			if (success) {
 				errCode = REPOERR_OK;
-				scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
+				scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE);
 			}
 			else {
 				errCode = REPOERR_UPLOAD_FAILED;
@@ -192,7 +181,7 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 	const bool                                    &headRevision,
 	const bool                                    &ignoreRefScenes,
 	const bool                                    &skeletonFetch,
-	const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus)
+	const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus)
 {
 	repo::core::model::RepoScene* scene = nullptr;
 	if (handler)
@@ -223,7 +212,7 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 				{
 					repoTrace << "Loaded Scene";
 				}
-				else 
+				else
 				{
 					delete scene;
 					scene = nullptr;
@@ -371,7 +360,7 @@ bool SceneManager::generateAndCommitSelectionTree(
 	bool success = false;
 	if (success = scene && scene->isRevisioned() && handler)
 	{
-		scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_SEL_TREE);
+		scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::GEN_SEL_TREE);
 		SelectionTreeMaker treeMaker(scene);
 		auto buffer = treeMaker.getSelectionTreeAsBuffer();
 
@@ -408,7 +397,7 @@ bool SceneManager::generateAndCommitSelectionTree(
 			repoError << "Failed to generate selection tree: JSON file buffer is empty!";
 		}
 
-		if (success) scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
+		if (success) scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE);
 	}
 	else
 	{
@@ -457,15 +446,9 @@ repo_web_buffers_t SceneManager::generateRepoBundleBuffer(
 }
 
 bool isAddOnEnabled(repo::core::handler::AbstractDatabaseHandler *handler, const std::string &database, const std::string addOn) {
-	auto teamspaceSetting = handler->findOneByCriteria(database, "teamspace", BSON("_id" << database));
-	if (teamspaceSetting.hasField("addOns")) {
-		auto addOns = teamspaceSetting.getObjectField("addOns");
-		if (addOns.hasField(addOn)) {
-			return addOns.getBoolField(addOn);
-		}
-	}
 
-	return false;
+	auto teamspace = repo::core::model::RepoTeamspace(handler->findOneByUniqueID(database, "teamspace", database));
+	return teamspace.isAddOnEnabled(addOn);
 }
 
 bool SceneManager::isVrEnabled(

@@ -67,11 +67,6 @@ void RepoController::destroyToken(RepoController::RepoToken* token)
 	if (token) delete token;
 }
 
-void RepoController::disconnectFromDatabase(const RepoController::RepoToken* token)
-{
-	impl->disconnectFromDatabase(token);
-}
-
 repo::core::model::RepoScene* RepoController::fetchScene(
 	const RepoController::RepoToken      *token,
 	const std::string    &database,
@@ -80,7 +75,7 @@ repo::core::model::RepoScene* RepoController::fetchScene(
 	const bool           &headRevision,
 	const bool           &ignoreRefScene,
 	const bool           &skeletonFetch,
-	const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus)
+	const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus)
 {
 	return impl->fetchScene(token, database, collection, uuid, headRevision, ignoreRefScene, skeletonFetch, includeStatus);
 }

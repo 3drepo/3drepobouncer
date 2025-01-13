@@ -18,21 +18,21 @@
 #include <cstdlib>
 
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest-matchers.h>
 
 #include <repo/core/model/bson/repo_node.h>
 #include <repo/core/model/bson/repo_node_mesh.h>
 #include <repo/core/model/bson/repo_bson_builder.h>
 
 using namespace repo::core::model;
-
-static const RepoNode testNode = RepoNode(BSON("ice" << "lolly" << "amount" << 100));
-static const RepoNode emptyNode;
+using namespace testing;
 
 static const std::string typicalName = "3drepo";
 static const repo::lib::RepoUUID typicalUniqueID = repo::lib::RepoUUID::createUUID();
 static const repo::lib::RepoUUID typicalSharedID = repo::lib::RepoUUID::createUUID();
 
-RepoNode makeTypicalNode()
+static RepoNode makeTypicalNode()
 {
 	RepoBSONBuilder builder;
 
@@ -43,7 +43,7 @@ RepoNode makeTypicalNode()
 	return RepoNode(builder.obj());
 }
 
-RepoNode makeRandomNode()
+static RepoNode makeRandomNode()
 {
 	RepoBSONBuilder builder;
 
@@ -53,7 +53,7 @@ RepoNode makeRandomNode()
 	return RepoNode(builder.obj());
 }
 
-RepoNode makeNode(const repo::lib::RepoUUID &unqiueID, const repo::lib::RepoUUID &sharedID, const std::string &name = "")
+static RepoNode makeNode(const repo::lib::RepoUUID &unqiueID, const repo::lib::RepoUUID &sharedID, const std::string &name = "")
 {
 	RepoBSONBuilder builder;
 
@@ -68,20 +68,125 @@ RepoNode makeNode(const repo::lib::RepoUUID &unqiueID, const repo::lib::RepoUUID
 	return RepoNode(builder.obj());
 }
 
-/**
-* Construct from mongo builder and mongo bson should give me the same bson
-*/
 TEST(RepoNodeTest, Constructor)
+{
+	auto node = RepoNode();
+	EXPECT_THAT(node.getParentIDs(), IsEmpty());
+	EXPECT_THAT(node.getName(), IsEmpty());
+	EXPECT_THAT(node.getUniqueID().isDefaultValue(), IsFalse());
+	EXPECT_THAT(node.getSharedID().isDefaultValue(), IsTrue());
+	EXPECT_THAT(node.getRevision().isDefaultValue(), IsTrue());
+	EXPECT_THAT(node.getType(), IsEmpty());
+}
+
+// The following few tests are concerned with converting to and from RepoBSON.
+
+TEST(RepoNodeTest, Deserialise)
+{
+	// Test the RepoNode constructor works for an existing BSON created independently
+	// of RepoNode.
+
+	auto name = "MyNode";
+	auto uniqueId = repo::lib::RepoUUID::createUUID();
+	auto sharedId = repo::lib::RepoUUID::createUUID();
+	auto parentIds = std::vector<repo::lib::RepoUUID>({
+		repo::lib::RepoUUID::createUUID(),
+		repo::lib::RepoUUID::createUUID(),
+		repo::lib::RepoUUID::createUUID(),
+	});
+	auto revisionId = repo::lib::RepoUUID::createUUID();
+
+	RepoBSONBuilder builder;
+	builder.append(REPO_NODE_LABEL_NAME, name);
+	builder.append(REPO_NODE_LABEL_SHARED_ID, sharedId);
+	builder.append(REPO_NODE_LABEL_ID, uniqueId);
+	builder.append(REPO_NODE_REVISION_ID, revisionId);
+	builder.appendArray(REPO_NODE_LABEL_PARENTS, parentIds);
+
+	auto node = RepoNode(builder.obj());
+
+	EXPECT_EQ(node.getName(), name);
+	EXPECT_EQ(node.getSharedID(), sharedId);
+	EXPECT_EQ(node.getUniqueID(), uniqueId);
+	EXPECT_THAT(node.getParentIDs(), UnorderedElementsAreArray(parentIds));
+	EXPECT_THAT(node.getRevision(), Eq(revisionId));
+
+}
+
+TEST(RepoNodeTest, DeserialiseNoSharedIDOrParents)
+{
+	// Test the RepoNode constructor works for an existing BSON created independently
+	// of RepoNode.
+
+	auto name = "MyNode";
+	auto uniqueId = repo::lib::RepoUUID::createUUID();
+
+	RepoBSONBuilder builder;
+	builder.append(REPO_NODE_LABEL_NAME, name);
+	builder.append(REPO_NODE_LABEL_ID, uniqueId);
+
+	auto node = RepoNode(builder.obj());
+
+	EXPECT_EQ(node.getName(), name);
+	EXPECT_EQ(node.getUniqueID(), uniqueId);
+	EXPECT_TRUE(node.getSharedID().isDefaultValue());
+	EXPECT_TRUE(node.getRevision().isDefaultValue());
+	EXPECT_FALSE(node.getParentIDs().size());
+}
+
+TEST(RepoNodeTest, DeserialiseNoName)
+{
+	// Test the RepoNode constructor works for an existing BSON created independently
+	// of RepoNode.
+
+	auto uniqueId = repo::lib::RepoUUID::createUUID();
+
+	RepoBSONBuilder builder;
+	builder.append(REPO_NODE_LABEL_ID, uniqueId);
+
+	auto node = RepoNode(builder.obj());
+
+	EXPECT_TRUE(node.getName().empty());
+	EXPECT_EQ(node.getUniqueID(), uniqueId);
+}
+
+TEST(RepoNodeTest, Serialise)
 {
 	RepoNode node;
 
-	EXPECT_TRUE(node.isEmpty());
+	// An empty node should not store anything other than the ID, and the ID should
+	// always be initialised.
 
-	const RepoBSON testBson = RepoBSON(BSON("ice" << "lolly" << "amount" << 100));
+	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_LABEL_NAME), IsFalse());
+	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_LABEL_TYPE), IsFalse());
+	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_LABEL_SHARED_ID), IsFalse());
+	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_LABEL_PARENTS), IsFalse());
+	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_LABEL_ID), IsTrue());
+	EXPECT_THAT(((RepoBSON)node).getUUIDField(REPO_NODE_LABEL_ID).isDefaultValue(), IsFalse());
 
-	RepoNode node2(testBson);
+	// Setting each other property should set the appropraite field in the RepoBSON
 
-	EXPECT_EQ(node2.toString(), testBson.toString());
+	auto parentIds = std::vector<repo::lib::RepoUUID>({
+		repo::lib::RepoUUID::createUUID(),
+		repo::lib::RepoUUID::createUUID(),
+		repo::lib::RepoUUID::createUUID(),
+		});
+	node.addParent(parentIds[0]);
+	node.addParent(parentIds[1]);
+	node.addParent(parentIds[2]);
+	EXPECT_THAT(((RepoBSON)node).getUUIDFieldArray(REPO_NODE_LABEL_PARENTS), UnorderedElementsAreArray(parentIds));
+
+	auto name = "name";
+	node.changeName(name, false);
+	EXPECT_EQ(((RepoBSON)node).getStringField(REPO_NODE_LABEL_NAME), name);
+
+	auto sharedId = repo::lib::RepoUUID::createUUID();
+	node.setSharedID(sharedId);
+	EXPECT_EQ(((RepoBSON)node).getUUIDField(REPO_NODE_LABEL_SHARED_ID), sharedId);
+
+	auto uniqueId = repo::lib::RepoUUID::createUUID();
+	node.setUniqueID(uniqueId);
+	EXPECT_EQ(((RepoBSON)node).getUUIDField(REPO_NODE_LABEL_ID), uniqueId);
 }
 
 TEST(RepoNodeTest, PositionDependantTest)
@@ -90,410 +195,137 @@ TEST(RepoNodeTest, PositionDependantTest)
 	EXPECT_FALSE(node.positionDependant());
 
 	//To make sure this is a virtual function
-	RepoNode *mesh = new MeshNode();
+	RepoNode* mesh = new MeshNode();
 	EXPECT_TRUE(mesh->positionDependant());
 }
 
-TEST(RepoNodeTest, CloneAndAddParentTest)
+TEST(RepoNodeTest, ChangeName)
+{
+	RepoNode node;
+	auto uuid = node.getUniqueID();
+	EXPECT_TRUE(node.getName().empty());
+
+	auto name = "name";
+	node.changeName(name);
+	EXPECT_EQ(node.getName(), name);
+	EXPECT_EQ(node.getUniqueID(), uuid);
+
+	node.changeName(name, true);
+	EXPECT_THAT(node.getUniqueID(), Not(Eq(uuid)));
+}
+
+TEST(RepoNodeTest, AddParentTest)
 {
 	RepoNode node;
 
-	EXPECT_FALSE(node.hasField(REPO_NODE_LABEL_PARENTS));
+	auto parentIds = std::vector<repo::lib::RepoUUID>({
+		repo::lib::RepoUUID::createUUID(),
+		repo::lib::RepoUUID::createUUID(),
+	});
 
-	repo::lib::RepoUUID parent = repo::lib::RepoUUID::createUUID();
-	RepoNode nodeWithParent = node.cloneAndAddParent(parent);
+	node.addParent(parentIds[0]);
+	node.addParent(parentIds[1]);
+	EXPECT_THAT(node.getParentIDs(), UnorderedElementsAreArray(parentIds));
 
-	ASSERT_TRUE(nodeWithParent.hasField(REPO_NODE_LABEL_PARENTS));
-	EXPECT_NE(node, nodeWithParent);
-	EXPECT_NE(node.toString(), nodeWithParent.toString());
+	auto parentId = repo::lib::RepoUUID::createUUID();
+	parentIds.push_back(parentId);
+	node.addParent(parentId);
+	EXPECT_THAT(node.getParentIDs(), UnorderedElementsAreArray(parentIds));
 
-	RepoBSONElement parentField = nodeWithParent.getField(REPO_NODE_LABEL_PARENTS);
-	ASSERT_EQ(ElementType::ARRAY, parentField.type());
+	// Make sure we don't add the same parent multiple times
 
-	std::vector<repo::lib::RepoUUID> parentsOut = nodeWithParent.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
+	node.addParent(parentId);
+	EXPECT_THAT(node.getParentIDs(), UnorderedElementsAreArray(parentIds));
 
-	EXPECT_EQ(1, parentsOut.size());
-	EXPECT_EQ(parent, parentsOut[0]);
-
-	//Ensure same parent isn't added
-	RepoNode sameParentTest = nodeWithParent.cloneAndAddParent(parent);
-
-	parentsOut = sameParentTest.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
-
-	ASSERT_EQ(1, parentsOut.size());
-	EXPECT_EQ(parent, parentsOut[0]);
-
-	//Try to add a parent when there's already a vector
-	repo::lib::RepoUUID parent2 = repo::lib::RepoUUID::createUUID();
-
-	RepoNode secondParentNode = nodeWithParent.cloneAndAddParent(parent2);
-	parentsOut = secondParentNode.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
-
-	ASSERT_EQ(2, parentsOut.size());
-	EXPECT_EQ(parent, parentsOut[0]);
-	EXPECT_EQ(parent2, parentsOut[1]);
-
-	//ensure extref files are retained
-	std::vector<uint8_t> file1;
-	std::vector<uint8_t> file2;
-
-	size_t fileSize = 32876;
-	file1.resize(fileSize);
-	file2.resize(fileSize);
-
-	std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>>> files;
-	files["field1"] = std::pair<std::string, std::vector<uint8_t>>("file1", file1);
-	files["field2"] = std::pair<std::string, std::vector<uint8_t>>("file2", file2);
-
-	RepoNode nodeWithFiles = RepoNode(node, files);
-	RepoNode clonedNodeWithFiles = nodeWithFiles.cloneAndAddParent(parent);
-
-	EXPECT_TRUE(clonedNodeWithFiles.hasOversizeFiles());
-	auto mappingOut = clonedNodeWithFiles.getFilesMapping();
-	EXPECT_EQ(2, mappingOut.size());
+	node.addParent(parentIds[0]);
+	EXPECT_THAT(node.getParentIDs(), UnorderedElementsAreArray(parentIds));
 }
 
-TEST(RepoNodeTest, CloneAndAddParentTest_MultipleParents)
+TEST(RepoNodeTest, AddParentsTest)
 {
 	RepoNode node;
 
-	EXPECT_FALSE(node.hasField(REPO_NODE_LABEL_PARENTS));
+	auto parentIds = std::vector<repo::lib::RepoUUID>({
+		repo::lib::RepoUUID::createUUID(),
+		repo::lib::RepoUUID::createUUID(),
+		});
 
-	std::vector<repo::lib::RepoUUID> parent;
-	size_t nParents = 10;
+	node.addParents(parentIds);
+	EXPECT_THAT(node.getParentIDs(), UnorderedElementsAreArray(parentIds));
 
-	for (size_t i = 0; i < nParents; ++i)
-	{
-		parent.push_back(repo::lib::RepoUUID::createUUID());
-	}
+	auto parentId1 = repo::lib::RepoUUID::createUUID();
+	auto parentId2 = repo::lib::RepoUUID::createUUID();
 
-	RepoNode nodeWithParent = node.cloneAndAddParent(parent);
+	parentIds.push_back(parentId1);
+	parentIds.push_back(parentId2);
 
-	ASSERT_TRUE(nodeWithParent.hasField(REPO_NODE_LABEL_PARENTS));
-	EXPECT_NE(node, nodeWithParent);
-	EXPECT_NE(node.toString(), nodeWithParent.toString());
+	node.addParents({ parentId1, parentId2 });
+	EXPECT_THAT(node.getParentIDs(), UnorderedElementsAreArray(parentIds));
 
-	RepoBSONElement parentField = nodeWithParent.getField(REPO_NODE_LABEL_PARENTS);
-	ASSERT_EQ(ElementType::ARRAY, parentField.type());
+	// Make sure we don't add the same parent multiple times
 
-	std::vector<repo::lib::RepoUUID> parentsOut = nodeWithParent.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
+	node.addParent({ parentId1 });
+	EXPECT_THAT(node.getParentIDs(), UnorderedElementsAreArray(parentIds));
 
-	EXPECT_EQ(nParents, parentsOut.size());
+	node.addParents({ parentId1, parentId2 });
+	EXPECT_THAT(node.getParentIDs(), UnorderedElementsAreArray(parentIds));
 
-	for (size_t i = 0; i < nParents; ++i)
-	{
-		//EXPECT_EQ(parent[i], parentsOut[i]);
-		auto it = std::find(parentsOut.begin(), parentsOut.end(), parent[i]);
-		EXPECT_NE(parentsOut.end(), it);
-		parentsOut.erase(it);
-	}
+	// Combination of new and existing Ids
 
-	EXPECT_EQ(0, parentsOut.size());
+	auto parentId3 = repo::lib::RepoUUID::createUUID();
+	parentIds.push_back(parentId3);
 
-	//Ensure same parent isn't added
-
-	RepoNode sameParentTest = nodeWithParent.cloneAndAddParent(parent);
-
-	parentsOut = sameParentTest.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
-
-	EXPECT_EQ(nParents, parentsOut.size());
-
-	for (size_t i = 0; i < nParents; ++i)
-	{
-		//EXPECT_EQ(parent[i], parentsOut[i]);
-		auto it = std::find(parentsOut.begin(), parentsOut.end(), parent[i]);
-		EXPECT_NE(parentsOut.end(), it);
-		parentsOut.erase(it);
-	}
-
-	EXPECT_EQ(0, parentsOut.size());
-
-	//Try to add a parent when there's already a vector
-	std::vector<repo::lib::RepoUUID> parent2;
-
-	for (size_t i = 0; i < nParents; ++i)
-	{
-		parent2.push_back(repo::lib::RepoUUID::createUUID());
-	}
-
-	RepoNode secondParentNode = nodeWithParent.cloneAndAddParent(parent2);
-	parentsOut = secondParentNode.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
-
-	ASSERT_EQ(2 * nParents, parentsOut.size());
-
-	std::vector<repo::lib::RepoUUID> fullParents = parent;
-	fullParents.insert(fullParents.end(), parent2.begin(), parent2.end());
-	for (size_t i = 0; i < nParents * 2; ++i)
-	{
-		//EXPECT_EQ(parent[i], parentsOut[i]);
-		auto it = std::find(parentsOut.begin(), parentsOut.end(), fullParents[i]);
-		EXPECT_NE(parentsOut.end(), it);
-		parentsOut.erase(it);
-	}
-
-	//ensure extref files are retained
-	std::vector<uint8_t> file1;
-	std::vector<uint8_t> file2;
-
-	size_t fileSize = 32876;
-	file1.resize(fileSize);
-	file2.resize(fileSize);
-
-	std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>>> files;
-	files["field1"] = std::pair<std::string, std::vector<uint8_t>>("file1", file1);
-	files["field2"] = std::pair<std::string, std::vector<uint8_t>>("file2", file2);
-
-	RepoNode nodeWithFiles = RepoNode(node, files);
-	RepoNode clonedNodeWithFiles = nodeWithFiles.cloneAndAddParent(parent);
-
-	EXPECT_TRUE(clonedNodeWithFiles.hasOversizeFiles());
-	auto mappingOut = clonedNodeWithFiles.getFilesMapping();
-	EXPECT_EQ(2, mappingOut.size());
+	node.addParents({ parentId1, parentId2, parentId3 });
+	EXPECT_THAT(node.getParentIDs(), UnorderedElementsAreArray(parentIds));
 }
 
-TEST(RepoNodeTest, CloneAndApplyTransformationTest)
+TEST(RepoNodeTest, SetParentsTest)
 {
-	std::vector<float> mat;
-	RepoNode transedEmpty = emptyNode.cloneAndApplyTransformation(mat);
-	RepoNode transedTest = testNode.cloneAndApplyTransformation(mat);
-	EXPECT_EQ(emptyNode.toString(), transedEmpty.toString());
-	EXPECT_EQ(testNode.toString(), transedTest.toString());
-	EXPECT_NE(transedEmpty.toString(), transedTest.toString());
+	RepoNode node;
 
-	//ensure extref files are retained
-	std::vector<uint8_t> file1;
-	std::vector<uint8_t> file2;
+	auto parentIds1 = std::vector<repo::lib::RepoUUID>({
+		repo::lib::RepoUUID::createUUID(),
+		repo::lib::RepoUUID::createUUID(),
+		});
 
-	size_t fileSize = 32876;
-	file1.resize(fileSize);
-	file2.resize(fileSize);
+	node.addParents(parentIds1);
+	EXPECT_THAT(node.getParentIDs(), UnorderedElementsAreArray(parentIds1));
 
-	std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>>> files;
-	files["field1"] = std::pair<std::string, std::vector<uint8_t>>("file1", file1);
-	files["field2"] = std::pair<std::string, std::vector<uint8_t>>("file2", file2);
+	auto parentIds2 = std::vector<repo::lib::RepoUUID>({
+	repo::lib::RepoUUID::createUUID(),
+	repo::lib::RepoUUID::createUUID(),
+		});
 
-	RepoNode nodeWithFiles = RepoNode(emptyNode, files);
-	RepoNode clonedNodeWithFiles = nodeWithFiles.cloneAndApplyTransformation(mat);
+	node.setParents(parentIds2);
 
-	EXPECT_TRUE(clonedNodeWithFiles.hasOversizeFiles());
-	auto mappingOut = clonedNodeWithFiles.getFilesMapping();
-	EXPECT_EQ(2, mappingOut.size());
+	EXPECT_THAT(node.getParentIDs(), UnorderedElementsAreArray(parentIds2));
 }
 
-TEST(RepoNodeTest, CloneAndChangeNameTest)
+TEST(RepoNodeTest, SetSharedIDTest)
 {
-	std::string name = "3dRepo";
-	std::string name2 = "Open Source";
-	RepoNode emptyNodeWithName = emptyNode.cloneAndChangeName(name);
+	RepoNode node;
+	EXPECT_TRUE(node.getSharedID().isDefaultValue());
 
-	EXPECT_FALSE(emptyNodeWithName.isEmpty());
-	EXPECT_EQ(name, emptyNodeWithName.getStringField(REPO_NODE_LABEL_NAME));
-	//ensure it is a clone, there is no change
-	EXPECT_TRUE(emptyNode.isEmpty());
-
-	RepoNode anotherNameNode = emptyNodeWithName.cloneAndChangeName(name2);
-	EXPECT_EQ(name, emptyNodeWithName.getStringField(REPO_NODE_LABEL_NAME));
-	EXPECT_EQ(name2, anotherNameNode.getStringField(REPO_NODE_LABEL_NAME));
-	EXPECT_NE(emptyNodeWithName.getUniqueID(), anotherNameNode.getUniqueID());
-	EXPECT_EQ(emptyNodeWithName.getUniqueID(), emptyNodeWithName.cloneAndChangeName(name2, false).getUniqueID());
-
-	//ensure extref files are retained
-	std::vector<uint8_t> file1;
-	std::vector<uint8_t> file2;
-
-	size_t fileSize = 32876;
-	file1.resize(fileSize);
-	file2.resize(fileSize);
-
-	std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>>> files;
-	files["field1"] = std::pair<std::string, std::vector<uint8_t>>("file1", file1);
-	files["field2"] = std::pair<std::string, std::vector<uint8_t>>("file2", file2);
-
-	RepoNode nodeWithFiles = RepoNode(emptyNode, files);
-	RepoNode clonedNodeWithFiles = nodeWithFiles.cloneAndChangeName(name2);
-
-	EXPECT_TRUE(clonedNodeWithFiles.hasOversizeFiles());
-	auto mappingOut = clonedNodeWithFiles.getFilesMapping();
-	EXPECT_EQ(2, mappingOut.size());
-}
-
-TEST(RepoNodeTest, CloneAndRemoveParentTest)
-{
-	RepoNode stillEmpty = emptyNode.cloneAndRemoveParent(repo::lib::RepoUUID::createUUID());
-	EXPECT_TRUE(stillEmpty.isEmpty());
-
-	RepoBSONBuilder builder;
-	builder.append("_id", repo::lib::RepoUUID::createUUID());
-	RepoNode startNode = RepoNode(builder.obj());
-
-	repo::lib::RepoUUID singleParent = repo::lib::RepoUUID::createUUID();
-	RepoNode oneParentNode = startNode.cloneAndAddParent(singleParent);
-	//Ensure the field is removed all together if there is no parent left
-	EXPECT_FALSE(oneParentNode.cloneAndRemoveParent(singleParent).hasField(REPO_NODE_LABEL_PARENTS));
-
-	std::vector<repo::lib::RepoUUID> parents;
-	size_t nParents = 10;
-	for (int i = 0; i < nParents; ++i)
-	{
-		parents.push_back(repo::lib::RepoUUID::createUUID());
-	}
-
-	RepoNode manyParentsNode = startNode.cloneAndAddParent(parents);
-
-	int indToRemove = std::rand() % nParents;
-
-	RepoNode parentRemovedNode = manyParentsNode.cloneAndRemoveParent(parents[indToRemove]);
-
-	std::vector<repo::lib::RepoUUID> parentsOut = parentRemovedNode.getParentIDs();
-	EXPECT_EQ(parentsOut.end(), std::find(parentsOut.begin(), parentsOut.end(), parents[indToRemove]));
-
-	EXPECT_NE(manyParentsNode.getUniqueID(), parentRemovedNode.getUniqueID());
-	EXPECT_EQ(manyParentsNode.getUniqueID(), manyParentsNode.cloneAndRemoveParent(parents[indToRemove], false).getUniqueID());
-
-	//ensure extref files are retained
-	std::vector<uint8_t> file1;
-	std::vector<uint8_t> file2;
-
-	size_t fileSize = 32876;
-	file1.resize(fileSize);
-	file2.resize(fileSize);
-
-	std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>>> files;
-	files["field1"] = std::pair<std::string, std::vector<uint8_t>>("file1", file1);
-	files["field2"] = std::pair<std::string, std::vector<uint8_t>>("file2", file2);
-
-	RepoNode nodeWithFiles = RepoNode(emptyNode, files);
-	RepoNode clonedNodeWithFiles = nodeWithFiles.cloneAndRemoveParent(singleParent);
-
-	EXPECT_TRUE(clonedNodeWithFiles.hasOversizeFiles());
-	auto mappingOut = clonedNodeWithFiles.getFilesMapping();
-	EXPECT_EQ(2, mappingOut.size());
-}
-
-TEST(RepoNodeTest, CloneAndAddFieldTest)
-{
-	std::string field = "3dRepo";
-	std::string name = "Open Source";
-
-	std::string field2 = "field2";
-	std::string name2 = "Open Source too";
-
-	RepoBSON *changeBson = new RepoBSON(BSON(field << name));
-	RepoBSON *changeBson2 = new RepoBSON(BSON(field2 << name2));
-	RepoBSON *changeBson3 = new RepoBSON(BSON(field << name2));
-
-	RepoNode nodeFieldAdded = emptyNode.cloneAndAddFields(changeBson);
-
-	EXPECT_FALSE(nodeFieldAdded.isEmpty());
-	EXPECT_EQ(name, nodeFieldAdded.getStringField(field));
-	//ensure it is a clone, there is no change
-	EXPECT_TRUE(emptyNode.isEmpty());
-
-	RepoNode anotherNameNode = nodeFieldAdded.cloneAndAddFields(changeBson2);
-	EXPECT_EQ(name, nodeFieldAdded.getStringField(field));
-	EXPECT_EQ(name2, anotherNameNode.getStringField(field2));
-	EXPECT_NE(nodeFieldAdded.getUniqueID(), anotherNameNode.getUniqueID());
-	EXPECT_EQ(nodeFieldAdded.getUniqueID(), nodeFieldAdded.cloneAndAddFields(changeBson2, false).getUniqueID());
-
-	RepoNode replaceField = nodeFieldAdded.cloneAndAddFields(changeBson3);
-	EXPECT_EQ(name2, replaceField.getStringField(field));
-
-	//ensure extref files are retained
-	std::vector<uint8_t> file1;
-	std::vector<uint8_t> file2;
-
-	size_t fileSize = 32876;
-	file1.resize(fileSize);
-	file2.resize(fileSize);
-
-	std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>>> files;
-	files["field1"] = std::pair<std::string, std::vector<uint8_t>>("file1", file1);
-	files["field2"] = std::pair<std::string, std::vector<uint8_t>>("file2", file2);
-
-	RepoNode nodeWithFiles = RepoNode(emptyNode, files);
-	RepoNode clonedNodeWithFiles = nodeWithFiles.cloneAndAddFields(changeBson);
-
-	EXPECT_TRUE(clonedNodeWithFiles.hasOversizeFiles());
-	auto mappingOut = clonedNodeWithFiles.getFilesMapping();
-	EXPECT_EQ(2, mappingOut.size());
-
-	delete changeBson;
-	delete changeBson2;
-	delete changeBson3;
-}
-
-TEST(RepoNodeTest, GetNameTest)
-{
-	RepoNode node = makeTypicalNode();
-
-	EXPECT_EQ(node.getName(), typicalName);
-	EXPECT_EQ(emptyNode.getName(), "");
-}
-
-TEST(RepoNodeTest, GetSharedIDTest)
-{
-	RepoNode node = makeTypicalNode();
-
-	EXPECT_EQ(node.getSharedID(), typicalSharedID);
-
-	//Ensure no exception is thrown if not found
-	emptyNode.getSharedID();
+	auto sharedId = repo::lib::RepoUUID::createUUID();
+	node.setSharedID(sharedId);
+	EXPECT_EQ(node.getSharedID(), sharedId);
 }
 
 TEST(RepoNodeTest, GetUniqueIDTest)
 {
-	RepoNode node = makeTypicalNode();
-
-	EXPECT_EQ(node.getUniqueID(), typicalUniqueID);
-
-	//Ensure no exception is thrown if not found
-	emptyNode.getUniqueID();
+	RepoNode node;
+	EXPECT_FALSE(node.getUniqueID().isDefaultValue());
 }
 
 TEST(RepoNodeTest, GetTypeTest)
 {
-	EXPECT_EQ("", emptyNode.getType());
-	std::string type = "myType";
-	RepoNode node = RepoNode(BSON(REPO_NODE_LABEL_TYPE << type));
-
-	EXPECT_EQ(type, node.getType());
-}
-
-TEST(RepoNodeTest, GetTypeAsEnumTest)
-{
-	EXPECT_EQ(NodeType::UNKNOWN, emptyNode.getTypeAsEnum());
-	RepoNode node = RepoNode(BSON(REPO_NODE_LABEL_TYPE << "nonExistentType"));
-	EXPECT_EQ(NodeType::UNKNOWN, node.getTypeAsEnum());
-
-	//material
-	node = RepoNode(BSON(REPO_NODE_LABEL_TYPE << REPO_NODE_TYPE_MATERIAL));
-	EXPECT_EQ(NodeType::MATERIAL, node.getTypeAsEnum());
-
-	//mesh
-	node = RepoNode(BSON(REPO_NODE_LABEL_TYPE << REPO_NODE_TYPE_MESH));
-	EXPECT_EQ(NodeType::MESH, node.getTypeAsEnum());
-
-	//reference
-	node = RepoNode(BSON(REPO_NODE_LABEL_TYPE << REPO_NODE_TYPE_REFERENCE));
-	EXPECT_EQ(NodeType::REFERENCE, node.getTypeAsEnum());
-
-	//revision
-	node = RepoNode(BSON(REPO_NODE_LABEL_TYPE << REPO_NODE_TYPE_REVISION));
-	EXPECT_EQ(NodeType::REVISION, node.getTypeAsEnum());
-
-	//texture
-	node = RepoNode(BSON(REPO_NODE_LABEL_TYPE << REPO_NODE_TYPE_TEXTURE));
-	EXPECT_EQ(NodeType::TEXTURE, node.getTypeAsEnum());
-
-	//transformation
-	node = RepoNode(BSON(REPO_NODE_LABEL_TYPE << REPO_NODE_TYPE_TRANSFORMATION));
-	EXPECT_EQ(NodeType::TRANSFORMATION, node.getTypeAsEnum());
+	RepoNode node1;
+	EXPECT_EQ(node1.getType(), "");
+	EXPECT_EQ(node1.getTypeAsEnum(), NodeType::UNKNOWN);
 }
 
 TEST(RepoNodeTest, GetParentsIDTest)
 {
-	EXPECT_EQ(0, emptyNode.getParentIDs().size());
-
 	std::vector<repo::lib::RepoUUID> parent;
 	size_t nParents = 10;
 
@@ -503,17 +335,11 @@ TEST(RepoNodeTest, GetParentsIDTest)
 	}
 
 	RepoBSONBuilder builder;
+	builder.append(REPO_LABEL_ID, repo::lib::RepoUUID::createUUID());
 	builder.appendArray(REPO_NODE_LABEL_PARENTS, parent);
 	RepoNode node = builder.obj();
 
-	std::vector<repo::lib::RepoUUID> parentOut = node.getParentIDs();
-
-	ASSERT_EQ(nParents, parentOut.size());
-
-	for (size_t i = 0; i < parentOut.size(); ++i)
-	{
-		EXPECT_EQ(parentOut[i], parent[i]);
-	}
+	EXPECT_THAT(node.getParentIDs(), UnorderedElementsAreArray(parent));
 }
 
 TEST(RepoNodeTest, OperatorEqualTest)
@@ -557,4 +383,43 @@ TEST(RepoNodeTest, OperatorCompareTest)
 	EXPECT_EQ(uniqueID < uniqueID2, makeNode(uniqueID, sharedID, "14") < makeNode(uniqueID2, sharedID, "14"));
 	EXPECT_EQ(uniqueID < uniqueID2, makeNode(uniqueID, sharedID, "15") < makeNode(uniqueID2, sharedID, "15"));
 	EXPECT_EQ(uniqueID < uniqueID2, makeNode(uniqueID, sharedID, "16") < makeNode(uniqueID2, sharedID, "16"));
+}
+
+TEST(RepoNodeTest, RepoNodeSetTest)
+{
+	// Does the MaterialNode behave correctly when added to a RepoNodeSet?
+
+	auto node1 = new RepoNode();
+	auto node2 = new RepoNode();
+
+	node2->setUniqueID(node1->getUniqueID());
+
+	// Nodes have identical unique and sharedIds
+
+	repo::core::model::RepoNodeSet nodes;
+	nodes.insert(node1);
+	nodes.insert(node2);
+
+	EXPECT_THAT(nodes.size(), Eq(1));
+
+	// Changing the unique Id of node2 makes it different from node1
+
+	node2->setUniqueID(repo::lib::RepoUUID::createUUID());
+	nodes.insert(node2);
+	EXPECT_THAT(nodes.size(), Eq(2));
+
+	// A new node that is identical to node1 and should not be added
+
+	auto node3 = new RepoNode();
+	node3->setUniqueID(node1->getUniqueID());
+	nodes.insert(node3);
+	EXPECT_THAT(nodes.size(), Eq(2));
+
+	// But giving it a sharedId will allow it to be added
+	node3->setSharedID(repo::lib::RepoUUID::createUUID());
+	nodes.insert(node3);
+	EXPECT_THAT(nodes.size(), Eq(3));
+
+	// The current version of RepoNodeSet only considers the shared and uniqueIds,
+	// not the sEqual response.
 }

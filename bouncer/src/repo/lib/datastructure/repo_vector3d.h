@@ -43,11 +43,19 @@ namespace repo{
 				z = (v.size() > 2) ? v[2] : 0;
 			}
 
+			template<typename From>
+			_RepoVector3D<T>(const _RepoVector3D<From>& v)
+			{
+				x = v.x;
+				y = v.y;
+				z = v.z;
+			}
+
 			unsigned long checkSum() const
 			{
 				std::stringstream ss;
 				ss.precision(17);
-				
+
 				ss << std::fixed << x << std::fixed << y << std::fixed << z;
 				auto stringified = ss.str();
 
@@ -100,6 +108,16 @@ namespace repo{
 				}
 			}
 
+			T norm() const
+			{
+				return std::sqrt(norm2());
+			}
+
+			T norm2() const
+			{
+				return (x * x + y * y + z * z);
+			}
+
 			inline _RepoVector3D<T>& operator=(const _RepoVector3D<T> &other)
 			{
 				x = other.x;
@@ -108,12 +126,12 @@ namespace repo{
 				return *this;
 			}
 
-			inline _RepoVector3D<T> operator+(const _RepoVector3D<T> &other)
-			{							
+			inline _RepoVector3D<T> operator+(const _RepoVector3D<T> &other) const
+			{
 				return _RepoVector3D<T>(x + other.x, y + other.y, z + other.z);
 			}
 
-			inline _RepoVector3D<T> operator-(const _RepoVector3D<T> &other)
+			inline _RepoVector3D<T> operator-(const _RepoVector3D<T> &other) const
 			{
 				return _RepoVector3D<T>(x - other.x, y - other.y, z - other.z);
 			}

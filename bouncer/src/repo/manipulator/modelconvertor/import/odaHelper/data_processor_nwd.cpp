@@ -25,7 +25,6 @@
 #include <RxDynamicModule.h>
 #include <DynamicLinker.h>
 #include <StaticRxObject.h>
-#include <ExSystemServices.h>
 #include <NwHostAppServices.h>
 #include <NwDatabase.h>
 #include <toString.h>
@@ -168,7 +167,7 @@ void setMetadataValue(const std::string& category, const std::string& key, const
 void setMetadataValue(const std::string& category, const OdString& key, const OdUInt64& uint, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	std::string keyString = convertToStdString(key);
-	repo::lib::RepoVariant v = static_cast<long long>(uint); // Potentially losing precision here, but mongo does not accept uint64
+	repo::lib::RepoVariant v = static_cast<int64_t>(uint); // Potentially losing precision here, but mongo does not accept uint64
 	setMetadataValueVariant(category, keyString, v, metadata);
 }
 
@@ -198,7 +197,7 @@ bool DataProcessorNwd::tryConvertMetadataProperty(std::string key, OdNwDataPrope
 		case NwDataType::dt_INT32: {
 			OdNwVariant odvar;
 			metaProperty->getValue(odvar);
-			v = static_cast<long long>(odvar.getInt32()); // Incoming is long, convert it to long long since int won't fit.
+			v = static_cast<int64_t>(odvar.getInt32()); // Incoming is long, convert it to long long since int won't fit.
 			break;
 		}
 		case NwDataType::dt_BOOL: {
@@ -389,7 +388,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 	setMetadataValue("Item", "Internal Type", ItemInternalType, metadata);
 	setMetadataValue("Item", "Hidden", ItemHidden, metadata);
 	setMetadataValue("Item", "Layer", ItemLayer, metadata);
-	if (hasGuid) {		
+	if (hasGuid) {
 		setMetadataValue("Item", "GUID", ItemGuid, metadata);
 	}
 
@@ -443,7 +442,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 		{
 			OdArray<OdNwDataPropertyPtr> properties;
 			propertiesAttribute->getProperties(properties);
-			
+
 			for (unsigned int j = 0; j < properties.length(); j++)
 			{
 				auto& prop = properties[j];
@@ -451,7 +450,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 
 				repo::lib::RepoVariant v;
 				if (DataProcessorNwd:: tryConvertMetadataProperty(key, prop, v))
-					setMetadataValueVariant(category, key, v, metadata);				
+					setMetadataValueVariant(category, key, v, metadata);
 			}
 		}
 

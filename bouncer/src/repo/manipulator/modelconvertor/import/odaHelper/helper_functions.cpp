@@ -43,11 +43,11 @@ void repo::manipulator::modelconvertor::odaHelper::forEachBmDBView(OdBmDatabaseP
 			continue;
 
 		OdBmViewportPtr pViewport = pDBDrawing->getBaseViewportId().safeOpenObject();
-		if (pViewport.isNull()) 
+		if (pViewport.isNull())
 			continue;
 
 		OdBmDBViewPtr pDBView = pViewport->getDbViewId().safeOpenObject();
-		if (pDBView.isNull()) 
+		if (pDBView.isNull())
 			continue;
 
 		func(pDBView);

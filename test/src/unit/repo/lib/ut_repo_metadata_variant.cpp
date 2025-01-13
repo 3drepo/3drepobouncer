@@ -22,8 +22,8 @@
 
 #include "../../repo_test_utils.h"
 
-
 using namespace repo::lib;
+using namespace testing;
 
 // Test of basic assignments and retreival.
 TEST(RepoMetaVariantTest, AssignmentTest)
@@ -36,8 +36,8 @@ TEST(RepoMetaVariantTest, AssignmentTest)
 	int value1 = boost::get<int>(v1);
 	EXPECT_EQ(value1, 24);
 
-	RepoVariant v2 = 9223372036854775806ll;
-	long long value2 = boost::get<long long>(v2);
+	RepoVariant v2 = (int64_t)9223372036854775806ll;
+	int64_t value2 = boost::get<int64_t>(v2);
 	EXPECT_EQ(value2, 9223372036854775806);
 
 	RepoVariant v3 = 24.24;
@@ -47,6 +47,11 @@ TEST(RepoMetaVariantTest, AssignmentTest)
 	RepoVariant v4 = std::string("3d Repo");
 	std::string value4 = boost::get<std::string>(v4);
 	EXPECT_EQ(value4, "3d Repo");
+
+	// Empty strings should be stored OK
+	RepoVariant v4_1 = std::string("");
+	std::string value4_1 = boost::get<std::string>(v4_1);
+	EXPECT_EQ(value4_1, "");
 
 	tm tmPre;
 	tmPre.tm_sec = 1;
@@ -69,6 +74,11 @@ TEST(RepoMetaVariantTest, AssignmentTest)
 	EXPECT_EQ(value5.tm_wday, tmPre.tm_wday);
 	EXPECT_EQ(value5.tm_yday, tmPre.tm_yday);
 	EXPECT_EQ(value5.tm_isdst, tmPre.tm_isdst);
+
+	auto uuid = repo::lib::RepoUUID::createUUID();
+	RepoVariant v6 = uuid;
+	repo::lib::RepoUUID value6 = boost::get<repo::lib::RepoUUID>(v6);
+	EXPECT_EQ(value6, uuid);
 }
 
 TEST(RepoMetaVariantTest, StringVisitor) {
@@ -80,7 +90,7 @@ TEST(RepoMetaVariantTest, StringVisitor) {
 	std::string value1 = boost::apply_visitor(StringConversionVisitor(), v1);
 	EXPECT_EQ(value1, "24");
 
-	RepoVariant v2 = 9223372036854775806ll;
+	RepoVariant v2 = (int64_t)9223372036854775806ll;
 	std::string value2 = boost::apply_visitor(StringConversionVisitor(), v2);
 	EXPECT_EQ(value2, "9223372036854775806");
 
@@ -105,6 +115,11 @@ TEST(RepoMetaVariantTest, StringVisitor) {
 	RepoVariant v5 = tmPre;
 	std::string value5 = boost::apply_visitor(StringConversionVisitor(), v5);
 	EXPECT_EQ(value5, "04-06-1976 03-02-01");
+
+	auto uuid = repo::lib::RepoUUID::createUUID();
+	RepoVariant v6 = uuid;
+	std::string value6 = boost::apply_visitor(StringConversionVisitor(), v6);
+	EXPECT_EQ(value6, uuid.toString());
 }
 
 TEST(RepoMetaVariantTest, CompareVisitor) {
@@ -173,6 +188,11 @@ TEST(RepoMetaVariantTest, CompareVisitor) {
 	tm6b.tm_isdst = 0;
 	RepoVariant v6a = tm6a;
 	RepoVariant v6b = tm6b;
-
 	EXPECT_FALSE(boost::apply_visitor(DuplicationVisitor(), v6a, v6b));
+
+	RepoVariant v7a = repo::lib::RepoUUID::createUUID();
+	RepoVariant v7b = v7a;
+	RepoVariant v7c = repo::lib::RepoUUID::createUUID();
+	EXPECT_TRUE(boost::apply_visitor(DuplicationVisitor(), v7a, v7b));
+	EXPECT_FALSE(boost::apply_visitor(DuplicationVisitor(), v7a, v7c));
 }

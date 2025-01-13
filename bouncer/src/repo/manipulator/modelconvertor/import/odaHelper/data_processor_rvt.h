@@ -55,8 +55,7 @@
 
 #include <TB_ExLabelUtils/BmSampleLabelUtilsPE.h>
 
-#include "../../../../lib/datastructure/repo_structs.h"
-#include "../../../../core/model/bson/repo_bson_builder.h"
+#include "repo/lib/datastructure/repo_structs.h"
 #include "geometry_collector.h"
 #include "data_processor.h"
 
@@ -109,7 +108,7 @@ namespace repo {
 					std::string determineTexturePath(const std::string& inputPath);
 					void establishProjectTranslation(OdBmDatabase* pDb);
 					void fillTexture(OdBmMaterialElemPtr materialPtr, repo_material_t& material, bool& missingTexture);
-					void fillMaterial(OdBmMaterialElemPtr materialPtr, const MaterialColours& matColors, repo_material_t& material);
+					void fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiMaterialTraitsData& materialData, repo_material_t& material);
 					void fillMeshData(const OdGiDrawable* element);
 
 					void fillMetadataById(

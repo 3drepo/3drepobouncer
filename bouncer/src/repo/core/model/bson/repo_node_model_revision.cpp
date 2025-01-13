@@ -20,93 +20,88 @@
 */
 
 #include "repo_node_model_revision.h"
+#include "repo_bson_builder.h"
 
 using namespace repo::core::model;
 
 ModelRevisionNode::ModelRevisionNode(RepoBSON bson) :
 	RevisionNode(bson)
 {
+	offset = { 0, 0, 0 };
+	deserialise(bson);
 }
+
 ModelRevisionNode::ModelRevisionNode() :
 	RevisionNode()
 {
+	status = UploadStatus::COMPLETE;
+	offset = { 0, 0, 0 };
 }
 
 ModelRevisionNode::~ModelRevisionNode()
 {
 }
 
-ModelRevisionNode ModelRevisionNode::cloneAndUpdateStatus(
-	const UploadStatus &status) const
+void ModelRevisionNode::deserialise(RepoBSON& bson)
 {
-	switch (status)
+	status = UploadStatus::COMPLETE;
+	if (bson.hasField(REPO_NODE_REVISION_LABEL_INCOMPLETE))
 	{
-	case UploadStatus::COMPLETE:
-		return RepoNode(removeField(REPO_NODE_REVISION_LABEL_INCOMPLETE), bigFiles);
-	case UploadStatus::UNKNOWN:
-		repoError << "Cannot set the status flag to Unknown state!";
-		return *this;
-	default:
-		RepoBSON bsonChange = BSON(REPO_NODE_REVISION_LABEL_INCOMPLETE << (int)status);
-		return cloneAndAddFields(&bsonChange, false);
+		status = (UploadStatus)bson.getIntField(REPO_NODE_REVISION_LABEL_INCOMPLETE);
+	}
+	if (bson.hasField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT))
+	{
+		offset = bson.getDoubleVectorField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT);
+	}
+	if (bson.hasField(REPO_NODE_REVISION_LABEL_REF_FILE))
+	{
+		files = bson.getFileList(REPO_NODE_REVISION_LABEL_REF_FILE);
+	}
+	if (bson.hasField(REPO_NODE_REVISION_LABEL_MESSAGE))
+	{
+		message = bson.getStringField(REPO_NODE_REVISION_LABEL_MESSAGE);
+	}
+	if (bson.hasField(REPO_NODE_REVISION_LABEL_TAG))
+	{
+		tag = bson.getStringField(REPO_NODE_REVISION_LABEL_TAG);
 	}
 }
 
-std::string ModelRevisionNode::getMessage() const
+void ModelRevisionNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 {
-	return getStringField(REPO_NODE_REVISION_LABEL_MESSAGE);
-}
-
-std::string ModelRevisionNode::getTag() const
-{
-	return getStringField(REPO_NODE_REVISION_LABEL_TAG);
-}
-
-std::vector<double> ModelRevisionNode::getCoordOffset() const
-{
-	std::vector<double> offset;
-	if (hasField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT))
+	RevisionNode::serialise(builder);
+	builder.append(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT, offset); // This is never empty because it initialises to 0,0,0.
+	if (files.size())
 	{
-		auto offsetObj = getObjectField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT);
-		if (!offsetObj.isEmpty())
-		{
-			for (int i = 0; i < 3; ++i)
-			{
-				offset.push_back(offsetObj.getDoubleField(std::to_string(i)));
-			}
-		}
-		else
-		{
-			offset.push_back(0);
-			offset.push_back(0);
-			offset.push_back(0);
-		}
+		builder.appendArray(REPO_NODE_REVISION_LABEL_REF_FILE, files);
 	}
-	else
+	if (!message.empty())
 	{
-		offset.push_back(0);
-		offset.push_back(0);
-		offset.push_back(0);
+		builder.append(REPO_NODE_REVISION_LABEL_MESSAGE, message);
 	}
-
-	return offset;
+	if (!tag.empty())
+	{
+		builder.append(REPO_NODE_REVISION_LABEL_TAG, tag);
+	}
+	if (status != UploadStatus::COMPLETE)
+	{
+		builder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, (int32_t)status);
+	}
+	builder.append(REPO_NODE_LABEL_SHARED_ID, sharedId); // By convention the ModelRevisionNode always has a SharedId member, even if zero
 }
 
-std::vector<std::string> ModelRevisionNode::getOrgFiles() const
+bool ModelRevisionNode::sEqual(const RepoNode& other) const
 {
-	std::vector<std::string> fileList;
-	if (hasField(REPO_NODE_REVISION_LABEL_REF_FILE))
+	auto otherRevision = dynamic_cast<const ModelRevisionNode*>(&other);
+
+	bool success = false;
+	if (otherRevision != nullptr)
 	{
-		RepoBSON arraybson = getObjectField(REPO_NODE_REVISION_LABEL_REF_FILE);
-
-		std::set<std::string> fields = arraybson.getFieldNames();
-
-		for (const auto &field : fields)
-		{
-			fileList.push_back(arraybson.getStringField(field));
-		}
+		success = offset == otherRevision->offset;
+		success &= message == otherRevision->message;
+		success &= tag == otherRevision->tag;
+		success &= files == otherRevision->files;
 	}
 
-	return fileList;
+	return success;
 }
-

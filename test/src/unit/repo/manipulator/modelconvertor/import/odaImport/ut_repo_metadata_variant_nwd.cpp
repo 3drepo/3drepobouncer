@@ -21,21 +21,23 @@
 
 #include <repo/lib/datastructure/repo_variant.h>
 #include <repo/manipulator/modelconvertor/import/odaHelper/data_processor_nwd.h>
+#include <repo/manipulator/modelconvertor/import/odaHelper/repo_system_services.h>
 
+#include <OdaCommon.h>
 #include <Attribute/NwPropertyAttribute.h>
 #include <NwVariant.h>
 #include <NwDatabase.h>
 #include <StaticRxObject.h>
-#include <ExSystemServices.h>
 #include <NwHostAppServices.h>
 #include "DynamicLinker.h"
 #include "Gs/GsBaseModule.h"
 
 using namespace repo::lib;
 using namespace repo::manipulator::modelconvertor::odaHelper;
+using namespace testing;
 
 // First helper class for the test of the NWD Converter
-class OdExNwSystemServices : public ExSystemServices
+class OdExNwSystemServices : public RepoSystemServices
 {
 public:
 	OdExNwSystemServices() {}
@@ -71,7 +73,7 @@ TEST(RepoMetaVariantConverterNWDTest, DoubleTest)
 
 	// Create data
 	double value = 1.0;
-	OdNwVariant var = OdNwVariant(value);
+	OdNwVariant var = OdNwVariant(value, OdNwVariant::Type::kArea);
 
 	// Convert to property
 	OdNwPropertyAttributePtr attribute = OdNwPropertyAttribute::createObject();
@@ -118,7 +120,7 @@ TEST(RepoMetaVariantConverterNWDTest, Int32Test)
 
 	// Check results
 	EXPECT_TRUE(success);
-	EXPECT_EQ(boost::get<long long>(v), -2147483648ll);
+	EXPECT_EQ(boost::get<int64_t>(v), -2147483648ll);
 
 	// Teardown
 	TeardownOdEnvForNWD();
@@ -287,7 +289,7 @@ TEST(RepoMetaVariantConverterNWDTest, NameTest)
 	SetupOdEnvForNWD(svcs, pDB);
 
 	// Create data
-	OdNwNamePtr value = OdNwName::createObject();
+	OdNwNamePtr value = OdNwName::createObject(OdString("internalName"), OdString("displayName"));
 	OdNwVariant var = OdNwVariant(OdRxObject::cast(value));
 
 	// Convert to property
@@ -304,7 +306,7 @@ TEST(RepoMetaVariantConverterNWDTest, NameTest)
 
 	// Check results
 	EXPECT_TRUE(success);
-	EXPECT_EQ(boost::get<std::string>(v), std::string("")); // Not ideal, but I have not found a way to set the OdNwName object yet (FT).
+	EXPECT_EQ(boost::get<std::string>(v), std::string("displayName")); // For Names, tryConvertMetadataProperty explicitly gets the disply name
 
 	// Teardown
 	TeardownOdEnvForNWD();

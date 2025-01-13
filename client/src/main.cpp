@@ -122,9 +122,15 @@ int main(int argc, char* argv[]) {
 				return REPOERR_AUTH_FAILED;
 			}
 		}
-		catch (const repo::lib::RepoException &e) {
-			repoLogError("Failed to read configuration from file: " + configPath + " : " + e.what());
-			return REPOERR_INVALID_CONFIG_FILE;
+		catch (const repo::lib::RepoException &e)
+		{
+			repoError << e.printFull();
+			return e.repoCode();
+		}
+		catch (const std::exception& e) // We expect all exceptions to be nested inside a RepoException, so this is only really a last ditch fallback
+		{
+			repoError << e.what() << std::endl;
+			return REPOERR_UNKNOWN_ERR;
 		}
 	}
 	else

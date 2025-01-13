@@ -20,39 +20,32 @@
 #include <string>
 
 #include "repo_file_handler_abstract.h"
-#include "../repo_database_handler_abstract.h"
-#include "../../model/bson/repo_bson_ref.h"
-#include "../../../lib/repo_config.h"
+#include "repo/core/model/bson/repo_bson_ref.h"
+#include "repo/lib/repo_config.h"
 
 namespace repo {
 	namespace core {
 		namespace handler {
+			class AbstractDatabaseHandler;
 			namespace fileservice {
 				class FileManager
 				{
 				public:
+
+					/**
+					 * Default constructor
+					 */
+					FileManager(const repo::lib::RepoConfig& config, std::weak_ptr<AbstractDatabaseHandler> handler);
+
 					/**
 					 * A Deconstructor
 					 */
 					~FileManager() {}
 
-					/*
-					* Returns file handler.
-					* Get file manager instance
-					* Throws RepoException if this is called before instantiateMananger is called.
-					*/
-					static FileManager* getManager();
-
-					static void disconnect() {
-						if (manager)
-							delete manager;
-						manager = nullptr;
-					}
-
-					static FileManager* instantiateManager(
-						const repo::lib::RepoConfig &config,
-						repo::core::handler::AbstractDatabaseHandler *dbHandler
-					);
+					// The FileManager's definition of Metadata. Consumers of this
+					// do not need to know about RepoRef, so it has its own type
+					// alias in case they diverge.
+					using Metadata = repo::core::model::RepoRef::Metadata;
 
 					/*
 					* Possible options for static compression of stored files
@@ -72,7 +65,7 @@ namespace repo {
 						const std::string                            &collectionNamePrefix,
 						const IdType								 &id,
 						const std::vector<uint8_t>                   &bin,
-						const repo::core::model::RepoBSON            &metadata = repo::core::model::RepoBSON(),
+						const repo::core::model::RepoRef::Metadata   &metadata = {},
 						const Encoding                               &encoding = Encoding::None
 					);
 
@@ -104,12 +97,12 @@ namespace repo {
 						const std::string                            &fileName
 					);
 
-					repo::core::model::RepoRef getFileRef(
+					repo::core::model::RepoRefT<std::string> getFileRef(
 						const std::string& databaseName,
 						const std::string& collectionNamePrefix,
 						const std::string& fileName);
 
-					repo::core::model::RepoRef getFileRef(
+					repo::core::model::RepoRefT<repo::lib::RepoUUID> getFileRef(
 						const std::string& databaseName,
 						const std::string& collectionNamePrefix,
 						const repo::lib::RepoUUID& id
@@ -124,12 +117,6 @@ namespace repo {
 					);
 
 				private:
-					/**
-					 * Default constructor
-					 */
-					FileManager(const repo::lib::RepoConfig &config,
-						repo::core::handler::AbstractDatabaseHandler *dbHandler);
-
 					/**
 					 * Cleans given filename by removing teamspace and model strings.
 					 * e.g. cleanFileName("/teamspaceA/modelB/file.obj")
@@ -148,19 +135,19 @@ namespace repo {
 						const std::string                            &databaseName,
 						const std::string                            &collectionNamePrefix);
 
-					repo::core::model::RepoRef makeRefNode(
+					repo::core::model::RepoRefT<repo::lib::RepoUUID> makeRefNode(
 						const repo::lib::RepoUUID& id,
 						const std::string& link,
 						const repo::core::model::RepoRef::RefType& type,
 						const uint32_t& size,
-						const repo::core::model::RepoBSON& metadata);
+						const repo::core::model::RepoRef::Metadata& metadata);
 
-					repo::core::model::RepoRef makeRefNode(
+					repo::core::model::RepoRefT<std::string> makeRefNode(
 						const std::string& id,
 						const std::string& link,
 						const repo::core::model::RepoRef::RefType& type,
 						const uint32_t& size,
-						const repo::core::model::RepoBSON& metadata);
+						const repo::core::model::RepoRef::Metadata& metadata);
 
 					/**
 					 * Add ref entry for file to database.
@@ -173,11 +160,12 @@ namespace repo {
 						const std::string                            &link,
 						const repo::core::model::RepoRef::RefType    &type,
 						const uint32_t                               &size,
-						const repo::core::model::RepoBSON            &metadata);
+						const repo::core::model::RepoRef::Metadata   &metadata);
 
-					static FileManager* manager;
-					repo::core::handler::AbstractDatabaseHandler *dbHandler;
-					std::shared_ptr<AbstractFileHandler> defaultHandler, fsHandler;
+					std::shared_ptr<AbstractDatabaseHandler> getDbHandler();
+
+					std::weak_ptr<AbstractDatabaseHandler> dbHandler;
+					std::shared_ptr<AbstractFileHandler> fsHandler;
 				};
 			}
 		}

@@ -32,11 +32,11 @@
 #include <boost/bimap.hpp>
 
 #include "repo_model_import_abstract.h"
-#include "../../../core/model/collection/repo_scene.h"
-#include "../../../core/model/bson/repo_node_material.h"
-#include "../../../core/model/bson/repo_node_mesh.h"
-#include "../../../core/model/bson/repo_node_metadata.h"
-#include "../../../core/model/bson/repo_node_transformation.h"
+#include "repo/core/model/collection/repo_scene.h"
+#include "repo/core/model/bson/repo_node_material.h"
+#include "repo/core/model/bson/repo_node_mesh.h"
+#include "repo/core/model/bson/repo_node_metadata.h"
+#include "repo/core/model/bson/repo_node_transformation.h"
 
 #include "repo/lib/datastructure/repo_variant.h"
 
@@ -149,7 +149,7 @@ namespace repo {
 				*/
 				repo::core::model::RepoNodeSet createTransformationNodesRecursive(
 					const aiNode                                                         *assimpNode,
-					const std::vector<repo::core::model::RepoNode >                      &meshes,
+					const std::vector<repo::core::model::MeshNode >                      &originalMeshes,
 					const std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode *, repo::lib::RepoUUIDHasher>    &meshToMat,
 					std::unordered_map<repo::core::model::RepoNode *, std::vector<repo::lib::RepoUUID>> &matParents,
 					repo::core::model::RepoNodeSet                                       &newMeshes,
@@ -166,7 +166,7 @@ namespace repo {
 				*/
 				repo::core::model::RepoNode* duplicateMesh(
 					repo::lib::RepoUUID                    &newParent,
-					repo::core::model::RepoNode &mesh,
+					const repo::core::model::MeshNode &mesh,
 					const std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode *, repo::lib::RepoUUIDHasher>    &meshToMat,
 					std::unordered_map<repo::core::model::RepoNode *, std::vector<repo::lib::RepoUUID>> &matParents);
 

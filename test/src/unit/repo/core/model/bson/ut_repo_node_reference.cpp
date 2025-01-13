@@ -18,6 +18,8 @@
 #include <cstdlib>
 
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest-matchers.h>
 
 #include <repo/core/model/bson/repo_node_reference.h>
 #include <repo/core/model/bson/repo_bson_builder.h>
@@ -26,29 +28,196 @@
 #include "../../../../repo_test_utils.h"
 
 using namespace repo::core::model;
+using namespace testing;
 
 /**
 * Construct from mongo builder and mongo bson should give me the same bson
 */
 TEST(RefNodeTest, Constructor)
 {
-	ReferenceNode empty;
+	ReferenceNode node;
+	EXPECT_THAT(node.getType(), Eq(REPO_NODE_TYPE_REFERENCE));
+	EXPECT_THAT(node.getTypeAsEnum(), Eq(NodeType::REFERENCE));
+	EXPECT_THAT(node.getUniqueID().isDefaultValue(), IsFalse());
+	EXPECT_THAT(node.getSharedID().isDefaultValue(), IsTrue());
+	EXPECT_THAT(node.getName(), IsEmpty());
+	EXPECT_THAT(node.getProjectRevision().isDefaultValue(), IsTrue());
+	EXPECT_THAT(node.getDatabaseName().empty(), IsTrue());
+	EXPECT_THAT(node.getProjectId().empty(), IsTrue());
+	EXPECT_THAT(node.useSpecificRevision(), IsFalse());
+}
 
-	EXPECT_TRUE(empty.isEmpty());
-	EXPECT_EQ(NodeType::REFERENCE, empty.getTypeAsEnum());
+TEST(RefNodeTest, Deserialise)
+{
+	auto project = repo::lib::RepoUUID::createUUID().toString(); // For legacy reasons the project reference is stored as a string
+	auto teamspace = "myTeamspace";
+	auto uniqueId = repo::lib::RepoUUID::createUUID();
+	auto sharedId = repo::lib::RepoUUID::createUUID();
+	auto name = "myName";
+	auto revisionId = repo::lib::RepoUUID::createUUID();
+	auto isUnique = true;
+	auto revId = repo::lib::RepoUUID::createUUID();
 
-	auto repoBson = RepoBSON(BSON("test" << "blah" << "test2" << 2));
+	RepoBSONBuilder builder;
 
-	auto fromRepoBSON = ReferenceNode(repoBson);
-	EXPECT_EQ(NodeType::REFERENCE, fromRepoBSON.getTypeAsEnum());
-	EXPECT_EQ(fromRepoBSON.nFields(), repoBson.nFields());
-	EXPECT_EQ(0, fromRepoBSON.getFileList().size());
+	builder.append(REPO_NODE_LABEL_ID, uniqueId);
+	builder.append(REPO_NODE_LABEL_SHARED_ID, sharedId);
+	builder.append(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_REFERENCE);
+	builder.append(REPO_NODE_LABEL_NAME, name);
+	builder.append(REPO_NODE_REVISION_ID, revId);
+	builder.append(REPO_NODE_REFERENCE_LABEL_OWNER, teamspace);
+	builder.append(REPO_NODE_REFERENCE_LABEL_PROJECT, project);
+	builder.append(REPO_NODE_REFERENCE_LABEL_REVISION_ID, revisionId);
+	builder.append(REPO_NODE_REFERENCE_LABEL_UNIQUE, isUnique);
+
+	auto node = ReferenceNode(builder.obj());
+
+	EXPECT_THAT(node.getUniqueID(), Eq(uniqueId));
+	EXPECT_THAT(node.getSharedID(), Eq(sharedId));
+	EXPECT_THAT(node.getRevision(), Eq(revId));
+	EXPECT_THAT(node.getName(), Eq(name));
+	EXPECT_THAT(node.getProjectRevision(), Eq(revisionId));
+	EXPECT_THAT(node.getDatabaseName(), Eq(teamspace));
+	EXPECT_THAT(node.getProjectId(), Eq(project));
+	EXPECT_THAT(node.useSpecificRevision(), Eq(isUnique));
+}
+
+TEST(RefNodeTest, DeserialiseEmpty)
+{
+	auto project = repo::lib::RepoUUID::createUUID().toString(); // For legacy reasons the project reference is stored as a string
+	auto teamspace = "myTeamspace";
+
+	RepoBSONBuilder builder;
+
+	builder.append(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_REFERENCE);
+	builder.append(REPO_NODE_REFERENCE_LABEL_OWNER, teamspace);
+	builder.append(REPO_NODE_REFERENCE_LABEL_PROJECT, project);
+
+	auto node = ReferenceNode(builder.obj());
+
+	EXPECT_THAT(node.getUniqueID().isDefaultValue(), IsTrue());
+	EXPECT_THAT(node.getSharedID().isDefaultValue(), IsTrue());
+	EXPECT_THAT(node.getRevision().isDefaultValue(), IsTrue());
+	EXPECT_THAT(node.getName(), IsEmpty());
+	EXPECT_THAT(node.getProjectRevision().isDefaultValue(), IsTrue());
+	EXPECT_THAT(node.getDatabaseName(), Eq(teamspace));
+	EXPECT_THAT(node.getProjectId(), Eq(project));
+	EXPECT_THAT(node.useSpecificRevision(), IsFalse());
+}
+
+TEST(RefNodeTest, Serialise)
+{
+	auto node = ReferenceNode();
+
+	EXPECT_THAT(((RepoBSON)node).getUUIDField(REPO_NODE_LABEL_ID).isDefaultValue(), IsFalse());
+	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_LABEL_SHARED_ID), IsFalse());
+	EXPECT_THAT(((RepoBSON)node).getStringField(REPO_NODE_LABEL_TYPE), Eq(REPO_NODE_TYPE_REFERENCE));
+	EXPECT_THAT(((RepoBSON)node).getStringField(REPO_NODE_REFERENCE_LABEL_OWNER), IsEmpty());
+	EXPECT_THAT(((RepoBSON)node).getStringField(REPO_NODE_REFERENCE_LABEL_PROJECT), IsEmpty());
+	EXPECT_THAT(((RepoBSON)node).getUUIDField(REPO_NODE_REFERENCE_LABEL_REVISION_ID), Eq(repo::lib::RepoUUID::defaultValue));
+	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_REFERENCE_LABEL_UNIQUE), IsFalse());
+
+	node.setUniqueID(repo::lib::RepoUUID::createUUID());
+	EXPECT_THAT(((RepoBSON)node).getUUIDField(REPO_NODE_LABEL_ID), node.getUniqueID());
+
+	node.setSharedID(repo::lib::RepoUUID::createUUID());
+	EXPECT_THAT(((RepoBSON)node).getUUIDField(REPO_NODE_LABEL_SHARED_ID), node.getSharedID());
+
+	node.setRevision(repo::lib::RepoUUID::createUUID());
+	EXPECT_THAT(((RepoBSON)node).getUUIDField(REPO_NODE_REVISION_ID), node.getRevision());
+
+	node.setDatabaseName("database");
+	EXPECT_THAT(((RepoBSON)node).getStringField(REPO_NODE_REFERENCE_LABEL_OWNER), node.getDatabaseName());
+
+	node.setProjectId("project");
+	EXPECT_THAT(((RepoBSON)node).getStringField(REPO_NODE_REFERENCE_LABEL_PROJECT), node.getProjectId());
+
+	node.setProjectRevision(repo::lib::RepoUUID::createUUID());
+	EXPECT_THAT(((RepoBSON)node).getUUIDField(REPO_NODE_REFERENCE_LABEL_REVISION_ID), node.getProjectRevision());
+
+	node.setUseSpecificRevision(true);
+	EXPECT_THAT(((RepoBSON)node).getBoolField(REPO_NODE_REFERENCE_LABEL_UNIQUE), node.useSpecificRevision());
+
+	node.setUseSpecificRevision(false);
+	EXPECT_THAT(((RepoBSON)node).hasField(REPO_NODE_REFERENCE_LABEL_UNIQUE), IsFalse());
+}
+
+TEST(RefNodeTest, Factory)
+{
+	auto project = repo::lib::RepoUUID::createUUID().toString(); // For legacy reasons the project reference is stored as a string
+	auto database = "myTeamspace";
+	auto uniqueId = repo::lib::RepoUUID::createUUID();
+	auto name = "myName";
+	auto revisionId = repo::lib::RepoUUID::createUUID();
+	auto isUnique = true;
+	auto revId = repo::lib::RepoUUID::createUUID();
+
+	auto node = RepoBSONFactory::makeReferenceNode(
+		database,
+		project,
+		revisionId,
+		false,
+		name
+	);
+
+	EXPECT_THAT(node.getDatabaseName(), Eq(database));
+	EXPECT_THAT(node.getProjectId(), Eq(project));
+	EXPECT_THAT(node.getProjectRevision(), Eq(revisionId));
+	EXPECT_THAT(node.getRevision(), Eq(repo::lib::RepoUUID::defaultValue));
+	EXPECT_THAT(node.useSpecificRevision(), IsFalse());
+	EXPECT_THAT(node.getName(), name);
+
+	EXPECT_THAT(node.getSharedID().isDefaultValue(), IsFalse()); // By convention, factory produced ReferenceNodes have SharedIds
+
+	// That the name is automatically produced if name is omitted
+
+	node = RepoBSONFactory::makeReferenceNode(
+		database,
+		project,
+		revisionId,
+		false
+	);
+
+	EXPECT_THAT(node.getName(), Eq(database + std::string(".") + project));
+
+}
+
+TEST(RefNodeTest, Methods)
+{
+	auto node = ReferenceNode();
+
+	auto projectRevision = repo::lib::RepoUUID::createUUID();
+	auto projectId = repo::lib::RepoUUID::createUUID().toString();
+	auto sharedId = repo::lib::RepoUUID::createUUID();
+	auto uniqueId = repo::lib::RepoUUID::createUUID();
+	auto name = "myName";
+	auto database = "database";
+
+	node.setProjectId(projectId);
+	EXPECT_THAT(node.getProjectId(), Eq(projectId));
+
+	node.setProjectRevision(projectRevision);
+	EXPECT_THAT(node.getProjectRevision(), Eq(projectRevision));
+
+	node.setSharedID(sharedId);
+	EXPECT_THAT(node.getSharedID(), Eq(sharedId));
+
+	node.changeName(name);
+	EXPECT_THAT(node.getName(), Eq(name));
+
+	node.setDatabaseName(database);
+	EXPECT_THAT(node.getDatabaseName(), Eq(database));
+
+	node.setUseSpecificRevision(true);
+	EXPECT_THAT(node.useSpecificRevision(), IsTrue());
+
+	node.setUseSpecificRevision(false);
+	EXPECT_THAT(node.useSpecificRevision(), IsFalse());
 }
 
 TEST(RefNodeTest, TypeTest)
 {
 	ReferenceNode node;
-
 	EXPECT_EQ(REPO_NODE_TYPE_REFERENCE, node.getType());
 	EXPECT_EQ(NodeType::REFERENCE, node.getTypeAsEnum());
 }
@@ -59,30 +228,55 @@ TEST(RefNodeTest, PositionDependantTest)
 	EXPECT_FALSE(node.positionDependant());
 }
 
-TEST(RefNodeTest, GetterTest)
+// This function is used by the CopyConstructor Test to return a stack-allocated
+// copy of a MetadataNode on the stack.
+static ReferenceNode makeRefNode()
 {
-	ReferenceNode empty;
-	EXPECT_EQ(repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH), empty.getRevisionID());
-	EXPECT_TRUE(empty.getDatabaseName().empty());
-	EXPECT_TRUE(empty.getProjectName().empty());
-	EXPECT_FALSE(empty.useSpecificRevision());
+	auto a = ReferenceNode();
+	a.setSharedID(repo::lib::RepoUUID("e624aab0-f983-49fb-9263-1991288cb449"));
+	a.setProjectRevision(repo::lib::RepoUUID("debd2287-36ca-4584-bce0-56487a1882c0"));
+	a.setProjectId("764c3c91-1c30-4ad7-ae5f-406c05d1f96a");
+	a.setDatabaseName("database");
+	return a;
+}
 
-	auto dbName = getRandomString(rand() % 10 + 1);
-	auto projName = getRandomString(rand() % 10 + 1);
-	auto revId = repo::lib::RepoUUID::createUUID();
-	auto refNode1 = RepoBSONFactory::makeReferenceNode(dbName, projName, revId, true);
+// This function is used by the CopyConstructor Test to return a heap-allocated
+// copy of a MetadataNode originally allocated on the stack.
+static ReferenceNode* makeNewNode()
+{
+	auto a = makeRefNode();
+	return new ReferenceNode(a);
+}
 
-	auto dbName2 = getRandomString(rand() % 10 + 1);
-	auto projName2 = getRandomString(rand() % 10 + 1);
-	auto refNode2 = RepoBSONFactory::makeReferenceNode(dbName2, projName2);
+TEST(RefNodeTest, CopyConstructor)
+{
+	auto a = makeRefNode();
 
-	EXPECT_EQ(dbName, refNode1.getDatabaseName());
-	EXPECT_EQ(projName, refNode1.getProjectName());
-	EXPECT_EQ(revId, refNode1.getRevisionID());
-	EXPECT_TRUE(refNode1.useSpecificRevision());
+	auto b = a;
+	EXPECT_THAT(a.sEqual(b), IsTrue());
 
-	EXPECT_EQ(dbName2, refNode2.getDatabaseName());
-	EXPECT_EQ(projName2, refNode2.getProjectName());
-	EXPECT_EQ(repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH), refNode2.getRevisionID());
-	EXPECT_FALSE(refNode2.useSpecificRevision());
+	b.setProjectRevision(repo::lib::RepoUUID::createUUID());
+	EXPECT_THAT(a.sEqual(b), IsFalse());
+
+	auto c = new ReferenceNode(a);
+	EXPECT_THAT(a.sEqual(*c), IsTrue());
+
+	c->setProjectRevision(repo::lib::RepoUUID::createUUID());
+	EXPECT_THAT(a.sEqual(*c), IsFalse());
+
+	delete c;
+
+	auto d = makeNewNode();
+	EXPECT_THAT(a.sEqual(*d), IsTrue());
+
+	d->setProjectRevision(repo::lib::RepoUUID::createUUID());
+	EXPECT_THAT(a.sEqual(*d), IsFalse());
+
+	delete d;
+
+	auto e = makeRefNode();
+	EXPECT_THAT(a.sEqual(e), IsTrue());
+
+	e.setProjectRevision(repo::lib::RepoUUID::createUUID());
+	EXPECT_THAT(a.sEqual(e), IsFalse());
 }

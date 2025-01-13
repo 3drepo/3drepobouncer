@@ -17,11 +17,12 @@
 
 #pragma once
 
-#include "../../../../error_codes.h"
+#include "repo/error_codes.h"
 #include "../repo_model_units.h"
-#include "../../../../core/model/bson/repo_bson_factory.h"
-#include "../../../../lib/datastructure/repo_structs.h"
-#include "../../../../lib/datastructure/repo_variant.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/lib/datastructure/repo_structs.h"
+#include "repo/lib/datastructure/repo_variant.h"
+#include "repo/lib/datastructure/repo_bounds.h"
 #include "helper_functions.h"
 #include "vertex_map.h"
 
@@ -36,7 +37,7 @@ namespace repo {
 			namespace odaHelper {
 				struct mesh_data_t {
 					std::vector<repo_face_t> faces;
-					std::vector<std::vector<float>> boundingBox;
+					repo::lib::RepoBounds boundingBox;
 					VertexMap vertexMap;
 					std::string name;
 					std::string layerName;
@@ -182,12 +183,6 @@ namespace repo {
 					void setOrigin(const double &x, const double &y, const double &z) {
 						origin = { x, y, z };
 					}
-
-					/**
-					* Change current meta node to the one provided
-					* @param meta node
-					*/
-					void setCurrentMeta(const std::map<std::string, repo::lib::RepoVariant>& meta);
 
 					/**
 					* Get all meta nodes collected.

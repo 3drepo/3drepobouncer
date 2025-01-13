@@ -191,9 +191,9 @@ repo_web_geo_files_t SRCModelExport::getSRCFilesAsBuffer() const
 				std::vector<uint8_t> compressed;
 				compressed.resize(4);
 				((uint32_t*)compressed.data())[0] = fullDataArray.size();
-				
+
 				compressed.insert(compressed.end(), std::istreambuf_iterator<char>(&out), std::istreambuf_iterator<char>());
-				
+
 				fullDataArray = compressed;
 #endif
 
@@ -361,7 +361,7 @@ bool SRCModelExport::generateTreeRepresentation(
 				continue;
 			}
 
-			if (mesh->getPrimitive() != repo::core::model::MeshNode::Primitive::TRIANGLES) 
+			if (mesh->getPrimitive() != repo::core::model::MeshNode::Primitive::TRIANGLES)
 			{
 				repoError << "SRCModelExport does not support primitive type " << (int)mesh->getPrimitive() << " on node " << node->getUniqueID() << ". Skipping...";
 				continue;
@@ -371,7 +371,7 @@ bool SRCModelExport::generateTreeRepresentation(
 				new repo::manipulator::modelutility::MeshMapReorganiser(mesh, SRC_MAX_VERTEX_LIMIT, SRC_MAX_TRIANGLE_LIMIT);
 
 			auto splittedMesh = reSplitter->getRemappedMesh();
-			if (success = !(splittedMesh.isEmpty()))
+			if (success = splittedMesh.getNumVertices())
 			{
 				std::vector<uint16_t> facebuf = reSplitter->getSerialisedFaces();
 				std::vector<std::vector<float>> idMapBuf = reSplitter->getIDMapArrays();
@@ -414,7 +414,7 @@ bool SRCModelExport::addMeshToExport(
 
 	auto vertices = mesh.getVertices();
 	auto normals = mesh.getNormals();
-	auto uvs = mesh.getUVChannels();
+	auto uvs = mesh.getUVChannelsSerialised();
 
 	if (!vertices.size())
 	{
