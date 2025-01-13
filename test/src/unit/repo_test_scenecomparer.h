@@ -24,6 +24,7 @@
 #include <repo/core/model/bson/repo_node_transformation.h>
 #include <repo/core/model/bson/repo_node_metadata.h>
 #include <repo/core/model/bson/repo_node_mesh.h>
+#include <repo/core/model/bson/repo_node_material.h>
 #include <repo/core/model/bson/repo_node_texture.h>
 
 namespace repo {
@@ -66,6 +67,17 @@ namespace repo {
 				*/
 				bool ignoreMetadataContent = false;
 
+				/*
+				* Textures are not supported yet.
+				*/
+				bool ignoreTextures = true;
+
+				/*
+				* Do not consider Material Nodes - it will be as if there are no MaterialNodes
+				* in the scene.
+				*/
+				bool ignoreMaterials = true;
+
 				struct Result
 				{
 					std::string message;
@@ -96,6 +108,8 @@ namespace repo {
 				void compareTransformationNode(std::shared_ptr<repo::core::model::TransformationNode> expected, std::shared_ptr<repo::core::model::TransformationNode> actual);
 				void compareMeshNode(std::shared_ptr<repo::core::model::MeshNode> expected, std::shared_ptr<repo::core::model::MeshNode> actual);
 				void compareMetaNode(std::shared_ptr<repo::core::model::MetadataNode> expected, std::shared_ptr<repo::core::model::MetadataNode> actual);
+				void compareMaterialNode(std::shared_ptr<repo::core::model::MaterialNode> expected, std::shared_ptr<repo::core::model::MaterialNode> actual);
+
 			};
 		}
 	}

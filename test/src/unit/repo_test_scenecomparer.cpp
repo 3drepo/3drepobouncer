@@ -163,6 +163,17 @@ namespace std
 			return hash;
 		}
 	};
+
+	template<> struct hash<MaterialNode> {
+		size_t operator()(const MaterialNode& n) const {
+			size_t hash = 0;
+			hash_combine(hash,
+				std::hash<std::string>{}(n.getName()),
+				std::hash<unsigned int>{}(n.getMaterialStruct().checksum())
+			);
+			return hash;
+		}
+	};
 }
 
 SceneComparer::SceneComparer()
@@ -196,16 +207,25 @@ struct SceneComparer::Scene
 	void addNode(std::shared_ptr<TransformationNode> n)
 	{
 		addNode(n, std::hash<TransformationNode>{}(*n));
+		numTransformationNodes++;
 	}
 
 	void addNode(std::shared_ptr<MeshNode> n)
 	{
 		addNode(n, std::hash<MeshNode>{}(*n));
+		numMeshNodes++;
 	}
 
 	void addNode(std::shared_ptr<MetadataNode> n)
 	{
 		addNode(n, std::hash<MetadataNode>{}(*n));
+		numMetadataNodes++;
+	}
+
+	void addNode(std::shared_ptr<MaterialNode> n)
+	{
+		addNode(n, std::hash<MaterialNode>{}(*n));
+		numMaterialNodes++;
 	}
 
 	void addNode(std::shared_ptr<RepoNode> dbNode, size_t hash)
@@ -279,7 +299,7 @@ struct SceneComparer::Scene
 		{
 			bool operator()(const Node* a, const Node* b) const
 			{
-				// First order by type (meta -> mesh -> transformation)
+				// First order by type (meta -> mesh -> -> material -> transformation)
 
 				auto cmp = compareNodeTypes<MetadataNode>(a, b);
 				if (cmp) {
@@ -287,6 +307,11 @@ struct SceneComparer::Scene
 				}
 
 				cmp = compareNodeTypes<MeshNode>(a, b);
+				if (cmp) {
+					return cmp > 0;
+				}
+
+				cmp = compareNodeTypes<MaterialNode>(a, b);
 				if (cmp) {
 					return cmp > 0;
 				}
@@ -327,6 +352,12 @@ struct SceneComparer::Scene
 	std::vector<Node> nodes;
 
 	Node* root;
+
+	size_t numTransformationNodes = 0;
+	size_t numMeshNodes = 0;
+	size_t numMetadataNodes = 0;
+	size_t numMaterialNodes = 0;
+	size_t numTextureNodes = 0;
 };
 
 // Compares the database node types of two Nodes, intended to be used
@@ -355,6 +386,36 @@ SceneComparer::Result SceneComparer::compare(std::string expectedDb, std::string
 	auto actual = loadScene(actualDb, actualName);
 	try
 	{
+		if (expected->numTransformationNodes != actual->numTransformationNodes)
+		{
+			throw ComparisonException("Number of Transformation nodes is different");
+		}
+
+		if (expected->numMetadataNodes != actual->numMetadataNodes)
+		{
+			throw ComparisonException("Number of Metadata nodes is different");
+		}
+
+		if (expected->numMeshNodes != actual->numMeshNodes)
+		{
+			throw ComparisonException("Number of Mesh nodes is different");
+		}
+
+		if (expected->numMaterialNodes != actual->numMaterialNodes)
+		{
+			throw ComparisonException("Number of Material nodes is different");
+		}
+
+		if (expected->numTextureNodes != actual->numTextureNodes)
+		{
+			throw ComparisonException("Number of Texture nodes is different");
+		}
+
+		if (!ignoreTextures)
+		{
+			throw ComparisonException("Textures are not supported yet. Make sure ignoreTextures is set to true");
+		}
+
 		compare({ expected->root, actual->root });
 	}
 	catch (ComparisonException e)
@@ -386,6 +447,10 @@ std::shared_ptr<SceneComparer::Scene> SceneComparer::loadScene(std::string db, s
 		else if (type == REPO_NODE_TYPE_METADATA)
 		{
 			scene->addNode(std::make_shared<MetadataNode>(bson));
+		}
+		else if (type == REPO_NODE_TYPE_MATERIAL && !ignoreMaterials)
+		{
+			scene->addNode(std::make_shared<MaterialNode>(bson));
 		}
 	}
 
@@ -446,6 +511,10 @@ void SceneComparer::compare(std::shared_ptr<RepoNode> expected, std::shared_ptr<
 	else if (std::dynamic_pointer_cast<MetadataNode>(expected))
 	{
 		compareMetaNode(std::dynamic_pointer_cast<MetadataNode>(expected), std::dynamic_pointer_cast<MetadataNode>(actual));
+	}
+	else if (std::dynamic_pointer_cast<MaterialNode>(expected))
+	{
+		compareMaterialNode(std::dynamic_pointer_cast<MaterialNode>(expected), std::dynamic_pointer_cast<MaterialNode>(actual));
 	}
 }
 
@@ -536,5 +605,28 @@ void SceneComparer::compareMetaNode(std::shared_ptr<MetadataNode> expected, std:
 				throw ComparisonException(expected, actual, "Expected contains a key that cannot be found in actual");
 			}
 		}
+	}
+}
+
+void SceneComparer::compareMaterialNode(std::shared_ptr<repo::core::model::MaterialNode> expected, std::shared_ptr<repo::core::model::MaterialNode> actual)
+{
+	auto a = expected->getMaterialStruct();
+	auto b = expected->getMaterialStruct();
+
+	if (
+		a.ambient != b.ambient ||
+		a.diffuse != b.diffuse ||
+		a.emissive != b.emissive ||
+		a.isTwoSided != b.isTwoSided ||
+		a.isWireframe != b.isWireframe ||
+		a.lineWeight != b.lineWeight ||
+		a.opacity != b.opacity ||
+		a.shininess != b.shininess ||
+		a.shininessStrength != b.shininessStrength ||
+		a.specular != b.specular ||
+		a.texturePath != b.texturePath
+		)
+	{
+		throw ComparisonException(expected, actual, "Material parameters are different");
 	}
 }
