@@ -104,30 +104,6 @@ namespace repo {
 
 				size_t referenceCounter;
 			};
-
-			/*
-			* The MaterialCache is used with RepoSceneBuilder to track references to
-			* MaterialNodes.
-			* Material and Texture Nodes are special in the sense that it is much more
-			* likely that they will be referenced multiple times over an import.
-			* 
-			* Right now, MaterialCache just holds pointers to keep materials from being
-			* collected, but in the future through a dedicated operation to update the
-			* parentIds, it could let the nodes be committed.
-			* 
-			* Internally, nodes are indexed through a checksum, based on their properties.
-			* We assume there are no collisions, by virtue of the simplicity of the
-			* material parameters.
-			*/
-			class MaterialCache
-			{
-			public:
-				//void addMaterialReference(repo_material_t material, repo::li)
-
-			private:
-				std::unordered_map<size_t, std::shared_ptr<repo::core::model::MaterialNode>> materials;
-				std::unordered_map<size_t, std::shared_ptr<repo::core::model::TextureNode>> textures;
-			};
 		}
 	}
 }

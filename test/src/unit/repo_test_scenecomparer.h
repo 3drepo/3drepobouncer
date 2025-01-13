@@ -76,7 +76,7 @@ namespace repo {
 				* Do not consider Material Nodes - it will be as if there are no MaterialNodes
 				* in the scene.
 				*/
-				bool ignoreMaterials = true;
+				bool ignoreMaterials = false;
 
 				struct Result
 				{

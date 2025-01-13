@@ -22,6 +22,7 @@
 
 #include "repo/manipulator/modelutility/repo_scene_builder.h"
 #include "repo/manipulator/modelconvertor/import/odaHelper/repo_mesh_builder.h"
+#include "repo/manipulator/modelconvertor/import/odaHelper/repo_material_builder.h"
 #include "repo/core/model/bson/repo_node_transformation.h"
 #include "repo/core/model/bson/repo_bson_factory.h"
 
@@ -93,6 +94,7 @@ struct RepoNwTraversalContext {
 	OdNwModelItemPtr parent;
 	std::string parentLayerId;
 	repo::manipulator::modelutility::RepoSceneBuilder* sceneBuilder;
+	RepoMaterialBuilder* materials;
 	std::shared_ptr<repo::core::model::TransformationNode> parentNode;
 };
 
@@ -698,10 +700,9 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 	std::vector<repo::core::model::MeshNode> nodes;
 	meshBuilder.extractMeshes(nodes);
 
-	auto material = context.sceneBuilder->addNode(repo::core::model::RepoBSONFactory::makeMaterialNode(repoMaterial));
 	for (auto& mesh : nodes)
 	{
-		material->addParent(mesh.getSharedID());
+		context.materials->addMaterialReference(repoMaterial, mesh.getSharedID());
 		context.sceneBuilder->addNode(mesh);
 	}
 
@@ -745,13 +746,7 @@ bool isCollection(OdNwModelItemPtr pNode)
 
 OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext context, const bool inCompositeObject = false)
 {
-	// GeometryCollector::setLayer() is used to build the hierarchy. Each layer
-	// corresponds to a 'node' in the Navisworks Standard View and has a unique Id.
-	// Calling setLayer will immediately create the layer, even before geometry is
-	// added.
-
 	auto levelName = convertToStdString(pNode->getDisplayName());
-	auto levelId = convertToStdString(toString(pNode->objectId().getHandle()));
 
 	// The OdNwPartition distinguishes between branches of the scene graph from
 	// different files.
@@ -859,6 +854,18 @@ void DataProcessorNwd::process(OdNwDatabasePtr pNwDb)
 		context.sceneBuilder = this->builder;
 		context.layer = pModelItemRoot;
 		context.parentNode = context.sceneBuilder->addNode(RepoBSONFactory::makeTransformationNode({}, "rootNode"));
+		context.materials = new RepoMaterialBuilder();
 		traverseSceneGraph(pModelItemRoot, context);
+
+		// Move the material nodes into the builder
+		// Todo: move this somewhere more sutiable or hook up the cache to the builder
+		std::vector<repo::core::model::MaterialNode> materials;
+		context.materials->extract(materials);
+		for (auto m : materials)
+		{
+			builder->addNode(m);
+		}
+
+		delete context.materials;
 	}
 }
