@@ -698,11 +698,10 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 	std::vector<repo::core::model::MeshNode> nodes;
 	meshBuilder.extractMeshes(nodes);
 
-	auto material = repo::core::model::RepoBSONFactory::makeMaterialNode(repoMaterial);
-	context.sceneBuilder->addNode(material);
+	auto material = context.sceneBuilder->addNode(repo::core::model::RepoBSONFactory::makeMaterialNode(repoMaterial));
 	for (auto& mesh : nodes)
 	{
-		material.addParent(mesh.getSharedID());
+		material->addParent(mesh.getSharedID());
 		context.sceneBuilder->addNode(mesh);
 	}
 
