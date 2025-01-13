@@ -277,6 +277,11 @@ namespace repo {
 				const repo::core::model::RepoScene::GraphType &gType
 				= repo::core::model::RepoScene::GraphType::DEFAULT);
 
+			void updateRevisionStatus(
+				repo::core::model::RepoScene* scene,
+				const repo::core::model::ModelRevisionNode::UploadStatus& status
+			);
+
 		private:
 
 			/**

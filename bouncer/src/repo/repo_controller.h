@@ -330,6 +330,10 @@ namespace repo {
 			const RepoToken              *token,
 			repo::core::model::RepoScene *scene);
 
+		void updateRevisionStatus(
+			repo::core::model::RepoScene* scene,
+			const repo::core::model::ModelRevisionNode::UploadStatus& status);
+
 		/*
 		*	------------- Versioning --------------
 		*/
