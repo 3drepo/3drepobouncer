@@ -853,7 +853,14 @@ void DataProcessorNwd::process(OdNwDatabasePtr pNwDb)
 		RepoNwTraversalContext context;
 		context.sceneBuilder = this->builder;
 		context.layer = pModelItemRoot;
-		context.parentNode = context.sceneBuilder->addNode(RepoBSONFactory::makeTransformationNode({}, "rootNode"));
+
+		//todo: remove this once we've integrated properly with model import manager
+		auto m = repo::lib::RepoMatrix(std::vector<float>({ 1, 0, 0, 0,
+			0, 0, 1, 0,
+			0, -1, 0, 0,
+			0, 0, 0, 1 }));
+
+		context.parentNode = context.sceneBuilder->addNode(RepoBSONFactory::makeTransformationNode(m, "rootNode"));
 		context.materials = new RepoMaterialBuilder();
 		traverseSceneGraph(pModelItemRoot, context);
 

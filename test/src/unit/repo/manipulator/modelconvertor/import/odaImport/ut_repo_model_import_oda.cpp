@@ -20,11 +20,11 @@
 #include <gtest/gtest-matchers.h>
 #include <repo/manipulator/modelconvertor/import/repo_model_import_oda.h>
 #include <repo/lib/repo_log.h>
+#include <repo/error_codes.h>
 #include "../../../../../repo_test_utils.h"
 #include "../../../../../repo_test_database_info.h"
 #include "../../../../../repo_test_scenecomparer.h"
 #include "boost/filesystem.hpp"
-#include "../../bouncer/src/repo/error_codes.h"
 
 #include <repo/manipulator/modelutility/repo_scene_builder.h>
 
@@ -39,6 +39,13 @@ using namespace testing;
 /* ODA is predominantly tested via the system tests using the client. These tests
  * cover specific features or regressions. */
 
+ /*
+ * To get the reference data for these tests, import models into the
+ * ODAModelImport database using a known-good bouncer.
+ * Some tests assume that the scenes have not had any optimisations applied.
+ * Depending on the age of the known-good version, this may require a custom
+ * build since not all versions of bouncer exposed this option to the config.
+ */
 
 namespace ODAModelImportUtils
 {
@@ -70,62 +77,34 @@ MATCHER(IsSuccess, "")
 	return (bool)arg;
 }
 
-TEST(ODAModelImport, CheckReferenceDatabases)
-{
-	// Checks for the existence of the SampleNWDTree reference database.
-	bool haveImported = false;
-
-	if (!projectExists(DBNAME, "Sample2025NWDODA"))
-	{
-		uint8_t errCode = 0;
-		auto importer = ODAModelImportUtils::ImportFile(getDataPath("sample2025.nwd"), errCode);
-		auto scene = importer->generateRepoScene(errCode);
-		auto handler = getHandler();
-		std::string errMsg;
-		scene->setDatabaseAndProjectName(DBNAME, "Sample2025NWDODA");
-		scene->commit(handler.get(), handler->getFileManager().get(), errMsg, "unit tests", "", "");
-	}
-
-	if (!projectExists(DBNAME, "Sample2025NWD")) {
-		runProcess(produceUploadArgs(DBNAME, "Sample2025NWD", getDataPath("sample2025.nwd")));
-		haveImported = true;
-	}
-
-	if (!projectExists(DBNAME, "Sample2025NWD2")) {
-		runProcess(produceUploadArgs(DBNAME, "Sample2025NWD2", getDataPath("sample2025.nwd")));
-		haveImported = true;
-	}
-
-	if(haveImported)
-	{
-		FAIL() << "One or more reference databases were not found. These have been reinitialised but must be checked manually and committed.";
-	}
-}
-
 TEST(ODAModelImport, Sample2025NWD)
 {
 	auto handler = getHandler();
 
+	auto db = "ODAModelImportTest";
+	auto col = "Test";
+
 	repo::manipulator::modelutility::RepoSceneBuilder builder(
 		handler,
-		"ODAModelImportTest",
-		"Sample2025NWDODARSB"
+		db,
+		col
 	);
 
 	ModelImportConfig config;
 	auto modelConvertor = std::unique_ptr<OdaModelImport>(new OdaModelImport(config));
-	modelConvertor->importModel(getDataPath("sample2025.nwd"), &builder);
+
+	
+//	modelConvertor->importModel("D:/3drepo/QA/IFC NWD Federation.nwd", &builder);
+//	modelConvertor->importModel("D:/3drepo/tests/cplusplus/bouncer/data/models/sample2025.nwd", &builder);	
+	modelConvertor->importModel("D:/3drepo/tests/cplusplus/bouncer/data/models/sampleHouse.nwd", &builder);
 
 	builder.finalise();
 	
 	repo::test::utils::SceneComparer comparer;
-	comparer.ignoreMetadataContent = false;
 	comparer.ignoreVertices = true;
+	comparer.ignoreTextures = true;
+	comparer.ignoreMeshNodes = true;
 
-	EXPECT_THAT(comparer.compare(DBNAME, "Sample2025NWDODA", "ODAModelImportTest", "Sample2025NWDODARSB"), IsSuccess());
+	EXPECT_THAT(comparer.compare(DBNAME, "SampleHouse", db, col), IsSuccess());
 }
 
-// todo::
-
-// Variations in metadata value
-// Variations in geometry

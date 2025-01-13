@@ -30,7 +30,7 @@
 using namespace repo::core::model;
 using namespace repo::test::utils;
 
-#pragma optimize("",off)
+#pragma optimize("", off)
 
 /*
 * This is the exception thrown by all the comparision methods of SceneComparer.
@@ -48,9 +48,9 @@ public:
 		message = std::string(description);
 	}
 
-	ComparisonException(std::shared_ptr<RepoNode> expected, std::shared_ptr<RepoNode> actual, const char* description)
+	ComparisonException(std::shared_ptr<RepoNode> expected, std::shared_ptr<RepoNode> actual, std::string description)
 	{
-		message = expected->getUniqueID().toString() + " != " + actual->getUniqueID().toString() + " " + std::string(description);
+		message = expected->getUniqueID().toString() + " != " + actual->getUniqueID().toString() + " " + description;
 	}
 
 	std::string explain()
@@ -111,6 +111,7 @@ namespace std
 				std::hash<int>{}(n.getNumFaces()),
 				std::hash<int>{}(n.getNumUVChannels()),
 				std::hash<int>{}(n.getNumVertices()),
+				std::hash<int>{}(n.getNormals().size()),
 				std::hash<repo::lib::RepoBounds>{}(n.getBoundingBox()),
 				std::hash<int>{}((int)n.getPrimitive()),
 				std::hash<std::string>{}(n.getGrouping())
@@ -192,6 +193,9 @@ struct SceneComparer::Node
 	// This should be ordered by the time the scene is fully loaded.
 	std::vector<Node*> children;
 
+	// Used primarily for debugging, since the comparison doesn't maintain a stack
+	std::vector<Node*> parents;
+
 	size_t combinedHash() const
 	{
 		size_t h = hash;
@@ -258,7 +262,13 @@ struct SceneComparer::Scene
 		{
 			for (auto p : n.dbNode->getParentIDs())
 			{
-				sharedIdToNode[p]->children.push_back(&n);
+				auto itr = sharedIdToNode.find(p);
+				if (itr != sharedIdToNode.end()) {
+
+					auto parentNode = itr->second;
+					n.parents.push_back(parentNode);
+					parentNode->children.push_back(&n);
+				}
 			}
 		}
 	}
@@ -267,9 +277,6 @@ struct SceneComparer::Scene
 	// match between two sets of siblings, nodes are given a hash based on their
 	// deterministic fields, which is used to order them. The order should end up
 	// the same between two identical scenes.
-	// 
-	// If siblings have identical hashes, then their hashes are combined with
-	// those of their children to disambiguate them.
 
 	void orderChildNodes()
 	{
@@ -288,62 +295,18 @@ struct SceneComparer::Scene
 			orderChildNodes(c);
 		}
 
-		// Nodes are sorted by different characteristics in a descending priority.
-		// If two siblings are indistinguishable based on their own content, the
-		// final disambiguation is to combine their has with their child nodes. The
-		// child nodes should already be ordered by this point, meaning if the two
-		// nodes remain indistinguishable, then its likely both entire branches are
-		// equivalent (and local order does not matter).
-
 		struct Comparer
 		{
 			bool operator()(const Node* a, const Node* b) const
 			{
-				// First order by type (meta -> mesh -> -> material -> transformation)
-
-				auto cmp = compareNodeTypes<MetadataNode>(a, b);
-				if (cmp) {
-					return cmp > 0;
-				}
-
-				cmp = compareNodeTypes<MeshNode>(a, b);
-				if (cmp) {
-					return cmp > 0;
-				}
-
-				cmp = compareNodeTypes<MaterialNode>(a, b);
-				if (cmp) {
-					return cmp > 0;
-				}
-
-				cmp = compareNodeTypes<TransformationNode>(a, b);
-				if (cmp) {
-					return cmp > 0;
-				}
-
-				// Then by name
-
-				if (a->dbNode->getName() != b->dbNode->getName())
-				{
-					return a->dbNode->getName() < b->dbNode->getName();
-				}
-
-				// If the names match, then by hash
-
-				if (a->hash != b->hash)
-				{
-					return a->hash < b->hash;
-				}
-
-				// If the hashes match, finally by the combined hashes the child nodes
-				// (which should already be in order)
-
-				return a->combinedHash() < b->combinedHash();
+				return a->hash < b->hash;
 			}
 		};
 
 		Comparer comparer;
 		std::sort(children.begin(), children.end(), comparer);
+
+		node->hash = node->combinedHash();
 	}
 
 	// This is the master list of nodes in the scene. Once the children members
@@ -360,30 +323,14 @@ struct SceneComparer::Scene
 	size_t numTextureNodes = 0;
 };
 
-// Compares the database node types of two Nodes, intended to be used
-// for sorting. If one of the nodes matches the type, return the result
-// of the comparison type A > type B. If neither matches, or both types
-// are the same, returns 0.
-
-template <typename T>
-int SceneComparer::compareNodeTypes(const Node* a, const Node* b)
-{
-	if (std::dynamic_pointer_cast<T>(a->dbNode) && !std::dynamic_pointer_cast<T>(b->dbNode))
-	{
-		return 1;
-	}
-	else if (std::dynamic_pointer_cast<T>(b->dbNode) && !std::dynamic_pointer_cast<T>(a->dbNode))
-	{
-		return -1;
-	}
-	return 0;
-}
-
 SceneComparer::Result SceneComparer::compare(std::string expectedDb, std::string expectedName, std::string actualDb, std::string actualName)
 {
 	Result result;
 	auto expected = loadScene(expectedDb, expectedName);
 	auto actual = loadScene(actualDb, actualName);
+
+	report = Report();
+
 	try
 	{
 		if (expected->numTransformationNodes != actual->numTransformationNodes)
@@ -422,6 +369,9 @@ SceneComparer::Result SceneComparer::compare(std::string expectedDb, std::string
 	{
 		result.message = e.explain();
 	}
+
+	result.report = report;
+
 	return result;
 }
 
@@ -435,18 +385,49 @@ std::shared_ptr<SceneComparer::Scene> SceneComparer::loadScene(std::string db, s
 	auto bsons = handler->getAllFromCollectionTailable(db, name + "." + REPO_COLLECTION_SCENE);
 	for (auto& bson : bsons)
 	{
+		// This method fetches the nodes from the database and adjusts the data before
+		// they are sent to the Scene object for hashing; since the hashes are used for
+		// matching, it is not enough that ignored parameters do not contribute to the
+		// equality comparison - they have to be ignored in the hash too, which is most
+		// easily achieved by setting them all to the same value here.
+
 		auto type = bson.getStringField(REPO_LABEL_TYPE);
 		if (type == REPO_NODE_TYPE_TRANSFORMATION)
 		{
 			scene->addNode(std::make_shared<TransformationNode>(bson));
 		}
-		else if (type == REPO_NODE_TYPE_MESH)
+		else if (type == REPO_NODE_TYPE_MESH && !ignoreMeshNodes)
 		{
-			scene->addNode(std::make_shared<MeshNode>(bson));
+			auto n = std::make_shared<MeshNode>(bson);
+
+			if (ignoreBounds)
+			{
+				n->setBoundingBox({});
+			}
+			if (ignoreFaces)
+			{
+				n->setFaces({});
+			}
+			if (ignoreVertices)
+			{
+				n->setVertices({});
+				n->setNormals({});
+			}
+
+			scene->addNode(n);
 		}
-		else if (type == REPO_NODE_TYPE_METADATA)
+		else if (type == REPO_NODE_TYPE_METADATA && !ignoreMetadataNodes)
 		{
-			scene->addNode(std::make_shared<MetadataNode>(bson));
+			auto n = std::make_shared<MetadataNode>(bson);
+
+			std::unordered_map<std::string, repo::lib::RepoVariant> overrides;
+			for (auto key : ignoreMetadataKeys)
+			{
+				overrides[key] = repo::lib::RepoVariant(0);
+			}
+			n->setMetadata(overrides);
+
+			scene->addNode(n);
 		}
 		else if (type == REPO_NODE_TYPE_MATERIAL && !ignoreMaterials)
 		{
@@ -475,6 +456,8 @@ void SceneComparer::compare(Pair begin)
 
 		// This compares the node fields themselves semantically
 		compare(expected->dbNode, actual->dbNode);
+
+		report.nodesCompared++;
 
 		if (expected->children.size() != actual->children.size())
 		{
@@ -562,7 +545,7 @@ void SceneComparer::compareMeshNode(std::shared_ptr<MeshNode> expected, std::sha
 		throw ComparisonException(expected, actual, "Faces do not match");
 	}
 
-	if (!ignoreVertices && expected->getVertices() != actual->getVertices())
+	if (expected->getVertices() != actual->getVertices())
 	{
 		throw ComparisonException(expected, actual, "Vertices do not match");
 	}
@@ -580,30 +563,31 @@ void SceneComparer::compareMeshNode(std::shared_ptr<MeshNode> expected, std::sha
 
 void SceneComparer::compareMetaNode(std::shared_ptr<MetadataNode> expected, std::shared_ptr<MetadataNode> actual)
 {
-	if (!ignoreMetadataContent)
+	auto& a = expected->getAllMetadata();
+	auto& b = actual->getAllMetadata();
+
+	if (a.size() != b.size())
 	{
-		auto& a = expected->getAllMetadata();
-		auto& b = actual->getAllMetadata();
+		throw ComparisonException(expected, actual, "Number of metadata keys does not match");
+	}
 
-		if (a.size() != b.size())
+	for (auto p : a)
+	{
+		auto v = b.find(p.first);
+		if (v != b.end())
 		{
-			throw ComparisonException(expected, actual, "Number of metadata keys does not match");
+			if (!boost::apply_visitor(repo::lib::DuplicationVisitor(), v->second, p.second))
+			{
+				repo::lib::RepoVariant rv1 = v->second; // As apply_visitor doesn't compile when accessing the variant member of the iterator
+				auto s1 = boost::apply_visitor(repo::lib::StringConversionVisitor(), rv1);
+				auto s2 = boost::apply_visitor(repo::lib::StringConversionVisitor(), p.second);
+				std::string msg = std::string("Metadata field \"") + v->first + "\" value differs: " + s1 + " vs. " + s2;
+				throw ComparisonException(expected, actual, msg);
+			}
 		}
-
-		for (auto& p : a)
+		else
 		{
-			auto v = b.find(p.first);
-			if (v != b.end())
-			{
-				if (!boost::apply_visitor(repo::lib::DuplicationVisitor(), v->second, p.second))
-				{
-					throw ComparisonException(expected, actual, "At least one metadata field has a different value");
-				}
-			}
-			else
-			{
-				throw ComparisonException(expected, actual, "Expected contains a key that cannot be found in actual");
-			}
+			throw ComparisonException(expected, actual, "Expected contains a key that cannot be found in actual");
 		}
 	}
 }

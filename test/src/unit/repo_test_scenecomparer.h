@@ -19,6 +19,7 @@
 
 #include <string>
 #include <memory>
+#include <set>
 #include <repo/core/handler/repo_database_handler_mongo.h>
 #include <repo/core/model/bson/repo_node.h>
 #include <repo/core/model/bson/repo_node_transformation.h>
@@ -36,13 +37,20 @@ namespace repo {
 			* but is independent of non-deterministic fields such as UUIDs or timestamps.
 			* This class assumes that the scene collection contains only one revision.
 			*
-			* The algorithm to compare scenes attempts to match nodes between the two trees.
+			* SceneComparer works by fingerprinting the contents of each node, and
+			* combining these hashes of parent nodes with those of their children, bottom-
+			* up.
+			* If two branches are identical, then the hashes should be identical all the
+			* way down. In this way the hashes can be used to determine the branch at
+			* which two scenes diverge. This approach also makes SceneComparer very, very
+			* sensitive however. Any minor difference in a node will cascade up to the
+			* root.
 			*
-			* Take care that the reported differences between nodes may be due to a mismatch
-			* between the two trees: if a property change causes the relative position of
-			* nodes to change with respect to the other tree, then the comparison may
-			* encounter these differences first. This is most likely to occur when comparing
-			* meshes with no names.
+			* SceneComparer therefore can be difficult to use. The reported difference is
+			* unlikely to be the actual differing node, but is most likely due to a
+			* mismatch between an ancestor. The way to use SceneComparer to find the
+			* difference is to use the ignore flags to isolate which characteristic of the
+			* graph diverges, and go from there.
 			*/
 			class SceneComparer
 			{
@@ -56,36 +64,44 @@ namespace repo {
 				double boundingBoxTolerance = 0.000001;
 
 				/*
-				* Don't consider vertices when comparing MeshNodes - this only applies to
-				* vertices themselves, other flags exist for UVs and Normals, etc.
+				* Ignoring an element of the scene means to consider it nonexistent. Ignored
+				* Nodes are not loaded at all, and ignored members are set to their defaults.
 				*/
+
+				bool ignoreMaterials = false;
+
+				bool ignoreMetadataNodes = false;
+
+				bool ignoreMeshNodes = false;
+
 				bool ignoreVertices = false;
 
-				/*
-				* Do not consider key-value pairs when comparing metadata nodes. Correspdonding
-				* metadata nodes with the same names must still exist.
-				*/
-				bool ignoreMetadataContent = false;
+				bool ignoreFaces = false;
+
+				bool ignoreBounds = false;
+
+				std::set<std::string> ignoreMetadataKeys;
 
 				/*
 				* Textures are not supported yet.
 				*/
 				bool ignoreTextures = true;
 
-				/*
-				* Do not consider Material Nodes - it will be as if there are no MaterialNodes
-				* in the scene.
-				*/
-				bool ignoreMaterials = false;
+				struct Report
+				{
+					size_t nodesCompared = 0;
+				};
 
 				struct Result
 				{
 					std::string message;
 
+					Report report;
+
 					// Conversion operator that says whether the comparision has succeeded or not
 					operator bool() const
 					{
-						return message.empty();
+						return message.empty() && report.nodesCompared > 0;
 					}
 				};
 
@@ -99,10 +115,10 @@ namespace repo {
 
 				using Pair = std::tuple<Node*, Node*>;
 
+				Report report;
+
 				std::shared_ptr<SceneComparer::Scene> loadScene(std::string db, std::string name);
 				void compare(Pair begin);
-				template <typename T>
-				static int compareNodeTypes(const Node* a, const Node* b);
 				void compare(std::shared_ptr<repo::core::model::RepoNode> expected, std::shared_ptr<repo::core::model::RepoNode> actual);
 				bool compare(const repo::lib::RepoBounds& a, const repo::lib::RepoBounds& b);
 				void compareTransformationNode(std::shared_ptr<repo::core::model::TransformationNode> expected, std::shared_ptr<repo::core::model::TransformationNode> actual);
