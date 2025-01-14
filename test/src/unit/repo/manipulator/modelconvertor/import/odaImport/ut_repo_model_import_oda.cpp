@@ -33,7 +33,8 @@ using namespace repo::manipulator::modelconvertor;
 using namespace repo::core::model;
 using namespace testing;
 
-#define DBNAME "ODAModelImport"
+#define REFDB "ODAModelImport"
+#define TESTDB "ODAModelImportTest"
 
 #pragma optimize("",off)
 
@@ -50,25 +51,26 @@ using namespace testing;
 
 namespace ODAModelImportUtils
 {
-	std::unique_ptr<AbstractModelImport> ImportFile(
-		std::string filePath,
-		uint8_t& impModelErrCode)
+	void ModelImportManagerImport(std::string collection, std::string filename)
 	{
-		ModelImportConfig config;
-		auto modelConvertor = std::unique_ptr<AbstractModelImport>(new OdaModelImport(config));
-		modelConvertor->importModel(filePath, impModelErrCode);
-		return modelConvertor;
-	}
+		ModelImportConfig config(
+			false,
+			true,
+			ModelUnits::MILLIMETRES,
+			"",
+			0,
+			repo::lib::RepoUUID::createUUID(),
+			TESTDB,
+			collection);
 
-	void ImportFileWithoutOptimisations(std::string filePath, std::string database, std::string project)
-	{
-		uint8_t errCode;
-		auto importer = ODAModelImportUtils::ImportFile(filePath, errCode);
-		auto scene = importer->generateRepoScene(errCode);
-		scene->setDatabaseAndProjectName(database, project);
 		auto handler = getHandler();
-		std::string errMsg;
-		scene->commit(handler.get(), handler->getFileManager().get(), errMsg, "unit tests", "", "");
+
+		uint8_t err;
+		std::string msg;
+
+		ModelImportManager manager;
+		auto scene = manager.ImportFromFile(filename, config, handler, err);
+		scene->commit(handler.get(), handler->getFileManager().get(), msg, "testuser", "", "", config.getRevisionId());
 	}
 }
 
@@ -80,29 +82,36 @@ MATCHER(IsSuccess, "")
 
 TEST(ODAModelImport, Sample2025NWD)
 {
-	auto handler = getHandler();
-
-	auto db = "ODAModelImportTest";
-	auto col = "Test";
-	auto file = "D:/3drepo/tests/cplusplus/bouncer/data/models/sample2025.nwd";
+	auto collection = "Sample2025NWD";
 
 	// We use the ModelImportManager as the entry point for this test, because it
 	// is easy to use the client to create comparable reference data at this point.
 
-	ModelImportConfig config(false, true, ModelUnits::MILLIMETRES, "", 0, repo::lib::RepoUUID::createUUID(), db, col);
-
-	uint8_t err;
-	ModelImportManager manager;
-	auto scene = manager.ImportFromFile(file, config, handler, err);
-
-	std::string msg;
-	scene->commit(handler.get(), handler->getFileManager().get(), msg, "testuser", "", "", config.getRevisionId());
+//	ODAModelImportUtils::ModelImportManagerImport(collection, getDataPath("sample2025.nwd"));
 	
 	repo::test::utils::SceneComparer comparer;
 	comparer.ignoreVertices = true;
 	comparer.ignoreTextures = true;
-	comparer.ignoreMeshNodes = true;
+	comparer.ignoreBounds = true;
+	comparer.ignoreMetadataKeys.insert("Item::File Name");
 
-	EXPECT_THAT(comparer.compare(DBNAME, "Sample2025NWD", db, col), IsSuccess());
+	EXPECT_THAT(comparer.compare(REFDB, collection, TESTDB, collection), IsSuccess());
 }
 
+TEST(ODAModelImport, SampleHouseNWD)
+{
+	auto collection = "SampleHouse";
+
+	// We use the ModelImportManager as the entry point for this test, because it
+	// is easy to use the client to create comparable reference data at this point.
+
+//	ODAModelImportUtils::ModelImportManagerImport(collection, getDataPath("sampleHouse.nwd"));
+
+	repo::test::utils::SceneComparer comparer;
+	comparer.ignoreVertices = true;
+	comparer.ignoreTextures = true;
+	comparer.ignoreMeshNodes = true;
+	comparer.ignoreMetadataKeys.insert("Item::File Name");
+
+	EXPECT_THAT(comparer.compare(REFDB, collection, TESTDB, collection), IsSuccess());
+}
