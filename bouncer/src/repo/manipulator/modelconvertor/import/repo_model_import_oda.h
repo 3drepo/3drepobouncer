@@ -51,6 +51,7 @@ namespace repo {
 				* @return returns a populated RepoScene upon success.
 				*/
 				virtual repo::core::model::RepoScene* generateRepoScene(uint8_t &errMsg);
+				virtual repo::core::model::RepoScene* generateRepoScene();
 
 				/**
 				* Import model from a given file
@@ -61,7 +62,7 @@ namespace repo {
 				* @return returns true upon success
 				*/
 				virtual bool importModel(std::string filePath, uint8_t &err);
-				void importModel(std::string filePath, modelutility::RepoSceneBuilder* builder);
+				virtual bool importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err);
 
 				virtual bool applyReduction() const { return shouldReduce; }
 				virtual bool requireReorientation() const { return true; }
@@ -69,6 +70,7 @@ namespace repo {
 			private:
 				std::string filePath;
 				bool shouldReduce = false;
+				std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler;
 #ifdef ODA_SUPPORT
 				odaHelper::GeometryCollector geoCollector;
 				std::unique_ptr<odaHelper::FileProcessor> odaProcessor;

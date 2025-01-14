@@ -18,6 +18,7 @@
 #pragma once
 
 #include "repo/core/model/repo_model_global.h"
+#include "repo/core/model/bson/repo_node.h"
 #include "repo/core/handler/repo_database_handler_abstract.h"
 #include "repo/core/handler/fileservice/repo_file_handler_abstract.h"
 #include "repo/lib/datastructure/repo_structs.h"
@@ -30,7 +31,6 @@
 namespace repo {
 	namespace core {
 		namespace model {
-			class RepoNode;
 			class MeshNode;
 			class TransformationNode;
 			class MetadataNode;
@@ -43,9 +43,6 @@ namespace repo {
 namespace repo {
 	namespace manipulator {
 		namespace modelutility {
-
-			template<class T>
-			concept RepoNodeClass = std::is_base_of<repo::core::model::RepoNode, T>::value;
 
 			/*
 			* RepoSceneBuilder is used to build a RepoScene piece-wise directly to the
@@ -61,8 +58,9 @@ namespace repo {
 
 				RepoSceneBuilder(
 					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-					std::string database,
-					std::string project);
+					const std::string& database,
+					const std::string& project,
+					const repo::lib::RepoUUID& revisionId);
 
 				~RepoSceneBuilder();
 
@@ -75,7 +73,7 @@ namespace repo {
 				* committal and becomes immutable and inaccessible.
 				*/
 
-				template<RepoNodeClass T>
+				template<repo::core::model::RepoNodeClass T>
 				std::shared_ptr<T> addNode(const T& node);
 
 				// Call when no more nodes are expected.

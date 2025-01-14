@@ -16,15 +16,15 @@
 */
 
 #include "repo_model_import_manager.h"
-#include "../../../lib/repo_utils.h"
-#include "../../../error_codes.h"
+#include "repo/lib/repo_utils.h"
+#include "repo/error_codes.h"
 #include "repo_model_import_assimp.h"
 #include "repo_model_import_ifc.h"
 #include "repo_model_import_3drepo.h"
 #include "repo_model_import_oda.h"
 #include "repo_model_import_synchro.h"
 #include "repo_model_units.h"
-#include "../../modeloptimizer/repo_optimizer_trans_reduction.h"
+#include "repo/manipulator/modeloptimizer/repo_optimizer_trans_reduction.h"
 #include <boost/filesystem.hpp>
 
 using namespace repo::manipulator::modelconvertor;
@@ -32,6 +32,7 @@ using namespace repo::manipulator::modelconvertor;
 repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 	const std::string &file,
 	const repo::manipulator::modelconvertor::ModelImportConfig &config,
+	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
 	uint8_t &error
 ) const {
 	if (!repo::lib::doesFileExist(file)) {
@@ -48,7 +49,7 @@ repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 
 	repo::core::model::RepoScene* scene = nullptr;
 	repoTrace << "Importing model...";
-	if (modelConvertor->importModel(file, error)) {
+	if (modelConvertor->importModel(file, handler, error)) {
 		repoTrace << "model Imported, generating Repo Scene";
 		uint8_t errCode = REPOERR_LOAD_SCENE_FAIL;
 		scene = modelConvertor->generateRepoScene(errCode);
@@ -68,7 +69,7 @@ repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 			error = errCode;
 		}
 		else {
-			if (!scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()) {
+			if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT)) {
 				delete scene;
 				scene = nullptr;
 				error = REPOERR_NO_MESHES;

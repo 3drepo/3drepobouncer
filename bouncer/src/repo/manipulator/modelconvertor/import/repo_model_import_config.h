@@ -25,10 +25,9 @@
 #include <map>
 #include <vector>
 #include <stdint.h>
-#include "../../../lib/repo_log.h"
-
-#include "../../../repo_bouncer_global.h"
-
+#include "repo/lib/repo_log.h"
+#include "repo/lib/datastructure/repo_uuid.h"
+#include "repo/repo_bouncer_global.h"
 #include "repo_model_units.h"
 
 namespace repo {
@@ -42,18 +41,29 @@ namespace repo {
 				int lod;
 				std::string timeZone;
 				ModelUnits targetUnits;
+				repo::lib::RepoUUID revisionId;
+				std::string databaseName;
+				std::string projectName;
 			public:
 				ModelImportConfig(
 					const bool applyReductions = true,
 					const bool importAnimations = true,
 					const ModelUnits targetUnits = ModelUnits::UNKNOWN,
 					const std::string timeZone = "",
-					const int lod = 0) :
+					const int lod = 0,
+					const repo::lib::RepoUUID revisionId = repo::lib::RepoUUID::defaultValue,
+					const std::string databaseName = "",
+					const std::string projectName = ""
+				):
 					applyReductions(applyReductions),
 					importAnimations(importAnimations),
 					targetUnits(targetUnits),
 					timeZone(timeZone),
-					lod(lod) {}
+					lod(lod),
+					revisionId(revisionId),
+					databaseName(databaseName),
+					projectName(projectName)
+				{}
 
 				~ModelImportConfig() {}
 
@@ -62,6 +72,9 @@ namespace repo {
 				std::string getTimeZone() const { return timeZone; }
 				ModelUnits getTargetUnits() const { return targetUnits; }
 				int getLevelOfDetail() const { return lod; }
+				repo::lib::RepoUUID getRevisionId() const { return revisionId; }
+				std::string getDatabaseName() const { return databaseName; }
+				std::string getProjectName() const { return projectName; }
 			};
 		}//namespace modelconvertor
 	}//namespace manipulator

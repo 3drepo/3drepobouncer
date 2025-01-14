@@ -57,6 +57,11 @@ namespace repo {
 			RepoGeometryProcessingException(const std::string& msg);
 		};
 
+		REPO_API_EXPORT class RepoSceneProcessingException : public RepoException {
+		public:
+			RepoSceneProcessingException(const std::string& msg);
+		};
+
 		REPO_API_EXPORT class RepoImporterUnavailable : public RepoException {
 		public:
 			RepoImporterUnavailable(const std::string& message, int code);

@@ -292,8 +292,16 @@ namespace repo {
 				}
 			};
 
+
+			/* Concept can be used as the typename in templates to constrain the type to a
+			* subclass of RepoNode.
+			*/
+			template<class T>
+			concept RepoNodeClass = std::is_base_of<repo::core::model::RepoNode, T>::value;
+
 			//! Set definition for pointers to abstract nodes (sorted by value rather than pointer)
-			typedef std::set<RepoNode *, RepoNodeComparator> RepoNodeSet;
+			typedef std::set<RepoNode*, RepoNodeComparator> RepoNodeSet;
+
 		} //namespace model
 	} //namespace core
 } //namespace repo

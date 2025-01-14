@@ -39,16 +39,15 @@ struct RepoSceneBuilder::Deleter
 
 RepoSceneBuilder::RepoSceneBuilder(
 	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-	std::string database,
-	std::string project)
+	const std::string& database,
+	const std::string& project,
+	const repo::lib::RepoUUID& revisionId)
 	:handler(handler),
 	databaseName(database),
 	projectName(project),
+	revisionId(revisionId),
 	referenceCounter(0)
 {
-	// A builder must start with a revision node. In the future, we expect this
-	// node to be created by .io.
-	revisionId = repo::lib::RepoUUID::createUUID();
 }
 
 RepoSceneBuilder::~RepoSceneBuilder()
@@ -64,7 +63,7 @@ RepoSceneBuilder::~RepoSceneBuilder()
 	}
 }
 
-template<RepoNodeClass T>
+template<repo::core::model::RepoNodeClass T>
 std::shared_ptr<T> RepoSceneBuilder::addNode(const T& node)
 {
 	Deleter deleter;

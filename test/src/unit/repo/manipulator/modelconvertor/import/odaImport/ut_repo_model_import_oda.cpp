@@ -19,6 +19,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest-matchers.h>
 #include <repo/manipulator/modelconvertor/import/repo_model_import_oda.h>
+#include <repo/manipulator/modelconvertor/import/repo_model_import_manager.h>
 #include <repo/lib/repo_log.h>
 #include <repo/error_codes.h>
 #include "../../../../../repo_test_utils.h"
@@ -83,28 +84,25 @@ TEST(ODAModelImport, Sample2025NWD)
 
 	auto db = "ODAModelImportTest";
 	auto col = "Test";
+	auto file = "D:/3drepo/tests/cplusplus/bouncer/data/models/sample2025.nwd";
 
-	repo::manipulator::modelutility::RepoSceneBuilder builder(
-		handler,
-		db,
-		col
-	);
+	// We use the ModelImportManager as the entry point for this test, because it
+	// is easy to use the client to create comparable reference data at this point.
 
-	ModelImportConfig config;
-	auto modelConvertor = std::unique_ptr<OdaModelImport>(new OdaModelImport(config));
+	ModelImportConfig config(false, true, ModelUnits::MILLIMETRES, "", 0, repo::lib::RepoUUID::createUUID(), db, col);
 
-	
-//	modelConvertor->importModel("D:/3drepo/QA/IFC NWD Federation.nwd", &builder);
-//	modelConvertor->importModel("D:/3drepo/tests/cplusplus/bouncer/data/models/sample2025.nwd", &builder);	
-	modelConvertor->importModel("D:/3drepo/tests/cplusplus/bouncer/data/models/sampleHouse.nwd", &builder);
+	uint8_t err;
+	ModelImportManager manager;
+	auto scene = manager.ImportFromFile(file, config, handler, err);
 
-	builder.finalise();
+	std::string msg;
+	scene->commit(handler.get(), handler->getFileManager().get(), msg, "testuser", "", "", config.getRevisionId());
 	
 	repo::test::utils::SceneComparer comparer;
 	comparer.ignoreVertices = true;
 	comparer.ignoreTextures = true;
 	comparer.ignoreMeshNodes = true;
 
-	EXPECT_THAT(comparer.compare(DBNAME, "SampleHouse", db, col), IsSuccess());
+	EXPECT_THAT(comparer.compare(DBNAME, "Sample2025NWD", db, col), IsSuccess());
 }
 

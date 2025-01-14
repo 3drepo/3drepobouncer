@@ -285,22 +285,7 @@ RepoManipulator::loadSceneFromFile(
 	const repo::manipulator::modelconvertor::ModelImportConfig& config)
 {
 	repo::manipulator::modelconvertor::ModelImportManager manager;
-	auto scene = manager.ImportFromFile(filePath, config, error);
-	if (scene) {
-		if (generateStashGraph(scene)) {
-			repoTrace << "Stash graph generated.";
-			error = REPOERR_OK;
-		}
-		else
-		{
-			repoError << "Error generating stash graph";
-			error = REPOERR_STASH_GEN_FAIL;
-			delete scene;
-			scene = nullptr;
-		}
-	}
-
-	return scene;
+	return manager.ImportFromFile(filePath, config, dbHandler, error);
 }
 
 void RepoManipulator::processDrawingRevision(

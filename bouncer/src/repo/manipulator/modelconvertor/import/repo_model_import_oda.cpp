@@ -32,6 +32,12 @@ bool OdaModelImport::isSupportedExts(const std::string &testExt)
 
 repo::core::model::RepoScene* OdaModelImport::generateRepoScene(uint8_t &errMsg)
 {
+	if (odaProcessor->repoSceneBuilder != nullptr) {
+		delete odaProcessor->repoSceneBuilder;
+		odaProcessor->repoSceneBuilder = nullptr;
+		return generateRepoScene();
+	}
+
 	repo::core::model::RepoScene *scene = nullptr;
 #ifdef ODA_SUPPORT
 	repoInfo << "Constructing Repo Scene...";
@@ -64,6 +70,36 @@ repo::core::model::RepoScene* OdaModelImport::generateRepoScene(uint8_t &errMsg)
 #endif
 	return scene;
 }
+
+repo::core::model::RepoScene* OdaModelImport::generateRepoScene()
+{
+	// RepoSceneBuilder has already populated the collection with nodes having a
+	// fixed revision id. This method creates a RepoScene instance that sits
+	// those nodes to finalise the import.
+
+#ifdef ODA_SUPPORT
+
+	repoInfo << "Initialising Repo Scene...";
+
+	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene(
+		settings.getDatabaseName(),
+		settings.getProjectName()
+	);
+	scene->setRevision(settings.getRevisionId());
+	scene->setOriginalFiles({ filePath });
+	scene->loadRootNode(handler.get());
+
+//	if (geoCollector.hasMissingTextures())
+//		scene->setMissingTexture();
+//	scene->setWorldOffset(geoCollector.getModelOffset());
+
+	return scene;
+
+#else
+	throw repo::lib::RepoImporterUnavailable("ODA support has not been compiled in. Please rebuild with ODA_SUPPORT ON", REPOERR_ODA_UNAVAILABLE);
+#endif
+}
+
 bool OdaModelImport::importModel(std::string filePath, uint8_t &err)
 {
 #ifdef ODA_SUPPORT
@@ -93,15 +129,25 @@ bool OdaModelImport::importModel(std::string filePath, uint8_t &err)
 #endif
 }
 
-void OdaModelImport::importModel(std::string filePath, modelutility::RepoSceneBuilder* builder)
+bool OdaModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err)
 {
 #ifdef ODA_SUPPORT
 	this->filePath = filePath;
-	repoInfo << " ==== Importing with Teigha Library [" << filePath << "] ====";
+	repoInfo << " ==== Importing with Teigha Library [" << filePath << "] using RepoSceneBuilder ====";
+	this->handler = handler;
 	odaProcessor = odaHelper::FileProcessor::getFileProcessor(filePath, &geoCollector, settings);
-	odaProcessor->repoSceneBuilder = builder;
+	odaProcessor->repoSceneBuilder = new repo::manipulator::modelutility::RepoSceneBuilder(
+		handler,
+		settings.getDatabaseName(),
+		settings.getProjectName(),
+		settings.getRevisionId()
+	);
 	shouldReduce = odaProcessor->shouldApplyReduction;
 	odaProcessor->readFile();
+
+	odaProcessor->repoSceneBuilder->finalise();
+
+	return true;
 #else
 	throw repo::lib::RepoImporterUnavailable("ODA support has not been compiled in. Please rebuild with ODA_SUPPORT ON", REPOERR_ODA_UNAVAILABLE);
 #endif

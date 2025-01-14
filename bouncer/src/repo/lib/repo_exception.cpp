@@ -83,6 +83,12 @@ RepoGeometryProcessingException::RepoGeometryProcessingException(const std::stri
 	errorCode = REPOERR_GEOMETRY_ERROR;
 }
 
+RepoSceneProcessingException::RepoSceneProcessingException(const std::string& msg)
+	: RepoException(msg)
+{
+	errorCode = REPOERR_LOAD_SCENE_FAIL;
+}
+
 RepoImporterUnavailable::RepoImporterUnavailable(const std::string& msg, int code)
 	: RepoException(msg)
 {
