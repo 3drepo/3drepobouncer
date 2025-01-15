@@ -33,9 +33,10 @@ bool OdaModelImport::isSupportedExts(const std::string &testExt)
 repo::core::model::RepoScene* OdaModelImport::generateRepoScene(uint8_t &errMsg)
 {
 	if (odaProcessor->repoSceneBuilder != nullptr) {
+		auto scene = generateRepoScene();
 		delete odaProcessor->repoSceneBuilder;
 		odaProcessor->repoSceneBuilder = nullptr;
-		return generateRepoScene();
+		return scene;
 	}
 
 	repo::core::model::RepoScene *scene = nullptr;
@@ -88,10 +89,10 @@ repo::core::model::RepoScene* OdaModelImport::generateRepoScene()
 	scene->setRevision(settings.getRevisionId());
 	scene->setOriginalFiles({ filePath });
 	scene->loadRootNode(handler.get());
-
-//	if (geoCollector.hasMissingTextures())
-//		scene->setMissingTexture();
-//	scene->setWorldOffset(geoCollector.getModelOffset());
+	scene->setWorldOffset(odaProcessor->repoSceneBuilder->getWorldOffset());
+	if (odaProcessor->repoSceneBuilder->hasMissingTextures()) {
+		scene->setMissingTexture();
+	}
 
 	return scene;
 

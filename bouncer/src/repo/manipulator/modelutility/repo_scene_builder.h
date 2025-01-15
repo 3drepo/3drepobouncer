@@ -79,6 +79,12 @@ namespace repo {
 				// Call when no more nodes are expected.
 				void finalise();
 
+				repo::lib::RepoVector3D64 getWorldOffset();
+				void setWorldOffset(const repo::lib::RepoVector3D64& offset);
+
+				void setMissingTextures();
+				bool hasMissingTextures();
+
 			private:
 
 				// All nodes will be committed with this as the revision id
@@ -86,6 +92,16 @@ namespace repo {
 
 				std::string databaseName;
 				std::string projectName;
+
+				// Stored offset that should be applied to the scene when it is done.
+				// Note that this doesn't affect nodes added with addNode - they must already
+				// have this applied!
+				repo::lib::RepoVector3D64 offset;
+
+				// Indicates that one material node added is missing textures. This must be
+				// set directly (i.e. it is not inferred from addNode). It is informational,
+				// to pass onto Scene - this flag doesn't do anything to RepoSceneBuilder.
+				bool isMissingTextures;
 
 				std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler;
 

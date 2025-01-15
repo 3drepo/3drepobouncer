@@ -34,7 +34,7 @@ namespace repo {
 				class RepoMeshBuilder
 				{
 				public:
-					RepoMeshBuilder(std::vector<repo::lib::RepoUUID> parents);
+					RepoMeshBuilder(std::vector<repo::lib::RepoUUID> parents, const repo::lib::RepoVector3D64& offset);
 					~RepoMeshBuilder();
 
 					void addFace(const std::vector<repo::lib::RepoVector3D64>& vertices);
@@ -66,6 +66,8 @@ namespace repo {
 					std::unordered_map<uint32_t, mesh_data_t*> meshes;
 
 					std::vector<repo::lib::RepoUUID> parents;
+
+					repo::lib::RepoVector3D64 offset;
 				};
 			}
 		}

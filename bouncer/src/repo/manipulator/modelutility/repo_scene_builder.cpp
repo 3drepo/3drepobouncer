@@ -46,7 +46,9 @@ RepoSceneBuilder::RepoSceneBuilder(
 	databaseName(database),
 	projectName(project),
 	revisionId(revisionId),
-	referenceCounter(0)
+	referenceCounter(0),
+	isMissingTextures(false),
+	offset({})
 {
 }
 
@@ -99,6 +101,27 @@ void RepoSceneBuilder::finalise()
 {
 	commitNodes();
 }
+
+repo::lib::RepoVector3D64 RepoSceneBuilder::getWorldOffset()
+{
+	return offset;
+}
+
+void RepoSceneBuilder::setWorldOffset(const repo::lib::RepoVector3D64& offset)
+{
+	this->offset = offset;
+}
+
+void RepoSceneBuilder::setMissingTextures()
+{
+	this->isMissingTextures = true;
+}
+
+bool RepoSceneBuilder::hasMissingTextures()
+{
+	return isMissingTextures;
+}
+
 
 // It is required to tell the module which specialisations to instantiate
 // for addNode.

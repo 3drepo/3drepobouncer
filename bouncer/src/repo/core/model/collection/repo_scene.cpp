@@ -447,6 +447,8 @@ void RepoScene::loadRootNode(
 	addNodes({new repo::core::model::TransformationNode(bson)});
 }
 
+#pragma optimize("", off)
+
 bool RepoScene::addNodeToMaps(
 	const GraphType &gType,
 	RepoNode *node,
@@ -466,12 +468,9 @@ bool RepoScene::addNodeToMaps(
 		}
 		else
 		{
-			//root node already exist, check if they are the same node
-			if (g.rootNode == node) {
-				//for some reason 2 instance of the root node reside in this scene graph - probably not game breaking.
-				repoWarning << "2 instance of the (same) root node found";
-			}
-			else
+			// If the root node has previously been loaded with loadRootNode, it will be here but
+			// not in the maps
+			if (*g.rootNode != *node)
 			{
 				//found 2 nodes with no parents...
 				//they could be straggling materials. Only give an error if both are transformation

@@ -32,8 +32,9 @@ struct RepoMeshBuilder::mesh_data_t {
 	uint32_t format;
 };
 
-RepoMeshBuilder::RepoMeshBuilder(std::vector<repo::lib::RepoUUID> parents)
-	:parents(parents)
+RepoMeshBuilder::RepoMeshBuilder(std::vector<repo::lib::RepoUUID> parents, const repo::lib::RepoVector3D64& offset)
+	:parents(parents),
+	offset(offset)
 {
 }
 
@@ -104,7 +105,7 @@ void RepoMeshBuilder::addFace(
 
 	repo_face_t face;
 	for (auto i = 0; i < vertices.size(); ++i) {
-		auto& v = vertices[i];
+		auto v = vertices[i] + offset;
 
 		VertexMap::result_t vertexReference;
 		if (hasNormals)

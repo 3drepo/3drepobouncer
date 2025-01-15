@@ -26,6 +26,7 @@
 #include <NwVariant.h>
 #include <NwName.h>
 
+#include "repo/lib/datastructure/repo_vector.h"
 #include "repo/lib/datastructure/repo_variant.h"
 #include "repo/manipulator/modelutility/repo_scene_builder.h"
 

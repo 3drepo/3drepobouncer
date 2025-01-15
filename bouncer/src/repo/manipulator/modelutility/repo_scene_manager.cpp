@@ -116,6 +116,14 @@ uint8_t SceneManager::commitScene(
 
 			if (!isFederation && !(success = scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED))) { // Make sure to check if we are looking at a federation before updating success with the state of the stash graph
 				repoInfo << "Optimised scene not found. Attempt to generate...";
+
+				if (!scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size())
+				{
+					// Scene is just a container - load all the actual meshes
+					std::string msg;
+					scene->loadScene(handler, msg);
+				}
+
 				success = generateStashGraph(scene);
 			}
 

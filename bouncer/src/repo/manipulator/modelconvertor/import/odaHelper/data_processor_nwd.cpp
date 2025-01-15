@@ -601,7 +601,7 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 	repo_material_t repoMaterial;
 	processMaterial(pComp, repoMaterial);
 
-	RepoMeshBuilder meshBuilder({ context.parentNode->getSharedID() });
+	RepoMeshBuilder meshBuilder({ context.parentNode->getSharedID() }, -context.sceneBuilder->getWorldOffset());
 	OdNwObjectIdArray aCompFragIds;
 	pComp->getFragments(aCompFragIds);
 	for (OdNwObjectIdArray::const_iterator itFrag = aCompFragIds.begin(); itFrag != aCompFragIds.end(); ++itFrag)
@@ -852,9 +852,11 @@ void DataProcessorNwd::process(OdNwDatabasePtr pNwDb)
 		OdNwModelItemPtr pModelItemRoot = OdNwModelItem::cast(modelItemRootId.safeOpenObject());
 		RepoNwTraversalContext context;
 		context.sceneBuilder = this->builder;
+		context.sceneBuilder->setWorldOffset(toRepoVector(pModelItemRoot->getBoundingBox().minPoint()));
 		context.layer = pModelItemRoot;
 		context.parentNode = context.sceneBuilder->addNode(RepoBSONFactory::makeTransformationNode({}, "rootNode"));
 		context.materials = new RepoMaterialBuilder();
+
 		traverseSceneGraph(pModelItemRoot, context);
 
 		// Move the material nodes into the builder

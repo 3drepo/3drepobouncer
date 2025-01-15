@@ -136,6 +136,11 @@ namespace repo{
 				return _RepoVector3D<T>(x - other.x, y - other.y, z - other.z);
 			}
 
+			inline _RepoVector3D<T> operator-() const
+			{
+				return _RepoVector3D<T>(-x, -y, -z);
+			}
+
 			std::string toString() const
 			{
 				std::stringstream sstr;
@@ -146,7 +151,12 @@ namespace repo{
 
 			std::vector<T> toStdVector() const
 			{
-				return{ x, y, z };
+				return { x, y, z };
+			}
+
+			inline operator std::vector<T>() const
+			{
+				return toStdVector();
 			}
 
 			T x, y, z;
