@@ -80,6 +80,7 @@ const logging = object({
 
 const processMonitoring = object({
 	memoryIntervalMS: number().default(100),
+	enabled: boolean(),
 });
 
 const schema = object({
