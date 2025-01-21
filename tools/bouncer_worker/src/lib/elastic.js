@@ -81,9 +81,11 @@ const createElasticClient = async () => {
 
 const elasticClientPromise = createElasticClient();
 const createElasticRecord = async (index, body, id) => {
+	logger.verbose('Entering createElasticRecord', logLabel);
 	try {
 		const elasticClient = await elasticClientPromise;
 		if (!elasticClient) {
+			logger.verbose('elasticClient not found', logLabel);
 			return;
 		}
 
