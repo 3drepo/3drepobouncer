@@ -57,8 +57,8 @@ const bouncer = object({
 });
 
 const elastic = object({
-	cloud: envars(),
-	auth: envars(),
+	cloud: envars,
+	auth: envars,
 	namespace: string(),
 	reload_connections: boolean(),
 	maxRetries: number(),
