@@ -93,19 +93,16 @@ ProcessMonitor.stopMonitor = async (rid, returnCode) => {
 };
 
 ProcessMonitor.sendReport = async (rid) => {
-	logger.verbose('Entering processMonitor.sendReport()', logLabel);
 	if (!(await shouldMonitor()) || !dataByRid[rid]) return;
 	const report = dataByRid[rid];
 	logger.verbose(`Sending report for ${rid}`, logLabel);
 	if (elasticEnabled) {
 		try {
-			logger.verbose('Preparing to create elastic record', report, logLabel);
 			await Elastic.createProcessRecord(report);
 		} catch (err) {
 			logger.error('Failed to create elastic record', report, logLabel);
 		}
 	} else {
-		logger.verbose('Elastic is not enabled', logLabel);
 		logger.info(`${rid} stats ProcessTime: ${report.ProcessTime} MaxMemory: ${report.MaxMemory}`, logLabel);
 	}
 

@@ -75,8 +75,6 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		processInformation.FileSize = size;
 
 		returnMessage.value = await runBouncerCommand(logDir, cmdParams, processInformation);
-		logger.verbose(`ridString: ${ridString}`, logLabel);
-		logger.verbose('Preparing to sendReport', ridString, logLabel);
 		await processMonitor.sendReport(ridString);
 
 		callback(JSON.stringify(returnMessage));

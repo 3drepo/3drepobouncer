@@ -83,7 +83,6 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		}
 
 		returnMessage.value = await runBouncerCommand(logDir, cmdParams, procInfo);
-		logger.verbose('Preparing to sendReport', ridString, logLabel);
 		await processMonitor.sendReport(ridString);
 
 		callback(JSON.stringify(returnMessage));
