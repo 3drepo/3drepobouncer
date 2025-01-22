@@ -422,7 +422,7 @@ int32_t importFileAndCommit(
 
 	uint8_t err;
 
-	repo::manipulator::modelconvertor::ModelImportConfig config(true, importAnimations, targetUnits, timeZone, lod, revId, database, project);
+	repo::manipulator::modelconvertor::ModelImportConfig config(importAnimations, targetUnits, timeZone, lod, revId, database, project);
 	repo::core::model::RepoScene* graph = controller->loadSceneFromFile(fileLoc, err, config);
 	if (graph)
 	{

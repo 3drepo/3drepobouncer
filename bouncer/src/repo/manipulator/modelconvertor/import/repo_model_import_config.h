@@ -36,7 +36,6 @@ namespace repo {
 			class REPO_API_EXPORT ModelImportConfig
 			{
 			private:
-				bool applyReductions;
 				bool importAnimations;
 				int lod;
 				std::string timeZone;
@@ -46,7 +45,6 @@ namespace repo {
 				std::string projectName;
 			public:
 				ModelImportConfig(
-					const bool applyReductions = true,
 					const bool importAnimations = true,
 					const ModelUnits targetUnits = ModelUnits::UNKNOWN,
 					const std::string timeZone = "",
@@ -55,7 +53,6 @@ namespace repo {
 					const std::string databaseName = "",
 					const std::string projectName = ""
 				):
-					applyReductions(applyReductions),
 					importAnimations(importAnimations),
 					targetUnits(targetUnits),
 					timeZone(timeZone),
@@ -67,7 +64,6 @@ namespace repo {
 
 				~ModelImportConfig() {}
 
-				bool shouldApplyReductions() const { return applyReductions; }
 				bool shouldImportAnimations() const { return importAnimations; }
 				std::string getTimeZone() const { return timeZone; }
 				ModelUnits getTargetUnits() const { return targetUnits; }

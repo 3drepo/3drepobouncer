@@ -36,7 +36,6 @@
 #include "modelutility/repo_scene_manager.h"
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
 #include "modelutility/repo_drawing_manager.h"
-#include "modeloptimizer/repo_optimizer_trans_reduction.h"
 #include "repo_manipulator.h"
 
 
@@ -370,28 +369,4 @@ bool RepoManipulator::isVREnabled(const repo::core::model::RepoScene* scene) con
 {
 	modelutility::SceneManager manager;
 	return manager.isVrEnabled(scene, dbHandler.get());
-}
-
-void RepoManipulator::reduceTransformations(
-	repo::core::model::RepoScene* scene,
-	const repo::core::model::RepoScene::GraphType& gType)
-{
-	if (scene && scene->hasRoot(gType))
-	{
-		modeloptimizer::TransformationReductionOptimizer optimizer;
-
-		optimizer.apply(scene);
-		//clear stash, it is not guaranteed to be relevant now.
-		//The user needs to regenerate the stash if they want one for this version
-		if (scene->isRevisioned())
-		{
-			scene->clearStash();
-			//FIXME: There is currently no way to regenerate the stash. Give this warning message.
-			//In the future we may want to autogenerate the stash upon commit.
-			repoWarning << "There is no stash associated with this optimised graph. Viewing may be impossible/slow should you commit this scene.";
-		}
-	}
-	else {
-		repoError << "RepoController::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";
-	}
 }

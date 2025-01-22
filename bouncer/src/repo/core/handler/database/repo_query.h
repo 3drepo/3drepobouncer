@@ -18,10 +18,13 @@
 #pragma once
 
 #include "repo/repo_bouncer_global.h"
+#include "repo/lib/datastructure/repo_variant.h"
+#include "repo_query_fwd.h"
 
 #include <vector>
 #include <string>
 #include <memory>
+#include <variant>
 
 namespace repo {
 	namespace core {
@@ -35,19 +38,69 @@ namespace repo {
 				namespace query {
 
 					/*
-					 * Base class for something describing a Query or Filter.Currently this
-					 * uses RepoBSONBuilder to build documents that conform to the mongo syntax.
-					 * If a better type becomes available, we can change the visitor to
-					 * something else.
+					 * Defines a set of composable expressions that any database handler must
+					 * accept in order to filter and otherwise query the collections.
 					 */
-					class REPO_API_EXPORT RepoQuery
+
+					class REPO_API_EXPORT Eq
 					{
 					public:
-						operator model::RepoBSON() const;
-						virtual void visit(model::RepoBSONBuilder& builder) const = 0;
+						Eq(std::string field, std::vector<repo::lib::RepoVariant> oneOf) :
+							field(field),
+							values(oneOf)
+						{
+						}
+
+						template<typename T>
+						Eq(std::string field, std::vector<T> oneOf) :
+							field(field)
+						{
+							for (auto& v : oneOf) {
+								values.push_back(v);
+							}
+						}
+
+						template<typename T>
+						Eq(const char* field, std::vector<T> oneOf) :
+							field(field)
+						{
+							for (auto& v : oneOf) {
+								values.push_back(v);
+							}
+						}
+
+						template<typename T>
+						Eq(const std::string& field, const T& value)
+							:field(field)
+						{
+							values.push_back(value);
+						}
+
+						template<typename T>
+						Eq(const char* field, const T& value)
+							: field(std::string(field))
+						{
+							values.push_back(value);
+						}
+
+						std::string field;
+						std::vector<repo::lib::RepoVariant> values;
 					};
 
-					class REPO_API_EXPORT Or : public RepoQuery
+					class REPO_API_EXPORT Exists
+					{
+					public:
+						Exists(std::string field, bool exists)
+							:field(field),
+							exists(exists)
+						{
+						}
+
+						std::string field;
+						bool exists;
+					};
+
+					class REPO_API_EXPORT Or
 					{
 					public:
 						template<typename ...Arguments>
@@ -55,17 +108,9 @@ namespace repo {
 							append(anyOf...); // Will call one of the two overloads depending on the number of Arguments
 						}
 
-						void visit(model::RepoBSONBuilder& builder) const;
-
-					private:
-						// Both Or and RepoQueryBuilder use lists of pointers to copies of their
-						// dependents, to avoid object slicing.
-
-						std::vector<std::shared_ptr<RepoQuery>> conditions;
-
 						template <typename T>
 						void append(const T& t) {
-							conditions.push_back(std::make_shared<T>(t));
+							conditions.push_back(t);
 						}
 
 						// This call will be recursive using pack expansion, until there is only one
@@ -76,51 +121,23 @@ namespace repo {
 							append(first);
 							append(rest...);
 						}
-					};
 
-					template<typename T>
-					class REPO_API_EXPORT Eq : public RepoQuery
-					{
-					public:
-						Eq(std::string field, const T& exactly);
-						Eq(const char*& field, const T& exactly);
-						Eq(std::string field, std::vector<T> oneOf);
-
-						void visit(model::RepoBSONBuilder& builder) const;
-
-					private:
-						std::string field;
-						std::vector<T> values;
-					};
-
-					class REPO_API_EXPORT Exists : public RepoQuery
-					{
-					public:
-						Exists(std::string field, bool exists);
-
-						void visit(model::RepoBSONBuilder& builder) const;
-
-					private:
-						std::string field;
-						bool exists;
+						std::vector<RepoQuery> conditions;
 					};
 
 					/*
 					 * Convenience type to help build more complex composite queries in
 					 * multiple stages.
 					 */
-					class REPO_API_EXPORT RepoQueryBuilder : public RepoQuery
+					class REPO_API_EXPORT RepoQueryBuilder
 					{
 					public:
 						template<typename T>
 						void append(const T& q) {
-							conditions.push_back(std::make_shared<T>(q));
-						}
+							conditions.push_back(q);
+						};
 
-						virtual void visit(model::RepoBSONBuilder& builder) const;
-
-					private:
-						std::vector<std::shared_ptr<RepoQuery>> conditions;
+						std::vector<RepoQuery> conditions;
 					};
 				}
 

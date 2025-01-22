@@ -26,6 +26,7 @@
 #include <repo/lib/datastructure/repo_bounds.h>
 #include <repo/lib/datastructure/repo_variant.h>
 #include <repo/lib/datastructure/repo_variant_utils.h>
+#include <repo/core/model/bson/repo_node_model_revision.h>
 
 using namespace repo::core::model;
 using namespace repo::test::utils;
@@ -382,6 +383,8 @@ SceneComparer::Result SceneComparer::compare(std::string expectedDb, std::string
 std::shared_ptr<SceneComparer::Scene> SceneComparer::loadScene(std::string db, std::string name)
 {
 	auto scene = std::make_shared<Scene>();
+	auto revision = new ModelRevisionNode(handler->getAllFromCollectionTailable(db, name + "." + REPO_COLLECTION_HISTORY)[0]);
+	auto offset = repo::lib::RepoVector3D64(revision->getCoordOffset());
 	auto bsons = handler->getAllFromCollectionTailable(db, name + "." + REPO_COLLECTION_SCENE);
 	for (auto& bson : bsons)
 	{

@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2015 3D Repo Ltd
+*  Copyright (C) 2025 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -15,37 +15,23 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/**
-* Abstract optimizer class
-*/
-
 #pragma once
 
-#include "../../core/model/collection/repo_scene.h"
+#include <variant>
 
 namespace repo {
-	namespace manipulator {
-		namespace modeloptimizer {
-			class AbstractOptimizer
-			{
-			public:
-				/**
-				* Default constructor
-				*/
-				AbstractOptimizer();
+	namespace core {
+		namespace handler {
+			namespace database{
+				namespace query {
+					class Eq;
+					class Exists;
+					class Or;
+					class RepoQueryBuilder;
 
-				/**
-				* Default deconstructor
-				*/
-				virtual ~AbstractOptimizer();
-
-				/**
-				* Apply optimisation on the given repoScene
-				* @param scene takes in a repoScene to optimise
-				* @return returns true upon success
-				*/
-				virtual bool apply(repo::core::model::RepoScene *scene) = 0;
-			};
+					using RepoQuery = std::variant<Eq, Exists, Or, RepoQueryBuilder>;
+				}
+			}
 		}
 	}
 }

@@ -24,7 +24,6 @@
 #include "repo_model_import_oda.h"
 #include "repo_model_import_synchro.h"
 #include "repo_model_units.h"
-#include "repo/manipulator/modeloptimizer/repo_optimizer_trans_reduction.h"
 #include <boost/filesystem.hpp>
 
 using namespace repo::manipulator::modelconvertor;
@@ -78,12 +77,6 @@ repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 				if (modelConvertor->requireReorientation()) {
 					repoTrace << "rotating model by 270 degress on the x axis...";
 					scene->reorientateDirectXModel();
-				}
-
-				if (config.shouldApplyReductions() && modelConvertor->applyReduction()) {
-					repoTrace << "Applying transformation reduction optimizer";
-					repo::manipulator::modeloptimizer::TransformationReductionOptimizer optimizer;
-					optimizer.apply(scene);
 				}
 
 				error = REPOERR_OK;

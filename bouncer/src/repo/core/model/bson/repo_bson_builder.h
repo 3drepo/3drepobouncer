@@ -170,6 +170,8 @@ namespace repo {
 
 				void append(const repo::lib::RepoMatrix& mat);
 
+				void append(const repo::lib::RepoVariant& variant);
+
 				void append(const RepoBSON& obj);
 
 				/**
@@ -187,39 +189,38 @@ namespace repo {
 				class AppendVisitor : public boost::static_visitor<> {
 				public:
 
-					AppendVisitor(RepoBSONBuilder& aBuilder, const std::string& aLabel) : builder(aBuilder), label(aLabel) {}
+					AppendVisitor(RepoBSONBuilder& aBuilder) : builder(aBuilder) {}
 
 					void operator()(const bool& b) const {
-						builder.append(label, b);
+						builder.append(b);
 					}
 
 					void operator()(const int& i) const {
-						builder.append(label, i);
+						builder.append(i);
 					}
 
 					void operator()(const int64_t& ll) const {
-						builder.append(label, ll);
+						builder.append(ll);
 					}
 
 					void operator()(const double& d) const {
-						builder.append(label, d);
+						builder.append(d);
 					}
 
 					void operator()(const std::string& s) const {
-						builder.append(label, s);
+						builder.append(s);
 					}
 
 					void operator()(const tm& t) const {
-						builder.appendTime(label, t);
+						builder.append(t);
 					}
 
 					void operator()(const repo::lib::RepoUUID& u) const {
-						builder.appendUUID(label, u);
+						builder.append(u);
 					}
 
 				private:
 					RepoBSONBuilder& builder;
-					std::string label;
 				};
 			};
 		}// end namespace model

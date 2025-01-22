@@ -29,12 +29,13 @@
 #include "repo/core/model/bson/repo_bson_element.h"
 #include "repo/lib/repo_log.h"
 #include "repo/lib/repo_exception.h"
-#include "database/repo_expressions.h"
+#include "database/repo_query.h"
 
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
 #include <mongocxx/uri.hpp>
 #include <mongocxx/pool.hpp>
+#include <mongocxx/cursor.hpp>
 #include <mongocxx/exception/operation_exception.hpp>
 #include <mongocxx/exception/bulk_write_exception.hpp>
 #include <mongocxx/exception/query_exception.hpp>
@@ -46,6 +47,7 @@
 
 using namespace repo::core::handler;
 using namespace repo::core::handler::fileservice;
+using namespace repo::core::handler::database;
 using namespace bsoncxx::builder::basic;
 
 // mongocxx requires an instance to be created before using the driver, which
@@ -125,6 +127,99 @@ private:
 		}
 	}
 };
+
+/*
+* Function for use by this module that turns a RepoQuery variant into a Json
+* object that can be handed to a mongo method that accepts a query filter or
+* predicate document (e.g. find, update).
+* This method is only intended for use by this module, but is exported so it
+* can be exercised in the module's unit tests.
+*/
+repo::core::model::RepoBSON REPO_API_EXPORT makeQueryFilterDocument(const repo::core::handler::database::query::RepoQuery& query);
+
+
+/*
+* This is the visitor for the query types when building a document of query
+* operators. When using query operators (as opposed to pipeline operators)
+* all the operators (if more than) exist as fields in one document, and
+* behave as if they are AND'd.
+* This type is exported so it can be exercised directly in the unit tests.
+*/
+
+struct MongoQueryFilterVistior
+{
+	repo::core::model::RepoBSONBuilder* builder;
+
+	MongoQueryFilterVistior(repo::core::model::RepoBSONBuilder* builder)
+		:builder(builder)
+	{
+	}
+
+	void operator() (const query::Eq& n) const
+	{
+		// For equality matching, if there is one entry then it is just set as
+		// the value, otherwise we need to use the 'in' operator match against
+		// any member of an array.
+
+		if (n.values.size() > 1)
+		{
+			repo::core::model::RepoBSONBuilder setBuilder;
+			setBuilder.append("$in", n.values);
+			builder->append(n.field, setBuilder.obj());
+		}
+		else if(n.values.size() == 1)
+		{
+			builder->append(n.field, n.values[0]);
+		}
+	}
+
+	void operator() (const query::Exists& n) const
+	{
+		// The exists operator goes in its own document, with a boolean saying
+		// which way round it should work.
+
+		repo::core::model::RepoBSONBuilder criteria;
+		criteria.append("$exists", n.exists);
+		builder->append(n.field, criteria.obj());
+	}
+
+	void operator() (const query::Or& n) const
+	{
+		// The Or operator is special in that it should exist at the top level
+		// and contain within its array a set of other operators that can work
+		// on a variety of fields
+
+		std::vector<repo::core::model::RepoBSON> results;
+		for (auto& q : n.conditions)
+		{
+			results.push_back(makeQueryFilterDocument(q));
+		}
+		builder->appendArray("$or", results);
+	}
+
+	void operator() (const query::RepoQueryBuilder& n) const
+	{
+		// RepoQueryBuilder allows matching on multiple fields; these fields
+		// should be siblings, so we add the fields directly to the builder
+
+		for (auto& q : n.conditions) {
+			std::visit(*this, q);
+		}
+	}
+};
+
+/*
+* Given a RepoQuery variant, build a Json object that is a Query Filter Document;
+* a query filter document has a set of fields matching the names of the fields
+* in the documents to match, and the values of those fields are Query Operators.
+*/
+repo::core::model::RepoBSON makeQueryFilterDocument(const repo::core::handler::database::query::RepoQuery& query)
+{
+	repo::core::model::RepoBSONBuilder bson;
+	MongoQueryFilterVistior visitor(&bson);
+	std::visit(visitor, query);
+	return bson.obj();
+}
 
 MongoDatabaseHandler::MongoDatabaseHandler(
 	const std::string& connectionString,
@@ -220,26 +315,37 @@ void MongoDatabaseHandler::createIndex(const std::string& database, const std::s
 }
 
 /*
- * This helper function resolves the binary files for a given document.Any
+ * This helper function resolves the binary files for a given document. Any
  * document that might have file mappings should be passed through here
  * before being returned as a RepoBSON.
  */
-repo::core::model::RepoBSON createRepoBSON(
-	fileservice::BlobFilesHandler &blobHandler,
-	const std::string &database,
-	const std::string &collection,
-	const bsoncxx::document::view& obj,
-	const bool ignoreExtFile = false)
+repo::core::model::RepoBSON MongoDatabaseHandler::createRepoBSON(
+	const std::string& database, 
+	const std::string& collection, 
+	const bsoncxx::document::view& view)
 {
-	repo::core::model::RepoBSON orgBson = repo::core::model::RepoBSON(obj);
-	if (!ignoreExtFile) {
-		if (orgBson.hasFileReference()) {
-			auto ref = orgBson.getBinaryReference();
-			auto buffer = blobHandler.readToBuffer(fileservice::DataRef::deserialise(ref));
-			orgBson.initBinaryBuffer(buffer);
-		}
+	fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
+
+	repo::core::model::RepoBSON orgBson = repo::core::model::RepoBSON(view);
+	if (orgBson.hasFileReference()) {
+		auto ref = orgBson.getBinaryReference();
+		auto buffer = blobHandler.readToBuffer(fileservice::DataRef::deserialise(ref));
+		orgBson.initBinaryBuffer(buffer);
 	}
 	return orgBson;
+}
+
+void MongoDatabaseHandler::loadBinaries(const std::string& database,
+	const std::string& collection, 
+	repo::core::model::RepoBSON& bson)
+{
+	fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
+
+	if (bson.hasFileReference()) {
+		auto ref = bson.getBinaryReference();
+		auto buffer = blobHandler.readToBuffer(fileservice::DataRef::deserialise(ref));
+		bson.initBinaryBuffer(buffer);
+	}
 }
 
 void MongoDatabaseHandler::dropCollection(
@@ -303,19 +409,17 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 	try
 	{
 		std::vector<repo::core::model::RepoBSON> data;
-		repo::core::model::RepoBSON criteria = filter;
+		repo::core::model::RepoBSON criteria = makeQueryFilterDocument(filter);
 		if (!criteria.isEmpty() && !database.empty() && !collection.empty())
 		{
 			auto client = clientPool->acquire();
 			auto db = client->database(database);
 			auto col = db.collection(collection);
 
-			fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-
 			// Find all documents
 			auto cursor = col.find(criteria.view());
 			for (auto& doc : cursor) {
-				data.push_back(createRepoBSON(blobHandler, database, collection, doc));
+				data.push_back(createRepoBSON(database, collection, doc));
 			}
 		}
 		return data;
@@ -334,7 +438,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 {
 	try
 	{
-		repo::core::model::RepoBSON criteria = filter;
+		repo::core::model::RepoBSON criteria = makeQueryFilterDocument(filter);
 		if (!criteria.isEmpty() && !database.empty() && !collection.empty())
 		{
 			auto client = clientPool->acquire();
@@ -350,7 +454,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 			auto findResult = col.find_one(criteria.view(), options);
 			if (findResult.has_value()) {
 				fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-				return createRepoBSON(blobHandler, database, collection, findResult.value());
+				return createRepoBSON(database, collection, findResult.value());
 			}
 		}
 		return {};
@@ -431,12 +535,9 @@ MongoDatabaseHandler::getAllFromCollectionTailable(
 			options.projection(projection.extract());
 		}
 
-
-		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-
 		auto cursor = col.find({}, options);
 		for (auto doc : cursor) {
-			bsons.push_back(createRepoBSON(blobHandler, database, collection, doc));
+			bsons.push_back(createRepoBSON(database, collection, doc));
 		}
 
 		return bsons;
@@ -651,4 +752,157 @@ void MongoDatabaseHandler::upsertDocument(
 	{
 		std::throw_with_nested(MongoDatabaseHandlerException(*this, "upsertDocument", database, collection));
 	}
+}
+
+#pragma optimise("",off)
+
+
+size_t MongoDatabaseHandler::count(
+	const std::string& database,
+	const std::string& collection,
+	const database::query::RepoQuery& criteria) 
+{
+	auto client = clientPool->acquire();
+	auto db = client->database(database);
+	auto col = db.collection(collection);
+	repo::core::model::RepoBSON filter = makeQueryFilterDocument(criteria);
+	return col.count_documents(filter.view());
+}
+
+/*
+* These next classes implement a wrapper around the Mongo cursor. The abstract
+* database handler declares a concrete iterator type using the pimpl pattern,
+* so that it can be copied by value, as is convention for iterators.
+* Underneath, the Mongo cursor is wrapped in a dedicated object and two iterators
+* are preallocated - under Mongo, all iterators coming from one cursor move
+* together, so this behaviour is the same as getting new ones each time.
+*/
+
+class REPO_API_EXPORT MongoDatabaseHandler::MongoCursor : public database::Cursor
+{
+public:
+	class MongoIteratorImpl : public database::Cursor::Iterator::Impl, public mongocxx::v_noabi::cursor::iterator
+	{
+		friend class MongoDatabaseHandler::MongoCursor;
+
+		virtual const repo::core::model::RepoBSON operator*()
+		{
+			return cursor->createRepoBSON(mongocxx::v_noabi::cursor::iterator::operator*());
+		}
+
+		virtual void operator++()
+		{
+			mongocxx::v_noabi::cursor::iterator::operator++();
+		}
+
+		virtual bool operator!=(const database::Cursor::Iterator::Impl* other)
+		{
+			return (mongocxx::v_noabi::cursor::iterator)*this != (mongocxx::v_noabi::cursor::iterator) * (MongoIteratorImpl*)other;
+		}
+
+		MongoIteratorImpl(mongocxx::v_noabi::cursor::iterator itr, MongoDatabaseHandler::MongoCursor* cursor)
+			:mongocxx::v_noabi::cursor::iterator(itr),
+			cursor(cursor)
+		{}
+
+		MongoDatabaseHandler::MongoCursor* cursor;
+	};
+
+	MongoCursor(mongocxx::v_noabi::cursor&& c, MongoDatabaseHandler* handler)
+		:cursor(std::move(c)),
+		handler(handler),
+		_begin(MongoIteratorImpl(cursor.begin(), this)),
+		_end(MongoIteratorImpl(cursor.end(), this))
+	{
+	}
+
+	mongocxx::v_noabi::cursor cursor;
+	MongoIteratorImpl _begin;
+	MongoIteratorImpl _end;
+
+	virtual database::Cursor::Iterator begin()
+	{
+		return database::Cursor::Iterator(&_begin);
+	}
+
+	virtual database::Cursor::Iterator end()
+	{
+		return database::Cursor::Iterator(&_end);
+	}
+
+private:
+	std::string database;
+	std::string collection;
+	MongoDatabaseHandler* handler;
+
+	repo::core::model::RepoBSON createRepoBSON(const bsoncxx::document::view& view)
+	{
+		return handler->createRepoBSON(database, collection, view);
+	}
+};
+
+void MongoDatabaseHandler::updateMany(
+	const std::string& database,
+	const std::string& collection,
+	const database::query::RepoQuery& query
+)
+{
+	// Turn the query into a pipeline operation
+
+
+
+
+}
+
+/*
+
+std::unique_ptr<database::Cursor> MongoDatabaseHandler::runDatabaseOperation(
+	const std::string& database,
+	const std::string& collection,
+	const database::AbstractDatabaseOperation& operation)
+{
+	auto client = clientPool->acquire();
+	auto db = client->database(database);
+	auto col = db.collection(collection);
+	auto& mongoOperation = dynamic_cast<const database::MongoDatabaseOperation&>(operation);
+	return std::make_unique<MongoCursor>(std::move(col.aggregate(mongoOperation)), this);
+}
+
+*/
+
+std::unique_ptr<repo::core::handler::database::Cursor> MongoDatabaseHandler::getAllByCriteria(
+	const std::string& database,
+	const std::string& collection,
+	const database::query::RepoQuery& criteria
+)
+{
+	try
+	{
+		auto client = clientPool->acquire();
+		auto db = client->database(database);
+		auto col = db.collection(collection);
+
+		repo::core::model::RepoBSON q = makeQueryFilterDocument(criteria);
+		return std::make_unique<MongoCursor>(std::move(col.find(q.view())), this);
+	}
+	catch (...)
+	{
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "replaceArrayEntriesByUniqueId", database, collection));
+	}
+}
+
+
+// Put the abstract cursor def here as well for the time being...
+
+
+const repo::core::model::RepoBSON repo::core::handler::database::Cursor::Iterator::operator*() {
+	return impl->operator*();
+}
+
+void repo::core::handler::database::Cursor::Iterator::operator++() {
+	impl->operator++();
+}
+
+bool repo::core::handler::database::Cursor::Iterator::operator!=(const Iterator& other) {
+	return impl->operator!=(other.impl);
 }

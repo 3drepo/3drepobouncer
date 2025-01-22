@@ -28,7 +28,7 @@
 #include "../unit/repo_test_database_info.h"
 #include "../unit/repo_test_utils.h"
 #include <repo/core/model/bson/repo_bson_builder.h>
-#include <repo/core/handler/database/repo_expressions.h>
+#include <repo/core/handler/database/repo_query.h>
 #include <unordered_set>
 
 using namespace testing;

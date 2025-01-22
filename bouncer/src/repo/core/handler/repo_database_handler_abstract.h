@@ -22,6 +22,7 @@
 #include <string>
 #include <unordered_map>
 #include "repo/lib/datastructure/repo_variant.h"
+#include "repo/core/handler/database/repo_query_fwd.h"
 
 namespace repo {
 	namespace core {
@@ -30,13 +31,59 @@ namespace repo {
 		}
 		namespace handler {
 			namespace database {
-				namespace query {
-					class RepoQuery;
-				}
-				namespace index{
+				namespace index {
 					class RepoIndex;
 				}
+				class AbstractDatabaseOperation
+				{
+				public:
+					virtual ~AbstractDatabaseOperation() // This is mainly so this class has a virtual function and is so considered polymorphic
+					{
+					}
+				};
+
+				/*
+				* The Cursor class provides iterable access to a database collection.
+				* Iterator based access should be preferred over reading all the results
+				* in one go. The Cursor and its Iterator use the pimpl pattern so that
+				* they can be passed by value, as is the convention, while allowing
+				* database handlers to provide custom implementations.
+				*/
+
+				class Cursor {
+				public:
+					class Iterator {
+					public:
+
+						// (The implementation of these method is simply to call the pimpl
+						// versions, but it is done in a separate module so we don't need
+						// to fully define RepoBSON.)
+
+						const repo::core::model::RepoBSON operator*();
+						void operator++();
+						bool operator!=(const Iterator& other);
+
+						struct Impl {
+							virtual const repo::core::model::RepoBSON operator*() = 0;
+							virtual void operator++() = 0;
+							virtual bool operator!=(const Impl*) = 0;
+						};
+
+						Impl* impl;
+
+						Cursor::Iterator(Impl* impl)
+							:impl(impl)
+						{
+						}
+					};
+
+					virtual Iterator begin() = 0;
+					virtual Iterator end() = 0;
+				};
+
+				using CursorPtr = std::unique_ptr<repo::core::handler::database::Cursor>;
 			}
+
 			class AbstractDatabaseHandler {
 			public:
 				/**
@@ -229,6 +276,11 @@ namespace repo {
 					const std::string& database,
 					const std::string& collection,
 					const std::string& id) = 0;
+
+				virtual size_t count(
+					const std::string& database,
+					const std::string& collection,
+					const database::query::RepoQuery& criteria) = 0;
 
 			protected:
 				/**

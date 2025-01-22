@@ -188,13 +188,6 @@ void RepoController::processDrawingRevision(
 	return impl->processDrawingRevision(token, teamspace, revision, err, imagePath);
 }
 
-void RepoController::reduceTransformations(
-	const RepoController::RepoToken              *token,
-	repo::core::model::RepoScene *scene)
-{
-	impl->reduceTransformations(token, scene);
-}
-
 bool RepoController::isVREnabled(const RepoController::RepoToken *token,
 	const repo::core::model::RepoScene *scene)
 {

@@ -419,44 +419,6 @@ RepoController::_RepoControllerImpl::processDrawingRevision(
 	workerPool.push(worker);
 }
 
-void RepoController::_RepoControllerImpl::reduceTransformations(
-	const RepoController::RepoToken              *token,
-	repo::core::model::RepoScene *scene)
-{
-	//We only do reduction optimisations on the unoptimised graph
-	const repo::core::model::RepoScene::GraphType gType = repo::core::model::RepoScene::GraphType::DEFAULT;
-	if (token && scene && scene->isRevisioned() && !scene->hasRoot(gType))
-	{
-		//If the unoptimised graph isn't fetched, try to fetch full scene before beginning
-		//This should be safe considering if it has not loaded the unoptimised graph it shouldn't have
-		//any uncommited changes.
-		repoInfo << "Unoptimised scene not loaded, trying loading unoptimised scene...";
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		worker->fetchScene(scene);
-		workerPool.push(worker);
-	}
-
-	if (scene && scene->hasRoot(gType))
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		size_t transNodes_pre = scene->getAllTransformations(gType).size();
-		try {
-			worker->reduceTransformations(scene, gType);
-		}
-		catch (const std::exception &e)
-		{
-			repoError << "Caught exception whilst trying to optimise graph : " << e.what();
-		}
-
-		workerPool.push(worker);
-		repoInfo << "Optimization completed. Number of transformations has been reduced from "
-			<< transNodes_pre << " to " << scene->getAllTransformations(gType).size();
-	}
-	else {
-		repoError << "RepoController::_RepoControllerImpl::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";
-	}
-}
-
 std::string RepoController::_RepoControllerImpl::getVersion()
 {
 	std::stringstream ss;

@@ -266,17 +266,6 @@ namespace repo {
 				uint8_t& error,
 				const std::string &imagePath);
 
-			/**
-			* Reduce redundant transformations from the scene
-			* to optimise the graph
-			* @param scene RepoScene to optimize
-			* @param gType graph type to diff (default: unoptimised)
-			*/
-			void reduceTransformations(
-				repo::core::model::RepoScene                  *scene,
-				const repo::core::model::RepoScene::GraphType &gType
-				= repo::core::model::RepoScene::GraphType::DEFAULT);
-
 		private:
 
 			/**

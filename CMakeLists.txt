@@ -42,6 +42,8 @@ if(${WIN32})
 		-DNOMINMAX
 	)
 
+	add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/MP>)
+
 	# This flag tells MSVC to interpret everything as utf8 - the default behaviour
 	# will sometimes interpret files as one of Windows' local encodings, which is
 	# a problem because our source files define string literals that are meant to

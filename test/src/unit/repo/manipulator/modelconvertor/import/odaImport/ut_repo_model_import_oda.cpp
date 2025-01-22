@@ -36,7 +36,7 @@ using namespace testing;
 #define REFDB "ODAModelImport"
 #define TESTDB "ODAModelImportTest"
 
-#pragma optimize("",off)
+#pragma optimize("", off)
 
 /* ODA is predominantly tested via the system tests using the client. These tests
  * cover specific features or regressions. */
@@ -54,7 +54,6 @@ namespace ODAModelImportUtils
 	void ModelImportManagerImport(std::string collection, std::string filename)
 	{
 		ModelImportConfig config(
-			false,
 			true,
 			ModelUnits::MILLIMETRES,
 			"",
@@ -80,36 +79,55 @@ MATCHER(IsSuccess, "")
 	return (bool)arg;
 }
 
-TEST(ODAModelImport, Sample2025NWD)
+// The set of 'tree' tests aims to compare the trees & metadata (for transformation nodes)
+// between the scenes.
+
+TEST(ODAModelImport, Sample2025NWDTree)
 {
 	auto collection = "Sample2025NWD";
 
-	// We use the ModelImportManager as the entry point for this test, because it
-	// is easy to use the client to create comparable reference data at this point.
+	ODAModelImportUtils::ModelImportManagerImport(collection, getDataPath("sample2025.nwd"));
 
-//	ODAModelImportUtils::ModelImportManagerImport(collection, getDataPath("sample2025.nwd"));
-	
 	repo::test::utils::SceneComparer comparer;
-	comparer.ignoreVertices = true;
-	comparer.ignoreTextures = true;
-	comparer.ignoreBounds = true;
+	comparer.ignoreMeshNodes = true;
 	comparer.ignoreMetadataKeys.insert("Item::File Name");
 
 	EXPECT_THAT(comparer.compare(REFDB, collection, TESTDB, collection), IsSuccess());
 }
 
-TEST(ODAModelImport, SampleHouseNWD)
+TEST(ODAModelImport, SampleHouseNWDTree)
 {
-	auto collection = "SampleHouse";
+	auto collection = "SampleHouseNWD";
 
-	// We use the ModelImportManager as the entry point for this test, because it
-	// is easy to use the client to create comparable reference data at this point.
-
-//	ODAModelImportUtils::ModelImportManagerImport(collection, getDataPath("sampleHouse.nwd"));
+	ODAModelImportUtils::ModelImportManagerImport(collection, getDataPath("sampleHouse.nwd"));
 
 	repo::test::utils::SceneComparer comparer;
-	comparer.ignoreVertices = true;
-	comparer.ignoreTextures = true;
+	comparer.ignoreMeshNodes = true;
+	comparer.ignoreMetadataKeys.insert("Item::File Name");
+
+	EXPECT_THAT(comparer.compare(REFDB, collection, TESTDB, collection), IsSuccess());
+}
+
+TEST(ODAModelImport, IFCNWDFederationTree)
+{
+	auto collection = "IfcNwdFederationNWD";
+
+	ODAModelImportUtils::ModelImportManagerImport(collection, getDataPath("IfcNwdFederation.nwd"));
+
+	repo::test::utils::SceneComparer comparer;
+	comparer.ignoreMeshNodes = true;
+	comparer.ignoreMetadataKeys.insert("Item::File Name");
+
+	EXPECT_THAT(comparer.compare(REFDB, collection, TESTDB, collection), IsSuccess());
+}
+
+TEST(ODAModelImport, TestNWCTree)
+{
+	auto collection = "TestNWC";
+
+	ODAModelImportUtils::ModelImportManagerImport(collection, getDataPath("test.nwc"));
+
+	repo::test::utils::SceneComparer comparer;
 	comparer.ignoreMeshNodes = true;
 	comparer.ignoreMetadataKeys.insert("Item::File Name");
 

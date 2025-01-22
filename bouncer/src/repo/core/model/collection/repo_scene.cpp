@@ -31,7 +31,7 @@
 #include "repo/core/model/bson/repo_bson_builder.h"
 #include "repo/core/model/bson/repo_bson_factory.h"
 #include "repo/core/model/bson/repo_bson_project_settings.h"
-#include "repo/core/handler/database/repo_expressions.h"
+#include "repo/core/handler/database/repo_query.h"
 
 using namespace repo::core::model;
 
@@ -446,8 +446,6 @@ void RepoScene::loadRootNode(
 
 	addNodes({new repo::core::model::TransformationNode(bson)});
 }
-
-#pragma optimize("", off)
 
 bool RepoScene::addNodeToMaps(
 	const GraphType &gType,

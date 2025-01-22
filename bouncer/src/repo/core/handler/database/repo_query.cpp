@@ -15,14 +15,15 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "repo_expressions.h"
-
+#include "repo_query.h"
 #include "repo/core/model/bson/repo_bson.h"
 #include "repo/core/model/bson/repo_bson_builder.h"
 
 using namespace repo::core::handler::database;
 using namespace repo::core::model;
 
+
+/*
 query::RepoQuery::operator repo::core::model::RepoBSON() const
 {
 	RepoBSONBuilder builder;
@@ -92,6 +93,7 @@ void query::RepoQueryBuilder::visit(RepoBSONBuilder& builder) const
 		q->visit(builder);
 	}
 }
+*/
 
 index::Ascending::Ascending(std::vector<std::string> fields)
 	:fields(fields)
@@ -122,13 +124,3 @@ index::Descending::operator repo::core::model::RepoBSON() const
 	}
 	return builder.obj();
 }
-
-// Template instantations for the generic types; these will be ones that the
-// database can effectively perform comparisons with during the query, so
-// will predominantly be primitives, though more can be added here when
-// necessary.
-
-template class query::Eq<repo::lib::RepoUUID>;
-template class query::Eq<std::string>;
-template class query::Eq<int>;
-

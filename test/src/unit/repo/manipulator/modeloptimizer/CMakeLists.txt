@@ -7,6 +7,5 @@
 set(TEST_SOURCES
 	${TEST_SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_optimizer_multipart.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_optimizer_trans_reduction.cpp
 	CACHE STRING "TEST_SOURCES" FORCE)
 

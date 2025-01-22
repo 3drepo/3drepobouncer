@@ -16,7 +16,7 @@
 */
 
 #include <repo/core/handler/repo_database_handler_mongo.h>
-#include <repo/core/handler/database/repo_expressions.h>
+#include <repo/core/handler/database/repo_query.h>
 #include <repo/core/model/bson/repo_bson.h>
 #include <repo/core/model/bson/repo_bson_element.h>
 #include <repo/core/model/bson/repo_node.h>
@@ -506,6 +506,11 @@ TEST(MongoDatabaseHandlerTest, FindAllByCriteria)
 	EXPECT_THAT(handler->findAllByCriteria(REPO_GTEST_DBNAME1, "", search), IsEmpty());
 }
 
+// The implementation of this is defined in repo_database_handler_mongo.cpp.
+// It is not intended to be used outside that module, but this being that
+// modules unit test is a special case.
+repo::core::model::RepoBSON REPO_API_EXPORT makeQueryFilterDocument(const repo::core::handler::database::query::RepoQuery& query);
+
 TEST(MongoDatabaseHandlerTest, FindOneByCriteria)
 {
 	auto handler = getHandler();
@@ -548,13 +553,12 @@ TEST(MongoDatabaseHandlerTest, FindOneByCriteria)
 	// Use of Or operator - should return the document with the highest timestamp
 	// of the two provided
 	{
-		auto q = query::Or(
+		query::RepoQuery q = query::Or(
 			query::Eq("_id", repo::lib::RepoUUID("3a28e39d-e901-4ca7-9453-9b9dde38d916")),
 			query::Eq("_id", repo::lib::RepoUUID("e664b837-45aa-4ad3-b2da-6efcce6438e2"))
 		);
-		repo::core::model::RepoBSONBuilder builder;
-		q.visit(builder);
-		auto s = builder.obj().toString();
+		repo::core::model::RepoBSON bson = makeQueryFilterDocument(q);
+		auto s = bson.toString();
 
 		auto col = "cube.history";
 		auto result = handler->findOneByCriteria(db, col,
