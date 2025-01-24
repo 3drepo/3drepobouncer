@@ -21,7 +21,7 @@
 #include "vectorise_device_rvt.h"
 #include "data_processor_rvt.h"
 #include "helper_functions.h"
-#include "../../../../lib/repo_utils.h"
+#include "repo/lib/repo_utils.h"
 #include <Database/BmTransaction.h>
 #include <Database/BmUnitUtils.h>
 #include <Database/Entities/BmRbsSystemType.h>
@@ -200,18 +200,12 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 	return std::string();
 }
 
-void DataProcessorRvt::init(GeometryCollector* geoColl, OdBmDatabasePtr database)
+void DataProcessorRvt::initialise(GeometryCollector* collector, OdBmDatabasePtr pDb, OdBmDBViewPtr view)
 {
-	this->collector = geoColl;
-	this->database = database;
-
-	establishProjectTranslation(database);
-
-	geoColl->units = getProjectUnits(database);
-}
-
-DataProcessorRvt::DataProcessorRvt()
-{
+	DataProcessor::initialise(collector);
+	this->view = view;
+	collector->setUnits(getProjectUnits(pDb));
+	establishProjectTranslation(pDb);
 }
 
 void DataProcessorRvt::beginViewVectorization()
@@ -223,8 +217,79 @@ void DataProcessorRvt::beginViewVectorization()
 
 void DataProcessorRvt::draw(const OdGiDrawable* pDrawable)
 {
-	fillMeshData(pDrawable);
+	OdBmElementPtr element = OdBmElement::cast(pDrawable);
+	if (element.isNull())
+		return;
+
+	if (!element->isDBRO())
+		return;
+
+	// In the current version of ODA, each component that is a member of a
+	// system is followed by that system as an OdGiDrawable, so we need the
+	// geometry to be associated with the previous OdGiDrawable. This is
+	// achieved by simply skipping all system drawables (and so not changing
+	// the collector settings).
+
+	if (element->isKindOf(OdBmRbsSystemType::desc()))
+	{
+		return;
+	}
+
+	if (!view->isElementVisible(element))
+	{
+		return;
+	}
+
+	if (view->isElementClipped(element, false))
+	{
+		return;
+	}
+
+	// For Revit files, drawable elements are arranged into layers, not unlike
+	// drawings.
+
+	std::string levelName = getLevelName(element, "Layer Default");
+	std::string elementName = getElementName(element);
+
+	if (!collector->hasLayer(levelName))
+	{
+		collector->createLayer(levelName, levelName, {}); // The tree for Revit files is only ever one level deep
+	}
+
+	if (!collector->hasLayer(elementName))
+	{
+		collector->createLayer(elementName, elementName, levelName);
+	}
+
+	collector->setLayer(elementName);
+
+	// We can skip certain items we know won't be rendered. Ultimately though
+	// the visualisation pipeline in ODA (and Revit) is a black-box, and there's
+	// no way to know for sure an element will result in geometry on the screen
+	// until it starts outputting vertices.
+
 	OdGsBaseMaterialView::draw(pDrawable);
+
+	// If theres geometry, create the layers for the mesh (if necessary), and set
+	// up their parents.
+
+
+
+	// The first time we encounter an element, we should create its metadata entry
+	// too
+	try
+	{
+		if (!collector->hasMetadata(elementName))
+		{
+			collector->setMetadata(elementName, fillMetadata(element));
+		}
+	}
+	catch (OdError& er)
+	{
+		//.. HOTFIX: handle nullPtr exception (reported to ODA)
+		repoError << "Caught exception whilst trying to retrieve metadata: " << convertToStdString(er.description());
+	}
+	
 }
 
 void DataProcessorRvt::convertTo3DRepoMaterial(
@@ -302,7 +367,7 @@ void DataProcessorRvt::convertTo3DRepoTriangle(
 	}
 }
 
-std::string DataProcessorRvt::getLevel(OdBmElementPtr element, const std::string& name)
+std::string DataProcessorRvt::getLevelName(OdBmElementPtr element, const std::string& name)
 {
 	auto levelId = element->getAssocLevelId();
 	if (levelId.isValid() && !levelId.isNull()) // (Opening a valid, null pointer will result in an exception)
@@ -324,59 +389,11 @@ std::string DataProcessorRvt::getLevel(OdBmElementPtr element, const std::string
 		{
 			auto parentElement = OdBmElement::cast(object);
 			if (!parentElement.isNull())
-				return getLevel(parentElement, name);
+				return getLevelName(parentElement, name);
 		}
 	}
 
 	return name;
-}
-
-void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
-{
-	OdBmElementPtr element = OdBmElement::cast(pDrawable);
-	if (element.isNull())
-		return;
-
-	if (!element->isDBRO())
-		return;
-
-	// In the current version of ODA, each component that is a member of a
-	// system is followed by that system as an OdGiDrawable, so we need the
-	// geometry to be associated with the previous OdGiDrawable. This is
-	// achieved by simply skipping all system drawables (and so not changing
-	// the collector settings).
-
-	if (element->isKindOf(OdBmRbsSystemType::desc()))
-	{
-		return;
-	}
-
-	collector->stopMeshEntry();
-
-	std::string elementName = getElementName(element);
-
-	collector->setNextMeshName(elementName);
-	collector->setMeshGroup(elementName);
-
-	std::string layerName = getLevel(element, "Layer Default");
-	// Calling this first time to ensure the layer exists
-	collector->setLayer(layerName, layerName);
-	// This is the actual layer we want to be on.
-	collector->setLayer(elementName, elementName, layerName);
-
-	try
-	{
-		//some objects material is not set. set default here
-		collector->setCurrentMaterial(GetDefaultMaterial());
-		if (!collector->hasMeta(elementName)) collector->setMetadata(elementName, fillMetadata(element));
-	}
-	catch (OdError& er)
-	{
-		//.. HOTFIX: handle nullPtr exception (reported to ODA)
-		repoError << "Caught exception whilst trying to retrieve Material/metadata: " << convertToStdString(er.description());
-	}
-
-	collector->startMeshEntry();
 }
 
 void DataProcessorRvt::fillMetadataById(
@@ -464,28 +481,22 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 	OdBmElementPtr element,
 	std::unordered_map<std::string, repo::lib::RepoVariant>& outputData)
 {
+	if (!labelUtils) return;
+
 	OdBmParameterSet aParams;
 	element->getListParams(aParams);
 
 	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
 
-	auto id = std::to_string((OdUInt64)element->objectId().getHandle());
-	if (collector->metadataCache.find(id) != collector->metadataCache.end()) {
-		metadata = collector->metadataCache[id];
-	}
-	else {
-		if (!labelUtils) return;
+	for (const auto& entry : aParams.getBuiltInParamsIterator()) {
+		std::string builtInName = convertToStdString(OdBm::BuiltInParameter(entry).toString());
 
-		for (const auto &entry : aParams.getBuiltInParamsIterator()) {
-			std::string builtInName = convertToStdString(OdBm::BuiltInParameter(entry).toString());
+		//.. HOTFIX: handle access violation exception (reported to ODA)
+		if (ignoreParam(builtInName)) continue;
 
-			//.. HOTFIX: handle access violation exception (reported to ODA)
-			if (ignoreParam(builtInName)) continue;
-
-			auto paramId = element->database()->getObjectId(entry);
-			if (paramId.isValid() && !paramId.isNull()) {
-				processParameter(element, paramId, metadata, entry);
-			}
+		auto paramId = element->database()->getObjectId(entry);
+		if (paramId.isValid() && !paramId.isNull()) {
+			processParameter(element, paramId, metadata, entry);
 		}
 	}
 
@@ -631,9 +642,9 @@ OdBmForgeTypeId DataProcessorRvt::getLengthUnits(OdBmDatabasePtr database)
 	return formatOptionsLength->getUnitTypeId();
 }
 
-ModelUnits DataProcessorRvt::getProjectUnits(OdBmDatabase* pDb) {
+ModelUnits DataProcessorRvt::getProjectUnits(OdBmDatabasePtr pDb) {
 	initLabelUtils();
-	auto unitsStr = convertToStdString(labelUtils->getLabelForUnit(getLengthUnits(database)));
+	auto unitsStr = convertToStdString(labelUtils->getLabelForUnit(getLengthUnits(pDb)));
 
 	if (unitsStr == "Millimeters") return ModelUnits::MILLIMETRES;
 	if (unitsStr == "Centimeters") return ModelUnits::CENTIMETRES;
@@ -647,7 +658,7 @@ ModelUnits DataProcessorRvt::getProjectUnits(OdBmDatabase* pDb) {
 }
 
 //.. TODO: Comment this code for newer version of ODA BIM library
-void DataProcessorRvt::establishProjectTranslation(OdBmDatabase* pDb)
+void DataProcessorRvt::establishProjectTranslation(OdBmDatabasePtr pDb)
 {
 	OdBmElementTrackingDataPtr pElementTrackingDataMgr = pDb->getAppInfo(OdBm::ManagerType::ElementTrackingData);
 	OdBmObjectIdArray aElements;
@@ -678,7 +689,7 @@ void DataProcessorRvt::establishProjectTranslation(OdBmDatabase* pDb)
 
 				OdGeMatrix3d alignedLocation;
 				alignedLocation.setToAlignCoordSys(activeOrigin, activeX, activeY, activeZ, projectOrigin, projectX, projectY, projectZ);
-				auto scaleCoef = 1.0 / OdBmUnitUtils::getUnitTypeIdInfo(getLengthUnits(database)).inIntUnitsCoeff;
+				auto scaleCoef = 1.0 / OdBmUnitUtils::getUnitTypeIdInfo(getLengthUnits(pDb)).inIntUnitsCoeff;
 				convertTo3DRepoWorldCoorindates = [activeOrigin, alignedLocation, scaleCoef](OdGePoint3d point) {
 					OdGeVector3d convertedPoint = (point - activeOrigin).transformBy(alignedLocation);
 					return repo::lib::RepoVector3D64(convertedPoint.x * scaleCoef, convertedPoint.y * scaleCoef, convertedPoint.z * scaleCoef);

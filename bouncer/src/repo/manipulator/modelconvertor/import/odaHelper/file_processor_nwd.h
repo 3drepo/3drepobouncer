@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "../../../../core/model/bson/repo_node_mesh.h"
+#include "repo/core/model/bson/repo_node_mesh.h"
 
 #include <OdaCommon.h>
 
@@ -45,7 +45,7 @@ namespace repo {
 					//Environment variable name for Autodesk textures
 					const char* RVT_TEXTURES_ENV_VARIABLE = "REPO_RVT_TEXTURES";
 
-					FileProcessorNwd(const std::string& inputFile, GeometryCollector* geoCollector, const ModelImportConfig& config) : FileProcessor(inputFile, geoCollector, config) {
+					FileProcessorNwd(const std::string& inputFile, modelutility::RepoSceneBuilder* builder, const ModelImportConfig& config) : FileProcessor(inputFile, builder, config) {
 						shouldApplyReduction = true;
 					};
 					~FileProcessorNwd() override;

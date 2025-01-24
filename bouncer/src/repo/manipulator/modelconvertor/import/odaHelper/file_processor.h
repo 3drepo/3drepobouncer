@@ -16,13 +16,14 @@
 */
 
 #pragma once
-#include "geometry_collector.h"
 #include "repo_material_builder.h"
 #include "repo/manipulator/modelutility/repo_drawing.h"
 #include "repo/manipulator/modelutility/repo_scene_builder.h"
 #include "repo/manipulator/modelconvertor/import/repo_model_import_config.h"
 #include "repo/error_codes.h"
 #include <string>
+
+class OdGsView; // Forward declaration from ODA's Gs.h
 
 namespace repo {
 	namespace manipulator {
@@ -31,23 +32,20 @@ namespace repo {
 				class FileProcessor
 				{
 				protected:
-					FileProcessor(const std::string& inputFile, GeometryCollector* geoCollector, const ModelImportConfig& config);
 					FileProcessor(const std::string& inputFile, modelutility::DrawingImageInfo* collector);
-					FileProcessor(const std::string& inputFile, modelutility::RepoSceneBuilder* builder);
+					FileProcessor(const std::string& inputFile, modelutility::RepoSceneBuilder* builder, const ModelImportConfig& config);
 
 				public:
-					static std::unique_ptr<FileProcessor> getFileProcessor(const std::string& inputFile, GeometryCollector* geoCollector, const ModelImportConfig& config);
+					static std::unique_ptr<FileProcessor> getFileProcessor(const std::string& inputFile, repo::manipulator::modelutility::RepoSceneBuilder* builder, const ModelImportConfig& config);
 					virtual ~FileProcessor();
 					virtual uint8_t readFile() = 0;
 					bool shouldApplyReduction = false;
 
-					modelutility::RepoSceneBuilder* repoSceneBuilder;
-
 				protected:
 					const std::string file;
-					GeometryCollector *collector;
 					modelutility::DrawingImageInfo* drawingCollector;
 					const ModelImportConfig& importConfig;
+					modelutility::RepoSceneBuilder* repoSceneBuilder;
 
 					// Helper function to update the DrawingCalibration's horizontal calibration
 					// based on the MVP matrix of the view.

@@ -43,6 +43,8 @@ namespace repo {
 				{
 				public:
 
+					~RepoMaterialBuilder();
+
 					// The current version of RepoMaterialBuilder holds all materials in
 					// memory and expects them to be explicitly added. This can change in
 					// the future once we know how much memory is typically dedicated to

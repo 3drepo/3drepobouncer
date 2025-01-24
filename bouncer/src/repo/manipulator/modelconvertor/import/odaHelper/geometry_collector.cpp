@@ -22,386 +22,125 @@
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-GeometryCollector::GeometryCollector()
+GeometryCollector::GeometryCollector(repo::manipulator::modelutility::RepoSceneBuilder* builder) :
+	meshBuilderDeleter(this),
+	meshBuilder(nullptr, meshBuilderDeleter),
+	sceneBuilder(builder)
 {
+	auto rootNode = repo::core::model::RepoBSONFactory::makeTransformationNode({}, "rootNode", {});
+	sceneBuilder->addNode(rootNode);
+	rootNodeId = rootNode.getSharedID();
 }
 
-GeometryCollector::~GeometryCollector()
+GeometryCollector::RepoMeshBuilderPtr GeometryCollector::makeMeshBuilder(
+	std::vector<repo::lib::RepoUUID> parentIds,
+	repo::lib::RepoVector3D64 offset,
+	repo_material_t material)
 {
+	return std::move(std::unique_ptr<RepoMeshBuilder, RepoMeshBuilderDeleter&>(
+		new RepoMeshBuilder(parentIds, offset, material),
+		meshBuilderDeleter)
+	);
 }
 
-repo::core::model::TransformationNode GeometryCollector::createRootNode()
+repo_material_t GeometryCollector::GetDefaultMaterial() const {
+	repo_material_t material;
+	material.shininess = 0.0;
+	material.shininessStrength = 0.0;
+	material.opacity = 1;
+	material.specular = { 0, 0, 0, 0 };
+	material.diffuse = { 0.5f, 0.5f, 0.5f, 0 };
+	material.emissive = material.diffuse;
+
+	return material;
+}
+
+void GeometryCollector::setLayer(std::string id)
 {
-	return repo::core::model::RepoBSONFactory::makeTransformationNode(rootMatrix, "rootNode");
-}
+	auto parentIds = std::vector<repo::lib::RepoUUID>({ layerIdToSharedId[id] }); // (There is only ever actually one parent)
 
-void GeometryCollector::setCurrentMaterial(const repo_material_t &material, bool missingTexture) {
-	auto checkSum = material.checksum();
-	if (idxToMat.find(checkSum) == idxToMat.end()) {
-		idxToMat[checkSum] = {
-			repo::core::model::RepoBSONFactory::makeMaterialNode(material),
-			createTextureNode(material.texturePath)
-		};
-
-		if (missingTexture)
-			this->missingTextures = true;
-	}
-	currMat = checkSum;
-}
-
-repo::core::model::RepoNodeSet repo::manipulator::modelconvertor::odaHelper::GeometryCollector::getMetaNodes()
-{
-	return metaNodes;
-}
-
-mesh_data_t GeometryCollector::createMeshEntry(uint32_t format) {
-	mesh_data_t entry;
-	entry.matIdx = currMat;
-	entry.name = nextMeshName;
-	entry.groupName = nextGroupName;
-	entry.layerName = nextLayer.empty() ? "UnknownLayer" : nextLayer;
-	entry.format = format;
-	return entry;
-}
-
-void GeometryCollector::startMeshEntry() {
-	nextMeshName = nextMeshName.empty() ? repo::lib::RepoUUID::createUUID().toString() : nextMeshName;
-	nextGroupName = nextGroupName.empty() ? nextMeshName : nextGroupName;
-	nextLayer = nextLayer.empty() ? nextMeshName : nextLayer;
-
-	if (meshData.find(nextGroupName) == meshData.end()) {
-		meshData[nextGroupName] = std::unordered_map<std::string, std::unordered_map<int, std::vector<mesh_data_t>>>();
-	}
-
-	if (meshData[nextGroupName].find(nextLayer) == meshData[nextGroupName].end()) {
-		meshData[nextGroupName][nextLayer] = std::unordered_map<int, std::vector<mesh_data_t>>();
-	}
-
-	if (meshData[nextGroupName][nextLayer].find(currMat) == meshData[nextGroupName][nextLayer].end()) {
-		meshData[nextGroupName][nextLayer][currMat] = std::vector<mesh_data_t>();
-	}
-
-	currentEntry = &meshData[nextGroupName][nextLayer][currMat];
-}
-
-void  GeometryCollector::stopMeshEntry() {
-	nextMeshName = "";
-	currentEntry = nullptr;
-	currentMesh = nullptr;
-}
-
-uint32_t GeometryCollector::getMeshFormat(bool hasUvs, bool hasNormals, int faceSize)
-{
-	uint32_t vBit = 1;
-	uint32_t fBit = faceSize << 8;
-	uint32_t nBit = hasNormals ? 1 : 0 << 16;
-	uint32_t uBit = hasUvs ? 1 : 0 << 17;
-	return vBit | fBit | nBit | uBit;
-}
-
-mesh_data_t* GeometryCollector::startOrContinueMeshByFormat(uint32_t format)
-{
-	if (!currentMesh || currentMesh->format != format)
+	if (!meshBuilder)
 	{
-		currentMesh = nullptr;
-
-		if (!currentEntry)
-		{
-			startMeshEntry();
-		}
-
-		for (auto meshDataIterator = currentEntry->begin(); meshDataIterator != currentEntry->end(); meshDataIterator++)
-		{
-			if (meshDataIterator->format == format)
-			{
-				currentMesh = &(*meshDataIterator);
-			}
-		}
-
-		if (!currentMesh)
-		{
-			currentEntry->push_back(createMeshEntry(format));
-			currentMesh = &currentEntry->back();
-		}
+		meshBuilder = makeMeshBuilder(parentIds, offset, GetDefaultMaterial());
 	}
-
-	return currentMesh;
-}
-
-void GeometryCollector::addFace(
-	const std::vector<repo::lib::RepoVector3D64>& vertices)
-{
-	addFace(vertices, boost::optional<const repo::lib::RepoVector3D64&>(), boost::optional<const std::vector<repo::lib::RepoVector2D>&>());
-}
-
-void GeometryCollector::addFace(
-	const std::vector<repo::lib::RepoVector3D64>& vertices,
-	const repo::lib::RepoVector3D64& normal,
-	const std::vector<repo::lib::RepoVector2D>& uvCoords)
-{
-	addFace(vertices, boost::optional<const repo::lib::RepoVector3D64&>(normal), boost::optional<const std::vector<repo::lib::RepoVector2D>&>(uvCoords)); // make the boost option type explicit so we get the correct overload
-}
-
-void GeometryCollector::addFace(
-	const std::vector<repo::lib::RepoVector3D64>& vertices,
-	boost::optional<const repo::lib::RepoVector3D64&> normal,
-	boost::optional<const std::vector<repo::lib::RepoVector2D>&> uvCoords
-)
-{
-	if (!vertices.size())
+	else if (meshBuilder->getParents() != parentIds)
 	{
-		repoError << "Vertices size [" << vertices.size() << "] is unsupported. A face must have more than 0 vertices.";
-		errorCode = REPOERR_GEOMETRY_ERROR;
-		return;
+		meshBuilder = makeMeshBuilder(parentIds, offset, meshBuilder->getMaterial());
 	}
-
-	bool hasNormals = (bool)normal;
-	bool hasUvs = (bool)uvCoords && (*uvCoords).size();
-
-	auto meshData = startOrContinueMeshByFormat(getMeshFormat(hasUvs, hasNormals, vertices.size()));
-
-	repo_face_t face;
-	for (auto i = 0; i < vertices.size(); ++i) {
-		auto& v = vertices[i];
-
-		VertexMap::result_t vertexReference;
-		if (hasNormals)
-		{
-			if (hasUvs)
-			{
-				auto& uv = (*uvCoords)[i];
-				vertexReference = meshData->vertexMap.find(v, *normal, uv);
-			}
-			else
-			{
-				vertexReference = meshData->vertexMap.find(v, *normal);
-			}
-		}
-		else if (hasUvs)
-		{
-			repoError << "Face has uvs but no normals. This is not supported. Faces that have uvs must also have a normal.";
-			errorCode = REPOERR_GEOMETRY_ERROR;
-			return;
-		}
-		else
-		{
-			vertexReference = meshData->vertexMap.find(v);
-		}
-
-		if (vertexReference.added)
-		{
-			meshData->boundingBox.encapsulate(v);
-
-			if (minMeshBox.size()) {
-				minMeshBox[0] = v.x < minMeshBox[0] ? v.x : minMeshBox[0];
-				minMeshBox[1] = v.y < minMeshBox[1] ? v.y : minMeshBox[1];
-				minMeshBox[2] = v.z < minMeshBox[2] ? v.z : minMeshBox[2];
-			}
-			else {
-				minMeshBox = { v.x, v.y, v.z };
-			}
-		}
-
-		face.push_back(vertexReference.index);
-	}
-
-	meshData->faces.push_back(face);
 }
 
-repo::core::model::TransformationNode* GeometryCollector::ensureParentNodeExists(
-	const std::string &layerId,
-	const repo::lib::RepoUUID &rootId,
-	std::unordered_map<std::string, repo::core::model::TransformationNode*> &layerToTrans
-
-) {
-	if (layerToTrans.find(layerId) == layerToTrans.end()) {
-		auto parent = rootId;
-		if (layerIDToParent.find(layerId) != layerIDToParent.end()) {
-			parent = ensureParentNodeExists(layerIDToParent[layerId], rootId, layerToTrans)->getSharedID();
-		}
-		layerToTrans[layerId] = createTransNode(layerIDToName[layerId], layerId, parent);
-		transNodes.insert(layerToTrans[layerId]);
-	}
-	return layerToTrans[layerId];
-}
-
-repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core::model::TransformationNode& root) {
-	repo::core::model::RepoNodeSet res;
-
-	std::unordered_map<std::string, repo::core::model::TransformationNode*> layerToTrans;
-
-	int numEntries = 0;
-	for (const auto& meshGroupEntry : meshData) {
-		for (const auto& meshLayerEntry : meshGroupEntry.second) {
-			for (const auto& meshMatEntry : meshLayerEntry.second) {
-				for (const auto& meshData : meshMatEntry.second) {
-					numEntries++;
-				}
-			}
-		}
-	}
-
-	repoInfo << "Collecting " << numEntries << " mesh nodes...";
-
-	auto rootId = root.getSharedID();
-	for (const auto& meshGroupEntry : meshData) {
-		for (const auto& meshLayerEntry : meshGroupEntry.second) {
-			for (const auto& meshMatEntry : meshLayerEntry.second) {
-				for (const auto& meshData : meshMatEntry.second) {
-					if (!meshData.vertexMap.vertices.size()) {
-						continue;
-					}
-
-					if (meshData.vertexMap.uvs.size() && (meshData.vertexMap.uvs.size() != meshData.vertexMap.vertices.size()))
-					{
-						repoError << "Vertices size [" << meshData.vertexMap.vertices.size() << "] does not match the uvs size [" << meshData.vertexMap.uvs.size() << "]. Skipping...";
-						errorCode = REPOERR_GEOMETRY_ERROR;
-						continue;
-					}
-
-					auto uvChannels = meshData.vertexMap.uvs.size() ?
-						std::vector<std::vector<repo::lib::RepoVector2D>>{meshData.vertexMap.uvs} :
-						std::vector<std::vector<repo::lib::RepoVector2D>>();
-
-					ensureParentNodeExists(meshLayerEntry.first, rootId, layerToTrans);
-
-					std::vector<repo::lib::RepoVector3D> normals32;
-
-					if (meshData.vertexMap.normals.size()) {
-						if ((meshData.vertexMap.normals.size() != meshData.vertexMap.vertices.size()))
-						{
-							repoError << "Vertices size [" << meshData.vertexMap.vertices.size() << "] does not match the Normals size [" << meshData.vertexMap.uvs.size() << "]. At this point the normals must be defined per-vertex. Skipping...";
-							errorCode = REPOERR_GEOMETRY_ERROR;
-							continue;
-						}
-
-						normals32.reserve(meshData.vertexMap.normals.size());
-
-						for (int i = 0; i < meshData.vertexMap.vertices.size(); ++i) {
-							auto& n = meshData.vertexMap.normals[i];
-							normals32.push_back({ (float)(n.x), (float)(n.y), (float)(n.z) });
-						}
-					}
-
-					std::vector<repo::lib::RepoVector3D> vertices32;
-					vertices32.reserve(meshData.vertexMap.vertices.size());
-					bool partialObject = meshGroupEntry.first == meshLayerEntry.first;
-					auto parentId = layerToTrans[meshLayerEntry.first]->getSharedID();
-
-					for (int i = 0; i < meshData.vertexMap.vertices.size(); ++i) {
-						auto& v = meshData.vertexMap.vertices[i];
-						vertices32.push_back({ (float)(v.x - minMeshBox[0]), (float)(v.y - minMeshBox[1]), (float)(v.z - minMeshBox[2]) });
-					}
-
-					auto meshNode = repo::core::model::RepoBSONFactory::makeMeshNode(
-						vertices32,
-						meshData.faces,
-						normals32,
-						meshData.boundingBox,
-						uvChannels,
-						partialObject ? "" : meshGroupEntry.first,
-						{ parentId }
-					);
-
-					if (idToMeta.find(meshGroupEntry.first) != idToMeta.end()) {
-						auto itPtr = elementToMetaNode.find(meshGroupEntry.first);
-						auto metaParent = partialObject ? parentId : meshNode.getSharedID();
-						if (itPtr == elementToMetaNode.end()) {
-							auto metaNode = createMetaNode(meshGroupEntry.first, metaParent, idToMeta[meshGroupEntry.first]);
-							elementToMetaNode[meshGroupEntry.first] = metaNode;
-							metaNodes.insert(metaNode);
-						}
-						else {
-							itPtr->second->addParent(metaParent);
-						}
-					}
-
-					if (matToMeshes.find(meshData.matIdx) == matToMeshes.end()) {
-						matToMeshes[meshData.matIdx] = std::vector<repo::lib::RepoUUID>();
-					}
-					matToMeshes[meshData.matIdx].push_back(meshNode.getSharedID());
-
-					res.insert(new repo::core::model::MeshNode(meshNode));
-				}
-			}
-		}
-	}
-
-	transNodes.insert(new repo::core::model::TransformationNode(root));
-	return res;
-}
-
-repo::core::model::MetadataNode*  GeometryCollector::createMetaNode(
-	const std::string &name,
-	const repo::lib::RepoUUID &parentId,
-	const  std::unordered_map<std::string, repo::lib::RepoVariant> &metaValues
-) {
-	return new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(metaValues, name, { parentId }));
-}
-
-repo::core::model::TransformationNode*  GeometryCollector::createTransNode(
-	const std::string &name,
-	const std::string &id,
-	const repo::lib::RepoUUID &parentId)
+void GeometryCollector::setMaterial(const repo_material_t& material, bool missingTexture)
 {
-	auto transNode = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), name, { parentId }));
-	if (idToMeta.find(id) != idToMeta.end()) {
-		if (elementToMetaNode.find(id) == elementToMetaNode.end()) {
-			auto metaNode = createMetaNode(name, transNode->getSharedID(), idToMeta[id]);
-			metaNodes.insert(metaNode);
-			elementToMetaNode[id] = metaNode;
-		}
-		else {
-			elementToMetaNode[id]->addParent(transNode->getSharedID());
-		}
+	// setLayer must always be called before the material
+
+	if (missingTexture) 
+	{
+		sceneBuilder->setMissingTextures();
 	}
-	return transNode;
-}
 
-void repo::manipulator::modelconvertor::odaHelper::GeometryCollector::setRootMatrix(repo::lib::RepoMatrix matrix)
-{
-	rootMatrix = matrix;
-}
-
-int GeometryCollector::getErrorCode()
-{
-	return errorCode;
-}
-
-bool GeometryCollector::hasMissingTextures()
-{
-	return missingTextures;
-}
-
-void GeometryCollector::getMaterialAndTextureNodes(repo::core::model::RepoNodeSet& materials, repo::core::model::RepoNodeSet& textures) {
-	materials.clear();
-	textures.clear();
-
-	for (const auto &matPair : idxToMat) {
-		auto matIdx = matPair.first;
-		if (matToMeshes.find(matIdx) != matToMeshes.end()) {
-			auto& materialNode = matPair.second.first;
-			auto& textureNode = matPair.second.second;
-
-			auto matNode = new repo::core::model::MaterialNode(materialNode);
-			matNode->addParents(matToMeshes[matIdx]);
-			materials.insert(matNode);
-
-			//FIXME: Mat shared ID is known at the point of creating texture node. We shouldn't be cloning here.
-			// SJF: the clone is also to get a pointer
-			if (!textureNode.isEmpty()) {
-
-				auto texNode = new repo::core::model::TextureNode(textureNode);
-				texNode->addParent(matNode->getSharedID());
-				textures.insert(texNode);
-			}
-		}
-		else {
-			repoDebug << "Did not find matTo Meshes: " << matIdx;
-		}
+	if (meshBuilder->getMaterial().checksum() != material.checksum())
+	{
+		meshBuilder = makeMeshBuilder(meshBuilder->getParents(), offset, material);
 	}
 }
 
+void GeometryCollector::createLayer(std::string id, std::string name, std::string parentId)
+{
+	if (hasLayer(id)) {
+		throw repo::lib::RepoSceneProcessingException("createLayer called for the same id twice");
+	}
+	auto parentSharedId = rootNodeId;
+
+	auto parentIdItr = layerIdToSharedId.find(parentId);
+	if (parentIdItr != layerIdToSharedId.end()) {
+		parentSharedId = parentIdItr->second;
+	}
+
+	auto node = repo::core::model::RepoBSONFactory::makeTransformationNode({}, name, { parentSharedId });
+	sceneBuilder->addNode(node);
+
+	layerIdToSharedId[id] = node.getSharedID();
+}
+
+bool GeometryCollector::hasLayer(std::string id)
+{
+	return layerIdToSharedId.find(id) != layerIdToSharedId.end();
+}
+
+void GeometryCollector::setMetadata(std::string id, std::unordered_map<std::string, repo::lib::RepoVariant> data)
+{
+	sceneBuilder->addNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(data, {}, { layerIdToSharedId[id] }));
+	layersWithMetadata.insert(id);
+}
+
+bool GeometryCollector::hasMetadata(std::string id)
+{
+	return layersWithMetadata.find(id) != layersWithMetadata.end();
+}
+
+void GeometryCollector::RepoMeshBuilderDeleter::operator()(RepoMeshBuilder* builder)
+{
+	std::vector<repo::core::model::MeshNode> meshes;
+	builder->extractMeshes(meshes);
+	for (auto m : meshes) {
+		processor->materialBuilder.addMaterialReference(builder->getMaterial(), m.getSharedID()); // (If it is not obvious, the logic of this loop ensures that a given material is only ever added if it is reference at least once)
+		processor->sceneBuilder->addNode(m);
+	}
+	delete builder;
+}
+
+void GeometryCollector::finalise()
+{
+	meshBuilder = nullptr;
+	std::vector<repo::core::model::MaterialNode> materials;
+	materialBuilder.extract(materials);
+	for (auto m : materials)
+	{
+		sceneBuilder->addNode(m);
+	}
+}
+
+/*
 repo::core::model::TextureNode GeometryCollector::createTextureNode(const std::string& texturePath)
 {
 	std::ifstream::pos_type size;
@@ -428,3 +167,4 @@ repo::core::model::TextureNode GeometryCollector::createTextureNode(const std::s
 
 	return texnode;
 }
+*/

@@ -23,6 +23,7 @@
 #include "repo/core/handler/fileservice/repo_file_handler_abstract.h"
 #include "repo/lib/datastructure/repo_structs.h"
 #include "repo/lib/datastructure/repo_variant.h"
+#include "repo/manipulator/modelconvertor/import/repo_model_units.h"
 
 #include <memory>
 #include <vector>
@@ -84,6 +85,11 @@ namespace repo {
 
 				void setMissingTextures();
 				bool hasMissingTextures();
+
+				void setUnits(repo::manipulator::modelconvertor::ModelUnits units)
+				{
+
+				}
 
 			private:
 

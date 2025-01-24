@@ -89,6 +89,12 @@ RepoSceneProcessingException::RepoSceneProcessingException(const std::string& ms
 	errorCode = REPOERR_LOAD_SCENE_FAIL;
 }
 
+RepoSceneProcessingException::RepoSceneProcessingException(const std::string& msg, int errorCode)
+	: RepoException(msg)
+{
+	this->errorCode = errorCode;
+}
+
 RepoImporterUnavailable::RepoImporterUnavailable(const std::string& msg, int code)
 	: RepoException(msg)
 {

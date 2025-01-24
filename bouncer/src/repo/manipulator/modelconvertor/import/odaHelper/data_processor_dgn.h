@@ -40,20 +40,14 @@ namespace repo {
 				class DataProcessorDgn : public DataProcessor
 				{
 				public:
-					DataProcessorDgn() {}
-
 					VectoriseDeviceDgn* device();
 
 					bool doDraw(OdUInt32 i,	const OdGiDrawable* pDrawable) override;
-					void init(
-						GeometryCollector *const geoCollector, const OdGeExtents3d &extModel);
+					void initialise(GeometryCollector *const geoCollector, const OdGeExtents3d &extModel);
 
 					void setMode(OdGsView::RenderMode mode);
 
-					void endViewVectorization();
-
 				protected:
-
 					void convertTo3DRepoMaterial(
 						OdGiMaterialItemPtr prevCache,
 						OdDbStub* materialId,

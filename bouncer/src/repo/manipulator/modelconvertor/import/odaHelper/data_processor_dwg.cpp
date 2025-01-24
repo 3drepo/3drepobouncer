@@ -41,8 +41,8 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	auto pGeoDataMarker = OdDbGeoDataMarker::cast(pDrawable);
 	if (!pGeoDataMarker.isNull())
 	{
-		collector->setLayer("GeoPositionMarker", "Geo Position Marker");
-		collector->setMeshGroup("GeoPositionMarker");
+		collector->createLayer("GeoPositionMarker", "Geo Position Marker", {});
+		collector->setLayer("GeoPositionMarker");
 	}
 
 	OdDbEntityPtr pEntity = OdDbEntity::cast(pDrawable);
@@ -81,7 +81,9 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 
 		// Make sure we have created an actual layer entry for the DWG layer...
 
-		collector->setLayer(layerId, layerName);
+		if (!collector->hasLayer(layerId)) {
+			collector->createLayer(layerId, layerName, {});
+		}
 
 		// Check if this drawable is directly under a layer or in a block.
 
@@ -130,8 +132,8 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 				blockReferenceLayerNodeId = layerId; // If the Block Entity layer has been overridden within the Block, take the absolute layer
 			}
 
-			collector->setLayer(blockReferenceNodeId, context.currentBlockReferenceName, blockReferenceLayerNodeId);
-			collector->setMeshGroup(blockReferenceNodeId);
+			collector->createLayer(blockReferenceLayerNodeId, context.currentBlockReferenceName, blockReferenceLayerNodeId);
+			collector->setLayer(blockReferenceNodeId);
 
 			std::unordered_map<std::string, repo::lib::RepoVariant> meta;
 			meta["Entity Handle::Value"] = context.currentBlockReferenceId;
@@ -142,15 +144,13 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 			// When not inside a block, each entity appears under its own tree
 			// node, under the specified layer.
 
-			collector->setLayer(entityId, entityName, layerId);
-			collector->setMeshGroup(entityId);
+			collector->createLayer(entityId, entityName, layerId);
+			collector->setLayer(entityId);
 
 			std::unordered_map<std::string, repo::lib::RepoVariant> meta;
 			meta["Entity Handle::Value"] = convertToStdString(toString(handle));
 			collector->setMetadata(entityId, meta);
 		}
-
-		collector->setNextMeshName(convertToStdString(sHandle));
 	}
 
 	return OdGsBaseMaterialView::doDraw(i, pDrawable);
@@ -207,22 +207,11 @@ void DataProcessorDwg::convertTo3DRepoMaterial(
 	material.shininessStrength = 0;
 }
 
-void DataProcessorDwg::init(GeometryCollector *const geoCollector)
-{
-	collector = geoCollector;
-}
-
 void DataProcessorDwg::setMode(OdGsView::RenderMode mode)
 {
 	OdGsBaseVectorizeView::m_renderMode = kGouraudShaded;
 	m_regenerationType = kOdGiRenderCommand;
 	OdGiGeometrySimplifier::m_renderMode = OdGsBaseVectorizeView::m_renderMode;
-}
-
-void DataProcessorDwg::endViewVectorization()
-{
-	collector->stopMeshEntry();
-	OdGsBaseMaterialView::endViewVectorization();
 }
 
 std::string DataProcessorDwg::getClassDisplayName(OdDbEntityPtr entity)

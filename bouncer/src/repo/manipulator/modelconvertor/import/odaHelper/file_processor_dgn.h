@@ -48,7 +48,7 @@ namespace repo {
 				class FileProcessorDgn : public FileProcessor
 				{
 				public:
-					FileProcessorDgn(const std::string &inputFile, GeometryCollector * geoCollector, const ModelImportConfig& config) : FileProcessor(inputFile, geoCollector, config) {};
+					FileProcessorDgn(const std::string& inputFile, repo::manipulator::modelutility::RepoSceneBuilder* builder, const ModelImportConfig& config);
 					FileProcessorDgn(const std::string& inputFile, modelutility::DrawingImageInfo* collector) : FileProcessor(inputFile, collector) {};
 					~FileProcessorDgn() override;
 
@@ -57,6 +57,7 @@ namespace repo {
 				protected:
 					virtual OdDgDatabasePtr initialiseOdDatabase();
 					OdStaticRxObject<RepoDgnServices> svcs;
+					GeometryCollector* collector;
 
 				private:
 					void importModel(OdDbBaseDatabase *pDb,

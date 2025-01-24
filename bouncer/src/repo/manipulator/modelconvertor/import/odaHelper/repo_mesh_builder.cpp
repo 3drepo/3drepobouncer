@@ -32,16 +32,28 @@ struct RepoMeshBuilder::mesh_data_t {
 	uint32_t format;
 };
 
-RepoMeshBuilder::RepoMeshBuilder(std::vector<repo::lib::RepoUUID> parents, const repo::lib::RepoVector3D64& offset)
-	:parents(parents),
-	offset(offset)
+RepoMeshBuilder::RepoMeshBuilder(std::vector<repo::lib::RepoUUID> parents, const repo::lib::RepoVector3D64& offset, repo_material_t material)
+	: parents(parents),
+	offset(offset),
+	material(material)
 {
+}
+
+const std::vector<repo::lib::RepoUUID>& RepoMeshBuilder::getParents()
+{
+	return parents;
+}
+
+repo_material_t RepoMeshBuilder::getMaterial()
+{
+	return material;
 }
 
 RepoMeshBuilder::~RepoMeshBuilder()
 {
-	for (auto m : meshes) {
-		delete m.second;
+	// extractMeshes *must* be called, because there is where the mesh data instances are deleted/cleaned up.
+	if (meshes.size()) {
+		throw repo::lib::RepoGeometryProcessingException("RepoMeshBuilder destroyed with meshes that have not been extracted.");
 	}
 }
 
@@ -193,6 +205,10 @@ void RepoMeshBuilder::extractMeshes(std::vector<MeshNode>& nodes)
 			parents
 		);
 
+		delete meshData;
+
 		nodes.push_back(meshNode);
 	}
+
+	meshes.clear();
 }

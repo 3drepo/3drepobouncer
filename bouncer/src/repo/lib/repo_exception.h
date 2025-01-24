@@ -57,9 +57,12 @@ namespace repo {
 			RepoGeometryProcessingException(const std::string& msg);
 		};
 
+		// Default error code is REPOERR_LOAD_SCENE_FAIL, but can be overridden for
+		// more detailed reporting.
 		REPO_API_EXPORT class RepoSceneProcessingException : public RepoException {
 		public:
 			RepoSceneProcessingException(const std::string& msg);
+			RepoSceneProcessingException(const std::string& msg, int errorCode);
 		};
 
 		REPO_API_EXPORT class RepoImporterUnavailable : public RepoException {

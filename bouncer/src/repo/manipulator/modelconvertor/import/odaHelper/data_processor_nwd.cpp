@@ -601,7 +601,7 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 	repo_material_t repoMaterial;
 	processMaterial(pComp, repoMaterial);
 
-	RepoMeshBuilder meshBuilder({ context.parentNode->getSharedID() }, -context.sceneBuilder->getWorldOffset());
+	RepoMeshBuilder meshBuilder(-context.sceneBuilder->getWorldOffset(), repoMaterial);
 	OdNwObjectIdArray aCompFragIds;
 	pComp->getFragments(aCompFragIds);
 	for (OdNwObjectIdArray::const_iterator itFrag = aCompFragIds.begin(); itFrag != aCompFragIds.end(); ++itFrag)
@@ -702,7 +702,8 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 
 	for (auto& mesh : nodes)
 	{
-		context.materials->addMaterialReference(repoMaterial, mesh.getSharedID());
+		mesh.setParents({ context.parentNode->getSharedID() });
+		context.materials->addMaterialReference(meshBuilder.getMaterial(), mesh.getSharedID());
 		context.sceneBuilder->addNode(mesh);
 	}
 
@@ -815,9 +816,7 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 
 		if (pNode->hasGeometry())
 		{
-			// Create meshes, parented to the current node in the context
-
-			processGeometry(pNode, context);
+			processGeometry(pNode, context); // Create meshes, parented to the current node in the context
 		}
 	}
 

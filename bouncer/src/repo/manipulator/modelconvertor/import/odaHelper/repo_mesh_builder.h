@@ -16,8 +16,8 @@
 */
 
 #include "repo/core/model/repo_model_global.h"
+#include "repo/lib/datastructure/repo_structs.h"
 #include "repo/core/model/bson/repo_node_mesh.h"
-
 #include <vector>
 
 namespace repo {
@@ -34,7 +34,8 @@ namespace repo {
 				class RepoMeshBuilder
 				{
 				public:
-					RepoMeshBuilder(std::vector<repo::lib::RepoUUID> parents, const repo::lib::RepoVector3D64& offset);
+					RepoMeshBuilder(std::vector<repo::lib::RepoUUID> parents, const repo::lib::RepoVector3D64& offset, repo_material_t material);
+
 					~RepoMeshBuilder();
 
 					void addFace(const std::vector<repo::lib::RepoVector3D64>& vertices);
@@ -45,9 +46,10 @@ namespace repo {
 
 					void extractMeshes(std::vector<repo::core::model::MeshNode>& nodes);
 
+					const std::vector<repo::lib::RepoUUID>& getParents();
+					repo_material_t getMaterial();
+
 				private:
-
-
 					void addFace(
 						const std::vector<repo::lib::RepoVector3D64>& vertices,
 						std::optional<repo::lib::RepoVector3D64> normal,
@@ -66,6 +68,12 @@ namespace repo {
 					std::unordered_map<uint32_t, mesh_data_t*> meshes;
 
 					std::vector<repo::lib::RepoUUID> parents;
+
+					/*
+					* A convenience property that tracks the material assocated with this
+					* builder. This doesn't change the actual mesh construction.
+					*/
+					repo_material_t material;
 
 					repo::lib::RepoVector3D64 offset;
 				};

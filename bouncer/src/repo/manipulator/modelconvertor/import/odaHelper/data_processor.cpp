@@ -15,6 +15,7 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+
 #include <OdaCommon.h>
 #include <OdString.h>
 
@@ -23,6 +24,7 @@
 
 #include "repo/core/model/bson/repo_bson_factory.h"
 #include "data_processor.h"
+#include "helper_functions.h"
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
@@ -154,32 +156,23 @@ OdGiMaterialItemPtr DataProcessor::fillMaterialCache(
 	repo_material_t material;
 	bool missingTexture = false;
 
-	collector->stopMeshEntry();
 	convertTo3DRepoMaterial(prevCache, materialId, materialData, colors, material, missingTexture);
 
-	collector->setCurrentMaterial(material, missingTexture);
-	collector->startMeshEntry();
+	collector->setMaterial(material, missingTexture);
 
 	return OdGiMaterialItemPtr();
 }
 
-repo_material_t DataProcessor::GetDefaultMaterial() const {
-	repo_material_t material;
-	material.shininess = 0.0;
-	material.shininessStrength = 0.0;
-	material.opacity = 1;
-	material.specular = { 0, 0, 0, 0 };
-	material.diffuse = { 0.5f, 0.5f, 0.5f, 0 };
-	material.emissive = material.diffuse;
-
-	return material;
-}
-
 void DataProcessor::beginViewVectorization()
 {
-	OdGsBaseVectorizer::beginViewVectorization();
+	OdGsBaseMaterialView::beginViewVectorization();
 	OdGiGeometrySimplifier::setDrawContext(OdGsBaseMaterialView::drawContext());
 	output().setDestGeometry((OdGiGeometrySimplifier&)*this);
 	setDrawContextFlags(drawContextFlags(), false);
 	setEyeToOutputTransform(getEyeToWorldTransform());
+}
+
+void DataProcessor::initialise(GeometryCollector* collector)
+{
+	this->collector = collector;
 }

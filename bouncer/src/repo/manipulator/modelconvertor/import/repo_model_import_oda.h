@@ -18,13 +18,9 @@
 #pragma once
 
 #include "repo_model_import_abstract.h"
-
 #include "repo/manipulator/modelutility/repo_scene_builder.h"
 
-#include <vector>
-
 #ifdef ODA_SUPPORT
-#include "odaHelper/geometry_collector.h"
 #include "odaHelper/file_processor.h"
 #endif
 
@@ -36,7 +32,10 @@ namespace repo {
 			public:
 				static const std::string supportedExtensions;
 
-				OdaModelImport(const ModelImportConfig &settings) : AbstractModelImport(settings) {}
+				OdaModelImport(const ModelImportConfig &settings)
+					: AbstractModelImport(settings),
+					sceneBuilder(nullptr)
+				{}
 				~OdaModelImport();
 
 				/**
@@ -51,7 +50,6 @@ namespace repo {
 				* @return returns a populated RepoScene upon success.
 				*/
 				virtual repo::core::model::RepoScene* generateRepoScene(uint8_t &errMsg);
-				virtual repo::core::model::RepoScene* generateRepoScene();
 
 				/**
 				* Import model from a given file
@@ -61,7 +59,10 @@ namespace repo {
 				* @param error message if failed
 				* @return returns true upon success
 				*/
-				virtual bool importModel(std::string filePath, uint8_t &err);
+				virtual bool importModel(std::string filePath, uint8_t& err) {
+					throw std::runtime_error("Classic import is no longer supported for ODA. Use streaming import.");
+				}
+
 				virtual bool importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err);
 
 				virtual bool applyReduction() const { return shouldReduce; }
@@ -71,8 +72,8 @@ namespace repo {
 				std::string filePath;
 				bool shouldReduce = false;
 				std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler;
+				repo::manipulator::modelutility::RepoSceneBuilder* sceneBuilder;
 #ifdef ODA_SUPPORT
-				odaHelper::GeometryCollector geoCollector;
 				std::unique_ptr<odaHelper::FileProcessor> odaProcessor;
 #endif
 			};

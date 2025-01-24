@@ -25,16 +25,22 @@
 
 #include "geometry_collector.h"
 #include "vectorise_device_dgn.h"
-#include "repo/core/model/bson/repo_node_mesh.h"
 
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
+				/*
+				* The DataProcessor behaves as a Graphics System Vectorizer that ODA can
+				* draw into. Beware that processing a File may involve multiple
+				* vectorisations, and so multiple instances of a DataProcessor. The
+				* GeometryCollector class is used to maintain the state across these.
+				*/
 				class DataProcessor : public OdGiGeometrySimplifier, public OdGsBaseMaterialView
 				{
 				protected:
 					GeometryCollector *collector;
+
 					struct MaterialColours
 					{
 						OdCmEntityColor colorDiffuse;
@@ -49,13 +55,13 @@ namespace repo {
 					};
 
 				public:
-					DataProcessor() {}
-
 					virtual double deviation(
 						const OdGiDeviationType deviationType,
 						const OdGePoint3d& pointOnCurve) const;
 
 					void beginViewVectorization();
+
+					virtual void initialise(GeometryCollector* collector);
 
 				protected:
 					/**
@@ -85,8 +91,6 @@ namespace repo {
 						std::vector<repo::lib::RepoVector3D64>& verticesOut,
 						repo::lib::RepoVector3D64& normalOut,
 						std::vector<repo::lib::RepoVector2D>& uvOut);
-
-					repo_material_t GetDefaultMaterial() const;
 
 					/**
 					* Given vertice location, obtain vertices in teigha type and 3drepo type.

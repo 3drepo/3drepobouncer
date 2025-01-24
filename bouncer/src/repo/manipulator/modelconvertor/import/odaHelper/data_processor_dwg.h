@@ -38,12 +38,8 @@ namespace repo {
 				class DataProcessorDwg : public DataProcessor
 				{
 				public:
-					DataProcessorDwg() {}
-
 					bool doDraw(OdUInt32 i,	const OdGiDrawable* pDrawable) override;
-					void init(GeometryCollector *const geoCollector);
 					void setMode(OdGsView::RenderMode mode);
-					void endViewVectorization();
 
 				protected:
 

@@ -16,6 +16,7 @@
 */
 
 #include "repo_material_builder.h"
+#include "repo/lib/repo_exception.h"
 
 #include "repo/core/model/bson/repo_bson_factory.h"
 
@@ -42,5 +43,13 @@ void RepoMaterialBuilder::extract(std::vector<repo::core::model::MaterialNode>& 
 	for (auto p : materials)
 	{
 		nodes.push_back(p.second);
+	}
+	materials.clear();
+}
+
+RepoMaterialBuilder::~RepoMaterialBuilder()
+{
+	if (materials.size() || textures.size()) {
+		throw repo::lib::RepoSceneProcessingException("Destroying RepoMaterialBuilder with material or texture nodes that have not been extracted.");
 	}
 }

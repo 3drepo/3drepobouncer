@@ -113,34 +113,40 @@ bool DataProcessorDgn::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	//We want to group meshes together up to 1 below the top.
 	std::string groupID = convertToStdString(toString(previousItem->elementId().getHandle()));
 
-	collector->setMeshGroup(groupID);
-	std::unordered_map<std::string, std::string> meta;
-
-	OdString sHandle = pElm->isDBRO() ? toString(pElm->elementId().getHandle()) : toString(OD_T("non-DbResident"));
-	collector->setNextMeshName(convertToStdString(sHandle));
+	//OdString sHandle = pElm->isDBRO() ? toString(pElm->elementId().getHandle()) : toString(OD_T("non-DbResident"));
+	//collector->setNextMeshName(convertToStdString(sHandle));
 
 	OdGiSubEntityTraitsData traits = effectiveTraits();
 	OdDgElementId idLevel = traits.layer();
 	std::string layerName;
+	std::string layerId; // Default of empty string puts any element directly below the root node
 	if (!idLevel.isNull())
 	{
 		OdDgLevelTableRecordPtr pLevel = idLevel.openObject(OdDg::kForRead);
-		const auto levelID = convertToStdString(toString(idLevel.getHandle()));
+		layerId = convertToStdString(toString(idLevel.getHandle()));
 		layerName = convertToStdString(pLevel->getName());
-		collector->setLayer(levelID, layerName);
+		if (collector->hasLayer(layerId)) {
+			collector->createLayer(layerId, layerName, {});
+		}
 
-		if (!collector->hasMeta(levelID)) {
-			collector->setMetadata(levelID, extractXMLLinkages(pLevel));
+		if (!collector->hasMetadata(layerId)) {
+			collector->setMetadata(layerId, extractXMLLinkages(pLevel));
 		}
 	}
 
-	if (!collector->hasMeta(groupID)) {
+	if (!collector->hasMetadata(groupID)) {
 		auto meta = extractXMLLinkages(previousItem);
 		if (!layerName.empty()) {
 			meta["Layer Name"] = layerName;
 		}
 		collector->setMetadata(groupID, meta);
 	}
+
+	if (!collector->hasLayer(groupID))
+	{
+		collector->createLayer(groupID, groupID, layerId);
+	}
+
 	return OdGsBaseMaterialView::doDraw(i, pDrawable);
 }
 
@@ -169,12 +175,12 @@ void DataProcessorDgn::convertTo3DRepoMaterial(
 	material.shininessStrength = 1 - material.shininessStrength;
 }
 
-void DataProcessorDgn::init(
+void DataProcessorDgn::initialise(
 	GeometryCollector *const geoCollector,
 	const OdGeExtents3d &extModel)
 {
-	collector = geoCollector;
-	//deviationValue = extModel.maxPoint().distanceTo(extModel.minPoint()) / 1e5; //FIXME: Uncomment when dgn bug is fixed https://jira.opendesign.com/browse/DGN-2274
+	deviationValue = extModel.maxPoint().distanceTo(extModel.minPoint()) / 1e5;
+	DataProcessor::initialise(geoCollector);
 }
 
 void DataProcessorDgn::setMode(OdGsView::RenderMode mode)
@@ -182,12 +188,6 @@ void DataProcessorDgn::setMode(OdGsView::RenderMode mode)
 	OdGsBaseVectorizeView::m_renderMode = kGouraudShaded;
 	m_regenerationType = kOdGiRenderCommand;
 	OdGiGeometrySimplifier::m_renderMode = OdGsBaseVectorizeView::m_renderMode;
-}
-
-void DataProcessorDgn::endViewVectorization()
-{
-	collector->stopMeshEntry();
-	OdGsBaseMaterialView::endViewVectorization();
 }
 
 OdCmEntityColor DataProcessorDgn::fixByACI(const ODCOLORREF *ids, const OdCmEntityColor &color)

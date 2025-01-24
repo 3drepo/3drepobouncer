@@ -34,6 +34,7 @@
 #include <vector>
 
 #include "data_processor_dwg.h"
+#include "helper_functions.h"
 
 #include <DbObjectIterator.h>
 #include <DbBlockTable.h>
@@ -69,7 +70,7 @@ protected:
 	OdSmartPtr<OdGsViewImpl> createViewObject()
 	{
 		auto pP = OdRxObjectImpl<DataProcessorDwg, OdGsViewImpl>::createObject();
-		((DataProcessorDwg*)pP.get())->init(collector);
+		((DataProcessorDwg*)pP.get())->initialise(collector);
 		return pP;
 	}
 
@@ -87,6 +88,13 @@ private:
 	GeometryCollector* collector;
 };
 ODRX_DEFINE_PSEUDO_STATIC_MODULE(DeviceModuleDwg);
+
+FileProcessorDwg::FileProcessorDwg(const std::string& inputFile, 
+	modelutility::RepoSceneBuilder* builder, 
+	const ModelImportConfig& config):FileProcessor(inputFile, builder, config)
+{
+	collector = new GeometryCollector(builder);
+}
 
 void FileProcessorDwg::importModel(OdDbDatabasePtr pDb)
 {

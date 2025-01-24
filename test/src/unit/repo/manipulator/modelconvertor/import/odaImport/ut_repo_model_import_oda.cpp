@@ -133,3 +133,16 @@ TEST(ODAModelImport, TestNWCTree)
 
 	EXPECT_THAT(comparer.compare(REFDB, collection, TESTDB, collection), IsSuccess());
 }
+
+TEST(ODAModelImport, SampleHouseRVT)
+{
+	auto collection = "SampleHouseRVT";
+
+	ODAModelImportUtils::ModelImportManagerImport(collection, getDataPath("sampleHouse.rvt"));
+
+	repo::test::utils::SceneComparer comparer;
+	comparer.ignoreMeshNodes = true;
+	comparer.ignoreMetadataKeys.insert("Item::File Name");
+
+	EXPECT_THAT(comparer.compare(REFDB, collection, TESTDB, collection), IsSuccess());
+}

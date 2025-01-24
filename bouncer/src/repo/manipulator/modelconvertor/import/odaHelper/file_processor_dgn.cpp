@@ -62,7 +62,7 @@ protected:
 	OdSmartPtr<OdGsViewImpl> createViewObject()
 	{
 		OdSmartPtr<OdGsViewImpl> pP = OdRxObjectImpl<DataProcessorDgn, OdGsViewImpl>::createObject();
-		((DataProcessorDgn*)pP.get())->init(collector, extModel);
+		((DataProcessorDgn*)pP.get())->initialise(collector, extModel);
 		return pP;
 	}
 	OdSmartPtr<OdGsBaseVectorizeDevice> createBitmapDeviceObject()
@@ -75,6 +75,14 @@ protected:
 	}
 };
 ODRX_DEFINE_PSEUDO_STATIC_MODULE(StubDeviceModuleDgn);
+
+FileProcessorDgn::FileProcessorDgn(const std::string& inputFile,
+	repo::manipulator::modelutility::RepoSceneBuilder* builder, 
+	const ModelImportConfig& config) 
+	: FileProcessor(inputFile, builder, config)
+{
+	collector = new GeometryCollector(builder);
+}
 
 repo::manipulator::modelconvertor::odaHelper::FileProcessorDgn::~FileProcessorDgn()
 {
@@ -158,7 +166,7 @@ uint8_t FileProcessorDgn::readFile() {
 		ODCOLORREF background = pModel->getBackground();
 
 		if (collector) {
-			collector->units = determineModelUnits(pModel->getMasterUnit());
+			collector->setUnits(determineModelUnits(pModel->getMasterUnit()));
 		}
 
 		OdDgElementId vectorizedViewId;
@@ -219,7 +227,7 @@ uint8_t FileProcessorDgn::readFile() {
 		//pModel->getGeomExtents(vectorizedViewId, extModel);
 		auto origin = pModel->getGlobalOrigin();
 		if (collector) {
-			collector->setOrigin(origin.x, origin.y, origin.z);
+			collector->setWorldOffset(repo::lib::RepoVector3D64(origin.x, origin.y, origin.z));
 		}
 		// Color with #255 always defines backround. The background of the active model must be considered in the device palette.
 		pPalCpy[255] = background;
@@ -240,6 +248,10 @@ uint8_t FileProcessorDgn::readFile() {
 		pDb.release();
 		odgsUninitialize();
 		odrxUninitialize();
+
+		if (collector) {
+			collector->finalise();
+		}
 	}
 	catch (OdError & e)
 	{

@@ -74,9 +74,7 @@ namespace repo {
 					const char* RVT_TEXTURES_ENV_VARIABLE = "REPO_RVT_TEXTURES";
 
 				public:
-					DataProcessorRvt();
-
-					void init(GeometryCollector* geoColl, OdBmDatabasePtr database);
+					void initialise(GeometryCollector* collector, OdBmDatabasePtr pDb, OdBmDBViewPtr view);
 
 					static bool tryConvertMetadataEntry(
 						OdTfVariant& metaEntry,
@@ -106,7 +104,7 @@ namespace repo {
 
 				private:
 					std::string determineTexturePath(const std::string& inputPath);
-					void establishProjectTranslation(OdBmDatabase* pDb);
+					void establishProjectTranslation(OdBmDatabasePtr pDb);
 					void fillTexture(OdBmMaterialElemPtr materialPtr, repo_material_t& material, bool& missingTexture);
 					void fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiMaterialTraitsData& materialData, repo_material_t& material);
 					void fillMeshData(const OdGiDrawable* element);
@@ -120,7 +118,7 @@ namespace repo {
 						std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
 
 					std::unordered_map<std::string, repo::lib::RepoVariant> fillMetadata(OdBmElementPtr element);
-					std::string getLevel(OdBmElementPtr element, const std::string& name);
+					std::string getLevelName(OdBmElementPtr element, const std::string& name);
 					std::string getElementName(OdBmElementPtr element);
 
 					void initLabelUtils();
@@ -136,9 +134,10 @@ namespace repo {
 						const OdBm::BuiltInParameter::Enum &buildInEnum
 					);
 
-					repo::manipulator::modelconvertor::ModelUnits getProjectUnits(OdBmDatabase* pDb);
+					ModelUnits getProjectUnits(OdBmDatabasePtr pDb);
 
 					OdBmDatabasePtr database;
+					OdBmDBViewPtr view;
 					OdBmSampleLabelUtilsPE* labelUtils = nullptr;
 				};
 			}
