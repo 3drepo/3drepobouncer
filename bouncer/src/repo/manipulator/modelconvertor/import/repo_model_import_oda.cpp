@@ -40,6 +40,8 @@ repo::core::model::RepoScene* OdaModelImport::generateRepoScene(uint8_t &errMsg)
 
 		repoInfo << "Initialising Repo Scene...";
 
+		this->modelUnits = sceneBuilder->getUnits();
+
 		repo::core::model::RepoScene* scene = new repo::core::model::RepoScene(
 			settings.getDatabaseName(),
 			settings.getProjectName()

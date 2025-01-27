@@ -20,6 +20,8 @@
 
 #include "repo/core/model/bson/repo_bson_factory.h"
 
+#include <fstream>
+
 using namespace repo::manipulator::modelconvertor::odaHelper;
 using namespace repo::core::model;
 
@@ -30,26 +32,82 @@ void RepoMaterialBuilder::addMaterialReference(repo_material_t material, repo::l
 	auto itr = materials.find(key);
 	if (itr == materials.end())
 	{
-		materials[key] = RepoBSONFactory::makeMaterialNode(material, {}, { parentId });
+		materials[key] = std::make_unique<repo::core::model::MaterialNode>(RepoBSONFactory::makeMaterialNode(material, {}, { parentId }));
 	}
 	else
 	{
-		itr->second.addParent(parentId);
+		itr->second->addParent(parentId);
+	}
+
+	if (!material.texturePath.empty())
+	{
+		createTextureNode(material.texturePath, materials[key]->getSharedID());
 	}
 }
 
-void RepoMaterialBuilder::extract(std::vector<repo::core::model::MaterialNode>& nodes)
+std::vector<std::unique_ptr<repo::core::model::RepoNode>> RepoMaterialBuilder::extract()
 {
-	for (auto p : materials)
+	std::vector<std::unique_ptr<repo::core::model::RepoNode>> nodes;
+
+	for (auto& p : materials)
 	{
-		nodes.push_back(p.second);
+		nodes.push_back(std::move(p.second));
 	}
 	materials.clear();
+
+	for (auto& p : textures) 
+	{
+		nodes.push_back(std::move(p.second));
+	}
+	textures.clear();
+
+	return nodes;
 }
 
 RepoMaterialBuilder::~RepoMaterialBuilder()
 {
 	if (materials.size() || textures.size()) {
 		throw repo::lib::RepoSceneProcessingException("Destroying RepoMaterialBuilder with material or texture nodes that have not been extracted.");
+	}
+}
+
+void RepoMaterialBuilder::createTextureNode(const std::string& texturePath, repo::lib::RepoUUID parent)
+{
+	auto texturePtr = textures.find(texturePath);
+
+	if (texturePtr == textures.end()) {
+
+		std::ifstream::pos_type size;
+		std::ifstream file(texturePath, std::ios::in | std::ios::binary | std::ios::ate);
+		char* memblock = nullptr;
+		if (!file.is_open())
+		{
+			missingTextures = true;
+			return;
+		}
+
+		size = file.tellg();
+		memblock = new char[size];
+		file.seekg(0, std::ios::beg);
+		file.read(memblock, size);
+		file.close();
+
+		auto texnode = repo::core::model::RepoBSONFactory::makeTextureNode(
+			texturePath,
+			(const char*)memblock,
+			size,
+			1,
+			0
+		);
+
+		delete[] memblock;
+
+		texnode.addParent(parent);
+
+		textures[texturePath] = std::make_unique<repo::core::model::TextureNode>(texnode);
+	}
+	else
+	{
+		texturePtr->second->addParent(parent);
 	}
 }

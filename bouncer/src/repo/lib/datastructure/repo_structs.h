@@ -140,6 +140,18 @@ struct repo_material_t {
 		crc32.process_bytes(stringified.c_str(), stringified.size());
 		return crc32.checksum();
 	}
+
+	static repo_material_t DefaultMaterial()
+	{
+		repo_material_t material;
+		material.shininess = 0.0;
+		material.shininessStrength = 0.0;
+		material.opacity = 1;
+		material.specular = { 0, 0, 0, 0 };
+		material.diffuse = { 0.5f, 0.5f, 0.5f, 0 };
+		material.emissive = material.diffuse;
+		return material;
+	}
 };
 
 struct repo_color4d_t {

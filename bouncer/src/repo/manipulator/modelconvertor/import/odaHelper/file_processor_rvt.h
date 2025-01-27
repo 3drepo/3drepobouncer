@@ -17,8 +17,6 @@
 
 #pragma once
 
-#include "../../../../core/model/bson/repo_node_mesh.h"
-
 #include <OdaCommon.h>
 #include <Gs/GsBaseInclude.h>
 #include <RxObjectImpl.h>

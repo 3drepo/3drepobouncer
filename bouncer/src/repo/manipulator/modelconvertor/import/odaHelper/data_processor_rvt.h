@@ -62,19 +62,44 @@
 #include "repo/lib/datastructure/repo_variant.h"
 #include "repo/lib/datastructure/repo_variant_utils.h"
 
+#include <map>
+#include <stack>
+
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
 				class VectoriseDeviceRvt;
 
-				class DataProcessorRvt : public DataProcessor
+				class DataProcessorRvtContext
+				{
+				public:
+					DataProcessorRvtContext(repo::manipulator::modelutility::RepoSceneBuilder& builder);
+
+					RepoMaterialBuilder materials;
+					repo::manipulator::modelutility::RepoSceneBuilder& scene;
+					repo::lib::RepoUUID rootNodeSharedId;
+					repo_material_t lastUsedMaterial;
+
+					/*
+					* Convenience methods to create transformation nodes in the scene for the
+					* given Id, or return the existing ones Id, if it exists, allowing the
+					* processor to work with its local ids.
+					*/
+					void createLayer(std::string id, std::string name, std::string parent);
+					repo::lib::RepoUUID getSharedId(std::string id);
+
+				private:
+					std::unordered_map<std::string, repo::lib::RepoUUID> layers;
+				};
+
+				class DataProcessorRvt : public OdGiGeometrySimplifier, public OdGsBaseMaterialView
 				{
 					//Environment variable name for Revit textures
 					const char* RVT_TEXTURES_ENV_VARIABLE = "REPO_RVT_TEXTURES";
 
 				public:
-					void initialise(GeometryCollector* collector, OdBmDatabasePtr pDb, OdBmDBViewPtr view);
+					void initialise(DataProcessorRvtContext* collector, OdBmDatabasePtr pDb, OdBmDBViewPtr view);
 
 					static bool tryConvertMetadataEntry(
 						OdTfVariant& metaEntry,
@@ -88,26 +113,19 @@ namespace repo {
 
 					void beginViewVectorization() override;
 
-					void convertTo3DRepoMaterial(
-						OdGiMaterialItemPtr prevCache,
-						OdDbStub* materialId,
-						const OdGiMaterialTraitsData & materialData,
-						MaterialColours& matColors,
-						repo_material_t& material,
-						bool& missingTexture) override;
-
-					void convertTo3DRepoTriangle(
-						const OdInt32* p3Vertices,
-						std::vector<repo::lib::RepoVector3D64>& verticesOut,
-						repo::lib::RepoVector3D64& normalOut,
-						std::vector<repo::lib::RepoVector2D>& uvOut) override;
-
 				private:
 					std::string determineTexturePath(const std::string& inputPath);
+
+					/*
+					* This method sets the convertTo3DRepoWorldCoorindates functor to translate from
+					* model space into Project Coordinates, including the conversion from internal
+					* units to project units. For Revit, the Project Coordinate System is defined by
+					* the active Survey Point.
+					*/
 					void establishProjectTranslation(OdBmDatabasePtr pDb);
+					void establishWorldOffset(OdBmDBViewPtr view);
 					void fillTexture(OdBmMaterialElemPtr materialPtr, repo_material_t& material, bool& missingTexture);
 					void fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiMaterialTraitsData& materialData, repo_material_t& material);
-					void fillMeshData(const OdGiDrawable* element);
 
 					void fillMetadataById(
 						OdBmObjectId id,
@@ -136,9 +154,103 @@ namespace repo {
 
 					ModelUnits getProjectUnits(OdBmDatabasePtr pDb);
 
+					/*
+					* Gets the bounds of the geometry in model space. This is an expensive operation
+					* and should only be called once.
+					*/
+					OdGeExtents3d getModelBounds(OdBmDBViewPtr view);
+
 					OdBmDatabasePtr database;
 					OdBmDBViewPtr view;
 					OdBmSampleLabelUtilsPE* labelUtils = nullptr;
+
+					class DrawContext
+					{
+					public:
+						repo::lib::RepoVector3D64 offset;
+						std::unordered_map<uint64_t, std::unique_ptr<RepoMeshBuilder>> meshBuilders;
+
+						RepoMeshBuilder* meshBuilder;
+
+						/*
+						* Creates a MeshBuilder for the material, and sets it as the active
+						* one.
+						*/
+						void setMaterial(const repo_material_t& material);
+					};
+
+					std::unique_ptr<DrawContext> createNewDrawContext();
+
+					struct DrawFrame
+					{
+						DrawFrame(OdBmElementPtr element)
+							:element(element),
+							context(nullptr)
+						{
+						}
+
+						OdBmElementPtr element;
+						std::unique_ptr<DrawContext> context;
+					};
+
+					DataProcessorRvtContext* importContext;
+					DrawContext* drawContext;
+					std::stack<DrawFrame*> drawStack;
+
+					OdGeMatrix3d modelToProjectCoordinates;
+
+					repo::lib::RepoVector3D64 convertToRepoWorldCoordinates(OdGePoint3d p);
+
+					/*
+					* Controls whether and how we change the draw context during tree traversal.
+					* The draw context controls which transformation nodes mesh data ends up
+					* under.
+					*/
+					bool shouldCreateNewLayer(const OdBmElementPtr element);
+
+					repo::lib::RepoVector3D64 offset;
+
+					void convertTo3DRepoTriangle(
+						const OdInt32* p3Vertices,
+						std::vector<repo::lib::RepoVector3D64>& verticesOut,
+						repo::lib::RepoVector3D64& normalOut,
+						std::vector<repo::lib::RepoVector2D>& uvOut);
+
+
+					// These functions override the outptus from the ODA visualisation classes
+					// and are used to recieve the geometry
+
+					/**
+					* This callback is invoked when next triangle should be processed
+					* defined in OdGiGeometrySimplifier class
+					* @param p3Vertices - input vertices of the triangle
+					* @param pNormal - input veritces normal
+					*/
+					void triangleOut(const OdInt32* p3Vertices,
+						const OdGeVector3d* pNormal) final;
+
+					/**
+					* This callback is invoked when the next line should be processed.
+					* Defined in OdGiGeometrySimplifier
+					* @param numPoints Number of points.
+					* @param vertexIndexList Pointer to an array of vertex indices.
+					*/
+					void polylineOut(OdInt32 numPoints, 
+						const OdInt32* vertexIndexList) final;
+
+					void polylineOut(OdInt32 numPoints,
+						const OdGePoint3d* vertexList) final;
+
+					/**
+					* This callback is invoked when next material should be processed
+					* @param prevCache - previous material cache
+					* @param materialId - database id of the material
+					* @param materialData - structure with material data
+					*/
+					OdGiMaterialItemPtr fillMaterialCache(
+						OdGiMaterialItemPtr prevCache,
+						OdDbStub* materialId,
+						const OdGiMaterialTraitsData& materialData) final;
 				};
 			}
 		}

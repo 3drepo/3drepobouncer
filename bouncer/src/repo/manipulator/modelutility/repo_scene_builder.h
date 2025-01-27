@@ -77,6 +77,12 @@ namespace repo {
 				template<repo::core::model::RepoNodeClass T>
 				std::shared_ptr<T> addNode(const T& node);
 
+				/*
+				* Adds nodes to the builder. These nodes can no longer be accessed once they
+				* have been handed over.
+				*/
+				void addNodes(std::vector<std::unique_ptr<repo::core::model::RepoNode>> nodes);
+
 				// Call when no more nodes are expected.
 				void finalise();
 
@@ -86,15 +92,15 @@ namespace repo {
 				void setMissingTextures();
 				bool hasMissingTextures();
 
-				void setUnits(repo::manipulator::modelconvertor::ModelUnits units)
-				{
-
-				}
+				void setUnits(repo::manipulator::modelconvertor::ModelUnits units);
+				repo::manipulator::modelconvertor::ModelUnits getUnits();
 
 			private:
 
 				// All nodes will be committed with this as the revision id
 				repo::lib::RepoUUID revisionId;
+
+				repo::manipulator::modelconvertor::ModelUnits units;
 
 				std::string databaseName;
 				std::string projectName;

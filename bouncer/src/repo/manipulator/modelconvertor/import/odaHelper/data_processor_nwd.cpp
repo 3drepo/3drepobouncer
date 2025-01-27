@@ -601,7 +601,7 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 	repo_material_t repoMaterial;
 	processMaterial(pComp, repoMaterial);
 
-	RepoMeshBuilder meshBuilder(-context.sceneBuilder->getWorldOffset(), repoMaterial);
+	RepoMeshBuilder meshBuilder({ context.parentNode->getSharedID() }, -context.sceneBuilder->getWorldOffset(), repoMaterial);
 	OdNwObjectIdArray aCompFragIds;
 	pComp->getFragments(aCompFragIds);
 	for (OdNwObjectIdArray::const_iterator itFrag = aCompFragIds.begin(); itFrag != aCompFragIds.end(); ++itFrag)
@@ -702,7 +702,7 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 
 	for (auto& mesh : nodes)
 	{
-		mesh.setParents({ context.parentNode->getSharedID() });
+
 		context.materials->addMaterialReference(meshBuilder.getMaterial(), mesh.getSharedID());
 		context.sceneBuilder->addNode(mesh);
 	}
@@ -858,14 +858,7 @@ void DataProcessorNwd::process(OdNwDatabasePtr pNwDb)
 
 		traverseSceneGraph(pModelItemRoot, context);
 
-		// Move the material nodes into the builder
-		// Todo: move this somewhere more sutiable or hook up the cache to the builder
-		std::vector<repo::core::model::MaterialNode> materials;
-		context.materials->extract(materials);
-		for (auto m : materials)
-		{
-			builder->addNode(m);
-		}
+		builder->addNodes(context.materials->extract());
 
 		delete context.materials;
 	}

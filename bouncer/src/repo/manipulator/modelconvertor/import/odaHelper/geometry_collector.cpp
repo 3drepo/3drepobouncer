@@ -132,39 +132,6 @@ void GeometryCollector::RepoMeshBuilderDeleter::operator()(RepoMeshBuilder* buil
 void GeometryCollector::finalise()
 {
 	meshBuilder = nullptr;
-	std::vector<repo::core::model::MaterialNode> materials;
-	materialBuilder.extract(materials);
-	for (auto m : materials)
-	{
-		sceneBuilder->addNode(m);
-	}
+	sceneBuilder->addNodes(materialBuilder.extract());
 }
 
-/*
-repo::core::model::TextureNode GeometryCollector::createTextureNode(const std::string& texturePath)
-{
-	std::ifstream::pos_type size;
-	std::ifstream file(texturePath, std::ios::in | std::ios::binary | std::ios::ate);
-	char *memblock = nullptr;
-	if (!file.is_open())
-		return repo::core::model::TextureNode();
-
-	size = file.tellg();
-	memblock = new char[size];
-	file.seekg(0, std::ios::beg);
-	file.read(memblock, size);
-	file.close();
-
-	auto texnode = repo::core::model::RepoBSONFactory::makeTextureNode(
-		texturePath,
-		(const char*)memblock,
-		size,
-		1,
-		0
-	);
-
-	delete[] memblock;
-
-	return texnode;
-}
-*/

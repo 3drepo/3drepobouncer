@@ -29,6 +29,8 @@
 #include <Base/BmParameterSet.h>
 #include <Base/BmSpecTypeId.h>
 
+#include "repo/core/model/bson/repo_bson_builder.h"
+
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
 using ModelUnits = repo::manipulator::modelconvertor::ModelUnits;
@@ -200,107 +202,204 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 	return std::string();
 }
 
-void DataProcessorRvt::initialise(GeometryCollector* collector, OdBmDatabasePtr pDb, OdBmDBViewPtr view)
+void DataProcessorRvt::initialise(DataProcessorRvtContext* context, OdBmDatabasePtr pDb, OdBmDBViewPtr view)
 {
-	DataProcessor::initialise(collector);
+	this->drawContext = nullptr;
+	this->importContext = context;
 	this->view = view;
-	collector->setUnits(getProjectUnits(pDb));
+	context->scene.setUnits(getProjectUnits(pDb)); // The coordinate conversion function will see to it the geometry is output in these project units
 	establishProjectTranslation(pDb);
+	establishWorldOffset(view);
 }
 
 void DataProcessorRvt::beginViewVectorization()
 {
-	DataProcessor::beginViewVectorization();
+	OdGsBaseMaterialView::beginViewVectorization();
+	OdGiGeometrySimplifier::setDrawContext(OdGsBaseMaterialView::drawContext());
+	output().setDestGeometry((OdGiGeometrySimplifier&)*this);
+	setDrawContextFlags(drawContextFlags(), false);
 	setEyeToOutputTransform(getEyeToWorldTransform());
 	initLabelUtils();
 }
 
-void DataProcessorRvt::draw(const OdGiDrawable* pDrawable)
+bool DataProcessorRvt::shouldCreateNewLayer(const OdBmElementPtr element)
 {
-	OdBmElementPtr element = OdBmElement::cast(pDrawable);
 	if (element.isNull())
-		return;
+		return false;
 
 	if (!element->isDBRO())
-		return;
+		return false;
 
 	// In the current version of ODA, each component that is a member of a
 	// system is followed by that system as an OdGiDrawable, so we need the
 	// geometry to be associated with the previous OdGiDrawable. This is
 	// achieved by simply skipping all system drawables (and so not changing
-	// the collector settings).
+	// the context settings).
 
 	if (element->isKindOf(OdBmRbsSystemType::desc()))
 	{
-		return;
+		return false;
 	}
 
-	if (!view->isElementVisible(element))
-	{
-		return;
-	}
-
-	if (view->isElementClipped(element, false))
-	{
-		return;
-	}
-
-	// For Revit files, drawable elements are arranged into layers, not unlike
-	// drawings.
-
-	std::string levelName = getLevelName(element, "Layer Default");
-	std::string elementName = getElementName(element);
-
-	if (!collector->hasLayer(levelName))
-	{
-		collector->createLayer(levelName, levelName, {}); // The tree for Revit files is only ever one level deep
-	}
-
-	if (!collector->hasLayer(elementName))
-	{
-		collector->createLayer(elementName, elementName, levelName);
-	}
-
-	collector->setLayer(elementName);
-
-	// We can skip certain items we know won't be rendered. Ultimately though
-	// the visualisation pipeline in ODA (and Revit) is a black-box, and there's
-	// no way to know for sure an element will result in geometry on the screen
-	// until it starts outputting vertices.
-
-	OdGsBaseMaterialView::draw(pDrawable);
-
-	// If theres geometry, create the layers for the mesh (if necessary), and set
-	// up their parents.
-
-
-
-	// The first time we encounter an element, we should create its metadata entry
-	// too
-	try
-	{
-		if (!collector->hasMetadata(elementName))
-		{
-			collector->setMetadata(elementName, fillMetadata(element));
-		}
-	}
-	catch (OdError& er)
-	{
-		//.. HOTFIX: handle nullPtr exception (reported to ODA)
-		repoError << "Caught exception whilst trying to retrieve metadata: " << convertToStdString(er.description());
-	}
-	
+	return true;
 }
 
-void DataProcessorRvt::convertTo3DRepoMaterial(
+void DataProcessorRvt::draw(const OdGiDrawable* pDrawable)
+{
+	/*
+	* ODA will traverse the tree of drawables, calling draw() for each one. Since
+	* we can't add parameters to draw(), we must track the stack manually. We can
+	* cull a branch by not calling the base's implementation of draw().
+	*/
+
+	OdBmElementPtr element = OdBmElement::cast(pDrawable);
+
+	if (!element.isNull() && !view->isElementVisible(element))
+	{
+		return;
+	}
+
+	if (!element.isNull() && view->isElementClipped(element, true))
+	{
+		return;
+	}
+
+	// In the future, if we wanted to support full trees for Revit, we'd add
+	// additional frame parameters here..
+
+	DrawFrame frame(element);
+
+	// Decide whether the geometry of this drawable should appear under a new layer
+
+	if (shouldCreateNewLayer(element))
+	{
+		frame.context = createNewDrawContext();
+	}
+
+	// Always update this just before pushing a new frame
+	if (frame.context) 
+	{
+		drawContext = frame.context.get();
+	}
+
+	drawStack.push(&frame);
+	OdGsBaseMaterialView::draw(pDrawable);
+	drawStack.pop();
+
+	// If this frame had it's own DrawContext, then extract its meshes (if any)
+
+	if (frame.context) 
+	{
+		// We can skip certain items we know won't be rendered. Ultimately though
+		// the visualisation pipeline in ODA (and Revit) is a black-box, and there's
+		// no way to know for sure an element will result in geometry on the screen
+		// until it starts outputting vertices. Therefore, we only commit transform
+		// nodes the first time we actually get meshes for them.
+
+		std::vector<repo::core::model::MeshNode> meshes;
+
+		for (auto& p : frame.context->meshBuilders) {
+			std::vector<repo::core::model::MeshNode> extracted;
+			p.second->extractMeshes(extracted);
+			for (auto& m : extracted) {
+				importContext->materials.addMaterialReference(p.second->getMaterial(), m.getSharedID());
+				meshes.push_back(m);
+			}
+		}
+
+		if (meshes.size())
+		{
+			// For Revit files, drawable elements are arranged into layers, not unlike
+			// drawings. This means we can get everything from just the element, and
+			// don't actually need the stack for this bit.
+
+			std::string levelName = getLevelName(element, "Layer Default");
+			std::string elementName = getElementName(element);
+
+			// These methods create the transformation nodes on-demand
+
+			importContext->createLayer(levelName, levelName, {});
+			importContext->createLayer(elementName, elementName, levelName);
+
+			auto parent = importContext->getSharedId(elementName);
+			for (auto& m : meshes) {
+				m.setParents({ parent });
+				importContext->scene.addNode(m);
+			}
+
+			try
+			{
+				auto metadataNode = repo::core::model::RepoBSONFactory::makeMetaDataNode(fillMetadata(element), elementName, { parent });
+				importContext->scene.addNode(metadataNode);
+			}
+			catch (OdError& er)
+			{
+				//.. HOTFIX: handle nullPtr exception (reported to ODA)
+				repoError << "Caught exception whilst trying to retrieve metadata: " << convertToStdString(er.description());
+			}
+		}
+	}
+}
+
+std::unique_ptr<DataProcessorRvt::DrawContext> DataProcessorRvt::createNewDrawContext()
+{
+	auto ctx = std::make_unique<DrawContext>();
+	ctx->offset = -importContext->scene.getWorldOffset();
+	ctx->setMaterial(importContext->lastUsedMaterial);
+	return ctx;
+}
+
+void DataProcessorRvt::DrawContext::setMaterial(const repo_material_t& material)
+{
+	auto id = material.checksum();
+	auto builder = meshBuilders.find(id);
+	if (builder == meshBuilders.end()) {
+		meshBuilders[id] = std::make_unique<RepoMeshBuilder>(std::vector<repo::lib::RepoUUID>(), offset, material);
+		this->meshBuilder = meshBuilders[id].get();
+	}
+	else
+	{
+		this->meshBuilder = builder->second.get();
+	}
+}
+
+DataProcessorRvtContext::DataProcessorRvtContext(repo::manipulator::modelutility::RepoSceneBuilder& builder)
+	:scene(builder)
+{
+	auto rootNode = repo::core::model::RepoBSONFactory::makeTransformationNode({}, "rootNode", {});
+	scene.addNode(rootNode);
+	rootNodeSharedId = rootNode.getSharedID();
+	lastUsedMaterial = repo_material_t::DefaultMaterial();
+}
+
+void DataProcessorRvtContext::createLayer(std::string id, std::string name, std::string parentId)
+{
+	if (layers.find(id) == layers.end())
+	{
+		auto parentSharedId = rootNodeSharedId;
+
+		if (!parentId.empty()) {
+			parentSharedId = layers[parentId];
+		}
+
+		auto node = repo::core::model::RepoBSONFactory::makeTransformationNode({}, name, { parentSharedId });
+		layers[id] = node.getSharedID();
+		scene.addNode(node);
+	}
+}
+
+repo::lib::RepoUUID DataProcessorRvtContext::getSharedId(std::string id)
+{
+	return layers[id];
+}
+
+OdGiMaterialItemPtr DataProcessorRvt::fillMaterialCache(
 	OdGiMaterialItemPtr prevCache,
 	OdDbStub* materialId,
-	const OdGiMaterialTraitsData & materialData,
-	MaterialColours& matColors,
-	repo_material_t& material,
-	bool& missingTexture)
-{
-	DataProcessor::convertTo3DRepoMaterial(prevCache, materialId, materialData, matColors, material, missingTexture);
+	const OdGiMaterialTraitsData& materialData
+) {
+	repo_material_t material;
+	bool missingTexture;
 
 	OdBmObjectId matId(materialId);
 	OdBmMaterialElemPtr materialElem;
@@ -313,6 +412,11 @@ void DataProcessorRvt::convertTo3DRepoMaterial(
 
 	fillMaterial(materialElem, materialData, material);
 	fillTexture(materialElem, material, missingTexture);
+
+	drawContext->setMaterial(material);
+	importContext->lastUsedMaterial = material;
+
+	return OdGiMaterialItemPtr();
 }
 
 void DataProcessorRvt::convertTo3DRepoTriangle(
@@ -322,7 +426,20 @@ void DataProcessorRvt::convertTo3DRepoTriangle(
 	std::vector<repo::lib::RepoVector2D>& uvsOut)
 {
 	std::vector<OdGePoint3d> odaPoints;
-	getVertices(3, indices, odaPoints, verticesOut);
+
+	const OdGePoint3d* pVertexDataList = vertexDataList();
+
+	if ((pVertexDataList + indices[0]) != (pVertexDataList + indices[1]) &&
+		(pVertexDataList + indices[0]) != (pVertexDataList + indices[2]) &&
+		(pVertexDataList + indices[1]) != (pVertexDataList + indices[2]))
+	{
+		for (int i = 0; i < 3; ++i)
+		{
+			auto point = pVertexDataList[indices[i]];
+			odaPoints.push_back(point);
+			verticesOut.push_back(convertToRepoWorldCoordinates(point));
+		}
+	}
 
 	if (verticesOut.size() != 3) {
 		return;
@@ -364,6 +481,44 @@ void DataProcessorRvt::convertTo3DRepoTriangle(
 		for (int i = 0; i < odaUvs.size(); ++i) {
 			uvsOut.push_back({ (float)odaUvs[i].x, (float)odaUvs[i].y });
 		}
+	}
+}
+
+void DataProcessorRvt::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* pNormal)
+{
+	std::vector<repo::lib::RepoVector3D64> vertices;
+	std::vector<repo::lib::RepoVector2D> uv;
+	repo::lib::RepoVector3D64 normal;
+
+	convertTo3DRepoTriangle(p3Vertices, vertices, normal, uv);
+
+	if (vertices.size()) {
+		drawContext->meshBuilder->addFace(vertices, normal, uv);
+	}
+}
+
+void DataProcessorRvt::polylineOut(OdInt32 numPoints, const OdInt32* vertexIndexList)
+{
+	std::vector<OdGePoint3d> vertices;
+	const auto pVertexDataList = vertexDataList();
+	for (int i = 0; i < numPoints; i++)
+	{
+		vertices.push_back(pVertexDataList[vertexIndexList[i]]);
+	}
+
+	polylineOut(numPoints, vertices.data());
+}
+
+void DataProcessorRvt::polylineOut(OdInt32 numPoints, const OdGePoint3d* vertexList)
+{
+	std::vector<repo::lib::RepoVector3D64> vertices;
+
+	for (OdInt32 i = 0; i < (numPoints - 1); i++)
+	{
+		vertices.clear();
+		vertices.push_back(convertToRepoWorldCoordinates(vertexList[i]));
+		vertices.push_back(convertToRepoWorldCoordinates(vertexList[i + 1]));
+		drawContext->meshBuilder->addFace(vertices);
 	}
 }
 
@@ -581,6 +736,10 @@ void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiM
 	materialData.shadingOpacity(opacity);
 	material.opacity = opacity;
 
+	OdGiMaterialColor specularColor; OdGiMaterialMap specularMap; double glossFactor;
+	materialData.specular(specularColor, specularMap, glossFactor);
+	material.shininessStrength = glossFactor;
+
 	if (!materialPtr.isNull())
 		material.shininess = (float)materialPtr->getMaterial()->getShininess() / 255.0f;
 }
@@ -625,6 +784,23 @@ void DataProcessorRvt::fillTexture(OdBmMaterialElemPtr materialPtr, repo_materia
 	}
 
 	material.texturePath = validTextureName;
+}
+
+OdGeExtents3d DataProcessorRvt::getModelBounds(OdBmDBViewPtr view)
+{
+	OdBmObjectIdArray elements;
+	view->getVisibleDrawableElements(elements);
+
+	OdGeExtents3d model;
+	for (auto& e : elements)
+	{
+		OdBmElementPtr element = e.safeOpenObject();
+		OdGeExtents3d extents;
+		element->getGeomExtents(extents); // These are in model space, in the file's native units
+		model.addExt(extents);
+	}
+
+	return model;
 }
 
 OdBmAUnitsPtr DataProcessorRvt::getUnits(OdBmDatabasePtr database)
@@ -675,26 +851,40 @@ void DataProcessorRvt::establishProjectTranslation(OdBmDatabasePtr pDb)
 		{
 			if (OdBmGeoLocation::isGeoLocationAllowed(pThis->database()))
 			{
+				// Revit has three coordinate systems, defined relative to: Internal Origin,
+				// Project Base Point and Survey Point.
+				// The Survey Point is the one that defines the shared coordinate system of
+				// a site; this is the coordinate system 3DRepo operates in, and is the one
+				// shared in a Federation.
+
+				// The Active Location is the Survey Point of the active Site. Revit can have
+				// a number of Sites defined, each with exactly one Survey Point. 
+				// This snippet initialises the modelToProjectCoordinates which transforms from
+				// the internal coordinate sysem into the shared coordinate system, including
+				// conversion to project units. (Coordinates may still undergo the Scene's
+				// World Offset, for storage.)
+
 				OdBmGeoLocationPtr pActiveLocation = OdBmGeoLocation::getActiveLocationId(pThis->database()).safeOpenObject();
 				OdGeMatrix3d activeTransform = pActiveLocation->getTransform();
-				OdGePoint3d activeOrigin;
-				OdGeVector3d activeX, activeY, activeZ;
-				activeTransform.getCoordSystem(activeOrigin, activeX, activeY, activeZ);
+				activeTransform.invert();
 
-				OdBmGeoLocationPtr pProjectLocation = OdBmGeoLocation::getProjectLocationId(pThis->database()).safeOpenObject();
-				OdGeMatrix3d projectTransform = pProjectLocation->getTransform();
-				OdGePoint3d projectOrigin;
-				OdGeVector3d projectX, projectY, projectZ;
-				projectTransform.getCoordSystem(projectOrigin, projectX, projectY, projectZ);
-
-				OdGeMatrix3d alignedLocation;
-				alignedLocation.setToAlignCoordSys(activeOrigin, activeX, activeY, activeZ, projectOrigin, projectX, projectY, projectZ);
 				auto scaleCoef = 1.0 / OdBmUnitUtils::getUnitTypeIdInfo(getLengthUnits(pDb)).inIntUnitsCoeff;
-				convertTo3DRepoWorldCoorindates = [activeOrigin, alignedLocation, scaleCoef](OdGePoint3d point) {
-					OdGeVector3d convertedPoint = (point - activeOrigin).transformBy(alignedLocation);
-					return repo::lib::RepoVector3D64(convertedPoint.x * scaleCoef, convertedPoint.y * scaleCoef, convertedPoint.z * scaleCoef);
-				};
+				activeTransform.preMultBy(OdGeMatrix3d::scaling(OdGeScale3d(scaleCoef)));
+
+				modelToProjectCoordinates = activeTransform;
 			}
 		}
 	}
+}
+
+void DataProcessorRvt::establishWorldOffset(OdBmDBViewPtr pView)
+{
+	auto model = getModelBounds(pView);
+	model.transformBy(modelToProjectCoordinates);
+	importContext->scene.setWorldOffset(toRepoVector(model.minPoint()));
+}
+
+repo::lib::RepoVector3D64 DataProcessorRvt::convertToRepoWorldCoordinates(OdGePoint3d p)
+{
+	return toRepoVector(p.transformBy(modelToProjectCoordinates));
 }

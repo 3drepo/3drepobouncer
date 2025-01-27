@@ -37,8 +37,6 @@
 #include <Database/BmGsManager.h>
 #include <Database/BmGsView.h>
 
-
-
 #include "repo/lib/repo_utils.h"
 
 //3d repo bouncer
@@ -87,10 +85,10 @@ class StubDeviceModuleRvt : public OdGsBaseModule
 private:
 	OdBmDatabasePtr database;
 	OdBmDBViewPtr view;
-	GeometryCollector *collector;
+	DataProcessorRvtContext* collector;
 
 public:
-	void init(GeometryCollector* const collector, OdBmDatabasePtr database, OdBmDBViewPtr view)
+	void init(DataProcessorRvtContext* const collector, OdBmDatabasePtr database, OdBmDBViewPtr view)
 	{
 		this->collector = collector;
 		this->database = database;
@@ -118,7 +116,7 @@ protected:
 
 #pragma optimize("",off)
 
-OdBmDBDrawingPtr Get3DDrawing(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimDatabase)
+OdBmDBDrawingPtr findView(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimDatabase)
 {
 	// Layouts correspond to the Views listed in the Project Browser in Revit.
 
@@ -235,7 +233,7 @@ uint8_t FileProcessorRvt::readFile()
 		if (!pDb.isNull())
 		{
 			OdDbBaseDatabasePEPtr pDbPE(pDb);
-			auto drawing = Get3DDrawing(pDbPE, pDb);
+			auto drawing = findView(pDbPE, pDb);
 
 			if (!drawing) {
 				throw repo::lib::RepoSceneProcessingException("Could not find a suitable view.", REPOERR_VALID_3D_VIEW_NOT_FOUND);
@@ -249,27 +247,13 @@ uint8_t FileProcessorRvt::readFile()
 
 			OdBmDBViewPtr view = drawing->getBaseDBViewId().safeOpenObject();	
 
-			GeometryCollector collector(repoSceneBuilder);
-			((StubDeviceModuleRvt*)pGsModule.get())->init(&collector, pDb, view);
+			DataProcessorRvtContext context(*repoSceneBuilder);
+
+			((StubDeviceModuleRvt*)pGsModule.get())->init(&context, pDb, view);
 			OdGsDevicePtr pDevice = pGsModule->createDevice();
 
 			pDbPE->setupLayoutView(pDevice, pBimContext, drawing->objectId());
-
-			OdBmObjectIdArray elements;
-			view->getVisibleDrawableElements(elements);
-
-			repo::lib::RepoBounds bounds;
-			for (auto& e : elements)
-			{
-				OdGeExtents3d extents;
-				OdBmElementPtr element = e.safeOpenObject();
-				element->getGeomExtents(extents); // These are in model space, in the file's native units
-				auto min = extents.minPoint();
-				bounds.encapsulate(repo::lib::RepoVector3D64(min.x, min.y, min.z));
-			}
-
-			repoInfo << bounds.min().x << " " << bounds.min().y << " " << bounds.min().z;
-
+			
 			// NOTE: Render mode can be kFlatShaded, kGouraudShaded, kFlatShadedWithWireframe, kGouraudShadedWithWireframe
 			// kHiddenLine mode prevents materails from being uploaded
 			// Uncomment the setupRenderMode function call to change render mode
@@ -280,7 +264,9 @@ uint8_t FileProcessorRvt::readFile()
 			setupUnitsFormat(pDb, ROUNDING_ACCURACY);
 			pDevice->update();
 
-			collector.finalise();
+			repoSceneBuilder->addNodes(std::move(context.materials.extract()));
+
+			repoSceneBuilder->finalise();
 		}
 	}
 	catch (OdError& e)

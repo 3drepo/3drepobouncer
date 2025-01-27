@@ -76,6 +76,14 @@ std::shared_ptr<T> RepoSceneBuilder::addNode(const T& node)
 	return ptr;
 }
 
+void RepoSceneBuilder::addNodes(std::vector<std::unique_ptr<repo::core::model::RepoNode>> nodes)
+{
+	for (auto& n : nodes) {
+		n->setRevision(revisionId);
+		queueNode(n.release());
+	}
+}
+
 void RepoSceneBuilder::queueNode(const RepoNode* node)
 {
 	nodesToCommit.push_back(node);
@@ -122,6 +130,15 @@ bool RepoSceneBuilder::hasMissingTextures()
 	return isMissingTextures;
 }
 
+void RepoSceneBuilder::setUnits(repo::manipulator::modelconvertor::ModelUnits units) 
+{
+	this->units = units;
+}
+
+repo::manipulator::modelconvertor::ModelUnits RepoSceneBuilder::getUnits()
+{
+	return this->units;
+}
 
 // It is required to tell the module which specialisations to instantiate
 // for addNode.

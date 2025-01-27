@@ -56,11 +56,15 @@ namespace repo {
 					*/
 					void addMaterialReference(repo_material_t material, repo::lib::RepoUUID parentId);
 
-					void extract(std::vector<repo::core::model::MaterialNode>& nodes);
+					std::vector<std::unique_ptr<repo::core::model::RepoNode>> extract();
 
 				private:
-					std::unordered_map<size_t, repo::core::model::MaterialNode> materials;
-					std::unordered_map<size_t, repo::core::model::TextureNode> textures;
+					std::unordered_map<size_t, std::unique_ptr<repo::core::model::MaterialNode>> materials;
+					std::unordered_map<std::string, std::unique_ptr<repo::core::model::TextureNode>> textures;
+
+					bool missingTextures = false;
+
+					void createTextureNode(const std::string& path, repo::lib::RepoUUID parent);
 				};
 			}
 		}
