@@ -29,6 +29,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <stack>
 
 namespace repo {
 	namespace manipulator {
@@ -38,6 +39,7 @@ namespace repo {
 				{
 				public:
 					GeometryCollector(repo::manipulator::modelutility::RepoSceneBuilder* builder);
+					~GeometryCollector();
 
 					/*
 					* Declares a new entry in the tree that can be accessed by an arbitrary
@@ -54,10 +56,10 @@ namespace repo {
 					bool hasLayer(std::string id);
 
 					/*
-					* Sets the current Layer (position in the tree) by the id used to create
-					* the layer. This will be used for any following meshes.
+					* Returns the sharedId for a layer with the given local id; used for
+					* setting the parents of mesh and metadata nodes.
 					*/
-					void setLayer(std::string id);
+					repo::lib::RepoUUID getSharedId(std::string id);
 
 					/*
 					* Adds a metadata node for the given layer. Each call will result in a new
@@ -72,16 +74,22 @@ namespace repo {
 					/*
 					* Immediately changes which material any new geometry should be using.
 					*/
-					void setMaterial(const repo_material_t& material, bool missingTextures);
+					void setMaterial(const repo_material_t& material);
 
-					void addFace(const std::vector<repo::lib::RepoVector3D64>& vertices) {
-						meshBuilder->addFace(vertices);
-					}
+					void addFace(const std::vector<repo::lib::RepoVector3D64>& vertices);
+
 					void addFace(
 						const std::vector<repo::lib::RepoVector3D64>& vertices,
 						const repo::lib::RepoVector3D64& normal,
-						const std::vector<repo::lib::RepoVector2D>& uvCoords) {
-						meshBuilder->addFace(vertices, normal, uvCoords);
+						const std::vector<repo::lib::RepoVector2D>& uvCoords);
+
+					template<repo::core::model::RepoNodeClass T>
+					void addNode(const T& n) {
+						sceneBuilder->addNode(n);
+					}
+
+					void addMaterialReference(repo_material_t material, repo::lib::RepoUUID parentId) {
+						materialBuilder.addMaterialReference(material, parentId);
 					}
 
 					void setUnits(repo::manipulator::modelconvertor::ModelUnits units) {
@@ -92,6 +100,10 @@ namespace repo {
 						sceneBuilder->setWorldOffset(offset);
 					}
 
+					repo::lib::RepoVector3D64 getWorldOffset() {
+						return sceneBuilder->getWorldOffset();
+					}
+
 					/*
 					* Should be called when the rendering is complete, to emit any remaining
 					* meshes and materials.
@@ -99,51 +111,70 @@ namespace repo {
 					void finalise();
 
 					/*
-					* Sets the offset that should be applied to the geometry before it is
-					* written to a MeshNode. If geometry is output in Project Coordinates,
-					* then this should the inverse of the scene's World Offset. If it is
-					* already in model space, then it should be zero (and the world location
-					* in model space should be applied to the scene).
+					* Maintains a set of MeshBuilders for given materials intended to receive
+					* geometry under a single transformation, until the active context changes.
 					*/
-					void setGeometryOffset(repo::lib::RepoVector3D64 offset);
+					class Context
+					{
+					public:
+						Context(repo::lib::RepoVector3D64 offset, const repo_material_t& material):
+							offset(offset)
+						{
+							setMaterial(material);
+						}
+
+						~Context();
+
+						std::unordered_map<uint64_t, std::unique_ptr<RepoMeshBuilder>> meshBuilders;
+
+						/*
+						* Creates a MeshBuilder for the material, and sets it as the active
+						* one.
+						*/
+						void setMaterial(const repo_material_t& material);
+
+						void addFace(const std::vector<repo::lib::RepoVector3D64>& vertices) {
+							meshBuilder->addFace(vertices);
+						}
+						void addFace(
+							const std::vector<repo::lib::RepoVector3D64>& vertices,
+							const repo::lib::RepoVector3D64& normal,
+							const std::vector<repo::lib::RepoVector2D>& uvCoords) {
+							meshBuilder->addFace(vertices, normal, uvCoords);
+						}
+
+						std::vector<std::pair<repo::core::model::MeshNode, repo_material_t>> extractMeshes();
+
+					private:
+						repo::lib::RepoVector3D64 offset;
+						RepoMeshBuilder* meshBuilder;
+					};
+
+					// These stack operations must be symmetric - calling pop with a different
+					// pointer to the active context will result in an exception.
+
+					/*
+					* If ctx is not null, sets the active context to ctx, and stores the
+					* previous context on the stack.
+					*/
+					void pushDrawContext(Context* ctx);
+
+					/*
+					* If ctx is not null, sets the active context to the previous one.
+					*/
+					void popDrawContext(Context* ctx);
+
+					repo_material_t getLastMaterial();
 
 				private:
 
 					repo::manipulator::modelutility::RepoSceneBuilder* sceneBuilder;
-
-					repo_material_t GetDefaultMaterial() const;
-
-					/*
-					* This object is used as a deleter for the meshBuilder smart pointer. Using
-					* a custom deleter ensures that we cannot accidentally abandon any
-					* uncollected geometry.
-					*/
-					struct RepoMeshBuilderDeleter {
-						RepoMeshBuilderDeleter(GeometryCollector* processor) :
-							processor(processor)
-						{}
-						GeometryCollector* processor;
-						void operator()(RepoMeshBuilder* builder);
-					};
-
-					using RepoMeshBuilderPtr = std::unique_ptr<RepoMeshBuilder, RepoMeshBuilderDeleter&>;
-
-					RepoMeshBuilderDeleter meshBuilderDeleter; 	// (We only need one of these...)
-					RepoMeshBuilderPtr meshBuilder;
-
-					// Convenience method for building a new RepoMeshBuilder smart pointer;
-					// there are no side effects so the std constructor could be used instead.
-					RepoMeshBuilderPtr makeMeshBuilder(
-						std::vector<repo::lib::RepoUUID> parents,
-						repo::lib::RepoVector3D64 offset,
-						repo_material_t material);
-
+					std::stack<Context*> contexts;
+					repo_material_t latestMaterial;
 					repo::lib::RepoVector3D64 offset;
 					RepoMaterialBuilder materialBuilder;
-
 					std::unordered_map<std::string, repo::lib::RepoUUID> layerIdToSharedId;
 					std::set<std::string> layersWithMetadata;
-
 					repo::lib::RepoUUID rootNodeId;
 				};
 			}

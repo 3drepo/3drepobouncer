@@ -85,14 +85,16 @@ class StubDeviceModuleRvt : public OdGsBaseModule
 private:
 	OdBmDatabasePtr database;
 	OdBmDBViewPtr view;
-	DataProcessorRvtContext* collector;
+	GeometryCollector* collector;
+	OdGeMatrix3d modelToWorld;
 
 public:
-	void init(DataProcessorRvtContext* const collector, OdBmDatabasePtr database, OdBmDBViewPtr view)
+	void init(GeometryCollector* const collector, OdBmDatabasePtr database, OdBmDBViewPtr view, const OdGeMatrix3d& modelToWorld)
 	{
 		this->collector = collector;
 		this->database = database;
 		this->view = view;
+		this->modelToWorld = modelToWorld;
 	}
 protected:
 	OdSmartPtr<OdGsBaseVectorizeDevice> createDeviceObject()
@@ -102,7 +104,7 @@ protected:
 	OdSmartPtr<OdGsViewImpl> createViewObject()
 	{
 		OdSmartPtr<OdGsViewImpl> pP = OdRxObjectImpl<DataProcessorRvt, OdGsViewImpl>::createObject();
-		((DataProcessorRvt*)pP.get())->initialise(collector, database, view);
+		((DataProcessorRvt*)pP.get())->initialise(collector, database, view, modelToWorld);
 		return pP;
 	}
 };
@@ -211,6 +213,67 @@ void setupRenderMode(OdBmDatabasePtr database, OdGsDevicePtr device, OdGiDefault
 	view->setMode(renderMode);
 }
 
+OdGeExtents3d getModelBounds(OdBmDBViewPtr view)
+{
+	OdBmObjectIdArray elements;
+	view->getVisibleDrawableElements(elements);
+
+	OdGeExtents3d model;
+	for (auto& e : elements)
+	{
+		OdBmElementPtr element = e.safeOpenObject();
+		OdGeExtents3d extents;
+		element->getGeomExtents(extents); // These are in model space, in the file's native units
+		model.addExt(extents);
+	}
+
+	return model;
+}
+
+OdGeMatrix3d getModelToWorldMatrix(OdBmDatabasePtr pDb)
+{
+	OdBmElementTrackingDataPtr pElementTrackingDataMgr = pDb->getAppInfo(OdBm::ManagerType::ElementTrackingData);
+	OdBmObjectIdArray aElements;
+	OdResult res = pElementTrackingDataMgr->getElementsByType(
+		pDb->getObjectId(OdBm::BuiltInCategory::OST_ProjectBasePoint),
+		OdBm::TrackingElementType::Elements,
+		aElements);
+
+	if (!aElements.isEmpty())
+	{
+		OdBmBasePointPtr pThis = aElements.first().safeOpenObject();
+
+		if (pThis->getLocationType() == 0)
+		{
+			if (OdBmGeoLocation::isGeoLocationAllowed(pThis->database()))
+			{
+				// Revit has three coordinate systems, defined relative to: Internal Origin,
+				// Project Base Point and Survey Point.
+				// The Survey Point is the one that defines the shared coordinate system of
+				// a site; this is the coordinate system 3DRepo operates in, and is the one
+				// shared in a Federation.
+
+				// The Active Location is the Survey Point of the active Site. Revit can have
+				// a number of Sites defined, each with exactly one Survey Point. 
+				// This snippet initialises the modelToProjectCoordinates which transforms from
+				// the internal coordinate sysem into the shared coordinate system, including
+				// conversion to project units. (Coordinates may still undergo the Scene's
+				// World Offset, for storage.)
+
+				OdBmGeoLocationPtr pActiveLocation = OdBmGeoLocation::getActiveLocationId(pThis->database()).safeOpenObject();
+				OdGeMatrix3d activeTransform = pActiveLocation->getTransform();
+				activeTransform.invert();
+
+				auto units = DataProcessorRvt::getLengthUnits(pDb);
+				auto scaleCoef = 1.0 / OdBmUnitUtils::getUnitTypeIdInfo(units).inIntUnitsCoeff;
+				activeTransform.preMultBy(OdGeMatrix3d::scaling(OdGeScale3d(scaleCoef)));
+
+				return activeTransform;
+			}
+		}
+	}
+}
+
 uint8_t FileProcessorRvt::readFile()
 {
 	int nRes = REPOERR_OK;
@@ -232,6 +295,11 @@ uint8_t FileProcessorRvt::readFile()
 		OdBmDatabasePtr pDb = svcs.readFile(OdString(file.c_str()));
 		if (!pDb.isNull())
 		{
+			// The 'drawing' object corresponds to a named entry in the 'Views' list in
+			// Revit, the drawing instance is a mostly empty container that points to an
+			// instance of the View Family type, which is what holds the actual
+			// properties.
+
 			OdDbBaseDatabasePEPtr pDbPE(pDb);
 			auto drawing = findView(pDbPE, pDb);
 
@@ -240,16 +308,18 @@ uint8_t FileProcessorRvt::readFile()
 			}
 			repoInfo << "Using 3D View: " << convertToStdString(drawing->getShortDescriptiveName());
 
+			OdBmDBViewPtr pView = drawing->getBaseDBViewId().safeOpenObject();
+			auto modelToWorld = getModelToWorldMatrix(pDb); // World here is the shared or 'project' coordinate system
+
+			auto bounds = getModelBounds(pView);
+			bounds.transformBy(modelToWorld);
+			repoSceneBuilder->setWorldOffset(toRepoVector(bounds.minPoint()));
+
 			OdGiDefaultContextPtr pBimContext = pDbPE->createGiContext(pDb);
 			OdGsModulePtr pGsModule = ODRX_STATIC_MODULE_ENTRY_POINT(StubDeviceModuleRvt)(OD_T("StubDeviceModuleRvt"));
 
-			// The view is the parameterised Revit Type instance belonging to the named drawing
-
-			OdBmDBViewPtr view = drawing->getBaseDBViewId().safeOpenObject();	
-
-			DataProcessorRvtContext context(*repoSceneBuilder);
-
-			((StubDeviceModuleRvt*)pGsModule.get())->init(&context, pDb, view);
+			GeometryCollector collector(repoSceneBuilder);
+			((StubDeviceModuleRvt*)pGsModule.get())->init(&collector, pDb, pView, modelToWorld);
 			OdGsDevicePtr pDevice = pGsModule->createDevice();
 
 			pDbPE->setupLayoutView(pDevice, pBimContext, drawing->objectId());
@@ -264,8 +334,7 @@ uint8_t FileProcessorRvt::readFile()
 			setupUnitsFormat(pDb, ROUNDING_ACCURACY);
 			pDevice->update();
 
-			repoSceneBuilder->addNodes(std::move(context.materials.extract()));
-
+			collector.finalise();
 			repoSceneBuilder->finalise();
 		}
 	}

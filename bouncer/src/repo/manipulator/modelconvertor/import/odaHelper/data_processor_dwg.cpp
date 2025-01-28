@@ -42,7 +42,7 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	if (!pGeoDataMarker.isNull())
 	{
 		collector->createLayer("GeoPositionMarker", "Geo Position Marker", {});
-		collector->setLayer("GeoPositionMarker");
+		setLayer("GeoPositionMarker");
 	}
 
 	OdDbEntityPtr pEntity = OdDbEntity::cast(pDrawable);
@@ -132,8 +132,8 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 				blockReferenceLayerNodeId = layerId; // If the Block Entity layer has been overridden within the Block, take the absolute layer
 			}
 
-			collector->createLayer(blockReferenceLayerNodeId, context.currentBlockReferenceName, blockReferenceLayerNodeId);
-			collector->setLayer(blockReferenceNodeId);
+			collector->createLayer(blockReferenceNodeId, context.currentBlockReferenceName, blockReferenceLayerNodeId);
+			setLayer(blockReferenceNodeId);
 
 			std::unordered_map<std::string, repo::lib::RepoVariant> meta;
 			meta["Entity Handle::Value"] = context.currentBlockReferenceId;
@@ -145,7 +145,7 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 			// node, under the specified layer.
 
 			collector->createLayer(entityId, entityName, layerId);
-			collector->setLayer(entityId);
+			setLayer(entityId);
 
 			std::unordered_map<std::string, repo::lib::RepoVariant> meta;
 			meta["Entity Handle::Value"] = convertToStdString(toString(handle));
@@ -188,10 +188,9 @@ void DataProcessorDwg::convertTo3DRepoMaterial(
 	OdDbStub* materialId,
 	const OdGiMaterialTraitsData& materialData,
 	MaterialColours& matColors,
-	repo_material_t& material,
-	bool& missingTexture)
+	repo_material_t& material)
 {
-	DataProcessor::convertTo3DRepoMaterial(prevCache, materialId, materialData, matColors, material, missingTexture);
+	DataProcessor::convertTo3DRepoMaterial(prevCache, materialId, materialData, matColors, material);
 
 	// The Gs superclass supercedes colour data from the material, unless the
 	// override flag is set.

@@ -125,9 +125,7 @@ bool DataProcessorDgn::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		OdDgLevelTableRecordPtr pLevel = idLevel.openObject(OdDg::kForRead);
 		layerId = convertToStdString(toString(idLevel.getHandle()));
 		layerName = convertToStdString(pLevel->getName());
-		if (collector->hasLayer(layerId)) {
-			collector->createLayer(layerId, layerName, {});
-		}
+		collector->createLayer(layerId, layerName, {});
 
 		if (!collector->hasMetadata(layerId)) {
 			collector->setMetadata(layerId, extractXMLLinkages(pLevel));
@@ -142,10 +140,8 @@ bool DataProcessorDgn::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		collector->setMetadata(groupID, meta);
 	}
 
-	if (!collector->hasLayer(groupID))
-	{
-		collector->createLayer(groupID, groupID, layerId);
-	}
+	collector->createLayer(groupID, groupID, layerId);
+	setLayer(groupID);
 
 	return OdGsBaseMaterialView::doDraw(i, pDrawable);
 }
@@ -155,10 +151,9 @@ void DataProcessorDgn::convertTo3DRepoMaterial(
 	OdDbStub* materialId,
 	const OdGiMaterialTraitsData & materialData,
 	MaterialColours& matColors,
-	repo_material_t& material,
-	bool& missingTexture)
+	repo_material_t& material)
 {
-	DataProcessor::convertTo3DRepoMaterial(prevCache, materialId, materialData, matColors, material, missingTexture);
+	DataProcessor::convertTo3DRepoMaterial(prevCache, materialId, materialData, matColors, material);
 
 	OdCmEntityColor color = fixByACI(this->device()->getPalette(), effectiveTraits().trueColor());
 	// diffuse

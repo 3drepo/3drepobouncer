@@ -23,88 +23,91 @@
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
 GeometryCollector::GeometryCollector(repo::manipulator::modelutility::RepoSceneBuilder* builder) :
-	meshBuilderDeleter(this),
-	meshBuilder(nullptr, meshBuilderDeleter),
 	sceneBuilder(builder)
 {
 	auto rootNode = repo::core::model::RepoBSONFactory::makeTransformationNode({}, "rootNode", {});
 	sceneBuilder->addNode(rootNode);
 	rootNodeId = rootNode.getSharedID();
+	latestMaterial = repo_material_t::DefaultMaterial();
 }
 
-GeometryCollector::RepoMeshBuilderPtr GeometryCollector::makeMeshBuilder(
-	std::vector<repo::lib::RepoUUID> parentIds,
-	repo::lib::RepoVector3D64 offset,
-	repo_material_t material)
+GeometryCollector::~GeometryCollector()
 {
-	return std::move(std::unique_ptr<RepoMeshBuilder, RepoMeshBuilderDeleter&>(
-		new RepoMeshBuilder(parentIds, offset, material),
-		meshBuilderDeleter)
-	);
-}
-
-repo_material_t GeometryCollector::GetDefaultMaterial() const {
-	repo_material_t material;
-	material.shininess = 0.0;
-	material.shininessStrength = 0.0;
-	material.opacity = 1;
-	material.specular = { 0, 0, 0, 0 };
-	material.diffuse = { 0.5f, 0.5f, 0.5f, 0 };
-	material.emissive = material.diffuse;
-
-	return material;
-}
-
-void GeometryCollector::setLayer(std::string id)
-{
-	auto parentIds = std::vector<repo::lib::RepoUUID>({ layerIdToSharedId[id] }); // (There is only ever actually one parent)
-
-	if (!meshBuilder)
-	{
-		meshBuilder = makeMeshBuilder(parentIds, offset, GetDefaultMaterial());
-	}
-	else if (meshBuilder->getParents() != parentIds)
-	{
-		meshBuilder = makeMeshBuilder(parentIds, offset, meshBuilder->getMaterial());
+	if (contexts.size()) {
+		throw repo::lib::RepoSceneProcessingException("GeometryCollector is being destroyed with outstanding draw contexts.");
 	}
 }
 
-void GeometryCollector::setMaterial(const repo_material_t& material, bool missingTexture)
+void GeometryCollector::addFace(const std::vector<repo::lib::RepoVector3D64>& vertices) 
 {
-	// setLayer must always be called before the material
+	contexts.top()->addFace(vertices);
+}
 
-	if (missingTexture) 
-	{
-		sceneBuilder->setMissingTextures();
+void GeometryCollector::addFace(
+	const std::vector<repo::lib::RepoVector3D64>& vertices,
+	const repo::lib::RepoVector3D64& normal,
+	const std::vector<repo::lib::RepoVector2D>& uvCoords) 
+{
+	contexts.top()->addFace(vertices, normal, uvCoords);
+}
+
+void GeometryCollector::setMaterial(const repo_material_t& material)
+{
+	contexts.top()->setMaterial(material);
+	latestMaterial = material;
+}
+
+repo_material_t GeometryCollector::getLastMaterial()
+{
+	return latestMaterial;
+}
+
+void GeometryCollector::pushDrawContext(Context* ctx) 
+{
+	if (ctx != nullptr) {
+		contexts.push(ctx);
 	}
+}
 
-	if (meshBuilder->getMaterial().checksum() != material.checksum())
-	{
-		meshBuilder = makeMeshBuilder(meshBuilder->getParents(), offset, material);
+void GeometryCollector::popDrawContext(Context* ctx)
+{
+	if (ctx != nullptr) {
+		if (contexts.top() != ctx)
+		{
+			throw repo::lib::RepoGeometryProcessingException("Attempting to pop a context that is not the last one pushed");
+		}
+		else
+		{
+			contexts.pop();
+		}
 	}
 }
 
 void GeometryCollector::createLayer(std::string id, std::string name, std::string parentId)
 {
-	if (hasLayer(id)) {
-		throw repo::lib::RepoSceneProcessingException("createLayer called for the same id twice");
+	if (!hasLayer(id)) {
+		auto parentSharedId = rootNodeId;
+
+		auto parentIdItr = layerIdToSharedId.find(parentId);
+		if (parentIdItr != layerIdToSharedId.end()) {
+			parentSharedId = parentIdItr->second;
+		}
+
+		auto node = repo::core::model::RepoBSONFactory::makeTransformationNode({}, name, { parentSharedId });
+		layerIdToSharedId[id] = node.getSharedID();
+
+		sceneBuilder->addNode(node);
 	}
-	auto parentSharedId = rootNodeId;
-
-	auto parentIdItr = layerIdToSharedId.find(parentId);
-	if (parentIdItr != layerIdToSharedId.end()) {
-		parentSharedId = parentIdItr->second;
-	}
-
-	auto node = repo::core::model::RepoBSONFactory::makeTransformationNode({}, name, { parentSharedId });
-	sceneBuilder->addNode(node);
-
-	layerIdToSharedId[id] = node.getSharedID();
 }
 
 bool GeometryCollector::hasLayer(std::string id)
 {
 	return layerIdToSharedId.find(id) != layerIdToSharedId.end();
+}
+
+repo::lib::RepoUUID GeometryCollector::getSharedId(std::string id)
+{
+	return layerIdToSharedId[id];
 }
 
 void GeometryCollector::setMetadata(std::string id, std::unordered_map<std::string, repo::lib::RepoVariant> data)
@@ -118,20 +121,43 @@ bool GeometryCollector::hasMetadata(std::string id)
 	return layersWithMetadata.find(id) != layersWithMetadata.end();
 }
 
-void GeometryCollector::RepoMeshBuilderDeleter::operator()(RepoMeshBuilder* builder)
-{
-	std::vector<repo::core::model::MeshNode> meshes;
-	builder->extractMeshes(meshes);
-	for (auto m : meshes) {
-		processor->materialBuilder.addMaterialReference(builder->getMaterial(), m.getSharedID()); // (If it is not obvious, the logic of this loop ensures that a given material is only ever added if it is reference at least once)
-		processor->sceneBuilder->addNode(m);
-	}
-	delete builder;
-}
-
 void GeometryCollector::finalise()
 {
-	meshBuilder = nullptr;
 	sceneBuilder->addNodes(materialBuilder.extract());
 }
 
+void GeometryCollector::Context::setMaterial(const repo_material_t& material)
+{
+	auto id = material.checksum();
+	auto builder = meshBuilders.find(id);
+	if (builder == meshBuilders.end()) {
+		meshBuilders[id] = std::make_unique<RepoMeshBuilder>(std::vector<repo::lib::RepoUUID>(), offset, material);
+		this->meshBuilder = meshBuilders[id].get();
+	}
+	else
+	{
+		this->meshBuilder = builder->second.get();
+	}
+}
+
+std::vector<std::pair<repo::core::model::MeshNode, repo_material_t>> GeometryCollector::Context::extractMeshes()
+{
+	std::vector<std::pair<repo::core::model::MeshNode, repo_material_t>> pairs;
+	for (auto& p : meshBuilders) {
+		std::vector<repo::core::model::MeshNode> meshes;
+		p.second->extractMeshes(meshes);
+		for (auto& m : meshes)
+		{
+			pairs.push_back({ m, p.second->getMaterial() });
+		}
+	}
+	meshBuilders.clear();
+	return pairs;
+}
+
+GeometryCollector::Context::~Context()
+{
+	if (meshBuilders.size()) {
+		throw repo::lib::RepoGeometryProcessingException("GeometryCollector draw context is being destroyed before extract has been called.");
+	}
+}

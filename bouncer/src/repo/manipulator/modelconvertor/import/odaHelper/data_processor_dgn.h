@@ -53,8 +53,7 @@ namespace repo {
 						OdDbStub* materialId,
 						const OdGiMaterialTraitsData & materialData,
 						MaterialColours& matColors,
-						repo_material_t& material,
-						bool& missingTexture) override;
+						repo_material_t& material) override;
 
 				private:
 					OdCmEntityColor fixByACI(const ODCOLORREF *ids, const OdCmEntityColor &color);

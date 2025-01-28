@@ -71,35 +71,15 @@ namespace repo {
 			namespace odaHelper {
 				class VectoriseDeviceRvt;
 
-				class DataProcessorRvtContext
-				{
-				public:
-					DataProcessorRvtContext(repo::manipulator::modelutility::RepoSceneBuilder& builder);
-
-					RepoMaterialBuilder materials;
-					repo::manipulator::modelutility::RepoSceneBuilder& scene;
-					repo::lib::RepoUUID rootNodeSharedId;
-					repo_material_t lastUsedMaterial;
-
-					/*
-					* Convenience methods to create transformation nodes in the scene for the
-					* given Id, or return the existing ones Id, if it exists, allowing the
-					* processor to work with its local ids.
-					*/
-					void createLayer(std::string id, std::string name, std::string parent);
-					repo::lib::RepoUUID getSharedId(std::string id);
-
-				private:
-					std::unordered_map<std::string, repo::lib::RepoUUID> layers;
-				};
-
 				class DataProcessorRvt : public OdGiGeometrySimplifier, public OdGsBaseMaterialView
 				{
 					//Environment variable name for Revit textures
 					const char* RVT_TEXTURES_ENV_VARIABLE = "REPO_RVT_TEXTURES";
 
+					GeometryCollector* collector;
+
 				public:
-					void initialise(DataProcessorRvtContext* collector, OdBmDatabasePtr pDb, OdBmDBViewPtr view);
+					void initialise(GeometryCollector* collector, OdBmDatabasePtr pDb, OdBmDBViewPtr view, const OdGeMatrix3d& modelToWorld);
 
 					static bool tryConvertMetadataEntry(
 						OdTfVariant& metaEntry,
@@ -107,6 +87,9 @@ namespace repo {
 						OdBmParamDefPtr paramDef,
 						OdBm::BuiltInParameter::Enum param,
 						repo::lib::RepoVariant& v);
+
+					static OdBmAUnitsPtr getUnits(OdBmDatabasePtr database);
+					static OdBmForgeTypeId getLengthUnits(OdBmDatabasePtr database);
 
 				protected:
 					void draw(const OdGiDrawable*) override;
@@ -116,14 +99,6 @@ namespace repo {
 				private:
 					std::string determineTexturePath(const std::string& inputPath);
 
-					/*
-					* This method sets the convertTo3DRepoWorldCoorindates functor to translate from
-					* model space into Project Coordinates, including the conversion from internal
-					* units to project units. For Revit, the Project Coordinate System is defined by
-					* the active Survey Point.
-					*/
-					void establishProjectTranslation(OdBmDatabasePtr pDb);
-					void establishWorldOffset(OdBmDBViewPtr view);
 					void fillTexture(OdBmMaterialElemPtr materialPtr, repo_material_t& material, bool& missingTexture);
 					void fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiMaterialTraitsData& materialData, repo_material_t& material);
 
@@ -140,8 +115,6 @@ namespace repo {
 					std::string getElementName(OdBmElementPtr element);
 
 					void initLabelUtils();
-					OdBmAUnitsPtr getUnits(OdBmDatabasePtr database);
-					OdBmForgeTypeId getLengthUnits(OdBmDatabasePtr database);
 
 					bool ignoreParam(const std::string& param);
 
@@ -154,48 +127,9 @@ namespace repo {
 
 					ModelUnits getProjectUnits(OdBmDatabasePtr pDb);
 
-					/*
-					* Gets the bounds of the geometry in model space. This is an expensive operation
-					* and should only be called once.
-					*/
-					OdGeExtents3d getModelBounds(OdBmDBViewPtr view);
-
 					OdBmDatabasePtr database;
 					OdBmDBViewPtr view;
 					OdBmSampleLabelUtilsPE* labelUtils = nullptr;
-
-					class DrawContext
-					{
-					public:
-						repo::lib::RepoVector3D64 offset;
-						std::unordered_map<uint64_t, std::unique_ptr<RepoMeshBuilder>> meshBuilders;
-
-						RepoMeshBuilder* meshBuilder;
-
-						/*
-						* Creates a MeshBuilder for the material, and sets it as the active
-						* one.
-						*/
-						void setMaterial(const repo_material_t& material);
-					};
-
-					std::unique_ptr<DrawContext> createNewDrawContext();
-
-					struct DrawFrame
-					{
-						DrawFrame(OdBmElementPtr element)
-							:element(element),
-							context(nullptr)
-						{
-						}
-
-						OdBmElementPtr element;
-						std::unique_ptr<DrawContext> context;
-					};
-
-					DataProcessorRvtContext* importContext;
-					DrawContext* drawContext;
-					std::stack<DrawFrame*> drawStack;
 
 					OdGeMatrix3d modelToProjectCoordinates;
 
@@ -207,8 +141,6 @@ namespace repo {
 					* under.
 					*/
 					bool shouldCreateNewLayer(const OdBmElementPtr element);
-
-					repo::lib::RepoVector3D64 offset;
 
 					void convertTo3DRepoTriangle(
 						const OdInt32* p3Vertices,

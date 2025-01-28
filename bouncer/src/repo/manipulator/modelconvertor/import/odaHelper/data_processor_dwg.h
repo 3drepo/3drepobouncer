@@ -48,8 +48,7 @@ namespace repo {
 						OdDbStub* materialId,
 						const OdGiMaterialTraitsData & materialData,
 						MaterialColours& matColors,
-						repo_material_t& material,
-						bool& missingTexture) override;
+						repo_material_t& material) override;
 
 				private:
 					void convertTo3DRepoColor(OdCmEntityColor& color, std::vector<float>& out);

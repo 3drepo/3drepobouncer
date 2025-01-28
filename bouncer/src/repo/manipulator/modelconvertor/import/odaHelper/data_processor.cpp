@@ -38,7 +38,7 @@ void DataProcessor::convertTo3DRepoTriangle(
 	for (int i = 0; i < 3; i++)
 	{
 		auto position = pVertexDataList[p3Vertices[i]];
-		verticesOut.push_back(convertTo3DRepoWorldCoorindates(position));
+		verticesOut.push_back(toRepoVector(position));
 	}
 	normalOut = calcNormal(verticesOut[0], verticesOut[1], verticesOut[2]);
 }
@@ -59,7 +59,7 @@ void DataProcessor::getVertices(
 		{
 			auto point = pVertexDataList[p3Vertices[i]];
 			odaPoint.push_back(point);
-			repoPoint.push_back(convertTo3DRepoWorldCoorindates(point));
+			repoPoint.push_back(toRepoVector(point));
 		}
 	}
 }
@@ -96,8 +96,8 @@ void DataProcessor::polylineOut(OdInt32 numPoints, const OdGePoint3d* vertexList
 	for (OdInt32 i = 0; i < (numPoints - 1); i++)
 	{
 		vertices.clear();
-		vertices.push_back(convertTo3DRepoWorldCoorindates(vertexList[i]));
-		vertices.push_back(convertTo3DRepoWorldCoorindates(vertexList[i + 1]));
+		vertices.push_back(toRepoVector(vertexList[i]));
+		vertices.push_back(toRepoVector(vertexList[i + 1]));
 		collector->addFace(vertices);
 	}
 }
@@ -113,8 +113,7 @@ void DataProcessor::convertTo3DRepoMaterial(
 	OdDbStub* materialId,
 	const OdGiMaterialTraitsData & materialData,
 	MaterialColours& matColors,
-	repo_material_t& material,
-	bool& missingTexture)
+	repo_material_t& material)
 {
 	OdGiMaterialColor diffuseColor; OdGiMaterialMap diffuseMap;
 	OdGiMaterialColor ambientColor;
@@ -156,9 +155,8 @@ OdGiMaterialItemPtr DataProcessor::fillMaterialCache(
 	repo_material_t material;
 	bool missingTexture = false;
 
-	convertTo3DRepoMaterial(prevCache, materialId, materialData, colors, material, missingTexture);
-
-	collector->setMaterial(material, missingTexture);
+	convertTo3DRepoMaterial(prevCache, materialId, materialData, colors, material);
+	collector->setMaterial(material);
 
 	return OdGiMaterialItemPtr();
 }
@@ -172,7 +170,45 @@ void DataProcessor::beginViewVectorization()
 	setEyeToOutputTransform(getEyeToWorldTransform());
 }
 
+void DataProcessor::endViewVectorization()
+{
+	OdGsBaseMaterialView::endViewVectorization();
+	activeContext = nullptr;
+}
+
 void DataProcessor::initialise(GeometryCollector* collector)
 {
 	this->collector = collector;
+}
+
+/*
+ * This drawing context will commit its meshes when it goes out of scope. 
+ */
+DataProcessor::AutoContext::AutoContext(GeometryCollector* collector, const std::string& layerId) :
+	collector(collector),
+	layerId(layerId),
+	GeometryCollector::Context(collector->getWorldOffset(), collector->getLastMaterial())
+{
+}
+
+DataProcessor::AutoContext::~AutoContext()
+{
+	collector->popDrawContext(this);
+	auto parent = collector->getSharedId(layerId);
+	auto meshes = extractMeshes();
+	for (auto& p : meshes) {
+		p.first.setParents({parent});
+		collector->addMaterialReference(p.second, p.first.getSharedID());
+		collector->addNode(p.first);
+	}
+}
+
+void DataProcessor::setLayer(std::string id)
+{
+	// When this is reset to a new layer, or null in endViewVectorization, the
+	// meshes will be committed under the specified layer. Destroying the old
+	// context will pop it from the stack.
+
+	activeContext = std::make_unique<AutoContext>(collector, id);
+	collector->pushDrawContext(activeContext.get());
 }

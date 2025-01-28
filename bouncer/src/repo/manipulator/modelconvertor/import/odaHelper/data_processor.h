@@ -60,8 +60,15 @@ namespace repo {
 						const OdGePoint3d& pointOnCurve) const;
 
 					void beginViewVectorization();
+					void endViewVectorization();
 
 					virtual void initialise(GeometryCollector* collector);
+
+					/*
+					* Sets up the processor so that any new primitives go under the layer with
+					* the specified Id.
+					*/
+					void setLayer(std::string id);
 
 				protected:
 					/**
@@ -77,8 +84,7 @@ namespace repo {
 						OdDbStub* materialId,
 						const OdGiMaterialTraitsData & materialData,
 						MaterialColours& matColors,
-						repo_material_t& material,
-						bool& missingTexture);
+						repo_material_t& material);
 
 					/**
 					* Should be overriden in derived classes to process triangles
@@ -105,16 +111,24 @@ namespace repo {
 						std::vector<repo::lib::RepoVector3D64> &repoPoint
 					);
 
-					/**
-					* Function to convert a teigha point to 3D Repo point
-					* By default, this just returns the same point converted into 3drepo type.
-					* Should the format require, this needs to be overwritten to translate the point back to project point
-					* @param pnt point in teigha format
-					* @return returns converted, transformed point in RepoVector3D64
-					*/
-					std::function<repo::lib::RepoVector3D64(OdGePoint3d)> convertTo3DRepoWorldCoorindates = [](OdGePoint3d pnt) { return repo::lib::RepoVector3D64(pnt.x, pnt.y, pnt.z); };
-
 					double deviationValue = 0;
+
+					/*
+					* This drawing context will commit its meshes when it goes out of scope.
+					*/
+					class AutoContext : public GeometryCollector::Context 
+					{
+					public:
+						AutoContext(GeometryCollector* collector, const std::string& layerId);
+						~AutoContext();
+
+					private:
+						std::string layerId;
+						GeometryCollector* collector;
+					};
+
+					std::unique_ptr<AutoContext> activeContext;
+
 				private:
 					/**
 					* This callback is invoked when next triangle should be processed
