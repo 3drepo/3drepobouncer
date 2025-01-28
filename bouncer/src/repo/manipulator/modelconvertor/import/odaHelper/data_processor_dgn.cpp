@@ -113,9 +113,6 @@ bool DataProcessorDgn::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	//We want to group meshes together up to 1 below the top.
 	std::string groupID = convertToStdString(toString(previousItem->elementId().getHandle()));
 
-	//OdString sHandle = pElm->isDBRO() ? toString(pElm->elementId().getHandle()) : toString(OD_T("non-DbResident"));
-	//collector->setNextMeshName(convertToStdString(sHandle));
-
 	OdGiSubEntityTraitsData traits = effectiveTraits();
 	OdDgElementId idLevel = traits.layer();
 	std::string layerName;

@@ -699,10 +699,8 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 
 	std::vector<repo::core::model::MeshNode> nodes;
 	meshBuilder.extractMeshes(nodes);
-
 	for (auto& mesh : nodes)
 	{
-
 		context.materials->addMaterialReference(meshBuilder.getMaterial(), mesh.getSharedID());
 		context.sceneBuilder->addNode(mesh);
 	}

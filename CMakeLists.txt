@@ -42,6 +42,8 @@ if(${WIN32})
 		-DNOMINMAX
 	)
 
+	# Tells Visual Studio to enable multithreaded/parallel compilation for all
+	# projects on Windows.
 	add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/MP>)
 
 	# This flag tells MSVC to interpret everything as utf8 - the default behaviour

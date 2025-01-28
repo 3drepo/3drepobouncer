@@ -1,6 +1,23 @@
+/**
+*  Copyright (C) 2018 3D Repo Ltd
+*
+*  This program is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU Affero General Public License as
+*  published by the Free Software Foundation, either version 3 of the
+*  License, or (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU Affero General Public License for more details.
+*
+*  You should have received a copy of the GNU Affero General Public License
+*  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "repo_model_import_oda.h"
-#include "../../../core/model/bson/repo_bson_factory.h"
-#include "../../../error_codes.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/error_codes.h"
 
 #ifdef ODA_SUPPORT
 #include <OdaCommon.h>
@@ -37,7 +54,6 @@ repo::core::model::RepoScene* OdaModelImport::generateRepoScene(uint8_t &errMsg)
 	// those nodes to finalise the import.
 
 	#ifdef ODA_SUPPORT
-
 		repoInfo << "Initialising Repo Scene...";
 
 		this->modelUnits = sceneBuilder->getUnits();
@@ -54,9 +70,6 @@ repo::core::model::RepoScene* OdaModelImport::generateRepoScene(uint8_t &errMsg)
 			scene->setMissingTexture();
 		}
 
-		delete sceneBuilder;
-		sceneBuilder = nullptr;
-
 		return scene;
 
 	#else
@@ -70,14 +83,14 @@ bool OdaModelImport::importModel(std::string filePath, std::shared_ptr<repo::cor
 	this->filePath = filePath;
 	repoInfo << " ==== Importing with Teigha Library [" << filePath << "] using RepoSceneBuilder ====";
 	this->handler = handler;
-	sceneBuilder = new repo::manipulator::modelutility::RepoSceneBuilder(
+	sceneBuilder = std::make_unique<repo::manipulator::modelutility::RepoSceneBuilder>(
 		handler,
 		settings.getDatabaseName(),
 		settings.getProjectName(),
 		settings.getRevisionId()
 	);
 
-	odaProcessor = odaHelper::FileProcessor::getFileProcessor(filePath, sceneBuilder, settings);
+	odaProcessor = odaHelper::FileProcessor::getFileProcessor(filePath, sceneBuilder.get(), settings);
 	odaProcessor->readFile();
 	sceneBuilder->finalise();
 

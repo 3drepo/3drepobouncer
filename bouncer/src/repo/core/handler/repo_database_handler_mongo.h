@@ -50,10 +50,6 @@ namespace repo {
 				class FileManager;
 			}
 
-			namespace database {
-				class MongoDatabaseOperation;
-			}
-
 			class MongoDatabaseHandler : public AbstractDatabaseHandler {
 				enum class OPERATION { DROP, INSERT, UPDATE };
 

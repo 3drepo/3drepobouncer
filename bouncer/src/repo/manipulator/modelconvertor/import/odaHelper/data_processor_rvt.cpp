@@ -22,14 +22,13 @@
 #include "data_processor_rvt.h"
 #include "helper_functions.h"
 #include "repo/lib/repo_utils.h"
+#include "repo/core/model/bson/repo_bson_builder.h"
 #include <Database/BmTransaction.h>
 #include <Database/BmUnitUtils.h>
 #include <Database/Entities/BmRbsSystemType.h>
 #include <Base/BmForgeTypeId.h>
 #include <Base/BmParameterSet.h>
 #include <Base/BmSpecTypeId.h>
-
-#include "repo/core/model/bson/repo_bson_builder.h"
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 

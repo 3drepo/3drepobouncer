@@ -116,8 +116,6 @@ protected:
 	ODRX_USING_HEAP_OPERATORS(RepoSystemServices);
 };
 
-#pragma optimize("",off)
-
 OdBmDBDrawingPtr findView(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimDatabase)
 {
 	// Layouts correspond to the Views listed in the Project Browser in Revit.
@@ -169,7 +167,8 @@ OdBmDBDrawingPtr findView(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bi
 
 FileProcessorRvt::FileProcessorRvt(const std::string& inputFile,
 	modelutility::RepoSceneBuilder* builder,
-	const ModelImportConfig& config) :FileProcessor(inputFile, builder, config)
+	const ModelImportConfig& config) :
+	FileProcessor(inputFile, builder, config)
 {
 }
 
@@ -223,7 +222,7 @@ OdGeExtents3d getModelBounds(OdBmDBViewPtr view)
 	{
 		OdBmElementPtr element = e.safeOpenObject();
 		OdGeExtents3d extents;
-		element->getGeomExtents(extents); // These are in model space, in the file's native units
+		element->getGeomExtents(extents); // These are in model space, in Revits internal units
 		model.addExt(extents);
 	}
 
@@ -242,7 +241,6 @@ OdGeMatrix3d getModelToWorldMatrix(OdBmDatabasePtr pDb)
 	if (!aElements.isEmpty())
 	{
 		OdBmBasePointPtr pThis = aElements.first().safeOpenObject();
-
 		if (pThis->getLocationType() == 0)
 		{
 			if (OdBmGeoLocation::isGeoLocationAllowed(pThis->database()))
@@ -255,10 +253,10 @@ OdGeMatrix3d getModelToWorldMatrix(OdBmDatabasePtr pDb)
 
 				// The Active Location is the Survey Point of the active Site. Revit can have
 				// a number of Sites defined, each with exactly one Survey Point. 
-				// This snippet initialises the modelToProjectCoordinates which transforms from
-				// the internal coordinate sysem into the shared coordinate system, including
-				// conversion to project units. (Coordinates may still undergo the Scene's
-				// World Offset, for storage.)
+				// This snippet initialises a matrix to convert from internal coordinates
+				// (model space) to the shared coordinate system, including conversion to the
+				// project's units. (Geometry still has to undergo the world offset applied to
+				// a revision node.)
 
 				OdBmGeoLocationPtr pActiveLocation = OdBmGeoLocation::getActiveLocationId(pThis->database()).safeOpenObject();
 				OdGeMatrix3d activeTransform = pActiveLocation->getTransform();

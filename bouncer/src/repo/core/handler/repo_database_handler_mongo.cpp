@@ -141,11 +141,9 @@ repo::core::model::RepoBSON REPO_API_EXPORT makeQueryFilterDocument(const repo::
 /*
 * This is the visitor for the query types when building a document of query
 * operators. When using query operators (as opposed to pipeline operators)
-* all the operators (if more than) exist as fields in one document, and
+* all the operators (if more than one) exist as fields in one document, and
 * behave as if they are AND'd.
-* This type is exported so it can be exercised directly in the unit tests.
 */
-
 struct MongoQueryFilterVistior
 {
 	repo::core::model::RepoBSONBuilder* builder;
@@ -754,9 +752,6 @@ void MongoDatabaseHandler::upsertDocument(
 	}
 }
 
-#pragma optimise("",off)
-
-
 size_t MongoDatabaseHandler::count(
 	const std::string& database,
 	const std::string& collection,
@@ -889,20 +884,4 @@ std::unique_ptr<repo::core::handler::database::Cursor> MongoDatabaseHandler::get
 	{
 		std::throw_with_nested(MongoDatabaseHandlerException(*this, "replaceArrayEntriesByUniqueId", database, collection));
 	}
-}
-
-
-// Put the abstract cursor def here as well for the time being...
-
-
-const repo::core::model::RepoBSON repo::core::handler::database::Cursor::Iterator::operator*() {
-	return impl->operator*();
-}
-
-void repo::core::handler::database::Cursor::Iterator::operator++() {
-	impl->operator++();
-}
-
-bool repo::core::handler::database::Cursor::Iterator::operator!=(const Iterator& other) {
-	return impl->operator!=(other.impl);
 }

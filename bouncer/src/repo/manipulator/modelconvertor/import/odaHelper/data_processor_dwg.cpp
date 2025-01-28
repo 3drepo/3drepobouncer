@@ -81,9 +81,7 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 
 		// Make sure we have created an actual layer entry for the DWG layer...
 
-		if (!collector->hasLayer(layerId)) {
-			collector->createLayer(layerId, layerName, {});
-		}
+		collector->createLayer(layerId, layerName, {});
 
 		// Check if this drawable is directly under a layer or in a block.
 

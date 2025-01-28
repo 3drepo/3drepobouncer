@@ -32,10 +32,7 @@ namespace repo {
 			public:
 				static const std::string supportedExtensions;
 
-				OdaModelImport(const ModelImportConfig &settings)
-					: AbstractModelImport(settings),
-					sceneBuilder(nullptr)
-				{}
+				OdaModelImport(const ModelImportConfig &settings) : AbstractModelImport(settings) {}
 				~OdaModelImport();
 
 				/**
@@ -60,7 +57,7 @@ namespace repo {
 				* @return returns true upon success
 				*/
 				virtual bool importModel(std::string filePath, uint8_t& err) {
-					throw std::runtime_error("Classic import is no longer supported for ODA. Use streaming import.");
+					throw std::runtime_error("Classic import is no longer supported for ODA. Use streaming model import instead.");
 				}
 
 				virtual bool importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err);
@@ -72,7 +69,7 @@ namespace repo {
 				std::string filePath;
 				bool shouldReduce = false;
 				std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler;
-				repo::manipulator::modelutility::RepoSceneBuilder* sceneBuilder;
+				std::unique_ptr<repo::manipulator::modelutility::RepoSceneBuilder> sceneBuilder;
 #ifdef ODA_SUPPORT
 				std::unique_ptr<odaHelper::FileProcessor> odaProcessor;
 #endif

@@ -34,13 +34,6 @@ namespace repo {
 				namespace index {
 					class RepoIndex;
 				}
-				class AbstractDatabaseOperation
-				{
-				public:
-					virtual ~AbstractDatabaseOperation() // This is mainly so this class has a virtual function and is so considered polymorphic
-					{
-					}
-				};
 
 				/*
 				* The Cursor class provides iterable access to a database collection.
@@ -49,7 +42,6 @@ namespace repo {
 				* they can be passed by value, as is the convention, while allowing
 				* database handlers to provide custom implementations.
 				*/
-
 				class Cursor {
 				public:
 					class Iterator {
