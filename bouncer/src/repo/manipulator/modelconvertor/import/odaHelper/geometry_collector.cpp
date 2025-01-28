@@ -124,6 +124,7 @@ bool GeometryCollector::hasMetadata(std::string id)
 void GeometryCollector::finalise()
 {
 	sceneBuilder->addNodes(materialBuilder.extract());
+	sceneBuilder->finalise();
 }
 
 void GeometryCollector::Context::setMaterial(const repo_material_t& material)

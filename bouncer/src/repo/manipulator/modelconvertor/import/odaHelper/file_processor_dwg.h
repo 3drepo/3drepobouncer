@@ -41,14 +41,13 @@ namespace repo {
 				class FileProcessorDwg : public FileProcessor
 				{
 				public:
-					FileProcessorDwg(const std::string& inputFile, modelutility::RepoSceneBuilder* builder, const ModelImportConfig& config);
+					FileProcessorDwg(const std::string& inputFile, modelutility::RepoSceneBuilder* builder, const ModelImportConfig& config) : FileProcessor(inputFile, builder, config) {}
 					FileProcessorDwg(const std::string& inputFile, repo::manipulator::modelutility::DrawingImageInfo* collector) : FileProcessor(inputFile, collector) {}
 					~FileProcessorDwg() override {}
 					uint8_t readFile();
 
 				protected:
 					OdStaticRxObject<RepoDwgServices> svcs;
-					GeometryCollector* collector;
 
 				private:
 					void importModel(OdDbDatabasePtr pDb);

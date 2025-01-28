@@ -45,7 +45,6 @@ class StubDeviceModuleDgn : public OdGsBaseModule
 {
 private:
 	GeometryCollector *collector;
-	OdGeMatrix3d        m_matTransform;
 	OdGeExtents3d extModel;
 
 public:
@@ -86,6 +85,9 @@ FileProcessorDgn::FileProcessorDgn(const std::string& inputFile,
 
 repo::manipulator::modelconvertor::odaHelper::FileProcessorDgn::~FileProcessorDgn()
 {
+	if (collector) {
+		delete collector;
+	}
 }
 
 OdDgDatabasePtr FileProcessorDgn::initialiseOdDatabase() {
@@ -224,11 +226,11 @@ uint8_t FileProcessorDgn::readFile() {
 			" (Model: '" << convertToStdString(OdDgModel::cast(pViewGroup->getModelId().openObject(OdDg::kForRead))->getName()) << "')";
 
 		OdGeExtents3d extModel;
-		//pModel->getGeomExtents(vectorizedViewId, extModel);
-		auto origin = pModel->getGlobalOrigin();
+		pModel->getGeomExtents(vectorizedViewId, extModel);
 		if (collector) {
-			collector->setWorldOffset(repo::lib::RepoVector3D64(origin.x, origin.y, origin.z));
+			collector->setWorldOffset(toRepoVector(extModel.minPoint()));
 		}
+
 		// Color with #255 always defines backround. The background of the active model must be considered in the device palette.
 		pPalCpy[255] = background;
 		// Note: This method should be called to resolve "white background issue" before setting device palette

@@ -335,7 +335,6 @@ uint8_t FileProcessorRvt::readFile()
 			pDevice->update();
 
 			collector.finalise();
-			repoSceneBuilder->finalise();
 		}
 	}
 	catch (OdError& e)

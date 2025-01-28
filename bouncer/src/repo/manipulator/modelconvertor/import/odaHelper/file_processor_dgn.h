@@ -49,7 +49,7 @@ namespace repo {
 				{
 				public:
 					FileProcessorDgn(const std::string& inputFile, repo::manipulator::modelutility::RepoSceneBuilder* builder, const ModelImportConfig& config);
-					FileProcessorDgn(const std::string& inputFile, modelutility::DrawingImageInfo* collector) : FileProcessor(inputFile, collector) {};
+					FileProcessorDgn(const std::string& inputFile, modelutility::DrawingImageInfo* collector) : FileProcessor(inputFile, collector), collector(nullptr) {};
 					~FileProcessorDgn() override;
 
 					uint8_t readFile() override;

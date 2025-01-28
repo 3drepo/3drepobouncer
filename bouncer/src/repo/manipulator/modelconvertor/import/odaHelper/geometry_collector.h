@@ -171,7 +171,6 @@ namespace repo {
 					repo::manipulator::modelutility::RepoSceneBuilder* sceneBuilder;
 					std::stack<Context*> contexts;
 					repo_material_t latestMaterial;
-					repo::lib::RepoVector3D64 offset;
 					RepoMaterialBuilder materialBuilder;
 					std::unordered_map<std::string, repo::lib::RepoUUID> layerIdToSharedId;
 					std::set<std::string> layersWithMetadata;
