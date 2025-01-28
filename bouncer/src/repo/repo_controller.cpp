@@ -188,6 +188,13 @@ void RepoController::processDrawingRevision(
 	return impl->processDrawingRevision(token, teamspace, revision, err, imagePath);
 }
 
+void RepoController::updateRevisionStatus(
+	repo::core::model::RepoScene* scene,
+	const repo::core::model::ModelRevisionNode::UploadStatus& status)
+{
+	impl->updateRevisionStatus(scene, status);
+}
+
 bool RepoController::isVREnabled(const RepoController::RepoToken *token,
 	const repo::core::model::RepoScene *scene)
 {

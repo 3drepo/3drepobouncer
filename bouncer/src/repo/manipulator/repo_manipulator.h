@@ -266,6 +266,10 @@ namespace repo {
 				uint8_t& error,
 				const std::string &imagePath);
 
+			void updateRevisionStatus(
+				repo::core::model::RepoScene* scene,
+				const repo::core::model::ModelRevisionNode::UploadStatus& status
+			);
 		private:
 
 			/**

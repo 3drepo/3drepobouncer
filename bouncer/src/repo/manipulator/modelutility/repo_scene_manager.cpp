@@ -35,8 +35,7 @@ bool SceneManager::commitWebBuffers(
 	const std::string                                     &geoStashExt,
 	const repo_web_buffers_t                              &resultBuffers,
 	repo::core::handler::AbstractDatabaseHandler          *handler,
-	repo::core::handler::fileservice::FileManager         *fileManager,
-	const bool                                            addTimestampToSettings)
+	repo::core::handler::fileservice::FileManager         *fileManager)
 {
 	bool success = true;
 	std::string jsonStashExt = REPO_COLLECTION_STASH_JSON;
@@ -79,19 +78,6 @@ bool SceneManager::commitWebBuffers(
 		handler->upsertDocument(databaseName, projectName + "." + repoAssetsStashExt, resultBuffers.repoAssets, true);
 	}
 
-	if (success)
-	{
-		scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE);
-		if (addTimestampToSettings)
-		{
-			scene->addTimestampToProjectSettings(handler);
-		}
-	}
-	else
-	{
-		scene->addErrorStatusToProjectSettings(handler);
-	}
-
 	return success;
 }
 
@@ -130,6 +116,7 @@ uint8_t SceneManager::commitScene(
 			if (success)
 			{
 				repoInfo << "Generating Selection Tree JSON...";
+				scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::GEN_SEL_TREE);
 				if (generateAndCommitSelectionTree(scene, handler, fileManager))
 					repoInfo << "Selection Tree Stored into the database";
 				else
@@ -141,6 +128,7 @@ uint8_t SceneManager::commitScene(
 				if (shouldGenerateSrcFiles(scene, handler))
 				{
 					repoInfo << "Generating SRC stashes...";
+					scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::GEN_WEB_STASH);
 					repo_web_buffers_t buffers;
 					if (success = generateWebViewBuffers(scene, repo::manipulator::modelconvertor::WebExportType::SRC, buffers, handler, fileManager))
 						repoInfo << "SRC Stashes Stored into the database";
@@ -152,6 +140,7 @@ uint8_t SceneManager::commitScene(
 			if (success && !isFederation)
 			{
 				repoInfo << "Generating Repo Bundles...";
+				scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::GEN_WEB_STASH);
 				repo_web_buffers_t buffers;
 				if (success = generateWebViewBuffers(scene, repo::manipulator::modelconvertor::WebExportType::REPO, buffers, handler, fileManager))
 					repoInfo << "Repo Bundles for Stash stored into the database";
@@ -176,6 +165,11 @@ uint8_t SceneManager::commitScene(
 			msg += "Trying to commit a scene that does not exist!";
 		repoError << "Error committing scene to the database : " << msg;
 		errCode = REPOERR_UPLOAD_FAILED;
+	}
+
+	if (errCode != REPOERR_OK)
+	{
+		scene->addErrorStatusToProjectSettings(handler);
 	}
 
 	return errCode;
@@ -368,7 +362,6 @@ bool SceneManager::generateAndCommitSelectionTree(
 	bool success = false;
 	if (success = scene && scene->isRevisioned() && handler)
 	{
-		scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::GEN_SEL_TREE);
 		SelectionTreeMaker treeMaker(scene);
 		auto buffer = treeMaker.getSelectionTreeAsBuffer();
 
@@ -404,15 +397,7 @@ bool SceneManager::generateAndCommitSelectionTree(
 		{
 			repoError << "Failed to generate selection tree: JSON file buffer is empty!";
 		}
-
-		if (success) scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE);
 	}
-	else
-	{
-		repoError << "Failed to commit selection tree.";
-		scene->addErrorStatusToProjectSettings(handler);
-	}
-
 	return success;
 }
 

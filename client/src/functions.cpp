@@ -251,15 +251,23 @@ bool _generateStash(
 	if (scene) {
 		if (type == "repo")
 		{
+			controller->updateRevisionStatus(scene, repo::core::model::ModelRevisionNode::UploadStatus::GEN_WEB_STASH);
 			success = controller->generateAndCommitRepoBundlesBuffer(token, scene);
 		}
 		else if (type == "src")
 		{
+			controller->updateRevisionStatus(scene, repo::core::model::ModelRevisionNode::UploadStatus::GEN_WEB_STASH);
 			success = controller->generateAndCommitSRCBuffer(token, scene);
 		}
 		else if (type == "tree")
 		{
+			controller->updateRevisionStatus(scene, repo::core::model::ModelRevisionNode::UploadStatus::GEN_SEL_TREE);
 			success = controller->generateAndCommitSelectionTree(token, scene);
+		}
+
+		if (success)
+		{
+			controller->updateRevisionStatus(scene, repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE);
 		}
 
 		delete scene;

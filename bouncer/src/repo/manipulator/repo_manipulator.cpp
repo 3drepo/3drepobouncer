@@ -370,3 +370,11 @@ bool RepoManipulator::isVREnabled(const repo::core::model::RepoScene* scene) con
 	modelutility::SceneManager manager;
 	return manager.isVrEnabled(scene, dbHandler.get());
 }
+
+void RepoManipulator::updateRevisionStatus(
+	repo::core::model::RepoScene* scene,
+	const ModelRevisionNode::UploadStatus& status
+)
+{
+	scene->updateRevisionStatus(dbHandler.get(), status);
+}

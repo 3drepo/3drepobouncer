@@ -319,6 +319,10 @@ namespace repo {
 				const uint32_t                     &maxDepth = 8
 			);
 
+		void updateRevisionStatus(
+			repo::core::model::RepoScene* scene,
+			const repo::core::model::ModelRevisionNode::UploadStatus& status);
+
 		/*
 		*	------------- Versioning --------------
 		*/

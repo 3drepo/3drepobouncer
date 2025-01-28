@@ -18,7 +18,7 @@
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
-const { object, string, number, lazy } = require('yup');
+const { boolean, object, string, number, lazy } = require('yup');
 const { exitApplication } = require('./utils');
 const params = require('./processParams');
 
@@ -56,6 +56,15 @@ const bouncer = object({
 	log_dir: string(),
 });
 
+const elastic = object({
+	cloud: envars,
+	auth: envars,
+	namespace: string(),
+	reload_connections: boolean(),
+	maxRetries: number(),
+	request_timeout: number(),
+});
+
 const logging = object({
 	taskLogDir: string(),
 	workerLogPath: string(),
@@ -71,6 +80,7 @@ const logging = object({
 
 const processMonitoring = object({
 	memoryIntervalMS: number().default(100),
+	enabled: boolean(),
 });
 
 const schema = object({
@@ -85,6 +95,7 @@ const schema = object({
 	logging,
 	processMonitoring,
 	bouncer,
+	elastic,
 });
 
 // eslint-disable-next-line consistent-return

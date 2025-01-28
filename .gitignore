@@ -37,8 +37,6 @@ resource.h
 #sed junk
 *.bak
 
-#mongo junk
-*.lock
 
 Debug
 x64

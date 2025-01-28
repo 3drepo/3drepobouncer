@@ -42,8 +42,8 @@ namespace repo {
 					const std::string                                     &geoStashExt,
 					const repo_web_buffers_t                              &resultBuffers,
 					repo::core::handler::AbstractDatabaseHandler          *handler,
-					repo::core::handler::fileservice::FileManager         *fileManager,
-					const bool                                            addTimestampToSettings = false);
+					repo::core::handler::fileservice::FileManager         *fileManager
+				);
 
 				uint8_t commitScene(
 					repo::core::model::RepoScene                          *scene,
