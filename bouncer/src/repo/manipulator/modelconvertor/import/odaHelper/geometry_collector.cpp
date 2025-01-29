@@ -123,7 +123,6 @@ bool GeometryCollector::hasMetadata(std::string id)
 
 void GeometryCollector::finalise()
 {
-	sceneBuilder->addNodes(materialBuilder.extract());
 	sceneBuilder->finalise();
 }
 

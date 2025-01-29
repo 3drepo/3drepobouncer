@@ -20,6 +20,7 @@
 #include "repo/core/model/repo_model_global.h"
 #include "repo/core/model/bson/repo_node.h"
 #include "repo/core/handler/repo_database_handler_abstract.h"
+#include "repo/core/handler/database/repo_query_fwd.h"
 #include "repo/core/handler/fileservice/repo_file_handler_abstract.h"
 #include "repo/lib/datastructure/repo_structs.h"
 #include "repo/lib/datastructure/repo_variant.h"
@@ -77,17 +78,31 @@ namespace repo {
 				template<repo::core::model::RepoNodeClass T>
 				std::shared_ptr<T> addNode(const T& node);
 
+				void addNode(std::unique_ptr<repo::core::model::RepoNode> node);
+
 				/*
 				* Adds nodes to the builder. These nodes can no longer be accessed once they
 				* have been handed over.
 				*/
 				void addNodes(std::vector<std::unique_ptr<repo::core::model::RepoNode>> nodes);
 
+				/**
+				* Adds the provided sharedId as a parent to the node with the given uniqueId.
+				* Nodes must already have been added with addNode.
+				*/
+				void addParent(repo::lib::RepoUUID nodeUniqueId, repo::lib::RepoUUID parentSharedId);
+
 				// Call when no more nodes are expected.
 				void finalise();
 
 				repo::lib::RepoVector3D64 getWorldOffset();
 				void setWorldOffset(const repo::lib::RepoVector3D64& offset);
+
+				/*
+				* Adds the repo_material_t to the scene with the specified parent, or adds
+				* the parent Id to the material's existing node.
+				*/
+				void addMaterialReference(const repo_material_t& m, repo::lib::RepoUUID parentId);
 
 				void setMissingTextures();
 				bool hasMissingTextures();
@@ -97,6 +112,12 @@ namespace repo {
 
 			private:
 
+				template<typename Value>
+				using RepoUUIDMap = std::unordered_map<repo::lib::RepoUUID, Value, repo::lib::RepoUUIDHasher>;
+
+				void addTextureReference(std::string texture, repo::lib::RepoUUID parentId);
+				std::unique_ptr<repo::core::model::TextureNode> createTextureNode(const std::string& texturePath);
+
 				// All nodes will be committed with this as the revision id
 				repo::lib::RepoUUID revisionId;
 
@@ -104,6 +125,8 @@ namespace repo {
 
 				std::string databaseName;
 				std::string projectName;
+
+				std::string getSceneCollectionName();
 
 				// Stored offset that should be applied to the scene when it is done.
 				// Note that this doesn't affect nodes added with addNode - they must already
@@ -117,14 +140,24 @@ namespace repo {
 
 				std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler;
 
-				std::vector<const repo::core::model::RepoNode*> nodesToCommit;
+				// These lookups are for use by the addMaterialReference method, which will
+				// update the parents of existing nodes.
+
+				std::unordered_map<size_t, repo::lib::RepoUUID> materialToUniqueId;
+				std::unordered_map<std::string, repo::lib::RepoUUID> textureToUniqueId;
+
+				// We have to use raw pointers here because the std containers' interaction
+				// with smart pointers requires the classes must be fully defined.
+
+				std::vector<repo::core::handler::database::query::AddParent*> parentUpdates;
+				RepoUUIDMap<repo::core::model::RepoNode*> nodesToCommit;
 
 				// Commits all nodes in the nodesToCommit vector immediately
 				void commitNodes();
 
 				// Schedule a node to be comitted to the database. Once queued, the node
 				// becomes immutable and must no longer be accessible outside the builder.
-				void queueNode(const repo::core::model::RepoNode* node);
+				void queueNode(repo::core::model::RepoNode* node);
 
 				struct Deleter;
 

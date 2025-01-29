@@ -141,6 +141,10 @@ struct repo_material_t {
 		return crc32.checksum();
 	}
 
+	bool hasTexture() const {
+		return !texturePath.empty();
+	}
+
 	static repo_material_t DefaultMaterial()
 	{
 		repo_material_t material;

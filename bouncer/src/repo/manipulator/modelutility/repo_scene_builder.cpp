@@ -23,6 +23,8 @@
 #include "repo/core/model/bson/repo_node_material.h"
 #include "repo/core/model/bson/repo_node_texture.h"
 #include "repo/core/model/bson/repo_bson.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/core/handler/database/repo_query.h"
 
 using namespace repo::manipulator::modelutility;
 using namespace repo::core::model;
@@ -48,7 +50,8 @@ RepoSceneBuilder::RepoSceneBuilder(
 	revisionId(revisionId),
 	referenceCounter(0),
 	isMissingTextures(false),
-	offset({})
+	offset({}),
+	units(repo::manipulator::modelconvertor::ModelUnits::UNKNOWN)
 {
 }
 
@@ -76,17 +79,22 @@ std::shared_ptr<T> RepoSceneBuilder::addNode(const T& node)
 	return ptr;
 }
 
+void RepoSceneBuilder::addNode(std::unique_ptr<repo::core::model::RepoNode> node)
+{
+	node->setRevision(revisionId);
+	queueNode(node.release());
+}
+
 void RepoSceneBuilder::addNodes(std::vector<std::unique_ptr<repo::core::model::RepoNode>> nodes)
 {
 	for (auto& n : nodes) {
-		n->setRevision(revisionId);
-		queueNode(n.release());
+		addNode(std::move(n));
 	}
 }
 
-void RepoSceneBuilder::queueNode(const RepoNode* node)
+void RepoSceneBuilder::queueNode(RepoNode* node)
 {
-	nodesToCommit.push_back(node);
+	nodesToCommit[node->getUniqueID()] = node;
 
 	if (nodesToCommit.size() > 1000)
 	{
@@ -94,15 +102,29 @@ void RepoSceneBuilder::queueNode(const RepoNode* node)
 	}
 }
 
+std::string RepoSceneBuilder::getSceneCollectionName()
+{
+	return projectName + "." + REPO_COLLECTION_SCENE;
+}
+
 void RepoSceneBuilder::commitNodes()
 {
 	std::vector< repo::core::model::RepoBSON> bsons;
-	for (auto n : nodesToCommit) {
-		bsons.push_back(*n);
-		delete n;
+	for (auto& n : nodesToCommit) {
+		bsons.push_back(*n.second);
+		delete n.second;
 	}
 	nodesToCommit.clear();
-	handler->insertManyDocuments(databaseName, projectName + "." + REPO_COLLECTION_SCENE, bsons);
+	handler->insertManyDocuments(databaseName, getSceneCollectionName(), bsons);
+
+	// Commit inheritence changes
+
+	std::vector<repo::core::handler::database::query::RepoUpdate> updates;
+	for (auto u : parentUpdates) {
+		updates.push_back(repo::core::handler::database::query::RepoUpdate(*u));
+	}
+	handler->updateOne(databaseName, getSceneCollectionName(), updates);
+	parentUpdates.clear();
 }
 
 void RepoSceneBuilder::finalise()
@@ -118,6 +140,86 @@ repo::lib::RepoVector3D64 RepoSceneBuilder::getWorldOffset()
 void RepoSceneBuilder::setWorldOffset(const repo::lib::RepoVector3D64& offset)
 {
 	this->offset = offset;
+}
+
+void RepoSceneBuilder::addMaterialReference(const repo_material_t& m, repo::lib::RepoUUID parentId)
+{
+	auto key = m.checksum();
+	if (materialToUniqueId.find(key) == materialToUniqueId.end())
+	{
+		auto node = repo::core::model::RepoBSONFactory::makeMaterialNode(m, {}, { parentId });
+		addNode(node);
+		materialToUniqueId[key] = node.getUniqueID();
+
+		if (m.hasTexture()) {
+			addTextureReference(m.texturePath, node.getSharedID());
+		}
+	}
+	else
+	{
+		addParent(materialToUniqueId[key], parentId);
+	}
+}
+
+void RepoSceneBuilder::addTextureReference(std::string texture, repo::lib::RepoUUID parentId)
+{
+	if (textureToUniqueId.find(texture) == textureToUniqueId.end()) {
+		auto node = createTextureNode(texture);
+		if (node) {
+			node->addParent(parentId);
+			textureToUniqueId[texture] = node->getUniqueID();
+			addNode(std::move(node));
+		}
+	}
+	else
+	{
+		addParent(textureToUniqueId[texture], parentId);
+	}
+}
+
+std::unique_ptr<repo::core::model::TextureNode> RepoSceneBuilder::createTextureNode(const std::string& texturePath)
+{
+	std::unique_ptr<repo::core::model::TextureNode> node;
+	std::ifstream::pos_type size;
+	std::ifstream file(texturePath, std::ios::in | std::ios::binary | std::ios::ate);
+	char* memblock = nullptr;
+	if (!file.is_open())
+	{
+		setMissingTextures();
+		return node;
+	}
+
+	size = file.tellg();
+	memblock = new char[size];
+	file.seekg(0, std::ios::beg);
+	file.read(memblock, size);
+	file.close();
+
+	node = std::make_unique<repo::core::model::TextureNode>(repo::core::model::RepoBSONFactory::makeTextureNode(
+		texturePath,
+		(const char*)memblock,
+		size,
+		1,
+		0
+	));
+
+	delete[] memblock;
+
+	return node;
+}
+
+void RepoSceneBuilder::addParent(repo::lib::RepoUUID nodeUniqueId, repo::lib::RepoUUID parentSharedId)
+{
+	using namespace repo::core::handler::database;
+
+	if (nodesToCommit.find(nodeUniqueId) != nodesToCommit.end()) 
+	{
+		nodesToCommit[nodeUniqueId]->addParent(parentSharedId);
+	}
+	else
+	{
+		parentUpdates.push_back(new query::AddParent(nodeUniqueId, parentSharedId));
+	}
 }
 
 void RepoSceneBuilder::setMissingTextures()

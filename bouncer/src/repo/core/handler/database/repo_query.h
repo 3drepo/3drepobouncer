@@ -113,8 +113,8 @@ namespace repo {
 							conditions.push_back(t);
 						}
 
-						// This call will be recursive using pack expansion, until there is only one
-						// parameter left and the single-argument method is called.
+						// This call will be recursive using pack expansion, until there is only
+						// one parameter left and the single-argument method is called.
 
 						template <typename First, typename ...Rest>
 						void append(const First& first, const Rest&... rest) {
@@ -126,8 +126,8 @@ namespace repo {
 					};
 
 					/*
-					 * Convenience type to help build more complex composite queries in
-					 * multiple stages.
+					 * Convenience type to help build more complex composite queries in multiple
+					 * stages.
 					 */
 					class REPO_API_EXPORT RepoQueryBuilder
 					{
@@ -139,6 +139,30 @@ namespace repo {
 
 						std::vector<RepoQuery> conditions;
 					};
+
+					/*
+					* Used with a query update call to add new UUIDs to the parents array of an
+					* existing document by unique id.
+					*/
+					class REPO_API_EXPORT AddParent
+					{
+					public:
+						// Users must create a new instance for each parentId to add, this is
+						// because Mongo doesn't allow multiple updates in one. While this is
+						// arguably an abstraction leak, there is no point in allowing the
+						// caller a convenience that will introduce additional overhead, and
+						// that we know for sure will just be undone anyway...
+
+						AddParent(const repo::lib::RepoUUID& uniqueId, repo::lib::RepoUUID parentId):
+							uniqueId(uniqueId),
+							parentId(parentId)
+						{
+						}
+
+						repo::lib::RepoUUID uniqueId;
+						repo::lib::RepoUUID parentId;
+					};
+
 				}
 
 				namespace index

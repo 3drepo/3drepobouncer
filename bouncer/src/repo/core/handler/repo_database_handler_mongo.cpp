@@ -137,7 +137,6 @@ private:
 */
 repo::core::model::RepoBSON REPO_API_EXPORT makeQueryFilterDocument(const repo::core::handler::database::query::RepoQuery& query);
 
-
 /*
 * This is the visitor for the query types when building a document of query
 * operators. When using query operators (as opposed to pipeline operators)
@@ -203,6 +202,29 @@ struct MongoQueryFilterVistior
 		for (auto& q : n.conditions) {
 			std::visit(*this, q);
 		}
+	}
+};
+
+/*
+* Visitor class for building the documents necessary for a Mongo Update operation
+* from a RepoUpdate instance. Mongo requires two documents per operation: the
+* typical query filter, and a second document containing the update operators.
+*/
+struct MongoUpdateVisitor
+{
+	repo::core::model::RepoBSONBuilder query;
+	repo::core::model::RepoBSONBuilder update;
+
+	void operator() (const query::AddParent& u)
+	{
+		MongoQueryFilterVistior filter(&query);
+		query::Eq condition(REPO_LABEL_ID, u.uniqueId);
+		std::visit(filter, query::RepoQuery(condition));
+
+		repo::core::model::RepoBSONBuilder operation;
+		operation.append(REPO_NODE_LABEL_PARENTS, u.parentId);
+
+		update.append("$addToSet", operation.obj());
 	}
 };
 
@@ -752,6 +774,36 @@ void MongoDatabaseHandler::upsertDocument(
 	}
 }
 
+void MongoDatabaseHandler::updateOne(
+	const std::string& database,
+	const std::string& collection,
+	const std::vector<database::query::RepoUpdate> updates)
+{
+	try
+	{
+		if (!updates.size()) {
+			return;
+		}
+		auto client = clientPool->acquire();
+		auto db = client->database(database);
+		auto col = db.collection(collection);
+		auto bulk = col.create_bulk_write();
+		for (auto& u : updates) {
+			MongoUpdateVisitor visitor;
+			std::visit(visitor, u);
+			auto filter = visitor.query.obj();
+			auto doc = visitor.update.obj();
+			mongocxx::model::update_one update_op { filter.view(), doc.view() };
+			bulk.append(update_op);
+		}
+		bulk.execute();
+	}
+	catch (...)
+	{
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "updateOne (bulk write)", database, collection));
+	}
+}
+
 size_t MongoDatabaseHandler::count(
 	const std::string& database,
 	const std::string& collection,
@@ -835,19 +887,6 @@ private:
 		return handler->createRepoBSON(database, collection, view);
 	}
 };
-
-void MongoDatabaseHandler::updateMany(
-	const std::string& database,
-	const std::string& collection,
-	const database::query::RepoQuery& query
-)
-{
-	// Turn the query into a pipeline operation
-
-
-
-
-}
 
 /*
 

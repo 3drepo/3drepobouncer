@@ -236,6 +236,11 @@ namespace repo {
 					const repo::core::model::RepoBSON &obj,
 					const bool        &overwrite);
 
+				void updateOne(
+					const std::string& database,
+					const std::string& collection,
+					const std::vector<database::query::RepoUpdate> updates);
+
 				/*
 				*	------------- Query operations --------------
 				*/
@@ -317,16 +322,6 @@ namespace repo {
 					const std::string& database,
 					const std::string& collection,
 					const database::query::RepoQuery& criteria
-				);
-
-				/*
-				 * Expected to be used with a query that updates a set of documents
-				 * on its own. 
-				 */
-				void updateMany(
-					const std::string& database,
-					const std::string& collection,
-					const database::query::RepoQuery& query
 				);
 
 				void setFileManager(std::shared_ptr<repo::core::handler::fileservice::FileManager> manager);

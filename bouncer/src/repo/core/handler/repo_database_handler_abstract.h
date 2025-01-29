@@ -178,6 +178,17 @@ namespace repo {
 					const repo::core::model::RepoBSON &obj,
 					const bool        &overwrite) = 0;
 
+				/*
+				* Updates a single document, but using a query that specifies
+				* update operations (instead of specifying a whole new document,
+				* like would be done for upsert). This overload takes a set of
+				* bulk updates.
+				*/
+				virtual void updateOne(
+					const std::string& database,
+					const std::string& collection,
+					const std::vector<database::query::RepoUpdate> updates) = 0;
+
 				/**
 				* Remove a collection from the database
 				* @param database the database the collection resides in

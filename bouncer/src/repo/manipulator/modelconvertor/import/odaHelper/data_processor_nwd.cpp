@@ -94,7 +94,6 @@ struct RepoNwTraversalContext {
 	OdNwModelItemPtr parent;
 	std::string parentLayerId;
 	repo::manipulator::modelutility::RepoSceneBuilder* sceneBuilder;
-	RepoMaterialBuilder* materials;
 	std::shared_ptr<repo::core::model::TransformationNode> parentNode;
 };
 
@@ -701,8 +700,8 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 	meshBuilder.extractMeshes(nodes);
 	for (auto& mesh : nodes)
 	{
-		context.materials->addMaterialReference(meshBuilder.getMaterial(), mesh.getSharedID());
 		context.sceneBuilder->addNode(mesh);
+		context.sceneBuilder->addMaterialReference(meshBuilder.getMaterial(), mesh.getSharedID());
 	}
 
 	return eOk;
@@ -852,12 +851,7 @@ void DataProcessorNwd::process(OdNwDatabasePtr pNwDb)
 		context.sceneBuilder->setWorldOffset(toRepoVector(pModelItemRoot->getBoundingBox().minPoint()));
 		context.layer = pModelItemRoot;
 		context.parentNode = context.sceneBuilder->addNode(RepoBSONFactory::makeTransformationNode({}, "rootNode"));
-		context.materials = new RepoMaterialBuilder();
 
 		traverseSceneGraph(pModelItemRoot, context);
-
-		builder->addNodes(context.materials->extract());
-
-		delete context.materials;
 	}
 }
