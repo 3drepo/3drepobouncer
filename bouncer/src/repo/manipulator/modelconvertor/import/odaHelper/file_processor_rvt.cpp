@@ -345,6 +345,17 @@ uint8_t FileProcessorRvt::readFile()
 			nRes = REPOERR_LOAD_SCENE_FAIL;
 		}
 	}
+	catch (const std::exception& e)
+	{
+		// Rethrows the existing exception after attempting cleanup. Nested exceptions
+		// are now the preferred way to report runtime issues. Try cleaning up ODA
+		// though so that its destructors don't throw again & confuse the process exit.
+
+		odgsUninitialize();
+		odrxUninitialize();
+		throw; 
+	}
+
 	odgsUninitialize();
 	odrxUninitialize();
 

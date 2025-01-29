@@ -88,6 +88,9 @@ int32_t performOperation(
 		try {
 			errCode = importFileAndCommit(controller, token, command);
 		}
+		catch (const repo::lib::RepoException& e) {
+			throw; // RepoExceptions have additional context as well as an embedded return code, so let these bubble up
+		}
 		catch (const std::exception& e)
 		{
 			repoLogError("Failed to import and commit file: " + std::string(e.what()));

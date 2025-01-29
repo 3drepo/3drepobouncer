@@ -28,7 +28,7 @@ namespace repo {
 		public:
 			RepoException(const std::string& msg);
 
-			char const* what() const throw();
+			REPO_API_EXPORT char const* what() const throw();
 
 			/*
 			 * Returns the code from error_codes.h, that best describes this exception.
