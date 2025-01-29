@@ -22,7 +22,6 @@
 
 #include "repo/manipulator/modelutility/repo_scene_builder.h"
 #include "repo/manipulator/modelconvertor/import/odaHelper/repo_mesh_builder.h"
-#include "repo/manipulator/modelconvertor/import/odaHelper/repo_material_builder.h"
 #include "repo/core/model/bson/repo_node_transformation.h"
 #include "repo/core/model/bson/repo_bson_factory.h"
 

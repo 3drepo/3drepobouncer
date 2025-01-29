@@ -24,7 +24,6 @@
 #include "repo/core/model/bson/repo_bson_factory.h"
 #include "repo/core/model/bson/repo_node_mesh.h"
 #include "repo_mesh_builder.h"
-#include "repo_material_builder.h"
 
 #include <fstream>
 #include <vector>

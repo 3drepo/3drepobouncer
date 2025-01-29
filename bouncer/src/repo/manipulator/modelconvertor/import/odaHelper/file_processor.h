@@ -16,7 +16,6 @@
 */
 
 #pragma once
-#include "repo_material_builder.h"
 #include "repo/manipulator/modelutility/repo_drawing.h"
 #include "repo/manipulator/modelutility/repo_scene_builder.h"
 #include "repo/manipulator/modelconvertor/import/repo_model_import_config.h"

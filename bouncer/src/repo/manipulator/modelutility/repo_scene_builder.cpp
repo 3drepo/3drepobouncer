@@ -121,7 +121,8 @@ void RepoSceneBuilder::commitNodes()
 
 	std::vector<repo::core::handler::database::query::RepoUpdate> updates;
 	for (auto u : parentUpdates) {
-		updates.push_back(repo::core::handler::database::query::RepoUpdate(*u));
+		updates.push_back(repo::core::handler::database::query::RepoUpdate(*u.second));
+		delete u.second;
 	}
 	handler->updateOne(databaseName, getSceneCollectionName(), updates);
 	parentUpdates.clear();
@@ -215,10 +216,14 @@ void RepoSceneBuilder::addParent(repo::lib::RepoUUID nodeUniqueId, repo::lib::Re
 	if (nodesToCommit.find(nodeUniqueId) != nodesToCommit.end()) 
 	{
 		nodesToCommit[nodeUniqueId]->addParent(parentSharedId);
+	} 
+	else if (parentUpdates.find(nodeUniqueId) != parentUpdates.end()) 
+	{
+		parentUpdates[nodeUniqueId]->parentIds.push_back(parentSharedId);
 	}
 	else
 	{
-		parentUpdates.push_back(new query::AddParent(nodeUniqueId, parentSharedId));
+		parentUpdates[nodeUniqueId] = new query::AddParent(nodeUniqueId, parentSharedId);
 	}
 }
 

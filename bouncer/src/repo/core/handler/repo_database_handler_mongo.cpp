@@ -222,7 +222,17 @@ struct MongoUpdateVisitor
 		std::visit(filter, query::RepoQuery(condition));
 
 		repo::core::model::RepoBSONBuilder operation;
-		operation.append(REPO_NODE_LABEL_PARENTS, u.parentId);
+
+		if (u.parentIds.size() == 1)
+		{
+			operation.append(REPO_NODE_LABEL_PARENTS, u.parentIds[0]);
+		}
+		else
+		{
+			repo::core::model::RepoBSONBuilder array;
+			array.appendArray("$each", u.parentIds);
+			operation.append(REPO_NODE_LABEL_PARENTS, array.obj());
+		}
 
 		update.append("$addToSet", operation.obj());
 	}

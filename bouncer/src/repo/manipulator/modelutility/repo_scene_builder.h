@@ -149,7 +149,7 @@ namespace repo {
 				// We have to use raw pointers here because the std containers' interaction
 				// with smart pointers requires the classes must be fully defined.
 
-				std::vector<repo::core::handler::database::query::AddParent*> parentUpdates;
+				RepoUUIDMap<repo::core::handler::database::query::AddParent*> parentUpdates;
 				RepoUUIDMap<repo::core::model::RepoNode*> nodesToCommit;
 
 				// Commits all nodes in the nodesToCommit vector immediately

@@ -147,20 +147,20 @@ namespace repo {
 					class REPO_API_EXPORT AddParent
 					{
 					public:
-						// Users must create a new instance for each parentId to add, this is
-						// because Mongo doesn't allow multiple updates in one. While this is
-						// arguably an abstraction leak, there is no point in allowing the
-						// caller a convenience that will introduce additional overhead, and
-						// that we know for sure will just be undone anyway...
+						AddParent(const repo::lib::RepoUUID& uniqueId, std::vector<repo::lib::RepoUUID> parentIds) :
+							uniqueId(uniqueId),
+							parentIds(parentIds)
+						{
+						}
 
 						AddParent(const repo::lib::RepoUUID& uniqueId, repo::lib::RepoUUID parentId):
 							uniqueId(uniqueId),
-							parentId(parentId)
+							parentIds({ parentId })
 						{
 						}
 
 						repo::lib::RepoUUID uniqueId;
-						repo::lib::RepoUUID parentId;
+						std::vector<repo::lib::RepoUUID> parentIds;
 					};
 
 				}
