@@ -20,6 +20,7 @@
 #include <Common/BmBuildSettings.h>
 #include <Gs/Gs.h>
 #include <Base/BmForgeTypeId.h>
+#include <Base/PE/BmSystemServicesPE.h>
 #include <Database/BmDatabase.h>
 #include <Database/BmUnitUtils.h>
 #include <Database/Entities/BmDBDrawing.h>
@@ -110,8 +111,34 @@ protected:
 };
 ODRX_DEFINE_PSEUDO_STATIC_MODULE(StubDeviceModuleRvt);
 
-class RepoRvtServices : public RepoSystemServices, public OdExBimHostAppServices
+class RepoRvtServices : public RepoSystemServices, public OdExBimHostAppServices, public OdBmSystemServicesPE
 {
+public:
+	/*
+	* This methods implement the abstract OdBmSystemServicesPE class, in order to
+	* turn on unloading to decrease memory usage at a cost of processing time.
+	*/
+
+	virtual bool unloadEnabled() const override
+	{
+		return true;
+	}
+
+	virtual bool useDisk() const override
+	{
+		return true;
+	}
+
+	virtual double indexingRate() const override
+	{
+		return 0;
+	}
+
+	virtual OdString unloadFilePath() const override
+	{
+		return "D:/3drepo/3drepobouncer_ISSUE729/temp/oda.unload";
+	}
+
 protected:
 	ODRX_USING_HEAP_OPERATORS(RepoSystemServices);
 };
@@ -217,13 +244,14 @@ OdGeExtents3d getModelBounds(OdBmDBViewPtr view)
 	OdBmObjectIdArray elements;
 	view->getVisibleDrawableElements(elements);
 
+	repoInfo << "Getting bounds of " << elements.size() << " visible elements...";
+
 	OdGeExtents3d model;
 	for (auto& e : elements)
 	{
 		OdBmElementPtr element = e.safeOpenObject();
 		OdGeExtents3d extents;
-		element->getGeomExtents(extents); // These are in model space, in Revits internal units
-		model.addExt(extents);
+		model.addExt(element->getBBox()); // These are in model space, in Revits internal units
 	}
 
 	return model;
@@ -277,7 +305,13 @@ uint8_t FileProcessorRvt::readFile()
 	int nRes = REPOERR_OK;
 	OdStaticRxObject<RepoRvtServices> svcs;
 	odrxInitialize(&svcs);
-	OdRxModule* pModule = ::odrxDynamicLinker()->loadModule(OdBmLoaderModuleName, false);
+
+	::odrxDynamicLinker()->loadModule(OdBmLoaderModuleName, false);
+
+	// Extensions should be initialised after the loader module, but before reading
+	// a file
+	OdRxSystemServices::desc()->addX(OdBmSystemServicesPE::desc(), static_cast<OdBmSystemServicesPE*>(&svcs));
+
 	odgsInitialize();
 	try
 	{
@@ -307,7 +341,7 @@ uint8_t FileProcessorRvt::readFile()
 			repoInfo << "Using 3D View: " << convertToStdString(drawing->getShortDescriptiveName());
 
 			OdBmDBViewPtr pView = drawing->getBaseDBViewId().safeOpenObject();
-			auto modelToWorld = getModelToWorldMatrix(pDb); // World here is the shared or 'project' coordinate system
+			auto modelToWorld = getModelToWorldMatrix(pDb); // World here is the shared or 'project' coordinate system			
 
 			auto bounds = getModelBounds(pView);
 			bounds.transformBy(modelToWorld);
@@ -330,6 +364,9 @@ uint8_t FileProcessorRvt::readFile()
 			OdGsDCRect screenRect(OdGsDCPoint(0, 0), OdGsDCPoint(1000, 1000)); //Set the screen space to the borders of the scene
 			pDevice->onSize(screenRect);
 			setupUnitsFormat(pDb, ROUNDING_ACCURACY);
+
+			repoInfo << "Processing geometry...";
+
 			pDevice->update();
 
 			collector.finalise();
