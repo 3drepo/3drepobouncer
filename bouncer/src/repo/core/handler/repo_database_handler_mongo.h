@@ -324,6 +324,10 @@ namespace repo {
 					const database::query::RepoQuery& criteria
 				);
 
+				std::unique_ptr<database::WriteContext> getWriteContext(
+					const std::string& database,
+					const std::string& collection);
+
 				void setFileManager(std::shared_ptr<repo::core::handler::fileservice::FileManager> manager);
 
 				std::shared_ptr<repo::core::handler::fileservice::FileManager> getFileManager();
@@ -351,8 +355,8 @@ namespace repo {
 
 				// We can work with either clients or pool as the top level, connection
 				// specific, container for getting connections. pool pool is threadsafe,
-				// but acquring a client is implied to not be cheap, so for now cache a
-				//client on starting up.
+				// but acquring a client is implied to not be cheap, so we should consider
+				// caching a client for the owner thread's purposes.
 				std::unique_ptr<mongocxx::pool> clientPool;
 
 				// The fileManager is used in the storage of certain member types, such
@@ -405,6 +409,8 @@ namespace repo {
 
 				class MongoDatabaseHandlerException;
 				friend MongoDatabaseHandlerException;
+
+				class MongoWriteContext;
 
 				/*
 				*	=========================================================================================

@@ -74,6 +74,31 @@ namespace repo {
 				};
 
 				using CursorPtr = std::unique_ptr<repo::core::handler::database::Cursor>;
+
+				/*
+				* An object that provides write access to a collection from a specific
+				* thread, that may be different to the one that owns the database handler.
+				* Methods in a write context are inherently asynchronous, but will be
+				* executed in the order they are called in the context (so inserting a
+				* document, and then updating it, is safe - the update will never run before
+				* the insert).
+				*/
+				class WriteContext
+				{
+				public:
+					//todo:: pass by move semantics here
+					virtual void insertDocument(repo::core::model::RepoBSON obj) = 0;
+
+					virtual void updateDocument(const database::query::RepoUpdate& obj) = 0;
+
+					/*
+					* Called to force everything that is outstanding to write to the database,
+					* and block until complete. This is called automatically when the context
+					* goes out of scope, but may be called explicitly multiple times during a
+					* context's life.
+					*/
+					virtual void flush() = 0;
+				};
 			}
 
 			class AbstractDatabaseHandler {
@@ -284,6 +309,10 @@ namespace repo {
 					const std::string& database,
 					const std::string& collection,
 					const database::query::RepoQuery& criteria) = 0;
+
+				virtual std::unique_ptr<database::WriteContext> getWriteContext(
+					const std::string& database,
+					const std::string& collection) = 0;
 
 			protected:
 				/**

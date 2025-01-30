@@ -931,6 +931,110 @@ std::unique_ptr<repo::core::handler::database::Cursor> MongoDatabaseHandler::get
 	}
 	catch (...)
 	{
-		std::throw_with_nested(MongoDatabaseHandlerException(*this, "replaceArrayEntriesByUniqueId", database, collection));
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "getAllByCriteria (cursor)", database, collection));
 	}
+}
+
+/*
+* Implements the WriteContext for Mongo. This uses the mongo bulk_write containers
+* and a persistent BlobFilesHandler to batch commit nodes provided over a number of
+* different calls.
+*/
+class MongoDatabaseHandler::MongoWriteContext : public database::WriteContext
+{
+	mongocxx::v_noabi::collection collection;
+	fileservice::BlobFilesHandler blobHandler;
+	std::unique_ptr<mongocxx::v_noabi::bulk_write> bulk;
+	size_t bulkSize;
+	size_t bulkOps;
+
+	// Todo:: refactor this to use unordered bulk writes
+	// Todo:: sort out exception handling for this...
+
+	// The blob files handler takes a reference to the metadata map, so make sure
+	// we have one
+	repo::core::handler::fileservice::FileManager::Metadata fileMetadata;
+
+public:
+	MongoWriteContext(
+		MongoDatabaseHandler* handler,
+		const std::string& database,
+		const std::string& collection):
+		blobHandler(handler->fileManager, database, collection, fileMetadata)
+	{
+		auto client = handler->clientPool->acquire();
+		auto db = client->database(database);
+		this->collection = db.collection(collection);
+		bulk = std::make_unique<mongocxx::v_noabi::bulk_write>(this->collection.create_bulk_write());
+		bulkSize = 0;
+		bulkOps = 0;
+	}
+
+	~MongoWriteContext()
+	{
+		flush();
+	}
+
+	void insertDocument(repo::core::model::RepoBSON obj) override
+	{
+		auto data = obj.getBinariesAsBuffer();
+		if (data.second.size()) {
+			auto ref = blobHandler.insertBinary(data.second);
+			obj.replaceBinaryWithReference(ref.serialise(), data.first); //Todo: delete binaries from buffer here?
+		}
+		bulk->append(mongocxx::model::insert_one(obj.view()));
+		bulkSize += obj.objsize();
+		bulkOps++;
+		checkBulkWrite();
+	}
+
+	void updateDocument(const database::query::RepoUpdate& update) override
+	{
+		MongoUpdateVisitor visitor;
+		std::visit(visitor, update);
+		auto filter = visitor.query.obj();
+		auto doc = visitor.update.obj();
+		mongocxx::model::update_one update_op{ filter.view(), doc.view() };
+		bulk->append(update_op);
+		bulkSize += filter.objsize();
+		bulkSize += doc.objsize();
+		bulkOps++;
+		checkBulkWrite();
+	}
+
+	void flush() override
+	{
+		executeBulkWrite();
+		blobHandler.finished();
+	}
+
+private:
+
+	void checkBulkWrite()
+	{
+		if (bulkSize > 16 * 1024 * 1024)
+		{
+			executeBulkWrite();
+		}
+	}
+
+	void executeBulkWrite()
+	{
+		if (bulk && bulkSize) {
+			bulk->execute();
+		}
+		bulk = std::make_unique<mongocxx::v_noabi::bulk_write>(this->collection.create_bulk_write());
+		bulkSize = 0;
+	}
+};
+
+std::unique_ptr<database::WriteContext> MongoDatabaseHandler::getWriteContext(
+	const std::string& database,
+	const std::string& collection)
+{
+	// This method should be being called from the thread that will own the write
+	// context, so the constructor can get a client directly from the pool which
+	// is threadsafe.
+
+	return std::make_unique<MongoWriteContext>(this, database, collection);
 }

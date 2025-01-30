@@ -162,6 +162,8 @@ namespace repo {
 				struct Deleter;
 
 				size_t referenceCounter;
+
+				std::unique_ptr<repo::core::handler::database::WriteContext> collection;
 			};
 		}
 	}

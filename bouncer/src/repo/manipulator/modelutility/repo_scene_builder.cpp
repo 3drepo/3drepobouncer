@@ -53,6 +53,7 @@ RepoSceneBuilder::RepoSceneBuilder(
 	offset({}),
 	units(repo::manipulator::modelconvertor::ModelUnits::UNKNOWN)
 {
+	collection = handler->getWriteContext(databaseName, getSceneCollectionName());
 }
 
 RepoSceneBuilder::~RepoSceneBuilder()
@@ -109,28 +110,24 @@ std::string RepoSceneBuilder::getSceneCollectionName()
 
 void RepoSceneBuilder::commitNodes()
 {
-	std::vector< repo::core::model::RepoBSON> bsons;
 	for (auto& n : nodesToCommit) {
-		bsons.push_back(*n.second);
+		collection->insertDocument(*n.second);
 		delete n.second;
 	}
 	nodesToCommit.clear();
-	handler->insertManyDocuments(databaseName, getSceneCollectionName(), bsons);
 
 	// Commit inheritence changes
-
-	std::vector<repo::core::handler::database::query::RepoUpdate> updates;
 	for (auto u : parentUpdates) {
-		updates.push_back(repo::core::handler::database::query::RepoUpdate(*u.second));
+		collection->updateDocument(repo::core::handler::database::query::RepoUpdate(*u.second));
 		delete u.second;
 	}
-	handler->updateOne(databaseName, getSceneCollectionName(), updates);
 	parentUpdates.clear();
 }
 
 void RepoSceneBuilder::finalise()
 {
 	commitNodes();
+	collection->flush();
 }
 
 repo::lib::RepoVector3D64 RepoSceneBuilder::getWorldOffset()
