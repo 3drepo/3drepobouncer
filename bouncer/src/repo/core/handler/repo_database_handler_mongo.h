@@ -324,7 +324,7 @@ namespace repo {
 					const database::query::RepoQuery& criteria
 				);
 
-				std::unique_ptr<database::WriteContext> getWriteContext(
+				std::unique_ptr<database::BulkWriteContext> getBulkWriteContext(
 					const std::string& database,
 					const std::string& collection);
 

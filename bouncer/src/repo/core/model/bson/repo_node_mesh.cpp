@@ -377,3 +377,17 @@ bool MeshNode::sEqual(const RepoNode &other) const
 
 	return success;
 }
+
+size_t MeshNode::getSize() const
+{
+	// Implementation aims to be as quick as possible as we can expect this to
+	// be called alot now streaming imports are used.
+
+	size_t size = 0;
+	size += faces.size() * (int)primitive * 4;
+	size += vertices.size() * sizeof(repo::lib::RepoVector3D);
+	size += normals.size() * sizeof(repo::lib::RepoVector3D);
+	size += channels.size() * vertices.size() * sizeof(repo::lib::RepoVector2D);
+	size += sizeof(*this);
+	return size;
+}

@@ -83,7 +83,7 @@ namespace repo {
 				* document, and then updating it, is safe - the update will never run before
 				* the insert).
 				*/
-				class WriteContext
+				class BulkWriteContext
 				{
 				public:
 					//todo:: pass by move semantics here
@@ -93,11 +93,15 @@ namespace repo {
 
 					/*
 					* Called to force everything that is outstanding to write to the database,
-					* and block until complete. This is called automatically when the context
-					* goes out of scope, but may be called explicitly multiple times during a
-					* context's life.
+					* and block until complete. This may be called multiple times during a
+					* single objects lifetime. It explicitly may be omitted - a write context
+					* should automatically flush everything when it is destroyed.
 					*/
 					virtual void flush() = 0;
+
+					// Make the destructor virtual to ensure unique_ptr calls the destructor
+					// on any subclasses.
+					virtual ~BulkWriteContext() { }
 				};
 			}
 
@@ -310,7 +314,7 @@ namespace repo {
 					const std::string& collection,
 					const database::query::RepoQuery& criteria) = 0;
 
-				virtual std::unique_ptr<database::WriteContext> getWriteContext(
+				virtual std::unique_ptr<database::BulkWriteContext> getBulkWriteContext(
 					const std::string& database,
 					const std::string& collection) = 0;
 

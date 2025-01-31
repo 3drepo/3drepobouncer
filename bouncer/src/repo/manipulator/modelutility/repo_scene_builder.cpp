@@ -26,8 +26,115 @@
 #include "repo/core/model/bson/repo_bson_factory.h"
 #include "repo/core/handler/database/repo_query.h"
 
+#include <variant>
+#include <semaphore>
+#include "spscqueue/readerwriterqueue.h"
+
 using namespace repo::manipulator::modelutility;
 using namespace repo::core::model;
+
+// 500 Mb
+#define DEFAULT_THRESHOLD 1024*1024*500
+
+/*
+* The async worker of RepoSceneBuilder is responsible for the multithreaded
+* writes. It's public API is expected to be called from the same thread as
+* RepoSceneBuilder, where it can exert backpressure by blocking. Internally it
+* maintains a worker that holds a database bulk write context.
+* Destroying the object will block until the bulk write context is finished.
+* AsyncImpl is designed to be cheap to create - to flush it, just destroy it,
+* and make another one if necessary.
+*/
+class RepoSceneBuilder::AsyncImpl
+{
+public:
+	AsyncImpl(RepoSceneBuilder* builder);
+
+	~AsyncImpl();
+
+	size_t threshold;
+
+	/*
+	* Adds an item to the queue for processing. This method will block until there
+	* is space in the queue. Passing the pointer transfers ownership to the queue.
+	*/
+	void push(repo::core::model::RepoNode* node);
+	void push(repo::core::handler::database::query::AddParent*);
+
+
+private:
+	/*
+	* The implementation of the consumer uses a visitor that belongs to the worker
+	* thread. This works well because the number of entities we wish to pass are
+	* few and small, and the SPSC queue used allows passing the variants by value.
+	*
+	* An alternative implementation is to pass pointers to functors. The advantage
+	* of this is that the consumer function is trivial. The downside is that we'd
+	* need to allocate a wrapper for entities that are already simple pointers, but
+	* it is worth keeping in mind if either of the above change.
+	*/
+
+	struct Close { // Passing this object instructs the worker to flush and terminate
+	};
+
+	struct Notify { // Passing this object instructs the worker to release the semaphore
+	};
+
+	using Consumables = std::variant<
+		repo::core::model::RepoNode*,
+		repo::core::handler::database::query::AddParent*,
+		Close,
+		Notify
+	>;
+
+	struct Consumable {
+		Consumables object;
+		size_t size;
+	};
+
+	void push(Consumable consumable);
+
+	struct Consumer
+	{
+		Consumer(RepoSceneBuilder::AsyncImpl* impl);
+
+		std::unique_ptr<repo::core::handler::database::BulkWriteContext> collection;
+		RepoSceneBuilder::AsyncImpl* impl;
+
+		bool operator() (const repo::core::model::RepoNode* n) const;
+		bool operator() (const repo::core::handler::database::query::AddParent* n) const;
+		bool operator() (const  Close& n) const;
+		bool operator() (const  Notify& n) const;
+	};
+
+	/* This will run as a member function */
+	void consumerFunction();
+
+	RepoSceneBuilder* builder;
+
+	moodycamel::BlockingReaderWriterQueue<Consumable> queue;
+	std::thread consumer;
+
+	/*
+	* The size of the queue - this is a unitless value that is compared with a
+	* fixed threshold. In practice, currently it represents the estimated memory
+	* usage of each node or update object.
+	*/
+	std::atomic<size_t> queueSize;
+
+	/*
+	* When the amount of data buffered exceeds the threshold, the main thread
+	* will attempt to acquire the semaphore to suspend itself until signalled
+	* by the consumer.
+	*/
+	std::binary_semaphore block;
+
+	/*
+	* If the consumer thread throws an exception, this will hold it. By default it
+	* is checked and rethrown in the destructor.
+	*/
+	std::exception_ptr consumerException;
+};
 
 struct RepoSceneBuilder::Deleter
 {
@@ -51,21 +158,21 @@ RepoSceneBuilder::RepoSceneBuilder(
 	referenceCounter(0),
 	isMissingTextures(false),
 	offset({}),
-	units(repo::manipulator::modelconvertor::ModelUnits::UNKNOWN)
+	units(repo::manipulator::modelconvertor::ModelUnits::UNKNOWN),
+	impl(std::make_unique<AsyncImpl>(this))
 {
-	collection = handler->getWriteContext(databaseName, getSceneCollectionName());
 }
 
 RepoSceneBuilder::~RepoSceneBuilder()
 {
-	if (referenceCounter != 0)
+	if (referenceCounter)
 	{
 		throw std::runtime_error("RepoSceneBuilder is being destroyed with outstanding RepoNode references. Make sure all RepoNodes have gone out of scope before RepoSceneBuilder.");
 	}
 
-	if (nodesToCommit.size())
+	if (parentUpdates.size())
 	{
-		throw std::runtime_error("RepoSceneBuilder is being destroyed with outstanding nodes to commit. Call finalise() before letting RepoSceneBuilder go out of scope.");
+		throw std::runtime_error("RepoSceneBuilder is being destroyed with outstanding updates. Make sure to call finalise before letting RepoSceneBuilder go out of scope.");
 	}
 }
 
@@ -95,12 +202,7 @@ void RepoSceneBuilder::addNodes(std::vector<std::unique_ptr<repo::core::model::R
 
 void RepoSceneBuilder::queueNode(RepoNode* node)
 {
-	nodesToCommit[node->getUniqueID()] = node;
-
-	if (nodesToCommit.size() > 1000)
-	{
-		commitNodes();
-	}
+	impl->push(node);
 }
 
 std::string RepoSceneBuilder::getSceneCollectionName()
@@ -108,26 +210,18 @@ std::string RepoSceneBuilder::getSceneCollectionName()
 	return projectName + "." + REPO_COLLECTION_SCENE;
 }
 
-void RepoSceneBuilder::commitNodes()
+void RepoSceneBuilder::commit()
 {
-	for (auto& n : nodesToCommit) {
-		collection->insertDocument(*n.second);
-		delete n.second;
-	}
-	nodesToCommit.clear();
-
-	// Commit inheritence changes
 	for (auto u : parentUpdates) {
-		collection->updateDocument(repo::core::handler::database::query::RepoUpdate(*u.second));
-		delete u.second;
+		impl->push(u.second);
 	}
 	parentUpdates.clear();
 }
 
 void RepoSceneBuilder::finalise()
 {
-	commitNodes();
-	collection->flush();
+	commit();
+	impl = std::make_unique<AsyncImpl>(this); // Destroying the AsyncImpl will flush everything to the database
 }
 
 repo::lib::RepoVector3D64 RepoSceneBuilder::getWorldOffset()
@@ -208,19 +302,25 @@ std::unique_ptr<repo::core::model::TextureNode> RepoSceneBuilder::createTextureN
 
 void RepoSceneBuilder::addParent(repo::lib::RepoUUID nodeUniqueId, repo::lib::RepoUUID parentSharedId)
 {
+	// Inheritence changes have very small footprints, so keep a few thousand of
+	// these on hand in case we get lots of references to the same entity, and so
+	// can perform back writes to a single document and so save on the number of
+	// individual database writes.
+
 	using namespace repo::core::handler::database;
 
-	if (nodesToCommit.find(nodeUniqueId) != nodesToCommit.end()) 
-	{
-		nodesToCommit[nodeUniqueId]->addParent(parentSharedId);
-	} 
-	else if (parentUpdates.find(nodeUniqueId) != parentUpdates.end()) 
+	if (parentUpdates.find(nodeUniqueId) != parentUpdates.end())
 	{
 		parentUpdates[nodeUniqueId]->parentIds.push_back(parentSharedId);
 	}
 	else
 	{
 		parentUpdates[nodeUniqueId] = new query::AddParent(nodeUniqueId, parentSharedId);
+	}
+
+	if (parentUpdates.size() > 10000)
+	{
+		commit();
 	}
 }
 
@@ -242,6 +342,108 @@ void RepoSceneBuilder::setUnits(repo::manipulator::modelconvertor::ModelUnits un
 repo::manipulator::modelconvertor::ModelUnits RepoSceneBuilder::getUnits()
 {
 	return this->units;
+}
+
+RepoSceneBuilder::AsyncImpl::AsyncImpl(RepoSceneBuilder* builder):
+	builder(builder),
+	block(0)
+{
+	consumer = std::thread(&RepoSceneBuilder::AsyncImpl::consumerFunction, this);
+	threshold = DEFAULT_THRESHOLD;
+}
+
+RepoSceneBuilder::AsyncImpl::~AsyncImpl()
+{
+	push({ Consumables(Close()), 0 });
+	consumer.join();
+	if (consumerException) {
+		std::rethrow_exception(consumerException);
+	}
+}
+
+void RepoSceneBuilder::AsyncImpl::push(repo::core::handler::database::query::AddParent* u)
+{
+	push({ Consumables(u), 100 }); // Update operations have a fixed approximate cost
+}
+
+void RepoSceneBuilder::AsyncImpl::push(repo::core::model::RepoNode* node)
+{
+	push({ Consumables(node), node->getSize() });
+}
+
+void RepoSceneBuilder::AsyncImpl::push(Consumable consumable)
+{
+	// The block semaphore is used to introduce backpressure by prompting the main
+	// thread (the caller) to suspend.
+
+	// The threads are only loosely synchronised - we don't track memory to the byte,
+	// and there is buffering in the bulk write context as well.
+	// The use of semaphores means that the order of the acquire() and release()
+	// calls should not matter (if the signal gets to the head of the consumer
+	// before we move onto the next statement).
+
+	// In any case though, to be sure there are no deadlocks we use try_acquire with
+	// a timeout - in the worst case, this method will simply check 'size' again.
+
+	if (consumable.size)
+	{
+		queueSize += consumable.size;
+		while (queueSize > threshold) {
+			queue.enqueue({ Consumables(Notify()), 0 });
+			block.try_acquire_for(std::chrono::seconds(1));
+		}
+	}
+	queue.enqueue(consumable);
+}
+
+RepoSceneBuilder::AsyncImpl::Consumer::Consumer(RepoSceneBuilder::AsyncImpl* impl):
+	impl(impl)
+{
+	auto builder = impl->builder;
+	auto handler = impl->builder->handler;
+	collection = handler->getBulkWriteContext(builder->databaseName, builder->getSceneCollectionName());
+}
+
+bool RepoSceneBuilder::AsyncImpl::Consumer::operator() (const repo::core::model::RepoNode* n) const
+{
+	collection->insertDocument(*n);
+	delete n;
+	return true;
+}
+
+bool RepoSceneBuilder::AsyncImpl::Consumer::operator() (const repo::core::handler::database::query::AddParent* u) const
+{
+	collection->updateDocument(repo::core::handler::database::query::RepoUpdate(*u));
+	delete u;
+	return true;
+}
+
+bool RepoSceneBuilder::AsyncImpl::Consumer::operator() (const Close& n) const
+{
+	return false;
+}
+
+bool RepoSceneBuilder::AsyncImpl::Consumer::operator() (const Notify& n) const
+{
+	impl->block.release();
+	return true;
+}
+
+void RepoSceneBuilder::AsyncImpl::consumerFunction()
+{
+	try {
+		Consumer consumer(this);
+
+		Consumable consumable;
+		do {
+			queue.wait_dequeue(consumable);
+			queueSize -= consumable.size;
+		} while (std::visit(consumer, consumable.object));
+	}
+	catch (...)
+	{
+		consumerException = std::current_exception();
+	}
 }
 
 // It is required to tell the module which specialisations to instantiate

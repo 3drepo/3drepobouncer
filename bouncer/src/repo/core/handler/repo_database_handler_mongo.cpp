@@ -940,7 +940,7 @@ std::unique_ptr<repo::core::handler::database::Cursor> MongoDatabaseHandler::get
 * and a persistent BlobFilesHandler to batch commit nodes provided over a number of
 * different calls.
 */
-class MongoDatabaseHandler::MongoWriteContext : public database::WriteContext
+class MongoDatabaseHandler::MongoWriteContext : public database::BulkWriteContext
 {
 	mongocxx::v_noabi::collection collection;
 	fileservice::BlobFilesHandler blobHandler;
@@ -980,7 +980,7 @@ public:
 		auto data = obj.getBinariesAsBuffer();
 		if (data.second.size()) {
 			auto ref = blobHandler.insertBinary(data.second);
-			obj.replaceBinaryWithReference(ref.serialise(), data.first); //Todo: delete binaries from buffer here?
+			obj.replaceBinaryWithReference(ref.serialise(), data.first);
 		}
 		bulk->append(mongocxx::model::insert_one(obj.view()));
 		bulkSize += obj.objsize();
@@ -1028,7 +1028,7 @@ private:
 	}
 };
 
-std::unique_ptr<database::WriteContext> MongoDatabaseHandler::getWriteContext(
+std::unique_ptr<database::BulkWriteContext> MongoDatabaseHandler::getBulkWriteContext(
 	const std::string& database,
 	const std::string& collection)
 {

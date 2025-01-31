@@ -273,6 +273,16 @@ namespace repo {
 						return sharedID > other.getSharedID();
 					}
 				}
+
+				/*
+				* Returns the estimated memory consumption, in bytes, of this node and all
+				* its members. This must be overridden by interested subclasses. The estimated
+				* values will be approximate.
+				*/
+				virtual size_t getSize() const
+				{
+					return sizeof(*this);
+				}
 			};
 
 			/*!

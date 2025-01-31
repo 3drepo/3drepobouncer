@@ -280,6 +280,8 @@ namespace repo {
 					return channels.size();
 				}
 
+				size_t getSize() const;
+
 				void updateBoundingBox();
 
 				static void transformBoundingBox(repo::lib::RepoBounds& bounds, repo::lib::RepoMatrix matrix);

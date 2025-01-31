@@ -150,10 +150,9 @@ namespace repo {
 				// with smart pointers requires the classes must be fully defined.
 
 				RepoUUIDMap<repo::core::handler::database::query::AddParent*> parentUpdates;
-				RepoUUIDMap<repo::core::model::RepoNode*> nodesToCommit;
 
 				// Commits all nodes in the nodesToCommit vector immediately
-				void commitNodes();
+				void commit();
 
 				// Schedule a node to be comitted to the database. Once queued, the node
 				// becomes immutable and must no longer be accessible outside the builder.
@@ -163,7 +162,10 @@ namespace repo {
 
 				size_t referenceCounter;
 
-				std::unique_ptr<repo::core::handler::database::WriteContext> collection;
+				// This is the multithreaded part of RepoSceneBuilder; it appears to the
+				// outer part of RepoSceneBuilder as a concurrent queue
+				class AsyncImpl;
+				std::unique_ptr<AsyncImpl> impl;
 			};
 		}
 	}
