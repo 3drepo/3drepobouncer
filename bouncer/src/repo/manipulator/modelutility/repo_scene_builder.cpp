@@ -156,6 +156,7 @@ RepoSceneBuilder::RepoSceneBuilder(
 	projectName(project),
 	revisionId(revisionId),
 	referenceCounter(0),
+	nodeCount(0),
 	isMissingTextures(false),
 	offset({}),
 	units(repo::manipulator::modelconvertor::ModelUnits::UNKNOWN),
@@ -202,7 +203,12 @@ void RepoSceneBuilder::addNodes(std::vector<std::unique_ptr<repo::core::model::R
 
 void RepoSceneBuilder::queueNode(RepoNode* node)
 {
+	nodeCount++;
 	impl->push(node);
+
+	if (nodeCount % 5000 == 0) {
+		repoInfo << "Committed " << nodeCount << " nodes...";
+	}
 }
 
 std::string RepoSceneBuilder::getSceneCollectionName()

@@ -121,12 +121,12 @@ public:
 
 	virtual bool unloadEnabled() const override
 	{
-		return true;
+		return false;
 	}
 
 	virtual bool useDisk() const override
 	{
-		return true;
+		return false;
 	}
 
 	virtual double indexingRate() const override

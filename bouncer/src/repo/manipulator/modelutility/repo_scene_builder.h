@@ -128,6 +128,10 @@ namespace repo {
 
 				std::string getSceneCollectionName();
 
+				// Convenience member that tracks the total number of nodes queued for commit
+				// over the life of this builder.
+				size_t nodeCount;
+
 				// Stored offset that should be applied to the scene when it is done.
 				// Note that this doesn't affect nodes added with addNode - they must already
 				// have this applied!
@@ -151,7 +155,8 @@ namespace repo {
 
 				RepoUUIDMap<repo::core::handler::database::query::AddParent*> parentUpdates;
 
-				// Commits all nodes in the nodesToCommit vector immediately
+				// Commits everything that might be outstanding, such as remaining updates,
+				// to the async writer object.
 				void commit();
 
 				// Schedule a node to be comitted to the database. Once queued, the node
@@ -163,7 +168,8 @@ namespace repo {
 				size_t referenceCounter;
 
 				// This is the multithreaded part of RepoSceneBuilder; it appears to the
-				// outer part of RepoSceneBuilder as a concurrent queue
+				// outer-part as a concurrent queue. Internally it has a thread that owns a
+				// database bulk write context.
 				class AsyncImpl;
 				std::unique_ptr<AsyncImpl> impl;
 			};
