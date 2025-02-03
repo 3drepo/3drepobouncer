@@ -183,6 +183,8 @@ namespace repo {
 						OdGiMaterialItemPtr prevCache,
 						OdDbStub* materialId,
 						const OdGiMaterialTraitsData& materialData) final;
+
+					std::unordered_map<OdUInt64, repo_material_t> materialCache;
 				};
 			}
 		}

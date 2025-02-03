@@ -331,18 +331,28 @@ OdGiMaterialItemPtr DataProcessorRvt::fillMaterialCache(
 	bool missingTexture;
 
 	OdBmObjectId matId(materialId);
-	OdBmMaterialElemPtr materialElem;
-	if (!matId.isNull() && matId.isValid())
-	{
-		OdBmObjectPtr objectPtr = matId.safeOpenObject();
-		if (!objectPtr.isNull())
-			materialElem = OdBmMaterialElem::cast(objectPtr);
+
+	if (!matId.isNull() && matId.isValid()) {
+		auto cacheEntry = materialCache.find(matId.getHandle());
+		if (cacheEntry != materialCache.end())
+		{
+			material = cacheEntry->second;
+		}
+		else
+		{
+			OdBmMaterialElemPtr materialElem;
+			OdBmObjectPtr objectPtr = matId.safeOpenObject();
+			if (!objectPtr.isNull())
+				materialElem = OdBmMaterialElem::cast(objectPtr);
+
+			fillMaterial(materialElem, materialData, material);
+			fillTexture(materialElem, material, missingTexture);
+
+			materialCache[matId.getHandle()] = material;
+		}
+
+		collector->setMaterial(material);
 	}
-
-	fillMaterial(materialElem, materialData, material);
-	fillTexture(materialElem, material, missingTexture);
-
-	collector->setMaterial(material);
 
 	return OdGiMaterialItemPtr();
 }
