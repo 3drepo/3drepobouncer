@@ -325,6 +325,7 @@ uint8_t FileProcessorRvt::readFile()
 		setTessellationParams(triParams);
 
 		OdBmDatabasePtr pDb = svcs.readFile(OdString(file.c_str()));
+		pDb->appServices()->setMtMode(OdDb::kMTRendering);
 		if (!pDb.isNull())
 		{
 			// The 'drawing' object corresponds to a named entry in the 'Views' list in

@@ -38,33 +38,40 @@ namespace repo {
 
 					~RepoMeshBuilder();
 
+					/* 
+					* General purpose face that can represent a number of formats. When
+					* representing a triangle, the normal is always calculated internally
+					* from the three points.
+					*/
 					struct face {
 
 						face();
+						face(std::initializer_list<repo::lib::RepoVector3D64> vertices);
+						face(const repo::lib::RepoVector3D64* vertices, size_t numVertices);
+						face(const repo::lib::RepoVector3D64* vertices, size_t numVertices, const repo::lib::RepoVector2D* uvs, size_t numUvs);
 
 						bool hasNormals() const;
 						bool hasUvs() const;
 						uint8_t getSize() const;
 						uint32_t getFormat() const;
 
+						void setVertices(std::initializer_list<repo::lib::RepoVector3D64> vertices);
+						void setVertices(const repo::lib::RepoVector3D64* vertices, size_t numVertices);
+						void setUvs(std::initializer_list<repo::lib::RepoVector2D> uvs);
+						void setUvs(const repo::lib::RepoVector2D* uvs, size_t numUvs);
+
 						repo::lib::RepoVector3D64 vertex(size_t i) const;
 						repo::lib::RepoVector2D uv(size_t i) const;
 						repo::lib::RepoVector3D64 normal() const;
 
 					private:
+						void updateNormal();
 						repo::lib::RepoVector3D64 vertices[3];
+						repo::lib::RepoVector3D64 norm;
 						repo::lib::RepoVector2D uvs[3];
-						repo::lib::RepoVector3D64 n;
-						bool _hasNormal;
-						bool _hasUvs;
-						uint8_t size;
+						uint8_t numVertices;
+						uint8_t numUvs;
 					};
-
-					void addFace(const std::vector<repo::lib::RepoVector3D64>& vertices);
-					void addFace(
-						const std::vector<repo::lib::RepoVector3D64>& vertices,
-						const repo::lib::RepoVector3D64& normal,
-						const std::vector<repo::lib::RepoVector2D>& uvCoords);
 
 					void addFace(const face& face);
 
@@ -74,12 +81,6 @@ namespace repo {
 					repo_material_t getMaterial();
 
 				private:
-					void addFace(
-						const std::vector<repo::lib::RepoVector3D64>& vertices,
-						std::optional<repo::lib::RepoVector3D64> normal,
-						const std::vector<repo::lib::RepoVector2D>& uvCoords
-					);
-
 					struct mesh_data_t;
 
 					mesh_data_t* startOrContinueMeshByFormat(uint32_t format);

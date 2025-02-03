@@ -75,12 +75,35 @@ namespace repo {
 					*/
 					void setMaterial(const repo_material_t& material);
 
-					void addFace(const std::vector<repo::lib::RepoVector3D64>& vertices);
+					/*
+					* A stack allocated triangle that can have uvs and a normal. This takes only
+					* a subset of formats supported by the face.
+					*/
+					struct Face
+					{
+						Face() :
+							numUvs(0),
+							numVertices(0)
+						{
+						}
 
-					void addFace(
-						const std::vector<repo::lib::RepoVector3D64>& vertices,
-						const repo::lib::RepoVector3D64& normal,
-						const std::vector<repo::lib::RepoVector2D>& uvCoords);
+						repo::lib::RepoVector3D64 vertices[3];
+						repo::lib::RepoVector2D uvs[3];
+						int numUvs;
+						int numVertices;
+
+						void push_back(repo::lib::RepoVector3D64 vertex) {
+							vertices[numVertices++] = vertex;
+						}
+
+						void push_back(repo::lib::RepoVector2D uv) {
+							uvs[numUvs++] = uv;
+						}
+					};
+
+					void addFace(const std::initializer_list<repo::lib::RepoVector3D64>& vertices);
+
+					void addFace(const Face& triangle);
 
 					template<repo::core::model::RepoNodeClass T>
 					void addNode(const T& n) {
@@ -132,14 +155,17 @@ namespace repo {
 						*/
 						void setMaterial(const repo_material_t& material);
 
-						void addFace(const std::vector<repo::lib::RepoVector3D64>& vertices) {
-							meshBuilder->addFace(vertices);
+						void addFace(const std::initializer_list<repo::lib::RepoVector3D64>& vertices) {
+							meshBuilder->addFace(RepoMeshBuilder::face(
+								vertices.begin(), vertices.size()
+							));
 						}
-						void addFace(
-							const std::vector<repo::lib::RepoVector3D64>& vertices,
-							const repo::lib::RepoVector3D64& normal,
-							const std::vector<repo::lib::RepoVector2D>& uvCoords) {
-							meshBuilder->addFace(vertices, normal, uvCoords);
+
+						void addFace(const Face& triangle) {
+							meshBuilder->addFace(RepoMeshBuilder::face(
+								triangle.vertices, triangle.numVertices,
+								triangle.uvs, triangle.numUvs
+							));
 						}
 
 						std::vector<std::pair<repo::core::model::MeshNode, repo_material_t>> extractMeshes();

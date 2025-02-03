@@ -20,6 +20,7 @@
 #include "repo/core/model/bson/repo_bson_factory.h"
 #include "repo/lib/repo_exception.h"
 #include "vertex_map.h"
+#include "helper_functions.h"
 #include <map>
 
 using namespace repo;
@@ -69,22 +70,22 @@ uint32_t RepoMeshBuilder::getMeshFormat(bool hasUvs, bool hasNormals, int faceSi
 
 uint32_t RepoMeshBuilder::face::getFormat() const
 {
-	return RepoMeshBuilder::getMeshFormat(_hasUvs, _hasNormal, size);
+	return RepoMeshBuilder::getMeshFormat(hasUvs(), hasNormals(), getSize());
 }
 
 bool RepoMeshBuilder::face::hasNormals() const
 {
-	return _hasNormal;
+	return numVertices == 3;
 }
 
 bool RepoMeshBuilder::face::hasUvs() const
 {
-	return _hasUvs;
+	return numUvs > 0;
 }
 
 uint8_t RepoMeshBuilder::face::getSize() const
 {
-	return size;
+	return numVertices;
 }
 
 repo::lib::RepoVector3D64 RepoMeshBuilder::face::vertex(size_t i) const 
@@ -99,7 +100,66 @@ repo::lib::RepoVector2D RepoMeshBuilder::face::uv(size_t i) const
 
 repo::lib::RepoVector3D64 RepoMeshBuilder::face::normal() const
 {
-	return n;
+	return norm;
+}
+
+RepoMeshBuilder::face::face():
+	numVertices(0),
+	numUvs(0)
+{
+}
+
+RepoMeshBuilder::face::face(std::initializer_list<repo::lib::RepoVector3D64> vertices):
+	face()
+{
+	setVertices(vertices);
+}
+
+RepoMeshBuilder::face::face(const repo::lib::RepoVector3D64* vertices, size_t numVertices):
+	face()
+{
+	setVertices(vertices, numVertices);
+}
+
+RepoMeshBuilder::face::face(const repo::lib::RepoVector3D64* vertices, size_t numVertices, const repo::lib::RepoVector2D* uvs, size_t numUvs) :
+	face()
+{
+	setVertices(vertices, numVertices);
+	setUvs(uvs, numUvs);
+}
+
+void RepoMeshBuilder::face::setVertices(std::initializer_list<repo::lib::RepoVector3D64> vertices)
+{
+	setVertices(vertices.begin(), vertices.size());
+}
+
+void RepoMeshBuilder::face::setVertices(const repo::lib::RepoVector3D64* newVertices, size_t numNewVertices)
+{
+	for (auto i = 0; i < numNewVertices; i++) {
+		vertices[i] = newVertices[i];
+	}
+	numVertices = numNewVertices;
+	if (numVertices == 3) {
+		updateNormal();
+	}
+}
+
+void RepoMeshBuilder::face::setUvs(std::initializer_list<repo::lib::RepoVector2D> uvs) 
+{
+	setUvs(uvs.begin(), uvs.size());
+}
+
+void RepoMeshBuilder::face::setUvs(const repo::lib::RepoVector2D* newUvs, size_t numNewUvs)
+{
+	for (auto i = 0; i < numNewUvs; i++) {
+		uvs[i] = newUvs[i];
+	}
+	numUvs = numNewUvs;
+}
+
+void RepoMeshBuilder::face::updateNormal()
+{
+	norm = calcNormal(vertices[0], vertices[1], vertices[2]);
 }
 
 RepoMeshBuilder::mesh_data_t* RepoMeshBuilder::startOrContinueMeshByFormat(uint32_t format)
@@ -119,29 +179,6 @@ RepoMeshBuilder::mesh_data_t* RepoMeshBuilder::startOrContinueMeshByFormat(uint3
 	}
 
 	return currentMesh;
-}
-
-void RepoMeshBuilder::addFace(
-	const std::vector<repo::lib::RepoVector3D64>& vertices)
-{
-	addFace(vertices, std::nullopt, {});
-}
-
-void RepoMeshBuilder::addFace(
-	const std::vector<repo::lib::RepoVector3D64>& vertices,
-	const repo::lib::RepoVector3D64& normal,
-	const std::vector<repo::lib::RepoVector2D>& uvCoords)
-{
-	addFace(vertices, std::optional(normal), uvCoords);
-}
-
-void RepoMeshBuilder::addFace(
-	const std::vector<repo::lib::RepoVector3D64>& vertices,
-	std::optional<repo::lib::RepoVector3D64> normal,
-	const std::vector<repo::lib::RepoVector2D>& uvCoords
-)
-{
-
 }
 
 void RepoMeshBuilder::addFace(const face& bf)

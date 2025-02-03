@@ -39,17 +39,14 @@ GeometryCollector::~GeometryCollector()
 	}
 }
 
-void GeometryCollector::addFace(const std::vector<repo::lib::RepoVector3D64>& vertices) 
+void GeometryCollector::addFace(const std::initializer_list<repo::lib::RepoVector3D64>& vertices)
 {
 	contexts.top()->addFace(vertices);
 }
 
-void GeometryCollector::addFace(
-	const std::vector<repo::lib::RepoVector3D64>& vertices,
-	const repo::lib::RepoVector3D64& normal,
-	const std::vector<repo::lib::RepoVector2D>& uvCoords) 
+void GeometryCollector::addFace(const GeometryCollector::Face& face)
 {
-	contexts.top()->addFace(vertices, normal, uvCoords);
+	contexts.top()->addFace(face);
 }
 
 void GeometryCollector::setMaterial(const repo_material_t& material)

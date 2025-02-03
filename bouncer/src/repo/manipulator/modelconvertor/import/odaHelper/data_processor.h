@@ -86,31 +86,6 @@ namespace repo {
 						MaterialColours& matColors,
 						repo_material_t& material);
 
-					/**
-					* Should be overriden in derived classes to process triangles
-					* @param p3Vertices - input vertices of the triangle
-					* @param verticesOut - output vertices in 3D Repo format
-					* @param uvOut - output texture coordinates
-					*/
-					virtual void convertTo3DRepoTriangle(
-						const OdInt32* p3Vertices,
-						std::vector<repo::lib::RepoVector3D64>& verticesOut,
-						repo::lib::RepoVector3D64& normalOut,
-						std::vector<repo::lib::RepoVector2D>& uvOut);
-
-					/**
-					* Given vertice location, obtain vertices in teigha type and 3drepo type.
-					* @param p3Vertices  - input vertice locations
-					* @param odaPoint - [OUTPUT] vector to store results in teigha type
-					* @param repoPoint - [OUTPUT] vector to store repoPoint
-					*/
-					void getVertices(
-						int numVertices,
-						const OdInt32* p3Vertices,
-						std::vector<OdGePoint3d> &odaPoint,
-						std::vector<repo::lib::RepoVector3D64> &repoPoint
-					);
-
 					double deviationValue = 0;
 
 					/*

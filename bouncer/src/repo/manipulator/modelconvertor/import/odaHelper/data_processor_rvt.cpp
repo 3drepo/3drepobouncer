@@ -359,11 +359,8 @@ OdGiMaterialItemPtr DataProcessorRvt::fillMaterialCache(
 
 void DataProcessorRvt::triangleOut(const OdInt32* indices, const OdGeVector3d* pNormal)
 {
-	std::vector<repo::lib::RepoVector3D64> vertices;
-	std::vector<repo::lib::RepoVector2D> uv;
-	repo::lib::RepoVector3D64 normal;
-
-	std::vector<OdGePoint3d> odaPoints;
+	OdGiMapperItemEntry::MapInputTriangle mapperTriangle;
+	GeometryCollector::Face repoTriangle;
 
 	const OdGePoint3d* pVertexDataList = vertexDataList();
 
@@ -374,21 +371,17 @@ void DataProcessorRvt::triangleOut(const OdInt32* indices, const OdGeVector3d* p
 		for (int i = 0; i < 3; ++i)
 		{
 			auto point = pVertexDataList[indices[i]];
-			odaPoints.push_back(point);
-			vertices.push_back(convertToRepoWorldCoordinates(point));
+			mapperTriangle.inPt[i] = point;
+			repoTriangle.push_back(convertToRepoWorldCoordinates(point));
 		}
 	}
-
-	if (vertices.size() != 3) {
-		return;
+	else
+	{
+		return; // Triangle is degenerate; this is not fatal (not even technically an error), but we won't store the invisible primitive
 	}
 
-	normal = calcNormal(vertices[0], vertices[1], vertices[2]);
-
-	if (isMapperEnabled() && isMapperAvailable()) {
-
-		std::vector<OdGePoint2d> odaUvs;
-
+	if (isMapperEnabled() && isMapperAvailable()) 
+	{
 		if (vertexData() && vertexData()->mappingCoords(OdGiVertexData::kAllChannels))
 		{
 			// Where Uvs are predefined, we need to get them for each vertex from the
@@ -396,11 +389,12 @@ void DataProcessorRvt::triangleOut(const OdInt32* indices, const OdGeVector3d* p
 
 			OdGiMapperItemEntryPtr mapper = currentMapper(false)->diffuseMapper();
 			if (!mapper.isNull()) {
-				odaUvs.resize(vertices.size());
 				const OdGePoint3d* predefinedUvCoords = vertexData()->mappingCoords(OdGiVertexData::kAllChannels);
-				for (OdInt32 i = 0; i < vertices.size(); i++)
+				for (OdInt32 i = 0; i < 3; i++)
 				{
-					mapper->mapPredefinedCoords(predefinedUvCoords + indices[i], odaUvs.data() + i, 1);
+					OdGePoint2d uv;
+					mapper->mapPredefinedCoords(predefinedUvCoords + indices[i], &uv, 1);
+					repoTriangle.push_back(repo::lib::RepoVector2D(uv.x, uv.y));
 				}
 			}
 		}
@@ -410,44 +404,39 @@ void DataProcessorRvt::triangleOut(const OdInt32* indices, const OdGeVector3d* p
 
 			if (!currentMapper(true)->diffuseMapper().isNull())
 			{
-				odaUvs.resize(vertices.size());
-				currentMapper()->diffuseMapper()->mapCoords(odaPoints.data(), odaUvs.data());
+				OdGiMapperItemEntry::MapOutputCoords uvs;
+				currentMapper()->diffuseMapper()->mapCoords(mapperTriangle, uvs);
+				for (int i = 0; i < 3; i++)
+				{
+					repoTriangle.push_back(repo::lib::RepoVector2D(uvs.outCoord[i].x, uvs.outCoord[i].y));
+				}
 			}
 		}
-
-		uv.clear();
-		for (int i = 0; i < odaUvs.size(); ++i) {
-			uv.push_back({ (float)odaUvs[i].x, (float)odaUvs[i].y });
-		}
 	}
 
-	if (vertices.size()) {
-		collector->addFace(vertices, normal, uv);
-	}
+	collector->addFace(repoTriangle);
 }
 
 void DataProcessorRvt::polylineOut(OdInt32 numPoints, const OdInt32* vertexIndexList)
 {
-	std::vector<OdGePoint3d> vertices;
 	const auto pVertexDataList = vertexDataList();
-	for (int i = 0; i < numPoints; i++)
+	for (int i = 0; i < numPoints - 1; i++)
 	{
-		vertices.push_back(pVertexDataList[vertexIndexList[i]]);
+		collector->addFace({
+			convertToRepoWorldCoordinates(pVertexDataList[vertexIndexList[i]]),
+			convertToRepoWorldCoordinates(pVertexDataList[vertexIndexList[i + 1]])
+		});
 	}
-
-	polylineOut(numPoints, vertices.data());
 }
 
 void DataProcessorRvt::polylineOut(OdInt32 numPoints, const OdGePoint3d* vertexList)
 {
-	std::vector<repo::lib::RepoVector3D64> vertices;
-
 	for (OdInt32 i = 0; i < (numPoints - 1); i++)
 	{
-		vertices.clear();
-		vertices.push_back(convertToRepoWorldCoordinates(vertexList[i]));
-		vertices.push_back(convertToRepoWorldCoordinates(vertexList[i + 1]));
-		collector->addFace(vertices);
+		collector->addFace({
+			convertToRepoWorldCoordinates(vertexList[i]),
+			convertToRepoWorldCoordinates(vertexList[i + 1])
+		});
 	}
 }
 

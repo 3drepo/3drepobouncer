@@ -633,19 +633,16 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 				// converts each strip into a set of 2-vertex line segments.
 
 				auto index = 0;
-				std::vector<repo::lib::RepoVector3D64> vertices;
 				for (auto line = aVertexPerLine.begin(); line != aVertexPerLine.end(); line++)
 				{
 					for (auto i = 0; i < (*line - 1); i++)
 					{
-						vertices.clear();
-						vertices.push_back(convertPoint(aVertexes[index + 0], transformMatrix));
-						vertices.push_back(convertPoint(aVertexes[index + 1], transformMatrix));
+						meshBuilder.addFace(RepoMeshBuilder::face({
+							convertPoint(aVertexes[index + 0], transformMatrix),
+							convertPoint(aVertexes[index + 1], transformMatrix)
+						}));
 						index++;
-
-						meshBuilder.addFace(vertices);
 					}
-
 					index++;
 				}
 
@@ -670,22 +667,24 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 
 				for (auto triangle = aTriangles.begin(); triangle != aTriangles.end(); triangle++)
 				{
-					std::vector<repo::lib::RepoVector3D64> vertices;
-					vertices.push_back(convertPoint(aVertices[triangle->pointIndex1], transformMatrix));
-					vertices.push_back(convertPoint(aVertices[triangle->pointIndex2], transformMatrix));
-					vertices.push_back(convertPoint(aVertices[triangle->pointIndex3], transformMatrix));
+					RepoMeshBuilder::face face;
 
-					auto normal = calcNormal(vertices[0], vertices[1], vertices[2]);
+					face.setVertices({
+						convertPoint(aVertices[triangle->pointIndex1], transformMatrix),
+						convertPoint(aVertices[triangle->pointIndex2], transformMatrix),
+						convertPoint(aVertices[triangle->pointIndex3], transformMatrix)
+					});
 
-					std::vector<repo::lib::RepoVector2D> uvs;
 					if (aUvs.length())
 					{
-						uvs.push_back(convertPoint(aUvs[triangle->pointIndex1]));
-						uvs.push_back(convertPoint(aUvs[triangle->pointIndex2]));
-						uvs.push_back(convertPoint(aUvs[triangle->pointIndex3]));
+						face.setUvs({
+							convertPoint(aUvs[triangle->pointIndex1]),
+							convertPoint(aUvs[triangle->pointIndex2]),
+							convertPoint(aUvs[triangle->pointIndex3])
+						});
 					}
 
-					meshBuilder.addFace(vertices, normal, uvs);
+					meshBuilder.addFace(face);
 				}
 
 				continue;
