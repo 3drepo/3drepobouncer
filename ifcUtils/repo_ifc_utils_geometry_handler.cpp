@@ -29,6 +29,8 @@
 constexpr int TRIANGLES = 3;
 constexpr int LINES = 2;
 
+using namespace repo;
+
 IfcGeom::IteratorSettings createSettings()
 {
 	IfcGeom::IteratorSettings itSettings;

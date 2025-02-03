@@ -401,7 +401,7 @@ bool SceneManager::generateAndCommitSelectionTree(
 	return success;
 }
 
-repo_web_buffers_t SceneManager::generateSRCBuffer(
+repo::repo_web_buffers_t SceneManager::generateSRCBuffer(
 	repo::core::model::RepoScene *scene)
 {
 	repo_web_buffers_t result;
@@ -417,7 +417,7 @@ repo_web_buffers_t SceneManager::generateSRCBuffer(
 	return result;
 }
 
-repo_web_buffers_t SceneManager::generateRepoBundleBuffer(
+repo::repo_web_buffers_t SceneManager::generateRepoBundleBuffer(
 	repo::core::model::RepoScene* scene)
 {
 	repo_web_buffers_t result;

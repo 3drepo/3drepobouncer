@@ -224,7 +224,7 @@ bool RepoManipulator::generateAndCommitWebViewBuffer(
 	return SceneManager.generateWebViewBuffers(scene, exType, buffers, dbHandler.get(), dbHandler->getFileManager().get());
 }
 
-repo_web_buffers_t RepoManipulator::generateSRCBuffer(
+repo::repo_web_buffers_t RepoManipulator::generateSRCBuffer(
 	repo::core::model::RepoScene* scene)
 {
 	repo_web_buffers_t buffers;
@@ -256,7 +256,7 @@ RepoManipulator::getAllFromCollectionTailable(
 	return dbHandler->getAllFromCollectionTailable(database, collection, skip, limit, fields, sortField, sortOrder);
 }
 
-std::shared_ptr<repo_partitioning_tree_t>
+std::shared_ptr<repo::repo_partitioning_tree_t>
 RepoManipulator::getScenePartitioning(
 	const repo::core::model::RepoScene* scene,
 	const uint32_t& maxDepth

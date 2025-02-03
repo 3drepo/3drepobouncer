@@ -5,6 +5,7 @@
 
 
 add_subdirectory(spatialpartitioning)
+add_subdirectory(spscqueue)
 set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing.cpp

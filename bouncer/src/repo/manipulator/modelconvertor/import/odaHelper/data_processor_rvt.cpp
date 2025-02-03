@@ -357,12 +357,12 @@ OdGiMaterialItemPtr DataProcessorRvt::fillMaterialCache(
 	return OdGiMaterialItemPtr();
 }
 
-void DataProcessorRvt::convertTo3DRepoTriangle(
-	const OdInt32* indices,
-	std::vector<repo::lib::RepoVector3D64>& verticesOut,
-	repo::lib::RepoVector3D64& normalOut,
-	std::vector<repo::lib::RepoVector2D>& uvsOut)
+void DataProcessorRvt::triangleOut(const OdInt32* indices, const OdGeVector3d* pNormal)
 {
+	std::vector<repo::lib::RepoVector3D64> vertices;
+	std::vector<repo::lib::RepoVector2D> uv;
+	repo::lib::RepoVector3D64 normal;
+
 	std::vector<OdGePoint3d> odaPoints;
 
 	const OdGePoint3d* pVertexDataList = vertexDataList();
@@ -375,15 +375,15 @@ void DataProcessorRvt::convertTo3DRepoTriangle(
 		{
 			auto point = pVertexDataList[indices[i]];
 			odaPoints.push_back(point);
-			verticesOut.push_back(convertToRepoWorldCoordinates(point));
+			vertices.push_back(convertToRepoWorldCoordinates(point));
 		}
 	}
 
-	if (verticesOut.size() != 3) {
+	if (vertices.size() != 3) {
 		return;
 	}
 
-	normalOut = calcNormal(verticesOut[0], verticesOut[1], verticesOut[2]);
+	normal = calcNormal(vertices[0], vertices[1], vertices[2]);
 
 	if (isMapperEnabled() && isMapperAvailable()) {
 
@@ -396,9 +396,9 @@ void DataProcessorRvt::convertTo3DRepoTriangle(
 
 			OdGiMapperItemEntryPtr mapper = currentMapper(false)->diffuseMapper();
 			if (!mapper.isNull()) {
-				odaUvs.resize(verticesOut.size());
+				odaUvs.resize(vertices.size());
 				const OdGePoint3d* predefinedUvCoords = vertexData()->mappingCoords(OdGiVertexData::kAllChannels);
-				for (OdInt32 i = 0; i < verticesOut.size(); i++)
+				for (OdInt32 i = 0; i < vertices.size(); i++)
 				{
 					mapper->mapPredefinedCoords(predefinedUvCoords + indices[i], odaUvs.data() + i, 1);
 				}
@@ -410,25 +410,16 @@ void DataProcessorRvt::convertTo3DRepoTriangle(
 
 			if (!currentMapper(true)->diffuseMapper().isNull())
 			{
-				odaUvs.resize(verticesOut.size());
+				odaUvs.resize(vertices.size());
 				currentMapper()->diffuseMapper()->mapCoords(odaPoints.data(), odaUvs.data());
 			}
 		}
 
-		uvsOut.clear();
+		uv.clear();
 		for (int i = 0; i < odaUvs.size(); ++i) {
-			uvsOut.push_back({ (float)odaUvs[i].x, (float)odaUvs[i].y });
+			uv.push_back({ (float)odaUvs[i].x, (float)odaUvs[i].y });
 		}
 	}
-}
-
-void DataProcessorRvt::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* pNormal)
-{
-	std::vector<repo::lib::RepoVector3D64> vertices;
-	std::vector<repo::lib::RepoVector2D> uv;
-	repo::lib::RepoVector3D64 normal;
-
-	convertTo3DRepoTriangle(p3Vertices, vertices, normal, uv);
 
 	if (vertices.size()) {
 		collector->addFace(vertices, normal, uv);

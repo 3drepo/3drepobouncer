@@ -141,7 +141,7 @@ void appendVertices(RepoBSONBuilder& builder, const std::vector<repo::lib::RepoV
 	}
 }
 
-void appendFaces(RepoBSONBuilder& builder, const std::vector<repo_face_t>& faces)
+void appendFaces(RepoBSONBuilder& builder, const std::vector<repo::repo_face_t>& faces)
 {
 	if (faces.size() > 0)
 	{
@@ -149,7 +149,6 @@ void appendFaces(RepoBSONBuilder& builder, const std::vector<repo_face_t>& faces
 
 		// In API LEVEL 1, faces are stored as
 		// [n1, v1, v2, ..., n2, v1, v2...]
-		std::vector<repo_face_t>::iterator faceIt;
 
 		MeshNode::Primitive primitive = MeshNode::Primitive::UNKNOWN;
 

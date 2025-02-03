@@ -22,6 +22,7 @@
 #include "vertex_map.h"
 #include <map>
 
+using namespace repo;
 using namespace repo::manipulator::modelconvertor::odaHelper;
 using namespace repo::core::model;
 
@@ -66,6 +67,41 @@ uint32_t RepoMeshBuilder::getMeshFormat(bool hasUvs, bool hasNormals, int faceSi
 	return vBit | fBit | nBit | uBit;
 }
 
+uint32_t RepoMeshBuilder::face::getFormat() const
+{
+	return RepoMeshBuilder::getMeshFormat(_hasUvs, _hasNormal, size);
+}
+
+bool RepoMeshBuilder::face::hasNormals() const
+{
+	return _hasNormal;
+}
+
+bool RepoMeshBuilder::face::hasUvs() const
+{
+	return _hasUvs;
+}
+
+uint8_t RepoMeshBuilder::face::getSize() const
+{
+	return size;
+}
+
+repo::lib::RepoVector3D64 RepoMeshBuilder::face::vertex(size_t i) const 
+{
+	return vertices[i];
+}
+
+repo::lib::RepoVector2D RepoMeshBuilder::face::uv(size_t i) const
+{
+	return uvs[i];
+}
+
+repo::lib::RepoVector3D64 RepoMeshBuilder::face::normal() const
+{
+	return n;
+}
+
 RepoMeshBuilder::mesh_data_t* RepoMeshBuilder::startOrContinueMeshByFormat(uint32_t format)
 {
 	if (!currentMesh || currentMesh->format != format)
@@ -105,34 +141,35 @@ void RepoMeshBuilder::addFace(
 	const std::vector<repo::lib::RepoVector2D>& uvCoords
 )
 {
-	if (!vertices.size())
+
+}
+
+void RepoMeshBuilder::addFace(const face& bf)
+{
+	if (!bf.getSize())
 	{
 		throw repo::lib::RepoGeometryProcessingException("addFace is being called without any vertices. A face must have more than 0 vertices.");
 	}
 
-	bool hasNormals = (bool)normal;
-	bool hasUvs = uvCoords.size();
-
-	auto meshData = startOrContinueMeshByFormat(getMeshFormat(hasUvs, hasNormals, vertices.size()));
+	auto meshData = startOrContinueMeshByFormat(bf.getFormat());
 
 	repo_face_t face;
-	for (auto i = 0; i < vertices.size(); ++i) {
-		auto v = vertices[i] + offset;
+	for (auto i = 0; i < bf.getSize(); ++i) {
+		auto v = bf.vertex(i) + offset;
 
 		VertexMap::result_t vertexReference;
-		if (hasNormals)
+		if (bf.hasNormals())
 		{
-			if (hasUvs)
+			if (bf.hasUvs())
 			{
-				auto& uv = uvCoords[i];
-				vertexReference = meshData->vertexMap.find(v, *normal, uv);
+				vertexReference = meshData->vertexMap.find(v, bf.normal(), bf.uv(i));
 			}
 			else
 			{
-				vertexReference = meshData->vertexMap.find(v, *normal);
+				vertexReference = meshData->vertexMap.find(v, bf.normal());
 			}
 		}
-		else if (hasUvs)
+		else if (bf.hasUvs())
 		{
 			throw repo::lib::RepoGeometryProcessingException("Face has uvs but no normals. This is not supported. Faces that have uvs must also have a normal.");
 		}

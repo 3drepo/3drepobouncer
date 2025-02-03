@@ -38,11 +38,35 @@ namespace repo {
 
 					~RepoMeshBuilder();
 
+					struct face {
+
+						face();
+
+						bool hasNormals() const;
+						bool hasUvs() const;
+						uint8_t getSize() const;
+						uint32_t getFormat() const;
+
+						repo::lib::RepoVector3D64 vertex(size_t i) const;
+						repo::lib::RepoVector2D uv(size_t i) const;
+						repo::lib::RepoVector3D64 normal() const;
+
+					private:
+						repo::lib::RepoVector3D64 vertices[3];
+						repo::lib::RepoVector2D uvs[3];
+						repo::lib::RepoVector3D64 n;
+						bool _hasNormal;
+						bool _hasUvs;
+						uint8_t size;
+					};
+
 					void addFace(const std::vector<repo::lib::RepoVector3D64>& vertices);
 					void addFace(
 						const std::vector<repo::lib::RepoVector3D64>& vertices,
 						const repo::lib::RepoVector3D64& normal,
 						const std::vector<repo::lib::RepoVector2D>& uvCoords);
+
+					void addFace(const face& face);
 
 					void extractMeshes(std::vector<repo::core::model::MeshNode>& nodes);
 
@@ -59,7 +83,7 @@ namespace repo {
 					struct mesh_data_t;
 
 					mesh_data_t* startOrContinueMeshByFormat(uint32_t format);
-					uint32_t getMeshFormat(bool hasUvs, bool hasNormals, int faceSize);
+					static uint32_t getMeshFormat(bool hasUvs, bool hasNormals, int faceSize);
 
 					// This exists to cache the result of the last startOrContinueMeshByFormat
 					// call for performance reasons.

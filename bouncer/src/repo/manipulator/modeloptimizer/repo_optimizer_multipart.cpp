@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <chrono>
 
+using namespace repo;
 using namespace repo::manipulator::modeloptimizer;
 
 auto defaultGraph = repo::core::model::RepoScene::GraphType::DEFAULT;

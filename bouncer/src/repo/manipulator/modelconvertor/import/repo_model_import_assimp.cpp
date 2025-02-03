@@ -463,8 +463,8 @@ repo::core::model::MeshNode AssimpModelImport::createMeshRepoNode(
 	{
 		for (uint32_t i = 0; i < assimpMesh->mNumFaces; i++)
 		{
-			faces.push_back({ std::vector<uint32_t>(assimpMesh->mFaces[i].mIndices,
-				assimpMesh->mFaces[i].mIndices + assimpMesh->mFaces[i].mNumIndices) });
+			faces.push_back(repo_face_t(assimpMesh->mFaces[i].mIndices,
+				assimpMesh->mFaces[i].mIndices + assimpMesh->mFaces[i].mNumIndices));
 		}
 	}
 	/*

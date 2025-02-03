@@ -79,6 +79,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 
+using namespace repo;
 using namespace repo::manipulator::modelconvertor::odaHelper;
 using namespace repo::core::model;
 

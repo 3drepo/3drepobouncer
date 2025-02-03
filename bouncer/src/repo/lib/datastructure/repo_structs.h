@@ -26,211 +26,308 @@
 #include "repo_vector.h"
 #include <boost/crc.hpp>
 
-using repo_web_geo_files_t = std::unordered_map<std::string, std::vector<uint8_t>>;
-using repo_web_json_files_t = std::unordered_map<std::string, std::vector<uint8_t>>;
-
-struct repo_web_buffers_t{
-	repo_web_geo_files_t geoFiles; //files where geometery are stored
-	repo_web_json_files_t jsonFiles; //JSON mapping files
-	repo::core::model::RepoAssets repoAssets; //RepoBundles assets list
-};
-
-//This is used to map info for multipart optimization
-typedef struct {
-	repo::lib::RepoVector3D min;
-	repo::lib::RepoVector3D max;
-	repo::lib::RepoUUID  mesh_id;
-	repo::lib::RepoUUID  shared_id;
-	repo::lib::RepoUUID  material_id; // MaterialNode Unique Id
-	int32_t       vertFrom;
-	int32_t       vertTo;
-	int32_t       triFrom;
-	int32_t       triTo;
-}repo_mesh_mapping_t;
-
-struct repo_mesh_entry_t
-{
-	std::vector<float> min;
-	std::vector<float> max;
-	std::vector<float> mid;// midpoint
-	repo::lib::RepoUUID      id;
-
-	repo_mesh_entry_t() :mid({ 0, 0, 0 })
-	{
-		min = { 0, 0, 0 };
-		max = { 0, 0, 0 };
-	}
-};
-
 namespace repo {
+
+	using repo_web_geo_files_t = std::unordered_map<std::string, std::vector<uint8_t>>;
+	using repo_web_json_files_t = std::unordered_map<std::string, std::vector<uint8_t>>;
+
+	struct repo_web_buffers_t {
+		repo_web_geo_files_t geoFiles; //files where geometery are stored
+		repo_web_json_files_t jsonFiles; //JSON mapping files
+		repo::core::model::RepoAssets repoAssets; //RepoBundles assets list
+	};
+
+	//This is used to map info for multipart optimization
+	typedef struct {
+		repo::lib::RepoVector3D min;
+		repo::lib::RepoVector3D max;
+		repo::lib::RepoUUID  mesh_id;
+		repo::lib::RepoUUID  shared_id;
+		repo::lib::RepoUUID  material_id; // MaterialNode Unique Id
+		int32_t       vertFrom;
+		int32_t       vertTo;
+		int32_t       triFrom;
+		int32_t       triTo;
+	}repo_mesh_mapping_t;
+
+	struct repo_mesh_entry_t
+	{
+		std::vector<float> min;
+		std::vector<float> max;
+		std::vector<float> mid;// midpoint
+		repo::lib::RepoUUID      id;
+
+		repo_mesh_entry_t() :mid({ 0, 0, 0 })
+		{
+			min = { 0, 0, 0 };
+			max = { 0, 0, 0 };
+		}
+	};
+
 	enum class PartitioningTreeType { PARTITION_X, PARTITION_Y, PARTITION_Z, LEAF_NODE };
 	enum class DiffMode { DIFF_BY_ID, DIFF_BY_NAME };
-}
 
-struct repo_partitioning_tree_t {
-	repo::PartitioningTreeType              type;
-	std::vector<repo_mesh_entry_t>            meshes; //mesh ids if it is a leaf node
-	float                             pValue; //partitioning value if not
-	std::shared_ptr<repo_partitioning_tree_t> left;
-	std::shared_ptr<repo_partitioning_tree_t> right;
+	struct repo_partitioning_tree_t {
+		repo::PartitioningTreeType              type;
+		std::vector<repo_mesh_entry_t>            meshes; //mesh ids if it is a leaf node
+		float                             pValue; //partitioning value if not
+		std::shared_ptr<repo_partitioning_tree_t> left;
+		std::shared_ptr<repo_partitioning_tree_t> right;
 
-	//Construction of branch node
-	repo_partitioning_tree_t(
-		const repo::PartitioningTreeType &type,
-		const float &pValue,
-		std::shared_ptr<repo_partitioning_tree_t> left,
-		std::shared_ptr<repo_partitioning_tree_t> right)
-		: type(type), pValue(pValue),
-		left(left),
-		right(right) {}
+		//Construction of branch node
+		repo_partitioning_tree_t(
+			const repo::PartitioningTreeType& type,
+			const float& pValue,
+			std::shared_ptr<repo_partitioning_tree_t> left,
+			std::shared_ptr<repo_partitioning_tree_t> right)
+			: type(type), pValue(pValue),
+			left(left),
+			right(right) {}
 
-	//Construction of leaf node
-	repo_partitioning_tree_t(
-		const std::vector<repo_mesh_entry_t> &meshes)
-		:
-		type(repo::PartitioningTreeType::LEAF_NODE),
-		meshes(meshes), pValue(0),
-		left(std::shared_ptr<repo_partitioning_tree_t>(nullptr)),
-		right(std::shared_ptr<repo_partitioning_tree_t>(nullptr)) {}
-};
+		//Construction of leaf node
+		repo_partitioning_tree_t(
+			const std::vector<repo_mesh_entry_t>& meshes)
+			:
+			type(repo::PartitioningTreeType::LEAF_NODE),
+			meshes(meshes), pValue(0),
+			left(std::shared_ptr<repo_partitioning_tree_t>(nullptr)),
+			right(std::shared_ptr<repo_partitioning_tree_t>(nullptr)) {}
+	};
 
-struct repo_diff_result_t {
-	std::vector<repo::lib::RepoUUID> added; //nodes that does not exist on the other model
-	std::vector<repo::lib::RepoUUID> modified; //nodes that exist on the other model but it is modified.
-	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher > correspondence;
-};
+	struct repo_diff_result_t {
+		std::vector<repo::lib::RepoUUID> added; //nodes that does not exist on the other model
+		std::vector<repo::lib::RepoUUID> modified; //nodes that exist on the other model but it is modified.
+		std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher > correspondence;
+	};
 
-struct repo_material_t {
-	std::vector<float> ambient;
-	std::vector<float> diffuse;
-	std::vector<float> specular;
-	std::vector<float> emissive;
-	float opacity = 1;
-	float shininess = 0;
-	float shininessStrength = 0;
-	float lineWeight = 1;
-	bool isWireframe = false;
-	bool isTwoSided = false;
+	struct repo_material_t {
+		std::vector<float> ambient;
+		std::vector<float> diffuse;
+		std::vector<float> specular;
+		std::vector<float> emissive;
+		float opacity = 1;
+		float shininess = 0;
+		float shininessStrength = 0;
+		float lineWeight = 1;
+		bool isWireframe = false;
+		bool isTwoSided = false;
 
-	std::string texturePath;
+		std::string texturePath;
 
-	unsigned int checksum() const {
-		std::stringstream ss;
-		ss.precision(17);
-		for (const auto &n : ambient) {
-			ss << std::fixed << n;
+		unsigned int checksum() const {
+			std::stringstream ss;
+			ss.precision(17);
+			for (const auto& n : ambient) {
+				ss << std::fixed << n;
+			}
+			for (const auto& n : diffuse) {
+				ss << std::fixed << n;
+			}
+			for (const auto& n : specular) {
+				ss << std::fixed << n;
+			}
+			for (const auto& n : emissive) {
+				ss << std::fixed << n;
+			}
+			for (const auto& n : texturePath) {
+				ss << n;
+			}
+
+			ss << opacity << shininess << shininessStrength << lineWeight << isWireframe << isTwoSided;
+			auto stringified = ss.str();
+
+			boost::crc_32_type crc32;
+			crc32.process_bytes(stringified.c_str(), stringified.size());
+			return crc32.checksum();
 		}
-		for (const auto &n : diffuse) {
-			ss << std::fixed << n;
-		}
-		for (const auto &n : specular) {
-			ss << std::fixed << n;
-		}
-		for (const auto &n : emissive) {
-			ss << std::fixed << n;
-		}
-		for (const auto &n : texturePath) {
-			ss << n;
+
+		bool hasTexture() const {
+			return !texturePath.empty();
 		}
 
-		ss << opacity << shininess << shininessStrength << lineWeight << isWireframe << isTwoSided;
-		auto stringified = ss.str();
-
-		boost::crc_32_type crc32;
-		crc32.process_bytes(stringified.c_str(), stringified.size());
-		return crc32.checksum();
-	}
-
-	bool hasTexture() const {
-		return !texturePath.empty();
-	}
-
-	static repo_material_t DefaultMaterial()
-	{
-		repo_material_t material;
-		material.shininess = 0.0;
-		material.shininessStrength = 0.0;
-		material.opacity = 1;
-		material.specular = { 0, 0, 0, 0 };
-		material.diffuse = { 0.5f, 0.5f, 0.5f, 0 };
-		material.emissive = material.diffuse;
-		return material;
-	}
-};
-
-struct repo_color4d_t {
-	float r;
-	float g;
-	float b;
-	float a;
-
-	repo_color4d_t()
-	{
-		a = 1;
-	}
-
-	repo_color4d_t(float r, float g, float b, float a) : r(r), g(g), b(b), a(a)
-	{
-	}
-
-	repo_color4d_t(float r, float g, float b) : r(r), g(g), b(b), a(1)
-	{
-	}
-
-	repo_color4d_t(std::vector<float> v)
-	{
-		r = v[0];
-		g = v[1];
-		b = v[2];
-		if (v.size() > 3) {
-			a = v[3];
+		static repo_material_t DefaultMaterial()
+		{
+			repo_material_t material;
+			material.shininess = 0.0;
+			material.shininessStrength = 0.0;
+			material.opacity = 1;
+			material.specular = { 0, 0, 0, 0 };
+			material.diffuse = { 0.5f, 0.5f, 0.5f, 0 };
+			material.emissive = material.diffuse;
+			return material;
 		}
-		else
+	};
+
+	/*
+	* A single object intended to be passed by value type that expresses a face with
+	* up to three vertices. In the future we could consider templating this type for
+	* the number of indicies, but it is very unlikely we'd need to work with, e.g.
+	* quads, and n-gons would have their own type.
+	*/
+	struct repo_face_t {
+		uint32_t indices[3];
+		uint8_t sides;
+
+		repo_face_t() :
+			sides(0)
+		{
+			indices[0] = 0;
+			indices[1] = 1;
+			indices[2] = 2;
+		}
+
+		repo_face_t(std::initializer_list<size_t> indices) :
+			sides(0)
+		{
+			for (auto i : indices) {
+				push_back(i);
+			}
+		}
+
+		repo_face_t(uint32_t* begin, uint32_t* end) :
+			sides(0)
+		{
+			while (begin != end) {
+				push_back(*begin);
+				begin++;
+			}
+		}
+
+		size_t size() const
+		{
+			return sides;
+		}
+
+		void resize(size_t sides)
+		{
+			this->sides = sides;
+		}
+
+		uint32_t& operator[](size_t i)
+		{
+			return indices[i];
+		}
+
+		uint32_t operator[](size_t i) const
+		{
+			return indices[i];
+		}
+
+		void push_back(uint32_t i)
+		{
+			indices[sides] = i;
+			sides++;
+		}
+
+		bool operator==(const repo_face_t& other) const
+		{
+			if (sides != other.sides) {
+				return false;
+			}
+			for (auto i = 0; i < sides; i++) {
+				if (indices[i] != other[i]) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		class iterator : public std::iterator<
+			std::forward_iterator_tag,
+			uint32_t,
+			uint8_t,
+			uint32_t*,
+			uint32_t> {
+
+			uint8_t index;
+			const repo_face_t& face;
+		public:
+			iterator(const repo_face_t& face, uint8_t index = 0) :face(face), index(index)
+			{
+			}
+
+			iterator& operator++()
+			{
+				index++;
+				return *this;
+			}
+
+			bool operator==(iterator other) const
+			{
+				return index == other.index;
+			}
+
+			bool operator!=(iterator other) const
+			{
+				return index != other.index;
+			}
+
+			reference operator*() const
+			{
+				return face[index];
+			}
+		};
+
+		iterator begin() const
+		{
+			return iterator(*this, 0);
+		}
+
+		iterator end() const
+		{
+			return iterator(*this, size());
+		}
+	};
+
+	struct repo_color4d_t {
+		float r;
+		float g;
+		float b;
+		float a;
+
+		repo_color4d_t()
 		{
 			a = 1;
 		}
-	}
 
-	repo_color4d_t(std::vector<float> v, float a)
-	{
-		r = v[0];
-		g = v[1];
-		b = v[2];
-		this->a = a;
-	}
+		repo_color4d_t(float r, float g, float b, float a) : r(r), g(g), b(b), a(a)
+		{
+		}
 
-	repo_color4d_t operator* (float scalar)
-	{
-		return {
-			r * scalar,
-			b * scalar,
-			g * scalar,
-			a * scalar
-		};
-	}
-};
+		repo_color4d_t(float r, float g, float b) : r(r), g(g), b(b), a(1)
+		{
+		}
 
-typedef std::vector<uint32_t> repo_face_t;
+		repo_color4d_t(std::vector<float> v)
+		{
+			r = v[0];
+			g = v[1];
+			b = v[2];
+			if (v.size() > 3) {
+				a = v[3];
+			}
+			else
+			{
+				a = 1;
+			}
+		}
 
-static std::string toString(const repo_face_t &f)
-{
-	std::string str;
-	unsigned int mNumIndices = f.size();
+		repo_color4d_t(std::vector<float> v, float a)
+		{
+			r = v[0];
+			g = v[1];
+			b = v[2];
+			this->a = a;
+		}
 
-	str += "[";
-	for (unsigned int i = 0; i < mNumIndices; i++)
-	{
-		str += std::to_string(f[i]);
-		if (i != mNumIndices - 1)
-			str += ", ";
-	}
-	str += "]";
-	return str;
-}
-
-static std::string toString(const repo_color4d_t &color)
-{
-	std::stringstream sstr;
-	sstr << "[" << color.r << ", " << color.g << ", " << color.b << ", " << color.a << "]";
-	return sstr.str();
+		repo_color4d_t operator* (float scalar)
+		{
+			return {
+				r * scalar,
+				b * scalar,
+				g * scalar,
+				a * scalar
+			};
+		}
+	};
 }
