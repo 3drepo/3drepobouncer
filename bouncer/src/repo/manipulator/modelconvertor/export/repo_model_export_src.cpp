@@ -279,7 +279,8 @@ bool SRCModelExport::generateJSONMapping(
 			matTree.addToTree(MP_LABEL_NAME, matNode->getUniqueID().toString());
 			repo_material_t matStruct = matNode->getMaterialStruct();
 
-			if (matStruct.diffuse.size())
+			/*
+			if (matStruct.diffuse)
 				matTree.addToTree(MP_LABEL_MATERIAL + "." + MP_LABEL_MAT_DIFFUSE, matStruct.diffuse, false);
 
 			if (matStruct.emissive.size())
@@ -293,6 +294,7 @@ bool SRCModelExport::generateJSONMapping(
 
 			if (matStruct.opacity == matStruct.opacity)
 				matTree.addToTree(MP_LABEL_MATERIAL + "." + MP_LABEL_MAT_TRANSPARENCY, 1.0 - matStruct.opacity);
+			*/
 
 			matChildrenTrees.push_back(matTree);
 		}

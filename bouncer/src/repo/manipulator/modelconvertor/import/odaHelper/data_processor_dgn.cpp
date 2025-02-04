@@ -155,14 +155,14 @@ void DataProcessorDgn::convertTo3DRepoMaterial(
 	OdCmEntityColor color = fixByACI(this->device()->getPalette(), effectiveTraits().trueColor());
 	// diffuse
 	if (matColors.colorDiffuseOverride)
-		material.diffuse = { matColors.colorDiffuse.red() / 255.0f, matColors.colorDiffuse.green() / 255.0f, matColors.colorDiffuse.blue() / 255.0f, 1.0f };
+		material.diffuse = { matColors.colorDiffuse.red() / 255.0f, matColors.colorDiffuse.green() / 255.0f, matColors.colorDiffuse.blue() / 255.0f };
 	else
-		material.diffuse = { color.red() / 255.0f, color.green() / 255.0f, color.blue() / 255.0f, 1.0f };
+		material.diffuse = { color.red() / 255.0f, color.green() / 255.0f, color.blue() / 255.0f };
 	// specular
 	if (matColors.colorSpecularOverride)
-		material.specular = { matColors.colorSpecular.red() / 255.0f, matColors.colorSpecular.green() / 255.0f, matColors.colorSpecular.blue() / 255.0f, 1.0f };
+		material.specular = { matColors.colorSpecular.red() / 255.0f, matColors.colorSpecular.green() / 255.0f, matColors.colorSpecular.blue() / 255.0f };
 	else
-		material.specular = { color.red() / 255.0f, color.green() / 255.0f, color.blue() / 255.0f, 1.0f };
+		material.specular = { color.red() / 255.0f, color.green() / 255.0f, color.blue() / 255.0f };
 
 	material.shininessStrength = 1 - material.shininessStrength;
 }

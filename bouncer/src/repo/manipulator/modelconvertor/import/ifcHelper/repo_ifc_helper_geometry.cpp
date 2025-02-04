@@ -121,9 +121,7 @@ bool IFCUtilsGeometry::generateGeometry(
 			//This mesh has no material, assigning a default
 			if (matNameToMaterials.find(defaultMaterialName) == matNameToMaterials.end())
 			{
-				repo_material_t matProp;
-				matProp.diffuse = { 0.5, 0.5, 0.5, 1 };
-				matNameToMaterials[defaultMaterialName] = matProp;
+				matNameToMaterials[defaultMaterialName] = repo_material_t::DefaultMaterial();
 			}
 			if (materialParent.find(defaultMaterialName) == materialParent.end())
 			{

@@ -113,30 +113,34 @@ repo::lib::RepoVector2D convertPoint(OdGePoint2d pnt)
 	return repo::lib::RepoVector2D(pnt.x, pnt.y);
 };
 
-void convertColor(OdNwColor color, std::vector<float>& dest)
+// These next methods explicitly ignore the alpha component of the Nw colours,
+// because the material *should* have the transparency accessible via a
+// dedicated member. If we get issues with materials though, this should be
+// re-evaluated.
+
+void convertColor(OdNwColor color, repo_color3d_t& dest)
 {
-	dest.clear();
-	dest.push_back(color.R());
-	dest.push_back(color.G());
-	dest.push_back(color.B());
-	dest.push_back(color.A());
+	dest.r = color.R();
+	dest.g = color.G();
+	dest.b = color.B();
 }
 
-void convertColor(OdString color, std::vector<float>& dest)
+void convertColor(OdString color, repo_color3d_t& dest)
 {
-	dest.clear();
 	try
 	{
 		typedef boost::tokenizer<boost::char_separator<OdChar>> tokenizer;
 		boost::char_separator<OdChar> sep(OD_T(","));
 		auto stringified = convertToStdString(color);
 		tokenizer tokens(stringified, sep);
+		std::vector<float> components;
 		for (tokenizer::iterator iter = tokens.begin(); iter != tokens.end(); iter++) {
 			auto token = *iter;
 			boost::trim(token);
 			auto component = boost::lexical_cast<float>(token);
-			dest.push_back(component / 255.0);
+			components.push_back(component / 255.0);
 		}
+		dest = components;
 	}
 	catch (...)
 	{

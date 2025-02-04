@@ -51,7 +51,7 @@ namespace repo {
 						repo_material_t& material) override;
 
 				private:
-					void convertTo3DRepoColor(OdCmEntityColor& color, std::vector<float>& out);
+					void convertTo3DRepoColor(OdCmEntityColor& color, repo_color3d_t& out);
 
 					// Some properties to be held between invocations of doDraw()
 					class Context

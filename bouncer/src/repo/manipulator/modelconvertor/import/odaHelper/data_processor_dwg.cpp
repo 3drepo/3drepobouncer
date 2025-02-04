@@ -154,7 +154,7 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	return OdGsBaseMaterialView::doDraw(i, pDrawable);
 }
 
-void DataProcessorDwg::convertTo3DRepoColor(OdCmEntityColor& color, std::vector<float>& out)
+void DataProcessorDwg::convertTo3DRepoColor(OdCmEntityColor& color, repo_color3d_t& out)
 {
 	switch (color.colorMethod())
 	{
@@ -174,10 +174,9 @@ void DataProcessorDwg::convertTo3DRepoColor(OdCmEntityColor& color, std::vector<
 		break;
 	}
 
-	out.push_back(color.red() / 255.0f);
-	out.push_back(color.green() / 255.0f);
-	out.push_back(color.blue() / 255.0f);
-	out.push_back(1.0f);
+	out.r = color.red() / 255.0f;
+	out.g = color.green() / 255.0f;
+	out.b = color.blue() / 255.0f;
 }
 
 

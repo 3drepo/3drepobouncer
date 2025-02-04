@@ -311,7 +311,9 @@ void DataProcessorRvt::draw(const OdGiDrawable* pDrawable)
 
 			try
 			{
-				collector->setMetadata(elementName, fillMetadata(element));
+				if (!collector->hasMetadata(elementName)) {
+					collector->setMetadata(elementName, fillMetadata(element));
+				}
 			}
 			catch (OdError& er)
 			{
@@ -698,7 +700,7 @@ void DataProcessorRvt::fillTexture(OdBmMaterialElemPtr materialPtr, repo_materia
 		// behaviour is to multiply in the shader, and Revit's is to replace it.
 		// (Revit's Appearance dialog does have a Tint option, but its more for use during
 		// ray-tracing.)
-		material.diffuse = { 1,1,1,1 };
+		material.diffuse = { 1,1,1 };
 	}
 
 	material.texturePath = validTextureName;

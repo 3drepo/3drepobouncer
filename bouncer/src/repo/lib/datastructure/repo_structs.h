@@ -100,11 +100,156 @@ namespace repo {
 		std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher > correspondence;
 	};
 
+	struct repo_color3d_t {
+		float r;
+		float g;
+		float b;
+
+		repo_color3d_t() :
+			r(0),
+			g(0),
+			b(0)
+		{
+		}
+
+		repo_color3d_t(float r, float g, float b) : r(r), g(g), b(b)
+		{
+		}
+
+		repo_color3d_t(std::vector<float> v)
+		{
+			r = v[0];
+			g = v[1];
+			b = v[2];
+		}
+
+		repo_color3d_t operator* (float scalar)
+		{
+			return {
+				r * scalar,
+				b * scalar,
+				g * scalar
+			};
+		}
+
+		size_t checksum() const
+		{
+			std::hash<float> hasher;
+			size_t seed = 0;
+			seed ^= hasher(r) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+			seed ^= hasher(g) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+			seed ^= hasher(b) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+			return seed;
+		}
+
+		/*
+		* Returns whether the current state differs from the default constructor
+		*/
+		operator bool() const
+		{
+			return r != 0 || g != 0 || b != 0;
+		}
+
+		bool operator==(const repo_color3d_t& other) const
+		{
+			return r == other.r && g == other.g && b == other.b;
+		}
+
+		operator std::vector<float>() const 
+		{
+			return { r, g, b };
+		}
+	};
+
+	struct repo_color4d_t {
+		float r;
+		float g;
+		float b;
+		float a;
+
+		repo_color4d_t():
+			r(0),
+			g(0),
+			b(0),
+			a(0)
+		{
+		}
+
+		repo_color4d_t(float r, float g, float b, float a) : r(r), g(g), b(b), a(a)
+		{
+		}
+
+		repo_color4d_t(float r, float g, float b) : r(r), g(g), b(b), a(1)
+		{
+		}
+
+		repo_color4d_t(const repo_color3d_t& color, float alpha):
+			r(color.r),
+			g(color.g),
+			b(color.b),
+			a(alpha)
+		{
+		}
+
+		repo_color4d_t(std::vector<float> v)
+		{
+			r = v[0];
+			g = v[1];
+			b = v[2];
+			if (v.size() > 3) {
+				a = v[3];
+			}
+			else
+			{
+				a = 1;
+			}
+		}
+
+		repo_color4d_t(std::vector<float> v, float a)
+		{
+			r = v[0];
+			g = v[1];
+			b = v[2];
+			this->a = a;
+		}
+
+		repo_color4d_t operator* (float scalar)
+		{
+			return {
+				r * scalar,
+				b * scalar,
+				g * scalar,
+				a * scalar
+			};
+		}
+
+		size_t checksum() const
+		{
+			std::hash<float> hasher;
+			size_t seed = 0;
+			seed ^= hasher(r) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+			seed ^= hasher(g) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+			seed ^= hasher(b) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+			seed ^= hasher(a) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+			return seed;
+		}
+
+		operator bool() const
+		{
+			return r != 0 || g != 0 || b != 0 || a != 0;
+		}
+
+		bool operator==(const repo_color4d_t& other) const
+		{
+			return r == other.r && g == other.g && b == other.b && a == other.a;
+		}
+	};
+
 	struct repo_material_t {
-		std::vector<float> ambient;
-		std::vector<float> diffuse;
-		std::vector<float> specular;
-		std::vector<float> emissive;
+		repo_color3d_t ambient;
+		repo_color3d_t diffuse;
+		repo_color3d_t specular;
+		repo_color3d_t emissive;
 		float opacity = 1;
 		float shininess = 0;
 		float shininessStrength = 0;
@@ -114,31 +259,20 @@ namespace repo {
 
 		std::string texturePath;
 
-		unsigned int checksum() const {
-			std::stringstream ss;
-			ss.precision(17);
-			for (const auto& n : ambient) {
-				ss << std::fixed << n;
-			}
-			for (const auto& n : diffuse) {
-				ss << std::fixed << n;
-			}
-			for (const auto& n : specular) {
-				ss << std::fixed << n;
-			}
-			for (const auto& n : emissive) {
-				ss << std::fixed << n;
-			}
-			for (const auto& n : texturePath) {
-				ss << n;
-			}
-
-			ss << opacity << shininess << shininessStrength << lineWeight << isWireframe << isTwoSided;
-			auto stringified = ss.str();
-
-			boost::crc_32_type crc32;
-			crc32.process_bytes(stringified.c_str(), stringified.size());
-			return crc32.checksum();
+		size_t checksum() const {
+			size_t seed = 0;
+			checksum(seed, ambient.checksum());
+			checksum(seed, diffuse.checksum());
+			checksum(seed, specular.checksum());
+			checksum(seed, emissive.checksum());
+			checksum(seed, opacity);
+			checksum(seed, shininess);
+			checksum(seed, shininessStrength);
+			checksum(seed, lineWeight);
+			checksum(seed, isWireframe);
+			checksum(seed, isTwoSided);
+			checksum(seed, texturePath);
+			return seed;
 		}
 
 		bool hasTexture() const {
@@ -151,18 +285,26 @@ namespace repo {
 			material.shininess = 0.0;
 			material.shininessStrength = 0.0;
 			material.opacity = 1;
-			material.specular = { 0, 0, 0, 0 };
-			material.diffuse = { 0.5f, 0.5f, 0.5f, 0 };
+			material.specular = { 0, 0, 0 };
+			material.diffuse = { 0.5f, 0.5f, 0.5f };
 			material.emissive = material.diffuse;
 			return material;
+		}
+
+	private:
+		template<typename T>
+		static void checksum(size_t& seed, const T& v)
+		{
+			std::hash<T> hasher;
+			seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 		}
 	};
 
 	/*
 	* A single object intended to be passed by value type that expresses a face with
-	* up to three vertices. In the future we could consider templating this type for
+	* up to three indices. In the future we could consider templating this type for
 	* the number of indicies, but it is very unlikely we'd need to work with, e.g.
-	* quads, and n-gons would have their own type.
+	* quads, and n-gons would have their own type anyway.
 	*/
 	struct repo_face_t {
 		uint32_t indices[3];
@@ -276,58 +418,6 @@ namespace repo {
 		iterator end() const
 		{
 			return iterator(*this, size());
-		}
-	};
-
-	struct repo_color4d_t {
-		float r;
-		float g;
-		float b;
-		float a;
-
-		repo_color4d_t()
-		{
-			a = 1;
-		}
-
-		repo_color4d_t(float r, float g, float b, float a) : r(r), g(g), b(b), a(a)
-		{
-		}
-
-		repo_color4d_t(float r, float g, float b) : r(r), g(g), b(b), a(1)
-		{
-		}
-
-		repo_color4d_t(std::vector<float> v)
-		{
-			r = v[0];
-			g = v[1];
-			b = v[2];
-			if (v.size() > 3) {
-				a = v[3];
-			}
-			else
-			{
-				a = 1;
-			}
-		}
-
-		repo_color4d_t(std::vector<float> v, float a)
-		{
-			r = v[0];
-			g = v[1];
-			b = v[2];
-			this->a = a;
-		}
-
-		repo_color4d_t operator* (float scalar)
-		{
-			return {
-				r * scalar,
-				b * scalar,
-				g * scalar,
-				a * scalar
-			};
 		}
 	};
 }

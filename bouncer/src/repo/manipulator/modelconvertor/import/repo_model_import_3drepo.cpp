@@ -94,23 +94,15 @@ void RepoModelImport::parseMaterial(const boost::property_tree::ptree& matTree)
 
 	if (matTree.find("diffuse") != matTree.not_found())
 		repo_material.diffuse = as_vector<float>(matTree, "diffuse");
-	else
-		repo_material.diffuse.resize(3, 0.0f);
 
 	if (matTree.find("specular") != matTree.not_found())
 		repo_material.specular = as_vector<float>(matTree, "specular");
-	else
-		repo_material.specular.resize(3, 0.0f);
 
 	if (matTree.find("emissive") != matTree.not_found())
 		repo_material.emissive = as_vector<float>(matTree, "emissive");
-	else
-		repo_material.emissive.resize(3, 0.0f);
 
 	if (matTree.find("ambient") != matTree.not_found())
 		repo_material.ambient = as_vector<float>(matTree, "ambient");
-	else
-		repo_material.ambient.resize(3, 0.0f);
 
 	if (matTree.find("transparency") != matTree.not_found())
 		repo_material.opacity = 1.0f - matTree.get<float>("transparency");

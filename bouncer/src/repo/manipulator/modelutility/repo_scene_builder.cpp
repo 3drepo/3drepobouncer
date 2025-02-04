@@ -397,6 +397,9 @@ void RepoSceneBuilder::AsyncImpl::push(Consumable consumable)
 		while (queueSize > threshold) {
 			queue.enqueue({ Consumables(Notify()), 0 });
 			block.try_acquire_for(std::chrono::seconds(1));
+			if (consumerException) {
+				std::rethrow_exception(consumerException);
+			}
 		}
 	}
 	queue.enqueue(consumable);

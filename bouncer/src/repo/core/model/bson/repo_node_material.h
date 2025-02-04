@@ -115,9 +115,6 @@ namespace repo {
 				{
 					material = s;
 				}
-
-			protected:
-				std::vector<float> getDataAsBuffer() const;
 			};
 		} //namespace model
 	} //namespace core

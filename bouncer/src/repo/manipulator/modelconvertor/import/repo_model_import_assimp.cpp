@@ -305,35 +305,27 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 		// Ambient
 		if (AI_SUCCESS == material->Get(AI_MATKEY_COLOR_AMBIENT, tempColor))
 		{
-			repo_material.ambient.push_back(tempColor.r);
-			repo_material.ambient.push_back(tempColor.g);
-			repo_material.ambient.push_back(tempColor.b);
+			repo_material.ambient = repo_color3d_t(tempColor.r, tempColor.g, tempColor.b);
 		}
 		//--------------------------------------------------------------------------
 		// Diffuse
 		if (AI_SUCCESS == material->Get(AI_MATKEY_COLOR_DIFFUSE, tempColor))
 		{
-			repo_material.diffuse.push_back(tempColor.r);
-			repo_material.diffuse.push_back(tempColor.g);
-			repo_material.diffuse.push_back(tempColor.b);
+			repo_material.diffuse = repo_color3d_t(tempColor.r, tempColor.g, tempColor.b);
 		}
 
 		//--------------------------------------------------------------------------
 		// Specular
 		if (AI_SUCCESS == material->Get(AI_MATKEY_COLOR_SPECULAR, tempColor))
 		{
-			repo_material.specular.push_back(tempColor.r);
-			repo_material.specular.push_back(tempColor.g);
-			repo_material.specular.push_back(tempColor.b);
+			repo_material.specular = repo_color3d_t(tempColor.r, tempColor.g, tempColor.b);
 		}
 
 		//--------------------------------------------------------------------------
 		// Emissive
 		if (AI_SUCCESS == material->Get(AI_MATKEY_COLOR_EMISSIVE, tempColor))
 		{
-			repo_material.emissive.push_back(tempColor.r);
-			repo_material.emissive.push_back(tempColor.g);
-			repo_material.emissive.push_back(tempColor.b);
+			repo_material.emissive = repo_color3d_t(tempColor.r, tempColor.g, tempColor.b);
 		}
 
 		//--------------------------------------------------------------------------
