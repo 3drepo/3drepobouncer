@@ -284,6 +284,12 @@ namespace repo {
 
 				void updateBoundingBox();
 
+				/*
+				* Compresses the mesh by rebuilding the vertices array, redirecting indices
+				* to existing vertices where possible and removing the duplicates.
+				*/
+				void removeDuplicateVertices();
+
 				static void transformBoundingBox(repo::lib::RepoBounds& bounds, repo::lib::RepoMatrix matrix);
 			};
 		} //namespace model

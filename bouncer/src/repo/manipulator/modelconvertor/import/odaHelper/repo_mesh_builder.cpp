@@ -194,16 +194,16 @@ void RepoMeshBuilder::addFace(const face& bf)
 	for (auto i = 0; i < bf.getSize(); ++i) {
 		auto v = bf.vertex(i) + offset;
 
-		VertexMap::result_t vertexReference;
+		size_t vertexReference;
 		if (bf.hasNormals())
 		{
 			if (bf.hasUvs())
 			{
-				vertexReference = meshData->vertexMap.find(v, bf.normal(), bf.uv(i));
+				vertexReference = meshData->vertexMap.insert(v, bf.normal(), bf.uv(i));
 			}
 			else
 			{
-				vertexReference = meshData->vertexMap.find(v, bf.normal());
+				vertexReference = meshData->vertexMap.insert(v, bf.normal());
 			}
 		}
 		else if (bf.hasUvs())
@@ -212,15 +212,12 @@ void RepoMeshBuilder::addFace(const face& bf)
 		}
 		else
 		{
-			vertexReference = meshData->vertexMap.find(v);
+			vertexReference = meshData->vertexMap.insert(v);
 		}
 
-		if (vertexReference.added)
-		{
-			meshData->boundingBox.encapsulate(v);
-		}
+		meshData->boundingBox.encapsulate(v);
 
-		face.push_back(vertexReference.index);
+		face.push_back(vertexReference);
 	}
 
 	meshData->faces.push_back(face);

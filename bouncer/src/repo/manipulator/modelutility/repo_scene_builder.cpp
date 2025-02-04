@@ -101,7 +101,7 @@ private:
 		std::unique_ptr<repo::core::handler::database::BulkWriteContext> collection;
 		RepoSceneBuilder::AsyncImpl* impl;
 
-		bool operator() (const repo::core::model::RepoNode* n) const;
+		bool operator() (repo::core::model::RepoNode* n) const;
 		bool operator() (const repo::core::handler::database::query::AddParent* n) const;
 		bool operator() (const  Close& n) const;
 		bool operator() (const  Notify& n) const;
@@ -141,7 +141,7 @@ struct RepoSceneBuilder::Deleter
 	RepoSceneBuilder* builder;
 	void operator()(RepoNode* n)
 	{
-		builder->queueNode(n);
+		builder->addNode(std::unique_ptr<RepoNode>(n));
 		builder->referenceCounter--;
 	}
 };
@@ -413,8 +413,18 @@ RepoSceneBuilder::AsyncImpl::Consumer::Consumer(RepoSceneBuilder::AsyncImpl* imp
 	collection = handler->getBulkWriteContext(builder->databaseName, builder->getSceneCollectionName());
 }
 
-bool RepoSceneBuilder::AsyncImpl::Consumer::operator() (const repo::core::model::RepoNode* n) const
+bool RepoSceneBuilder::AsyncImpl::Consumer::operator() (repo::core::model::RepoNode* n) const
 {
+	// At the moment, profiling shows that this thread is often waiting more than
+	// not, so we perform optimisations in it directly.
+	// If this changes in the future, we will need to move the optimisation calls
+	// somewhere else.
+
+	auto meshNode = dynamic_cast<repo::core::model::MeshNode*>(n);
+	if (meshNode) {
+		meshNode->removeDuplicateVertices();
+	}
+
 	collection->insertDocument(*n);
 	delete n;
 	return true;

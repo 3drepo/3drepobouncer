@@ -390,3 +390,115 @@ size_t MeshNode::getSize() const
 	size += sizeof(*this);
 	return size;
 }
+
+void hash_combine(size_t& seed, float v)
+{
+	std::hash<float> hasher;
+	seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
+
+struct Vertex
+{
+	repo::lib::RepoVector3D position;
+	std::optional<repo::lib::RepoVector3D> normal;
+	std::optional<repo::lib::RepoVector2D> uv;
+
+	size_t hash()
+	{
+		size_t hash = 0;
+		hash_combine(hash, position.x);
+		hash_combine(hash, position.y);
+		hash_combine(hash, position.z);
+		if (normal)
+		{
+			hash_combine(hash, normal->x);
+			hash_combine(hash, normal->y);
+			hash_combine(hash, normal->z);
+		}
+		if (uv)
+		{
+			hash_combine(hash, uv->x);
+			hash_combine(hash, uv->y);
+		}
+		return hash;
+	}
+
+	bool operator== (const Vertex& other) const = default;
+};
+
+void MeshNode::removeDuplicateVertices()
+{
+	bool useNormals = normals.size();
+	bool useUvs = channels.size();
+
+	if (channels.size() > 1) {
+		throw repo::lib::RepoGeometryProcessingException("removeDuplicateVertices currently only supports one uv channel.");
+	}
+
+	std::vector<repo::lib::RepoVector2D> uvs;
+	if (useUvs) {
+		uvs = channels[0];
+	}
+
+	std::vector<Vertex> newVertices;
+	std::unordered_multimap<size_t, size_t> map;
+
+	for (auto& f : faces)
+	{
+		for (auto i = 0; i < f.size(); i++)
+		{
+			auto& index = f[i];
+
+			Vertex v;
+			v.position = vertices[index];
+
+			if (useNormals) {
+				v.normal = normals[index];
+			}
+
+			if (useUvs) {
+				v.uv = uvs[index];
+			}
+
+			auto hash = v.hash();
+			auto matching = map.equal_range(hash);
+
+			index = -1;
+			for (auto it = matching.first; it != matching.second; it++)
+			{
+				if (newVertices[it->second] == v)
+				{
+					index = it->second;
+					break;
+				}
+			}
+
+			if (index == -1) // (face indices are unsigned, so compare directly to a rolled over positive integer, instead of ltz)
+			{
+				index = newVertices.size();
+				newVertices.push_back(v);
+				map.insert(std::pair<size_t, size_t>(hash, index));
+			}
+		}
+	}
+
+	vertices.clear();
+	normals.clear();
+	uvs.clear();
+
+	for (auto& v : newVertices)
+	{
+		vertices.push_back(v.position);
+		if (v.normal)
+		{
+			normals.push_back(*v.normal);
+		}
+		if (v.uv) {
+			uvs.push_back(*v.uv);
+		}
+	}
+
+	if (useUvs) {
+		channels[0] = uvs;
+	}
+}
