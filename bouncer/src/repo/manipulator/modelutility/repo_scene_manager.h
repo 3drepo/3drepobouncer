@@ -40,7 +40,7 @@ namespace repo {
 				bool commitWebBuffers(
 					repo::core::model::RepoScene                          *scene,
 					const std::string                                     &geoStashExt,
-					const repo_web_buffers_t                              &resultBuffers,
+					const repo::lib::repo_web_buffers_t                   &resultBuffers,
 					repo::core::handler::AbstractDatabaseHandler          *handler,
 					repo::core::handler::fileservice::FileManager         *fileManager
 				);
@@ -157,7 +157,7 @@ namespace repo {
 				bool generateWebViewBuffers(
 					repo::core::model::RepoScene                           *scene,
 					const repo::manipulator::modelconvertor::WebExportType &exType,
-					repo_web_buffers_t                                     &resultBuffers,
+					repo::lib::repo_web_buffers_t                          &resultBuffers,
 					repo::core::handler::AbstractDatabaseHandler           *handler = nullptr,
 					repo::core::handler::fileservice::FileManager         *fileManager = nullptr);
 
@@ -178,7 +178,7 @@ namespace repo {
 				* @param scene the scene to generate the src encoding from
 				* @return returns a buffer in the form of a byte vector mapped to its filename
 				*/
-				repo_web_buffers_t generateSRCBuffer(
+				repo::lib::repo_web_buffers_t generateSRCBuffer(
 					repo::core::model::RepoScene *scene);
 
 				/**
@@ -188,7 +188,7 @@ namespace repo {
 				* REPO_ASSETGENERATOR_SUPPORT ON. If not, this method will report
 				* an error and return an empty buffers object.
 				*/
-				repo_web_buffers_t generateRepoBundleBuffer(
+				repo::lib::repo_web_buffers_t generateRepoBundleBuffer(
 					repo::core::model::RepoScene* scene);
 			};
 		}

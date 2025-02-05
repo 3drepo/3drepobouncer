@@ -73,7 +73,7 @@ void DataProcessor::convertTo3DRepoMaterial(
 	OdDbStub* materialId,
 	const OdGiMaterialTraitsData & materialData,
 	MaterialColours& matColors,
-	repo_material_t& material)
+	repo::lib::repo_material_t& material)
 {
 	OdGiMaterialColor diffuseColor; OdGiMaterialMap diffuseMap;
 	OdGiMaterialColor ambientColor;
@@ -112,7 +112,7 @@ OdGiMaterialItemPtr DataProcessor::fillMaterialCache(
 	const OdGiMaterialTraitsData & materialData
 ) {
 	MaterialColours colors;
-	repo_material_t material;
+	repo::lib::repo_material_t material;
 	bool missingTexture = false;
 
 	convertTo3DRepoMaterial(prevCache, materialId, materialData, colors, material);

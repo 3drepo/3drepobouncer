@@ -17,7 +17,6 @@
 
 #include "repo_property_tree.h"
 
-using namespace repo;
 using namespace repo::lib;
 
 static const std::string XML_ATTR_TAG = "<xmlattr>";

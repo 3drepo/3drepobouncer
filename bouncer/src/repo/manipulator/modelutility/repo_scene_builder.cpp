@@ -240,7 +240,7 @@ void RepoSceneBuilder::setWorldOffset(const repo::lib::RepoVector3D64& offset)
 	this->offset = offset;
 }
 
-void RepoSceneBuilder::addMaterialReference(const repo_material_t& m, repo::lib::RepoUUID parentId)
+void RepoSceneBuilder::addMaterialReference(const repo::lib::repo_material_t& m, repo::lib::RepoUUID parentId)
 {
 	auto key = m.checksum();
 	if (materialToUniqueId.find(key) == materialToUniqueId.end())

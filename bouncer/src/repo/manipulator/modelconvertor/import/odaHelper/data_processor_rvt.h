@@ -99,8 +99,8 @@ namespace repo {
 				private:
 					std::string determineTexturePath(const std::string& inputPath);
 
-					void fillTexture(OdBmMaterialElemPtr materialPtr, repo_material_t& material, bool& missingTexture);
-					void fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiMaterialTraitsData& materialData, repo_material_t& material);
+					void fillTexture(OdBmMaterialElemPtr materialPtr, repo::lib::repo_material_t& material, bool& missingTexture);
+					void fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiMaterialTraitsData& materialData, repo::lib::repo_material_t& material);
 
 					void fillMetadataById(
 						OdBmObjectId id,
@@ -184,7 +184,7 @@ namespace repo {
 						OdDbStub* materialId,
 						const OdGiMaterialTraitsData& materialData) final;
 
-					std::unordered_map<OdUInt64, repo_material_t> materialCache;
+					std::unordered_map<OdUInt64, repo::lib::repo_material_t> materialCache;
 				};
 			}
 		}

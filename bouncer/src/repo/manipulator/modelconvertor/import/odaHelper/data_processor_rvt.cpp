@@ -329,7 +329,7 @@ OdGiMaterialItemPtr DataProcessorRvt::fillMaterialCache(
 	OdDbStub* materialId,
 	const OdGiMaterialTraitsData& materialData
 ) {
-	repo_material_t material;
+	repo::lib::repo_material_t material;
 	bool missingTexture;
 
 	OdBmObjectId matId(materialId);
@@ -635,7 +635,7 @@ std::vector<float> toRepoColour(const OdGiMaterialColor& c)
 	return { c.color().red() / 255.0f, c.color().green() / 255.0f, c.color().blue() / 255.0f, 1.0f };
 }
 
-void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiMaterialTraitsData& materialData, repo_material_t& material)
+void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiMaterialTraitsData& materialData, repo::lib::repo_material_t& material)
 {
 	OdGiMaterialColor colour;
 
@@ -664,7 +664,7 @@ void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiM
 		material.shininess = (float)materialPtr->getMaterial()->getShininess() / 255.0f;
 }
 
-void DataProcessorRvt::fillTexture(OdBmMaterialElemPtr materialPtr, repo_material_t& material, bool& missingTexture)
+void DataProcessorRvt::fillTexture(OdBmMaterialElemPtr materialPtr, repo::lib::repo_material_t& material, bool& missingTexture)
 {
 	missingTexture = false;
 

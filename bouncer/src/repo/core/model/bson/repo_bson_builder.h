@@ -171,9 +171,9 @@ namespace repo {
 
 				void append(const repo::lib::RepoMatrix& mat);
 
-				void append(const repo::repo_color3d_t& col);
+				void append(const repo::lib::repo_color3d_t& col);
 
-				void append(const repo::repo_color4d_t& col);
+				void append(const repo::lib::repo_color4d_t& col);
 
 				void append(const repo::lib::RepoVariant& variant);
 

@@ -29,7 +29,7 @@
 constexpr int TRIANGLES = 3;
 constexpr int LINES = 2;
 
-using namespace repo;
+using namespace repo::lib;
 
 IfcGeom::IteratorSettings createSettings()
 {

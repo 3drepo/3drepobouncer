@@ -38,13 +38,6 @@ namespace repo {
 					std::vector<repo::lib::RepoVector3D64> normals;
 					std::vector<repo::lib::RepoVector2D> uvs;
 
-					VertexMap()
-					{
-						vertices.reserve(1000);
-						normals.reserve(1000);
-						uvs.reserve(1000);
-					}
-
 					size_t insert(const repo::lib::RepoVector3D64& position);
 					size_t insert(const repo::lib::RepoVector3D64& position, const repo::lib::RepoVector3D64& normal);
 					size_t insert(const repo::lib::RepoVector3D64& position, const repo::lib::RepoVector3D64& normal, const repo::lib::RepoVector2D& uv);

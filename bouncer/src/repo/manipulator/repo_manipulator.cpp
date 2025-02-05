@@ -177,7 +177,7 @@ void RepoManipulator::fetchScene(
 bool RepoManipulator::generateAndCommitRepoBundlesBuffer(
 	repo::core::model::RepoScene* scene)
 {
-	repo_web_buffers_t buffers;
+	repo::lib::repo_web_buffers_t buffers;
 	return generateAndCommitWebViewBuffer(
 		scene,
 		buffers,
@@ -188,7 +188,7 @@ bool RepoManipulator::generateAndCommitRepoBundlesBuffer(
 bool RepoManipulator::generateAndCommitSRCBuffer(
 	repo::core::model::RepoScene* scene)
 {
-	repo_web_buffers_t buffers;
+	repo::lib::repo_web_buffers_t buffers;
 	return generateAndCommitWebViewBuffer(
 		scene,
 		buffers,
@@ -214,7 +214,7 @@ bool RepoManipulator::generateStashGraph(
 
 bool RepoManipulator::generateAndCommitWebViewBuffer(
 	repo::core::model::RepoScene* scene,
-	repo_web_buffers_t& buffers,
+	repo::lib::repo_web_buffers_t& buffers,
 	const modelconvertor::WebExportType& exType)
 {
 	modelutility::SceneManager SceneManager;
@@ -224,10 +224,10 @@ bool RepoManipulator::generateAndCommitWebViewBuffer(
 	return SceneManager.generateWebViewBuffers(scene, exType, buffers, dbHandler.get(), dbHandler->getFileManager().get());
 }
 
-repo::repo_web_buffers_t RepoManipulator::generateSRCBuffer(
+repo::lib::repo_web_buffers_t RepoManipulator::generateSRCBuffer(
 	repo::core::model::RepoScene* scene)
 {
-	repo_web_buffers_t buffers;
+	repo::lib::repo_web_buffers_t buffers;
 	modelutility::SceneManager SceneManager;
 	SceneManager.generateWebViewBuffers(scene, modelconvertor::WebExportType::SRC, buffers, nullptr);
 	return buffers;
@@ -256,7 +256,7 @@ RepoManipulator::getAllFromCollectionTailable(
 	return dbHandler->getAllFromCollectionTailable(database, collection, skip, limit, fields, sortField, sortOrder);
 }
 
-std::shared_ptr<repo::repo_partitioning_tree_t>
+std::shared_ptr<repo::lib::repo_partitioning_tree_t>
 RepoManipulator::getScenePartitioning(
 	const repo::core::model::RepoScene* scene,
 	const uint32_t& maxDepth

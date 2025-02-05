@@ -28,6 +28,7 @@
 #include <submodules/asset_generator/src/repo_model_export_repobundle.h>
 #endif
 
+using namespace repo::lib;
 using namespace repo::manipulator::modelutility;
 
 bool SceneManager::commitWebBuffers(
@@ -401,7 +402,7 @@ bool SceneManager::generateAndCommitSelectionTree(
 	return success;
 }
 
-repo::repo_web_buffers_t SceneManager::generateSRCBuffer(
+repo::lib::repo_web_buffers_t SceneManager::generateSRCBuffer(
 	repo::core::model::RepoScene *scene)
 {
 	repo_web_buffers_t result;
@@ -417,7 +418,7 @@ repo::repo_web_buffers_t SceneManager::generateSRCBuffer(
 	return result;
 }
 
-repo::repo_web_buffers_t SceneManager::generateRepoBundleBuffer(
+repo::lib::repo_web_buffers_t SceneManager::generateRepoBundleBuffer(
 	repo::core::model::RepoScene* scene)
 {
 	repo_web_buffers_t result;

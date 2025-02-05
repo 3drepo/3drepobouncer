@@ -89,7 +89,7 @@ repo::core::model::MetadataNode* RepoModelImport::createMetadataNode(
 
 void RepoModelImport::parseMaterial(const boost::property_tree::ptree& matTree)
 {
-	repo_material_t repo_material;
+	repo::lib::repo_material_t repo_material;
 	int textureId = -1;
 
 	if (matTree.find("diffuse") != matTree.not_found())
@@ -212,7 +212,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 	std::vector<repo::lib::RepoVector3D64> vertices;
 	std::vector<repo::lib::RepoVector3D> normals;
 	std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
-	std::vector<repo_face_t> faces;
+	std::vector<repo::lib::repo_face_t> faces;
 
 	repo::lib::RepoBounds bounds;
 
@@ -305,7 +305,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 			case repo::core::model::MeshNode::Primitive::TRIANGLES:
 				for (int i = 0; i < numIndices; i += primitiveIdxLen)
 				{
-					repo_face_t tmpFace;
+					repo::lib::repo_face_t tmpFace;
 					for (int j = 0; j < primitiveIdxLen; ++j)
 					{
 						tmpFace.push_back(tmpIndices[i + j]);

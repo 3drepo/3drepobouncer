@@ -74,7 +74,7 @@ void MeshNode::deserialise(RepoBSON& bson)
 			int mNumIndices = serializedFaces[mNumIndicesIndex];
 			if (serializedFaces.size() > mNumIndicesIndex + mNumIndices)
 			{
-				repo_face_t face;
+				repo::lib::repo_face_t face;
 				face.resize(mNumIndices);
 				for (int i = 0; i < mNumIndices; ++i)
 					face[i] = serializedFaces[mNumIndicesIndex + 1 + i];
@@ -141,7 +141,7 @@ void appendVertices(RepoBSONBuilder& builder, const std::vector<repo::lib::RepoV
 	}
 }
 
-void appendFaces(RepoBSONBuilder& builder, const std::vector<repo::repo_face_t>& faces)
+void appendFaces(RepoBSONBuilder& builder, const std::vector<repo::lib::repo_face_t>& faces)
 {
 	if (faces.size() > 0)
 	{

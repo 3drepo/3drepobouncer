@@ -23,7 +23,7 @@
 #include "helper_functions.h"
 #include <map>
 
-using namespace repo;
+using namespace repo::lib;
 using namespace repo::manipulator::modelconvertor::odaHelper;
 using namespace repo::core::model;
 

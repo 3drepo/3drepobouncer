@@ -154,7 +154,7 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	return OdGsBaseMaterialView::doDraw(i, pDrawable);
 }
 
-void DataProcessorDwg::convertTo3DRepoColor(OdCmEntityColor& color, repo_color3d_t& out)
+void DataProcessorDwg::convertTo3DRepoColor(OdCmEntityColor& color, repo::lib::repo_color3d_t& out)
 {
 	switch (color.colorMethod())
 	{
@@ -185,7 +185,7 @@ void DataProcessorDwg::convertTo3DRepoMaterial(
 	OdDbStub* materialId,
 	const OdGiMaterialTraitsData& materialData,
 	MaterialColours& matColors,
-	repo_material_t& material)
+	repo::lib::repo_material_t& material)
 {
 	DataProcessor::convertTo3DRepoMaterial(prevCache, materialId, materialData, matColors, material);
 

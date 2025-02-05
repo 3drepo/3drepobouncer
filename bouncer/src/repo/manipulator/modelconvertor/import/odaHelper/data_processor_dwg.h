@@ -48,10 +48,10 @@ namespace repo {
 						OdDbStub* materialId,
 						const OdGiMaterialTraitsData & materialData,
 						MaterialColours& matColors,
-						repo_material_t& material) override;
+						repo::lib::repo_material_t& material) override;
 
 				private:
-					void convertTo3DRepoColor(OdCmEntityColor& color, repo_color3d_t& out);
+					void convertTo3DRepoColor(OdCmEntityColor& color, repo::lib::repo_color3d_t& out);
 
 					// Some properties to be held between invocations of doDraw()
 					class Context

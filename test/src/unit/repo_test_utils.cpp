@@ -364,12 +364,12 @@ bool testing::filesCompare(
 	return match;
 }
 
-bool testing::compareMaterialStructs(const repo_material_t& m1, const repo_material_t& m2)
+bool testing::compareMaterialStructs(const repo::lib::repo_material_t& m1, const repo::lib::repo_material_t& m2)
 {
-	return compareStdVectors(m1.ambient, m2.ambient)
-		&& compareStdVectors(m1.diffuse, m2.diffuse)
-		&& compareStdVectors(m1.specular, m2.specular)
-		&& compareStdVectors(m1.emissive, m2.emissive)
+	return m1.ambient == m2.ambient
+		&& m1.diffuse == m2.diffuse
+		&& m1.specular == m2.specular
+		&& m1.emissive == m2.emissive
 		&& m1.opacity == m2.opacity
 		&& m1.shininess == m2.shininess
 		&& m1.shininessStrength == m2.shininessStrength
@@ -393,12 +393,12 @@ std::string testing::getRandomString(const uint32_t& iLen)
 	return sStr;
 }
 
-bool testing::compareVectors(const repo_color4d_t& v1, const repo_color4d_t& v2)
+bool testing::compareVectors(const repo::lib::repo_color4d_t& v1, const repo::lib::repo_color4d_t& v2)
 {
 	return v1.r == v2.r && v1.g == v2.g && v1.b == v2.b && v1.a == v2.a;
 }
 
-bool testing::compareVectors(const std::vector<repo_color4d_t>& v1, const std::vector<repo_color4d_t>& v2)
+bool testing::compareVectors(const std::vector<repo::lib::repo_color4d_t>& v1, const std::vector<repo::lib::repo_color4d_t>& v2)
 {
 	if (v1.size() != v2.size()) return false;
 	bool match = true;

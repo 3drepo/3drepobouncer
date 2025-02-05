@@ -85,7 +85,7 @@ static MetadataNode makeMetadataNode(
 static MaterialNode makeMaterialNode(
 	const repo::lib::RepoUUID& parent)
 {
-	repo_material_t s;
+	repo::lib::repo_material_t s;
 	auto m = RepoBSONFactory::makeMaterialNode(s, "", { parent });
 	m.setSharedID(repo::lib::RepoUUID::createUUID());  // These unit tests will set the parent of texture nodes as material nodes
 	return m;

@@ -148,7 +148,7 @@ void DataProcessorDgn::convertTo3DRepoMaterial(
 	OdDbStub* materialId,
 	const OdGiMaterialTraitsData & materialData,
 	MaterialColours& matColors,
-	repo_material_t& material)
+	repo::lib::repo_material_t& material)
 {
 	DataProcessor::convertTo3DRepoMaterial(prevCache, materialId, materialData, matColors, material);
 

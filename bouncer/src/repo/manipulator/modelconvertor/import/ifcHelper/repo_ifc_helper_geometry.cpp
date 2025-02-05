@@ -23,10 +23,11 @@
 #include <ifcUtils/repo_ifc_utils_Ifc4.h>
 #include "repo_ifc_helper_common.h"
 #include "repo_ifc_helper_geometry.h"
-#include "../../../../core/model/bson/repo_bson_factory.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
 #include <boost/filesystem.hpp>
 #include "../repo_model_import_config_default_values.h"
 
+using namespace repo::lib;
 using namespace repo::manipulator::modelconvertor::ifcHelper;
 
 IFCUtilsGeometry::IFCUtilsGeometry(const std::string &file, const modelConverter::ModelImportConfig &settings) :

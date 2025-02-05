@@ -129,7 +129,7 @@ namespace repo {
 				std::string grouping;
 				MeshNode::Primitive primitive;
 				repo::lib::RepoBounds boundingBox;
-				std::vector<repo_face_t> faces;
+				std::vector<repo::lib::repo_face_t> faces;
 				std::vector<repo::lib::RepoVector3D> vertices;
 				std::vector<repo::lib::RepoVector3D> normals;
 				std::vector<std::vector<repo::lib::RepoVector2D>> channels;
@@ -205,14 +205,14 @@ namespace repo {
 				/**
 				* Retrieve a vector of faces from the bson object
 				*/
-				std::vector<repo_face_t> getFaces() const
+				std::vector<repo::lib::repo_face_t> getFaces() const
 				{
 					return faces;
 				}
 
-				void setFaces(const std::vector<repo_face_t>& faces)
+				void setFaces(const std::vector<repo::lib::repo_face_t>& faces)
 				{
-					this->faces = std::vector<repo_face_t>(faces.begin(), faces.end());
+					this->faces = std::vector<repo::lib::repo_face_t>(faces.begin(), faces.end());
 					if (this->faces.size()) {
 						primitive = (Primitive)this->faces[0].size();
 					}

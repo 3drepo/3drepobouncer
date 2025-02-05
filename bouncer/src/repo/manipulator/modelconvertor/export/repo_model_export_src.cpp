@@ -29,7 +29,7 @@
 #include <boost/iostreams/filter/zlib.hpp>
 #include <unordered_set>
 
-using namespace repo;
+using namespace repo::lib;
 using namespace repo::manipulator::modelconvertor;
 
 const static uint32_t SRC_MAGIC_BIT = 23;

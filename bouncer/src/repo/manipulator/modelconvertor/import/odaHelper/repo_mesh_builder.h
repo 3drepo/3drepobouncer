@@ -34,7 +34,7 @@ namespace repo {
 				class RepoMeshBuilder
 				{
 				public:
-					RepoMeshBuilder(std::vector<repo::lib::RepoUUID> parents, const repo::lib::RepoVector3D64& offset, repo_material_t material);
+					RepoMeshBuilder(std::vector<repo::lib::RepoUUID> parents, const repo::lib::RepoVector3D64& offset, repo::lib::repo_material_t material);
 
 					~RepoMeshBuilder();
 
@@ -78,7 +78,7 @@ namespace repo {
 					void extractMeshes(std::vector<repo::core::model::MeshNode>& nodes);
 
 					const std::vector<repo::lib::RepoUUID>& getParents();
-					repo_material_t getMaterial();
+					repo::lib::repo_material_t getMaterial();
 
 				private:
 					struct mesh_data_t;
@@ -98,7 +98,7 @@ namespace repo {
 					* A convenience property that tracks the material assocated with this
 					* builder. This doesn't change the actual mesh construction.
 					*/
-					repo_material_t material;
+					repo::lib::repo_material_t material;
 
 					repo::lib::RepoVector3D64 offset;
 				};

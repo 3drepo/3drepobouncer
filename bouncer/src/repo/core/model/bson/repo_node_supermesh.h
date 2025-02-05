@@ -29,7 +29,7 @@ namespace repo {
 				SupermeshNode(RepoBSON bson);
 
 			protected:
-				std::vector<repo_mesh_mapping_t> mappings;
+				std::vector<repo::lib::repo_mesh_mapping_t> mappings;
 				std::vector<float> submeshIds;
 
 			protected:
@@ -38,12 +38,12 @@ namespace repo {
 
 			public:
 
-				const std::vector<repo_mesh_mapping_t>& getMeshMapping() const
+				const std::vector<repo::lib::repo_mesh_mapping_t>& getMeshMapping() const
 				{
 					return mappings;
 				}
 
-				void setMeshMapping(const std::vector<repo_mesh_mapping_t>& mapping)
+				void setMeshMapping(const std::vector<repo::lib::repo_mesh_mapping_t>& mapping)
 				{
 					this->mappings = mapping;
 				}

@@ -140,8 +140,9 @@ repo::core::model::RepoBSON REPO_API_EXPORT makeQueryFilterDocument(const repo::
 /*
 * This is the visitor for the query types when building a document of query
 * operators. When using query operators (as opposed to pipeline operators)
-* all the operators (if more than one) exist as fields in one document, and
-* behave as if they are AND'd.
+* all the operators exist as fields in one document, with each field having
+* the same name as the field to conditionally match in any documents in the
+* collection. (The results of the fields are AND'd.)
 */
 struct MongoQueryFilterVistior
 {
@@ -784,36 +785,6 @@ void MongoDatabaseHandler::upsertDocument(
 	}
 }
 
-void MongoDatabaseHandler::updateOne(
-	const std::string& database,
-	const std::string& collection,
-	const std::vector<database::query::RepoUpdate> updates)
-{
-	try
-	{
-		if (!updates.size()) {
-			return;
-		}
-		auto client = clientPool->acquire();
-		auto db = client->database(database);
-		auto col = db.collection(collection);
-		auto bulk = col.create_bulk_write();
-		for (auto& u : updates) {
-			MongoUpdateVisitor visitor;
-			std::visit(visitor, u);
-			auto filter = visitor.query.obj();
-			auto doc = visitor.update.obj();
-			mongocxx::model::update_one update_op { filter.view(), doc.view() };
-			bulk.append(update_op);
-		}
-		bulk.execute();
-	}
-	catch (...)
-	{
-		std::throw_with_nested(MongoDatabaseHandlerException(*this, "updateOne (bulk write)", database, collection));
-	}
-}
-
 size_t MongoDatabaseHandler::count(
 	const std::string& database,
 	const std::string& collection,
@@ -898,22 +869,6 @@ private:
 	}
 };
 
-/*
-
-std::unique_ptr<database::Cursor> MongoDatabaseHandler::runDatabaseOperation(
-	const std::string& database,
-	const std::string& collection,
-	const database::AbstractDatabaseOperation& operation)
-{
-	auto client = clientPool->acquire();
-	auto db = client->database(database);
-	auto col = db.collection(collection);
-	auto& mongoOperation = dynamic_cast<const database::MongoDatabaseOperation&>(operation);
-	return std::make_unique<MongoCursor>(std::move(col.aggregate(mongoOperation)), this);
-}
-
-*/
-
 std::unique_ptr<repo::core::handler::database::Cursor> MongoDatabaseHandler::getAllByCriteria(
 	const std::string& database,
 	const std::string& collection,
@@ -936,9 +891,9 @@ std::unique_ptr<repo::core::handler::database::Cursor> MongoDatabaseHandler::get
 }
 
 /*
-* Implements the WriteContext for Mongo. This uses the mongo bulk_write containers
-* and a persistent BlobFilesHandler to batch commit nodes provided over a number of
-* different calls.
+* Implements the BulkWriteContext for Mongo. This uses the mongo bulk_write
+* containers and a persistent BlobFilesHandler to batch commit nodes provided
+* over a number of different calls.
 */
 class MongoDatabaseHandler::MongoWriteContext : public database::BulkWriteContext
 {
@@ -1033,7 +988,7 @@ std::unique_ptr<database::BulkWriteContext> MongoDatabaseHandler::getBulkWriteCo
 	const std::string& collection)
 {
 	// This method should be being called from the thread that will own the write
-	// context, so the constructor can get a client directly from the pool which
+	// context, so the constructor can get a client directly from the pool, which
 	// is threadsafe.
 
 	return std::make_unique<MongoWriteContext>(this, database, collection);

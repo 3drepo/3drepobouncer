@@ -20,7 +20,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-using namespace repo;
+using namespace repo::lib;
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
 GeometryCollector::GeometryCollector(repo::manipulator::modelutility::RepoSceneBuilder* builder) :

@@ -51,7 +51,7 @@ namespace repo{
 				* @return returns a repo_src_export_t containing all files needed for this
 				*          model to be rendered
 				*/
-				repo_web_buffers_t getAllFilesExportedAsBuffer() const;
+				repo::lib::repo_web_buffers_t getAllFilesExportedAsBuffer() const;
 
 			private:
 				std::unordered_map<std::string, std::vector<uint8_t>> fullDataBuffer;
@@ -95,7 +95,7 @@ namespace repo{
 				* Return the SRC file as raw bytes buffer
 				* returns an empty vector if the export has failed
 				*/
-				repo_web_geo_files_t getSRCFilesAsBuffer() const;
+				repo::lib::repo_web_geo_files_t getSRCFilesAsBuffer() const;
 			};
 		} //namespace modelconvertor
 	} //namespace manipulator

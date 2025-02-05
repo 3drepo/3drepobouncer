@@ -73,7 +73,7 @@ namespace repo {
 					/*
 					* Immediately changes which material any new geometry should be using.
 					*/
-					void setMaterial(const repo_material_t& material);
+					void setMaterial(const repo::lib::repo_material_t& material);
 
 					/*
 					* A stack allocated triangle that can have uvs and a normal. This takes only
@@ -110,7 +110,7 @@ namespace repo {
 						sceneBuilder->addNode(n);
 					}
 
-					void addMaterialReference(repo_material_t material, repo::lib::RepoUUID parentId) {
+					void addMaterialReference(repo::lib::repo_material_t material, repo::lib::RepoUUID parentId) {
 						sceneBuilder->addMaterialReference(material, parentId);
 					}
 
@@ -139,7 +139,7 @@ namespace repo {
 					class Context
 					{
 					public:
-						Context(repo::lib::RepoVector3D64 offset, const repo_material_t& material):
+						Context(repo::lib::RepoVector3D64 offset, const repo::lib::repo_material_t& material):
 							offset(offset)
 						{
 							setMaterial(material);
@@ -153,7 +153,7 @@ namespace repo {
 						* Creates a MeshBuilder for the material, and sets it as the active
 						* one.
 						*/
-						void setMaterial(const repo_material_t& material);
+						void setMaterial(const repo::lib::repo_material_t& material);
 
 						void addFace(const std::initializer_list<repo::lib::RepoVector3D64>& vertices) {
 							meshBuilder->addFace(RepoMeshBuilder::face(
@@ -168,7 +168,7 @@ namespace repo {
 							));
 						}
 
-						std::vector<std::pair<repo::core::model::MeshNode, repo_material_t>> extractMeshes();
+						std::vector<std::pair<repo::core::model::MeshNode, repo::lib::repo_material_t>> extractMeshes();
 
 					private:
 						repo::lib::RepoVector3D64 offset;
@@ -189,13 +189,13 @@ namespace repo {
 					*/
 					void popDrawContext(Context* ctx);
 
-					repo_material_t getLastMaterial();
+					repo::lib::repo_material_t getLastMaterial();
 
 				private:
 
 					repo::manipulator::modelutility::RepoSceneBuilder* sceneBuilder;
 					std::stack<Context*> contexts;
-					repo_material_t latestMaterial;
+					repo::lib::repo_material_t latestMaterial;
 					std::unordered_map<std::string, repo::lib::RepoUUID> layerIdToSharedId;
 					std::set<std::string> layersWithMetadata;
 					repo::lib::RepoUUID rootNodeId;

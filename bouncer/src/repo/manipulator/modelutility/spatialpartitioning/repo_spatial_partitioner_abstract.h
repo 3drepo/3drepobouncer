@@ -43,7 +43,7 @@ namespace repo{
 				* Partition the scene
 				* @return returns the spatial partitioning information as a tree
 				*/
-				virtual std::shared_ptr<repo_partitioning_tree_t>
+				virtual std::shared_ptr<repo::lib::repo_partitioning_tree_t>
 					partitionScene() = 0;
 
 				/**
@@ -59,7 +59,7 @@ namespace repo{
 				const repo::core::model::RepoScene::GraphType gType;
 
 				repo::lib::PropertyTree generatePropertyTreeForPartitioningInternal(
-					const std::shared_ptr<repo_partitioning_tree_t> &spTree) const;
+					const std::shared_ptr<repo::lib::repo_partitioning_tree_t> &spTree) const;
 			};
 		}
 	}

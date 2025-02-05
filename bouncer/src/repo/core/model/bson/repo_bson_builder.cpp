@@ -117,7 +117,7 @@ void repo::core::model::RepoBSONBuilder::append(const repo::lib::RepoMatrix& mat
 	core::append(rows.extract());
 }
 
-void repo::core::model::RepoBSONBuilder::append(const repo::repo_color3d_t& col)
+void repo::core::model::RepoBSONBuilder::append(const repo::lib::repo_color3d_t& col)
 {
 	open_array();
 	append(col.r);
@@ -126,7 +126,7 @@ void repo::core::model::RepoBSONBuilder::append(const repo::repo_color3d_t& col)
 	close_array();;
 }
 
-void repo::core::model::RepoBSONBuilder::append(const repo::repo_color4d_t& col)
+void repo::core::model::RepoBSONBuilder::append(const repo::lib::repo_color4d_t& col)
 {
 	open_array();
 	append(col.r);

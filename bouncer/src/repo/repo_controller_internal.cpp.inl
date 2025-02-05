@@ -302,10 +302,10 @@ bool RepoController::_RepoControllerImpl::generateAndCommitSRCBuffer(
 	return success;
 }
 
-repo_web_buffers_t RepoController::_RepoControllerImpl::generateSRCBuffer(
+repo::lib::repo_web_buffers_t RepoController::_RepoControllerImpl::generateSRCBuffer(
 	repo::core::model::RepoScene *scene)
 {
-	repo_web_buffers_t buffer;
+	repo::lib::repo_web_buffers_t buffer;
 	if (scene)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
@@ -319,13 +319,13 @@ repo_web_buffers_t RepoController::_RepoControllerImpl::generateSRCBuffer(
 	return buffer;
 }
 
-std::shared_ptr<repo_partitioning_tree_t>
+std::shared_ptr<repo::lib::repo_partitioning_tree_t>
 RepoController::_RepoControllerImpl::getScenePartitioning(
 	const repo::core::model::RepoScene *scene,
 	const uint32_t                     &maxDepth
 )
 {
-	std::shared_ptr<repo_partitioning_tree_t> partition(nullptr);
+	std::shared_ptr<repo::lib::repo_partitioning_tree_t> partition(nullptr);
 
 	if (scene && scene->getRoot(scene->getViewGraph()))
 	{

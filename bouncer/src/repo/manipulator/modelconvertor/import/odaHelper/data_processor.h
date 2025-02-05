@@ -84,7 +84,7 @@ namespace repo {
 						OdDbStub* materialId,
 						const OdGiMaterialTraitsData & materialData,
 						MaterialColours& matColors,
-						repo_material_t& material);
+						repo::lib::repo_material_t& material);
 
 					double deviationValue = 0;
 

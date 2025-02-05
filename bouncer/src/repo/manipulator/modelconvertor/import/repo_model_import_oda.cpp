@@ -25,7 +25,7 @@
 #include "odaHelper/helper_functions.h"
 #endif
 
-using namespace repo;
+using namespace repo::lib;
 using namespace repo::manipulator::modelconvertor;
 
 const std::string OdaModelImport::supportedExtensions = ".dgn.rvt.rfa.dwg.dxf.nwd.nwc";
