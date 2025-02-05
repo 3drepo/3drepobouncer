@@ -66,9 +66,9 @@ TEST(ODAModelImport, Sample2025NWDTree)
 	auto collection = "Sample2025NWD";
 	auto scene = ODAModelImportUtils::ModelImportManagerImport(collection, getDataPath("sample2025.nwd"));
 
-	// For NWDs, Layers/Levels & Groups end up in the tree as branch nodes, whereas
-	// Groups and Composite Objects should be leaf nodes. (For context, Groups and
-	// Composite Objects have Element Ids whereas geometric Items do not.)
+	// For NWDs, Layers/Levels & Collections always end up as branch nodes. Composite
+	// Objects and Groups are leaf nodes if they contain only Geometric Items and
+	// Instances as children.
 
 	// See this page for the meaning of the icons in Navis: https://help.autodesk.com/view/NAV/2024/ENU/?guid=GUID-BC657B3A-5104-45B7-93A9-C6F4A10ED0D4
 

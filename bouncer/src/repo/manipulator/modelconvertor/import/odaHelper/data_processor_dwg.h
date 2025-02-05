@@ -40,6 +40,7 @@ namespace repo {
 				public:
 					bool doDraw(OdUInt32 i,	const OdGiDrawable* pDrawable) override;
 					void setMode(OdGsView::RenderMode mode);
+					~DataProcessorDwg();
 
 				protected:
 
@@ -53,17 +54,39 @@ namespace repo {
 				private:
 					void convertTo3DRepoColor(OdCmEntityColor& color, repo::lib::repo_color3d_t& out);
 
+					class Layer
+					{
+					public:
+						std::string id;
+						std::string name;
+
+						Layer(std::string id, std::string name):
+							id(id),
+							name(name)
+						{
+						}
+
+						Layer() 
+						{
+						}
+
+						operator bool() const {
+							return !id.empty() && !name.empty();
+						}
+					};
+
 					// Some properties to be held between invocations of doDraw()
 					class Context
 					{
 					public:
 						bool inBlock = false;
-						std::string currentBlockReferenceLayerId;
-						std::string currentBlockReferenceLayerName;
-						std::string currentBlockReferenceId;
-						std::string currentBlockReferenceName;
+						Layer currentBlockReferenceLayer;
+						Layer currentBlockReference;
 						OdDbObjectId layoutId;
 					};
+
+					class DwgDrawContext;
+					std::unique_ptr<DwgDrawContext> makeDrawContext(const Layer& entity, const Layer& parent, const std::string& handle);
 
 					Context context;
 

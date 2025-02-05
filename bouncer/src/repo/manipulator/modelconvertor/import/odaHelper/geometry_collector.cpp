@@ -60,6 +60,11 @@ repo_material_t GeometryCollector::getLastMaterial()
 	return latestMaterial;
 }
 
+GeometryCollector::Context GeometryCollector::createDrawContext()
+{
+	return GeometryCollector::Context(-getWorldOffset(), getLastMaterial());
+}
+
 void GeometryCollector::pushDrawContext(Context* ctx) 
 {
 	if (ctx != nullptr) {
@@ -117,6 +122,16 @@ void GeometryCollector::setMetadata(std::string id, std::unordered_map<std::stri
 bool GeometryCollector::hasMetadata(std::string id)
 {
 	return layersWithMetadata.find(id) != layersWithMetadata.end();
+}
+
+void GeometryCollector::addMeshes(std::string id, std::vector<std::pair<repo::core::model::MeshNode, repo::lib::repo_material_t>>& meshes)
+{
+	auto parent = getSharedId(id);
+	for (auto& p : meshes) {
+		p.first.setParents({ parent });
+		addNode(p.first);
+		addMaterialReference(p.second, p.first.getSharedID());
+	}
 }
 
 void GeometryCollector::finalise()

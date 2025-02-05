@@ -301,13 +301,7 @@ void DataProcessorRvt::draw(const OdGiDrawable* pDrawable)
 
 			collector->createLayer(levelName, levelName, {});
 			collector->createLayer(elementName, elementName, levelName);
-
-			auto parent = collector->getSharedId(elementName);
-			for (auto& p : meshes) {
-				p.first.setParents({ parent });
-				collector->addNode(p.first);
-				collector->addMaterialReference(p.second, p.first.getSharedID());
-			}
+			collector->addMeshes(elementName, meshes);
 
 			try
 			{

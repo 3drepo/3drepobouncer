@@ -40,6 +40,13 @@ namespace repo {
 					GeometryCollector(repo::manipulator::modelutility::RepoSceneBuilder* builder);
 					~GeometryCollector();
 
+					class Layer {
+						std::string name;
+						repo::lib::RepoUUID sharedId; // For setting up parents before the layer is actually committed.
+
+						~Layer();
+					};
+
 					/*
 					* Declares a new entry in the tree that can be accessed by an arbitrary
 					* Id (instead of a RepoUUID). Layers must be explicitly set with a call
@@ -69,6 +76,8 @@ namespace repo {
 					void setMetadata(std::string id, std::unordered_map<std::string, repo::lib::RepoVariant>);
 
 					bool hasMetadata(std::string id);
+
+					void addMeshes(std::string id, std::vector<std::pair<repo::core::model::MeshNode, repo::lib::repo_material_t>>& meshes);
 
 					/*
 					* Immediately changes which material any new geometry should be using.
@@ -175,6 +184,13 @@ namespace repo {
 						RepoMeshBuilder* meshBuilder;
 					};
 
+					/*
+					* Creates a context initialised with the offset and material. This returns
+					* a value, with the expectation that it will be used inside a subclass
+					* constructor.
+					*/
+					Context createDrawContext();
+
 					// These stack operations must be symmetric - calling pop with a different
 					// pointer to the active context will result in an exception.
 
@@ -192,7 +208,6 @@ namespace repo {
 					repo::lib::repo_material_t getLastMaterial();
 
 				private:
-
 					repo::manipulator::modelutility::RepoSceneBuilder* sceneBuilder;
 					std::stack<Context*> contexts;
 					repo::lib::repo_material_t latestMaterial;
