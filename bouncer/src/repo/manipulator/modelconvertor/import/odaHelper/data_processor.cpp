@@ -130,45 +130,7 @@ void DataProcessor::beginViewVectorization()
 	setEyeToOutputTransform(getEyeToWorldTransform());
 }
 
-void DataProcessor::endViewVectorization()
-{
-	OdGsBaseMaterialView::endViewVectorization();
-	activeContext = nullptr;
-}
-
 void DataProcessor::initialise(GeometryCollector* collector)
 {
 	this->collector = collector;
-}
-
-/*
- * This drawing context will commit its meshes when it goes out of scope. 
- */
-DataProcessor::AutoContext::AutoContext(GeometryCollector* collector, const std::string& layerId) :
-	collector(collector),
-	layerId(layerId),
-	GeometryCollector::Context(collector->getWorldOffset(), collector->getLastMaterial())
-{
-}
-
-DataProcessor::AutoContext::~AutoContext()
-{
-	collector->popDrawContext(this);
-	auto parent = collector->getSharedId(layerId);
-	auto meshes = extractMeshes();
-	for (auto& p : meshes) {
-		p.first.setParents({parent});
-		collector->addMaterialReference(p.second, p.first.getSharedID());
-		collector->addNode(p.first);
-	}
-}
-
-void DataProcessor::setLayer(std::string id)
-{
-	// When this is reset to a new layer, or null in endViewVectorization, the
-	// meshes will be committed under the specified layer. Destroying the old
-	// context will pop it from the stack.
-
-	activeContext = std::make_unique<AutoContext>(collector, id);
-	collector->pushDrawContext(activeContext.get());
 }

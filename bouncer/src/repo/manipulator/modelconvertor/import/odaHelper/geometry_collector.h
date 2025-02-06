@@ -40,24 +40,17 @@ namespace repo {
 					GeometryCollector(repo::manipulator::modelutility::RepoSceneBuilder* builder);
 					~GeometryCollector();
 
-					class Layer {
-						std::string name;
-						repo::lib::RepoUUID sharedId; // For setting up parents before the layer is actually committed.
-
-						~Layer();
-					};
-
 					/*
 					* Declares a new entry in the tree that can be accessed by an arbitrary
-					* Id (instead of a RepoUUID). Layers must be explicitly set with a call
-					* to setLayer. If parentId is empty, the layer will be created under the
-					* root node.
+					* Id (instead of a RepoUUID). If parentId is empty, the layer will be
+					* created under the root node.
 					*/
 					void createLayer(std::string id, std::string name, std::string parentId);
 
 					/*
-					* True if the layer with the id was creaed with createLayer. Use this to
-					* check if a layer exists before trying to create or set it.
+					* True if the layer with the id was created with createLayer. createLayer
+					* can still be called but nothing will change (e.g. the name and parent
+					* will still be those of the first call).
 					*/
 					bool hasLayer(std::string id);
 
@@ -86,7 +79,7 @@ namespace repo {
 
 					/*
 					* A stack allocated triangle that can have uvs and a normal. This takes only
-					* a subset of formats supported by the face.
+					* a subset of the formats supported by repo_face_t.
 					*/
 					struct Face
 					{
@@ -131,7 +124,7 @@ namespace repo {
 						sceneBuilder->setWorldOffset(offset);
 					}
 
-					repo::lib::RepoVector3D64 getWorldOffset() {
+					repo::lib::RepoVector3D64 getWorldOffset() const {
 						return sceneBuilder->getWorldOffset();
 					}
 
@@ -148,10 +141,10 @@ namespace repo {
 					class Context
 					{
 					public:
-						Context(repo::lib::RepoVector3D64 offset, const repo::lib::repo_material_t& material):
-							offset(offset)
+						Context(const GeometryCollector* collector):
+							offset(-collector->getWorldOffset())
 						{
-							setMaterial(material);
+							setMaterial(collector->getLastMaterial());
 						}
 
 						~Context();
@@ -185,11 +178,10 @@ namespace repo {
 					};
 
 					/*
-					* Creates a context initialised with the offset and material. This returns
-					* a value, with the expectation that it will be used inside a subclass
-					* constructor.
+					* Creates a new context initialised with the offset and material. This does
+					* not make the context active - it must still be pushed with pushDrawContext.
 					*/
-					Context createDrawContext();
+					std::unique_ptr<Context> makeNewDrawContext();
 
 					// These stack operations must be symmetric - calling pop with a different
 					// pointer to the active context will result in an exception.
@@ -205,7 +197,7 @@ namespace repo {
 					*/
 					void popDrawContext(Context* ctx);
 
-					repo::lib::repo_material_t getLastMaterial();
+					repo::lib::repo_material_t getLastMaterial() const;
 
 				private:
 					repo::manipulator::modelutility::RepoSceneBuilder* sceneBuilder;

@@ -38,46 +38,28 @@ DataProcessorDwg::~DataProcessorDwg()
 
 #pragma optimize("",off)
 
-class DataProcessorDwg::DwgDrawContext : public GeometryCollector::Context
-{
-public:
-	DataProcessorDwg::Layer entity;
-	DataProcessorDwg::Layer parent;
-	std::string entityHandle;
-
-	DwgDrawContext(repo::lib::RepoVector3D64 offset, const repo::lib::repo_material_t& material, Layer entity, Layer parent, std::string handle):
-		GeometryCollector::Context(offset, material),
-		entity(entity),
-		parent(parent),
-		entityHandle(handle)
-	{
-	}
-};
-
-std::unique_ptr<DataProcessorDwg::DwgDrawContext> DataProcessorDwg::makeDrawContext(const Layer& entity, const Layer& parent, const std::string& handle)
-{
-	return std::make_unique<DwgDrawContext>(
-		-collector->getWorldOffset(),
-		collector->getLastMaterial(),
-		entity,
-		parent,
-		handle
-	);
-}
-
 bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 {
-	std::unique_ptr<DwgDrawContext> ctx;
+	std::unique_ptr<GeometryCollector::Context> ctx;
+
+	// These three locals track where the geometry from ctx - if any - should go.
+
+	Layer entityLayer;
+	Layer parentLayer;
+	std::string handleMetaValue;
 
 	// GeoDataMarkers derive directly from drawables; they aren't entities and
 	// don't have Ids. The current behaviour is to disable these by default
 	// through pDb->setGEOMARKERVISIBILITY. If they are re-enabled, this snippet
 	// ensures that the geometry goes into its own tree node.
 	
-	auto pGeoDataMarker = OdDbGeoDataMarker::cast(pDrawable);
-	if (!pGeoDataMarker.isNull() && OdDbEntity::cast(pDrawable).isNull()) // Workaround for bug in ODA that thinks entities can be geo markers
+	// dynamic_cast is a workaround for an ODA bug where OdDbGeoDataMarker has no ODA RTTI
+	// https://forum.opendesign.com/showthread.php?24537-Cast-of-OdGiDrawable-to-OdDbGeoDataMarker-succeeding-for-OdDbEntity
+	auto pGeoDataMarker = dynamic_cast<const OdDbGeoDataMarker*>(pDrawable);
+	if (pGeoDataMarker)
 	{
-		ctx = makeDrawContext({ "GeoPositionMarker", "Geo Position Marker" }, {}, {});
+		entityLayer = { "GeoPositionMarker", "Geo Position Marker" };
+		ctx = collector->makeNewDrawContext();
 	}
 
 	OdDbEntityPtr pEntity = OdDbEntity::cast(pDrawable);
@@ -156,24 +138,30 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 			// Create a unique node for the reference under each layer in which
 			// it appears.
 
-			Layer blockReferenceInLayer(
+			entityLayer = {
 				context.currentBlockReference.id + layerId,
-				context.currentBlockReference.name);
-
-			ctx = makeDrawContext(blockReferenceInLayer, context.currentBlockReferenceLayer, context.currentBlockReference.id);
+				context.currentBlockReference.name
+			};
+			handleMetaValue = context.currentBlockReference.id;
+			parentLayer = context.currentBlockReferenceLayer;
 
 			if (!isDefaultLayer)
 			{
-				ctx->parent = assignedLayer; // If the Block Entity layer has been overridden within the Block, take the absolute layer
+				parentLayer = assignedLayer; // If the Block Entity layer has been overridden within the Block, take the absolute layer
 			}
+
+			ctx = collector->makeNewDrawContext();
 		}
 		else
 		{
 			// When not inside a block, each entity appears under its own tree
 			// node, under the specified layer.
 
-			Layer entityReference(entityId, entityName);
-			ctx = makeDrawContext(entityReference, assignedLayer, entityId);
+			entityLayer = { entityId, entityName };
+			parentLayer = assignedLayer;
+			handleMetaValue = entityId;
+
+			ctx = collector->makeNewDrawContext();
 		}
 	}
 
@@ -187,16 +175,16 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		if (meshes.size()) {
 			// This stack frame should create a layer with actual geometry
 
-			if (ctx->parent) {
-				collector->createLayer(ctx->parent.id, ctx->parent.name, {});
+			if (parentLayer) {
+				collector->createLayer(parentLayer.id, parentLayer.name, {});
 			}
-			collector->createLayer(ctx->entity.id, ctx->entity.name, ctx->parent.id);
-			collector->addMeshes(ctx->entity.id, meshes);
+			collector->createLayer(entityLayer.id, entityLayer.name, parentLayer.id);
+			collector->addMeshes(entityLayer.id, meshes);
 
-			if (!ctx->entityHandle.empty()) {
+			if (!handleMetaValue.empty()) {
 				std::unordered_map<std::string, repo::lib::RepoVariant> meta;
-				meta["Entity Handle::Value"] = ctx->entityHandle;
-				collector->setMetadata(ctx->entity.id, meta);
+				meta["Entity Handle::Value"] = handleMetaValue;
+				collector->setMetadata(entityLayer.id, meta);
 			}
 		}
 	}

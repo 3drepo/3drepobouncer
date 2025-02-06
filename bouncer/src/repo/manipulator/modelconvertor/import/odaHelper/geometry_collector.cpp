@@ -55,14 +55,14 @@ void GeometryCollector::setMaterial(const repo_material_t& material)
 	latestMaterial = material;
 }
 
-repo_material_t GeometryCollector::getLastMaterial()
+repo_material_t GeometryCollector::getLastMaterial() const
 {
 	return latestMaterial;
 }
 
-GeometryCollector::Context GeometryCollector::createDrawContext()
+std::unique_ptr<GeometryCollector::Context> GeometryCollector::makeNewDrawContext()
 {
-	return GeometryCollector::Context(-getWorldOffset(), getLastMaterial());
+	return std::make_unique<GeometryCollector::Context>(this);
 }
 
 void GeometryCollector::pushDrawContext(Context* ctx) 

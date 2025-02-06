@@ -28,7 +28,7 @@
 #include <vector>
 
 #include "vectorise_device_dgn.h"
-#include "../../../../core/model/bson/repo_node_mesh.h"
+#include "repo/core/model/bson/repo_node_mesh.h"
 #include "repo/lib/datastructure/repo_variant.h"
 
 namespace repo {
@@ -84,9 +84,6 @@ namespace repo {
 						Layer currentBlockReference;
 						OdDbObjectId layoutId;
 					};
-
-					class DwgDrawContext;
-					std::unique_ptr<DwgDrawContext> makeDrawContext(const Layer& entity, const Layer& parent, const std::string& handle);
 
 					Context context;
 

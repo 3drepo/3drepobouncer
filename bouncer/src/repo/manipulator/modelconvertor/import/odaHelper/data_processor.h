@@ -60,15 +60,8 @@ namespace repo {
 						const OdGePoint3d& pointOnCurve) const;
 
 					void beginViewVectorization();
-					void endViewVectorization();
 
 					virtual void initialise(GeometryCollector* collector);
-
-					/*
-					* Sets up the processor so that any new primitives go under the layer with
-					* the specified Id.
-					*/
-					void setLayer(std::string id);
 
 				protected:
 					/**
@@ -87,22 +80,6 @@ namespace repo {
 						repo::lib::repo_material_t& material);
 
 					double deviationValue = 0;
-
-					/*
-					* This drawing context will commit its meshes when it goes out of scope.
-					*/
-					class AutoContext : public GeometryCollector::Context 
-					{
-					public:
-						AutoContext(GeometryCollector* collector, const std::string& layerId);
-						~AutoContext();
-
-					private:
-						std::string layerId;
-						GeometryCollector* collector;
-					};
-
-					std::unique_ptr<AutoContext> activeContext;
 
 				private:
 					/**

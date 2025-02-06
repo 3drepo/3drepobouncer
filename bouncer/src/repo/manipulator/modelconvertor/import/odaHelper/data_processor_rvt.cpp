@@ -272,7 +272,7 @@ void DataProcessorRvt::draw(const OdGiDrawable* pDrawable)
 
 	if (shouldCreateNewLayer(element))
 	{
-		ctx = std::make_unique<GeometryCollector::Context>(-collector->getWorldOffset(), collector->getLastMaterial());
+		ctx = collector->makeNewDrawContext();
 	}
 
 	collector->pushDrawContext(ctx.get()); // (Calling push or pop with a nullptr is a no-op)
@@ -291,8 +291,7 @@ void DataProcessorRvt::draw(const OdGiDrawable* pDrawable)
 		if (meshes.size())
 		{
 			// For Revit files, drawable elements are arranged into layers, not unlike
-			// drawings. This means we can get everything from just the element, and
-			// don't actually need the stack for this bit.
+			// drawings. This means we can get everything from just the element.
 
 			std::string levelName = getLevelName(element, "Layer Default");
 			std::string elementName = getElementName(element);
