@@ -21,12 +21,12 @@
 
 namespace testing {
 
-	class SceneHelper
+	class SceneUtils
 	{
 	public:
 		repo::core::model::RepoScene* scene;
 
-		SceneHelper(repo::core::model::RepoScene* scene) :
+		SceneUtils(repo::core::model::RepoScene* scene) :
 			scene(scene)
 		{
 		}
@@ -36,7 +36,7 @@ namespace testing {
 			size_t numVisibleChildren;
 			size_t numMeshes;
 
-			NodeInfo(repo::core::model::RepoNode* node, SceneHelper* scene) :
+			NodeInfo(repo::core::model::RepoNode* node, SceneUtils* scene) :
 				numVisibleChildren(0),
 				numMeshes(0),
 				scene(scene),
@@ -57,18 +57,35 @@ namespace testing {
 				return node->getName();
 			}
 
-			SceneHelper* scene;
+			SceneUtils* scene;
 			repo::core::model::RepoNode* node;
 
 			std::vector<NodeInfo> getChildren()
 			{
 				return scene->getChildNodes(node, true);
 			}
+
+			/* Names of all children (excluding metadata); children that don't
+			* have names are omitted (as opposed to being included as empty 
+			strings */
+			std::vector<std::string> getChildNames();
+
+			std::vector<NodeInfo> getMeshes();
+
+			repo::lib::repo_material_t getMaterial();
+
+			/*
+			* Returns the colours of all the repo_material_t's that belong to the MeshNodes
+			* directly below this node.
+			*/
+			std::vector<repo::lib::repo_color4d_t> getColours();
 		};
 
-		std::vector<NodeInfo> findNodesByMetadata(std::string key, repo::lib::RepoVariant value);
+		std::vector<NodeInfo> findNodesByMetadata(std::string key, std::string value);
+		NodeInfo findNodeByMetadata(std::string key, std::string value);
 		std::vector<NodeInfo> findTransformationNodesByName(std::string name);
 		std::vector<NodeInfo> getChildNodes(repo::core::model::RepoNode* node, bool ignoreMeta);
 		NodeInfo getNodeInfo(repo::core::model::RepoNode* node);
+		NodeInfo getRootNode();
 	};
 }

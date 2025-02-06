@@ -63,25 +63,26 @@ namespace ODAModelImportUtils
 
 TEST(ODAModelImport, Sample2025NWDTree)
 {
-	auto collection = "Sample2025NWD";
-	auto scene = ODAModelImportUtils::ModelImportManagerImport(collection, getDataPath("sample2025.nwd"));
+	auto scene = ODAModelImportUtils::ModelImportManagerImport("Sample2025NWD", getDataPath("sample2025.nwd"));
 
 	// For NWDs, Layers/Levels & Collections always end up as branch nodes. Composite
-	// Objects and Groups are leaf nodes if they contain only Geometric Items and
+	// Objects and Groups are leaf nodes if they contain only Geometric Items &
 	// Instances as children.
 
-	// See this page for the meaning of the icons in Navis: https://help.autodesk.com/view/NAV/2024/ENU/?guid=GUID-BC657B3A-5104-45B7-93A9-C6F4A10ED0D4
+	// See this page for the meaning of the icons in Navis: 
+	// https://help.autodesk.com/view/NAV/2024/ENU/?guid=GUID-BC657B3A-5104-45B7-93A9-C6F4A10ED0D4,
+	// but keep in mind the terminology on that page doesn't match exactly ODAs.
 
 	// This snippet tests whether geometry is grouped successfully
 
-	SceneHelper helper(scene);
+	SceneUtils utils(scene);
 
-	auto nodes = helper.findNodesByMetadata("Element::Id", repo::lib::RepoVariant(int64_t(309347)));
+	auto nodes = utils.findNodesByMetadata("Element::Id", "309347");
 	EXPECT_THAT(nodes.size(), Eq(1));
 	EXPECT_THAT(nodes[0].isLeaf(), IsTrue());
 	EXPECT_THAT(nodes[0].hasGeometry(), IsTrue());
 
-	nodes = helper.findTransformationNodesByName("Wall-Ext_102Bwk-75Ins-100LBlk-12P");
+	nodes = utils.findTransformationNodesByName("Wall-Ext_102Bwk-75Ins-100LBlk-12P");
 	EXPECT_THAT(nodes.size(), Eq(1));
 
 	auto children = nodes[0].getChildren();
@@ -96,7 +97,68 @@ TEST(ODAModelImport, Sample2025NWDTree)
 	// These two nodes correspond to hidden items. In Navis, hidden elements should
 	// be imported unaffected.
 
-	EXPECT_THAT(helper.findNodesByMetadata("Element::Id", repo::lib::RepoVariant(int64_t(694))).size(), Gt(0));
-	EXPECT_THAT(helper.findNodesByMetadata("Element::Id", repo::lib::RepoVariant(int64_t(311))).size(), Gt(0));
+	EXPECT_THAT(utils.findNodesByMetadata("Element::Id", "694").size(), Gt(0));
+	EXPECT_THAT(utils.findNodesByMetadata("Element::Id", "311").size(), Gt(0));
 }
 
+TEST(ODAModelImport, ColouredBoxesDWG)
+{
+	auto scene = ODAModelImportUtils::ModelImportManagerImport("ColouredBoxesDWG", getDataPath("colouredBoxes.dwg"));
+	SceneUtils utils(scene);
+
+	// The coloured boxes file contains 3d geometry, with subobject colours assigned
+	// in different ways.
+
+	// These two elements are set to byLayer, and the layers have two different
+	// colours
+
+	auto byLayer1 = utils.findNodeByMetadata("Entity Handle::Value", "[6FC5]");
+	EXPECT_THAT(byLayer1.getColours(), ElementsAre(repo::lib::repo_color4d_t(1, 1, 1, 1)));
+
+	auto byLayer2 = utils.findNodeByMetadata("Entity Handle::Value", "[6FC9]");
+	EXPECT_THAT(byLayer2.getColours(), ElementsAre(repo::lib::repo_color4d_t(1, 0, 0, 1)));
+
+	// This element has a fixed colour
+
+	auto cyan = utils.findNodeByMetadata("Entity Handle::Value", "[702C]");
+	EXPECT_THAT(cyan.getColours(), ElementsAre(repo::lib::repo_color4d_t(0, 1, 1, 1)));
+
+	// This is a 3d solid that has one face with a fixed colour and the others by
+	// layer
+
+	auto mixed = utils.findNodeByMetadata("Entity Handle::Value", "[6FCD]");
+	EXPECT_THAT(mixed.getColours(), UnorderedElementsAre(
+		repo::lib::repo_color4d_t(1, 1, 1, 1),
+		repo::lib::repo_color4d_t(0, 1, 0, 1)
+	));
+
+	// This block reference contains the above solid, with a face assiged to a
+	// specific colour, and a face assigned to the block colour. The remaining
+	// faces are per-layer, but the layer has changed again.
+
+	auto block = utils.findNodeByMetadata("Entity Handle::Value", "[7063]");
+	EXPECT_THAT(block.getColours(), UnorderedElementsAre(
+		repo::lib::repo_color4d_t(1, 0, 1, 1),
+		repo::lib::repo_color4d_t(0, 1, 0, 1),
+		repo::lib::repo_color4d_t(1, 0, 0, 1),
+		repo::lib::repo_color4d_t(1, 0, 0, 1)
+	));
+}
+
+TEST(ODAModelImport, NestedBlocksDWG)
+{
+	auto scene = ODAModelImportUtils::ModelImportManagerImport("NestedBlocksDWG", getDataPath("nestedBlocks.dwg"));
+	SceneUtils utils(scene);
+
+	// This dwg contains a number of nested blocks. The DWG importer should put
+	// block items under the block reference for the given layer (by block, or
+	// explicit) they items are in.
+
+	// The outer most block touches three layers: it itself is on layer 0, it contains a
+	// nested block reference on layer 2, and an entity on layer 3. The nested reference
+	// itself explicitly has an item on layer 1 (the other layer 2 references show on 
+	// layer 0, by convention as only the first block is considered).
+
+	EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "[4FA]").size(), Eq(3));
+	EXPECT_THAT(utils.getRootNode().getChildNames(), UnorderedElementsAre("0", "Layer1", "Layer3"));
+}

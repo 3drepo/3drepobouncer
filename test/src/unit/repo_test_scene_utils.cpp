@@ -18,19 +18,20 @@
 #include "repo_test_scene_utils.h"
 #include <repo/core/model/bson/repo_node_metadata.h>
 #include <repo/core/model/bson/repo_node_mesh.h>
+#include <repo/core/model/bson/repo_node_material.h>
 #include <repo/lib/datastructure/repo_variant_utils.h>
 
 using namespace repo::core::model;
 using namespace testing;
 
-std::vector<SceneHelper::NodeInfo> SceneHelper::findNodesByMetadata(std::string key, repo::lib::RepoVariant value)
+std::vector<SceneUtils::NodeInfo> SceneUtils::findNodesByMetadata(std::string key, std::string value)
 {
 	std::vector<NodeInfo> info;
 	for (auto& n : scene->getAllMetadata(repo::core::model::RepoScene::GraphType::DEFAULT))
 	{
 		auto m = dynamic_cast<MetadataNode*>(n);
 		auto metadata = m->getAllMetadata();
-		if (boost::apply_visitor(repo::lib::DuplicationVisitor(), metadata[key], value)) {
+		if (boost::apply_visitor(repo::lib::StringConversionVisitor(), metadata[key]) == value) {
 			for (auto p : m->getParentIDs()) {
 				info.push_back(getNodeInfo(scene->getNodeBySharedID(repo::core::model::RepoScene::GraphType::DEFAULT, p)));
 			}
@@ -39,7 +40,21 @@ std::vector<SceneHelper::NodeInfo> SceneHelper::findNodesByMetadata(std::string 
 	return info;
 }
 
-std::vector<SceneHelper::NodeInfo> SceneHelper::findTransformationNodesByName(std::string name)
+SceneUtils::NodeInfo SceneUtils::findNodeByMetadata(std::string key, std::string value)
+{
+	auto nodes = findNodesByMetadata(key, value);
+	if (nodes.size() > 1) {
+		throw std::runtime_error("Found too many matching nodes for call.");
+	}
+	return nodes[0];
+}
+
+SceneUtils::NodeInfo SceneUtils::getRootNode()
+{
+	return getNodeInfo(scene->getRoot(repo::core::model::RepoScene::GraphType::DEFAULT));
+}
+
+std::vector<SceneUtils::NodeInfo> SceneUtils::findTransformationNodesByName(std::string name)
 {
 	std::vector<NodeInfo> nodes;
 	for (auto& n : scene->getAllTransformations(repo::core::model::RepoScene::GraphType::DEFAULT))
@@ -51,7 +66,7 @@ std::vector<SceneHelper::NodeInfo> SceneHelper::findTransformationNodesByName(st
 	return nodes;
 }
 
-std::vector<SceneHelper::NodeInfo> SceneHelper::getChildNodes(repo::core::model::RepoNode* node, bool ignoreMeta)
+std::vector<SceneUtils::NodeInfo> SceneUtils::getChildNodes(repo::core::model::RepoNode* node, bool ignoreMeta)
 {
 	std::vector<NodeInfo> nodes;
 	for (auto& n : scene->getChildrenAsNodes(repo::core::model::RepoScene::GraphType::DEFAULT, node->getSharedID()))
@@ -64,7 +79,7 @@ std::vector<SceneHelper::NodeInfo> SceneHelper::getChildNodes(repo::core::model:
 	return nodes;
 }
 
-SceneHelper::NodeInfo SceneHelper::getNodeInfo(repo::core::model::RepoNode* node)
+SceneUtils::NodeInfo SceneUtils::getNodeInfo(repo::core::model::RepoNode* node)
 {
 	NodeInfo info(node, this);
 	for (auto child : scene->getChildrenAsNodes(repo::core::model::RepoScene::GraphType::DEFAULT, node->getSharedID()))
@@ -83,4 +98,48 @@ SceneHelper::NodeInfo SceneHelper::getNodeInfo(repo::core::model::RepoNode* node
 		}
 	}
 	return info;
+}
+
+std::vector<SceneUtils::NodeInfo> SceneUtils::NodeInfo::getMeshes()
+{
+	std::vector<SceneUtils::NodeInfo> meshNodes;
+	for (auto c : scene->getChildNodes(node, true))
+	{
+		if (dynamic_cast<MeshNode*>(c.node)) {
+			meshNodes.push_back(c);
+		}
+	}
+	return meshNodes;
+}
+
+repo::lib::repo_material_t SceneUtils::NodeInfo::getMaterial()
+{
+	for (auto c : scene->getChildNodes(node, true))
+	{
+		if (dynamic_cast<MaterialNode*>(c.node)) {
+			return dynamic_cast<MaterialNode*>(c.node)->getMaterialStruct();
+		}
+	}
+	throw std::runtime_error("Node does not have a material");
+}
+
+std::vector<repo::lib::repo_color4d_t> SceneUtils::NodeInfo::getColours()
+{
+	std::vector<repo::lib::repo_color4d_t> colours;
+	for (auto c : getMeshes()) {
+		colours.push_back(repo::lib::repo_color4d_t(c.getMaterial().diffuse, c.getMaterial().opacity));
+	}
+	return colours;
+}
+
+std::vector<std::string> SceneUtils::NodeInfo::getChildNames()
+{
+	std::vector<std::string> names;
+	for (auto c : scene->getChildNodes(node, true))
+	{
+		if (!c.node->getName().empty()) {
+			names.push_back(c.node->getName());
+		}
+	}
+	return names;
 }

@@ -181,7 +181,7 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 			collector->createLayer(entityLayer.id, entityLayer.name, parentLayer.id);
 			collector->addMeshes(entityLayer.id, meshes);
 
-			if (!handleMetaValue.empty()) {
+			if (!handleMetaValue.empty() && !collector->hasMetadata(entityLayer.id)) {
 				std::unordered_map<std::string, repo::lib::RepoVariant> meta;
 				meta["Entity Handle::Value"] = handleMetaValue;
 				collector->setMetadata(entityLayer.id, meta);
