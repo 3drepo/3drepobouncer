@@ -41,12 +41,19 @@ GeometryCollector::~GeometryCollector()
 
 void GeometryCollector::addFace(const std::initializer_list<repo::lib::RepoVector3D64>& vertices)
 {
-	contexts.top()->addFace(vertices);
+	// Note that some views may output geometry outside of a drawable (e.g. Revit
+	// cameras). In this case the geometry should be ignored.
+
+	if (contexts.size()) {
+		contexts.top()->addFace(vertices);
+	}
 }
 
 void GeometryCollector::addFace(const GeometryCollector::Face& face)
 {
-	contexts.top()->addFace(face);
+	if (contexts.size()) {
+		contexts.top()->addFace(face);
+	}
 }
 
 void GeometryCollector::setMaterial(const repo_material_t& material)

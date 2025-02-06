@@ -37,6 +37,7 @@
 #include <StaticRxObject.h>
 #include <Database/BmGsManager.h>
 #include <Database/BmGsView.h>
+#include <Database/Entities/BmBasicFileInfo.h>
 
 #include "repo/lib/repo_utils.h"
 
@@ -54,6 +55,8 @@ using namespace repo::manipulator::modelconvertor::odaHelper;
 const bool USE_NEW_TESSELLATION = true;
 const double TRIANGULATION_EDGE_LENGTH = 1;
 const double ROUNDING_ACCURACY = 0.000001;
+
+#define RVT_TEMPORARY_DIRECTORY_ENV_VARIABLE "REPO_RVT_TEMP_DIR"
 
 // The following sets up the level of detail parameters for the FileProcessorRvt.
 // The exact meaning of the LOD parameter provided in the config will depend on
@@ -119,14 +122,19 @@ public:
 	* turn on unloading to decrease memory usage at a cost of processing time.
 	*/
 
+	bool setUseUnload(bool enabled) 
+	{
+		this->useUnload = enabled;
+	}
+
 	virtual bool unloadEnabled() const override
 	{
-		return false;
+		return useUnload;
 	}
 
 	virtual bool useDisk() const override
 	{
-		return false;
+		return useUnload;
 	}
 
 	virtual double indexingRate() const override
@@ -136,11 +144,13 @@ public:
 
 	virtual OdString unloadFilePath() const override
 	{
-		return "D:/3drepo/3drepobouncer_ISSUE729/temp/oda.unload";
+		return OdBmSystemServicesPE::unloadFilePath(); // We could change the file path using an environment variable here
 	}
 
 protected:
 	ODRX_USING_HEAP_OPERATORS(RepoSystemServices);
+
+	bool useUnload = false;
 };
 
 OdBmDBDrawingPtr findView(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimDatabase)
@@ -324,8 +334,7 @@ uint8_t FileProcessorRvt::readFile()
 		}
 		setTessellationParams(triParams);
 
-		OdBmDatabasePtr pDb = svcs.readFile(OdString(file.c_str()));
-		pDb->appServices()->setMtMode(OdDb::kMTRendering);
+		OdBmDatabasePtr pDb = svcs.readFile(OdString(file.c_str()));	
 		if (!pDb.isNull())
 		{
 			// The 'drawing' object corresponds to a named entry in the 'Views' list in
