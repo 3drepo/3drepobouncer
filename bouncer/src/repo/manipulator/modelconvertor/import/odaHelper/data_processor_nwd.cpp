@@ -91,10 +91,9 @@ static std::string sElementIdKey = "Element ID::Value";
 struct RepoNwTraversalContext {
 	OdNwModelItemPtr layer;
 	OdNwPartitionPtr partition;
-	OdNwModelItemPtr parent;
-	std::string parentLayerId;
 	repo::manipulator::modelutility::RepoSceneBuilder* sceneBuilder;
 	std::shared_ptr<repo::core::model::TransformationNode> parentNode;
+	std::unordered_map<std::string, repo::lib::RepoVariant> parentMetadata;
 };
 
 repo::lib::RepoVector3D64 convertPoint(OdGePoint3d pnt, OdGeMatrix3d& transform)
@@ -777,6 +776,19 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 		levelName = convertToStdString(pNode->getClassDisplayName());
 	}
 
+	// Collect the metadata for this node; even if this node does not exist in our
+	// tree we still need it to combine with the metadata of it's descendants (see
+	// below).
+
+	// It turns out to be far, far faster to call processAttributes on every
+	// drawable and store the metadata, than to store a pointer to the parent and
+	// get the metadata on-demand. (The mechanism is not clear but it is probably
+	// something like ODA having to seek the file in order to open properties for
+	// an element that is not next to pNode, etc.)
+
+	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
+	processAttributes(pNode, context, metadata);
+
 	// The importer will not create tree entries for Instance nodes, though it will
 	// import their metadata.
 
@@ -806,12 +818,12 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 			// To match the plug-in, and ensure metadata ends up in the right place for
 			// the benefit of smart groups, node properties are overridden with their
 			// parent's metadata
+			std::unordered_map<std::string, repo::lib::RepoVariant> merged = metadata;
+			for (auto p : context.parentMetadata) {
+				merged[p.first] = p.second;
+			}
 
-			std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
-			processAttributes(pNode, context, metadata);
-			processAttributes(context.parent, context, metadata);
-
-			context.sceneBuilder->addNode(RepoBSONFactory::makeMetaDataNode(metadata, context.parentNode->getName(), { context.parentNode->getSharedID() }));
+			context.sceneBuilder->addNode(RepoBSONFactory::makeMetaDataNode(merged, context.parentNode->getName(), { context.parentNode->getSharedID() }));
 		}
 
 		if (pNode->hasGeometry())
@@ -827,7 +839,10 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 		return res;
 	}
 
-	context.parent = pNode; // The node for getting parent metadata should always be the parent in the Nw tree, even if its a (e.g. instance) node that doesn't appear in our tree
+	// The node for getting parent metadata should always be the parent in the Nw
+	// tree, even if its a (e.g. instance) node that doesn't appear in our tree.
+
+	context.parentMetadata = metadata;
 
 	for (OdNwObjectIdArray::const_iterator itRootChildren = aNodeChildren.begin(); itRootChildren != aNodeChildren.end(); ++itRootChildren)
 	{
