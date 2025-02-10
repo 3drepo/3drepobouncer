@@ -134,18 +134,6 @@ namespace repo {
 					repo::core::handler::AbstractDatabaseHandler *handler) const;
 
 				/**
-				* Check if the scene has SRC generation enabled
-				* This is primarily used for determining if we need to generate
-				* SRC stashes of the optimised scene for Unreal.
-				* @param scene scene to generate stash for
-				* @param handler hander to the database
-				* @return returns true if src stashes are enabled
-				*/
-				bool shouldGenerateSrcFiles(
-					const repo::core::model::RepoScene* scene,
-					repo::core::handler::AbstractDatabaseHandler* handler) const;
-
-				/**
 				* Generate a `exType` encoding for the given scene
 				* if a database handler is provided, it will also commit the
 				* buffers into the database
@@ -172,15 +160,6 @@ namespace repo {
 					repo::core::model::RepoScene *scene);
 
 			private:
-				/**
-				* Generate a SRC encoding in the form of a buffer for the given scene
-				* This requires the stash to have been generated already
-				* @param scene the scene to generate the src encoding from
-				* @return returns a buffer in the form of a byte vector mapped to its filename
-				*/
-				repo::lib::repo_web_buffers_t generateSRCBuffer(
-					repo::core::model::RepoScene *scene);
-
 				/**
 				* Generate a set of Repo Bundles in the form of web buffers for
 				* the given scene. The stash must have beeen generated already.

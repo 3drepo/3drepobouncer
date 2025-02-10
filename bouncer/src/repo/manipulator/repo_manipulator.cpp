@@ -185,17 +185,6 @@ bool RepoManipulator::generateAndCommitRepoBundlesBuffer(
 	);
 }
 
-bool RepoManipulator::generateAndCommitSRCBuffer(
-	repo::core::model::RepoScene* scene)
-{
-	repo::lib::repo_web_buffers_t buffers;
-	return generateAndCommitWebViewBuffer(
-		scene,
-		buffers,
-		modelconvertor::WebExportType::SRC
-	);
-}
-
 bool RepoManipulator::generateAndCommitSelectionTree(
 	repo::core::model::RepoScene* scene
 )
@@ -222,15 +211,6 @@ bool RepoManipulator::generateAndCommitWebViewBuffer(
 		SceneManager.generateStashGraph(scene);
 	}
 	return SceneManager.generateWebViewBuffers(scene, exType, buffers, dbHandler.get(), dbHandler->getFileManager().get());
-}
-
-repo::lib::repo_web_buffers_t RepoManipulator::generateSRCBuffer(
-	repo::core::model::RepoScene* scene)
-{
-	repo::lib::repo_web_buffers_t buffers;
-	modelutility::SceneManager SceneManager;
-	SceneManager.generateWebViewBuffers(scene, modelconvertor::WebExportType::SRC, buffers, nullptr);
-	return buffers;
 }
 
 std::vector<repo::core::model::RepoBSON>

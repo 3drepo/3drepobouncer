@@ -134,24 +134,6 @@ namespace repo {
 				repo::core::model::RepoScene* scene);
 
 			/**
-			* Generate and commit a SRC encoding for the given scene
-			* This requires the stash to have been generated already
-			* @param scene the scene to generate the src encoding from
-			* @return returns true upon success
-			*/
-			bool generateAndCommitSRCBuffer(
-				repo::core::model::RepoScene *scene);
-
-			/**
-			* Generate a SRC encoding in the form of a buffer for the given scene
-			* This requires the stash to have been generated already
-			* @param scene the scene to generate the src encoding fro
-			* @return returns a buffer in the form of a byte vector mapped to its filename
-			*/
-			repo::lib::repo_web_buffers_t generateSRCBuffer(
-				repo::core::model::RepoScene *scene);
-
-			/**
 			* Generate a stash graph for the given scene and populate it
 			* into the given scene
 			* @param scene scene to generate stash graph for

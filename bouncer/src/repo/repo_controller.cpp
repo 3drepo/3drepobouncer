@@ -135,19 +135,6 @@ bool RepoController::generateAndCommitRepoBundlesBuffer(
 	return impl->generateAndCommitRepoBundlesBuffer(token, scene);
 }
 
-bool RepoController::generateAndCommitSRCBuffer(
-	const RepoController::RepoToken    *token,
-	repo::core::model::RepoScene *scene)
-{
-	return impl->generateAndCommitSRCBuffer(token, scene);
-}
-
-repo::lib::repo_web_buffers_t RepoController::generateSRCBuffer(
-	repo::core::model::RepoScene *scene)
-{
-	return impl->generateSRCBuffer(scene);
-}
-
 std::shared_ptr<repo::lib::repo_partitioning_tree_t>
 RepoController::getScenePartitioning(
 	const repo::core::model::RepoScene *scene,

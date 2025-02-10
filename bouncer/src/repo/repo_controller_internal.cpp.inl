@@ -284,41 +284,6 @@ bool RepoController::_RepoControllerImpl::generateAndCommitRepoBundlesBuffer(
 	return success;
 }
 
-bool RepoController::_RepoControllerImpl::generateAndCommitSRCBuffer(
-	const RepoController::RepoToken *token,
-	repo::core::model::RepoScene    *scene)
-{
-	bool success;
-	if (success = token && scene)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		success = worker->generateAndCommitSRCBuffer(scene);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Failed to generate SRC Buffer.";
-	}
-	return success;
-}
-
-repo::lib::repo_web_buffers_t RepoController::_RepoControllerImpl::generateSRCBuffer(
-	repo::core::model::RepoScene *scene)
-{
-	repo::lib::repo_web_buffers_t buffer;
-	if (scene)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		buffer = worker->generateSRCBuffer(scene);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Failed to generate SRC Buffer.";
-	}
-	return buffer;
-}
-
 std::shared_ptr<repo::lib::repo_partitioning_tree_t>
 RepoController::_RepoControllerImpl::getScenePartitioning(
 	const repo::core::model::RepoScene *scene,

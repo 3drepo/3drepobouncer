@@ -257,11 +257,6 @@ bool _generateStash(
 			controller->updateRevisionStatus(scene, repo::core::model::ModelRevisionNode::UploadStatus::GEN_WEB_STASH);
 			success = controller->generateAndCommitRepoBundlesBuffer(token, scene);
 		}
-		else if (type == "src")
-		{
-			controller->updateRevisionStatus(scene, repo::core::model::ModelRevisionNode::UploadStatus::GEN_WEB_STASH);
-			success = controller->generateAndCommitSRCBuffer(token, scene);
-		}
 		else if (type == "tree")
 		{
 			controller->updateRevisionStatus(scene, repo::core::model::ModelRevisionNode::UploadStatus::GEN_SEL_TREE);
@@ -291,7 +286,7 @@ int32_t generateStash(
 	if (command.nArgcs < 3)
 	{
 		repoLogError("Number of arguments mismatch! " + cmdGenStash
-			+ " requires 3 arguments:database project [repo|src|tree]");
+			+ " requires 3 arguments:database project [repo|tree]");
 		return REPOERR_INVALID_ARG;
 	}
 
@@ -299,7 +294,7 @@ int32_t generateStash(
 	std::string project = command.args[1];
 	std::string type = command.args[2];
 
-	if (!(type == "repo" || type == "src" || type == "tree"))
+	if (!(type == "repo" || type == "tree"))
 	{
 		repoLogError("Unknown stash type: " + type);
 		return REPOERR_INVALID_ARG;
