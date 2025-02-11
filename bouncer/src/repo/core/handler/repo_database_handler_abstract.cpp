@@ -34,3 +34,13 @@ void repo::core::handler::database::Cursor::Iterator::operator++() {
 bool repo::core::handler::database::Cursor::Iterator::operator!=(const Iterator& other) {
 	return impl->operator!=(other.impl);
 }
+
+repo::core::handler::database::Cursor::Iterator::Iterator(Impl* impl)
+	:impl(impl)
+{
+}
+
+// This exists so unique_ptr will call any destructors on the base class
+repo::core::handler::database::Cursor::~Cursor()
+{
+}

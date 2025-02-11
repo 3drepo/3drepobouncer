@@ -62,15 +62,14 @@ namespace repo {
 						};
 
 						Impl* impl;
-
-						Cursor::Iterator(Impl* impl)
-							:impl(impl)
-						{
-						}
+						
+						Iterator(Impl* impl);
 					};
 
 					virtual Iterator begin() = 0;
 					virtual Iterator end() = 0;
+
+					virtual ~Cursor();
 				};
 
 				using CursorPtr = std::unique_ptr<repo::core::handler::database::Cursor>;
@@ -86,7 +85,6 @@ namespace repo {
 				class BulkWriteContext
 				{
 				public:
-					//todo:: pass by move semantics here
 					virtual void insertDocument(repo::core::model::RepoBSON obj) = 0;
 
 					virtual void updateDocument(const database::query::RepoUpdate& obj) = 0;
