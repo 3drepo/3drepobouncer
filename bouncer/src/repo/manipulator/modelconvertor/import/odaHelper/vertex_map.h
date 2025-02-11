@@ -19,7 +19,6 @@
 
 #include "repo/lib/datastructure/repo_vector.h"
 #include <vector>
-#include <map>
 
 namespace repo {
 	namespace manipulator {
