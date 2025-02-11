@@ -56,17 +56,9 @@ const bouncer = object({
 	log_dir: string(),
 });
 
-const elasticCloud = object({
-	id: string(),
-}).default(undefined);
-
-const elasticAuth = object({
-	apiKey: string(),
-}).default(undefined);
-
 const elastic = object({
-	cloud: elasticCloud,
-	auth: elasticAuth,
+	cloud: object({id: string()}).default(undefined),
+	auth: object({apiKey: string()}).default(undefined),
 	namespace: string(),
 	reload_connections: boolean(),
 	maxRetries: number(),
