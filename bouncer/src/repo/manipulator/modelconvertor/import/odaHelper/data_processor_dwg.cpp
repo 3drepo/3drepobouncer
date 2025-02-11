@@ -36,8 +36,6 @@ DataProcessorDwg::~DataProcessorDwg()
 	// This exists so we can use unique_ptr with a forward declaration of DwgDrawContext
 }
 
-#pragma optimize("",off)
-
 bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 {
 	std::unique_ptr<GeometryCollector::Context> ctx;
