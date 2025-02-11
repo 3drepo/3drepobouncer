@@ -82,7 +82,7 @@ namespace repo {
 					void initialise(GeometryCollector* collector, OdBmDatabasePtr pDb, OdBmDBViewPtr view, const OdGeMatrix3d& modelToWorld);
 
 					static bool tryConvertMetadataEntry(
-						OdTfVariant& metaEntry,
+						const OdTfVariant& metaEntry,
 						OdBmLabelUtilsPEPtr labelUtils,
 						OdBmParamDefPtr paramDef,
 						OdBm::BuiltInParameter::Enum param,
@@ -119,7 +119,7 @@ namespace repo {
 					bool ignoreParam(const std::string& param);
 
 					void processParameter(
-						OdBmElementPtr element,
+						const OdTfVariant& value,
 						OdBmObjectId paramId,
 						std::unordered_map<std::string, repo::lib::RepoVariant> &metadata,
 						const OdBm::BuiltInParameter::Enum &buildInEnum

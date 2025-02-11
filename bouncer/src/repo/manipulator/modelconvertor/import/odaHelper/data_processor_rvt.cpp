@@ -43,7 +43,7 @@ const std::set<std::string> IGNORE_PARAMS = {
 	"RENDER APPEARANCE PROPERTIES"
 };
 
-bool DataProcessorRvt::tryConvertMetadataEntry(OdTfVariant& metaEntry, OdBmLabelUtilsPEPtr labelUtils, OdBmParamDefPtr paramDef, OdBm::BuiltInParameter::Enum param, repo::lib::RepoVariant& v)
+bool DataProcessorRvt::tryConvertMetadataEntry(const OdTfVariant& metaEntry, OdBmLabelUtilsPEPtr labelUtils, OdBmParamDefPtr paramDef, OdBm::BuiltInParameter::Enum param, repo::lib::RepoVariant& v)
 {
 	auto dataType = metaEntry.type();
 	switch (dataType) {
@@ -127,7 +127,7 @@ bool DataProcessorRvt::tryConvertMetadataEntry(OdTfVariant& metaEntry, OdBmLabel
 						// The object class is unknown - some superclasses we can handle explicitly.
 
 						auto bmPtrClass = bmPtr->isA();
-						if (!bmPtrClass->isKindOf(OdBmElement::desc()))
+						if (bmPtrClass->isKindOf(OdBmElement::desc()))
 						{
 							OdBmElementPtr elem = bmPtr;
 							if (elem->getElementName() == OdString::kEmpty) {
@@ -492,55 +492,49 @@ void DataProcessorRvt::initLabelUtils() {
 }
 
 void DataProcessorRvt::processParameter(
-	OdBmElementPtr element,
+	const OdTfVariant& value,
 	OdBmObjectId paramId,
 	std::unordered_map<std::string, repo::lib::RepoVariant> &metadata,
 	const OdBm::BuiltInParameter::Enum &buildInEnum
 ) {
-	OdTfVariant value;
-	OdResult res = element->getParam(paramId, value);
+	OdBmParamElemPtr pParamElem = paramId.safeOpenObject();
+	OdBmParamDefPtr pDescParam = pParamElem->getParamDef();
+	OdBmForgeTypeId groupId = pDescParam->getGroupTypeId();
 
-	if (res == eOk)
-	{
-		OdBmParamElemPtr pParamElem = paramId.safeOpenObject();
-		OdBmParamDefPtr pDescParam = pParamElem->getParamDef();
-		OdBmForgeTypeId groupId = pDescParam->getGroupTypeId();
+	auto metaKey = convertToStdString(pDescParam->getCaption());
 
-		auto metaKey = convertToStdString(pDescParam->getCaption());
+	if (!ignoreParam(metaKey)) {
+		auto paramGroup = labelUtils->getLabelForGroup(groupId);
+		if (!paramGroup.isEmpty()) {
+			metaKey = convertToStdString(paramGroup) + "::" + metaKey;
+		}
 
-		if (!ignoreParam(metaKey)) {
-			auto paramGroup = labelUtils->getLabelForGroup(groupId);
-			if (!paramGroup.isEmpty()) {
-				metaKey = convertToStdString(paramGroup) + "::" + metaKey;
+		// Get the label for the units, using the same mechanism as the OdBmSampleLabelUtilsPE::getParamValueAsString.
+
+		auto pAUnits = getUnits(pParamElem->getDatabase());
+		auto pFormatOptions = pAUnits->getFormatOptions(pDescParam->getSpecTypeId());
+		if (!pFormatOptions.isNull()) {
+			auto symbolTypeId = pFormatOptions->getSymbolTypeId();
+			auto units = labelUtils->getLabelForSymbol(symbolTypeId);
+			if (!units.isEmpty()) {
+				metaKey += " (" + convertToStdString(units) + ")";
 			}
+		}
 
-			// Get the label for the units, using the same mechanism as the OdBmSampleLabelUtilsPE::getParamValueAsString.
+		repo::lib::RepoVariant v;
 
-			auto pAUnits = getUnits(pParamElem->getDatabase());
-			auto pFormatOptions = pAUnits->getFormatOptions(pDescParam->getSpecTypeId());
-			if (!pFormatOptions.isNull()) {
-				auto symbolTypeId = pFormatOptions->getSymbolTypeId();
-				auto units = labelUtils->getLabelForSymbol(symbolTypeId);
-				if (!units.isEmpty()) {
-					metaKey += " (" + convertToStdString(units) + ")";
-				}
+		if (tryConvertMetadataEntry(value, labelUtils, pDescParam, buildInEnum, v))
+		{
+			if (metadata.find(metaKey) != metadata.end() && !boost::apply_visitor(repo::lib::DuplicationVisitor(), metadata[metaKey], v)) {
+
+				repoDebug
+					<< "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: "
+					<< metaKey << "value before: "
+					<< boost::apply_visitor(repo::lib::StringConversionVisitor(), metadata[metaKey])
+					<< " after: "
+					<< boost::apply_visitor(repo::lib::StringConversionVisitor(), v);
 			}
-
-			repo::lib::RepoVariant v;
-
-			if (tryConvertMetadataEntry(value, labelUtils, pDescParam, buildInEnum, v))
-			{
-				if (metadata.find(metaKey) != metadata.end() && !boost::apply_visitor(repo::lib::DuplicationVisitor(), metadata[metaKey], v)) {
-
-					repoDebug
-						<< "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: "
-						<< metaKey << "value before: "
-						<< boost::apply_visitor(repo::lib::StringConversionVisitor(), metadata[metaKey])
-						<< " after: "
-						<< boost::apply_visitor(repo::lib::StringConversionVisitor(), v);
-				}
-				metadata[metaKey] = v;
-			}
+			metadata[metaKey] = v;
 		}
 	}
 }
@@ -564,12 +558,19 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 
 		auto paramId = element->database()->getObjectId(entry);
 		if (paramId.isValid() && !paramId.isNull()) {
-			processParameter(element, paramId, metadata, entry);
+
+			OdTfVariant value;
+			if (element->getParam(paramId, value) == eOk) {
+				processParameter(value, paramId, metadata, entry);
+			}
 		}
 	}
 
-	for (const auto &entry : aParams.getUserParamsIterator()) {
-		processParameter(element, entry, metadata,
+	OdBmMap<OdBmObjectId, OdTfVariant> parameters;
+	element->getParameters(parameters);
+
+	for (const auto &entry : parameters) {
+		processParameter(entry.second, entry.first, metadata,
 			//A dummy entry, as long as it's not ELEM_CATEGORY_PARAM_MT or ELEM_CATEGORY_PARAM it's not utilised.
 			OdBm::BuiltInParameter::Enum::ACTUAL_MAX_RIDGE_HEIGHT_PARAM);
 	}
