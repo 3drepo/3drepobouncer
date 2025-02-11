@@ -127,7 +127,7 @@ bool DataProcessorRvt::tryConvertMetadataEntry(const OdTfVariant& metaEntry, OdB
 						// The object class is unknown - some superclasses we can handle explicitly.
 
 						auto bmPtrClass = bmPtr->isA();
-						if (bmPtrClass->isKindOf(OdBmElement::desc()))
+						if (!bmPtrClass->isKindOf(OdBmElement::desc()))
 						{
 							OdBmElementPtr elem = bmPtr;
 							if (elem->getElementName() == OdString::kEmpty) {
