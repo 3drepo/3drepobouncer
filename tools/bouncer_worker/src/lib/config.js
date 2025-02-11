@@ -57,12 +57,10 @@ const bouncer = object({
 });
 
 const elastic = object({
-	cloud: object({id: string()}).default(undefined),
-	auth: object({apiKey: string()}).default(undefined),
-	namespace: string(),
-	reload_connections: boolean(),
-	maxRetries: number(),
-	request_timeout: number(),
+	cloud: object({id: string().required()}),
+	auth: object({apiKey: string().required()}),
+	namespace: string().required(),
+	maxRetries: number().default(5),
 }).default(undefined);
 
 const logging = object({
