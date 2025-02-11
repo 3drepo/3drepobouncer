@@ -110,6 +110,14 @@ namespace repo {
 				void setUnits(repo::manipulator::modelconvertor::ModelUnits units);
 				repo::manipulator::modelconvertor::ModelUnits getUnits();
 
+				/*
+				* Creates a common set of indices prior to import, to avoid Mongo having to build
+				* an index on a large number of nodes at the end.
+				* This is a temporary method that can be removed when .io becomes responsible for
+				* creating the collection.
+				*/
+				void createIndexes();
+
 			private:
 
 				template<typename Value>

@@ -29,6 +29,7 @@
 #include <variant>
 #include <semaphore>
 #include "spscqueue/readerwriterqueue.h"
+#include <repo/core/handler/database/repo_query.cpp>
 
 using namespace repo::manipulator::modelutility;
 using namespace repo::core::model;
@@ -60,7 +61,6 @@ public:
 	*/
 	void push(repo::core::model::RepoNode* node);
 	void push(repo::core::handler::database::query::AddParent*);
-
 
 private:
 	/*
@@ -348,6 +348,16 @@ void RepoSceneBuilder::setUnits(repo::manipulator::modelconvertor::ModelUnits un
 repo::manipulator::modelconvertor::ModelUnits RepoSceneBuilder::getUnits()
 {
 	return this->units;
+}
+
+void RepoSceneBuilder::createIndexes()
+{
+	using namespace repo::core::handler::database::index;
+	handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, Descending({ REPO_NODE_REVISION_LABEL_TIMESTAMP }));
+	handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ REPO_NODE_REVISION_ID, "metadata.key", "metadata.value" }));
+	handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ "metadata.key", "metadata.value" }));
+	handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ REPO_NODE_REVISION_ID, REPO_NODE_LABEL_SHARED_ID, REPO_LABEL_TYPE }));
+	handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ REPO_NODE_LABEL_SHARED_ID }));
 }
 
 RepoSceneBuilder::AsyncImpl::AsyncImpl(RepoSceneBuilder* builder):
