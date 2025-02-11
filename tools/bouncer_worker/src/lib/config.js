@@ -56,14 +56,22 @@ const bouncer = object({
 	log_dir: string(),
 });
 
+const elasticCloud = object({
+	id: string(),
+}).default(undefined);
+
+const elasticAuth = object({
+	apiKey: string(),
+}).default(undefined);
+
 const elastic = object({
-	cloud: envars,
-	auth: envars,
+	cloud: elasticCloud,
+	auth: elasticAuth,
 	namespace: string(),
 	reload_connections: boolean(),
 	maxRetries: number(),
 	request_timeout: number(),
-});
+}).default(undefined);
 
 const logging = object({
 	taskLogDir: string(),
