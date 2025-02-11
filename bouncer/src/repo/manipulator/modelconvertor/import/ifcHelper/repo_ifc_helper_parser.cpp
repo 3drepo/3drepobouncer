@@ -36,22 +36,26 @@ void convertTreeToNodes(
 ) {
 	std::vector<repo::lib::RepoUUID> childrenParents = parents;
 	if (tree.createNode) {
-		auto transNode = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode(tree.transformation, tree.name, parents));
-		childrenParents = { transNode->getSharedID() };
-		auto metaParents = childrenParents;
-		transSet.insert(transNode);
+		std::vector<repo::lib::RepoUUID> metaParents;
+
+		if (!tree.absorbTrans) {
+			auto transNode = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode(tree.transformation, tree.name, parents));
+			childrenParents = { transNode->getSharedID() };
+			metaParents = childrenParents;
+			transSet.insert(transNode);
+		}
 
 		if (meshes.find(tree.guid) != meshes.end()) {
 			for (auto &mesh : meshes[tree.guid]) {
-				mesh->addParent(transNode->getSharedID()); // In the IFC importer, meshes are already created per-instance and so are updated in-place
-				if (tree.isIfcSpace || tree.meshTakeName && mesh->getName().empty()) {
+				mesh->addParents(childrenParents); // In the IFC importer, meshes are already created per-instance and so are updated in-place
+				if (tree.absorbTrans || tree.meshTakeName && mesh->getName().empty()) {
 					mesh->changeName(tree.name);
 					metaParents.push_back(mesh->getSharedID());
 				}
 			}
 		}
 
-		if (tree.meta.size()) {
+		if (tree.meta.size() && metaParents.size()) {
 			metaSet.insert(new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(tree.meta, tree.name, metaParents)));
 		}
 	}

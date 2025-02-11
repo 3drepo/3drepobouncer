@@ -209,7 +209,7 @@ TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursiv
 		transNode.meta.insert(elementInfo.begin(), elementInfo.end());
 		transNode.meta.insert(locationInfo.begin(), locationInfo.end());
 		transNode.meshTakeName = hasTransChildren;
-		transNode.isIfcSpace = hasTransChildren;
+		transNode.absorbTrans = !hasTransChildren;
 	}
 	else
 	{
