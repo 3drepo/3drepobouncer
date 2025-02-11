@@ -566,9 +566,14 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 		}
 	}
 
+	// This snippet gets user parameter values. Elements may have lots of parameters
+	// without values, if say, the project has lots of shared parameters. Since we
+	// filter out parameters without values anyway, this is much more efficient than
+	// checking each parameter in the user params list one by one, as most of them
+	// may end up filtered out anyway.
+
 	OdBmMap<OdBmObjectId, OdTfVariant> parameters;
 	element->getParameters(parameters);
-
 	for (const auto &entry : parameters) {
 		processParameter(entry.second, entry.first, metadata,
 			//A dummy entry, as long as it's not ELEM_CATEGORY_PARAM_MT or ELEM_CATEGORY_PARAM it's not utilised.
