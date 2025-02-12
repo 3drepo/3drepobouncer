@@ -7,7 +7,6 @@
 #endif
 
 #include <boost/iostreams/stream.hpp>
-#include <boost/log/expressions.hpp>
 #include <boost/log/sinks/sync_frontend.hpp>
 #include <boost/log/sinks/text_ostream_backend.hpp>
 #include <boost/log/sources/record_ostream.hpp>
