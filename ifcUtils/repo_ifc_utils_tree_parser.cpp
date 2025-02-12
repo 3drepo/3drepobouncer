@@ -25,7 +25,7 @@
 #include "repo_ifc_utils_constants.h"
 #include <repo/lib/repo_utils.h>
 #include <repo/lib/datastructure/repo_variant.h>
-#include <repo/lib/repo_log.h>
+#include <repo_log.h>
 
 TransNode  repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformations(const std::string &filePath, bool &missingEntities)
 {

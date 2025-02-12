@@ -29,7 +29,6 @@
 #include <variant>
 #include <semaphore>
 #include "spscqueue/readerwriterqueue.h"
-#include <repo/core/handler/database/repo_query.cpp>
 
 using namespace repo::manipulator::modelutility;
 using namespace repo::core::model;

@@ -24,7 +24,7 @@
 
 #include <ifcgeom/IfcGeom.h>
 #include <ifcgeom_schema_agnostic/IfcGeomIterator.h>
-#include <repo/lib/repo_log.h>
+#include <repo_log.h>
 
 constexpr int TRIANGLES = 3;
 constexpr int LINES = 2;

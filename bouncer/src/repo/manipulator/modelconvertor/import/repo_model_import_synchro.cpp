@@ -20,7 +20,7 @@
 #include "repo_model_import_synchro.h"
 
 #include "repo/core/model/bson/repo_bson_factory.h"
-#include "repo/lib/repo_log.h"
+#include <repo_log.h>
 #include "repo/lib/datastructure/repo_matrix.h"
 #include "repo/lib/datastructure/repo_bounds.h"
 #include "repo/error_codes.h"

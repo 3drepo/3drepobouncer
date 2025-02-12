@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "../repo_bouncer_global.h"
+#include <repo/repo_bouncer_global.h>
 #include <string>
 
 namespace repo{

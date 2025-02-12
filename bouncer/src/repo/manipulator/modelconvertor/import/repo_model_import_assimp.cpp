@@ -558,7 +558,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 			aiMetadataEntry &currentValue = assimpMeta->mValues[i];
 
 			if (key == "IfcGloballyUniqueId")
-				repoError << "TODO: fix IfcGloballyUniqueId in RepoMetadata" << std::endl;
+				repoError << "TODO: fix IfcGloballyUniqueId in RepoMetadata";
 
 			if (currentValue.mType != AI_AISTRING && currentValue.mType != FORCE_32BIT)
 			{
@@ -570,7 +570,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 					metaEntries[key] = v;
 				}
 				else {
-					repoError << "Conversion of assimp entry to RepoVariant failed" << std::endl;
+					repoError << "Conversion of assimp entry to RepoVariant failed";
 				}
 			}
 			else if (currentValue.mType == AI_AISTRING) {
@@ -759,7 +759,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 							char *memblock = nullptr;
 							if (!file.is_open())
 							{
-								repoError << "Could not open texture: " << filePath << std::endl;
+								repoError << "Could not open texture: " << filePath;
 								missingTextures = true;
 							}
 							else

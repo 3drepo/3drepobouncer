@@ -185,6 +185,9 @@ option (REPO_NO_GZIP "If zlib is not compiled into boost" OFF)
 option (REPO_ASSET_GENERATOR_SUPPORT "If the AssetGenerator is present and compiled into the library" ON)
 option (REPO_SVG_EXPORT_SUPPORT "If the customised Svg Exporter is present and compiled into the library" ON)
 
+# Logging is implemented in a separate shared library so all dependencies can
+# use the same instance.
+add_subdirectory(log)
 
 #Build IFCUtils
 add_subdirectory(ifcUtils)
@@ -208,7 +211,6 @@ endif()
 
 #bouncer library
 add_subdirectory(bouncer)
-
 
 #client exe
 if (REPO_BUILD_CLIENT)

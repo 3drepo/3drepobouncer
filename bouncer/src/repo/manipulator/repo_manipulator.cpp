@@ -23,12 +23,12 @@
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 
+#include <repo_log.h>
 #include "repo/core/handler/repo_database_handler_mongo.h"
 #include "repo/core/handler/fileservice/repo_file_manager.h"
 #include "repo/core/model/bson/repo_bson_factory.h"
 #include "repo/core/model/bson/repo_bson.h"
 #include "repo/error_codes.h"
-#include "repo/lib/repo_log.h"
 #include "repo/lib/repo_config.h"
 #include "modelconvertor/import/repo_drawing_import_manager.h"
 #include "modelconvertor/import/repo_model_import_manager.h"

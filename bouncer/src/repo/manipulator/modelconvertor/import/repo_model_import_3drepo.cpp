@@ -23,7 +23,7 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include "repo/core/model/bson/repo_bson_factory.h"
-#include "repo/lib/repo_log.h"
+#include <repo_log.h>
 #include "repo/error_codes.h"
 
 using namespace repo::core::model;

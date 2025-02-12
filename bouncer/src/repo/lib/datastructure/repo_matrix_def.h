@@ -18,7 +18,7 @@
 #pragma once
 
 #include "repo_vector.h"
-#include "../repo_log.h"
+#include <repo_log.h>
 #include <string>
 
 namespace repo {

@@ -19,8 +19,8 @@
 * Allows Export functionality from 3D Repo World to SRC
 */
 
+#include <repo_log.h>
 #include "repo_model_export_web.h"
-#include "repo/lib/repo_log.h"
 #include "repo/core/model/bson/repo_bson_factory.h"
 
 #include <boost/filesystem.hpp>

@@ -113,8 +113,7 @@ namespace repo {
 				/*
 				* Creates a common set of indices prior to import, to avoid Mongo having to build
 				* an index on a large number of nodes at the end.
-				* This is a temporary method that can be removed when .io becomes responsible for
-				* creating the collection.
+				* Some of the indexes this creats could be moved to .io in the future.
 				*/
 				void createIndexes();
 

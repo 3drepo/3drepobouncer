@@ -1,3 +1,20 @@
+/**
+*  Copyright (C) 2025 3D Repo Ltd
+*
+*  This program is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU Affero General Public License as
+*  published by the Free Software Foundation, either version 3 of the
+*  License, or (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU Affero General Public License for more details.
+*
+*  You should have received a copy of the GNU Affero General Public License
+*  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "repo_log.h"
 
 #if BOOST_VERSION > 105700
@@ -6,6 +23,7 @@
 #include <boost/utility/empty_deleter.hpp>
 #endif
 
+#include <boost/log/trivial.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <boost/log/sinks/sync_frontend.hpp>
 #include <boost/log/sinks/text_ostream_backend.hpp>
@@ -17,11 +35,20 @@
 #include <boost/log/utility/setup/console.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/shared_ptr.hpp>
-#include <ctime>
 
 using namespace repo::lib;
 
 using text_sink = boost::log::sinks::synchronous_sink < boost::log::sinks::text_ostream_backend >;
+
+extern RepoLog* singleton = nullptr;
+
+RepoLog& RepoLog::getInstance()
+{
+	if (!singleton) {
+		singleton = new RepoLog();
+	}
+	return *singleton;
+}
 
 // Cannot use repo_utils.h -> for some reason it switches the headers for :toupper.
 std::string getEnvString(std::string const & envVarName)
@@ -40,15 +67,7 @@ RepoLog::RepoLog()
 	std::cout << "Logging directory is set to " << logDir << std::endl;
 	this->logToFile(logDir);
 
-	boost::log::add_console_log
-	(std::cout,
-		boost::log::keywords::format = (
-			boost::log::expressions::stream
-			<< "[" << boost::log::expressions::format_date_time(timestamp, "%Y-%m-%d %H:%M:%S") << "]"
-			<< "(" << threadid << ") <" << boost::log::trivial::severity
-			<< ">"
-			<< ": " << boost::log::expressions::smessage
-			));
+	boost::log::add_console_log(std::cout);
 
 	std::string debug = getEnvString("REPO_DEBUG");
 	std::string verbose = getEnvString("REPO_VERBOSE");
@@ -65,47 +84,87 @@ RepoLog::RepoLog()
 		this->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::INFO);
 	}
 }
+
 RepoLog::~RepoLog()
 {
+}
+
+std::string severityAsString(const RepoLog::RepoLogLevel& severity)
+{
+	switch (severity)
+	{
+	case RepoLog::RepoLogLevel::TRACE:
+		return "trace";
+	case RepoLog::RepoLogLevel::DEBUG:
+		return "debug";
+	case RepoLog::RepoLogLevel::INFO:
+		return "info";
+	case RepoLog::RepoLogLevel::WARNING:
+		return "warning";
+	case RepoLog::RepoLogLevel::ERR:
+		return "error";
+	case RepoLog::RepoLogLevel::FATAL:
+		return "fatal";
+	}
+}
+
+std::string getTimeAsString(bool nospaces = false)
+{
+	time_t rawtime;
+	struct tm* timeinfo;
+	char buffer[80];
+
+	time(&rawtime);
+	timeinfo = localtime(&rawtime);
+
+	if (nospaces)
+	{
+		strftime(buffer, 80, "%Y-%m-%d-%Hh%Mm%Ss", timeinfo);
+	}
+	else 
+	{
+		strftime(buffer, 80, "%Y-%m-%d %H:%M:%S", timeinfo);
+	}
+	return std::string(buffer);
 }
 
 void RepoLog::log(
 	const RepoLogLevel &severity,
 	const std::string  &msg)
 {
+	auto full = "[" + getTimeAsString() + "]" + " <" + severityAsString(severity) + ">: " + msg;
+
 	switch (severity)
 	{
 	case RepoLogLevel::TRACE:
-		repoTrace << msg;
+		BOOST_LOG_TRIVIAL(trace) << full;
 		break;
 	case RepoLogLevel::DEBUG:
-		repoDebug << msg;
+		BOOST_LOG_TRIVIAL(debug) << full;
 		break;
 	case RepoLogLevel::INFO:
-		repoInfo << msg;
+		BOOST_LOG_TRIVIAL(info) << full;
 		break;
 	case RepoLogLevel::WARNING:
-		repoWarning << msg;
+		BOOST_LOG_TRIVIAL(warning) << full;
 		break;
 	case RepoLogLevel::ERR:
-		repoError << msg;
+		BOOST_LOG_TRIVIAL(error) << full;
 		break;
 	case RepoLogLevel::FATAL:
-		repoFatal << msg;
+		BOOST_LOG_TRIVIAL(fatal) << full;
 	}
 }
 
-static std::string getTimeAsString()
+RepoLog::record::~record()
 {
-	time_t rawtime;
-	struct tm * timeinfo;
-	char buffer[80];
+	log.log(severity, stream.str());
+}
 
-	time(&rawtime);
-	timeinfo = localtime(&rawtime);
-
-	strftime(buffer, 80, "%Y-%m-%d_%Hh%Mm%S", timeinfo);
-	return std::string(buffer);
+RepoLog::record::record(RepoLog& log, const RepoLogLevel& severity):
+	log(log),
+	severity(severity)
+{
 }
 
 void RepoLog::logToFile(const std::string &filePath)
@@ -113,25 +172,18 @@ void RepoLog::logToFile(const std::string &filePath)
 	boost::filesystem::path logPath(filePath);
 	std::string fileName;
 	// a directory is given
-	std::string name = getTimeAsString() + "_%N.log";
+	std::string name = getTimeAsString(true) + "_%N.log";
 	fileName = (logPath / name).string();
 
-	boost::log::add_file_log
-	(
+	boost::log::add_file_log(
 		boost::log::keywords::file_name = fileName,
 		boost::log::keywords::rotation_size = 10 * 1024 * 1024,
 		boost::log::keywords::time_based_rotation = boost::log::sinks::file::rotation_at_time_point(0, 0, 0),
-		boost::log::keywords::auto_flush = true,
-		boost::log::keywords::format = (
-			boost::log::expressions::stream
-			<< "[" << boost::log::expressions::format_date_time(timestamp, "%Y-%m-%d %H:%M:%S") << "]"
-			<< "(" << threadid << ") <" << boost::log::trivial::severity
-			<< ">"
-			<< ": " << boost::log::expressions::smessage
-			));
+		boost::log::keywords::auto_flush = true
+	);
 	boost::log::add_common_attributes();
 
-	repoInfo << "Log file registered: " << filePath;
+	BOOST_LOG_TRIVIAL(info) << "Log file registered: " << filePath;
 }
 
 void RepoLog::setLoggingLevel(const RepoLogLevel &level)
@@ -181,13 +233,6 @@ void RepoLog::subscribeBroadcaster(RepoBroadcaster *broadcaster) {
 	boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >();
 
 	sink->set_filter(boost::log::trivial::severity >= boost::log::trivial::trace);
-	//FIXME: better format!
-	sink->set_formatter
-	(
-		boost::log::expressions::stream
-		<< "%" << boost::log::trivial::severity << "%"
-		<< boost::log::expressions::smessage);
-
 	sink->locked_backend()->add_stream(stream);
 	sink->locked_backend()->auto_flush(true);
 

@@ -19,7 +19,7 @@
 
 #include <boost/filesystem.hpp>
 
-#include "repo/lib/repo_log.h"
+#include <repo_log.h>
 #include "repo/lib/repo_exception.h"
 
 using namespace repo::core::model;
