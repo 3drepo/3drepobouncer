@@ -32,10 +32,10 @@
 	},
 	"defaultStorage": "db",
 	"elastic": {
-		"enabled"   : false,
-		"cloudId"   : "cloudhost:xxx",
-		"cloudAuth" : "username:password",
-		"namespace" : ""
+		"cloud"      : { "id" : "ElasticCloudId:abc12345" },
+		"auth"       : { "apiKey" : "*******************" },
+		"namespace"  : "example",
+		"maxRetries" : 5
 	},
 	"processMonitoring" : {
 		"enabled" : false,
