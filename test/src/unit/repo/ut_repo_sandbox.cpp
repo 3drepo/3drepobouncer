@@ -35,17 +35,27 @@
 using namespace repo::core::handler;
 using namespace testing;
 
-struct TreeSummary {
+struct LinkedSummary {
 	repo::lib::RepoUUID rootNodeId;
 	repo::lib::RepoUUID leafNodeId;
 	repo::lib::RepoMatrix fullTransform;
 };
+
+repo::lib::RepoMatrix generateRandomMatrix() {
+	std::vector<float> randValues;
+	for (int i = 0; i < 16; ++i)
+	{
+		randValues.push_back((rand() % 1000) / 1000.f);
+	}
+	return repo::lib::RepoMatrix(randValues);
+}
 
 repo::core::model::RepoBSON createRootEntry()
 {
 	auto id = repo::lib::RepoUUID::createUUID();
 	repo::core::model::RepoBSONBuilder builder;
 	builder.append("_id", id);	
+	builder.append("transform", generateRandomMatrix());	
 	return builder.obj();
 }
 
@@ -55,10 +65,11 @@ repo::core::model::RepoBSON createChildEntry(repo::lib::RepoUUID parentId)
 	repo::core::model::RepoBSONBuilder builder;
 	builder.append("_id", id);
 	builder.append("parent", parentId);
+	builder.append("transform", generateRandomMatrix());
 	return builder.obj();
 }
 
-TreeSummary fillDBWithLinkedEntries(std::shared_ptr<MongoDatabaseHandler> handler, std::string database, std::string collection, int noEntries)
+LinkedSummary fillDBWithLinkedEntries(std::shared_ptr<MongoDatabaseHandler> handler, std::string database, std::string collection, int noEntries)
 {
 	repo::lib::RepoMatrix fullTransform;
 		
@@ -83,11 +94,72 @@ TreeSummary fillDBWithLinkedEntries(std::shared_ptr<MongoDatabaseHandler> handle
 
 	handler->insertManyDocuments(database, collection, documents);
 
-	TreeSummary summary;
+	LinkedSummary summary;
 	summary.rootNodeId = rootId;
 	summary.leafNodeId = parentId;
 	summary.fullTransform = fullTransform;
 	return summary;
+}
+
+struct TreeInfo {
+	std::vector<repo::core::model::RepoBSON> documents;
+	std::vector<repo::lib::RepoUUID> leafNodeIds;
+	std::vector<repo::lib::RepoMatrix> leafMatrices;
+};
+
+TreeInfo createTreeEntries(
+	repo::lib::RepoUUID parentId,
+	repo::lib::RepoMatrix parentMat,
+	TreeInfo currentTree,
+	int noLevelsRemaining,
+	int noChildren) {
+
+	if (noLevelsRemaining > 1) {
+		int levelsRemaining = noLevelsRemaining - 1;
+
+		std::vector<repo::core::model::RepoBSON> documents;
+		std::vector<repo::lib::RepoUUID> leafNodeIds;
+		std::vector<repo::lib::RepoMatrix> leafMatrices;
+
+		for (int i = 0; i < noChildren; i++) {
+			auto child = createChildEntry(parentId);
+
+			currentTree.documents.push_back(child);
+
+			auto childId = child.getField("_id").UUID();
+			auto childMat = child.getMatrixField("transform");
+			auto nextMat = parentMat * childMat;
+			createTreeEntries(childId, nextMat, currentTree, levelsRemaining, noChildren);
+		}		
+	}
+	else {
+		// We are in the leaf, store leaf id and matrix
+		currentTree.leafNodeIds.push_back(parentId);
+		currentTree.leafMatrices.push_back(parentMat);
+	}
+
+	return currentTree;
+}
+
+TreeInfo buildTree(
+	std::shared_ptr<MongoDatabaseHandler> handler,
+	std::string database,
+	std::string collection,
+	int noLevels,
+	int noChildren)
+{
+	TreeInfo tree;
+
+	auto rootEntry = createRootEntry();
+	repo::lib::RepoUUID rootId = rootEntry.getField("_id").UUID();
+	repo::lib::RepoMatrix rootTransform = rootEntry.getMatrixField("transform");
+	handler->insertDocument(database, collection, rootEntry);
+
+	tree = createTreeEntries(rootId, rootTransform, tree, noLevels, noChildren);
+
+	handler->insertManyDocuments(database, collection, tree.documents);
+
+	return tree;
 }
 
 repo::lib::RepoMatrix calculateMatrixRecursively(
@@ -114,7 +186,7 @@ repo::lib::RepoMatrix calculateMatrixRecursively(
 	}
 }
 
-TEST(Sandbox, SandboxTest01)
+TEST(Sandbox, TestLinkedCreation)
 {
 	auto handler = getHandler();
 
@@ -125,33 +197,84 @@ TEST(Sandbox, SandboxTest01)
 	handler->dropCollection(database, collection);
 
 	// Create DB with linked Entries
-	TreeSummary tree = fillDBWithLinkedEntries(handler, database, collection, 100);
+	LinkedSummary linkedEntries = fillDBWithLinkedEntries(handler, database, collection, 100);
 
 	// Check number of entries
 	auto documents = handler->getAllFromCollectionTailable(database, collection);
 	EXPECT_THAT(documents.size(), Eq(101));
+}
 
-	// Approach 1: Recursive
-	repo::lib::RepoMatrix recursiveResult = calculateMatrixRecursively(handler, database, collection, tree.leafNodeId, repo::lib::RepoMatrix());
-	EXPECT_TRUE(recursiveResult.equals(tree.fullTransform));
+TEST(Sandbox, TestTreeCreation)
+{
+	auto handler = getHandler();
 
-	// Approach 2: 
-	//	db.collection.aggregate([
-	//		{
-	//			$graphLookup: {
-	//				from: "collection",
-	//				startWith: tree.leafNodeId,
-	//				connectFromField: "parent",
-	//				connectToField: "_id",
-	//				as: parents
-	//			}
-	//		},
-	//		{
-	//			$project: {
-	//				"transforms": "$parents.transform"
-	//			}
-	// ])
-	auto cursor = handler->getTransformThroughAggregation(database, collection, tree.leafNodeId);
+	std::string database = "sandbox";
+	std::string collection = "bakingTestCollection";
+
+	// Clean collection first
+	handler->dropCollection(database, collection);
+
+	// Create DB with tree
+	TreeInfo tree = buildTree(handler, database, collection, 5, 3);
+
+	// Check number of entries
+	auto documents = handler->getAllFromCollectionTailable(database, collection);
+	int expNodeCount = pow(3, 5);
+	EXPECT_THAT(documents.size(), Eq(expNodeCount));
+
+	// Check number of leaves
+	EXPECT_THAT(tree.leafNodeIds.size(), Eq(3 * 5));
+
+	// Check for match between number of leaves and matrices
+	EXPECT_THAT(tree.leafMatrices.size(), Eq(tree.leafNodeIds.size()));
+}
+
+// Approach 1: Recursive
+TEST(Sandbox, LinkedRecursive) {
+	auto handler = getHandler();
+
+	std::string database = "sandbox";
+	std::string collection = "bakingTestCollection";
+
+	// Clean collection first
+	handler->dropCollection(database, collection);
+
+	// Create DB with linked Entries
+	LinkedSummary linkedEntries = fillDBWithLinkedEntries(handler, database, collection, 100);
+
+	repo::lib::RepoMatrix recursiveResult = calculateMatrixRecursively(handler, database, collection, linkedEntries.leafNodeId, repo::lib::RepoMatrix());
+	EXPECT_TRUE(recursiveResult.equals(linkedEntries.fullTransform));
+}
+
+// Approach 2: Aggregate Pipeline from leaf
+//	db.collection.aggregate([
+//		{
+//			$graphLookup: {
+//				from: "collection",
+//				startWith: tree.leafNodeId,
+//				connectFromField: "parent",
+//				connectToField: "_id",
+//				as: parents
+//			}
+//		},
+//		{
+//			$project: {
+//				"transforms": "$parents.transform"
+//			}
+// ])
+TEST(Sandbox, LinkedAggLeaves) {
+	auto handler = getHandler();
+
+	std::string database = "sandbox";
+	std::string collection = "bakingTestCollection";
+
+	// Clean collection first
+	handler->dropCollection(database, collection);
+
+	// Create DB with linked Entries
+	LinkedSummary linkedEntries = fillDBWithLinkedEntries(handler, database, collection, 100);
+
+	auto cursor = handler->getTransformThroughAggregation(database, collection, linkedEntries.leafNodeId);
 	std::vector<repo::lib::RepoMatrix> matrices;
 	for (auto document : (*cursor)) {
 		// Get array "transforms"
@@ -170,8 +293,41 @@ TEST(Sandbox, SandboxTest01)
 	}
 
 	EXPECT_THAT(matrices.size(), 1);
-	EXPECT_TRUE(matrices[0].equals(tree.fullTransform));
-	
-			
-	
+	EXPECT_TRUE(matrices[0].equals(linkedEntries.fullTransform));
+}
+
+// Approach 3: Aggregate Pipeline from root
+//	db.collection.aggregate([
+//		TODO
+// ])
+TEST(Sandbox, LinkedAggRoot) {
+	auto handler = getHandler();
+
+	std::string database = "sandbox";
+	std::string collection = "bakingTestCollection";
+
+	// Clean collection first
+	handler->dropCollection(database, collection);
+
+	// Create DB with linked Entries
+	LinkedSummary linkedEntries = fillDBWithLinkedEntries(handler, database, collection, 100);
+}
+
+TEST(Sandbox, SandboxTest01)
+{
+	auto handler = getHandler();
+
+	std::string database = "sandbox";
+	std::string collection = "bakingTestCollection";
+
+	// Clean collection first
+	handler->dropCollection(database, collection);
+
+	// Create DB with linked Entries
+	LinkedSummary tree = fillDBWithLinkedEntries(handler, database, collection, 100);
+
+	// Check number of entries
+	auto documents = handler->getAllFromCollectionTailable(database, collection);
+	EXPECT_THAT(documents.size(), Eq(101));
+
 }
