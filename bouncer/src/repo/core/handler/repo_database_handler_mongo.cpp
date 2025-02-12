@@ -140,8 +140,9 @@ repo::core::model::RepoBSON REPO_API_EXPORT makeQueryFilterDocument(const repo::
 /*
 * This is the visitor for the query types when building a document of query
 * operators. When using query operators (as opposed to pipeline operators)
-* all the operators (if more than one) exist as fields in one document, and
-* behave as if they are AND'd.
+* all the operators exist as fields in one document, with each field having
+* the same name as the field to conditionally match in any documents in the
+* collection. (The results of the fields are AND'd.)
 */
 struct MongoQueryFilterVistior
 {
@@ -784,36 +785,6 @@ void MongoDatabaseHandler::upsertDocument(
 	}
 }
 
-void MongoDatabaseHandler::updateOne(
-	const std::string& database,
-	const std::string& collection,
-	const std::vector<database::query::RepoUpdate> updates)
-{
-	try
-	{
-		if (!updates.size()) {
-			return;
-		}
-		auto client = clientPool->acquire();
-		auto db = client->database(database);
-		auto col = db.collection(collection);
-		auto bulk = col.create_bulk_write();
-		for (auto& u : updates) {
-			MongoUpdateVisitor visitor;
-			std::visit(visitor, u);
-			auto filter = visitor.query.obj();
-			auto doc = visitor.update.obj();
-			mongocxx::model::update_one update_op { filter.view(), doc.view() };
-			bulk.append(update_op);
-		}
-		bulk.execute();
-	}
-	catch (...)
-	{
-		std::throw_with_nested(MongoDatabaseHandlerException(*this, "updateOne (bulk write)", database, collection));
-	}
-}
-
 size_t MongoDatabaseHandler::count(
 	const std::string& database,
 	const std::string& collection,
@@ -959,9 +930,9 @@ std::unique_ptr<repo::core::handler::database::Cursor> MongoDatabaseHandler::get
 }
 
 /*
-* Implements the WriteContext for Mongo. This uses the mongo bulk_write containers
-* and a persistent BlobFilesHandler to batch commit nodes provided over a number of
-* different calls.
+* Implements the BulkWriteContext for Mongo. This uses the mongo bulk_write
+* containers and a persistent BlobFilesHandler to batch commit nodes provided
+* over a number of different calls.
 */
 class MongoDatabaseHandler::MongoWriteContext : public database::BulkWriteContext
 {
@@ -970,9 +941,6 @@ class MongoDatabaseHandler::MongoWriteContext : public database::BulkWriteContex
 	std::unique_ptr<mongocxx::v_noabi::bulk_write> bulk;
 	size_t bulkSize;
 	size_t bulkOps;
-
-	// Todo:: refactor this to use unordered bulk writes
-	// Todo:: sort out exception handling for this...
 
 	// The blob files handler takes a reference to the metadata map, so make sure
 	// we have one
@@ -1000,29 +968,41 @@ public:
 
 	void insertDocument(repo::core::model::RepoBSON obj) override
 	{
-		auto data = obj.getBinariesAsBuffer();
-		if (data.second.size()) {
-			auto ref = blobHandler.insertBinary(data.second);
-			obj.replaceBinaryWithReference(ref.serialise(), data.first);
+		try {
+			auto data = obj.getBinariesAsBuffer();
+			if (data.second.size()) {
+				auto ref = blobHandler.insertBinary(data.second);
+				obj.replaceBinaryWithReference(ref.serialise(), data.first);
+			}
+			bulk->append(mongocxx::model::insert_one(obj.view()));
+			bulkSize += obj.objsize();
+			bulkOps++;
+			checkBulkWrite();
 		}
-		bulk->append(mongocxx::model::insert_one(obj.view()));
-		bulkSize += obj.objsize();
-		bulkOps++;
-		checkBulkWrite();
+		catch (...)
+		{
+			std::throw_with_nested(MongoDatabaseHandlerException(std::string("MongoWriteContext::insertDocument on ") + collection.name().data()));
+		}
 	}
 
 	void updateDocument(const database::query::RepoUpdate& update) override
 	{
-		MongoUpdateVisitor visitor;
-		std::visit(visitor, update);
-		auto filter = visitor.query.obj();
-		auto doc = visitor.update.obj();
-		mongocxx::model::update_one update_op{ filter.view(), doc.view() };
-		bulk->append(update_op);
-		bulkSize += filter.objsize();
-		bulkSize += doc.objsize();
-		bulkOps++;
-		checkBulkWrite();
+		try {
+			MongoUpdateVisitor visitor;
+			std::visit(visitor, update);
+			auto filter = visitor.query.obj();
+			auto doc = visitor.update.obj();
+			mongocxx::model::update_one update_op{ filter.view(), doc.view() };
+			bulk->append(update_op);
+			bulkSize += filter.objsize();
+			bulkSize += doc.objsize();
+			bulkOps++;
+			checkBulkWrite();
+		}
+		catch (...)
+		{
+			std::throw_with_nested(MongoDatabaseHandlerException(std::string("MongoWriteContext::updateDocument on ") + collection.name().data()));
+		}
 	}
 
 	void flush() override
@@ -1056,7 +1036,7 @@ std::unique_ptr<database::BulkWriteContext> MongoDatabaseHandler::getBulkWriteCo
 	const std::string& collection)
 {
 	// This method should be being called from the thread that will own the write
-	// context, so the constructor can get a client directly from the pool which
+	// context, so the constructor can get a client directly from the pool, which
 	// is threadsafe.
 
 	return std::make_unique<MongoWriteContext>(this, database, collection);

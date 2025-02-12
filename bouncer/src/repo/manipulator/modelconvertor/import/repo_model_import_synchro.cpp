@@ -96,7 +96,7 @@ std::pair<repo::core::model::RepoNodeSet, repo::core::model::RepoNodeSet> Synchr
 
 	for (const auto matEntry : reader->getMaterials()) {
 		auto mat = matEntry.second;
-		repo_material_t material;
+		repo::lib::repo_material_t material;
 		material.diffuse = mat.diffuse;
 		material.specular = mat.specular;
 		material.opacity = 1 - mat.transparency;
@@ -173,7 +173,7 @@ std::unordered_map<std::string, repo::core::model::MeshNode> SynchroModelImport:
 		repo::lib::RepoBounds bbox;
 		std::vector<repo::lib::RepoVector3D> vertices, normals;
 		std::vector<repo::lib::RepoVector2D> uvs;
-		std::vector<repo_face_t> faces;
+		std::vector<repo::lib::repo_face_t> faces;
 		for (int i = 0; i < meshDetails.vertices.size(); ++i) {
 			if (meshDetails.normals.size() > i) {
 				normals.push_back({ (float)meshDetails.normals[i].x, (float)meshDetails.normals[i].y, (float)meshDetails.normals[i].z });

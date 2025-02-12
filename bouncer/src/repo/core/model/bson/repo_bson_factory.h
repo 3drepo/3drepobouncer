@@ -114,7 +114,7 @@ namespace repo {
 				* @return returns a Material node
 				*/
 				static MaterialNode makeMaterialNode(
-					const repo_material_t &material,
+					const repo::lib::repo_material_t &material,
 					const std::string     &name = std::string(),
 					const std::vector<repo::lib::RepoUUID> &parents = std::vector<repo::lib::RepoUUID>(),
 					const int             &apiLevel = REPO_NODE_API_LEVEL_1);
@@ -164,7 +164,7 @@ namespace repo {
 				*/
 				static MeshNode makeMeshNode(
 					const std::vector<repo::lib::RepoVector3D>& vertices,
-					const std::vector<repo_face_t>& faces,
+					const std::vector<repo::lib::repo_face_t>& faces,
 					const std::vector<repo::lib::RepoVector3D>& normals,
 					const repo::lib::RepoBounds& boundingBox,
 					const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels = {},
@@ -173,21 +173,21 @@ namespace repo {
 
 				static SupermeshNode makeSupermeshNode(
 					const std::vector<repo::lib::RepoVector3D>& vertices,
-					const std::vector<repo_face_t>& faces,
+					const std::vector<repo::lib::repo_face_t>& faces,
 					const std::vector<repo::lib::RepoVector3D>& normals,
 					const repo::lib::RepoBounds& boundingBox,
 					const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
 					const std::string& name,
-					const std::vector<repo_mesh_mapping_t>& mappings
+					const std::vector<repo::lib::repo_mesh_mapping_t>& mappings
 				);
 
 				static SupermeshNode makeSupermeshNode(
 					const std::vector<repo::lib::RepoVector3D>& vertices,
-					const std::vector<repo_face_t>& faces,
+					const std::vector<repo::lib::repo_face_t>& faces,
 					const std::vector<repo::lib::RepoVector3D>& normals,
 					const repo::lib::RepoBounds& boundingBox,
 					const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
-					const std::vector<repo_mesh_mapping_t>& mappings,
+					const std::vector<repo::lib::repo_mesh_mapping_t>& mappings,
 					const repo::lib::RepoUUID& id,
 					const repo::lib::RepoUUID& sharedId,
 					const std::vector<float> mappingIds = {}

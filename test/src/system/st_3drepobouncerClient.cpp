@@ -585,7 +585,6 @@ TEST(RepoClientTest, GenStashTest)
 	handler->dropCollection("genStashTest", "cube.stash.json_mpc.ref");
 
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("genStashTest", "cube", "repo")));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("genStashTest", "cube", "src")));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("genStashTest", "cube", "tree")));
 
 	std::unordered_set<std::string> collections;
@@ -594,7 +593,6 @@ TEST(RepoClientTest, GenStashTest)
 		collections.insert(name);
 	}
 
-	EXPECT_TRUE(collections.find("cube.stash.src.ref") != collections.end());
 	EXPECT_TRUE(collections.find("cube.stash.repobundles") != collections.end());
 	EXPECT_TRUE(collections.find("cube.stash.repobundles.ref") != collections.end());
 	EXPECT_TRUE(collections.find("cube.stash.json_mpc.ref") != collections.end());

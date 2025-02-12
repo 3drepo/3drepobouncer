@@ -43,7 +43,7 @@ const std::set<std::string> IGNORE_PARAMS = {
 	"RENDER APPEARANCE PROPERTIES"
 };
 
-bool DataProcessorRvt::tryConvertMetadataEntry(OdTfVariant& metaEntry, OdBmLabelUtilsPEPtr labelUtils, OdBmParamDefPtr paramDef, OdBm::BuiltInParameter::Enum param, repo::lib::RepoVariant& v)
+bool DataProcessorRvt::tryConvertMetadataEntry(const OdTfVariant& metaEntry, OdBmLabelUtilsPEPtr labelUtils, OdBmParamDefPtr paramDef, OdBm::BuiltInParameter::Enum param, repo::lib::RepoVariant& v)
 {
 	auto dataType = metaEntry.type();
 	switch (dataType) {
@@ -272,7 +272,7 @@ void DataProcessorRvt::draw(const OdGiDrawable* pDrawable)
 
 	if (shouldCreateNewLayer(element))
 	{
-		ctx = std::make_unique<GeometryCollector::Context>(-collector->getWorldOffset(), collector->getLastMaterial());
+		ctx = collector->makeNewDrawContext();
 	}
 
 	collector->pushDrawContext(ctx.get()); // (Calling push or pop with a nullptr is a no-op)
@@ -291,8 +291,7 @@ void DataProcessorRvt::draw(const OdGiDrawable* pDrawable)
 		if (meshes.size())
 		{
 			// For Revit files, drawable elements are arranged into layers, not unlike
-			// drawings. This means we can get everything from just the element, and
-			// don't actually need the stack for this bit.
+			// drawings. This means we can get everything from just the element.
 
 			std::string levelName = getLevelName(element, "Layer Default");
 			std::string elementName = getElementName(element);
@@ -301,17 +300,13 @@ void DataProcessorRvt::draw(const OdGiDrawable* pDrawable)
 
 			collector->createLayer(levelName, levelName, {});
 			collector->createLayer(elementName, elementName, levelName);
-
-			auto parent = collector->getSharedId(elementName);
-			for (auto& p : meshes) {
-				p.first.setParents({ parent });
-				collector->addNode(p.first);
-				collector->addMaterialReference(p.second, p.first.getSharedID());
-			}
+			collector->addMeshes(elementName, meshes);
 
 			try
 			{
-				collector->setMetadata(elementName, fillMetadata(element));
+				if (!collector->hasMetadata(elementName)) {
+					collector->setMetadata(elementName, fillMetadata(element));
+				}
 			}
 			catch (OdError& er)
 			{
@@ -327,7 +322,7 @@ OdGiMaterialItemPtr DataProcessorRvt::fillMaterialCache(
 	OdDbStub* materialId,
 	const OdGiMaterialTraitsData& materialData
 ) {
-	repo_material_t material;
+	repo::lib::repo_material_t material;
 	bool missingTexture;
 
 	OdBmObjectId matId(materialId);
@@ -359,11 +354,8 @@ OdGiMaterialItemPtr DataProcessorRvt::fillMaterialCache(
 
 void DataProcessorRvt::triangleOut(const OdInt32* indices, const OdGeVector3d* pNormal)
 {
-	std::vector<repo::lib::RepoVector3D64> vertices;
-	std::vector<repo::lib::RepoVector2D> uv;
-	repo::lib::RepoVector3D64 normal;
-
-	std::vector<OdGePoint3d> odaPoints;
+	OdGiMapperItemEntry::MapInputTriangle mapperTriangle;
+	GeometryCollector::Face repoTriangle;
 
 	const OdGePoint3d* pVertexDataList = vertexDataList();
 
@@ -374,21 +366,17 @@ void DataProcessorRvt::triangleOut(const OdInt32* indices, const OdGeVector3d* p
 		for (int i = 0; i < 3; ++i)
 		{
 			auto point = pVertexDataList[indices[i]];
-			odaPoints.push_back(point);
-			vertices.push_back(convertToRepoWorldCoordinates(point));
+			mapperTriangle.inPt[i] = point;
+			repoTriangle.push_back(convertToRepoWorldCoordinates(point));
 		}
 	}
-
-	if (vertices.size() != 3) {
-		return;
+	else
+	{
+		return; // Triangle is degenerate; this is not fatal (not even technically an error), but we won't store the invisible primitive
 	}
 
-	normal = calcNormal(vertices[0], vertices[1], vertices[2]);
-
-	if (isMapperEnabled() && isMapperAvailable()) {
-
-		std::vector<OdGePoint2d> odaUvs;
-
+	if (isMapperEnabled() && isMapperAvailable()) 
+	{
 		if (vertexData() && vertexData()->mappingCoords(OdGiVertexData::kAllChannels))
 		{
 			// Where Uvs are predefined, we need to get them for each vertex from the
@@ -396,11 +384,12 @@ void DataProcessorRvt::triangleOut(const OdInt32* indices, const OdGeVector3d* p
 
 			OdGiMapperItemEntryPtr mapper = currentMapper(false)->diffuseMapper();
 			if (!mapper.isNull()) {
-				odaUvs.resize(vertices.size());
 				const OdGePoint3d* predefinedUvCoords = vertexData()->mappingCoords(OdGiVertexData::kAllChannels);
-				for (OdInt32 i = 0; i < vertices.size(); i++)
+				for (OdInt32 i = 0; i < 3; i++)
 				{
-					mapper->mapPredefinedCoords(predefinedUvCoords + indices[i], odaUvs.data() + i, 1);
+					OdGePoint2d uv;
+					mapper->mapPredefinedCoords(predefinedUvCoords + indices[i], &uv, 1);
+					repoTriangle.push_back(repo::lib::RepoVector2D(uv.x, uv.y));
 				}
 			}
 		}
@@ -410,44 +399,39 @@ void DataProcessorRvt::triangleOut(const OdInt32* indices, const OdGeVector3d* p
 
 			if (!currentMapper(true)->diffuseMapper().isNull())
 			{
-				odaUvs.resize(vertices.size());
-				currentMapper()->diffuseMapper()->mapCoords(odaPoints.data(), odaUvs.data());
+				OdGiMapperItemEntry::MapOutputCoords uvs;
+				currentMapper()->diffuseMapper()->mapCoords(mapperTriangle, uvs);
+				for (int i = 0; i < 3; i++)
+				{
+					repoTriangle.push_back(repo::lib::RepoVector2D(uvs.outCoord[i].x, uvs.outCoord[i].y));
+				}
 			}
 		}
-
-		uv.clear();
-		for (int i = 0; i < odaUvs.size(); ++i) {
-			uv.push_back({ (float)odaUvs[i].x, (float)odaUvs[i].y });
-		}
 	}
 
-	if (vertices.size()) {
-		collector->addFace(vertices, normal, uv);
-	}
+	collector->addFace(repoTriangle);
 }
 
 void DataProcessorRvt::polylineOut(OdInt32 numPoints, const OdInt32* vertexIndexList)
 {
-	std::vector<OdGePoint3d> vertices;
 	const auto pVertexDataList = vertexDataList();
-	for (int i = 0; i < numPoints; i++)
+	for (int i = 0; i < numPoints - 1; i++)
 	{
-		vertices.push_back(pVertexDataList[vertexIndexList[i]]);
+		collector->addFace({
+			convertToRepoWorldCoordinates(pVertexDataList[vertexIndexList[i]]),
+			convertToRepoWorldCoordinates(pVertexDataList[vertexIndexList[i + 1]])
+		});
 	}
-
-	polylineOut(numPoints, vertices.data());
 }
 
 void DataProcessorRvt::polylineOut(OdInt32 numPoints, const OdGePoint3d* vertexList)
 {
-	std::vector<repo::lib::RepoVector3D64> vertices;
-
 	for (OdInt32 i = 0; i < (numPoints - 1); i++)
 	{
-		vertices.clear();
-		vertices.push_back(convertToRepoWorldCoordinates(vertexList[i]));
-		vertices.push_back(convertToRepoWorldCoordinates(vertexList[i + 1]));
-		collector->addFace(vertices);
+		collector->addFace({
+			convertToRepoWorldCoordinates(vertexList[i]),
+			convertToRepoWorldCoordinates(vertexList[i + 1])
+		});
 	}
 }
 
@@ -508,55 +492,49 @@ void DataProcessorRvt::initLabelUtils() {
 }
 
 void DataProcessorRvt::processParameter(
-	OdBmElementPtr element,
+	const OdTfVariant& value,
 	OdBmObjectId paramId,
 	std::unordered_map<std::string, repo::lib::RepoVariant> &metadata,
 	const OdBm::BuiltInParameter::Enum &buildInEnum
 ) {
-	OdTfVariant value;
-	OdResult res = element->getParam(paramId, value);
+	OdBmParamElemPtr pParamElem = paramId.safeOpenObject();
+	OdBmParamDefPtr pDescParam = pParamElem->getParamDef();
+	OdBmForgeTypeId groupId = pDescParam->getGroupTypeId();
 
-	if (res == eOk)
-	{
-		OdBmParamElemPtr pParamElem = paramId.safeOpenObject();
-		OdBmParamDefPtr pDescParam = pParamElem->getParamDef();
-		OdBmForgeTypeId groupId = pDescParam->getGroupTypeId();
+	auto metaKey = convertToStdString(pDescParam->getCaption());
 
-		auto metaKey = convertToStdString(pDescParam->getCaption());
+	if (!ignoreParam(metaKey)) {
+		auto paramGroup = labelUtils->getLabelForGroup(groupId);
+		if (!paramGroup.isEmpty()) {
+			metaKey = convertToStdString(paramGroup) + "::" + metaKey;
+		}
 
-		if (!ignoreParam(metaKey)) {
-			auto paramGroup = labelUtils->getLabelForGroup(groupId);
-			if (!paramGroup.isEmpty()) {
-				metaKey = convertToStdString(paramGroup) + "::" + metaKey;
+		// Get the label for the units, using the same mechanism as the OdBmSampleLabelUtilsPE::getParamValueAsString.
+
+		auto pAUnits = getUnits(pParamElem->getDatabase());
+		auto pFormatOptions = pAUnits->getFormatOptions(pDescParam->getSpecTypeId());
+		if (!pFormatOptions.isNull()) {
+			auto symbolTypeId = pFormatOptions->getSymbolTypeId();
+			auto units = labelUtils->getLabelForSymbol(symbolTypeId);
+			if (!units.isEmpty()) {
+				metaKey += " (" + convertToStdString(units) + ")";
 			}
+		}
 
-			// Get the label for the units, using the same mechanism as the OdBmSampleLabelUtilsPE::getParamValueAsString.
+		repo::lib::RepoVariant v;
 
-			auto pAUnits = getUnits(pParamElem->getDatabase());
-			auto pFormatOptions = pAUnits->getFormatOptions(pDescParam->getSpecTypeId());
-			if (!pFormatOptions.isNull()) {
-				auto symbolTypeId = pFormatOptions->getSymbolTypeId();
-				auto units = labelUtils->getLabelForSymbol(symbolTypeId);
-				if (!units.isEmpty()) {
-					metaKey += " (" + convertToStdString(units) + ")";
-				}
+		if (tryConvertMetadataEntry(value, labelUtils, pDescParam, buildInEnum, v))
+		{
+			if (metadata.find(metaKey) != metadata.end() && !boost::apply_visitor(repo::lib::DuplicationVisitor(), metadata[metaKey], v)) {
+
+				repoDebug
+					<< "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: "
+					<< metaKey << "value before: "
+					<< boost::apply_visitor(repo::lib::StringConversionVisitor(), metadata[metaKey])
+					<< " after: "
+					<< boost::apply_visitor(repo::lib::StringConversionVisitor(), v);
 			}
-
-			repo::lib::RepoVariant v;
-
-			if (tryConvertMetadataEntry(value, labelUtils, pDescParam, buildInEnum, v))
-			{
-				if (metadata.find(metaKey) != metadata.end() && !boost::apply_visitor(repo::lib::DuplicationVisitor(), metadata[metaKey], v)) {
-
-					repoDebug
-						<< "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: "
-						<< metaKey << "value before: "
-						<< boost::apply_visitor(repo::lib::StringConversionVisitor(), metadata[metaKey])
-						<< " after: "
-						<< boost::apply_visitor(repo::lib::StringConversionVisitor(), v);
-				}
-				metadata[metaKey] = v;
-			}
+			metadata[metaKey] = v;
 		}
 	}
 }
@@ -580,12 +558,24 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 
 		auto paramId = element->database()->getObjectId(entry);
 		if (paramId.isValid() && !paramId.isNull()) {
-			processParameter(element, paramId, metadata, entry);
+
+			OdTfVariant value;
+			if (element->getParam(paramId, value) == eOk) {
+				processParameter(value, paramId, metadata, entry);
+			}
 		}
 	}
 
-	for (const auto &entry : aParams.getUserParamsIterator()) {
-		processParameter(element, entry, metadata,
+	// This snippet gets user parameter values. Elements may have lots of parameters
+	// without values, if say, the project has lots of shared parameters. Since we
+	// filter out parameters without values anyway, this is much more efficient than
+	// checking each parameter in the user params list one by one, as most of them
+	// may end up filtered out anyway.
+
+	OdBmMap<OdBmObjectId, OdTfVariant> parameters;
+	element->getParameters(parameters);
+	for (const auto &entry : parameters) {
+		processParameter(entry.second, entry.first, metadata,
 			//A dummy entry, as long as it's not ELEM_CATEGORY_PARAM_MT or ELEM_CATEGORY_PARAM it's not utilised.
 			OdBm::BuiltInParameter::Enum::ACTUAL_MAX_RIDGE_HEIGHT_PARAM);
 	}
@@ -644,7 +634,7 @@ std::vector<float> toRepoColour(const OdGiMaterialColor& c)
 	return { c.color().red() / 255.0f, c.color().green() / 255.0f, c.color().blue() / 255.0f, 1.0f };
 }
 
-void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiMaterialTraitsData& materialData, repo_material_t& material)
+void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiMaterialTraitsData& materialData, repo::lib::repo_material_t& material)
 {
 	OdGiMaterialColor colour;
 
@@ -673,7 +663,7 @@ void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiM
 		material.shininess = (float)materialPtr->getMaterial()->getShininess() / 255.0f;
 }
 
-void DataProcessorRvt::fillTexture(OdBmMaterialElemPtr materialPtr, repo_material_t& material, bool& missingTexture)
+void DataProcessorRvt::fillTexture(OdBmMaterialElemPtr materialPtr, repo::lib::repo_material_t& material, bool& missingTexture)
 {
 	missingTexture = false;
 
@@ -709,7 +699,7 @@ void DataProcessorRvt::fillTexture(OdBmMaterialElemPtr materialPtr, repo_materia
 		// behaviour is to multiply in the shader, and Revit's is to replace it.
 		// (Revit's Appearance dialog does have a Tint option, but its more for use during
 		// ray-tracing.)
-		material.diffuse = { 1,1,1,1 };
+		material.diffuse = { 1,1,1 };
 	}
 
 	material.texturePath = validTextureName;

@@ -17,7 +17,7 @@
 #include "repo_mesh_map_reorganiser.h"
 #include "repo/core/model/bson/repo_bson_factory.h"
 
-using namespace repo;
+using namespace repo::lib;
 using namespace repo::manipulator::modelutility;
 
 MeshMapReorganiser::MeshMapReorganiser(

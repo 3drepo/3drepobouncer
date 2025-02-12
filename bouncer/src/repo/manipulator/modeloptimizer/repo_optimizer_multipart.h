@@ -73,9 +73,9 @@ namespace repo {
 				struct mapped_mesh_t {
 					std::vector<repo::lib::RepoVector3D> vertices;
 					std::vector<repo::lib::RepoVector3D> normals;
-					std::vector<repo_face_t> faces;
+					std::vector<repo::lib::repo_face_t> faces;
 					std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
-					std::vector<repo_mesh_mapping_t> meshMapping;
+					std::vector<repo::lib::repo_mesh_mapping_t> meshMapping;
 				};
 
 				void appendMesh(

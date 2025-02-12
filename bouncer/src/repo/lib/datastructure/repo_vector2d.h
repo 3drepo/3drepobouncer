@@ -43,6 +43,11 @@ namespace repo{
 				return *this;
 			}
 
+			inline bool operator==(const _RepoVector2D<T>& other)
+			{
+				return x == other.x && y == other.y;
+			}
+
 			std::string toString() const
 			{
 				std::stringstream sstr;

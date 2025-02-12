@@ -42,15 +42,15 @@ namespace repo {
 
 					/*
 					* Declares a new entry in the tree that can be accessed by an arbitrary
-					* Id (instead of a RepoUUID). Layers must be explicitly set with a call
-					* to setLayer. If parentId is empty, the layer will be created under the
-					* root node.
+					* Id (instead of a RepoUUID). If parentId is empty, the layer will be
+					* created under the root node.
 					*/
 					void createLayer(std::string id, std::string name, std::string parentId);
 
 					/*
-					* True if the layer with the id was creaed with createLayer. Use this to
-					* check if a layer exists before trying to create or set it.
+					* True if the layer with the id was created with createLayer. createLayer
+					* can still be called but nothing will change (e.g. the name and parent
+					* will still be those of the first call).
 					*/
 					bool hasLayer(std::string id);
 
@@ -70,24 +70,49 @@ namespace repo {
 
 					bool hasMetadata(std::string id);
 
+					void addMeshes(std::string id, std::vector<std::pair<repo::core::model::MeshNode, repo::lib::repo_material_t>>& meshes);
+
 					/*
 					* Immediately changes which material any new geometry should be using.
 					*/
-					void setMaterial(const repo_material_t& material);
+					void setMaterial(const repo::lib::repo_material_t& material);
 
-					void addFace(const std::vector<repo::lib::RepoVector3D64>& vertices);
+					/*
+					* A stack allocated triangle that can have uvs and a normal. This takes only
+					* a subset of the formats supported by repo_face_t.
+					*/
+					struct Face
+					{
+						Face() :
+							numUvs(0),
+							numVertices(0)
+						{
+						}
 
-					void addFace(
-						const std::vector<repo::lib::RepoVector3D64>& vertices,
-						const repo::lib::RepoVector3D64& normal,
-						const std::vector<repo::lib::RepoVector2D>& uvCoords);
+						repo::lib::RepoVector3D64 vertices[3];
+						repo::lib::RepoVector2D uvs[3];
+						int numUvs;
+						int numVertices;
+
+						void push_back(repo::lib::RepoVector3D64 vertex) {
+							vertices[numVertices++] = vertex;
+						}
+
+						void push_back(repo::lib::RepoVector2D uv) {
+							uvs[numUvs++] = uv;
+						}
+					};
+
+					void addFace(const std::initializer_list<repo::lib::RepoVector3D64>& vertices);
+
+					void addFace(const Face& triangle);
 
 					template<repo::core::model::RepoNodeClass T>
 					void addNode(const T& n) {
 						sceneBuilder->addNode(n);
 					}
 
-					void addMaterialReference(repo_material_t material, repo::lib::RepoUUID parentId) {
+					void addMaterialReference(repo::lib::repo_material_t material, repo::lib::RepoUUID parentId) {
 						sceneBuilder->addMaterialReference(material, parentId);
 					}
 
@@ -99,7 +124,7 @@ namespace repo {
 						sceneBuilder->setWorldOffset(offset);
 					}
 
-					repo::lib::RepoVector3D64 getWorldOffset() {
+					repo::lib::RepoVector3D64 getWorldOffset() const {
 						return sceneBuilder->getWorldOffset();
 					}
 
@@ -116,10 +141,10 @@ namespace repo {
 					class Context
 					{
 					public:
-						Context(repo::lib::RepoVector3D64 offset, const repo_material_t& material):
-							offset(offset)
+						Context(const GeometryCollector* collector):
+							offset(-collector->getWorldOffset())
 						{
-							setMaterial(material);
+							setMaterial(collector->getLastMaterial());
 						}
 
 						~Context();
@@ -130,24 +155,33 @@ namespace repo {
 						* Creates a MeshBuilder for the material, and sets it as the active
 						* one.
 						*/
-						void setMaterial(const repo_material_t& material);
+						void setMaterial(const repo::lib::repo_material_t& material);
 
-						void addFace(const std::vector<repo::lib::RepoVector3D64>& vertices) {
-							meshBuilder->addFace(vertices);
-						}
-						void addFace(
-							const std::vector<repo::lib::RepoVector3D64>& vertices,
-							const repo::lib::RepoVector3D64& normal,
-							const std::vector<repo::lib::RepoVector2D>& uvCoords) {
-							meshBuilder->addFace(vertices, normal, uvCoords);
+						void addFace(const std::initializer_list<repo::lib::RepoVector3D64>& vertices) {
+							meshBuilder->addFace(RepoMeshBuilder::face(
+								vertices.begin(), vertices.size()
+							));
 						}
 
-						std::vector<std::pair<repo::core::model::MeshNode, repo_material_t>> extractMeshes();
+						void addFace(const Face& triangle) {
+							meshBuilder->addFace(RepoMeshBuilder::face(
+								triangle.vertices, triangle.numVertices,
+								triangle.uvs, triangle.numUvs
+							));
+						}
+
+						std::vector<std::pair<repo::core::model::MeshNode, repo::lib::repo_material_t>> extractMeshes();
 
 					private:
 						repo::lib::RepoVector3D64 offset;
 						RepoMeshBuilder* meshBuilder;
 					};
+
+					/*
+					* Creates a new context initialised with the offset and material. This does
+					* not make the context active - it must still be pushed with pushDrawContext.
+					*/
+					std::unique_ptr<Context> makeNewDrawContext();
 
 					// These stack operations must be symmetric - calling pop with a different
 					// pointer to the active context will result in an exception.
@@ -163,13 +197,12 @@ namespace repo {
 					*/
 					void popDrawContext(Context* ctx);
 
-					repo_material_t getLastMaterial();
+					repo::lib::repo_material_t getLastMaterial() const;
 
 				private:
-
 					repo::manipulator::modelutility::RepoSceneBuilder* sceneBuilder;
 					std::stack<Context*> contexts;
-					repo_material_t latestMaterial;
+					repo::lib::repo_material_t latestMaterial;
 					std::unordered_map<std::string, repo::lib::RepoUUID> layerIdToSharedId;
 					std::set<std::string> layersWithMetadata;
 					repo::lib::RepoUUID rootNodeId;

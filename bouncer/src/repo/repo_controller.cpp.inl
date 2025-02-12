@@ -240,17 +240,6 @@ public:
 		repo::core::model::RepoScene* scene);
 
 	/**
-	* Generate and commit a SRC encoding for the given scene
-	* This requires the stash to have been generated already
-	* @param token token for authentication
-	* @param scene the scene to generate the src encoding from
-	* @return returns true upon success
-	*/
-	bool generateAndCommitSRCBuffer(
-		const RepoToken                               *token,
-		repo::core::model::RepoScene            *scene);
-
-	/**
 	* Generate and commit a selection tree for the given scene
 	* @param token token for authentication
 	* @param scene the scene to generate from
@@ -259,15 +248,6 @@ public:
 	bool generateAndCommitSelectionTree(
 		const RepoToken                               *token,
 		repo::core::model::RepoScene            *scene);
-
-	/**
-	* Generate a SRC encoding in the form of a buffer for the given scene
-	* This requires the stash to have been generated already
-	* @param scene the scene to generate the src encoding from
-	* @return returns a buffer in the form of a byte vector
-	*/
-	repo_web_buffers_t generateSRCBuffer(
-		repo::core::model::RepoScene *scene);
 
 	/**
 	* Get a string of supported file formats for file import
@@ -322,7 +302,7 @@ public:
 	* @param scene scene to partition
 	* @param maxDepth max partitioning depth
 	*/
-	std::shared_ptr<repo_partitioning_tree_t>
+	std::shared_ptr<repo::lib::repo_partitioning_tree_t>
 		getScenePartitioning(
 			const repo::core::model::RepoScene *scene,
 			const uint32_t                     &maxDepth = 8

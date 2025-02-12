@@ -30,7 +30,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # For gcc 9, the flag must be c++2a; it should be c++20 on 11 and greater. This
 # has no effect on Windows, which will be driven by CMAKE_CXX_STANDARD.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -std=c++2a -pthread")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -std=c++2a -pthread -fconcepts")
 
 if(${APPLE})
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -framework Foundation")

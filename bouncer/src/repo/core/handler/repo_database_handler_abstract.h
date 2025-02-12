@@ -49,7 +49,7 @@ namespace repo {
 
 						// (The implementation of these method is simply to call the pimpl
 						// versions, but it is done in a separate module so we don't need
-						// to fully define RepoBSON.)
+						// to fully define RepoBSON in this header.)
 
 						const repo::core::model::RepoBSON operator*();
 						void operator++();
@@ -62,15 +62,14 @@ namespace repo {
 						};
 
 						Impl* impl;
-
-						Cursor::Iterator(Impl* impl)
-							:impl(impl)
-						{
-						}
+						
+						Iterator(Impl* impl);
 					};
 
 					virtual Iterator begin() = 0;
 					virtual Iterator end() = 0;
+
+					virtual ~Cursor();
 				};
 
 				using CursorPtr = std::unique_ptr<repo::core::handler::database::Cursor>;
@@ -86,7 +85,6 @@ namespace repo {
 				class BulkWriteContext
 				{
 				public:
-					//todo:: pass by move semantics here
 					virtual void insertDocument(repo::core::model::RepoBSON obj) = 0;
 
 					virtual void updateDocument(const database::query::RepoUpdate& obj) = 0;
@@ -206,17 +204,6 @@ namespace repo {
 					const std::string &collection,
 					const repo::core::model::RepoBSON &obj,
 					const bool        &overwrite) = 0;
-
-				/*
-				* Updates a single document, but using a query that specifies
-				* update operations (instead of specifying a whole new document,
-				* like would be done for upsert). This overload takes a set of
-				* bulk updates.
-				*/
-				virtual void updateOne(
-					const std::string& database,
-					const std::string& collection,
-					const std::vector<database::query::RepoUpdate> updates) = 0;
 
 				/**
 				* Remove a collection from the database

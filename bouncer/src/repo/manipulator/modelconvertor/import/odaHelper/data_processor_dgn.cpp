@@ -100,47 +100,59 @@ bool shouldBeInGroupHierarchy(OdDgElement::ElementTypes type)
 
 bool DataProcessorDgn::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 {
-	OdDgElementPtr pElm = OdDgElement::cast(pDrawable);
-	auto currentItem = pElm;
-	auto previousItem = pElm;
-	while (currentItem->ownerId() && shouldBeInGroupHierarchy(currentItem->getElementType())) {
-		previousItem = currentItem;
-		auto ownerId = currentItem->ownerId();
-		auto ownerItem = OdDgElement::cast(ownerId.openObject(OdDg::kForRead));
-		currentItem = ownerItem;
-	}
-
-	//We want to group meshes together up to 1 below the top.
-	std::string groupID = convertToStdString(toString(previousItem->elementId().getHandle()));
-
 	OdGiSubEntityTraitsData traits = effectiveTraits();
-	OdDgElementId idLevel = traits.layer();
-	std::string layerName;
-	std::string layerId; // Default of empty string puts any element directly below the root node
-	if (!idLevel.isNull())
+	auto ctx = collector->makeNewDrawContext(); // Every entity in a dgn is in its own group
+
+	collector->pushDrawContext(ctx.get());
+	auto ret = OdGsBaseMaterialView::doDraw(i, pDrawable);
+	collector->popDrawContext(ctx.get());
+
+	auto meshes = ctx->extractMeshes();
+	if (meshes.size())
 	{
-		OdDgLevelTableRecordPtr pLevel = idLevel.openObject(OdDg::kForRead);
-		layerId = convertToStdString(toString(idLevel.getHandle()));
-		layerName = convertToStdString(pLevel->getName());
-		collector->createLayer(layerId, layerName, {});
+		OdDgElementId idLevel = traits.layer();
+		std::string layerName;
+		std::string layerId; // Default of empty string puts any element directly below the root node
 
-		if (!collector->hasMetadata(layerId)) {
-			collector->setMetadata(layerId, extractXMLLinkages(pLevel));
+		if (!idLevel.isNull())
+		{
+			OdDgLevelTableRecordPtr pLevel = idLevel.openObject(OdDg::kForRead);
+			layerId = convertToStdString(toString(idLevel.getHandle()));
+			layerName = convertToStdString(pLevel->getName());
+			collector->createLayer(layerId, layerName, {});
+
+			if (!collector->hasMetadata(layerId)) {
+				collector->setMetadata(layerId, extractXMLLinkages(pLevel));
+			}
+		}
+
+		//We want to group meshes together up to 1 below the top.
+
+		OdDgElementPtr pElm = OdDgElement::cast(pDrawable);
+		auto currentItem = pElm;
+		auto previousItem = pElm;
+		while (currentItem->ownerId() && shouldBeInGroupHierarchy(currentItem->getElementType())) {
+			previousItem = currentItem;
+			auto ownerId = currentItem->ownerId();
+			auto ownerItem = OdDgElement::cast(ownerId.openObject(OdDg::kForRead));
+			currentItem = ownerItem;
+		}
+
+		std::string groupID = convertToStdString(toString(previousItem->elementId().getHandle()));
+
+		collector->createLayer(groupID, groupID, layerId);
+		collector->addMeshes(groupID, meshes);
+
+		if (!collector->hasMetadata(groupID)) {
+			auto meta = extractXMLLinkages(previousItem);
+			if (!layerName.empty()) {
+				meta["Layer Name"] = layerName;
+			}
+			collector->setMetadata(groupID, meta);
 		}
 	}
 
-	if (!collector->hasMetadata(groupID)) {
-		auto meta = extractXMLLinkages(previousItem);
-		if (!layerName.empty()) {
-			meta["Layer Name"] = layerName;
-		}
-		collector->setMetadata(groupID, meta);
-	}
-
-	collector->createLayer(groupID, groupID, layerId);
-	setLayer(groupID);
-
-	return OdGsBaseMaterialView::doDraw(i, pDrawable);
+	return ret;
 }
 
 void DataProcessorDgn::convertTo3DRepoMaterial(
@@ -148,21 +160,21 @@ void DataProcessorDgn::convertTo3DRepoMaterial(
 	OdDbStub* materialId,
 	const OdGiMaterialTraitsData & materialData,
 	MaterialColours& matColors,
-	repo_material_t& material)
+	repo::lib::repo_material_t& material)
 {
 	DataProcessor::convertTo3DRepoMaterial(prevCache, materialId, materialData, matColors, material);
 
 	OdCmEntityColor color = fixByACI(this->device()->getPalette(), effectiveTraits().trueColor());
 	// diffuse
 	if (matColors.colorDiffuseOverride)
-		material.diffuse = { matColors.colorDiffuse.red() / 255.0f, matColors.colorDiffuse.green() / 255.0f, matColors.colorDiffuse.blue() / 255.0f, 1.0f };
+		material.diffuse = { matColors.colorDiffuse.red() / 255.0f, matColors.colorDiffuse.green() / 255.0f, matColors.colorDiffuse.blue() / 255.0f };
 	else
-		material.diffuse = { color.red() / 255.0f, color.green() / 255.0f, color.blue() / 255.0f, 1.0f };
+		material.diffuse = { color.red() / 255.0f, color.green() / 255.0f, color.blue() / 255.0f };
 	// specular
 	if (matColors.colorSpecularOverride)
-		material.specular = { matColors.colorSpecular.red() / 255.0f, matColors.colorSpecular.green() / 255.0f, matColors.colorSpecular.blue() / 255.0f, 1.0f };
+		material.specular = { matColors.colorSpecular.red() / 255.0f, matColors.colorSpecular.green() / 255.0f, matColors.colorSpecular.blue() / 255.0f };
 	else
-		material.specular = { color.red() / 255.0f, color.green() / 255.0f, color.blue() / 255.0f, 1.0f };
+		material.specular = { color.red() / 255.0f, color.green() / 255.0f, color.blue() / 255.0f };
 
 	material.shininessStrength = 1 - material.shininessStrength;
 }

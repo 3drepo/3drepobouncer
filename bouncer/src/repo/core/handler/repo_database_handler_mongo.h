@@ -236,11 +236,6 @@ namespace repo {
 					const repo::core::model::RepoBSON &obj,
 					const bool        &overwrite);
 
-				void updateOne(
-					const std::string& database,
-					const std::string& collection,
-					const std::vector<database::query::RepoUpdate> updates);
-
 				/*
 				*	------------- Query operations --------------
 				*/
@@ -360,9 +355,7 @@ namespace repo {
 			private:
 
 				// We can work with either clients or pool as the top level, connection
-				// specific, container for getting connections. pool pool is threadsafe,
-				// but acquring a client is implied to not be cheap, so we should consider
-				// caching a client for the owner thread's purposes.
+				// specific, container for getting connections. pool pool is threadsafe.
 				std::unique_ptr<mongocxx::pool> clientPool;
 
 				// The fileManager is used in the storage of certain member types, such

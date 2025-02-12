@@ -65,7 +65,7 @@ const establishIndices = async (client) => Promise.all(
 );
 
 const createElasticClient = async () => {
-	if (!elastic) return undefined;
+	if (!elastic || !elastic.enabled) return undefined;
 	const internalElastic = new Client(elastic);
 	try {
 		await internalElastic.cluster.health();

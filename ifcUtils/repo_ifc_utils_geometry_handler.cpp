@@ -29,7 +29,7 @@
 constexpr int TRIANGLES = 3;
 constexpr int LINES = 2;
 
-using namespace repo;
+using namespace repo::lib;
 
 IfcGeom::IteratorSettings createSettings()
 {
@@ -67,9 +67,6 @@ repo_material_t createMaterial(
 	{
 		auto specular = material.specular();
 		matProp.specular = { (float)specular[0], (float)specular[1], (float)specular[2] };
-	}
-	else {
-		matProp.specular = { 0, 0, 0, 0 };
 	}
 
 	if (material.hasSpecularity())

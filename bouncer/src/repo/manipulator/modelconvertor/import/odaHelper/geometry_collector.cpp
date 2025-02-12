@@ -20,7 +20,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-using namespace repo;
+using namespace repo::lib;
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
 GeometryCollector::GeometryCollector(repo::manipulator::modelutility::RepoSceneBuilder* builder) :
@@ -39,17 +39,21 @@ GeometryCollector::~GeometryCollector()
 	}
 }
 
-void GeometryCollector::addFace(const std::vector<repo::lib::RepoVector3D64>& vertices) 
+void GeometryCollector::addFace(const std::initializer_list<repo::lib::RepoVector3D64>& vertices)
 {
-	contexts.top()->addFace(vertices);
+	// Note that some views may output geometry outside of a drawable (e.g. Revit
+	// cameras). In this case the geometry should be ignored.
+
+	if (contexts.size()) {
+		contexts.top()->addFace(vertices);
+	}
 }
 
-void GeometryCollector::addFace(
-	const std::vector<repo::lib::RepoVector3D64>& vertices,
-	const repo::lib::RepoVector3D64& normal,
-	const std::vector<repo::lib::RepoVector2D>& uvCoords) 
+void GeometryCollector::addFace(const GeometryCollector::Face& face)
 {
-	contexts.top()->addFace(vertices, normal, uvCoords);
+	if (contexts.size()) {
+		contexts.top()->addFace(face);
+	}
 }
 
 void GeometryCollector::setMaterial(const repo_material_t& material)
@@ -58,9 +62,14 @@ void GeometryCollector::setMaterial(const repo_material_t& material)
 	latestMaterial = material;
 }
 
-repo_material_t GeometryCollector::getLastMaterial()
+repo_material_t GeometryCollector::getLastMaterial() const
 {
 	return latestMaterial;
+}
+
+std::unique_ptr<GeometryCollector::Context> GeometryCollector::makeNewDrawContext()
+{
+	return std::make_unique<GeometryCollector::Context>(this);
 }
 
 void GeometryCollector::pushDrawContext(Context* ctx) 
@@ -120,6 +129,16 @@ void GeometryCollector::setMetadata(std::string id, std::unordered_map<std::stri
 bool GeometryCollector::hasMetadata(std::string id)
 {
 	return layersWithMetadata.find(id) != layersWithMetadata.end();
+}
+
+void GeometryCollector::addMeshes(std::string id, std::vector<std::pair<repo::core::model::MeshNode, repo::lib::repo_material_t>>& meshes)
+{
+	auto parent = getSharedId(id);
+	for (auto& p : meshes) {
+		p.first.setParents({ parent });
+		addNode(p.first);
+		addMaterialReference(p.second, p.first.getSharedID());
+	}
 }
 
 void GeometryCollector::finalise()

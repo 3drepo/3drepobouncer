@@ -52,16 +52,16 @@ namespace testing {
 		const std::string& fileB);
 
 	bool compareMaterialStructs(
-		const repo_material_t& m1,
-		const repo_material_t& m2);
+		const repo::lib::repo_material_t& m1,
+		const repo::lib::repo_material_t& m2);
 
 	bool compareVectors(
-		const repo_color4d_t& v1,
-		const repo_color4d_t& v2);
+		const repo::lib::repo_color4d_t& v1,
+		const repo::lib::repo_color4d_t& v2);
 
 	bool compareVectors(
-		const std::vector<repo_color4d_t>& v1,
-		const std::vector<repo_color4d_t>& v2);
+		const std::vector<repo::lib::repo_color4d_t>& v1,
+		const std::vector<repo::lib::repo_color4d_t>& v2);
 
 	std::string getRandomString(const uint32_t& iLen);
 

@@ -30,6 +30,7 @@
 #include <variant>
 #include <semaphore>
 #include "spscqueue/readerwriterqueue.h"
+#include <repo/core/handler/database/repo_query.cpp>
 
 using namespace repo::manipulator::modelutility;
 using namespace repo::core::model;
@@ -61,7 +62,6 @@ public:
 	*/
 	void push(repo::core::model::RepoNode* node);
 	void push(repo::core::handler::database::query::AddParent*);
-
 
 private:
 	/*
@@ -102,7 +102,7 @@ private:
 		std::unique_ptr<repo::core::handler::database::BulkWriteContext> collection;
 		RepoSceneBuilder::AsyncImpl* impl;
 
-		bool operator() (const repo::core::model::RepoNode* n) const;
+		bool operator() (repo::core::model::RepoNode* n) const;
 		bool operator() (const repo::core::handler::database::query::AddParent* n) const;
 		bool operator() (const  Close& n) const;
 		bool operator() (const  Notify& n) const;
@@ -142,7 +142,7 @@ struct RepoSceneBuilder::Deleter
 	RepoSceneBuilder* builder;
 	void operator()(RepoNode* n)
 	{
-		builder->queueNode(n);
+		builder->addNode(std::unique_ptr<RepoNode>(n));
 		builder->referenceCounter--;
 	}
 };
@@ -241,7 +241,7 @@ void RepoSceneBuilder::setWorldOffset(const repo::lib::RepoVector3D64& offset)
 	this->offset = offset;
 }
 
-void RepoSceneBuilder::addMaterialReference(const repo_material_t& m, repo::lib::RepoUUID parentId)
+void RepoSceneBuilder::addMaterialReference(const repo::lib::repo_material_t& m, repo::lib::RepoUUID parentId)
 {
 	auto key = m.checksum();
 	if (materialToUniqueId.find(key) == materialToUniqueId.end())
@@ -351,6 +351,16 @@ repo::manipulator::modelconvertor::ModelUnits RepoSceneBuilder::getUnits()
 	return this->units;
 }
 
+void RepoSceneBuilder::createIndexes()
+{
+	using namespace repo::core::handler::database::index;
+	handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, Descending({ REPO_NODE_REVISION_LABEL_TIMESTAMP }));
+	handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ REPO_NODE_REVISION_ID, "metadata.key", "metadata.value" }));
+	handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ "metadata.key", "metadata.value" }));
+	handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ REPO_NODE_REVISION_ID, REPO_NODE_LABEL_SHARED_ID, REPO_LABEL_TYPE }));
+	handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ REPO_NODE_LABEL_SHARED_ID }));
+}
+
 RepoSceneBuilder::AsyncImpl::AsyncImpl(RepoSceneBuilder* builder):
 	builder(builder),
 	block(0)
@@ -398,6 +408,9 @@ void RepoSceneBuilder::AsyncImpl::push(Consumable consumable)
 		while (queueSize > threshold) {
 			queue.enqueue({ Consumables(Notify()), 0 });
 			block.try_acquire_for(std::chrono::seconds(1));
+			if (consumerException) {
+				std::rethrow_exception(consumerException);
+			}
 		}
 	}
 	queue.enqueue(consumable);
@@ -411,8 +424,18 @@ RepoSceneBuilder::AsyncImpl::Consumer::Consumer(RepoSceneBuilder::AsyncImpl* imp
 	collection = handler->getBulkWriteContext(builder->databaseName, builder->getSceneCollectionName());
 }
 
-bool RepoSceneBuilder::AsyncImpl::Consumer::operator() (const repo::core::model::RepoNode* n) const
+bool RepoSceneBuilder::AsyncImpl::Consumer::operator() (repo::core::model::RepoNode* n) const
 {
+	// At the moment, profiling shows that this thread is often waiting more than
+	// not, so we perform optimisations in it directly.
+	// If this changes in the future, we will need to move the optimisation calls
+	// somewhere else.
+
+	auto meshNode = dynamic_cast<repo::core::model::MeshNode*>(n);
+	if (meshNode) {
+		meshNode->removeDuplicateVertices();
+	}
+
 	collection->insertDocument(*n);
 	delete n;
 	return true;

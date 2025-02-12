@@ -39,13 +39,13 @@ repo::lib::PropertyTree AbstractSpatialPartitioner::generatePropertyTreeForParti
 }
 
 repo::lib::PropertyTree AbstractSpatialPartitioner::generatePropertyTreeForPartitioningInternal(
-	const std::shared_ptr<repo_partitioning_tree_t> &spTree) const
+	const std::shared_ptr<repo::lib::repo_partitioning_tree_t> &spTree) const
 {
 	repo::lib::PropertyTree tree;
 
 	if (spTree)
 	{
-		if (repo::PartitioningTreeType::LEAF_NODE == spTree->type)
+		if (repo::lib::PartitioningTreeType::LEAF_NODE == spTree->type)
 		{
 			repo::lib::PropertyTree meshesTree;
 
@@ -62,8 +62,8 @@ repo::lib::PropertyTree AbstractSpatialPartitioner::generatePropertyTreeForParti
 		}
 		else
 		{
-			std::string axisStr = repo::PartitioningTreeType::PARTITION_X == spTree->type ? "X"
-				: (repo::PartitioningTreeType::PARTITION_Y == spTree->type ? "Y" : "Z");
+			std::string axisStr = repo::lib::PartitioningTreeType::PARTITION_X == spTree->type ? "X"
+				: (repo::lib::PartitioningTreeType::PARTITION_Y == spTree->type ? "Y" : "Z");
 			tree.addToTree("axis", axisStr);
 			tree.addToTree("value", spTree->pValue);
 			tree.mergeSubTree("left", generatePropertyTreeForPartitioningInternal(spTree->left));

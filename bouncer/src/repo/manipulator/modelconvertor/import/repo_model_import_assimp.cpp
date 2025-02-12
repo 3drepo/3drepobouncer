@@ -296,7 +296,7 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 	repo::core::model::MaterialNode *materialNode;
 
 	if (material) {
-		repo_material_t repo_material;
+		repo::lib::repo_material_t repo_material;
 
 		aiColor3D tempColor;
 		auto tempFloat = tempColor.b;
@@ -305,35 +305,27 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 		// Ambient
 		if (AI_SUCCESS == material->Get(AI_MATKEY_COLOR_AMBIENT, tempColor))
 		{
-			repo_material.ambient.push_back(tempColor.r);
-			repo_material.ambient.push_back(tempColor.g);
-			repo_material.ambient.push_back(tempColor.b);
+			repo_material.ambient = repo::lib::repo_color3d_t(tempColor.r, tempColor.g, tempColor.b);
 		}
 		//--------------------------------------------------------------------------
 		// Diffuse
 		if (AI_SUCCESS == material->Get(AI_MATKEY_COLOR_DIFFUSE, tempColor))
 		{
-			repo_material.diffuse.push_back(tempColor.r);
-			repo_material.diffuse.push_back(tempColor.g);
-			repo_material.diffuse.push_back(tempColor.b);
+			repo_material.diffuse = repo::lib::repo_color3d_t(tempColor.r, tempColor.g, tempColor.b);
 		}
 
 		//--------------------------------------------------------------------------
 		// Specular
 		if (AI_SUCCESS == material->Get(AI_MATKEY_COLOR_SPECULAR, tempColor))
 		{
-			repo_material.specular.push_back(tempColor.r);
-			repo_material.specular.push_back(tempColor.g);
-			repo_material.specular.push_back(tempColor.b);
+			repo_material.specular = repo::lib::repo_color3d_t(tempColor.r, tempColor.g, tempColor.b);
 		}
 
 		//--------------------------------------------------------------------------
 		// Emissive
 		if (AI_SUCCESS == material->Get(AI_MATKEY_COLOR_EMISSIVE, tempColor))
 		{
-			repo_material.emissive.push_back(tempColor.r);
-			repo_material.emissive.push_back(tempColor.g);
-			repo_material.emissive.push_back(tempColor.b);
+			repo_material.emissive = repo::lib::repo_color3d_t(tempColor.r, tempColor.g, tempColor.b);
 		}
 
 		//--------------------------------------------------------------------------
@@ -423,10 +415,10 @@ repo::core::model::MeshNode AssimpModelImport::createMeshRepoNode(
 
 	//Avoid using assimp objects everywhere -> converting assimp objects into repo structs
 	std::vector<repo::lib::RepoVector3D> vertices;
-	std::vector<repo_face_t> faces;
+	std::vector<repo::lib::repo_face_t> faces;
 	std::vector<repo::lib::RepoVector3D> normals;
 	std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
-	std::vector<repo_color4d_t> colors;
+	std::vector<repo::lib::repo_color4d_t> colors;
 
 	/*
 	 *--------------------- Vertices (always present) -----------------------------
@@ -463,7 +455,7 @@ repo::core::model::MeshNode AssimpModelImport::createMeshRepoNode(
 	{
 		for (uint32_t i = 0; i < assimpMesh->mNumFaces; i++)
 		{
-			faces.push_back(repo_face_t(assimpMesh->mFaces[i].mIndices,
+			faces.push_back(repo::lib::repo_face_t(assimpMesh->mFaces[i].mIndices,
 				assimpMesh->mFaces[i].mIndices + assimpMesh->mFaces[i].mNumIndices));
 		}
 	}

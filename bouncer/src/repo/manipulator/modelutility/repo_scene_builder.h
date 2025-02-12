@@ -102,13 +102,21 @@ namespace repo {
 				* Adds the repo_material_t to the scene with the specified parent, or adds
 				* the parent Id to the material's existing node.
 				*/
-				void addMaterialReference(const repo_material_t& m, repo::lib::RepoUUID parentId);
+				void addMaterialReference(const repo::lib::repo_material_t& m, repo::lib::RepoUUID parentId);
 
 				void setMissingTextures();
 				bool hasMissingTextures();
 
 				void setUnits(repo::manipulator::modelconvertor::ModelUnits units);
 				repo::manipulator::modelconvertor::ModelUnits getUnits();
+
+				/*
+				* Creates a common set of indices prior to import, to avoid Mongo having to build
+				* an index on a large number of nodes at the end.
+				* This is a temporary method that can be removed when .io becomes responsible for
+				* creating the collection.
+				*/
+				void createIndexes();
 
 			private:
 

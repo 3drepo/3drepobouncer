@@ -35,6 +35,7 @@
 #include "repo/lib/datastructure/repo_uuid.h"
 #include "repo/lib/datastructure/repo_bounds.h"
 #include "repo/lib/datastructure/repo_variant.h"
+#include "repo/lib/datastructure/repo_structs.h"
 #include <boost/variant/static_visitor.hpp>
 #include <string>
 #include <ctime>
@@ -169,6 +170,10 @@ namespace repo {
 				void append(const repo::lib::RepoVector3D& vec);
 
 				void append(const repo::lib::RepoMatrix& mat);
+
+				void append(const repo::lib::repo_color3d_t& col);
+
+				void append(const repo::lib::repo_color4d_t& col);
 
 				void append(const repo::lib::RepoVariant& variant);
 

@@ -82,7 +82,7 @@ namespace repo {
 					void initialise(GeometryCollector* collector, OdBmDatabasePtr pDb, OdBmDBViewPtr view, const OdGeMatrix3d& modelToWorld);
 
 					static bool tryConvertMetadataEntry(
-						OdTfVariant& metaEntry,
+						const OdTfVariant& metaEntry,
 						OdBmLabelUtilsPEPtr labelUtils,
 						OdBmParamDefPtr paramDef,
 						OdBm::BuiltInParameter::Enum param,
@@ -99,8 +99,8 @@ namespace repo {
 				private:
 					std::string determineTexturePath(const std::string& inputPath);
 
-					void fillTexture(OdBmMaterialElemPtr materialPtr, repo_material_t& material, bool& missingTexture);
-					void fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiMaterialTraitsData& materialData, repo_material_t& material);
+					void fillTexture(OdBmMaterialElemPtr materialPtr, repo::lib::repo_material_t& material, bool& missingTexture);
+					void fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiMaterialTraitsData& materialData, repo::lib::repo_material_t& material);
 
 					void fillMetadataById(
 						OdBmObjectId id,
@@ -119,7 +119,7 @@ namespace repo {
 					bool ignoreParam(const std::string& param);
 
 					void processParameter(
-						OdBmElementPtr element,
+						const OdTfVariant& value,
 						OdBmObjectId paramId,
 						std::unordered_map<std::string, repo::lib::RepoVariant> &metadata,
 						const OdBm::BuiltInParameter::Enum &buildInEnum
@@ -184,7 +184,7 @@ namespace repo {
 						OdDbStub* materialId,
 						const OdGiMaterialTraitsData& materialData) final;
 
-					std::unordered_map<OdUInt64, repo_material_t> materialCache;
+					std::unordered_map<OdUInt64, repo::lib::repo_material_t> materialCache;
 				};
 			}
 		}

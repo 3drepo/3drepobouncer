@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2018 3D Repo Ltd
+*  Copyright (C) 2025 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -25,7 +25,7 @@
 #include "odaHelper/helper_functions.h"
 #endif
 
-using namespace repo;
+using namespace repo::lib;
 using namespace repo::manipulator::modelconvertor;
 
 const std::string OdaModelImport::supportedExtensions = ".dgn.rvt.rfa.dwg.dxf.nwd.nwc";
@@ -90,6 +90,7 @@ bool OdaModelImport::importModel(std::string filePath, std::shared_ptr<repo::cor
 		settings.getProjectName(),
 		settings.getRevisionId()
 	);
+	sceneBuilder->createIndexes();
 
 	odaProcessor = odaHelper::FileProcessor::getFileProcessor(filePath, sceneBuilder.get(), settings);
 	odaProcessor->readFile();
