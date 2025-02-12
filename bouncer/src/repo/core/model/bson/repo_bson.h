@@ -119,6 +119,8 @@ namespace repo {
 
 				repo::lib::RepoMatrix getMatrixField(const std::string& label) const;
 
+				std::vector<repo::lib::RepoMatrix> getMatrixFieldArray(const std::string& label) const;
+
 				std::vector<double> getDoubleVectorField(const std::string& label) const;
 
 				std::vector<std::string> getFileList(const std::string& label) const;
