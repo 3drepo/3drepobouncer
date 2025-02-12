@@ -26,6 +26,7 @@
 #include "repo/core/model/bson/repo_bson_factory.h"
 #include "repo/core/handler/database/repo_query.h"
 
+#include <thread>
 #include <variant>
 #include <semaphore>
 #include "spscqueue/readerwriterqueue.h"
