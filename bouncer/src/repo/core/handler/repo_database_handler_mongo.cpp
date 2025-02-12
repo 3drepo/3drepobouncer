@@ -914,6 +914,29 @@ std::unique_ptr<database::Cursor> MongoDatabaseHandler::runDatabaseOperation(
 
 */
 
+std::unique_ptr<repo::core::handler::database::Cursor> MongoDatabaseHandler::getTransformThroughAggregation(
+	const std::string& database,
+	const std::string& collection,
+	const repo::lib::RepoUUID& id)
+{
+	auto client = clientPool->acquire();
+	auto db = client->database(database);
+	auto col = db.collection(collection);
+
+	mongocxx::pipeline pipeline;
+	pipeline.graph_lookup(make_document(
+		kvp("from", collection),
+		kvp("startWith", id),
+		kvp("connectFromField", "parent"),
+		kvp("connectToField", "_id"),
+		kvp("as", "parents")
+	)).project(make_document(
+		kvp("transforms", "$parents.transforms")
+	));
+
+	return std::make_unique<MongoCursor>(std::move(col.aggregate(pipeline)), this);
+}
+
 std::unique_ptr<repo::core::handler::database::Cursor> MongoDatabaseHandler::getAllByCriteria(
 	const std::string& database,
 	const std::string& collection,

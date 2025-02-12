@@ -324,6 +324,12 @@ namespace repo {
 					const database::query::RepoQuery& criteria
 				);
 
+				std::unique_ptr<repo::core::handler::database::Cursor> getTransformThroughAggregation(
+					const std::string& database,
+					const std::string& collection,
+					const repo::lib::RepoUUID& id
+				);
+
 				std::unique_ptr<database::BulkWriteContext> getBulkWriteContext(
 					const std::string& database,
 					const std::string& collection);
