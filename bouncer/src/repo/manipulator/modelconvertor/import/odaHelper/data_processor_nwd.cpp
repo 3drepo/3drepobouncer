@@ -659,7 +659,7 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 
 				if (pGeometryMesh->getIndices().length() && !aTriangles.length())
 				{
-					repoError << "Mesh " << pNode->getDisplayName().c_str() << " has indices but does not have a triangulation. Only triangulated meshes are supported.";
+					repoError << "Mesh " << convertToStdString(pNode->getDisplayName().c_str()) << " has indices but does not have a triangulation. Only triangulated meshes are supported.";
 				}
 
 				const OdNwVerticesDataPtr aVertexesData = pGeometryMesh->getVerticesData();

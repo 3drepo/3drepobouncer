@@ -28,6 +28,7 @@
 
 #include <variant>
 #include <semaphore>
+#include <thread>
 #include "spscqueue/readerwriterqueue.h"
 
 using namespace repo::manipulator::modelutility;

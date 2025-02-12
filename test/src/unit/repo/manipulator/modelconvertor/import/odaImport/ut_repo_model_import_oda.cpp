@@ -20,7 +20,7 @@
 #include <gtest/gtest-matchers.h>
 #include <repo/manipulator/modelconvertor/import/repo_model_import_oda.h>
 #include <repo/manipulator/modelconvertor/import/repo_model_import_manager.h>
-#include <repo/lib/repo_log.h>
+#include <repo_log.h>
 #include <repo/error_codes.h>
 #include "../../../../../repo_test_utils.h"
 #include "../../../../../repo_test_database_info.h"

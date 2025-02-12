@@ -22,6 +22,7 @@
 #pragma once
 
 #include <string>
+#include <optional>
 #include "repo_model_import_abstract.h"
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
