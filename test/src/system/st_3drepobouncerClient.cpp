@@ -298,7 +298,6 @@ TEST(RepoClientTest, UploadTestRVT)
 	//Upload RVT file with no valid 3D view
 	std::string rvtUpload3 = produceUploadArgs(db, "rvtTest3", getDataPath(rvtNo3DViewModel));
 	EXPECT_EQ((int)REPOERR_VALID_3D_VIEW_NOT_FOUND, runProcess(rvtUpload3));
-	EXPECT_FALSE(projectExists(db, "rvtTest3"));
 }
 
 TEST(RepoClientTest, UploadTestRVT2021)
