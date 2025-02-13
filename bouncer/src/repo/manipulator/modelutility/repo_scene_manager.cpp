@@ -100,21 +100,16 @@ uint8_t SceneManager::commitScene(
 			bool success = true;
 			bool isFederation = scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size();
 
-			if (!isFederation && !(success = scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED))) { // Make sure to check if we are looking at a federation before updating success with the state of the stash graph
-				repoInfo << "Optimised scene not found. Attempt to generate...";
-
-				if (!scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size())
+			if (success)
+			{
+				// Loading the full scene is required for the tree generation, for now.
+				if (!isFederation && !scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size())
 				{
 					// Scene is just a container - load all the actual meshes
 					std::string msg;
 					scene->loadScene(handler, msg);
 				}
 
-				success = generateStashGraph(scene);
-			}
-
-			if (success)
-			{
 				repoInfo << "Generating Selection Tree JSON...";
 				scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::GEN_SEL_TREE);
 				if (generateAndCommitSelectionTree(scene, handler, fileManager))
@@ -298,12 +293,23 @@ bool SceneManager::generateWebViewBuffers(
 	repo::core::handler::fileservice::FileManager         *fileManager)
 {
 	bool success = false;
-	if (success = (scene&& scene->isRevisioned()))
+	if (success = (scene && scene->isRevisioned()))
 	{
 		bool toCommit = handler;
 
 		std::string geoStashExt;
 		std::string jsonStashExt = REPO_COLLECTION_STASH_JSON;
+
+		if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED)) {
+
+			repoInfo << "Optimised scene not found. Attempt to generate...";
+
+			if (!scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()) {
+				std::string msg;
+				scene->loadScene(handler, msg);
+			}
+			generateStashGraph(scene);
+		}
 
 		switch (exType)
 		{

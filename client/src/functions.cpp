@@ -433,7 +433,6 @@ int32_t importFileAndCommit(
 	if (graph)
 	{
 		repoLog("Trying to commit this scene to database as " + database + "." + project);
-		graph->setDatabaseAndProjectName(database, project);
 
 		err = controller->commitScene(token, graph, owner, tag, desc, revId);
 

@@ -53,6 +53,8 @@ repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 		uint8_t errCode = REPOERR_LOAD_SCENE_FAIL;
 		scene = modelConvertor->generateRepoScene(errCode);
 
+		scene->setDatabaseAndProjectName(config.getDatabaseName(), config.getProjectName());
+
 		auto fileUnits = modelConvertor->getUnits();
 		auto targetUnits = config.getTargetUnits();
 
