@@ -885,7 +885,7 @@ std::unique_ptr<database::Cursor> MongoDatabaseHandler::runDatabaseOperation(
 
 */
 
-std::unique_ptr<repo::core::handler::database::Cursor> MongoDatabaseHandler::getTransformThroughAggregation(
+std::unique_ptr<repo::core::handler::database::Cursor> MongoDatabaseHandler::getTransformsForLeaf(
 	const std::string& database,
 	const std::string& collection,
 	const repo::lib::RepoUUID& id)
@@ -895,15 +895,88 @@ std::unique_ptr<repo::core::handler::database::Cursor> MongoDatabaseHandler::get
 	auto col = db.collection(collection);
 
 	mongocxx::pipeline pipeline;
-	pipeline.graph_lookup(make_document(
+	pipeline.match(
+		make_document(
+			kvp("_id", id)
+	)).graph_lookup(make_document(
 		kvp("from", collection),
 		kvp("startWith", id),
 		kvp("connectFromField", "parent"),
 		kvp("connectToField", "_id"),
-		kvp("as", "parents")
+		kvp("as", "parents"),
+		kvp("depthField", "level")
 	)).project(make_document(
-		kvp("transforms", "$parents.transforms")
+		kvp("transform", 1),
+		kvp("sortedParents", make_document(
+			kvp("$sortArray:", make_document(
+				kvp("input", "$parents"),
+				kvp("sortBy", make_document(
+					kvp("level", 1)
+				))
+			))
+		))
+	)).project(make_document(
+		kvp("transforms", make_document(
+			kvp("$concatArrays", make_array(
+				make_array(
+					"$transform"
+				),
+				"$sortedParents.transform"
+			))
+		))
 	));
+
+	return std::make_unique<MongoCursor>(std::move(col.aggregate(pipeline)), this);
+}
+
+std::unique_ptr<repo::core::handler::database::Cursor> MongoDatabaseHandler::getTransformsForAllLeaves(
+	const std::string& database,
+	const std::string& collection)
+{
+	auto client = clientPool->acquire();
+	auto db = client->database(database);
+	auto col = db.collection(collection);
+
+	mongocxx::pipeline pipeline;
+	pipeline.graph_lookup(make_document(
+		kvp("from", collection),
+		kvp("startWith", "$_id"),
+		kvp("connectFromField", "_id"),
+		kvp("connectToField", "parent"),
+		kvp("as", "children"),
+		kvp("maxDepth", 0)
+	)).match(
+		make_document(
+			kvp("children", make_document(
+				kvp("$size", 0)
+			))
+		)).graph_lookup(make_document(
+			kvp("from", collection),
+			kvp("startWith", "$parent"),
+			kvp("connectFromField", "parent"),
+			kvp("connectToField", "_id"),
+			kvp("as", "parents"),
+			kvp("depthField", "level")
+		)).project(make_document(
+			kvp("transform", 1),
+			kvp("sortedParents", make_document(
+				kvp("$sortArray:", make_document(
+					kvp("input", "$parents"),
+					kvp("sortBy", make_document(
+						kvp("level", 1)
+					))
+				))
+			))
+		)).project(make_document(
+			kvp("transforms", make_document(
+				kvp("$concatArrays", make_array(
+					make_array(
+						"$transform"
+					),
+					"$sortedParents.transform"
+				))
+			))
+		));
 
 	return std::make_unique<MongoCursor>(std::move(col.aggregate(pipeline)), this);
 }
