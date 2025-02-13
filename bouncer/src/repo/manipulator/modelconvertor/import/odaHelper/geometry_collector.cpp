@@ -122,7 +122,7 @@ repo::lib::RepoUUID GeometryCollector::getSharedId(std::string id)
 
 void GeometryCollector::setMetadata(std::string id, std::unordered_map<std::string, repo::lib::RepoVariant> data)
 {
-	sceneBuilder->addNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(data, {}, { layerIdToSharedId[id] }));
+	sceneBuilder->addNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(data, id, { layerIdToSharedId[id] }));
 	layersWithMetadata.insert(id);
 }
 

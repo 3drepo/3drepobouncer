@@ -63,7 +63,7 @@ namespace ODAModelImportUtils
 
 TEST(ODAModelImport, Sample2025NWDTree)
 {
-	auto scene = ODAModelImportUtils::ModelImportManagerImport("Sample2025NWD", getDataPath("sample2025.nwd"));
+	auto scene = ODAModelImportUtils::ModelImportManagerImport("Sample2025NWD", getDataPath(nwdModel2025));
 
 	// For NWDs, Layers/Levels & Collections always end up as branch nodes. Composite
 	// Objects and Groups are leaf nodes if they contain only Geometric Items &
@@ -81,6 +81,7 @@ TEST(ODAModelImport, Sample2025NWDTree)
 	EXPECT_THAT(nodes.size(), Eq(1));
 	EXPECT_THAT(nodes[0].isLeaf(), IsTrue());
 	EXPECT_THAT(nodes[0].hasGeometry(), IsTrue());
+	EXPECT_THAT(nodes[0].getPath(), Eq("rootNode->sample2025.nwd->Level 0->Planting->Planting_RPC_Tree_Deciduous->Hawthorn-7.4_Meters->Planting_RPC_Tree_Deciduous"));
 
 	nodes = utils.findTransformationNodesByName("Wall-Ext_102Bwk-75Ins-100LBlk-12P");
 	EXPECT_THAT(nodes.size(), Eq(1));
@@ -145,6 +146,14 @@ TEST(ODAModelImport, ColouredBoxesDWG)
 	));
 }
 
+MATCHER_P(Paths, matcher, "") {
+	std::vector<std::string> paths;
+	for (auto& n : arg) {
+		paths.push_back(n.getPath());
+	}
+	return ExplainMatchResult(matcher, paths, result_listener);
+}
+
 TEST(ODAModelImport, NestedBlocksDWG)
 {
 	auto scene = ODAModelImportUtils::ModelImportManagerImport("NestedBlocksDWG", getDataPath("nestedBlocks.dwg"));
@@ -159,6 +168,48 @@ TEST(ODAModelImport, NestedBlocksDWG)
 	// itself explicitly has an item on layer 1 (the other layer 2 references show on 
 	// layer 0, by convention as only the first block is considered).
 
-	EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "[4FA]").size(), Eq(3));
+	EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "[4FA]"), Paths(UnorderedElementsAre(
+		"rootNode->0->My Outer Block",
+		"rootNode->Layer1->My Outer Block",
+		"rootNode->Layer3->My Outer Block"
+	)));
+
+	EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "[50D]"), Paths(UnorderedElementsAre(
+		"rootNode->0->My Block", 
+		"rootNode->Layer1->My Block"
+	)));
+
+	EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "[423]"), Paths(UnorderedElementsAre(
+		"rootNode->0->Block Text"
+	)));
+
+	// Even though this handle exists, it should be compressed in the tree.
+	EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "[534]"), IsEmpty());
+
 	EXPECT_THAT(utils.getRootNode().getChildNames(), UnorderedElementsAre("0", "Layer1", "Layer3"));
+}
+
+TEST(ODAModelImport, RevitMEPSystems)
+{
+	auto scene = ODAModelImportUtils::ModelImportManagerImport("RevitMeta3", getDataPath(rvtMeta3));
+	SceneUtils utils(scene);
+
+	// In rvtMeta3, some of these elements belong to systems, and others do not.
+	// They should all exist as tree leaf nodes however, with geometry.
+
+	std::vector<std::string> elementsWithMetadata = {
+		"702167",
+		"702041",
+		"706118",
+		"706347",
+		"703971",
+		"704116"
+	};
+
+	for (auto e : elementsWithMetadata) {
+		auto nodes = utils.findNodesByMetadata("Element ID", e);
+		EXPECT_THAT(nodes.size(), Eq(1));
+		EXPECT_THAT(nodes[0].isLeaf(), IsTrue());
+		EXPECT_THAT(nodes[0].hasGeometry(), IsTrue());
+	}
 }

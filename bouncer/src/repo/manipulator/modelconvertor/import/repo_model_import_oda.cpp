@@ -93,7 +93,12 @@ bool OdaModelImport::importModel(std::string filePath, std::shared_ptr<repo::cor
 	sceneBuilder->createIndexes();
 
 	odaProcessor = odaHelper::FileProcessor::getFileProcessor(filePath, sceneBuilder.get(), settings);
-	odaProcessor->readFile();
+	auto result = odaProcessor->readFile();
+
+	if (result != REPOERR_OK) {
+		throw repo::lib::RepoImportException(result);
+	}
+
 	sceneBuilder->finalise();
 
 	return true;

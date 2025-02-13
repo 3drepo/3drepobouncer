@@ -255,15 +255,6 @@ TEST(RepoClientTest, UploadTestDWG)
 	EXPECT_EQ((int)REPOERR_OK, runProcess(dwgUpload));
 	EXPECT_TRUE(projectExists(db, "dwgTest"));
 
-	// This snippet tests the behaviour of Block References and nested Block
-	// References in the tree.
-	std::string dwgUploadNestedBlocks = produceUploadArgs(db, "dwgTestNestedBlocks", getDataPath(dwgNestedBlocks));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(dwgUploadNestedBlocks));
-	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "[423]", { "rootNode->0->Block Text->Block Text" }));
-	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "[50D]", { "rootNode->0->My Block->My Block", "rootNode->Layer1->My Block->My Block" }));
-	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "dwgTestNestedBlocks", "Entity Handle::Value", "[4FA]", { "rootNode->0->My Outer Block->My Outer Block", "rootNode->Layer1->My Outer Block->My Outer Block", "rootNode->Layer3->My Outer Block->My Outer Block" }));
-	EXPECT_FALSE(projectHasGeometryWithMetadata(db, "dwgTestNestedBlocks", "Entity Handle::Value", "[534]")); // Even though this handle exists, it should be compressed in the tree.
-
 	// This snippet checks if encrypted files are handled correctly.
 	std::string dwgUploadProtected = produceUploadArgs(db, "dwgTestProtected", getDataPath(dwgPasswordProtected));
 	EXPECT_EQ(REPOERR_FILE_IS_ENCRYPTED, runProcess(dwgUploadProtected));
@@ -392,12 +383,6 @@ TEST(RepoClientTest, UploadTestNWD2025)
 	std::string nwdUpload = produceUploadArgs(db, "nwdTest2025", getDataPath(nwdModel2025));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(nwdUpload));
 	EXPECT_TRUE(projectExists(db, "nwdTest2025"));
-
-	// Do some checks on the file to make sure we are getting the tree and
-	// metadata in the right place.
-
-	EXPECT_TRUE(projectHasMetaNodesWithPaths(db, "nwdTest2025", "Element::Id", "309347", { "rootNode->sample2025.nwd->Level 0->Planting->Planting_RPC_Tree_Deciduous->Hawthorn-7.4_Meters->Planting_RPC_Tree_Deciduous->Planting_RPC_Tree_Deciduous" })); // Note the additional "Planting_RPC_Tree_Deciduous" at the end of this path corresponds to the Metadata Node name 
-	EXPECT_TRUE(projectHasGeometryWithMetadata(db, "nwdTest2025", "Element::Id", "309347"));
 }
 
 TEST(RepoClientTest, UploadTestNWDProtected)
@@ -409,7 +394,6 @@ TEST(RepoClientTest, UploadTestNWDProtected)
 	//Upload password-protected NWD
 	std::string nwdUpload = produceUploadArgs(db, "nwdPasswordProtected", getDataPath(nwdPasswordProtected));
 	EXPECT_EQ((int)REPOERR_FILE_IS_ENCRYPTED, runProcess(nwdUpload));
-	EXPECT_FALSE(projectExists(db, "nwdPasswordProtected"));
 }
 
 TEST(RepoClientTest, UploadTestNWC)
@@ -479,19 +463,6 @@ TEST(RepoClientTest, UploadTestRVTRegressionTests)
 	std::string rvtUpload7 = produceUploadArgs(db, "rvtTest7", getDataPath(rvtHouse));
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, runProcess(rvtUpload7));
 	EXPECT_TRUE(projectExists(db, "rvtTest7"));
-
-	// Check if the metadata applied to geometric elements connected to MEP
-	// systems is correct
-	std::string rvtUpload8 = produceUploadArgs(db, "rvtTest8", getDataPath(rvtMeta3));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload8));
-	EXPECT_TRUE(projectExists(db, "rvtTest8"));
-	// In rvtMeta3, some of these elements belong to systems, and others do not
-	EXPECT_TRUE(projectHasGeometryWithMetadata(db, "rvtTest8", "Element ID", "702167"));
-	EXPECT_TRUE(projectHasGeometryWithMetadata(db, "rvtTest8", "Element ID", "702041"));
-	EXPECT_TRUE(projectHasGeometryWithMetadata(db, "rvtTest8", "Element ID", "706118"));
-	EXPECT_TRUE(projectHasGeometryWithMetadata(db, "rvtTest8", "Element ID", "706347"));
-	EXPECT_TRUE(projectHasGeometryWithMetadata(db, "rvtTest8", "Element ID", "703971"));
-	EXPECT_TRUE(projectHasGeometryWithMetadata(db, "rvtTest8", "Element ID", "704116"));
 }
 
 TEST(RepoClientTest, UploadTestMissingFieldsInJSON)

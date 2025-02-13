@@ -79,6 +79,16 @@ std::vector<SceneUtils::NodeInfo> SceneUtils::getChildNodes(repo::core::model::R
 	return nodes;
 }
 
+std::vector<SceneUtils::NodeInfo> SceneUtils::getParentNodes(repo::core::model::RepoNode* node)
+{
+	std::vector<NodeInfo> nodes;
+	for (auto& n : scene->getParentNodesFiltered(repo::core::model::RepoScene::GraphType::DEFAULT, node, repo::core::model::NodeType::TRANSFORMATION))
+	{
+		nodes.push_back(getNodeInfo(n));
+	}
+	return nodes;
+}
+
 SceneUtils::NodeInfo SceneUtils::getNodeInfo(repo::core::model::RepoNode* node)
 {
 	NodeInfo info(node, this);
@@ -142,4 +152,16 @@ std::vector<std::string> SceneUtils::NodeInfo::getChildNames()
 		}
 	}
 	return names;
+}
+
+std::string SceneUtils::NodeInfo::getPath() const
+{
+	auto parents = scene->getParentNodes(node);
+	if (parents.size()) {
+		return parents[0].getPath() + "->" + name();
+	}
+	else
+	{
+		return name();
+	}
 }
