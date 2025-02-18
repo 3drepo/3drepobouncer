@@ -34,6 +34,7 @@
 #include <vector>
 
 #include "data_processor_dwg.h"
+#include "helper_functions.h"
 
 #include <DbObjectIterator.h>
 #include <DbBlockTable.h>
@@ -69,7 +70,7 @@ protected:
 	OdSmartPtr<OdGsViewImpl> createViewObject()
 	{
 		auto pP = OdRxObjectImpl<DataProcessorDwg, OdGsViewImpl>::createObject();
-		((DataProcessorDwg*)pP.get())->init(collector);
+		((DataProcessorDwg*)pP.get())->initialise(collector);
 		return pP;
 	}
 
@@ -90,13 +91,18 @@ ODRX_DEFINE_PSEUDO_STATIC_MODULE(DeviceModuleDwg);
 
 void FileProcessorDwg::importModel(OdDbDatabasePtr pDb)
 {
+	GeometryCollector collector(repoSceneBuilder);
+
 	// Create the vectorizer device that will render the DWG database. This will
 	// use the GeometryCollector underneath.
 
 	OdGsModulePtr pGsModule = ODRX_STATIC_MODULE_ENTRY_POINT(DeviceModuleDwg)(OD_T("DeviceModuleDwg"));
 	auto deviceModule = (DeviceModuleDwg*)pGsModule.get();
-	deviceModule->init(collector);
+	deviceModule->init(&collector);
 	auto pDevice = pGsModule->createDevice();
+
+	collector.setUnits(determineModelUnits(pDb->getINSUNITS()));
+	collector.setWorldOffset(toRepoVector(pDb->getEXTMIN()));
 
 	OdGiContextForDbDatabasePtr pDbGiContext = OdGiContextForDbDatabase::createObject();
 	pDbGiContext->setDatabase(pDb);
@@ -110,6 +116,8 @@ void FileProcessorDwg::importModel(OdDbDatabasePtr pDb)
 	pHelperDevice->update();
 
 	pGsModule.release();
+
+	collector.finalise();
 }
 
 void FileProcessorDwg::importDrawing(OdDbDatabasePtr pDb)
@@ -213,7 +221,7 @@ uint8_t FileProcessorDwg::readFile()
 		OdString f = file.c_str();
 		OdDbDatabasePtr pDb = svcs.readFile(f);
 
-		if (collector)
+		if (repoSceneBuilder)
 		{
 			importModel(pDb);
 		}

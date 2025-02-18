@@ -17,7 +17,7 @@
 
 #include "repo_bson_teamspace.h"
 #include "repo/core/model/bson/repo_bson.h"
-#include "repo/lib/repo_log.h"
+#include <repo_log.h>
 
 using namespace repo::core::model;
 

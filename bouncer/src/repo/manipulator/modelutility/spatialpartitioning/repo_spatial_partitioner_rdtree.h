@@ -41,7 +41,7 @@ namespace repo{
 
 				virtual ~RDTreeSpatialPartitioner();
 
-				virtual std::shared_ptr<repo_partitioning_tree_t> partitionScene();
+				virtual std::shared_ptr<repo::lib::repo_partitioning_tree_t> partitionScene();
 
 			protected:
 
@@ -49,7 +49,7 @@ namespace repo{
 				* Generate a vector of mesh entries base on
 				* the current scene.
 				*/
-				std::vector<repo_mesh_entry_t> createMeshEntries();
+				std::vector<repo::lib::repo_mesh_entry_t> createMeshEntries();
 
 				/**
 				* Create a partitioning with the given meshes
@@ -57,9 +57,9 @@ namespace repo{
 				* @param axis which axis to divide
 				* @param depthCount current depth
 				*/
-				std::shared_ptr<repo_partitioning_tree_t> createPartition(
-					const std::vector<repo_mesh_entry_t> &meshes,
-					const repo::PartitioningTreeType   &axis,
+				std::shared_ptr<repo::lib::repo_partitioning_tree_t> createPartition(
+					const std::vector<repo::lib::repo_mesh_entry_t> &meshes,
+					const repo::lib::PartitioningTreeType   &axis,
 					const uint32_t               &depthCount,
 					const uint32_t               &failcount,
 					const std::vector<std::vector<float>>     &currentSection);
@@ -73,12 +73,12 @@ namespace repo{
 				* @param rMeshes meshes belonging to the right child
 				*/
 				void sortMeshes(
-					const std::vector<repo_mesh_entry_t> &meshes,
-					const repo::PartitioningTreeType   &axis,
+					const std::vector<repo::lib::repo_mesh_entry_t> &meshes,
+					const repo::lib::PartitioningTreeType   &axis,
 					const std::vector<std::vector<float>>  &currentSection,
 					float                        &median,
-					std::vector<repo_mesh_entry_t>       &lMeshes,
-					std::vector<repo_mesh_entry_t>       &rMeshes
+					std::vector<repo::lib::repo_mesh_entry_t>       &lMeshes,
+					std::vector<repo::lib::repo_mesh_entry_t>       &rMeshes
 					);
 			};
 		}

@@ -79,10 +79,8 @@ std::string getConnConfig() {
 
 repo::lib::RepoConfig getConfig()
 {
-	auto config = repo::lib::RepoConfig(REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
-		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
-	config.configureFS(".");
-
+	auto config = repo::lib::RepoConfig::fromFile(getDataPath("config/withFS.json"));
+	config.configureFS(getDataPath("fileShare"));
 	return config;
 }
 

@@ -67,7 +67,7 @@ namespace repo {
 				* Get all mesh mapping, grouped by the sub meshes they belong to
 				* @return a vector (new submeshes) of vector of mesh mappings(original submeshes)
 				*/
-				std::vector<std::vector<repo_mesh_mapping_t>> getMappingsPerSubMesh() const;
+				std::vector<std::vector<repo::lib::repo_mesh_mapping_t>> getMappingsPerSubMesh() const;
 
 				/**
 				* Get the mesh, with mesh mappings and buffers modified
@@ -97,7 +97,7 @@ namespace repo {
 				* @param maxBox maximum bounding box (length of 3)
 				*/
 				void finishSubMesh(
-					repo_mesh_mapping_t &mapping,
+					repo::lib::repo_mesh_mapping_t &mapping,
 					std::vector<float> &minBox,
 					std::vector<float> &maxBox,
 					const size_t &nVertices,
@@ -105,7 +105,7 @@ namespace repo {
 				);
 
 				void newMatMapEntry(
-					const repo_mesh_mapping_t &mapping,
+					const repo::lib::repo_mesh_mapping_t &mapping,
 					const size_t        &sVertices,
 					const size_t        &sFaces
 				);
@@ -134,8 +134,8 @@ namespace repo {
 				* @param totalFaceCount total face count      (consume and update)
 				*/
 				bool splitLargeMesh(
-					const repo_mesh_mapping_t        &currentSubMesh,
-					std::vector<repo_mesh_mapping_t> &newMappings,
+					const repo::lib::repo_mesh_mapping_t        &currentSubMesh,
+					std::vector<repo::lib::repo_mesh_mapping_t> &newMappings,
 					size_t                           &idMapIdx,
 					size_t                           &orgFaceIdx,
 					size_t                           &totalVertexCount,
@@ -150,7 +150,7 @@ namespace repo {
 				* @param sFaces    starting face #
 				*/
 				void startSubMesh(
-					repo_mesh_mapping_t &mapping,
+					repo::lib::repo_mesh_mapping_t &mapping,
 					const repo::lib::RepoUUID      &meshID,
 					const repo::lib::RepoUUID      &sharedID,
 					const repo::lib::RepoUUID      &matID,
@@ -188,19 +188,19 @@ namespace repo {
 				const std::vector<repo::lib::RepoVector3D> oldVertices;
 				const std::vector<repo::lib::RepoVector3D> oldNormals;
 				const std::vector<std::vector<repo::lib::RepoVector2D>> oldUVs;
-				const std::vector<repo_face_t>   oldFaces;
+				const std::vector<repo::lib::repo_face_t> oldFaces;
 
 				std::vector<repo::lib::RepoVector3D> newVertices;
 				std::vector<repo::lib::RepoVector3D> newNormals;
-				std::vector<repo_face_t>   newFaces;
+				std::vector<repo::lib::repo_face_t> newFaces;
 				std::vector<std::vector<repo::lib::RepoVector2D>> newUVs;
 
 				std::vector<uint16_t> serialisedFaces;
 
 				std::vector<std::vector<float>> idMapBuf;
 				std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher> splitMap;
-				std::vector<std::vector<repo_mesh_mapping_t>> matMap;
-				std::vector<repo_mesh_mapping_t> reMappedMappings;
+				std::vector<std::vector<repo::lib::repo_mesh_mapping_t>> matMap;
+				std::vector<repo::lib::repo_mesh_mapping_t> reMappedMappings;
 			};
 		}
 	}

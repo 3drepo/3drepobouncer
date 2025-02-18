@@ -17,8 +17,6 @@
 
 #pragma once
 
-#include "../../../../core/model/bson/repo_node_mesh.h"
-
 #include <OdaCommon.h>
 #include <Gs/GsBaseInclude.h>
 #include <RxObjectImpl.h>
@@ -27,7 +25,6 @@
 #include <vector>
 #include <string>
 
-#include "geometry_collector.h"
 #include "file_processor.h"
 
 namespace repo {
@@ -37,11 +34,7 @@ namespace repo {
 				class FileProcessorRvt : public FileProcessor
 				{
 				public:
-					FileProcessorRvt(const std::string& inputFile, GeometryCollector* geoCollector, const ModelImportConfig& config) : FileProcessor(inputFile, geoCollector, config) {
-						shouldApplyReduction = true;
-					};
-					~FileProcessorRvt() override;
-
+					FileProcessorRvt(const std::string& inputFile, modelutility::RepoSceneBuilder* builder, const ModelImportConfig& config);
 					uint8_t readFile() override;
 
 				private:

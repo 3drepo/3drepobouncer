@@ -26,7 +26,7 @@
 #include <vector>
 #include <stdint.h>
 
-#include "../../../repo_bouncer_global.h"
+#include "repo/repo_bouncer_global.h"
 
 namespace repo {
 	namespace manipulator {

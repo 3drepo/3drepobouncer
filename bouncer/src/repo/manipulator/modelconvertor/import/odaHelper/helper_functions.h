@@ -70,6 +70,8 @@ namespace repo {
 				int compare(double d1, double d2);
 
 				repo::lib::RepoVector3D64 calcNormal(repo::lib::RepoVector3D64 p1, repo::lib::RepoVector3D64 p2, repo::lib::RepoVector3D64 p3);
+
+				repo::lib::RepoVector3D64 toRepoVector(const OdGePoint3d& p);
 			}
 		}
 	}

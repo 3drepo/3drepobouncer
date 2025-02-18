@@ -23,7 +23,7 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include "repo/core/model/bson/repo_bson_factory.h"
-#include "repo/lib/repo_log.h"
+#include <repo_log.h>
 #include "repo/error_codes.h"
 
 using namespace repo::core::model;
@@ -89,28 +89,20 @@ repo::core::model::MetadataNode* RepoModelImport::createMetadataNode(
 
 void RepoModelImport::parseMaterial(const boost::property_tree::ptree& matTree)
 {
-	repo_material_t repo_material;
+	repo::lib::repo_material_t repo_material;
 	int textureId = -1;
 
 	if (matTree.find("diffuse") != matTree.not_found())
 		repo_material.diffuse = as_vector<float>(matTree, "diffuse");
-	else
-		repo_material.diffuse.resize(3, 0.0f);
 
 	if (matTree.find("specular") != matTree.not_found())
 		repo_material.specular = as_vector<float>(matTree, "specular");
-	else
-		repo_material.specular.resize(3, 0.0f);
 
 	if (matTree.find("emissive") != matTree.not_found())
 		repo_material.emissive = as_vector<float>(matTree, "emissive");
-	else
-		repo_material.emissive.resize(3, 0.0f);
 
 	if (matTree.find("ambient") != matTree.not_found())
 		repo_material.ambient = as_vector<float>(matTree, "ambient");
-	else
-		repo_material.ambient.resize(3, 0.0f);
 
 	if (matTree.find("transparency") != matTree.not_found())
 		repo_material.opacity = 1.0f - matTree.get<float>("transparency");
@@ -220,7 +212,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 	std::vector<repo::lib::RepoVector3D64> vertices;
 	std::vector<repo::lib::RepoVector3D> normals;
 	std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
-	std::vector<repo_face_t> faces;
+	std::vector<repo::lib::repo_face_t> faces;
 
 	repo::lib::RepoBounds bounds;
 
@@ -313,7 +305,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 			case repo::core::model::MeshNode::Primitive::TRIANGLES:
 				for (int i = 0; i < numIndices; i += primitiveIdxLen)
 				{
-					repo_face_t tmpFace;
+					repo::lib::repo_face_t tmpFace;
 					for (int j = 0; j < primitiveIdxLen; ++j)
 					{
 						tmpFace.push_back(tmpIndices[i + j]);

@@ -23,80 +23,42 @@
 
 #include "repo/core/model/bson/repo_bson_factory.h"
 #include "data_processor.h"
+#include "helper_functions.h"
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-void DataProcessor::convertTo3DRepoTriangle(
-	const OdInt32* p3Vertices,
-	std::vector<repo::lib::RepoVector3D64>& verticesOut,
-	repo::lib::RepoVector3D64& normalOut,
-	std::vector<repo::lib::RepoVector2D>& uvOut)
+void DataProcessor::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* pNormal)
 {
+	GeometryCollector::Face triangle;
 	const auto pVertexDataList = vertexDataList();
 	for (int i = 0; i < 3; i++)
 	{
 		auto position = pVertexDataList[p3Vertices[i]];
-		verticesOut.push_back(convertTo3DRepoWorldCoorindates(position));
+		triangle.push_back(toRepoVector(position));
 	}
-	normalOut = calcNormal(verticesOut[0], verticesOut[1], verticesOut[2]);
-}
-
-void DataProcessor::getVertices(
-	int numVertices,
-	const OdInt32* p3Vertices,
-	std::vector<OdGePoint3d> &odaPoint,
-	std::vector<repo::lib::RepoVector3D64> &repoPoint
-){
-	const OdGePoint3d*  pVertexDataList = vertexDataList();
-
-	if ((pVertexDataList + p3Vertices[0]) != (pVertexDataList + p3Vertices[1]) &&
-		(pVertexDataList + p3Vertices[0]) != (pVertexDataList + p3Vertices[2]) &&
-		(pVertexDataList + p3Vertices[1]) != (pVertexDataList + p3Vertices[2]))
-	{
-		for (int i = 0; i < numVertices; ++i)
-		{
-			auto point = pVertexDataList[p3Vertices[i]];
-			odaPoint.push_back(point);
-			repoPoint.push_back(convertTo3DRepoWorldCoorindates(point));
-		}
-	}
-}
-
-void DataProcessor::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* pNormal)
-{
-	std::vector<repo::lib::RepoVector3D64> vertices;
-	std::vector<repo::lib::RepoVector2D> uv;
-	repo::lib::RepoVector3D64 normal;
-
-	convertTo3DRepoTriangle(p3Vertices, vertices, normal, uv);
-
-	if (vertices.size()) {
-		collector->addFace(vertices, normal, uv);
-	}
+	collector->addFace(triangle);
 }
 
 void DataProcessor::polylineOut(OdInt32 numPoints, const OdInt32* vertexIndexList)
 {
-	std::vector<OdGePoint3d> vertices;
 	const auto pVertexDataList = vertexDataList();
-	for (int i = 0; i < numPoints; i++)
+	for (int i = 0; i < numPoints - 1; i++)
 	{
-		vertices.push_back(pVertexDataList[vertexIndexList[i]]);
+		collector->addFace({
+			toRepoVector(pVertexDataList[vertexIndexList[i + 0]]),
+			toRepoVector(pVertexDataList[vertexIndexList[i + 1]])
+		});
 	}
-
-	polylineOut(numPoints, vertices.data());
 }
 
 void DataProcessor::polylineOut(OdInt32 numPoints, const OdGePoint3d* vertexList)
 {
-	std::vector<repo::lib::RepoVector3D64> vertices;
-
 	for (OdInt32 i = 0; i < (numPoints - 1); i++)
 	{
-		vertices.clear();
-		vertices.push_back(convertTo3DRepoWorldCoorindates(vertexList[i]));
-		vertices.push_back(convertTo3DRepoWorldCoorindates(vertexList[i + 1]));
-		collector->addFace(vertices);
+		collector->addFace({
+			toRepoVector(vertexList[i]),
+			toRepoVector(vertexList[i + 1]),
+		});
 	}
 }
 
@@ -111,8 +73,7 @@ void DataProcessor::convertTo3DRepoMaterial(
 	OdDbStub* materialId,
 	const OdGiMaterialTraitsData & materialData,
 	MaterialColours& matColors,
-	repo_material_t& material,
-	bool& missingTexture)
+	repo::lib::repo_material_t& material)
 {
 	OdGiMaterialColor diffuseColor; OdGiMaterialMap diffuseMap;
 	OdGiMaterialColor ambientColor;
@@ -151,35 +112,25 @@ OdGiMaterialItemPtr DataProcessor::fillMaterialCache(
 	const OdGiMaterialTraitsData & materialData
 ) {
 	MaterialColours colors;
-	repo_material_t material;
+	repo::lib::repo_material_t material;
 	bool missingTexture = false;
 
-	collector->stopMeshEntry();
-	convertTo3DRepoMaterial(prevCache, materialId, materialData, colors, material, missingTexture);
-
-	collector->setCurrentMaterial(material, missingTexture);
-	collector->startMeshEntry();
+	convertTo3DRepoMaterial(prevCache, materialId, materialData, colors, material);
+	collector->setMaterial(material);
 
 	return OdGiMaterialItemPtr();
 }
 
-repo_material_t DataProcessor::GetDefaultMaterial() const {
-	repo_material_t material;
-	material.shininess = 0.0;
-	material.shininessStrength = 0.0;
-	material.opacity = 1;
-	material.specular = { 0, 0, 0, 0 };
-	material.diffuse = { 0.5f, 0.5f, 0.5f, 0 };
-	material.emissive = material.diffuse;
-
-	return material;
-}
-
 void DataProcessor::beginViewVectorization()
 {
-	OdGsBaseVectorizer::beginViewVectorization();
+	OdGsBaseMaterialView::beginViewVectorization();
 	OdGiGeometrySimplifier::setDrawContext(OdGsBaseMaterialView::drawContext());
 	output().setDestGeometry((OdGiGeometrySimplifier&)*this);
 	setDrawContextFlags(drawContextFlags(), false);
 	setEyeToOutputTransform(getEyeToWorldTransform());
+}
+
+void DataProcessor::initialise(GeometryCollector* collector)
+{
+	this->collector = collector;
 }

@@ -23,10 +23,11 @@
 #include <ifcUtils/repo_ifc_utils_Ifc4.h>
 #include "repo_ifc_helper_common.h"
 #include "repo_ifc_helper_geometry.h"
-#include "../../../../core/model/bson/repo_bson_factory.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
 #include <boost/filesystem.hpp>
 #include "../repo_model_import_config_default_values.h"
 
+using namespace repo::lib;
 using namespace repo::manipulator::modelconvertor::ifcHelper;
 
 IFCUtilsGeometry::IFCUtilsGeometry(const std::string &file, const modelConverter::ModelImportConfig &settings) :
@@ -121,9 +122,7 @@ bool IFCUtilsGeometry::generateGeometry(
 			//This mesh has no material, assigning a default
 			if (matNameToMaterials.find(defaultMaterialName) == matNameToMaterials.end())
 			{
-				repo_material_t matProp;
-				matProp.diffuse = { 0.5, 0.5, 0.5, 1 };
-				matNameToMaterials[defaultMaterialName] = matProp;
+				matNameToMaterials[defaultMaterialName] = repo_material_t::DefaultMaterial();
 			}
 			if (materialParent.find(defaultMaterialName) == materialParent.end())
 			{

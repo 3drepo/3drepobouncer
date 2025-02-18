@@ -22,11 +22,12 @@
 #pragma once
 
 #include <string>
-#include <boost/log/trivial.hpp>
+#include <sstream>
 
 #include "repo_broadcaster.h"
 #include "repo_listener_abstract.h"
-#include "../repo_bouncer_global.h"
+
+#include <repo/repo_bouncer_global.h>
 
 //------------------------------------------------------------------------------
 // Logging macros - to avoid having to write all that everytime to log something
@@ -36,16 +37,20 @@
 #define repoLogDebug(MSG) repo::lib::RepoLog::getInstance().log(repo::lib::RepoLog::RepoLogLevel::DEBUG, MSG)
 #define repoLogError(MSG) repo::lib::RepoLog::getInstance().log(repo::lib::RepoLog::RepoLogLevel::ERR, MSG)
 
+#define REPO_LOG_TRIVIAL(S) repo::lib::RepoLog::record(repo::lib::RepoLog::getInstance(), repo::lib::RepoLog::RepoLogLevel::S)
+
 //internal classes should all be using this.
-#define repoTrace BOOST_LOG_TRIVIAL(trace)
-#define repoDebug BOOST_LOG_TRIVIAL(debug)
-#define repoInfo BOOST_LOG_TRIVIAL(info)
-#define repoWarning BOOST_LOG_TRIVIAL(warning)
-#define repoError BOOST_LOG_TRIVIAL(error)
-#define repoFatal BOOST_LOG_TRIVIAL(fatal)
+#define repoTrace REPO_LOG_TRIVIAL(TRACE)
+#define repoDebug REPO_LOG_TRIVIAL(DEBUG)
+#define repoInfo REPO_LOG_TRIVIAL(INFO)
+#define repoWarning REPO_LOG_TRIVIAL(WARNING)
+#define repoError REPO_LOG_TRIVIAL(ERR)
+#define repoFatal REPO_LOG_TRIVIAL(FATAL)
 
 namespace repo{
 	namespace lib{
+		class RepoUUID;
+
 		class REPO_API_EXPORT RepoLog
 		{
 		public:
@@ -57,11 +62,33 @@ namespace repo{
 
 			~RepoLog();
 
-			static RepoLog &getInstance()
+			static RepoLog& getInstance();
+
+			// The record object is used to detect when the operator chain has ended.
+			// The first record is allocated on the stack. The return value of the
+			// operator (which is just a reference to the object) is then placed on the
+			// stack underneath, and used to call the second operator invocation. This
+			// repeats until the chain has terminated, at which point the initial
+			// object's destructor is called.
+
+			struct REPO_API_EXPORT record
 			{
-				static RepoLog log = RepoLog();
-				return log;
-			}
+				record(RepoLog& log, const RepoLogLevel& severity);
+
+				template<typename T>
+				record& operator<<(T const& m)
+				{
+					stream << m;
+					return *this;
+				}
+
+				~record();
+
+			private:
+				std::ostringstream stream;
+				RepoLog& log;
+				RepoLogLevel severity;
+			};
 
 			/**
 			* Log a message(carriage return is not needed!)
@@ -106,7 +133,6 @@ namespace repo{
 				const std::vector<RepoAbstractListener*> &listeners);
 
 		private:
-
 			RepoLog();
 		};
 	}

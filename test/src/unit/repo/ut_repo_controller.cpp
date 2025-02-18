@@ -81,7 +81,6 @@ TEST(RepoControllerTest, CommitScene) {
 TEST(RepoControllerTest, LoadSceneFromFile) {
 	auto controller = getController();
 	auto defaultG = core::model::RepoScene::GraphType::DEFAULT;
-	auto optG = core::model::RepoScene::GraphType::OPTIMIZED;
 
 	//standard import
 	uint8_t errCode;
@@ -89,21 +88,9 @@ TEST(RepoControllerTest, LoadSceneFromFile) {
 	ASSERT_TRUE(scene);
 	EXPECT_EQ(errCode, 0);
 	ASSERT_TRUE(scene->getRoot(defaultG));
-	ASSERT_TRUE(scene->getRoot(optG));
 	EXPECT_FALSE(scene->isMissingTexture());
 	EXPECT_FALSE(scene->isRevisioned());
 	EXPECT_TRUE(dynamic_cast<core::model::TransformationNode*>(scene->getRoot(defaultG))->isIdentity());
-
-	//Import the scene with no transformation reduction
-	auto sceneNoReduction = controller->loadSceneFromFile(getDataPath(simpleModel), errCode, repo::manipulator::modelconvertor::ModelImportConfig(false));
-	EXPECT_EQ(errCode, 0);
-	EXPECT_TRUE(sceneNoReduction);
-	EXPECT_TRUE(sceneNoReduction->getRoot(defaultG));
-	EXPECT_TRUE(sceneNoReduction->getRoot(optG));
-	EXPECT_FALSE(sceneNoReduction->isMissingTexture());
-	//There should be more transformations in the non-reduced scene than the standard scene
-	EXPECT_TRUE(sceneNoReduction->getAllTransformations(defaultG).size()
-			> scene->getAllTransformations(defaultG).size());
 
 	//Import the scene with non existant file
 	auto sceneNoFile = controller->loadSceneFromFile("thisFileDoesntExist.obj", errCode);
@@ -120,7 +107,6 @@ TEST(RepoControllerTest, LoadSceneFromFile) {
 	EXPECT_EQ(errCode, 0);
 	EXPECT_TRUE(sceneNoTex);
 	EXPECT_TRUE(sceneNoTex->getRoot(defaultG));
-	EXPECT_TRUE(sceneNoTex->getRoot(optG));
 	EXPECT_TRUE(sceneNoTex->isMissingTexture());
 
 	//Import the scene with texture but not found
@@ -128,7 +114,6 @@ TEST(RepoControllerTest, LoadSceneFromFile) {
 	EXPECT_EQ(errCode, 0);
 	EXPECT_TRUE(sceneTex);
 	EXPECT_TRUE(sceneTex->getRoot(defaultG));
-	EXPECT_TRUE(sceneTex->getRoot(optG));
 	EXPECT_FALSE(sceneTex->isMissingTexture());
 
 	//FIXME: need to test with change of config, but this is probably not trival.

@@ -296,7 +296,7 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 	repo::core::model::MaterialNode *materialNode;
 
 	if (material) {
-		repo_material_t repo_material;
+		repo::lib::repo_material_t repo_material;
 
 		aiColor3D tempColor;
 		auto tempFloat = tempColor.b;
@@ -305,35 +305,27 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 		// Ambient
 		if (AI_SUCCESS == material->Get(AI_MATKEY_COLOR_AMBIENT, tempColor))
 		{
-			repo_material.ambient.push_back(tempColor.r);
-			repo_material.ambient.push_back(tempColor.g);
-			repo_material.ambient.push_back(tempColor.b);
+			repo_material.ambient = repo::lib::repo_color3d_t(tempColor.r, tempColor.g, tempColor.b);
 		}
 		//--------------------------------------------------------------------------
 		// Diffuse
 		if (AI_SUCCESS == material->Get(AI_MATKEY_COLOR_DIFFUSE, tempColor))
 		{
-			repo_material.diffuse.push_back(tempColor.r);
-			repo_material.diffuse.push_back(tempColor.g);
-			repo_material.diffuse.push_back(tempColor.b);
+			repo_material.diffuse = repo::lib::repo_color3d_t(tempColor.r, tempColor.g, tempColor.b);
 		}
 
 		//--------------------------------------------------------------------------
 		// Specular
 		if (AI_SUCCESS == material->Get(AI_MATKEY_COLOR_SPECULAR, tempColor))
 		{
-			repo_material.specular.push_back(tempColor.r);
-			repo_material.specular.push_back(tempColor.g);
-			repo_material.specular.push_back(tempColor.b);
+			repo_material.specular = repo::lib::repo_color3d_t(tempColor.r, tempColor.g, tempColor.b);
 		}
 
 		//--------------------------------------------------------------------------
 		// Emissive
 		if (AI_SUCCESS == material->Get(AI_MATKEY_COLOR_EMISSIVE, tempColor))
 		{
-			repo_material.emissive.push_back(tempColor.r);
-			repo_material.emissive.push_back(tempColor.g);
-			repo_material.emissive.push_back(tempColor.b);
+			repo_material.emissive = repo::lib::repo_color3d_t(tempColor.r, tempColor.g, tempColor.b);
 		}
 
 		//--------------------------------------------------------------------------
@@ -423,10 +415,10 @@ repo::core::model::MeshNode AssimpModelImport::createMeshRepoNode(
 
 	//Avoid using assimp objects everywhere -> converting assimp objects into repo structs
 	std::vector<repo::lib::RepoVector3D> vertices;
-	std::vector<repo_face_t> faces;
+	std::vector<repo::lib::repo_face_t> faces;
 	std::vector<repo::lib::RepoVector3D> normals;
 	std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
-	std::vector<repo_color4d_t> colors;
+	std::vector<repo::lib::repo_color4d_t> colors;
 
 	/*
 	 *--------------------- Vertices (always present) -----------------------------
@@ -463,8 +455,8 @@ repo::core::model::MeshNode AssimpModelImport::createMeshRepoNode(
 	{
 		for (uint32_t i = 0; i < assimpMesh->mNumFaces; i++)
 		{
-			faces.push_back({ std::vector<uint32_t>(assimpMesh->mFaces[i].mIndices,
-				assimpMesh->mFaces[i].mIndices + assimpMesh->mFaces[i].mNumIndices) });
+			faces.push_back(repo::lib::repo_face_t(assimpMesh->mFaces[i].mIndices,
+				assimpMesh->mFaces[i].mIndices + assimpMesh->mFaces[i].mNumIndices));
 		}
 	}
 	/*
@@ -566,7 +558,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 			aiMetadataEntry &currentValue = assimpMeta->mValues[i];
 
 			if (key == "IfcGloballyUniqueId")
-				repoError << "TODO: fix IfcGloballyUniqueId in RepoMetadata" << std::endl;
+				repoError << "TODO: fix IfcGloballyUniqueId in RepoMetadata";
 
 			if (currentValue.mType != AI_AISTRING && currentValue.mType != FORCE_32BIT)
 			{
@@ -578,7 +570,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 					metaEntries[key] = v;
 				}
 				else {
-					repoError << "Conversion of assimp entry to RepoVariant failed" << std::endl;
+					repoError << "Conversion of assimp entry to RepoVariant failed";
 				}
 			}
 			else if (currentValue.mType == AI_AISTRING) {
@@ -606,8 +598,7 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 	repo::core::model::RepoNodeSet						     &metadata,
 	uint32_t                                               &count,
 	const std::vector<double>                                &worldOffset,
-	const std::vector<repo::lib::RepoUUID>						             &parent
-
+	std::vector<repo::lib::RepoUUID>						parents
 )
 {
 	repo::core::model::RepoNodeSet transNodes;
@@ -639,13 +630,23 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 			}
 		}
 
-		repo::core::model::TransformationNode * transNode =
-			new repo::core::model::TransformationNode(
-				repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(transMat), transName, parent));
+		repo::lib::RepoMatrix transform(transMat);
 
-		repo::lib::RepoUUID sharedId = transNode->getSharedID();
-		std::vector<repo::lib::RepoUUID> myShareID;
-		myShareID.push_back(sharedId);
+		// If this transform is a leaf node, we can skip the transform node entirely and
+		// give the mesh(es) its transformation, in its place.
+
+		bool absorbTransform = !assimpNode->mNumChildren;
+
+		if (!absorbTransform)
+		{
+			repo::core::model::TransformationNode* transNode =
+				new repo::core::model::TransformationNode(
+					repo::core::model::RepoBSONFactory::makeTransformationNode(transform, transName, parents));
+
+			transNodes.insert(transNode);
+
+			parents = { transNode->getSharedID() };
+		}
 
 		//--------------------------------------------------------------------------
 		// Register meshes as children of this transformation if any
@@ -657,24 +658,30 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 				auto& mesh = originalMeshes[meshIndex];
 				if (mesh.getNumVertices())
 				{
-					newMeshes.insert(duplicateMesh(sharedId, mesh, meshToMat, matParents));
+					auto instance = duplicateMesh(parents, mesh, meshToMat, matParents);
+					newMeshes.insert(instance);
+					if (absorbTransform)
+					{
+						instance->applyTransformation(transform);
+						instance->changeName(transName);
+						parents = { instance->getSharedID() }; // (For the metadata - there will be no other further child nodes)
+					}
 				}
 			}
 		}
 
 		//--------------------------------------------------------------------------
 		// Collect metadata and add as a child
+
 		if (keepMetadata && assimpNode->mMetaData)
 		{
 			std::string metadataName = assimpNode->mName.data;
 			if (metadataName == "<transformation>")
 				metadataName = "<metadata>";
 
-			repo::core::model::MetadataNode *metachild = createMetadataRepoNode(assimpNode->mMetaData, metadataName, myShareID);
+			repo::core::model::MetadataNode* metachild = createMetadataRepoNode(assimpNode->mMetaData, metadataName, parents);
 			metadata.insert(metachild);
 		}
-
-		transNodes.insert(transNode);
 
 		//--------------------------------------------------------------------------
 		// Register child transformations as children if any
@@ -682,7 +689,7 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 		{
 			repo::core::model::RepoNodeSet childMetadata;
 			repo::core::model::RepoNodeSet childSet = createTransformationNodesRecursive(assimpNode->mChildren[i],
-				originalMeshes, meshToMat, matParents, newMeshes, childMetadata, ++count, worldOffset, myShareID);
+				originalMeshes, meshToMat, matParents, newMeshes, childMetadata, ++count, worldOffset, parents);
 
 			transNodes.insert(childSet.begin(), childSet.end());
 			metadata.insert(childMetadata.begin(), childMetadata.end());
@@ -767,7 +774,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 							char *memblock = nullptr;
 							if (!file.is_open())
 							{
-								repoError << "Could not open texture: " << filePath << std::endl;
+								repoError << "Could not open texture: " << filePath;
 								missingTextures = true;
 							}
 							else
@@ -959,7 +966,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 }
 
 repo::core::model::RepoNode* AssimpModelImport::duplicateMesh(
-	repo::lib::RepoUUID                    &newParent,
+	const std::vector<repo::lib::RepoUUID>& newParent,
 	const repo::core::model::MeshNode &mesh,
 	const std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode *, repo::lib::RepoUUIDHasher>    &meshToMat,
 	std::unordered_map<repo::core::model::RepoNode *, std::vector<repo::lib::RepoUUID>> &matParents)
@@ -967,7 +974,7 @@ repo::core::model::RepoNode* AssimpModelImport::duplicateMesh(
 	auto newMesh = new repo::core::model::MeshNode(mesh);
 	newMesh->setUniqueID(repo::lib::RepoUUID::createUUID());
 	newMesh->setSharedID(repo::lib::RepoUUID::createUUID());
-	newMesh->setParents({ newParent });
+	newMesh->setParents( newParent );
 
 	auto it = meshToMat.find(mesh.getSharedID());
 	if (it != meshToMat.end() && it->second)

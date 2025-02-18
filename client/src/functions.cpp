@@ -88,6 +88,9 @@ int32_t performOperation(
 		try {
 			errCode = importFileAndCommit(controller, token, command);
 		}
+		catch (const repo::lib::RepoException& e) {
+			throw; // RepoExceptions have additional context as well as an embedded return code, so let these bubble up
+		}
 		catch (const std::exception& e)
 		{
 			repoLogError("Failed to import and commit file: " + std::string(e.what()));
@@ -254,11 +257,6 @@ bool _generateStash(
 			controller->updateRevisionStatus(scene, repo::core::model::ModelRevisionNode::UploadStatus::GEN_WEB_STASH);
 			success = controller->generateAndCommitRepoBundlesBuffer(token, scene);
 		}
-		else if (type == "src")
-		{
-			controller->updateRevisionStatus(scene, repo::core::model::ModelRevisionNode::UploadStatus::GEN_WEB_STASH);
-			success = controller->generateAndCommitSRCBuffer(token, scene);
-		}
 		else if (type == "tree")
 		{
 			controller->updateRevisionStatus(scene, repo::core::model::ModelRevisionNode::UploadStatus::GEN_SEL_TREE);
@@ -288,7 +286,7 @@ int32_t generateStash(
 	if (command.nArgcs < 3)
 	{
 		repoLogError("Number of arguments mismatch! " + cmdGenStash
-			+ " requires 3 arguments:database project [repo|src|tree]");
+			+ " requires 3 arguments:database project [repo|tree]");
 		return REPOERR_INVALID_ARG;
 	}
 
@@ -296,7 +294,7 @@ int32_t generateStash(
 	std::string project = command.args[1];
 	std::string type = command.args[2];
 
-	if (!(type == "repo" || type == "src" || type == "tree"))
+	if (!(type == "repo" || type == "tree"))
 	{
 		repoLogError("Unknown stash type: " + type);
 		return REPOERR_INVALID_ARG;
@@ -425,17 +423,16 @@ int32_t importFileAndCommit(
 
 	repoLog("File: " + fileLoc + " database: " + database
 		+ " project: " + project + " target units: " + (units.empty() ? "none" : units) + " owner :" + owner + " importAnimations: " + (importAnimations ? "true" : "false")
-		+ " lod: " + std::to_string(lod)
+		+ " lod: " + std::to_string(lod) + " revisionId: " + revId.toString()
 	);
 
 	uint8_t err;
 
-	repo::manipulator::modelconvertor::ModelImportConfig config(true, importAnimations, targetUnits, timeZone, lod);
+	repo::manipulator::modelconvertor::ModelImportConfig config(importAnimations, targetUnits, timeZone, lod, revId, database, project);
 	repo::core::model::RepoScene* graph = controller->loadSceneFromFile(fileLoc, err, config);
 	if (graph)
 	{
 		repoLog("Trying to commit this scene to database as " + database + "." + project);
-		graph->setDatabaseAndProjectName(database, project);
 
 		err = controller->commitScene(token, graph, owner, tag, desc, revId);
 

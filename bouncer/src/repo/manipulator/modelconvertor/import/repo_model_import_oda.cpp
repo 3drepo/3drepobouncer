@@ -1,6 +1,23 @@
+/**
+*  Copyright (C) 2025 3D Repo Ltd
+*
+*  This program is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU Affero General Public License as
+*  published by the Free Software Foundation, either version 3 of the
+*  License, or (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU Affero General Public License for more details.
+*
+*  You should have received a copy of the GNU Affero General Public License
+*  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "repo_model_import_oda.h"
-#include "../../../core/model/bson/repo_bson_factory.h"
-#include "../../../error_codes.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/error_codes.h"
 
 #ifdef ODA_SUPPORT
 #include <OdaCommon.h>
@@ -8,6 +25,7 @@
 #include "odaHelper/helper_functions.h"
 #endif
 
+using namespace repo::lib;
 using namespace repo::manipulator::modelconvertor;
 
 const std::string OdaModelImport::supportedExtensions = ".dgn.rvt.rfa.dwg.dxf.nwd.nwc";
@@ -32,63 +50,59 @@ bool OdaModelImport::isSupportedExts(const std::string &testExt)
 
 repo::core::model::RepoScene* OdaModelImport::generateRepoScene(uint8_t &errMsg)
 {
-	repo::core::model::RepoScene *scene = nullptr;
-#ifdef ODA_SUPPORT
-	repoInfo << "Constructing Repo Scene...";
-	const repo::core::model::RepoNodeSet dummy;
-	modelUnits = geoCollector.units;
-	auto rootNode = geoCollector.createRootNode();
-	auto meshSet = geoCollector.getMeshNodes(rootNode);
-	if (meshSet.size()) {
-		repoInfo << "Get material nodes... ";
+	// RepoSceneBuilder has already populated the collection with nodes having a
+	// fixed revision id. This method creates a RepoScene instance that sits
+	// those nodes to finalise the import.
 
-		repo::core::model::RepoNodeSet materialSet, textureSet;
+	#ifdef ODA_SUPPORT
+		repoInfo << "Initialising Repo Scene...";
 
-		geoCollector.getMaterialAndTextureNodes(materialSet, textureSet);
-		auto transSet = geoCollector.getTransformationNodes();
-		auto metaSet = geoCollector.getMetaNodes();
-		repoInfo << "Nodes count - Trans: " << transSet.size() << " meshes: " << meshSet.size() << " materials: " << materialSet.size() << " metadata: " << metaSet.size();
-		scene = new repo::core::model::RepoScene({ filePath }, meshSet, materialSet, metaSet, textureSet, transSet);
-		if (geoCollector.hasMissingTextures())
+		this->modelUnits = sceneBuilder->getUnits();
+
+		repo::core::model::RepoScene* scene = new repo::core::model::RepoScene(
+			settings.getDatabaseName(),
+			settings.getProjectName()
+		);
+		scene->setRevision(settings.getRevisionId());
+		scene->setOriginalFiles({ filePath });
+		scene->loadRootNode(handler.get());
+		scene->setWorldOffset(sceneBuilder->getWorldOffset());
+		if (sceneBuilder->hasMissingTextures()) {
 			scene->setMissingTexture();
-		scene->setWorldOffset(geoCollector.getModelOffset());
-		repoInfo << "Repo Scene constructed.";
-	}
-	else {
-		repoError << "No meshes generated";
-		scene = new repo::core::model::RepoScene({ filePath }, dummy, dummy, dummy, dummy, dummy, dummy);
-	}
+		}
 
-#else
-	errMsg = REPOERR_ODA_UNAVAILABLE;
-#endif
-	return scene;
+		return scene;
+
+	#else
+		throw repo::lib::RepoImporterUnavailable("ODA support has not been compiled in. Please rebuild with ODA_SUPPORT ON", REPOERR_ODA_UNAVAILABLE);
+	#endif
 }
-bool OdaModelImport::importModel(std::string filePath, uint8_t &err)
+
+bool OdaModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err)
 {
 #ifdef ODA_SUPPORT
 	this->filePath = filePath;
-	repoInfo << " ==== Importing with Teigha Library [" << filePath << "] ====";
-	odaProcessor = odaHelper::FileProcessor::getFileProcessor(filePath, &geoCollector, settings);
-	shouldReduce = odaProcessor->shouldApplyReduction;
-	bool success = false;
-	err = REPOERR_OK;
-	try {
-		err = odaProcessor->readFile();
-		if (err == REPOERR_OK) {
-			err = geoCollector.getErrorCode(); // the outermost error codes should take precedence as they could cause inner errors
-		}
-		success = odaProcessor != nullptr && err == REPOERR_OK;
-	}
-	catch (std::exception& ex) {
-		success = false;
-		err = REPOERR_LOAD_SCENE_FAIL;
+	repoInfo << " ==== Importing with Teigha Library [" << filePath << "] using RepoSceneBuilder ====";
+	this->handler = handler;
+	sceneBuilder = std::make_unique<repo::manipulator::modelutility::RepoSceneBuilder>(
+		handler,
+		settings.getDatabaseName(),
+		settings.getProjectName(),
+		settings.getRevisionId()
+	);
+	sceneBuilder->createIndexes();
+
+	odaProcessor = odaHelper::FileProcessor::getFileProcessor(filePath, sceneBuilder.get(), settings);
+	auto result = odaProcessor->readFile();
+
+	if (result != REPOERR_OK) {
+		throw repo::lib::RepoImportException(result);
 	}
 
-	return success;
+	sceneBuilder->finalise();
+
+	return true;
 #else
-	//ODA support not compiled in.
-	err = REPOERR_ODA_UNAVAILABLE;
-	return false;
+	throw repo::lib::RepoImporterUnavailable("ODA support has not been compiled in. Please rebuild with ODA_SUPPORT ON", REPOERR_ODA_UNAVAILABLE);
 #endif
 }

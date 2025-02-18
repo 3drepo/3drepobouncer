@@ -45,7 +45,6 @@ class StubDeviceModuleDgn : public OdGsBaseModule
 {
 private:
 	GeometryCollector *collector;
-	OdGeMatrix3d        m_matTransform;
 	OdGeExtents3d extModel;
 
 public:
@@ -62,7 +61,7 @@ protected:
 	OdSmartPtr<OdGsViewImpl> createViewObject()
 	{
 		OdSmartPtr<OdGsViewImpl> pP = OdRxObjectImpl<DataProcessorDgn, OdGsViewImpl>::createObject();
-		((DataProcessorDgn*)pP.get())->init(collector, extModel);
+		((DataProcessorDgn*)pP.get())->initialise(collector, extModel);
 		return pP;
 	}
 	OdSmartPtr<OdGsBaseVectorizeDevice> createBitmapDeviceObject()
@@ -76,8 +75,19 @@ protected:
 };
 ODRX_DEFINE_PSEUDO_STATIC_MODULE(StubDeviceModuleDgn);
 
+FileProcessorDgn::FileProcessorDgn(const std::string& inputFile,
+	repo::manipulator::modelutility::RepoSceneBuilder* builder, 
+	const ModelImportConfig& config) 
+	: FileProcessor(inputFile, builder, config)
+{
+	collector = new GeometryCollector(builder);
+}
+
 repo::manipulator::modelconvertor::odaHelper::FileProcessorDgn::~FileProcessorDgn()
 {
+	if (collector) {
+		delete collector;
+	}
 }
 
 OdDgDatabasePtr FileProcessorDgn::initialiseOdDatabase() {
@@ -158,7 +168,7 @@ uint8_t FileProcessorDgn::readFile() {
 		ODCOLORREF background = pModel->getBackground();
 
 		if (collector) {
-			collector->units = determineModelUnits(pModel->getMasterUnit());
+			collector->setUnits(determineModelUnits(pModel->getMasterUnit()));
 		}
 
 		OdDgElementId vectorizedViewId;
@@ -216,11 +226,11 @@ uint8_t FileProcessorDgn::readFile() {
 			" (Model: '" << convertToStdString(OdDgModel::cast(pViewGroup->getModelId().openObject(OdDg::kForRead))->getName()) << "')";
 
 		OdGeExtents3d extModel;
-		//pModel->getGeomExtents(vectorizedViewId, extModel);
-		auto origin = pModel->getGlobalOrigin();
+		pModel->getGeomExtents(vectorizedViewId, extModel);
 		if (collector) {
-			collector->setOrigin(origin.x, origin.y, origin.z);
+			collector->setWorldOffset(toRepoVector(extModel.minPoint()));
 		}
+
 		// Color with #255 always defines backround. The background of the active model must be considered in the device palette.
 		pPalCpy[255] = background;
 		// Note: This method should be called to resolve "white background issue" before setting device palette
@@ -240,6 +250,10 @@ uint8_t FileProcessorDgn::readFile() {
 		pDb.release();
 		odgsUninitialize();
 		odrxUninitialize();
+
+		if (collector) {
+			collector->finalise();
+		}
 	}
 	catch (OdError & e)
 	{

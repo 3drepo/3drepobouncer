@@ -19,13 +19,13 @@
 
 #include <boost/filesystem.hpp>
 
-#include "repo/lib/repo_log.h"
+#include <repo_log.h>
 #include "repo/lib/repo_exception.h"
 
 using namespace repo::core::model;
 
 MaterialNode RepoBSONFactory::makeMaterialNode(
-	const repo_material_t& material,
+	const repo::lib::repo_material_t& material,
 	const std::string& name,
 	const std::vector<repo::lib::RepoUUID>& parents,
 	const int& apiLevel)
@@ -79,7 +79,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 
 MeshNode RepoBSONFactory::makeMeshNode(
 	const std::vector<repo::lib::RepoVector3D>& vertices,
-	const std::vector<repo_face_t>& faces,
+	const std::vector<repo::lib::repo_face_t>& faces,
 	const std::vector<repo::lib::RepoVector3D>& normals,
 	const repo::lib::RepoBounds& boundingBox,
 	const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
@@ -103,12 +103,12 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
 SupermeshNode RepoBSONFactory::makeSupermeshNode(
 	const std::vector<repo::lib::RepoVector3D>& vertices,
-	const std::vector<repo_face_t>& faces,
+	const std::vector<repo::lib::repo_face_t>& faces,
 	const std::vector<repo::lib::RepoVector3D>& normals,
 	const repo::lib::RepoBounds& boundingBox,
 	const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
 	const std::string& name,
-	const std::vector<repo_mesh_mapping_t>& mappings
+	const std::vector<repo::lib::repo_mesh_mapping_t>& mappings
 )
 {
 	SupermeshNode node;
@@ -127,11 +127,11 @@ SupermeshNode RepoBSONFactory::makeSupermeshNode(
 
 SupermeshNode RepoBSONFactory::makeSupermeshNode(
 	const std::vector<repo::lib::RepoVector3D>& vertices,
-	const std::vector<repo_face_t>& faces,
+	const std::vector<repo::lib::repo_face_t>& faces,
 	const std::vector<repo::lib::RepoVector3D>& normals,
 	const repo::lib::RepoBounds& boundingBox,
 	const std::vector<std::vector<repo::lib::RepoVector2D>>& uvChannels,
-	const std::vector<repo_mesh_mapping_t>& mappings,
+	const std::vector<repo::lib::repo_mesh_mapping_t>& mappings,
 	const repo::lib::RepoUUID& id,
 	const repo::lib::RepoUUID& sharedId,
 	const std::vector<float> mappingIds

@@ -18,255 +18,198 @@
 #pragma once
 
 #include "repo/error_codes.h"
-#include "../repo_model_units.h"
-#include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/manipulator/modelconvertor/import/repo_model_units.h"
 #include "repo/lib/datastructure/repo_structs.h"
-#include "repo/lib/datastructure/repo_variant.h"
-#include "repo/lib/datastructure/repo_bounds.h"
-#include "helper_functions.h"
-#include "vertex_map.h"
+#include "repo/manipulator/modelutility/repo_scene_builder.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/core/model/bson/repo_node_mesh.h"
+#include "repo_mesh_builder.h"
 
 #include <fstream>
 #include <vector>
 #include <string>
-#include <boost/optional.hpp>
+#include <stack>
 
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
-				struct mesh_data_t {
-					std::vector<repo_face_t> faces;
-					repo::lib::RepoBounds boundingBox;
-					VertexMap vertexMap;
-					std::string name;
-					std::string layerName;
-					std::string groupName;
-					uint32_t matIdx;
-					uint32_t format;
-				};
-
 				class GeometryCollector
 				{
 				public:
-					GeometryCollector();
+					GeometryCollector(repo::manipulator::modelutility::RepoSceneBuilder* builder);
 					~GeometryCollector();
 
-					std::unordered_map<std::string, std::unordered_map<std::string, repo::lib::RepoVariant>> metadataCache;
-					ModelUnits units = ModelUnits::UNKNOWN;
-
-					/**
-					* Check whether collector has missing textures.
-					* @return returns true if at least one texture is missing
+					/*
+					* Declares a new entry in the tree that can be accessed by an arbitrary
+					* Id (instead of a RepoUUID). If parentId is empty, the layer will be
+					* created under the root node.
 					*/
-					bool hasMissingTextures();
+					void createLayer(std::string id, std::string name, std::string parentId);
 
-					/**
-					* If a geometry processing error is encountered the import will attempt to continue.
-					* This checks if any errors were encountered. Returns REPOERR_OK if not.
+					/*
+					* True if the layer with the id was created with createLayer. createLayer
+					* can still be called but nothing will change (e.g. the name and parent
+					* will still be those of the first call).
 					*/
-					int getErrorCode();
+					bool hasLayer(std::string id);
 
-					/**
-					* Get all the material and texture nodes collected.
-					* @return returns a repoNodeSet containing material nodes
+					/*
+					* Returns the sharedId for a layer with the given local id; used for
+					* setting the parents of mesh and metadata nodes.
 					*/
-					void getMaterialAndTextureNodes(repo::core::model::RepoNodeSet& materials, repo::core::model::RepoNodeSet& textures);
+					repo::lib::RepoUUID getSharedId(std::string id);
 
-					/**
-					* Get all the transformation nodes collected.
-					* This is based on the layer information
-					* @return returns a repoNodeSet containing transformation nodes
+					/*
+					* Adds a metadata node for the given layer. Each call will result in a new
+					* node (so, if called twice a given transformation could end up with two
+					* metadata nodes parented to it). If this is not desired, call hasMetadata
+					* to see if the id already has had a node created.
 					*/
-					repo::core::model::RepoNodeSet getTransformationNodes() {
-						return transNodes;
-					}
+					void setMetadata(std::string id, std::unordered_map<std::string, repo::lib::RepoVariant>);
 
-					/**
-					* Get all the metadata nodes collected.
-					* This is based on the layer information
-					* @return returns a repoNodeSet containing metadata nodes
+					bool hasMetadata(std::string id);
+
+					void addMeshes(std::string id, std::vector<std::pair<repo::core::model::MeshNode, repo::lib::repo_material_t>>& meshes);
+
+					/*
+					* Immediately changes which material any new geometry should be using.
 					*/
-					repo::core::model::RepoNodeSet getMetadataNodes() {
-						return metaNodes;
-					}
+					void setMaterial(const repo::lib::repo_material_t& material);
 
-					/**
-					* Get all mesh nodes collected.
-					* @return returns a vector of mesh nodes
+					/*
+					* A stack allocated triangle that can have uvs and a normal. This takes only
+					* a subset of the formats supported by repo_face_t.
 					*/
-					repo::core::model::RepoNodeSet getMeshNodes(const repo::core::model::TransformationNode& root);
-
-					/**
-					* Gt the model offset applied on the meshes collected
-					* this is typically the minimum bounding box.
-					* @return returns a vector of double (3 values) for the model offset.
-					*/
-					std::vector<double> getModelOffset() const {
-						std::vector<double> res;
-						for (int i = 0; i < minMeshBox.size(); ++i) {
-							res.push_back(origin.size() > i ? minMeshBox[i] - origin[i] : minMeshBox[i]);
-						}
-
-						return res;
-					}
-
-					/**
-					* returns a boolean indicating if we already have metedata for this given ID
-					* @return returns true if there is a metadata entry
-					*/
-					bool hasMeta(const std::string &id) {
-						return idToMeta.find(id) != idToMeta.end();
-					}
-
-					/**
-					* Indicates a start of a mesh
-					*/
-					void startMeshEntry();
-
-					/**
-					* Indicates end of a mesh
-					*/
-					void stopMeshEntry();
-
-					void setLayer(const std::string id, const std::string &name, const std::string parentID = std::string()) {
-						nextLayer = id;
-						if (layerIDToName.find(id) == layerIDToName.end()) {
-							layerIDToName[id] = name;
-							if (!parentID.empty()) {
-								layerIDToParent[id] = parentID;
-							}
-						}
-					}
-
-					/**
-					* Set the name for the next mesh
-					* @param name name of the next mesh
-					*/
-					void setNextMeshName(const std::string &name) {
-						nextMeshName = name;
-					}
-
-					/**
-					* Set next group name
-					* @param groupName group name of the next mesh
-					* @return returns true if there's already a metadata entry for this grouping
-					*/
-					void setMeshGroup(const std::string &groupName) {
-						nextGroupName = groupName;
-					}
-
-					/**
-					* Add a face to the current mesh, setting the normal for all the vertices
-					* @param vertices a vector of vertices that makes up this face
-					*/
-					void addFace(
-						const std::vector<repo::lib::RepoVector3D64> &vertices,
-						const repo::lib::RepoVector3D64& normal,
-						const std::vector<repo::lib::RepoVector2D>& uvCoords = std::vector<repo::lib::RepoVector2D>()
-					);
-
-					/**
-					* Add a face to the current mesh. This has no normals or uvs (such as would be the case with polylines)
-					* @param vertices a vector of vertices that makes up this face
-					*/
-					void addFace(
-						const std::vector<repo::lib::RepoVector3D64>& vertices
-					);
-
-					/**
-					* Change current material to the one provided
-					* @param material material contents.
-					*/
-					void setCurrentMaterial(const repo_material_t &material, bool missingTexture = false);
-
-					void setOrigin(const double &x, const double &y, const double &z) {
-						origin = { x, y, z };
-					}
-
-					/**
-					* Get all meta nodes collected.
-					* @return returns a vector of meta nodes
-					*/
-					repo::core::model::RepoNodeSet getMetaNodes();
-
-					/**
-					* Set transformation matrix for rootNode
-					* @param transformation matrix for rootNode
-					*/
-					void setRootMatrix(repo::lib::RepoMatrix matrix);
-
-					/**
-					* Create transformation root node
-					* @return root transformation node
-					*/
-					repo::core::model::TransformationNode createRootNode();
-
-					/**
-					* Set metadata of a group
-					* @param groupName groupName
-					* @param metaEntry Metadata entry for groupName
-					*/
-					void setMetadata(const std::string &groupName,
-						const std::unordered_map<std::string, repo::lib::RepoVariant> &metaEntry)
+					struct Face
 					{
-						if (!hasMeta(groupName) && metaEntry.size() > 0) {
-							idToMeta[groupName] = metaEntry;
+						Face() :
+							numUvs(0),
+							numVertices(0)
+						{
 						}
+
+						repo::lib::RepoVector3D64 vertices[3];
+						repo::lib::RepoVector2D uvs[3];
+						int numUvs;
+						int numVertices;
+
+						void push_back(repo::lib::RepoVector3D64 vertex) {
+							vertices[numVertices++] = vertex;
+						}
+
+						void push_back(repo::lib::RepoVector2D uv) {
+							uvs[numUvs++] = uv;
+						}
+					};
+
+					void addFace(const std::initializer_list<repo::lib::RepoVector3D64>& vertices);
+
+					void addFace(const Face& triangle);
+
+					template<repo::core::model::RepoNodeClass T>
+					void addNode(const T& n) {
+						sceneBuilder->addNode(n);
 					}
+
+					void addMaterialReference(repo::lib::repo_material_t material, repo::lib::RepoUUID parentId) {
+						sceneBuilder->addMaterialReference(material, parentId);
+					}
+
+					void setUnits(repo::manipulator::modelconvertor::ModelUnits units) {
+						sceneBuilder->setUnits(units);
+					}
+
+					void setWorldOffset(repo::lib::RepoVector3D64 offset){
+						sceneBuilder->setWorldOffset(offset);
+					}
+
+					void setMissingTextures() {
+						sceneBuilder->setMissingTextures();
+					}
+
+					repo::lib::RepoVector3D64 getWorldOffset() const {
+						return sceneBuilder->getWorldOffset();
+					}
+
+					/*
+					* Should be called when the rendering is complete, to emit any remaining
+					* meshes and materials.
+					*/
+					void finalise();
+
+					/*
+					* Maintains a set of MeshBuilders for given materials intended to receive
+					* geometry under a single transformation, until the active context changes.
+					*/
+					class Context
+					{
+					public:
+						Context(const GeometryCollector* collector):
+							offset(-collector->getWorldOffset())
+						{
+							setMaterial(collector->getLastMaterial());
+						}
+
+						~Context();
+
+						std::unordered_map<uint64_t, std::unique_ptr<RepoMeshBuilder>> meshBuilders;
+
+						/*
+						* Creates a MeshBuilder for the material, and sets it as the active
+						* one.
+						*/
+						void setMaterial(const repo::lib::repo_material_t& material);
+
+						void addFace(const std::initializer_list<repo::lib::RepoVector3D64>& vertices) {
+							meshBuilder->addFace(RepoMeshBuilder::face(
+								vertices.begin(), vertices.size()
+							));
+						}
+
+						void addFace(const Face& triangle) {
+							meshBuilder->addFace(RepoMeshBuilder::face(
+								triangle.vertices, triangle.numVertices,
+								triangle.uvs, triangle.numUvs
+							));
+						}
+
+						std::vector<std::pair<repo::core::model::MeshNode, repo::lib::repo_material_t>> extractMeshes();
+
+					private:
+						repo::lib::RepoVector3D64 offset;
+						RepoMeshBuilder* meshBuilder;
+					};
+
+					/*
+					* Creates a new context initialised with the offset and material. This does
+					* not make the context active - it must still be pushed with pushDrawContext.
+					*/
+					std::unique_ptr<Context> makeNewDrawContext();
+
+					// These stack operations must be symmetric - calling pop with a different
+					// pointer to the active context will result in an exception.
+
+					/*
+					* If ctx is not null, sets the active context to ctx, and stores the
+					* previous context on the stack.
+					*/
+					void pushDrawContext(Context* ctx);
+
+					/*
+					* If ctx is not null, sets the active context to the previous one.
+					*/
+					void popDrawContext(Context* ctx);
+
+					repo::lib::repo_material_t getLastMaterial() const;
 
 				private:
-
-					std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<int, std::vector<mesh_data_t>>>> meshData;
-					std::unordered_map<std::string, std::unordered_map<std::string, repo::lib::RepoVariant> > idToMeta;
-					std::unordered_map<std::string, std::string> layerIDToName, layerIDToParent;
-					std::unordered_map<std::string, repo::core::model::MetadataNode*> elementToMetaNode;
-					std::string nextMeshName, nextLayer, nextGroupName;
-					uint32_t nextFormat;
-					std::unordered_map< uint32_t, std::pair<repo::core::model::MaterialNode, repo::core::model::TextureNode> > idxToMat;
-					std::unordered_map<uint32_t, std::vector<repo::lib::RepoUUID> > matToMeshes;
-					repo::core::model::RepoNodeSet transNodes, metaNodes;
-					uint32_t currMat;
-					std::vector<double> minMeshBox, origin;
-
-					std::vector<mesh_data_t>* currentEntry = nullptr;
-					mesh_data_t* currentMesh = nullptr;
-					bool missingTextures = false;
-					int errorCode = REPOERR_OK;
-					repo::lib::RepoMatrix rootMatrix;
-
-					/**
-					* Add a face to the current mesh. This method should only be called by one of the overloads above.
-					* Setting a face with uvs but no normals is not supported.
-					*/
-					void addFace(
-						const std::vector<repo::lib::RepoVector3D64>& vertices,
-						boost::optional<const repo::lib::RepoVector3D64&> normal,
-						boost::optional<const std::vector<repo::lib::RepoVector2D>&> uvCoords
-					);
-
-					repo::core::model::TransformationNode* createTransNode(
-						const std::string &name,
-						const std::string &id,
-						const repo::lib::RepoUUID &parentId
-					);
-
-					repo::core::model::TextureNode createTextureNode(const std::string& texturePath);
-					repo::core::model::MetadataNode*  createMetaNode(
-						const std::string &name,
-						const repo::lib::RepoUUID &parentId,
-						const  std::unordered_map<std::string, repo::lib::RepoVariant> &metaValues
-					);
-
-					mesh_data_t* startOrContinueMeshByFormat(uint32_t format);
-					uint32_t getMeshFormat(bool hasUvs, bool hasNormals, int faceSize);
-					repo::core::model::TransformationNode* ensureParentNodeExists(
-						const std::string &layerId,
-						const repo::lib::RepoUUID &rootId,
-						std::unordered_map<std::string, repo::core::model::TransformationNode*> &layerToTrans
-					);
-
-					mesh_data_t createMeshEntry(uint32_t format);
+					repo::manipulator::modelutility::RepoSceneBuilder* sceneBuilder;
+					std::stack<Context*> contexts;
+					repo::lib::repo_material_t latestMaterial;
+					std::unordered_map<std::string, repo::lib::RepoUUID> layerIdToSharedId;
+					std::set<std::string> layersWithMetadata;
+					repo::lib::RepoUUID rootNodeId;
 				};
 			}
 		}

@@ -85,7 +85,7 @@ static MetadataNode makeMetadataNode(
 static MaterialNode makeMaterialNode(
 	const repo::lib::RepoUUID& parent)
 {
-	repo_material_t s;
+	repo::lib::repo_material_t s;
 	auto m = RepoBSONFactory::makeMaterialNode(s, "", { parent });
 	m.setSharedID(repo::lib::RepoUUID::createUUID());  // These unit tests will set the parent of texture nodes as material nodes
 	return m;
@@ -941,28 +941,10 @@ TEST(RepoSceneTest, getNodeBySharedID)
 	matNodes.insert(mat2);
 	texNodes.insert(tex1);
 
-	auto rootst = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
-	auto trans2st = new TransformationNode(makeTransformationNode(rootst->getSharedID()));
-	auto m1st = new MeshNode(makeMeshNode(rootst->getSharedID()));
-	auto m2st = new MeshNode(makeMeshNode(trans2st->getSharedID()));
-	auto mat1st = new MaterialNode(makeMaterialNode(m1st->getSharedID()));
-	auto mat2st = new MaterialNode(makeMaterialNode(m2st->getSharedID()));
-	auto tex1st = new TextureNode(makeTextureNode(mat1st->getSharedID()));
-
-	transNodes.insert(rootst);
-	transNodes.insert(trans2st);
-	meshNodes.insert(m1st);
-	meshNodes.insert(m2st);
-
-	matNodes.insert(mat1st);
-	matNodes.insert(mat2st);
-	texNodes.insert(tex1st);
-
 	auto scene2 = RepoScene(std::vector<std::string>(), meshNodes, matNodes, empty, texNodes, transNodes);
 
 	EXPECT_EQ(root, scene2.getNodeBySharedID(defaultG, root->getSharedID()));
 	EXPECT_EQ(nullptr, scene2.getNodeBySharedID(defaultG, repo::lib::RepoUUID::createUUID()));
-	EXPECT_EQ(nullptr, scene2.getNodeBySharedID(RepoScene::GraphType::OPTIMIZED, m2st->getSharedID()));
 }
 
 TEST(RepoSceneTest, getNodeByUniqueID)
@@ -986,28 +968,10 @@ TEST(RepoSceneTest, getNodeByUniqueID)
 	matNodes.insert(mat2);
 	texNodes.insert(tex1);
 
-	auto rootst = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
-	auto trans2st = new TransformationNode(makeTransformationNode(rootst->getSharedID()));
-	auto m1st = new MeshNode(makeMeshNode(rootst->getSharedID()));
-	auto m2st = new MeshNode(makeMeshNode(trans2st->getSharedID()));
-	auto mat1st = new MaterialNode(makeMaterialNode(m1st->getSharedID()));
-	auto mat2st = new MaterialNode(makeMaterialNode(m2st->getSharedID()));
-	auto tex1st = new TextureNode(makeTextureNode(mat1st->getSharedID()));
-
-	transNodes.insert(rootst);
-	transNodes.insert(trans2st);
-	meshNodes.insert(m1st);
-	meshNodes.insert(m2st);
-
-	matNodes.insert(mat1st);
-	matNodes.insert(mat2st);
-	texNodes.insert(tex1st);
-
 	auto scene2 = RepoScene(std::vector<std::string>(), meshNodes, matNodes, empty, texNodes, transNodes);
 
 	EXPECT_EQ(root, scene2.getNodeByUniqueID(defaultG, root->getUniqueID()));
 	EXPECT_EQ(nullptr, scene2.getNodeBySharedID(defaultG, repo::lib::RepoUUID::createUUID()));
-	EXPECT_EQ(nullptr, scene2.getNodeBySharedID(RepoScene::GraphType::OPTIMIZED, m2st->getUniqueID()));
 }
 
 TEST(RepoSceneTest, hasRoot)
@@ -1131,7 +1095,7 @@ TEST(RepoSceneTest, addNodes)
 
 	int currentSize = newNodes.size();
 	newNodes.clear();
-	newNodes.push_back(new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1))));
+	newNodes.push_back(new TransformationNode(makeTransformationNode(scene.getRoot(defaultG)->getSharedID(), getRandomString(rand() % 10 + 1))));
 	newNodes.push_back(new TransformationNode(makeTransformationNode(newNodes.back()->getSharedID())));
 	newNodes.push_back(new MeshNode(makeMeshNode(newNodes.back()->getSharedID())));
 	newNodes.push_back(new MeshNode(makeMeshNode(newNodes.back()->getSharedID())));

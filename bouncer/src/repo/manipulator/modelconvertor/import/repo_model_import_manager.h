@@ -21,8 +21,9 @@
 #include <memory>
 
 #include "repo_model_import_config.h"
-#include "../../../core/model/collection/repo_scene.h"
 #include "repo_model_import_abstract.h"
+#include "repo/core/model/collection/repo_scene.h"
+#include "repo/core/handler/repo_database_handler_abstract.h"
 
 namespace repo {
 	namespace manipulator {
@@ -35,6 +36,7 @@ namespace repo {
 				repo::core::model::RepoScene* ImportFromFile(
 					const std::string &file,
 					const repo::manipulator::modelconvertor::ModelImportConfig &config,
+					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
 					uint8_t &error) const;
 
 			private:

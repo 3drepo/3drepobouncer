@@ -30,12 +30,8 @@ std::vector<repo::lib::RepoUUID> uuidPool;
 int uuidPoolCounter = 0;
 
 repo::RepoController::RepoToken* testing::initController(repo::RepoController* controller) {
-	repo::lib::RepoConfig config = { REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
-		REPO_GTEST_DBUSER, REPO_GTEST_DBPW };
-
-	config.configureFS("./", 2);
 	std::string errMsg;
-	return controller->init(errMsg, config);
+	return controller->init(errMsg, getConfig());
 }
 
 repo::lib::RepoVector3D testing::makeRepoVector()
@@ -106,170 +102,6 @@ void testing::restartRand(int seed)
 {
 	std::srand(seed);
 	uuidPoolCounter = seed;
-}
-
-
-
-bool testing::projectHasMetaNodesWithPaths(std::string dbName, std::string projectName, std::string key, std::string value, std::vector<std::string> expected)
-{
-	repo::RepoController* controller = new repo::RepoController();
-	auto token = initController(controller);
-
-	std::vector<std::string> paths;
-
-	if (token)
-	{
-		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, false, false, { repo::core::model::ModelRevisionNode::UploadStatus::MISSING_BUNDLES });
-		if (scene)
-		{
-			auto metadata = scene->getAllMetadata(repo::core::model::RepoScene::GraphType::DEFAULT);
-			auto transforms = scene->getAllTransformations(repo::core::model::RepoScene::GraphType::DEFAULT);
-			auto meshes = scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT);
-
-			std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> sharedIdToNode;
-
-			for (auto m : transforms) {
-				sharedIdToNode[m->getSharedID()] = m;
-			}
-
-			for (auto m : meshes) {
-				sharedIdToNode[m->getSharedID()] = m;
-			}
-
-			for (auto m : metadata) {
-				auto metaDataNode = dynamic_cast<repo::core::model::MetadataNode*>(m);
-				auto metaDataArray = metaDataNode->getAllMetadata();
-				for (auto entry : metaDataArray)
-				{
-					auto aKey = entry.first;
-					std::string aValue = boost::apply_visitor(repo::lib::StringConversionVisitor(), entry.second);
-
-					if (aKey == key && aValue == value)
-					{
-						// This metadata node contains the key-value pair we are looking for. Now
-						// check its position in the tree.
-
-						auto path = metaDataNode->getName();
-						auto parents = metaDataNode->getParentIDs();
-
-						while (parents.size() > 0)
-						{
-							auto parent = sharedIdToNode[parents[0]];
-							path = parent->getName() + "->" + path;
-							parents = parent->getParentIDs();
-						}
-
-						paths.push_back(path);
-					}
-				}
-			}
-			delete scene;
-		}
-	}
-	delete controller;
-
-	if (paths.size() != expected.size())
-	{
-		return false;
-	}
-
-	int found = 0;
-
-	for (auto p : expected)
-	{
-		for (size_t i = 0; i < paths.size(); i++)
-		{
-			if (paths[i] == p)
-			{
-				found++;
-				paths.erase(paths.begin() + i);
-				break;
-			}
-		}
-	}
-
-	if (found != expected.size())
-	{
-		return false;
-	}
-
-	return true;
-}
-
-bool testing::projectHasGeometryWithMetadata(std::string dbName, std::string projectName, std::string key, std::string value)
-{
-	bool res = false;
-	repo::RepoController* controller = new repo::RepoController();
-	auto token = initController(controller);
-
-	if (token)
-	{
-		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, true, false, { repo::core::model::ModelRevisionNode::UploadStatus::MISSING_BUNDLES });
-		if (scene)
-		{
-			auto metadata = scene->getAllMetadata(repo::core::model::RepoScene::GraphType::DEFAULT);
-			auto meshes = scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT);
-
-			std::unordered_map<repo::lib::RepoUUID, repo::core::model::MeshNode*, repo::lib::RepoUUIDHasher > sharedIdToMeshNode;
-
-			for (auto m : meshes) {
-				auto meshNode = dynamic_cast<repo::core::model::MeshNode*>(m);
-				sharedIdToMeshNode[meshNode->getSharedID()] = meshNode;
-			}
-
-			for (auto m : metadata) {
-				auto metaDataNode = dynamic_cast<repo::core::model::MetadataNode*>(m);
-				auto metaDataArray = metaDataNode->getAllMetadata();
-				for (auto entry : metaDataArray)
-				{
-					auto aKey = entry.first;
-					std::string aValue = boost::apply_visitor(repo::lib::StringConversionVisitor(), entry.second);
-
-					// Note: the string conversion encloses values that are stored as strings in the DB with \"
-					// We will need to remove them to guarantee a correct comparison
-					std::string sanitisedValue;
-					if (aValue.length() > 2 && aValue.substr(0, 1) == "\"" && aValue.substr(aValue.length() - 1, 1) == "\"") {
-						sanitisedValue = aValue.substr(1, aValue.length() - 2);
-					}
-					else {
-						sanitisedValue = aValue;
-					}
-
-
-					if (aKey == key && sanitisedValue == value)
-					{
-						// This metadata node contains the key-value pair we are looking for. Now
-						// check if there is geometry associated with it.
-
-						for (auto p : metaDataNode->getParentIDs())
-						{
-							if (sharedIdToMeshNode.find(p) != sharedIdToMeshNode.end())
-							{
-								if (sharedIdToMeshNode[p]->getNumVertices() >= 0)
-								{
-									res = true;
-									break;
-								}
-							}
-						}
-					}
-
-					if (res)
-					{
-						break;
-					}
-				}
-
-				if (res)
-				{
-					break;
-				}
-			}
-			delete scene;
-		}
-	}
-	delete controller;
-	return res;
 }
 
 bool testing::projectExists(
@@ -366,12 +198,12 @@ bool testing::filesCompare(
 	return match;
 }
 
-bool testing::compareMaterialStructs(const repo_material_t& m1, const repo_material_t& m2)
+bool testing::compareMaterialStructs(const repo::lib::repo_material_t& m1, const repo::lib::repo_material_t& m2)
 {
-	return compareStdVectors(m1.ambient, m2.ambient)
-		&& compareStdVectors(m1.diffuse, m2.diffuse)
-		&& compareStdVectors(m1.specular, m2.specular)
-		&& compareStdVectors(m1.emissive, m2.emissive)
+	return m1.ambient == m2.ambient
+		&& m1.diffuse == m2.diffuse
+		&& m1.specular == m2.specular
+		&& m1.emissive == m2.emissive
 		&& m1.opacity == m2.opacity
 		&& m1.shininess == m2.shininess
 		&& m1.shininessStrength == m2.shininessStrength
@@ -395,12 +227,12 @@ std::string testing::getRandomString(const uint32_t& iLen)
 	return sStr;
 }
 
-bool testing::compareVectors(const repo_color4d_t& v1, const repo_color4d_t& v2)
+bool testing::compareVectors(const repo::lib::repo_color4d_t& v1, const repo::lib::repo_color4d_t& v2)
 {
 	return v1.r == v2.r && v1.g == v2.g && v1.b == v2.b && v1.a == v2.a;
 }
 
-bool testing::compareVectors(const std::vector<repo_color4d_t>& v1, const std::vector<repo_color4d_t>& v2)
+bool testing::compareVectors(const std::vector<repo::lib::repo_color4d_t>& v1, const std::vector<repo::lib::repo_color4d_t>& v2)
 {
 	if (v1.size() != v2.size()) return false;
 	bool match = true;
@@ -425,4 +257,104 @@ tm testing::getRandomTm()
 int testing::nFields(const repo::core::model::RepoBSON& bson)
 {
 	return bson.getFieldNames().size();
+}
+
+std::string produceCleanArgs(
+	const std::string& database,
+	const std::string& project,
+	const std::string& dbAdd = REPO_GTEST_DBADDRESS,
+	const int& port = REPO_GTEST_DBPORT,
+	const std::string& username = REPO_GTEST_DBUSER,
+	const std::string& password = REPO_GTEST_DBPW
+)
+{
+	return  getClientExePath() + " "
+		+ getConnConfig()
+		+ " clean "
+		+ database + " "
+		+ project;
+}
+
+std::string testing::produceGenStashArgs(
+	const std::string& database,
+	const std::string& project,
+	const std::string& type
+)
+{
+	return  getClientExePath() + " "
+		+ getConnConfig()
+		+ " genStash "
+		+ database + " "
+		+ project + " "
+		+ type;
+}
+
+std::string testing::produceGetFileArgs(
+	const std::string& file,
+	const std::string& database,
+	const std::string& project
+)
+{
+	return  getClientExePath() + " "
+		+ getConnConfig()
+		+ " getFile "
+		+ database + " "
+		+ project + " \""
+		+ file + "\"";
+}
+
+std::string testing::produceCreateFedArgs(
+	const std::string& file,
+	const std::string& owner
+)
+{
+	return  getClientExePath() + " "
+		+ getConnConfig()
+		+ " genFed \""
+		+ file + "\" "
+		+ owner;
+}
+
+std::string testing::produceUploadFileArgs(
+	const std::string& filePath
+) {
+	return  getClientExePath() + " "
+		+ getConnConfig()
+		+ " import -f \""
+		+ filePath + "\"";
+}
+
+std::string testing::produceProcessDrawingArgs(
+	const std::string& filePath
+)
+{
+	return  getClientExePath() + " "
+		+ getConnConfig()
+		+ " processDrawing \""
+		+ filePath + "\"";
+}
+
+std::string testing::produceUploadArgs(
+	const std::string& database,
+	const std::string& project,
+	const std::string& filePath,
+	const std::string& configPath)
+{
+	return  getClientExePath()
+		+ " " + configPath
+		+ " import \""
+		+ filePath + "\" "
+		+ database + " " + project;
+}
+
+int testing::runProcess(
+	const std::string& cmd)
+{
+	int status = system(cmd.c_str());
+#ifndef _WIN32
+	//Linux, use WIFEXITED(status) to get the real exit code
+	return WEXITSTATUS(status);
+#else
+	return status;
+#endif
 }

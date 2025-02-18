@@ -10,6 +10,7 @@ include_directories(
 	src
 	../bouncer/src
 	../client/src
+	../log
 	../
 	${Boost_INCLUDE_DIR}
 	${MONGO_CXX_DRIVER_MONGO_INCLUDE_DIR}
@@ -29,6 +30,7 @@ target_link_libraries(
 	3drepobouncerTest
 	gtest
 	gmock
+	log
 	${Boost_LIBRARIES}
 	${MONGO_CXX_DRIVER_LIBRARIES}
 	${ASSIMP_LIBRARIES}

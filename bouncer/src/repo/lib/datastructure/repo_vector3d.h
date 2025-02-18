@@ -35,8 +35,8 @@ namespace repo{
 		{
 		public:
 
-			_RepoVector3D<T>(const T x = 0, const T y = 0, const T z = 0) : x(x), y(y), z(z) {}
-			_RepoVector3D<T>(const std::vector<T> &v)
+			_RepoVector3D(const T x = 0, const T y = 0, const T z = 0) : x(x), y(y), z(z) {}
+			_RepoVector3D(const std::vector<T> &v)
 			{
 				x = (v.size() > 0) ? v[0] : 0;
 				y = (v.size() > 1) ? v[1] : 0;
@@ -44,7 +44,7 @@ namespace repo{
 			}
 
 			template<typename From>
-			_RepoVector3D<T>(const _RepoVector3D<From>& v)
+			_RepoVector3D(const _RepoVector3D<From>& v)
 			{
 				x = v.x;
 				y = v.y;
@@ -136,6 +136,11 @@ namespace repo{
 				return _RepoVector3D<T>(x - other.x, y - other.y, z - other.z);
 			}
 
+			inline _RepoVector3D<T> operator-() const
+			{
+				return _RepoVector3D<T>(-x, -y, -z);
+			}
+
 			std::string toString() const
 			{
 				std::stringstream sstr;
@@ -146,7 +151,12 @@ namespace repo{
 
 			std::vector<T> toStdVector() const
 			{
-				return{ x, y, z };
+				return { x, y, z };
+			}
+
+			inline operator std::vector<T>() const
+			{
+				return toStdVector();
 			}
 
 			T x, y, z;

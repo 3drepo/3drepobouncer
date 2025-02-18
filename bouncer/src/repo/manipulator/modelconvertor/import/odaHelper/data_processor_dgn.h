@@ -40,27 +40,20 @@ namespace repo {
 				class DataProcessorDgn : public DataProcessor
 				{
 				public:
-					DataProcessorDgn() {}
-
 					VectoriseDeviceDgn* device();
 
 					bool doDraw(OdUInt32 i,	const OdGiDrawable* pDrawable) override;
-					void init(
-						GeometryCollector *const geoCollector, const OdGeExtents3d &extModel);
+					void initialise(GeometryCollector *const geoCollector, const OdGeExtents3d &extModel);
 
 					void setMode(OdGsView::RenderMode mode);
 
-					void endViewVectorization();
-
 				protected:
-
 					void convertTo3DRepoMaterial(
 						OdGiMaterialItemPtr prevCache,
 						OdDbStub* materialId,
 						const OdGiMaterialTraitsData & materialData,
 						MaterialColours& matColors,
-						repo_material_t& material,
-						bool& missingTexture) override;
+						repo::lib::repo_material_t& material) override;
 
 				private:
 					OdCmEntityColor fixByACI(const ODCOLORREF *ids, const OdCmEntityColor &color);

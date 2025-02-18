@@ -16,12 +16,11 @@
 */
 #include <stdio.h>
 #include <boost/thread.hpp>
+#include <repo_log.h>
 #include "repo_file_handler_fs.h"
-
-#include "../../model/repo_model_global.h"
-#include "../../../lib/repo_log.h"
-#include "../../../lib/repo_exception.h"
-#include "../../../lib/repo_utils.h"
+#include "repo/core/model/repo_model_global.h"
+#include "repo/lib/repo_exception.h"
+#include "repo/lib/repo_utils.h"
 
 using namespace repo::core::handler::fileservice;
 

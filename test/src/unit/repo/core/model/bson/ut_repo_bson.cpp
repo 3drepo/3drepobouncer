@@ -543,6 +543,11 @@ TEST(RepoBSONTest, ReplaceBinaryWithReference)
 
 	EXPECT_THAT(bson.hasFileReference(), IsFalse());
 
+	// second element of the getBinariesAsBuffer is the collated buffer of
+	// all bigFiles.
+
+	EXPECT_THAT(bson.getBinariesAsBuffer().second, Not(IsEmpty()));
+
 	// (Note that replaceBinaryWithReference doesn't actually use the mappings,
 	// which from this point are ignored.)
 
@@ -570,6 +575,10 @@ TEST(RepoBSONTest, ReplaceBinaryWithReference)
 	// It should be possible to get the buffer via getBinaryReference too
 
 	EXPECT_THAT(bson.getBinaryReference(), Eq(fileRef));
+
+	// While it should no longer be possible to get the buffers themselves
+
+	EXPECT_THAT(bson.getBinariesAsBuffer().second, IsEmpty());
 }
 
 TEST(RepoBSONTest, InitBinaryBuffer)

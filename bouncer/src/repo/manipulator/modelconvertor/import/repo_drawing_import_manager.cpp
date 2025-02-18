@@ -16,9 +16,9 @@
 */
 
 #include "repo_drawing_import_manager.h"
-#include "../../../lib/repo_log.h"
-#include "../../../lib/repo_utils.h"
-#include "../../../error_codes.h"
+#include <repo_log.h>
+#include "repo/lib/repo_utils.h"
+#include "repo/error_codes.h"
 
 #ifdef ODA_SUPPORT
 #include "../../modelconvertor/import/odaHelper/file_processor_dgn.h"

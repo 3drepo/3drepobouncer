@@ -20,7 +20,7 @@
 */
 
 #include "repo_node_texture.h"
-#include "repo/lib/repo_log.h"
+#include <repo_log.h>
 #include <boost/filesystem.hpp>
 #include "repo_bson_builder.h"
 

@@ -23,12 +23,12 @@
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 
+#include <repo_log.h>
 #include "repo/core/handler/repo_database_handler_mongo.h"
 #include "repo/core/handler/fileservice/repo_file_manager.h"
 #include "repo/core/model/bson/repo_bson_factory.h"
 #include "repo/core/model/bson/repo_bson.h"
 #include "repo/error_codes.h"
-#include "repo/lib/repo_log.h"
 #include "repo/lib/repo_config.h"
 #include "modelconvertor/import/repo_drawing_import_manager.h"
 #include "modelconvertor/import/repo_model_import_manager.h"
@@ -36,7 +36,6 @@
 #include "modelutility/repo_scene_manager.h"
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
 #include "modelutility/repo_drawing_manager.h"
-#include "modeloptimizer/repo_optimizer_trans_reduction.h"
 #include "repo_manipulator.h"
 
 
@@ -178,22 +177,11 @@ void RepoManipulator::fetchScene(
 bool RepoManipulator::generateAndCommitRepoBundlesBuffer(
 	repo::core::model::RepoScene* scene)
 {
-	repo_web_buffers_t buffers;
+	repo::lib::repo_web_buffers_t buffers;
 	return generateAndCommitWebViewBuffer(
 		scene,
 		buffers,
 		modelconvertor::WebExportType::REPO
-	);
-}
-
-bool RepoManipulator::generateAndCommitSRCBuffer(
-	repo::core::model::RepoScene* scene)
-{
-	repo_web_buffers_t buffers;
-	return generateAndCommitWebViewBuffer(
-		scene,
-		buffers,
-		modelconvertor::WebExportType::SRC
 	);
 }
 
@@ -215,7 +203,7 @@ bool RepoManipulator::generateStashGraph(
 
 bool RepoManipulator::generateAndCommitWebViewBuffer(
 	repo::core::model::RepoScene* scene,
-	repo_web_buffers_t& buffers,
+	repo::lib::repo_web_buffers_t& buffers,
 	const modelconvertor::WebExportType& exType)
 {
 	modelutility::SceneManager SceneManager;
@@ -223,15 +211,6 @@ bool RepoManipulator::generateAndCommitWebViewBuffer(
 		SceneManager.generateStashGraph(scene);
 	}
 	return SceneManager.generateWebViewBuffers(scene, exType, buffers, dbHandler.get(), dbHandler->getFileManager().get());
-}
-
-repo_web_buffers_t RepoManipulator::generateSRCBuffer(
-	repo::core::model::RepoScene* scene)
-{
-	repo_web_buffers_t buffers;
-	modelutility::SceneManager SceneManager;
-	SceneManager.generateWebViewBuffers(scene, modelconvertor::WebExportType::SRC, buffers, nullptr);
-	return buffers;
 }
 
 std::vector<repo::core::model::RepoBSON>
@@ -257,7 +236,7 @@ RepoManipulator::getAllFromCollectionTailable(
 	return dbHandler->getAllFromCollectionTailable(database, collection, skip, limit, fields, sortField, sortOrder);
 }
 
-std::shared_ptr<repo_partitioning_tree_t>
+std::shared_ptr<repo::lib::repo_partitioning_tree_t>
 RepoManipulator::getScenePartitioning(
 	const repo::core::model::RepoScene* scene,
 	const uint32_t& maxDepth
@@ -285,22 +264,7 @@ RepoManipulator::loadSceneFromFile(
 	const repo::manipulator::modelconvertor::ModelImportConfig& config)
 {
 	repo::manipulator::modelconvertor::ModelImportManager manager;
-	auto scene = manager.ImportFromFile(filePath, config, error);
-	if (scene) {
-		if (generateStashGraph(scene)) {
-			repoTrace << "Stash graph generated.";
-			error = REPOERR_OK;
-		}
-		else
-		{
-			repoError << "Error generating stash graph";
-			error = REPOERR_STASH_GEN_FAIL;
-			delete scene;
-			scene = nullptr;
-		}
-	}
-
-	return scene;
+	return manager.ImportFromFile(filePath, config, dbHandler, error);
 }
 
 void RepoManipulator::processDrawingRevision(
@@ -385,30 +349,6 @@ bool RepoManipulator::isVREnabled(const repo::core::model::RepoScene* scene) con
 {
 	modelutility::SceneManager manager;
 	return manager.isVrEnabled(scene, dbHandler.get());
-}
-
-void RepoManipulator::reduceTransformations(
-	repo::core::model::RepoScene* scene,
-	const repo::core::model::RepoScene::GraphType& gType)
-{
-	if (scene && scene->hasRoot(gType))
-	{
-		modeloptimizer::TransformationReductionOptimizer optimizer;
-
-		optimizer.apply(scene);
-		//clear stash, it is not guaranteed to be relevant now.
-		//The user needs to regenerate the stash if they want one for this version
-		if (scene->isRevisioned())
-		{
-			scene->clearStash();
-			//FIXME: There is currently no way to regenerate the stash. Give this warning message.
-			//In the future we may want to autogenerate the stash upon commit.
-			repoWarning << "There is no stash associated with this optimised graph. Viewing may be impossible/slow should you commit this scene.";
-		}
-	}
-	else {
-		repoError << "RepoController::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";
-	}
 }
 
 void RepoManipulator::updateRevisionStatus(

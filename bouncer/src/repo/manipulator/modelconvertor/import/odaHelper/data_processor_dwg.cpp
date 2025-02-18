@@ -31,18 +31,33 @@
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
+DataProcessorDwg::~DataProcessorDwg()
+{
+	// This exists so we can use unique_ptr with a forward declaration of DwgDrawContext
+}
+
 bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 {
+	std::unique_ptr<GeometryCollector::Context> ctx;
+
+	// These three locals track where the geometry from ctx - if any - should go.
+
+	Layer entityLayer;
+	Layer parentLayer;
+	std::string handleMetaValue;
+
 	// GeoDataMarkers derive directly from drawables; they aren't entities and
 	// don't have Ids. The current behaviour is to disable these by default
 	// through pDb->setGEOMARKERVISIBILITY. If they are re-enabled, this snippet
 	// ensures that the geometry goes into its own tree node.
-
-	auto pGeoDataMarker = OdDbGeoDataMarker::cast(pDrawable);
-	if (!pGeoDataMarker.isNull())
+	
+	// dynamic_cast is a workaround for an ODA bug where OdDbGeoDataMarker has no ODA RTTI
+	// https://forum.opendesign.com/showthread.php?24537-Cast-of-OdGiDrawable-to-OdDbGeoDataMarker-succeeding-for-OdDbEntity
+	auto pGeoDataMarker = dynamic_cast<const OdDbGeoDataMarker*>(pDrawable);
+	if (pGeoDataMarker)
 	{
-		collector->setLayer("GeoPositionMarker", "Geo Position Marker");
-		collector->setMeshGroup("GeoPositionMarker");
+		entityLayer = { "GeoPositionMarker", "Geo Position Marker" };
+		ctx = collector->makeNewDrawContext();
 	}
 
 	OdDbEntityPtr pEntity = OdDbEntity::cast(pDrawable);
@@ -64,8 +79,15 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		auto layerId = convertToStdString(toString(pEntity->layerId().getHandle()));
 		auto layerName = convertToStdString(toString(pEntity->layer()));
 
-		// Layer "0" cannot be renamed, so this is a safe way to check if we're
-		// on the default layer
+		Layer assignedLayer(layerId, layerName);
+
+		// If a Block Entity has the default layer assigned, then it appears in
+		// the Navisworks tree under the Block Reference's layer. If it has a non
+		// default layer assigned, it appears under that Layer in the tree.
+		// In both cases the Entity appears under the Block's name.
+
+		// Layer "0" cannot be renamed, so this is a safe way to check if the
+		// current entity has its layer over-ridden for not.
 
 		auto isDefaultLayer = layerName == "0";
 
@@ -73,15 +95,6 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		auto sHandle = pEntity->isDBRO() ? toString(handle) : toString(L"non-DbResident");
 		auto entityId = convertToStdString(toString(sHandle));
 		auto entityName = getClassDisplayName(pEntity);
-
-		// If a Block Entity has the default layer assigned, then it appears in
-		// the Navisworks tree under the Block Reference's layer. If it has a non
-		// default layer assigned, it appears under that Layer in the tree.
-		// In both cases the Entity appears under the Block's name.
-
-		// Make sure we have created an actual layer entry for the DWG layer...
-
-		collector->setLayer(layerId, layerName);
 
 		// Check if this drawable is directly under a layer or in a block.
 
@@ -104,15 +117,13 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		if (!pBlock.isNull() && !context.inBlock) // We only consider the top level block when building the tree.
 		{
 			context.inBlock = true;
-			context.currentBlockReferenceLayerId = layerId;
-			context.currentBlockReferenceLayerName = layerName;
-			context.currentBlockReferenceId = entityId;
+			context.currentBlockReferenceLayer = assignedLayer;
 
 			// Information about the Block prototype itself is available in its
 			// table record.
 
 			auto record = OdDbBlockTableRecord::cast(pBlock->blockTableRecord().safeOpenObject());
-			context.currentBlockReferenceName = convertToStdString(record->getName());
+			context.currentBlockReference = Layer(entityId, convertToStdString(record->getName()));
 		}
 
 		if (context.inBlock)
@@ -122,41 +133,64 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 			// therefore may appear multiple times, once under a variety of
 			// different layers.
 
-			auto blockReferenceNodeId = context.currentBlockReferenceId + layerId;
-			auto blockReferenceLayerNodeId = context.currentBlockReferenceLayerId;
+			// Create a unique node for the reference under each layer in which
+			// it appears.
+
+			entityLayer = {
+				context.currentBlockReference.id + layerId,
+				context.currentBlockReference.name
+			};
+			handleMetaValue = context.currentBlockReference.id;
+			parentLayer = context.currentBlockReferenceLayer;
 
 			if (!isDefaultLayer)
 			{
-				blockReferenceLayerNodeId = layerId; // If the Block Entity layer has been overridden within the Block, take the absolute layer
+				parentLayer = assignedLayer; // If the Block Entity layer has been overridden within the Block, take the absolute layer
 			}
 
-			collector->setLayer(blockReferenceNodeId, context.currentBlockReferenceName, blockReferenceLayerNodeId);
-			collector->setMeshGroup(blockReferenceNodeId);
-
-			std::unordered_map<std::string, repo::lib::RepoVariant> meta;
-			meta["Entity Handle::Value"] = context.currentBlockReferenceId;
-			collector->setMetadata(blockReferenceNodeId, meta);
+			ctx = collector->makeNewDrawContext();
 		}
 		else
 		{
 			// When not inside a block, each entity appears under its own tree
 			// node, under the specified layer.
 
-			collector->setLayer(entityId, entityName, layerId);
-			collector->setMeshGroup(entityId);
+			entityLayer = { entityId, entityName };
+			parentLayer = assignedLayer;
+			handleMetaValue = entityId;
 
-			std::unordered_map<std::string, repo::lib::RepoVariant> meta;
-			meta["Entity Handle::Value"] = convertToStdString(toString(handle));
-			collector->setMetadata(entityId, meta);
+			ctx = collector->makeNewDrawContext();
 		}
-
-		collector->setNextMeshName(convertToStdString(sHandle));
 	}
 
-	return OdGsBaseMaterialView::doDraw(i, pDrawable);
+	collector->pushDrawContext(ctx.get());
+	auto ret = OdGsBaseMaterialView::doDraw(i, pDrawable);
+	collector->popDrawContext(ctx.get());
+
+	if (ctx) 
+	{
+		auto meshes = ctx->extractMeshes();
+		if (meshes.size()) {
+			// This stack frame should create a layer with actual geometry
+
+			if (parentLayer) {
+				collector->createLayer(parentLayer.id, parentLayer.name, {});
+			}
+			collector->createLayer(entityLayer.id, entityLayer.name, parentLayer.id);
+			collector->addMeshes(entityLayer.id, meshes);
+
+			if (!handleMetaValue.empty() && !collector->hasMetadata(entityLayer.id)) {
+				std::unordered_map<std::string, repo::lib::RepoVariant> meta;
+				meta["Entity Handle::Value"] = handleMetaValue;
+				collector->setMetadata(entityLayer.id, meta);
+			}
+		}
+	}
+
+	return ret;
 }
 
-void DataProcessorDwg::convertTo3DRepoColor(OdCmEntityColor& color, std::vector<float>& out)
+void DataProcessorDwg::convertTo3DRepoColor(OdCmEntityColor& color, repo::lib::repo_color3d_t& out)
 {
 	switch (color.colorMethod())
 	{
@@ -176,10 +210,9 @@ void DataProcessorDwg::convertTo3DRepoColor(OdCmEntityColor& color, std::vector<
 		break;
 	}
 
-	out.push_back(color.red() / 255.0f);
-	out.push_back(color.green() / 255.0f);
-	out.push_back(color.blue() / 255.0f);
-	out.push_back(1.0f);
+	out.r = color.red() / 255.0f;
+	out.g = color.green() / 255.0f;
+	out.b = color.blue() / 255.0f;
 }
 
 
@@ -188,10 +221,9 @@ void DataProcessorDwg::convertTo3DRepoMaterial(
 	OdDbStub* materialId,
 	const OdGiMaterialTraitsData& materialData,
 	MaterialColours& matColors,
-	repo_material_t& material,
-	bool& missingTexture)
+	repo::lib::repo_material_t& material)
 {
-	DataProcessor::convertTo3DRepoMaterial(prevCache, materialId, materialData, matColors, material, missingTexture);
+	DataProcessor::convertTo3DRepoMaterial(prevCache, materialId, materialData, matColors, material);
 
 	// The Gs superclass supercedes colour data from the material, unless the
 	// override flag is set.
@@ -207,22 +239,11 @@ void DataProcessorDwg::convertTo3DRepoMaterial(
 	material.shininessStrength = 0;
 }
 
-void DataProcessorDwg::init(GeometryCollector *const geoCollector)
-{
-	collector = geoCollector;
-}
-
 void DataProcessorDwg::setMode(OdGsView::RenderMode mode)
 {
 	OdGsBaseVectorizeView::m_renderMode = kGouraudShaded;
 	m_regenerationType = kOdGiRenderCommand;
 	OdGiGeometrySimplifier::m_renderMode = OdGsBaseVectorizeView::m_renderMode;
-}
-
-void DataProcessorDwg::endViewVectorization()
-{
-	collector->stopMeshEntry();
-	OdGsBaseMaterialView::endViewVectorization();
 }
 
 std::string DataProcessorDwg::getClassDisplayName(OdDbEntityPtr entity)

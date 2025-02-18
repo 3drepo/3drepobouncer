@@ -20,6 +20,11 @@
 #include "helper_functions.h"
 #include "data_processor_nwd.h"
 
+#include "repo/manipulator/modelutility/repo_scene_builder.h"
+#include "repo/manipulator/modelconvertor/import/odaHelper/repo_mesh_builder.h"
+#include "repo/core/model/bson/repo_node_transformation.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
+
 // ODA
 #include <OdaCommon.h>
 #include <RxDynamicModule.h>
@@ -74,7 +79,9 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 
+using namespace repo::lib;
 using namespace repo::manipulator::modelconvertor::odaHelper;
+using namespace repo::core::model;
 
 static std::vector<std::string> ignoredCategories = { "Material", "Geometry", "Autodesk Material", "Revit Material" };
 static std::vector<std::string> ignoredKeys = { "Item::Source File Name" };
@@ -84,9 +91,9 @@ static std::string sElementIdKey = "Element ID::Value";
 struct RepoNwTraversalContext {
 	OdNwModelItemPtr layer;
 	OdNwPartitionPtr partition;
-	OdNwModelItemPtr parent;
-	std::string parentLayerId;
-	GeometryCollector* collector;
+	repo::manipulator::modelutility::RepoSceneBuilder* sceneBuilder;
+	std::shared_ptr<repo::core::model::TransformationNode> parentNode;
+	std::unordered_map<std::string, repo::lib::RepoVariant> parentMetadata;
 };
 
 repo::lib::RepoVector3D64 convertPoint(OdGePoint3d pnt, OdGeMatrix3d& transform)
@@ -105,30 +112,34 @@ repo::lib::RepoVector2D convertPoint(OdGePoint2d pnt)
 	return repo::lib::RepoVector2D(pnt.x, pnt.y);
 };
 
-void convertColor(OdNwColor color, std::vector<float>& dest)
+// These next methods explicitly ignore the alpha component of the Nw colours,
+// because the material *should* have the transparency accessible via a
+// dedicated member. If we get issues with materials though, this should be
+// re-evaluated.
+
+void convertColor(OdNwColor color, repo_color3d_t& dest)
 {
-	dest.clear();
-	dest.push_back(color.R());
-	dest.push_back(color.G());
-	dest.push_back(color.B());
-	dest.push_back(color.A());
+	dest.r = color.R();
+	dest.g = color.G();
+	dest.b = color.B();
 }
 
-void convertColor(OdString color, std::vector<float>& dest)
+void convertColor(OdString color, repo_color3d_t& dest)
 {
-	dest.clear();
 	try
 	{
 		typedef boost::tokenizer<boost::char_separator<OdChar>> tokenizer;
 		boost::char_separator<OdChar> sep(OD_T(","));
 		auto stringified = convertToStdString(color);
 		tokenizer tokens(stringified, sep);
+		std::vector<float> components;
 		for (tokenizer::iterator iter = tokens.begin(); iter != tokens.end(); iter++) {
 			auto token = *iter;
 			boost::trim(token);
 			auto component = boost::lexical_cast<float>(token);
-			dest.push_back(component / 255.0);
+			components.push_back(component / 255.0);
 		}
+		dest = components;
 	}
 	catch (...)
 	{
@@ -591,8 +602,8 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 
 	repo_material_t repoMaterial;
 	processMaterial(pComp, repoMaterial);
-	context.collector->setCurrentMaterial(repoMaterial);
 
+	RepoMeshBuilder meshBuilder({ context.parentNode->getSharedID() }, -context.sceneBuilder->getWorldOffset(), repoMaterial);
 	OdNwObjectIdArray aCompFragIds;
 	pComp->getFragments(aCompFragIds);
 	for (OdNwObjectIdArray::const_iterator itFrag = aCompFragIds.begin(); itFrag != aCompFragIds.end(); ++itFrag)
@@ -625,19 +636,16 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 				// converts each strip into a set of 2-vertex line segments.
 
 				auto index = 0;
-				std::vector<repo::lib::RepoVector3D64> vertices;
 				for (auto line = aVertexPerLine.begin(); line != aVertexPerLine.end(); line++)
 				{
 					for (auto i = 0; i < (*line - 1); i++)
 					{
-						vertices.clear();
-						vertices.push_back(convertPoint(aVertexes[index + 0], transformMatrix));
-						vertices.push_back(convertPoint(aVertexes[index + 1], transformMatrix));
+						meshBuilder.addFace(RepoMeshBuilder::face({
+							convertPoint(aVertexes[index + 0], transformMatrix),
+							convertPoint(aVertexes[index + 1], transformMatrix)
+						}));
 						index++;
-
-						context.collector->addFace(vertices);
 					}
-
 					index++;
 				}
 
@@ -651,7 +659,7 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 
 				if (pGeometryMesh->getIndices().length() && !aTriangles.length())
 				{
-					repoError << "Mesh " << pNode->getDisplayName().c_str() << " has indices but does not have a triangulation. Only triangulated meshes are supported.";
+					repoError << "Mesh " << convertToStdString(pNode->getDisplayName().c_str()) << " has indices but does not have a triangulation. Only triangulated meshes are supported.";
 				}
 
 				const OdNwVerticesDataPtr aVertexesData = pGeometryMesh->getVerticesData();
@@ -662,22 +670,24 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 
 				for (auto triangle = aTriangles.begin(); triangle != aTriangles.end(); triangle++)
 				{
-					std::vector<repo::lib::RepoVector3D64> vertices;
-					vertices.push_back(convertPoint(aVertices[triangle->pointIndex1], transformMatrix));
-					vertices.push_back(convertPoint(aVertices[triangle->pointIndex2], transformMatrix));
-					vertices.push_back(convertPoint(aVertices[triangle->pointIndex3], transformMatrix));
+					RepoMeshBuilder::face face;
 
-					auto normal = calcNormal(vertices[0], vertices[1], vertices[2]);
+					face.setVertices({
+						convertPoint(aVertices[triangle->pointIndex1], transformMatrix),
+						convertPoint(aVertices[triangle->pointIndex2], transformMatrix),
+						convertPoint(aVertices[triangle->pointIndex3], transformMatrix)
+					});
 
-					std::vector<repo::lib::RepoVector2D> uvs;
 					if (aUvs.length())
 					{
-						uvs.push_back(convertPoint(aUvs[triangle->pointIndex1]));
-						uvs.push_back(convertPoint(aUvs[triangle->pointIndex2]));
-						uvs.push_back(convertPoint(aUvs[triangle->pointIndex3]));
+						face.setUvs({
+							convertPoint(aUvs[triangle->pointIndex1]),
+							convertPoint(aUvs[triangle->pointIndex2]),
+							convertPoint(aUvs[triangle->pointIndex3])
+						});
 					}
 
-					context.collector->addFace(vertices, normal, uvs);
+					meshBuilder.addFace(face);
 				}
 
 				continue;
@@ -686,6 +696,14 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 			// The full set of types that the OdNwGeometry could be are described
 			// here: https://docs.opendesign.com/bimnv/OdNwGeometry.html
 		}
+	}
+
+	std::vector<repo::core::model::MeshNode> nodes;
+	meshBuilder.extractMeshes(nodes);
+	for (auto& mesh : nodes)
+	{
+		context.sceneBuilder->addNode(mesh);
+		context.sceneBuilder->addMaterialReference(meshBuilder.getMaterial(), mesh.getSharedID());
 	}
 
 	return eOk;
@@ -728,13 +746,7 @@ bool isCollection(OdNwModelItemPtr pNode)
 
 OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext context, const bool inCompositeObject = false)
 {
-	// GeometryCollector::setLayer() is used to build the hierarchy. Each layer
-	// corresponds to a 'node' in the Navisworks Standard View and has a unique Id.
-	// Calling setLayer will immediately create the layer, even before geometry is
-	// added.
-
 	auto levelName = convertToStdString(pNode->getDisplayName());
-	auto levelId = convertToStdString(toString(pNode->objectId().getHandle()));
 
 	// The OdNwPartition distinguishes between branches of the scene graph from
 	// different files.
@@ -747,7 +759,7 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 	{
 		context.partition = pPartition;
 
-		// When "changing file", remove the path from the name fo the purposes of
+		// When "changing file", remove the path from the name for the purposes of
 		// building the tree.
 
 		if (!levelName.empty())
@@ -764,6 +776,19 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 		levelName = convertToStdString(pNode->getClassDisplayName());
 	}
 
+	// Collect the metadata for this node; even if this node does not exist in our
+	// tree we still need it to combine with the metadata of it's descendants (see
+	// below).
+
+	// It turns out to be far, far faster to call processAttributes on every
+	// drawable and store the metadata, than to store a pointer to the parent and
+	// get the metadata on-demand. (The mechanism is not clear but it is probably
+	// something like ODA having to seek the file in order to open properties for
+	// an element that is not next to pNode, etc.)
+
+	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
+	processAttributes(pNode, context, metadata);
+
 	// The importer will not create tree entries for Instance nodes, though it will
 	// import their metadata.
 
@@ -774,8 +799,10 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 	{
 		// If we're building a composite object, Keep the layer the same.
 		if (!inCompositeObject) {
-			context.collector->setLayer(levelId, levelName, context.parentLayerId);
-			context.parentLayerId = levelId; // Track the ancestry manually so we can skip nodes at will when building the output tree
+
+			// Otherwise add a new layer for this node
+
+			context.parentNode = context.sceneBuilder->addNode(RepoBSONFactory::makeTransformationNode({}, levelName, { context.parentNode->getSharedID() }));
 
 			// GetIcon distinguishes the type of node. This corresponds to the icon seen in
 			// the Selection Tree View in Navisworks.
@@ -791,23 +818,18 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 			// To match the plug-in, and ensure metadata ends up in the right place for
 			// the benefit of smart groups, node properties are overridden with their
 			// parent's metadata
+			std::unordered_map<std::string, repo::lib::RepoVariant> merged = metadata;
+			for (auto p : context.parentMetadata) {
+				merged[p.first] = p.second;
+			}
 
-			std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
-			processAttributes(pNode, context, metadata);
-			processAttributes(context.parent, context, metadata);
-
-			context.collector->setMetadata(levelId, metadata);
+			context.sceneBuilder->addNode(RepoBSONFactory::makeMetaDataNode(merged, context.parentNode->getName(), { context.parentNode->getSharedID() }));
 		}
 
 		if (pNode->hasGeometry())
 		{
-			context.collector->setMeshGroup(inCompositeObject ? context.parentLayerId : levelId); // Group and Layer names must match, so the mesh is flagged as a partial object and different primitives are combined in the tree view
-			context.collector->setNextMeshName(levelName);
-
-			processGeometry(pNode, context);
+			processGeometry(pNode, context); // Create meshes, parented to the current node in the context
 		}
-
-		context.collector->stopMeshEntry();
 	}
 
 	OdNwObjectIdArray aNodeChildren;
@@ -817,7 +839,10 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 		return res;
 	}
 
-	context.parent = pNode; // The node for getting parent metadata should always be the parent in the Nw tree, even if its a (e.g. instance) node that doesn't appear in our tree
+	// The node for getting parent metadata should always be the parent in the Nw
+	// tree, even if its a (e.g. instance) node that doesn't appear in our tree.
+
+	context.parentMetadata = metadata;
 
 	for (OdNwObjectIdArray::const_iterator itRootChildren = aNodeChildren.begin(); itRootChildren != aNodeChildren.end(); ++itRootChildren)
 	{
@@ -840,8 +865,11 @@ void DataProcessorNwd::process(OdNwDatabasePtr pNwDb)
 	{
 		OdNwModelItemPtr pModelItemRoot = OdNwModelItem::cast(modelItemRootId.safeOpenObject());
 		RepoNwTraversalContext context;
-		context.collector = this->collector;
+		context.sceneBuilder = this->builder;
+		context.sceneBuilder->setWorldOffset(toRepoVector(pModelItemRoot->getBoundingBox().minPoint()));
 		context.layer = pModelItemRoot;
+		context.parentNode = context.sceneBuilder->addNode(RepoBSONFactory::makeTransformationNode({}, "rootNode"));
+
 		traverseSceneGraph(pModelItemRoot, context);
 	}
 }

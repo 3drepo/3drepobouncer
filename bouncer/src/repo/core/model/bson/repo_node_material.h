@@ -68,7 +68,7 @@ namespace repo {
 				void serialise(repo::core::model::RepoBSONBuilder&) const;
 
 			private:
-				repo_material_t material;
+				repo::lib::repo_material_t material;
 
 			public:
 				/**
@@ -106,18 +106,15 @@ namespace repo {
 				* Get material information from the node as a struct
 				* @return returns a repo_material_t containing the information
 				*/
-				repo_material_t getMaterialStruct() const
+				repo::lib::repo_material_t getMaterialStruct() const
 				{
 					return material;
 				}
 
-				void setMaterialStruct(const repo_material_t& s)
+				void setMaterialStruct(const repo::lib::repo_material_t& s)
 				{
 					material = s;
 				}
-
-			protected:
-				std::vector<float> getDataAsBuffer() const;
 			};
 		} //namespace model
 	} //namespace core

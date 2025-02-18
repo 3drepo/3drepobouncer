@@ -51,7 +51,7 @@ namespace repo {
 					std::vector<repo::lib::RepoUUID> parents;
 					std::vector<std::vector<float>> boundingBox;
 					std::vector<repo::lib::RepoVector3D> vertices;
-					std::vector<repo_face_t> faces;
+					std::vector<repo::lib::repo_face_t> faces;
 					std::vector<repo::lib::RepoVector3D> normals;
 					std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
 				};
@@ -158,7 +158,7 @@ namespace repo {
 				/*
 				* Creates randomised faces
 				*/
-				std::vector<repo_face_t> makeFaces(repo::core::model::MeshNode::Primitive);
+				std::vector<repo::lib::repo_face_t> makeFaces(repo::core::model::MeshNode::Primitive);
 
 				/*
 				* Computes the bounding box for a set of vertices

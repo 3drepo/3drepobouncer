@@ -41,13 +41,13 @@ namespace repo {
 				static bool retrieveGeometry(
 					const std::string &file,
 					std::vector < std::vector<double>> &allVertices,
-					std::vector<std::vector<repo_face_t>> &allFaces,
+					std::vector<std::vector<repo::lib::repo_face_t>> &allFaces,
 					std::vector < std::vector<double>> &allNormals,
 					std::vector < std::vector<double>> &allUVs,
 					std::vector<std::string> &allIds,
 					std::vector<std::string> &allNames,
 					std::vector<std::string> &allMaterials,
-					std::unordered_map<std::string, repo_material_t> &matNameToMaterials,
+					std::unordered_map<std::string, repo::lib::repo_material_t> &matNameToMaterials,
 					std::vector<double>		&offset,
 					std::string              &errMsg);
 			};

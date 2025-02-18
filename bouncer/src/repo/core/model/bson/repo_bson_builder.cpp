@@ -45,8 +45,8 @@ void RepoBSONBuilder::appendUUID(
 
 void repo::core::model::RepoBSONBuilder::appendRepoVariant(const std::string& label, const repo::lib::RepoVariant& item)
 {
-	// Apply visitor to handle the variant.
-	boost::apply_visitor(AppendVisitor(*this, label), item);
+	key_owned(label);
+	append(item);
 }
 
 RepoBSON RepoBSONBuilder::obj()
@@ -117,9 +117,33 @@ void repo::core::model::RepoBSONBuilder::append(const repo::lib::RepoMatrix& mat
 	core::append(rows.extract());
 }
 
+void repo::core::model::RepoBSONBuilder::append(const repo::lib::repo_color3d_t& col)
+{
+	open_array();
+	append(col.r);
+	append(col.g);
+	append(col.b);
+	close_array();;
+}
+
+void repo::core::model::RepoBSONBuilder::append(const repo::lib::repo_color4d_t& col)
+{
+	open_array();
+	append(col.r);
+	append(col.g);
+	append(col.b);
+	append(col.a);
+	close_array();;
+}
+
 void repo::core::model::RepoBSONBuilder::append(const RepoBSON& obj)
 {
 	append(obj.view());
+}
+
+void repo::core::model::RepoBSONBuilder::append(const repo::lib::RepoVariant& v)
+{
+	boost::apply_visitor(AppendVisitor(*this), v);
 }
 
 void RepoBSONBuilder::appendVector3DObject(

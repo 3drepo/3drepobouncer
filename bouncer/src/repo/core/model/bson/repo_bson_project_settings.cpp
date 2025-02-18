@@ -21,7 +21,7 @@
 
 #include "repo_bson_project_settings.h"
 #include "repo_bson_builder.h"
-#include "repo/lib/repo_log.h"
+#include <repo_log.h>
 
 using namespace repo::core::model;
 

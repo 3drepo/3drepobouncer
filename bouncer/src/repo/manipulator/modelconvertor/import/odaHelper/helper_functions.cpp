@@ -73,3 +73,8 @@ repo::lib::RepoVector3D64 repo::manipulator::modelconvertor::odaHelper::calcNorm
 	vecC.normalize();
 	return vecC;
 }
+
+repo::lib::RepoVector3D64 repo::manipulator::modelconvertor::odaHelper::toRepoVector(const OdGePoint3d& p)
+{
+	return repo::lib::RepoVector3D64(p.x, p.y, p.z);
+}

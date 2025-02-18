@@ -156,7 +156,7 @@ namespace repo {
 					repo::core::model::RepoNodeSet						                 &metadata,
 					uint32_t                                                             &count,
 					const std::vector<double>                                            &worldOffset,
-					const std::vector<repo::lib::RepoUUID>						                     &parent = std::vector<repo::lib::RepoUUID>()
+					std::vector<repo::lib::RepoUUID>						             parents = std::vector<repo::lib::RepoUUID>()
 				);
 
 				/**
@@ -165,7 +165,7 @@ namespace repo {
 				* @return returns a pointer to the newly constructed mesh
 				*/
 				repo::core::model::RepoNode* duplicateMesh(
-					repo::lib::RepoUUID                    &newParent,
+					const std::vector<repo::lib::RepoUUID>& newParent,
 					const repo::core::model::MeshNode &mesh,
 					const std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode *, repo::lib::RepoUUIDHasher>    &meshToMat,
 					std::unordered_map<repo::core::model::RepoNode *, std::vector<repo::lib::RepoUUID>> &matParents);

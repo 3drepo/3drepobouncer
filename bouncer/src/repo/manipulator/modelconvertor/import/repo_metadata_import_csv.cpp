@@ -16,7 +16,7 @@
 */
 
 #include "repo_metadata_import_csv.h"
-#include "../../../lib/repo_log.h"
+#include <repo_log.h>
 #include <fstream>
 
 using namespace repo::manipulator::modelconvertor;

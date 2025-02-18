@@ -284,48 +284,13 @@ bool RepoController::_RepoControllerImpl::generateAndCommitRepoBundlesBuffer(
 	return success;
 }
 
-bool RepoController::_RepoControllerImpl::generateAndCommitSRCBuffer(
-	const RepoController::RepoToken *token,
-	repo::core::model::RepoScene    *scene)
-{
-	bool success;
-	if (success = token && scene)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		success = worker->generateAndCommitSRCBuffer(scene);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Failed to generate SRC Buffer.";
-	}
-	return success;
-}
-
-repo_web_buffers_t RepoController::_RepoControllerImpl::generateSRCBuffer(
-	repo::core::model::RepoScene *scene)
-{
-	repo_web_buffers_t buffer;
-	if (scene)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		buffer = worker->generateSRCBuffer(scene);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Failed to generate SRC Buffer.";
-	}
-	return buffer;
-}
-
-std::shared_ptr<repo_partitioning_tree_t>
+std::shared_ptr<repo::lib::repo_partitioning_tree_t>
 RepoController::_RepoControllerImpl::getScenePartitioning(
 	const repo::core::model::RepoScene *scene,
 	const uint32_t                     &maxDepth
 )
 {
-	std::shared_ptr<repo_partitioning_tree_t> partition(nullptr);
+	std::shared_ptr<repo::lib::repo_partitioning_tree_t> partition(nullptr);
 
 	if (scene && scene->getRoot(scene->getViewGraph()))
 	{
@@ -417,44 +382,6 @@ RepoController::_RepoControllerImpl::processDrawingRevision(
 	manipulator::RepoManipulator* worker = workerPool.pop();
 	worker->processDrawingRevision(teamspace, revision, err, imagePath);
 	workerPool.push(worker);
-}
-
-void RepoController::_RepoControllerImpl::reduceTransformations(
-	const RepoController::RepoToken              *token,
-	repo::core::model::RepoScene *scene)
-{
-	//We only do reduction optimisations on the unoptimised graph
-	const repo::core::model::RepoScene::GraphType gType = repo::core::model::RepoScene::GraphType::DEFAULT;
-	if (token && scene && scene->isRevisioned() && !scene->hasRoot(gType))
-	{
-		//If the unoptimised graph isn't fetched, try to fetch full scene before beginning
-		//This should be safe considering if it has not loaded the unoptimised graph it shouldn't have
-		//any uncommited changes.
-		repoInfo << "Unoptimised scene not loaded, trying loading unoptimised scene...";
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		worker->fetchScene(scene);
-		workerPool.push(worker);
-	}
-
-	if (scene && scene->hasRoot(gType))
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		size_t transNodes_pre = scene->getAllTransformations(gType).size();
-		try {
-			worker->reduceTransformations(scene, gType);
-		}
-		catch (const std::exception &e)
-		{
-			repoError << "Caught exception whilst trying to optimise graph : " << e.what();
-		}
-
-		workerPool.push(worker);
-		repoInfo << "Optimization completed. Number of transformations has been reduced from "
-			<< transNodes_pre << " to " << scene->getAllTransformations(gType).size();
-	}
-	else {
-		repoError << "RepoController::_RepoControllerImpl::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";
-	}
 }
 
 void RepoController::_RepoControllerImpl::updateRevisionStatus(

@@ -20,7 +20,6 @@
 #include "repo/core/model/bson/repo_bson_teamspace.h"
 #include "../../error_codes.h"
 #include "../modeloptimizer/repo_optimizer_multipart.h"
-#include "../modelconvertor/export/repo_model_export_src.h"
 #include "../modeloptimizer/repo_optimizer_multipart.h"
 #include "../modelutility/repo_maker_selection_tree.h"
 
@@ -28,6 +27,7 @@
 #include <submodules/asset_generator/src/repo_model_export_repobundle.h>
 #endif
 
+using namespace repo::lib;
 using namespace repo::manipulator::modelutility;
 
 bool SceneManager::commitWebBuffers(
@@ -100,33 +100,22 @@ uint8_t SceneManager::commitScene(
 			bool success = true;
 			bool isFederation = scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size();
 
-			if (!isFederation && !(success = scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED))) { // Make sure to check if we are looking at a federation before updating success with the state of the stash graph
-				repoInfo << "Optimised scene not found. Attempt to generate...";
-				success = generateStashGraph(scene);
-			}
-
 			if (success)
 			{
+				// Loading the full scene is required for the tree generation, for now.
+				if (!isFederation && !scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size())
+				{
+					// Scene is just a container - load all the actual meshes
+					std::string msg;
+					scene->loadScene(handler, msg);
+				}
+
 				repoInfo << "Generating Selection Tree JSON...";
 				scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::GEN_SEL_TREE);
 				if (generateAndCommitSelectionTree(scene, handler, fileManager))
 					repoInfo << "Selection Tree Stored into the database";
 				else
 					repoError << "failed to commit selection tree";
-			}
-
-			if (success && !isFederation)
-			{
-				if (shouldGenerateSrcFiles(scene, handler))
-				{
-					repoInfo << "Generating SRC stashes...";
-					scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::GEN_WEB_STASH);
-					repo_web_buffers_t buffers;
-					if (success = generateWebViewBuffers(scene, repo::manipulator::modelconvertor::WebExportType::SRC, buffers, handler, fileManager))
-						repoInfo << "SRC Stashes Stored into the database";
-					else
-						repoError << "failed to commit SRC";
-				}
 			}
 
 			if (success && !isFederation)
@@ -304,19 +293,26 @@ bool SceneManager::generateWebViewBuffers(
 	repo::core::handler::fileservice::FileManager         *fileManager)
 {
 	bool success = false;
-	if (success = (scene&& scene->isRevisioned()))
+	if (success = (scene && scene->isRevisioned()))
 	{
 		bool toCommit = handler;
 
 		std::string geoStashExt;
 		std::string jsonStashExt = REPO_COLLECTION_STASH_JSON;
 
+		if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED)) {
+
+			repoInfo << "Optimised scene not found. Attempt to generate...";
+
+			if (!scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()) {
+				std::string msg;
+				scene->loadScene(handler, msg);
+			}
+			generateStashGraph(scene);
+		}
+
 		switch (exType)
 		{
-		case repo::manipulator::modelconvertor::WebExportType::SRC:
-			geoStashExt = REPO_COLLECTION_STASH_SRC;
-			resultBuffers = generateSRCBuffer(scene);
-			break;
 		case repo::manipulator::modelconvertor::WebExportType::REPO:
 			geoStashExt = REPO_COLLECTION_STASH_BUNDLE;
 			resultBuffers = generateRepoBundleBuffer(scene);
@@ -393,23 +389,7 @@ bool SceneManager::generateAndCommitSelectionTree(
 	return success;
 }
 
-repo_web_buffers_t SceneManager::generateSRCBuffer(
-	repo::core::model::RepoScene *scene)
-{
-	repo_web_buffers_t result;
-	repo::manipulator::modelconvertor::SRCModelExport srcExport(scene);
-	if (srcExport.isOk())
-	{
-		repoTrace << "Conversion succeed.. exporting as buffer..";
-		result = srcExport.getAllFilesExportedAsBuffer();
-	}
-	else
-		repoError << "Export to SRC failed.";
-
-	return result;
-}
-
-repo_web_buffers_t SceneManager::generateRepoBundleBuffer(
+repo::lib::repo_web_buffers_t SceneManager::generateRepoBundleBuffer(
 	repo::core::model::RepoScene* scene)
 {
 	repo_web_buffers_t result;
@@ -442,33 +422,6 @@ bool SceneManager::isVrEnabled(
 {
 	auto dbName = scene->getDatabaseName();
 	return isAddOnEnabled(handler, dbName, REPO_USER_LABEL_VR_ENABLED);
-}
-
-bool SceneManager::shouldGenerateSrcFiles(
-	const repo::core::model::RepoScene* scene,
-	repo::core::handler::AbstractDatabaseHandler* handler) const
-{
-	//only generate SRC files if the user has the src flag enabled and there are meshes
-
-	if (isAddOnEnabled(handler, scene->getDatabaseName(), REPO_USER_LABEL_SRC_ENABLED))
-	{
-		auto meshes = scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT);
-		for (const repo::core::model::RepoNode* node : meshes)
-		{
-			auto mesh = dynamic_cast<const repo::core::model::MeshNode*>(node);
-			if (!mesh)
-			{
-				continue;
-			}
-
-			if (mesh->getPrimitive() == repo::core::model::MeshNode::Primitive::TRIANGLES)
-			{
-				return true; // only need one triangle mesh to warrant generating srcs
-			}
-		}
-	}
-
-	return false;
 }
 
 bool SceneManager::removeStashGraph(repo::core::model::RepoScene *scene)

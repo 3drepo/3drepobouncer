@@ -25,12 +25,13 @@
 #include <boost/range/algorithm/copy.hpp>
 #include <fstream>
 
-#include "repo/lib/repo_log.h"
+#include <repo_log.h>
 #include "repo/error_codes.h"
+#include "repo/lib/repo_exception.h"
 #include "repo/core/model/bson/repo_bson_builder.h"
 #include "repo/core/model/bson/repo_bson_factory.h"
 #include "repo/core/model/bson/repo_bson_project_settings.h"
-#include "repo/core/handler/database/repo_expressions.h"
+#include "repo/core/handler/database/repo_query.h"
 
 using namespace repo::core::model;
 
@@ -109,7 +110,7 @@ RepoScene::RepoScene(
 	databaseName(sanitizeDatabaseName(database)),
 	projectName(sanitizeName(projectName)),
 	headRevision(true),
-	unRevisioned(false),
+	unRevisioned(true),
 	revNode(0),
 	status(0)
 {
@@ -427,6 +428,25 @@ void RepoScene::addNodes(
 	}
 }
 
+void RepoScene::loadRootNode(
+	repo::core::handler::AbstractDatabaseHandler* handler)
+{
+	using namespace repo::core::handler::database;
+
+	repo::core::handler::database::query::RepoQueryBuilder query;
+	query.append(repo::core::handler::database::query::Eq(REPO_LABEL_REVISION, revision));
+	query.append(repo::core::handler::database::query::Eq(REPO_LABEL_TYPE, std::string(REPO_NODE_TYPE_TRANSFORMATION)));
+	query.append(repo::core::handler::database::query::Exists(REPO_NODE_LABEL_PARENTS, false));
+
+	auto bson = handler->findOneByCriteria(databaseName, projectName + "." + REPO_COLLECTION_SCENE, query);
+
+	if (bson.isEmpty()) {
+		throw repo::lib::RepoSceneProcessingException(std::string("Could not find root node for ") + getDatabaseName() + "." + getProjectName() + "." + revision.toString());
+	}
+
+	addNodes({new repo::core::model::TransformationNode(bson)});
+}
+
 bool RepoScene::addNodeToMaps(
 	const GraphType &gType,
 	RepoNode *node,
@@ -446,12 +466,9 @@ bool RepoScene::addNodeToMaps(
 		}
 		else
 		{
-			//root node already exist, check if they are the same node
-			if (g.rootNode == node) {
-				//for some reason 2 instance of the root node reside in this scene graph - probably not game breaking.
-				repoWarning << "2 instance of the (same) root node found";
-			}
-			else
+			// If the root node has previously been loaded with loadRootNode, it will be here but
+			// not in the maps
+			if (*g.rootNode != *node)
 			{
 				//found 2 nodes with no parents...
 				//they could be straggling materials. Only give an error if both are transformation
@@ -460,7 +477,7 @@ bool RepoScene::addNodeToMaps(
 				if (node->getTypeAsEnum() == NodeType::TRANSFORMATION &&
 					g.rootNode->getTypeAsEnum() == NodeType::TRANSFORMATION)
 				{
-					repoError << "2 candidate for root node found. This is possibly an invalid Scene Graph.";
+					throw repo::lib::RepoSceneProcessingException("2 candidate for root node found. This is possibly an invalid Scene Graph.");
 				}
 
 				if (node->getTypeAsEnum() == NodeType::TRANSFORMATION)
@@ -790,18 +807,30 @@ bool RepoScene::commitSceneChanges(
 	const repo::lib::RepoUUID &revId,
 	std::string &errMsg)
 {
-	bool success = true;
-	std::vector<repo::lib::RepoUUID> nodesToCommit;
-	std::vector<repo::lib::RepoUUID>::iterator it;
+	if (newAdded.size()) {
+		repoInfo << "Committing " << newAdded.size() << " nodes...";
 
-	long count = 0;
+		std::vector<repo::core::model::RepoBSON> nodes;
+		for (auto& id : newAdded) {
+			auto node = graph.nodesByUniqueID[graph.sharedIDtoUniqueID[id]];
+			node->setRevision(revId);
+			nodes.push_back(*node);
+		}
 
-	nodesToCommit.insert(nodesToCommit.end(), newAdded.begin(), newAdded.end());
-	nodesToCommit.insert(nodesToCommit.end(), newModified.begin(), newModified.end());
+		handler->insertManyDocuments(databaseName, projectName + "." + REPO_COLLECTION_SCENE, nodes);
+	}
 
-	commitNodes(handler, nodesToCommit, revId, GraphType::DEFAULT, errMsg);
+	if (newModified.size()) {
+		repoInfo << "Updating " << newModified.size() << " nodes...";
 
-	return success;
+		for (auto& id : newModified) {
+			auto node = graph.nodesByUniqueID[graph.sharedIDtoUniqueID[id]];
+			node->setRevision(revId);
+			handler->upsertDocument(databaseName, projectName + "." + REPO_COLLECTION_SCENE, *node, false);
+		}
+	}
+
+	return true;
 }
 
 std::vector<RepoNode*>
@@ -1016,6 +1045,15 @@ std::vector<std::string> RepoScene::getOriginalFiles() const
 	return refFiles;
 }
 
+void RepoScene::setOriginalFiles(std::vector<std::string> fileNames)
+{
+	if (revNode)
+	{
+		revNode->setFiles(fileNames);
+	}
+	refFiles = fileNames;
+}
+
 bool RepoScene::loadRevision(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	std::string &errMsg,
@@ -1075,6 +1113,7 @@ bool RepoScene::loadRevision(
 	else {
 		revNode = new ModelRevisionNode(bson);
 		worldOffset = revNode->getCoordOffset();
+		unRevisioned = false;
 	}
 
 	return success;
@@ -1404,6 +1443,8 @@ void RepoScene::applyScaleFactor(const float &scale) {
 				worldOffset[i] *= scale;
 			}
 		}
+
+		newModified.insert(rootTrans->getSharedID());
 	}
 }
 
@@ -1435,6 +1476,8 @@ void RepoScene::reorientateDirectXModel()
 			worldOffset[2] = -worldOffset[1];
 			worldOffset[1] = temp;
 		}
+
+		newModified.insert(rootTrans->getSharedID());
 	}
 }
 

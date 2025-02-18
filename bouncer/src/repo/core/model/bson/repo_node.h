@@ -273,6 +273,16 @@ namespace repo {
 						return sharedID > other.getSharedID();
 					}
 				}
+
+				/*
+				* Returns the estimated memory consumption, in bytes, of this node and all
+				* its members. This must be overridden by interested subclasses. The estimated
+				* values will be approximate.
+				*/
+				virtual size_t getSize() const
+				{
+					return sizeof(*this);
+				}
 			};
 
 			/*!
@@ -292,8 +302,16 @@ namespace repo {
 				}
 			};
 
+
+			/* Concept can be used as the typename in templates to constrain the type to a
+			* subclass of RepoNode.
+			*/
+			template<class T>
+			concept RepoNodeClass = std::is_base_of<repo::core::model::RepoNode, T>::value;
+
 			//! Set definition for pointers to abstract nodes (sorted by value rather than pointer)
-			typedef std::set<RepoNode *, RepoNodeComparator> RepoNodeSet;
+			typedef std::set<RepoNode*, RepoNodeComparator> RepoNodeSet;
+
 		} //namespace model
 	} //namespace core
 } //namespace repo

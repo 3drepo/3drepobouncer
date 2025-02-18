@@ -63,7 +63,12 @@ namespace repo {
 				* @param error message if failed
 				* @return returns true upon success
 				*/
-				virtual bool importModel(std::string filePath, uint8_t &errMsg) = 0;
+				virtual bool importModel(std::string filePath, uint8_t& errMsg) = 0;
+
+				virtual bool importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& errMsg)
+				{
+					return importModel(filePath, errMsg);
+				}
 
 				virtual bool applyReduction() const { return true; }
 				virtual bool requireReorientation() const { return false; }

@@ -16,125 +16,30 @@
 */
 
 #include "vertex_map.h"
-#include <boost/functional/hash.hpp>
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-
-VertexMap::result_t VertexMap::find(const repo::lib::RepoVector3D64& position)
+size_t VertexMap::insert(const repo::lib::RepoVector3D64& position)
 {
-	size_t hash = 0;
-	boost::hash_combine(hash, position.x);
-	boost::hash_combine(hash, position.y);
-	boost::hash_combine(hash, position.z);
-
-	auto matching = map.equal_range(hash);
-
-	result_t result;
-
-	for (auto it = matching.first; it != matching.second; it++)
-	{
-		if (vertices[it->second] == position)
-		{
-			result.index = it->second;
-			result.added = false;
-			return result;
-		}
-	}
-
 	auto idx = vertices.size();
 	vertices.push_back(position);
-
-	map.insert(std::pair<size_t, size_t>(hash, idx));
-
-	result.index = idx;
-	result.added = true;
-
-	return result;
+	return idx;
 }
 
-VertexMap::result_t VertexMap::find(const repo::lib::RepoVector3D64& position, const repo::lib::RepoVector3D64& normal)
+size_t VertexMap::insert(const repo::lib::RepoVector3D64& position, const repo::lib::RepoVector3D64& normal)
 {
-	size_t hash = 0;
-	boost::hash_combine(hash, position.x);
-	boost::hash_combine(hash, position.y);
-	boost::hash_combine(hash, position.z);
-	boost::hash_combine(hash, normal.x);
-	boost::hash_combine(hash, normal.y);
-	boost::hash_combine(hash, normal.z);
-
-	auto matching = map.equal_range(hash);
-
-	result_t result;
-
-	for (auto it = matching.first; it != matching.second; it++)
-	{
-		if (vertices[it->second] == position)
-		{
-			if (normals[it->second] == normal)
-			{
-				result.index = it->second;
-				result.added = false;
-				return result;
-			}
-		}
-	}
-
 	auto idx = vertices.size();
-
 	vertices.push_back(position);
 	normals.push_back(normal);
-
-	map.insert(std::pair<size_t, size_t>(hash, idx));
-
-	result.index = idx;
-	result.added = true;
-
-	return result;
+	return idx;
 }
 
-VertexMap::result_t VertexMap::find(const repo::lib::RepoVector3D64& position, const repo::lib::RepoVector3D64& normal, const repo::lib::RepoVector2D& uv)
+size_t VertexMap::insert(const repo::lib::RepoVector3D64& position, const repo::lib::RepoVector3D64& normal, const repo::lib::RepoVector2D& uv)
 {
-	size_t hash = 0;
-	boost::hash_combine(hash, position.x);
-	boost::hash_combine(hash, position.y);
-	boost::hash_combine(hash, position.z);
-	boost::hash_combine(hash, normal.x);
-	boost::hash_combine(hash, normal.y);
-	boost::hash_combine(hash, normal.z);
-	boost::hash_combine(hash, uv.x);
-	boost::hash_combine(hash, uv.y);
-
-	auto matching = map.equal_range(hash);
-
-	result_t result;
-
-	for (auto it = matching.first; it != matching.second; it++)
-	{
-		if (vertices[it->second] == position)
-		{
-			if (normals[it->second] == normal)
-			{
-				if (uvs[it->second] == uv)
-				{
-					result.index = it->second;
-					result.added = false;
-					return result;
-				}
-			}
-		}
-	}
-
 	auto idx = vertices.size();
-
 	vertices.push_back(position);
 	normals.push_back(normal);
 	uvs.push_back(uv);
-
-	map.insert(std::pair<size_t, size_t>(hash, idx));
-
-	result.index = idx;
-	result.added = true;
-
-	return result;
+	return idx;
 }
+

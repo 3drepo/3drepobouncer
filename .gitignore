@@ -1,10 +1,10 @@
 build
-log
 
 tools/testScripts
 tools/scripts/log*
 tools/scripts/*.csv
 tools/bouncer_worker/toy
+tools/bouncer_worker/log
 .vs
 
 #nodeJS stuff

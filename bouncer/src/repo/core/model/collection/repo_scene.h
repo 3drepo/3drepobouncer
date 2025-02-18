@@ -466,6 +466,14 @@ namespace repo {
 					repo::core::handler::AbstractDatabaseHandler *handler,
 					std::string &errMsg);
 
+				/*
+				* Loads the root node of the Default graph into the member. This method
+				* assumes the Scene has a revisionId set.
+				*/
+				void loadRootNode(
+					repo::core::handler::AbstractDatabaseHandler* handler
+				);
+
 				/**
 				* Update revision status, if the scene is revisioned
 				* This will also update the record within the database
@@ -794,6 +802,7 @@ namespace repo {
 					const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 					return (bool)g.rootNode;
 				}
+
 				RepoNode* getRoot(const GraphType &gType) const {
 					const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 					return g.rootNode;
@@ -814,6 +823,12 @@ namespace repo {
 				* @return returns a vector of file names
 				*/
 				std::vector<std::string> getOriginalFiles() const;
+
+				/*
+				* Adds the fileName to the reference files list. This has no effect if the scene
+				* has already been commi
+				*/
+				void setOriginalFiles(std::vector<std::string> fileNames);
 
 				/**
 				* -------------- Scene Modification Functions --------------

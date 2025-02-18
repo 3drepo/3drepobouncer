@@ -32,7 +32,7 @@
 namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
-			enum class WebExportType { SRC, REPO };
+			enum class WebExportType { REPO };
 
 			class WebModelExport : public AbstractModelExport
 			{
@@ -61,7 +61,7 @@ namespace repo{
 				* @return returns a repo_src_export_t containing all files needed for this
 				*          model to be rendered
 				*/
-				virtual repo_web_buffers_t getAllFilesExportedAsBuffer() const = 0;
+				virtual repo::lib::repo_web_buffers_t getAllFilesExportedAsBuffer() const = 0;
 
 				/**
 				* Return the JSON file as raw bytes buffer

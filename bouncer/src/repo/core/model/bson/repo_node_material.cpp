@@ -43,19 +43,19 @@ void MaterialNode::deserialise(RepoBSON& bson)
 {
 	std::vector<float> tempVec = bson.getFloatArray(REPO_NODE_MATERIAL_LABEL_AMBIENT);
 	if (tempVec.size() > 0)
-		material.ambient.insert(material.ambient.end(), tempVec.begin(), tempVec.end());
+		material.ambient = tempVec;
 
 	tempVec = bson.getFloatArray(REPO_NODE_MATERIAL_LABEL_DIFFUSE);
 	if (tempVec.size() > 0)
-		material.diffuse.insert(material.diffuse.end(), tempVec.begin(), tempVec.end());
+		material.diffuse = tempVec;
 
 	tempVec = bson.getFloatArray(REPO_NODE_MATERIAL_LABEL_SPECULAR);
 	if (tempVec.size() > 0)
-		material.specular.insert(material.specular.end(), tempVec.begin(), tempVec.end());
+		material.specular = tempVec;
 
 	tempVec = bson.getFloatArray(REPO_NODE_MATERIAL_LABEL_EMISSIVE);
 	if (tempVec.size() > 0)
-		material.emissive.insert(material.emissive.end(), tempVec.begin(), tempVec.end());
+		material.emissive = tempVec;
 
 	material.isWireframe = bson.hasField(REPO_NODE_MATERIAL_LABEL_WIREFRAME) &&
 		bson.getBoolField(REPO_NODE_MATERIAL_LABEL_WIREFRAME);
@@ -84,14 +84,14 @@ void MaterialNode::deserialise(RepoBSON& bson)
 void MaterialNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 {
 	RepoNode::serialise(builder);
-	if (material.ambient.size() > 0)
-		builder.appendArray(REPO_NODE_MATERIAL_LABEL_AMBIENT, material.ambient);
-	if (material.diffuse.size() > 0)
-		builder.appendArray(REPO_NODE_MATERIAL_LABEL_DIFFUSE, material.diffuse);
-	if (material.specular.size() > 0)
-		builder.appendArray(REPO_NODE_MATERIAL_LABEL_SPECULAR, material.specular);
-	if (material.emissive.size() > 0)
-		builder.appendArray(REPO_NODE_MATERIAL_LABEL_EMISSIVE, material.emissive);
+	if (material.ambient)
+		builder.append(REPO_NODE_MATERIAL_LABEL_AMBIENT, material.ambient);
+	if (material.diffuse > 0)
+		builder.append(REPO_NODE_MATERIAL_LABEL_DIFFUSE, material.diffuse);
+	if (material.specular)
+		builder.append(REPO_NODE_MATERIAL_LABEL_SPECULAR, material.specular);
+	if (material.emissive)
+		builder.append(REPO_NODE_MATERIAL_LABEL_EMISSIVE, material.emissive);
 
 	if (material.isWireframe)
 		builder.append(REPO_NODE_MATERIAL_LABEL_WIREFRAME, material.isWireframe);
@@ -110,44 +110,6 @@ void MaterialNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 		builder.append(REPO_NODE_MATERIAL_LABEL_LINE_WEIGHT, material.lineWeight);
 }
 
-std::vector<float> MaterialNode::getDataAsBuffer() const
-{
-	repo_material_t mat = getMaterialStruct();
-
-	//flatten the material struct
-	std::vector<float> buffer;
-	buffer.reserve(sizeof(mat) / sizeof(float)); //FIXME: bigger than this, since we have 4 vector points with each having 3 members.
-
-	for (const float &n : mat.ambient)
-	{
-		buffer.push_back(n);
-	}
-
-	for (const float &n : mat.diffuse)
-	{
-		buffer.push_back(n);
-	}
-
-	for (const float &n : mat.specular)
-	{
-		buffer.push_back(n);
-	}
-
-	for (const float &n : mat.emissive)
-	{
-		buffer.push_back(n);
-	}
-
-	buffer.push_back(mat.opacity);
-	buffer.push_back(mat.shininess);
-	buffer.push_back(mat.shininessStrength);
-	uint32_t mask = (((int)mat.isWireframe) << 1) | mat.isTwoSided;
-
-	buffer.push_back((float)mask);
-
-	return buffer;
-}
-
 bool MaterialNode::sEqual(const RepoNode &other) const
 {
 	if (other.getTypeAsEnum() != NodeType::MATERIAL || other.getParentIDs().size() != getParentIDs().size())
@@ -157,9 +119,7 @@ bool MaterialNode::sEqual(const RepoNode &other) const
 
 	try{
 		auto otherMaterialNode = dynamic_cast<const MaterialNode&>(other);
-		auto mat = getDataAsBuffer();
-		auto otherMat = otherMaterialNode.getDataAsBuffer();
-		return mat.size() == otherMat.size() && !memcmp(mat.data(), otherMat.data(), mat.size() * sizeof(*mat.data()));
+		return getMaterialStruct().checksum() == otherMaterialNode.getMaterialStruct().checksum();
 	}
 	catch (std::bad_cast)
 	{

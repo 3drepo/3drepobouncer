@@ -15,7 +15,7 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "repo_blob_files_handler.h"
-#include "../../../lib/datastructure/repo_uuid.h"
+#include "repo/lib/datastructure/repo_uuid.h"
 
 using namespace repo::core::handler::fileservice;
 
