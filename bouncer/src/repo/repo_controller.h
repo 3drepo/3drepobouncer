@@ -33,10 +33,10 @@
 #include "core/model/bson/repo_node_reference.h"
 #include "core/model/collection/repo_scene.h"
 #include "lib/datastructure/repo_structs.h"
-#include "lib/repo_listener_abstract.h"
 #include "lib/repo_config.h"
 #include "manipulator/modelconvertor/import/repo_model_import_config.h"
 #include "repo_bouncer_global.h"
+#include <repo_log.h>
 
 namespace repo {
 	class REPO_API_EXPORT RepoController

@@ -52,7 +52,7 @@ namespace testing {
 				return numMeshes;
 			}
 
-			std::string name()
+			std::string name() const
 			{
 				return node->getName();
 			}
@@ -79,13 +79,18 @@ namespace testing {
 			* directly below this node.
 			*/
 			std::vector<repo::lib::repo_color4d_t> getColours();
+
+			std::string getPath() const;
 		};
 
 		std::vector<NodeInfo> findNodesByMetadata(std::string key, std::string value);
 		NodeInfo findNodeByMetadata(std::string key, std::string value);
 		std::vector<NodeInfo> findTransformationNodesByName(std::string name);
 		std::vector<NodeInfo> getChildNodes(repo::core::model::RepoNode* node, bool ignoreMeta);
+		std::vector<NodeInfo> getParentNodes(repo::core::model::RepoNode* node);
 		NodeInfo getNodeInfo(repo::core::model::RepoNode* node);
 		NodeInfo getRootNode();
 	};
+
+	
 }

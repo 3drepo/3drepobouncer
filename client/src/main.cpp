@@ -15,7 +15,7 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <repo/lib/repo_listener_stdout.h>
+#include <repo_log.h>
 #include <repo/lib/repo_exception.h>
 #include "functions.h"
 
@@ -39,10 +39,9 @@ void printHelp()
 	std::cout << "REPO_VERBOSE\tEnable verbose logging" << std::endl;
 }
 
-std::shared_ptr<repo::RepoController>  instantiateController()
+std::shared_ptr<repo::RepoController> instantiateController()
 {
-	repo::lib::LogToStdout *stdOutListener = new repo::lib::LogToStdout();
-	std::vector<repo::lib::RepoAbstractListener*> listeners = { stdOutListener };
+	std::vector<repo::lib::RepoAbstractListener*> listeners; // RepoLog currently will default to console
 	std::shared_ptr<repo::RepoController> controller;
 
 	try
@@ -129,7 +128,7 @@ int main(int argc, char* argv[]) {
 		}
 		catch (const std::exception& e) // We expect all exceptions to be nested inside a RepoException, so this is only really a last ditch fallback
 		{
-			repoError << e.what() << std::endl;
+			repoError << e.what();
 			return REPOERR_UNKNOWN_ERR;
 		}
 	}

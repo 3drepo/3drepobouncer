@@ -28,9 +28,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake_mod
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# For gcc 9, the flag must be c++2a; it should be c++20 on 11 and greater. This
-# has no effect on Windows, which will be driven by CMAKE_CXX_STANDARD.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -std=c++2a -pthread -fconcepts")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -pthread")
 
 if(${APPLE})
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -framework Foundation")
@@ -187,6 +185,9 @@ option (REPO_NO_GZIP "If zlib is not compiled into boost" OFF)
 option (REPO_ASSET_GENERATOR_SUPPORT "If the AssetGenerator is present and compiled into the library" ON)
 option (REPO_SVG_EXPORT_SUPPORT "If the customised Svg Exporter is present and compiled into the library" ON)
 
+# Logging is implemented in a separate shared library so all dependencies can
+# use the same instance.
+add_subdirectory(log)
 
 #Build IFCUtils
 add_subdirectory(ifcUtils)
@@ -210,7 +211,6 @@ endif()
 
 #bouncer library
 add_subdirectory(bouncer)
-
 
 #client exe
 if (REPO_BUILD_CLIENT)

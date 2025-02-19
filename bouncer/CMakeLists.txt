@@ -3,7 +3,7 @@
 add_subdirectory(src)
 
 set(VERSION_MAJOR 5)
-set(VERSION_MINOR 14_0)
+set(VERSION_MINOR 15_0)
 
 include_directories(
 	${MONGO_CXX_DRIVER_MONGO_INCLUDE_DIR}
@@ -18,6 +18,7 @@ include_directories(
 	${CRYPTOLENS_INCLUDE_DIR}
 	src
 	../
+	../log
 )
 
 add_definitions(-DREPO_API_LIBRARY)
@@ -42,6 +43,7 @@ target_link_libraries(3drepobouncer
 	${CRYPTOLENS_LIBRARIES}
 	ifcUtils_2x3
 	ifcUtils_4
+	log
 )
 
 install(DIRECTORY src/ DESTINATION include FILES_MATCHING PATTERN "*.h")

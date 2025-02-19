@@ -25,7 +25,7 @@
 #include <boost/range/algorithm/copy.hpp>
 #include <fstream>
 
-#include "repo/lib/repo_log.h"
+#include <repo_log.h>
 #include "repo/error_codes.h"
 #include "repo/lib/repo_exception.h"
 #include "repo/core/model/bson/repo_bson_builder.h"

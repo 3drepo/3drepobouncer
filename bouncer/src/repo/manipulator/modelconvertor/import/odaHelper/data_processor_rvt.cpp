@@ -323,7 +323,7 @@ OdGiMaterialItemPtr DataProcessorRvt::fillMaterialCache(
 	const OdGiMaterialTraitsData& materialData
 ) {
 	repo::lib::repo_material_t material;
-	bool missingTexture;
+	bool missingTexture = false;
 
 	OdBmObjectId matId(materialId);
 
@@ -344,6 +344,10 @@ OdGiMaterialItemPtr DataProcessorRvt::fillMaterialCache(
 			fillTexture(materialElem, material, missingTexture);
 
 			materialCache[matId.getHandle()] = material;
+
+			if (missingTexture) {
+				collector->setMissingTextures();
+			}
 		}
 
 		collector->setMaterial(material);

@@ -124,6 +124,10 @@ namespace repo {
 						sceneBuilder->setWorldOffset(offset);
 					}
 
+					void setMissingTextures() {
+						sceneBuilder->setMissingTextures();
+					}
+
 					repo::lib::RepoVector3D64 getWorldOffset() const {
 						return sceneBuilder->getWorldOffset();
 					}

@@ -17,7 +17,7 @@
 
 #include <gtest/gtest.h>
 #include <repo/manipulator/modelconvertor/import/repo_model_import_assimp.h>
-#include <repo/lib/repo_log.h>
+#include <repo_log.h>
 #include "../../../../repo_test_utils.h"
 
 using namespace repo::manipulator::modelconvertor;

@@ -25,7 +25,7 @@
 #include <map>
 #include <vector>
 #include <stdint.h>
-#include "repo/lib/repo_log.h"
+#include <repo_log.h>
 #include "repo/lib/datastructure/repo_uuid.h"
 #include "repo/repo_bouncer_global.h"
 #include "repo_model_units.h"

@@ -35,9 +35,9 @@
 
 #include <unordered_map>
 #include <set>
+#include <repo_log.h>
 #include "repo/repo_bouncer_global.h"
 #include "repo/core/model/repo_model_global.h"
-#include "repo/lib/repo_log.h"
 #include "repo/lib/datastructure/repo_uuid.h"
 #include "repo/lib/datastructure/repo_vector.h"
 #include "repo/lib/datastructure/repo_matrix.h"

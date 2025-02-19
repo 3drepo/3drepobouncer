@@ -67,24 +67,6 @@ namespace testing {
 
 	tm getRandomTm();
 
-	// Searches all elements in a project for one with metadata matching the
-	// key-value provided, and returns true if that element has geometry. Keys
-	// and Values are case-sensitive.
-	bool projectHasGeometryWithMetadata(
-		std::string dbName,
-		std::string projectName,
-		std::string key,
-		std::string value);
-
-	// Finds all meta nodes that match the metadata criteria, and compares their
-	// position in the transformation tree to the list in expected.
-	bool projectHasMetaNodesWithPaths(
-		std::string dbName,
-		std::string projectName,
-		std::string key,
-		std::string value,
-		std::vector<std::string> expected);
-
 	repo::lib::RepoVector3D makeRepoVector();
 
 	std::vector<uint8_t> makeRandomBinary(size_t size = 1000);

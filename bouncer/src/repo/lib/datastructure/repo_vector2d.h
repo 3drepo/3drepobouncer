@@ -29,8 +29,8 @@ namespace repo{
 		{
 		public:
 
-			_RepoVector2D<T>(const T &x = 0, const T &y = 0) : x(x), y(y) {}
-			_RepoVector2D<T>(const std::vector<T > &v)
+			_RepoVector2D(const T &x = 0, const T &y = 0) : x(x), y(y) {}
+			_RepoVector2D(const std::vector<T > &v)
 			{
 				x = (v.size() > 0) ? v[0] : 0;
 				y = (v.size() > 1) ? v[1] : 0;

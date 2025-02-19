@@ -22,12 +22,12 @@
 #include <regex>
 #include <unordered_map>
 
+#include <repo_log.h>
 #include "repo_database_handler_mongo.h"
 #include "fileservice/repo_file_manager.h"
 #include "fileservice/repo_blob_files_handler.h"
 #include "repo/core/model/bson/repo_bson_builder.h"
 #include "repo/core/model/bson/repo_bson_element.h"
-#include "repo/lib/repo_log.h"
 #include "repo/lib/repo_exception.h"
 #include "database/repo_query.h"
 

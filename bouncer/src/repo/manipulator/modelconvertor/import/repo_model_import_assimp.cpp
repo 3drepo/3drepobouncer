@@ -558,7 +558,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 			aiMetadataEntry &currentValue = assimpMeta->mValues[i];
 
 			if (key == "IfcGloballyUniqueId")
-				repoError << "TODO: fix IfcGloballyUniqueId in RepoMetadata" << std::endl;
+				repoError << "TODO: fix IfcGloballyUniqueId in RepoMetadata";
 
 			if (currentValue.mType != AI_AISTRING && currentValue.mType != FORCE_32BIT)
 			{
@@ -570,7 +570,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 					metaEntries[key] = v;
 				}
 				else {
-					repoError << "Conversion of assimp entry to RepoVariant failed" << std::endl;
+					repoError << "Conversion of assimp entry to RepoVariant failed";
 				}
 			}
 			else if (currentValue.mType == AI_AISTRING) {
@@ -598,8 +598,7 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 	repo::core::model::RepoNodeSet						     &metadata,
 	uint32_t                                               &count,
 	const std::vector<double>                                &worldOffset,
-	const std::vector<repo::lib::RepoUUID>						             &parent
-
+	std::vector<repo::lib::RepoUUID>						parents
 )
 {
 	repo::core::model::RepoNodeSet transNodes;
@@ -631,13 +630,23 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 			}
 		}
 
-		repo::core::model::TransformationNode * transNode =
-			new repo::core::model::TransformationNode(
-				repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(transMat), transName, parent));
+		repo::lib::RepoMatrix transform(transMat);
 
-		repo::lib::RepoUUID sharedId = transNode->getSharedID();
-		std::vector<repo::lib::RepoUUID> myShareID;
-		myShareID.push_back(sharedId);
+		// If this transform is a leaf node, we can skip the transform node entirely and
+		// give the mesh(es) its transformation, in its place.
+
+		bool absorbTransform = !assimpNode->mNumChildren;
+
+		if (!absorbTransform)
+		{
+			repo::core::model::TransformationNode* transNode =
+				new repo::core::model::TransformationNode(
+					repo::core::model::RepoBSONFactory::makeTransformationNode(transform, transName, parents));
+
+			transNodes.insert(transNode);
+
+			parents = { transNode->getSharedID() };
+		}
 
 		//--------------------------------------------------------------------------
 		// Register meshes as children of this transformation if any
@@ -649,24 +658,30 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 				auto& mesh = originalMeshes[meshIndex];
 				if (mesh.getNumVertices())
 				{
-					newMeshes.insert(duplicateMesh(sharedId, mesh, meshToMat, matParents));
+					auto instance = duplicateMesh(parents, mesh, meshToMat, matParents);
+					newMeshes.insert(instance);
+					if (absorbTransform)
+					{
+						instance->applyTransformation(transform);
+						instance->changeName(transName);
+						parents = { instance->getSharedID() }; // (For the metadata - there will be no other further child nodes)
+					}
 				}
 			}
 		}
 
 		//--------------------------------------------------------------------------
 		// Collect metadata and add as a child
+
 		if (keepMetadata && assimpNode->mMetaData)
 		{
 			std::string metadataName = assimpNode->mName.data;
 			if (metadataName == "<transformation>")
 				metadataName = "<metadata>";
 
-			repo::core::model::MetadataNode *metachild = createMetadataRepoNode(assimpNode->mMetaData, metadataName, myShareID);
+			repo::core::model::MetadataNode* metachild = createMetadataRepoNode(assimpNode->mMetaData, metadataName, parents);
 			metadata.insert(metachild);
 		}
-
-		transNodes.insert(transNode);
 
 		//--------------------------------------------------------------------------
 		// Register child transformations as children if any
@@ -674,7 +689,7 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 		{
 			repo::core::model::RepoNodeSet childMetadata;
 			repo::core::model::RepoNodeSet childSet = createTransformationNodesRecursive(assimpNode->mChildren[i],
-				originalMeshes, meshToMat, matParents, newMeshes, childMetadata, ++count, worldOffset, myShareID);
+				originalMeshes, meshToMat, matParents, newMeshes, childMetadata, ++count, worldOffset, parents);
 
 			transNodes.insert(childSet.begin(), childSet.end());
 			metadata.insert(childMetadata.begin(), childMetadata.end());
@@ -759,7 +774,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 							char *memblock = nullptr;
 							if (!file.is_open())
 							{
-								repoError << "Could not open texture: " << filePath << std::endl;
+								repoError << "Could not open texture: " << filePath;
 								missingTextures = true;
 							}
 							else
@@ -951,7 +966,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 }
 
 repo::core::model::RepoNode* AssimpModelImport::duplicateMesh(
-	repo::lib::RepoUUID                    &newParent,
+	const std::vector<repo::lib::RepoUUID>& newParent,
 	const repo::core::model::MeshNode &mesh,
 	const std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode *, repo::lib::RepoUUIDHasher>    &meshToMat,
 	std::unordered_map<repo::core::model::RepoNode *, std::vector<repo::lib::RepoUUID>> &matParents)
@@ -959,7 +974,7 @@ repo::core::model::RepoNode* AssimpModelImport::duplicateMesh(
 	auto newMesh = new repo::core::model::MeshNode(mesh);
 	newMesh->setUniqueID(repo::lib::RepoUUID::createUUID());
 	newMesh->setSharedID(repo::lib::RepoUUID::createUUID());
-	newMesh->setParents({ newParent });
+	newMesh->setParents( newParent );
 
 	auto it = meshToMat.find(mesh.getSharedID());
 	if (it != meshToMat.end() && it->second)

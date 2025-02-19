@@ -18,7 +18,7 @@
 #pragma once
 
 #include "repo_vector.h"
-#include "../repo_log.h"
+#include <repo_log.h>
 #include <string>
 
 namespace repo {
@@ -28,14 +28,14 @@ namespace repo {
 		{
 		public:
 
-			_RepoMatrix<T>() {
+			_RepoMatrix() {
 				data = { 1, 0, 0, 0,
 					0, 1, 0, 0,
 					0, 0, 1, 0,
 					0, 0, 0, 1 };
 			}
 
-			_RepoMatrix<T>(const std::vector<float> &mat)
+			_RepoMatrix(const std::vector<float> &mat)
 			{
 				data = { 1, 0, 0, 0,
 					0, 1, 0, 0,
@@ -49,7 +49,7 @@ namespace repo {
 				}
 			}
 
-			_RepoMatrix<T>(const std::vector<double> &mat)
+			_RepoMatrix(const std::vector<double> &mat)
 
 			{
 				data = { 1, 0, 0, 0,
@@ -64,7 +64,7 @@ namespace repo {
 				}
 			}
 
-			_RepoMatrix<T>(const std::vector<std::vector<T>> &mat)
+			_RepoMatrix(const std::vector<std::vector<T>> &mat)
 			{
 				data = { 1, 0, 0, 0,
 					0, 1, 0, 0,
