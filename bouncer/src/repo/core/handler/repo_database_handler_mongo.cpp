@@ -897,10 +897,10 @@ std::unique_ptr<repo::core::handler::database::Cursor> MongoDatabaseHandler::get
 	mongocxx::pipeline pipeline;
 	pipeline.match(
 		make_document(
-			kvp("_id", id)
+			kvp("_id", id.toString())
 	)).graph_lookup(make_document(
 		kvp("from", collection),
-		kvp("startWith", id),
+		kvp("startWith", id.toString()),
 		kvp("connectFromField", "parent"),
 		kvp("connectToField", "_id"),
 		kvp("as", "parents"),
