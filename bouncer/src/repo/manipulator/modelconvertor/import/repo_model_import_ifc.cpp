@@ -20,17 +20,26 @@
 */
 
 #include "repo_model_import_ifc.h"
-#include "ifcHelper/repo_ifc_helper_geometry.h"
-#include "ifcHelper/repo_ifc_helper_parser.h"
-#include "../../../core/model/bson/repo_bson_factory.h"
-#include "../../../error_codes.h"
+//#include "ifcHelper/repo_ifc_helper_geometry.h"
+//#include "ifcHelper/repo_ifc_helper_parser.h"
+#include "repo/manipulator/modelutility/repo_scene_builder.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/error_codes.h"
 #include <boost/filesystem.hpp>
+#include <ifcparse/IfcFile.h>
+
+#include <ifcgeom/Iterator.h>
+#include <ifcgeom/IfcGeomElement.h>
+#include <ifcgeom/ConversionSettings.h>
+#include "repo/lib/datastructure/repo_structs.h"
+
 
 using namespace repo::manipulator::modelconvertor;
 
 IFCModelImport::IFCModelImport(const ModelImportConfig &settings) :
 	AbstractModelImport(settings),
-	partialFailure(false)
+	partialFailure(false),
+	scene(nullptr)
 {
 	modelUnits = ModelUnits::METRES;
 }
@@ -39,43 +48,233 @@ IFCModelImport::~IFCModelImport()
 {
 }
 
-repo::core::model::RepoScene* IFCModelImport::generateRepoScene(uint8_t &errCode)
+repo::lib::RepoVector3D64 repoVector(const ifcopenshell::geometry::taxonomy::point3& p)
 {
-	ifcHelper::IFCUtilsParser parserUtil(ifcFile);
-	std::string errMsg;
-	auto scene = parserUtil.generateRepoScene(errMsg, meshes, materials, offset);
-	if (!scene) {
-		repoError << "Failed to generate Repo Scene: " << errMsg;
-		errCode = REPOERR_LOAD_SCENE_FAIL;
+	return repo::lib::RepoVector3D64(p.components_->x(), p.components_->y(), p.components_->z());
+}
+
+bool IFCModelImport::importModel(std::string filePath, uint8_t& err)
+{
+	throw repo::lib::RepoException("Classic import is no longer supported for IFCs. Please use the streaming import.");
+}
+
+
+void configureDefaultSettings(ifcopenshell::geometry::Settings& settings)
+{
+	settings.get<ifcopenshell::geometry::settings::WeldVertices>().value = false;
+	settings.get<ifcopenshell::geometry::settings::UseWorldCoords>().value = true;
+	settings.get<ifcopenshell::geometry::settings::ConvertBackUnits>().value = false; // Export in meters
+	settings.get<ifcopenshell::geometry::settings::ApplyDefaultMaterials>().value = true;
+
+	/*
+	itSettings.set(IfcGeom::WELD_VERTICES, false);
+	itSettings.set(IfcGeom::IteratorSettings::USE_WORLD_COORDS, true);
+	itSettings.set(IfcGeom::IteratorSettings::CONVERT_BACK_UNITS, false);
+	itSettings.set(IfcGeom::IteratorSettings::USE_BREP_DATA, false);
+	itSettings.set(IfcGeom::IteratorSettings::SEW_SHELLS, false);
+	itSettings.set(IfcGeom::IteratorSettings::FASTER_BOOLEANS, false);
+	itSettings.set(IfcGeom::IteratorSettings::DISABLE_OPENING_SUBTRACTIONS, false);
+	itSettings.set(IfcGeom::IteratorSettings::DISABLE_TRIANGULATION, false);
+	itSettings.set(IfcGeom::IteratorSettings::APPLY_DEFAULT_MATERIALS, true);
+	itSettings.set(IfcGeom::IteratorSettings::EXCLUDE_SOLIDS_AND_SURFACES, false);
+	itSettings.set(IfcGeom::IteratorSettings::NO_NORMALS, false);
+	itSettings.set(IfcGeom::IteratorSettings::GENERATE_UVS, true);
+	itSettings.set(IfcGeom::IteratorSettings::APPLY_LAYERSETS, false);
+	//Enable to get 2D lines. You will need to set CONVERT_BACK_UNITS to false or the model may not align.
+	itSettings.set(IfcGeom::IteratorSettings::INCLUDE_CURVES, false);
+	*/
+}
+
+#pragma optimize("",off)
+
+class IFCSerialiser
+{
+public:
+	IFCSerialiser(IfcParse::IfcFile& file, const ifcopenshell::geometry::Settings& settings, repo::manipulator::modelutility::RepoSceneBuilder* builder)
+		:file(file),
+		settings(settings),
+		builder(builder)
+	{
+		kernel = "opencascade";
+		numThreads = std::thread::hardware_concurrency();
+		createRootNode();
 	}
-	if (partialFailure) scene->setMissingNodes();
+
+	IfcParse::IfcFile& file;
+	const ifcopenshell::geometry::Settings& settings;
+	std::string kernel;
+	int numThreads;
+	repo::manipulator::modelutility::RepoSceneBuilder* builder;
+	repo::lib::RepoUUID rootNodeId;
+
+	repo::lib::RepoBounds getBounds()
+	{
+		IfcGeom::Iterator boundsIterator(kernel, settings, &file, {}, numThreads);
+		boundsIterator.initialize();
+		boundsIterator.compute_bounds(false); // False here means the geometry is not triangulated but we get more approximate bounds based on the transforms
+		repo::lib::RepoBounds bounds(repoVector(boundsIterator.bounds_min()), repoVector(boundsIterator.bounds_max()));
+		return bounds;
+	}
+
+	void createRootNode()
+	{
+		auto rootNode = repo::core::model::RepoBSONFactory::makeTransformationNode({}, "rootNode", {});
+		builder->addNode(rootNode);
+		rootNodeId = rootNode.getSharedID();
+	}
+
+	void import(const IfcGeom::TriangulationElement* triangulation)
+	{
+		auto& mesh = triangulation->geometry();
+
+		std::vector<repo::lib::RepoVector3D> vertices;
+		vertices.reserve(mesh.verts().size() / 3);
+		for (auto it = mesh.verts().begin(); it != mesh.verts().end();) {
+			const float x = *(it++);
+			const float y = *(it++);
+			const float z = *(it++);
+			vertices.push_back({ x, y, z });
+		}
+
+		std::vector<repo::lib::RepoVector3D> normals;
+		normals.reserve(mesh.normals().size() / 3);
+		for (auto it = mesh.normals().begin(); it != mesh.normals().end();) {
+			const float x = *(it++);
+			const float y = *(it++);
+			const float z = *(it++);
+			normals.push_back({ x, y, z });
+		}
+
+		std::vector<repo::lib::RepoVector2D> uvs;
+		normals.reserve(mesh.uvs().size() / 2);
+		for (auto it = mesh.uvs().begin(); it != mesh.uvs().end();) {
+			const float u = *it++;
+			const float v = *it++;
+			uvs.push_back({ u, v });
+		}
+
+		auto& facesIt = mesh.faces();
+		auto facesMaterialIt = mesh.material_ids().begin();
+
+		std::unordered_map<size_t, std::vector<repo::lib::repo_face_t>> facesByMaterial;		
+		for (auto it = facesIt.begin(); it != facesIt.end();)
+		{
+			const int materialId = *(facesMaterialIt++);
+			auto& faces = facesByMaterial[materialId];			
+			const size_t v1 = *(it++);
+			const size_t v2 = *(it++);
+			const size_t v3 = *(it++);
+			faces.push_back({ v1, v2, v3 });
+		}
+
+		for (auto pair : facesByMaterial)
+		{
+			// Vertices that are not referenced by a particular set of faces will be
+			// removed when removeDuplicates is called as part of the commit process.
+
+			auto mesh = repo::core::model::RepoBSONFactory::makeMeshNode(
+				vertices,
+				pair.second,
+				normals,
+				{},
+				{ uvs }
+			);
+			mesh.updateBoundingBox();
+
+			auto transform = repo::core::model::RepoBSONFactory::makeTransformationNode({}, triangulation->name(), { rootNodeId });
+
+			mesh.addParent(transform.getSharedID());
+
+			builder->addNode(transform);
+			builder->addNode(mesh);
+
+			builder->addMaterialReference(repo::lib::repo_material_t::DefaultMaterial(), mesh.getSharedID());
+		}
+	}
+
+	void importGeometry()
+	{
+		IfcGeom::Iterator contextIterator("opencascade", settings, &file, {}, numThreads);
+		int previousProgress = 0;
+		if (contextIterator.initialize())
+		{
+			repoInfo << "Processing geometry...";
+
+			do
+			{
+				IfcGeom::Element* element = contextIterator.get();
+				import(static_cast<const IfcGeom::TriangulationElement*>(element));
+
+				auto progress = contextIterator.progress();
+				if (progress != previousProgress) {
+					previousProgress = progress;
+					repoInfo << progress << "%...";
+				}
+
+			} while (contextIterator.next());
+
+			repoInfo << "100%...";
+		}
+	}
+};
+
+repo::core::model::RepoScene* IFCModelImport::generateRepoScene(uint8_t& errCode)
+{
 	return scene;
 }
 
-bool IFCModelImport::importModel(std::string filePath, uint8_t &err)
+bool IFCModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err)
 {
-	ifcFile = filePath;
 	std::string fileName = getFileName(filePath);
 
 	repoInfo << "IMPORT [" << fileName << "]";
 	repoInfo << "=== IMPORTING MODEL WITH IFC OPEN SHELL ===";
 
-	bool success = false;
-	std::string errMsg;
-	ifcHelper::IFCUtilsGeometry geoUtil(filePath, settings);
-	if (success = geoUtil.generateGeometry(errMsg, partialFailure))
-	{
-		//generate tree;
-		repoInfo << "Geometry generated successfully";
-		meshes = geoUtil.getGeneratedMeshes();
-		materials = geoUtil.getGeneratedMaterials();
-		offset = geoUtil.getGeometryOffset();
-	}
-	else
-	{
-		repoError << "Failed to generate geometry: " << errMsg;
-		err = REPOERR_FILE_IFC_GEO_GEN;
+	auto sceneBuilder = std::make_unique<repo::manipulator::modelutility::RepoSceneBuilder>(
+		handler,
+		settings.getDatabaseName(),
+		settings.getProjectName(),
+		settings.getRevisionId()
+		);
+	sceneBuilder->createIndexes();
+
+	IfcParse::IfcFile file(filePath);
+
+	if (!file.good()) {
+		throw repo::lib::RepoImportException(REPOERR_MODEL_FILE_READ);
 	}
 
-	return success;
+	ifcopenshell::geometry::Settings geometrySettings;
+	configureDefaultSettings(geometrySettings);
+
+	IFCSerialiser serialiser(file, geometrySettings, sceneBuilder.get());
+
+	repoInfo << "Computing bounds...";
+
+	auto bounds = serialiser.getBounds();
+	sceneBuilder->setWorldOffset(bounds.min());	
+	geometrySettings.get<ifcopenshell::geometry::settings::ModelOffset>().value = (-sceneBuilder->getWorldOffset()).toStdVector();
+
+	// Consider setting an HDF5 cache file here to reduce memory
+	// Check out IfcConvert.cpp ln 980
+
+	serialiser.importGeometry();
+
+	sceneBuilder->finalise();
+
+	scene = new repo::core::model::RepoScene(
+		settings.getDatabaseName(),
+		settings.getProjectName()
+	);
+
+	scene->setRevision(settings.getRevisionId());
+	scene->setOriginalFiles({ filePath });
+	scene->loadRootNode(handler.get());
+	scene->setWorldOffset(sceneBuilder->getWorldOffset());
+
+	if (sceneBuilder->hasMissingTextures()) {
+		scene->setMissingTexture();
+	}
+
+	return true;
 }

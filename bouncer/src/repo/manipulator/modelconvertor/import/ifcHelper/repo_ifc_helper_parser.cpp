@@ -5,12 +5,10 @@
 #include "repo_ifc_helper_parser.h"
 #include "repo_ifc_helper_common.h"
 #include <ifcUtils/repo_ifc_utils_constants.h>
-#include <ifcUtils/repo_ifc_utils_Ifc2x3.h>
-#include <ifcUtils/repo_ifc_utils_Ifc4.h>
-
-#include "../../../../core/model/bson/repo_bson_factory.h"
-#include "../../../../core/model/collection/repo_scene.h"
-#include "../../../../lib/repo_utils.h"
+#include <ifcUtils/repo_ifc_utils_globals.h>
+#include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/core/model/collection/repo_scene.h"
+#include "repo/lib/repo_utils.h"
 #include <boost/filesystem.hpp>
 #include <algorithm>
 
@@ -79,6 +77,7 @@ repo::core::model::RepoScene* IFCUtilsParser::generateRepoScene(
 	TransNode tree;
 	bool missingEntities = false;
 
+	/*
 	switch (getIFCSchema(file)) {
 	case IfcSchemaVersion::IFC2x3:
 		tree = repo::ifcUtility::Schema_Ifc2x3::TreeParser::createTransformations(file, missingEntities);
@@ -90,6 +89,7 @@ repo::core::model::RepoScene* IFCUtilsParser::generateRepoScene(
 		errMsg = "Unsupported IFC Version";
 		return nullptr;
 	}
+	*/
 
 	repoDebug << "Tree generated. root node is " << tree.name << " with " << tree.children.size() << " children";
 

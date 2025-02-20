@@ -19,8 +19,7 @@
 * Allows geometry creation using ifcopenshell
 */
 
-#include <ifcUtils/repo_ifc_utils_Ifc2x3.h>
-#include <ifcUtils/repo_ifc_utils_Ifc4.h>
+//#include <ifcUtils/repo_ifc_utils_schema_template.h>
 #include "repo_ifc_helper_common.h"
 #include "repo_ifc_helper_geometry.h"
 #include "repo/core/model/bson/repo_bson_factory.h"
@@ -52,6 +51,7 @@ bool IFCUtilsGeometry::generateGeometry(
 	std::vector<std::string> allIds, allNames, allMaterials;
 	std::unordered_map<std::string, repo_material_t> matNameToMaterials;
 
+	/*
 	switch (getIFCSchema(file)) {
 	case IfcSchemaVersion::IFC2x3:
 		if (!repo::ifcUtility::Schema_Ifc2x3::GeometryHandler::retrieveGeometry(file,
@@ -67,6 +67,7 @@ bool IFCUtilsGeometry::generateGeometry(
 		errMsg = "Unsupported IFC Version";
 		return false;
 	}
+	*/
 
 	//now we have found all meshes, take the minimum bounding box of the scene as offset
 	//and create repo meshes

@@ -24,9 +24,9 @@
 #include <string>
 #include <unordered_map>
 
-#include "../../../../core/model/bson/repo_node_material.h"
-#include "../../../../core/model/bson/repo_node_mesh.h"
-#include "../../../../core/model/collection/repo_scene.h"
+#include "repo/core/model/bson/repo_node_material.h"
+#include "repo/core/model/bson/repo_node_mesh.h"
+#include "repo/core/model/collection/repo_scene.h"
 
 namespace repo {
 	namespace manipulator {

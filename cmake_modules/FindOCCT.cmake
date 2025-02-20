@@ -20,8 +20,56 @@
 
 
 SET(OCCT_LIB_NAMES
-	TKernel TKMath TKBRep TKGeomBase TKGeomAlgo TKG3d TKG2d TKShHealing TKTopAlgo TKMesh TKPrim TKBool TKBO
-	TKFillet TKSTEP TKSTEPBase TKSTEPAttr TKXSBase TKSTEP209 TKIGES TKOffset
+	TKernel
+	TKMath
+	TKG2d
+	TKG3d
+	TKGeomBase
+	TKBRep
+	TKGeomAlgo
+	TKTopAlgo
+	TKPrim
+	TKBO
+	TKShHealing
+	TKBool
+	TKHLR
+	TKFillet
+	TKOffset
+	TKFeat
+	TKMesh
+	TKXMesh
+	TKService
+	TKV3d
+	TKOpenGl
+	TKMeshVS
+	TKCDF
+	TKLCAF
+	TKCAF
+	TKBinL
+	TKXmlL
+	TKBin
+	TKXml
+	TKStdL
+	TKStd
+	TKTObj
+	TKBinTObj
+	TKXmlTObj
+	TKVCAF
+	TKDE
+	TKXSBase
+	TKDESTEP
+	TKXCAF
+	TKDEIGES
+	TKDESTL
+	TKDEVRML
+	TKRWMesh
+	TKDECascade
+	TKBinXCAF
+	TKXmlXCAF
+	TKDEOBJ
+	TKDEGLTF
+	TKDEPLY
+	TKExpress
 )
 
 if(DEFINED ENV{OCCT_DEBUG_LIB_DIR})
@@ -68,7 +116,6 @@ endif()
 
 if(OCCT_INCLUDE_DIR AND OCCT_LIBRARIES)
 	set(OCCT_FOUND TRUE)
-
 else(OCCT_INCLUDE_DIR AND OCCT_LIBRARIES)
 	find_path(OCCT_INCLUDE_DIR gp_Pnt.hxx
 		/usr/include/opencascade
@@ -100,10 +147,14 @@ else(OCCT_INCLUDE_DIR AND OCCT_LIBRARIES)
 		)
 endif(OCCT_INCLUDE_DIR AND OCCT_LIBRARIES)
 
+# OCCT on Windows requires winsock
+if(WIN32)
+	set(OCCT_LIBRARIES ${OCCT_LIBRARIES} ws2_32)
+endif()
 
+message(STATUS "OCCT_INCLUDE_DIR: ${OCCT_INCLUDE_DIR}")
+message(STATUS "OCCT_LIBRARIES: ${OCCT_LIBRARIES}")
 
-	message(STATUS "OCCT_INCLUDE_DIR: ${OCCT_INCLUDE_DIR}")
-	message(STATUS "OCCT_LIBRARIES: ${OCCT_LIBRARIES}")
 if(OCCT_INCLUDE_DIR AND OCCT_LIBRARIES)
 	set(OCCTM_FOUND TRUE)
 	message(STATUS "OCCT installation found.")
