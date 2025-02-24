@@ -20,8 +20,6 @@
 */
 
 #include "repo_model_import_ifc.h"
-//#include "ifcHelper/repo_ifc_helper_geometry.h"
-//#include "ifcHelper/repo_ifc_helper_parser.h"
 #include "repo/manipulator/modelutility/repo_scene_builder.h"
 #include "repo/core/model/bson/repo_bson_factory.h"
 #include "repo/error_codes.h"
@@ -33,6 +31,7 @@
 #include <ifcgeom/ConversionSettings.h>
 #include "repo/lib/datastructure/repo_structs.h"
 
+#include <ranges>
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -53,36 +52,26 @@ repo::lib::RepoVector3D64 repoVector(const ifcopenshell::geometry::taxonomy::poi
 	return repo::lib::RepoVector3D64(p.components_->x(), p.components_->y(), p.components_->z());
 }
 
+repo::lib::repo_color3d_t repoColor(const ifcopenshell::geometry::taxonomy::colour& c)
+{
+	return repo::lib::repo_color3d_t(c.r(), c.g(), c.b());
+}
+
 bool IFCModelImport::importModel(std::string filePath, uint8_t& err)
 {
 	throw repo::lib::RepoException("Classic import is no longer supported for IFCs. Please use the streaming import.");
 }
 
-
 void configureDefaultSettings(ifcopenshell::geometry::Settings& settings)
 {
-	settings.get<ifcopenshell::geometry::settings::WeldVertices>().value = false;
-	settings.get<ifcopenshell::geometry::settings::UseWorldCoords>().value = true;
-	settings.get<ifcopenshell::geometry::settings::ConvertBackUnits>().value = false; // Export in meters
-	settings.get<ifcopenshell::geometry::settings::ApplyDefaultMaterials>().value = true;
+	// Look at the ConversionSettings.h file, or the Python documentation, for the
+	// set of options. Here we override only those that have a different default
+	// value to what we want.
 
-	/*
-	itSettings.set(IfcGeom::WELD_VERTICES, false);
-	itSettings.set(IfcGeom::IteratorSettings::USE_WORLD_COORDS, true);
-	itSettings.set(IfcGeom::IteratorSettings::CONVERT_BACK_UNITS, false);
-	itSettings.set(IfcGeom::IteratorSettings::USE_BREP_DATA, false);
-	itSettings.set(IfcGeom::IteratorSettings::SEW_SHELLS, false);
-	itSettings.set(IfcGeom::IteratorSettings::FASTER_BOOLEANS, false);
-	itSettings.set(IfcGeom::IteratorSettings::DISABLE_OPENING_SUBTRACTIONS, false);
-	itSettings.set(IfcGeom::IteratorSettings::DISABLE_TRIANGULATION, false);
-	itSettings.set(IfcGeom::IteratorSettings::APPLY_DEFAULT_MATERIALS, true);
-	itSettings.set(IfcGeom::IteratorSettings::EXCLUDE_SOLIDS_AND_SURFACES, false);
-	itSettings.set(IfcGeom::IteratorSettings::NO_NORMALS, false);
-	itSettings.set(IfcGeom::IteratorSettings::GENERATE_UVS, true);
-	itSettings.set(IfcGeom::IteratorSettings::APPLY_LAYERSETS, false);
-	//Enable to get 2D lines. You will need to set CONVERT_BACK_UNITS to false or the model may not align.
-	itSettings.set(IfcGeom::IteratorSettings::INCLUDE_CURVES, false);
-	*/
+	settings.get<ifcopenshell::geometry::settings::WeldVertices>().value = false; // Welding vertices can make uv projection difficult
+	settings.get<ifcopenshell::geometry::settings::UseWorldCoords>().value = true; // Put everything in project coordinates by the time it gets out of the triangulator
+	settings.get<ifcopenshell::geometry::settings::GenerateUvs>().value = true;
+	settings.get<ifcopenshell::geometry::settings::UseElementHierarchy>().value = true;
 }
 
 #pragma optimize("",off)
@@ -106,6 +95,7 @@ public:
 	int numThreads;
 	repo::manipulator::modelutility::RepoSceneBuilder* builder;
 	repo::lib::RepoUUID rootNodeId;
+	std::unordered_map<std::string, repo::lib::repo_material_t> materials;
 
 	repo::lib::RepoBounds getBounds()
 	{
@@ -116,11 +106,106 @@ public:
 		return bounds;
 	}
 
+	const repo::lib::repo_material_t& resolveMaterial(const ifcopenshell::geometry::taxonomy::style::ptr ptr)
+	{
+		auto name = ptr->name;
+		IfcUtil::sanitate_material_name(name);
+
+		if (materials.find(name) == materials.end())
+		{
+			repo::lib::repo_material_t material = repo::lib::repo_material_t::DefaultMaterial();
+
+			material.diffuse = repoColor(ptr->get_color());
+
+			material.specular = repoColor(ptr->specular);
+			if (ptr->has_specularity()) 
+			{
+				material.shininess = ptr->specularity;
+			}
+			else
+			{
+				material.shininess = 0.5f;
+			}
+			material.shininessStrength = 0.5f;
+
+			if (ptr->has_transparency()) {
+				material.opacity = 1 - ptr->transparency;
+			}
+
+			materials[name] = material;
+		}
+		
+		return materials[name];
+	}
+
 	void createRootNode()
 	{
 		auto rootNode = repo::core::model::RepoBSONFactory::makeTransformationNode({}, "rootNode", {});
 		builder->addNode(rootNode);
 		rootNodeId = rootNode.getSharedID();
+	}
+
+	// If createContainer is true, should create a transformationNode for this element,
+	// otherwise just return the parents of the parent.
+
+	struct TreeInfo {
+		repo::lib::RepoUUID parentId;
+	};
+
+	std::unordered_map<int, repo::lib::RepoUUID> sharedIds;
+
+	/*
+	* Builds metadata and possibly transformation nodes for this element. If
+	* the caller passes false to createTransform, then it is expected any mesh
+	* nodes will attach directly to the parents.
+	*/
+	repo::lib::RepoUUID getParentId(const IfcGeom::Element* element, bool createTransform)
+	{
+		// If this element already has a transformation node, return its Id. An
+		// existing node will already have all its metdata set up, etc.
+		
+		if (sharedIds.find(element->id()) != sharedIds.end())
+		{
+			return sharedIds[element->id()];
+		}
+
+		// The parents array is a flat list that represents the inheritence as a stack.
+		// It is only populated for the leaf element, so we can't use the member of any
+		// of the entries themselves.
+
+		// The following snippet finds the first node we have not yet created a
+		// transformation node for, and then builds transformation nodes from that
+		// one down.
+
+		repo::lib::RepoUUID parentId = rootNodeId;
+		int i = 0;
+		for (i = element->parents().size() - 1; i >= 0; i--)
+		{
+			auto ifcId = element->parents()[i]->id();
+			if (sharedIds.find(ifcId) != sharedIds.end())
+			{
+				parentId = sharedIds[ifcId];
+				break;
+			}
+		}
+
+		for (i++; i < element->parents().size(); i++) 
+		{
+			auto p = element->parents()[i];
+			auto transform = repo::core::model::RepoBSONFactory::makeTransformationNode({}, p->name(), { parentId });
+			parentId = transform.getSharedID();
+			builder->addNode(transform);
+			sharedIds[p->id()] = parentId;
+		}
+
+		if (createTransform) {
+			auto transform = repo::core::model::RepoBSONFactory::makeTransformationNode({}, element->name(), { parentId });
+			parentId = transform.getSharedID();
+			sharedIds[element->id()] = parentId;
+			builder->addNode(transform);
+		}
+
+		return parentId;
 	}
 
 	void import(const IfcGeom::TriangulationElement* triangulation)
@@ -155,6 +240,7 @@ public:
 
 		auto& facesIt = mesh.faces();
 		auto facesMaterialIt = mesh.material_ids().begin();
+		auto materials = mesh.materials();
 
 		std::unordered_map<size_t, std::vector<repo::lib::repo_face_t>> facesByMaterial;		
 		for (auto it = facesIt.begin(); it != facesIt.end();)
@@ -167,6 +253,23 @@ public:
 			faces.push_back({ v1, v2, v3 });
 		}
 
+		if (!facesByMaterial.size()) {
+			return;
+		}
+
+		bool createTransformNode = true;// facesByMaterial.size() > 1;
+
+		// Creates the transformation node for this element, and its parent(s), 
+		// on-demand. In this version of the importer, we always create a
+		// transformation node, regardless of how many child meshes there are -
+		// this is because it it is possible to tell up front whether a single
+		// mesh may eventually get transformation node siblings.
+
+		auto parentId = getParentId(triangulation, createTransformNode);
+
+		std::string name;
+		name = triangulation->name();
+
 		for (auto pair : facesByMaterial)
 		{
 			// Vertices that are not referenced by a particular set of faces will be
@@ -177,18 +280,13 @@ public:
 				pair.second,
 				normals,
 				{},
-				{ uvs }
+				{ uvs },
+				{ },
+				{ parentId }
 			);
 			mesh.updateBoundingBox();
-
-			auto transform = repo::core::model::RepoBSONFactory::makeTransformationNode({}, triangulation->name(), { rootNodeId });
-
-			mesh.addParent(transform.getSharedID());
-
-			builder->addNode(transform);
 			builder->addNode(mesh);
-
-			builder->addMaterialReference(repo::lib::repo_material_t::DefaultMaterial(), mesh.getSharedID());
+			builder->addMaterialReference(resolveMaterial(materials[pair.first]), mesh.getSharedID());
 		}
 	}
 
@@ -266,7 +364,6 @@ bool IFCModelImport::importModel(std::string filePath, std::shared_ptr<repo::cor
 		settings.getDatabaseName(),
 		settings.getProjectName()
 	);
-
 	scene->setRevision(settings.getRevisionId());
 	scene->setOriginalFiles({ filePath });
 	scene->loadRootNode(handler.get());
