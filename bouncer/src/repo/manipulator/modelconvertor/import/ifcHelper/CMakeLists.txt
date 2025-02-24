@@ -6,14 +6,11 @@
 
 set(SOURCES
 	${SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_ifc_helper_geometry.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_ifc_helper_parser.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_ifc_serialiser.cpp
 	CACHE STRING "SOURCES" FORCE)
 
 set(HEADERS
 	${HEADERS}
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_ifc_helper_common.h
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_ifc_helper_geometry.h
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_ifc_helper_parser.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_ifc_serialiser.h
 	CACHE STRING "HEADERS" FORCE)
 

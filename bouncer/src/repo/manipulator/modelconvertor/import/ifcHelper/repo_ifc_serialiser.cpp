@@ -1,0 +1,332 @@
+/**
+*  Copyright (C) 2025 3D Repo Ltd
+*
+*  This program is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU Affero General Public License as
+*  published by the Free Software Foundation, either version 3 of the
+*  License, or (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU Affero General Public License for more details.
+*
+*  You should have received a copy of the GNU Affero General Public License
+*  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#include "repo_ifc_serialiser.h"
+
+#include "repo/lib/datastructure/repo_structs.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
+
+#pragma optimize("",off)
+
+using namespace repo::manipulator::modelconvertor::ifcHelper;
+
+repo::lib::RepoVector3D64 repoVector(const ifcopenshell::geometry::taxonomy::point3& p)
+{
+	return repo::lib::RepoVector3D64(p.components_->x(), p.components_->y(), p.components_->z());
+}
+
+repo::lib::repo_color3d_t repoColor(const ifcopenshell::geometry::taxonomy::colour& c)
+{
+	return repo::lib::repo_color3d_t(c.r(), c.g(), c.b());
+}
+
+IFCSerialiser::IFCSerialiser(IfcParse::IfcFile& file, repo::manipulator::modelutility::RepoSceneBuilder* builder)
+	:file(file),
+	builder(builder)
+{
+	kernel = "opencascade";
+	numThreads = std::thread::hardware_concurrency();
+	configureSettings();
+	createRootNode();
+}
+
+void IFCSerialiser::configureSettings()
+{
+	// Look at the ConversionSettings.h file, or the Python documentation, for the
+	// set of options. Here we override only those that have a different default
+	// value to what we want.
+
+	settings.get<ifcopenshell::geometry::settings::WeldVertices>().value = false; // Welding vertices can make uv projection difficult
+	settings.get<ifcopenshell::geometry::settings::UseWorldCoords>().value = true; // Put everything in project coordinates by the time it gets out of the triangulator
+	settings.get<ifcopenshell::geometry::settings::GenerateUvs>().value = true;
+	settings.get<ifcopenshell::geometry::settings::UseElementHierarchy>().value = true;
+}
+
+void IFCSerialiser::updateBounds()
+{
+	repoInfo << "Computing bounds...";
+
+	auto bounds = getBounds();
+	builder->setWorldOffset(bounds.min());
+	settings.get<ifcopenshell::geometry::settings::ModelOffset>().value = (-builder->getWorldOffset()).toStdVector();
+}
+
+repo::lib::RepoBounds IFCSerialiser::getBounds()
+{
+	IfcGeom::Iterator boundsIterator(kernel, settings, &file, {}, numThreads);
+	boundsIterator.initialize();
+	boundsIterator.compute_bounds(false); // False here means the geometry is not triangulated but we get more approximate bounds based on the transforms
+	repo::lib::RepoBounds bounds(repoVector(boundsIterator.bounds_min()), repoVector(boundsIterator.bounds_max()));
+	return bounds;
+}
+
+const repo::lib::repo_material_t& IFCSerialiser::resolveMaterial(const ifcopenshell::geometry::taxonomy::style::ptr ptr)
+{
+	auto name = ptr->name;
+	IfcUtil::sanitate_material_name(name);
+
+	if (materials.find(name) == materials.end())
+	{
+		repo::lib::repo_material_t material = repo::lib::repo_material_t::DefaultMaterial();
+
+		material.diffuse = repoColor(ptr->get_color());
+
+		material.specular = repoColor(ptr->specular);
+		if (ptr->has_specularity())
+		{
+			material.shininess = ptr->specularity;
+		}
+		else
+		{
+			material.shininess = 0.5f;
+		}
+		material.shininessStrength = 0.5f;
+
+		if (ptr->has_transparency()) {
+			material.opacity = 1 - ptr->transparency;
+		}
+
+		materials[name] = material;
+	}
+
+	return materials[name];
+}
+
+void IFCSerialiser::createRootNode()
+{
+	auto rootNode = repo::core::model::RepoBSONFactory::makeTransformationNode({}, "rootNode", {});
+	builder->addNode(rootNode);
+	rootNodeId = rootNode.getSharedID();
+}
+
+/*
+* Given an arbitrary Ifc Object, determine from its relationships which is the
+* best one for it so it under in the acyclic tree.
+*/
+const IfcSchema::IfcObjectDefinition* IFCSerialiser::getParent(const IfcSchema::IfcObjectDefinition* object)
+{
+	auto elem = object->as<IfcSchema::IfcElement>();
+	if (elem)
+	{
+		auto structures = elem->ContainedInStructure();
+		if (structures->size()) {
+			auto container = *structures->begin();
+			return container->RelatingStructure();
+		}
+	}
+
+	auto compositions = object->file_->getInverse(object->id(), &(IfcSchema::IfcRelDecomposes::Class()), -1);
+	for (auto& composition : *compositions) {
+		auto whole = composition->as<IfcSchema::IfcRelDecomposes>()->RelatingObject();
+		if (!whole || whole == object) {
+			continue;
+		}
+		return whole;
+	}
+
+	return nullptr;
+}
+
+repo::lib::RepoUUID IFCSerialiser::createTransformationNode(const IfcSchema::IfcObjectDefinition* parent, const IfcParse::entity& type)
+{
+	auto parentId = createTransformationNode(parent);
+
+	auto groupId = parent->file_->getMaxId() + parent->id() + type.type() + 1;
+	if (sharedIds.find(groupId) != sharedIds.end()) {
+		return sharedIds[groupId];
+	}
+
+	auto transform = repo::core::model::RepoBSONFactory::makeTransformationNode({}, type.name(), { parentId });
+	sharedIds[groupId] = transform.getSharedID();;
+	builder->addNode(transform);
+
+	return transform.getSharedID();
+}
+
+repo::lib::RepoUUID IFCSerialiser::createTransformationNode(const IfcSchema::IfcObjectDefinition* object)
+{
+	if (!object) {
+		return rootNodeId;
+	}
+
+	// If this object already has a transformation node, return its Id. An
+	// existing node will already have all its metdata set up, etc.
+
+	if (sharedIds.find(object->id()) != sharedIds.end())
+	{
+		return sharedIds[object->id()];
+	}
+
+	auto parent = getParent(object);
+
+	auto parentId = createTransformationNode(parent);
+
+	// If the parent is a non-physical container, group the entities by type, as
+	// a convenience.
+
+	if (parent && !parent->as<IfcSchema::IfcElement>() && object->as<IfcSchema::IfcElement>()) 
+	{
+		parentId = createTransformationNode(parent, object->declaration());
+	}
+
+	auto transform = repo::core::model::RepoBSONFactory::makeTransformationNode({}, object->Name().get_value_or({}), { parentId });
+	parentId = transform.getSharedID();
+	sharedIds[object->id()] = parentId;
+	builder->addNode(transform);
+
+	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
+
+	metadata["Entity"] = object->declaration().name();
+
+	auto metadataNode = repo::core::model::RepoBSONFactory::makeMetaDataNode(metadata, {}, { parentId });
+	builder->addNode(metadataNode);
+
+	return parentId;
+}
+
+repo::lib::RepoUUID IFCSerialiser::getParentId(const IfcGeom::Element* element, bool createTransform)
+{
+	auto parentId = createTransformationNode(element->product()->as<IfcSchema::IfcObjectDefinition>());
+	return parentId;
+}
+
+void IFCSerialiser::import(const IfcGeom::TriangulationElement* triangulation)
+{
+	auto& mesh = triangulation->geometry();
+
+	std::vector<repo::lib::RepoVector3D> vertices;
+	vertices.reserve(mesh.verts().size() / 3);
+	for (auto it = mesh.verts().begin(); it != mesh.verts().end();) {
+		const float x = *(it++);
+		const float y = *(it++);
+		const float z = *(it++);
+		vertices.push_back({ x, y, z });
+	}
+
+	std::vector<repo::lib::RepoVector3D> normals;
+	normals.reserve(mesh.normals().size() / 3);
+	for (auto it = mesh.normals().begin(); it != mesh.normals().end();) {
+		const float x = *(it++);
+		const float y = *(it++);
+		const float z = *(it++);
+		normals.push_back({ x, y, z });
+	}
+
+	std::vector<repo::lib::RepoVector2D> uvs;
+	normals.reserve(mesh.uvs().size() / 2);
+	for (auto it = mesh.uvs().begin(); it != mesh.uvs().end();) {
+		const float u = *it++;
+		const float v = *it++;
+		uvs.push_back({ u, v });
+	}
+
+	auto& facesIt = mesh.faces();
+	auto facesMaterialIt = mesh.material_ids().begin();
+	auto materials = mesh.materials();
+
+	std::unordered_map<size_t, std::vector<repo::lib::repo_face_t>> facesByMaterial;
+	for (auto it = facesIt.begin(); it != facesIt.end();)
+	{
+		const int materialId = *(facesMaterialIt++);
+		auto& faces = facesByMaterial[materialId];
+		const size_t v1 = *(it++);
+		const size_t v2 = *(it++);
+		const size_t v3 = *(it++);
+		faces.push_back({ v1, v2, v3 });
+	}
+
+	if (!facesByMaterial.size()) {
+		return;
+	}
+
+	bool createTransformNode = true;// facesByMaterial.size() > 1;
+
+	// Creates the transformation node for this element, and its parent(s), 
+	// on-demand. In this version of the importer, we always create a
+	// transformation node, regardless of how many child meshes there are -
+	// this is because it it is possible to tell up front whether a single
+	// mesh may eventually get transformation node siblings.
+
+	auto parentId = getParentId(triangulation, createTransformNode);
+
+	std::string name;
+	name = triangulation->name();
+
+	for (auto pair : facesByMaterial)
+	{
+		// Vertices that are not referenced by a particular set of faces will be
+		// removed when removeDuplicates is called as part of the commit process.
+
+		auto mesh = repo::core::model::RepoBSONFactory::makeMeshNode(
+			vertices,
+			pair.second,
+			normals,
+			{},
+			{ uvs },
+			{ },
+			{ parentId }
+		);
+		mesh.updateBoundingBox();
+		builder->addNode(mesh);
+		builder->addMaterialReference(resolveMaterial(materials[pair.first]), mesh.getSharedID());
+	}
+}
+
+/*
+* The custom filter object is used with the geometry iterator to filter out
+* any products we do not want.
+*
+* This implementation ignores Openings.
+*/
+struct filter
+{
+	bool operator()(IfcUtil::IfcBaseEntity* prod) const {
+		if (prod->as<IfcSchema::IfcOpeningElement>()) {
+			return false;
+		}
+		return true;
+	}
+};
+
+void IFCSerialiser::import()
+{
+	filter f;
+	IfcGeom::Iterator contextIterator("opencascade", settings, &file, { boost::ref(f) }, numThreads);
+	int previousProgress = 0;
+	if (contextIterator.initialize())
+	{
+		repoInfo << "Processing geometry...";
+
+		do
+		{
+			IfcGeom::Element* element = contextIterator.get();
+			import(static_cast<const IfcGeom::TriangulationElement*>(element));
+
+			auto progress = contextIterator.progress();
+			if (progress != previousProgress) {
+				previousProgress = progress;
+				repoInfo << progress << "%...";
+			}
+
+		} while (contextIterator.next());
+
+		repoInfo << "100%...";
+	}
+}
+
+
+

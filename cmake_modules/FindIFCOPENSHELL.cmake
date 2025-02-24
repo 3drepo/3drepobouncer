@@ -46,6 +46,11 @@ set(IFCOPENSHELL_FOUND TRUE)
 
 if(DEFINED ENV{IFCOPENSHELL_ROOT})
 	set(IFCOPENSHELL_ROOT $ENV{IFCOPENSHELL_ROOT})
+	
+	if(NOT IFCOPENSHELL_INCLUDE_DIR)
+		set(IFCOPENSHELL_INCLUDE_DIR ${IFCOPENSHELL_ROOT}/include)
+	endif()
+	
 	foreach(libName ${IFCOS_LIB_NAMES})
 		find_library(libPath${libName} NAMES ${libName}
 			PATHS
@@ -54,7 +59,7 @@ if(DEFINED ENV{IFCOPENSHELL_ROOT})
 			/usr/local/lib/
 			/opt/local/lib/
 		)
-
+		
 		if(NOT libPath${libName})
 			set(IFCOPENSHELL_FOUND FALSE)
 			message("Could not find " ${libName})

@@ -16,13 +16,14 @@
 */
 #include "repo_maker_selection_tree.h"
 #include "../../core/model/bson/repo_node_reference.h"
-#include <ifcUtils/repo_ifc_utils_constants.h>
+
 using namespace repo::manipulator::modelutility;
 
 const static std::string REPO_LABEL_VISIBILITY_STATE = "toggleState";
 const static std::string REPO_VISIBILITY_STATE_SHOW = "visible";
 const static std::string REPO_VISIBILITY_STATE_HIDDEN = "invisible";
 const static std::string REPO_VISIBILITY_STATE_HALF_HIDDEN = "parentOfInvisible";
+const static std::string IFC_TYPE_SPACE_LABEL = "(IFC Space)";
 
 SelectionTreeMaker::SelectionTreeMaker(
 	const repo::core::model::RepoScene *scene)
