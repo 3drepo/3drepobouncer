@@ -84,7 +84,7 @@ matrix:
           - export SYNCHRO_READER_ROOT=$PWD/3drepoSynchroReader
 
       install:
-          - sudo pip install cpp-coveralls
+          - pip install cpp-coveralls
       services:
           - mongodb
       before_script:
