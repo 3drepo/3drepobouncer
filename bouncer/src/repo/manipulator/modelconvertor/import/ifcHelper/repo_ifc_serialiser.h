@@ -112,6 +112,12 @@ namespace repo {
 						const IfcParse::entity& type);
 
 					/*
+					* If this entity sit under an empty node in the tree that doesn't exist in
+					* the Ifc, but exists in the Repo tree to group entities by type.
+					*/
+					bool shouldGroupByType(const IfcSchema::IfcObjectDefinition* object, const IfcSchema::IfcObjectDefinition* parent);
+
+					/*
 					* Builds metadata and possibly transformation nodes for this element. If
 					* the caller passes false to createTransform, then it is expected any mesh
 					* nodes will attach directly to the parents.

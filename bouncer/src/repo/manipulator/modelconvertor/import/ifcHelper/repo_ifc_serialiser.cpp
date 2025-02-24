@@ -157,6 +157,11 @@ repo::lib::RepoUUID IFCSerialiser::createTransformationNode(const IfcSchema::Ifc
 	return transform.getSharedID();
 }
 
+bool IFCSerialiser::shouldGroupByType(const IfcSchema::IfcObjectDefinition* object, const IfcSchema::IfcObjectDefinition* parent)
+{
+	return parent && !parent->as<IfcSchema::IfcElement>() && object->as<IfcSchema::IfcElement>();
+}
+
 repo::lib::RepoUUID IFCSerialiser::createTransformationNode(const IfcSchema::IfcObjectDefinition* object)
 {
 	if (!object) {
@@ -178,20 +183,24 @@ repo::lib::RepoUUID IFCSerialiser::createTransformationNode(const IfcSchema::Ifc
 	// If the parent is a non-physical container, group the entities by type, as
 	// a convenience.
 
-	if (parent && !parent->as<IfcSchema::IfcElement>() && object->as<IfcSchema::IfcElement>()) 
+	if (shouldGroupByType(object, parent))
 	{
 		parentId = createTransformationNode(parent, object->declaration());
 	}
 
-	auto transform = repo::core::model::RepoBSONFactory::makeTransformationNode({}, object->Name().get_value_or({}), { parentId });
+	auto name = object->Name().get_value_or({});
+	if (name.empty())
+	{
+		name = object->declaration().name();
+	}
+
+	auto transform = repo::core::model::RepoBSONFactory::makeTransformationNode({}, name, { parentId });
 	parentId = transform.getSharedID();
 	sharedIds[object->id()] = parentId;
 	builder->addNode(transform);
 
 	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
-
 	metadata["Entity"] = object->declaration().name();
-
 	auto metadataNode = repo::core::model::RepoBSONFactory::makeMetaDataNode(metadata, {}, { parentId });
 	builder->addNode(metadataNode);
 
@@ -200,8 +209,23 @@ repo::lib::RepoUUID IFCSerialiser::createTransformationNode(const IfcSchema::Ifc
 
 repo::lib::RepoUUID IFCSerialiser::getParentId(const IfcGeom::Element* element, bool createTransform)
 {
-	auto parentId = createTransformationNode(element->product()->as<IfcSchema::IfcObjectDefinition>());
-	return parentId;
+	auto object = element->product()->as<IfcSchema::IfcObjectDefinition>();
+	if (createTransform)
+	{
+		return createTransformationNode(object);
+	}
+	else
+	{
+		auto parent = getParent(object);
+		if (shouldGroupByType(object, parent))
+		{
+			return createTransformationNode(parent, object->declaration());
+		}
+		else
+		{
+			return createTransformationNode(parent);
+		}
+	}
 }
 
 void IFCSerialiser::import(const IfcGeom::TriangulationElement* triangulation)
@@ -253,18 +277,18 @@ void IFCSerialiser::import(const IfcGeom::TriangulationElement* triangulation)
 		return;
 	}
 
-	bool createTransformNode = true;// facesByMaterial.size() > 1;
-
-	// Creates the transformation node for this element, and its parent(s), 
-	// on-demand. In this version of the importer, we always create a
-	// transformation node, regardless of how many child meshes there are -
-	// this is because it it is possible to tell up front whether a single
-	// mesh may eventually get transformation node siblings.
-
-	auto parentId = getParentId(triangulation, createTransformNode);
+	bool createTransformNode = facesByMaterial.size() > 1;
 
 	std::string name;
-	name = triangulation->name();
+	if (!createTransformNode) {
+		name = triangulation->name();
+	}
+
+	if (triangulation->product()->as<IfcSchema::IfcSpace>()) {
+		name += " (IFC Space)";
+	}
+
+	auto parentId = getParentId(triangulation, createTransformNode);
 
 	for (auto pair : facesByMaterial)
 	{
@@ -277,7 +301,7 @@ void IFCSerialiser::import(const IfcGeom::TriangulationElement* triangulation)
 			normals,
 			{},
 			{ uvs },
-			{ },
+			name,
 			{ parentId }
 		);
 		mesh.updateBoundingBox();
@@ -291,6 +315,9 @@ void IFCSerialiser::import(const IfcGeom::TriangulationElement* triangulation)
 * any products we do not want.
 *
 * This implementation ignores Openings.
+*
+* IfcSpaces are imported, but appear under their own groups, and so are handled
+* further in.
 */
 struct filter
 {
