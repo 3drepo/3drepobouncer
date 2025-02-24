@@ -5,7 +5,7 @@ matrix:
       name: Bouncer Worker linter check
       dist: focal
       node_js:
-        - "18.12.1"
+        - "18.20.6"
       script:
         - cd tools/bouncer_worker && yarn install && yarn lint
 
@@ -16,7 +16,7 @@ matrix:
       dist: focal
       name: Unit tests and integration tests
       node_js:
-        - "18.12.1"
+        - "18.20.6"
       compiler:
            - gcc
 
@@ -36,12 +36,12 @@ matrix:
           - git submodule status
           - sudo apt-get install gnupg curl
           - sudo apt remove mongodb && sudo apt purge mongodb && sudo apt autoremove && sudo rm -rf /var/lib/mongodb
-          - curl -fsSL https://www.mongodb.org/static/pgp/server-5.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-5.0.gpg --dearmor
-          - curl -fsSL https://www.mongodb.org/static/pgp/server-4.4.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-4.4.gpg --dearmor
-          - echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-5.0.gpg ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/5.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-5.0.list
-          - echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-4.4.gpg ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.4.list
+          - curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-8.0.gpg --dearmor
+          - echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
           - sudo apt-get update
-          - sudo apt-get install -y gnupg mongodb-org=5.0.8 mongodb-org-database=5.0.8 mongodb-org-server=5.0.8 mongodb-org-shell=5.0.8 mongodb-org-tools=5.0.8
+          - sudo apt-get install -y mongodb-org mongodb-org-database mongodb-org-server mongodb-org-mongos mongodb-org-tools
+          - sudo mkdir -p /var/lib/mongodb
+          - sudo chmod 777 /var/lib/mongodb
           - sudo systemctl daemon-reload && sudo systemctl start mongod && echo $(mongod --version)
           - mkdir testData && cd testData
           - git clone --filter=blob:none --sparse https://$TESTUSER:$TESTPW@github.com/3drepo/tests.git .
@@ -49,7 +49,7 @@ matrix:
           - mv cplusplus/bouncer/ .
           - cd ../
           - until nc -z localhost 27017; do echo Waiting for MongoDB; sleep 1; done
-          - mongo admin testData/bouncer/createUser.js
+          - mongosh admin testData/bouncer/createUser.js
           - cd  testData/bouncer/data/database/
           - mongorestore -u "testUser" -p "3drepotest" --authenticationDatabase admin --quiet
           - cd ../../../../
@@ -91,7 +91,7 @@ matrix:
           - export BOUNCER_DIR=$PWD
           - mkdir build && cd build
           - cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_BUILD_TYPE=Debug -DSYNCHRO_SUPPORT=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
-          - mongo mydb_test --eval 'db.createUser({user:"testUser",pwd:"3drepotest",roles:["readWrite"]});'
+          - mongosh mydb_test --eval 'db.createUser({user:"testUser",pwd:"3drepotest",roles:["readWrite"]});'
       script:
           - sudo make -j8 install
           - export REPO_MODEL_PATH=$PWD/../testData/bouncer/data/models
@@ -110,7 +110,7 @@ matrix:
       dist: focal
       name: license support compilation check
       node_js:
-        - "18.12.1"
+        - "18.20.6"
       compiler:
            - gcc
 
