@@ -165,7 +165,7 @@ bool IFCSerialiser::shouldGroupByType(const IfcSchema::IfcObjectDefinition* obje
 	return parent && !parent->as<IfcSchema::IfcElement>() && object->as<IfcSchema::IfcElement>();
 }
 
-repo::lib::RepoUUID IFCSerialiser::createTransformationNode(const IfcSchema::IfcObjectDefinition* object, const repo::lib::RepoMatrix& matrix)
+repo::lib::RepoUUID IFCSerialiser::createTransformationNode(const IfcSchema::IfcObjectDefinition* object)
 {
 	if (!object) {
 		return rootNodeId;
@@ -181,7 +181,7 @@ repo::lib::RepoUUID IFCSerialiser::createTransformationNode(const IfcSchema::Ifc
 
 	auto parent = getParent(object);
 
-	auto parentId = createTransformationNode(parent, {});
+	auto parentId = createTransformationNode(parent);
 
 	// If the parent is a non-physical container, group elements by type, as
 	// a convenience.
@@ -197,7 +197,7 @@ repo::lib::RepoUUID IFCSerialiser::createTransformationNode(const IfcSchema::Ifc
 		name = object->declaration().name();
 	}
 
-	auto transform = repo::core::model::RepoBSONFactory::makeTransformationNode(matrix, name, { parentId });
+	auto transform = repo::core::model::RepoBSONFactory::makeTransformationNode({}, name, { parentId });
 	parentId = transform.getSharedID();
 	sharedIds[object->id()] = parentId;
 	builder->addNode(transform);
@@ -210,14 +210,32 @@ repo::lib::RepoUUID IFCSerialiser::createTransformationNode(const IfcSchema::Ifc
 	return parentId;
 }
 
-std::set<repo::lib::RepoUUID> IFCSerialiser::createMeshNodes(
-	const IfcGeom::Representation::Triangulation& mesh,
-	repo::lib::RepoUUID parentId,
-	std::string name,
-	repo::lib::RepoMatrix matrix
-)
+repo::lib::RepoUUID IFCSerialiser::getParentId(const IfcGeom::Element* element, bool createTransform)
 {
-	std::set<repo::lib::RepoUUID> uniqueIds;
+	auto object = element->product()->as<IfcSchema::IfcObjectDefinition>();
+	if (createTransform)
+	{
+		return createTransformationNode(object);
+	}
+	else
+	{
+		auto parent = getParent(object);
+		if (shouldGroupByType(object, parent))
+		{
+			return createTransformationNode(parent, object->declaration());
+		}
+		else
+		{
+			return createTransformationNode(parent);
+		}
+	}
+}
+
+void IFCSerialiser::import(const IfcGeom::TriangulationElement* triangulation)
+{
+	auto& mesh = triangulation->geometry();
+
+	auto matrix = repoMatrix(*triangulation->transformation().data());
 
 	std::vector<repo::lib::RepoVector3D> vertices;
 	vertices.reserve(mesh.verts().size() / 3);
@@ -260,6 +278,23 @@ std::set<repo::lib::RepoUUID> IFCSerialiser::createMeshNodes(
 		faces.push_back({ v1, v2, v3 });
 	}
 
+	if (!facesByMaterial.size()) {
+		return;
+	}
+
+	bool createTransformNode = facesByMaterial.size() > 1;
+
+	std::string name;
+	if (!createTransformNode) {
+		name = triangulation->name();
+	}
+
+	if (triangulation->product()->as<IfcSchema::IfcSpace>()) {
+		name += " (IFC Space)";
+	}
+
+	auto parentId = getParentId(triangulation, createTransformNode);
+
 	for (auto pair : facesByMaterial)
 	{
 		// Vertices that are not referenced by a particular set of faces will be
@@ -274,76 +309,10 @@ std::set<repo::lib::RepoUUID> IFCSerialiser::createMeshNodes(
 			name,
 			{ parentId }
 		);
-		mesh.updateBoundingBox();
 		mesh.applyTransformation(matrix);
+		mesh.updateBoundingBox();
 		builder->addNode(mesh);
 		builder->addMaterialReference(resolveMaterial(materials[pair.first]), mesh.getSharedID());
-
-		uniqueIds.insert(mesh.getUniqueID());
-	}
-
-	return uniqueIds;
-}
-
-repo::lib::RepoUUID IFCSerialiser::getParentId(const IfcGeom::Element* element, bool createTransform)
-{
-	auto object = element->product()->as<IfcSchema::IfcObjectDefinition>();
-	if (createTransform)
-	{
-		return createTransformationNode(object, repoMatrix(*element->transformation().data()));
-	}
-	else
-	{
-		auto parent = getParent(object);
-		if (shouldGroupByType(object, parent))
-		{
-			return createTransformationNode(parent, object->declaration());
-		}
-		else
-		{
-			return createTransformationNode(parent);
-		}
-	}
-}
-
-void IFCSerialiser::import(const IfcGeom::TriangulationElement* element)
-{
-	// We can't know ahead of time how many references a mesh may have, so all
-	// MeshNodes are instanced, by default, except for those we explicitly choose
-	// to bake (e.g. Ifc Spaces) (which may get baked over and over).
-
-	// There are only two options: bake the transform into a named mesh, or have an
-	// unnamed mesh under a leaf TransformationNode. The importer will not place a
-	// baked mesh under a leaf TransformationNode.
-
-	bool instanced = true;
-
-	std::string name;
-	if (element->product()->as<IfcSchema::IfcSpace>()) {
-		name += " (IFC Space)";
-		instanced = false;
-	}
-
-	auto& mesh = element->geometry();
-	auto matrix = repoMatrix(*element->transformation().data());
-	auto parentId = getParentId(element, instanced);
-
-	if (!instanced)
-	{
-		createMeshNodes(mesh, parentId, name, matrix);
-	}
-	else
-	{
-		auto existing = representations.find(mesh.id());
-		if (existing != representations.end()) {
-			for (auto& uniqueId : existing->second) {
-				builder->addParent(uniqueId, parentId);
-			}
-		}
-		else
-		{
-			representations[mesh.id()] = createMeshNodes(mesh, parentId, {}, {});
-		}
 	}
 }
 
@@ -388,7 +357,7 @@ void IFCSerialiser::import()
 
 		} while (contextIterator.next());
 
-		repoInfo << "100%";
+		repoInfo << "100%...";
 	}
 }
 
