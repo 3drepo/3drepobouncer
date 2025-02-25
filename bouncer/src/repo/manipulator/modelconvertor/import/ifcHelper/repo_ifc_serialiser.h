@@ -53,6 +53,7 @@ namespace repo {
 					repo::lib::RepoUUID rootNodeId;
 					std::unordered_map<std::string, repo::lib::repo_material_t> materials;
 					std::unordered_map<int64_t, repo::lib::RepoUUID> sharedIds;
+					std::unordered_map<std::string, std::set<repo::lib::RepoUUID>> representations;
 
 				public:
 					/*
@@ -81,7 +82,14 @@ namespace repo {
 					* number of primitive sets, with multiple materials. Will also create
 					* the tree and metadata nodes.
 					*/
-					void import(const IfcGeom::TriangulationElement* triangulation);
+					void import(const IfcGeom::TriangulationElement* element);
+
+					std::set<repo::lib::RepoUUID> createMeshNodes(
+						const IfcGeom::Representation::Triangulation& mesh,
+						repo::lib::RepoUUID parent,
+						std::string name,
+						repo::lib::RepoMatrix matrix
+					);
 
 					/*
 					* Given an arbitrary Ifc Object, determine from its relationships which is
@@ -101,7 +109,10 @@ namespace repo {
 					* but also storeys and projects. Both types of object coexist in the tree.
 					*
 					*/
-					repo::lib::RepoUUID createTransformationNode(const IfcSchema::IfcObjectDefinition* object);
+					repo::lib::RepoUUID createTransformationNode(
+						const IfcSchema::IfcObjectDefinition* object,
+						const repo::lib::RepoMatrix& matrix = {}
+					);
 
 					/*
 					* Creates a transformation node under the parent object to group together
@@ -109,7 +120,8 @@ namespace repo {
 					*/
 					repo::lib::RepoUUID createTransformationNode(
 						const IfcSchema::IfcObjectDefinition* parent, 
-						const IfcParse::entity& type);
+						const IfcParse::entity& type
+					);
 
 					/*
 					* If this entity sit under an empty node in the tree that doesn't exist in
