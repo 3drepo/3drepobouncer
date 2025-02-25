@@ -34,6 +34,11 @@ repo::lib::repo_color3d_t repoColor(const ifcopenshell::geometry::taxonomy::colo
 	return repo::lib::repo_color3d_t(c.r(), c.g(), c.b());
 }
 
+repo::lib::RepoMatrix repoMatrix(const ifcopenshell::geometry::taxonomy::matrix4& m)
+{
+	return repo::lib::RepoMatrix(m.ccomponents().data(), false);
+}
+
 IFCSerialiser::IFCSerialiser(IfcParse::IfcFile& file, repo::manipulator::modelutility::RepoSceneBuilder* builder)
 	:file(file),
 	builder(builder)
@@ -51,9 +56,7 @@ void IFCSerialiser::configureSettings()
 	// value to what we want.
 
 	settings.get<ifcopenshell::geometry::settings::WeldVertices>().value = false; // Welding vertices can make uv projection difficult
-	settings.get<ifcopenshell::geometry::settings::UseWorldCoords>().value = true; // Put everything in project coordinates by the time it gets out of the triangulator
 	settings.get<ifcopenshell::geometry::settings::GenerateUvs>().value = true;
-	settings.get<ifcopenshell::geometry::settings::UseElementHierarchy>().value = true;
 }
 
 void IFCSerialiser::updateBounds()
@@ -180,7 +183,7 @@ repo::lib::RepoUUID IFCSerialiser::createTransformationNode(const IfcSchema::Ifc
 
 	auto parentId = createTransformationNode(parent);
 
-	// If the parent is a non-physical container, group the entities by type, as
+	// If the parent is a non-physical container, group elements by type, as
 	// a convenience.
 
 	if (shouldGroupByType(object, parent))
@@ -231,6 +234,8 @@ repo::lib::RepoUUID IFCSerialiser::getParentId(const IfcGeom::Element* element, 
 void IFCSerialiser::import(const IfcGeom::TriangulationElement* triangulation)
 {
 	auto& mesh = triangulation->geometry();
+
+	auto matrix = repoMatrix(*triangulation->transformation().data());
 
 	std::vector<repo::lib::RepoVector3D> vertices;
 	vertices.reserve(mesh.verts().size() / 3);
@@ -304,6 +309,7 @@ void IFCSerialiser::import(const IfcGeom::TriangulationElement* triangulation)
 			name,
 			{ parentId }
 		);
+		mesh.applyTransformation(matrix);
 		mesh.updateBoundingBox();
 		builder->addNode(mesh);
 		builder->addMaterialReference(resolveMaterial(materials[pair.first]), mesh.getSharedID());
@@ -336,7 +342,7 @@ void IFCSerialiser::import()
 	int previousProgress = 0;
 	if (contextIterator.initialize())
 	{
-		repoInfo << "Processing geometry...";
+		repoInfo << "Processing geometry with " << numThreads << " threads...";
 
 		do
 		{
