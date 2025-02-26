@@ -31,9 +31,31 @@
 
 #include <mongocxx/exception/exception.hpp>
 #include <mongocxx/exception/operation_exception.hpp>
+#include <mongocxx/pipeline.hpp>
+#include <bsoncxx/document/value.hpp>
+#include <bsoncxx/document/view_or_value.hpp>
+#include <bsoncxx/builder/basic/document.hpp>
+
+#include <unordered_set>
 
 using namespace repo::core::handler;
 using namespace testing;
+using namespace bsoncxx::builder::basic;
+
+std::shared_ptr<repo::core::handler::MongoDatabaseHandler> getLocalHandler()
+{
+	auto handler = repo::core::handler::MongoDatabaseHandler::getHandler(
+		REPO_GTEST_DBADDRESS,
+		REPO_GTEST_DBPORT,
+		"adminUser",
+		"password"
+	);
+
+	auto config = repo::lib::RepoConfig::fromFile(getDataPath("config/withFS.json"));
+	config.configureFS("D:\\Git\\local\\efs\\models"); //getDataPath("fileShare"));
+	handler->setFileManager(std::make_shared<repo::core::handler::fileservice::FileManager>(config, handler));
+	return handler;
+}
 
 struct LinkedSummary {
 	repo::lib::RepoUUID rootNodeId;
@@ -54,8 +76,8 @@ repo::core::model::RepoBSON createRootEntry()
 {
 	auto id = repo::lib::RepoUUID::createUUID();
 	repo::core::model::RepoBSONBuilder builder;
-	builder.append("_id", id);	
-	builder.append("transform", generateRandomMatrix());	
+	builder.append("_id", id);
+	builder.append("transform", generateRandomMatrix());
 	return builder.obj();
 }
 
@@ -72,7 +94,7 @@ repo::core::model::RepoBSON createChildEntry(repo::lib::RepoUUID parentId)
 LinkedSummary fillDBWithLinkedEntries(std::shared_ptr<MongoDatabaseHandler> handler, std::string database, std::string collection, int noEntries)
 {
 	repo::lib::RepoMatrix fullTransform;
-		
+
 	auto rootEntry = createRootEntry();
 	repo::lib::RepoUUID rootId = rootEntry.getField("_id").UUID();
 	repo::lib::RepoMatrix rootTransform = rootEntry.getMatrixField("transform");
@@ -130,7 +152,7 @@ TreeInfo createTreeEntries(
 			auto childMat = child.getMatrixField("transform");
 			auto nextMat = parentMat * childMat;
 			createTreeEntries(childId, nextMat, currentTree, levelsRemaining, noChildren);
-		}		
+		}
 	}
 	else {
 		// We are in the leaf, store leaf id and matrix
@@ -329,5 +351,434 @@ TEST(Sandbox, SandboxTest01)
 	// Check number of entries
 	auto documents = handler->getAllFromCollectionTailable(database, collection);
 	EXPECT_THAT(documents.size(), Eq(101));
+
+}
+
+
+mongocxx::pipeline createMeshNodeCountPipeline(std::string collection, repo::lib::RepoUUID revId) {
+	auto uuidData = revId.data();
+	bsoncxx::types::b_binary revIdbinary{
+		bsoncxx::binary_sub_type::k_uuid_deprecated,
+		uuidData.size(),
+		uuidData.data()
+	};
+
+	mongocxx::pipeline countPipeline;
+	countPipeline.match(
+		make_document(
+			kvp("rev_id", revIdbinary),
+			kvp("type", "mesh")
+		)
+	).project(
+		make_document(
+			kvp("_id", 1)
+		)
+	);
+
+	return countPipeline;
+}
+
+mongocxx::pipeline createTranspPipeline(std::string collection, repo::lib::RepoUUID revId, bool uvParam, int primitiveParam) {
+	auto uuidData = revId.data();
+	bsoncxx::types::b_binary revIdbinary{
+		bsoncxx::binary_sub_type::k_uuid_deprecated,
+		uuidData.size(),
+		uuidData.data()
+	};
+	
+	mongocxx::pipeline transpPipeline;
+	transpPipeline.match(
+		make_document(
+			kvp("rev_id", revIdbinary),
+			kvp("type", "material"),
+			kvp("opacity", make_document(
+				kvp("$ne", 1)
+			))
+		)
+	).project(
+		make_document(
+			kvp("shared_id", 1),
+			kvp("parents", 1)
+		)
+	).graph_lookup(
+		make_document(
+			kvp("from", collection),
+			kvp("startWith", "$shared_id"),
+			kvp("connectFromField", "shared_id"),
+			kvp("connectToField", "parents"),
+			kvp("as", "textureChildNodes"),
+			kvp("restrictSearchWithMatch", make_document(
+				kvp("type", "texture")
+			))
+		)
+	).match(
+		make_document(
+			kvp("textureChildNodes", make_document(
+				kvp("$size", 0)
+			))
+		)
+	).project(
+		make_document(
+			kvp("parents", 1)
+		)
+	).unwind(
+		"$parents"
+	).lookup(
+		make_document(
+			kvp("from", collection),
+			kvp("localField", "parents"),
+			kvp("foreignField", "shared_id"),
+			kvp("as", "mesh")
+		)
+	).match(
+		make_document(
+			kvp("mesh.0.primitive", primitiveParam),
+			kvp("mesh.0.uv_channels_count", make_document(
+				kvp("$exists", uvParam)
+			))
+		)
+	).project(
+		make_document(
+			kvp("node", "$parents")
+		)
+	);
+
+	return transpPipeline;
+}
+
+mongocxx::pipeline createNormalPipeline(std::string collection, repo::lib::RepoUUID revId, bool uvParam, int primitiveParam) {
+	auto uuidData = revId.data();
+	bsoncxx::types::b_binary revIdbinary{
+		bsoncxx::binary_sub_type::k_uuid_deprecated,
+		uuidData.size(),
+		uuidData.data()
+	};
+
+	mongocxx::pipeline normalPipeline;
+	normalPipeline.match(
+		make_document(
+			kvp("rev_id", revIdbinary),
+			kvp("type", "material"),
+			kvp("opacity", 1)
+		)
+	).project(
+		make_document(
+			kvp("shared_id", 1),
+			kvp("parents", 1)
+		)
+	).graph_lookup(
+		make_document(
+			kvp("from", collection),
+			kvp("startWith", "$shared_id"),
+			kvp("connectFromField", "shared_id"),
+			kvp("connectToField", "parents"),
+			kvp("as", "textureChildNodes"),
+			kvp("restrictSearchWithMatch", make_document(
+				kvp("type", "texture")
+			))
+		)
+	).match(
+		make_document(
+			kvp("textureChildNodes", make_document(
+				kvp("$size", 0)
+			))
+		)
+	).project(
+		make_document(
+			kvp("parents", 1)
+		)
+	).unwind(
+		"$parents"
+	).lookup(
+		make_document(
+			kvp("from", collection),
+			kvp("localField", "parents"),
+			kvp("foreignField", "shared_id"),
+			kvp("as", "mesh")
+		)
+	).match(
+		make_document(
+			kvp("mesh.0.primitive", primitiveParam),
+			kvp("mesh.0.uv_channels_count", make_document(
+				kvp("$exists", uvParam)
+			))
+		)
+	).project(
+		make_document(
+			kvp("node", "$parents")
+		)
+	);
+
+	return normalPipeline;
+}
+
+mongocxx::pipeline createTextureIdPipeline(std::string collection, repo::lib::RepoUUID revId) {
+	auto uuidData = revId.data();
+	bsoncxx::types::b_binary revIdbinary{
+		bsoncxx::binary_sub_type::k_uuid_deprecated,
+		uuidData.size(),
+		uuidData.data()
+	};
+	
+	mongocxx::pipeline textureIdPipeline;
+	textureIdPipeline.match(
+		make_document(
+			kvp("rev_id", revIdbinary),
+			kvp("type", "texture")
+		)
+	).project(
+		make_document(
+			kvp("shared_id", 1)
+		)
+	);
+
+	return textureIdPipeline;
+}
+
+mongocxx::pipeline createTextureNodesPipeline(std::string collection, repo::lib::RepoUUID revId, bool uvParam, int primitiveParam, repo::lib::RepoUUID texId) {
+
+	auto texUuidData = texId.data();
+	bsoncxx::types::b_binary texIdBinary{
+		bsoncxx::binary_sub_type::k_uuid_deprecated,
+		texUuidData.size(),
+		texUuidData.data()
+	};
+
+	auto revUuidData = revId.data();
+	bsoncxx::types::b_binary revIdBinary{
+		bsoncxx::binary_sub_type::k_uuid_deprecated,
+		revUuidData.size(),
+		revUuidData.data()
+	};
+
+
+	mongocxx::pipeline textureNodePipeline;
+	textureNodePipeline.match(
+		make_document(
+			kvp("rev_id", revIdBinary),
+			kvp("shared_id", texIdBinary)
+		)
+	).project(
+		make_document(
+			kvp("parents", 1)
+		)
+	).unwind(
+		"$parents"
+	).lookup(
+		make_document(
+			kvp("from", collection),
+			kvp("localField", "parents"),
+			kvp("foreignField", "shared_id"),
+			kvp("as", "material")
+		)
+	).project(
+		make_document(
+			kvp("material", 1)
+		)
+	).unwind(
+		"$material"
+	).project(
+		make_document(
+			kvp("materialParents", "$material.parents")
+		)
+	).unwind(
+		"$materialParents"
+	).lookup(
+		make_document(
+			kvp("from", collection),
+			kvp("localField", "materialParents"),
+			kvp("foreignField", "shared_id"),
+			kvp("as", "mesh")
+		)
+	).match(
+		make_document(
+			kvp("mesh.0.primitive", primitiveParam),
+			kvp("mesh.0.uv_channels_count", make_document(
+				kvp("$exists", uvParam)
+			))
+		)
+	).project(make_document(
+		kvp("node", "$materialParents")
+	));
+
+	return textureNodePipeline;
+}
+TEST(Sandbox, SandboxCoverageTest) {
+	auto handler = getLocalHandler();
+
+	std::string database = "fthiel";
+
+	// House model (small)
+	//std::string collection = "5144ac65-6b9d-4236-b0a6-9186149a32c8.scene";
+	//repo::lib::RepoUUID revId = repo::lib::RepoUUID("949EE0E2-13FB-4C07-9B49-9556F5E8F293");
+
+	// "Medium" Model
+	//std::string collection = "69d561b4-77d7-44a0-b295-d0db459d5270.scene";
+	//repo::lib::RepoUUID revId = repo::lib::RepoUUID("3792C7CB-2854-4FF0-B957-278C154C0CB7");
+	//int noMeshNodes = 245669;
+
+	// XXL Model
+	std::string collection = "20523f34-f3d5-4cb6-9ebe-63b744b486b3.scene";
+	repo::lib::RepoUUID revId = repo::lib::RepoUUID("75FAFCC9-4AD4-488E-BCE2-35A4F8C7463C");
+	 int noMeshNodes = 654211;
+
+	// Get number of total entries
+	//auto allDocs = handler->getAllFromCollectionTailable(database, collection);
+	//EXPECT_THAT(allDocs.size(), Eq(2332));
+
+	//Get number of mesh nodes
+	//auto cursorMeshNodeCursor = handler->runAggregatePipeline(database, collection, createMeshNodeCountPipeline(collection, revId));
+	//int noMeshNodes = 0;
+	//for (auto document : (*cursorMeshNodeCursor)) {
+	//	noMeshNodes++;
+	//}
+	//EXPECT_THAT(noMeshNodes, 1349);
+
+
+
+	// Get number of transparent Nodes (no uv, primitive 2)
+	auto cursorTranspNoUvPrim2 = handler->runAggregatePipeline(database, collection, createTranspPipeline(collection, revId, false, 2));
+	int countTranspNoUvPrim2 = 0;
+	for (auto document : (*cursorTranspNoUvPrim2)) {
+		countTranspNoUvPrim2++;
+	}
+	std::cout << "MESH NODES, TRANSPARENT, NO UV, Prim 2: " << countTranspNoUvPrim2 << std::endl;
+
+	// Get number of transparent Nodes (uv, primitive 2)
+	auto cursorTranspUvPrim2 = handler->runAggregatePipeline(database, collection, createTranspPipeline(collection, revId, true, 2));
+	int countTranspUvPrim2 = 0;
+	for (auto document : (*cursorTranspUvPrim2)) {
+		countTranspUvPrim2++;
+	}
+	std::cout << "MESH NODES, TRANSPARENT, UV, Prim 2: " << countTranspUvPrim2 << std::endl;
+
+	// Get number of transparent Nodes (no uv, primitive 3)
+	auto cursorTranspNoUvPrim3 = handler->runAggregatePipeline(database, collection, createTranspPipeline(collection, revId, false, 3));
+	int countTranspNoUvPrim3 = 0;
+	for (auto document : (*cursorTranspNoUvPrim3)) {
+		countTranspNoUvPrim3++;
+	}
+
+	std::cout << "MESH NODES, TRANSPARENT, NO UV, Prim 3: " << countTranspNoUvPrim3 << std::endl;
+
+	// Get number of transparent Nodes (uv, primitive 3)
+	auto cursorTranspUvPrim3 = handler->runAggregatePipeline(database, collection, createTranspPipeline(collection, revId, true, 3));
+	int countTranspUvPrim3 = 0;
+	for (auto document : (*cursorTranspUvPrim3)) {
+		countTranspUvPrim3++;
+	}
+
+	std::cout << "MESH NODES, TRANSPARENT, UV, Prim 3: " << countTranspUvPrim3 << std::endl;
+
+	int countTranspTotal = countTranspNoUvPrim2 + countTranspNoUvPrim3 + countTranspUvPrim2 + countTranspUvPrim3;
+	std::cout << "MESH NODES, TRANSPARENT, TOTAL: " << countTranspUvPrim2 << std::endl;
+
+
+
+
+	// Get number of normal Nodes (no uv, primitive 2)
+	auto cursorNormNoUvPrim2 = handler->runAggregatePipeline(database, collection, createNormalPipeline(collection, revId, false, 2));
+	int countNormNoUvPrim2 = 0;
+	for (auto document : (*cursorNormNoUvPrim2)) {
+		countNormNoUvPrim2++;
+	}
+	std::cout << "MESH NODES, NORMAL, NO UV, Prim 2: " << countNormNoUvPrim2 << std::endl;
+
+	// Get number of normal Nodes (uv, primitive 2)
+	auto cursorNormUvPrim2 = handler->runAggregatePipeline(database, collection, createNormalPipeline(collection, revId, true, 2));
+	int countNormUvPrim2 = 0;
+	for (auto document : (*cursorNormUvPrim2)) {
+		countNormUvPrim2++;
+	}
+	std::cout << "MESH NODES, NORMAL, UV, Prim 2: " << countNormUvPrim2 << std::endl;
+
+	// Get number of normal Nodes (no uv, primitive 3)
+	auto cursorNormNoUvPrim3 = handler->runAggregatePipeline(database, collection, createNormalPipeline(collection, revId, false, 3));
+	int countNormNoUvPrim3 = 0;
+	for (auto document : (*cursorNormNoUvPrim3)) {
+		countNormNoUvPrim3++;
+	}
+
+	std::cout << "MESH NODES, NORMAL, NO UV, Prim 3: " << countNormNoUvPrim3 << std::endl;
+
+	// Get number of normal Nodes (uv, primitive 3)
+	auto cursorNormUvPrim3 = handler->runAggregatePipeline(database, collection, createNormalPipeline(collection, revId, true, 3));
+	int countNormUvPrim3 = 0;
+	for (auto document : (*cursorNormUvPrim3)) {
+		countNormUvPrim3++;
+	}
+
+	std::cout << "MESH NODES, NORMAL, UV, Prim 3: " << countNormUvPrim3 << std::endl;
+
+	int countNormTotal = countNormNoUvPrim2 + countNormNoUvPrim3 + countNormUvPrim2 + countNormUvPrim3;
+	std::cout << "MESH NODES, NORMAL, TOTAL: " << countNormTotal << std::endl;
+
+
+
+	// Get Textured nodes
+	mongocxx::pipeline texIdPipeline = createTextureIdPipeline(collection, revId);
+	auto cursorTexId = handler->runAggregatePipeline(database, collection, texIdPipeline);
+
+	int countTextNodes = 0;	
+	std::unordered_set<std::string> texIdsCovered;
+
+	for (auto document : (*cursorTexId)) {
+
+		auto texId = document.getUUIDField("shared_id");
+
+		std::string texIdString = texId.toString();
+		if (texIdsCovered.find(texIdString) == texIdsCovered.end()) {
+
+			texIdsCovered.insert(texIdString);
+
+			// Get number of textured Nodes (no uv, primitive 2)
+			auto cursorTextNoUvPrim2 = handler->runAggregatePipeline(database, collection, createTextureNodesPipeline(collection, revId, false, 2, texId));
+			int countTextNoUvPrim2 = 0;
+			for (auto document : (*cursorTextNoUvPrim2)) {
+				countTextNoUvPrim2++;
+			}
+			std::cout << "MESH NODES, TEXTURED, TEXID: " << texId.toString() << ", NO UV, Prim 2: " << countTextNoUvPrim2 << std::endl;
+
+			// Get number of textured Nodes (uv, primitive 2)
+			auto cursorTextUvPrim2 = handler->runAggregatePipeline(database, collection, createTextureNodesPipeline(collection, revId, true, 2, texId));
+			int countTextUvPrim2 = 0;
+			for (auto document : (*cursorTextUvPrim2)) {
+				countTextUvPrim2++;
+			}
+			std::cout << "MESH NODES, TEXTURED, TEXID: " << texId.toString() << ", UV, Prim 2: " << countTextUvPrim2 << std::endl;
+
+			// Get number of textured Nodes (no uv, primitive 3)
+			auto cursorTextNoUvPrim3 = handler->runAggregatePipeline(database, collection, createTextureNodesPipeline(collection, revId, false, 3, texId));
+			int countTextNoUvPrim3 = 0;
+			for (auto document : (*cursorTextNoUvPrim3)) {
+				countTextNoUvPrim3++;
+			}
+
+			std::cout << "MESH NODES, TEXTURED, TEXID: " << texId.toString() << ", NO UV, Prim 3: " << countTextNoUvPrim3 << std::endl;
+
+			// Get number of textured Nodes (uv, primitive 3)
+			auto cursorTextUvPrim3 = handler->runAggregatePipeline(database, collection, createTextureNodesPipeline(collection, revId, true, 3, texId));
+			int countTextUvPrim3 = 0;
+			for (auto document : (*cursorTextUvPrim3)) {
+				countTextUvPrim3++;
+			}
+
+			std::cout << "MESH NODES, TEXTURED, TEXID: " << texId.toString() << ", UV, Prim 3: " << countTextUvPrim3 << std::endl;
+
+			int countTextTotal = countTextNoUvPrim2 + countTextNoUvPrim3 + countTextUvPrim2 + countTextUvPrim3;
+			std::cout << "MESH NODES, TEXTURED, TEXID: " << texId.toString() << ", TOTAL: " << countTextUvPrim2 << std::endl;
+
+			countTextNodes += countTextTotal;
+		}
+	}
+
+	std::cout << "UNIQUE TEX IDS: " << texIdsCovered.size() << std::endl;
+
+	std::cout << "MESH NODES, TEXTURED, TOTAL: " << countTextNodes << std::endl;
+
+	int foundMeshNodesTotal = countTranspTotal + countNormTotal + countTextNodes;
+	std::cout << "MESH NODES, ALL, TOTAL: " << foundMeshNodesTotal << std::endl;
+
+	EXPECT_THAT(foundMeshNodesTotal, Eq(noMeshNodes));
 
 }
