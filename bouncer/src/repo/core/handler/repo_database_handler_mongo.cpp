@@ -279,7 +279,7 @@ MongoDatabaseHandler::MongoDatabaseHandler(
 
 	std::string optionsPrefix = s.find("?") == std::string::npos ? "/?" : "&";
 	s += optionsPrefix + "maxConnecting=" + std::to_string(options.maxConnections) +
-		"&socketTimeoutMS=" + std::to_string(options.timeout) +
+		/*"&socketTimeoutMS=" + std::to_string(options.timeout) +*/
 		"&serverSelectionTimeoutMS=" + std::to_string(options.timeout) +
 		"&connectTimeoutMS=" + std::to_string(options.timeout);
 
@@ -884,6 +884,23 @@ std::unique_ptr<database::Cursor> MongoDatabaseHandler::runDatabaseOperation(
 }
 
 */
+
+
+std::unique_ptr<database::Cursor> MongoDatabaseHandler::runAggregatePipeline(
+	const std::string& database,
+	const std::string& collection,
+	const mongocxx::pipeline& pipeline)
+{
+	auto client = clientPool->acquire();
+	auto db = client->database(database);
+	auto col = db.collection(collection);	
+
+	mongocxx::options::aggregate options = mongocxx::options::aggregate();
+	options.batch_size(100);
+	// options.max_time();
+
+	return std::make_unique<MongoCursor>(std::move(col.aggregate(pipeline)), this);
+}
 
 std::unique_ptr<repo::core::handler::database::Cursor> MongoDatabaseHandler::getTransformsForLeaf(
 	const std::string& database,

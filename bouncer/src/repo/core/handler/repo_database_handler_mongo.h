@@ -38,6 +38,7 @@
 #include <mongocxx/client-fwd.hpp>
 #include <mongocxx/pool-fwd.hpp>
 #include <bsoncxx/document/view-fwd.hpp>
+#include <mongocxx/pipeline.hpp>
 
 namespace repo {
 	namespace core {
@@ -318,6 +319,11 @@ namespace repo {
 					const std::string& collection,
 					const database::query::RepoQuery& criteria
 				);
+
+				std::unique_ptr<database::Cursor> runAggregatePipeline(
+					const std::string& database,
+					const std::string& collection,
+					const mongocxx::pipeline& pipeline);
 
 				std::unique_ptr<repo::core::handler::database::Cursor> getTransformsForLeaf(
 					const std::string& database,
