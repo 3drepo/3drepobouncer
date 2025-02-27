@@ -16,13 +16,24 @@
 */
 
 #include "repo_ifc_serialiser.h"
+#include "repo_ifc_constants.h"
 
 #include "repo/lib/datastructure/repo_structs.h"
+#include "repo/lib/datastructure/repo_variant.h"
 #include "repo/core/model/bson/repo_bson_factory.h"
+
+#include <ifcparse/IfcEntityInstanceData.h>
 
 #pragma optimize("",off)
 
 using namespace repo::manipulator::modelconvertor::ifcHelper;
+
+/*
+* The starting index of the subtype attributes - this is the same for Ifc2x3 and
+* 4x, however if it changes in future versions we may have to get it from the
+* schema instead.
+*/
+#define NUM_ROOT_ATTRIBUTES 4
 
 repo::lib::RepoVector3D64 repoVector(const ifcopenshell::geometry::taxonomy::point3& p)
 {
@@ -37,6 +48,124 @@ repo::lib::repo_color3d_t repoColor(const ifcopenshell::geometry::taxonomy::colo
 repo::lib::RepoMatrix repoMatrix(const ifcopenshell::geometry::taxonomy::matrix4& m)
 {
 	return repo::lib::RepoMatrix(m.ccomponents().data(), false);
+}
+
+template<typename T>
+std::string stringifyVector(std::vector<T> arr)
+{
+	std::stringstream ss;
+	ss << "(";
+	for (size_t i = 0; i < arr.size(); i++) {
+		ss << arr[i];
+		if (i < arr.size() - 1) {
+			ss << ",";
+		}
+	}
+	ss << ")";
+	return ss.str();
+}
+
+template<typename T>
+repo::lib::RepoVariant stringify(std::vector<T> arr)
+{
+	repo::lib::RepoVariant v;
+	if (arr.size()) {
+		v = stringifyVector(arr);
+	}
+	return v;
+}
+
+template<typename T>
+repo::lib::RepoVariant stringify(std::vector<std::vector<T>> arr)
+{
+	repo::lib::RepoVariant v;
+	if (arr.size()) {
+		std::stringstream ss;
+		ss << "(";
+		for (size_t i = 0; i < arr.size(); i++) {
+			ss << stringifyVector(arr[i]);
+			if (i < arr.size() - 1) {
+				ss << ",";
+			}
+		}
+		ss << ")";
+		v = ss.str();
+	}
+	return v;
+}
+
+std::optional<repo::lib::RepoVariant> repoVariant(const AttributeValue& a)
+{
+	repo::lib::RepoVariant v;
+	switch (a.type())
+	{
+	case IfcUtil::ArgumentType::Argument_NULL:
+	case IfcUtil::ArgumentType::Argument_DERIVED: // not clear what this one is...
+		return std::nullopt;
+	case IfcUtil::ArgumentType::Argument_INT:
+		v = a.operator int();
+		return v;
+	case IfcUtil::ArgumentType::Argument_BOOL:
+		v = a.operator bool();
+		return v;
+	case IfcUtil::ArgumentType::Argument_LOGICAL:
+	{
+		auto value = a.operator boost::logic::tribool();
+		if (value == boost::logic::tribool::true_value) {
+			v = true;
+		}
+		else if (value == boost::logic::tribool::false_value) {
+			v = false;
+		}
+		else {
+			v = "UNKNOWN";
+		}
+		return v;
+	}
+	case IfcUtil::ArgumentType::Argument_DOUBLE:
+		v = a.operator double();
+		return v;
+	case IfcUtil::ArgumentType::Argument_STRING:
+		v = a.operator std::string();
+		return v;
+
+	// Aggregations will often hold things such as GIS coordinates; usually these
+	// complex types should be formatted explicitly by processAttributeValue, but
+	// make a best effort to return something as a fallback if not.
+
+	case IfcUtil::ArgumentType::Argument_AGGREGATE_OF_INT:
+		v = stringify(a.operator std::vector<int, std::allocator<int>>());
+		return v;
+	case IfcUtil::ArgumentType::Argument_AGGREGATE_OF_DOUBLE:
+		v = stringify(a.operator std::vector<double, std::allocator<double>>());
+		return v;
+	case IfcUtil::ArgumentType::Argument_AGGREGATE_OF_STRING:
+		v = stringify(a.operator std::vector<std::string, std::allocator<std::string>>());
+		return v;
+	case IfcUtil::ArgumentType::Argument_AGGREGATE_OF_AGGREGATE_OF_INT:
+		v = stringify(a.operator std::vector<std::vector<int, std::allocator<int>>, std::allocator<std::vector<int, std::allocator<int>>>>());
+		return v;
+	case IfcUtil::ArgumentType::Argument_AGGREGATE_OF_AGGREGATE_OF_DOUBLE:
+		v = stringify(a.operator std::vector<std::vector<double, std::allocator<double>>, std::allocator<std::vector<double, std::allocator<double>>>>());
+		return v;
+
+	// IFCOS will conveniently resolve the enumeration label through the string
+	// conversion without us having to do anything else...
+
+	case IfcUtil::ArgumentType::Argument_ENUMERATION:
+		v = a.operator std::string();
+		return v;
+
+	case IfcUtil::ArgumentType::Argument_BINARY:
+	case IfcUtil::ArgumentType::Argument_ENTITY_INSTANCE:
+	case IfcUtil::ArgumentType::Argument_EMPTY_AGGREGATE:
+	case IfcUtil::ArgumentType::Argument_AGGREGATE_OF_BINARY:
+	case IfcUtil::ArgumentType::Argument_AGGREGATE_OF_ENTITY_INSTANCE:
+	case IfcUtil::ArgumentType::Argument_AGGREGATE_OF_EMPTY_AGGREGATE:
+	case IfcUtil::ArgumentType::Argument_AGGREGATE_OF_AGGREGATE_OF_ENTITY_INSTANCE:
+	case IfcUtil::ArgumentType::Argument_UNKNOWN:
+		return std::nullopt;
+	}
 }
 
 IFCSerialiser::IFCSerialiser(IfcParse::IfcFile& file, repo::manipulator::modelutility::RepoSceneBuilder* builder)
@@ -118,18 +247,18 @@ void IFCSerialiser::createRootNode()
 
 /*
 * Given an arbitrary Ifc Object, determine from its relationships which is the
-* best one for it so it under in the acyclic tree.
+* best one for it to sit under in the acyclic tree.
 */
 const IfcSchema::IfcObjectDefinition* IFCSerialiser::getParent(const IfcSchema::IfcObjectDefinition* object)
 {
-	auto elem = object->as<IfcSchema::IfcElement>();
-	if (elem)
-	{
-		auto structures = elem->ContainedInStructure();
-		if (structures->size()) {
-			auto container = *structures->begin();
-			return container->RelatingStructure();
+	auto connects = object->file_->getInverse(object->id(), &(IfcSchema::IfcRelContainedInSpatialStructure::Class()), -1);
+	for (auto& rel : *connects) {
+		auto contained = rel->as<IfcSchema::IfcRelContainedInSpatialStructure>();
+		auto structure = contained->RelatingStructure();
+		if (!structure || structure == object) {
+			continue;
 		}
+		return structure;
 	}
 
 	auto compositions = object->file_->getInverse(object->id(), &(IfcSchema::IfcRelDecomposes::Class()), -1);
@@ -167,7 +296,8 @@ bool IFCSerialiser::shouldGroupByType(const IfcSchema::IfcObjectDefinition* obje
 
 repo::lib::RepoUUID IFCSerialiser::createTransformationNode(const IfcSchema::IfcObjectDefinition* object)
 {
-	if (!object) {
+	if (!object)
+	{
 		return rootNodeId;
 	}
 
@@ -202,10 +332,9 @@ repo::lib::RepoUUID IFCSerialiser::createTransformationNode(const IfcSchema::Ifc
 	sharedIds[object->id()] = parentId;
 	builder->addNode(transform);
 
-	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
-	metadata["Entity"] = object->declaration().name();
-	auto metadataNode = repo::core::model::RepoBSONFactory::makeMetaDataNode(metadata, {}, { parentId });
-	builder->addNode(metadataNode);
+	auto metaNode = createMetadataNode(object);
+	metaNode->addParent(parentId);
+	builder->addNode(std::move(metaNode));
 
 	return parentId;
 }
@@ -295,6 +424,11 @@ void IFCSerialiser::import(const IfcGeom::TriangulationElement* triangulation)
 
 	auto parentId = getParentId(triangulation, createTransformNode);
 
+	std::unique_ptr<repo::core::model::MetadataNode> metaNode;
+	if (!createTransformNode) {
+		metaNode = createMetadataNode(triangulation->product()->as<IfcSchema::IfcObjectDefinition>());
+	}
+
 	for (auto pair : facesByMaterial)
 	{
 		// Vertices that are not referenced by a particular set of faces will be
@@ -313,7 +447,326 @@ void IFCSerialiser::import(const IfcGeom::TriangulationElement* triangulation)
 		mesh.updateBoundingBox();
 		builder->addNode(mesh);
 		builder->addMaterialReference(resolveMaterial(materials[pair.first]), mesh.getSharedID());
+
+		if (metaNode) {
+			metaNode->addParent(mesh.getSharedID());
+		}
 	}
+
+	if (metaNode) {
+		builder->addNode(std::move(metaNode));
+	}
+}
+
+std::string constructMetadataLabel(
+	const std::string& label,
+	const std::string& prefix,
+	const std::string& units = {}
+) {
+	std::stringstream ss;
+
+	if (!prefix.empty())
+		ss << prefix << "::";
+
+	ss << label;
+
+	if (!units.empty()) {
+		ss << " (" << units << ")";
+	}
+	return ss.str();
+}
+
+void collectMetadata(const IfcSchema::IfcObjectDefinition* object, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata, std::string group)
+{
+	if (auto propVal = dynamic_cast<const IfcSchema::IfcPropertySingleValue*>(object)) {
+		/*
+		std::string value = "n/a";
+		std::string units = "";
+		if (propVal->NominalValue())
+		{
+			value = getValueAsString(propVal->NominalValue(), units, projectUnits);
+		}
+
+		if (propVal->Unit())
+		{
+			units = processUnits(propVal->Unit()).second;
+		}
+
+		metaValues[constructMetadataLabel(propVal->Name(), metaPrefix, units)] = value;
+		*/
+	}
+
+	if (auto defByProp = dynamic_cast<const IfcSchema::IfcRelDefinesByProperties*>(object)) {
+		/*
+		extraChildren.push_back(defByProp->RelatingPropertyDefinition());
+		action.cacheMetadata = true;
+		action.takeRefsAsChildren = false;
+		*/
+	}
+
+	if (auto propSet = dynamic_cast<const IfcSchema::IfcPropertySet*>(object)) {
+		/*
+		auto propDefs = propSet->HasProperties();
+		extraChildren.insert(extraChildren.end(), propDefs->begin(), propDefs->end());
+		childrenMetaPrefix = constructMetadataLabel(propSet->Name(), metaPrefix);
+
+		action.createElement = false;
+		action.cacheMetadata = true;
+		action.takeRefsAsChildren = false;
+		*/
+	}
+
+	if (auto propSet = dynamic_cast<const IfcSchema::IfcPropertyBoundedValue*>(object)) {
+		/*
+		auto unitsOverride = propSet->hasUnit() ? processUnits(propSet->Unit()).second : "";
+		std::string upperBound, lowerBound;
+		if (propSet->hasUpperBoundValue()) {
+			std::string units;
+			upperBound = getValueAsString(propSet->UpperBoundValue(), units, projectUnits);
+			if (unitsOverride.empty()) unitsOverride = units;
+		}
+		if (propSet->hasLowerBoundValue()) {
+			std::string units;
+			lowerBound = getValueAsString(propSet->UpperBoundValue(), units, projectUnits);
+			if (unitsOverride.empty()) unitsOverride = units;
+		}
+
+		metaValues[constructMetadataLabel(propSet->Name(), metaPrefix, unitsOverride)] = "[" + lowerBound + ", " + upperBound + "]";
+
+		action.createElement = false;
+		action.traverseChildren = false;
+		*/
+	}
+
+	if (auto eleQuan = dynamic_cast<const IfcSchema::IfcElementQuantity*>(object)) {
+		/*
+		auto quantities = eleQuan->Quantities();
+		extraChildren.insert(extraChildren.end(), quantities->begin(), quantities->end());
+		childrenMetaPrefix = constructMetadataLabel(eleQuan->Name(), metaPrefix);
+
+		action.createElement = false;
+		action.takeRefsAsChildren = false;
+		action.cacheMetadata = true;
+		*/
+	}
+
+	if (auto quantities = dynamic_cast<const IfcSchema::IfcPhysicalComplexQuantity*>(object)) {
+		/*
+		childrenMetaPrefix = constructMetadataLabel(quantities->Name(), metaPrefix);
+		auto quantitySet = quantities->HasQuantities();
+		extraChildren.insert(extraChildren.end(), quantitySet->begin(), quantitySet->end());
+
+		action.createElement = false;
+		action.takeRefsAsChildren = false;
+		*/
+	}
+
+	if (auto quantity = dynamic_cast<const IfcSchema::IfcQuantityLength*>(object)) {
+		/*
+		const std::string units = quantity->hasUnit() ? processUnits(quantity->Unit()).second :
+			getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_LENGTHUNIT, projectUnits);
+
+		metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = quantity->LengthValue();
+
+		action.createElement = false;
+		action.traverseChildren = false;
+		*/
+	}
+
+	if (auto quantity = dynamic_cast<const IfcSchema::IfcQuantityArea*>(object)) {
+		/*
+		const std::string units = quantity->hasUnit() ? processUnits(quantity->Unit()).second : getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_AREAUNIT, projectUnits);
+
+		metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = quantity->AreaValue();
+
+		action.createElement = false;
+		action.traverseChildren = false;
+		*/
+	}
+
+	if (auto quantity = dynamic_cast<const IfcSchema::IfcQuantityCount*>(object)) {
+		/*
+		const std::string units = quantity->hasUnit() ? processUnits(quantity->Unit()).second : "";
+		metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = quantity->CountValue();
+
+		action.createElement = false;
+		action.traverseChildren = false;
+		*/
+	}
+
+	if (auto quantity = dynamic_cast<const IfcSchema::IfcQuantityTime*>(object)) {
+		/*
+		const std::string units = quantity->hasUnit() ? processUnits(quantity->Unit()).second : getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_TIMEUNIT, projectUnits);
+		metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = quantity->TimeValue();
+
+		action.createElement = false;
+		action.traverseChildren = false;
+		*/
+	}
+
+	if (auto quantity = dynamic_cast<const IfcSchema::IfcQuantityVolume*>(object)) {
+		/*
+			const std::string units = quantity->hasUnit() ? processUnits(quantity->Unit()).second : getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_VOLUMEUNIT, projectUnits);
+
+			metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = quantity->VolumeValue();
+
+			action.createElement = false;
+			action.traverseChildren = false;
+			*/
+	}
+
+	if (auto quantity = dynamic_cast<const IfcSchema::IfcQuantityWeight*>(object)) {
+		/*
+			const std::string units = quantity->hasUnit() ? processUnits(quantity->Unit()).second : getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_MASSUNIT, projectUnits);
+
+			metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = quantity->WeightValue();
+
+			action.createElement = false;
+			action.traverseChildren = false;
+			*/
+	}
+
+	if (auto relCS = dynamic_cast<const IfcSchema::IfcRelAssociatesClassification*>(object)) {
+		/*
+		action.traverseChildren = false;
+		action.takeRefsAsChildren = false;
+		generateClassificationInformation(relCS, metaValues);
+		*/
+	}
+
+	if (auto relCS = dynamic_cast<const IfcSchema::IfcRelContainedInSpatialStructure*>(object)) {
+		/*
+		try {
+			auto relatedObjects = relCS->RelatedElements();
+			if (relatedObjects)
+			{
+				extraChildren.insert(extraChildren.end(), relatedObjects->begin(), relatedObjects->end());
+			}
+		}
+		catch (const IfcParse::IfcException& e)
+		{
+			repoError << "Failed to retrieve related elements from " << relCS->data().id() << ": " << e.what();
+			missingEntities = true;
+		}
+		action.createElement = false;
+		action.takeRefsAsChildren = false;
+		*/
+	}
+
+	if (auto relAgg = dynamic_cast<const IfcSchema::IfcRelAggregates*>(object)) {
+		/*
+		auto relatedObjects = relAgg->RelatedObjects();
+		if (relatedObjects)
+		{
+			extraChildren.insert(extraChildren.end(), relatedObjects->begin(), relatedObjects->end());
+		}
+		action.takeRefsAsChildren = false;
+		*/
+	}
+
+	if (auto eleType = dynamic_cast<const IfcSchema::IfcTypeObject*>(object)) {
+		/*
+		if (eleType->hasHasPropertySets()) {
+			auto propSets = eleType->HasPropertySets();
+			extraChildren.insert(extraChildren.end(), propSets->begin(), propSets->end());
+		}
+
+		action.createElement = false;
+		action.traverseChildren = true;
+		action.cacheMetadata = true;
+		action.takeRefsAsChildren = false;
+		*/
+	}
+
+	if (auto eleType = dynamic_cast<const IfcSchema::IfcPropertyDefinition*>(object)) {
+		/*
+		action.createElement = false;
+		action.traverseChildren = false;
+		action.takeRefsAsChildren = false;
+		*/
+	}
+}
+
+/*
+For some types, build explicit metadata entries
+*/
+void collectAdditionalAttributes(const IfcSchema::IfcObjectDefinition* object, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
+{
+	if (auto project = dynamic_cast<const IfcSchema::IfcProject*>(object)) {
+		metadata[constructMetadataLabel(PROJECT_LABEL, LOCATION_LABEL)] = project->Name().get_value_or("(" + object->declaration().name() + ")");
+	}
+
+	if (auto building = dynamic_cast<const IfcSchema::IfcBuilding*>(object)) {
+		metadata[constructMetadataLabel(BUILDING_LABEL, LOCATION_LABEL)] = building->Name().get_value_or("(" + object->declaration().name() + ")");
+	}
+
+	if (auto storey = dynamic_cast<const IfcSchema::IfcBuildingStorey*>(object)) {
+		metadata[constructMetadataLabel(STOREY_LABEL, LOCATION_LABEL)] = storey->Name().get_value_or("(" + object->declaration().name() + ")");
+	}
+}
+
+struct Formatted {
+	std::optional<repo::lib::RepoVariant> v;
+	std::string units;
+};
+
+Formatted processAttributeValue(const IfcParse::attribute* attribute, const AttributeValue& value, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
+{
+	// Ifc types provide information on how to interpret the underlying values; we
+	// can use these to determine units, and explicit formatting where necessary.
+
+	auto type = attribute->type_of_attribute();
+
+	if (type->is(IfcSchema::IfcCompoundPlaneAngleMeasure::Class())) {
+		auto c = value.operator std::vector<int, std::allocator<int>>();
+		std::stringstream ss;
+		ss << c[0] << "° ";
+		ss << abs(c[1]) << "' ";
+		ss << abs(c[2]) << "\" ";
+		ss << abs(c[3]);
+		repo::lib::RepoVariant v;
+		v = ss.str();
+		return { v, {} };
+	}
+	else {
+		// The fallback is simply to report the raw value
+		return { repoVariant(value), {} };
+	}
+}
+
+std::unique_ptr<repo::core::model::MetadataNode> IFCSerialiser::createMetadataNode(const IfcSchema::IfcObjectDefinition* object)
+{
+	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
+
+	auto& type = object->declaration();
+	auto& instance = object->data();
+
+	metadata[REPO_LABEL_IFC_TYPE] = type.name();
+	metadata[REPO_LABEL_IFC_NAME] = object->Name().get_value_or("(" + type.name() + ")");
+	metadata[REPO_LABEL_IFC_GUID] = object->GlobalId();
+	if (object->Description()) {
+		metadata[REPO_LABEL_IFC_DESCRIPTION] = object->Description().value();
+	}
+
+	// All types inherit from IfcRoot, which defines four attributes, of which we
+	// take three explicitly above. The remaining attributes depend on the subtype.
+
+	for (size_t i = NUM_ROOT_ATTRIBUTES; i < type.attribute_count(); i++)
+	{
+		auto attribute = type.attribute_by_index(i);
+		auto value = object->data().get_attribute_value(i);
+		if (!value.isNull()) {
+			auto f = processAttributeValue(attribute, value, metadata);
+			if (f.v) {
+				metadata[attribute->name()] = *f.v;
+			}
+		}
+	}
+
+	collectAdditionalAttributes(object, metadata);
+
+	auto metadataNode = std::make_unique<repo::core::model::MetadataNode>(repo::core::model::RepoBSONFactory::makeMetaDataNode(metadata, {}, {}));
+	return metadataNode;
 }
 
 /*
@@ -344,6 +797,11 @@ void IFCSerialiser::import()
 	{
 		repoInfo << "Processing geometry with " << numThreads << " threads...";
 
+		// try get project units here...
+		//	if (auto project = dynamic_cast<const IfcSchema::IfcProject*>(object)) {
+		//	setProjectUnits(project->UnitsInContext(), projectUnits);
+		//	locationData[constructMetadataLabel(PROJECT_LABEL, LOCATION_LABEL)] = project->hasName() ? project->Name() : "(" + element->data().type()->name() + ")";
+
 		do
 		{
 			IfcGeom::Element* element = contextIterator.get();
@@ -357,7 +815,7 @@ void IFCSerialiser::import()
 
 		} while (contextIterator.next());
 
-		repoInfo << "100%...";
+		repoInfo << "100%";
 	}
 }
 

@@ -20,6 +20,8 @@
 #include "repo/manipulator/modelutility/repo_scene_builder.h"
 #include "repo/lib/datastructure/repo_bounds.h"
 
+#include <memory>
+
 #include <ifcparse/IfcFile.h>
 #include <ifcparse/Ifc2x3.h>
 #include <ifcgeom/Iterator.h>
@@ -110,6 +112,8 @@ namespace repo {
 					repo::lib::RepoUUID createTransformationNode(
 						const IfcSchema::IfcObjectDefinition* parent, 
 						const IfcParse::entity& type);
+
+					std::unique_ptr<repo::core::model::MetadataNode> createMetadataNode(const IfcSchema::IfcObjectDefinition* object);
 
 					/*
 					* If this entity sit under an empty node in the tree that doesn't exist in
