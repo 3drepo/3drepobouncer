@@ -21,10 +21,9 @@
 
 #include "repo_model_import_ifc.h"
 #include "repo/manipulator/modelutility/repo_scene_builder.h"
-#include "ifcHelper/repo_ifc_serialiser.h"
+#include "repo_ifc_utils.h"
 #include "repo/error_codes.h"
 #include <boost/filesystem.hpp>
-#include <ifcparse/IfcFile.h>
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -65,19 +64,12 @@ bool IFCModelImport::importModel(std::string filePath, std::shared_ptr<repo::cor
 		);
 	sceneBuilder->createIndexes();
 
-	IfcParse::IfcFile file(filePath);
-
-	if (!file.good()) {
-		throw repo::lib::RepoImportException(REPOERR_MODEL_FILE_READ);
-	}
-
-	ifcHelper::IFCSerialiser serialiser(file, sceneBuilder.get());
+	auto serialiser = ifcUtils::IfcUtils::CreateSerialiser(filePath);
 
 	// Consider setting an HDF5 cache file here to reduce memory
 	// Check out IfcConvert.cpp ln 980
 
-	serialiser.updateBounds();
-	serialiser.import();
+	serialiser->import(sceneBuilder.get());
 
 	sceneBuilder->finalise();
 

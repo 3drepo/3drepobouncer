@@ -80,7 +80,8 @@ namespace repo {
 				if (data.size() > 16) data.resize(16);
 			}
 
-			_RepoMatrix(const double* coefficients, bool rowMajor = true)
+			template<typename T2>
+			_RepoMatrix(const T2* coefficients, bool rowMajor = true)
 			{
 				data.resize(16);
 				for (int i = 0; i < 4; i++) {

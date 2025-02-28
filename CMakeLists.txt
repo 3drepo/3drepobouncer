@@ -111,16 +111,6 @@ if(NOT ${ASSIMPM_FOUND})
 	message(FATAL_ERROR "Cannot find assimp")
 endif()
 
-#===============IFCOPENSHELL SETTINGS==================
-find_package(OCCT REQUIRED)
-find_package(IFCOPENSHELL REQUIRED)
-if(NOT ${OCCT_FOUND})
-	message(FATAL_ERROR "Cannot find OCCT")
-endif()
-if(NOT ${IFCOPENSHELL_FOUND})
-	message(FATAL_ERROR "Cannot find IFCOpenShell")
-endif()
-
 #===================== ODA ============================
 if (ODA_SUPPORT)
 	add_definitions(-D_TOOLKIT_IN_DLL_)
@@ -188,6 +178,9 @@ option (REPO_SVG_EXPORT_SUPPORT "If the customised Svg Exporter is present and c
 # Logging is implemented in a separate shared library so all dependencies can
 # use the same instance.
 add_subdirectory(log)
+
+add_subdirectory(ifcUtils)
+message("IFC Utils: " ${IFCUTILS_INCLUDE_DIR} ", " ${IFCUTILS_LIBRARIES})
 
 if(REPO_NO_GZIP)
 	add_definitions(-DREPO_BOOST_NO_GZIP)
