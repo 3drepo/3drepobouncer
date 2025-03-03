@@ -45,6 +45,8 @@
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/json.hpp>
 
+#include <chrono>
+
 using namespace repo::core::handler;
 using namespace repo::core::handler::fileservice;
 using namespace repo::core::handler::database;
@@ -885,6 +887,44 @@ std::unique_ptr<database::Cursor> MongoDatabaseHandler::runDatabaseOperation(
 
 */
 
+mongocxx::v_noabi::cursor MongoDatabaseHandler::specialFind(
+	const std::string& database,
+	const std::string& collection,
+	const repo::core::model::RepoBSON filter,
+	const repo::core::model::RepoBSON projection) {
+
+	auto client = clientPool->acquire();
+	auto db = client->database(database);
+	auto col = db.collection(collection);
+
+	 mongocxx::options::find options;
+	 options.projection(projection.view());
+
+	return col.find(filter.view(), options);
+}
+
+mongocxx::v_noabi::cursor MongoDatabaseHandler::specialFindPerf(
+	const std::string& database,
+	const std::string& collection,
+	const repo::core::model::RepoBSON filter,
+	const repo::core::model::RepoBSON projection,
+	long long& duration) {
+
+	auto client = clientPool->acquire();
+	auto db = client->database(database);
+	auto col = db.collection(collection);
+
+	mongocxx::options::find options;
+	options.projection(projection.view());
+
+	auto preFindMeasurement = std::chrono::high_resolution_clock::now();
+	auto cursor = col.find(filter.view(), options);
+	auto postFindMeasurement = std::chrono::high_resolution_clock::now();
+
+	duration = std::chrono::duration_cast<std::chrono::microseconds>(postFindMeasurement - preFindMeasurement).count();
+
+	return cursor;
+}
 
 std::unique_ptr<database::Cursor> MongoDatabaseHandler::runAggregatePipeline(
 	const std::string& database,

@@ -37,6 +37,9 @@
 #include <bsoncxx/builder/basic/document.hpp>
 
 #include <unordered_set>
+#include <iostream>
+#include <fstream>
+#include <chrono>
 
 using namespace repo::core::handler;
 using namespace testing;
@@ -781,4 +784,408 @@ TEST(Sandbox, SandboxCoverageTest) {
 
 	EXPECT_THAT(foundMeshNodesTotal, Eq(noMeshNodes));
 
+}
+
+TEST(Sandbox, SandboxMultiRequestTest) {
+	auto handler = getLocalHandler();
+
+	std::string database = "fthiel";
+
+	// XXL Model
+	std::string collection = "20523f34-f3d5-4cb6-9ebe-63b744b486b3.scene";
+
+	repo::lib::RepoUUID uuid1 = repo::lib::RepoUUID("1CF40B3C-0960-426E-ACA7-83510F82F535");
+	repo::lib::RepoUUID uuid2 = repo::lib::RepoUUID("D6DAF4E0-6976-4F86-9A08-5EF9937D8CF4");
+
+
+	std::vector<repo::lib::RepoUUID> ids;
+	ids.push_back(uuid1);
+	ids.push_back(uuid2);
+
+	repo::core::model::RepoBSONBuilder innerBson;
+	innerBson.appendArray("$in", ids);
+	repo::core::model::RepoBSONBuilder outerBson;
+	outerBson.append("shared_id", innerBson.obj());
+	auto filter = outerBson.obj();
+
+	repo::core::model::RepoBSONBuilder projBson;
+	projBson.append("shared_id", 1);
+	auto projection = projBson.obj();
+
+	auto cursor = handler->specialFind(database, collection, filter, projection);
+	
+	std::ofstream file;
+	file.open("sharedIds.txt");
+	
+	
+	for (auto& doc : cursor) {
+
+		repo::core::model::RepoBSON bson = repo::core::model::RepoBSON(doc);
+		auto sharedId = bson.getUUIDField("shared_id");	
+		
+		file << sharedId.toString() << std::endl;		
+	}
+
+	file.close();	
+}
+
+TEST(Sandbox, SandboxDumpSharedIds) {
+	auto handler = getLocalHandler();
+
+	std::string database = "fthiel";
+
+	// XXL Model
+	std::string collection = "20523f34-f3d5-4cb6-9ebe-63b744b486b3.scene";
+
+
+
+	repo::core::model::RepoBSONBuilder bson;	
+	bson.append("type", "mesh");
+	auto filter = bson.obj();
+
+	repo::core::model::RepoBSONBuilder projBson;
+	projBson.append("shared_id", 1);
+	auto projection = projBson.obj();
+
+	auto cursor = handler->specialFind(database, collection, filter, projection);
+
+	std::ofstream file;
+	file.open("sharedIds.txt");
+
+
+	for (auto& doc : cursor) {
+
+		repo::core::model::RepoBSON bson = repo::core::model::RepoBSON(doc);
+		auto sharedId = bson.getUUIDField("shared_id");
+
+		file << sharedId.toString() << std::endl;
+	}
+
+	file.close();
+}
+
+TEST(Sandbox, TimerTest) {
+	auto handler = getLocalHandler();
+
+	std::string database = "fthiel";
+
+	// XXL Model
+	std::string collection = "20523f34-f3d5-4cb6-9ebe-63b744b486b3.scene";
+
+	std::ofstream logFile;
+	logFile.open("TimerTestLog.txt");
+
+	std::ifstream file;
+	file.open("sharedIds.txt");
+
+	std::vector<repo::lib::RepoUUID> ids;
+	std::string line;
+
+	auto point1 = std::chrono::high_resolution_clock::now();
+	while (std::getline(file, line)) {
+		repo::lib::RepoUUID id = repo::lib::RepoUUID(line);
+		ids.push_back(id);
+	}
+	auto point2 = std::chrono::high_resolution_clock::now();
+
+	file.close();
+
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(point2 - point1);
+	logFile << "Reading file:" << duration.count() << " microseconds" << std::endl;
+	logFile.close();
+
+	EXPECT_THAT(ids.size(), Eq(654211));
+}
+
+TEST(Sandbox, FindMultiRequestPerfMeasurement) {
+	
+	auto handler = getLocalHandler();
+	std::string database = "fthiel";
+	std::string collection = "20523f34-f3d5-4cb6-9ebe-63b744b486b3.scene"; // XXL Model
+
+	// Set up log file
+	std::ofstream logFile;
+	logFile.open("FindMultiRequestPerfLog.csv");
+	logFile << "elements,find,iteration" << std::endl;
+
+	// Read in all ids
+	std::ifstream file;
+	file.open("sharedIds.txt");
+	std::vector<repo::lib::RepoUUID> ids;
+
+	std::string line;
+	while (std::getline(file, line)) {
+		repo::lib::RepoUUID id = repo::lib::RepoUUID(line);
+		ids.push_back(id);
+	}
+	file.close();
+
+	// setup projection
+	repo::core::model::RepoBSONBuilder projBson;	
+	auto projection = projBson.obj();
+
+	// Magnitude 1: 1 Document
+	{
+		int elements = 1;
+
+		std::vector<repo::lib::RepoUUID> subVec;
+		for (int i = 0; i < elements; i++) {
+			subVec.push_back(ids[i]);
+		}
+
+		repo::core::model::RepoBSONBuilder innerBson;
+		innerBson.appendArray("$in", subVec);
+		repo::core::model::RepoBSONBuilder outerBson;
+		outerBson.append("shared_id", innerBson.obj());
+		auto filter = outerBson.obj();
+
+		long long findDuration;
+		auto cursor = handler->specialFindPerf(database, collection, filter, projection, findDuration);		
+
+		auto preIterationMeasurement = std::chrono::high_resolution_clock::now();
+		int count = 0;
+		for (auto& doc : cursor) {
+			count++;
+		}
+		auto postIterationMeasurement = std::chrono::high_resolution_clock::now();
+
+		
+		auto itDuration = std::chrono::duration_cast<std::chrono::microseconds>(postIterationMeasurement - preIterationMeasurement);
+		logFile << elements << "," << findDuration << "," << itDuration.count() << std::endl;
+
+		EXPECT_THAT(count, elements);
+	}
+
+	// Magnitude 2: 10 Documents
+	{
+		int elements = 10;
+
+		std::vector<repo::lib::RepoUUID> subVec;
+		for (int i = 0; i < elements; i++) {
+			subVec.push_back(ids[i]);
+		}
+
+		repo::core::model::RepoBSONBuilder innerBson;
+		innerBson.appendArray("$in", subVec);
+		repo::core::model::RepoBSONBuilder outerBson;
+		outerBson.append("shared_id", innerBson.obj());
+		auto filter = outerBson.obj();
+
+		long long findDuration;
+		auto cursor = handler->specialFindPerf(database, collection, filter, projection, findDuration);
+
+		auto preIterationMeasurement = std::chrono::high_resolution_clock::now();
+		int count = 0;
+		for (auto& doc : cursor) {
+			count++;
+		}
+		auto postIterationMeasurement = std::chrono::high_resolution_clock::now();
+
+		auto itDuration = std::chrono::duration_cast<std::chrono::microseconds>(postIterationMeasurement - preIterationMeasurement);
+		logFile << elements << "," << findDuration << "," << itDuration.count() << std::endl;
+	}
+
+	// Magnitude 3: 100 Documents
+	{
+		int elements = 100;
+
+		std::vector<repo::lib::RepoUUID> subVec;
+		for (int i = 0; i < elements; i++) {
+			subVec.push_back(ids[i]);
+		}
+
+		repo::core::model::RepoBSONBuilder innerBson;
+		innerBson.appendArray("$in", subVec);
+		repo::core::model::RepoBSONBuilder outerBson;
+		outerBson.append("shared_id", innerBson.obj());
+		auto filter = outerBson.obj();
+
+		long long findDuration;
+		auto cursor = handler->specialFindPerf(database, collection, filter, projection, findDuration);
+
+		auto preIterationMeasurement = std::chrono::high_resolution_clock::now();
+		int count = 0;
+		for (auto& doc : cursor) {
+			count++;
+		}
+		auto postIterationMeasurement = std::chrono::high_resolution_clock::now();
+
+		auto itDuration = std::chrono::duration_cast<std::chrono::microseconds>(postIterationMeasurement - preIterationMeasurement);
+		logFile << elements << "," << findDuration << "," << itDuration.count() << std::endl;
+
+		EXPECT_THAT(count, elements);
+	}
+
+	// Magnitude 4: 1000 Documents
+	{
+		int elements = 1000;
+
+		std::vector<repo::lib::RepoUUID> subVec;
+		for (int i = 0; i < elements; i++) {
+			subVec.push_back(ids[i]);
+		}
+
+		repo::core::model::RepoBSONBuilder innerBson;
+		innerBson.appendArray("$in", subVec);
+		repo::core::model::RepoBSONBuilder outerBson;
+		outerBson.append("shared_id", innerBson.obj());
+		auto filter = outerBson.obj();
+
+		long long findDuration;
+		auto cursor = handler->specialFindPerf(database, collection, filter, projection, findDuration);
+
+		auto preIterationMeasurement = std::chrono::high_resolution_clock::now();
+		int count = 0;
+		for (auto& doc : cursor) {
+			count++;
+		}
+		auto postIterationMeasurement = std::chrono::high_resolution_clock::now();
+
+		auto itDuration = std::chrono::duration_cast<std::chrono::microseconds>(postIterationMeasurement - preIterationMeasurement);
+		logFile << elements << "," << findDuration << "," << itDuration.count() << std::endl;
+
+		EXPECT_THAT(count, elements);
+	}
+
+	// Magnitude 5: 10000 Documents
+	{
+		int elements = 10000;
+
+		std::vector<repo::lib::RepoUUID> subVec;
+		for (int i = 0; i < elements; i++) {
+			subVec.push_back(ids[i]);
+		}
+
+		repo::core::model::RepoBSONBuilder innerBson;
+		innerBson.appendArray("$in", subVec);
+		repo::core::model::RepoBSONBuilder outerBson;
+		outerBson.append("shared_id", innerBson.obj());
+		auto filter = outerBson.obj();
+
+		long long findDuration;
+		auto cursor = handler->specialFindPerf(database, collection, filter, projection, findDuration);
+
+		auto preIterationMeasurement = std::chrono::high_resolution_clock::now();
+		int count = 0;
+		for (auto& doc : cursor) {
+			count++;
+		}
+		auto postIterationMeasurement = std::chrono::high_resolution_clock::now();
+
+		auto itDuration = std::chrono::duration_cast<std::chrono::microseconds>(postIterationMeasurement - preIterationMeasurement);
+		logFile << elements << "," << findDuration << "," << itDuration.count() << std::endl;
+
+		EXPECT_THAT(count, elements);
+	}
+
+	// Magnitude 6: 100000 Documents
+	{
+		int elements = 100000;
+
+		std::vector<repo::lib::RepoUUID> subVec;
+		for (int i = 0; i < elements; i++) {
+			subVec.push_back(ids[i]);
+		}
+
+		repo::core::model::RepoBSONBuilder innerBson;
+		innerBson.appendArray("$in", subVec);
+		repo::core::model::RepoBSONBuilder outerBson;
+		outerBson.append("shared_id", innerBson.obj());
+		auto filter = outerBson.obj();
+
+		long long findDuration;
+		auto cursor = handler->specialFindPerf(database, collection, filter, projection, findDuration);
+
+		auto preIterationMeasurement = std::chrono::high_resolution_clock::now();
+		int count = 0;
+		for (auto& doc : cursor) {
+			count++;
+		}
+		auto postIterationMeasurement = std::chrono::high_resolution_clock::now();
+
+		auto itDuration = std::chrono::duration_cast<std::chrono::microseconds>(postIterationMeasurement - preIterationMeasurement);
+		logFile << elements << "," << findDuration << "," << itDuration.count() << std::endl;
+
+		EXPECT_THAT(count, elements);
+	}
+
+	// Magnitude 7: 582915 Documents
+	{
+		int elements = 582915;
+
+		std::vector<repo::lib::RepoUUID> subVec;
+		for (int i = 0; i < elements; i++) {
+			subVec.push_back(ids[i]);
+		}
+
+		repo::core::model::RepoBSONBuilder innerBson;
+		innerBson.appendArray("$in", subVec);
+		repo::core::model::RepoBSONBuilder outerBson;
+		outerBson.append("shared_id", innerBson.obj());
+		auto filter = outerBson.obj();
+
+		long long findDuration;
+		auto cursor = handler->specialFindPerf(database, collection, filter, projection, findDuration);
+
+		auto preIterationMeasurement = std::chrono::high_resolution_clock::now();
+		int count = 0;
+		for (auto& doc : cursor) {
+			count++;
+		}
+		auto postIterationMeasurement = std::chrono::high_resolution_clock::now();
+
+		auto itDuration = std::chrono::duration_cast<std::chrono::microseconds>(postIterationMeasurement - preIterationMeasurement);
+		logFile << elements << "," << findDuration << "," << itDuration.count() << std::endl;
+
+		EXPECT_THAT(count, elements);
+	}
+
+	logFile.close();	
+}
+
+
+TEST(Sandbox, GottaReadThemAll) {
+	auto handler = getLocalHandler();
+	std::string database = "fthiel";
+
+	// XXL Model
+	std::string collection = "20523f34-f3d5-4cb6-9ebe-63b744b486b3.scene";
+	repo::lib::RepoUUID revId = repo::lib::RepoUUID("75FAFCC9-4AD4-488E-BCE2-35A4F8C7463C");
+
+	// Set up log file
+	std::ofstream logFile;
+	logFile.open("ReadThemAll.log");
+	logFile << "Starting operation" << std::endl;
+
+	repo::core::model::RepoBSONBuilder projBson;
+	auto projection = projBson.obj();
+
+	repo::core::model::RepoBSONBuilder filterBson;
+	filterBson.append("rev_id", revId);
+	auto filter = filterBson.obj();
+
+	long long findDuration;
+	auto cursor = handler->specialFindPerf(database, collection, filter, projection, findDuration);
+
+	logFile << "Find operation complete after " << findDuration << " microseconds" << std::endl;
+	logFile.flush();
+
+	auto preIterationMeasurement = std::chrono::high_resolution_clock::now();
+	std::vector<repo::core::model::RepoBSON> documents;
+	long long count = 0;
+	for (auto& doc : cursor) {
+		auto bson = repo::core::model::RepoBSON(doc);
+		documents.push_back(bson);
+
+		count++;
+		if (count % 1000 == 0) {
+			logFile << "Read " << count << " elements" << std::endl;
+		}
+	}
+	auto postIterationMeasurement = std::chrono::high_resolution_clock::now();
+
+	auto itDuration = std::chrono::duration_cast<std::chrono::microseconds>(postIterationMeasurement - preIterationMeasurement);
+	logFile << "Iteration operation complete after " << itDuration.count() << " microseconds. Total number of elements: " << count << std::endl;
+
+	EXPECT_THAT(documents.size(), Eq(2404268));
 }

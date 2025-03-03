@@ -39,6 +39,7 @@
 #include <mongocxx/pool-fwd.hpp>
 #include <bsoncxx/document/view-fwd.hpp>
 #include <mongocxx/pipeline.hpp>
+#include <mongocxx/cursor.hpp>
 
 namespace repo {
 	namespace core {
@@ -319,6 +320,19 @@ namespace repo {
 					const std::string& collection,
 					const database::query::RepoQuery& criteria
 				);
+
+				mongocxx::v_noabi::cursor specialFind(
+					const std::string& database,
+					const std::string& collection,
+					const repo::core::model::RepoBSON filter,
+					const repo::core::model::RepoBSON projection);
+
+				mongocxx::v_noabi::cursor specialFindPerf(
+					const std::string& database,
+					const std::string& collection,
+					const repo::core::model::RepoBSON filter,
+					const repo::core::model::RepoBSON projection,
+					long long& duration);
 
 				std::unique_ptr<database::Cursor> runAggregatePipeline(
 					const std::string& database,
