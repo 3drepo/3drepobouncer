@@ -242,10 +242,10 @@ TEST(MeshNodeTest, SEqualTest)
 	// and inter-list meshes being different.
 
 	std::vector<repo::lib::RepoVector3D> emptyV, v;
-	std::vector<repo_face_t> f;
+	std::vector<repo::lib::repo_face_t> f;
 	std::vector<std::vector<float>> bbox;
 	std::vector<std::vector<repo::lib::RepoVector2D>> emptyUV, uvs;
-	std::vector<repo_color4d_t> emptyCol, cols;
+	std::vector<repo::lib::repo_color4d_t> emptyCol, cols;
 	v.resize(10);
 	f.resize(10);
 	cols.resize(10);

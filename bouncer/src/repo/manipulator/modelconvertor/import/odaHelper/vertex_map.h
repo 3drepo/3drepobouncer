@@ -17,13 +17,8 @@
 
 #pragma once
 
-#include "../../../../error_codes.h"
-#include "../../../../core/model/bson/repo_bson_factory.h"
-#include "../../../../lib/datastructure/repo_structs.h"
-#include "helper_functions.h"
-#include <fstream>
+#include "repo/lib/datastructure/repo_vector.h"
 #include <vector>
-#include <string>
 
 namespace repo {
 	namespace manipulator {
@@ -31,26 +26,20 @@ namespace repo {
 			namespace odaHelper {
 
 				/*
-				 * Helper class for referencing existing vertices into indices. This class relies on the format checking in
-				 * GeometryCollector, and is only for use within mesh_data_t.
+				 * Helper class for collecting vertex attributes in step. This type does not
+				 * do any error checking - the caller must make sure only one of its methods
+				 * is called for its entire lifetime or the attributes will become out of 
+				 * sync.
 				 */
 				class VertexMap {
-					std::multimap<size_t, size_t> map;
-
 				public:
 					std::vector<repo::lib::RepoVector3D64> vertices;
 					std::vector<repo::lib::RepoVector3D64> normals;
 					std::vector<repo::lib::RepoVector2D> uvs;
 
-					struct result_t
-					{
-						bool added;
-						uint32_t index;
-					};
-
-					result_t find(const repo::lib::RepoVector3D64& position);
-					result_t find(const repo::lib::RepoVector3D64& position, const repo::lib::RepoVector3D64& normal);
-					result_t find(const repo::lib::RepoVector3D64& position, const repo::lib::RepoVector3D64& normal, const repo::lib::RepoVector2D& uv);
+					size_t insert(const repo::lib::RepoVector3D64& position);
+					size_t insert(const repo::lib::RepoVector3D64& position, const repo::lib::RepoVector3D64& normal);
+					size_t insert(const repo::lib::RepoVector3D64& position, const repo::lib::RepoVector3D64& normal, const repo::lib::RepoVector2D& uv);
 				};
 
 			}

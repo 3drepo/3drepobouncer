@@ -37,6 +37,9 @@
 
 #include <mongocxx/client-fwd.hpp>
 #include <mongocxx/pool-fwd.hpp>
+#include <bsoncxx/document/view-fwd.hpp>
+#include <mongocxx/pipeline.hpp>
+#include <mongocxx/cursor.hpp>
 
 namespace repo {
 	namespace core {
@@ -48,6 +51,7 @@ namespace repo {
 				class Metadata; // Forward declaration for alias
 				class FileManager;
 			}
+
 			class MongoDatabaseHandler : public AbstractDatabaseHandler {
 				enum class OPERATION { DROP, INSERT, UPDATE };
 
@@ -64,6 +68,8 @@ namespace repo {
 				static const std::list<std::string> ANY_DATABASE_ROLES;
 				//! Built in admin database roles. See http://docs.mongodb.org/manual/reference/built-in-roles/
 				static const std::list<std::string> ADMIN_ONLY_DATABASE_ROLES;
+
+				class MongoCursor;
 
 				struct ConnectionOptions
 				{
@@ -304,9 +310,58 @@ namespace repo {
 					const std::string& collection,
 					const std::string& id);
 
+				size_t count(
+					const std::string& database,
+					const std::string& collection,
+					const database::query::RepoQuery& criteria);
+
+				std::unique_ptr<repo::core::handler::database::Cursor> getAllByCriteria(
+					const std::string& database,
+					const std::string& collection,
+					const database::query::RepoQuery& criteria
+				);
+
+				mongocxx::v_noabi::cursor specialFind(
+					const std::string& database,
+					const std::string& collection,
+					const repo::core::model::RepoBSON filter,
+					const repo::core::model::RepoBSON projection);
+
+				mongocxx::v_noabi::cursor specialFindPerf(
+					const std::string& database,
+					const std::string& collection,
+					const repo::core::model::RepoBSON filter,
+					const repo::core::model::RepoBSON projection,
+					long long& duration);
+
+				std::unique_ptr<database::Cursor> runAggregatePipeline(
+					const std::string& database,
+					const std::string& collection,
+					const mongocxx::pipeline& pipeline);
+
+				std::unique_ptr<repo::core::handler::database::Cursor> getTransformsForLeaf(
+					const std::string& database,
+					const std::string& collection,
+					const repo::lib::RepoUUID& id);
+
+				std::unique_ptr<repo::core::handler::database::Cursor> getTransformsForAllLeaves(
+					const std::string& database,
+					const std::string& collection);
+
+				std::unique_ptr<database::BulkWriteContext> getBulkWriteContext(
+					const std::string& database,
+					const std::string& collection);
+
 				void setFileManager(std::shared_ptr<repo::core::handler::fileservice::FileManager> manager);
 
 				std::shared_ptr<repo::core::handler::fileservice::FileManager> getFileManager();
+
+				/*
+				* If a RepoBSON comes from somewhere else, populate the binaries.
+				*/
+				void loadBinaries(const std::string& database,
+					const std::string& collection, 
+					repo::core::model::RepoBSON& bson);
 
 				/**
 				* This method performs an arbitrary operation against the database to check
@@ -323,15 +378,18 @@ namespace repo {
 			private:
 
 				// We can work with either clients or pool as the top level, connection
-				// specific, container for getting connections. pool pool is threadsafe,
-				// but acquring a client is implied to not be cheap, so for now cache a
-				//client on starting up.
+				// specific, container for getting connections. pool pool is threadsafe.
 				std::unique_ptr<mongocxx::pool> clientPool;
 
 				// The fileManager is used in the storage of certain member types, such
 				// as large vectors of binary data. It must be set using setFileManager
 				// before documents containing such members are uploaded.
 				std::shared_ptr<repo::core::handler::fileservice::FileManager> fileManager;
+
+				repo::core::model::RepoBSON createRepoBSON(
+					const std::string& database,
+					const std::string& collection,
+					const bsoncxx::document::view& view);
 
 				/**
 				* Get large file off GridFS
@@ -373,6 +431,8 @@ namespace repo {
 
 				class MongoDatabaseHandlerException;
 				friend MongoDatabaseHandlerException;
+
+				class MongoWriteContext;
 
 				/*
 				*	=========================================================================================

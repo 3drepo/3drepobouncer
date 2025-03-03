@@ -25,16 +25,22 @@
 
 #include "geometry_collector.h"
 #include "vectorise_device_dgn.h"
-#include "repo/core/model/bson/repo_node_mesh.h"
 
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
+				/*
+				* The DataProcessor behaves as a Graphics System Vectorizer that ODA can
+				* draw into. Beware that processing a File may involve multiple
+				* vectorisations, and so multiple instances of a DataProcessor. The
+				* GeometryCollector class is used to maintain the state across these.
+				*/
 				class DataProcessor : public OdGiGeometrySimplifier, public OdGsBaseMaterialView
 				{
 				protected:
 					GeometryCollector *collector;
+
 					struct MaterialColours
 					{
 						OdCmEntityColor colorDiffuse;
@@ -49,13 +55,13 @@ namespace repo {
 					};
 
 				public:
-					DataProcessor() {}
-
 					virtual double deviation(
 						const OdGiDeviationType deviationType,
 						const OdGePoint3d& pointOnCurve) const;
 
 					void beginViewVectorization();
+
+					virtual void initialise(GeometryCollector* collector);
 
 				protected:
 					/**
@@ -71,46 +77,10 @@ namespace repo {
 						OdDbStub* materialId,
 						const OdGiMaterialTraitsData & materialData,
 						MaterialColours& matColors,
-						repo_material_t& material,
-						bool& missingTexture);
-
-					/**
-					* Should be overriden in derived classes to process triangles
-					* @param p3Vertices - input vertices of the triangle
-					* @param verticesOut - output vertices in 3D Repo format
-					* @param uvOut - output texture coordinates
-					*/
-					virtual void convertTo3DRepoTriangle(
-						const OdInt32* p3Vertices,
-						std::vector<repo::lib::RepoVector3D64>& verticesOut,
-						repo::lib::RepoVector3D64& normalOut,
-						std::vector<repo::lib::RepoVector2D>& uvOut);
-
-					repo_material_t GetDefaultMaterial() const;
-
-					/**
-					* Given vertice location, obtain vertices in teigha type and 3drepo type.
-					* @param p3Vertices  - input vertice locations
-					* @param odaPoint - [OUTPUT] vector to store results in teigha type
-					* @param repoPoint - [OUTPUT] vector to store repoPoint
-					*/
-					void getVertices(
-						int numVertices,
-						const OdInt32* p3Vertices,
-						std::vector<OdGePoint3d> &odaPoint,
-						std::vector<repo::lib::RepoVector3D64> &repoPoint
-					);
-
-					/**
-					* Function to convert a teigha point to 3D Repo point
-					* By default, this just returns the same point converted into 3drepo type.
-					* Should the format require, this needs to be overwritten to translate the point back to project point
-					* @param pnt point in teigha format
-					* @return returns converted, transformed point in RepoVector3D64
-					*/
-					std::function<repo::lib::RepoVector3D64(OdGePoint3d)> convertTo3DRepoWorldCoorindates = [](OdGePoint3d pnt) { return repo::lib::RepoVector3D64(pnt.x, pnt.y, pnt.z); };
+						repo::lib::repo_material_t& material);
 
 					double deviationValue = 0;
+
 				private:
 					/**
 					* This callback is invoked when next triangle should be processed

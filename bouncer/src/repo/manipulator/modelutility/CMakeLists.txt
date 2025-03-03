@@ -5,12 +5,14 @@
 
 
 add_subdirectory(spatialpartitioning)
+add_subdirectory(spscqueue)
 set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing_manager.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_maker_selection_tree.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_mesh_map_reorganiser.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_scene_builder.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_scene_manager.cpp
 	CACHE STRING "SOURCES" FORCE)
 
@@ -20,6 +22,7 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing_manager.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_maker_selection_tree.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_mesh_map_reorganiser.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_scene_builder.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_scene_manager.h
 	CACHE STRING "HEADERS" FORCE)
 

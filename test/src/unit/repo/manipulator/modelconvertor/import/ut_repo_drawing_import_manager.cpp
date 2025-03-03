@@ -17,7 +17,7 @@
 
 #include <gtest/gtest.h>
 #include <repo/manipulator/modelconvertor/import/repo_drawing_import_manager.h>
-#include <repo/lib/repo_log.h>
+#include <repo_log.h>
 #include "../../../../repo_test_utils.h"
 #include "../../../../repo_test_database_info.h"
 #include "boost/filesystem.hpp"

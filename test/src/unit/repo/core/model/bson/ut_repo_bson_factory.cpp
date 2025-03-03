@@ -27,17 +27,16 @@
 #include <repo/core/model/bson/repo_bson_factory.h>
 #include <repo/core/model/bson/repo_bson_builder.h>
 #include <repo/lib/datastructure/repo_variant_utils.h>
+#include "repo/lib/datastructure/repo_structs.h"
 
+using namespace repo::lib;
 using namespace repo::core::model;
 using namespace testing;
+using namespace repo;
 
 TEST(RepoBSONFactoryTest, MakeMaterialNodeTest)
 {
 	repo_material_t mat_struct;
-	mat_struct.ambient.resize(4);
-	mat_struct.diffuse.resize(4);
-	mat_struct.specular.resize(4);
-	mat_struct.emissive.resize(4);
 	mat_struct.opacity = 0.9;
 	mat_struct.shininess = 1.0;
 	mat_struct.shininessStrength = 0.5;

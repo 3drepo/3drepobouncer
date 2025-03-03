@@ -35,9 +35,9 @@
 
 #include <unordered_map>
 #include <set>
+#include <repo_log.h>
 #include "repo/repo_bouncer_global.h"
 #include "repo/core/model/repo_model_global.h"
-#include "repo/lib/repo_log.h"
 #include "repo/lib/datastructure/repo_uuid.h"
 #include "repo/lib/datastructure/repo_vector.h"
 #include "repo/lib/datastructure/repo_matrix.h"
@@ -118,6 +118,8 @@ namespace repo {
 				lib::RepoVector3D getVector3DField(const std::string& label) const;
 
 				repo::lib::RepoMatrix getMatrixField(const std::string& label) const;
+
+				std::vector<repo::lib::RepoMatrix> getMatrixFieldArray(const std::string& label) const;
 
 				std::vector<double> getDoubleVectorField(const std::string& label) const;
 

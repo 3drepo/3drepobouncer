@@ -237,6 +237,8 @@ void RepoBSON::replaceBinaryWithReference(
 	builder.appendElementsUnique(*this);
 
 	*this = builder.obj();
+
+	this->bigFiles.clear();
 }
 
 repo::lib::RepoUUID RepoBSON::getUUIDField(const std::string &label) const
@@ -283,6 +285,11 @@ repo::lib::RepoMatrix RepoBSON::getMatrixField(const std::string& label) const
 	}
 
 	return repo::lib::RepoMatrix(transformationMatrix);
+}
+
+std::vector<repo::lib::RepoMatrix> RepoBSON::getMatrixFieldArray(const std::string& label) const
+{
+	return getArray<repo::lib::RepoMatrix>(label, true);
 }
 
 std::vector<double> RepoBSON::getDoubleVectorField(const std::string& label) const
@@ -443,6 +450,34 @@ template<> repo::lib::RepoUUID getValue<repo::lib::RepoUUID>(const bsoncxx::arra
 		}
 	}
 	throw repo::lib::RepoBSONException("Cannot convert binary field to RepoUUID because it has the wrong subtype");
+}
+
+template<> repo::lib::RepoMatrix getValue<repo::lib::RepoMatrix>(const bsoncxx::array::element& e)
+{
+	if (e.type() == bsoncxx::type::k_array)
+	{
+		std::vector<float> transformationMatrix;
+
+		transformationMatrix.resize(16);
+		float* transArr = &transformationMatrix.at(0);
+
+		// matrix is stored as array of arrays, row first
+
+		const bsoncxx::array::view& rows = e.get_array();
+		for (uint32_t rowInd = 0; rowInd < 4; rowInd++)
+		{
+			const bsoncxx::array::view& cols = rows[rowInd].get_array();
+			for (uint32_t colInd = 0; colInd < 4; colInd++)
+			{
+				const auto& e = cols[colInd];
+				uint32_t index = rowInd * 4 + colInd;
+				transArr[index] = e.get_double();
+			}
+		}
+
+		return repo::lib::RepoMatrix(transformationMatrix);
+	}
+	throw repo::lib::RepoBSONException("Cannot convert array field to RepoMatrix because it has the wrong subtype");
 }
 
 template<typename T>

@@ -18,6 +18,7 @@ include_directories(
 	${CRYPTOLENS_INCLUDE_DIR}
 	src
 	../
+	../log
 )
 
 add_definitions(-DREPO_API_LIBRARY)
@@ -42,6 +43,7 @@ target_link_libraries(3drepobouncer
 	${CRYPTOLENS_LIBRARIES}
 	ifcUtils_2x3
 	ifcUtils_4
+	log
 )
 
 install(DIRECTORY src/ DESTINATION include FILES_MATCHING PATTERN "*.h")

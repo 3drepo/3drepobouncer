@@ -18,11 +18,9 @@
 #pragma once
 
 #include "repo_model_import_abstract.h"
-#include "../../../core/model/bson/repo_node_mesh.h"
-#include <vector>
+#include "repo/manipulator/modelutility/repo_scene_builder.h"
 
 #ifdef ODA_SUPPORT
-#include "odaHelper/geometry_collector.h"
 #include "odaHelper/file_processor.h"
 #endif
 
@@ -58,7 +56,11 @@ namespace repo {
 				* @param error message if failed
 				* @return returns true upon success
 				*/
-				virtual bool importModel(std::string filePath, uint8_t &err);
+				virtual bool importModel(std::string filePath, uint8_t& err) {
+					throw std::runtime_error("Classic import is no longer supported for ODA. Use streaming model import instead.");
+				}
+
+				virtual bool importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err);
 
 				virtual bool applyReduction() const { return shouldReduce; }
 				virtual bool requireReorientation() const { return true; }
@@ -66,8 +68,9 @@ namespace repo {
 			private:
 				std::string filePath;
 				bool shouldReduce = false;
+				std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler;
+				std::unique_ptr<repo::manipulator::modelutility::RepoSceneBuilder> sceneBuilder;
 #ifdef ODA_SUPPORT
-				odaHelper::GeometryCollector geoCollector;
 				std::unique_ptr<odaHelper::FileProcessor> odaProcessor;
 #endif
 			};

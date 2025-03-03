@@ -62,54 +62,45 @@
 #include "repo/lib/datastructure/repo_variant.h"
 #include "repo/lib/datastructure/repo_variant_utils.h"
 
+#include <map>
+#include <stack>
+
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
 				class VectoriseDeviceRvt;
 
-				class DataProcessorRvt : public DataProcessor
+				class DataProcessorRvt : public OdGiGeometrySimplifier, public OdGsBaseMaterialView
 				{
 					//Environment variable name for Revit textures
 					const char* RVT_TEXTURES_ENV_VARIABLE = "REPO_RVT_TEXTURES";
 
-				public:
-					DataProcessorRvt();
+					GeometryCollector* collector;
 
-					void init(GeometryCollector* geoColl, OdBmDatabasePtr database);
+				public:
+					void initialise(GeometryCollector* collector, OdBmDatabasePtr pDb, OdBmDBViewPtr view, const OdGeMatrix3d& modelToWorld);
 
 					static bool tryConvertMetadataEntry(
-						OdTfVariant& metaEntry,
+						const OdTfVariant& metaEntry,
 						OdBmLabelUtilsPEPtr labelUtils,
 						OdBmParamDefPtr paramDef,
 						OdBm::BuiltInParameter::Enum param,
 						repo::lib::RepoVariant& v);
+
+					static OdBmAUnitsPtr getUnits(OdBmDatabasePtr database);
+					static OdBmForgeTypeId getLengthUnits(OdBmDatabasePtr database);
 
 				protected:
 					void draw(const OdGiDrawable*) override;
 
 					void beginViewVectorization() override;
 
-					void convertTo3DRepoMaterial(
-						OdGiMaterialItemPtr prevCache,
-						OdDbStub* materialId,
-						const OdGiMaterialTraitsData & materialData,
-						MaterialColours& matColors,
-						repo_material_t& material,
-						bool& missingTexture) override;
-
-					void convertTo3DRepoTriangle(
-						const OdInt32* p3Vertices,
-						std::vector<repo::lib::RepoVector3D64>& verticesOut,
-						repo::lib::RepoVector3D64& normalOut,
-						std::vector<repo::lib::RepoVector2D>& uvOut) override;
-
 				private:
 					std::string determineTexturePath(const std::string& inputPath);
-					void establishProjectTranslation(OdBmDatabase* pDb);
-					void fillTexture(OdBmMaterialElemPtr materialPtr, repo_material_t& material, bool& missingTexture);
-					void fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiMaterialTraitsData& materialData, repo_material_t& material);
-					void fillMeshData(const OdGiDrawable* element);
+
+					void fillTexture(OdBmMaterialElemPtr materialPtr, repo::lib::repo_material_t& material, bool& missingTexture);
+					void fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiMaterialTraitsData& materialData, repo::lib::repo_material_t& material);
 
 					void fillMetadataById(
 						OdBmObjectId id,
@@ -120,26 +111,80 @@ namespace repo {
 						std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
 
 					std::unordered_map<std::string, repo::lib::RepoVariant> fillMetadata(OdBmElementPtr element);
-					std::string getLevel(OdBmElementPtr element, const std::string& name);
+					std::string getLevelName(OdBmElementPtr element, const std::string& name);
 					std::string getElementName(OdBmElementPtr element);
 
 					void initLabelUtils();
-					OdBmAUnitsPtr getUnits(OdBmDatabasePtr database);
-					OdBmForgeTypeId getLengthUnits(OdBmDatabasePtr database);
 
 					bool ignoreParam(const std::string& param);
 
 					void processParameter(
-						OdBmElementPtr element,
+						const OdTfVariant& value,
 						OdBmObjectId paramId,
 						std::unordered_map<std::string, repo::lib::RepoVariant> &metadata,
 						const OdBm::BuiltInParameter::Enum &buildInEnum
 					);
 
-					repo::manipulator::modelconvertor::ModelUnits getProjectUnits(OdBmDatabase* pDb);
+					ModelUnits getProjectUnits(OdBmDatabasePtr pDb);
 
 					OdBmDatabasePtr database;
+					OdBmDBViewPtr view;
 					OdBmSampleLabelUtilsPE* labelUtils = nullptr;
+
+					OdGeMatrix3d modelToProjectCoordinates;
+
+					repo::lib::RepoVector3D64 convertToRepoWorldCoordinates(OdGePoint3d p);
+
+					/*
+					* Controls whether and how we change the draw context during tree traversal.
+					* The draw context controls which transformation nodes mesh data ends up
+					* under.
+					*/
+					bool shouldCreateNewLayer(const OdBmElementPtr element);
+
+					void convertTo3DRepoTriangle(
+						const OdInt32* p3Vertices,
+						std::vector<repo::lib::RepoVector3D64>& verticesOut,
+						repo::lib::RepoVector3D64& normalOut,
+						std::vector<repo::lib::RepoVector2D>& uvOut);
+
+
+					// These functions override the outptus from the ODA visualisation classes
+					// and are used to recieve the geometry
+
+					/**
+					* This callback is invoked when next triangle should be processed
+					* defined in OdGiGeometrySimplifier class
+					* @param p3Vertices - input vertices of the triangle
+					* @param pNormal - input veritces normal
+					*/
+					void triangleOut(const OdInt32* p3Vertices,
+						const OdGeVector3d* pNormal) final;
+
+					/**
+					* This callback is invoked when the next line should be processed.
+					* Defined in OdGiGeometrySimplifier
+					* @param numPoints Number of points.
+					* @param vertexIndexList Pointer to an array of vertex indices.
+					*/
+					void polylineOut(OdInt32 numPoints, 
+						const OdInt32* vertexIndexList) final;
+
+					void polylineOut(OdInt32 numPoints,
+						const OdGePoint3d* vertexList) final;
+
+					/**
+					* This callback is invoked when next material should be processed
+					* @param prevCache - previous material cache
+					* @param materialId - database id of the material
+					* @param materialData - structure with material data
+					*/
+					OdGiMaterialItemPtr fillMaterialCache(
+						OdGiMaterialItemPtr prevCache,
+						OdDbStub* materialId,
+						const OdGiMaterialTraitsData& materialData) final;
+
+					std::unordered_map<OdUInt64, repo::lib::repo_material_t> materialCache;
 				};
 			}
 		}

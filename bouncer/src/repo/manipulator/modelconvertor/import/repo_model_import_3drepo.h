@@ -22,6 +22,7 @@
 #pragma once
 
 #include <string>
+#include <optional>
 #include "repo_model_import_abstract.h"
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -96,7 +97,7 @@ namespace repo {
 					std::vector<repo::lib::RepoVector3D64> rawVertices;
 					std::vector<repo::lib::RepoVector3D> normals;
 					std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
-					std::vector<repo_face_t> faces;
+					std::vector<repo::lib::repo_face_t> faces;
 					repo::lib::RepoBounds boundingBox;
 					repo::lib::RepoUUID parent;
 					repo::lib::RepoUUID sharedID;

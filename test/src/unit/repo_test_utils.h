@@ -52,38 +52,20 @@ namespace testing {
 		const std::string& fileB);
 
 	bool compareMaterialStructs(
-		const repo_material_t& m1,
-		const repo_material_t& m2);
+		const repo::lib::repo_material_t& m1,
+		const repo::lib::repo_material_t& m2);
 
 	bool compareVectors(
-		const repo_color4d_t& v1,
-		const repo_color4d_t& v2);
+		const repo::lib::repo_color4d_t& v1,
+		const repo::lib::repo_color4d_t& v2);
 
 	bool compareVectors(
-		const std::vector<repo_color4d_t>& v1,
-		const std::vector<repo_color4d_t>& v2);
+		const std::vector<repo::lib::repo_color4d_t>& v1,
+		const std::vector<repo::lib::repo_color4d_t>& v2);
 
 	std::string getRandomString(const uint32_t& iLen);
 
 	tm getRandomTm();
-
-	// Searches all elements in a project for one with metadata matching the
-	// key-value provided, and returns true if that element has geometry. Keys
-	// and Values are case-sensitive.
-	bool projectHasGeometryWithMetadata(
-		std::string dbName,
-		std::string projectName,
-		std::string key,
-		std::string value);
-
-	// Finds all meta nodes that match the metadata criteria, and compares their
-	// position in the transformation tree to the list in expected.
-	bool projectHasMetaNodesWithPaths(
-		std::string dbName,
-		std::string projectName,
-		std::string key,
-		std::string value,
-		std::vector<std::string> expected);
 
 	repo::lib::RepoVector3D makeRepoVector();
 
@@ -121,4 +103,32 @@ namespace testing {
 	// the same result for whatever reason there is to count them can be achieved
 	// by iterating them directly, which is more performant.
 	int nFields(const repo::core::model::RepoBSON& bson);
+
+	std::string produceGenStashArgs(
+		const std::string& database,
+		const std::string& project,
+		const std::string& type);
+
+	std::string produceGetFileArgs(
+		const std::string& file,
+		const std::string& database,
+		const std::string& project);
+
+	std::string produceCreateFedArgs(
+		const std::string& file,
+		const std::string& owner = std::string());
+
+	std::string produceUploadFileArgs(
+		const std::string& filePath);
+
+	std::string produceProcessDrawingArgs(
+		const std::string& filePath);
+
+	std::string produceUploadArgs(
+		const std::string& database,
+		const std::string& project,
+		const std::string& filePath,
+		const std::string& configPath = getConnConfig());
+
+	int runProcess(const std::string& cmd);
 }
