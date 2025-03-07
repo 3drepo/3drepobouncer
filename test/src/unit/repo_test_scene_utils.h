@@ -72,6 +72,8 @@ namespace testing {
 
 			std::vector<NodeInfo> getMeshes();
 
+			std::unordered_map<std::string, repo::lib::RepoVariant> getMetadata();
+
 			repo::lib::repo_material_t getMaterial();
 
 			/*

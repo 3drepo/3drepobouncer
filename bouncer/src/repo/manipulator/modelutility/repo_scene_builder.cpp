@@ -166,14 +166,16 @@ RepoSceneBuilder::RepoSceneBuilder(
 
 RepoSceneBuilder::~RepoSceneBuilder()
 {
-	if (referenceCounter)
-	{
-		throw std::runtime_error("RepoSceneBuilder is being destroyed with outstanding RepoNode references. Make sure all RepoNodes have gone out of scope before RepoSceneBuilder.");
-	}
+	if (!std::uncaught_exceptions()) { // The the following checks are a convenience, if the stack is unwinding something else has gone wrong so we don't care anymore...
+		if (referenceCounter)
+		{
+			throw std::runtime_error("RepoSceneBuilder is being destroyed with outstanding RepoNode references. Make sure all RepoNodes have gone out of scope before RepoSceneBuilder.");
+		}
 
-	if (parentUpdates.size())
-	{
-		throw std::runtime_error("RepoSceneBuilder is being destroyed with outstanding updates. Make sure to call finalise before letting RepoSceneBuilder go out of scope.");
+		if (parentUpdates.size())
+		{
+			throw std::runtime_error("RepoSceneBuilder is being destroyed with outstanding updates. Make sure to call finalise before letting RepoSceneBuilder go out of scope.");
+		}
 	}
 }
 

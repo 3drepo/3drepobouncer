@@ -27,6 +27,8 @@ using namespace ifcUtils;
 #include "repo_ifc_serialiser.h"
 #define IfcSchema Ifc4
 #include "repo_ifc_serialiser.h"
+#define IfcSchema Ifc4x3_add2
+#include "repo_ifc_serialiser.h"
 
 std::unique_ptr<AbstractIfcSerialiser> IfcUtils::CreateSerialiser(std::string filePath)
 {
@@ -36,12 +38,14 @@ std::unique_ptr<AbstractIfcSerialiser> IfcUtils::CreateSerialiser(std::string fi
 	}
 
 	auto schema = file->schema()->name();
-	if (schema == "IFC2X3")
-	{
+	if (schema == "IFC2X3") {
 		return std::make_unique<Ifc2x3Serialiser>(std::move(file));
 	}
 	else if (schema == "IFC4") {
 		return std::make_unique<Ifc4Serialiser>(std::move(file));
+	}
+	else if (schema == "IFC4X3_ADD2") {
+		return std::make_unique<Ifc4x3_add2Serialiser>(std::move(file));
 	}
 	else
 	{

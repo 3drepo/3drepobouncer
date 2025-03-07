@@ -122,6 +122,18 @@ std::vector<SceneUtils::NodeInfo> SceneUtils::NodeInfo::getMeshes()
 	return meshNodes;
 }
 
+std::unordered_map<std::string, repo::lib::RepoVariant> SceneUtils::NodeInfo::getMetadata()
+{
+	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
+	for (auto c : scene->getChildNodes(node, false))
+	{
+		if (dynamic_cast<MetadataNode*>(c.node)) {
+			auto m = dynamic_cast<MetadataNode*>(c.node)->getAllMetadata();
+			metadata.insert(m.begin(), m.end());
+		}
+	}
+}
+
 repo::lib::repo_material_t SceneUtils::NodeInfo::getMaterial()
 {
 	for (auto c : scene->getChildNodes(node, true))

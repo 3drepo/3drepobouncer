@@ -27,13 +27,13 @@
 *		correct encodings for literals in the named formats. The repo_ifc_serialiser.cpp
 *		file has been saved with the BOM to add an extra check for if this changes.
 *	4.	Do not use the SCHEMA_HAS... defines inside the header, as these don't go
-*		away when the IfcSchema definition changes; put any such conditions as static
-*		functions in the repo_ifc_serialiser.cpp file.
+*		away when the IfcSchema definition changes. Use them only in the .cpp.
 */
 
 #include "repo_ifc_serialiser_abstract.h"
 
 #include "repo/manipulator/modelutility/repo_scene_builder.h"
+#include "repo/core/model/bson/repo_node_transformation.h"
 #include "repo/lib/datastructure/repo_bounds.h"
 
 #include <memory>
@@ -83,7 +83,20 @@ namespace ifcUtils
 		repo::manipulator::modelutility::RepoSceneBuilder* builder;
 		repo::lib::RepoUUID rootNodeId;
 		std::unordered_map<std::string, repo::lib::repo_material_t> materials;
-		std::unordered_map<int64_t, repo::lib::RepoUUID> sharedIds;
+
+		/*
+		* Cache entry representing the possible transformation nodes that result from
+		* a single Ifc Object - either or both of the members can be set, indicating
+		* whether the object has geometry, or children, or both.
+		*/
+		struct TransformationNodesInfo
+		{
+			repo::lib::RepoUUID branchSharedId;
+			std::shared_ptr<repo::core::model::TransformationNode> leafNode;
+		};
+
+		std::unordered_map<int64_t, TransformationNodesInfo> sharedIds;
+		std::unordered_map<int64_t, repo::lib::RepoUUID> metadataUniqueIds;
 
 		enum class RepoDerivedUnits {
 			MONETARY_VALUE
@@ -113,9 +126,67 @@ namespace ifcUtils
 		const repo::lib::repo_material_t& resolveMaterial(
 			const ifcopenshell::geometry::taxonomy::style::ptr ptr);
 
-		struct Formatted {
+		/*
+		* Helper type that represents an Ifc parameter that may come from a property,
+		* attribute or another source, in its final form ready to be added to a
+		* metadata node.
+		*/
+
+		struct RepoValue {
 			std::optional<repo::lib::RepoVariant> v;
 			std::string units;
+		};
+		
+		/*
+		* Helper class to build metadata entries, including a persistent context for
+		* grouping, for dealing with nested property sets.
+		*/
+
+		struct Metadata
+		{
+			std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
+			std::string prefix;
+
+			void setGroup(const std::string& group) {
+				prefix = group;
+			}
+
+			const std::string& getGroup() {
+				return prefix;
+			}
+
+			repo::lib::RepoVariant& operator()(const std::string& name)
+			{
+				return (*this)(name, prefix, {});
+			}
+
+			repo::lib::RepoVariant& operator()(const std::string& name, const std::string& prefix, const std::string& units)
+			{
+				std::string fullName;
+				if (!prefix.empty()) {
+					fullName = prefix + "::" + name;
+				}
+				else
+				{
+					fullName = name;
+				}
+				if (!units.empty()) {
+					fullName += " (" + units + ")";
+				}
+				return metadata[fullName];
+			}
+
+			void setValue(const std::string& name, RepoValue value)
+			{
+				if (value.v) {
+					(*this)(name, prefix, value.units) = *value.v;
+				}
+			}
+
+			operator const std::unordered_map<std::string, repo::lib::RepoVariant>& () const
+			{
+				return metadata;
+			}
 		};
 
 		std::string getUnitsLabel(const IfcSchema::IfcUnit* unit);
@@ -126,6 +197,11 @@ namespace ifcUtils
 		std::string getUnitsLabel(const IfcParse::declaration& type);
 
 		std::string getExponentAsString(int value);
+
+		/* Returns the unit of the first Measure Value in the list (if any) */
+
+		std::string getUnitsLabel(const aggregate_of<IfcSchema::IfcValue>::ptr list);
+		std::string getUnitsLabel(const boost::optional<aggregate_of<IfcSchema::IfcValue>::ptr> list);
 
 		/*
 		* Sets the unit_t that will be used by the getUnitsLabel declaration overide.
@@ -170,16 +246,24 @@ namespace ifcUtils
 		* present in the physical world - that is, they could include walls, doors,
 		* but also storeys and projects. Both types of object coexist in the tree.
 		*
+		* leafNode is used to indicate that the new node holds only mesh nodes (to
+		* start with).
 		*/
-		repo::lib::RepoUUID createTransformationNode(const IfcSchema::IfcObjectDefinition* object);
+		repo::lib::RepoUUID getTransformationNode(
+			const IfcSchema::IfcObjectDefinition* object, 
+			bool leafNode);
 
 		/*
 		* Creates a transformation node under the parent object to group together
 		* entities of a given type.
 		*/
-		repo::lib::RepoUUID createTransformationNode(
+		repo::lib::RepoUUID getTransformationNode(
 			const IfcSchema::IfcObjectDefinition* parent,
 			const IfcParse::entity& type);
+
+		std::shared_ptr<repo::core::model::TransformationNode> createTransformationNode(
+			const IfcSchema::IfcObjectDefinition* object,
+			const repo::lib::RepoUUID& parentId);
 
 		std::unique_ptr<repo::core::model::MetadataNode> createMetadataNode(
 			const IfcSchema::IfcObjectDefinition* object);
@@ -193,14 +277,60 @@ namespace ifcUtils
 			const IfcGeom::Element* element,
 			bool createTransform);
 
-		Formatted processAttributeValue(
-			const IfcParse::attribute* attribute,
-			const AttributeValue& value,
-			std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
+		/*
+		* Given a value (value) from a type (type), extract the value into a
+		* RepoVariant, while performing any post-processing, such as formatting,
+		* appropriate to the type.
+		*/
+		RepoValue getValue(const IfcParse::declaration& type, const AttributeValue& value);
+
+		RepoValue getValue(const IfcSchema::IfcValue* value);
+
+		/*
+		* Given an object reference, return a representation of that object that
+		* can be used as a value in a key-value pair (instead of descending into
+		* the object to collect its metadata as a sibling). In almost all cases
+		* this will be some sort of string representation of its name(s) or Id.
+		*/
+		RepoValue getValue(const IfcSchema::IfcObjectReferenceSelect* object);
+
+		/*
+		* Return the list of IfcValues as a single variant. For lists with more than
+		* one entry, the variant will be a string representation of the array.
+		*/
+		std::optional<repo::lib::RepoVariant> getValue(aggregate_of<IfcSchema::IfcValue>::ptr list);
+		std::optional<repo::lib::RepoVariant> getValue(boost::optional<aggregate_of<IfcSchema::IfcValue>::ptr> list);
 
 		void collectAdditionalAttributes(
 			const IfcSchema::IfcObjectDefinition* object,
-			std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
+			Metadata& metadata);
+
+		void collectAttributes(
+			const IfcUtil::IfcBaseEntity* object,
+			Metadata& metadata
+		);
+
+		/*
+		* Recursively collects attributes and properties into the metadata object. This
+		* method works by trying to convert object to one of a number of known types.
+		* This method is intended to be used with both the underlying containers, such
+		* as IfcProperty, and the relationship objects that compose sets of metadata,
+		* such as ifcRelDefines or IfcRelNests.
+		*/
+		void collectMetadata(
+			const IfcUtil::IfcBaseInterface* object,
+			Metadata& metadata
+		);
+
+		// Use concepts rather than specify T as part of the iterator, so T can
+		// be deduced automatically.
+
+		template<typename T>
+		void collectMetadata(
+			T begin,
+			T end,
+			Metadata& metadata
+		);
 
 		bool shouldGroupByType(
 			const IfcSchema::IfcObjectDefinition* object,

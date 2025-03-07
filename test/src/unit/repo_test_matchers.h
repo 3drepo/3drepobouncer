@@ -20,6 +20,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest-matchers.h>
+#include "repo/lib/datastructure/repo_variant_utils.h"
 
 /* As we sometimes deal with very large coordinate systems, we expect positions
  * to have a low tolerance, approaching floating point quantisation itself.
@@ -142,6 +143,13 @@ namespace testing {
 	MATCHER(HasBinaryFields, "")
 	{
 		return arg.hasOversizeFiles();
+	}
+
+	// Allows using the string value of a variant directly in an expects statement
+	MATCHER_P(Vq, s, "")
+	{
+		auto asString = boost::apply_visitor(repo::lib::StringConversionVisitor(), arg);
+		return asString == s;
 	}
 }
 
