@@ -81,7 +81,7 @@ static std::optional<repo::lib::RepoVariant> bakeIf(std::vector<repo::lib::RepoV
 		for (size_t i = 0; i < variants.size(); i++) {
 			ss << boost::apply_visitor(repo::lib::StringConversionVisitor(), variants[i]);
 			if (i < variants.size() - 1) {
-				ss << ",";
+				ss << ", ";
 			}
 		}
 		ss << ")";
@@ -278,6 +278,34 @@ std::string IfcSerialiser::getExponentAsString(int value)
 	return ss.str();
 }
 
+int IfcSerialiser::removeExponentFromString(std::string& base)
+{
+	// This method will only work for volume and area (superscript 2 and 3), which
+	// covers all the base units we define. If the file declares an
+	// IfcContextDependentUnit with another exponent in the name however, this will
+	// not be supported.
+
+	// This implementation assumes UTF8 encoding, which is safe because we control
+	// the encoding of this file, which is also the one in which the units are
+	// defined.
+
+	auto length = base.size();
+	if (length > 2) {
+		auto data = base.data();
+		if (data[length - 2] == (char)0xC2) {
+			if (data[length - 1] == (char)0xB2) {
+				base.resize(length - 2);
+				return 2;
+			}
+			else if (data[length - 1] == (char)0xB3) {
+				base.resize(length - 2);
+				return 3;
+			}
+		}
+	}
+	return 1;
+}
+
 std::string IfcSerialiser::getUnitsLabel(const IfcSchema::IfcSIUnitName::Value& name)
 {
 	switch (name)
@@ -424,6 +452,7 @@ std::string IfcSerialiser::getUnitsLabel(const std::string& unitName)
 	if (data == "hour") return "hr";
 	if (data == "day") return "day";
 	if (data == "btu") return "btu";
+	if (data == "fahrenheit") return "°F";
 
 	return data;
 }
@@ -456,12 +485,14 @@ std::string IfcSerialiser::getUnitsLabel(const IfcSchema::IfcUnit* unit)
 	{
 		std::stringstream ss;
 		auto elements = u->Elements();
+		std::string multiplier = "";
 		for (const auto& e : *elements)
 		{
 			auto base = getUnitsLabel(e->Unit());
 			if (!base.empty()) 
 			{
-				ss << base << getExponentAsString(e->Exponent());
+				auto existing = removeExponentFromString(base);
+				ss << multiplier << base << getExponentAsString(e->Exponent() * existing);
 			}
 			else
 			{
@@ -469,6 +500,7 @@ std::string IfcSerialiser::getUnitsLabel(const IfcSchema::IfcUnit* unit)
 				e->Unit()->data().toString(es);
 				repoWarning << "Unrecognised Derived Unit Element " << es.str();
 			}
+			multiplier = "·";
 		}
 		return ss.str();
 	}
@@ -522,7 +554,22 @@ std::string IfcSerialiser::getUnitsLabel(const unit_t& unit)
 	return {};
 }
 
-void IfcSerialiser::setDefinedTypeUnits()
+std::string IfcSerialiser::getUnitsLabel(const aggregate_of<IfcSchema::IfcValue>::ptr list)
+{
+	if (list && list->size()) {
+		return getUnitsLabel((*list->begin())->declaration());
+	}
+	else {
+		return {};
+	}
+}
+
+std::string IfcSerialiser::getUnitsLabel(const boost::optional<aggregate_of<IfcSchema::IfcValue>::ptr> list)
+{
+	return getUnitsLabel(list.get_value_or(nullptr));
+}
+
+void IfcSerialiser::setNamedTypeUnits()
 {
 	// Ifc defines a number of value and measurement types. As far as we are aware,
 	// IFCOS has no programmatic mapping between these and the unit enums, so we
@@ -608,6 +655,7 @@ void IfcSerialiser::setDefinedTypeUnits()
 	setUnits(IfcSchema::IfcVolumetricFlowRateMeasure::Class(), IfcSchema::IfcDerivedUnitEnum::Value::IfcDerivedUnit_VOLUMETRICFLOWRATEUNIT);
 	setUnits(IfcSchema::IfcWarpingConstantMeasure::Class(), IfcSchema::IfcDerivedUnitEnum::Value::IfcDerivedUnit_WARPINGCONSTANTUNIT);
 	setUnits(IfcSchema::IfcWarpingMomentMeasure::Class(), IfcSchema::IfcDerivedUnitEnum::Value::IfcDerivedUnit_WARPINGMOMENTUNIT);
+	setUnits(IfcSchema::IfcMonetaryMeasure::Class(), RepoDerivedUnits::MONETARY_VALUE);
 
 #ifdef SCHEMA_HAS_IfcThermalConductivityMeasure
 	setUnits(IfcSchema::IfcThermalConductivityMeasure::Class(), IfcSchema::IfcDerivedUnitEnum::Value::IfcDerivedUnit_THERMALCONDUCTANCEUNIT);
@@ -649,7 +697,7 @@ IfcSerialiser::IfcSerialiser(std::unique_ptr<IfcParse::IfcFile> file)
 {
 	kernel = "opencascade";
 	numThreads = std::thread::hardware_concurrency();
-	setDefinedTypeUnits();
+	setNamedTypeUnits();
 	configureSettings();
 }
 
@@ -751,9 +799,6 @@ const IfcSchema::IfcObjectDefinition* IfcSerialiser::getParent(const IfcSchema::
 				}
 			}
 		}
-
-		// We may also consider IfcRelVoidsElement here, but we don't import openings
-		// at all currently.
 	}
 
 	return nullptr;
@@ -1072,21 +1117,6 @@ IfcSerialiser::RepoValue IfcSerialiser::getValue(const IfcSchema::IfcObjectRefer
 	return {};
 }
 
-std::string IfcSerialiser::getUnitsLabel(const aggregate_of<IfcSchema::IfcValue>::ptr list)
-{
-	if (list && list->size()) {
-		return getUnitsLabel((*list->begin())->declaration());
-	}
-	else {
-		return {};
-	}
-}
-
-std::string IfcSerialiser::getUnitsLabel(const boost::optional<aggregate_of<IfcSchema::IfcValue>::ptr> list)
-{
-	return getUnitsLabel(list.get_value_or(nullptr));
-}
-
 std::optional<repo::lib::RepoVariant> IfcSerialiser::getValue(boost::optional<aggregate_of<IfcSchema::IfcValue>::ptr> list)
 {
 	if (list) {
@@ -1173,7 +1203,7 @@ void IfcSerialiser::collectAttributes(const IfcUtil::IfcBaseEntity* object, Meta
 	// adds all those attributes to the metadata object.
 
 	auto start = 0;
-	if (object->as<IfcSchema::IfcRoof>()) {
+	if (object->as<IfcSchema::IfcRoot>()) {
 		
 		// IfcRoot is the root class for all kernel types. It has a fixed number
 		// of attributes - these are handled explicitly for the top-level object,
@@ -1191,25 +1221,52 @@ void IfcSerialiser::collectAttributes(const IfcUtil::IfcBaseEntity* object, Meta
 		auto attribute = type->attribute_by_index(i);
 		auto value = object->data().get_attribute_value(i);
 
-		if (!value.isNull()) {
-			auto attribute_type = attribute->type_of_attribute();
-			RepoValue v;
-			if (auto named = attribute_type->as_named_type()) 
+		if (!value.isNull())
+		{
+			// If the attribute is a reference to another object, then we attempt to
+			// collect that object's metadata under a local group. Usually attributes
+			// will only be simple, however there are a number of cases, such as with
+			// predefined types, where static attributes reference entities that have
+			// relevant metadata.
+
+			// If the value is not a reference, the type information is stored with
+			// the attribute itself, rather than the value.
+
+			if (value.type() == IfcUtil::ArgumentType::Argument_ENTITY_INSTANCE)
 			{
-				v = getValue(*named->declared_type(), value);
+				Metadata suffixed(metadata, attribute->name());
+				collectMetadata((const IfcUtil::IfcBaseClass*)value, suffixed);
 			}
-			else if (auto simple = attribute_type->as_simple_type())
+			else if (value.type() == IfcUtil::ArgumentType::Argument_AGGREGATE_OF_ENTITY_INSTANCE)
 			{
-				v.v = repoVariant(value);
-			}
-			else if (auto aggregation = attribute_type->as_aggregation_type())
-			{
-				v.v = repoVariant(value);
-				if (auto named = aggregation->type_of_element()->as_named_type()) {
-					v.units = getUnitsLabel(*named->declared_type());
+				auto refs = value.operator boost::shared_ptr<aggregate_of_instance>();
+				auto i = 0;
+				for (auto& ref : *refs) {
+					Metadata suffixed(metadata, attribute->name() + " " + std::to_string(i++));
+					collectMetadata((const IfcUtil::IfcBaseClass*)ref, suffixed);
 				}
 			}
-			metadata.setValue(attribute->name(), v);
+			else
+			{
+				auto attribute_type = attribute->type_of_attribute();
+				RepoValue v;
+				if (auto named = attribute_type->as_named_type())
+				{
+					v = getValue(*named->declared_type(), value);
+				}
+				else if (auto simple = attribute_type->as_simple_type())
+				{
+					v.v = repoVariant(value);
+				}
+				else if (auto aggregation = attribute_type->as_aggregation_type())
+				{
+					v.v = repoVariant(value);
+					if (auto named = aggregation->type_of_element()->as_named_type()) {
+						v.units = getUnitsLabel(*named->declared_type());
+					}
+				}
+				metadata.setValue(attribute->name(), v);
+			}
 		}
 	}
 }
@@ -1299,15 +1356,25 @@ void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Met
 		collectAttributes(o, metadata);
 	}
 #endif
+#ifdef SCHEMA_HAS_IfcPreDefinedProperties
+	else if (auto o = object->as<IfcSchema::IfcPreDefinedProperties>()) 
+	{
+		collectAttributes(o, metadata);
+	}
+#endif
+	else if (auto o = object->as<IfcSchema::IfcProfileDef>())
+	{
+		collectAttributes(o, metadata);
+	}
 	else if (auto o = object->as<IfcSchema::IfcComplexProperty>())
 	{
-		// Our metadata groups are at most one deep, so all complex properties are
-		// appended under the existing category.
+		// Our metadata groups are at most one deep, so complex properties are
+		// unrolled and an identifier suffixed to the key.
 
-		// Possibly we could append the UsageName to the prefix?
-
-		auto props = o->HasProperties();
-		collectMetadata(props->begin(), props->end(), metadata);
+		if (auto props = o->HasProperties()) {
+			Metadata suffixedMetadata(metadata, o->UsageName());
+			collectMetadata(props->begin(), props->end(), suffixedMetadata);
+		}
 	}
 	else if (auto o = object->as<IfcSchema::IfcPropertyBoundedValue>()) 
 	{
@@ -1349,11 +1416,13 @@ void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Met
 	}
 	else if (auto o = object->as<IfcSchema::IfcPropertySingleValue>())
 	{
-		auto f = getValue(o->NominalValue());
-		if (o->Unit()) {
-			f.units = getUnitsLabel(o->Unit());
+		if (o->NominalValue()) {
+			auto f = getValue(o->NominalValue());
+			if (o->Unit()) {
+				f.units = getUnitsLabel(o->Unit());
+			}
+			metadata.setValue(o->Name(), f);
 		}
-		metadata.setValue(o->Name(), f);
 	}
 	else if (auto table = object->as<IfcSchema::IfcPropertyTableValue>())
 	{
@@ -1364,6 +1433,10 @@ void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Met
 	else if (auto o = object->as<IfcSchema::IfcElementQuantity>())
 	{
 		metadata.setGroup(o->Name().get_value_or({}));
+		auto method = o->MethodOfMeasurement().get_value_or({});
+		if (!method.empty()) {
+			metadata("MethodOfMeasurement") = method;
+		}
 		auto quantities = o->Quantities();
 		collectMetadata(quantities->begin(), quantities->end(), metadata);
 	}
@@ -1386,7 +1459,8 @@ void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Met
 	else if (auto o = object->as<IfcSchema::IfcPhysicalComplexQuantity>())
 	{
 		auto quantities = o->HasQuantities();
-		collectMetadata(quantities->begin(), quantities->end(), metadata);
+		Metadata suffix(metadata, o->Usage().get_value_or(o->Name()));
+		collectMetadata(quantities->begin(), quantities->end(), suffix);
 	}
 }
 
@@ -1410,7 +1484,8 @@ void IfcSerialiser::collectAdditionalAttributes(const IfcSchema::IfcObjectDefini
 
 std::unique_ptr<repo::core::model::MetadataNode> IfcSerialiser::createMetadataNode(const IfcSchema::IfcObjectDefinition* object)
 {
-	Metadata metadata;
+	std::unordered_map<std::string, repo::lib::RepoVariant> map;
+	Metadata metadata(map);
 
 	// To build a metadata node, the serialiser first collects the IfcRoot
 	// attributes for the starting object (the one that will be the leaf
@@ -1447,7 +1522,7 @@ std::unique_ptr<repo::core::model::MetadataNode> IfcSerialiser::createMetadataNo
 	auto a = file->getInverse(object->id(), &(IfcSchema::IfcRelAssociates::Class()), -1);
 	collectMetadata(a->begin(), a->end(), metadata);
 
-	auto metadataNode = std::make_unique<repo::core::model::MetadataNode>(repo::core::model::RepoBSONFactory::makeMetaDataNode(metadata, {}, {}));
+	auto metadataNode = std::make_unique<repo::core::model::MetadataNode>(repo::core::model::RepoBSONFactory::makeMetaDataNode(map, {}, {}));
 	return metadataNode;
 }
 

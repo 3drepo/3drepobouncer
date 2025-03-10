@@ -146,10 +146,15 @@ namespace testing {
 	}
 
 	// Allows using the string value of a variant directly in an expects statement
-	MATCHER_P(Vq, s, "")
+	MATCHER_P(Vs, s, "")
 	{
 		auto asString = boost::apply_visitor(repo::lib::StringConversionVisitor(), arg);
 		return asString == s;
+	}
+
+	MATCHER_P(Vq, s, "")
+	{
+		return boost::apply_visitor(repo::lib::DuplicationVisitor(), arg, repo::lib::RepoVariant(s));
 	}
 }
 

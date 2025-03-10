@@ -132,6 +132,7 @@ std::unordered_map<std::string, repo::lib::RepoVariant> SceneUtils::NodeInfo::ge
 			metadata.insert(m.begin(), m.end());
 		}
 	}
+	return metadata;
 }
 
 repo::lib::repo_material_t SceneUtils::NodeInfo::getMaterial()

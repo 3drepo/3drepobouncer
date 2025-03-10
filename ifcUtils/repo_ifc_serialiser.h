@@ -144,8 +144,25 @@ namespace ifcUtils
 
 		struct Metadata
 		{
-			std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
+			std::unordered_map<std::string, repo::lib::RepoVariant>& metadata;
 			std::string prefix;
+			std::string suffix;
+
+			Metadata(std::unordered_map<std::string, repo::lib::RepoVariant>& map)
+				:metadata(map)
+			{
+			}
+
+			Metadata(Metadata& metadata, const std::string& suffix)
+				:Metadata(metadata)
+			{
+				if (!metadata.suffix.empty()) {
+					this->suffix = metadata.suffix + ":" + suffix;
+				}
+				else {
+					this->suffix = suffix;
+				}
+			}
 
 			void setGroup(const std::string& group) {
 				prefix = group;
@@ -166,9 +183,11 @@ namespace ifcUtils
 				if (!prefix.empty()) {
 					fullName = prefix + "::" + name;
 				}
-				else
-				{
+				else {
 					fullName = name;
+				}
+				if (!suffix.empty()) {
+					fullName += " (" + suffix + ")";
 				}
 				if (!units.empty()) {
 					fullName += " (" + units + ")";
@@ -182,11 +201,6 @@ namespace ifcUtils
 					(*this)(name, prefix, value.units) = *value.v;
 				}
 			}
-
-			operator const std::unordered_map<std::string, repo::lib::RepoVariant>& () const
-			{
-				return metadata;
-			}
 		};
 
 		std::string getUnitsLabel(const IfcSchema::IfcUnit* unit);
@@ -197,6 +211,13 @@ namespace ifcUtils
 		std::string getUnitsLabel(const IfcParse::declaration& type);
 
 		std::string getExponentAsString(int value);
+
+		/*
+		* If the base units label already contains the exponents, as will be the case
+		* for area and volume, remove the exponent from the string and return it so it
+		* can be recombined in derived units.
+		*/
+		int removeExponentFromString(std::string& base);
 
 		/* Returns the unit of the first Measure Value in the list (if any) */
 
@@ -216,11 +237,11 @@ namespace ifcUtils
 		void setUnits(IfcSchema::IfcSIUnit u);
 
 		/*
-		* Creates the associations between Ifc Classes and Unit Enums that are expressed
+		* Creates the associations between IFC Types and Unit Enums that are expressed
 		* in the IfcMeasureResource, but are not programmatically linked in IFCOS. Should
 		* be called early on (e.g. in the constructor).
 		*/
-		void setDefinedTypeUnits();
+		void setNamedTypeUnits();
 		
 		/*
 		* Creates the MeshNode(s) for a given element - this may consist of a
