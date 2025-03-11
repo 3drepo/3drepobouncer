@@ -68,7 +68,7 @@ TEST(IFCModelImport, RelContainedInSpatialStructure)
 	* The tree is predominantly built by two relationship objects:
 	* RelContainedInSpatialStructure for spatial relationhsips and RelDecomposes
 	* for part/whole relationships.
-	* 
+	*
 	* This test looks for instances of a tangible entity placed under spatial
 	* entities at multiple levels, including where those spatial entities can
 	* be multiple levels deep.
@@ -87,7 +87,7 @@ TEST(IFCModelImport, RelContainedInSpatialStructure)
 
 	node = utils.findNodeByMetadata("Name", "P5");
 	EXPECT_THAT(node.getPath(), Eq("rootNode->Project Number->Default->IfcBuilding->Level 0->P3->P4->IfcBeam->P5"));
-	EXPECT_THAT(node.isLeaf(), IsTrue());	
+	EXPECT_THAT(node.isLeaf(), IsTrue());
 }
 
 TEST(IFCModelImport, RelContainedInSpatialStructure_DoublyPlacedObjects)
@@ -100,7 +100,7 @@ TEST(IFCModelImport, RelContainedInSpatialStructure_DoublyPlacedObjects)
 	* Nesting, it is placed twice. This is not supported by all tools. We will
 	* import the file, with RelContainedInSpatialStructure always taking priority.
 	*/
-	
+
 	std::vector<std::string> beams = { "Beam1", "Beam2" };
 	for (auto name : beams)
 	{
@@ -116,7 +116,7 @@ TEST(IFCModelImport, RelAssigns)
 	* IfcRelAssigns is used to infer logical relationships such as client->supplier
 	* or navigation (room1->room2). For example, a Lift Shaft may be contained
 	* under Level 0, but assigned to multiple levels above it.
-	* 
+	*
 	* IfcRelAssigns should not affect either the tree or metadata in the current
 	* importer.
 	*/
@@ -137,9 +137,9 @@ TEST(IFCModelImport, RelDecomposes)
 	* IfcRelDecomposes represents part/whole relationships of tangible entities and
 	* along with RelContainedInSpatialStructure is one of the primary ways in which
 	* we build the tree.
-	* 
+	*
 	* We support Nesting and Aggregation.
-	* 
+	*
 	* IFCOS will use IfcRelVoids to build the geometry, but we do not represent
 	* Openings the tree or collect metadata for them. The same is true for
 	* IfcRelProjectsElements.
@@ -180,7 +180,7 @@ TEST(IFCModelImport, RelAssociatesClassification)
 		EXPECT_THAT(metadata["Classification1::Name"], Vs("Classification1"));
 		EXPECT_THAT(metadata["Classification1::Description"], Vs("Unit Test Classification 1"));
 		EXPECT_THAT(metadata["Classification1::Specification"], Vs("3drepo.io"));
-		EXPECT_THAT(metadata["Classification1::ReferenceTokens"], Vs("(ReferenceToken1)"));
+		EXPECT_THAT(metadata["Classification1::ReferenceTokens"], Vs("(ReferenceToken1, ReferenceToken2)"));
 	}
 
 	for (auto name : classification2)
@@ -201,7 +201,7 @@ TEST(IFCModelImport, RelDeclares)
 	* IfcRelDeclares is used to associate a set of IfcObjects and/or
 	* IfcPropertyDefinitions to an IfcContext (IfcProject) so that they take that
 	* context's units and presentation.
-	* 
+	*
 	* This is ignored as we only support one context and set of units.
 	*/
 
@@ -214,7 +214,7 @@ TEST(IFCModelImport, RelDefinesByObject)
 	* IfcRelDefinesByObject allows using another object as a prototype for multiple
 	* instances. Reflected objects take the Declaring Object's Property Sets and
 	* Representations.
-	* 
+	*
 	* Unlike DefinesByType, the Reflected object exists as a distinct tangible (if
 	* represented) entity in its own right.
 	*/
@@ -251,7 +251,7 @@ TEST(IFCModelImport, RelDefinesByType)
 	/*
 	* IfcRelDefinesByType is used to declare that an object should inhert the
 	* properties of an IfcTypeObject, like a superclass.
-	* 
+	*
 	* If a Property with the same name exists in the occuring object, then the
 	* occuring object's value takes precedence.
 	*/
@@ -275,12 +275,12 @@ TEST(IFCModelImport, RelDefinesByTemplate)
 	/*
 	* IfcRelDefinesByTemplate allows declaring that a Property Set is of a given
 	* IfcPropertySetTemplate. IfcPropertySetTemplates contain IfcPropertyTemplates.
-	* 
+	*
 	* Templates can hold information such as Names and Descriptions, as well as
 	* lists of Properties the instantations of the Template should hold.
-	* 
+	*
 	* The arrangement does not affect the tree.
-	* 
+	*
 	* Currently this way of declaring Properties is redundant, as we have not seen
 	* a property that does not hold the relevant information locally, even if
 	* templated (see for example, the attributes of the Predefined Property Sets).
@@ -301,10 +301,10 @@ TEST(IFCModelImport, ValuesAndUnits)
 	* This test checks that all named IfcMeasureResource types are correctly
 	* handled. This test also checks the behaviour of the units, since the measure
 	* types and units processing are interwoven.
-	* 
+	*
 	* The units checked here are set at the Project (Context) level in the file,
 	* and cover SI, Derived and Context Dependent units.
-	* 
+	*
 	* Conversion (Imperial) units and MeasureWithUnit are covered by other tests.
 	*/
 
@@ -345,7 +345,7 @@ TEST(IFCModelImport, ValuesAndUnits)
 	EXPECT_THAT(metadata["PSet_SimpleValues::Identifer"], Vs("MyIdentifier"));
 	EXPECT_THAT(metadata["PSet_SimpleValues::Text"], Vs("MyText"));
 	EXPECT_THAT(metadata["PSet_SimpleValues::Label"], Vs("MyLabel"));
-	
+
 	// Logicals do not work due to a known bug in IFCOS
 	// EXPECT_THAT(metadata["PSet_SimpleValues::Logical"], Vs("Unknown"));
 
@@ -440,7 +440,7 @@ TEST(IFCModelImport, RootAttributes)
 	/*
 	* IfcRoot attributes should be imported with different names than their IFC
 	* Attribute Names.
-	* 
+	*
 	* Attributes should also support the full units functionality based on their
 	* named types (if any).
 	*/
@@ -460,7 +460,7 @@ TEST(IFCModelImport, PropertySets)
 	* Ifc Property Sets can contain a mix of Measure Values and other values, such
 	* as enumerations and lists. This test ensures that all Property sub-types are
 	* parsed and formatted correctly, including units.
-	* 
+	*
 	* Complex Properties should be unrolled, with the set name or usage suffixed to
 	* each sub-property.
 	*/
@@ -526,13 +526,13 @@ TEST(IFCModelImport, PredefinedPropertySets)
 	/*
 	* Predefined property sets are property sets that are statically defined in the
 	* Ifc spec.
-	* 
+	*
 	* Something specifically special to PredefinedProperySets is that their
 	* elements can contain object references. While IfcSimpleProperty can hold
 	* an IfcObjectReferenceSelect, this is limited in the number of types the
 	* reference can be. Predefined Property Sets on the other hand reference a
 	* graph of IfcPreDefinedProperties.
-	* 
+	*
 	* This test checks both simple predefinde properties and those with recursive
 	* reference attributes.
 	*/
@@ -584,7 +584,7 @@ TEST(IFCModelImport, QuantitySets)
 	/*
 	* Quantity Sets are a type sibling of IfcPropertySet, behaving very similarly
 	* but limited to only IfcPhysicalQuantity entries.
-	* 
+	*
 	* The type also has an optional MethodOfMeasurement attribute, which we add
 	* in parallel with the members.
 	*/
@@ -689,7 +689,7 @@ TEST(IFCModelImport, Unicode)
 	* The metadata tests above do consider special characters, however the tests
 	* & importer are built by the same toolchain, so they won't detect if a
 	* lossless, but undesirable, codepage (such as Windows-1252) is used.
-	* 
+	*
 	* This test makes sure that the text encodings are UTF8 at the byte level.
 	*/
 

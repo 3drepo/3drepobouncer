@@ -66,7 +66,7 @@ static repo::lib::RepoMatrix repoMatrix(const ifcopenshell::geometry::taxonomy::
 
 static std::optional<repo::lib::RepoVariant> bakeIf(std::vector<repo::lib::RepoVariant> variants)
 {
-	if (variants.size() < 1) 
+	if (variants.size() < 1)
 	{
 		return std::nullopt;
 	}
@@ -459,7 +459,7 @@ std::string IfcSerialiser::getUnitsLabel(const std::string& unitName)
 
 std::string IfcSerialiser::getUnitsLabel(const IfcSchema::IfcUnit* unit)
 {
-	if (!unit) 
+	if (!unit)
 	{
 		return {};
 	}
@@ -489,7 +489,7 @@ std::string IfcSerialiser::getUnitsLabel(const IfcSchema::IfcUnit* unit)
 		for (const auto& e : *elements)
 		{
 			auto base = getUnitsLabel(e->Unit());
-			if (!base.empty()) 
+			if (!base.empty())
 			{
 				auto existing = removeExponentFromString(base);
 				ss << multiplier << base << getExponentAsString(e->Exponent() * existing);
@@ -920,7 +920,7 @@ repo::lib::RepoUUID IfcSerialiser::getTransformationNode(const IfcSchema::IfcObj
 
 		auto node = createTransformationNode(object, parentId);
 
-		if (leafNode) 
+		if (leafNode)
 		{
 			nodes.leafNode = node;
 		}
@@ -1053,7 +1053,7 @@ IfcSerialiser::RepoValue IfcSerialiser::getValue(const IfcSchema::IfcObjectRefer
 	// The IfcObjectReferenceSelect adds an object as an assignment. The objects
 	// that can be assigned this way are limited:
 	// https://standards.buildingsmart.org/IFC/DEV/IFC4_2/FINAL/HTML/schema/ifcpropertyresource/lexical/ifcobjectreferenceselect.htm
-	
+
 	// This method is used when we want an identifier of an object for a key-value
 	// pair, as opposed to when we want to recurse into the object to gather its
 	// properties directly.
@@ -1074,7 +1074,7 @@ IfcSerialiser::RepoValue IfcSerialiser::getValue(const IfcSchema::IfcObjectRefer
 	{
 	}
 #endif
-	else if (auto o = object->as<IfcSchema::IfcOrganization>()) 
+	else if (auto o = object->as<IfcSchema::IfcOrganization>())
 	{
 #ifdef SCHEMA_IfcOrganization_HAS_Identification
 		if (o->Identification()) {
@@ -1210,7 +1210,7 @@ void IfcSerialiser::collectAttributes(const IfcUtil::IfcBaseEntity* object, Meta
 
 	auto start = 0;
 	if (object->as<IfcSchema::IfcRoot>()) {
-		
+
 		// IfcRoot is the root class for all kernel types. It has a fixed number
 		// of attributes - these are handled explicitly for the top-level object,
 		// so are always skipped here.
@@ -1354,21 +1354,21 @@ void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Met
 		metadata.setGroup(o->Name());
 		collectAttributes(o, metadata);
 	}
-	else if (auto o = object->as<IfcSchema::IfcPropertySet>()) 
+	else if (auto o = object->as<IfcSchema::IfcPropertySet>())
 	{
 		metadata.setGroup(o->Name().get_value_or(o->declaration().name()));
 		auto props = o->HasProperties();
 		collectMetadata(props->begin(), props->end(), metadata);
 	}
 #ifdef SCHEMA_HAS_IfcPreDefinedPropertySet
-	else if (auto o = object->as<IfcSchema::IfcPreDefinedPropertySet>()) 
+	else if (auto o = object->as<IfcSchema::IfcPreDefinedPropertySet>())
 	{
 		metadata.setGroup(o->Name().get_value_or(o->declaration().name()));
 		collectAttributes(o, metadata);
 	}
 #endif
 #ifdef SCHEMA_HAS_IfcPreDefinedProperties
-	else if (auto o = object->as<IfcSchema::IfcPreDefinedProperties>()) 
+	else if (auto o = object->as<IfcSchema::IfcPreDefinedProperties>())
 	{
 		collectAttributes(o, metadata);
 	}
@@ -1387,7 +1387,7 @@ void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Met
 			collectMetadata(props->begin(), props->end(), suffixedMetadata);
 		}
 	}
-	else if (auto o = object->as<IfcSchema::IfcPropertyBoundedValue>()) 
+	else if (auto o = object->as<IfcSchema::IfcPropertyBoundedValue>())
 	{
 		auto units = getUnitsLabel(o->Unit());
 		std::string upperBound, lowerBound;
@@ -1456,7 +1456,7 @@ void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Met
 	{
 		// All IfcPhysicalSimpleQuantity subtypes have their values at the same
 		// attribute, so we don't need to check each type individually.
-		
+
 		// We do however need to infer the type of the value, as they will be
 		// specific Measure types, and this information is not stored in
 		// AttributeValue or IfcPhysicalSimpleQuantity programmatically.

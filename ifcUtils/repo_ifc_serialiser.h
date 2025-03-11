@@ -60,7 +60,7 @@
 
 #define IfcSerialiser CLASS_NAME(IfcSchema)
 
-namespace ifcUtils 
+namespace ifcUtils
 {
 	/*
 	* The IfcSerialiser behaves similarly to a GeometrySerialiser of
@@ -136,7 +136,7 @@ namespace ifcUtils
 			std::optional<repo::lib::RepoVariant> v;
 			std::string units;
 		};
-		
+
 		/*
 		* Helper class to build metadata entries, including a persistent context for
 		* grouping, for dealing with nested property sets.
@@ -262,7 +262,7 @@ namespace ifcUtils
 		* be called early on (e.g. in the constructor).
 		*/
 		void setNamedTypeUnits();
-		
+
 		/*
 		* Creates the MeshNode(s) for a given element - this may consist of a
 		* number of primitive sets, with multiple materials. Will also create
@@ -291,7 +291,7 @@ namespace ifcUtils
 		* start with).
 		*/
 		repo::lib::RepoUUID getTransformationNode(
-			const IfcSchema::IfcObjectDefinition* object, 
+			const IfcSchema::IfcObjectDefinition* object,
 			bool leafNode);
 
 		/*
