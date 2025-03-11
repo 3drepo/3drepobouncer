@@ -363,9 +363,6 @@ namespace ifcUtils
 			Metadata& metadata
 		);
 
-		// Use concepts rather than specify T as part of the iterator, so T can
-		// be deduced automatically.
-
 		template<typename T>
 		void collectMetadata(
 			T begin,

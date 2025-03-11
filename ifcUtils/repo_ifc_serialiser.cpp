@@ -62,72 +62,39 @@ static repo::lib::RepoMatrix repoMatrix(const ifcopenshell::geometry::taxonomy::
 	return repo::lib::RepoMatrix(m.ccomponents().data(), false);
 }
 
-static std::optional<repo::lib::RepoVariant> bakeIf(std::vector<repo::lib::RepoVariant> variants)
+template<typename T>
+static void stringify(std::stringstream& ss, const T& v)
 {
-	if (variants.size() < 1)
-	{
-		return std::nullopt;
-	}
-	else if (variants.size() < 2)
-	{
-		return variants[0];
-	}
-	else
-	{
-		std::stringstream ss;
+	ss << v;
+}
+
+static void stringify(std::stringstream& ss, const repo::lib::RepoVariant& v)
+{
+	ss << boost::apply_visitor(repo::lib::StringConversionVisitor(), v);
+}
+
+template<typename T>
+static void stringify(std::stringstream& ss, const std::vector<T>& v)
+{
+	if (v.size()) {
 		ss << "(";
-		for (size_t i = 0; i < variants.size(); i++) {
-			ss << boost::apply_visitor(repo::lib::StringConversionVisitor(), variants[i]);
-			if (i < variants.size() - 1) {
+		for (size_t i = 0; i < v.size(); i++) {
+			stringify(ss, v[i]);
+			if (i < v.size() - 1) {
 				ss << ", ";
 			}
 		}
 		ss << ")";
-		return ss.str();
 	}
 }
 
 template<typename T>
-static std::string stringifyVector(std::vector<T> arr)
+static repo::lib::RepoVariant stringify(std::vector<T> vec)
 {
+	repo::lib::RepoVariant v;
 	std::stringstream ss;
-	ss << "(";
-	for (size_t i = 0; i < arr.size(); i++) {
-		ss << arr[i];
-		if (i < arr.size() - 1) {
-			ss << ", ";
-		}
-	}
-	ss << ")";
-	return ss.str();
-}
-
-template<typename T>
-static repo::lib::RepoVariant stringify(std::vector<T> arr)
-{
-	repo::lib::RepoVariant v;
-	if (arr.size()) {
-		v = stringifyVector(arr);
-	}
-	return v;
-}
-
-template<typename T>
-static repo::lib::RepoVariant stringify(std::vector<std::vector<T>> arr)
-{
-	repo::lib::RepoVariant v;
-	if (arr.size()) {
-		std::stringstream ss;
-		ss << "(";
-		for (size_t i = 0; i < arr.size(); i++) {
-			ss << stringifyVector(arr[i]);
-			if (i < arr.size() - 1) {
-				ss << ", ";
-			}
-		}
-		ss << ")";
-		v = ss.str();
-	}
+	stringify(ss, vec);
+	v = ss.str();
 	return v;
 }
 
@@ -1136,13 +1103,27 @@ std::optional<repo::lib::RepoVariant> IfcSerialiser::getValue(boost::optional<ag
 std::optional<repo::lib::RepoVariant> IfcSerialiser::getValue(aggregate_of<IfcSchema::IfcValue>::ptr list)
 {
 	std::vector<repo::lib::RepoVariant> values;
-	for (auto& v : *list) {
+
+	for (auto& v : *list)
+	{
 		auto f = getValue(v);
 		if (f.v) {
 			values.push_back(*f.v);
 		}
 	}
-	return bakeIf(values);
+
+	if (values.size() < 1)
+	{
+		return std::nullopt;
+	}
+	else if (values.size() < 2)
+	{
+		return values[0];
+	}
+	else
+	{
+		return stringify(values);
+	}
 }
 
 IfcSerialiser::RepoValue IfcSerialiser::getValue(const IfcParse::declaration& type, const AttributeValue& value)
