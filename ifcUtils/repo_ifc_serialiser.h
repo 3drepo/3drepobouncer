@@ -138,13 +138,13 @@ namespace ifcUtils
 		};
 
 		/*
-		* Helper class to build metadata entries, including persistent a context for
+		* Helper class to build metadata entries, including a persistent context for
 		* grouping nested entries.
 		*
 		* In most recursive calls of collectMetadata, the helper can be passed by
 		* reference as the context will not change. When it does (e.g. grouping by
-		* PSet), one of the helper methods can be used to create a copy for that
-		* branch.
+		* PSet), one of the methods can be used to create a copy with the updated
+		* state to pass to that recursive branch.
 		*/
 
 		struct Metadata
