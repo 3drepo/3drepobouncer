@@ -137,7 +137,7 @@ std::unordered_map<std::string, repo::lib::RepoVariant> SceneUtils::NodeInfo::ge
 
 repo::lib::repo_material_t SceneUtils::NodeInfo::getMaterial()
 {
-	for (auto c : scene->getChildNodes(node, true))
+	for (auto& c : scene->getChildNodes(node, true))
 	{
 		if (dynamic_cast<MaterialNode*>(c.node)) {
 			return dynamic_cast<MaterialNode*>(c.node)->getMaterialStruct();

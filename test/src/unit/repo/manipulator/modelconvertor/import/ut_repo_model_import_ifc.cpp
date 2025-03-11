@@ -20,6 +20,7 @@
 #include <repo/manipulator/modelconvertor/import/repo_model_import_ifc.h>
 #include <repo/manipulator/modelconvertor/import/repo_model_import_manager.h>
 #include <repo_log.h>
+#include <repo/lib/datastructure/repo_structs.h>
 #include "../../../../repo_test_utils.h"
 #include "../../../../repo_test_database_info.h"
 #include "../../../../repo_test_scene_utils.h"
@@ -709,5 +710,39 @@ TEST(IFCModelImport, Unicode)
 			EXPECT_THAT(m.first.length(), Eq(22));
 			EXPECT_THAT(memcmp(m.first.c_str() + m.first.size() - 5, s, 5), Eq(0));
 		}
+	}
+}
+
+#pragma optimize("", off)
+
+TEST(IFCModelImport, Materials)
+{
+	auto scene = IfcModelImportUtils::ModelImportManagerImport("SimpleHouse", getDataPath(ifcSimpleHouse1));
+	SceneUtils utils(scene);
+
+	// The Toposolid does not have a material definition, so we should be assinging
+	// a sensible default
+
+	auto defaultIfcMaterial = repo::lib::repo_material_t::DefaultMaterial();
+	defaultIfcMaterial.shininess = 0.5;
+	defaultIfcMaterial.shininessStrength = 0.5;
+
+	for (auto& m : utils.findNodeByMetadata("Name", "Toposolid:Toposolid 1:328663").getMeshes())
+	{
+		EXPECT_THAT(m.getMaterial(), Eq(defaultIfcMaterial));
+	}
+
+	auto brickMaterial = repo::lib::repo_material_t::DefaultMaterial();
+	brickMaterial.diffuse = repo::lib::repo_color3d_t(0.666666687, 0.392156869, 0.411764711);
+	brickMaterial.ambient = repo::lib::repo_color3d_t();
+	brickMaterial.specular = repo::lib::repo_color3d_t(0.5, 0.5, 0.5);
+	brickMaterial.emissive = repo::lib::repo_color3d_t(0.5, 0.5, 0.5);
+	brickMaterial.opacity = 1;
+	brickMaterial.shininess = 128;
+	brickMaterial.shininessStrength = 0.5;
+
+	for (auto& m : utils.findNodeByMetadata("Name", "Basic Wall:Wall-Ext_102Bwk-75Ins-100LBlk-12P:326450").getMeshes())
+	{
+		EXPECT_THAT(m.getMaterial(), Eq(brickMaterial));
 	}
 }
