@@ -139,8 +139,9 @@ TEST(IFCModelImport, RelDecomposes)
 	* 
 	* We support Nesting and Aggregation.
 	* 
-	* IFCOS will use Voids to build the geometry, but we do not represent Voids in
-	* the tree or collect metadata for them. The same is true for Projections.
+	* IFCOS will use IfcRelVoids to build the geometry, but we do not represent
+	* Openings the tree or collect metadata for them. The same is true for
+	* IfcRelProjectsElements.
 	*/
 
 	auto scene = IfcModelImportUtils::ModelImportManagerImport("SimpleHouse", getDataPath(ifcSimpleHouse1));
@@ -193,46 +194,98 @@ TEST(IFCModelImport, RelAssociatesClassification)
 	}
 }
 
-TEST(IFCModelImport, RelConnects)
-{
-	// RelConnects are ignored for now.
-}
-
 TEST(IFCModelImport, RelDeclares)
 {
-	// We do not currently process IfcRelDeclares - we assume only one IfcProject
-	// exists. IFCOS should implicitly consider it when iterating the geometry
-	// however.
-}
+	/*
+	* IfcRelDeclares is used to associate a set of IfcObjects and/or
+	* IfcPropertyDefinitions to an IfcContext (IfcProject) so that they take that
+	* context's units and presentation.
+	* 
+	* This is ignored as we only support one context and set of units.
+	*/
 
-TEST(IFCModelImport, RelDefinesByType)
-{
-	// IfcRelDefinesByType is used to declare an IfcTypeObject as a superclass of
-	// an IfcObject; the entity should inhert (and can override) the type object's
-	// properties. This relationship does not affect the tree.
+	SUCCEED();
 }
 
 TEST(IFCModelImport, RelDefinesByObject)
 {
-	// IfcRelDefinesByObject allows an entity to inhert the properties of another
-	// object, like a superclass. Related objects take the relating objects
-	// property sets and represetnations. This behaves similarly to DefinesByType,
-	// except that in this case the super-object is an entity, rather than a
-	// dedicated type object.
+	/*
+	* IfcRelDefinesByObject allows using another object as a prototype for multiple
+	* instances. Reflected objects take the Declaring Object's Property Sets and
+	* Representations.
+	* 
+	* Unlike DefinesByType, the Reflected object exists as a distinct tangible (if
+	* represented) entity in its own right.
+	*/
+
+	auto scene = IfcModelImportUtils::ModelImportManagerImport("SimpleHouse", getDataPath(ifcSimpleHouse_definesByObject));
+	SceneUtils utils(scene);
+
+	auto node = utils.findNodeByMetadata("Name", "Planting_RPC_Tree_Deciduous:Scarlet_Oak-12.5_Meters:328305");
+	auto metadata = node.getMetadata();
+
+	EXPECT_THAT(metadata["Pset_BuildingElementProxyCommon::Reference"], Vs("Scarlet_Oak-12.5_Meters"));
+	EXPECT_THAT(metadata["Pset_EnvironmentalImpactIndicators::Reference"], Vs("Scarlet_Oak-12.5_Meters"));
+
+	EXPECT_THAT(metadata.find("PSet_1::Length (mm)"), Eq(metadata.end()));
+
+	EXPECT_THAT(metadata.find("PSet_2::Energy (J)"), Eq(metadata.end()));
+
+
+	node = utils.findNodeByMetadata("Name", "P0");
+	metadata = node.getMetadata();
+
+	EXPECT_THAT(metadata["Pset_BuildingElementProxyCommon::Reference"], Vs("Scarlet_Oak-12.5_Meters"));
+	EXPECT_THAT(metadata["Pset_EnvironmentalImpactIndicators::Reference"], Vs("Scarlet_Oak-12.5_Meters"));
+
+	EXPECT_THAT(metadata["PSet_1::Length (mm)"], Vq((double)18.3));
+	EXPECT_THAT(metadata["PSet_1::Power (W)"], Vq((double)-54));
+
+	EXPECT_THAT(metadata["PSet_2::Energy (J)"], Vq((double)-51));
+	EXPECT_THAT(metadata["PSet_2::Force (N)"], Vq((double)238.3));
 }
 
-TEST(IFCModelImport, RelDefinesByProperties)
+TEST(IFCModelImport, RelDefinesByType)
 {
-	// IfcRelDefinesByProperties is how property sets are associated with
-	// instances.
+	/*
+	* IfcRelDefinesByType is used to declare that an object should inhert the
+	* properties of an IfcTypeObject, like a superclass.
+	* 
+	* If a Property with the same name exists in the occuring object, then the
+	* occuring object's value takes precedence.
+	*/
+
+	auto scene = IfcModelImportUtils::ModelImportManagerImport("SimpleHouse", getDataPath(ifcSimpleHouse_definesByType));
+	SceneUtils utils(scene);
+	auto metadata = utils.findNodeByMetadata("Name", "P0").getMetadata();
+
+	EXPECT_THAT(metadata["PSet_1::Length (mm)"], Vq((double)18.3));
+	EXPECT_THAT(metadata["PSet_1::Power (W)"], Vq((double)21.3));
+
+	EXPECT_THAT(metadata["PSet_2::Energy (J)"], Vq((double)38));
+	EXPECT_THAT(metadata["PSet_2::Force (N)"], Vq((double)238.3));
+
+	EXPECT_THAT(metadata["PSet_3::Current (A)"], Vq((double)28.3));
+	EXPECT_THAT(metadata["PSet_3::Resistance (Ω)"], Vq((double)-11));
 }
 
 TEST(IFCModelImport, RelDefinesByTemplate)
 {
-	// IfcRelDefinesByTemplate allows a template of a property set to be declared
-	// for multiple property set definitions. The template may include things like
-	// the name, description and possibly contained properties. The relationship
-	// is hierarchical in the object oriented sense. This does not affect the tree.
+	/*
+	* IfcRelDefinesByTemplate allows declaring that a Property Set is of a given
+	* IfcPropertySetTemplate. IfcPropertySetTemplates contain IfcPropertyTemplates.
+	* 
+	* Templates can hold information such as Names and Descriptions, as well as
+	* lists of Properties the instantations of the Template should hold.
+	* 
+	* The arrangement does not affect the tree.
+	* 
+	* Currently this way of declaring Properties is redundant, as we have not seen
+	* a property that does not hold the relevant information locally, even if
+	* templated (see for example, the attributes of the Predefined Property Sets).
+	*/
+
+	SUCCEED();
 }
 
 TEST(IFCModelImport, ValuesAndUnits)

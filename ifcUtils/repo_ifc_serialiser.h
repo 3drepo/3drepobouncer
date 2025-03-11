@@ -147,9 +147,11 @@ namespace ifcUtils
 			std::unordered_map<std::string, repo::lib::RepoVariant>& metadata;
 			std::string prefix;
 			std::string suffix;
+			bool overwrite;
 
 			Metadata(std::unordered_map<std::string, repo::lib::RepoVariant>& map)
-				:metadata(map)
+				:metadata(map),
+				overwrite(true)
 			{
 			}
 
@@ -162,6 +164,12 @@ namespace ifcUtils
 				else {
 					this->suffix = suffix;
 				}
+			}
+
+			Metadata(Metadata& metadata, bool overwrite)
+				:Metadata(metadata)
+			{
+				this->overwrite = overwrite;
 			}
 
 			void setGroup(const std::string& group) {
@@ -179,6 +187,25 @@ namespace ifcUtils
 
 			repo::lib::RepoVariant& operator()(const std::string& name, const std::string& prefix, const std::string& units)
 			{
+				return metadata[getKey(name, prefix, units)];
+			}
+
+			void setValue(const std::string& name, RepoValue value)
+			{
+				if (value.v) {
+					auto key = getKey(name, prefix, value.units);
+					if (!overwrite && metadata.find(key) != metadata.end()) {
+						return;
+					}
+					else {
+						metadata[key] = *value.v;
+					}
+				}
+			}
+
+		private:
+			std::string getKey(const std::string& name, const std::string& prefix, const std::string& units)
+			{
 				std::string fullName;
 				if (!prefix.empty()) {
 					fullName = prefix + "::" + name;
@@ -192,14 +219,7 @@ namespace ifcUtils
 				if (!units.empty()) {
 					fullName += " (" + units + ")";
 				}
-				return metadata[fullName];
-			}
-
-			void setValue(const std::string& name, RepoValue value)
-			{
-				if (value.v) {
-					(*this)(name, prefix, value.units) = *value.v;
-				}
+				return fullName;
 			}
 		};
 

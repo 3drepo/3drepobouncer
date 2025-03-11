@@ -1301,16 +1301,18 @@ void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Met
 		// in the tree, they are combined into the metadata of the top-level node.
 
 		auto related = o->RelatedObjects();
-		collectMetadata(related->begin(), related->end(), metadata);
+		Metadata noOverwrite(metadata, false);
+		collectMetadata(related->begin(), related->end(), noOverwrite);
 	}
 	else if (auto o = object->as<IfcSchema::IfcRelDefinesByType>())
 	{
-		// IfcRelDefinesByType allows declaring a prototype object to hold common
-		// information such as property sets.
-
-		auto props = o->RelatingType()->HasPropertySets().get_value_or({});
-		if (props) {
-			collectMetadata(props->begin(), props->end(), metadata);
+		if (auto type = o->RelatingType()) {
+			Metadata noOverwrite(metadata, false);
+			if (auto props = type->HasPropertySets().get_value_or({})) {
+				collectMetadata(props->begin(), props->end(), noOverwrite);
+			}
+			auto related = file->getInverse(type->id(), &(IfcSchema::IfcRelDefinesByProperties::Class()), -1);
+			collectMetadata(related->begin(), related->end(), noOverwrite);
 		}
 	}
 #ifdef SCHEMA_HAS_IfcRelDefinesByTemplate
@@ -1322,7 +1324,10 @@ void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Met
 #ifdef SCHEMA_HAS_IfcRelDefinesByObject
 	else if (auto o = object->as<IfcSchema::IfcRelDefinesByObject>())
 	{
-		//throw std::exception();
+		if (auto relating = o->RelatingObject()) {
+			auto props = file->getInverse(relating->id(), &(IfcSchema::IfcRelDefinesByProperties::Class()), -1);
+			collectMetadata(props->begin(), props->end(), metadata);
+		}
 	}
 #endif
 	else if (auto o = object->as<IfcSchema::IfcRelAssociatesClassification>())
