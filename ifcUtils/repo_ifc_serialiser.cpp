@@ -736,9 +736,14 @@ const repo::lib::repo_material_t& IfcSerialiser::resolveMaterial(const ifcopensh
 	{
 		repo::lib::repo_material_t material = repo::lib::repo_material_t::DefaultMaterial();
 
-		material.diffuse = repoColor(ptr->get_color());
+		if (ptr->get_color()) {
+			material.diffuse = repoColor(ptr->get_color());
+		}
 
-		material.specular = repoColor(ptr->specular);
+		if (ptr->specular) {
+			material.specular = repoColor(ptr->specular);
+		}
+
 		if (ptr->has_specularity())
 		{
 			material.shininess = ptr->specularity;
@@ -747,6 +752,7 @@ const repo::lib::repo_material_t& IfcSerialiser::resolveMaterial(const ifcopensh
 		{
 			material.shininess = 0.5f;
 		}
+
 		material.shininessStrength = 0.5f;
 
 		if (ptr->has_transparency()) {
@@ -1318,7 +1324,7 @@ void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Met
 #ifdef SCHEMA_HAS_IfcRelDefinesByTemplate
 	else if (auto o = object->as<IfcSchema::IfcRelDefinesByTemplate>())
 	{
-		//throw std::exception();
+		// Not currently used
 	}
 #endif
 #ifdef SCHEMA_HAS_IfcRelDefinesByObject
