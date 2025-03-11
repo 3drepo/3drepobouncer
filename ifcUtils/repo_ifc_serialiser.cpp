@@ -1221,7 +1221,7 @@ void IfcSerialiser::collectAttributes(const IfcUtil::IfcBaseEntity* object, Meta
 
 			if (value.type() == IfcUtil::ArgumentType::Argument_ENTITY_INSTANCE)
 			{
-				Metadata suffixed(metadata, attribute->name());
+				auto suffixed = metadata.addSuffix(attribute->name());
 				collectMetadata((const IfcUtil::IfcBaseClass*)value, suffixed);
 			}
 			else if (value.type() == IfcUtil::ArgumentType::Argument_AGGREGATE_OF_ENTITY_INSTANCE)
@@ -1229,7 +1229,7 @@ void IfcSerialiser::collectAttributes(const IfcUtil::IfcBaseEntity* object, Meta
 				auto refs = value.operator boost::shared_ptr<aggregate_of_instance>();
 				auto i = 0;
 				for (auto& ref : *refs) {
-					Metadata suffixed(metadata, attribute->name() + " " + std::to_string(i++));
+					auto suffixed = metadata.addSuffix(attribute->name() + " " + std::to_string(i++));
 					collectMetadata((const IfcUtil::IfcBaseClass*)ref, suffixed);
 				}
 			}
@@ -1288,13 +1288,13 @@ void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Met
 		// in the tree, they are combined into the metadata of the top-level node.
 
 		auto related = o->RelatedObjects();
-		Metadata noOverwrite(metadata, false);
+		auto noOverwrite = metadata.setOverwrite(false);
 		collectMetadata(related->begin(), related->end(), noOverwrite);
 	}
 	else if (auto o = object->as<IfcSchema::IfcRelDefinesByType>())
 	{
 		if (auto type = o->RelatingType()) {
-			Metadata noOverwrite(metadata, false);
+			auto noOverwrite = metadata.setOverwrite(false);
 			if (auto props = type->HasPropertySets().get_value_or({})) {
 				collectMetadata(props->begin(), props->end(), noOverwrite);
 			}
@@ -1326,26 +1326,26 @@ void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Met
 		if (o->ReferencedSource()) {
 			collectMetadata(o->ReferencedSource(), metadata);
 		} else {
-			metadata.setGroup(o->Name().get_value_or(o->declaration().name()));
-			collectAttributes(o, metadata);
+			auto ctx = metadata.setGroup(o->Name().get_value_or(o->declaration().name()));
+			collectAttributes(o, ctx);
 		}
 	}
 	else if (auto o = object->as<IfcSchema::IfcClassification>())
 	{
-		metadata.setGroup(o->Name());
-		collectAttributes(o, metadata);
+		auto ctx = metadata.setGroup(o->Name());
+		collectAttributes(o, ctx);
 	}
 	else if (auto o = object->as<IfcSchema::IfcPropertySet>())
 	{
-		metadata.setGroup(o->Name().get_value_or(o->declaration().name()));
+		auto ctx = metadata.setGroup(o->Name().get_value_or(o->declaration().name()));
 		auto props = o->HasProperties();
-		collectMetadata(props->begin(), props->end(), metadata);
+		collectMetadata(props->begin(), props->end(), ctx);
 	}
 #ifdef SCHEMA_HAS_IfcPreDefinedPropertySet
 	else if (auto o = object->as<IfcSchema::IfcPreDefinedPropertySet>())
 	{
-		metadata.setGroup(o->Name().get_value_or(o->declaration().name()));
-		collectAttributes(o, metadata);
+		auto ctx = metadata.setGroup(o->Name().get_value_or(o->declaration().name()));
+		collectAttributes(o, ctx);
 	}
 #endif
 #ifdef SCHEMA_HAS_IfcPreDefinedProperties
@@ -1364,8 +1364,8 @@ void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Met
 		// unrolled and an identifier suffixed to the key.
 
 		if (auto props = o->HasProperties()) {
-			Metadata suffixedMetadata(metadata, o->UsageName());
-			collectMetadata(props->begin(), props->end(), suffixedMetadata);
+			Metadata ctx = metadata.addSuffix(o->UsageName());
+			collectMetadata(props->begin(), props->end(), ctx);
 		}
 	}
 	else if (auto o = object->as<IfcSchema::IfcPropertyBoundedValue>())
@@ -1424,13 +1424,13 @@ void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Met
 #ifdef SCHEMA_HAS_IfcElementQuantity
 	else if (auto o = object->as<IfcSchema::IfcElementQuantity>())
 	{
-		metadata.setGroup(o->Name().get_value_or({}));
+		auto ctx = metadata.setGroup(o->Name().get_value_or(o->declaration().name()));
 		auto method = o->MethodOfMeasurement().get_value_or({});
 		if (!method.empty()) {
-			metadata("MethodOfMeasurement") = method;
+			ctx("MethodOfMeasurement") = method;
 		}
 		auto quantities = o->Quantities();
-		collectMetadata(quantities->begin(), quantities->end(), metadata);
+		collectMetadata(quantities->begin(), quantities->end(), ctx);
 	}
 #endif
 	else if (auto o = object->as<IfcSchema::IfcPhysicalSimpleQuantity>())
@@ -1451,7 +1451,7 @@ void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Met
 	else if (auto o = object->as<IfcSchema::IfcPhysicalComplexQuantity>())
 	{
 		auto quantities = o->HasQuantities();
-		Metadata suffix(metadata, o->Usage().get_value_or(o->Name()));
+		auto suffix = metadata.addSuffix(o->Usage().get_value_or(o->Name()));
 		collectMetadata(quantities->begin(), quantities->end(), suffix);
 	}
 }
@@ -1461,16 +1461,18 @@ For some types, build explicit metadata entries
 */
 void IfcSerialiser::collectAdditionalAttributes(const IfcSchema::IfcObjectDefinition* object, Metadata& metadata)
 {
+	auto location = metadata.setGroup(LOCATION_LABEL);
+
 	if (auto project = dynamic_cast<const IfcSchema::IfcProject*>(object)) {
-		metadata(PROJECT_LABEL, LOCATION_LABEL, {}) = project->Name().get_value_or("(" + object->declaration().name() + ")");
+		location(PROJECT_LABEL) = project->Name().get_value_or("(" + object->declaration().name() + ")");
 	}
 
 	if (auto building = dynamic_cast<const IfcSchema::IfcBuilding*>(object)) {
-		metadata(BUILDING_LABEL, LOCATION_LABEL, {}) = building->Name().get_value_or("(" + object->declaration().name() + ")");
+		location(BUILDING_LABEL) = building->Name().get_value_or("(" + object->declaration().name() + ")");
 	}
 
 	if (auto storey = dynamic_cast<const IfcSchema::IfcBuildingStorey*>(object)) {
-		metadata(STOREY_LABEL, LOCATION_LABEL, {}) = storey->Name().get_value_or("(" + object->declaration().name() + ")");
+		location(STOREY_LABEL) = storey->Name().get_value_or("(" + object->declaration().name() + ")");
 	}
 }
 

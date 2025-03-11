@@ -138,62 +138,62 @@ namespace ifcUtils
 		};
 
 		/*
-		* Helper class to build metadata entries, including a persistent context for
-		* grouping, for dealing with nested property sets.
+		* Helper class to build metadata entries, including persistent a context for
+		* grouping nested entries.
+		*
+		* In most recursive calls of collectMetadata, the helper can be passed by
+		* reference as the context will not change. When it does (e.g. grouping by
+		* PSet), one of the helper methods can be used to create a copy for that
+		* branch.
 		*/
 
 		struct Metadata
 		{
+		private:
 			std::unordered_map<std::string, repo::lib::RepoVariant>& metadata;
 			std::string prefix;
 			std::string suffix;
 			bool overwrite;
 
+		public:
 			Metadata(std::unordered_map<std::string, repo::lib::RepoVariant>& map)
 				:metadata(map),
 				overwrite(true)
 			{
 			}
 
-			Metadata(Metadata& metadata, const std::string& suffix)
-				:Metadata(metadata)
-			{
-				if (!metadata.suffix.empty()) {
-					this->suffix = metadata.suffix + ":" + suffix;
+			Metadata addSuffix(const std::string& suffix) {
+				auto copy = *this;
+				if (!copy.suffix.empty()) {
+					copy.suffix = this->suffix + ":" + suffix;
 				}
 				else {
-					this->suffix = suffix;
+					copy.suffix = suffix;
 				}
+				return copy;
 			}
 
-			Metadata(Metadata& metadata, bool overwrite)
-				:Metadata(metadata)
-			{
-				this->overwrite = overwrite;
+			Metadata setGroup(const std::string& group) {
+				auto copy = *this;
+				copy.prefix = group;
+				return copy;
 			}
 
-			void setGroup(const std::string& group) {
-				prefix = group;
-			}
-
-			const std::string& getGroup() {
-				return prefix;
+			Metadata setOverwrite(bool overwrite) {
+				auto copy = *this;
+				copy.overwrite = overwrite;
+				return copy;
 			}
 
 			repo::lib::RepoVariant& operator()(const std::string& name)
 			{
-				return (*this)(name, prefix, {});
-			}
-
-			repo::lib::RepoVariant& operator()(const std::string& name, const std::string& prefix, const std::string& units)
-			{
-				return metadata[getKey(name, prefix, units)];
+				return metadata[getKey(name, {})];
 			}
 
 			void setValue(const std::string& name, RepoValue value)
 			{
 				if (value.v) {
-					auto key = getKey(name, prefix, value.units);
+					auto key = getKey(name, value.units);
 					if (!overwrite && metadata.find(key) != metadata.end()) {
 						return;
 					}
@@ -204,7 +204,7 @@ namespace ifcUtils
 			}
 
 		private:
-			std::string getKey(const std::string& name, const std::string& prefix, const std::string& units)
+			std::string getKey(const std::string& name, const std::string& units)
 			{
 				std::string fullName;
 				if (!prefix.empty()) {
