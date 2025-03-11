@@ -33,8 +33,6 @@
 
 #include <ifcparse/IfcEntityInstanceData.h>
 
-#pragma optimize("",off)
-
 // 26812 is a warning about preferring enum class, but these defs are in IFCOS so
 // there is nothing we can do about them.
 #pragma warning(suppress: 26812)
@@ -421,8 +419,8 @@ std::string IfcSerialiser::getUnitsLabel(const std::string& unitName)
 	std::string data = unitName;
 	repo::lib::toLower(data);
 
-	// Some conversion unit descriptions are identical to the units. We only check
-	// below for those we have known symbols for.
+	// Some conversion unit names are identical to the units themselves. We only
+	// check below for those we have different symbols for.
 
 	if (data == "inch") return "in";
 	if (data == "foot") return "ft";
@@ -491,8 +489,8 @@ std::string IfcSerialiser::getUnitsLabel(const IfcSchema::IfcUnit* unit)
 			auto base = getUnitsLabel(e->Unit());
 			if (!base.empty())
 			{
-				auto existing = removeExponentFromString(base);
-				ss << multiplier << base << getExponentAsString(e->Exponent() * existing);
+				auto ex = removeExponentFromString(base);
+				ss << multiplier << base << getExponentAsString(e->Exponent() * ex);
 			}
 			else
 			{
@@ -811,8 +809,9 @@ const IfcSchema::IfcObjectDefinition* IfcSerialiser::getParent(const IfcSchema::
 }
 
 /*
-* If this entity sit under an empty node in the tree that doesn't exist in
-* the Ifc, but exists in the Repo tree to group entities by type.
+* Decides based on the parent-object relationship, whether to insert an
+* additional branch node in order to group child objects by their Ifc type
+* in our tree.
 */
 bool IfcSerialiser::shouldGroupByType(const IfcSchema::IfcObjectDefinition* object, const typename IfcSchema::IfcObjectDefinition* parent)
 {
@@ -847,17 +846,17 @@ std::shared_ptr<repo::core::model::TransformationNode> IfcSerialiser::createTran
 	return builder->addNode(transform);;
 }
 
-repo::lib::RepoUUID IfcSerialiser::getTransformationNode(const IfcSchema::IfcObjectDefinition* parent, const IfcParse::entity& type)
+repo::lib::RepoUUID IfcSerialiser::getTransformationNode(const IfcSchema::IfcObjectDefinition* parent, const IfcParse::entity& typeGroup)
 {
 	auto parentId = getTransformationNode(parent, false);
-	auto groupId = parent->file_->getMaxId() + parent->id() + type.type() + 1;
+	auto groupId = parent->file_->getMaxId() + parent->id() + typeGroup.type() + 1;
 	auto& nodes = sharedIds[groupId];
 
 	if (nodes.branchSharedId) {
 		return nodes.branchSharedId;
 	}
 
-	auto transform = repo::core::model::RepoBSONFactory::makeTransformationNode({}, type.name(), { parentId });
+	auto transform = repo::core::model::RepoBSONFactory::makeTransformationNode({}, typeGroup.name(), { parentId });
 	builder->addNode(transform);
 
 	nodes.branchSharedId = transform.getSharedID();
@@ -877,10 +876,11 @@ repo::lib::RepoUUID IfcSerialiser::getTransformationNode(const IfcSchema::IfcObj
 	// Ifc Objects may have both geometry representations and children, but this is
 	// not supported in our tree.
 
-	// As such, we allow each object to create up to two transformation nodes, which
-	// are built on-demand. Depending on which is created first this can be a simple
-	// addition, but in the most complex involves re-parenting existing leaf nodes
-	// to insert a new common parent.
+	// As such, we allow each object to create up to two transformation nodes to
+	// represent it: a leaf node to hold only its meshes, and a branch node to hold
+	// its children. These nodes are are built on-demand. Depending on which is
+	// created first this can be a simple addition, but in the most complex involves
+	// re-parenting existing leaf nodes to insert a new common parent.
 
 	if (leafNode && nodes.leafNode)
 	{
@@ -1572,7 +1572,9 @@ void IfcSerialiser::updateUnits()
 * The custom filter object is used with the geometry iterator to filter out
 * any products we do not want.
 *
-* This implementation ignores Openings.
+* This implementation ignores Openings, so the openings will be subtracted from
+* the host geometry, but will not exist as entities in their own right in the
+* tree.
 *
 * IfcSpaces are imported, but appear under their own groups, and so are handled
 * further in.

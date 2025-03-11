@@ -179,6 +179,7 @@ option (REPO_SVG_EXPORT_SUPPORT "If the customised Svg Exporter is present and c
 # use the same instance.
 add_subdirectory(log)
 
+# Build IFCUtils
 add_subdirectory(ifcUtils)
 message("IFC Utils: " ${IFCUTILS_INCLUDE_DIR} ", " ${IFCUTILS_LIBRARIES})
 
