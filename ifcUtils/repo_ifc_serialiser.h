@@ -162,7 +162,7 @@ namespace ifcUtils
 			{
 			}
 
-			Metadata addSuffix(const std::string& suffix) {
+			Metadata addSuffix(const std::string& suffix) const {
 				auto copy = *this;
 				if (!copy.suffix.empty()) {
 					copy.suffix = this->suffix + ":" + suffix;
@@ -173,13 +173,13 @@ namespace ifcUtils
 				return copy;
 			}
 
-			Metadata setGroup(const std::string& group) {
+			Metadata setGroup(const std::string& group) const {
 				auto copy = *this;
 				copy.prefix = group;
 				return copy;
 			}
 
-			Metadata setOverwrite(bool overwrite) {
+			Metadata setOverwrite(bool overwrite) const {
 				auto copy = *this;
 				copy.overwrite = overwrite;
 				return copy;

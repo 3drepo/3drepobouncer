@@ -122,7 +122,7 @@ static std::optional<repo::lib::RepoVariant> repoVariant(const AttributeValue& a
 			v = false;
 		}
 		else {
-			v = "UNKNOWN";
+			v = std::string("UNKNOWN");
 		}
 		return v;
 	}

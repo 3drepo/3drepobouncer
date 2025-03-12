@@ -37,14 +37,25 @@ std::unique_ptr<AbstractIfcSerialiser> IfcUtils::CreateSerialiser(std::string fi
 		throw repo::lib::RepoImportException(REPOERR_MODEL_FILE_READ);
 	}
 
+	// The Ifc Schema (https://technical.buildingsmart.org/standards/ifc/ifc-schema-specifications/)
+	// introduces breaking changes in minor revisions, so each minor revision needs
+	// its own Schema. Addendums are upwards compatiable, while Corrigendums do not
+	// change the schema.
+
 	auto schema = file->schema()->name();
-	if (schema == "IFC2X3") {
+	if (schema == "IFC2X3")
+	{
 		return std::make_unique<Ifc2x3Serialiser>(std::move(file));
 	}
-	else if (schema == "IFC4") {
+	else if (schema == "IFC4")
+	{
 		return std::make_unique<Ifc4Serialiser>(std::move(file));
 	}
-	else if (schema == "IFC4X3_ADD2") {
+	else if (schema == "IFC4x3" ||
+		schema == "IFC4x3_ADD1" ||
+		schema == "IFC4X3_ADD2" ||
+		schema == "IFC4X3_TC1")
+	{
 		return std::make_unique<Ifc4x3_add2Serialiser>(std::move(file));
 	}
 	else
