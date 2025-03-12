@@ -22,7 +22,7 @@ include_directories(
 )
 
 if(NOT SCHEMA_VERSIONS)
-	set(SCHEMA_VERSIONS "2x3" "4" "4x3_add2")
+	set(SCHEMA_VERSIONS "2x3" "4" "4x1" "4x2" "4x3_add2")
 endif()
 
 
