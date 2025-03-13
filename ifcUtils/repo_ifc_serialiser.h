@@ -121,6 +121,8 @@ namespace ifcUtils
 
 		void configureSettings();
 
+		void setLevelOfDetail(int lod);
+
 		repo::lib::RepoBounds getBounds();
 
 		const repo::lib::repo_material_t& resolveMaterial(

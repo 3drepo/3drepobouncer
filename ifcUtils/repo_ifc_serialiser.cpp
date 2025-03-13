@@ -676,6 +676,35 @@ void IfcSerialiser::configureSettings()
 	settings.get<ifcopenshell::geometry::settings::GenerateUvs>().value = true;
 }
 
+void IfcSerialiser::setLevelOfDetail(int lod)
+{
+	std::pair<double, double> params = { 0.001, 0.5 };
+
+	switch (lod) {
+	case 1:
+		params = { 1000, 1 };
+		break;
+	case 2:
+		params = { 0.5, 0.698132 };
+		break;
+	case 3:
+		params = { 0.1, 0.25 };
+		break;
+	case 4:
+		params = { 0.01, 0.174 };
+		break;
+	case 5:
+		params = { 0.005, 0.05 };
+		break;
+	case 6:
+		params = { 0.0005, 0.0174 };
+		break;
+	}
+
+	settings.get<ifcopenshell::geometry::settings::MesherLinearDeflection>().value = std::get<0>(params);
+	settings.get<ifcopenshell::geometry::settings::MesherAngularDeflection>().value = std::get<1>(params);
+}
+
 void IfcSerialiser::updateBounds()
 {
 	auto bounds = getBounds();

@@ -66,6 +66,8 @@ bool IFCModelImport::importModel(std::string filePath, std::shared_ptr<repo::cor
 
 	auto serialiser = ifcUtils::IfcUtils::CreateSerialiser(filePath);
 
+	serialiser->setLevelOfDetail(settings.getLevelOfDetail());
+
 	// Consider setting an HDF5 cache file here to reduce memory
 	// Check out IfcConvert.cpp ln 980
 

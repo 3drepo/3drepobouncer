@@ -28,5 +28,7 @@ namespace ifcUtils
 		* Import all elements into the RepoSceneBuilder
 		*/
 		virtual void import(repo::manipulator::modelutility::RepoSceneBuilder* builder) = 0;
+
+		virtual void setLevelOfDetail(int lod) = 0;
 	};
 }
