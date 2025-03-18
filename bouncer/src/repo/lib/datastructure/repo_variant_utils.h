@@ -21,6 +21,7 @@
 
 #include <string>
 #include "boost/variant.hpp"
+#include <boost/variant/static_visitor.hpp>
 #include "repo_variant.h"
 #include <ctime>
 #include <iostream>

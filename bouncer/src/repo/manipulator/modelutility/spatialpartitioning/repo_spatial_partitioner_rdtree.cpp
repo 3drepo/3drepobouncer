@@ -19,6 +19,7 @@
 #include "../../../core/model/bson/repo_node_mesh.h"
 #include "../../../core/model/bson/repo_node_supermesh.h"
 
+using namespace repo::lib;
 using namespace repo::manipulator::modelutility;
 
 RDTreeSpatialPartitioner::RDTreeSpatialPartitioner(
@@ -97,7 +98,7 @@ std::vector<repo_mesh_entry_t> RDTreeSpatialPartitioner::createMeshEntries()
 
 std::shared_ptr<repo_partitioning_tree_t> RDTreeSpatialPartitioner::createPartition(
 	const std::vector<repo_mesh_entry_t>              &meshes,
-	const repo::PartitioningTreeType                &axis,
+	const PartitioningTreeType                &axis,
 	const uint32_t                            &depthCount,
 	const uint32_t                            &failCount,
 	const std::vector<std::vector<float>>     &currentSection)
@@ -122,22 +123,22 @@ std::shared_ptr<repo_partitioning_tree_t> RDTreeSpatialPartitioner::createPartit
 	std::vector<repo_mesh_entry_t> lMeshes, rMeshes;
 	sortMeshes(meshes, axis, currentSection, median, lMeshes, rMeshes);
 
-	repo::PartitioningTreeType nextAxis;
+	PartitioningTreeType nextAxis;
 	int32_t axisIdx;
 	//Enum classes are not guaranteed to be contiguous
 	switch (axis)
 	{
-	case repo::PartitioningTreeType::PARTITION_X:
+	case PartitioningTreeType::PARTITION_X:
 		axisIdx = 0;
-		nextAxis = repo::PartitioningTreeType::PARTITION_Y;
+		nextAxis = PartitioningTreeType::PARTITION_Y;
 		break;
-	case repo::PartitioningTreeType::PARTITION_Y:
+	case PartitioningTreeType::PARTITION_Y:
 		axisIdx = 1;
-		nextAxis = repo::PartitioningTreeType::PARTITION_Z;
+		nextAxis = PartitioningTreeType::PARTITION_Z;
 		break;
-	case repo::PartitioningTreeType::PARTITION_Z:
+	case PartitioningTreeType::PARTITION_Z:
 		axisIdx = 2;
-		nextAxis = repo::PartitioningTreeType::PARTITION_X;
+		nextAxis = PartitioningTreeType::PARTITION_X;
 		break;
 	default:
 		//Only thing left is LEAF, which should never be passed in in the first place
@@ -183,7 +184,7 @@ std::shared_ptr<repo_partitioning_tree_t> RDTreeSpatialPartitioner::partitionSce
 				((repo::lib::RepoVector3D)bbox.max()).toStdVector()
 			};
 
-			pTree = createPartition(meshEntries, repo::PartitioningTreeType::PARTITION_X, 0, 0, currentSection);
+			pTree = createPartition(meshEntries, PartitioningTreeType::PARTITION_X, 0, 0, currentSection);
 		}
 		else
 		{
@@ -200,7 +201,7 @@ std::shared_ptr<repo_partitioning_tree_t> RDTreeSpatialPartitioner::partitionSce
 
 void RDTreeSpatialPartitioner::sortMeshes(
 	const std::vector<repo_mesh_entry_t> &meshes,
-	const repo::PartitioningTreeType   &axis,
+	const PartitioningTreeType   &axis,
 	const std::vector<std::vector<float>>    &currentSection,
 	float                        &median,
 	std::vector<repo_mesh_entry_t>       &lMeshes,
@@ -212,21 +213,21 @@ void RDTreeSpatialPartitioner::sortMeshes(
 
 	//Sort the meshes and determine axis index
 	switch (axis){
-	case repo::PartitioningTreeType::PARTITION_X:
+	case PartitioningTreeType::PARTITION_X:
 		axisIdx = 0;
 		std::sort(sortedMeshes.begin(), sortedMeshes.end(),
 			[](repo_mesh_entry_t const& a, repo_mesh_entry_t const& b)
 		{ return a.mid[0] < b.mid[0]; }
 		);
 		break;
-	case repo::PartitioningTreeType::PARTITION_Y:
+	case PartitioningTreeType::PARTITION_Y:
 		axisIdx = 1;
 		std::sort(sortedMeshes.begin(), sortedMeshes.end(),
 			[](repo_mesh_entry_t const& a, repo_mesh_entry_t const& b)
 		{ return a.mid[1] < b.mid[1];  }
 		);
 		break;
-	case repo::PartitioningTreeType::PARTITION_Z:
+	case PartitioningTreeType::PARTITION_Z:
 		axisIdx = 2;
 		std::sort(sortedMeshes.begin(), sortedMeshes.end(),
 			[](repo_mesh_entry_t const& a, repo_mesh_entry_t const& b)

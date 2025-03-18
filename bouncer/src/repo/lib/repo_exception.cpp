@@ -76,3 +76,33 @@ RepoInvalidLicenseException::RepoInvalidLicenseException(const std::string& msg)
 {
 	errorCode = ERRCODE_REPO_LICENCE_INVALID;
 };
+
+RepoImportException::RepoImportException(int errorCode)
+	: RepoException("Error during model import")
+{
+	this->errorCode = errorCode;
+};
+
+RepoGeometryProcessingException::RepoGeometryProcessingException(const std::string& msg)
+	: RepoException(msg)
+{
+	errorCode = REPOERR_GEOMETRY_ERROR;
+}
+
+RepoSceneProcessingException::RepoSceneProcessingException(const std::string& msg)
+	: RepoException(msg)
+{
+	errorCode = REPOERR_LOAD_SCENE_FAIL;
+}
+
+RepoSceneProcessingException::RepoSceneProcessingException(const std::string& msg, int errorCode)
+	: RepoException(msg)
+{
+	this->errorCode = errorCode;
+}
+
+RepoImporterUnavailable::RepoImporterUnavailable(const std::string& msg, int code)
+	: RepoException(msg)
+{
+	errorCode = code;
+}

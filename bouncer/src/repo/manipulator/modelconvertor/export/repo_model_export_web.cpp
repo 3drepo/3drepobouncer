@@ -19,12 +19,13 @@
 * Allows Export functionality from 3D Repo World to SRC
 */
 
+#include <repo_log.h>
 #include "repo_model_export_web.h"
-#include "../../../lib/repo_log.h"
-#include "../../../core/model/bson/repo_bson_factory.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
 
 #include <boost/filesystem.hpp>
 
+using namespace repo::lib;
 using namespace repo::manipulator::modelconvertor;
 
 WebModelExport::WebModelExport(

@@ -19,9 +19,8 @@
 *  Mesh node
 */
 
+#include <repo_log.h>
 #include "repo_node_mesh.h"
-
-#include "repo/lib/repo_log.h"
 #include "repo_bson_builder.h"
 
 using namespace repo::core::model;
@@ -74,7 +73,7 @@ void MeshNode::deserialise(RepoBSON& bson)
 			int mNumIndices = serializedFaces[mNumIndicesIndex];
 			if (serializedFaces.size() > mNumIndicesIndex + mNumIndices)
 			{
-				repo_face_t face;
+				repo::lib::repo_face_t face;
 				face.resize(mNumIndices);
 				for (int i = 0; i < mNumIndices; ++i)
 					face[i] = serializedFaces[mNumIndicesIndex + 1 + i];
@@ -141,7 +140,7 @@ void appendVertices(RepoBSONBuilder& builder, const std::vector<repo::lib::RepoV
 	}
 }
 
-void appendFaces(RepoBSONBuilder& builder, const std::vector<repo_face_t>& faces)
+void appendFaces(RepoBSONBuilder& builder, const std::vector<repo::lib::repo_face_t>& faces)
 {
 	if (faces.size() > 0)
 	{
@@ -149,7 +148,6 @@ void appendFaces(RepoBSONBuilder& builder, const std::vector<repo_face_t>& faces
 
 		// In API LEVEL 1, faces are stored as
 		// [n1, v1, v2, ..., n2, v1, v2...]
-		std::vector<repo_face_t>::iterator faceIt;
 
 		MeshNode::Primitive primitive = MeshNode::Primitive::UNKNOWN;
 
@@ -376,4 +374,133 @@ bool MeshNode::sEqual(const RepoNode &other) const
 	}
 
 	return success;
+}
+
+size_t MeshNode::getSize() const
+{
+	// Implementation aims to be as quick as possible as we can expect this to
+	// be called alot now streaming imports are used.
+
+	size_t size = 0;
+	size += faces.size() * (int)primitive * 4;
+	size += vertices.size() * sizeof(repo::lib::RepoVector3D);
+	size += normals.size() * sizeof(repo::lib::RepoVector3D);
+	size += channels.size() * vertices.size() * sizeof(repo::lib::RepoVector2D);
+	size += sizeof(*this);
+	return size;
+}
+
+// Common constant used to get good hash scattering
+#define GOLDEN_RATIO 0x9e3779b9
+
+static void hashCombine(size_t& seed, float v)
+{
+	std::hash<float> hasher;
+	seed ^= hasher(v) + GOLDEN_RATIO + (seed << 6) + (seed >> 2);
+}
+
+struct Vertex
+{
+	repo::lib::RepoVector3D position;
+	std::optional<repo::lib::RepoVector3D> normal;
+	std::optional<repo::lib::RepoVector2D> uv;
+
+	size_t hash()
+	{
+		size_t hash = 0;
+		hashCombine(hash, position.x);
+		hashCombine(hash, position.y);
+		hashCombine(hash, position.z);
+		if (normal)
+		{
+			hashCombine(hash, normal->x);
+			hashCombine(hash, normal->y);
+			hashCombine(hash, normal->z);
+		}
+		if (uv)
+		{
+			hashCombine(hash, uv->x);
+			hashCombine(hash, uv->y);
+		}
+		return hash;
+	}
+
+	bool operator== (const Vertex& other) const = default;
+};
+
+void MeshNode::removeDuplicateVertices()
+{
+	bool useNormals = normals.size();
+	bool useUvs = channels.size();
+
+	if (channels.size() > 1) {
+		throw repo::lib::RepoGeometryProcessingException("removeDuplicateVertices currently only supports one uv channel.");
+	}
+
+	std::vector<repo::lib::RepoVector2D> uvs;
+	if (useUvs) {
+		uvs = channels[0];
+	}
+
+	std::vector<Vertex> newVertices;
+	std::unordered_multimap<size_t, size_t> map;
+
+	for (auto& f : faces)
+	{
+		for (auto i = 0; i < f.size(); i++)
+		{
+			auto& index = f[i];
+
+			Vertex v;
+			v.position = vertices[index];
+
+			if (useNormals) {
+				v.normal = normals[index];
+			}
+
+			if (useUvs) {
+				v.uv = uvs[index];
+			}
+
+			auto hash = v.hash();
+			auto matching = map.equal_range(hash);
+
+			index = -1;
+			for (auto it = matching.first; it != matching.second; it++)
+			{
+				if (newVertices[it->second] == v)
+				{
+					index = it->second;
+					break;
+				}
+			}
+
+			if (index == -1) // (face indices are unsigned, so compare directly to a rolled over positive integer, instead of ltz)
+			{
+				index = newVertices.size();
+				newVertices.push_back(v);
+				map.insert(std::pair<size_t, size_t>(hash, index));
+			}
+		}
+	}
+
+	vertices.clear();
+	normals.clear();
+	uvs.clear();
+
+	for (auto& v : newVertices)
+	{
+		vertices.push_back(v.position);
+		if (v.normal)
+		{
+			normals.push_back(*v.normal);
+		}
+		if (v.uv) {
+			uvs.push_back(*v.uv);
+		}
+	}
+
+	if (useUvs) {
+		channels[0] = uvs;
+	}
 }

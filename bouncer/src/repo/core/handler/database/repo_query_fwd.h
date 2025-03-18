@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2015 3D Repo Ltd
+*  Copyright (C) 2025 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -15,25 +15,27 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/**
-* Abstract listener class that any object wishing to subscript to the library logger
-* will have to implement.
-*/
-
 #pragma once
 
-#include "../repo_bouncer_global.h"
-#include <string>
+#include <variant>
 
-namespace repo{
-	namespace lib{
-		class REPO_API_EXPORT RepoAbstractListener
-		{
-		public:
-			RepoAbstractListener() {}
-			~RepoAbstractListener(){};
+namespace repo {
+	namespace core {
+		namespace handler {
+			namespace database{
+				namespace query {
+					class Eq;
+					class Exists;
+					class Or;
+					class RepoQueryBuilder;
 
-			virtual void messageGenerated(const std::string &message) = 0;
-		};
+					class AddParent;
+
+					using RepoQuery = std::variant<Eq, Exists, Or, RepoQueryBuilder>;
+
+					using RepoUpdate = std::variant<AddParent>;
+				}
+			}
+		}
 	}
 }

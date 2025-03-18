@@ -237,6 +237,8 @@ void RepoBSON::replaceBinaryWithReference(
 	builder.appendElementsUnique(*this);
 
 	*this = builder.obj();
+
+	this->bigFiles.clear();
 }
 
 repo::lib::RepoUUID RepoBSON::getUUIDField(const std::string &label) const

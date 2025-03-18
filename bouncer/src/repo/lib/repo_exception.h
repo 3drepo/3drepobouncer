@@ -28,7 +28,7 @@ namespace repo {
 		public:
 			RepoException(const std::string& msg);
 
-			char const* what() const throw();
+			REPO_API_EXPORT char const* what() const throw();
 
 			/*
 			 * Returns the code from error_codes.h, that best describes this exception.
@@ -50,6 +50,29 @@ namespace repo {
 		REPO_API_EXPORT class RepoInvalidLicenseException : public RepoException {
 		public:
 			RepoInvalidLicenseException(const std::string& msg);
+		};
+
+		REPO_API_EXPORT class RepoImportException : public RepoException {
+		public:
+			RepoImportException(int errorCode);
+		};
+
+		REPO_API_EXPORT class RepoGeometryProcessingException : public RepoException {
+		public:
+			RepoGeometryProcessingException(const std::string& msg);
+		};
+
+		// Default error code is REPOERR_LOAD_SCENE_FAIL, but can be overridden for
+		// more detailed reporting.
+		REPO_API_EXPORT class RepoSceneProcessingException : public RepoException {
+		public:
+			RepoSceneProcessingException(const std::string& msg);
+			RepoSceneProcessingException(const std::string& msg, int errorCode);
+		};
+
+		REPO_API_EXPORT class RepoImporterUnavailable : public RepoException {
+		public:
+			RepoImporterUnavailable(const std::string& message, int code);
 		};
 
 		REPO_API_EXPORT class RepoBSONException : public RepoException {

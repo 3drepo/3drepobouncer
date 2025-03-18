@@ -22,6 +22,7 @@
 #include <string>
 #include <unordered_map>
 #include "repo/lib/datastructure/repo_variant.h"
+#include "repo/core/handler/database/repo_query_fwd.h"
 
 namespace repo {
 	namespace core {
@@ -30,13 +31,78 @@ namespace repo {
 		}
 		namespace handler {
 			namespace database {
-				namespace query {
-					class RepoQuery;
-				}
-				namespace index{
+				namespace index {
 					class RepoIndex;
 				}
+
+				/*
+				* The Cursor class provides iterable access to a database collection.
+				* Iterator based access should be preferred over reading all the results
+				* in one go. The Cursor and its Iterator use the pimpl pattern so that
+				* they can be passed by value, as is the convention, while allowing
+				* database handlers to provide custom implementations.
+				*/
+				class Cursor {
+				public:
+					class Iterator {
+					public:
+
+						// (The implementation of these method is simply to call the pimpl
+						// versions, but it is done in a separate module so we don't need
+						// to fully define RepoBSON in this header.)
+
+						const repo::core::model::RepoBSON operator*();
+						void operator++();
+						bool operator!=(const Iterator& other);
+
+						struct Impl {
+							virtual const repo::core::model::RepoBSON operator*() = 0;
+							virtual void operator++() = 0;
+							virtual bool operator!=(const Impl*) = 0;
+						};
+
+						Impl* impl;
+						
+						Iterator(Impl* impl);
+					};
+
+					virtual Iterator begin() = 0;
+					virtual Iterator end() = 0;
+
+					virtual ~Cursor();
+				};
+
+				using CursorPtr = std::unique_ptr<repo::core::handler::database::Cursor>;
+
+				/*
+				* An object that provides write access to a collection from a specific
+				* thread, that may be different to the one that owns the database handler.
+				* Methods in a write context are inherently asynchronous, but will be
+				* executed in the order they are called in the context (so inserting a
+				* document, and then updating it, is safe - the update will never run before
+				* the insert).
+				*/
+				class BulkWriteContext
+				{
+				public:
+					virtual void insertDocument(repo::core::model::RepoBSON obj) = 0;
+
+					virtual void updateDocument(const database::query::RepoUpdate& obj) = 0;
+
+					/*
+					* Called to force everything that is outstanding to write to the database,
+					* and block until complete. This may be called multiple times during a
+					* single objects lifetime. It explicitly may be omitted - a write context
+					* should automatically flush everything when it is destroyed.
+					*/
+					virtual void flush() = 0;
+
+					// Make the destructor virtual to ensure unique_ptr calls the destructor
+					// on any subclasses.
+					virtual ~BulkWriteContext() { }
+				};
 			}
+
 			class AbstractDatabaseHandler {
 			public:
 				/**
@@ -229,6 +295,15 @@ namespace repo {
 					const std::string& database,
 					const std::string& collection,
 					const std::string& id) = 0;
+
+				virtual size_t count(
+					const std::string& database,
+					const std::string& collection,
+					const database::query::RepoQuery& criteria) = 0;
+
+				virtual std::unique_ptr<database::BulkWriteContext> getBulkWriteContext(
+					const std::string& database,
+					const std::string& collection) = 0;
 
 			protected:
 				/**

@@ -101,7 +101,7 @@
 #define REPO_COLLECTION_RAW             "history"
 #define REPO_COLLECTION_SCENE           "scene"
 #define REPO_COLLECTION_STASH_REPO      "stash.3drepo"
-#define REPO_COLLECTION_STASH_SRC       "stash.src"
+#define REPO_COLLECTION_STASH_SRC       "stash.src"	// This collection is no longer used but may still exist in the database
 #define REPO_COLLECTION_STASH_GLTF      "stash.gltf" // This collection is no longer used but may still exist in the database
 #define REPO_COLLECTION_STASH_X3D       "stash.x3d" // This collection is no longer used but may still exist in the database
 #define REPO_COLLECTION_STASH_JSON      "stash.json_mpc"

@@ -18,7 +18,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <repo/manipulator/modelconvertor/import/repo_model_import_ifc.h>
-#include <repo/lib/repo_log.h>
+#include <repo_log.h>
 #include "../../../../repo_test_utils.h"
 
 using namespace repo::manipulator::modelconvertor;

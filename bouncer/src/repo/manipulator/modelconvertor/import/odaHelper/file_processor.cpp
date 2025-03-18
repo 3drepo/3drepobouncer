@@ -26,19 +26,19 @@
 using namespace repo::manipulator::modelconvertor;
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-FileProcessor::FileProcessor(const std::string &inputFile, GeometryCollector *geoCollector, const ModelImportConfig& config)
+FileProcessor::FileProcessor(const std::string& inputFile, repo::manipulator::modelutility::DrawingImageInfo* collector)
 	: file(inputFile),
-	collector(geoCollector),
-	importConfig(config),
-	drawingCollector(nullptr)
+	importConfig({}),
+	drawingCollector(collector),
+	repoSceneBuilder(nullptr)
 {
 }
 
-FileProcessor::FileProcessor(const std::string& inputFile, repo::manipulator::modelutility::DrawingImageInfo* collector)
+FileProcessor::FileProcessor(const std::string& inputFile, repo::manipulator::modelutility::RepoSceneBuilder* builder, const ModelImportConfig& config)
 	: file(inputFile),
-	collector(nullptr),
-	importConfig({}),
-	drawingCollector(collector)
+	importConfig(config),
+	drawingCollector(nullptr),
+	repoSceneBuilder(builder)
 {
 }
 
@@ -51,19 +51,19 @@ std::unique_ptr<T> makeUnique(Args&&... args) {
 	return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
-std::unique_ptr<FileProcessor> FileProcessor::getFileProcessor(const std::string &inputFile, GeometryCollector * geoCollector, const ModelImportConfig& config) {
+std::unique_ptr<FileProcessor> FileProcessor::getFileProcessor(const std::string &inputFile, repo::manipulator::modelutility::RepoSceneBuilder* builder, const ModelImportConfig& config) {
 	boost::filesystem::path filePathP(inputFile);
 	std::string fileExt = filePathP.extension().string();
 	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
 
 	if (fileExt == ".DGN")
-		return makeUnique<FileProcessorDgn>(inputFile, geoCollector, config);
+		return makeUnique<FileProcessorDgn>(inputFile, builder, config);
 	else if (fileExt == ".DWG" || fileExt == ".DXF")
-		return makeUnique<FileProcessorDwg>(inputFile, geoCollector, config);
+		return makeUnique<FileProcessorDwg>(inputFile, builder, config);
 	else if (fileExt == ".RVT" || fileExt == ".RFA")
-		return makeUnique<FileProcessorRvt>(inputFile, geoCollector, config);
+		return makeUnique<FileProcessorRvt>(inputFile, builder, config);
 	else if (fileExt == ".NWD" || fileExt == ".NWC")
-		return makeUnique<FileProcessorNwd>(inputFile, geoCollector, config);
+		return makeUnique<FileProcessorNwd>(inputFile, builder, config);
 
 	return nullptr;
 }

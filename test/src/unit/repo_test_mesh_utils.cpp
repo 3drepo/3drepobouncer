@@ -172,7 +172,6 @@ RepoBSON repo::test::utils::mesh::meshNodeTestBSONFactory(mesh_data data)
 
 		// In API LEVEL 1, faces are stored as
 		// [n1, v1, v2, ..., n2, v1, v2...]
-		std::vector<repo_face_t>::iterator faceIt;
 
 		MeshNode::Primitive primitive = MeshNode::Primitive::UNKNOWN;
 
@@ -286,12 +285,12 @@ std::vector<repo::lib::RepoVector2D> repo::test::utils::mesh::makeUVs(int num)
 	return uvs;
 }
 
-std::vector<repo_face_t> repo::test::utils::mesh::makeFaces(MeshNode::Primitive primitive)
+std::vector<repo::lib::repo_face_t> repo::test::utils::mesh::makeFaces(MeshNode::Primitive primitive)
 {
-	std::vector<repo_face_t> faces;
+	std::vector<repo::lib::repo_face_t> faces;
 	for (int i = 0; i < 100; i++)
 	{
-		repo_face_t face;
+		repo::lib::repo_face_t face;
 		for (int i = 0; i < (int)primitive; i++)
 		{
 			face.push_back(rand());
@@ -358,7 +357,7 @@ repo::test::utils::mesh::mesh_data::mesh_data(
 	int vertexIndex = 0;
 	do
 	{
-		repo_face_t face;
+		repo::lib::repo_face_t face;
 		for (int j = 0; j < faceSize; j++)
 		{
 			face.push_back((vertexIndex++ % vertices.size()));
