@@ -222,11 +222,6 @@ TEST(RepoClientTest, UploadTestIFC)
 	EXPECT_EQ((int)REPOERR_OK, runProcess(ifcUpload));
 	EXPECT_TRUE(projectExists(db, "ifcTest"));
 
-	//Upload IFCFile
-	std::string ifcUploadReg = produceUploadArgs(db, "ifcTestRegression", getDataPath(ifcModel_InfiniteLoop));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(ifcUploadReg));
-	EXPECT_TRUE(projectExists(db, "ifcTestRegression"));
-
 	std::string ifc4Upload = produceUploadArgs(db, "ifc4Test", getDataPath(ifc4Model));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(ifc4Upload));
 	EXPECT_TRUE(projectExists(db, "ifc4Test"));

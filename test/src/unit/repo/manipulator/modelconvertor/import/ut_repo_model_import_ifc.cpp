@@ -754,3 +754,24 @@ TEST(IFCModelImport, Materials)
 		EXPECT_THAT(m.getMaterial(), Eq(brickMaterial));
 	}
 }
+
+TEST(IFCModelImport, InfiniteLoopRegression)
+{
+	/*
+	* This test makes sure the infinite regression bug described here is still
+	* resolved: https://tracker.dev.opencascade.org/view.php?id=32949
+	* We have a fix for OCCT if it regresses here: https://github.com/3drepo/OCCT/tree/CR0032949
+	*/
+
+	auto scene = IfcModelImportUtils::ModelImportManagerImport("RegressionTests", getDataPath(ifcModel_InfiniteLoop));
+	SceneUtils utils(scene);
+
+	if (utils.findNodeByMetadata("Name", "N4021").node)
+	{
+		SUCCEED();
+	}
+	else
+	{
+		FAIL();
+	}
+}
