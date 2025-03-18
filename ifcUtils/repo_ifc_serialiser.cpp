@@ -705,6 +705,11 @@ void IfcSerialiser::setLevelOfDetail(int lod)
 	settings.get<ifcopenshell::geometry::settings::MesherAngularDeflection>().value = std::get<1>(params);
 }
 
+void IfcSerialiser::setNumThreads(int numThreads)
+{
+	this->numThreads = numThreads ? numThreads : std::thread::hardware_concurrency();
+}
+
 void IfcSerialiser::updateBounds()
 {
 	auto bounds = getBounds();

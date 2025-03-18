@@ -79,7 +79,7 @@ namespace ifcUtils
 		std::unique_ptr<IfcParse::IfcFile> file;
 		ifcopenshell::geometry::Settings settings;
 		std::string kernel;
-		int numThreads;
+		unsigned int numThreads;
 		repo::manipulator::modelutility::RepoSceneBuilder* builder;
 		repo::lib::RepoUUID rootNodeId;
 		std::unordered_map<std::string, repo::lib::repo_material_t> materials;
@@ -122,6 +122,8 @@ namespace ifcUtils
 		void configureSettings();
 
 		void setLevelOfDetail(int lod);
+
+		void setNumThreads(int numThreads);
 
 		repo::lib::RepoBounds getBounds();
 

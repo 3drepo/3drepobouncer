@@ -30,5 +30,12 @@ namespace ifcUtils
 		virtual void import(repo::manipulator::modelutility::RepoSceneBuilder* builder) = 0;
 
 		virtual void setLevelOfDetail(int lod) = 0;
+
+		/*
+		* Maximum number of threads the importer should use for generating geometry.
+		* 0 or less indicates the default number of threads should be used, which is
+		* the same as the number of physical CPUs.
+		*/
+		virtual void setNumThreads(int numThreads) = 0;
 	};
 }

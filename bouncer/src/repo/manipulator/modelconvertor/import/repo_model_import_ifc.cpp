@@ -66,6 +66,7 @@ bool IFCModelImport::importModel(std::string filePath, std::shared_ptr<repo::cor
 
 	auto serialiser = ifcUtils::IfcUtils::CreateSerialiser(filePath);
 
+	serialiser->setNumThreads(settings.getNumThreads());
 	serialiser->setLevelOfDetail(settings.getLevelOfDetail());
 
 	serialiser->import(sceneBuilder.get());
