@@ -68,9 +68,6 @@ bool IFCModelImport::importModel(std::string filePath, std::shared_ptr<repo::cor
 
 	serialiser->setLevelOfDetail(settings.getLevelOfDetail());
 
-	// Consider setting an HDF5 cache file here to reduce memory
-	// Check out IfcConvert.cpp ln 980
-
 	serialiser->import(sceneBuilder.get());
 
 	sceneBuilder->finalise();

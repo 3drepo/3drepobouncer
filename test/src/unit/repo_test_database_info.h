@@ -59,6 +59,7 @@ const static std::string ifcSimpleHouse_doublyPlacedObjects = "simpleHouse_doubl
 const static std::string ifcSimpleHouse_classification = "simpleHouse_classification.ifc";
 const static std::string ifcSimpleHouse_valuesAndUnits = "simpleHouse_valuesAndUnits.ifc";
 const static std::string ifcSimpleHouse_propertySets = "simpleHouse_propertySets.ifc";
+const static std::string ifcSimpleHouse_propertySetsOfSets = "simpleHouse_propertySetsOfSets.ifc";
 const static std::string ifcSimpleHouse_predefinedPropertySets = "simpleHouse_predefinedPropertySets.ifc";
 const static std::string ifcSimpleHouse_quantitySets = "simpleHouse_quantitySets.ifc";
 const static std::string ifcSimpleHouse_imperialUnits = "simpleHouse_imperialUnits.ifc";

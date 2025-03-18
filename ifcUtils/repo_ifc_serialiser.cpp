@@ -1301,8 +1301,9 @@ void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Met
 	{
 #ifdef SCHEMA_HAS_IfcPropertySetDefinitionSelect
 		if (auto p = o->RelatingPropertyDefinition()->as<IfcSchema::IfcPropertySetDefinitionSet>()) {
-			auto props = p->operator boost::shared_ptr<aggregate_of<IfcSchema::IfcPropertySetDefinition>>();
-			collectMetadata(props->begin(), props->end(), metadata);
+			// ProperySetDefinitionSets are temporarily disabled until this IFCOS bug is resolved: https://github.com/IfcOpenShell/IfcOpenShell/issues/6330
+			//auto props = p->operator boost::shared_ptr<aggregate_of<IfcSchema::IfcPropertySetDefinition>>();
+			//collectMetadata(props->begin(), props->end(), metadata);
 		}else if (auto s = o->RelatingPropertyDefinition()->as<IfcSchema::IfcPropertySetDefinition>()) {
 			collectMetadata(s, metadata);
 		}

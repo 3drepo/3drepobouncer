@@ -512,8 +512,18 @@ TEST(IFCModelImport, PropertySets)
 TEST(IFCModelImport, PropertySetsOfSets)
 {
 	/*
-	* This is not supported due to a bug in IfcOpenShell
+	* PropertySetDefinitionSets are not supported (https://github.com/IfcOpenShell/IfcOpenShell/issues/6330)
+	* The importer will not populate them, but should not crash.
 	*/
+
+	auto scene = IfcModelImportUtils::ModelImportManagerImport("PropertySetSets", getDataPath(ifcSimpleHouse_propertySetsOfSets));
+	SceneUtils utils(scene);
+
+	auto metadata = utils.findNodeByMetadata("Name", "P1").getMetadata();
+
+	// If the above succeeds, the node has been successfully imported.
+
+	SUCCEED();
 }
 
 TEST(IFCModelImport, PredefinedPropertySets)
@@ -712,8 +722,6 @@ TEST(IFCModelImport, Unicode)
 		}
 	}
 }
-
-#pragma optimize("", off)
 
 TEST(IFCModelImport, Materials)
 {
