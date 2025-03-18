@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <chrono>
 
+using namespace repo::lib;
 using namespace repo::manipulator::modeloptimizer;
 
 auto defaultGraph = repo::core::model::RepoScene::GraphType::DEFAULT;
@@ -50,15 +51,6 @@ static const size_t REPO_BVH_MAX_LEAF_SIZE = 16;
 static const size_t REPO_MODEL_LOW_CLUSTERING_RATIO = 0.2f;
 
 #define CHRONO_DURATION(start) std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count()
-
-MultipartOptimizer::MultipartOptimizer() :
-	AbstractOptimizer()
-{
-}
-
-MultipartOptimizer::~MultipartOptimizer()
-{
-}
 
 bool MultipartOptimizer::apply(repo::core::model::RepoScene *scene)
 {

@@ -27,6 +27,7 @@
 
 #include "../../../../repo_test_utils.h"
 
+using namespace repo::lib;
 using namespace repo::core::model;
 using namespace testing;
 
@@ -45,10 +46,10 @@ static repo_material_t makeRandomMaterialStruct()
 	repo_material_t matProp;
 	for (int i = 0; i < 3; ++i)
 	{
-		matProp.ambient.push_back(rand() / 100.f);
-		matProp.diffuse.push_back(rand() / 100.f);
-		matProp.specular.push_back(rand() / 100.f);
-		matProp.emissive.push_back(rand() / 100.f);
+		matProp.ambient = makeColour();
+		matProp.diffuse = makeColour();
+		matProp.specular = makeColour();
+		matProp.emissive = makeColour();
 		matProp.opacity = rand() / 100.f;
 		matProp.shininess = rand() / 100.f;
 		matProp.shininessStrength = rand() / 100.f;
@@ -63,10 +64,10 @@ static MaterialNode makeRandomMaterial(
 {
 	for (int i = 0; i < 3; ++i)
 	{
-		matProp.ambient.push_back(rand() / 100.f);
-		matProp.diffuse.push_back(rand() / 100.f);
-		matProp.specular.push_back(rand() / 100.f);
-		matProp.emissive.push_back(rand() / 100.f);
+		matProp.ambient = makeColour();
+		matProp.diffuse = makeColour();
+		matProp.specular = makeColour();
+		matProp.emissive = makeColour();
 		matProp.opacity = rand() / 100.f;
 		matProp.shininess = rand() / 100.f;
 		matProp.shininessStrength = rand() / 100.f;
@@ -126,10 +127,10 @@ TEST(MaterialNodeTest, Deserialise)
 
 	auto s = material.getMaterialStruct();
 
-	EXPECT_THAT(s.ambient, ElementsAreArray(ambient));
-	EXPECT_THAT(s.diffuse, ElementsAreArray(diffuse));
-	EXPECT_THAT(s.specular, ElementsAreArray(specular));
-	EXPECT_THAT(s.emissive, ElementsAreArray(emissive));
+	EXPECT_THAT(s.ambient, Eq(repo_color3d_t(ambient)));
+	EXPECT_THAT(s.diffuse, Eq(repo_color3d_t(diffuse)));
+	EXPECT_THAT(s.specular, Eq(repo_color3d_t(specular)));
+	EXPECT_THAT(s.emissive, Eq(repo_color3d_t(emissive)));
 	EXPECT_THAT(s.opacity, Eq(opacity));
 	EXPECT_THAT(s.shininess, Eq(shininess));
 	EXPECT_THAT(s.shininessStrength, Eq(shininess_strength));
@@ -171,10 +172,10 @@ TEST(MaterialNodeTest, Serialise)
 
 	// And that the material struct is written
 
-	EXPECT_THAT(bson.getFloatArray(REPO_NODE_MATERIAL_LABEL_AMBIENT), ElementsAreArray(material.ambient));
-	EXPECT_THAT(bson.getFloatArray(REPO_NODE_MATERIAL_LABEL_DIFFUSE), ElementsAreArray(material.diffuse));
-	EXPECT_THAT(bson.getFloatArray(REPO_NODE_MATERIAL_LABEL_SPECULAR), ElementsAreArray(material.specular));
-	EXPECT_THAT(bson.getFloatArray(REPO_NODE_MATERIAL_LABEL_EMISSIVE), ElementsAreArray(material.emissive));
+	EXPECT_THAT(bson.getFloatArray(REPO_NODE_MATERIAL_LABEL_AMBIENT), ElementsAreArray(material.ambient.operator std::vector<float, std::allocator<float>>()));
+	EXPECT_THAT(bson.getFloatArray(REPO_NODE_MATERIAL_LABEL_DIFFUSE), ElementsAreArray(material.diffuse.operator std::vector<float, std::allocator<float>>()));
+	EXPECT_THAT(bson.getFloatArray(REPO_NODE_MATERIAL_LABEL_SPECULAR), ElementsAreArray(material.specular.operator std::vector<float, std::allocator<float>>()));
+	EXPECT_THAT(bson.getFloatArray(REPO_NODE_MATERIAL_LABEL_EMISSIVE), ElementsAreArray(material.emissive.operator std::vector<float, std::allocator<float>>()));
 	EXPECT_THAT(bson.getDoubleField(REPO_NODE_MATERIAL_LABEL_OPACITY), Eq(material.opacity));
 	EXPECT_THAT(bson.getDoubleField(REPO_NODE_MATERIAL_LABEL_SHININESS), Eq(material.shininess));
 	EXPECT_THAT(bson.getDoubleField(REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH), Eq(material.shininessStrength));

@@ -20,411 +20,164 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+using namespace repo::lib;
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-GeometryCollector::GeometryCollector()
+GeometryCollector::GeometryCollector(repo::manipulator::modelutility::RepoSceneBuilder* builder) :
+	sceneBuilder(builder)
 {
+	auto rootNode = repo::core::model::RepoBSONFactory::makeTransformationNode({}, "rootNode", {});
+	sceneBuilder->addNode(rootNode);
+	rootNodeId = rootNode.getSharedID();
+	latestMaterial = repo_material_t::DefaultMaterial();
 }
 
 GeometryCollector::~GeometryCollector()
 {
-}
-
-repo::core::model::TransformationNode GeometryCollector::createRootNode()
-{
-	return repo::core::model::RepoBSONFactory::makeTransformationNode(rootMatrix, "rootNode");
-}
-
-void GeometryCollector::setCurrentMaterial(const repo_material_t &material, bool missingTexture) {
-	auto checkSum = material.checksum();
-	if (idxToMat.find(checkSum) == idxToMat.end()) {
-		idxToMat[checkSum] = {
-			repo::core::model::RepoBSONFactory::makeMaterialNode(material),
-			createTextureNode(material.texturePath)
-		};
-
-		if (missingTexture)
-			this->missingTextures = true;
+	if (contexts.size()) {
+		throw repo::lib::RepoSceneProcessingException("GeometryCollector is being destroyed with outstanding draw contexts.");
 	}
-	currMat = checkSum;
 }
 
-repo::core::model::RepoNodeSet repo::manipulator::modelconvertor::odaHelper::GeometryCollector::getMetaNodes()
+void GeometryCollector::addFace(const std::initializer_list<repo::lib::RepoVector3D64>& vertices)
 {
-	return metaNodes;
-}
+	// Note that some views may output geometry outside of a drawable (e.g. Revit
+	// cameras). In this case the geometry should be ignored.
 
-mesh_data_t GeometryCollector::createMeshEntry(uint32_t format) {
-	mesh_data_t entry;
-	entry.matIdx = currMat;
-	entry.name = nextMeshName;
-	entry.groupName = nextGroupName;
-	entry.layerName = nextLayer.empty() ? "UnknownLayer" : nextLayer;
-	entry.format = format;
-	return entry;
-}
-
-void GeometryCollector::startMeshEntry() {
-	nextMeshName = nextMeshName.empty() ? repo::lib::RepoUUID::createUUID().toString() : nextMeshName;
-	nextGroupName = nextGroupName.empty() ? nextMeshName : nextGroupName;
-	nextLayer = nextLayer.empty() ? nextMeshName : nextLayer;
-
-	if (meshData.find(nextGroupName) == meshData.end()) {
-		meshData[nextGroupName] = std::unordered_map<std::string, std::unordered_map<int, std::vector<mesh_data_t>>>();
+	if (contexts.size()) {
+		contexts.top()->addFace(vertices);
 	}
-
-	if (meshData[nextGroupName].find(nextLayer) == meshData[nextGroupName].end()) {
-		meshData[nextGroupName][nextLayer] = std::unordered_map<int, std::vector<mesh_data_t>>();
-	}
-
-	if (meshData[nextGroupName][nextLayer].find(currMat) == meshData[nextGroupName][nextLayer].end()) {
-		meshData[nextGroupName][nextLayer][currMat] = std::vector<mesh_data_t>();
-	}
-
-	currentEntry = &meshData[nextGroupName][nextLayer][currMat];
 }
 
-void  GeometryCollector::stopMeshEntry() {
-	nextMeshName = "";
-	currentEntry = nullptr;
-	currentMesh = nullptr;
-}
-
-uint32_t GeometryCollector::getMeshFormat(bool hasUvs, bool hasNormals, int faceSize)
+void GeometryCollector::addFace(const GeometryCollector::Face& face)
 {
-	uint32_t vBit = 1;
-	uint32_t fBit = faceSize << 8;
-	uint32_t nBit = hasNormals ? 1 : 0 << 16;
-	uint32_t uBit = hasUvs ? 1 : 0 << 17;
-	return vBit | fBit | nBit | uBit;
+	if (contexts.size()) {
+		contexts.top()->addFace(face);
+	}
 }
 
-mesh_data_t* GeometryCollector::startOrContinueMeshByFormat(uint32_t format)
+void GeometryCollector::setMaterial(const repo_material_t& material)
 {
-	if (!currentMesh || currentMesh->format != format)
-	{
-		currentMesh = nullptr;
+	contexts.top()->setMaterial(material);
+	latestMaterial = material;
+}
 
-		if (!currentEntry)
+repo_material_t GeometryCollector::getLastMaterial() const
+{
+	return latestMaterial;
+}
+
+std::unique_ptr<GeometryCollector::Context> GeometryCollector::makeNewDrawContext()
+{
+	return std::make_unique<GeometryCollector::Context>(this);
+}
+
+void GeometryCollector::pushDrawContext(Context* ctx) 
+{
+	if (ctx != nullptr) {
+		contexts.push(ctx);
+	}
+}
+
+void GeometryCollector::popDrawContext(Context* ctx)
+{
+	if (ctx != nullptr) {
+		if (contexts.top() != ctx)
 		{
-			startMeshEntry();
-		}
-
-		for (auto meshDataIterator = currentEntry->begin(); meshDataIterator != currentEntry->end(); meshDataIterator++)
-		{
-			if (meshDataIterator->format == format)
-			{
-				currentMesh = &(*meshDataIterator);
-			}
-		}
-
-		if (!currentMesh)
-		{
-			currentEntry->push_back(createMeshEntry(format));
-			currentMesh = &currentEntry->back();
-		}
-	}
-
-	return currentMesh;
-}
-
-void GeometryCollector::addFace(
-	const std::vector<repo::lib::RepoVector3D64>& vertices)
-{
-	addFace(vertices, boost::optional<const repo::lib::RepoVector3D64&>(), boost::optional<const std::vector<repo::lib::RepoVector2D>&>());
-}
-
-void GeometryCollector::addFace(
-	const std::vector<repo::lib::RepoVector3D64>& vertices,
-	const repo::lib::RepoVector3D64& normal,
-	const std::vector<repo::lib::RepoVector2D>& uvCoords)
-{
-	addFace(vertices, boost::optional<const repo::lib::RepoVector3D64&>(normal), boost::optional<const std::vector<repo::lib::RepoVector2D>&>(uvCoords)); // make the boost option type explicit so we get the correct overload
-}
-
-void GeometryCollector::addFace(
-	const std::vector<repo::lib::RepoVector3D64>& vertices,
-	boost::optional<const repo::lib::RepoVector3D64&> normal,
-	boost::optional<const std::vector<repo::lib::RepoVector2D>&> uvCoords
-)
-{
-	if (!vertices.size())
-	{
-		repoError << "Vertices size [" << vertices.size() << "] is unsupported. A face must have more than 0 vertices.";
-		errorCode = REPOERR_GEOMETRY_ERROR;
-		return;
-	}
-
-	bool hasNormals = (bool)normal;
-	bool hasUvs = (bool)uvCoords && (*uvCoords).size();
-
-	auto meshData = startOrContinueMeshByFormat(getMeshFormat(hasUvs, hasNormals, vertices.size()));
-
-	repo_face_t face;
-	for (auto i = 0; i < vertices.size(); ++i) {
-		auto& v = vertices[i];
-
-		VertexMap::result_t vertexReference;
-		if (hasNormals)
-		{
-			if (hasUvs)
-			{
-				auto& uv = (*uvCoords)[i];
-				vertexReference = meshData->vertexMap.find(v, *normal, uv);
-			}
-			else
-			{
-				vertexReference = meshData->vertexMap.find(v, *normal);
-			}
-		}
-		else if (hasUvs)
-		{
-			repoError << "Face has uvs but no normals. This is not supported. Faces that have uvs must also have a normal.";
-			errorCode = REPOERR_GEOMETRY_ERROR;
-			return;
+			throw repo::lib::RepoGeometryProcessingException("Attempting to pop a context that is not the last one pushed");
 		}
 		else
 		{
-			vertexReference = meshData->vertexMap.find(v);
+			contexts.pop();
+		}
+	}
+}
+
+void GeometryCollector::createLayer(std::string id, std::string name, std::string parentId)
+{
+	if (!hasLayer(id)) {
+		auto parentSharedId = rootNodeId;
+
+		auto parentIdItr = layerIdToSharedId.find(parentId);
+		if (parentIdItr != layerIdToSharedId.end()) {
+			parentSharedId = parentIdItr->second;
 		}
 
-		if (vertexReference.added)
+		auto node = repo::core::model::RepoBSONFactory::makeTransformationNode({}, name, { parentSharedId });
+		layerIdToSharedId[id] = node.getSharedID();
+
+		sceneBuilder->addNode(node);
+	}
+}
+
+bool GeometryCollector::hasLayer(std::string id)
+{
+	return layerIdToSharedId.find(id) != layerIdToSharedId.end();
+}
+
+repo::lib::RepoUUID GeometryCollector::getSharedId(std::string id)
+{
+	return layerIdToSharedId[id];
+}
+
+void GeometryCollector::setMetadata(std::string id, std::unordered_map<std::string, repo::lib::RepoVariant> data)
+{
+	sceneBuilder->addNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(data, id, { layerIdToSharedId[id] }));
+	layersWithMetadata.insert(id);
+}
+
+bool GeometryCollector::hasMetadata(std::string id)
+{
+	return layersWithMetadata.find(id) != layersWithMetadata.end();
+}
+
+void GeometryCollector::addMeshes(std::string id, std::vector<std::pair<repo::core::model::MeshNode, repo::lib::repo_material_t>>& meshes)
+{
+	auto parent = getSharedId(id);
+	for (auto& p : meshes) {
+		p.first.setParents({ parent });
+		addNode(p.first);
+		addMaterialReference(p.second, p.first.getSharedID());
+	}
+}
+
+void GeometryCollector::finalise()
+{
+	sceneBuilder->finalise();
+}
+
+void GeometryCollector::Context::setMaterial(const repo_material_t& material)
+{
+	auto id = material.checksum();
+	auto builder = meshBuilders.find(id);
+	if (builder == meshBuilders.end()) {
+		meshBuilders[id] = std::make_unique<RepoMeshBuilder>(std::vector<repo::lib::RepoUUID>(), offset, material);
+		this->meshBuilder = meshBuilders[id].get();
+	}
+	else
+	{
+		this->meshBuilder = builder->second.get();
+	}
+}
+
+std::vector<std::pair<repo::core::model::MeshNode, repo_material_t>> GeometryCollector::Context::extractMeshes()
+{
+	std::vector<std::pair<repo::core::model::MeshNode, repo_material_t>> pairs;
+	for (auto& p : meshBuilders) {
+		std::vector<repo::core::model::MeshNode> meshes;
+		p.second->extractMeshes(meshes);
+		for (auto& m : meshes)
 		{
-			meshData->boundingBox.encapsulate(v);
-
-			if (minMeshBox.size()) {
-				minMeshBox[0] = v.x < minMeshBox[0] ? v.x : minMeshBox[0];
-				minMeshBox[1] = v.y < minMeshBox[1] ? v.y : minMeshBox[1];
-				minMeshBox[2] = v.z < minMeshBox[2] ? v.z : minMeshBox[2];
-			}
-			else {
-				minMeshBox = { v.x, v.y, v.z };
-			}
-		}
-
-		face.push_back(vertexReference.index);
-	}
-
-	meshData->faces.push_back(face);
-}
-
-repo::core::model::TransformationNode* GeometryCollector::ensureParentNodeExists(
-	const std::string &layerId,
-	const repo::lib::RepoUUID &rootId,
-	std::unordered_map<std::string, repo::core::model::TransformationNode*> &layerToTrans
-
-) {
-	if (layerToTrans.find(layerId) == layerToTrans.end()) {
-		auto parent = rootId;
-		if (layerIDToParent.find(layerId) != layerIDToParent.end()) {
-			parent = ensureParentNodeExists(layerIDToParent[layerId], rootId, layerToTrans)->getSharedID();
-		}
-		layerToTrans[layerId] = createTransNode(layerIDToName[layerId], layerId, parent);
-		transNodes.insert(layerToTrans[layerId]);
-	}
-	return layerToTrans[layerId];
-}
-
-repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core::model::TransformationNode& root) {
-	repo::core::model::RepoNodeSet res;
-
-	std::unordered_map<std::string, repo::core::model::TransformationNode*> layerToTrans;
-
-	int numEntries = 0;
-	for (const auto& meshGroupEntry : meshData) {
-		for (const auto& meshLayerEntry : meshGroupEntry.second) {
-			for (const auto& meshMatEntry : meshLayerEntry.second) {
-				for (const auto& meshData : meshMatEntry.second) {
-					numEntries++;
-				}
-			}
+			pairs.push_back({ m, p.second->getMaterial() });
 		}
 	}
-
-	repoInfo << "Collecting " << numEntries << " mesh nodes...";
-
-	auto rootId = root.getSharedID();
-	for (const auto& meshGroupEntry : meshData) {
-		for (const auto& meshLayerEntry : meshGroupEntry.second) {
-			for (const auto& meshMatEntry : meshLayerEntry.second) {
-				for (const auto& meshData : meshMatEntry.second) {
-					if (!meshData.vertexMap.vertices.size()) {
-						continue;
-					}
-
-					if (meshData.vertexMap.uvs.size() && (meshData.vertexMap.uvs.size() != meshData.vertexMap.vertices.size()))
-					{
-						repoError << "Vertices size [" << meshData.vertexMap.vertices.size() << "] does not match the uvs size [" << meshData.vertexMap.uvs.size() << "]. Skipping...";
-						errorCode = REPOERR_GEOMETRY_ERROR;
-						continue;
-					}
-
-					auto uvChannels = meshData.vertexMap.uvs.size() ?
-						std::vector<std::vector<repo::lib::RepoVector2D>>{meshData.vertexMap.uvs} :
-						std::vector<std::vector<repo::lib::RepoVector2D>>();
-
-					ensureParentNodeExists(meshLayerEntry.first, rootId, layerToTrans);
-
-					std::vector<repo::lib::RepoVector3D> normals32;
-
-					if (meshData.vertexMap.normals.size()) {
-						if ((meshData.vertexMap.normals.size() != meshData.vertexMap.vertices.size()))
-						{
-							repoError << "Vertices size [" << meshData.vertexMap.vertices.size() << "] does not match the Normals size [" << meshData.vertexMap.uvs.size() << "]. At this point the normals must be defined per-vertex. Skipping...";
-							errorCode = REPOERR_GEOMETRY_ERROR;
-							continue;
-						}
-
-						normals32.reserve(meshData.vertexMap.normals.size());
-
-						for (int i = 0; i < meshData.vertexMap.vertices.size(); ++i) {
-							auto& n = meshData.vertexMap.normals[i];
-							normals32.push_back({ (float)(n.x), (float)(n.y), (float)(n.z) });
-						}
-					}
-
-					std::vector<repo::lib::RepoVector3D> vertices32;
-					vertices32.reserve(meshData.vertexMap.vertices.size());
-					bool partialObject = meshGroupEntry.first == meshLayerEntry.first;
-					auto parentId = layerToTrans[meshLayerEntry.first]->getSharedID();
-
-					for (int i = 0; i < meshData.vertexMap.vertices.size(); ++i) {
-						auto& v = meshData.vertexMap.vertices[i];
-						vertices32.push_back({ (float)(v.x - minMeshBox[0]), (float)(v.y - minMeshBox[1]), (float)(v.z - minMeshBox[2]) });
-					}
-
-					auto meshNode = repo::core::model::RepoBSONFactory::makeMeshNode(
-						vertices32,
-						meshData.faces,
-						normals32,
-						meshData.boundingBox,
-						uvChannels,
-						partialObject ? "" : meshGroupEntry.first,
-						{ parentId }
-					);
-
-					if (idToMeta.find(meshGroupEntry.first) != idToMeta.end()) {
-						auto itPtr = elementToMetaNode.find(meshGroupEntry.first);
-						auto metaParent = partialObject ? parentId : meshNode.getSharedID();
-						if (itPtr == elementToMetaNode.end()) {
-							auto metaNode = createMetaNode(meshGroupEntry.first, metaParent, idToMeta[meshGroupEntry.first]);
-							elementToMetaNode[meshGroupEntry.first] = metaNode;
-							metaNodes.insert(metaNode);
-						}
-						else {
-							itPtr->second->addParent(metaParent);
-						}
-					}
-
-					if (matToMeshes.find(meshData.matIdx) == matToMeshes.end()) {
-						matToMeshes[meshData.matIdx] = std::vector<repo::lib::RepoUUID>();
-					}
-					matToMeshes[meshData.matIdx].push_back(meshNode.getSharedID());
-
-					res.insert(new repo::core::model::MeshNode(meshNode));
-				}
-			}
-		}
-	}
-
-	transNodes.insert(new repo::core::model::TransformationNode(root));
-	return res;
+	meshBuilders.clear();
+	return pairs;
 }
 
-repo::core::model::MetadataNode*  GeometryCollector::createMetaNode(
-	const std::string &name,
-	const repo::lib::RepoUUID &parentId,
-	const  std::unordered_map<std::string, repo::lib::RepoVariant> &metaValues
-) {
-	return new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(metaValues, name, { parentId }));
-}
-
-repo::core::model::TransformationNode*  GeometryCollector::createTransNode(
-	const std::string &name,
-	const std::string &id,
-	const repo::lib::RepoUUID &parentId)
+GeometryCollector::Context::~Context()
 {
-	auto transNode = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), name, { parentId }));
-	if (idToMeta.find(id) != idToMeta.end()) {
-		if (elementToMetaNode.find(id) == elementToMetaNode.end()) {
-			auto metaNode = createMetaNode(name, transNode->getSharedID(), idToMeta[id]);
-			metaNodes.insert(metaNode);
-			elementToMetaNode[id] = metaNode;
-		}
-		else {
-			elementToMetaNode[id]->addParent(transNode->getSharedID());
-		}
+	if (meshBuilders.size()) {
+		throw repo::lib::RepoGeometryProcessingException("GeometryCollector draw context is being destroyed before extract has been called.");
 	}
-	return transNode;
-}
-
-void repo::manipulator::modelconvertor::odaHelper::GeometryCollector::setRootMatrix(repo::lib::RepoMatrix matrix)
-{
-	rootMatrix = matrix;
-}
-
-int GeometryCollector::getErrorCode()
-{
-	return errorCode;
-}
-
-bool GeometryCollector::hasMissingTextures()
-{
-	return missingTextures;
-}
-
-void GeometryCollector::getMaterialAndTextureNodes(repo::core::model::RepoNodeSet& materials, repo::core::model::RepoNodeSet& textures) {
-	materials.clear();
-	textures.clear();
-
-	for (const auto &matPair : idxToMat) {
-		auto matIdx = matPair.first;
-		if (matToMeshes.find(matIdx) != matToMeshes.end()) {
-			auto& materialNode = matPair.second.first;
-			auto& textureNode = matPair.second.second;
-
-			auto matNode = new repo::core::model::MaterialNode(materialNode);
-			matNode->addParents(matToMeshes[matIdx]);
-			materials.insert(matNode);
-
-			//FIXME: Mat shared ID is known at the point of creating texture node. We shouldn't be cloning here.
-			// SJF: the clone is also to get a pointer
-			if (!textureNode.isEmpty()) {
-
-				auto texNode = new repo::core::model::TextureNode(textureNode);
-				texNode->addParent(matNode->getSharedID());
-				textures.insert(texNode);
-			}
-		}
-		else {
-			repoDebug << "Did not find matTo Meshes: " << matIdx;
-		}
-	}
-}
-
-repo::core::model::TextureNode GeometryCollector::createTextureNode(const std::string& texturePath)
-{
-	std::ifstream::pos_type size;
-	std::ifstream file(texturePath, std::ios::in | std::ios::binary | std::ios::ate);
-	char *memblock = nullptr;
-	if (!file.is_open())
-		return repo::core::model::TextureNode();
-
-	size = file.tellg();
-	memblock = new char[size];
-	file.seekg(0, std::ios::beg);
-	file.read(memblock, size);
-	file.close();
-
-	auto texnode = repo::core::model::RepoBSONFactory::makeTextureNode(
-		texturePath,
-		(const char*)memblock,
-		size,
-		1,
-		0
-	);
-
-	delete[] memblock;
-
-	return texnode;
 }

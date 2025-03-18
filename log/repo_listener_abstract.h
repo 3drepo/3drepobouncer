@@ -16,36 +16,24 @@
 */
 
 /**
-* Abstract optimizer class
+* Abstract listener class that any object wishing to subscript to the library logger
+* will have to implement.
 */
 
 #pragma once
 
-#include "../../core/model/collection/repo_scene.h"
+#include <repo/repo_bouncer_global.h>
+#include <string>
 
-namespace repo {
-	namespace manipulator {
-		namespace modeloptimizer {
-			class AbstractOptimizer
-			{
-			public:
-				/**
-				* Default constructor
-				*/
-				AbstractOptimizer();
+namespace repo{
+	namespace lib{
+		class REPO_API_EXPORT RepoAbstractListener
+		{
+		public:
+			RepoAbstractListener() {}
+			~RepoAbstractListener(){};
 
-				/**
-				* Default deconstructor
-				*/
-				virtual ~AbstractOptimizer();
-
-				/**
-				* Apply optimisation on the given repoScene
-				* @param scene takes in a repoScene to optimise
-				* @return returns true upon success
-				*/
-				virtual bool apply(repo::core::model::RepoScene *scene) = 0;
-			};
-		}
+			virtual void messageGenerated(const std::string &message) = 0;
+		};
 	}
 }

@@ -26,8 +26,8 @@
 #include <Windows.h>
 #endif
 
+#include "repo_log.h"
 #include "repo/repo_bouncer_global.h"
-#include "repo/lib/repo_log.h"
 #include "repo/lib/datastructure/repo_variant.h"
 
 #include <bsoncxx/document/element.hpp>

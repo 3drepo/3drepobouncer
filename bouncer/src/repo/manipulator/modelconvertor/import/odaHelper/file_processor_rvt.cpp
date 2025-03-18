@@ -20,6 +20,7 @@
 #include <Common/BmBuildSettings.h>
 #include <Gs/Gs.h>
 #include <Base/BmForgeTypeId.h>
+#include <Base/PE/BmSystemServicesPE.h>
 #include <Database/BmDatabase.h>
 #include <Database/BmUnitUtils.h>
 #include <Database/Entities/BmDBDrawing.h>
@@ -34,14 +35,17 @@
 #include <RxInit.h>
 #include <RxObjectImpl.h>
 #include <StaticRxObject.h>
-#include "Database/BmGsManager.h"
+#include <Database/BmGsManager.h>
+#include <Database/BmGsView.h>
+#include <Database/Entities/BmBasicFileInfo.h>
 
-#include "../../../../lib/repo_utils.h"
+#include "repo/lib/repo_utils.h"
 
 //3d repo bouncer
 #include "file_processor_rvt.h"
 #include "data_processor_rvt.h"
 #include "repo_system_services.h"
+#include "helper_functions.h"
 
 //help
 #include "vectorise_device_rvt.h"
@@ -51,6 +55,8 @@ using namespace repo::manipulator::modelconvertor::odaHelper;
 const bool USE_NEW_TESSELLATION = true;
 const double TRIANGULATION_EDGE_LENGTH = 1;
 const double ROUNDING_ACCURACY = 0.000001;
+
+#define RVT_TEMPORARY_DIRECTORY_ENV_VARIABLE "REPO_RVT_TEMP_DIR"
 
 // The following sets up the level of detail parameters for the FileProcessorRvt.
 // The exact meaning of the LOD parameter provided in the config will depend on
@@ -82,13 +88,17 @@ class StubDeviceModuleRvt : public OdGsBaseModule
 {
 private:
 	OdBmDatabasePtr database;
-	GeometryCollector *collector;
+	OdBmDBViewPtr view;
+	GeometryCollector* collector;
+	OdGeMatrix3d modelToWorld;
 
 public:
-	void init(GeometryCollector* const collector, OdBmDatabasePtr database)
+	void init(GeometryCollector* const collector, OdBmDatabasePtr database, OdBmDBViewPtr view, const OdGeMatrix3d& modelToWorld)
 	{
 		this->collector = collector;
 		this->database = database;
+		this->view = view;
+		this->modelToWorld = modelToWorld;
 	}
 protected:
 	OdSmartPtr<OdGsBaseVectorizeDevice> createDeviceObject()
@@ -98,65 +108,104 @@ protected:
 	OdSmartPtr<OdGsViewImpl> createViewObject()
 	{
 		OdSmartPtr<OdGsViewImpl> pP = OdRxObjectImpl<DataProcessorRvt, OdGsViewImpl>::createObject();
-		((DataProcessorRvt*)pP.get())->init(collector, database);
+		((DataProcessorRvt*)pP.get())->initialise(collector, database, view, modelToWorld);
 		return pP;
 	}
 };
 ODRX_DEFINE_PSEUDO_STATIC_MODULE(StubDeviceModuleRvt);
 
-class RepoRvtServices : public RepoSystemServices, public OdExBimHostAppServices
+class RepoRvtServices : public RepoSystemServices, public OdExBimHostAppServices, public OdBmSystemServicesPE
 {
+public:
+	/*
+	* This methods implement the abstract OdBmSystemServicesPE class, in order to
+	* turn on unloading to decrease memory usage at a cost of processing time.
+	*/
+
+	bool setUseUnload(bool enabled) 
+	{
+		this->useUnload = enabled;
+	}
+
+	virtual bool unloadEnabled() const override
+	{
+		return useUnload;
+	}
+
+	virtual bool useDisk() const override
+	{
+		return useUnload;
+	}
+
+	virtual double indexingRate() const override
+	{
+		return 0;
+	}
+
+	virtual OdString unloadFilePath() const override
+	{
+		return OdBmSystemServicesPE::unloadFilePath(); // We could change the file path using an environment variable here
+	}
+
 protected:
 	ODRX_USING_HEAP_OPERATORS(RepoSystemServices);
+
+	bool useUnload = false;
 };
 
-OdString Get3DLayout(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimDatabase)
+OdBmDBDrawingPtr findView(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimDatabase)
 {
-	OdString layoutName;
+	// Layouts correspond to the Views listed in the Project Browser in Revit.
+
 	OdRxIteratorPtr layouts = baseDatabase->layouts(bimDatabase);
 	bool navisNameFound = false;
 
+	OdBmDBDrawingPtr currentpDBDrawing;
 	for (; !layouts->done(); layouts->next())
 	{
 		OdBmDBDrawingPtr pDBDrawing = layouts->object();
-		OdDbBaseLayoutPEPtr pLayout(layouts->object());
-
 		if (pDBDrawing->getBaseViewType() == OdBm::ViewType::ThreeD)
 		{
-			auto viewName = pLayout->name(layouts->object());
-			auto viewNameStr = convertToStdString(viewName);
-			repo::lib::toLower(viewNameStr);
+			OdDbBaseLayoutPEPtr pLayout(pDBDrawing);
+			auto viewNameStr = convertToStdString(pDBDrawing->getTitle());
+
 			//set first 3D view available
-			if (layoutName.isEmpty()) {
-				layoutName = pLayout->name(layouts->object());
-				repoInfo << "First layout name is " << convertToStdString(layoutName);
+			if (!currentpDBDrawing) {
+				currentpDBDrawing = pDBDrawing;
+				repoInfo << "First layout name is " << viewNameStr;
 			}
+
+			// Make lowercase for the comparisons below
+			repo::lib::toLower(viewNameStr);
 
 			//3D view called "3D Repo" should return straight away
 			if (viewNameStr.find("3drepo") != std::string::npos || viewNameStr.find("3d repo") != std::string::npos) {
 				repoInfo << "Found 3D view named 3D Repo.";
-				return pLayout->name(layouts->object());
+				return pDBDrawing;
 			}
 
 			if (!navisNameFound) {
 				navisNameFound = viewNameStr.find("navis") != std::string::npos;
 				if (navisNameFound) {
 					//3D View called "navis" has precedence over default 3D view
-					repoInfo << "Found default named 3D view.";
-					layoutName = pLayout->name(layouts->object());
+					repoInfo << "Found view containing \"navis\".";
+					currentpDBDrawing = pDBDrawing;
 				}
-				else if (pDBDrawing->getName().iCompare("{3D}") == 0) {
+				else if (pDBDrawing->getName().iCompare("{3D}") == 0) { // For checking default 3D view, we use the drawings true name for an exact match
 					repoInfo << "Found default named 3D view.";
-					layoutName = pLayout->name(layouts->object());
+					currentpDBDrawing = pDBDrawing;
 				}
 			}
 		}
 	}
 
-	return layoutName;
+	return currentpDBDrawing;
 }
 
-repo::manipulator::modelconvertor::odaHelper::FileProcessorRvt::~FileProcessorRvt()
+FileProcessorRvt::FileProcessorRvt(const std::string& inputFile,
+	modelutility::RepoSceneBuilder* builder,
+	const ModelImportConfig& config) :
+	FileProcessor(inputFile, builder, config)
 {
 }
 
@@ -200,12 +249,79 @@ void setupRenderMode(OdBmDatabasePtr database, OdGsDevicePtr device, OdGiDefault
 	view->setMode(renderMode);
 }
 
+OdGeExtents3d getModelBounds(OdBmDBViewPtr view)
+{
+	OdBmObjectIdArray elements;
+	view->getVisibleDrawableElements(elements);
+
+	repoInfo << "Getting bounds of " << elements.size() << " visible elements...";
+
+	OdGeExtents3d model;
+	for (auto& e : elements)
+	{
+		OdBmElementPtr element = e.safeOpenObject();
+		OdGeExtents3d extents;
+		model.addExt(element->getBBox()); // These are in model space, in Revits internal units
+	}
+
+	return model;
+}
+
+OdGeMatrix3d getModelToWorldMatrix(OdBmDatabasePtr pDb)
+{
+	OdBmElementTrackingDataPtr pElementTrackingDataMgr = pDb->getAppInfo(OdBm::ManagerType::ElementTrackingData);
+	OdBmObjectIdArray aElements;
+	OdResult res = pElementTrackingDataMgr->getElementsByType(
+		pDb->getObjectId(OdBm::BuiltInCategory::OST_ProjectBasePoint),
+		OdBm::TrackingElementType::Elements,
+		aElements);
+
+	if (!aElements.isEmpty())
+	{
+		OdBmBasePointPtr pThis = aElements.first().safeOpenObject();
+		if (pThis->getLocationType() == 0)
+		{
+			if (OdBmGeoLocation::isGeoLocationAllowed(pThis->database()))
+			{
+				// Revit has three coordinate systems, defined relative to: Internal Origin,
+				// Project Base Point and Survey Point.
+				// The Survey Point is the one that defines the shared coordinate system of
+				// a site; this is the coordinate system 3DRepo operates in, and is the one
+				// shared in a Federation.
+
+				// The Active Location is the Survey Point of the active Site. Revit can have
+				// a number of Sites defined, each with exactly one Survey Point. 
+				// This snippet initialises a matrix to convert from internal coordinates
+				// (model space) to the shared coordinate system, including conversion to the
+				// project's units. (Geometry still has to undergo the world offset applied to
+				// a revision node.)
+
+				OdBmGeoLocationPtr pActiveLocation = OdBmGeoLocation::getActiveLocationId(pThis->database()).safeOpenObject();
+				OdGeMatrix3d activeTransform = pActiveLocation->getTransform();
+				activeTransform.invert();
+
+				auto units = DataProcessorRvt::getLengthUnits(pDb);
+				auto scaleCoef = 1.0 / OdBmUnitUtils::getUnitTypeIdInfo(units).inIntUnitsCoeff;
+				activeTransform.preMultBy(OdGeMatrix3d::scaling(OdGeScale3d(scaleCoef)));
+
+				return activeTransform;
+			}
+		}
+	}
+}
+
 uint8_t FileProcessorRvt::readFile()
 {
 	int nRes = REPOERR_OK;
 	OdStaticRxObject<RepoRvtServices> svcs;
 	odrxInitialize(&svcs);
-	OdRxModule* pModule = ::odrxDynamicLinker()->loadModule(OdBmLoaderModuleName, false);
+
+	::odrxDynamicLinker()->loadModule(OdBmLoaderModuleName, false);
+
+	// Extensions should be initialised after the loader module, but before reading
+	// a file
+	OdRxSystemServices::desc()->addX(OdBmSystemServicesPE::desc(), static_cast<OdBmSystemServicesPE*>(&svcs));
+
 	odgsInitialize();
 	try
 	{
@@ -217,36 +333,53 @@ uint8_t FileProcessorRvt::readFile()
 			triParams.normalTolerance = LOD_PARAMETERS[importConfig.getLevelOfDetail()].normalTolerance;
 		}
 		setTessellationParams(triParams);
-		OdBmDatabasePtr pDb = svcs.readFile(OdString(file.c_str()));
+
+		OdBmDatabasePtr pDb = svcs.readFile(OdString(file.c_str()));	
 		if (!pDb.isNull())
 		{
+			// The 'drawing' object corresponds to a named entry in the 'Views' list in
+			// Revit, the drawing instance is a mostly empty container that points to an
+			// instance of the View Family type, which is what holds the actual
+			// properties.
+
 			OdDbBaseDatabasePEPtr pDbPE(pDb);
-			OdString layout = Get3DLayout(pDbPE, pDb);
-			repoInfo << "Using 3D View: " << convertToStdString(layout);
-			if (layout.isEmpty()) {
-				nRes = REPOERR_VALID_3D_VIEW_NOT_FOUND;
+			auto drawing = findView(pDbPE, pDb);
+
+			if (!drawing) {
+				throw repo::lib::RepoSceneProcessingException("Could not find a suitable view.", REPOERR_VALID_3D_VIEW_NOT_FOUND);
 			}
-			else {
-				pDbPE->setCurrentLayout(pDb, layout);
+			repoInfo << "Using 3D View: " << convertToStdString(drawing->getShortDescriptiveName());
 
-				OdGiDefaultContextPtr pBimContext = pDbPE->createGiContext(pDb);
-				OdGsModulePtr pGsModule = ODRX_STATIC_MODULE_ENTRY_POINT(StubDeviceModuleRvt)(OD_T("StubDeviceModuleRvt"));
+			OdBmDBViewPtr pView = drawing->getBaseDBViewId().safeOpenObject();
+			auto modelToWorld = getModelToWorldMatrix(pDb); // World here is the shared or 'project' coordinate system			
 
-				((StubDeviceModuleRvt*)pGsModule.get())->init(collector, pDb);
-				OdGsDevicePtr pDevice = pGsModule->createDevice();
+			auto bounds = getModelBounds(pView);
+			bounds.transformBy(modelToWorld);
+			repoSceneBuilder->setWorldOffset(toRepoVector(bounds.minPoint()));
 
-				pDevice = pDbPE->setupActiveLayoutViews(pDevice, pBimContext);
+			OdGiDefaultContextPtr pBimContext = pDbPE->createGiContext(pDb);
+			OdGsModulePtr pGsModule = ODRX_STATIC_MODULE_ENTRY_POINT(StubDeviceModuleRvt)(OD_T("StubDeviceModuleRvt"));
 
-				// NOTE: Render mode can be kFlatShaded, kGouraudShaded, kFlatShadedWithWireframe, kGouraudShadedWithWireframe
-				// kHiddenLine mode prevents materails from being uploaded
-				// Uncomment the setupRenderMode function call to change render mode
-				//setupRenderMode(pDb, pDevice, pBimContext, OdGsView::kFlatShaded);
+			GeometryCollector collector(repoSceneBuilder);
+			((StubDeviceModuleRvt*)pGsModule.get())->init(&collector, pDb, pView, modelToWorld);
+			OdGsDevicePtr pDevice = pGsModule->createDevice();
 
-				OdGsDCRect screenRect(OdGsDCPoint(0, 0), OdGsDCPoint(1000, 1000)); //Set the screen space to the borders of the scene
-				pDevice->onSize(screenRect);
-				setupUnitsFormat(pDb, ROUNDING_ACCURACY);
-				pDevice->update();
-			}
+			pDbPE->setupLayoutView(pDevice, pBimContext, drawing->objectId());
+			
+			// NOTE: Render mode can be kFlatShaded, kGouraudShaded, kFlatShadedWithWireframe, kGouraudShadedWithWireframe
+			// kHiddenLine mode prevents materails from being uploaded
+			// Uncomment the setupRenderMode function call to change render mode
+			//setupRenderMode(pDb, pDevice, pBimContext, OdGsView::kFlatShaded);
+
+			OdGsDCRect screenRect(OdGsDCPoint(0, 0), OdGsDCPoint(1000, 1000)); //Set the screen space to the borders of the scene
+			pDevice->onSize(screenRect);
+			setupUnitsFormat(pDb, ROUNDING_ACCURACY);
+
+			repoInfo << "Processing geometry...";
+
+			pDevice->update();
+
+			collector.finalise();
 		}
 	}
 	catch (OdError& e)
@@ -259,6 +392,17 @@ uint8_t FileProcessorRvt::readFile()
 			nRes = REPOERR_LOAD_SCENE_FAIL;
 		}
 	}
+	catch (const std::exception& e)
+	{
+		// Rethrows the existing exception after attempting cleanup. Nested exceptions
+		// are now the preferred way to report runtime issues. Try cleaning up ODA
+		// though so that its destructors don't throw again & confuse the process exit.
+
+		odgsUninitialize();
+		odrxUninitialize();
+		throw; 
+	}
+
 	odgsUninitialize();
 	odrxUninitialize();
 

@@ -19,8 +19,8 @@
 #include "file_processor_nwd.h"
 #include "data_processor_nwd.h"
 #include "repo_system_services.h"
-
-#include "../repo_model_units.h"
+#include "repo/manipulator/modelconvertor/import/repo_model_units.h"
+#include "helper_functions.h"
 
 // ODA
 #include <OdaCommon.h>
@@ -74,26 +74,26 @@ uint8_t FileProcessorNwd::readFile()
 		auto fileUnits = pNwDb->getUnits();
 		switch (fileUnits) {
 		case  NwModelUnits::UNITS_METERS:
-			collector->units = ModelUnits::METRES;
+			repoSceneBuilder->setUnits(ModelUnits::METRES);
 			break;
 		case  NwModelUnits::UNITS_CENTIMETERS:
-			collector->units = ModelUnits::CENTIMETRES;
+			repoSceneBuilder->setUnits(ModelUnits::CENTIMETRES);
 			break;
 		case  NwModelUnits::UNITS_MILLIMETERS:
-			collector->units = ModelUnits::MILLIMETRES;
+			repoSceneBuilder->setUnits(ModelUnits::MILLIMETRES);
 			break;
 		case  NwModelUnits::UNITS_FEET:
-			collector->units = ModelUnits::FEET;
+			repoSceneBuilder->setUnits(ModelUnits::FEET);
 			break;
 		case  NwModelUnits::UNITS_INCHES:
-			collector->units = ModelUnits::INCHES;
+			repoSceneBuilder->setUnits(ModelUnits::INCHES);
 			break;
 		default:
 			repoWarning << "Unsupported project units: " << (int)fileUnits;
-			collector->units = ModelUnits::UNKNOWN;
+			repoSceneBuilder->setUnits(ModelUnits::UNKNOWN);
 		}
 
-		DataProcessorNwd dataProcessor(collector);
+		DataProcessorNwd dataProcessor(repoSceneBuilder);
 		dataProcessor.process(pNwDb);
 	}
 	catch (OdError& e)

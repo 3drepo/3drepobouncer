@@ -9,6 +9,7 @@ if(ODA_SUPPORT)
 		${TEST_SOURCES}
 		${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_metadata_variant_nwd.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_metadata_variant_rvt.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_model_import_oda.cpp
 		CACHE STRING "TEST_SOURCES" FORCE)
 
 endif()

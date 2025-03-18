@@ -6,11 +6,12 @@
 
 set(SOURCES
 	${SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_expressions.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_query.cpp
 	CACHE STRING "SOURCES" FORCE)
 
 set(HEADERS
 	${HEADERS}
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_expressions.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_query.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_query_fwd.h
 	CACHE STRING "HEADERS" FORCE)
 

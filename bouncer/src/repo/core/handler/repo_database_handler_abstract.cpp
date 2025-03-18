@@ -20,3 +20,27 @@
 */
 
 #include "repo_database_handler_abstract.h"
+
+#include "repo/core/model/bson/repo_bson.h"
+
+const repo::core::model::RepoBSON repo::core::handler::database::Cursor::Iterator::operator*() {
+	return impl->operator*();
+}
+
+void repo::core::handler::database::Cursor::Iterator::operator++() {
+	impl->operator++();
+}
+
+bool repo::core::handler::database::Cursor::Iterator::operator!=(const Iterator& other) {
+	return impl->operator!=(other.impl);
+}
+
+repo::core::handler::database::Cursor::Iterator::Iterator(Impl* impl)
+	:impl(impl)
+{
+}
+
+// This exists so unique_ptr will call any destructors on the base class
+repo::core::handler::database::Cursor::~Cursor()
+{
+}

@@ -28,7 +28,7 @@
 #include <vector>
 
 #include "vectorise_device_dgn.h"
-#include "../../../../core/model/bson/repo_node_mesh.h"
+#include "repo/core/model/bson/repo_node_mesh.h"
 #include "repo/lib/datastructure/repo_variant.h"
 
 namespace repo {
@@ -38,12 +38,9 @@ namespace repo {
 				class DataProcessorDwg : public DataProcessor
 				{
 				public:
-					DataProcessorDwg() {}
-
 					bool doDraw(OdUInt32 i,	const OdGiDrawable* pDrawable) override;
-					void init(GeometryCollector *const geoCollector);
 					void setMode(OdGsView::RenderMode mode);
-					void endViewVectorization();
+					~DataProcessorDwg();
 
 				protected:
 
@@ -52,21 +49,39 @@ namespace repo {
 						OdDbStub* materialId,
 						const OdGiMaterialTraitsData & materialData,
 						MaterialColours& matColors,
-						repo_material_t& material,
-						bool& missingTexture) override;
+						repo::lib::repo_material_t& material) override;
 
 				private:
-					void convertTo3DRepoColor(OdCmEntityColor& color, std::vector<float>& out);
+					void convertTo3DRepoColor(OdCmEntityColor& color, repo::lib::repo_color3d_t& out);
+
+					class Layer
+					{
+					public:
+						std::string id;
+						std::string name;
+
+						Layer(std::string id, std::string name):
+							id(id),
+							name(name)
+						{
+						}
+
+						Layer() 
+						{
+						}
+
+						operator bool() const {
+							return !id.empty() && !name.empty();
+						}
+					};
 
 					// Some properties to be held between invocations of doDraw()
 					class Context
 					{
 					public:
 						bool inBlock = false;
-						std::string currentBlockReferenceLayerId;
-						std::string currentBlockReferenceLayerName;
-						std::string currentBlockReferenceId;
-						std::string currentBlockReferenceName;
+						Layer currentBlockReferenceLayer;
+						Layer currentBlockReference;
 						OdDbObjectId layoutId;
 					};
 

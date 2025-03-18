@@ -21,7 +21,6 @@
 
 #pragma once
 
-#include "repo_optimizer_abstract.h"
 #include "../../core/model/collection/repo_scene.h"
 #include "../../core/model/bson/repo_node_mesh.h"
 #include "../../core/model/bson/repo_node_supermesh.h"
@@ -30,19 +29,9 @@
 namespace repo {
 	namespace manipulator {
 		namespace modeloptimizer {
-			class MultipartOptimizer : AbstractOptimizer
+			class MultipartOptimizer
 			{
 			public:
-				/**
-				* Default constructor
-				*/
-				MultipartOptimizer();
-
-				/**
-				* Default deconstructor
-				*/
-				virtual ~MultipartOptimizer();
-
 				/**
 				* Apply optimisation on the given repoScene
 				* @param scene takes in a repoScene to optimise
@@ -84,9 +73,9 @@ namespace repo {
 				struct mapped_mesh_t {
 					std::vector<repo::lib::RepoVector3D> vertices;
 					std::vector<repo::lib::RepoVector3D> normals;
-					std::vector<repo_face_t> faces;
+					std::vector<repo::lib::repo_face_t> faces;
 					std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
-					std::vector<repo_mesh_mapping_t> meshMapping;
+					std::vector<repo::lib::repo_mesh_mapping_t> meshMapping;
 				};
 
 				void appendMesh(
