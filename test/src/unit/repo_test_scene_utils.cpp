@@ -54,6 +54,11 @@ SceneUtils::NodeInfo SceneUtils::getRootNode()
 	return getNodeInfo(scene->getRoot(repo::core::model::RepoScene::GraphType::DEFAULT));
 }
 
+bool SceneUtils::isPopulated()
+{
+	return scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size() > 0;
+}
+
 std::vector<SceneUtils::NodeInfo> SceneUtils::findTransformationNodesByName(std::string name)
 {
 	std::vector<NodeInfo> nodes;

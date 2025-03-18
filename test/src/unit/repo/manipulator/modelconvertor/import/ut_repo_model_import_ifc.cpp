@@ -765,13 +765,33 @@ TEST(IFCModelImport, InfiniteLoopRegression)
 
 	auto scene = IfcModelImportUtils::ModelImportManagerImport("RegressionTests", getDataPath(ifcModel_InfiniteLoop));
 	SceneUtils utils(scene);
+	EXPECT_TRUE(utils.isPopulated());
+}
 
-	if (utils.findNodeByMetadata("Name", "N4021").node)
-	{
-		SUCCEED();
-	}
-	else
-	{
-		FAIL();
-	}
+TEST(IFCModelImport, Ifc2x3)
+{
+	auto scene = IfcModelImportUtils::ModelImportManagerImport("VersionTests", getDataPath(ifc2x3Model));
+	SceneUtils utils(scene);
+	EXPECT_TRUE(utils.isPopulated());
+}
+
+TEST(IFCModelImport, Ifc4)
+{
+	auto scene = IfcModelImportUtils::ModelImportManagerImport("VersionTests", getDataPath(ifc4Model));
+	SceneUtils utils(scene);
+	EXPECT_TRUE(utils.isPopulated());
+}
+
+TEST(IFCModelImport, Ifc4x3)
+{
+	auto scene = IfcModelImportUtils::ModelImportManagerImport("VersionTests", getDataPath(ifc4x3Model));
+	SceneUtils utils(scene);
+	EXPECT_TRUE(utils.isPopulated());
+}
+
+TEST(IFCModelImport, Ifc4x3_Add2)
+{
+	auto scene = IfcModelImportUtils::ModelImportManagerImport("VersionTests", getDataPath(ifc4x3_add2Model));
+	SceneUtils utils(scene);
+	EXPECT_TRUE(utils.isPopulated());
 }

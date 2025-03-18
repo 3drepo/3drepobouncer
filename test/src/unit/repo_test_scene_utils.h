@@ -92,6 +92,8 @@ namespace testing {
 		std::vector<NodeInfo> getParentNodes(repo::core::model::RepoNode* node);
 		NodeInfo getNodeInfo(repo::core::model::RepoNode* node);
 		NodeInfo getRootNode();
+
+		bool isPopulated();
 	};
 
 	
