@@ -29,14 +29,14 @@ SET(IFCOS_LIB_NAMES
 	geometry_kernel_cgal
 	geometry_kernel_cgal_simple
 	geometry_kernel_opencascade
-	geometry_mapping_ifc2x3.lib
-	geometry_mapping_ifc4.lib
-	geometry_mapping_ifc4x1.lib
-	geometry_mapping_ifc4x2.lib
-	geometry_mapping_ifc4x3.lib
-	geometry_mapping_ifc4x3_add1.lib
-	geometry_mapping_ifc4x3_add2.lib
-	geometry_mapping_ifc4x3_tc1.lib
+	geometry_mapping_ifc2x3
+	geometry_mapping_ifc4
+	geometry_mapping_ifc4x1
+	geometry_mapping_ifc4x2
+	geometry_mapping_ifc4x3
+	geometry_mapping_ifc4x3_add1
+	geometry_mapping_ifc4x3_add2
+	geometry_mapping_ifc4x3_tc1
 	mpfr
 	mpir
 	mpirxx
