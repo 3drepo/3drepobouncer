@@ -52,6 +52,11 @@ namespace IfcModelImportUtils
 
 		ModelImportManager manager;
 		auto scene = manager.ImportFromFile(filename, config, handler, err);
+
+		if (err != REPOERR_OK) {
+			throw repo::lib::RepoImportException(err);
+		}
+
 		scene->commit(handler.get(), handler->getFileManager().get(), msg, "testuser", "", "", config.getRevisionId());
 		scene->loadScene(handler.get(), msg);
 
