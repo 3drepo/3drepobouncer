@@ -96,7 +96,7 @@ matrix:
           - cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_BUILD_TYPE=Debug -DSYNCHRO_SUPPORT=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
           - mongosh mydb_test --eval 'db.createUser({user:"testUser",pwd:"3drepotest",roles:["readWrite"]});'
       script:
-          - sudo make -j8 install VERBOSE=1
+          - sudo make -j8 install
           - export REPO_MODEL_PATH=$PWD/../testData/bouncer/data/models
           - for f in $REPO_MODEL_PATH/*.json; do sed -i.bak -e 's|$REPO_MODEL_PATH|'$REPO_MODEL_PATH'|g' $f; done
           - export REPOBOUNCER_ROOT=$HOME/bouncer_install
@@ -182,7 +182,7 @@ matrix:
       script:
             # check compilation with license enabled
           - cd $BOUNCER_DIR/build && cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Debug -DLICENSE_CHECK=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
-          - sudo make install -j8 VERBOSE=1
+          - sudo make install -j8
 
 notifications:
     email:
