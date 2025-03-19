@@ -3,7 +3,7 @@ matrix:
   include:
     - language: node_js
       name: Bouncer Worker linter check
-      dist: jammy
+      dist: noble
       node_js:
         - "18.20.6"
       script:
@@ -13,7 +13,7 @@ matrix:
           submodules: false
 
     - language: cpp
-      dist: jammy
+      dist: noble
       name: Unit tests and integration tests
       node_js:
         - "18.20.6"
@@ -42,7 +42,7 @@ matrix:
           - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 11
           - sudo apt remove mongodb && sudo apt purge mongodb && sudo apt autoremove && sudo rm -rf /var/lib/mongodb
           - curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-8.0.gpg --dearmor
-          - echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
+          - echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
           - sudo apt-get update
           - sudo apt-get install -y mongodb-org mongodb-org-database mongodb-org-server mongodb-org-mongos mongodb-org-tools
           - sudo mkdir -p /var/lib/mongodb
@@ -98,7 +98,7 @@ matrix:
           - cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_BUILD_TYPE=Debug -DSYNCHRO_SUPPORT=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
           - mongosh mydb_test --eval 'db.createUser({user:"testUser",pwd:"3drepotest",roles:["readWrite"]});'
       script:
-          - sudo make -j8 install
+          - sudo make -j8 install VERBOSE=1
           - export REPO_MODEL_PATH=$PWD/../testData/bouncer/data/models
           - for f in $REPO_MODEL_PATH/*.json; do sed -i.bak -e 's|$REPO_MODEL_PATH|'$REPO_MODEL_PATH'|g' $f; done
           - export REPOBOUNCER_ROOT=$HOME/bouncer_install
@@ -112,7 +112,7 @@ matrix:
           - cd $BOUNCER_DIR - && coveralls --root . -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "mongo" -e "assimp" -e "assimp-install" -e "mongo-cxx-1.1.0" -e "aws-install"
 
     - language: cpp
-      dist: jammy
+      dist: noble
       name: license support compilation check
       node_js:
         - "18.20.6"
@@ -184,7 +184,7 @@ matrix:
       script:
             # check compilation with license enabled
           - cd $BOUNCER_DIR/build && cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Debug -DLICENSE_CHECK=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
-          - sudo make install -j8
+          - sudo make install -j8 VERBOSE=1
 
 notifications:
     email:
