@@ -21,6 +21,7 @@
 #include <map>
 #include <string>
 #include <unordered_map>
+#include <memory>
 #include "repo/lib/datastructure/repo_variant.h"
 #include "repo/core/handler/database/repo_query_fwd.h"
 
