@@ -25,11 +25,11 @@ if(DEFINED ENV{SYNCHRO_READER_ROOT})
 	find_path(SYNCHRO_READER_INCLUDE_DIR interface
 		${SYNCHRO_READER_ROOT}/include
 		)
-	find_library(SYNCHRO_READER_LIBRARIES_RELEASE NAMES 3drepoSynchroReader_4_0_2
+	find_library(SYNCHRO_READER_LIBRARIES_RELEASE NAMES 3drepoSynchroReader
 		PATHS
 		${SYNCHRO_READER_ROOT}/lib
 	)
-find_library(SYNCHRO_READER_LIBRARIES_DEBUG NAMES 3drepoSynchroReader_4_0_2d 3drepoSynchroReader_4_0_2
+find_library(SYNCHRO_READER_LIBRARIES_DEBUG NAMES 3drepoSynchroReaderd 3drepoSynchroReader
 		PATHS
 		${SYNCHRO_READER_ROOT}/lib
 	)
@@ -49,14 +49,14 @@ else(SYNCHRO_READER_INCLUDE_DIR AND SYNCHRO_READER_LIBRARIES)
 		/opt/local/include
     )
 
-	find_library(SYNCHRO_READER_LIBRARIES_RELEASE NAMES 3drepoSynchroReader_4_0_2
+	find_library(SYNCHRO_READER_LIBRARIES_RELEASE NAMES 3drepoSynchroReader
     	PATHS
     	/usr/lib/
     	/usr/local/lib/
     	/opt/local/lib/
     )
 
-	find_library(SYNCHRO_READER_LIBRARIES_DEBUG NAMES 3drepoSynchroReader_4_0_2d 3drepoSynchroReader_4_0_2
+	find_library(SYNCHRO_READER_LIBRARIES_DEBUG NAMES 3drepoSynchroReaderd 3drepoSynchroReader
     	PATHS
     	/usr/lib/
     	/usr/local/lib/
