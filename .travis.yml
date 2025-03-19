@@ -37,7 +37,7 @@ matrix:
           - sudo apt-get install gnupg curl
           - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
           - sudo apt update
-          - sudo apt install gcc-11 g++-11 -y
+          - sudo apt install gcc-11 g++-11 python3 -y
           - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 11
           - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 11
           - sudo apt remove mongodb && sudo apt purge mongodb && sudo apt autoremove && sudo rm -rf /var/lib/mongodb
