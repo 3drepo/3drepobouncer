@@ -37,9 +37,6 @@ SET(IFCOS_LIB_NAMES
 	geometry_mapping_ifc4x3_add1
 	geometry_mapping_ifc4x3_add2
 	geometry_mapping_ifc4x3_tc1
-	mpfr
-	mpir
-	mpirxx
 )
 
 set(IFCOPENSHELL_FOUND TRUE)
@@ -58,6 +55,7 @@ if(DEFINED ENV{IFCOPENSHELL_ROOT})
 			/usr/lib/
 			/usr/local/lib/
 			/opt/local/lib/
+			/usr/lib/x86_64-linux-gnu
 		)
 		
 		if(NOT libPath${libName})

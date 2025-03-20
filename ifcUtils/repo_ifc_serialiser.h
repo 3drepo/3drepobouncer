@@ -43,17 +43,18 @@
 #include <ifcgeom/IfcGeomElement.h>
 #include <ifcgeom/ConversionSettings.h>
 
-// The indirection is required to get the preprocessor evaluate the IfcSchema
-// definition
+// The pre-processor cannot run multiple times, so we use levels of indirection
+// to get the value of the IfcSchema define as a token literal, and then the
+// combination class and filenames as token literals, for use in the top level
+// pre-processor commands.
+
+#define LITERAL(x) x
 
 #define CLASS_NAME(name) CLASS_NAME_IMPL(name)
 #define CLASS_NAME_IMPL(name) name##Serialiser
 
-#define HEADER_NAME(name) HEADER_NAME_IMPL(name)
-#define HEADER_NAME_IMPL(name) <ifcparse/##name.h>
-
-#define DEFINITIONS_NAME(name) DEFINITIONS_NAME_IMPL(name)
-#define DEFINITIONS_NAME_IMPL(name) <ifcparse/##name-definitions.h>
+#define HEADER_NAME(schema) <ifcparse/LITERAL(schema).h>
+#define DEFINITIONS_NAME(schema) <ifcparse/LITERAL(schema)-definitions.h>
 
 #include HEADER_NAME(IfcSchema)
 #include DEFINITIONS_NAME(IfcSchema)

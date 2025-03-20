@@ -55,21 +55,11 @@ SET(OCCT_LIB_NAMES
 	TKBinTObj
 	TKXmlTObj
 	TKVCAF
-	TKDE
 	TKXSBase
-	TKDESTEP
 	TKXCAF
-	TKDEIGES
-	TKDESTL
-	TKDEVRML
 	TKRWMesh
-	TKDECascade
 	TKBinXCAF
 	TKXmlXCAF
-	TKDEOBJ
-	TKDEGLTF
-	TKDEPLY
-	TKExpress
 )
 
 if(DEFINED ENV{OCCT_DEBUG_LIB_DIR})
@@ -91,7 +81,8 @@ if(DEFINED ENV{OCCT_ROOT})
 		${OCCT_ROOT}/include
 		${OCCT_ROOT}/include/opencascade
 		${OCCT_ROOT}/inc
-		)
+	)
+	
 	foreach(libName ${OCCT_LIB_NAMES})
 		find_library(libPathRelease${libName} NAMES ${libName}
 			PATHS
@@ -121,22 +112,24 @@ else(OCCT_INCLUDE_DIR AND OCCT_LIBRARIES)
 		/usr/include/opencascade
 		/usr/local/include/opencascade
 		/opt/local/include/opencascade
-    )
+	)
 
 	foreach(libName ${OCCT_LIB_NAMES})
 		find_library(libPathRelease${libName} NAMES ${libName}
 			PATHS
-	    	/usr/lib/
-    		/usr/local/lib/
-	    	/opt/local/lib/
+			/usr/lib/
+			/usr/local/lib/
+			/opt/local/lib/
+			/usr/lib/x86_64-linux-gnu/
 		)
 		set(OCCT_LIBRARIES_RELEASE ${OCCT_LIBRARIES_RELEASE} ${libPathRelease${libName}})
 		find_library(libPathDebug${libName} NAMES ${libName}
 			PATHS
 			${OCCT_DEBUG_LIB_DIR}
-	    	/usr/lib/
-    		/usr/local/lib/
-	    	/opt/local/lib/}
+			/usr/lib/
+			/usr/local/lib/
+			/opt/local/lib/
+			/usr/lib/x86_64-linux-gnu/
 		)
 		set(OCCT_LIBRARIES_DEBUG ${OCCT_LIBRARIES_DEBUG} ${libPathDebug${libName}})
 	endforeach()
