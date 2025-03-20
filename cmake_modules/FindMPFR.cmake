@@ -35,6 +35,15 @@ if(DEFINED ENV{MPFR_ROOT})
 	set(PATHS_TO_SEARCH ${MPFR_ROOT} ${PATHS_TO_SEARCH})
 endif()
 
+# MPFR is an IFCOS dependency and may be distributed with it
+
+if(DEFINED ENV{IFCOPENSHELL_ROOT})
+	set(PATHS_TO_SEARCH ${PATHS_TO_SEARCH}
+		$ENV{IFCOPENSHELL_ROOT}
+		$ENV{IFCOPENSHELL_ROOT}/lib
+	)
+endif()
+
 set(MPFR_FOUND TRUE)
 
 foreach(libName ${MPFR_LIB_NAMES})

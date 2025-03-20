@@ -25,11 +25,11 @@ if(DEFINED ENV{SYNCHRO_READER_ROOT})
 	find_path(SYNCHRO_READER_INCLUDE_DIR interface
 		${SYNCHRO_READER_ROOT}/include
 		)
-	find_library(SYNCHRO_READER_LIBRARIES_RELEASE NAMES 3drepoSynchroReader
+	find_library(SYNCHRO_READER_LIBRARIES_RELEASE NAMES 3drepoSynchroReader_4_0_2
 		PATHS
 		${SYNCHRO_READER_ROOT}/lib
 	)
-find_library(SYNCHRO_READER_LIBRARIES_DEBUG NAMES 3drepoSynchroReaderd 3drepoSynchroReader
+	find_library(SYNCHRO_READER_LIBRARIES_DEBUG NAMES 3drepoSynchroReader_4_0_2d 3drepoSynchroReader_4_0_2
 		PATHS
 		${SYNCHRO_READER_ROOT}/lib
 	)

@@ -22,6 +22,16 @@ SET(GMP_LIB_NAMES
 	gmpxx
 )
 
+# For now, for whatever reason, the GMP libraries are called something
+# different on Windows!
+
+if(${WIN32})
+	SET(GMP_LIB_NAMES
+		mpir
+		mpirxx
+	)
+endif()
+
 set(PATHS_TO_SEARCH 
 	/usr/lib/
 	/usr/local/lib/
@@ -33,6 +43,15 @@ if(DEFINED ENV{GMP_ROOT})
 	set(GMP_ROOT $ENV{GMP_ROOT})
 	message(STATUS "$GMP_ROOT defined: ${GMP_ROOT}")
 	set(PATHS_TO_SEARCH ${GMP_ROOT} ${PATHS_TO_SEARCH})
+endif()
+
+# GMP is an IFCOS dependency and may be distributed with it
+
+if(DEFINED ENV{IFCOPENSHELL_ROOT})
+	set(PATHS_TO_SEARCH ${PATHS_TO_SEARCH}
+		$ENV{IFCOPENSHELL_ROOT}
+		$ENV{IFCOPENSHELL_ROOT}/lib
+	)
 endif()
 
 set(GMP_FOUND TRUE)
@@ -51,5 +70,5 @@ endforeach()
 if(GMP_FOUND)
 	message(STATUS "GMP installation found.")
 else()
-	message(STATUS "GMP not found. Please set GMP_ROOT to your installation directory or install via a suitable package manager.")
+	message(STATUS "GMP not found. Please set GMP_ROOT to your installation directory or install via a suitable package manager. Paths searched: ${PATHS_TO_SEARCH}")
 endif()
