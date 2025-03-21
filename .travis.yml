@@ -136,6 +136,7 @@ matrix:
           - git sparse-checkout add cplusplus/bouncer/ext_libs/focal
           - git sparse-checkout add cplusplus/bouncer/ext_libs/noble
           - mv cplusplus/bouncer/ext_libs/focal/ .
+          - mv cplusplus/bouncer/ext_libs/noble/ .
           - cd ../
           - echo ============ BOOST  INSTALL =============
           - sudo apt-get install libboost-all-dev
