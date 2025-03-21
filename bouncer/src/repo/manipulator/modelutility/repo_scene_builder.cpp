@@ -405,8 +405,8 @@ void RepoSceneBuilder::AsyncImpl::push(Consumable consumable)
 
 	if (consumable.size)
 	{
-		queueSize += consumable.size;
-		while (queueSize > threshold) {
+		auto maxQueueSize = std::max((long)threshold - (long)consumable.size, 0l);
+		while (queueSize > maxQueueSize) {
 			queue.enqueue({ Consumables(Notify()), 0 });
 			block.try_acquire_for(std::chrono::seconds(1));
 			if (consumerException) {
@@ -414,6 +414,7 @@ void RepoSceneBuilder::AsyncImpl::push(Consumable consumable)
 			}
 		}
 	}
+	queueSize += consumable.size;
 	queue.enqueue(consumable);
 }
 
