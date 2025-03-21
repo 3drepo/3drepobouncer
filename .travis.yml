@@ -129,13 +129,8 @@ matrix:
           - echo -e "machine github.com\n  login $TESTUSER\n  password $TESTPW" >~/.netrc
           - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
           - sudo apt update
-          - sudo apt install gcc-11 g++-11 -y
-          - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 11
-          - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 11
           - git submodule update --init --recursive
           - export BOUNCER_DIR=$PWD
-          - export CXX="g++"
-          - export CC="gcc"
           - mkdir testData && cd testData
           - git clone --filter=blob:none --sparse https://$TESTUSER:$TESTPW@github.com/3drepo/tests.git .
           - git sparse-checkout add cplusplus/bouncer/ext_libs/focal
@@ -144,7 +139,7 @@ matrix:
           - echo ============ BOOST  INSTALL =============
           - sudo apt-get install libboost-all-dev
           - echo ============ MONGO  INSTALL =============
-          - tar -zxf testData/focal/mongo-cxx-driver.tgz
+          - tar -zxf testData/noble/mongo-cxx-driver.tgz
           - export MONGO_ROOT=$PWD/mongo-cxx-driver
           - echo ============ ASSIMP INSTALL =============
           - tar -zxf testData/focal/assimp-5.0.1.tgz
@@ -161,9 +156,11 @@ matrix:
           - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_8.3dll/
           - echo ============ SYNCHRO INSTALL =============
           - sudo apt-get install zlib1g-dev libssl-dev libxft-dev
-          - tar -zxf testData/focal/thrift-0.12.0.tgz
-          - tar -zxf testData/focal/3drepoSynchroReader-4.0.2.tgz
+          - tar -zxf testData/bouncer/ext_libs/noble/thrift-0.12.0.tgz
+          - tar -zxf testData/bouncer/ext_libs/noble/3drepoSynchroReader.tgz
+          - tar -zxf testData/bouncer/ext_libs/focal/date.tgz
           - export THRIFT_ROOT=$PWD/thrift-0.12.0
+          - export DATE_ROOT=$PWD/date
           - export SYNCHRO_READER_ROOT=$PWD/3drepoSynchroReader
           - echo ============ CRYPTOLENS INSTALL =============
           - sudo apt-get install libcurl4-openssl-dev
