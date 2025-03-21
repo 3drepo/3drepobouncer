@@ -134,6 +134,7 @@ matrix:
           - mkdir testData && cd testData
           - git clone --filter=blob:none --sparse https://$TESTUSER:$TESTPW@github.com/3drepo/tests.git .
           - git sparse-checkout add cplusplus/bouncer/ext_libs/focal
+          - git sparse-checkout add cplusplus/bouncer/ext_libs/noble
           - mv cplusplus/bouncer/ext_libs/focal/ .
           - cd ../
           - echo ============ BOOST  INSTALL =============
