@@ -158,9 +158,9 @@ matrix:
           - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_8.3dll/
           - echo ============ SYNCHRO INSTALL =============
           - sudo apt-get install zlib1g-dev libssl-dev libxft-dev
-          - tar -zxf testData/bouncer/ext_libs/noble/thrift-0.12.0.tgz
-          - tar -zxf testData/bouncer/ext_libs/noble/3drepoSynchroReader.tgz
-          - tar -zxf testData/bouncer/ext_libs/focal/date.tgz
+          - tar -zxf testData/noble/thrift-0.12.0.tgz
+          - tar -zxf testData/noble/3drepoSynchroReader.tgz
+          - tar -zxf testData/focal/date.tgz
           - export THRIFT_ROOT=$PWD/thrift-0.12.0
           - export DATE_ROOT=$PWD/date
           - export SYNCHRO_READER_ROOT=$PWD/3drepoSynchroReader
