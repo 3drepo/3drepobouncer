@@ -166,7 +166,7 @@ matrix:
           - export SYNCHRO_READER_ROOT=$PWD/3drepoSynchroReader
           - echo ============ CRYPTOLENS INSTALL =============
           - sudo apt-get install libcurl4-openssl-dev
-          - tar -zxf testData/focal/cryptoLens.tgz
+          - tar -zxf testData/noble/cryptoLens.tgz
           - export CRYPTOLENS_ROOT=$PWD/cryptoLens
             # dummy values just to ensure it compiles
           - export LICENSE_RSA_PUB_KEY_MOD="1bc"
