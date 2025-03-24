@@ -59,7 +59,7 @@ std::unique_ptr<AbstractIfcSerialiser> IfcUtils::CreateSerialiser(std::string fi
 	{
 		return std::make_unique<Ifc4x1Serialiser>(std::move(file));
 	}
-	else if (schema == "IFX4X2")
+	else if (schema == "IFC4X2")
 	{
 		return std::make_unique<Ifc4x2Serialiser>(std::move(file));
 	}
