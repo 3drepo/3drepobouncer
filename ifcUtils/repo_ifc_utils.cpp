@@ -55,16 +55,16 @@ std::unique_ptr<AbstractIfcSerialiser> IfcUtils::CreateSerialiser(std::string fi
 	{
 		return std::make_unique<Ifc4Serialiser>(std::move(file));
 	}
-	else if (schema == "IFC4x1")
+	else if (schema == "IFC4X1")
 	{
 		return std::make_unique<Ifc4x1Serialiser>(std::move(file));
 	}
-	else if (schema == "IFX4x2")
+	else if (schema == "IFX4X2")
 	{
 		return std::make_unique<Ifc4x2Serialiser>(std::move(file));
 	}
-	else if (schema == "IFC4x3" ||
-		schema == "IFC4x3_ADD1" ||
+	else if (schema == "IFC4X3" ||
+		schema == "IFC4X3_ADD1" ||
 		schema == "IFC4X3_ADD2" ||
 		schema == "IFC4X3_TC1")
 	{

@@ -14,7 +14,7 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Ifc Utils is built around IfcOpenShell; find IFCOS but also
-# any dependencies that are not in its cmake find module (OCCT).
+# any dependencies that are not in its cmake find module (e.g. OCCT).
 
 find_package(OCCT REQUIRED)
 if(NOT ${OCCT_FOUND})
@@ -100,7 +100,6 @@ target_link_libraries("ifcUtils"
 
 set(IFCUTILS_LIBRARIES
 		ifcUtils
-		${IFCOPENSHELL_LIBRARIES}
 	PARENT_SCOPE
 )
 set(IFCUTILS_INCLUDE_DIR

@@ -179,7 +179,6 @@ add_subdirectory(log)
 
 # Build IFCUtils
 add_subdirectory(ifcUtils)
-message("IFC Utils: " ${IFCUTILS_INCLUDE_DIR} ", " ${IFCUTILS_LIBRARIES})
 
 if(REPO_NO_GZIP)
 	add_definitions(-DREPO_BOOST_NO_GZIP)

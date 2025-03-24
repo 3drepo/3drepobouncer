@@ -24,8 +24,8 @@
 # mpir
 
 SET(IFCOS_LIB_NAMES
-	IfcGeom
 	IfcParse
+	IfcGeom
 	geometry_kernel_cgal
 	geometry_kernel_cgal_simple
 	geometry_kernel_opencascade
