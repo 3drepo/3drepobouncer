@@ -123,8 +123,6 @@ endif()
 if (SYNCHRO_SUPPORT)
 	add_definitions(-DSYNCHRO_SUPPORT)
 	find_package(SYNCHROREADER REQUIRED)
-	find_package(THRIFT REQUIRED)
-	find_package(ZLIB REQUIRED)
 endif()
 
 
