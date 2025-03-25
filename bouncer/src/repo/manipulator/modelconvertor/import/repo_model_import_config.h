@@ -43,6 +43,7 @@ namespace repo {
 				repo::lib::RepoUUID revisionId;
 				std::string databaseName;
 				std::string projectName;
+				int numThreads;
 			public:
 				ModelImportConfig(
 					const bool importAnimations = true,
@@ -51,7 +52,8 @@ namespace repo {
 					const int lod = 0,
 					const repo::lib::RepoUUID revisionId = repo::lib::RepoUUID::defaultValue,
 					const std::string databaseName = "",
-					const std::string projectName = ""
+					const std::string projectName = "",
+					const int numThreads = 0
 				):
 					importAnimations(importAnimations),
 					targetUnits(targetUnits),
@@ -59,7 +61,8 @@ namespace repo {
 					lod(lod),
 					revisionId(revisionId),
 					databaseName(databaseName),
-					projectName(projectName)
+					projectName(projectName),
+					numThreads(numThreads)
 				{}
 
 				~ModelImportConfig() {}
@@ -71,6 +74,7 @@ namespace repo {
 				repo::lib::RepoUUID getRevisionId() const { return revisionId; }
 				std::string getDatabaseName() const { return databaseName; }
 				std::string getProjectName() const { return projectName; }
+				int getNumThreads() const { return numThreads; }
 			};
 		}//namespace modelconvertor
 	}//namespace manipulator

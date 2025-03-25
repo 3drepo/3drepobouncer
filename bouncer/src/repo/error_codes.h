@@ -93,3 +93,5 @@
 #define REPOERR_FILE_IS_ENCRYPTED 37
 //When image processing failed (only used by bouncer_worker)
 #define REPOERR_IMAGE_PROCESSING_FAILED 38
+//When the Ifc file uses a schema that is not supported by the importer
+#define REPOERR_FILE_IFC_UNSUPPORTED_SCHEMA 39

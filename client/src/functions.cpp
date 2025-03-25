@@ -359,6 +359,7 @@ int32_t importFileAndCommit(
 	std::string  owner, tag, desc, units;
 	repo::lib::RepoUUID revId = repo::lib::RepoUUID::createUUID();
 	int lod = 0;
+	int numThreads = 0;
 
 	bool success = true;
 	bool rotate = false;
@@ -385,6 +386,7 @@ int32_t importFileAndCommit(
 			if (!revIdStr.empty()) {
 				revId = repo::lib::RepoUUID(revIdStr);
 			}
+			numThreads = jsonTree.get<int>("numThreads", numThreads);
 
 			if (database.empty() || project.empty() || fileLoc.empty())
 			{
@@ -423,12 +425,12 @@ int32_t importFileAndCommit(
 
 	repoLog("File: " + fileLoc + " database: " + database
 		+ " project: " + project + " target units: " + (units.empty() ? "none" : units) + " owner :" + owner + " importAnimations: " + (importAnimations ? "true" : "false")
-		+ " lod: " + std::to_string(lod) + " revisionId: " + revId.toString()
+		+ " lod: " + std::to_string(lod) + " revisionId: " + revId.toString() + "num threads: " + std::to_string(numThreads)
 	);
 
 	uint8_t err;
 
-	repo::manipulator::modelconvertor::ModelImportConfig config(importAnimations, targetUnits, timeZone, lod, revId, database, project);
+	repo::manipulator::modelconvertor::ModelImportConfig config(importAnimations, targetUnits, timeZone, lod, revId, database, project, numThreads);
 	repo::core::model::RepoScene* graph = controller->loadSceneFromFile(fileLoc, err, config);
 	if (graph)
 	{

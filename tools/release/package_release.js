@@ -37,7 +37,7 @@ const externalLibraries = [
 	{
 		rootEnvVar: "IFCOPENSHELL_ROOT",
 		subPath: ["lib"],
-		extensions: [...exts, ".6"]
+		extensions: [...exts, ".8"]
 	},
 	{
 		rootEnvVar: "SYNCHRO_READER_ROOT",
