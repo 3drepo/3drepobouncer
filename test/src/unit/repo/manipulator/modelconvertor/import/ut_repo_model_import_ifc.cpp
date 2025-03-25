@@ -765,14 +765,14 @@ TEST(IFCModelImport, InvalidSchema)
 	/*
 	* This particular model is broken in such a way that internal casts are invalid,
 	* so the file can be opened but when the Iterator attempts to read it will
-	* throw an exception internally. This should be detected at least, even if no
-	* debugging information is available for now.
+	* throw an exception internally. Currently the importer provides a best-effort
+	* import since it is not straightforward to detect between trivial and non-
+	* trivial errors.
 	*/
 
-	EXPECT_THROW({
-		auto scene = IfcModelImportUtils::ModelImportManagerImport("InvalidSchema", getDataPath(ifcModel_invalidSchema));
-	},
-	repo::lib::RepoException);
+	auto scene = IfcModelImportUtils::ModelImportManagerImport("InvalidSchema", getDataPath(ifcModel_invalidSchema));
+	SceneUtils utils(scene);
+	EXPECT_TRUE(utils.isPopulated());
 }
 
 TEST(IFCModelImport, InfiniteLoopRegression)

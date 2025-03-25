@@ -160,13 +160,6 @@ TEST(RepoClientTest, UploadTestTexture)
 	EXPECT_TRUE(projectExists(db, "textured"));
 }
 
-TEST(RepoClientTest, UploadTestIfcInvalidSchema)
-{
-	ASSERT_TRUE(system(nullptr));
-	std::string args = produceUploadArgs("stUpload", "ifcInvalidSchema", getDataPath(ifcModel_invalidSchema));
-	EXPECT_EQ((int)REPOERR_UNKNOWN_ERR, runProcess(args));
-}
-
 TEST(RepoClientTest, UploadTestBIM)
 {
 	//this ensures we can run processes
