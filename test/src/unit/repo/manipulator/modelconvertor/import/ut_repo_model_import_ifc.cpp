@@ -760,6 +760,21 @@ TEST(IFCModelImport, Materials)
 	}
 }
 
+TEST(IFCModelImport, InvalidSchema)
+{
+	/*
+	* This particular model is broken in such a way that internal casts are invalid,
+	* so the file can be opened but when the Iterator attempts to read it will
+	* throw an exception internally. This should be detected at least, even if no
+	* debugging information is available for now.
+	*/
+
+	EXPECT_THROW({
+		auto scene = IfcModelImportUtils::ModelImportManagerImport("InvalidSchema", getDataPath(ifcModel_invalidSchema));
+	},
+	repo::lib::RepoException);
+}
+
 TEST(IFCModelImport, InfiniteLoopRegression)
 {
 	/*

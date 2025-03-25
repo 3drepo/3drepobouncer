@@ -27,6 +27,7 @@
 #include <repo/lib/datastructure/repo_variant_utils.h>
 #include <boost/variant/apply_visitor.hpp>
 #include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/lib/repo_exception.h"
 #include "repo/error_codes.h"
 
 #include <ctime>
@@ -1641,6 +1642,10 @@ void IfcSerialiser::import(repo::manipulator::modelutility::RepoSceneBuilder* bu
 		} while (contextIterator.next());
 
 		repoInfo << "Done";
+	}
+
+	if (contextIterator.progress() != 100) {
+		throw repo::lib::RepoException("IfcGeom failed to process the entire Ifc with an internal error.");
 	}
 
 	sharedIds.clear(); // This call releases any leaf nodes, now we are sure they won't change.
