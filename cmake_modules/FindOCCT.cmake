@@ -136,6 +136,15 @@ else()
 		)
 endif()
 
+# OCCT kerneal requires winsock on Windows builds
+
+if(${WIN32})
+	set(OCCT_LIBRARIES
+		${OCCT_LIBRARIES}
+		ws2_32.lib
+	)
+endif()
+
 if(OCCT_INCLUDE_DIR AND OCCT_LIBRARIES)
 	set(OCCTM_FOUND TRUE)
 	message(STATUS "OCCT installation found.")
