@@ -174,6 +174,15 @@ namespace repo {
 				virtual void createIndex(const std::string &database, const std::string &collection, const database::index::RepoIndex& index);
 
 				/**
+				* Create an index within the given collection
+				* @param database name of the database
+				* @param name name of the collection
+				* @param index BSONObj specifying the index
+				* @param bool whether this is a sparse index
+				*/
+				virtual void createIndex(const std::string& database, const std::string& collection, const database::index::RepoIndex& index, bool sparse);
+
+				/**
 				* Remove a collection from the database
 				* @param database the database the collection resides in
 				* @param collection name of the collection to drop
@@ -255,6 +264,20 @@ namespace repo {
 					const database::query::RepoQuery& criteria);
 
 				/**
+				* Given a search criteria,  find all the documents that passes this query
+				* @param database name of database
+				* @param collection name of collection
+				* @param criteria search criteria in a bson object
+				* @param projection to define the fiels in the returned document
+				* @return a vector of RepoBSON objects satisfy the given criteria
+				*/
+				std::vector<repo::core::model::RepoBSON> findAllByCriteria(
+					const std::string& database,
+					const std::string& collection,
+					const database::query::RepoQuery& filter,
+					const repo::core::model::RepoBSON projection);
+
+				/**
 				* Given a search criteria,  find one documents that passes this query
 				* @param database name of database
 				* @param collection name of collection
@@ -321,6 +344,24 @@ namespace repo {
 					const database::query::RepoQuery& criteria
 				);
 
+				void updateManyWithAggregate(
+					const std::string& database,
+					const std::string& collection,
+					const repo::core::model::RepoBSON filter,
+					const mongocxx::pipeline& pipeline);
+
+				void updateOne(
+					const std::string& database,
+					const std::string& collection,
+					const repo::core::model::RepoBSON filter,
+					const repo::core::model::RepoBSON update);
+
+				void updateMany(
+					const std::string& database,
+					const std::string& collection,
+					const repo::core::model::RepoBSON filter,
+					const repo::core::model::RepoBSON update);
+
 				mongocxx::v_noabi::cursor specialFind(
 					const std::string& database,
 					const std::string& collection,
@@ -333,6 +374,18 @@ namespace repo {
 					const repo::core::model::RepoBSON filter,
 					const repo::core::model::RepoBSON projection,
 					long long& duration);
+
+				repo::core::model::RepoBSON rawFindOne(
+					const std::string& database,
+					const std::string& collection,
+					const repo::core::model::RepoBSON filter,
+					const repo::core::model::RepoBSON projection);
+
+				mongocxx::v_noabi::cursor rawCursorFind(
+					const std::string& database,
+					const std::string& collection,
+					const repo::core::model::RepoBSON filter,
+					const repo::core::model::RepoBSON projection);
 
 				std::unique_ptr<database::Cursor> runAggregatePipeline(
 					const std::string& database,

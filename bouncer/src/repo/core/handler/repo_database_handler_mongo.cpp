@@ -327,6 +327,11 @@ bool MongoDatabaseHandler::caseInsensitiveStringCompare(
 
 void MongoDatabaseHandler::createIndex(const std::string& database, const std::string& collection, const database::index::RepoIndex& index)
 {
+	createIndex(database, collection, index, false);
+}
+
+void MongoDatabaseHandler::createIndex(const std::string& database, const std::string& collection, const database::index::RepoIndex& index, bool sparse)
+{
 	try
 	{
 		if (!(database.empty() || collection.empty()))
@@ -336,9 +341,14 @@ void MongoDatabaseHandler::createIndex(const std::string& database, const std::s
 			auto col = db.collection(collection);
 			auto obj = (repo::core::model::RepoBSON)index;
 
-			repoInfo << "Creating index for :" << database << "." << collection << " : index: " << obj.toString();
+			repoInfo << "Creating index for :" << database << "." << collection << " : index: " << obj.toString() << " sparse: " << sparse;
 
-			col.create_index(obj.view());
+			mongocxx::v_noabi::options::index options;			
+			if (sparse) {
+				options.sparse(true);
+			}
+
+			col.create_index(obj.view(), options);
 		}
 	}
 	catch (...)
@@ -437,7 +447,17 @@ void MongoDatabaseHandler::dropDocument(
 std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria(
 	const std::string& database,
 	const std::string& collection,
-	const database::query::RepoQuery& filter)
+	const database::query::RepoQuery& filter) {
+
+	repo::core::model::RepoBSON projection;
+	return findAllByCriteria(database, collection, filter, projection);
+}
+
+std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria(
+	const std::string& database,
+	const std::string& collection,
+	const database::query::RepoQuery& filter,
+	const repo::core::model::RepoBSON projection)
 {
 	try
 	{
@@ -448,6 +468,12 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 			auto client = clientPool->acquire();
 			auto db = client->database(database);
 			auto col = db.collection(collection);
+
+			std::string critString = criteria.toString();
+			std::cout << critString;
+
+			mongocxx::v_noabi::options::find options;
+			options.projection(projection.view());
 
 			// Find all documents
 			auto cursor = col.find(criteria.view());
@@ -887,6 +913,66 @@ std::unique_ptr<database::Cursor> MongoDatabaseHandler::runDatabaseOperation(
 
 */
 
+void MongoDatabaseHandler::updateManyWithAggregate(
+	const std::string& database,
+	const std::string& collection,
+	const repo::core::model::RepoBSON filter,
+	const mongocxx::pipeline& pipeline) {
+
+	auto client = clientPool->acquire();
+	auto db = client->database(database);
+	auto col = db.collection(collection);
+
+	try {
+		col.update_many(filter.view(), pipeline);
+	}
+	catch (std::exception e)
+	{
+		std::cout << e.what() << std::endl;
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "updateManyWithAggregate", database, collection));
+	}
+}
+
+void MongoDatabaseHandler::updateOne(
+	const std::string& database,
+	const std::string& collection,
+	const repo::core::model::RepoBSON filter,
+	const repo::core::model::RepoBSON update) {
+
+	auto client = clientPool->acquire();
+	auto db = client->database(database);
+	auto col = db.collection(collection);
+
+	try {
+		col.update_one(filter.view(), update.view());		
+	}
+	catch (std::exception e)
+	{
+		std::cout << e.what() << std::endl;
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "updateMany", database, collection));
+	}
+}
+
+void MongoDatabaseHandler::updateMany(
+	const std::string& database,
+	const std::string& collection,
+	const repo::core::model::RepoBSON filter,
+	const repo::core::model::RepoBSON update) {
+
+	auto client = clientPool->acquire();
+	auto db = client->database(database);
+	auto col = db.collection(collection);
+
+	try {
+		col.update_many(filter.view(), update.view());
+	}
+	catch (std::exception e)
+	{
+		std::cout << e.what() << std::endl;
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "updateMany", database, collection));
+	}
+}
+
 mongocxx::v_noabi::cursor MongoDatabaseHandler::specialFind(
 	const std::string& database,
 	const std::string& collection,
@@ -897,8 +983,8 @@ mongocxx::v_noabi::cursor MongoDatabaseHandler::specialFind(
 	auto db = client->database(database);
 	auto col = db.collection(collection);
 
-	 mongocxx::options::find options;
-	 options.projection(projection.view());
+	mongocxx::options::find options;
+	options.projection(projection.view());
 
 	return col.find(filter.view(), options);
 }
@@ -923,6 +1009,42 @@ mongocxx::v_noabi::cursor MongoDatabaseHandler::specialFindPerf(
 
 	duration = std::chrono::duration_cast<std::chrono::microseconds>(postFindMeasurement - preFindMeasurement).count();
 
+	return cursor;
+}
+
+repo::core::model::RepoBSON MongoDatabaseHandler::rawFindOne(
+	const std::string& database,
+	const std::string& collection,
+	const repo::core::model::RepoBSON filter,
+	const repo::core::model::RepoBSON projection) {
+
+	auto client = clientPool->acquire();
+	auto db = client->database(database);
+	auto col = db.collection(collection);
+
+	mongocxx::options::find options;
+	options.projection(projection.view());
+
+	auto doc = col.find_one(filter.view(), options);
+	return repo::core::model::RepoBSON(doc.value());
+}
+
+// Special find operation returning a raw cursor. Used due to issues with the blobref in the regular find
+mongocxx::v_noabi::cursor MongoDatabaseHandler::rawCursorFind(
+	const std::string& database,
+	const std::string& collection,
+	const repo::core::model::RepoBSON filter,
+	const repo::core::model::RepoBSON projection) {
+
+	auto client = clientPool->acquire();
+	auto db = client->database(database);
+	auto col = db.collection(collection);
+
+	mongocxx::options::find options;
+	options.projection(projection.view());
+		
+	auto cursor = col.find(filter.view(), options);
+	
 	return cursor;
 }
 
