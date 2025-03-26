@@ -71,6 +71,45 @@ std::vector<SceneUtils::NodeInfo> SceneUtils::findTransformationNodesByName(std:
 	return nodes;
 }
 
+SceneUtils::NodeInfo SceneUtils::findTransformationNodeByName(std::string name)
+{
+	auto nodes = findTransformationNodesByName(name);
+	if (nodes.size() > 1) {
+		throw std::runtime_error("Found too many matching nodes for call.");
+	}
+	return nodes[0];
+}
+
+SceneUtils::NodeInfo SceneUtils::findLeafNode(std::string name)
+{
+	std::vector<NodeInfo> nodes;
+
+	for (auto& n : scene->getAllTransformations(repo::core::model::RepoScene::GraphType::DEFAULT))
+	{
+		if (n->getName() == name) {
+			auto i = getNodeInfo(n);
+			if (i.isLeaf())
+			{
+				nodes.push_back(i);
+			}
+		}
+	}
+
+	for (auto& n : scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT))
+	{
+		if (n->getName() == name) {
+			auto i = getNodeInfo(n);
+			nodes.push_back(i);
+		}
+	}
+
+	if (nodes.size() > 1) {
+		throw std::runtime_error("Found too many matching nodes for call.");
+	}
+
+	return nodes[0];
+}
+
 std::vector<SceneUtils::NodeInfo> SceneUtils::getChildNodes(repo::core::model::RepoNode* node, bool ignoreMeta)
 {
 	std::vector<NodeInfo> nodes;
@@ -118,11 +157,14 @@ SceneUtils::NodeInfo SceneUtils::getNodeInfo(repo::core::model::RepoNode* node)
 std::vector<SceneUtils::NodeInfo> SceneUtils::NodeInfo::getMeshes()
 {
 	std::vector<SceneUtils::NodeInfo> meshNodes;
-	for (auto c : scene->getChildNodes(node, true))
+	for (auto& c : scene->getChildNodes(node, true))
 	{
 		if (dynamic_cast<MeshNode*>(c.node)) {
 			meshNodes.push_back(c);
 		}
+	}
+	if (dynamic_cast<MeshNode*>(this->node)) {
+		meshNodes.push_back(*this);
 	}
 	return meshNodes;
 }
