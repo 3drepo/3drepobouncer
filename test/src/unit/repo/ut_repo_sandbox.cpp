@@ -1883,71 +1883,6 @@ mongocxx::pipeline createTextListPipeline(std::string collection, repo::lib::Rep
 	return textListPipe;
 }
 
-void updateTexturedNodeBatch(
-	std::shared_ptr<MongoDatabaseHandler> handler,
-	std::string database,
-	std::string collection,
-	std::vector<repo::lib::RepoUUID> batch
-) {
-	std::ofstream logFile;
-	logFile.open("processGroupFiltered.log", std::ios_base::app);
-	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Mark textured nodes batch start" << std::endl;
-
-	// Construct filter
-	repo::core::model::RepoBSONBuilder primitiveClause;
-	primitiveClause.append("primitive", 3);
-
-	repo::core::model::RepoBSONBuilder existClause;
-	existClause.append("$exists", true);
-
-	repo::core::model::RepoBSONBuilder uvClause;
-	uvClause.append("uv_channels_count", existClause.obj());
-
-	repo::core::model::RepoBSONBuilder inClause;
-	inClause.appendArray("$in", batch);
-
-	repo::core::model::RepoBSONBuilder idClause;
-	idClause.append("shared_id", inClause.obj());
-
-	std::vector<repo::core::model::RepoBSON> filterConditions{ idClause.obj(), primitiveClause.obj(), uvClause.obj() };
-	repo::core::model::RepoBSONBuilder texturedFilter;
-	texturedFilter.appendArray("$and", filterConditions);
-
-	repo::core::model::RepoBSONBuilder newField;
-	newField.append("isTextured", true);
-	repo::core::model::RepoBSONBuilder update;
-	update.append("$set", newField.obj());
-
-	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Update textured nodes with isTextured start" << std::endl;
-	handler->updateMany(database, collection, texturedFilter.obj(), update.obj());
-	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Update textured nodes with isTextured end" << std::endl;
-
-	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Mark textured nodes batch end" << std::endl;
-	logFile.close();
-}
-
-void updateTexturedNodesInBatches(
-	std::shared_ptr<MongoDatabaseHandler> handler,
-	std::string database,
-	std::string collection,
-	std::vector<repo::lib::RepoUUID> nodes,
-	int batchSize
-) {
-	std::vector<repo::lib::RepoUUID> currentBatch;
-	for (int i = 0; i < nodes.size(); i++) {
-		currentBatch.push_back(nodes[i]);
-
-		if (currentBatch.size() >= batchSize) {
-			updateTexturedNodeBatch(handler, database, collection, currentBatch);
-			currentBatch.clear();
-		}
-	}
-
-	if (currentBatch.size() > 0) {
-		updateTexturedNodeBatch(handler, database, collection, currentBatch);
-	}
-}
-
 void markTexturedNodes(
 	std::shared_ptr<MongoDatabaseHandler> handler,
 	std::string database,
@@ -1956,26 +1891,6 @@ void markTexturedNodes(
 	int batchSize) {
 
 	std::ofstream logFile;
-	logFile.open("processGroupFiltered.log", std::ios_base::app);
-	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Mark textured nodes start" << std::endl;
-
-	// Get list for mesh nodes with opaque material
-	std::vector<repo::lib::RepoUUID> textureNodeIds;
-	{
-		logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Get textured nodes query start" << std::endl;
-		auto cursor = handler->runAggregatePipeline(database, collection, createTextListPipeline(collection, revId));
-		logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Get textured nodes query end" << std::endl;
-		logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Get textured nodes iteration start" << std::endl;
-		for (auto doc : (*cursor)) {
-			textureNodeIds.push_back(doc.getUUIDField("shared_id"));
-		}
-		logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Get textured nodes iteration end" << std::endl;
-	}
-
-	logFile.close();
-
-	updateTexturedNodesInBatches(handler, database, collection, textureNodeIds, batchSize);
-
 	logFile.open("processGroupFiltered.log", std::ios_base::app);
 
 	// Add texture IDs to nodes
@@ -2016,12 +1931,11 @@ void markTexturedNodes(
 		inClause.appendArray("$in", meshNodes);
 
 		repo::core::model::RepoBSONBuilder filter;
-		filter.append("isTextured", true);
 		filter.append("shared_id", inClause.obj());
 
 
 		repo::core::model::RepoBSONBuilder newField;
-		newField.append("tex_id", texId);
+		newField.append("materialProperties.textureId", texId);
 		repo::core::model::RepoBSONBuilder update;
 		update.append("$set", newField.obj());
 
@@ -2033,10 +1947,9 @@ void markTexturedNodes(
 
 	
 	
-	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Create texture indexes start" << std::endl;
-	handler->createIndex(database, collection, repo::core::handler::database::index::Ascending({ "isTextured" }), true);
-	handler->createIndex(database, collection, repo::core::handler::database::index::Ascending({ "isTextured", "tex_id", "shared_id"}), true);
-	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Create texture indexes end" << std::endl;
+	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Create texture index start" << std::endl;	
+	handler->createIndex(database, collection, repo::core::handler::database::index::Ascending({ "materialProperties.textureId", "shared_id"}), true);
+	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Create texture index end" << std::endl;
 
 	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Mark textured nodes end" << std::endl;
 	logFile.close();
@@ -2057,7 +1970,7 @@ void updateOpaqueNodeBatch(
 	textExistClause.append("$exists", false);
 
 	repo::core::model::RepoBSONBuilder textClause;
-	textClause.append("isTextured", textExistClause.obj());
+	textClause.append("materialProperties.textureId", textExistClause.obj());
 
 	repo::core::model::RepoBSONBuilder inClause;
 	inClause.appendArray("$in", batch);
@@ -2070,7 +1983,7 @@ void updateOpaqueNodeBatch(
 	opaqueFilter.appendArray("$and", filterConditions);
 
 	repo::core::model::RepoBSONBuilder newField;
-	newField.append("isOpaque", true);
+	newField.append("materialProperties.isOpaque", true);
 	repo::core::model::RepoBSONBuilder update;
 	update.append("$set", newField.obj());
 
@@ -2136,7 +2049,7 @@ void markOpaqueNodes(
 	logFile.open("processGroupFiltered.log", std::ios_base::app);
 
 	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Create opaque indexes start" << std::endl;
-	handler->createIndex(database, collection, repo::core::handler::database::index::Ascending({ "isOpaque", "primitive", "shared_id"}), true);
+	handler->createIndex(database, collection, repo::core::handler::database::index::Ascending({ "materialProperties.isOpaque", "primitive", "shared_id"}), true);
 	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Create opaque indexes end" << std::endl;
 
 	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Mark opaque nodes end" << std::endl;
@@ -2158,7 +2071,7 @@ void updateTransparentNodeBatch(
 	textExistClause.append("$exists", false);
 
 	repo::core::model::RepoBSONBuilder textClause;
-	textClause.append("isTextured", textExistClause.obj());
+	textClause.append("materialProperties.textureId", textExistClause.obj());
 
 	repo::core::model::RepoBSONBuilder inClause;
 	inClause.appendArray("$in", batch);
@@ -2171,7 +2084,7 @@ void updateTransparentNodeBatch(
 	transparentFilter.appendArray("$and", filterConditions);
 
 	repo::core::model::RepoBSONBuilder newField;
-	newField.append("isTransparent", true);
+	newField.append("materialProperties.isTransparent", true);
 	repo::core::model::RepoBSONBuilder update;
 	update.append("$set", newField.obj());
 
@@ -2236,7 +2149,7 @@ void markTransparentNodes(
 	logFile.open("processGroupFiltered.log", std::ios_base::app);
 
 	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Create transparent indexes start" << std::endl;
-	handler->createIndex(database, collection, repo::core::handler::database::index::Ascending({ "isTransparent", "primitive", "shared_id"}), true);
+	handler->createIndex(database, collection, repo::core::handler::database::index::Ascending({ "materialProperties.isTransparent", "primitive", "shared_id"}), true);
 	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Create transparent indexes end" << std::endl;
 
 	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Mark transparent nodes end" << std::endl;
@@ -2249,18 +2162,18 @@ TEST(Sandbox, FilterCoverageTest) {
 	std::string database = "fthiel";
 
 	// House model (small)
-	//std::string collection = "5144ac65-6b9d-4236-b0a6-9186149a32c8.scene";
-	//repo::lib::RepoUUID revId = repo::lib::RepoUUID("949EE0E2-13FB-4C07-9B49-9556F5E8F293");
+	//std::string collection = "1d08cae9-ba1f-4b40-b96e-6ad1a0059901.scene";
+	//repo::lib::RepoUUID revId = repo::lib::RepoUUID("CDB96441-5A9D-4EB1-8439-6124B2DC5EEE");
 	//int noMeshNodes = 1349;
 
 	// "Medium" Model
-	//std::string collection = "69d561b4-77d7-44a0-b295-d0db459d5270.scene";
-	//repo::lib::RepoUUID revId = repo::lib::RepoUUID("3792C7CB-2854-4FF0-B957-278C154C0CB7");
+	//std::string collection = "1a874c4b-891c-4586-864c-3bbb408a71d3.scene";
+	//repo::lib::RepoUUID revId = repo::lib::RepoUUID("6E2F4803-34AA-4719-A797-693C842342D0");
 	//int noMeshNodes = 245669;
 
 	// XXL Model
-	std::string collection = "20523f34-f3d5-4cb6-9ebe-63b744b486b3.scene";
-	repo::lib::RepoUUID revId = repo::lib::RepoUUID("75FAFCC9-4AD4-488E-BCE2-35A4F8C7463C");
+	std::string collection = "624bc24b-00b8-4434-ac21-e73fb819b529.scene";
+	repo::lib::RepoUUID revId = repo::lib::RepoUUID("63752F30-0EB9-4090-8233-AE1B63B86E32");
 	int noMeshNodes = 654211;
 
 	int batchSize = 550000;
@@ -2282,7 +2195,7 @@ TEST(Sandbox, FilterCoverageTest) {
 	{
 		// Construct find filter
 		repo::core::model::RepoBSONBuilder filter;
-		filter.append("isOpaque", true);
+		filter.append("materialProperties.isOpaque", true);
 
 		// Construct projection
 		repo::core::model::RepoBSONBuilder projection;
@@ -2299,7 +2212,7 @@ TEST(Sandbox, FilterCoverageTest) {
 	{
 		// Construct find filter
 		repo::core::model::RepoBSONBuilder filter;
-		filter.append("isTransparent", true);
+		filter.append("materialProperties.isTransparent", true);
 
 		// Construct projection
 		repo::core::model::RepoBSONBuilder projection;
@@ -2311,12 +2224,14 @@ TEST(Sandbox, FilterCoverageTest) {
 		}
 	}
 
-	// Count transparents
+	// Count textured
 	int texturedCount = 0;
 	{
 		// Construct find filter
+		repo::core::model::RepoBSONBuilder existClause;
+		existClause.append("$exists", true);
 		repo::core::model::RepoBSONBuilder filter;
-		filter.append("isTextured", true);
+		filter.append("materialProperties.textureId", existClause.obj());
 
 		// Construct projection
 		repo::core::model::RepoBSONBuilder projection;
@@ -2330,30 +2245,6 @@ TEST(Sandbox, FilterCoverageTest) {
 	
 	int totalNodes = opaqueCount + transparentCount + texturedCount;
 	EXPECT_THAT(totalNodes, Eq(noMeshNodes));
-
-		
-
-	// Check whether each textured node has an Id field attributed to them.
-	int textNodesWithoutId = 0;
-	{
-		// Construct filter
-		repo::core::model::RepoBSONBuilder existClause;
-		existClause.append("$exists", false);
-
-		repo::core::model::RepoBSONBuilder filter;
-		filter.append("isTextured", true);
-		filter.append("tex_id", existClause.obj());
-		
-		// Construct projection
-		repo::core::model::RepoBSONBuilder projection;
-		projection.append("_id", 1);
-
-		auto cursor = handler->rawCursorFind(database, collection, filter.obj(), projection.obj());
-		for (auto doc : cursor) {
-			textNodesWithoutId++;
-		}		
-	}
-	EXPECT_THAT(textNodesWithoutId, Eq(0));
 }
 
 void processGroupFiltered(
@@ -2522,7 +2413,7 @@ TEST(Sandbox, FilterSortingPrototype) {
 	// Transparent group (primitive 2)
 	{
 		repo::core::model::RepoBSONBuilder query;
-		query.append("isTransparent", true);
+		query.append("materialProperties.isTransparent", true);
 		query.append("primitive", 2);
 		processGroupFiltered(handler, database, collection, revId, query.obj(), sortingBatchSize, "transparent, prim 2");
 	}
@@ -2530,7 +2421,7 @@ TEST(Sandbox, FilterSortingPrototype) {
 	// Transparent group (primitive 3)
 	{
 		repo::core::model::RepoBSONBuilder query;
-		query.append("isTransparent", true);
+		query.append("materialProperties.isTransparent", true);
 		query.append("primitive", 3);
 		processGroupFiltered(handler, database, collection, revId, query.obj(), sortingBatchSize, "transparent, prim 3");
 	}
@@ -2538,7 +2429,7 @@ TEST(Sandbox, FilterSortingPrototype) {
 	// Opaque group (primitive 2)
 	{
 		repo::core::model::RepoBSONBuilder query;
-		query.append("isOpaque", true);
+		query.append("materialProperties.isOpaque", true);
 		query.append("primitive", 2);
 		processGroupFiltered(handler, database, collection, revId, query.obj(), sortingBatchSize, "opaque, prim 2");
 	}
@@ -2546,7 +2437,7 @@ TEST(Sandbox, FilterSortingPrototype) {
 	// Opaque group (primitive 3)
 	{
 		repo::core::model::RepoBSONBuilder query;
-		query.append("isOpaque", true);
+		query.append("materialProperties.isOpaque", true);
 		query.append("primitive", 3);
 		processGroupFiltered(handler, database, collection, revId, query.obj(), sortingBatchSize, "opaque, prim 3");
 	}
@@ -2561,9 +2452,8 @@ TEST(Sandbox, FilterSortingPrototype) {
 
 		// 2.1. Process the group
 		{
-			repo::core::model::RepoBSONBuilder query;
-			query.append("isTextured", true);
-			query.append("tex_id", texId);
+			repo::core::model::RepoBSONBuilder query;			
+			query.append("materialProperties.textureId", texId);
 			std::string groupStr = "textured, " + texId.toString();
 			processGroupFiltered(handler, database, collection, revId, query.obj(), sortingBatchSize, groupStr);
 		}
