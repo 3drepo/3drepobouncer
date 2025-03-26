@@ -1948,7 +1948,7 @@ void markTexturedNodes(
 	
 	
 	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Create texture index start" << std::endl;	
-	handler->createIndex(database, collection, repo::core::handler::database::index::Ascending({ "materialProperties.textureId", "shared_id"}), true);
+	handler->createIndex(database, collection, repo::core::handler::database::index::Ascending({"rev_id", "materialProperties.textureId", "shared_id"}), true);
 	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Create texture index end" << std::endl;
 
 	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Mark textured nodes end" << std::endl;
@@ -2049,7 +2049,7 @@ void markOpaqueNodes(
 	logFile.open("processGroupFiltered.log", std::ios_base::app);
 
 	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Create opaque indexes start" << std::endl;
-	handler->createIndex(database, collection, repo::core::handler::database::index::Ascending({ "materialProperties.isOpaque", "primitive", "shared_id"}), true);
+	handler->createIndex(database, collection, repo::core::handler::database::index::Ascending({"rev_id", "materialProperties.isOpaque", "primitive", "shared_id"}), true);
 	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Create opaque indexes end" << std::endl;
 
 	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Mark opaque nodes end" << std::endl;
@@ -2149,7 +2149,7 @@ void markTransparentNodes(
 	logFile.open("processGroupFiltered.log", std::ios_base::app);
 
 	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Create transparent indexes start" << std::endl;
-	handler->createIndex(database, collection, repo::core::handler::database::index::Ascending({ "materialProperties.isTransparent", "primitive", "shared_id"}), true);
+	handler->createIndex(database, collection, repo::core::handler::database::index::Ascending({"rev_id", "materialProperties.isTransparent", "primitive", "shared_id"}), true);
 	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Create transparent indexes end" << std::endl;
 
 	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00, " << "Mark transparent nodes end" << std::endl;
