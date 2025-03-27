@@ -36,7 +36,6 @@
 
 using namespace repo::manipulator::modelconvertor;
 
-
 bool AssimpModelImport::tryConvertMetadataEntry(aiMetadataEntry& assimpMetaEntry, repo::lib::RepoVariant& v){
 	// Dissect the entry object
 	auto dataType = assimpMetaEntry.mType;
@@ -296,7 +295,7 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 	repo::core::model::MaterialNode *materialNode;
 
 	if (material) {
-		repo::lib::repo_material_t repo_material;
+		repo::lib::repo_material_t repo_material = repo::lib::repo_material_t::DefaultMaterial();
 
 		aiColor3D tempColor;
 		auto tempFloat = tempColor.b;
@@ -418,7 +417,6 @@ repo::core::model::MeshNode AssimpModelImport::createMeshRepoNode(
 	std::vector<repo::lib::repo_face_t> faces;
 	std::vector<repo::lib::RepoVector3D> normals;
 	std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
-	std::vector<repo::lib::repo_color4d_t> colors;
 
 	/*
 	 *--------------------- Vertices (always present) -----------------------------
@@ -504,27 +502,14 @@ repo::core::model::MeshNode AssimpModelImport::createMeshRepoNode(
 		uvChannels.push_back(channelVector);
 	}
 
-	// Note that currently the colours are not used
-	// Consider only first color set
-	if (assimpMesh->HasVertexColors(0))
-	{
-		for (uint32_t i = 0; i < assimpMesh->mNumVertices; i++)
-		{
-			colors.push_back({
-				(float)assimpMesh->mColors[0][i].r,
-				(float)assimpMesh->mColors[0][i].g,
-				(float)assimpMesh->mColors[0][i].b,
-				(float)assimpMesh->mColors[0][i].a });
-		}
-	}
 	/*
 	*-----------------------------------------------------------------------------
 	*/
 
 	repo::lib::RepoBounds boundingBox(minVertex, maxVertex);
 
-	meshNode = repo::core::model::MeshNode(repo::core::model::RepoBSONFactory::makeMeshNode(
-		vertices, faces, normals, boundingBox, uvChannels));
+	meshNode = repo::core::model::RepoBSONFactory::makeMeshNode(
+		vertices, faces, normals, boundingBox, uvChannels, std::string(assimpMesh->mName.data));
 
 	///*
 	//*------------------------------ setParents ----------------------------------
@@ -635,7 +620,7 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 		// If this transform is a leaf node, we can skip the transform node entirely and
 		// give the mesh(es) its transformation, in its place.
 
-		bool absorbTransform = !assimpNode->mNumChildren;
+		bool absorbTransform = !assimpNode->mNumChildren && assimpNode->mNumMeshes == 1 && parents.size();
 
 		if (!absorbTransform)
 		{
@@ -660,11 +645,20 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 				{
 					auto instance = duplicateMesh(parents, mesh, meshToMat, matParents);
 					newMeshes.insert(instance);
+
 					if (absorbTransform)
 					{
 						instance->applyTransformation(transform);
 						instance->changeName(transName);
 						parents = { instance->getSharedID() }; // (For the metadata - there will be no other further child nodes)
+					}
+					else if (assimpNode->mNumChildren && mesh.getName().empty())
+					{
+						instance->changeName(!transName.empty() ? transName : "Unnamed Mesh"); // If we are setting the name because there's siblings, make sure it cannot be empty
+					}
+					else if (!assimpNode->mNumChildren && !mesh.getName().empty())
+					{
+						instance->changeName({});
 					}
 				}
 			}

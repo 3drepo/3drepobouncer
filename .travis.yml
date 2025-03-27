@@ -62,7 +62,7 @@ matrix:
           - tar -zxf testData/bouncer/ext_libs/noble/mongo-cxx-driver.tgz
           - export MONGO_ROOT=$PWD/mongo-cxx-driver
           - echo ============ ASSIMP INSTALL =============
-          - tar -zxf testData/bouncer/ext_libs/focal/assimp-5.0.1.tgz
+          - tar -zxf testData/bouncer/ext_libs/noble/assimp-5.4.3.tgz
           - export ASSIMP_ROOT=$PWD/assimp
           - echo ============ IFCOPENSHELL INSTALL =============
           - tar -zxf testData/bouncer/ext_libs/noble/IfcOpenShell-0.8.0.tgz
@@ -142,7 +142,7 @@ matrix:
           - tar -zxf testData/noble/mongo-cxx-driver.tgz
           - export MONGO_ROOT=$PWD/mongo-cxx-driver
           - echo ============ ASSIMP INSTALL =============
-          - tar -zxf testData/focal/assimp-5.0.1.tgz
+          - tar -zxf testData/noble/assimp-5.4.3.tgz
           - export ASSIMP_ROOT=$PWD/assimp
           - echo ============ IFCOPENSHELL INSTALL =============
           - tar -zxf testData/noble/IfcOpenShell-0.8.0.tgz

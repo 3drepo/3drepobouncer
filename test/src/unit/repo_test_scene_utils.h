@@ -87,6 +87,8 @@ namespace testing {
 
 		std::vector<NodeInfo> findNodesByMetadata(std::string key, std::string value);
 		NodeInfo findNodeByMetadata(std::string key, std::string value);
+		NodeInfo findTransformationNodeByName(std::string name);
+		NodeInfo findLeafNode(std::string name);
 		std::vector<NodeInfo> findTransformationNodesByName(std::string name);
 		std::vector<NodeInfo> getChildNodes(repo::core::model::RepoNode* node, bool ignoreMeta);
 		std::vector<NodeInfo> getParentNodes(repo::core::model::RepoNode* node);
