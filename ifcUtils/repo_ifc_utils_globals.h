@@ -65,5 +65,5 @@ struct TransNode {
 	std::vector<TransNode> children;
 	bool createNode = false;
 	bool meshTakeName = false;
-	bool absorbTrans = false;
+	bool isIfcSpace = false;
 };

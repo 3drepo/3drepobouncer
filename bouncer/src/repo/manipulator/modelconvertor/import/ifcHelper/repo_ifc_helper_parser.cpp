@@ -38,7 +38,7 @@ void convertTreeToNodes(
 	if (tree.createNode) {
 		std::vector<repo::lib::RepoUUID> metaParents;
 
-		if (!tree.absorbTrans) {
+		if (!tree.isIfcSpace) {
 			auto transNode = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode(tree.transformation, tree.name, parents));
 			childrenParents = { transNode->getSharedID() };
 			metaParents = childrenParents;
@@ -48,7 +48,7 @@ void convertTreeToNodes(
 		if (meshes.find(tree.guid) != meshes.end()) {
 			for (auto &mesh : meshes[tree.guid]) {
 				mesh->addParents(childrenParents); // In the IFC importer, meshes are already created per-instance and so are updated in-place
-				if (tree.absorbTrans || tree.meshTakeName && mesh->getName().empty()) {
+				if (tree.meshTakeName && mesh->getName().empty() || tree.isIfcSpace) {
 					mesh->changeName(tree.name);
 					metaParents.push_back(mesh->getSharedID());
 				}
