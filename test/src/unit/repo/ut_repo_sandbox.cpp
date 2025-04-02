@@ -22,6 +22,9 @@
 #include <repo/core/model/bson/repo_node.h>
 #include <repo/core/model/bson/repo_bson_builder.h>
 
+#include <repo/core/handler/fileservice/repo_blob_files_handler.h>
+#include <repo/core/handler/fileservice/repo_file_manager.h>
+
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest-matchers.h>
@@ -41,6 +44,9 @@
 #include <fstream>
 #include <chrono>
 
+#include "bouncer/src/repo/manipulator/modeloptimizer/bvh/bvh.hpp"
+#include "bouncer/src/repo/manipulator/modeloptimizer/bvh/sweep_sah_builder.hpp"
+
 using namespace repo::core::handler;
 using namespace testing;
 using namespace bsoncxx::builder::basic;
@@ -57,6 +63,22 @@ std::shared_ptr<repo::core::handler::MongoDatabaseHandler> getLocalHandler()
 	auto config = repo::lib::RepoConfig::fromFile(getDataPath("config/withFS.json"));
 	config.configureFS("C:\\Git\\local\\efs\\models"); //getDataPath("fileShare"));
 	handler->setFileManager(std::make_shared<repo::core::handler::fileservice::FileManager>(config, handler));
+	return handler;
+}
+
+std::shared_ptr<repo::core::handler::MongoDatabaseHandler> getLocalHandler(std::shared_ptr<FileManager>& fileManager)
+{
+	auto handler = repo::core::handler::MongoDatabaseHandler::getHandler(
+		REPO_GTEST_DBADDRESS,
+		REPO_GTEST_DBPORT,
+		"adminUser",
+		"password"
+	);
+
+	auto config = repo::lib::RepoConfig::fromFile(getDataPath("config/withFS.json"));
+	config.configureFS("C:\\Git\\local\\efs\\models"); //getDataPath("fileShare"));
+	fileManager = std::make_shared<repo::core::handler::fileservice::FileManager>(config, handler);
+	handler->setFileManager(fileManager);
 	return handler;
 }
 
@@ -1669,6 +1691,7 @@ void processGroup(
 //	return texIds;
 //}
 
+// This is wrong currently. Returns shared ids of nodes with textures. Not texture IDs
 std::vector<repo::lib::RepoUUID> getTexIds(
 	std::shared_ptr<repo::core::handler::MongoDatabaseHandler> handler,
 	std::string database,
@@ -1687,7 +1710,7 @@ std::vector<repo::lib::RepoUUID> getTexIds(
 	auto cursor = handler->rawCursorFind(database, collection, filter.obj(), projection.obj());	
 	for (auto document : cursor) {
 		auto bson = repo::core::model::RepoBSON(document);
-		texIds.push_back(bson.getUUIDField("shared_id"));
+		texIds.push_back(bson.getUUIDField("shared_id")); 
 	}
 
 	return texIds;
@@ -2733,5 +2756,750 @@ TEST(Sandbox, ConvertTransformsNodes) {
 		update.append("$set", newFields.obj());
 
 		handler->updateOne(database, collection, upFilter.obj(), update.obj());
+	}
+}
+
+// BVH TREE
+
+TEST(Sandbox, PullAllBVHInfo) {
+	auto handler = getLocalHandler();
+
+	std::string database = "fthiel";
+
+	// House model (small)
+	//std::string collection = "1d08cae9-ba1f-4b40-b96e-6ad1a0059901.scene";
+	//repo::lib::RepoUUID revId = repo::lib::RepoUUID("CDB96441-5A9D-4EB1-8439-6124B2DC5EEE");
+
+	// "Medium" Model
+	//std::string collection = "1a874c4b-891c-4586-864c-3bbb408a71d3.scene";
+	//repo::lib::RepoUUID revId = repo::lib::RepoUUID("6E2F4803-34AA-4719-A797-693C842342D0");
+
+	// XXL Model
+	std::string collection = "624bc24b-00b8-4434-ac21-e73fb819b529.scene";
+	repo::lib::RepoUUID revId = repo::lib::RepoUUID("63752F30-0EB9-4090-8233-AE1B63B86E32");
+
+	repo::core::model::RepoBSONBuilder filter;
+	filter.append("rev_id", revId);
+	filter.append("materialProperties.isOpaque", true);
+	filter.append("primitive", 3);
+
+	repo::core::model::RepoBSONBuilder projection;
+	projection.append("_id", 0);
+	projection.append("shared_id", 1);	
+	projection.append("bounding_box", 1);
+	projection.append("vertices_count", 1);
+	projection.append("parents", 1);
+
+	std::ofstream logFile;
+	logFile.open("GetAllBVHInfo.log", std::ios_base::app);
+	logFile << "timestamp,event" << std::endl;
+
+	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00,QueryStart" << std::endl;
+	auto cursor = handler->rawCursorFind(database, collection, filter.obj(), projection.obj());
+	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00,QueryEnd" << std::endl;
+
+	std::vector<repo::core::model::RepoBSON> bvhNodes;
+	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00,IterationStart" << std::endl;
+	for (auto doc : cursor) {
+		auto bson = repo::core::model::RepoBSON(doc);
+		bvhNodes.push_back(bson);
+	}
+	logFile << std::chrono::system_clock::now().time_since_epoch().count() << "00,IterationEnd" << std::endl;
+
+	EXPECT_THAT(bvhNodes.size(), Eq(478546));
+}
+
+using Scalar = float;
+using Bvh = bvh::Bvh<Scalar>;
+using BvhVector3 = bvh::Vector3<Scalar>;
+
+class MeshNodeLight {
+	repo::lib::RepoUUID sharedId;
+	std::uint32_t numVertices = 0;
+	repo::lib::RepoUUID parent;
+	repo::lib::RepoBounds bounds;
+
+public:
+	MeshNodeLight(repo::core::model::RepoBSON bson)
+	{
+		if (bson.hasField("shared_id")) {
+			sharedId = bson.getUUIDField("shared_id");
+		}
+		if (bson.hasField("vertices_count")) {
+			numVertices = bson.getIntField("vertices_count");
+		}
+		if (bson.hasField("parents")) {
+			auto parents = bson.getUUIDFieldArray("parents");
+			parent = parents[0];
+		}
+		if (bson.hasField("bounding_box")) {
+			bounds = bson.getBoundsField("bounding_box");
+		}
+	}
+
+	repo::lib::RepoUUID getSharedId() const {
+		return sharedId;
+	}
+
+	std::uint32_t getNumVertices() const
+	{
+		return numVertices;
+	}
+
+	repo::lib::RepoBounds getBoundingBox() const
+	{
+		return bounds;
+	}
+
+	repo::lib::RepoUUID getParent() const
+	{
+		return parent;
+	}
+
+};
+
+void traverseTree(const repo::core::model::RepoBSON root, const std::unordered_map<repo::lib::RepoUUID, std::vector<repo::core::model::RepoBSON>, repo::lib::RepoUUIDHasher> childNodeMap, std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher>& leafTransforms) {
+	std::stack<repo::core::model::RepoBSON> bsonStack;
+	std::stack<repo::lib::RepoMatrix> matStack;
+
+	repo::lib::RepoMatrix identity;
+
+	bsonStack.push(root);
+	matStack.push(identity);
+
+	while (!bsonStack.empty()) {
+		auto topBson = bsonStack.top();
+		bsonStack.pop();
+		auto topMat = matStack.top();
+		matStack.pop();
+
+		auto nodeId = topBson.getUUIDField("shared_id");
+		auto matrix = topBson.getMatrixField("matrix");
+
+		auto newMat = matrix * topMat;
+
+		if (childNodeMap.contains(nodeId)) {
+			auto children = childNodeMap.at(nodeId);
+			for (auto child : children) {
+				bsonStack.push(child);
+				matStack.push(newMat);
+			}
+		}
+		else {
+			leafTransforms.insert({ nodeId, newMat });
+		}
+	}
+}
+
+std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> getAllTransforms (
+	std::shared_ptr<MongoDatabaseHandler> handler,
+	std::string database,
+	std::string collection,
+	repo::lib::RepoUUID revId) {
+	
+
+	repo::core::model::RepoBSONBuilder filter;
+	filter.append("rev_id", revId);
+	filter.append("type", "transformation");
+
+	repo::core::model::RepoBSONBuilder projection;
+	projection.append("_id", 0);
+	projection.append("shared_id", 1);
+	projection.append("matrix", 1);	
+	projection.append("parents", 1);
+	
+
+
+	auto cursor = handler->rawCursorFind(database, collection, filter.obj(), projection.obj());
+
+	//TransformNode rootNode;
+	repo::core::model::RepoBSON rootNode;
+	std::unordered_map<repo::lib::RepoUUID, std::vector<repo::core::model::RepoBSON>, repo::lib::RepoUUIDHasher> childNodeMap;
+	for (auto doc : cursor) {
+		auto bson = repo::core::model::RepoBSON(doc);
+		
+		if (bson.hasField("parents")) {
+			auto parentId = bson.getUUIDFieldArray("parents")[0];
+
+			if (childNodeMap.contains(parentId)) {
+				childNodeMap.at(parentId).push_back(bson);
+			}
+			else {
+				auto children = std::vector<repo::core::model::RepoBSON>{ bson };
+				childNodeMap.insert({ parentId, children });
+			}
+		}
+		else {
+			rootNode = bson;
+		}
+	}
+
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> leafToTransformMap;
+	traverseTree(rootNode, childNodeMap, leafToTransformMap);
+
+	return leafToTransformMap;
+}
+
+void flattenBvhSandbox(
+	const Bvh& bvh,
+	std::vector<size_t>& leaves,
+	std::vector<size_t>& branches
+)
+{
+	std::queue<size_t> nodeQueue; // Using a queue instead of a stack means the child nodes are handled later, resulting in a breadth first traversal
+	nodeQueue.push(0);
+	do {
+		auto index = nodeQueue.front();
+		nodeQueue.pop();
+
+		auto& node = bvh.nodes[index];
+
+		if (node.is_leaf())
+		{
+			leaves.push_back(index);
+		}
+		else
+		{
+			nodeQueue.push(node.first_child_or_primitive);
+			nodeQueue.push(node.first_child_or_primitive + 1);
+
+			branches.push_back(index);
+		}
+	} while (!nodeQueue.empty());
+}
+
+// Gets the vertex counts of each node in the Bvh, when the Bvh primitives are
+// MeshNodes.
+std::vector<size_t> getVertexCounts(
+	const Bvh& bvh,
+	const std::vector<MeshNodeLight>& primitives
+)
+{	// To do this, get the nodes in list form, 'bottom up', in order to set the
+	// vertex counts of each leaf node.
+
+	std::vector<size_t> leaves;
+	std::vector<size_t> flattened;
+	flattenBvhSandbox(bvh, leaves, flattened);
+
+	// Next initialise the vertex count of the leaves
+
+	std::vector<size_t> vertexCounts;
+	vertexCounts.resize(bvh.node_count);
+
+	for (const auto nodeIndex : leaves)
+	{
+		size_t vertexCount = 0;
+		auto& node = bvh.nodes[nodeIndex];
+		for (int i = 0; i < node.primitive_count; i++)
+		{
+			auto primitiveIndex = bvh.primitive_indices[node.first_child_or_primitive + i];
+
+			if (primitiveIndex < 0 || primitiveIndex >= primitives.size())
+			{
+				repoError << "Bvh primitive index out of range. This means something has gone wrong with the BVH construction.";
+			}
+
+			vertexCount += primitives[primitiveIndex].getNumVertices();
+		}
+
+		vertexCounts[nodeIndex] = vertexCount;
+	}
+
+	// Now, moving backwards, add up for each branch node the number of vertices in its children
+
+	std::reverse(flattened.begin(), flattened.end());
+
+	for (const auto nodeIndex : flattened)
+	{
+		auto& node = bvh.nodes[nodeIndex];
+		vertexCounts[nodeIndex] = vertexCounts[node.first_child_or_primitive] + vertexCounts[node.first_child_or_primitive + 1];
+	}
+
+	return vertexCounts;
+}
+
+// Gets the branch nodes that contain fewer than REPO_MP_MAX_VERTEX_COUNT beneath
+// them in total.
+static const size_t REPO_MP_MAX_VERTEX_COUNT = 1200000;
+std::vector<size_t> getSupermeshBranchNodesSandbox(
+	const Bvh& bvh,
+	std::vector<size_t> vertexCounts)
+{
+	std::vector<size_t> branchNodes;
+	std::stack<size_t> nodeStack;
+	nodeStack.push(0);
+	do {
+		auto index = nodeStack.top();
+		nodeStack.pop();
+
+		auto& node = bvh.nodes[index];
+		auto numVertices = vertexCounts[index];
+
+		// As we are traversing top-down, the vertex counts get smaller.
+		// As soon as a node's count drops below the target, all the nodes in
+		// that branch can become a mesh.
+
+		if (numVertices < REPO_MP_MAX_VERTEX_COUNT || node.is_leaf()) // This node is the head of a branch that should become a group
+		{
+			branchNodes.push_back(index);
+		}
+		else
+		{
+			nodeStack.push(node.first_child_or_primitive);
+			nodeStack.push(node.first_child_or_primitive + 1);
+		}
+	} while (!nodeStack.empty());
+
+	return branchNodes;
+}
+
+std::vector<size_t> getBranchPrimitivesSandbox(
+	const Bvh& bvh,
+	size_t head
+)
+{
+	std::vector<size_t> primitives;
+
+	std::stack<size_t> nodeStack;
+	nodeStack.push(head);
+	do
+	{
+		auto node = bvh.nodes[nodeStack.top()];
+		nodeStack.pop();
+
+		if (node.is_leaf())
+		{
+			for (int i = 0; i < node.primitive_count; i++)
+			{
+				auto primitive = bvh.primitive_indices[node.first_child_or_primitive + i];
+				primitives.push_back(primitive);
+			}
+		}
+		else
+		{
+			nodeStack.push(node.first_child_or_primitive);
+			nodeStack.push(node.first_child_or_primitive + 1);
+		}
+	} while (!nodeStack.empty());
+
+	return primitives;
+}
+
+static const size_t REPO_MP_MAX_MESHES_IN_SUPERMESH = 5000;
+void splitBigClustersSandbox(std::vector<std::vector<MeshNodeLight>>& clusters)
+{
+	auto clustersToSplit = std::vector<std::vector<MeshNodeLight>>();
+	clusters.erase(std::remove_if(clusters.begin(), clusters.end(),
+		[&](std::vector<MeshNodeLight> cluster)
+		{
+			if (cluster.size() > REPO_MP_MAX_MESHES_IN_SUPERMESH)
+			{
+				clustersToSplit.push_back(cluster);
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}),
+		clusters.end()
+	);
+
+	std::vector<MeshNodeLight> cluster;
+	for (auto const clusterToSplit : clustersToSplit)
+	{
+		int i = 0;
+		while (i < clusterToSplit.size())
+		{
+			cluster.push_back(clusterToSplit[i++]);
+			if (cluster.size() >= REPO_MP_MAX_MESHES_IN_SUPERMESH)
+			{
+				clusters.push_back(std::vector<MeshNodeLight>(cluster));
+				cluster.clear();
+			}
+		}
+
+		if (cluster.size())
+		{
+			clusters.push_back(std::vector<MeshNodeLight>(cluster));
+		}
+	}
+}
+
+TEST(Sandbox, PullBVHInfoAndBuildTree) {
+	auto handler = getLocalHandler();
+
+	std::string database = "fthiel";
+
+	// House model (small)
+	//std::string collection = "1d08cae9-ba1f-4b40-b96e-6ad1a0059901.scene";
+	//repo::lib::RepoUUID revId = repo::lib::RepoUUID("CDB96441-5A9D-4EB1-8439-6124B2DC5EEE");
+
+	// "Medium" Model
+	//std::string collection = "1a874c4b-891c-4586-864c-3bbb408a71d3.scene";
+	//repo::lib::RepoUUID revId = repo::lib::RepoUUID("6E2F4803-34AA-4719-A797-693C842342D0");
+
+	// XXL Model
+	std::string collection = "624bc24b-00b8-4434-ac21-e73fb819b529.scene";
+	repo::lib::RepoUUID revId = repo::lib::RepoUUID("63752F30-0EB9-4090-8233-AE1B63B86E32");
+
+	// Get transforms first
+	auto transformMap = getAllTransforms(handler, database, collection, revId);
+
+	repo::core::model::RepoBSONBuilder filter;
+	filter.append("rev_id", revId);
+	filter.append("materialProperties.isOpaque", true);
+	filter.append("primitive", 3);
+
+	repo::core::model::RepoBSONBuilder projection;
+	projection.append("_id", 0);
+	projection.append("shared_id", 1);
+	projection.append("bounding_box", 1);
+	projection.append("vertices_count", 1);
+	projection.append("parents", 1);
+
+	auto cursor = handler->rawCursorFind(database, collection, filter.obj(), projection.obj());
+
+	std::vector<MeshNodeLight> nodes;
+	std::vector<bvh::BoundingBox<Scalar>> boundingBoxes;
+
+	for (auto doc : cursor) {
+		auto bson = repo::core::model::RepoBSON(doc);
+		auto node = MeshNodeLight(bson);		
+		nodes.push_back(node);
+
+		auto bounds = node.getBoundingBox();
+
+		// Transform bounds
+		auto parentId = node.getParent();
+		if (!transformMap.contains(parentId))
+			throw new std::invalid_argument("This should not happen");
+		
+		auto transMat = transformMap.at(node.getParent());
+		auto newMinBound = transMat * bounds.min();
+		auto newMaxBound = transMat * bounds.max();
+
+		auto min = BvhVector3(newMinBound.x, newMinBound.y, newMinBound.z);
+		auto max = BvhVector3(newMaxBound.x, newMaxBound.y, newMaxBound.z);
+		boundingBoxes.push_back(bvh::BoundingBox<Scalar>(min, max));
+	}
+
+	auto centers = std::vector<BvhVector3>();
+	for (const auto& bounds : boundingBoxes)
+	{
+		centers.push_back(bounds.center());
+	}
+
+	auto globalBounds = bvh::compute_bounding_boxes_union(boundingBoxes.data(), boundingBoxes.size());
+
+
+	// CREATE BVH TREE
+
+	Bvh bvh;
+	bvh::SweepSahBuilder<Bvh> builder(bvh);
+	builder.build(globalBounds, boundingBoxes.data(), centers.data(), boundingBoxes.size());
+
+	// The tree contains all the submesh bounds grouped in space.
+	// Create a list of vertex counts for each node so we can decide where to
+	// prune in order to build the clusters.
+	auto vertexCounts = getVertexCounts(bvh, nodes);
+
+	// Next, traverse the tree again, but this time depth first, cutting the tree
+	// at places the vertex count drops below a target threshold.
+	auto branchNodes = getSupermeshBranchNodesSandbox(bvh, vertexCounts);
+
+	// Finally, get all the leaf nodes for each branch in order to build the
+	// groups of MeshNodes
+	std::vector<std::vector<MeshNodeLight>> clusters;
+	for (const auto head : branchNodes)
+	{
+		std::vector<MeshNodeLight> cluster;
+		for (const auto primitive : getBranchPrimitivesSandbox(bvh, head))
+		{
+			cluster.push_back(nodes[primitive]);
+		}
+		clusters.push_back(cluster);
+	}
+
+	// If clusters contain too many meshes, we can exceed the maximum BSON size.
+	// Do a quick check and split any clusters that are too large.
+	splitBigClustersSandbox(clusters);
+
+	std::ofstream clusterFile;
+	clusterFile.open("clusterFile.csv");
+
+	for (auto cluster : clusters) {
+		for (int i = 0; i < cluster.size(); i++) {
+			const MeshNodeLight& node = cluster[i];
+
+			if (i != 0) {
+				clusterFile << ",";
+			}
+
+			clusterFile << node.getSharedId().toString();
+		}
+
+		clusterFile << std::endl;
+	}
+
+	clusterFile.close();
+
+	//std::ofstream clusterLog;
+	//clusterLog.open("clusterLog.csv");
+	//clusterLog << "cluster index,noNodes,noUniqueFiles,clusterSize" << std::endl;
+
+	//// Get cluster information
+	//int clusterIndex = 0;
+	//for (auto cluster : clusters) {
+	//	std::vector<repo::lib::RepoUUID> sharedIds;
+	//	for (const MeshNodeLight &node : cluster) {
+	//		sharedIds.push_back(node.getSharedId());
+	//	}
+
+	//	repo::core::model::RepoBSONBuilder inClause;
+	//	inClause.appendArray("$in", sharedIds);
+	//	repo::core::model::RepoBSONBuilder infoFilter;
+	//	infoFilter.append("shared_id", inClause.obj());
+
+	//	repo::core::model::RepoBSONBuilder infoProjection;
+	//	infoProjection.append("_id", 0);
+	//	infoProjection.append("_blobRef", 1);
+
+	//	
+	//	auto cursorInfo = handler->rawCursorFind(database, collection, infoFilter.obj(), infoProjection.obj());
+	//	
+	//	std::set<std::string> uniqueFiles;
+	//	for (auto doc : cursorInfo)
+	//	{
+	//		auto bson = repo::core::model::RepoBSON(doc);
+	//		auto binRef = bson.getBinaryReference();
+	//		auto fileName = binRef.getStringField("name");
+
+	//		if (!uniqueFiles.contains(fileName))
+	//			uniqueFiles.insert(fileName);
+	//	}
+
+	//	long long sizeSum = 0;
+	//	for (auto fileName : uniqueFiles) {
+	//		std::string refCollection = collection + ".ref";
+
+	//		repo::core::model::RepoBSONBuilder refFilter;
+	//		refFilter.append("_id", fileName);
+
+	//		repo::core::model::RepoBSONBuilder refProj;
+	//		refProj.append("_id", 0);
+	//		refProj.append("size", 1);
+
+	//		auto cursorRef = handler->rawCursorFind(database, refCollection, refFilter.obj(), refProj.obj());
+	//		for (auto doc : cursorRef) {
+	//			auto bson = repo::core::model::RepoBSON(doc);
+	//			sizeSum += bson.getIntField("size");
+	//		}
+	//	}
+	//	
+	//	clusterLog << clusterIndex << "," << cluster.size() << "," << uniqueFiles.size() << "," << sizeSum << std::endl;
+	//	clusterIndex++;
+	//}
+
+	//clusterLog.close();
+
+	EXPECT_THAT(boundingBoxes.size(), Eq(478546));	
+}
+
+class GeomNode {
+	repo::lib::RepoUUID sharedId;
+	std::vector<uint8_t> bufferedData;
+
+public: 
+	GeomNode(repo::lib::RepoUUID sharedId, std::vector<uint8_t>& buffer)
+	{
+		this->sharedId = sharedId;
+		this->bufferedData = std::vector<uint8_t>(buffer.begin(), buffer.end());
+	}
+
+	void setBuffer(const std::vector<uint8_t>& buffer)
+	{
+		this->bufferedData = std::vector<uint8_t>(buffer.begin(), buffer.end());
+	}
+};
+
+TEST(Sandbox, GeomdataLegacy) {
+	
+	// Load cluster file
+	std::ifstream clusterFile;
+	clusterFile.open("clusterFile.csv");
+	std::string line;
+	std::vector <repo::lib::RepoUUID> nodes;
+	while (std::getline(clusterFile, line)) {
+		std::vector<std::string> strings;
+		boost::split(strings, line, boost::is_any_of(","));
+
+		std::vector<repo::lib::RepoUUID> uids;
+		for (std::string stringId : strings) {
+			nodes.push_back(repo::lib::RepoUUID(stringId));
+		}		
+	}
+
+	EXPECT_THAT(nodes.size(), Eq(478836));
+
+	std::shared_ptr<FileManager> fileManager;
+	auto handler = getLocalHandler(fileManager);
+
+	std::string database = "fthiel";
+	// XXL Model
+	std::string collection = "624bc24b-00b8-4434-ac21-e73fb819b529.scene";
+	repo::lib::RepoUUID revId = repo::lib::RepoUUID("63752F30-0EB9-4090-8233-AE1B63B86E32");
+
+	fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
+
+	std::vector<GeomNode> nodesWithGeom;
+	for (auto uid : nodes) {
+		repo::core::model::RepoBSONBuilder infoFilter;
+		infoFilter.append("shared_id", uid);
+
+		repo::core::model::RepoBSONBuilder infoProjection;
+		infoProjection.append("_id", 0);
+		infoProjection.append("_blobRef", 1);
+
+		auto cursorInfo = handler->rawCursorFind(database, collection, infoFilter.obj(), infoProjection.obj());
+
+		std::set<std::string> uniqueFiles;
+		for (auto doc : cursorInfo)
+		{
+			auto bson = repo::core::model::RepoBSON(doc);
+			auto binRef = bson.getBinaryReference();
+			auto buffer = blobHandler.readToBuffer(fileservice::DataRef::deserialise(binRef));
+
+			auto newNode = GeomNode(uid, buffer);
+			nodesWithGeom.push_back(newNode);
+		}
+	}
+
+	EXPECT_THAT(nodesWithGeom.size(), Eq(478836));
+}
+
+TEST(Sandbox, GeomdataPerCluster) {
+
+	// Load cluster file
+	std::ifstream clusterFile;
+	clusterFile.open("clusterFile.csv");
+	std::string line;
+	std::vector < std::vector<repo::lib::RepoUUID>> clusters;
+	while (std::getline(clusterFile, line)) {
+		std::vector<std::string> strings;
+		boost::split(strings, line, boost::is_any_of(","));
+
+		std::vector<repo::lib::RepoUUID> uids;
+		for (std::string stringId : strings) {
+			uids.push_back(repo::lib::RepoUUID(stringId));
+		}
+		clusters.push_back(uids);
+	}
+
+	EXPECT_THAT(clusters.size(), Eq(607));
+
+	std::shared_ptr<FileManager> fileManager;
+	auto handler = getLocalHandler(fileManager);
+
+	std::string database = "fthiel";
+	// XXL Model
+	std::string collection = "624bc24b-00b8-4434-ac21-e73fb819b529.scene";
+	repo::lib::RepoUUID revId = repo::lib::RepoUUID("63752F30-0EB9-4090-8233-AE1B63B86E32");
+
+	fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
+
+	for (auto cluster : clusters) {
+		std::vector<GeomNode> nodesWithGeom;
+
+		repo::core::model::RepoBSONBuilder inClause;
+		inClause.appendArray("$in", cluster);
+		repo::core::model::RepoBSONBuilder infoFilter;
+		infoFilter.append("shared_id", inClause.obj());
+
+		repo::core::model::RepoBSONBuilder infoProjection;
+		infoProjection.append("_id", 0);
+		infoProjection.append("shared_id", 1);
+		infoProjection.append("_blobRef", 1);
+
+		auto cursorInfo = handler->rawCursorFind(database, collection, infoFilter.obj(), infoProjection.obj());
+		
+		std::vector<repo::core::model::RepoBSON> nodeInfos;
+		for (auto doc : cursorInfo)
+		{
+			auto bson = repo::core::model::RepoBSON(doc);
+			nodeInfos.push_back(bson);
+		}
+
+		// separate loop to keep cursor separate from file operations and free it up as soon as possible
+		for (auto bson : nodeInfos)
+		{
+			auto uid = bson.getUUIDField("shared_id");
+			auto binRef = bson.getBinaryReference();
+			auto buffer = blobHandler.readToBuffer(fileservice::DataRef::deserialise(binRef));
+
+			auto newNode = GeomNode(uid, buffer);
+			nodesWithGeom.push_back(newNode);
+		}		
+	}
+}
+
+TEST(Sandbox, GeomdataSingle) {
+	// Load cluster file
+	std::ifstream clusterFile;
+	clusterFile.open("clusterFile.csv");
+	std::string line;
+	std::vector < std::vector<repo::lib::RepoUUID>> clusters;
+	while (std::getline(clusterFile, line)) {
+		std::vector<std::string> strings;
+		boost::split(strings, line, boost::is_any_of(","));
+
+		std::vector<repo::lib::RepoUUID> uids;
+		for (std::string stringId : strings) {
+			uids.push_back(repo::lib::RepoUUID(stringId));
+		}
+		clusters.push_back(uids);
+	}
+
+	EXPECT_THAT(clusters.size(), Eq(607));
+
+	std::shared_ptr<FileManager> fileManager;
+	auto handler = getLocalHandler(fileManager);
+
+	std::string database = "fthiel";
+	// XXL Model
+	std::string collection = "624bc24b-00b8-4434-ac21-e73fb819b529.scene";
+	repo::lib::RepoUUID revId = repo::lib::RepoUUID("63752F30-0EB9-4090-8233-AE1B63B86E32");
+
+	fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
+
+	for (auto cluster : clusters) {
+		repo::core::model::RepoBSONBuilder inClause;
+		inClause.appendArray("$in", cluster);
+		repo::core::model::RepoBSONBuilder infoFilter;
+		infoFilter.append("shared_id", inClause.obj());
+
+		repo::core::model::RepoBSONBuilder infoProjection;
+		infoProjection.append("_id", 0);
+		infoProjection.append("shared_id", 1);
+		infoProjection.append("_blobRef", 1);
+
+		auto cursorInfo = handler->rawCursorFind(database, collection, infoFilter.obj(), infoProjection.obj());
+
+		std::vector<repo::core::model::RepoBSON> nodeInfos;
+		for (auto doc : cursorInfo)
+		{
+			auto bson = repo::core::model::RepoBSON(doc);
+			nodeInfos.push_back(bson);
+		}
+
+		// separate loop to keep cursor separate from file operations and free it up as soon as possible
+		for (auto bson : nodeInfos)
+		{
+			auto uid = bson.getUUIDField("shared_id");
+			auto binRef = bson.getBinaryReference();
+			auto buffer = blobHandler.readToBuffer(fileservice::DataRef::deserialise(binRef));
+
+			auto newNode = GeomNode(uid, buffer);			
+		}
 	}
 }
