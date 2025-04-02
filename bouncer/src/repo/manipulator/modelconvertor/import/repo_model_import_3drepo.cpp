@@ -19,400 +19,978 @@
 #include <boost/filesystem.hpp>
 #include <sstream>
 #include <fstream>
+#include <stack>
 #include <iostream>
+#include <ranges>
+#include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
+#include "repo/manipulator/modelutility/repo_scene_builder.h"
 #include "repo/core/model/bson/repo_bson_factory.h"
-#include <repo_log.h>
+#include "repo/core/model/bson/repo_node_material.h"
+#include "repo/core/model/bson/repo_node_mesh.h"
+#include "repo/core/model/bson/repo_node_metadata.h"
+#include "repo/core/model/bson/repo_node_transformation.h"
+#include "repo/core/model/bson/repo_node_texture.h"
 #include "repo/error_codes.h"
+#include <repo_log.h>
+#include "rapidjson/reader.h"
 
 using namespace repo::core::model;
 using namespace repo::manipulator::modelconvertor;
-using namespace boost::property_tree;
+using namespace rapidjson;
+
+const  std::string REPO_IMPORT_METADATA = "metadata";
+const  std::string REPO_IMPORT_GEOMETRY = "geometry";
+const  std::string REPO_IMPORT_MATERIAL = "material";
+const  std::string REPO_IMPORT_VERTICES = "vertices";
+const  std::string REPO_IMPORT_UV = "uv";
+const  std::string REPO_IMPORT_NORMALS = "normals";
+const  std::string REPO_IMPORT_INDICES = "indices";
+const  std::string REPO_IMPORT_BBOX = "bbox";
+const  std::string REPO_IMPORT_PRIMITIVE = "primitive";
+
+const  std::string REPO_TXTR_FNAME = "filename";
+const  std::string REPO_TXTR_NUM_BYTES = "numImageBytes";
+const  std::string REPO_TXTR_WIDTH = "width";
+const  std::string REPO_TXTR_HEIGHT = "height";
+const  std::string REPO_TXTR_ID = "id";
+const  std::string REPO_TXTR_IMG_BYTES = "imageBytes";
+
+const char REPO_IMPORT_TYPE_STRING = 'S';
+const char REPO_IMPORT_TYPE_DOUBLE = 'D';
+const char REPO_IMPORT_TYPE_INT = 'I';
+const char REPO_IMPORT_TYPE_BOOL = 'B';
+const char REPO_IMPORT_TYPE_DATETIME = 'T';
+
+const static int REPO_VERSION_LENGTH = 6;
+
+#pragma optimize("",off)
 
 RepoModelImport::RepoModelImport(const ModelImportConfig& settings) :
 	AbstractModelImport(settings)
 {
-	fin = nullptr;
-	finCompressed = nullptr;
+	scene = nullptr;
 }
 
 RepoModelImport::~RepoModelImport()
 {
 }
 
-repo::core::model::MetadataNode* RepoModelImport::createMetadataNode(
-	const ptree& metaTree,
-	const std::string& parentName,
-	const repo::lib::RepoUUID& parentID)
+bool RepoModelImport::importModel(std::string filePath, uint8_t& errMsg)
 {
-	std::vector<std::string> keys;
-	std::vector<repo::lib::RepoVariant> values;
-
-	for (ptree::const_iterator props = metaTree.begin(); props != metaTree.end(); props++)
-	{
-		std::string origKey = props->first;
-		std::string key;
-		char type = origKey[0];
-		key = origKey.substr(1);
-
-		keys.push_back(key);
-		repo::lib::RepoVariant value;
-		switch (type)
-		{
-		case REPO_IMPORT_TYPE_BOOL:
-			value = props->second.get_value<bool>();
-			break;
-
-		case REPO_IMPORT_TYPE_INT:
-			value = props->second.get_value<int>();
-			break;
-
-		case REPO_IMPORT_TYPE_DOUBLE:
-			value = props->second.get_value<double>();
-			break;
-
-		case REPO_IMPORT_TYPE_STRING:
-			value = props->second.get_value<std::string>();
-			break;
-		}
-		values.push_back(value);
-	}
-
-	repo::core::model::MetadataNode* metaNode = new repo::core::model::MetadataNode(
-		repo::core::model::RepoBSONFactory::makeMetaDataNode(keys, values, parentName));
-
-	metadata.insert(metaNode);
-
-	return metaNode;
+	throw repo::lib::RepoException("Classic import is no longer supported for .bim. Please use the streaming import.");
 }
 
-void RepoModelImport::parseMaterial(const boost::property_tree::ptree& matTree)
+struct Range
 {
-	repo::lib::repo_material_t repo_material;
-	int textureId = -1;
+	size_t start;
+	size_t end;
 
-	if (matTree.find("diffuse") != matTree.not_found())
-		repo_material.diffuse = as_vector<float>(matTree, "diffuse");
-
-	if (matTree.find("specular") != matTree.not_found())
-		repo_material.specular = as_vector<float>(matTree, "specular");
-
-	if (matTree.find("emissive") != matTree.not_found())
-		repo_material.emissive = as_vector<float>(matTree, "emissive");
-
-	if (matTree.find("ambient") != matTree.not_found())
-		repo_material.ambient = as_vector<float>(matTree, "ambient");
-
-	if (matTree.find("transparency") != matTree.not_found())
-		repo_material.opacity = 1.0f - matTree.get<float>("transparency");
-	else
-		repo_material.opacity = 1.0f;
-
-	if (matTree.find("shininess") != matTree.not_found())
-		repo_material.shininess = matTree.get<float>("shininess") * 5;
-	else
-		repo_material.shininess = 0.0f;
-
-	if (matTree.find("texture") != matTree.not_found())
+	Range()
+		:start(0),
+		end(0)
 	{
-		textureId = matTree.get<int>("texture");
 	}
 
-	if (matTree.find("lineWeight") != matTree.not_found())
+	size_t size() const
 	{
-		repo_material.lineWeight = matTree.get<float>("lineWeight");
+		return end - start;
 	}
-	else
-	{
-		repo_material.lineWeight = std::numeric_limits<float>::quiet_NaN();
-	}
+};
 
-	repo_material.shininessStrength = 0.25f;
-	repo_material.isWireframe = false;
-	repo_material.isTwoSided = false;
-
-	std::stringstream ss("");
-	ss << "Material." << std::setfill('0') << std::setw(5) << materials.size();
-
-	repo::core::model::MaterialNode* materialNode = new repo::core::model::MaterialNode(
-		repo::core::model::RepoBSONFactory::makeMaterialNode(repo_material, ss.str()));
-	materials.insert(materialNode);
-	matNodeList.push_back(materialNode);
-
-	if (textureId >= 0)
-	{
-		textureIdToParents[textureId].push_back(materialNode->getSharedID());
-	}
-}
-
-void RepoModelImport::parseTexture(
-	const boost::property_tree::ptree& textureTree,
-	char* const dataBuffer)
+struct TextureRecord
 {
-	bool fileNameOk = textureTree.find(REPO_TXTR_FNAME) != textureTree.not_found();
-	bool byteCountOK = textureTree.find(REPO_TXTR_NUM_BYTES) != textureTree.not_found();
-	bool widthOk = textureTree.find(REPO_TXTR_WIDTH) != textureTree.not_found();
-	bool heightOk = textureTree.find(REPO_TXTR_HEIGHT) != textureTree.not_found();
-	bool idOk = textureTree.find(REPO_TXTR_ID) != textureTree.not_found();
+	std::string filename;
+	int numBytes;
+	int width;
+	int height;
+	int id;
+	Range bytes;
 
-	// do the fields exist
-	if (!byteCountOK ||
-		!widthOk ||
-		!heightOk ||
-		!idOk)
+	TextureRecord() :
+		numBytes(0),
+		width(0),
+		height(0),
+		id(-1)
 	{
-		repoError << "Required texture field missing. Skipping this texture.";
-		missingTextures = true;
-		return;
 	}
+};
 
-	std::string name = fileNameOk ? textureTree.get_child(REPO_TXTR_FNAME).data() : "";
-	uint32_t byteCount = textureTree.get<uint32_t>(REPO_TXTR_NUM_BYTES);
-	uint32_t width = textureTree.get<uint32_t>(REPO_TXTR_WIDTH);
-	uint32_t height = textureTree.get<uint32_t>(REPO_TXTR_HEIGHT);
-	uint32_t id = textureTree.get<uint32_t>(REPO_TXTR_ID);
-
-	// are they valid
-	if (byteCount == 0)
-	{
-		repoError << "No data buffer size for the texture " << name;
-		missingTextures = true;
-		return;
-	}
-
-	std::vector<uint64_t> DataStartEnd = as_vector<uint64_t>(textureTree, REPO_TXTR_IMG_BYTES);
-
-	char* data = &dataBuffer[DataStartEnd[0]];
-
-	repo::core::model::TextureNode* textureNode =
-		new repo::core::model::TextureNode(
-			repo::core::model::RepoBSONFactory::makeTextureNode(
-				name,
-				data,
-				byteCount,
-				width,
-				height,
-				textureIdToParents[id]));
-
-	textures.insert(textureNode);
-}
-
-RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
-	const ptree& mesh,
-	const std::string& parentName,
-	const repo::lib::RepoUUID& parentID,
-	const repo::lib::RepoMatrix& trans)
+struct View
 {
-	int materialID = -1;
+	size_t begin;
+	size_t end;
 
-	auto numIndices = mesh.get<int64_t>("numIndices");
-	auto numVertices = mesh.get<int64_t>("numVertices");
+	View(const Range& range)
+		:begin(range.start),
+		end(range.end)
+	{
+	}
 
-	std::vector<repo::lib::RepoVector3D64> vertices;
-	std::vector<repo::lib::RepoVector3D> normals;
-	std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
-	std::vector<repo::lib::repo_face_t> faces;
+	size_t size()
+	{
+		return end - begin;
+	}
 
+	virtual ~View() = default; // Required for the subclass destructors to be called and so to release the shared pointers.
+};
+
+template<typename T>
+struct MeshAttributeView : public View
+{
+	std::shared_ptr<repo::core::model::MeshNode> node;
+
+	MeshAttributeView(const Range& range, std::shared_ptr<repo::core::model::MeshNode> node):
+		View(range),
+		node(node)
+	{}
+
+	std::vector<T> vector(char* data)
+	{
+		std::vector<T> vector;
+		vector.resize(size() / sizeof(T));
+		memcpy_s(vector.data(), size(), data, size());
+		return vector;
+	}
+};
+
+struct VerticesView : public MeshAttributeView<repo::lib::RepoVector3D64>
+{
+	using MeshAttributeView::MeshAttributeView;
+};
+
+struct NormalsView : public MeshAttributeView<repo::lib::RepoVector3D>
+{
+	using MeshAttributeView::MeshAttributeView;
+};
+
+struct UvsView : public MeshAttributeView<repo::lib::RepoVector2D>
+{
+	using MeshAttributeView::MeshAttributeView;
+};
+
+struct TextureView : public View
+{
+	TextureRecord record;
+
+	TextureView(const TextureRecord& record):
+		View(record.bytes),
+		record(record)
+	{
+	}
+};
+
+struct IndicesView : public MeshAttributeView<uint32_t>
+{
+	repo::core::model::MeshNode::Primitive primitive;
+	IndicesView(const Range& range, std::shared_ptr<repo::core::model::MeshNode> node, repo::core::model::MeshNode::Primitive primitive)
+		:MeshAttributeView(range, node),
+		primitive(primitive)
+	{
+	}
+};
+
+struct GeometryRecord
+{
+	repo::core::model::MeshNode::Primitive primitive;
+	size_t numIndices;
+	size_t numVertices;
+	Range indices;
+	Range vertices;
+	Range normals;
+	Range uv;
+	int material;
+	bool hasGeometry;
+
+	GeometryRecord()
+		:primitive(repo::core::model::MeshNode::Primitive::UNKNOWN),
+		numIndices(0),
+		numVertices(0),
+		material(0),
+		hasGeometry(false)
+	{
+	}
+};
+
+struct NodeRecord
+{
+	int id;
+	int parentId;
+	std::string name;
+	repo::lib::RepoMatrix matrix;
+	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
+	GeometryRecord geometry;
 	repo::lib::RepoBounds bounds;
 
-	const bool needTransform = !trans.isIdentity();
-	repo::lib::RepoMatrix normalTrans;
-
-	if (needTransform)
+	NodeRecord()
+		:id(-1),
+		parentId(-1)
 	{
-		repo::lib::RepoMatrix invTrans;
-
-		invTrans = trans.invert().transpose();
-
-		auto data = invTrans.getData();
-		data[3] = data[7] = data[11] = 0;
-		data[12] = data[13] = data[14] = 0;
-
-		normalTrans = repo::lib::RepoMatrix(data);
 	}
+};
 
-	for (ptree::const_iterator props = mesh.begin(); props != mesh.end(); props++)
-	{
-		if (props->first == REPO_IMPORT_MATERIAL)
-		{
-			materialID = props->second.get_value<int>();
-		}
-		else if (props->first == REPO_IMPORT_VERTICES || props->first == REPO_IMPORT_NORMALS)
-		{
-			std::vector<int64_t> startEnd = as_vector<int64_t>(mesh, props->first);
-
-			double* tmpVerticesDouble = (double*)(dataBuffer + startEnd[0]);
-			float* tmpVerticesSingle = (float*)(dataBuffer + startEnd[0]);
-
-			for (int i = 0; i < numVertices; i++)
-			{
-				if (props->first == REPO_IMPORT_VERTICES) {
-					repo::lib::RepoVector3D64 tmpVec;
-					tmpVec = { tmpVerticesDouble[i * 3] ,  tmpVerticesDouble[i * 3 + 1] , tmpVerticesDouble[i * 3 + 2] };
-					if (needTransform) tmpVec = trans * tmpVec;
-
-					bounds.encapsulate(tmpVec);
-
-					vertices.push_back(tmpVec);
-				}
-				else {
-					repo::lib::RepoVector3D tmpVec =
-					{
-						tmpVerticesSingle[i * 3] ,
-						tmpVerticesSingle[i * 3 + 1] ,
-						tmpVerticesSingle[i * 3 + 2]
-					};
-					normals.push_back(needTransform ? normalTrans * tmpVec : tmpVec);
-				}
-			}
-		}
-		else if (props->first == REPO_IMPORT_UV)
-		{
-			std::vector<int64_t> startEnd = as_vector<int64_t>(mesh, props->first);
-			float* tmpUVs = (float*)(dataBuffer + startEnd[0]);
-			std::vector<repo::lib::RepoVector2D> uvChannelVector;
-			for (int i = 0; i < numVertices; i++)
-			{
-				repo::lib::RepoVector2D tmpUVVec = repo::lib::RepoVector2D(tmpUVs[i * 2], tmpUVs[i * 2 + 1]);
-				uvChannelVector.push_back(tmpUVVec);
-			}
-			uvChannels.push_back(uvChannelVector);
-		}
-		else if (props->first == REPO_IMPORT_INDICES)
-		{
-			std::vector<int64_t> startEnd = as_vector<int64_t>(mesh, REPO_IMPORT_INDICES);
-
-			uint32_t* tmpIndices = (uint32_t*)(dataBuffer + startEnd[0]);
-
-			// figure out primitive type
-			boost::optional<const ptree&> primitiveProp = mesh.get_child_optional(REPO_IMPORT_PRIMITIVE);
-			MeshNode::Primitive primitiveType;
-			if (primitiveProp)
-			{
-				primitiveType = static_cast<MeshNode::Primitive>(primitiveProp.get().get_value<int8_t>());
-			}
-			else
-			{
-				primitiveType = MeshNode::Primitive::TRIANGLES;
-			}
-
-			// pull out faces
-			const auto primitiveIdxLen = (int8_t)primitiveType;
-			switch (primitiveType)
-			{
-			case repo::core::model::MeshNode::Primitive::LINES:
-			case repo::core::model::MeshNode::Primitive::TRIANGLES:
-				for (int i = 0; i < numIndices; i += primitiveIdxLen)
-				{
-					repo::lib::repo_face_t tmpFace;
-					for (int j = 0; j < primitiveIdxLen; ++j)
-					{
-						tmpFace.push_back(tmpIndices[i + j]);
-					}
-					faces.push_back(tmpFace);
-				}
-				break;
-			default:
-				geometryImportError = true;
-				break;
-			}
-		}
-	}
-
-	if (offset) {
-		offset = repo::lib::RepoVector3D64::min(offset.value(), bounds.min());
-	}
-	else {
-		offset = bounds.min();
-	}
-
-	const auto sharedID = repo::lib::RepoUUID::createUUID();
-
-	if (materialID >= 0)
-	{
-		matNodeList[materialID]->addParent(sharedID);
-	}
-
-	mesh_data_t result = { vertices, normals, uvChannels, faces, bounds, parentID, sharedID };
-	return result;
-}
-
-void RepoModelImport::createObject(const ptree& tree)
+/*
+* A subclass of RepoSceneBuilder with a dictionary for mapping local indices.
+*/
+class Builder : private repo::manipulator::modelutility::RepoSceneBuilder
 {
-	int myID = tree.get<int>("id");
-	int myParent = tree.get<int>("parent");
+public:
 
-	std::string transName = tree.get<std::string>("name", "");
+	Builder(std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+		const std::string& database,
+		const std::string& project,
+		const repo::lib::RepoUUID& revisionId) :
+		RepoSceneBuilder(handler, database, project, revisionId),
+		minBufferSize(0),
+		numMaterials(0)
+	{
+	}
 
-	repo::lib::RepoUUID parentSharedID = node_map[myParent]->getSharedID();
-	repo::lib::RepoMatrix parentTransform = trans_matrix_map[myParent];
+	struct Ids
+	{
+		repo::lib::RepoUUID uniqueId;
+		repo::lib::RepoUUID sharedId;
 
-	boost::optional< const ptree& > transMatTree = tree.get_child_optional("transformation");
+		Ids()
+			:uniqueId(repo::lib::RepoUUID::createUUID()),
+			sharedId(repo::lib::RepoUUID::createUUID())
+		{
+		}
+	};
 
-	repo::core::model::TransformationNode* transNode = (repo::core::model::TransformationNode*) node_map[myParent];
+	std::unordered_map<int, repo::lib::RepoUUID> transformSharedIds;
+	std::unordered_map<int, Ids> materialIds;
+	std::unordered_map<int, Ids> textureIds;
+	size_t numMaterials;
+	std::vector<View*> dataMap;
+	size_t minBufferSize;
+	repo::lib::RepoBounds sceneBounds;
+	repo::lib::RepoVector3D64 offset; // Applied to the vertex data
 
-	// We only want to create a node if there is a matrix transformation to represent, or
-	// we're trying to represent a different entity to its parent. Otherwise, reuse the parent transform and only store the geometry
-	bool isEntity = !transName.empty() || transMatTree;
+	/* 
+	* Used to set the parents once all nodes have been read in. This is used
+	* instead of RepoSceneBuilder's addParent until the end, because the Ids may
+	* be created before the actual nodes themselves.
+	*/
+	std::vector<std::pair<repo::lib::RepoUUID, repo::lib::RepoUUID>> references; // From uniqueId to sharedId
 
-	if (isEntity) {
-		if (transMatTree) {
-			repo::lib::RepoMatrix transMat = repo::lib::RepoMatrix(as_vector<float>(tree, "transformation"));
-			trans_matrix_map.push_back(parentTransform * transMat);
+	void getParent(int id, std::vector<repo::lib::RepoUUID>& parents)
+	{
+		auto it = transformSharedIds.find(id);
+		if (it != transformSharedIds.end())
+		{
+			parents.push_back(it->second);
+		}
+	}
+
+	void createNode(const NodeRecord& r)
+	{
+		std::vector<repo::lib::RepoUUID> parentIds;
+		getParent(r.parentId, parentIds);
+
+		sceneBounds.encapsulate(r.bounds);
+
+		bool isEntity = !r.name.empty() || !r.matrix.isIdentity();
+		if (isEntity)
+		{
+			auto node = repo::core::model::RepoBSONFactory::makeTransformationNode(
+				r.matrix,
+				r.name,
+				parentIds
+			);
+			transformSharedIds[r.id] = node.getSharedID();
+			parentIds.clear();
+			parentIds.push_back(node.getSharedID());
+			addNode(node);
+		}
+
+		// Take care that this comes before the metadata node creation, as it can modify
+		// the parentIds vector.
+
+		if (r.geometry.hasGeometry)
+		{
+			// When the views are deleted, the shared references to the MeshNode will
+			// be deleted, and after the last one is gone the node will be free to be
+			// committed by RepoSceneBuilder
+
+			auto node = addNode(MeshNode());
+			node->setUniqueID(repo::lib::RepoUUID::createUUID());
+			node->setSharedID(repo::lib::RepoUUID::createUUID());
+			node->setParents(parentIds);
+
+			if (!isEntity) {
+				parentIds = { node->getSharedID() };
+			}
+
+			if (r.geometry.vertices.size()) {
+				dataMap.push_back(new VerticesView(r.geometry.vertices, node));
+			}
+
+			if (r.geometry.indices.size()) {
+				dataMap.push_back(new IndicesView(r.geometry.indices, node, r.geometry.primitive));
+			}
+
+			if (r.geometry.normals.size()) {
+				dataMap.push_back(new NormalsView(r.geometry.normals, node));
+			}
+
+			if (r.geometry.uv.size()) {
+				dataMap.push_back(new UvsView(r.geometry.uv, node));
+			}
+
+			auto& material = materialIds[r.geometry.material];
+			references.push_back({ material.uniqueId, node->getSharedID() });
+		}
+
+		if (r.metadata.size())
+		{
+			auto node = repo::core::model::RepoBSONFactory::makeMetaDataNode(r.metadata, {}, parentIds);
+			addNode(node);
+		}
+	}
+
+	// It is expected that materials are added in the order they are indexed by
+	// the nodes
+	void createMaterial(repo::lib::repo_material_t material, int texture)
+	{
+		auto n = repo::core::model::RepoBSONFactory::makeMaterialNode(material, {}, {});
+		auto& ids = materialIds[numMaterials++];
+		n.setUniqueID(ids.uniqueId);
+		n.setSharedID(ids.sharedId);
+		addNode(n);
+
+		if (texture != -1) {
+			references.push_back({ textureIds[texture].uniqueId, ids.sharedId });
+		}
+	}
+
+	void createTexture(const TextureRecord& t)
+	{
+		if (t.bytes.size()) {
+			dataMap.push_back(new TextureView(t)); // The node and blobs are created together for textures
 		}
 		else {
-			trans_matrix_map.push_back(parentTransform);
+			setMissingTextures();
 		}
-		transNode =
-			new repo::core::model::TransformationNode(
-				repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), transName, { parentSharedID }));
-		transformations.insert(transNode);
 	}
-	else {
-		trans_matrix_map.push_back(parentTransform);
-	}
-	node_map.push_back(transNode);
 
-	std::vector<repo::core::model::MetadataNode*> metas;
-	std::vector<repo::lib::RepoUUID> metaParentIDs;
-
-	for (ptree::const_iterator props = tree.begin(); props != tree.end(); props++)
+	void prepareDataMap()
 	{
-		if (isEntity && props->first == REPO_IMPORT_METADATA)
-		{
-			// The assumption is that if the entry is not an individual entity, we don't want to import the metadata.
-			metas.push_back(createMetadataNode(props->second, transName, parentSharedID));
-		}
+		std::ranges::sort(dataMap, {}, &View::begin);
 
-		if (props->first == REPO_IMPORT_GEOMETRY)
-		{
-			auto mesh = createMeshRecord(props->second, transNode->getName(), transNode->getSharedID(), trans_matrix_map.back());
-			metaParentIDs.push_back(mesh.sharedID);
-			meshEntries.push_back(mesh);
+		minBufferSize = 0;
+		for (auto view : dataMap) {
+			minBufferSize = std::max(minBufferSize, view->size());
 		}
 	}
 
-	if (isEntity) {
-		metaParentIDs.push_back(transNode->getSharedID());
-
-		for (auto& meta : metas)
+	void readView(View* v, char* buffer)
+	{
+		if (auto view = dynamic_cast<VerticesView*>(v))
 		{
-			meta->addParents(metaParentIDs);
+			auto vertices64 = view->vector(buffer);
+			std::vector<repo::lib::RepoVector3D> vertices32(vertices64.size());
+			for (auto i = 0; i < vertices32.size(); i++) {
+				vertices32[i] = vertices64[i] - offset;
+			}
+			view->node->setVertices(vertices32, true);
+		}
+		else if (auto view = dynamic_cast<IndicesView*>(v))
+		{
+			auto indices = view->vector(buffer);
+			std::vector<repo::lib::repo_face_t> faces(indices.size() / (int)view->primitive);
+			auto idx = 0;
+			for (auto& f : faces) {
+				for (auto i = 0; i < (int)view->primitive; i++) {
+					f.push_back(indices[idx++]);
+				}
+			}
+			view->node->setFaces(faces);
+		}
+		else if (auto view = dynamic_cast<NormalsView*>(v))
+		{
+			view->node->setNormals(view->vector(buffer));
+		}
+		else if (auto view = dynamic_cast<UvsView*>(v))
+		{
+			view->node->setUVChannel(0, view->vector(buffer));
+		}
+		else if (auto view = dynamic_cast<TextureView*>(v))
+		{
+			auto n = repo::core::model::RepoBSONFactory::makeTextureNode(
+				view->record.filename,
+				buffer,
+				view->size(),
+				view->record.width,
+				view->record.height,
+				{}
+			);
+			auto ids = textureIds[view->record.id];
+			n.setUniqueID(ids.uniqueId);
+			n.setSharedID(ids.uniqueId);
+			addNode(n);
 		}
 	}
-}
 
-void RepoModelImport::skipAheadInFile(long amount)
+	void readData(std::istream* fin)
+	{
+		auto buffer = new char[minBufferSize];
+
+		size_t position = 0;
+		for (auto view : dataMap)
+		{
+			auto skip = view->begin - position;
+			fin->ignore(skip);
+			position += skip;
+
+			fin->read(buffer, view->size());
+			position += view->size();
+
+			readView(view, buffer);
+
+			delete view;
+		}
+
+		delete[] buffer;
+
+		dataMap.clear();
+	}
+
+	repo::lib::RepoBounds readBoundsFromData(std::istream* fin)
+	{
+		auto buffer = new char[minBufferSize];
+		repo::lib::RepoBounds bounds;
+
+		size_t position = 0;
+		for (auto v : dataMap) {
+			if (auto view = dynamic_cast<VerticesView*>(v)) {
+				auto skip = view->begin - position;
+				fin->ignore(skip);
+				position += skip;
+
+				fin->read(buffer, view->size());
+				position += view->size();
+
+				for (auto& v : view->vector(buffer)) {
+					bounds.encapsulate(v);
+				}
+			}
+		}
+
+		delete[] buffer;
+
+		return bounds;
+	}
+
+	void finalise()
+	{
+		for (auto& r : references) {
+			addParent(r.first, r.second);
+		}
+		RepoSceneBuilder::finalise();
+	}
+
+	bool hasMissingTextures() 
+	{
+		return RepoSceneBuilder::hasMissingTextures();
+	}
+};
+
+/*
+* Parsers map primitives from the Json to members of more complex structures.
+* 
+* Parsers typically hold a reference to the variable they are meant to update,
+* and when they receive the value via one of the base methods, they can perform
+* any necessary post-processing, and assign it.
+* 
+* Parser objects can also respond to object & array delimiters and keys; if a
+* parser returns another Parser pointer, the new Parser will be added to the
+* stack, and used for any subsequent values/tokens, until the scope (object or
+* array) exits. In this way a tree of Parser objects can be constructed
+* to handle complex types with multiple nested types, such as Nodes or
+* Bounding Boxes.
+* 
+* It is expected the Parser tree is created once per-application, and the
+* memory sections that it updates are written to over and over as new objects
+* are read from the Json.
+*/
+
+struct Parser
 {
-	if (amount > 0)
-	{
-		// Cannot use seekg on GZIP file
-		char* tmpBuf = new char[amount];
-		fin->read(tmpBuf, amount);
-		delete[] tmpBuf;
+	virtual void Null() {}
+	virtual void Bool(bool b) {}
+	virtual void Int(int i) {}
+	virtual void Uint(unsigned i) {}
+	virtual void Int64(int64_t i) {}
+	virtual void Uint64(uint64_t i) {}
+	virtual void Double(double d) {}
+	virtual void String(const std::string_view& string) {}
+	virtual void StartObject() {}
+	virtual Parser* Key(const std::string_view& key) { return nullptr;  }
+	virtual void EndObject() {}
+	virtual Parser* StartArray() { return nullptr; }
+	virtual void EndArray() {}
+};
+
+/*
+* Calls the parser at the top of the stack for any value. When arrays or objects
+* are encountered, the Parser has the opportunity to push a new parser to the
+* stack for the duration of that scope.
+* Objects are additionally special in that they have two stack entries: one
+* for the object Parser itself, and one for the Parser for each key. When
+* key is called inside an Object, the top of the stack is *swapped* for the new
+* Parser. When the object terminates, the top Parser is discarded and EndObject
+* called on the Parser on which StartObject was called.
+*/
+
+struct MyHandler : public BaseReaderHandler<UTF8<>, MyHandler>
+{
+	bool StartObject() {
+		if (stack.top()) {
+			stack.top()->StartObject();
+		}
+		stack.push(nullptr); // This one is to hold the Parsers for the objects' members. This should be updated after the call to Key before any values are read.
+		return true;
 	}
-}
+
+	bool Key(const Ch* str, SizeType length, bool copy) {
+		stack.pop();
+		stack.push(stack.top() ? stack.top()->Key(std::string_view(str, length)) : nullptr);
+		return true;
+	}
+	
+	bool EndObject(SizeType) {
+		stack.pop(); // (The key's parser, or nullptr if one was never set.)
+		if (stack.top()) {
+			stack.top()->EndObject();
+		}
+		return true;
+	}
+
+	bool StartArray() {
+		stack.push(stack.top() ? stack.top()->StartArray() : nullptr);
+		return true;
+	}
+
+	bool EndArray(SizeType) { 
+		stack.pop();
+		if (stack.top()) {
+			stack.top()->EndArray();
+		}
+		return true;
+	}
+
+	bool String(const Ch* str, SizeType length, bool copy) {
+		if (stack.top()) {
+			stack.top()->String(std::string_view(str, length));
+		}
+		return true;
+	}
+
+	bool Bool(bool b) {
+		if (stack.top()) {
+			stack.top()->Bool(b);
+		}
+		return true;
+	}
+
+	bool Int(int v) {
+		if (stack.top()) {
+			stack.top()->Int(v);
+		}
+		return true;
+	}
+
+	bool Uint(unsigned v) {
+		if (stack.top()) {
+			stack.top()->Uint(v);
+		}
+		return true;
+	}
+
+	bool Int64(int64_t v) {
+		if (stack.top()) {
+			stack.top()->Int64(v);
+		}
+		return true;
+	}
+
+	bool Uint64(uint64_t v) {
+		if (stack.top()) {
+			stack.top()->Uint64(v);
+		}
+		return true;
+	}
+
+	bool Double(double v) {
+		if (stack.top()) {
+			stack.top()->Double(v);
+		}
+		return true;
+	}
+
+	std::stack<Parser*> stack;
+};
+
+
+struct ObjectParser : public Parser
+{
+	std::map<std::string, Parser*, std::less<>> parsers;
+
+	virtual Parser* Key(const std::string_view& key) override {
+		auto it = parsers.find(key);
+		if (it != parsers.end()) {
+			return it->second;
+		}
+		else {
+			return nullptr;
+		}
+	}
+};
+
+/*
+* Tells the handler to call elementParser for each element of the array
+*/
+struct ArrayParser : public Parser
+{
+	Parser* elementParser;
+
+	ArrayParser(Parser* elementParser)
+		:elementParser(elementParser) {
+	}
+
+	virtual Parser* StartArray() {
+		return elementParser;
+	}
+};
+
+/*
+* Casts any number received to the desired type and outputs it via the single
+* abstract method.
+*/
+template<typename T>
+struct NumberParserBase : public Parser
+{
+	virtual void Int(int i) override {
+		Number((T)i);
+	}
+
+	virtual void Uint(unsigned i) override {
+		Number((T)i);
+	}
+
+	virtual void Int64(int64_t i) override {
+		Number((T)i);
+	}
+
+	virtual void Uint64(uint64_t i) override {
+		Number((T)i);
+	}
+
+	virtual void Double(double d) override {
+		Number((T)d);
+	}
+
+	virtual void Number(T v) = 0;
+};
+
+template<typename T>
+struct NumberParser : public NumberParserBase<T>
+{
+	T& v;
+
+	NumberParser(T& v)
+		:v(v)
+	{
+	}
+
+	virtual void Number(T v) override {
+		this->v = v;
+	}
+};
+
+struct StringParser : public Parser
+{
+	std::string& v;
+
+	StringParser(std::string& v)
+		:v(v)
+	{
+	}
+
+	virtual void String(const std::string_view& s) override {
+		v = s;
+	}
+};
+
+// Reads an array as a RepoVector
+struct VectorParser : public NumberParserBase<double>
+{
+	repo::lib::RepoVector3D64& vec;
+	int i;
+
+	VectorParser(repo::lib::RepoVector3D64& vec)
+		:i(0),
+		vec(vec)
+	{
+	}
+
+	virtual Parser* StartArray() override {
+		vec = repo::lib::RepoVector3D64();
+		i = 0;
+		return this;
+	}
+
+	virtual void Number(double d) override {
+		if (i < 3) {
+			((double*)&vec)[i++] = d;
+		}
+	}
+};
+
+struct BoundsParser : public ObjectParser
+{
+	repo::lib::RepoVector3D64 min;
+	repo::lib::RepoVector3D64 max;
+
+	repo::lib::RepoBounds& bounds;
+
+	BoundsParser(repo::lib::RepoBounds& bounds):
+		bounds(bounds)
+	{
+		parsers["min"] = new VectorParser(min);
+		parsers["max"] = new VectorParser(max);
+	}
+
+	void EndObject() override {
+		bounds = repo::lib::RepoBounds(min, max);
+	}
+};
+
+struct RepoVariantParser : public Parser
+{
+	repo::lib::RepoVariant* v;
+
+	RepoVariantParser() {
+		v = nullptr;
+	}
+
+	virtual void Bool(bool b) { *v = b; }
+	virtual void Int(int i) { *v = i; }
+	virtual void Uint(unsigned i) { *v = (int)i; }
+	virtual void Int64(int64_t i) { *v = i; }
+	virtual void Uint64(uint64_t i) { *v = (int64_t)i; }
+	virtual void Double(double d) { *v = d; }
+	virtual void String(const std::string_view& string) { *v = std::string(string); }
+};
+
+struct MetadataParser : public Parser
+{
+	std::unordered_map<std::string, repo::lib::RepoVariant>& metadata;
+	RepoVariantParser valueParser;
+
+	MetadataParser(std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
+		:metadata(metadata)
+	{
+	}
+
+	Parser* Key(const std::string_view& key) override {
+		valueParser.v = &metadata[std::string(key).substr(1)]; // BIM004 and below prefix metadata keys with a character indicating the type
+		return &valueParser;
+	}
+
+	void StartObject() override {
+		metadata = {};
+	}
+};
+
+struct RepoMatrixParser : public NumberParserBase<float>
+{
+	repo::lib::RepoMatrix& matrix;
+	int i;
+
+	RepoMatrixParser(repo::lib::RepoMatrix& matrix)
+		:matrix(matrix),
+		i(0)
+	{
+	}
+
+	virtual Parser* StartArray() {
+		matrix = repo::lib::RepoMatrix();
+		i = 0;
+		return this;
+	}
+
+	void Number(float d) override {
+		if (i < matrix.getData().size()) {
+			matrix.getData()[i++] = d;
+		}
+	}
+};
+
+struct RangeParser : public NumberParserBase<size_t>
+{
+	bool started = false;
+
+	Range& range;
+
+	RangeParser(Range& range):
+		range(range)
+	{
+	}
+
+	virtual Parser* StartArray() {
+		started = false;
+		return this;
+	}
+
+	void Number(size_t n) override {
+		if (!started) {
+			range.start = n;
+			started = true;
+		}
+		else {
+			range.end = n;
+		}
+	}
+};
+
+struct ColourParser : public NumberParserBase<float>
+{
+	int i;
+	repo::lib::repo_color3d_t& colour;
+
+	ColourParser(repo::lib::repo_color3d_t& colour) :
+		colour(colour),
+		i(0)
+	{}
+
+	virtual Parser* StartArray() {
+		i = 0;
+		return this;
+	}
+
+	virtual void Number(float d) override 	{
+		if (i < 3) {
+			((float*)&colour)[i++] = d;
+		}
+	}
+};
+
+struct TextureParser : public ObjectParser
+{
+	TextureRecord texture;
+	Builder* builder;
+
+	TextureParser(Builder* builder)
+		:builder(builder)
+	{
+		parsers["id"] = new NumberParser<int>(texture.id);
+		parsers["filename"] = new StringParser(texture.filename);
+		parsers["width"] = new NumberParser<int>(texture.width);
+		parsers["height"] = new NumberParser<int>(texture.height);
+		parsers["imageBytes"] = new RangeParser(texture.bytes);
+	}
+
+	virtual void StartObject() override {
+		texture = TextureRecord();
+	}
+
+	virtual void EndObject() override {
+		builder->createTexture(texture);
+	}
+};
+
+struct MaterialParser : public ObjectParser
+{
+	repo::lib::repo_material_t material;
+	int texture;
+	Builder* builder;
+
+	MaterialParser(Builder* builder)
+		:builder(builder)
+	{
+		parsers["diffuse"] = new ColourParser(material.diffuse);
+		parsers["ambient"] = new ColourParser(material.ambient);
+		parsers["specular"] = new ColourParser(material.specular);
+		parsers["emissive"] = new ColourParser(material.emissive);
+		parsers["transparency"] = new NumberParser<float>(material.opacity);
+		parsers["shininess"] = new NumberParser<float>(material.shininess);
+		parsers["lineWeight"] = new NumberParser<float>(material.lineWeight);
+		parsers["texture"] = new NumberParser<int>(texture);
+	}
+
+	virtual void StartObject() override {
+		material = repo::lib::repo_material_t::DefaultMaterial();
+		material.opacity = 0;
+		material.shininess = material.shininess / 5;
+		texture = -1;
+	}
+
+	virtual void EndObject() override {
+		material.opacity = 1 - material.opacity;
+		material.shininess = material.shininess * 5;
+		builder->createMaterial(material, texture);
+	}
+};
+
+struct GeometryParser : public ObjectParser
+{
+	GeometryRecord& geometry;
+
+	GeometryParser(GeometryRecord& geometry)
+		:geometry(geometry)
+	{
+		parsers["primitive"] = new NumberParser(geometry.primitive);
+		parsers["numIndices"] = new NumberParser(geometry.numIndices);
+		parsers["numVertices"] = new NumberParser(geometry.numVertices);
+		parsers["indices"] = new RangeParser(geometry.indices);
+		parsers["vertices"] = new RangeParser(geometry.vertices);
+		parsers["normals"] = new RangeParser(geometry.normals);
+		parsers["uv"] = new RangeParser(geometry.uv);
+		parsers["material"] = new NumberParser(geometry.material);
+	}
+
+	virtual void StartObject() {
+		geometry.hasGeometry = true;
+	}
+};
+
+struct NodeParser : public ObjectParser
+{
+	NodeRecord record;
+	Builder* builder;
+
+	NodeParser(Builder* builder)
+		:builder(builder)
+	{
+		parsers["id"] = new NumberParser(record.id);
+		parsers["name"] = new StringParser(record.name);
+		parsers["parent"] = new NumberParser(record.parentId);
+		parsers["metadata"] = new MetadataParser(record.metadata);
+		parsers["geometry"] = new GeometryParser(record.geometry);
+		parsers["bounds"] = new BoundsParser(record.bounds);
+	}
+
+	virtual void StartObject() {
+		record = NodeRecord();
+	}
+
+	virtual void EndObject() {
+		builder->createNode(record);
+	}
+};
+
+struct TreeParser : public ObjectParser
+{
+	TreeParser(Builder* builder)
+	{
+		parsers["nodes"] = new ArrayParser(new NodeParser(builder));
+		parsers["materials"] = new ArrayParser(new MaterialParser(builder));
+		parsers["textures"] = new ArrayParser(new TextureParser(builder));
+	}
+};
 
 /**
 * Will parse the entire BIM file and store the results in
@@ -420,26 +998,22 @@ void RepoModelImport::skipAheadInFile(long amount)
 * @param filePath
 * @param err
 */
-bool RepoModelImport::importModel(std::string filePath, uint8_t& err)
+bool RepoModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err)
 {
-	orgFile = filePath;
 	std::string fileName = getFileName(filePath);
 
 	repoInfo << "IMPORT [" << fileName << "]";
 	repoInfo << "=== IMPORTING MODEL WITH REPO IMPORTER ===";
 
 	// Reading in file
-	finCompressed = new std::ifstream(filePath, std::ios_base::in | std::ios::binary);
+	std::ifstream finCompressed(filePath, std::ios_base::in | std::ios::binary);
 	if (finCompressed)
 	{
-		inbuf = new boost::iostreams::filtering_streambuf<boost::iostreams::input>();
-#ifndef REPO_BOOST_NO_GZIP
+		auto inbuf = new boost::iostreams::filtering_streambuf<boost::iostreams::input>();
 		inbuf->push(boost::iostreams::gzip_decompressor());
-#else
-		repoWarning << "Gzip is not compiled into Boost library, .bim imports may not work as intended";
-#endif
-		inbuf->push(*finCompressed);
-		fin = new std::istream(inbuf);
+		inbuf->push(finCompressed);
+
+		auto fin = new std::istream(inbuf);
 
 		// Check the BIM file format version
 		char fileVersion[REPO_VERSION_LENGTH + 1] = { 0 };
@@ -455,8 +1029,8 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t& err)
 
 		// Loading file metadata
 		repoInfo << "Loading BIM file [VERSION: " << incomingVersion << "]";
-		size_t metaSize = REPO_VERSION_LENGTH + sizeof(fileMeta);
-		fin->read((char*)&file_meta, FILE_META_BYTE_LEN_BY_VERSION.at(incomingVersionNo));
+		size_t metaSize = FILE_META_BYTE_LEN_BY_VERSION.at(incomingVersionNo);
+		fin->read((char*)&file_meta, metaSize);
 
 		repoInfo << std::left << std::setw(30) << "File meta size: " << metaSize;
 		repoInfo << std::left << std::setw(30) << "JSON size: " << file_meta.jsonSize << " bytes";
@@ -469,82 +1043,90 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t& err)
 		repoInfo << std::left << std::setw(30) << "\"textures\" array size: " << file_meta.textureStart << " bytes";
 		repoInfo << std::left << std::setw(30) << "Number of parts to process:" << file_meta.numChildren;
 
-		// Load full JSON tree
-		boost::property_tree::ptree jsonRoot = getNextJSON(file_meta.jsonSize);
+		auto builder = new Builder(
+			handler,
+			settings.getDatabaseName(),
+			settings.getProjectName(),
+			settings.getRevisionId()
+		);
 
-		// Load binary data
-		repoInfo << "Reading data buffer";
-		dataBuffer = new char[file_meta.dataSize];
-		fin->read(dataBuffer, file_meta.dataSize);
+		repoInfo << "Reading Json header...";
 
-		// Loading in required JSON nodes
-		boost::optional<ptree&> materialsRoot = jsonRoot.get_child_optional("materials");
-		if (materialsRoot)
-		{
-			for (ptree::value_type element : materialsRoot.get())
-			{
-				parseMaterial(element.second);
-			}
-			repoInfo << "Loaded: " << materials.size() << " materials";
-		}
-		else
-		{
-			repoError << "File " << fileName << " does not have a \"materials\" node";
-			err = REPOERR_MODEL_FILE_READ;
-			return false;
-		}
-		boost::optional<ptree&> sizesRoot = jsonRoot.get_child_optional("sizes");
-		if (sizesRoot)
-		{
-			sizes = as_vector<long>(sizesRoot.get());
-		}
-		else
-		{
-			repoError << "File " << fileName << " does not have a \"sizes\" node";
-			err = REPOERR_MODEL_FILE_READ;
-			return false;
-		}
-		boost::optional<ptree&> texturesRoot = jsonRoot.get_child_optional("textures");
-		if (texturesRoot)
-		{
-			for (ptree::value_type element : texturesRoot.get())
-			{
-				parseTexture(element.second, dataBuffer);
-			}
-			repoInfo << "Loaded: " << textures.size() << " textures";
-			if (textureIdToParents.size() > 0)
-			{
-				int maxTextureId = textureIdToParents.rbegin()->first;
-				// Texture ids in the material JSON should map
-				// directly on to the order they appear in the texture JSON
-				if (maxTextureId > (textures.size() - 1))
-				{
-					repoError << "A material is referencing a missing texture";
-					missingTextures = true;
-				}
-			}
-		}
+		// Stream in Json tree
 
-		if (missingTextures)
-		{
-			err = REPOERR_LOAD_SCENE_MISSING_TEXTURE;
-		}
+		char* jsonBuf = new char[file_meta.jsonSize + 1];
+		fin->read(jsonBuf, file_meta.jsonSize);
+		jsonBuf[file_meta.jsonSize] = '\0';
+		StringStream ss(jsonBuf);
 
-		// Clean up
-		finCompressed->close();
-		delete finCompressed;
-		finCompressed = new std::ifstream(filePath, std::ios_base::in | std::ios::binary);
+
+		rapidjson::Reader reader;
+		MyHandler jsonHandler;
+		TreeParser parser(builder);
+		jsonHandler.stack.push(&parser);
+		reader.Parse(ss, jsonHandler);
+
+		builder->prepareDataMap();
+
+		repoInfo << "Pre-processing scene bounds for BIM004...";
+
+		// Get offset
+
+		// In BIM004 and below, the bounds are not set, meaning we need to get
+		// them from the geometry directly. We do this by reading the data section
+		// once then resetting the stream.
+
+		// For BIM005, we should introduce instancing, and along with that, the
+		// primary offset applied at the root node transform.
+
+		auto bounds = builder->readBoundsFromData(fin);
+		builder->offset = bounds.min();
+		builder->sceneBounds = bounds;
+
+		// Now reset the file stream for the actual data read
+
+		repoInfo << "Reading data buffer...";
+
 		delete fin;
 		delete inbuf;
 
-		// Reloading file, skipping to the root start. No seekg for GZIPped files.
+		finCompressed.seekg(0, std::ios::beg);
+		
 		inbuf = new boost::iostreams::filtering_streambuf<boost::iostreams::input>();
-#ifndef REPO_BOOST_NO_GZIP
 		inbuf->push(boost::iostreams::gzip_decompressor());
-#endif
-		inbuf->push(*finCompressed);
+		inbuf->push(finCompressed);
+
 		fin = new std::istream(inbuf);
-		skipAheadInFile(sizes[0]);
+		fin->ignore(REPO_VERSION_LENGTH);
+		fin->ignore(metaSize);
+		fin->ignore(file_meta.jsonSize);
+
+		builder->readData(fin);
+
+		delete fin;
+		delete inbuf;
+
+		repoInfo << "Create scene";
+
+		builder->finalise();
+
+		scene = new repo::core::model::RepoScene(
+			settings.getDatabaseName(),
+			settings.getProjectName()
+		);
+		scene->setWorldOffset(builder->sceneBounds.min());
+
+		scene->setRevision(settings.getRevisionId());
+		scene->setOriginalFiles({ filePath });
+		scene->loadRootNode(handler.get());
+		if (builder->hasMissingTextures()) {
+			scene->setMissingTexture();
+		}
+
+		if (scene->isMissingTexture())
+		{
+			err = REPOERR_LOAD_SCENE_MISSING_TEXTURE;
+		}
 
 		return true;
 	}
@@ -555,129 +1137,7 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t& err)
 	}
 }
 
-boost::property_tree::ptree RepoModelImport::getNextJSON(long jsonSize)
-{
-	boost::property_tree::ptree singleJSON;
-	char* jsonBuf = new char[jsonSize + 1];
-
-	fin->read(jsonBuf, jsonSize);
-	jsonBuf[jsonSize] = '\0';
-
-	std::stringstream bufReader(jsonBuf);
-	read_json(bufReader, singleJSON);
-
-	delete[] jsonBuf;
-
-	return singleJSON;
-}
-
 repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t& errCode)
 {
-	repoInfo << "Generating scene";
-
-	// Process root node
-	boost::property_tree::ptree root = getNextJSON(sizes[1]);
-	std::string rootName = root.get<std::string>("name", "");
-	boost::optional< ptree& > rootBBOX = root.get_child_optional("bbox");
-	if (!rootBBOX) {
-		repoError << "No root bounding box specified.";
-		errCode = REPOERR_MODEL_FILE_READ;
-		return nullptr;
-	}
-	boost::optional< ptree& > transMatTree = root.get_child_optional("transformation");
-	repo::lib::RepoMatrix transMat;
-	if (transMatTree)
-	{
-		transMat = repo::lib::RepoMatrix(as_vector<float>(root, "transformation"));
-	}
-	repo::core::model::TransformationNode* rootNode =
-		new repo::core::model::TransformationNode(
-			repo::core::model::RepoBSONFactory::makeTransformationNode(
-				repo::lib::RepoMatrix(), rootName, std::vector<repo::lib::RepoUUID>()));
-	node_map.push_back(rootNode);
-	trans_matrix_map.push_back(transMat);
-	transformations.insert(rootNode);
-
-	// Process children of root node
-	char comma;
-	for (long i = 0; i < file_meta.numChildren; i++)
-	{
-		if (i % 500 == 0 || i == file_meta.numChildren - 1)
-		{
-			repoInfo << "Importing " << i << " of " << file_meta.numChildren << " JSON nodes";
-		}
-		fin->read(&comma, 1);
-		boost::property_tree::ptree jsonTree = getNextJSON(sizes[i + 2]);
-		createObject(jsonTree);
-	}
-
-	// Change the container type of the materials for RepoScene's constructor
-	repoInfo << "Building materials list";
-	materials.clear();
-	for (int i = 0; i < matNodeList.size(); i++)
-	{
-		materials.insert(matNodeList[i]);
-	}
-
-	// Preparing reference files
-	std::vector<std::string> fileVect;
-	if (!orgFile.empty())
-	{
-		fileVect.push_back(orgFile);
-	}
-
-	// Processing meshes
-	repo::core::model::RepoNodeSet meshes;
-	if (!offset) offset = repo::lib::RepoVector3D64(0, 0, 0);
-	for (const auto& entry : meshEntries) {
-		std::vector<repo::lib::RepoVector3D> vertices;
-		// Offsetting all the verts by the world offset to reduce the magnitude
-		// of their values so they can be cast to floats (widely used in 3D libs)
-		for (const auto& v : entry.rawVertices) {
-			repo::lib::RepoVector3D v32 = (repo::lib::RepoVector3D)(v - offset.value());
-			vertices.push_back(v32);
-		}
-
-		repo::lib::RepoBounds boundingBox(
-			entry.boundingBox.min() - offset.value(),
-			entry.boundingBox.max() - offset.value()
-		);
-
-		auto mesh = repo::core::model::RepoBSONFactory::makeMeshNode(
-			vertices,
-			entry.faces,
-			entry.normals,
-			boundingBox,
-			entry.uvChannels,
-			std::string(),
-			{ entry.parent });
-		mesh.setSharedID(entry.sharedID);
-		meshes.insert(new repo::core::model::MeshNode(mesh));
-	}
-
-	// Generate scene
-	repo::core::model::RepoScene* scenePtr = new repo::core::model::RepoScene(
-		fileVect, meshes, materials, metadata, textures, transformations);
-	scenePtr->setWorldOffset({ offset.value().x, offset.value().y, offset.value().z });
-
-	// Error handling
-	if (missingTextures)
-	{
-		errCode = REPOERR_LOAD_SCENE_MISSING_TEXTURE;
-		scenePtr->setMissingTexture();
-	}
-	if (geometryImportError)
-	{
-		repoError << "Unsupported geometry primitive type found	";
-		errCode = REPOERR_GEOMETRY_ERROR;
-	}
-
-	// Cleanup
-	delete[] dataBuffer;
-	finCompressed->close();
-	delete fin;
-	delete inbuf;
-	delete finCompressed;
-
-	return scenePtr;
+	return scene;
 }
