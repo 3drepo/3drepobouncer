@@ -6,6 +6,7 @@ tools/scripts/*.csv
 tools/bouncer_worker/toy
 tools/bouncer_worker/log
 .vs
+.vscode
 
 #nodeJS stuff
 tools/bouncer_worker/config.js
