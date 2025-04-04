@@ -64,6 +64,6 @@ struct TransNode {
 	std::unordered_map<std::string, repo::lib::RepoVariant> meta;
 	std::vector<TransNode> children;
 	bool createNode = false;
-	bool meshTakeName = false;
-	bool absorbTrans = false;
+	bool hasTransChildren = false;
+	bool isIfcSpace = false;
 };
