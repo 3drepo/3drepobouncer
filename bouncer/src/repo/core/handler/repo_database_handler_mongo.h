@@ -275,7 +275,35 @@ namespace repo {
 					const std::string& database,
 					const std::string& collection,
 					const database::query::RepoQuery& filter,
-					const repo::core::model::RepoBSON projection);
+					const database::query::RepoQuery& projection);
+
+				/**
+				* Given a search criteria,  find all the documents that passes this query
+				* @param database name of database
+				* @param collection name of collection
+				* @param criteria search criteria in a bson object
+				* @return a MongoCursor allowing traversal of the documents that satisfy the given criteria
+				*/
+				bool findCursorByCriteria(
+					const std::string& database,
+					const std::string& collection,
+					const database::query::RepoQuery& criteria,
+					std::unique_ptr<database::Cursor>& cursor);
+
+				/**
+				* Given a search criteria,  find all the documents that passes this query
+				* @param database name of database
+				* @param collection name of collection
+				* @param criteria search criteria in a bson object
+				* @param projection to define the fiels in the returned document
+				* @return a MongoCursor allowing traversal of the documents that satisfy the given criteria
+				*/
+				bool findCursorByCriteria(
+					const std::string& database,
+					const std::string& collection,
+					const database::query::RepoQuery& filter,
+					const database::query::RepoQuery& projection,
+					std::unique_ptr<database::Cursor>& cursor);
 
 				/**
 				* Given a search criteria,  find one documents that passes this query

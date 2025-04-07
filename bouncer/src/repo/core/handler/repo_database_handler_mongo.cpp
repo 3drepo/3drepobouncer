@@ -206,6 +206,19 @@ struct MongoQueryFilterVistior
 			std::visit(*this, q);
 		}
 	}
+
+	void operator() (const query::RepoProjectionBuilder& n) const {
+		// RepoProjectionBuilder allows to construct projections by providing
+		// fields to be included and fields to be excluded
+
+		for (std::string field : n.includedFields) {
+			builder->append(field, 1);
+		}
+
+		for (std::string field : n.excludedFields) {
+			builder->append(field, 0);
+		}
+	}
 };
 
 /*
@@ -430,7 +443,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 	const std::string& collection,
 	const database::query::RepoQuery& filter) {
 
-	repo::core::model::RepoBSON projection;
+	auto projection = database::query::RepoProjectionBuilder();
 	return findAllByCriteria(database, collection, filter, projection);
 }
 
@@ -438,7 +451,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 	const std::string& database,
 	const std::string& collection,
 	const database::query::RepoQuery& filter,
-	const repo::core::model::RepoBSON projection)
+	const database::query::RepoQuery& projection)
 {
 	try
 	{
@@ -453,8 +466,9 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 			std::string critString = criteria.toString();
 			std::cout << critString;
 
+			repo::core::model::RepoBSON projectionBson = makeQueryFilterDocument(projection);
 			mongocxx::v_noabi::options::find options;
-			options.projection(projection.view());
+			options.projection(projectionBson.view());
 
 			// Find all documents
 			auto cursor = col.find(criteria.view());
@@ -467,6 +481,55 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 	catch (...)
 	{
 		std::throw_with_nested(MongoDatabaseHandlerException(*this, "findAllByCriteria", database, collection));
+	}
+}
+
+bool repo::core::handler::MongoDatabaseHandler::findCursorByCriteria(
+	const std::string& database,
+	const std::string& collection,
+	const database::query::RepoQuery& criteria,
+	std::unique_ptr<database::Cursor>& cursor)
+{
+	auto projection = database::query::RepoProjectionBuilder();
+	return findCursorByCriteria(database, collection, criteria, projection, cursor);
+}
+
+bool repo::core::handler::MongoDatabaseHandler::findCursorByCriteria(
+	const std::string& database,
+	const std::string& collection,
+	const database::query::RepoQuery& filter,
+	const database::query::RepoQuery& projection,
+	std::unique_ptr<database::Cursor>& cursor)
+{
+	try
+	{
+		repo::core::model::RepoBSON criteria = makeQueryFilterDocument(filter);
+		if (!criteria.isEmpty() && !database.empty() && !collection.empty())
+		{
+			auto client = clientPool->acquire();
+			auto db = client->database(database);
+			auto col = db.collection(collection);
+
+			std::string critString = criteria.toString();
+			std::cout << critString;
+
+			repo::core::model::RepoBSON projectionBson = makeQueryFilterDocument(projection);
+			mongocxx::v_noabi::options::find options;
+			options.projection(projectionBson.view());
+
+			// Find all documents and return cursor
+			cursor = std::make_unique<MongoCursor>(std::move(col.find(criteria.view())), this);
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+		
+	}
+	catch (...)
+	{
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "findCursorByCriteria", database, collection));
 	}
 }
 
