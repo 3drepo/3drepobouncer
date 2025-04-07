@@ -154,7 +154,7 @@ TEST(AssimpModelImport, MDL5)
 	SceneUtils scene(RepoModelImportUtils::ImportAssimpFile(getDataPath("molecule.mdl")));
 	EXPECT_TRUE(scene.isPopulated());
 	EXPECT_TRUE(scene.getRootNode().isLeaf());
-	EXPECT_TRUE(scene.getRootNode().getMeshes().size(), Eq(1));
+	EXPECT_THAT(scene.getRootNode().getMeshes().size(), Eq(1));
 }
 
 TEST(AssimpModelImport, XML)
@@ -162,7 +162,7 @@ TEST(AssimpModelImport, XML)
 	SceneUtils scene(RepoModelImportUtils::ImportAssimpFile(getDataPath("mesh.mesh.xml"))); // When working with xml files, meshes must be called [x].mesh.xml
 	EXPECT_TRUE(scene.isPopulated());
 	EXPECT_TRUE(scene.getRootNode().isLeaf());
-	EXPECT_TRUE(scene.getRootNode().getMeshes().size(), Eq(1));
+	EXPECT_THAT(scene.getRootNode().getMeshes().size(), Eq(1));
 }
 
 TEST(AssimpModelImport, ASE)
@@ -179,7 +179,7 @@ TEST(AssimpModelImport, STL1)
 	SceneUtils scene(RepoModelImportUtils::ImportAssimpFile(getDataPath("3dsmax.stl")));
 	EXPECT_TRUE(scene.isPopulated());
 	EXPECT_TRUE(scene.getRootNode().isLeaf());
-	EXPECT_TRUE(scene.getRootNode().getMeshes().size(), Eq(1));
+	EXPECT_THAT(scene.getRootNode().getMeshes().size(), Eq(1));
 }
 
 TEST(AssimpModelImport, STL2)
@@ -187,7 +187,7 @@ TEST(AssimpModelImport, STL2)
 	SceneUtils scene(RepoModelImportUtils::ImportAssimpFile(getDataPath("ext.stl")));
 	EXPECT_TRUE(scene.isPopulated());
 	EXPECT_TRUE(scene.getRootNode().isLeaf());
-	EXPECT_TRUE(scene.getRootNode().getMeshes().size(), Eq(1));
+	EXPECT_THAT(scene.getRootNode().getMeshes().size(), Eq(1));
 }
 
 TEST(AssimpModelImport, B3D)
@@ -195,7 +195,7 @@ TEST(AssimpModelImport, B3D)
 	SceneUtils scene(RepoModelImportUtils::ImportAssimpFile(getDataPath("bison.b3d")));
 	EXPECT_TRUE(scene.isPopulated());
 	EXPECT_TRUE(scene.getRootNode().isLeaf());
-	EXPECT_TRUE(scene.getRootNode().getMeshes().size(), Eq(1));
+	EXPECT_THAT(scene.getRootNode().getMeshes().size(), Eq(1));
 }
 
 TEST(AssimpModelImport, HMP)
@@ -203,7 +203,7 @@ TEST(AssimpModelImport, HMP)
 	SceneUtils scene(RepoModelImportUtils::ImportAssimpFile(getDataPath("terrain.hmp")));
 	EXPECT_TRUE(scene.isPopulated());
 	EXPECT_TRUE(scene.getRootNode().isLeaf());
-	EXPECT_TRUE(scene.getRootNode().getMeshes().size(), Eq(1));
+	EXPECT_THAT(scene.getRootNode().getMeshes().size(), Eq(1));
 }
 
 TEST(AssimpModelImport, LWO)
@@ -211,7 +211,7 @@ TEST(AssimpModelImport, LWO)
 	SceneUtils scene(RepoModelImportUtils::ImportAssimpFile(getDataPath("cube.lwo")));
 	EXPECT_TRUE(scene.isPopulated());
 	EXPECT_THAT(scene.findLeafNode("Layer_0").getPath(), Eq("Pivot-Layer_0->Layer_0"));
-	EXPECT_TRUE(scene.findLeafNode("Layer_0").getMeshes().size(), Eq(1));
+	EXPECT_THAT(scene.findLeafNode("Layer_0").getMeshes().size(), Eq(1));
 }
 
 TEST(AssimpModelImport, MD2)
@@ -219,7 +219,7 @@ TEST(AssimpModelImport, MD2)
 	SceneUtils scene(RepoModelImportUtils::ImportAssimpFile(getDataPath("sydney.md2")));
 	EXPECT_TRUE(scene.isPopulated());
 	EXPECT_TRUE(scene.getRootNode().isLeaf());
-	EXPECT_TRUE(scene.getRootNode().getMeshes().size(), Eq(1));
+	EXPECT_THAT(scene.getRootNode().getMeshes().size(), Eq(1));
 }
 
 TEST(AssimpModelImport, MD3)
@@ -227,7 +227,7 @@ TEST(AssimpModelImport, MD3)
 	SceneUtils scene(RepoModelImportUtils::ImportAssimpFile(getDataPath("winchester.MD3")));
 	EXPECT_TRUE(scene.isPopulated());
 	EXPECT_TRUE(scene.getRootNode().isLeaf());
-	EXPECT_TRUE(scene.getRootNode().getMeshes().size(), Eq(1));
+	EXPECT_TRUE(scene.getRootNode().getMeshes().size());
 }
 
 TEST(AssimpModelImport, MS3D)
@@ -235,7 +235,7 @@ TEST(AssimpModelImport, MS3D)
 	SceneUtils scene(RepoModelImportUtils::ImportAssimpFile(getDataPath("twospheres.ms3d")));
 	EXPECT_TRUE(scene.isPopulated());
 	EXPECT_TRUE(scene.getRootNode().isLeaf());
-	EXPECT_TRUE(scene.getRootNode().getMeshes().size(), Eq(1));
+	EXPECT_TRUE(scene.getRootNode().getMeshes().size());
 }
 
 TEST(AssimpModelImport, OFF)
@@ -243,7 +243,7 @@ TEST(AssimpModelImport, OFF)
 	SceneUtils scene(RepoModelImportUtils::ImportAssimpFile(getDataPath("cube.off")));
 	EXPECT_TRUE(scene.isPopulated());
 	EXPECT_TRUE(scene.getRootNode().isLeaf());
-	EXPECT_TRUE(scene.getRootNode().getMeshes().size(), Eq(1));
+	EXPECT_THAT(scene.getRootNode().getMeshes().size(), Eq(1));
 }
 
 TEST(AssimpModelImport, PK3)
@@ -251,7 +251,7 @@ TEST(AssimpModelImport, PK3)
 	SceneUtils scene(RepoModelImportUtils::ImportAssimpFile(getDataPath("SGDTT3.pk3")));
 	EXPECT_TRUE(scene.isPopulated());
 	EXPECT_TRUE(scene.getRootNode().isLeaf());
-	EXPECT_TRUE(scene.getRootNode().getMeshes().size(), Eq(1));
+	EXPECT_TRUE(scene.getRootNode().getMeshes().size());
 }
 
 TEST(AssimpModelImport, PLY)
@@ -259,7 +259,7 @@ TEST(AssimpModelImport, PLY)
 	SceneUtils scene(RepoModelImportUtils::ImportAssimpFile(getDataPath("bison.ply")));
 	EXPECT_TRUE(scene.isPopulated());
 	EXPECT_TRUE(scene.getRootNode().isLeaf());
-	EXPECT_TRUE(scene.getRootNode().getMeshes().size(), Eq(1));
+	EXPECT_THAT(scene.getRootNode().getMeshes().size(), Eq(1));
 }
 
 TEST(AssimpModelImport, Q3S)
@@ -286,7 +286,7 @@ TEST(AssimpModelImport, TER)
 	SceneUtils scene(RepoModelImportUtils::ImportAssimpFile(getDataPath("terrain.ter")));
 	EXPECT_TRUE(scene.isPopulated());
 	EXPECT_TRUE(scene.getRootNode().isLeaf());
-	EXPECT_TRUE(scene.getRootNode().getMeshes().size(), Eq(1));
+	EXPECT_THAT(scene.getRootNode().getMeshes().size(), Eq(1));
 }
 
 TEST(AssimpModelImport, XGL)
@@ -294,7 +294,7 @@ TEST(AssimpModelImport, XGL)
 	SceneUtils scene(RepoModelImportUtils::ImportAssimpFile(getDataPath("sample_official.xgl")));
 	EXPECT_TRUE(scene.isPopulated());
 	EXPECT_TRUE(scene.getRootNode().isLeaf());
-	EXPECT_TRUE(scene.getRootNode().getMeshes().size(), Eq(1));
+	EXPECT_TRUE(scene.getRootNode().getMeshes().size());
 }
 
 TEST(AssimpModelImport, ZGL)
@@ -302,5 +302,5 @@ TEST(AssimpModelImport, ZGL)
 	SceneUtils scene(RepoModelImportUtils::ImportAssimpFile(getDataPath("cubes_with_alpha.zgl")));
 	EXPECT_TRUE(scene.isPopulated());
 	EXPECT_TRUE(scene.getRootNode().isLeaf());
-	EXPECT_TRUE(scene.getRootNode().getMeshes().size(), Eq(1));
+	EXPECT_TRUE(scene.getRootNode().getMeshes().size());
 }
