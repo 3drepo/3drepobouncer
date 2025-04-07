@@ -418,3 +418,47 @@ void repo::test::utils::mesh::compareMeshNode(mesh_data expected, MeshNode actua
 		EXPECT_THAT(actual.getUVChannelsSeparated()[i], ElementsAreArray(expected.uvChannels[i]));
 	}
 }
+
+float repo::test::utils::mesh::hausdorffDistance(const std::vector<repo::core::model::MeshNode>& meshes)
+{
+	float d = 0;
+	for (auto& a : meshes) {
+		for (auto& b : meshes) {
+			d = std::max(d, hausdorffDistance(a, b));
+		}
+	}
+	return d;
+}
+
+float repo::test::utils::mesh::hausdorffDistance(const repo::core::model::MeshNode& ma, const repo::core::model::MeshNode& mb)
+{
+	auto& A = ma.getVertices();
+	auto& B = mb.getVertices();
+	float h = FLT_MIN;
+	for (auto& a : A) {
+		float d = FLT_MAX;
+		for (auto& b : B) {
+			d = std::min(d, (a - b).norm2());
+		}
+		h = std::max(h, d);
+	}
+	return std::sqrt(h);
+}
+
+float repo::test::utils::mesh::shortestDistance(const repo::core::model::MeshNode& m, repo::lib::RepoVector3D p)
+{
+	float d = FLT_MAX;
+	for (auto& v : m.getVertices()) {
+		d = std::min(d, (v - p).norm2());
+	}
+	return std::sqrt(d);
+}
+
+float repo::test::utils::mesh::shortestDistance(const std::vector<repo::core::model::MeshNode>& meshes, repo::lib::RepoVector3D p)
+{
+	float d = FLT_MAX;
+	for (auto& m : meshes) {
+		d = std::min(d, shortestDistance(m, p));
+	}
+	return d;
+}

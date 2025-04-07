@@ -56,10 +56,6 @@ namespace repo {
 
 				repo::core::model::RepoScene* scene;
 
-				bool requireReorientation() const override {
-					return true;
-				}
-
 			public:
 
 				/**

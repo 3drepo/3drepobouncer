@@ -18,6 +18,7 @@
 #pragma once
 
 #include <repo/core/model/collection/repo_scene.h>
+#include <repo/core/model/bson/repo_node_mesh.h>
 
 namespace testing {
 
@@ -72,6 +73,12 @@ namespace testing {
 
 			std::vector<NodeInfo> getMeshes();
 
+			repo::core::model::MeshNode getMeshInProjectCoordinates();
+
+			std::vector<repo::core::model::MeshNode> getMeshesInProjectCoordinates();
+
+			std::vector<NodeInfo> getTextures();
+
 			std::unordered_map<std::string, repo::lib::RepoVariant> getMetadata();
 
 			repo::lib::repo_material_t getMaterial();
@@ -92,6 +99,8 @@ namespace testing {
 		std::vector<NodeInfo> findTransformationNodesByName(std::string name);
 		std::vector<NodeInfo> getChildNodes(repo::core::model::RepoNode* node, bool ignoreMeta);
 		std::vector<NodeInfo> getParentNodes(repo::core::model::RepoNode* node);
+		std::vector<NodeInfo> getMeshes();
+		repo::lib::RepoMatrix getWorldTransform(repo::core::model::RepoNode* node);
 		NodeInfo getNodeInfo(repo::core::model::RepoNode* node);
 		NodeInfo getRootNode();
 

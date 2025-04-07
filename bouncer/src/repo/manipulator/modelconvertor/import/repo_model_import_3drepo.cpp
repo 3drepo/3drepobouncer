@@ -21,8 +21,9 @@
 #include <fstream>
 #include <stack>
 #include <iostream>
+#include <istream>
 #include <ranges>
-#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include "repo/manipulator/modelutility/repo_scene_builder.h"
@@ -36,26 +37,11 @@
 #include <repo_log.h>
 #include "rapidjson/reader.h"
 
+#pragma optimize("", off)
+
 using namespace repo::core::model;
 using namespace repo::manipulator::modelconvertor;
 using namespace rapidjson;
-
-const  std::string REPO_IMPORT_METADATA = "metadata";
-const  std::string REPO_IMPORT_GEOMETRY = "geometry";
-const  std::string REPO_IMPORT_MATERIAL = "material";
-const  std::string REPO_IMPORT_VERTICES = "vertices";
-const  std::string REPO_IMPORT_UV = "uv";
-const  std::string REPO_IMPORT_NORMALS = "normals";
-const  std::string REPO_IMPORT_INDICES = "indices";
-const  std::string REPO_IMPORT_BBOX = "bbox";
-const  std::string REPO_IMPORT_PRIMITIVE = "primitive";
-
-const  std::string REPO_TXTR_FNAME = "filename";
-const  std::string REPO_TXTR_NUM_BYTES = "numImageBytes";
-const  std::string REPO_TXTR_WIDTH = "width";
-const  std::string REPO_TXTR_HEIGHT = "height";
-const  std::string REPO_TXTR_ID = "id";
-const  std::string REPO_TXTR_IMG_BYTES = "imageBytes";
 
 const char REPO_IMPORT_TYPE_STRING = 'S';
 const char REPO_IMPORT_TYPE_DOUBLE = 'D';
@@ -64,8 +50,6 @@ const char REPO_IMPORT_TYPE_BOOL = 'B';
 const char REPO_IMPORT_TYPE_DATETIME = 'T';
 
 const static int REPO_VERSION_LENGTH = 6;
-
-#pragma optimize("",off)
 
 RepoModelImport::RepoModelImport(const ModelImportConfig& settings) :
 	AbstractModelImport(settings)
@@ -114,6 +98,11 @@ struct TextureRecord
 		height(0),
 		id(-1)
 	{
+	}
+
+	bool isOK() const
+	{
+		return bytes.size() > 0 && width > 0 && height > 0;
 	}
 };
 
@@ -204,7 +193,7 @@ struct GeometryRecord
 	bool hasGeometry;
 
 	GeometryRecord()
-		:primitive(repo::core::model::MeshNode::Primitive::UNKNOWN),
+		:primitive(repo::core::model::MeshNode::Primitive::TRIANGLES), // Default to Triangles for compatibility with earlier versions
 		numIndices(0),
 		numVertices(0),
 		material(0),
@@ -218,7 +207,7 @@ struct NodeRecord
 	int id;
 	int parentId;
 	std::string name;
-	repo::lib::RepoMatrix matrix;
+	repo::lib::RepoMatrix64 matrix;
 	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
 	GeometryRecord geometry;
 	repo::lib::RepoBounds bounds;
@@ -265,8 +254,8 @@ public:
 	size_t numMaterials;
 	std::vector<View*> dataMap;
 	size_t minBufferSize;
-	repo::lib::RepoBounds sceneBounds;
 	repo::lib::RepoVector3D64 offset; // Applied to the vertex data
+	repo::lib::RepoMatrix64 rootTransform; // For BIM004 and below, there is one (root) transform that is applied to all geometry
 
 	/* 
 	* Used to set the parents once all nodes have been read in. This is used
@@ -289,13 +278,15 @@ public:
 		std::vector<repo::lib::RepoUUID> parentIds;
 		getParent(r.parentId, parentIds);
 
-		sceneBounds.encapsulate(r.bounds);
+		if (parentIds.empty()) {
+			rootTransform = r.matrix;
+		}
 
 		bool isEntity = !r.name.empty() || !r.matrix.isIdentity();
 		if (isEntity)
 		{
 			auto node = repo::core::model::RepoBSONFactory::makeTransformationNode(
-				r.matrix,
+				(repo::lib::RepoMatrix)r.matrix, // When this downcast is performed the world offset should have already been removed from the root
 				r.name,
 				parentIds
 			);
@@ -367,7 +358,7 @@ public:
 
 	void createTexture(const TextureRecord& t)
 	{
-		if (t.bytes.size()) {
+		if (t.isOK()) {
 			dataMap.push_back(new TextureView(t)); // The node and blobs are created together for textures
 		}
 		else {
@@ -457,13 +448,19 @@ public:
 		dataMap.clear();
 	}
 
+	/*
+	* Gets the bounds of the vertices, in the local space of the .bim, without
+	* changing the data map - this is used to get the scene bounds for BIM004
+	* and below, which are not set in the nodes.
+	*/
 	repo::lib::RepoBounds readBoundsFromData(std::istream* fin)
 	{
 		auto buffer = new char[minBufferSize];
 		repo::lib::RepoBounds bounds;
 
 		size_t position = 0;
-		for (auto v : dataMap) {
+		for (auto v : dataMap)
+		{
 			if (auto view = dynamic_cast<VerticesView*>(v)) {
 				auto skip = view->begin - position;
 				fin->ignore(skip);
@@ -807,17 +804,17 @@ struct MetadataParser : public Parser
 
 struct RepoMatrixParser : public NumberParserBase<float>
 {
-	repo::lib::RepoMatrix& matrix;
+	repo::lib::RepoMatrix64& matrix;
 	int i;
 
-	RepoMatrixParser(repo::lib::RepoMatrix& matrix)
+	RepoMatrixParser(repo::lib::RepoMatrix64& matrix)
 		:matrix(matrix),
 		i(0)
 	{
 	}
 
 	virtual Parser* StartArray() {
-		matrix = repo::lib::RepoMatrix();
+		matrix = repo::lib::RepoMatrix64();
 		i = 0;
 		return this;
 	}
@@ -971,6 +968,7 @@ struct NodeParser : public ObjectParser
 		parsers["metadata"] = new MetadataParser(record.metadata);
 		parsers["geometry"] = new GeometryParser(record.geometry);
 		parsers["bounds"] = new BoundsParser(record.bounds);
+		parsers["transformation"] = new RepoMatrixParser(record.matrix);
 	}
 
 	virtual void StartObject() {
@@ -992,7 +990,7 @@ struct TreeParser : public ObjectParser
 	}
 };
 
-/**
+/*
 * Will parse the entire BIM file and store the results in
 * temporary datastructures in preperation for scene generation.
 * @param filePath
@@ -1009,15 +1007,13 @@ bool RepoModelImport::importModel(std::string filePath, std::shared_ptr<repo::co
 	std::ifstream finCompressed(filePath, std::ios_base::in | std::ios::binary);
 	if (finCompressed)
 	{
-		auto inbuf = new boost::iostreams::filtering_streambuf<boost::iostreams::input>();
+		auto inbuf = new boost::iostreams::filtering_istream();
 		inbuf->push(boost::iostreams::gzip_decompressor());
 		inbuf->push(finCompressed);
 
-		auto fin = new std::istream(inbuf);
-
 		// Check the BIM file format version
 		char fileVersion[REPO_VERSION_LENGTH + 1] = { 0 };
-		fin->read(fileVersion, REPO_VERSION_LENGTH);
+		inbuf->read(fileVersion, REPO_VERSION_LENGTH);
 		std::string incomingVersion = fileVersion;
 		uint8_t incomingVersionNo = std::stoi(incomingVersion.substr(3, 3));
 		if (FILE_META_BYTE_LEN_BY_VERSION.find(incomingVersionNo) == FILE_META_BYTE_LEN_BY_VERSION.end())
@@ -1030,7 +1026,7 @@ bool RepoModelImport::importModel(std::string filePath, std::shared_ptr<repo::co
 		// Loading file metadata
 		repoInfo << "Loading BIM file [VERSION: " << incomingVersion << "]";
 		size_t metaSize = FILE_META_BYTE_LEN_BY_VERSION.at(incomingVersionNo);
-		fin->read((char*)&file_meta, metaSize);
+		inbuf->read((char*)&file_meta, metaSize);
 
 		repoInfo << std::left << std::setw(30) << "File meta size: " << metaSize;
 		repoInfo << std::left << std::setw(30) << "JSON size: " << file_meta.jsonSize << " bytes";
@@ -1055,10 +1051,9 @@ bool RepoModelImport::importModel(std::string filePath, std::shared_ptr<repo::co
 		// Stream in Json tree
 
 		char* jsonBuf = new char[file_meta.jsonSize + 1];
-		fin->read(jsonBuf, file_meta.jsonSize);
+		inbuf->read(jsonBuf, file_meta.jsonSize);
 		jsonBuf[file_meta.jsonSize] = '\0';
 		StringStream ss(jsonBuf);
-
 
 		rapidjson::Reader reader;
 		MyHandler jsonHandler;
@@ -1068,7 +1063,7 @@ bool RepoModelImport::importModel(std::string filePath, std::shared_ptr<repo::co
 
 		builder->prepareDataMap();
 
-		repoInfo << "Pre-processing scene bounds for BIM004...";
+		repoInfo << "Pre-processing scene bounds (BIM004 and below)...";
 
 		// Get offset
 
@@ -1079,31 +1074,27 @@ bool RepoModelImport::importModel(std::string filePath, std::shared_ptr<repo::co
 		// For BIM005, we should introduce instancing, and along with that, the
 		// primary offset applied at the root node transform.
 
-		auto bounds = builder->readBoundsFromData(fin);
-		builder->offset = bounds.min();
-		builder->sceneBounds = bounds;
+		auto bounds = builder->readBoundsFromData(inbuf);
+		builder->offset = -bounds.min();
 
 		// Now reset the file stream for the actual data read
 
-		repoInfo << "Reading data buffer...";
-
-		delete fin;
 		delete inbuf;
 
 		finCompressed.seekg(0, std::ios::beg);
 		
-		inbuf = new boost::iostreams::filtering_streambuf<boost::iostreams::input>();
+		inbuf = new boost::iostreams::filtering_istream();
 		inbuf->push(boost::iostreams::gzip_decompressor());
 		inbuf->push(finCompressed);
 
-		fin = new std::istream(inbuf);
-		fin->ignore(REPO_VERSION_LENGTH);
-		fin->ignore(metaSize);
-		fin->ignore(file_meta.jsonSize);
+		inbuf->ignore(REPO_VERSION_LENGTH);
+		inbuf->ignore(metaSize);
+		inbuf->ignore(file_meta.jsonSize);
 
-		builder->readData(fin);
+		repoInfo << "Reading data buffer...";
 
-		delete fin;
+		builder->readData(inbuf);
+
 		delete inbuf;
 
 		repoInfo << "Create scene";
@@ -1114,7 +1105,7 @@ bool RepoModelImport::importModel(std::string filePath, std::shared_ptr<repo::co
 			settings.getDatabaseName(),
 			settings.getProjectName()
 		);
-		scene->setWorldOffset(builder->sceneBounds.min());
+		scene->setWorldOffset(builder->rootTransform * builder->offset);
 
 		scene->setRevision(settings.getRevisionId());
 		scene->setOriginalFiles({ filePath });
@@ -1123,8 +1114,7 @@ bool RepoModelImport::importModel(std::string filePath, std::shared_ptr<repo::co
 			scene->setMissingTexture();
 		}
 
-		if (scene->isMissingTexture())
-		{
+		if (scene->isMissingTexture()){
 			err = REPOERR_LOAD_SCENE_MISSING_TEXTURE;
 		}
 
