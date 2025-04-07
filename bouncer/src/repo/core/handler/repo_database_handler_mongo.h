@@ -439,11 +439,6 @@ namespace repo {
 				// before documents containing such members are uploaded.
 				std::shared_ptr<repo::core::handler::fileservice::FileManager> fileManager;
 
-				repo::core::model::RepoBSON createRepoBSON(
-					const std::string& database,
-					const std::string& collection,
-					const bsoncxx::document::view& view);
-
 				/**
 				* Get large file off GridFS
 				* @param database database that it is stored in

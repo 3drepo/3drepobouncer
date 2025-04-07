@@ -357,26 +357,7 @@ void MongoDatabaseHandler::createIndex(const std::string& database, const std::s
 	}
 }
 
-/*
- * This helper function resolves the binary files for a given document. Any
- * document that might have file mappings should be passed through here
- * before being returned as a RepoBSON.
- */
-repo::core::model::RepoBSON MongoDatabaseHandler::createRepoBSON(
-	const std::string& database, 
-	const std::string& collection, 
-	const bsoncxx::document::view& view)
-{
-	fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
 
-	repo::core::model::RepoBSON orgBson = repo::core::model::RepoBSON(view);
-	if (orgBson.hasFileReference()) {
-		auto ref = orgBson.getBinaryReference();
-		auto buffer = blobHandler.readToBuffer(fileservice::DataRef::deserialise(ref));
-		orgBson.initBinaryBuffer(buffer);
-	}
-	return orgBson;
-}
 
 void MongoDatabaseHandler::loadBinaries(const std::string& database,
 	const std::string& collection, 
@@ -478,7 +459,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 			// Find all documents
 			auto cursor = col.find(criteria.view());
 			for (auto& doc : cursor) {
-				data.push_back(createRepoBSON(database, collection, doc));
+				data.push_back(repo::core::model::RepoBSON(doc));
 			}
 		}
 		return data;
@@ -513,7 +494,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 			auto findResult = col.find_one(criteria.view(), options);
 			if (findResult.has_value()) {
 				fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-				return createRepoBSON(database, collection, findResult.value());
+				return repo::core::model::RepoBSON(findResult.value());
 			}
 		}
 		return {};
@@ -596,7 +577,7 @@ MongoDatabaseHandler::getAllFromCollectionTailable(
 
 		auto cursor = col.find({}, options);
 		for (auto doc : cursor) {
-			bsons.push_back(createRepoBSON(database, collection, doc));
+			bsons.push_back(repo::core::model::RepoBSON(doc));
 		}
 
 		return bsons;
@@ -893,7 +874,7 @@ private:
 
 	repo::core::model::RepoBSON createRepoBSON(const bsoncxx::document::view& view)
 	{
-		return handler->createRepoBSON(database, collection, view);
+		return repo::core::model::RepoBSON(view);
 	}
 };
 
