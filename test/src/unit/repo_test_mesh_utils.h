@@ -171,7 +171,7 @@ namespace repo {
 
 				float shortestDistance(const repo::core::model::MeshNode& m, repo::lib::RepoVector3D p);
 				float shortestDistance(const std::vector<repo::core::model::MeshNode>& m, repo::lib::RepoVector3D p);
-
+				float shortestDistance(const std::vector<repo::lib::RepoVector3D>& v, repo::lib::RepoVector3D p);
 			}
 		}
 	}

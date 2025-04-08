@@ -37,17 +37,9 @@
 #include <repo_log.h>
 #include "rapidjson/reader.h"
 
-#pragma optimize("", off)
-
 using namespace repo::core::model;
 using namespace repo::manipulator::modelconvertor;
 using namespace rapidjson;
-
-const char REPO_IMPORT_TYPE_STRING = 'S';
-const char REPO_IMPORT_TYPE_DOUBLE = 'D';
-const char REPO_IMPORT_TYPE_INT = 'I';
-const char REPO_IMPORT_TYPE_BOOL = 'B';
-const char REPO_IMPORT_TYPE_DATETIME = 'T';
 
 const static int REPO_VERSION_LENGTH = 6;
 
@@ -234,6 +226,7 @@ public:
 		minBufferSize(0),
 		numMaterials(0)
 	{
+		createIndexes();
 	}
 
 	struct Ids
@@ -294,6 +287,10 @@ public:
 			parentIds.clear();
 			parentIds.push_back(node.getSharedID());
 			addNode(node);
+		}
+		else
+		{
+			transformSharedIds[r.id] = parentIds[0]; // If the TransformationNode is effectively a noop, any child nodes go directly to its parent
 		}
 
 		// Take care that this comes before the metadata node creation, as it can modify
@@ -1075,7 +1072,7 @@ bool RepoModelImport::importModel(std::string filePath, std::shared_ptr<repo::co
 		// primary offset applied at the root node transform.
 
 		auto bounds = builder->readBoundsFromData(inbuf);
-		builder->offset = -bounds.min();
+		builder->offset = bounds.min();
 
 		// Now reset the file stream for the actual data read
 

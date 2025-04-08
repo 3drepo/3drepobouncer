@@ -214,3 +214,47 @@ TEST(RepoModelImport, SharedCoordinates)
 		EXPECT_THAT(repo::lib::RepoVector3D64(s.scene->getWorldOffset()).norm(), Gt(100000));
 	}
 }
+
+TEST(RepoModelImport, Normals)
+{
+	uint8_t errCode = 0;
+	SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/rotatedbox.revit.bim004.bim"), errCode));
+	auto mesh = scene.getMeshes()[0].getMeshInProjectCoordinates();
+
+	// Check against known good values that should be in the normals list
+	std::vector<repo::lib::RepoVector3D> normals = {
+		{0.0000, 1.0000, 0.0000},
+		{0.0000, -1.0000, 0.0000},
+		{0.8440, 0.0000, 0.5362},
+		{0.5362, 0.0000, -0.8440},
+		{-0.8440, 0.0000, -0.5362},
+		{-0.5362, 0.0000, 0.8440}
+	};
+
+	for (auto& n : normals) {
+		EXPECT_THAT(mesh::shortestDistance(mesh.getNormals(), n), Lt(0.1));
+	}
+}
+
+TEST(RepoModelImport, Metadata)
+{
+	uint8_t errCode = 0;
+	SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/metadata.bim004.bim"), errCode));
+	auto node = scene.findNodeByMetadata("Element ID", "329486");
+	auto metadata = node.getMetadata();
+
+	EXPECT_THAT(metadata["MyBool"].which(), Eq(0));
+	EXPECT_THAT(metadata["MyInteger"].which(), Eq(1));
+	EXPECT_THAT(metadata["Geometry::MyDouble (mm)"].which(), Eq(3));
+	EXPECT_THAT(metadata["Text::MyDate"].which(), Eq(4));
+	EXPECT_THAT(metadata["Text::MyString"].which(), Eq(4));
+}
+
+TEST(RepoModelImport, EmptyTransforms)
+{
+	/*
+	* Should handle the case where child nodes skip empty parents.
+	*/
+
+
+}

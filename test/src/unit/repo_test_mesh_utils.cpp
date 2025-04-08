@@ -447,11 +447,7 @@ float repo::test::utils::mesh::hausdorffDistance(const repo::core::model::MeshNo
 
 float repo::test::utils::mesh::shortestDistance(const repo::core::model::MeshNode& m, repo::lib::RepoVector3D p)
 {
-	float d = FLT_MAX;
-	for (auto& v : m.getVertices()) {
-		d = std::min(d, (v - p).norm2());
-	}
-	return std::sqrt(d);
+	return shortestDistance(m.getVertices(), p);
 }
 
 float repo::test::utils::mesh::shortestDistance(const std::vector<repo::core::model::MeshNode>& meshes, repo::lib::RepoVector3D p)
@@ -461,4 +457,13 @@ float repo::test::utils::mesh::shortestDistance(const std::vector<repo::core::mo
 		d = std::min(d, shortestDistance(m, p));
 	}
 	return d;
+}
+
+float repo::test::utils::mesh::shortestDistance(const std::vector<repo::lib::RepoVector3D>& vectors, repo::lib::RepoVector3D p)
+{
+	float d = FLT_MAX;
+	for (auto& v : vectors) {
+		d = std::min(d, (v - p).norm2());
+	}
+	return std::sqrt(d);
 }
