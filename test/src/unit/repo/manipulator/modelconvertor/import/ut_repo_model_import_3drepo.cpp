@@ -253,8 +253,24 @@ TEST(RepoModelImport, Metadata)
 TEST(RepoModelImport, EmptyTransforms)
 {
 	/*
-	* Should handle the case where child nodes skip empty parents.
+	* The following files should have identical geometry, but differ in how empty
+	* transforms are arranged.
+	* (If inspecting the imports, be aware the metadata keys have been adjusted to
+	* keep the Json sections the same length, so may not always look sensible.)
 	*/
 
+	uint8_t errCode = 0;
 
+	std::vector<SceneUtils> scenes = {
+		SceneUtils(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/emptyTransforms1.bim004.bim"), errCode)),
+		SceneUtils(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/emptyTransforms2.bim004.bim"), errCode))
+	};
+
+	for (auto s : scenes)
+	{
+		EXPECT_THAT(s.getMeshes().size(), Eq(4));
+		auto node = s.findLeafNode("450x450mm");
+		auto mesh = node.getMeshesInProjectCoordinates()[0];
+		EXPECT_THAT(mesh::shortestDistance(mesh.getVertices(), { -13623.82985447024, 4000, -9214.240784344169 }), Lt(0.1));
+	}
 }
