@@ -5,6 +5,7 @@
 
 
 add_subdirectory(odaHelper)
+add_subdirectory(rapidjson)
 set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing_import_manager.cpp

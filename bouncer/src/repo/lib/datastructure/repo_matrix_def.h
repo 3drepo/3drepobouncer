@@ -139,6 +139,8 @@ namespace repo {
 
 			std::vector<T> getData() const { return data; }
 
+			std::vector<T>& getData() { return data; }
+
 			_RepoMatrix<T> invert() const {
 				std::vector<T> result;
 				result.resize(16);
@@ -294,6 +296,15 @@ namespace repo {
 					0, 0, 1, t.z,
 					0, 0, 0, 1
 				}));
+			}
+
+			explicit operator repo::lib::_RepoMatrix<float>() const
+			{
+				auto m = repo::lib::_RepoMatrix<float>();
+				for (auto i = 0; i < data.size(); i++) {
+					m.getData()[i] = (float)data[i];
+				}
+				return m;
 			}
 
 		private:

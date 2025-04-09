@@ -196,6 +196,7 @@ void RepoBSONBuilder::appendElementsUnique(RepoBSON bson)
 		if (view.find(element.key()) == view.end()) {
 			key_view(element.key());
 			append(element.get_value());
+			view = core::view_document(); // If we change the document, we must update the view as the underlying memory may have moved
 		}
 	}
 }

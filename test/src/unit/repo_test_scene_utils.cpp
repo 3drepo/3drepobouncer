@@ -19,6 +19,7 @@
 #include <repo/core/model/bson/repo_node_metadata.h>
 #include <repo/core/model/bson/repo_node_mesh.h>
 #include <repo/core/model/bson/repo_node_material.h>
+#include <repo/core/model/bson/repo_node_texture.h>
 #include <repo/lib/datastructure/repo_variant_utils.h>
 
 using namespace repo::core::model;
@@ -169,6 +170,66 @@ std::vector<SceneUtils::NodeInfo> SceneUtils::NodeInfo::getMeshes()
 	return meshNodes;
 }
 
+repo::core::model::MeshNode SceneUtils::NodeInfo::getMeshInProjectCoordinates()
+{
+	return dynamic_cast<repo::core::model::MeshNode*>(node)->
+		cloneAndApplyTransformation(
+			repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(scene->scene->getWorldOffset())) * scene->getWorldTransform(node)
+	);
+}
+
+std::vector<repo::core::model::MeshNode> SceneUtils::NodeInfo::getMeshesInProjectCoordinates()
+{
+	std::vector<repo::core::model::MeshNode> meshes;
+	for (auto& m : getMeshes()) {
+		meshes.push_back(m.getMeshInProjectCoordinates());
+	}
+	return meshes;
+}
+
+
+std::vector<SceneUtils::NodeInfo> SceneUtils::NodeInfo::getTextures()
+{
+	std::vector<MeshNode*> meshes;
+	std::vector<MaterialNode*> materials;
+	std::vector<SceneUtils::NodeInfo> textures;
+
+	if (auto mesh = dynamic_cast<MeshNode*>(node)) {
+		meshes.push_back(mesh);
+	}
+	
+	for (auto m : meshes) {
+		for (auto c : scene->getChildNodes(m, true)) {
+			if (auto material = dynamic_cast<MaterialNode*>(c.node)) {
+				materials.push_back(material);
+			}
+		}
+	}
+	
+	if(auto material = dynamic_cast<MaterialNode*>(node)) {
+		materials.push_back(material);
+	}
+	
+	for (auto m : materials) {
+		for (auto& c : scene->getChildNodes(m, true)) {
+			if (dynamic_cast<TextureNode*>(c.node)) {
+				textures.push_back(c);
+			}
+		}
+	}
+
+	return textures;
+}
+
+std::vector<SceneUtils::NodeInfo> SceneUtils::getMeshes()
+{
+	std::vector<SceneUtils::NodeInfo> meshes;
+	for (auto n : scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT)) {
+		meshes.push_back(getNodeInfo(n));
+	}
+	return meshes;
+}
+
 std::unordered_map<std::string, repo::lib::RepoVariant> SceneUtils::NodeInfo::getMetadata()
 {
 	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
@@ -224,4 +285,28 @@ std::string SceneUtils::NodeInfo::getPath() const
 	{
 		return name();
 	}
+}
+
+repo::lib::RepoMatrix SceneUtils::getWorldTransform(repo::core::model::RepoNode* node)
+{
+	repo::lib::RepoMatrix m;
+	if (auto t = dynamic_cast<repo::core::model::TransformationNode*>(node)) {
+		m = t->getTransMatrix();
+	}
+	auto child = node;
+	while(true){
+		auto parents = scene->getParentNodesFiltered(
+			repo::core::model::RepoScene::GraphType::DEFAULT,
+			child,
+			repo::core::model::NodeType::TRANSFORMATION);
+		if (!parents.size()) {
+			break;
+		}
+		if (parents.size() > 1) {
+			throw repo::lib::RepoException("SceneUtils::getWorldTransform does not support instancing. Call getWorldTransform from each instances' TransformationNode one by one.");
+		}
+		m = dynamic_cast<repo::core::model::TransformationNode*>(parents[0])->getTransMatrix() * m;
+		child = parents[0];
+	}
+	return m;
 }

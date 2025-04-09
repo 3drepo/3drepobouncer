@@ -166,6 +166,12 @@ namespace repo {
 				repo::lib::RepoBounds getBoundingBox(std::vector< repo::lib::RepoVector3D> vertices);
 				repo::lib::RepoBounds getBoundingBox(std::vector< repo::lib::RepoVector3D64> vertices);
 
+				float hausdorffDistance(const repo::core::model::MeshNode& ma, const repo::core::model::MeshNode& mb);
+				float hausdorffDistance(const std::vector<repo::core::model::MeshNode>& meshes);
+
+				float shortestDistance(const repo::core::model::MeshNode& m, repo::lib::RepoVector3D p);
+				float shortestDistance(const std::vector<repo::core::model::MeshNode>& m, repo::lib::RepoVector3D p);
+				float shortestDistance(const std::vector<repo::lib::RepoVector3D>& v, repo::lib::RepoVector3D p);
 			}
 		}
 	}
