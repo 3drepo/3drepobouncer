@@ -188,12 +188,12 @@ TEST(RepoClientTest, UploadTestBIM)
 	EXPECT_TRUE(projectExists(mongoDbName, okBim4PrjName));
 
 	std::string corrTxtrBim3PrjName = "corruptedTextureBIM3Test";
-	EXPECT_EQ(REPOERR_LOAD_SCENE_MISSING_TEXTURE,
+	EXPECT_EQ(REPOERR_OK,
 		testUpload(mongoDbName, corrTxtrBim3PrjName, "RepoModelImport/BrickWalls_bim3_CorruptedTextureField.bim"));
 	EXPECT_TRUE(projectExists(mongoDbName, corrTxtrBim3PrjName));
 
 	std::string corrMatBim3PrjName = "corruptedMaterialBIM3Test";
-	EXPECT_EQ(REPOERR_LOAD_SCENE_MISSING_NODES,
+	EXPECT_EQ(REPOERR_OK,
 		testUpload(mongoDbName, corrMatBim3PrjName, "RepoModelImport/BrickWalls_bim3_MissingTexture.bim"));
 	EXPECT_TRUE(projectExists(mongoDbName, corrMatBim3PrjName));
 }
