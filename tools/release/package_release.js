@@ -89,12 +89,11 @@ const copyDir = (src, dest) => {
 };
 
 const folderPath = process.argv[2] || `3drepobouncer`
-/*
- uncomment when we upgrade nodejs.
+
 if(fs.existsSync(folderPath)) {
 	fs.rmSync(folderPath, {recursive: true});
 }
-	*/
+
 fs.mkdirSync(folderPath);
 
 externalLibraries.forEach(({rootEnvVar, subPath, subFolder, extensions}) => {
