@@ -16,13 +16,13 @@
 */
 
 #include "repo_model_import_3drepo.h"
-#include <boost/filesystem.hpp>
 #include <sstream>
 #include <fstream>
 #include <stack>
 #include <iostream>
 #include <istream>
 #include <ranges>
+#include <iomanip>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
@@ -131,7 +131,7 @@ struct MeshAttributeView : public View
 	{
 		std::vector<T> vector;
 		vector.resize(size() / sizeof(T));
-		memcpy_s(vector.data(), size(), data, size());
+		memcpy(vector.data(), data, size());
 		return vector;
 	}
 };
