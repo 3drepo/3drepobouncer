@@ -5,7 +5,7 @@ matrix:
       name: Bouncer Worker linter check
       dist: noble
       node_js:
-        - "18.20.6"
+        - "22.14.0"
       script:
         - cd tools/bouncer_worker && yarn install && yarn lint
 
@@ -16,7 +16,7 @@ matrix:
       dist: noble
       name: Unit tests and integration tests
       node_js:
-        - "18.20.6"
+        - "22.14.0"
       compiler:
            - gcc
 
@@ -106,7 +106,7 @@ matrix:
       dist: noble
       name: license support compilation check
       node_js:
-        - "18.20.6"
+        - "22.14.0"
       compiler:
            - gcc
 
