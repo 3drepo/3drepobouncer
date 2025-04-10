@@ -18,96 +18,61 @@
 #IFCOPENSHELL_INCLUDE_DIR will point to the include folder of the installation
 #IFCOPENSHELL_LIBRARIES will point to the libraries
 
+# This cmake file encompasses the following IFCOS dependencies as well, which
+# should be provided with the installation:
+# mpfr
+# mpir
+
+SET(IFCOS_LIB_NAMES
+	IfcParse
+	IfcGeom
+	geometry_kernel_cgal
+	geometry_kernel_cgal_simple
+	geometry_kernel_opencascade
+	geometry_mapping_ifc2x3
+	geometry_mapping_ifc4
+	geometry_mapping_ifc4x1
+	geometry_mapping_ifc4x2
+	geometry_mapping_ifc4x3
+	geometry_mapping_ifc4x3_add1
+	geometry_mapping_ifc4x3_add2
+	geometry_mapping_ifc4x3_tc1
+)
+
+set(IFCOPENSHELL_FOUND TRUE)
 
 if(DEFINED ENV{IFCOPENSHELL_ROOT})
 	set(IFCOPENSHELL_ROOT $ENV{IFCOPENSHELL_ROOT})
-	find_path(IFCOPENSHELL_INCLUDE_DIR ifcparse ifcgeom ifcgeom_schema_agnostic
-		${IFCOPENSHELL_ROOT}/include
+	
+	if(NOT IFCOPENSHELL_INCLUDE_DIR)
+		set(IFCOPENSHELL_INCLUDE_DIR ${IFCOPENSHELL_ROOT}/include)
+	endif()
+	
+	foreach(libName ${IFCOS_LIB_NAMES})
+		find_library(libPath${libName} NAMES ${libName}
+			PATHS
+			${IFCOPENSHELL_ROOT}/lib
+			/usr/lib/
+			/usr/local/lib/
+			/opt/local/lib/
+			/usr/lib/x86_64-linux-gnu
 		)
-	find_library(IFCOPENSHELL_PARSE_LIBRARIES_RELEASE NAMES IfcParse
-		PATHS
-		${IFCOPENSHELL_ROOT}/lib
-	)
-	find_library(IFCOPENSHELL_GEOM_LIBRARIES_RELEASE NAMES IfcGeom
-		PATHS
-		${IFCOPENSHELL_ROOT}/lib
-	)
-	find_library(IFCOPENSHELL_PARSE_LIBRARIES_DEBUG NAMES IfcParse_d IfcParse
-		PATHS
-		${IFCOPENSHELL_ROOT}/lib
-	)
-find_library(IFCOPENSHELL_GEOM_LIBRARIES_DEBUG NAMES IfcGeom_d IfcGeom
-		PATHS
-		${IFCOPENSHELL_ROOT}/lib
-	)
-	set(IFCOPENSHELL_PARSERLIB
-		debug ${IFCOPENSHELL_PARSE_LIBRARIES_DEBUG}
-		optimized ${IFCOPENSHELL_PARSE_LIBRARIES_RELEASE}
-	)
-	set(IFCOPENSHELL_GEOMLIB
-		debug  ${IFCOPENSHELL_GEOM_LIBRARIES_DEBUG}
-		optimized  ${IFCOPENSHELL_GEOM_LIBRARIES_RELEASE}
-	)
+		
+		if(NOT libPath${libName})
+			set(IFCOPENSHELL_FOUND FALSE)
+			message("Could not find " ${libName})
+		endif()
+
+		set(IFCOPENSHELL_LIBRARIES ${IFCOPENSHELL_LIBRARIES} ${libPath${libName}})
+	endforeach()
 endif()
 
-if(IFCOPENSHELL_INCLUDE_DIR AND IFCOPENSHELL_PARSERLIB AND IFCOPENSHELL_GEOMLIB)
-	set(IFCOPENSHELL_FOUND TRUE)
-
-else(IFCOPENSHELL_INCLUDE_DIR AND IFCOPENSHELL_PARSERLIB AND IFCOPENSHELL_GEOMLIB)
-	find_path(IFCOPENSHELL_INCLUDE_DIR ifcparse ifcgeom
-		/usr/include
-		/usr/local/include
-		/opt/local/include
-    )
-
-	find_library(IFCOPENSHELL_PARSE_LIBRARIES_RELEASE NAMES IfcParse
-    	PATHS
-    	/usr/lib/
-    	/usr/local/lib/
-    	/opt/local/lib/
-    )
-
-	find_library(IFCOPENSHELL_GEOM_LIBRARIES_RELEASE NAMES IfcGeom
-    	PATHS
-    	/usr/lib/
-    	/usr/local/lib/
-    	/opt/local/lib/
-    )
-
-	find_library(IFCOPENSHELL_PARSE_LIBRARIES_DEBUG NAMES IfcParse_d IfcParse
-    	PATHS
-    	/usr/lib/
-    	/usr/local/lib/
-    	/opt/local/lib/
-    )
-
-	find_library(IFCOPENSHELL_GEOM_LIBRARIES_DEBUG NAMES IfcGeom_d IfcGeom
-    	PATHS
-    	/usr/lib/
-    	/usr/local/lib/
-    	/opt/local/lib/
-    )
-
-
-	set(IFCOPENSHELL_PARSERLIB
-		debug ${IFCOPENSHELL_PARSE_LIBRARIES_DEBUG}
-		optimized ${IFCOPENSHELL_PARSE_LIBRARIES_RELEASE}
-		)
-	set(IFCOPENSHELL_GEOMLIB
-	debug ${IFCOPENSHELL_GEOM_LIBRARIES_DEBUG}
-	optimized  ${IFCOPENSHELL_GEOM_LIBRARIES_RELEASE}
-	)
-endif(IFCOPENSHELL_INCLUDE_DIR AND IFCOPENSHELL_PARSERLIB AND IFCOPENSHELL_GEOMLIB)
-
-
-
-if(IFCOPENSHELL_INCLUDE_DIR AND IFCOPENSHELL_PARSERLIB AND IFCOPENSHELL_GEOMLIB)
+if(IFCOPENSHELL_INCLUDE_DIR AND IFCOPENSHELL_FOUND)
 	set(IFCOPENSHELL_FOUND TRUE)
 	message(STATUS "IFCOPENSHELL installation found.")
 	message(STATUS "IFCOPENSHELL_INCLUDE_DIR: ${IFCOPENSHELL_INCLUDE_DIR}")
-	message(STATUS "IFCOPENSHELL_LIBRARIES: ${IFCOPENSHELL_PARSERLIB} ${IFCOPENSHELL_GEOMLIB}")
-
-else(IFCOPENSHELL_INCLUDE_DIR AND IFCOPENSHELL_PARSERLIB AND IFCOPENSHELL_GEOMLIB)
+	message(STATUS "IFCOPENSHELL_LIBRARIES: ${IFCOPENSHELL_LIBRARIES}")
+else()
 	set(IFCOPENSHELL_FOUND FALSE)
 	message(STATUS "IFCOPENSHELL not found. Please set IFCOPENSHELL_ROOT to your installation directory")
-endif(IFCOPENSHELL_INCLUDE_DIR AND IFCOPENSHELL_PARSERLIB AND IFCOPENSHELL_GEOMLIB)
+endif()

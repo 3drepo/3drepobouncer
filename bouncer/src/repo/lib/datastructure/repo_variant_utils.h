@@ -57,23 +57,23 @@ namespace repo {
 		class StringConversionVisitor : public boost::static_visitor<std::string> {
 		public:
 
-			std::string operator()(bool& b) const {
+			std::string operator()(const bool& b) const {
 				return std::to_string(b);
 			}
 
-			std::string operator()(int& i) const {
+			std::string operator()(const int& i) const {
 				return std::to_string(i);
 			}
 
-			std::string operator()(int64_t& ll) const {
+			std::string operator()(const int64_t& ll) const {
 				return std::to_string(ll);
 			}
 
-			std::string operator()(double& d) const {
+			std::string operator()(const double& d) const {
 				return std::to_string(d);
 			}
 
-			std::string operator()(std::string& s) const {
+			std::string operator()(const std::string& s) const {
 				return s;
 			}
 

@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2021 3D Repo Ltd
+*  Copyright (C) 2025 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -17,6 +17,25 @@
 
 #pragma once
 
-#define SCHEMA_IN_FILE Ifc4
-#include "repo_ifc_utils_schema_template.h"
-#undef SCHEMA_IN_FILE
+#include <repo/manipulator/modelutility/repo_scene_builder.h>
+
+namespace ifcUtils
+{
+	class AbstractIfcSerialiser
+	{
+	public:
+		/*
+		* Import all elements into the RepoSceneBuilder
+		*/
+		virtual void import(repo::manipulator::modelutility::RepoSceneBuilder* builder) = 0;
+
+		virtual void setLevelOfDetail(int lod) = 0;
+
+		/*
+		* Maximum number of threads the importer should use for generating geometry.
+		* 0 or less indicates the default number of threads should be used, which is
+		* the same as the number of physical CPUs.
+		*/
+		virtual void setNumThreads(int numThreads) = 0;
+	};
+}
