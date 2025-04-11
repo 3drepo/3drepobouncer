@@ -488,7 +488,7 @@ bool repo::core::handler::MongoDatabaseHandler::findCursorByCriteria(
 	const std::string& database,
 	const std::string& collection,
 	const database::query::RepoQuery& criteria,
-	std::unique_ptr<database::Cursor>& cursor)
+	std::shared_ptr<database::Cursor> cursor)
 {
 	auto projection = database::query::RepoProjectionBuilder();
 	return findCursorByCriteria(database, collection, criteria, projection, cursor);
@@ -499,7 +499,7 @@ bool repo::core::handler::MongoDatabaseHandler::findCursorByCriteria(
 	const std::string& collection,
 	const database::query::RepoQuery& filter,
 	const database::query::RepoQuery& projection,
-	std::unique_ptr<database::Cursor>& cursor)
+	std::shared_ptr<database::Cursor> cursor)
 {
 	try
 	{
@@ -518,7 +518,8 @@ bool repo::core::handler::MongoDatabaseHandler::findCursorByCriteria(
 			options.projection(projectionBson.view());
 
 			// Find all documents and return cursor
-			cursor = std::make_unique<MongoCursor>(std::move(col.find(criteria.view())), this);
+			auto mongoCursor = std::make_shared<MongoCursor>(std::move(col.find(criteria.view())), this);
+			cursor = std::static_pointer_cast<Cursor>(mongoCursor);
 			return true;
 		}
 		else

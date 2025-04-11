@@ -288,7 +288,7 @@ namespace repo {
 					const std::string& database,
 					const std::string& collection,
 					const database::query::RepoQuery& criteria,
-					std::unique_ptr<database::Cursor>& cursor);
+					std::shared_ptr<database::Cursor> cursor);
 
 				/**
 				* Given a search criteria,  find all the documents that passes this query
@@ -303,7 +303,7 @@ namespace repo {
 					const std::string& collection,
 					const database::query::RepoQuery& filter,
 					const database::query::RepoQuery& projection,
-					std::unique_ptr<database::Cursor>& cursor);
+					std::shared_ptr<database::Cursor> cursor);
 
 				/**
 				* Given a search criteria,  find one documents that passes this query
@@ -462,10 +462,10 @@ namespace repo {
 				// specific, container for getting connections. pool pool is threadsafe.
 				std::unique_ptr<mongocxx::pool> clientPool;
 
-				// The fileManager is used in the storage of certain member types, such
-				// as large vectors of binary data. It must be set using setFileManager
-				// before documents containing such members are uploaded.
-				std::shared_ptr<repo::core::handler::fileservice::FileManager> fileManager;
+				//// The fileManager is used in the storage of certain member types, such
+				//// as large vectors of binary data. It must be set using setFileManager
+				//// before documents containing such members are uploaded.
+				//std::shared_ptr<repo::core::handler::fileservice::FileManager> fileManager;
 
 				/**
 				* Get large file off GridFS
