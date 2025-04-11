@@ -30,6 +30,9 @@ namespace repo {
 			class RepoBSON;
 		}
 		namespace handler {
+			namespace fileservice {				
+				class FileManager;
+			}
 			namespace database {
 				namespace index {
 					class RepoIndex;
@@ -244,6 +247,50 @@ namespace repo {
 					const database::query::RepoQuery& criteria) = 0;
 
 				/**
+				* Given a search criteria,  find all the documents that passes this query
+				* @param database name of database
+				* @param collection name of collection
+				* @param criteria search criteria in a bson object
+				* @param projection to define the fiels in the returned document
+				* @return a vector of RepoBSON objects satisfy the given criteria
+				*/
+				virtual std::vector<repo::core::model::RepoBSON> findAllByCriteria(
+					const std::string& database,
+					const std::string& collection,
+					const database::query::RepoQuery& filter,
+					const database::query::RepoQuery& projection) = 0;
+
+
+
+				/**
+				* Given a search criteria,  find all the documents that passes this query
+				* @param database name of database
+				* @param collection name of collection
+				* @param criteria search criteria in a bson object
+				* @return a MongoCursor allowing traversal of the documents that satisfy the given criteria
+				*/
+				virtual bool findCursorByCriteria(
+					const std::string& database,
+					const std::string& collection,
+					const database::query::RepoQuery& criteria,
+					std::shared_ptr<database::Cursor> cursor) = 0;
+
+				/**
+				* Given a search criteria,  find all the documents that passes this query
+				* @param database name of database
+				* @param collection name of collection
+				* @param criteria search criteria in a bson object
+				* @param projection to define the fiels in the returned document
+				* @return a MongoCursor allowing traversal of the documents that satisfy the given criteria
+				*/
+				virtual bool findCursorByCriteria(
+					const std::string& database,
+					const std::string& collection,
+					const database::query::RepoQuery& filter,
+					const database::query::RepoQuery& projection,
+					std::shared_ptr<database::Cursor> cursor) = 0;
+
+				/**
 				* Given a search criteria,  find one documents that passes this query
 				* @param database name of database
 				* @param collection name of collection
@@ -305,6 +352,10 @@ namespace repo {
 					const std::string& database,
 					const std::string& collection) = 0;
 
+				virtual void setFileManager(std::shared_ptr<repo::core::handler::fileservice::FileManager> manager) = 0;
+
+				virtual std::shared_ptr<repo::core::handler::fileservice::FileManager> getFileManager() = 0;
+
 			protected:
 				/**
 				* Default constructor
@@ -313,6 +364,11 @@ namespace repo {
 				AbstractDatabaseHandler(uint64_t size) :maxDocumentSize(size) {};
 
 				const uint64_t maxDocumentSize;
+
+				// The fileManager is used in the storage of certain member types, such
+				// as large vectors of binary data. It must be set using setFileManager
+				// before documents containing such members are uploaded.
+				std::shared_ptr<repo::core::handler::fileservice::FileManager> fileManager;
 			};
 		}
 	}
