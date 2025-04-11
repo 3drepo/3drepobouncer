@@ -263,6 +263,22 @@ repo::lib::RepoVector3D RepoBSON::getVector3DField(const std::string& label) con
 	return v;
 }
 
+repo::lib::repo_color3d_t repo::core::model::RepoBSON::getColourField(const std::string& label) const
+{
+	auto arr = getFloatArray(label);
+	if (arr.size() < 3)
+	{
+		return repo::lib::repo_color3d_t();
+	}
+	else {
+		repo::lib::repo_color3d_t c;
+		c.r = arr[0];
+		c.g = arr[1];
+		c.b = arr[2];
+		return c;
+	}
+}
+
 repo::lib::RepoMatrix RepoBSON::getMatrixField(const std::string& label) const
 {
 	std::vector<float> transformationMatrix;
