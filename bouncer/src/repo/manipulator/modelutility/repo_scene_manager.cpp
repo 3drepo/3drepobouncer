@@ -30,56 +30,6 @@
 using namespace repo::lib;
 using namespace repo::manipulator::modelutility;
 
-bool SceneManager::commitWebBuffers(
-	repo::core::model::RepoScene                          *scene,
-	const std::string                                     &geoStashExt,
-	const repo_web_buffers_t                              &resultBuffers,
-	repo::core::handler::AbstractDatabaseHandler          *handler,
-	repo::core::handler::fileservice::FileManager         *fileManager)
-{
-	bool success = true;
-	std::string jsonStashExt = REPO_COLLECTION_STASH_JSON;
-	std::string repoAssetsStashExt = REPO_COLLECTION_STASH_BUNDLE;
-	std::string databaseName = scene->getDatabaseName();
-	std::string projectName = scene->getProjectName();
-
-	//Upload the files
-	for (const auto &bufferPair : resultBuffers.geoFiles)
-	{
-		if (success &= fileManager->uploadFileAndCommit(databaseName, projectName + "." + geoStashExt, bufferPair.first, bufferPair.second, {}, repo::core::handler::fileservice::FileManager::Encoding::Gzip)) // Web geometry files are gzipped by default
-		{
-			repoInfo << "File (" << bufferPair.first << ") added successfully to file storage.";
-		}
-		else
-		{
-			repoError << "Failed to add file  (" << bufferPair.first << ") to file storage";
-		}
-	}
-
-	for (const auto &bufferPair : resultBuffers.jsonFiles)
-	{
-		std::string errMsg;
-		std::string fileName = bufferPair.first;
-
-		if (success &= fileManager->uploadFileAndCommit(databaseName, projectName + "." + jsonStashExt, bufferPair.first, bufferPair.second))
-		{
-			repoInfo << "File (" << fileName << ") added successfully to file storage.";
-		}
-		else
-		{
-			repoError << "Failed to add file  (" << fileName << ") to  file storage.";
-		}
-	}
-
-	std::string errMsg;
-
-	if (!resultBuffers.repoAssets.isEmpty())
-	{
-		handler->upsertDocument(databaseName, projectName + "." + repoAssetsStashExt, resultBuffers.repoAssets, true);
-	}
-
-	return success;
-}
 
 uint8_t SceneManager::commitScene(
 	repo::core::model::RepoScene                          *scene,
@@ -122,8 +72,7 @@ uint8_t SceneManager::commitScene(
 			{
 				repoInfo << "Generating Repo Bundles...";
 				scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::GEN_WEB_STASH);
-				repo_web_buffers_t buffers;
-				if (success = generateWebViewBuffers(scene, repo::manipulator::modelconvertor::WebExportType::REPO, buffers, handler, fileManager))
+				if (success = generateWebViewBuffers(scene, repo::manipulator::modelconvertor::WebExportType::REPO, handler, fileManager))
 					repoInfo << "Repo Bundles for Stash stored into the database";
 				else
 					repoError << "failed to commit Repo Bundles";
@@ -260,78 +209,40 @@ void SceneManager::fetchScene(
 	}
 }
 
-bool SceneManager::generateStashGraph(
-	repo::core::model::RepoScene              *scene
-)
-{
-	bool success = false;
-	if (success = (scene && scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT)))
-	{
-		removeStashGraph(scene);
-
-		repoInfo << "Generating stash graph...";
-
-		repo::manipulator::modeloptimizer::MultipartOptimizer mpOpt;
-		if (!(success = mpOpt.apply(scene)))
-		{
-			repoError << "Failed to generate stash graph with MultipartOptimizer.";
-		}
-	}
-	else
-	{
-		repoError << "Failed to generate stash graph: nullptr to scene or empty scene graph!";
-	}
-
-	return success;
-}
-
 bool SceneManager::generateWebViewBuffers(
 	repo::core::model::RepoScene                           *scene,
 	const repo::manipulator::modelconvertor::WebExportType &exType,
-	repo_web_buffers_t                                     &resultBuffers,
 	repo::core::handler::AbstractDatabaseHandler           *handler,
 	repo::core::handler::fileservice::FileManager         *fileManager)
 {
-	bool success = false;
-	if (success = (scene && scene->isRevisioned()))
+	bool validScene =
+		scene
+		&& scene->isRevisioned()
+		&& scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT);
+		
+	if (validScene)
 	{
-		bool toCommit = handler;
-
 		std::string geoStashExt;
 		std::string jsonStashExt = REPO_COLLECTION_STASH_JSON;
-
-		if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED)) {
-
-			repoInfo << "Optimised scene not found. Attempt to generate...";
-
-			if (!scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()) {
-				std::string msg;
-				scene->loadScene(handler, msg);
-			}
-			generateStashGraph(scene);
-		}
 
 		switch (exType)
 		{
 		case repo::manipulator::modelconvertor::WebExportType::REPO:
 			geoStashExt = REPO_COLLECTION_STASH_BUNDLE;
-			resultBuffers = generateRepoBundleBuffer(scene);
-			break;
+			
+
+			repo::manipulator::modeloptimizer::MultipartOptimizer mpOpt;
+			mpOpt.ProcessScene(
+				scene->getDatabaseName(),
+				scene->getProjectName(),
+				scene->getRevisionID(),
+				handler
+			);
+
+			return true;
 		default:
 			repoError << "Unknown export type with enum:  " << (uint16_t)exType;
 			return false;
-		}
-
-		if (success = resultBuffers.geoFiles.size())
-		{
-			if (toCommit)
-			{
-				success = commitWebBuffers(scene, geoStashExt, resultBuffers, handler, fileManager);
-			}
-		}
-		else
-		{
-			repoError << "Failed to generate web buffers: no geometry file generated";
 		}
 	}
 	else
@@ -339,7 +250,7 @@ bool SceneManager::generateWebViewBuffers(
 		repoError << "Failed to generate web buffers: scene is empty or not revisioned!";
 	}
 
-	return success;
+	return false;
 }
 
 bool SceneManager::generateAndCommitSelectionTree(
@@ -394,15 +305,15 @@ repo::lib::repo_web_buffers_t SceneManager::generateRepoBundleBuffer(
 {
 	repo_web_buffers_t result;
 #ifdef REPO_ASSET_GENERATOR_SUPPORT
-	repo::manipulator::modelconvertor::RepoBundleExport bundleExport(scene);
-	if (bundleExport.isOk()) {
-		repoTrace << "Exporting Repo Bundles as buffer...";
-		result = bundleExport.getAllFilesExportedAsBuffer();
-	}
-	else
-	{
-		repoError << "Export of Repo Bundles failed.";
-	}
+	//repo::manipulator::modelconvertor::RepoBundleExport bundleExport(scene);
+	//if (bundleExport.isOk()) {
+	//	repoTrace << "Exporting Repo Bundles as buffer...";
+	//	result = bundleExport.getAllFilesExportedAsBuffer();
+	//}
+	//else
+	//{
+	//	repoError << "Export of Repo Bundles failed.";
+	//}
 #else
 	repoError << "Bouncer must be built with REPO_ASSET_GENERATOR_SUPPORT ON in order to generate Repo Bundles.";
 #endif // REPO_ASSETGENERATOR

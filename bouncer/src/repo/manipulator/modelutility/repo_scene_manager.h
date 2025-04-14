@@ -29,22 +29,6 @@ namespace repo {
 				SceneManager() {}
 				~SceneManager() {}
 
-				/**
-				* Commit web buffers
-				* @param scene repo scene related to repo scene
-				* @param geoStashExt geometry stash extension
-				* @param resultBuffers buffers to write
-				* @param hander mongo handler
-				* @param addTimestampToSettings whether we should be adding timestamp to settings upon success
-				*/
-				bool commitWebBuffers(
-					repo::core::model::RepoScene                          *scene,
-					const std::string                                     &geoStashExt,
-					const repo::lib::repo_web_buffers_t                   &resultBuffers,
-					repo::core::handler::AbstractDatabaseHandler          *handler,
-					repo::core::handler::fileservice::FileManager         *fileManager
-				);
-
 				uint8_t commitScene(
 					repo::core::model::RepoScene                          *scene,
 					const std::string									  &owner,
@@ -110,18 +94,6 @@ namespace repo {
 				);
 
 				/**
-				* Generate a stash graph for the given scene and populate it
-				* into the given scene
-				* If a databasehandler is given and the scene is revisioned,
-				* it will commit the stash to database
-				* @param scene scene to generate stash graph for
-				* @param handler hander to the database
-				* @return returns true upon success
-				*/
-				bool generateStashGraph(
-					repo::core::model::RepoScene *scene);
-
-				/**
 				* Check if the scene is VR enabled
 				* This is primarily used for determining if we need to generate
 				* VR version of the asset bundles.
@@ -145,7 +117,6 @@ namespace repo {
 				bool generateWebViewBuffers(
 					repo::core::model::RepoScene                           *scene,
 					const repo::manipulator::modelconvertor::WebExportType &exType,
-					repo::lib::repo_web_buffers_t                          &resultBuffers,
 					repo::core::handler::AbstractDatabaseHandler           *handler = nullptr,
 					repo::core::handler::fileservice::FileManager         *fileManager = nullptr);
 

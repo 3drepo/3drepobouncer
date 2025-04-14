@@ -369,6 +369,9 @@ std::vector<repo::lib::RepoUUID> getAllTextureIds(
 			texIds.push_back(bson.getUUIDField("shared_id"));
 		}
 	}	
+	else {
+		repoWarning << "getAllTextureIds; getting cursor was not successful; no texture Ids in output vector";
+	}
 
 	return texIds;
 }
