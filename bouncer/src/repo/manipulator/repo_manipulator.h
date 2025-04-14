@@ -121,7 +121,6 @@ namespace repo {
 			*/
 			bool generateAndCommitWebViewBuffer(
 				repo::core::model::RepoScene          *scene,
-				repo::lib::repo_web_buffers_t         &buffers,
 				const modelconvertor::WebExportType   &exType);
 
 			/**
@@ -132,16 +131,6 @@ namespace repo {
 
 			bool generateAndCommitRepoBundlesBuffer(
 				repo::core::model::RepoScene* scene);
-
-			/**
-			* Generate a stash graph for the given scene and populate it
-			* into the given scene
-			* @param scene scene to generate stash graph for
-			* @return returns true upon success
-			*/
-			bool generateStashGraph(
-				repo::core::model::RepoScene              *scene
-			);
 
 			/**
 			* Retrieve documents from a specified collection

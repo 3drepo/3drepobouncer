@@ -32,13 +32,13 @@ using namespace repo::manipulator::modelutility;
 
 
 uint8_t SceneManager::commitScene(
-	repo::core::model::RepoScene                          *scene,
-	const std::string									  &owner,
-	const std::string									  &tag,
-	const std::string									  &desc,
-	const repo::lib::RepoUUID              &revId,
-	repo::core::handler::AbstractDatabaseHandler          *handler,
-	repo::core::handler::fileservice::FileManager         *fileManager
+	repo::core::model::RepoScene									*scene,
+	const std::string												&owner,
+	const std::string												&tag,
+	const std::string												&desc,
+	const repo::lib::RepoUUID										&revId,
+	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler>	handler,
+	std::shared_ptr <repo::core::handler::fileservice::FileManager>	fileManager
 ) {
 	uint8_t errCode = REPOERR_UPLOAD_FAILED;
 	std::string msg;
@@ -72,7 +72,7 @@ uint8_t SceneManager::commitScene(
 			{
 				repoInfo << "Generating Repo Bundles...";
 				scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::GEN_WEB_STASH);
-				if (success = generateWebViewBuffers(scene, repo::manipulator::modelconvertor::WebExportType::REPO, handler, fileManager))
+				if (success = generateWebViewBuffers(scene, repo::manipulator::modelconvertor::WebExportType::REPO, handler))
 					repoInfo << "Repo Bundles for Stash stored into the database";
 				else
 					repoError << "failed to commit Repo Bundles";
@@ -106,7 +106,7 @@ uint8_t SceneManager::commitScene(
 }
 
 repo::core::model::RepoScene* SceneManager::fetchScene(
-	repo::core::handler::AbstractDatabaseHandler *handler,
+	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
 	const std::string                             &database,
 	const std::string                             &project,
 	const repo::lib::RepoUUID                     &uuid,
@@ -167,7 +167,7 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 }
 
 void SceneManager::fetchScene(
-	repo::core::handler::AbstractDatabaseHandler *handler,
+	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
 	repo::core::model::RepoScene              *scene)
 {
 	if (scene)
@@ -210,10 +210,9 @@ void SceneManager::fetchScene(
 }
 
 bool SceneManager::generateWebViewBuffers(
-	repo::core::model::RepoScene                           *scene,
-	const repo::manipulator::modelconvertor::WebExportType &exType,
-	repo::core::handler::AbstractDatabaseHandler           *handler,
-	repo::core::handler::fileservice::FileManager         *fileManager)
+	repo::core::model::RepoScene									*scene,
+	const repo::manipulator::modelconvertor::WebExportType			&exType,
+	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler>	handler)
 {
 	bool validScene =
 		scene
@@ -254,9 +253,9 @@ bool SceneManager::generateWebViewBuffers(
 }
 
 bool SceneManager::generateAndCommitSelectionTree(
-	repo::core::model::RepoScene                           *scene,
-	repo::core::handler::AbstractDatabaseHandler           *handler,
-	repo::core::handler::fileservice::FileManager         *fileManager)
+	repo::core::model::RepoScene									*scene,
+	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler>	handler,
+	std::shared_ptr <repo::core::handler::fileservice::FileManager>	fileManager)
 {
 	bool success = false;
 	if (success = scene && scene->isRevisioned() && handler)
@@ -300,28 +299,7 @@ bool SceneManager::generateAndCommitSelectionTree(
 	return success;
 }
 
-repo::lib::repo_web_buffers_t SceneManager::generateRepoBundleBuffer(
-	repo::core::model::RepoScene* scene)
-{
-	repo_web_buffers_t result;
-#ifdef REPO_ASSET_GENERATOR_SUPPORT
-	//repo::manipulator::modelconvertor::RepoBundleExport bundleExport(scene);
-	//if (bundleExport.isOk()) {
-	//	repoTrace << "Exporting Repo Bundles as buffer...";
-	//	result = bundleExport.getAllFilesExportedAsBuffer();
-	//}
-	//else
-	//{
-	//	repoError << "Export of Repo Bundles failed.";
-	//}
-#else
-	repoError << "Bouncer must be built with REPO_ASSET_GENERATOR_SUPPORT ON in order to generate Repo Bundles.";
-#endif // REPO_ASSETGENERATOR
-
-	return result;
-}
-
-bool isAddOnEnabled(repo::core::handler::AbstractDatabaseHandler *handler, const std::string &database, const std::string addOn) {
+bool isAddOnEnabled(std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, const std::string &database, const std::string addOn) {
 
 	auto teamspace = repo::core::model::RepoTeamspace(handler->findOneByUniqueID(database, "teamspace", database));
 	return teamspace.isAddOnEnabled(addOn);
@@ -329,7 +307,7 @@ bool isAddOnEnabled(repo::core::handler::AbstractDatabaseHandler *handler, const
 
 bool SceneManager::isVrEnabled(
 	const repo::core::model::RepoScene                 *scene,
-	repo::core::handler::AbstractDatabaseHandler *handler) const
+	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler) const
 {
 	auto dbName = scene->getDatabaseName();
 	return isAddOnEnabled(handler, dbName, REPO_USER_LABEL_VR_ENABLED);

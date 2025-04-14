@@ -149,7 +149,7 @@ uint8_t RepoManipulator::commitScene(
 	}
 
 	modelutility::SceneManager sceneManager;
-	return sceneManager.commitScene(scene, projOwner, tag, desc, revId, dbHandler.get(), dbHandler->getFileManager().get());
+	return sceneManager.commitScene(scene, projOwner, tag, desc, revId, dbHandler, dbHandler->getFileManager());
 }
 
 repo::core::model::RepoScene* RepoManipulator::fetchScene(
@@ -162,7 +162,7 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 	const std::vector<repo::core::model::ModelRevisionNode::UploadStatus>& includeStatus)
 {
 	modelutility::SceneManager sceneManager;
-	return sceneManager.fetchScene(dbHandler.get(), database, project, uuid, headRevision, ignoreRefScene, skeletonFetch, includeStatus);
+	return sceneManager.fetchScene(dbHandler, database, project, uuid, headRevision, ignoreRefScene, skeletonFetch, includeStatus);
 }
 
 void RepoManipulator::fetchScene(
@@ -171,16 +171,14 @@ void RepoManipulator::fetchScene(
 	const bool& skeletonFetch)
 {
 	modelutility::SceneManager sceneManager;
-	return sceneManager.fetchScene(dbHandler.get(), scene);
+	return sceneManager.fetchScene(dbHandler, scene);
 }
 
 bool RepoManipulator::generateAndCommitRepoBundlesBuffer(
 	repo::core::model::RepoScene* scene)
 {
-	repo::lib::repo_web_buffers_t buffers;
 	return generateAndCommitWebViewBuffer(
 		scene,
-		buffers,
 		modelconvertor::WebExportType::REPO
 	);
 }
@@ -190,27 +188,15 @@ bool RepoManipulator::generateAndCommitSelectionTree(
 )
 {
 	modelutility::SceneManager SceneManager;
-	return SceneManager.generateAndCommitSelectionTree(scene, dbHandler.get(), dbHandler->getFileManager().get());
-}
-
-bool RepoManipulator::generateStashGraph(
-	repo::core::model::RepoScene* scene
-)
-{
-	modelutility::SceneManager SceneManager;
-	return SceneManager.generateStashGraph(scene);
+	return SceneManager.generateAndCommitSelectionTree(scene, dbHandler, dbHandler->getFileManager());
 }
 
 bool RepoManipulator::generateAndCommitWebViewBuffer(
 	repo::core::model::RepoScene* scene,
-	repo::lib::repo_web_buffers_t& buffers,
 	const modelconvertor::WebExportType& exType)
 {
 	modelutility::SceneManager SceneManager;
-	if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED)) {
-		SceneManager.generateStashGraph(scene);
-	}
-	return SceneManager.generateWebViewBuffers(scene, exType, buffers, dbHandler.get(), dbHandler->getFileManager().get());
+	return SceneManager.generateWebViewBuffers(scene, exType, dbHandler);
 }
 
 std::vector<repo::core::model::RepoBSON>
@@ -348,7 +334,7 @@ bool RepoManipulator::init(
 bool RepoManipulator::isVREnabled(const repo::core::model::RepoScene* scene) const
 {
 	modelutility::SceneManager manager;
-	return manager.isVrEnabled(scene, dbHandler.get());
+	return manager.isVrEnabled(scene, dbHandler);
 }
 
 void RepoManipulator::updateRevisionStatus(
@@ -356,5 +342,5 @@ void RepoManipulator::updateRevisionStatus(
 	const ModelRevisionNode::UploadStatus& status
 )
 {
-	scene->updateRevisionStatus(dbHandler.get(), status);
+	scene->updateRevisionStatus(dbHandler, status);
 }
