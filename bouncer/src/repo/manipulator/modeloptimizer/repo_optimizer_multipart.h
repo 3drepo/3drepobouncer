@@ -409,6 +409,13 @@ namespace repo {
 					repo::lib::RepoUUID revId
 				);
 
+				std::vector < repo::lib::RepoUUID> getAllTextureIds(
+					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+					std::string database,
+					std::string collection,
+					repo::lib::RepoUUID revId
+				);
+
 				void ProcessUntexturedGroup(
 					const std::string database,
 					const std::string collection,
@@ -419,6 +426,16 @@ namespace repo {
 					const MaterialPropMap& matPropMap,
 					const bool isOpaque,
 					const int primitive);
+
+				void ProcessTexturedGroup(
+					const std::string database,
+					const std::string collection,
+					const repo::lib::RepoUUID revId,
+					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+					std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
+					const TransformMap& transformMap,
+					const MaterialPropMap& matPropMap,
+					const repo::lib::RepoUUID texId);
 
 				std::vector<std::vector<std::shared_ptr<StreamingMeshNode>>> buildBVHAndCluster(
 					const std::string database,
@@ -435,7 +452,8 @@ namespace repo {
 					std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
 					const TransformMap& transformMap,
 					const MaterialPropMap& matPropMap,
-					std::vector<std::vector<std::shared_ptr<StreamingMeshNode>>>& clusters
+					std::vector<std::vector<std::shared_ptr<StreamingMeshNode>>>& clusters,
+					repo::lib::RepoUUID texId = repo::lib::RepoUUID()
 				);
 
 				void createSuperMesh(
@@ -470,7 +488,8 @@ namespace repo {
 				void appendMesh(					
 					std::shared_ptr<StreamingMeshNode> node,
 					const MaterialPropMap& matPropMap,
-					mapped_mesh_t& mappedMesh
+					mapped_mesh_t& mappedMesh,
+					repo::lib::RepoUUID texId
 				);
 
 				Bvh buildFacesBvh(
@@ -500,7 +519,8 @@ namespace repo {
 				void splitMesh(
 					std::shared_ptr<StreamingMeshNode> node,
 					std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
-					const MaterialPropMap& matPropMap
+					const MaterialPropMap& matPropMap,
+					repo::lib::RepoUUID texId
 				);
 
 				/*

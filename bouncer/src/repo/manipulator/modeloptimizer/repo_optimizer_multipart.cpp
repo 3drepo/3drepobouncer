@@ -168,8 +168,21 @@ void MultipartOptimizer::ProcessScene(
 	);
 
 	// Get Texture IDs
+	auto texIds = getAllTextureIds(handler, database, collection, revId);
 
 	// Process each texture group
+	for (auto texId : texIds) {
+		ProcessTexturedGroup(
+			database,
+			collection,
+			revId,
+			handler,
+			exporter,
+			transformMap,
+			matPropMap,
+			texId
+		);
+	}
 
 	// Finalise export
 	exporter->Finalise();
@@ -330,6 +343,36 @@ MultipartOptimizer::MaterialPropMap& MultipartOptimizer::getAllMaterials(
 	return matMap;
 }
 
+std::vector<repo::lib::RepoUUID> getAllTextureIds(
+	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+	std::string database,
+	std::string collection,
+	repo::lib::RepoUUID revId) {
+
+	// Create filter
+	repo::core::handler::database::query::RepoQueryBuilder filter;
+	filter.append(repo::core::handler::database::query::Eq("rev_id", revId));
+	filter.append(repo::core::handler::database::query::Eq("type", "texture"));
+
+	repo::core::handler::database::query::RepoProjectionBuilder projection;
+	projection.excludeField("_id");
+	projection.includeField("shared_id");
+
+	std::vector<repo::lib::RepoUUID> texIds;
+
+	std::shared_ptr<repo::core::handler::database::Cursor> cursor;
+	auto success = handler->findCursorByCriteria(database, collection, filter, projection, cursor);
+
+	if (success) {
+		for (auto document : (*cursor)) {
+			auto bson = repo::core::model::RepoBSON(document);
+			texIds.push_back(bson.getUUIDField("shared_id"));
+		}
+	}	
+
+	return texIds;
+}
+
 void MultipartOptimizer::ProcessUntexturedGroup(
 	const std::string database,
 	const std::string collection,
@@ -361,6 +404,34 @@ void MultipartOptimizer::ProcessUntexturedGroup(
 	// Create Supermeshes
 	createSuperMeshes(database, collection, handler, exporter, transformMap, matPropMap, clusters);
 	
+}
+
+void MultipartOptimizer::ProcessTexturedGroup(
+	const std::string database,
+	const std::string collection,
+	const repo::lib::RepoUUID revId,
+	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+	std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
+	const TransformMap& transformMap,
+	const MaterialPropMap& matPropMap,
+	const repo::lib::RepoUUID texId)
+{
+	// Create filter
+	repo::core::handler::database::query::RepoQueryBuilder filter;
+	filter.append(repo::core::handler::database::query::Eq("rev_id", revId));	
+	filter.append(repo::core::handler::database::query::Eq("materialProperties.textureId", texId));
+	
+
+	// Build BVH tree and cluster nodes
+	auto clusters = buildBVHAndCluster(
+		database,
+		collection,
+		handler,
+		transformMap,
+		filter);
+
+	// Create Supermeshes
+	createSuperMeshes(database, collection, handler, exporter, transformMap, matPropMap, clusters, texId);
 }
 
 std::vector<std::vector<std::shared_ptr<MultipartOptimizer::StreamingMeshNode>>> MultipartOptimizer::buildBVHAndCluster(
@@ -421,7 +492,8 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 	std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
 	const TransformMap& transformMap,
 	const MaterialPropMap& matPropMap,
-	std::vector<std::vector<std::shared_ptr<StreamingMeshNode>>>& clusters)
+	std::vector<std::vector<std::shared_ptr<StreamingMeshNode>>>& clusters,
+	repo::lib::RepoUUID texId /* = repo::lib::RepoUUID() */)
 {
 	// Get blobHandler
 	repo::core::handler::fileservice::BlobFilesHandler blobHandler(handler->getFileManager(), database, collection);
@@ -480,19 +552,19 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 			if (currentSupermesh.vertices.size() + sNode->getNumVertices() <= REPO_MP_MAX_VERTEX_COUNT)
 			{
 				// The current node can be added to the supermesh OK
-				appendMesh(sNode, matPropMap, currentSupermesh);
+				appendMesh(sNode, matPropMap, currentSupermesh, texId);
 			}
 			else if (sNode->getNumVertices() > REPO_MP_MAX_VERTEX_COUNT)
 			{
 				// The node is too big to fit into any supermesh, so it must be split
-				splitMesh(sNode, exporter, matPropMap);
+				splitMesh(sNode, exporter, matPropMap, texId);
 			}
 			else
 			{
 				// The node is small enough to fit within one supermesh, just not this one
 				createSuperMesh(exporter, currentSupermesh);
 				currentSupermesh = mapped_mesh_t();
-				appendMesh(sNode, matPropMap, currentSupermesh);
+				appendMesh(sNode, matPropMap, currentSupermesh, texId);
 			}
 
 			// Unload the streaming node
@@ -536,7 +608,8 @@ std::vector<double> MultipartOptimizer::getWorldOffset(
 void MultipartOptimizer::appendMesh(	
 	std::shared_ptr<StreamingMeshNode> node,
 	const MaterialPropMap& matPropMap,
-	mapped_mesh_t& mapped
+	mapped_mesh_t& mapped,
+	repo::lib::RepoUUID texId
 )
 {
 	repo_mesh_mapping_t meshMap;
@@ -545,6 +618,10 @@ void MultipartOptimizer::appendMesh(
 	auto matPair = matPropMap.at(node->getSharedId());
 	meshMap.material_id = matPair->first;
 	meshMap.material = matPair->second;
+	
+	// set texture id if passed in
+	if (!texId.isDefaultValue())
+		meshMap.texture_id = texId;
 
 	meshMap.mesh_id = node->getUniqueId();
 	meshMap.shared_id = node->getSharedId();
@@ -804,7 +881,8 @@ std::vector<size_t> MultipartOptimizer::getSupermeshBranchNodes(
 void MultipartOptimizer::splitMesh(
 	std::shared_ptr<StreamingMeshNode> node,
 	std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
-	const MaterialPropMap& matPropMap
+	const MaterialPropMap& matPropMap,
+	repo::lib::RepoUUID texId
 )
 {
 	// The purpose of this method is to split large MeshNodes into smaller ones.
@@ -944,6 +1022,10 @@ void MultipartOptimizer::splitMesh(
 		auto matPair = matPropMap.at(node->getSharedId());
 		mapping.material_id = matPair->first;
 		mapping.material = matPair->second;		
+
+		// set texture id if passed in
+		if (!texId.isDefaultValue())
+			mapping.texture_id = texId;
 
 		mapped.meshMapping.push_back(mapping);
 
