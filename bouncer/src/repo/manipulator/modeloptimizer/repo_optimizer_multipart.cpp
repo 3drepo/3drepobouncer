@@ -343,7 +343,7 @@ MultipartOptimizer::MaterialPropMap& MultipartOptimizer::getAllMaterials(
 	return matMap;
 }
 
-std::vector<repo::lib::RepoUUID> getAllTextureIds(
+std::vector<repo::lib::RepoUUID> MultipartOptimizer::getAllTextureIds(
 	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
 	std::string database,
 	std::string collection,
