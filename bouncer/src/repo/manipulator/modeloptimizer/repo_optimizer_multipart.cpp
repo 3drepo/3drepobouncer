@@ -197,14 +197,14 @@ std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUU
 {
 
 	repo::core::handler::database::query::RepoQueryBuilder filter;
-	filter.append(repo::core::handler::database::query::Eq("rev_id", revId));
-	filter.append(repo::core::handler::database::query::Eq("type", "transformation"));
+	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));
+	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_TRANSFORMATION));
 
 	repo::core::handler::database::query::RepoProjectionBuilder projection;
-	projection.excludeField("_id");	
-	projection.includeField("shared_id");
-	projection.includeField("matrix");
-	projection.includeField("parents");
+	projection.excludeField(REPO_NODE_LABEL_ID);	
+	projection.includeField(REPO_NODE_LABEL_SHARED_ID);
+	projection.includeField(REPO_NODE_LABEL_MATRIX);
+	projection.includeField(REPO_NODE_LABEL_PARENTS);
 	
 	std::shared_ptr<repo::core::handler::database::Cursor> cursor;
 	auto success = handler->findCursorByCriteria(database, collection, filter, projection, cursor);	
@@ -215,8 +215,8 @@ std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUU
 		repo::core::model::RepoBSON rootNode;
 		std::unordered_map<repo::lib::RepoUUID, std::vector<repo::core::model::RepoBSON>, repo::lib::RepoUUIDHasher> childNodeMap;
 		for (auto bson : (*cursor)) {
-			if (bson.hasField("parents")) {
-				auto parentId = bson.getUUIDFieldArray("parents")[0];
+			if (bson.hasField(REPO_NODE_LABEL_PARENTS)) {
+				auto parentId = bson.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS)[0];
 
 				if (childNodeMap.contains(parentId)) {
 					childNodeMap.at(parentId).push_back(bson);
@@ -269,8 +269,8 @@ void MultipartOptimizer::traverseTransformTree(
 		matStack.pop();
 
 		// Get node information
-		auto nodeId = topBson.getUUIDField("shared_id");
-		auto matrix = topBson.getMatrixField("matrix");
+		auto nodeId = topBson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);
+		auto matrix = topBson.getMatrixField(REPO_NODE_LABEL_MATRIX);
 
 		// Apply the node's trnsaformation
 		auto newMat = matrix * topMat;
@@ -298,8 +298,8 @@ MultipartOptimizer::MaterialPropMap& MultipartOptimizer::getAllMaterials(
 	repo::lib::RepoUUID revId)
 {
 	repo::core::handler::database::query::RepoQueryBuilder filter;
-	filter.append(repo::core::handler::database::query::Eq("rev_id", revId));
-	filter.append(repo::core::handler::database::query::Eq("type", "material"));
+	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));
+	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_MATERIAL));
 
 	auto materialBsons = handler->findAllByCriteria(database, collection, filter);
 
@@ -307,34 +307,34 @@ MultipartOptimizer::MaterialPropMap& MultipartOptimizer::getAllMaterials(
 	for (auto &materialBson : materialBsons) {
 		
 		// Create material struct
-		repo::lib::RepoUUID uniqueId = materialBson.getUUIDField("_id");
+		repo::lib::RepoUUID uniqueId = materialBson.getUUIDField(REPO_NODE_LABEL_ID);
 		auto material = std::make_shared<std::pair<repo::lib::RepoUUID, repo_material_t>>();
 
 		// Fill material struct with values
-		if (materialBson.hasField("ambient"))
-			material->second.ambient = materialBson.getColourField("ambient");
-		if (materialBson.hasField("diffuse"))
-			material->second.diffuse = materialBson.getColourField("diffuse");
-		if (materialBson.hasField("specular"))
-			material->second.specular = materialBson.getColourField("specular");
-		if (materialBson.hasField("emissive"))
-			material->second.emissive = materialBson.getColourField("emissive");
-		if (materialBson.hasField("opacity"))
-			material->second.opacity = materialBson.getDoubleField("opacity");
-		if (materialBson.hasField("shininess"))
-			material->second.shininess = materialBson.getDoubleField("shininess");
-		if (materialBson.hasField("shininessStrength"))
-			material->second.shininessStrength = materialBson.getDoubleField("shininessStrength");
-		if (materialBson.hasField("lineWeight"))
-			material->second.lineWeight = materialBson.getDoubleField("lineWeight");
-		if (materialBson.hasField("isWireframe"))
-			material->second.isWireframe = materialBson.getBoolField("isWireframe");
-		if (materialBson.hasField("isTwoSided"))
-			material->second.opacity = materialBson.getBoolField("isTwoSided");
+		if (materialBson.hasField(REPO_NODE_MATERIAL_LABEL_AMBIENT))
+			material->second.ambient = materialBson.getColourField(REPO_NODE_MATERIAL_LABEL_AMBIENT);
+		if (materialBson.hasField(REPO_NODE_MATERIAL_LABEL_DIFFUSE))
+			material->second.diffuse = materialBson.getColourField(REPO_NODE_MATERIAL_LABEL_DIFFUSE);
+		if (materialBson.hasField(REPO_NODE_MATERIAL_LABEL_SPECULAR))
+			material->second.specular = materialBson.getColourField(REPO_NODE_MATERIAL_LABEL_SPECULAR);
+		if (materialBson.hasField(REPO_NODE_MATERIAL_LABEL_EMISSIVE))
+			material->second.emissive = materialBson.getColourField(REPO_NODE_MATERIAL_LABEL_EMISSIVE);
+		if (materialBson.hasField(REPO_NODE_MATERIAL_LABEL_OPACITY))
+			material->second.opacity = materialBson.getDoubleField(REPO_NODE_MATERIAL_LABEL_OPACITY);
+		if (materialBson.hasField(REPO_NODE_MATERIAL_LABEL_SHININESS))
+			material->second.shininess = materialBson.getDoubleField(REPO_NODE_MATERIAL_LABEL_SHININESS);
+		if (materialBson.hasField(REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH))
+			material->second.shininessStrength = materialBson.getDoubleField(REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH);
+		if (materialBson.hasField(REPO_NODE_MATERIAL_LABEL_LINE_WEIGHT))
+			material->second.lineWeight = materialBson.getDoubleField(REPO_NODE_MATERIAL_LABEL_LINE_WEIGHT);
+		if (materialBson.hasField(REPO_NODE_MATERIAL_LABEL_WIREFRAME))
+			material->second.isWireframe = materialBson.getBoolField(REPO_NODE_MATERIAL_LABEL_WIREFRAME);
+		if (materialBson.hasField(REPO_NODE_MATERIAL_LABEL_TWO_SIDED))
+			material->second.opacity = materialBson.getBoolField(REPO_NODE_MATERIAL_LABEL_TWO_SIDED);
 
 		// Go over the parents and add the pointer for each so that the map can be used to lookup
 		// the material for a given meshNode
-		auto parents = materialBson.getUUIDFieldArray("parents");
+		auto parents = materialBson.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
 		for (auto parent : parents) {
 			matMap.insert({ parent, material });
 		}
@@ -351,12 +351,12 @@ std::vector<repo::lib::RepoUUID> MultipartOptimizer::getAllTextureIds(
 
 	// Create filter
 	repo::core::handler::database::query::RepoQueryBuilder filter;
-	filter.append(repo::core::handler::database::query::Eq("rev_id", revId));
-	filter.append(repo::core::handler::database::query::Eq("type", "texture"));
+	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));
+	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_TEXTURE));
 
 	repo::core::handler::database::query::RepoProjectionBuilder projection;
-	projection.excludeField("_id");
-	projection.includeField("shared_id");
+	projection.excludeField(REPO_NODE_LABEL_ID);
+	projection.includeField(REPO_NODE_LABEL_SHARED_ID);
 
 	std::vector<repo::lib::RepoUUID> texIds;
 
@@ -366,7 +366,7 @@ std::vector<repo::lib::RepoUUID> MultipartOptimizer::getAllTextureIds(
 	if (success) {
 		for (auto document : (*cursor)) {
 			auto bson = repo::core::model::RepoBSON(document);
-			texIds.push_back(bson.getUUIDField("shared_id"));
+			texIds.push_back(bson.getUUIDField(REPO_NODE_LABEL_SHARED_ID));
 		}
 	}	
 	else {
@@ -389,12 +389,12 @@ void MultipartOptimizer::ProcessUntexturedGroup(
 {
 	// Create filter
 	repo::core::handler::database::query::RepoQueryBuilder filter;
-	filter.append(repo::core::handler::database::query::Eq("rev_id", revId));
-	filter.append(repo::core::handler::database::query::Eq("primitive", primitive));
+	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));
+	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_PRIMITIVE, primitive));
 	if (isOpaque)
-		filter.append(repo::core::handler::database::query::Eq("materialProperties.isOpaque", true));
+		filter.append(repo::core::handler::database::query::Eq(REPO_FILTER_TAG_OPAQUE, true));
 	else
-		filter.append(repo::core::handler::database::query::Eq("materialProperties.isTransparent", true));
+		filter.append(repo::core::handler::database::query::Eq(REPO_FILTER_TAG_TRANSPARENT, true));
 
 	// Build BVH tree and cluster nodes
 	auto clusters = buildBVHAndCluster(
@@ -421,8 +421,8 @@ void MultipartOptimizer::ProcessTexturedGroup(
 {
 	// Create filter
 	repo::core::handler::database::query::RepoQueryBuilder filter;
-	filter.append(repo::core::handler::database::query::Eq("rev_id", revId));	
-	filter.append(repo::core::handler::database::query::Eq("materialProperties.textureId", texId));
+	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));	
+	filter.append(repo::core::handler::database::query::Eq(REPO_FILTER_TAG_TEXTURE_ID, texId));
 	
 
 	// Build BVH tree and cluster nodes
@@ -446,11 +446,11 @@ std::vector<std::vector<std::shared_ptr<MultipartOptimizer::StreamingMeshNode>>>
 ) {
 	// Create projection
 	repo::core::handler::database::query::RepoProjectionBuilder projection;
-	projection.excludeField("_id");
-	projection.includeField("shared_id");
-	projection.includeField("bounding_box");
-	projection.includeField("vertices_count");
-	projection.includeField("parents");
+	projection.excludeField(REPO_NODE_LABEL_ID);
+	projection.includeField(REPO_NODE_LABEL_SHARED_ID);
+	projection.includeField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
+	projection.includeField(REPO_NODE_MESH_LABEL_VERTICES_COUNT);
+	projection.includeField(REPO_NODE_LABEL_PARENTS);
 
 	// Get cursor
 	std::shared_ptr<repo::core::handler::database::Cursor> cursor;
@@ -513,17 +513,17 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 		}
 
 		// Create filter
-		auto filter = repo::core::handler::database::query::Eq("shared_id", clusterIds);
+		auto filter = repo::core::handler::database::query::Eq(REPO_NODE_LABEL_SHARED_ID, clusterIds);
 
 		// Create projection
 		repo::core::handler::database::query::RepoProjectionBuilder projection;
-		projection.excludeField("_id");
-		projection.includeField("shared_id");
-		projection.includeField("vertices_count");
-		projection.includeField("faces_count");
-		projection.includeField("uv_channels_count");
-		projection.includeField("primitive");
-		projection.includeField("_blobRef");
+		projection.excludeField(REPO_NODE_LABEL_ID);
+		projection.includeField(REPO_NODE_LABEL_SHARED_ID);
+		projection.includeField(REPO_NODE_MESH_LABEL_VERTICES_COUNT);
+		projection.includeField(REPO_NODE_MESH_LABEL_FACES_COUNT);
+		projection.includeField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT);
+		projection.includeField(REPO_NODE_MESH_LABEL_PRIMITIVE);
+		projection.includeField(REPO_LABEL_BINARY_REFERENCE);
 
 		auto binNodes = handler->findAllByCriteria(database, collection, filter, projection);
 
@@ -536,7 +536,7 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 		for (auto& nodeBson : binNodes) {
 
 			// Find streamed node
-			auto sharedId = nodeBson.getUUIDField("shared_id");
+			auto sharedId = nodeBson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);
 			auto& sNode = clusterMap.at(sharedId);
 
 			// Load geometry for this node.

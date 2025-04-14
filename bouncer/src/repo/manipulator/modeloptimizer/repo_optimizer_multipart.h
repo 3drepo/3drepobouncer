@@ -44,11 +44,7 @@ namespace repo {
 
 				typedef float Scalar;
 				typedef bvh::Bvh<Scalar> Bvh;
-				typedef bvh::Vector3<Scalar> BvhVector3;				
-
-				//using Scalar = float;
-				//using Bvh = bvh::Bvh<Scalar>;
-				//using BvhVector3 = bvh::Vector3<Scalar>;
+				typedef bvh::Vector3<Scalar> BvhVector3;
 
 			public:
 				
@@ -91,7 +87,7 @@ namespace repo {
 						SupermeshingData(repo::core::model::RepoBSON& bson, std::vector<uint8_t>& buffer)
 						{
 
-							this->uniqueId = bson.getUUIDField("_id");
+							this->uniqueId = bson.getUUIDField(REPO_NODE_LABEL_ID);
 
 							deserialise(bson, buffer);
 						}
@@ -136,26 +132,26 @@ namespace repo {
 							repo::core::model::RepoBSON& bson,
 							std::vector<uint8_t>& buffer)
 						{
-							auto blobRefBson = bson.getObjectField("_blobRef");
-							auto elementsBson = blobRefBson.getObjectField("elements");
+							auto blobRefBson = bson.getObjectField(REPO_LABEL_BINARY_REFERENCE);
+							auto elementsBson = blobRefBson.getObjectField(REPO_LABEL_BINARY_ELEMENTS);
 
-							if (elementsBson.hasField("vertices")) {
-								auto vertBson = elementsBson.getObjectField("vertices");
+							if (elementsBson.hasField(REPO_NODE_MESH_LABEL_VERTICES)) {
+								auto vertBson = elementsBson.getObjectField(REPO_NODE_MESH_LABEL_VERTICES);
 								deserialiseVector(vertBson, buffer, vertices);
 							}
 
-							if (elementsBson.hasField("normals")) {
-								auto vertBson = elementsBson.getObjectField("normals");
+							if (elementsBson.hasField(REPO_NODE_MESH_LABEL_NORMALS)) {
+								auto vertBson = elementsBson.getObjectField(REPO_NODE_MESH_LABEL_NORMALS);
 								deserialiseVector(vertBson, buffer, normals);
 							}
 
-							if (elementsBson.hasField("faces")) {
+							if (elementsBson.hasField(REPO_NODE_MESH_LABEL_FACES)) {
 
-								int32_t faceCount = bson.getIntField("faces_count");
+								int32_t faceCount = bson.getIntField(REPO_NODE_MESH_LABEL_FACES_COUNT);
 								faces.reserve(faceCount);
 
 								std::vector<uint32_t> serialisedFaces = std::vector<uint32_t>();
-								auto faceBson = elementsBson.getObjectField("faces");
+								auto faceBson = elementsBson.getObjectField(REPO_NODE_MESH_LABEL_FACES);
 								deserialiseVector(faceBson, buffer, serialisedFaces);
 
 								// Retrieve numbers of vertices for each face and subsequent
@@ -184,9 +180,9 @@ namespace repo {
 
 							}
 
-							if (elementsBson.hasField("uv_channels")) {
+							if (elementsBson.hasField(REPO_NODE_MESH_LABEL_UV_CHANNELS)) {
 								std::vector<repo::lib::RepoVector2D> serialisedChannels;
-								auto uvBson = elementsBson.getObjectField("uv_channels");
+								auto uvBson = elementsBson.getObjectField(REPO_NODE_MESH_LABEL_UV_CHANNELS);
 								deserialiseVector(uvBson, buffer, serialisedChannels);
 
 								if (serialisedChannels.size())
@@ -214,8 +210,8 @@ namespace repo {
 							std::vector<uint8_t>& buffer,
 							std::vector<T>& vec)
 						{
-							auto start = bson.getIntField("start");
-							auto size = bson.getIntField("size");
+							auto start = bson.getIntField(REPO_LABEL_BINARY_START);
+							auto size = bson.getIntField(REPO_LABEL_BINARY_SIZE);
 
 							vec.resize(size / sizeof(T));
 							memcpy(vec.data(), buffer.data() + (sizeof(uint8_t) * start), size);
@@ -240,18 +236,18 @@ namespace repo {
 
 					StreamingMeshNode(repo::core::model::RepoBSON bson)
 					{
-						if (bson.hasField("shared_id")) {
-							sharedId = bson.getUUIDField("shared_id");
+						if (bson.hasField(REPO_NODE_LABEL_SHARED_ID)) {
+							sharedId = bson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);
 						}
-						if (bson.hasField("vertices_count")) {
-							numVertices = bson.getIntField("vertices_count");
+						if (bson.hasField(REPO_NODE_MESH_LABEL_VERTICES_COUNT)) {
+							numVertices = bson.getIntField(REPO_NODE_MESH_LABEL_VERTICES_COUNT);
 						}
-						if (bson.hasField("parents")) {
-							auto parents = bson.getUUIDFieldArray("parents");
+						if (bson.hasField(REPO_NODE_LABEL_PARENTS)) {
+							auto parents = bson.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
 							parent = parents[0];
 						}
-						if (bson.hasField("bounding_box")) {
-							bounds = bson.getBoundsField("bounding_box");
+						if (bson.hasField(REPO_NODE_MESH_LABEL_BOUNDING_BOX)) {
+							bounds = bson.getBoundsField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
 						}
 					}
 
