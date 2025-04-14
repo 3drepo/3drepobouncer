@@ -3503,3 +3503,319 @@ TEST(Sandbox, GeomdataSingle) {
 		}
 	}
 }
+
+class StreamingMeshNode {
+
+
+	class SupermeshingData {
+
+		repo::lib::RepoUUID uniqueId;
+
+		// Geometry
+		std::vector<repo::lib::RepoVector3D> vertices;
+		std::vector<repo::lib::repo_face_t> faces;
+		std::vector<repo::lib::RepoVector3D> normals;
+
+	public:
+		SupermeshingData(repo::core::model::RepoBSON& bson, std::vector<uint8_t>& buffer)
+		{
+
+			this->uniqueId = bson.getUUIDField("_id");
+
+			deserialise(bson, buffer);
+		}
+
+		repo::lib::RepoUUID getUniqueId() const {
+			return uniqueId;
+		}
+
+		std::uint32_t getNumFaces() const {
+			return faces.size();
+		}
+		std::vector<repo::lib::repo_face_t>& getFaces()
+		{
+			return faces;
+		}
+
+		std::uint32_t getNumVertices() const {
+			return vertices.size();
+		}
+		const std::vector<repo::lib::RepoVector3D>& getVertices() const {
+			return vertices;
+		}
+
+		const std::vector<repo::lib::RepoVector3D>& getNormals() const
+		{
+			return normals;
+		}
+
+	private:
+		void deserialise(
+			repo::core::model::RepoBSON& bson,
+			std::vector<uint8_t>& buffer)
+		{
+			auto blobRefBson = bson.getObjectField("_blobRef");
+			auto elementsBson = blobRefBson.getObjectField("elements");
+
+			if (elementsBson.hasField("vertices")) {
+				auto vertBson = elementsBson.getObjectField("vertices");
+				deserialiseVector(vertBson, buffer, vertices);
+			}
+
+			if (elementsBson.hasField("normals")) {
+				auto vertBson = elementsBson.getObjectField("normals");
+				deserialiseVector(vertBson, buffer, normals);
+			}
+
+			if (elementsBson.hasField("faces")) {
+
+				int32_t faceCount = bson.getIntField("faces_count");
+				faces.reserve(faceCount);
+
+				std::vector<uint32_t> serialisedFaces = std::vector<uint32_t>();
+				auto faceBson = elementsBson.getObjectField("faces");
+				deserialiseVector(faceBson, buffer, serialisedFaces);
+
+				// Retrieve numbers of vertices for each face and subsequent
+				// indices into the vertex array.
+				// In API level 1, mesh is represented as
+				// [n1, v1, v2, ..., n2, v1, v2...]
+
+				int mNumIndicesIndex = 0;
+				while (serialisedFaces.size() > mNumIndicesIndex)
+				{
+					int mNumIndices = serialisedFaces[mNumIndicesIndex];
+					if (serialisedFaces.size() > mNumIndicesIndex + mNumIndices)
+					{
+						repo::lib::repo_face_t face;
+						face.resize(mNumIndices);
+						for (int i = 0; i < mNumIndices; ++i)
+							face[i] = serialisedFaces[mNumIndicesIndex + 1 + i];
+						faces.push_back(face);
+						mNumIndicesIndex += mNumIndices + 1;
+					}
+					else
+					{
+						repoError << "Cannot copy all faces. Buffer size is smaller than expected!";
+					}
+				}
+
+			}
+		}
+
+		template <class T>
+		void deserialiseVector(
+			repo::core::model::RepoBSON& bson,
+			std::vector<uint8_t>& buffer,
+			std::vector<T>& vec)
+		{
+			auto start = bson.getIntField("start");
+			auto size = bson.getIntField("size");
+
+			vec.resize(size / sizeof(T));
+			memcpy(vec.data(), buffer.data() + (sizeof(uint8_t) * start), size);
+		}
+	};
+
+
+
+	repo::lib::RepoUUID sharedId;
+	std::uint32_t numVertices = 0;
+	repo::lib::RepoUUID parent;
+	repo::lib::RepoBounds bounds;
+
+	std::unique_ptr<SupermeshingData> supermeshingData;
+	
+
+public:
+	StreamingMeshNode(repo::core::model::RepoBSON bson)
+	{
+		if (bson.hasField("shared_id")) {
+			sharedId = bson.getUUIDField("shared_id");
+		}
+		if (bson.hasField("vertices_count")) {
+			numVertices = bson.getIntField("vertices_count");
+		}
+		if (bson.hasField("parents")) {
+			auto parents = bson.getUUIDFieldArray("parents");
+			parent = parents[0];
+		}
+		if (bson.hasField("bounding_box")) {
+			bounds = bson.getBoundsField("bounding_box");
+		}
+	}
+
+	bool supermeshingDataLoaded() {
+		return supermeshingData != nullptr;
+	}
+
+	void LoadSupermeshingData(repo::core::model::RepoBSON bson, std::vector<uint8_t>& buffer) {
+		if (supermeshingDataLoaded())
+		{
+			// Throw warning
+		}
+
+		supermeshingData = std::make_unique<SupermeshingData>(bson, buffer);
+	}
+
+	void UnloadSupermeshingData() {
+		supermeshingData.reset();
+	}
+
+	repo::lib::RepoUUID getSharedId() const {
+		return sharedId;
+	}
+
+	std::uint32_t getNumVertices() const
+	{
+		return numVertices;
+	}
+
+	repo::lib::RepoBounds getBoundingBox() const
+	{
+		return bounds;
+	}
+
+	repo::lib::RepoUUID getParent() const
+	{
+		return parent;
+	}
+
+	// Requiring the supermeshing data to be loaded
+
+	repo::lib::RepoUUID getUniqueId() {
+		if (supermeshingDataLoaded()) {
+			return supermeshingData->getUniqueId();
+		}
+		else {
+			// Throw error
+			throw std::exception("Supermesh data not loaded");
+		}
+	}
+
+	std::uint32_t getNumFaces() {
+		if (supermeshingDataLoaded()) {
+			return supermeshingData->getNumFaces();
+		}
+		else {
+			// Throw error
+			throw std::exception("Supermesh data not loaded");
+		}
+	}
+
+	std::vector<repo::lib::repo_face_t>& getFaces()
+	{
+		if (supermeshingDataLoaded()) {
+			return supermeshingData->getFaces();
+		}
+		else {
+			// Throw error			
+			throw std::exception("Supermesh data not loaded");
+		}
+	}
+
+	std::uint32_t getNumVertices() {
+		if (supermeshingDataLoaded()) {
+			return supermeshingData->getNumVertices();
+		}
+		else {
+			// Throw error
+			throw std::exception("Supermesh data not loaded");
+		}
+	}
+	const std::vector<repo::lib::RepoVector3D>& getVertices() {
+		if (supermeshingDataLoaded()) {
+			return supermeshingData->getVertices();
+		}
+		else {
+			// Throw error			
+			throw std::exception("Supermesh data not loaded");
+		}
+	}
+
+	const std::vector<repo::lib::RepoVector3D>& getNormals()
+	{
+		if (supermeshingDataLoaded()) {
+			return supermeshingData->getNormals();
+		}
+		else {
+			// Throw error			
+			throw std::exception("Supermesh data not loaded");
+		}
+	}
+};
+
+TEST(Sandbox, StreamingMeshNodeTest) {
+
+	std::shared_ptr<FileManager> fileManager;
+	auto handler = getLocalHandler(fileManager);
+
+	std::string database = "fthiel";
+	// XXL Model
+	std::string collection = "624bc24b-00b8-4434-ac21-e73fb819b529.scene";
+	repo::lib::RepoUUID revId = repo::lib::RepoUUID("63752F30-0EB9-4090-8233-AE1B63B86E32");
+
+	// select mesh node with a lot of geometry
+	repo::lib::RepoUUID nodeId = repo::lib::RepoUUID("42EAF9FE-6D5B-47DE-A248-CCB28EF7421E");
+
+	// Get data for clustering phase first
+
+	repo::core::handler::database::query::Eq filter1("shared_id", nodeId);
+	
+	repo::core::handler::database::query::RepoProjectionBuilder projection1;
+	projection1.excludeField("_id");
+	projection1.includeField("shared_id");
+	projection1.includeField("bounding_box");
+	projection1.includeField("vertices_count");
+	projection1.includeField("parents");
+
+	auto results1 = handler->findAllByCriteria(database, collection, filter1, projection1);
+	auto bson1 = results1[0];
+
+	// Create node with these original data
+	StreamingMeshNode sNode = StreamingMeshNode(bson1);
+
+	// This is where we measure the memory for the first time
+	auto sid = sNode.getSharedId();
+
+
+	// Now get data for supermeshing phase
+
+	// Create filter
+	auto filter2 = repo::core::handler::database::query::Eq("shared_id", nodeId);
+
+	// Create projection
+	repo::core::handler::database::query::RepoProjectionBuilder projection2;
+	projection2.excludeField("_id");
+	projection2.includeField("shared_id");
+	projection2.includeField("vertices_count");
+	projection2.includeField("faces_count");
+	projection2.includeField("_blobRef");
+
+	auto results2 = handler->findAllByCriteria(database, collection, filter2, projection2);
+	auto bson2 = results2[0];
+
+	fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
+	{
+		auto binRef = bson2.getBinaryReference();
+		auto buffer = blobHandler.readToBuffer(repo::core::handler::fileservice::DataRef::deserialise(binRef));
+		sNode.LoadSupermeshingData(bson2, buffer);
+	}
+	// This is where we measure the memory for the second time
+	int vertNum = sNode.getNumVertices();
+	int faceNum = sNode.getNumFaces();
+	EXPECT_THAT(vertNum, Eq(8529013));
+	EXPECT_THAT(faceNum, Eq(2927089));
+
+	// Now unload the geometry data again
+	sNode.UnloadSupermeshingData();
+
+	// This is where we measure the memory for the third time
+
+
+	repo::lib::RepoUUID sid2 = sNode.getSharedId();
+
+	Sleep(3000);
+
+	repo::lib::RepoUUID sid3 = sNode.getSharedId();	
+}
