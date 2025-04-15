@@ -231,7 +231,7 @@ bool SceneManager::generateWebViewBuffers(
 			
 
 			repo::manipulator::modeloptimizer::MultipartOptimizer mpOpt;
-			mpOpt.ProcessScene(
+			mpOpt.processScene(
 				scene->getDatabaseName(),
 				scene->getProjectName(),
 				scene->getRevisionID(),

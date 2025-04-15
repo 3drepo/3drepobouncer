@@ -53,7 +53,7 @@ static const size_t REPO_MODEL_LOW_CLUSTERING_RATIO = 0.2f;
 
 #define CHRONO_DURATION(start) std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count()
 
-void MultipartOptimizer::ProcessScene(
+void MultipartOptimizer::processScene(
 	std::string database,
 	std::string collection,
 	repo::lib::RepoUUID revId,
@@ -116,7 +116,7 @@ void MultipartOptimizer::ProcessScene(
 	auto matPropMap = getAllMaterials(handler, database, collection, revId);
 
 	// Process Group (Opaque, prim 2)
-	ProcessUntexturedGroup(
+	processUntexturedGroup(
 		database,
 		collection,
 		revId,
@@ -129,7 +129,7 @@ void MultipartOptimizer::ProcessScene(
 	);
 
 	// Process Group (Opaque, prim 3)
-	ProcessUntexturedGroup(
+	processUntexturedGroup(
 		database,
 		collection,
 		revId,
@@ -142,7 +142,7 @@ void MultipartOptimizer::ProcessScene(
 	);
 
 	// Process Group (Transparent, prim 2)
-	ProcessUntexturedGroup(
+	processUntexturedGroup(
 		database,
 		collection,
 		revId,
@@ -155,7 +155,7 @@ void MultipartOptimizer::ProcessScene(
 	);
 
 	// Process Group (Transparent, prim 3)
-	ProcessUntexturedGroup(
+	processUntexturedGroup(
 		database,
 		collection,
 		revId,
@@ -172,7 +172,7 @@ void MultipartOptimizer::ProcessScene(
 
 	// Process each texture group
 	for (auto texId : texIds) {
-		ProcessTexturedGroup(
+		processTexturedGroup(
 			database,
 			collection,
 			revId,
@@ -190,9 +190,9 @@ void MultipartOptimizer::ProcessScene(
 
 std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> MultipartOptimizer::getAllTransforms(
 	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-	std::string database,
-	std::string collection,
-	repo::lib::RepoUUID revId
+	const std::string &database,
+	const std::string &collection,
+	const repo::lib::RepoUUID &revId
 )
 {
 
@@ -240,12 +240,9 @@ std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUU
 }
 
 void MultipartOptimizer::traverseTransformTree(
-	const repo::core::model::RepoBSON root,
-	const std::unordered_map<repo::lib::RepoUUID,
-	std::vector<repo::core::model::RepoBSON>,
-	repo::lib::RepoUUIDHasher> childNodeMap,
-	std::unordered_map<repo::lib::RepoUUID,
-	repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher>& leafTransforms)
+	const repo::core::model::RepoBSON &root,
+	const std::unordered_map<repo::lib::RepoUUID, std::vector<repo::core::model::RepoBSON>,	repo::lib::RepoUUIDHasher> &childNodeMap,
+	std::unordered_map<repo::lib::RepoUUID,	repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> &leafTransforms)
 {
 
 	// Create stacks for the nodes and the matrices
@@ -293,9 +290,9 @@ void MultipartOptimizer::traverseTransformTree(
 
 MultipartOptimizer::MaterialPropMap& MultipartOptimizer::getAllMaterials(
 	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-	std::string database,
-	std::string collection,
-	repo::lib::RepoUUID revId)
+	const std::string &database,
+	const std::string &collection,
+	const repo::lib::RepoUUID &revId)
 {
 	repo::core::handler::database::query::RepoQueryBuilder filter;
 	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));
@@ -345,9 +342,9 @@ MultipartOptimizer::MaterialPropMap& MultipartOptimizer::getAllMaterials(
 
 std::vector<repo::lib::RepoUUID> MultipartOptimizer::getAllTextureIds(
 	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-	std::string database,
-	std::string collection,
-	repo::lib::RepoUUID revId) {
+	const std::string &database,
+	const std::string &collection,
+	const repo::lib::RepoUUID &revId) {
 
 	// Create filter
 	repo::core::handler::database::query::RepoQueryBuilder filter;
@@ -376,10 +373,10 @@ std::vector<repo::lib::RepoUUID> MultipartOptimizer::getAllTextureIds(
 	return texIds;
 }
 
-void MultipartOptimizer::ProcessUntexturedGroup(
-	const std::string database,
-	const std::string collection,
-	const repo::lib::RepoUUID revId,
+void MultipartOptimizer::processUntexturedGroup(
+	const std::string &database,
+	const std::string &collection,
+	const repo::lib::RepoUUID &revId,
 	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
 	std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
 	const TransformMap& transformMap,
@@ -409,10 +406,10 @@ void MultipartOptimizer::ProcessUntexturedGroup(
 	
 }
 
-void MultipartOptimizer::ProcessTexturedGroup(
-	const std::string database,
-	const std::string collection,
-	const repo::lib::RepoUUID revId,
+void MultipartOptimizer::processTexturedGroup(
+	const std::string &database,
+	const std::string &collection,
+	const repo::lib::RepoUUID &revId,
 	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
 	std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
 	const TransformMap& transformMap,
@@ -438,11 +435,11 @@ void MultipartOptimizer::ProcessTexturedGroup(
 }
 
 std::vector<std::vector<std::shared_ptr<MultipartOptimizer::StreamingMeshNode>>> MultipartOptimizer::buildBVHAndCluster(
-	const std::string database,
-	const std::string collection,
+	const std::string &database,
+	const std::string &collection,
 	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
 	const TransformMap& transformMap,
-	const repo::core::handler::database::query::RepoQuery& filter
+	const repo::core::handler::database::query::RepoQuery filter
 ) {
 	// Create projection
 	repo::core::handler::database::query::RepoProjectionBuilder projection;
@@ -489,14 +486,14 @@ std::vector<std::vector<std::shared_ptr<MultipartOptimizer::StreamingMeshNode>>>
 }
 
 void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
-	const std::string database,
-	const std::string collection,
+	const std::string &database,
+	const std::string &collection,
 	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
 	std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
 	const TransformMap& transformMap,
 	const MaterialPropMap& matPropMap,
-	std::vector<std::vector<std::shared_ptr<StreamingMeshNode>>>& clusters,
-	repo::lib::RepoUUID texId /* = repo::lib::RepoUUID() */)
+	const std::vector<std::vector<std::shared_ptr<StreamingMeshNode>>>& clusters,
+	const repo::lib::RepoUUID &texId /* = repo::lib::RepoUUID() */)
 {
 	// Get blobHandler
 	repo::core::handler::fileservice::BlobFilesHandler blobHandler(handler->getFileManager(), database, collection);
@@ -544,7 +541,7 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 			{
 				auto binRef = nodeBson.getBinaryReference();
 				auto buffer = blobHandler.readToBuffer(repo::core::handler::fileservice::DataRef::deserialise(binRef));
-				sNode->LoadSupermeshingData(nodeBson, buffer);
+				sNode->loadSupermeshingData(nodeBson, buffer);
 			}
 			
 			// Bake the streaming mesh node by applying the transformation to the vertices
@@ -571,7 +568,7 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 			}
 
 			// Unload the streaming node
-			sNode->UnloadSupermeshingData();
+			sNode->unloadSupermeshingData();
 
 		}
 
@@ -585,7 +582,7 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 
 void MultipartOptimizer::createSuperMesh(
 	std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
-	mapped_mesh_t& mappedMesh)
+	const mapped_mesh_t& mappedMesh)
 {
 	// Create supermesh node
 	auto supermeshNode = createSupermeshNode(mappedMesh);
@@ -594,9 +591,9 @@ void MultipartOptimizer::createSuperMesh(
 }
 
 std::vector<double> MultipartOptimizer::getWorldOffset(
-	std::string database,
-	std::string collection,
-	repo::lib::RepoUUID revId,
+	const std::string &database,
+	const std::string &collection,
+	const repo::lib::RepoUUID &revId,
 	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler)
 {
 	auto bson = handler->findOneByUniqueID(database, collection + "." + REPO_COLLECTION_HISTORY, revId);
@@ -610,9 +607,9 @@ std::vector<double> MultipartOptimizer::getWorldOffset(
 
 void MultipartOptimizer::appendMesh(	
 	std::shared_ptr<StreamingMeshNode> node,
-	const MaterialPropMap& matPropMap,
-	mapped_mesh_t& mapped,
-	repo::lib::RepoUUID texId
+	const MaterialPropMap &matPropMap,
+	mapped_mesh_t &mapped,
+	const repo::lib::RepoUUID &texId
 )
 {
 	repo_mesh_mapping_t meshMap;
@@ -734,8 +731,8 @@ MultipartOptimizer::Bvh MultipartOptimizer::buildFacesBvh(
 
 void MultipartOptimizer::flattenBvh(
 	const Bvh& bvh,
-	std::vector<size_t>& leaves,
-	std::vector<size_t>& branches
+	std::vector<size_t> &leaves,
+	std::vector<size_t> &branches
 )
 {
 	std::queue<size_t> nodeQueue; // Using a queue instead of a stack means the child nodes are handled later, resulting in a breadth first traversal
@@ -850,8 +847,8 @@ std::vector<std::set<uint32_t>> MultipartOptimizer::getUniqueVertices(
 // them in total.
 
 std::vector<size_t> MultipartOptimizer::getSupermeshBranchNodes(
-	const Bvh& bvh,
-	std::vector<size_t> vertexCounts)
+	const Bvh &bvh,
+	const std::vector<size_t> &vertexCounts)
 {
 	std::vector<size_t> branchNodes;
 	std::stack<size_t> nodeStack;
@@ -884,8 +881,8 @@ std::vector<size_t> MultipartOptimizer::getSupermeshBranchNodes(
 void MultipartOptimizer::splitMesh(
 	std::shared_ptr<StreamingMeshNode> node,
 	std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
-	const MaterialPropMap& matPropMap,
-	repo::lib::RepoUUID texId
+	const MaterialPropMap &matPropMap,
+	const repo::lib::RepoUUID &texId
 )
 {
 	// The purpose of this method is to split large MeshNodes into smaller ones.
@@ -1041,7 +1038,7 @@ void MultipartOptimizer::splitMesh(
 
 
 repo::core::model::SupermeshNode* MultipartOptimizer::createSupermeshNode(
-	const mapped_mesh_t& mapped
+	const mapped_mesh_t &mapped
 )
 {
 	if (!mapped.meshMapping.size())

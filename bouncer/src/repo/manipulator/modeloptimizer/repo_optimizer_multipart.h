@@ -48,7 +48,7 @@ namespace repo {
 
 			public:
 				
-				void ProcessScene(
+				void processScene(
 					std::string database,
 					std::string collection,
 					repo::lib::RepoUUID revId,
@@ -72,7 +72,6 @@ namespace repo {
 				// TODO: Is this in the right place here?
 				class StreamingMeshNode {
 
-
 					class SupermeshingData {
 
 						repo::lib::RepoUUID uniqueId;
@@ -84,7 +83,9 @@ namespace repo {
 						std::vector<std::vector<repo::lib::RepoVector2D>> channels;
 
 					public:
-						SupermeshingData(repo::core::model::RepoBSON& bson, std::vector<uint8_t>& buffer)
+						SupermeshingData(
+							const repo::core::model::RepoBSON& bson,
+							const std::vector<uint8_t>& buffer)
 						{
 
 							this->uniqueId = bson.getUUIDField(REPO_NODE_LABEL_ID);
@@ -111,7 +112,7 @@ namespace repo {
 							return vertices;
 						}
 
-						void bakeVertices(repo::lib::RepoMatrix transform) {
+						void bakeVertices(const repo::lib::RepoMatrix& transform) {
 							for (int i = 0; i < vertices.size(); i++) {
 								vertices[i] = transform * vertices[i];
 							}
@@ -129,8 +130,8 @@ namespace repo {
 
 					private:
 						void deserialise(
-							repo::core::model::RepoBSON& bson,
-							std::vector<uint8_t>& buffer)
+							const repo::core::model::RepoBSON& bson,
+							const std::vector<uint8_t>& buffer)
 						{
 							auto blobRefBson = bson.getObjectField(REPO_LABEL_BINARY_REFERENCE);
 							auto elementsBson = blobRefBson.getObjectField(REPO_LABEL_BINARY_ELEMENTS);
@@ -206,8 +207,8 @@ namespace repo {
 
 						template <class T>
 						void deserialiseVector(
-							repo::core::model::RepoBSON& bson,
-							std::vector<uint8_t>& buffer,
+							const repo::core::model::RepoBSON& bson,
+							const std::vector<uint8_t>& buffer,
 							std::vector<T>& vec)
 						{
 							auto start = bson.getIntField(REPO_LABEL_BINARY_START);
@@ -234,7 +235,7 @@ namespace repo {
 						// Default constructor so instances can be initialised for vectors
 					}
 
-					StreamingMeshNode(repo::core::model::RepoBSON bson)
+					StreamingMeshNode(const repo::core::model::RepoBSON& bson)
 					{
 						if (bson.hasField(REPO_NODE_LABEL_SHARED_ID)) {
 							sharedId = bson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);
@@ -255,16 +256,19 @@ namespace repo {
 						return supermeshingData != nullptr;
 					}
 
-					void LoadSupermeshingData(repo::core::model::RepoBSON bson, std::vector<uint8_t>& buffer) {
+					void loadSupermeshingData(
+						const repo::core::model::RepoBSON &bson,
+						const std::vector<uint8_t>& buffer) {
 						if (supermeshingDataLoaded())
-						{
-							// Throw warning
+						{							
+							repoWarning << "StreamingMeshNode instructed to load geometry data, but geometry data is already loaded.";
+							unloadSupermeshingData();
 						}
 
 						supermeshingData = std::make_unique<SupermeshingData>(bson, buffer);
 					}
 
-					void UnloadSupermeshingData() {
+					void unloadSupermeshingData() {
 						supermeshingData.reset();
 					}
 
@@ -287,7 +291,7 @@ namespace repo {
 						return parent;
 					}
 
-					void transformBounds(repo::lib::RepoMatrix transform) {
+					void transformBounds(const repo::lib::RepoMatrix &transform) {
 						auto newMinBound = transform * bounds.min();
 						auto newMaxBound = transform * bounds.max();
 						bounds = repo::lib::RepoBounds(newMinBound, newMaxBound);
@@ -300,8 +304,8 @@ namespace repo {
 							return supermeshingData->getUniqueId();
 						}
 						else {
-							// Throw error
-							throw std::exception("Supermesh data not loaded");
+							repoError << "Tried to access supermesh geometry of StreamingMeshNode without loading geometry first. Empty returned.";
+							return repo::lib::RepoUUID();
 						}
 					}
 
@@ -310,19 +314,19 @@ namespace repo {
 							return supermeshingData->getNumFaces();
 						}
 						else {
-							// Throw error
-							throw std::exception("Supermesh data not loaded");
+							repoError << "Tried to access supermesh geometry of StreamingMeshNode without loading geometry first. Empty returned.";
+							return 0;
 						}
 					}
 
-					std::vector<repo::lib::repo_face_t>& getFaces()
+					const std::vector<repo::lib::repo_face_t>& getFaces()
 					{
 						if (supermeshingDataLoaded()) {
 							return supermeshingData->getFaces();
 						}
 						else {
-							// TODO FT: Throw proper error			
-							throw std::exception("Supermesh data not loaded");
+							repoError << "Tried to access supermesh geometry of StreamingMeshNode without loading geometry first. Empty returned.";
+							return std::vector<repo::lib::repo_face_t>();
 						}
 					}
 
@@ -330,9 +334,9 @@ namespace repo {
 						if (supermeshingDataLoaded()) {
 							return supermeshingData->getNumVertices();
 						}
-						else {
-							// Throw error
-							throw std::exception("Supermesh data not loaded");
+						else {							
+							repoError << "Tried to access supermesh geometry of StreamingMeshNode without loading geometry first. Empty returned.";
+							return 0;
 						}
 					}
 					const std::vector<repo::lib::RepoVector3D>& getVertices() {
@@ -340,18 +344,17 @@ namespace repo {
 							return supermeshingData->getVertices();
 						}
 						else {
-							// Throw error			
-							throw std::exception("Supermesh data not loaded");
+							repoError << "Tried to access supermesh geometry of StreamingMeshNode without loading geometry first. Empty returned.";
+							return std::vector < repo::lib::RepoVector3D>();
 						}
 					}
 
-					void bakeVertices(repo::lib::RepoMatrix transform) {
+					void bakeVertices(const repo::lib::RepoMatrix &transform) {
 						if (supermeshingDataLoaded()) {
 							return supermeshingData->bakeVertices(transform);
 						}
-						else {
-							// Throw error			
-							throw std::exception("Supermesh data not loaded");
+						else {							
+							repoError << "Tried to access supermesh geometry of StreamingMeshNode without loading geometry first. No action performed.";
 						}
 					}
 
@@ -361,8 +364,8 @@ namespace repo {
 							return supermeshingData->getNormals();
 						}
 						else {
-							// Throw error			
-							throw std::exception("Supermesh data not loaded");
+							repoError << "Tried to access supermesh geometry of StreamingMeshNode without loading geometry first. Empty returned.";
+							return std::vector<repo::lib::RepoVector3D>();
 						}
 					}
 
@@ -372,8 +375,8 @@ namespace repo {
 							return supermeshingData->getUVChannelsSeparated();
 						}
 						else {
-							// Throw error			
-							throw std::exception("Supermesh data not loaded");
+							repoError << "Tried to access supermesh geometry of StreamingMeshNode without loading geometry first. Empty returned.";
+							return std::vector<std::vector<repo::lib::RepoVector2D>>();
 						}
 					}
 				};
@@ -385,37 +388,34 @@ namespace repo {
 
 				std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> getAllTransforms(
 					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-					std::string database,
-					std::string collection,
-					repo::lib::RepoUUID revId
+					const std::string &database,
+					const std::string &collection,
+					const repo::lib::RepoUUID &revId
 				);
 
 				void traverseTransformTree(
-					const repo::core::model::RepoBSON root,
-					const std::unordered_map<repo::lib::RepoUUID,
-					std::vector<repo::core::model::RepoBSON>,
-					repo::lib::RepoUUIDHasher> childNodeMap,
-					std::unordered_map<repo::lib::RepoUUID,
-					repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher>& leafTransforms);
+					const repo::core::model::RepoBSON &root,
+					const std::unordered_map<repo::lib::RepoUUID, std::vector<repo::core::model::RepoBSON>, repo::lib::RepoUUIDHasher> &childNodeMap,
+					std::unordered_map<repo::lib::RepoUUID,	repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> &leafTransforms);
 
 				MaterialPropMap& getAllMaterials(
 					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-					std::string database,
-					std::string collection,
-					repo::lib::RepoUUID revId
+					const std::string &database,
+					const std::string &collection,
+					const repo::lib::RepoUUID &revId
 				);
 
 				std::vector < repo::lib::RepoUUID> getAllTextureIds(
 					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-					std::string database,
-					std::string collection,
-					repo::lib::RepoUUID revId
+					const std::string &database,
+					const std::string &collection,
+					const repo::lib::RepoUUID &revId
 				);
 
-				void ProcessUntexturedGroup(
-					const std::string database,
-					const std::string collection,
-					const repo::lib::RepoUUID revId,
+				void processUntexturedGroup(
+					const std::string &database,
+					const std::string &collection,
+					const repo::lib::RepoUUID &revId,
 					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
 					std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
 					const TransformMap& transformMap,
@@ -423,10 +423,10 @@ namespace repo {
 					const bool isOpaque,
 					const int primitive);
 
-				void ProcessTexturedGroup(
-					const std::string database,
-					const std::string collection,
-					const repo::lib::RepoUUID revId,
+				void processTexturedGroup(
+					const std::string &database,
+					const std::string &collection,
+					const repo::lib::RepoUUID &revId,
 					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
 					std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
 					const TransformMap& transformMap,
@@ -434,58 +434,40 @@ namespace repo {
 					const repo::lib::RepoUUID texId);
 
 				std::vector<std::vector<std::shared_ptr<StreamingMeshNode>>> buildBVHAndCluster(
-					const std::string database,
-					const std::string collection,
+					const std::string &database,
+					const std::string &collection,
 					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
 					const TransformMap& transformMap,
-					const repo::core::handler::database::query::RepoQuery& filter
+					const repo::core::handler::database::query::RepoQuery filter
 				);
 
 				void createSuperMeshes(
-					const std::string database,
-					const std::string collection,
+					const std::string &database,
+					const std::string &collection,
 					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
 					std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
 					const TransformMap& transformMap,
 					const MaterialPropMap& matPropMap,
-					std::vector<std::vector<std::shared_ptr<StreamingMeshNode>>>& clusters,
-					repo::lib::RepoUUID texId = repo::lib::RepoUUID()
+					const std::vector<std::vector<std::shared_ptr<StreamingMeshNode>>>& clusters,
+					const repo::lib::RepoUUID &texId = repo::lib::RepoUUID()
 				);
 
 				void createSuperMesh(
 					std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
-					mapped_mesh_t& mappedMesh
+					const mapped_mesh_t& mappedMesh
 				);
 
 				std::vector<double> getWorldOffset(
-					std::string database,
-					std::string collection,
-					repo::lib::RepoUUID revId,
+					const std::string &database,
+					const std::string &collection,
+					const repo::lib::RepoUUID &revId,
 					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler);
-
-				// New implementation above this line
-
-				/*
-				* Maps between two Repo UUIDs
-				*/
-				using UUIDMap = std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>;
-
-				/*
-				* A dictionary of MaterialNodes indexed by UUIDs
-				*/
-				using MaterialMap = std::unordered_map<repo::lib::RepoUUID, repo::core::model::MaterialNode*, repo::lib::RepoUUIDHasher>;
-
-				/*
-				* A dictionary of MeshNodes indexed by UUIDs. Each UUID may map to multiple nodes.
-				*/
-				using MeshMap = std::unordered_multimap<repo::lib::RepoUUID, repo::core::model::MeshNode, repo::lib::RepoUUIDHasher>;
-
 
 				void appendMesh(					
 					std::shared_ptr<StreamingMeshNode> node,
-					const MaterialPropMap& matPropMap,
-					mapped_mesh_t& mappedMesh,
-					repo::lib::RepoUUID texId
+					const MaterialPropMap &matPropMap,
+					mapped_mesh_t &mappedMesh,
+					const repo::lib::RepoUUID &texId
 				);
 
 				Bvh buildFacesBvh(
@@ -493,9 +475,9 @@ namespace repo {
 				);
 
 				void flattenBvh(
-					const Bvh& bvh,
-					std::vector<size_t>& leaves,
-					std::vector<size_t>& branches
+					const Bvh &bvh,
+					std::vector<size_t> &leaves,
+					std::vector<size_t> &branches
 				);
 
 				std::vector<size_t> getBranchPrimitives(
@@ -515,15 +497,15 @@ namespace repo {
 				void splitMesh(
 					std::shared_ptr<StreamingMeshNode> node,
 					std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
-					const MaterialPropMap& matPropMap,
-					repo::lib::RepoUUID texId
+					const MaterialPropMap &matPropMap,
+					const repo::lib::RepoUUID &texId
 				);
 
 				/*
 				* Turns a mapped_mesh_t into a MeshNode that can be added to the database
 				*/
 				repo::core::model::SupermeshNode* createSupermeshNode(
-					const mapped_mesh_t& mapped
+					const mapped_mesh_t &mapped
 				);
 
 
@@ -549,8 +531,8 @@ namespace repo {
 				);
 
 				std::vector<size_t> getSupermeshBranchNodes(
-					const Bvh& bvh,
-					std::vector<size_t> vertexCounts);
+					const Bvh &bvh,
+					const std::vector<size_t> &vertexCounts);
 
 				void splitBigClusters(
 					std::vector<std::vector<std::shared_ptr<StreamingMeshNode>>>& clusters);
