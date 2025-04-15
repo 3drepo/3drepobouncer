@@ -393,17 +393,15 @@ void MultipartOptimizer::processUntexturedGroup(
 	else
 		filter.append(repo::core::handler::database::query::Eq(REPO_FILTER_TAG_TRANSPARENT, true));
 
-	// Build BVH tree and cluster nodes
-	auto clusters = buildBVHAndCluster(
+	// Use filter to cluster and supermesh
+	clusterAndSupermesh(
 		database,
 		collection,
 		handler,
+		exporter,
 		transformMap,
-		filter);
-
-	// Create Supermeshes
-	createSuperMeshes(database, collection, handler, exporter, transformMap, matPropMap, clusters);
-	
+		matPropMap,
+		filter);	
 }
 
 void MultipartOptimizer::processTexturedGroup(
@@ -422,24 +420,27 @@ void MultipartOptimizer::processTexturedGroup(
 	filter.append(repo::core::handler::database::query::Eq(REPO_FILTER_TAG_TEXTURE_ID, texId));
 	
 
-	// Build BVH tree and cluster nodes
-	auto clusters = buildBVHAndCluster(
+	// Use filter to cluster and supermesh
+	clusterAndSupermesh(
 		database,
 		collection,
 		handler,
+		exporter,
 		transformMap,
-		filter);
-
-	// Create Supermeshes
-	createSuperMeshes(database, collection, handler, exporter, transformMap, matPropMap, clusters, texId);
+		matPropMap,
+		filter,
+		texId);
 }
 
-std::vector<std::vector<std::shared_ptr<MultipartOptimizer::StreamingMeshNode>>> MultipartOptimizer::buildBVHAndCluster(
+void MultipartOptimizer::clusterAndSupermesh(
 	const std::string &database,
 	const std::string &collection,
 	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+	std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
 	const TransformMap& transformMap,
-	const repo::core::handler::database::query::RepoQuery filter
+	const MaterialPropMap& matPropMap,
+	const repo::core::handler::database::query::RepoQuery filter,
+	const repo::lib::RepoUUID &texId /* = repo::lib::RepoUUID() */
 ) {
 	// Create projection
 	repo::core::handler::database::query::RepoProjectionBuilder projection;
@@ -455,34 +456,37 @@ std::vector<std::vector<std::shared_ptr<MultipartOptimizer::StreamingMeshNode>>>
 
 
 	// iterate cursor and pack outcomes in lightweight mesh node structure
-	std::vector<std::shared_ptr<StreamingMeshNode>> nodes;
+	std::vector<StreamingMeshNode> nodes;
 	if (success) {
 		for (auto bson : (*cursor)) {
-			auto node = std::make_shared<StreamingMeshNode>(bson);			
-			nodes.push_back(node);
+			nodes.push_back(StreamingMeshNode(bson));
 		}
 	}
 	else {
-		repoWarning << "buildBVHAndCluster; getting cursor was not successful; no nodes filtered for processing";
+		repoWarning << "clusterAndSupermesh; getting cursor was not successful; no nodes filtered for processing";
 	}
 
 	// Transform bounds before clustering
 	for (auto& node : nodes) {
-		auto bounds = node->getBoundingBox();
+		auto bounds = node.getBoundingBox();
 
 		// Transform bounds
-		auto parentId = node->getParent();		
+		auto parentId = node.getParent();		
 
 		if (transformMap.contains(parentId)) {
-			auto transMat = transformMap.at(node->getParent());
-			node->transformBounds(transMat);
+			auto transMat = transformMap.at(node.getParent());
+			node.transformBounds(transMat);
 		}
 		else {
-			repoWarning << "buildBVHAndCluster; current node has no transform parents; this should not happen; malformed file?";
+			repoWarning << "clusterAndSupermesh; current node has no transform parents; this should not happen; malformed file?";
 		}		
 	}
 
-	return clusterMeshNodes(nodes);
+	// Cluster the mesh nodes
+	auto clusters = clusterMeshNodes(nodes);
+
+	// Create Supermeshes from the clusters
+	createSuperMeshes(database, collection, handler, exporter, transformMap, matPropMap, nodes, clusters, texId);
 }
 
 void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
@@ -492,19 +496,21 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 	std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
 	const TransformMap& transformMap,
 	const MaterialPropMap& matPropMap,
-	const std::vector<std::vector<std::shared_ptr<StreamingMeshNode>>>& clusters,
-	const repo::lib::RepoUUID &texId /* = repo::lib::RepoUUID() */)
+	std::vector<StreamingMeshNode>& meshNodes,
+	const std::vector<std::vector<int>>& clusters,
+	const repo::lib::RepoUUID &texId)
 {
 	// Get blobHandler
 	repo::core::handler::fileservice::BlobFilesHandler blobHandler(handler->getFileManager(), database, collection);
 	
 	for (auto cluster : clusters) {
 
-		std::unordered_map<repo::lib::RepoUUID, std::shared_ptr<StreamingMeshNode>, repo::lib::RepoUUIDHasher> clusterMap;
+		std::unordered_map<repo::lib::RepoUUID, int, repo::lib::RepoUUIDHasher> clusterMap;
 		std::vector<repo::lib::RepoUUID> clusterIds;
-		for (auto& node : cluster) {
-			auto sharedId = node->getSharedId();
-			clusterMap.insert({ sharedId, node });
+		for (auto& index : cluster) {
+			auto& node = meshNodes[index];
+			auto sharedId = node.getSharedId();
+			clusterMap.insert({ sharedId, index });
 
 			clusterIds.push_back(sharedId);
 		}
@@ -534,27 +540,29 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 
 			// Find streamed node
 			auto sharedId = nodeBson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);
-			auto& sNode = clusterMap.at(sharedId);
-
+			auto nodeIndex = clusterMap.at(sharedId);
+			auto& sNode = meshNodes[nodeIndex];
+			
 			// Load geometry for this node.
 			// Placed In its own scope so that buffer can be discarded as soon as it is processed
 			{
 				auto binRef = nodeBson.getBinaryReference();
 				auto buffer = blobHandler.readToBuffer(repo::core::handler::fileservice::DataRef::deserialise(binRef));
-				sNode->loadSupermeshingData(nodeBson, buffer);
+				sNode.loadSupermeshingData(nodeBson, buffer);
+				
 			}
 			
 			// Bake the streaming mesh node by applying the transformation to the vertices
 			// Note that the bounds have already been transformed by calling transformBounds earlier
 			auto transform = transformMap.at(sharedId);
-			sNode->bakeVertices(transform);
+			sNode.bakeVertices(transform);
 			
-			if (currentSupermesh.vertices.size() + sNode->getNumVertices() <= REPO_MP_MAX_VERTEX_COUNT)
+			if (currentSupermesh.vertices.size() + sNode.getNumVertices() <= REPO_MP_MAX_VERTEX_COUNT)
 			{
 				// The current node can be added to the supermesh OK
 				appendMesh(sNode, matPropMap, currentSupermesh, texId);
 			}
-			else if (sNode->getNumVertices() > REPO_MP_MAX_VERTEX_COUNT)
+			else if (sNode.getNumVertices() > REPO_MP_MAX_VERTEX_COUNT)
 			{
 				// The node is too big to fit into any supermesh, so it must be split
 				splitMesh(sNode, exporter, matPropMap, texId);
@@ -568,7 +576,7 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 			}
 
 			// Unload the streaming node
-			sNode->unloadSupermeshingData();
+			sNode.unloadSupermeshingData();
 
 		}
 
@@ -606,7 +614,7 @@ std::vector<double> MultipartOptimizer::getWorldOffset(
 }
 
 void MultipartOptimizer::appendMesh(	
-	std::shared_ptr<StreamingMeshNode> node,
+	StreamingMeshNode &node,
 	const MaterialPropMap &matPropMap,
 	mapped_mesh_t &mapped,
 	const repo::lib::RepoUUID &texId
@@ -615,7 +623,7 @@ void MultipartOptimizer::appendMesh(
 	repo_mesh_mapping_t meshMap;
 
 	// Get material information
-	auto matPair = matPropMap.at(node->getSharedId());
+	auto matPair = matPropMap.at(node.getSharedId());
 	meshMap.material_id = matPair->first;
 	meshMap.material = matPair->second;
 	
@@ -623,17 +631,17 @@ void MultipartOptimizer::appendMesh(
 	if (!texId.isDefaultValue())
 		meshMap.texture_id = texId;
 
-	meshMap.mesh_id = node->getUniqueId();
-	meshMap.shared_id = node->getSharedId();
+	meshMap.mesh_id = node.getUniqueId();
+	meshMap.shared_id = node.getSharedId();
 
-	auto bbox = node->getBoundingBox();
+	auto bbox = node.getBoundingBox();
 	meshMap.min = (repo::lib::RepoVector3D)bbox.min();
 	meshMap.max = (repo::lib::RepoVector3D)bbox.max();
 
-	std::vector<repo::lib::RepoVector3D> submVertices = node->getVertices();
-	std::vector<repo::lib::RepoVector3D> submNormals = node->getNormals();
-	std::vector<repo_face_t> submFaces = node->getFaces();
-	std::vector<std::vector<repo::lib::RepoVector2D>> submUVs = node->getUVChannelsSeparated();
+	std::vector<repo::lib::RepoVector3D> submVertices = node.getVertices();
+	std::vector<repo::lib::RepoVector3D> submNormals = node.getNormals();
+	std::vector<repo_face_t> submFaces = node.getFaces();
+	std::vector<std::vector<repo::lib::RepoVector2D>> submUVs = node.getUVChannelsSeparated();
 
 	if (submVertices.size() && submFaces.size())
 	{
@@ -687,15 +695,15 @@ void MultipartOptimizer::appendMesh(
 // Constructs a bounding volumne hierarchy of all the Faces in the MeshNode
 
 MultipartOptimizer::Bvh MultipartOptimizer::buildFacesBvh(
-	std::shared_ptr < StreamingMeshNode> node
+	StreamingMeshNode &node
 )
 {
 	// Create a set of bounding boxes & centers for each Face in the oversized
 	// mesh.
 	// The BVH builder expects a set of bounding boxes and centers to work with.
 
-	auto faces = node->getFaces();
-	auto vertices = node->getVertices();
+	auto faces = node.getFaces();
+	auto vertices = node.getVertices();
 	auto boundingBoxes = std::vector<bvh::BoundingBox<Scalar>>();
 	auto centers = std::vector<BvhVector3>();
 
@@ -879,7 +887,7 @@ std::vector<size_t> MultipartOptimizer::getSupermeshBranchNodes(
 }
 
 void MultipartOptimizer::splitMesh(
-	std::shared_ptr<StreamingMeshNode> node,
+	StreamingMeshNode &node,
 	std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
 	const MaterialPropMap &matPropMap,
 	const repo::lib::RepoUUID &texId
@@ -901,7 +909,7 @@ void MultipartOptimizer::splitMesh(
 	// We get the vertex counts by first computing all the vertices referenced
 	// by the node(s), which will be used in the re-indexing.
 
-	auto faces = node->getFaces();
+	auto faces = node.getFaces();
 	auto uniqueVerticesByNode = getUniqueVertices(bvh, faces);
 
 	auto vertexCounts = std::vector<size_t>();
@@ -940,9 +948,9 @@ void MultipartOptimizer::splitMesh(
 
 	// Get the vertex attributes for building the sub mapped meshes
 
-	auto vertices = node->getVertices();
-	auto normals = node->getNormals();
-	auto uvChannels = node->getUVChannelsSeparated();
+	auto vertices = node.getVertices();
+	auto normals = node.getNormals();
+	auto uvChannels = node.getUVChannelsSeparated();
 
 	for (const auto head : branchNodes)
 	{
@@ -1015,11 +1023,11 @@ void MultipartOptimizer::splitMesh(
 		}
 		mapping.min = (repo::lib::RepoVector3D)bounds.min();
 		mapping.max = (repo::lib::RepoVector3D)bounds.max();
-		mapping.mesh_id = node->getUniqueId();
-		mapping.shared_id = node->getSharedId();
+		mapping.mesh_id = node.getUniqueId();
+		mapping.shared_id = node.getSharedId();
 
 		// Get material information
-		auto matPair = matPropMap.at(node->getSharedId());
+		auto matPair = matPropMap.at(node.getSharedId());
 		mapping.material_id = matPair->first;
 		mapping.material = matPair->second;		
 
@@ -1032,7 +1040,7 @@ void MultipartOptimizer::splitMesh(
 		createSuperMesh(exporter, mapped);		
 	}
 
-	repoInfo << "Split mesh with " << node->getNumVertices() << " vertices into " << branchNodes.size() << " submeshes in " << CHRONO_DURATION(start) << " ms";
+	repoInfo << "Split mesh with " << node.getNumVertices() << " vertices into " << branchNodes.size() << " submeshes in " << CHRONO_DURATION(start) << " ms";
 }
 
 
@@ -1075,7 +1083,8 @@ repo::core::model::SupermeshNode* MultipartOptimizer::createSupermeshNode(
 // the primitive.
 
 MultipartOptimizer::Bvh MultipartOptimizer::buildBoundsBvh(
-	const std::vector<std::shared_ptr<StreamingMeshNode>>& meshes
+	const std::vector<int>& binIndexes,
+	const std::vector<StreamingMeshNode>& meshes
 )
 {
 	// The BVH builder requires a set of bounding boxes and centers to work with.
@@ -1084,9 +1093,10 @@ MultipartOptimizer::Bvh MultipartOptimizer::buildBoundsBvh(
 	// is the same (which it is).
 
 	auto boundingBoxes = std::vector<bvh::BoundingBox<Scalar>>();
-	for (const auto& node : meshes)
+	for (const int index : binIndexes)
 	{
-		auto bounds = node->getBoundingBox();
+		auto& node = meshes[index];
+		auto bounds = node.getBoundingBox();
 		auto min = BvhVector3(bounds.min().x, bounds.min().y, bounds.min().z);
 		auto max = BvhVector3(bounds.max().x, bounds.max().y, bounds.max().z);
 		boundingBoxes.push_back(bvh::BoundingBox<Scalar>(min, max));
@@ -1114,7 +1124,8 @@ MultipartOptimizer::Bvh MultipartOptimizer::buildBoundsBvh(
 
 std::vector<size_t> MultipartOptimizer::getVertexCounts(
 	const Bvh& bvh,
-	const std::vector<std::shared_ptr<StreamingMeshNode>>& primitives
+	const std::vector<int>& binIndexes,
+	const std::vector<StreamingMeshNode>& meshes
 )
 {	// To do this, get the nodes in list form, 'bottom up', in order to set the
 	// vertex counts of each leaf node.
@@ -1136,12 +1147,13 @@ std::vector<size_t> MultipartOptimizer::getVertexCounts(
 		{
 			auto primitiveIndex = bvh.primitive_indices[node.first_child_or_primitive + i];
 
-			if (primitiveIndex < 0 || primitiveIndex >= primitives.size())
+			if (primitiveIndex < 0 || primitiveIndex >= binIndexes.size())
 			{
 				repoError << "Bvh primitive index out of range. This means something has gone wrong with the BVH construction.";
 			}
 
-			vertexCount += primitives[primitiveIndex]->getNumVertices();
+			auto& node = meshes[binIndexes[primitiveIndex]];
+			vertexCount += node.getNumVertices();
 		}
 
 		vertexCounts[nodeIndex] = vertexCount;
@@ -1164,16 +1176,17 @@ std::vector<size_t> MultipartOptimizer::getVertexCounts(
 // and vertex count.
 
 void MultipartOptimizer::clusterMeshNodesBvh(
-	const std::vector<std::shared_ptr<MultipartOptimizer::StreamingMeshNode>>& meshes,
-	std::vector<std::vector<std::shared_ptr<MultipartOptimizer::StreamingMeshNode>>>& clusters)
+	const std::vector<StreamingMeshNode> &meshes,
+	const std::vector<int> &binIndexes,
+	std::vector<std::vector<int>> &clusters)
 {
-	auto bvh = buildBoundsBvh(meshes);
+	auto bvh = buildBoundsBvh(binIndexes, meshes);
 
 	// The tree contains all the submesh bounds grouped in space.
 	// Create a list of vertex counts for each node so we can decide where to
 	// prune in order to build the clusters.
 
-	auto vertexCounts = getVertexCounts(bvh, meshes);
+	auto vertexCounts = getVertexCounts(bvh, binIndexes, meshes);
 
 	// Next, traverse the tree again, but this time depth first, cutting the tree
 	// at places the vertex count drops below a target threshold.
@@ -1185,20 +1198,21 @@ void MultipartOptimizer::clusterMeshNodesBvh(
 
 	for (const auto head : branchNodes)
 	{
-		std::vector<std::shared_ptr<StreamingMeshNode>> cluster;
+		std::vector<int> cluster;
 		for (const auto primitive : getBranchPrimitives(bvh, head))
 		{
-			cluster.push_back(meshes[primitive]);
+			cluster.push_back(binIndexes[primitive]);
 		}
 		clusters.push_back(cluster);
 	}
 }
 
-void MultipartOptimizer::splitBigClusters(std::vector<std::vector<std::shared_ptr<MultipartOptimizer::StreamingMeshNode>>>& clusters)
+void MultipartOptimizer::splitBigClusters(
+	std::vector<std::vector<int>>& clusters)
 {
-	auto clustersToSplit = std::vector<std::vector<std::shared_ptr<StreamingMeshNode>>>();
+	auto clustersToSplit = std::vector<std::vector<int>>();
 	clusters.erase(std::remove_if(clusters.begin(), clusters.end(),
-		[&](std::vector<std::shared_ptr<StreamingMeshNode>> cluster)
+		[&](std::vector<int> cluster)
 		{
 			if (cluster.size() > REPO_MP_MAX_MESHES_IN_SUPERMESH)
 			{
@@ -1213,7 +1227,7 @@ void MultipartOptimizer::splitBigClusters(std::vector<std::vector<std::shared_pt
 		clusters.end()
 	);
 
-	std::vector<std::shared_ptr<StreamingMeshNode>> cluster;
+	std::vector<int> cluster;
 	for (auto const clusterToSplit : clustersToSplit)
 	{
 		int i = 0;
@@ -1222,20 +1236,20 @@ void MultipartOptimizer::splitBigClusters(std::vector<std::vector<std::shared_pt
 			cluster.push_back(clusterToSplit[i++]);
 			if (cluster.size() >= REPO_MP_MAX_MESHES_IN_SUPERMESH)
 			{
-				clusters.push_back(std::vector<std::shared_ptr<StreamingMeshNode>>(cluster));
+				clusters.push_back(std::vector<int>(cluster));
 				cluster.clear();
 			}
 		}
 
 		if (cluster.size())
 		{
-			clusters.push_back(std::vector<std::shared_ptr<StreamingMeshNode>>(cluster));
+			clusters.push_back(std::vector<int>(cluster));
 		}
 	}
 }
 
-std::vector<std::vector<std::shared_ptr<MultipartOptimizer::StreamingMeshNode>>> MultipartOptimizer::clusterMeshNodes(
-	const std::vector<std::shared_ptr<MultipartOptimizer::StreamingMeshNode>>& meshes
+std::vector<std::vector<int>> MultipartOptimizer::clusterMeshNodes(
+	const std::vector<MultipartOptimizer::StreamingMeshNode>& meshes
 )
 {
 	// Takes one set of MeshNodes and groups them into N sets of MeshNodes,
@@ -1248,17 +1262,18 @@ std::vector<std::vector<std::shared_ptr<MultipartOptimizer::StreamingMeshNode>>>
 	// nodes by their efficiency
 
 	struct meshMetric {
-		std::shared_ptr<StreamingMeshNode> node;
+		int nodeIndex;
 		float efficiency;
 	};
 
 	std::vector<meshMetric> metrics(meshes.size());
 	for (size_t i = 0; i < meshes.size(); i++)
 	{
-		auto& mesh = metrics[i];		
-		mesh.node = meshes[i];
-		auto bounds = mesh.node->getBoundingBox();
-		auto numVertices = mesh.node->getNumVertices();
+		auto& mesh = metrics[i];	
+		mesh.nodeIndex = i;
+		auto& node = meshes[i];
+		auto bounds = node.getBoundingBox();
+		auto numVertices = node.getNumVertices();
 		auto width = bounds.size().x;
 		auto height = bounds.size().y;
 		auto length = bounds.size().z;
@@ -1276,30 +1291,31 @@ std::vector<std::vector<std::shared_ptr<MultipartOptimizer::StreamingMeshNode>>>
 	auto totalVertices = 0;
 	for (const auto& mesh : meshes)
 	{
-		totalVertices += mesh->getNumVertices();
+		totalVertices += mesh.getNumVertices();
 	}
 
 	auto modelLowerThreshold = std::max<int>(REPO_MP_MAX_VERTEX_COUNT, (int)(totalVertices * REPO_MODEL_LOW_CLUSTERING_RATIO));
 
-	std::vector<std::shared_ptr<StreamingMeshNode>> bin;
+	std::vector<int> bin;
 	auto binVertexCount = 0;
 	auto binsVertexCount = 0;
 
-	std::vector<std::vector<std::shared_ptr<StreamingMeshNode>>> clusters;
+	std::vector<std::vector<int>> clusters;
 	auto metricsIterator = metrics.begin();
 
 	while (metricsIterator != metrics.end() && binsVertexCount <= modelLowerThreshold)
 	{
 		auto& item = *metricsIterator++;
+		auto& node = meshes[item.nodeIndex];
 
-		binVertexCount += item.node->getNumVertices();
-		binsVertexCount += item.node->getNumVertices();
-		bin.push_back(item.node);
+		binVertexCount += node.getNumVertices();
+		binsVertexCount += node.getNumVertices();
+		bin.push_back(item.nodeIndex);
 
 		if (binVertexCount >= REPO_MP_MAX_VERTEX_COUNT) // If we've filled up one supermesh
 		{
 			// Copy
-			auto cluster = std::vector<std::shared_ptr<StreamingMeshNode>>(bin);
+			auto cluster = std::vector<int>(bin);
 			clusters.push_back(cluster);
 
 			// And reset
@@ -1310,7 +1326,7 @@ std::vector<std::vector<std::shared_ptr<MultipartOptimizer::StreamingMeshNode>>>
 
 	if (bin.size()) // Either we have some % of the model remaining, or the entire model fits below 65K
 	{
-		auto cluster = std::vector<std::shared_ptr<StreamingMeshNode>>(bin);
+		auto cluster = std::vector<int>(bin);
 		clusters.push_back(cluster);
 
 		bin.clear();
@@ -1321,12 +1337,12 @@ std::vector<std::vector<std::shared_ptr<MultipartOptimizer::StreamingMeshNode>>>
 	{
 		auto& item = *metricsIterator++;
 
-		bin.push_back(item.node);
+		bin.push_back(item.nodeIndex);
 	}
 
 	if (bin.size())
 	{
-		clusterMeshNodesBvh(bin, clusters);
+		clusterMeshNodesBvh(meshes, bin, clusters);
 	}
 
 	// If clusters contain too many meshes, we can exceed the maximum BSON size.

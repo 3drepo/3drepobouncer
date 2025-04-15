@@ -272,21 +272,21 @@ namespace repo {
 						supermeshingData.reset();
 					}
 
-					repo::lib::RepoUUID getSharedId() const {
+					const repo::lib::RepoUUID getSharedId() const {
 						return sharedId;
 					}
 
-					std::uint32_t getNumVertices() const
+					const std::uint32_t getNumVertices() const
 					{
 						return numVertices;
 					}
 
-					repo::lib::RepoBounds getBoundingBox() const
+					const repo::lib::RepoBounds getBoundingBox() const
 					{
 						return bounds;
 					}
 
-					repo::lib::RepoUUID getParent() const
+					const repo::lib::RepoUUID getParent() const
 					{
 						return parent;
 					}
@@ -299,7 +299,7 @@ namespace repo {
 
 					// Requiring the supermeshing data to be loaded
 
-					repo::lib::RepoUUID getUniqueId() {
+					const repo::lib::RepoUUID getUniqueId() {
 						if (supermeshingDataLoaded()) {
 							return supermeshingData->getUniqueId();
 						}
@@ -309,7 +309,7 @@ namespace repo {
 						}
 					}
 
-					std::uint32_t getNumFaces() {
+					const std::uint32_t getNumFaces() {
 						if (supermeshingDataLoaded()) {
 							return supermeshingData->getNumFaces();
 						}
@@ -330,7 +330,7 @@ namespace repo {
 						}
 					}
 
-					std::uint32_t getNumVertices() {
+					const std::uint32_t getNumVertices() {
 						if (supermeshingDataLoaded()) {
 							return supermeshingData->getNumVertices();
 						}
@@ -433,12 +433,15 @@ namespace repo {
 					const MaterialPropMap& matPropMap,
 					const repo::lib::RepoUUID texId);
 
-				std::vector<std::vector<std::shared_ptr<StreamingMeshNode>>> buildBVHAndCluster(
+				void clusterAndSupermesh(
 					const std::string &database,
 					const std::string &collection,
 					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+					std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
 					const TransformMap& transformMap,
-					const repo::core::handler::database::query::RepoQuery filter
+					const MaterialPropMap& matPropMap,
+					const repo::core::handler::database::query::RepoQuery filter,
+					const repo::lib::RepoUUID &texId = repo::lib::RepoUUID()
 				);
 
 				void createSuperMeshes(
@@ -448,8 +451,9 @@ namespace repo {
 					std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
 					const TransformMap& transformMap,
 					const MaterialPropMap& matPropMap,
-					const std::vector<std::vector<std::shared_ptr<StreamingMeshNode>>>& clusters,
-					const repo::lib::RepoUUID &texId = repo::lib::RepoUUID()
+					std::vector<StreamingMeshNode>& meshNodes,
+					const std::vector<std::vector<int>>& clusters,
+					const repo::lib::RepoUUID &texId
 				);
 
 				void createSuperMesh(
@@ -464,14 +468,14 @@ namespace repo {
 					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler);
 
 				void appendMesh(					
-					std::shared_ptr<StreamingMeshNode> node,
+					StreamingMeshNode &node,
 					const MaterialPropMap &matPropMap,
 					mapped_mesh_t &mappedMesh,
 					const repo::lib::RepoUUID &texId
 				);
 
 				Bvh buildFacesBvh(
-					std::shared_ptr<StreamingMeshNode> node
+					StreamingMeshNode &node
 				);
 
 				void flattenBvh(
@@ -495,7 +499,7 @@ namespace repo {
 				* each mapped_mesh_t has a vertex count below a certain size.
 				*/
 				void splitMesh(
-					std::shared_ptr<StreamingMeshNode> node,
+					StreamingMeshNode &node,
 					std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
 					const MaterialPropMap &matPropMap,
 					const repo::lib::RepoUUID &texId
@@ -513,21 +517,24 @@ namespace repo {
 				* Groups the MeshNodes into sets based on their location and
 				* geometry size.
 				*/
-				std::vector<std::vector<std::shared_ptr<StreamingMeshNode>>> clusterMeshNodes(
-					const std::vector<std::shared_ptr<StreamingMeshNode>>& nodes
+				std::vector<std::vector<int>> clusterMeshNodes(
+					const std::vector<StreamingMeshNode>& nodes
 				);
 
 				void clusterMeshNodesBvh(
-					const std::vector<std::shared_ptr<StreamingMeshNode>>& meshes,
-					std::vector<std::vector<std::shared_ptr<StreamingMeshNode>>>& clusters);
+					const std::vector<StreamingMeshNode>& meshes,
+					const std::vector<int>& binIndexes,
+					std::vector<std::vector<int>>& clusters);
 
 				Bvh buildBoundsBvh(
-					const std::vector<std::shared_ptr<StreamingMeshNode>>& meshes
+					const std::vector<int>& binIndexes,
+					const std::vector<StreamingMeshNode>& meshes
 				);
 
 				std::vector<size_t> getVertexCounts(
 					const Bvh& bvh,
-					const std::vector<std::shared_ptr<StreamingMeshNode>>& primitives
+					const std::vector<int>& binIndexes,
+					const std::vector<StreamingMeshNode>& meshes
 				);
 
 				std::vector<size_t> getSupermeshBranchNodes(
@@ -535,7 +542,8 @@ namespace repo {
 					const std::vector<size_t> &vertexCounts);
 
 				void splitBigClusters(
-					std::vector<std::vector<std::shared_ptr<StreamingMeshNode>>>& clusters);
+					std::vector<std::vector<int>>& clusters
+				);
 								
 			};
 		}
