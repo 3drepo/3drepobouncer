@@ -288,7 +288,7 @@ void MultipartOptimizer::traverseTransformTree(
 	}
 }
 
-MultipartOptimizer::MaterialPropMap& MultipartOptimizer::getAllMaterials(
+MultipartOptimizer::MaterialPropMap MultipartOptimizer::getAllMaterials(
 	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
 	const std::string &database,
 	const std::string &collection,

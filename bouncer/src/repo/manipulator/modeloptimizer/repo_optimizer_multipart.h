@@ -398,7 +398,7 @@ namespace repo {
 					const std::unordered_map<repo::lib::RepoUUID, std::vector<repo::core::model::RepoBSON>, repo::lib::RepoUUIDHasher> &childNodeMap,
 					std::unordered_map<repo::lib::RepoUUID,	repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> &leafTransforms);
 
-				MaterialPropMap& getAllMaterials(
+				MaterialPropMap getAllMaterials(
 					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
 					const std::string &database,
 					const std::string &collection,
