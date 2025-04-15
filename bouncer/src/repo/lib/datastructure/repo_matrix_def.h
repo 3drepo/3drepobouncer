@@ -80,6 +80,18 @@ namespace repo {
 				if (data.size() > 16) data.resize(16);
 			}
 
+			template<typename T2>
+			_RepoMatrix(const T2* coefficients, bool rowMajor = true)
+			{
+				data.resize(16);
+				for (int i = 0; i < 4; i++) {
+					for (int j = 0; j < 4; j++) {
+						auto c = rowMajor ? (i * 4) + j : i + (j * 4);
+						data[c] = (T)*coefficients++;
+					}
+				}
+			}
+
 			float determinant() const {
 				/*
 				00 01 02 03
@@ -126,6 +138,8 @@ namespace repo {
 			}
 
 			std::vector<T> getData() const { return data; }
+
+			std::vector<T>& getData() { return data; }
 
 			_RepoMatrix<T> invert() const {
 				std::vector<T> result;
@@ -282,6 +296,15 @@ namespace repo {
 					0, 0, 1, t.z,
 					0, 0, 0, 1
 				}));
+			}
+
+			explicit operator repo::lib::_RepoMatrix<float>() const
+			{
+				auto m = repo::lib::_RepoMatrix<float>();
+				for (auto i = 0; i < data.size(); i++) {
+					m.getData()[i] = (float)data[i];
+				}
+				return m;
 			}
 
 		private:

@@ -61,13 +61,11 @@ matrix:
           - tar -zxf testData/bouncer/ext_libs/noble/mongo-cxx-driver.tgz
           - export MONGO_ROOT=$PWD/mongo-cxx-driver
           - echo ============ ASSIMP INSTALL =============
-          - tar -zxf testData/bouncer/ext_libs/focal/assimp-5.0.1.tgz
+          - tar -zxf testData/bouncer/ext_libs/noble/assimp-5.4.3.tgz
           - export ASSIMP_ROOT=$PWD/assimp
           - echo ============ IFCOPENSHELL INSTALL =============
-          - tar -zxf testData/bouncer/ext_libs/focal/IfcOpenShell_v0.6.0/OCCT_3drepoFix.tgz
-          - tar -zxf testData/bouncer/ext_libs/focal/IfcOpenShell_v0.6.0/IfcOpenShell_3drepofix.tgz
-          - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev
-          - export OCCT_ROOT=$PWD/OCCT
+          - tar -zxf testData/bouncer/ext_libs/noble/IfcOpenShell-0.8.0.tgz
+          - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev libboost-all-dev libcgal-dev libocct-data-exchange-dev libocct-draw-dev libocct-foundation-dev libocct-modeling-algorithms-dev libocct-modeling-data-dev libocct-ocaf-dev libocct-visualization-dev libgmp-dev libmpfr-dev libxml2-dev libeigen3-dev
           - export IFCOPENSHELL_ROOT=$PWD/IfcOpenShell
           - echo ============ TEIGHA INSTALL =============
           - cat testData/bouncer/ext_libs/focal/teigha/2025.11/teighaLinuxGCC8.3.tgz* | tar -zxf -
@@ -139,13 +137,11 @@ matrix:
           - tar -zxf testData/noble/mongo-cxx-driver.tgz
           - export MONGO_ROOT=$PWD/mongo-cxx-driver
           - echo ============ ASSIMP INSTALL =============
-          - tar -zxf testData/focal/assimp-5.0.1.tgz
+          - tar -zxf testData/noble/assimp-5.4.3.tgz
           - export ASSIMP_ROOT=$PWD/assimp
           - echo ============ IFCOPENSHELL INSTALL =============
-          - tar -zxf testData/focal/IfcOpenShell_v0.6.0/OCCT_3drepoFix.tgz
-          - tar -zxf testData/focal/IfcOpenShell_v0.6.0/IfcOpenShell_3drepofix.tgz
-          - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev
-          - export OCCT_ROOT=$PWD/OCCT
+          - tar -zxf testData/noble/IfcOpenShell-0.8.0.tgz
+          - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev libboost-all-dev libcgal-dev libocct-data-exchange-dev libocct-draw-dev libocct-foundation-dev libocct-modeling-algorithms-dev libocct-modeling-data-dev libocct-ocaf-dev libocct-visualization-dev libgmp-dev libmpfr-dev libxml2-dev libeigen3-dev
           - export IFCOPENSHELL_ROOT=$PWD/IfcOpenShell
           - echo ============ TEIGHA INSTALL =============
           - cat testData/focal/teigha/2025.11/teighaLinuxGCC8.3.tgz* | tar -zxf -

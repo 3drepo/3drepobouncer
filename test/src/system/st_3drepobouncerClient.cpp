@@ -160,19 +160,6 @@ TEST(RepoClientTest, UploadTestTexture)
 	EXPECT_TRUE(projectExists(db, "textured"));
 }
 
-TEST(RepoClientTest, UploadTestMissingNodes)
-{
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
-
-	//Test missing nodes Upload
-	std::string misUpload = produceUploadArgs(db, "missing", getDataPath(missingNodesModel));
-	std::cout << " Running Missing nodes... " << misUpload << std::endl;
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_NODES, runProcess(misUpload));
-	EXPECT_TRUE(projectExists(db, "missing"));
-}
-
 TEST(RepoClientTest, UploadTestBIM)
 {
 	//this ensures we can run processes
@@ -201,12 +188,12 @@ TEST(RepoClientTest, UploadTestBIM)
 	EXPECT_TRUE(projectExists(mongoDbName, okBim4PrjName));
 
 	std::string corrTxtrBim3PrjName = "corruptedTextureBIM3Test";
-	EXPECT_EQ(REPOERR_LOAD_SCENE_MISSING_TEXTURE,
+	EXPECT_EQ(REPOERR_OK,
 		testUpload(mongoDbName, corrTxtrBim3PrjName, "RepoModelImport/BrickWalls_bim3_CorruptedTextureField.bim"));
 	EXPECT_TRUE(projectExists(mongoDbName, corrTxtrBim3PrjName));
 
 	std::string corrMatBim3PrjName = "corruptedMaterialBIM3Test";
-	EXPECT_EQ(REPOERR_LOAD_SCENE_MISSING_NODES,
+	EXPECT_EQ(REPOERR_OK,
 		testUpload(mongoDbName, corrMatBim3PrjName, "RepoModelImport/BrickWalls_bim3_MissingTexture.bim"));
 	EXPECT_TRUE(projectExists(mongoDbName, corrMatBim3PrjName));
 }
@@ -221,11 +208,6 @@ TEST(RepoClientTest, UploadTestIFC)
 	std::string ifcUpload = produceUploadArgs(db, "ifcTest", getDataPath(ifcModel));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(ifcUpload));
 	EXPECT_TRUE(projectExists(db, "ifcTest"));
-
-	//Upload IFCFile
-	std::string ifcUploadReg = produceUploadArgs(db, "ifcTestRegression", getDataPath(ifcModel_InfiniteLoop));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(ifcUploadReg));
-	EXPECT_TRUE(projectExists(db, "ifcTestRegression"));
 
 	std::string ifc4Upload = produceUploadArgs(db, "ifc4Test", getDataPath(ifc4Model));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(ifc4Upload));

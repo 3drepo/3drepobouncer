@@ -20,8 +20,46 @@
 
 
 SET(OCCT_LIB_NAMES
-	TKernel TKMath TKBRep TKGeomBase TKGeomAlgo TKG3d TKG2d TKShHealing TKTopAlgo TKMesh TKPrim TKBool TKBO
-	TKFillet TKSTEP TKSTEPBase TKSTEPAttr TKXSBase TKSTEP209 TKIGES TKOffset
+	TKernel
+	TKMath
+	TKG2d
+	TKG3d
+	TKGeomBase
+	TKBRep
+	TKGeomAlgo
+	TKTopAlgo
+	TKPrim
+	TKBO
+	TKShHealing
+	TKBool
+	TKHLR
+	TKFillet
+	TKOffset
+	TKFeat
+	TKMesh
+	TKXMesh
+	TKService
+	TKV3d
+	TKOpenGl
+	TKMeshVS
+	TKCDF
+	TKLCAF
+	TKCAF
+	TKBinL
+	TKXmlL
+	TKBin
+	TKXml
+	TKStdL
+	TKStd
+	TKTObj
+	TKBinTObj
+	TKXmlTObj
+	TKVCAF
+	TKXSBase
+	TKXCAF
+	TKRWMesh
+	TKBinXCAF
+	TKXmlXCAF
 )
 
 if(DEFINED ENV{OCCT_DEBUG_LIB_DIR})
@@ -96,6 +134,15 @@ else()
 		debug ${OCCT_LIBRARIES_DEBUG}
 		optimized ${OCCT_LIBRARIES_RELEASE}
 		)
+endif()
+
+# OCCT kerneal requires winsock on Windows builds
+
+if(${WIN32})
+	set(OCCT_LIBRARIES
+		${OCCT_LIBRARIES}
+		ws2_32.lib
+	)
 endif()
 
 if(OCCT_INCLUDE_DIR AND OCCT_LIBRARIES)

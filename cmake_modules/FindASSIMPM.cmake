@@ -24,51 +24,33 @@ if(DEFINED ENV{ASSIMP_ROOT})
 	message(STATUS "$ASSIMP_ROOT defined: ${ASSIMP_ROOT}")
 	find_path(ASSIMP_INCLUDE_DIR assimp
 		${ASSIMP_ROOT}/include
-		)
-	find_library(ASSIMP_LIBRARIES_RELEASE NAMES assimp-vc120-mt assimp-vc130-mt assimp-vc140-mt assimp-vc143-mt assimp
+	)
+	find_library(ASSIMP_LIBRARIES
+		NAMES
+			assimp-vc140-mt
+			assimp-vc142-mt
+			assimp-vc143-mt
+			assimp
 		PATHS
-		${ASSIMP_ROOT}/lib
+			${ASSIMP_ROOT}/lib
 	)
-	find_library(ASSIMP_LIBRARIES_DEBUG NAMES assimp-vc120-mtd assimp-vc130-mtd assimp-vc130-mt assimp-vc140-mt assimp-vc140-mtd assimp-vc143-mtd assimp-vc143-mt assimp-vc120-mt assimpd assimp
-		PATHS
-		${ASSIMP_ROOT}/lib
-	)
-	set(ASSIMP_LIBRARIES
-		debug ${ASSIMP_LIBRARIES_DEBUG}
-		optimized ${ASSIMP_LIBRARIES_RELEASE}
-	)
-endif()
-
-if(ASSIMP_INCLUDE_DIR AND ASSIMP_LIBRARIES)
-	set(ASSIMP_FOUND TRUE)
-
-else(ASSIMP_INCLUDE_DIR AND ASSIMP_LIBRARIES)
+else()
 	find_path(ASSIMP_INCLUDE_DIR assimp
 		/usr/include
 		/usr/local/include
 		/opt/local/include
     )
 
-	find_library(ASSIMP_LIBRARIES_RELEASE NAMES assimp
+	find_library(ASSIMP_LIBRARIES
+		NAMES
+			assimp
     	PATHS
-    	/usr/lib/
-    	/usr/local/lib/
-    	/opt/local/lib/
+			/usr/lib/
+			/usr/local/lib/
+			/opt/local/lib/
     )
 
-	find_library(ASSIMP_LIBRARIES_DEBUG NAMES assimpd assimp
-    	PATHS
-    	/usr/lib/
-    	/usr/local/lib/
-    	/opt/local/lib/
-    )
-
-	set(ASSIMP_LIBRARIES
-		debug ${ASSIMP_LIBRARIES_DEBUG}
-		optimized ${ASSIMP_LIBRARIES_RELEASE}
-		)
-endif(ASSIMP_INCLUDE_DIR AND ASSIMP_LIBRARIES)
-
+endif()
 
 
 if(ASSIMP_INCLUDE_DIR AND ASSIMP_LIBRARIES)
@@ -76,9 +58,7 @@ if(ASSIMP_INCLUDE_DIR AND ASSIMP_LIBRARIES)
 	message(STATUS "ASSIMP installation found.")
 	message(STATUS "ASSIMP_INCLUDE_DIR: ${ASSIMP_INCLUDE_DIR}")
 	message(STATUS "ASSIMP_LIBRARIES: ${ASSIMP_LIBRARIES}")
-
-else(ASSIMP_INCLUDE_DIR AND ASSIMP_LIBRARIES)
-#cannot find mongo anywhere!
+else()
 	set(ASSIMPM_FOUND FALSE)
-	message(STATUS "ASSIMP not found. Please set ASSIMP_ROOT to your installation directory")
-endif(ASSIMP_INCLUDE_DIR AND ASSIMP_LIBRARIES)
+	message(STATUS "ASSIMP not found. Please set ASSIMP_ROOT to your installation directory or install via a suitable package manager.")
+endif()

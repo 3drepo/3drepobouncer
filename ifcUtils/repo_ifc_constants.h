@@ -25,6 +25,8 @@ const static std::string IFC_ARGUMENT_NAME = "Name";
 
 const static std::string REPO_LABEL_IFC_TYPE = "IFC Type";
 const static std::string REPO_LABEL_IFC_GUID = "IFC GUID";
+const static std::string REPO_LABEL_IFC_NAME = "Name";
+const static std::string REPO_LABEL_IFC_DESCRIPTION = "Description";
 
 const static std::string IFC_TYPE_ABSORBED_DOSE_MEASURE = "ifcabsorbeddosemeasure";
 const static std::string IFC_TYPE_ACCELERATION_MEASURE = "ifcaccelerationmeasure";
