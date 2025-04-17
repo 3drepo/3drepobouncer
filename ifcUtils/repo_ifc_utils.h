@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2021 3D Repo Ltd
+*  Copyright (C) 2025 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -16,19 +16,16 @@
 */
 
 #pragma once
-#include <string>
-#include <ifcparse/IfcFile.h>
 
-enum IfcSchemaVersion { IFC2x3, IFC4, UNKNOWN };
+#include "repo_ifc_serialiser_abstract.h"
+#include <repo/repo_bouncer_global.h>
+#include <memory>
 
-static IfcSchemaVersion getIFCSchema(const std::string &file) {
-	IfcParse::IfcFile ifcFile = file;
-	if (ifcFile.schema()->name() == "IFC2X3") {
-		return IfcSchemaVersion::IFC2x3;
-	}
-	else if (ifcFile.schema()->name() == "IFC4") {
-		return IfcSchemaVersion::IFC4;
-	}
-
-	return IfcSchemaVersion::UNKNOWN;
+namespace ifcUtils
+{
+	REPO_API_EXPORT class IfcUtils
+	{
+	public:
+		static std::unique_ptr<AbstractIfcSerialiser> CreateSerialiser(std::string filename);
+	};
 }
