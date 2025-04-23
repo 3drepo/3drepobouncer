@@ -42,10 +42,7 @@ namespace RepoModelImportUtils
 		std::string filePath)
 	{
 		uint8_t impModelErrCode;
-		ModelImportConfig config;
-		auto modelConvertor = std::unique_ptr<AssimpModelImport>(new AssimpModelImport(config));
-		modelConvertor->importModel(filePath, impModelErrCode);
-		return modelConvertor->generateRepoScene(impModelErrCode);
+		return CreateModelConvertor(filePath, impModelErrCode)->generateRepoScene(impModelErrCode);
 	}
 }
 
