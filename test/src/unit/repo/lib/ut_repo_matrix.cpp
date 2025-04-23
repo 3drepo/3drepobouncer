@@ -57,6 +57,39 @@ TEST(RepoMatrixTest, constructorTest)
 	}
 
 	RepoMatrix matrix7(sourceMat1), matrix5(sourceMat2), matrix6(sourceMat3);
+
+	std::vector<double> sourceMat64 = {
+	0.41611923158633757, 0.41192361684200907, 0.3802399115383849, 1383.5544861408555,
+	0.3102479090644362, 0.8211657559760365, 0.42445244930658144, 6159.647077873367,
+	0.4608093818203498, 0.18089090705175348, 0.9258387270989096, 7714.581019037681,
+	0, 0, 0, 1
+	};
+
+	std::vector<float> sourceMat32;
+	sourceMat32.resize(16);
+	for (auto i = 0; i < 16; i++)
+	{
+		sourceMat32[i] = (double)sourceMat64[i];
+	}
+
+	RepoMatrix singleFromSingle(sourceMat32.data());
+	RepoMatrix singleFromDouble(sourceMat64.data());
+	RepoMatrix64 doubleFromSingle(sourceMat32.data());
+	RepoMatrix64 doubleFromDouble(sourceMat64.data());
+
+	EXPECT_THAT(singleFromSingle.isIdentity(), IsFalse());
+	EXPECT_THAT(singleFromDouble.isIdentity(), IsFalse());
+	EXPECT_THAT(doubleFromSingle.isIdentity(), IsFalse());
+	EXPECT_THAT(doubleFromDouble.isIdentity(), IsFalse());
+
+	EXPECT_THAT(singleFromSingle.getData(), ElementsAreArray(sourceMat32));
+	EXPECT_THAT(singleFromDouble.getData(), ElementsAreArray(sourceMat32));
+
+	EXPECT_THAT(doubleFromSingle.getData(), ElementsAreArray(sourceMat32));
+	EXPECT_THAT(doubleFromDouble.getData(), ElementsAreArray(sourceMat64));
+
+	RepoMatrix64 colMajor(sourceMat64.data(), false);
+	EXPECT_THAT(colMajor, Eq(doubleFromDouble.transpose()));
 }
 
 TEST(RepoMatrixTest, determinantTest)
