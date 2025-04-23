@@ -851,7 +851,7 @@ std::shared_ptr<repo::core::model::TransformationNode> IfcSerialiser::createTran
 		builder->addNode(std::move(metaNode));
 	}
 
-	return builder->addNode(transform);;
+	return builder->addNode(transform);
 }
 
 repo::lib::RepoUUID IfcSerialiser::getTransformationNode(const IfcSchema::IfcObjectDefinition* parent, const IfcParse::entity& typeGroup)
