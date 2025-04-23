@@ -336,9 +336,10 @@ std::string IfcSerialiser::getUnitsLabel(const IfcSchema::IfcSIUnitName::Value& 
 		return "W";
 	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_WEBER:
 		return "Wb";
+	default:
+		repoWarning << "Encountered unrecognised IfcSIUnitName " << name << ".";
+		return "";
 	}
-
-	return "";
 }
 
 std::string IfcSerialiser::getUnitsLabel(const IfcSchema::IfcSIPrefix::Value& prefix)
@@ -377,9 +378,10 @@ std::string IfcSerialiser::getUnitsLabel(const IfcSchema::IfcSIPrefix::Value& pr
 		return "f";
 	case IfcSchema::IfcSIPrefix::Value::IfcSIPrefix_ATTO:
 		return "a";
+	default:
+		repoWarning << "Encountered unrecognised IfcSIPrefix " << prefix << ".";
+		return "";
 	}
-
-	return "";
 }
 
 std::string IfcSerialiser::getUnitsLabel(const std::string& unitName)
