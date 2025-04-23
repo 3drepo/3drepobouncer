@@ -363,13 +363,13 @@ namespace ifcUtils
 		* as IfcProperty, and the relationship objects that compose sets of metadata,
 		* such as ifcRelDefines or IfcRelNests.
 		*/
-		void collectMetadata(
+		void collectProperties(
 			const IfcUtil::IfcBaseInterface* object,
 			Metadata& metadata
 		);
 
 		template<typename T>
-		void collectMetadata(
+		void collectProperties(
 			T begin,
 			T end,
 			Metadata& metadata

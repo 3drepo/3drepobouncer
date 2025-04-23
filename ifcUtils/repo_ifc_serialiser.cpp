@@ -1263,7 +1263,7 @@ void IfcSerialiser::collectAttributes(const IfcUtil::IfcBaseEntity* object, Meta
 			if (value.type() == IfcUtil::ArgumentType::Argument_ENTITY_INSTANCE)
 			{
 				auto suffixed = metadata.addSuffix(attribute->name());
-				collectMetadata((const IfcUtil::IfcBaseClass*)value, suffixed);
+				collectProperties((const IfcUtil::IfcBaseClass*)value, suffixed);
 			}
 			else if (value.type() == IfcUtil::ArgumentType::Argument_AGGREGATE_OF_ENTITY_INSTANCE)
 			{
@@ -1271,7 +1271,7 @@ void IfcSerialiser::collectAttributes(const IfcUtil::IfcBaseEntity* object, Meta
 				auto i = 0;
 				for (auto& ref : *refs) {
 					auto suffixed = metadata.addSuffix(attribute->name() + " " + std::to_string(i++));
-					collectMetadata((const IfcUtil::IfcBaseClass*)ref, suffixed);
+					collectProperties((const IfcUtil::IfcBaseClass*)ref, suffixed);
 				}
 			}
 			else
@@ -1300,14 +1300,14 @@ void IfcSerialiser::collectAttributes(const IfcUtil::IfcBaseEntity* object, Meta
 }
 
 template<typename T>
-void IfcSerialiser::collectMetadata(T begin, T end, Metadata& metadata)
+void IfcSerialiser::collectProperties(T begin, T end, Metadata& metadata)
 {
 	for (auto it = begin; it != end; it++) {
-		collectMetadata(*it, metadata);
+		collectProperties(*it, metadata);
 	}
 }
 
-void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Metadata& metadata)
+void IfcSerialiser::collectProperties(const IfcUtil::IfcBaseInterface* object, Metadata& metadata)
 {
 	if (auto o = object->as<IfcSchema::IfcRelDefinesByProperties>())
 	{
@@ -1315,12 +1315,12 @@ void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Met
 		if (auto p = o->RelatingPropertyDefinition()->as<IfcSchema::IfcPropertySetDefinitionSet>()) {
 			// ProperySetDefinitionSets are temporarily disabled until this IFCOS bug is resolved: https://github.com/IfcOpenShell/IfcOpenShell/issues/6330
 			//auto props = p->operator boost::shared_ptr<aggregate_of<IfcSchema::IfcPropertySetDefinition>>();
-			//collectMetadata(props->begin(), props->end(), metadata);
+			//collectProperties(props->begin(), props->end(), metadata);
 		}else if (auto s = o->RelatingPropertyDefinition()->as<IfcSchema::IfcPropertySetDefinition>()) {
-			collectMetadata(s, metadata);
+			collectProperties(s, metadata);
 		}
 #else
-		collectMetadata(o->RelatingPropertyDefinition(), metadata);
+		collectProperties(o->RelatingPropertyDefinition(), metadata);
 #endif
 	}
 	else if (auto o = object->as<IfcSchema::IfcRelNests>())
@@ -1331,17 +1331,17 @@ void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Met
 
 		auto related = o->RelatedObjects();
 		auto noOverwrite = metadata.setOverwrite(false);
-		collectMetadata(related->begin(), related->end(), noOverwrite);
+		collectProperties(related->begin(), related->end(), noOverwrite);
 	}
 	else if (auto o = object->as<IfcSchema::IfcRelDefinesByType>())
 	{
 		if (auto type = o->RelatingType()) {
 			auto noOverwrite = metadata.setOverwrite(false);
 			if (auto props = type->HasPropertySets().get_value_or({})) {
-				collectMetadata(props->begin(), props->end(), noOverwrite);
+				collectProperties(props->begin(), props->end(), noOverwrite);
 			}
 			auto related = file->getInverse(type->id(), &(IfcSchema::IfcRelDefinesByProperties::Class()), -1);
-			collectMetadata(related->begin(), related->end(), noOverwrite);
+			collectProperties(related->begin(), related->end(), noOverwrite);
 		}
 	}
 #ifdef SCHEMA_HAS_IfcRelDefinesByTemplate
@@ -1355,18 +1355,18 @@ void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Met
 	{
 		if (auto relating = o->RelatingObject()) {
 			auto props = file->getInverse(relating->id(), &(IfcSchema::IfcRelDefinesByProperties::Class()), -1);
-			collectMetadata(props->begin(), props->end(), metadata);
+			collectProperties(props->begin(), props->end(), metadata);
 		}
 	}
 #endif
 	else if (auto o = object->as<IfcSchema::IfcRelAssociatesClassification>())
 	{
-		collectMetadata(o->RelatingClassification(), metadata);
+		collectProperties(o->RelatingClassification(), metadata);
 	}
 	else if (auto o = object->as<IfcSchema::IfcClassificationReference>())
 	{
 		if (o->ReferencedSource()) {
-			collectMetadata(o->ReferencedSource(), metadata);
+			collectProperties(o->ReferencedSource(), metadata);
 		} else {
 			auto ctx = metadata.setGroup(o->Name().get_value_or(o->declaration().name()));
 			collectAttributes(o, ctx);
@@ -1381,7 +1381,7 @@ void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Met
 	{
 		auto ctx = metadata.setGroup(o->Name().get_value_or(o->declaration().name()));
 		auto props = o->HasProperties();
-		collectMetadata(props->begin(), props->end(), ctx);
+		collectProperties(props->begin(), props->end(), ctx);
 	}
 #ifdef SCHEMA_HAS_IfcPreDefinedPropertySet
 	else if (auto o = object->as<IfcSchema::IfcPreDefinedPropertySet>())
@@ -1407,7 +1407,7 @@ void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Met
 
 		if (auto props = o->HasProperties()) {
 			Metadata ctx = metadata.addSuffix(o->UsageName());
-			collectMetadata(props->begin(), props->end(), ctx);
+			collectProperties(props->begin(), props->end(), ctx);
 		}
 	}
 	else if (auto o = object->as<IfcSchema::IfcPropertyBoundedValue>())
@@ -1472,7 +1472,7 @@ void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Met
 			ctx("MethodOfMeasurement") = method;
 		}
 		auto quantities = o->Quantities();
-		collectMetadata(quantities->begin(), quantities->end(), ctx);
+		collectProperties(quantities->begin(), quantities->end(), ctx);
 	}
 #endif
 	else if (auto o = object->as<IfcSchema::IfcPhysicalSimpleQuantity>())
@@ -1494,7 +1494,7 @@ void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Met
 	{
 		auto quantities = o->HasQuantities();
 		auto suffix = metadata.addSuffix(o->Usage().get_value_or(o->Name()));
-		collectMetadata(quantities->begin(), quantities->end(), suffix);
+		collectProperties(quantities->begin(), quantities->end(), suffix);
 	}
 }
 
@@ -1550,13 +1550,13 @@ std::unique_ptr<repo::core::model::MetadataNode> IfcSerialiser::createMetadataNo
 	// that metadata into a single node.
 
 	auto d = file->getInverse(object->id(), &(IfcSchema::IfcRelDefines::Class()), -1);
-	collectMetadata(d->begin(), d->end(), metadata);
+	collectProperties(d->begin(), d->end(), metadata);
 
 	auto n = file->getInverse(object->id(), &(IfcSchema::IfcRelNests::Class()), -1);
-	collectMetadata(n->begin(), n->end(), metadata);
+	collectProperties(n->begin(), n->end(), metadata);
 
 	auto a = file->getInverse(object->id(), &(IfcSchema::IfcRelAssociates::Class()), -1);
-	collectMetadata(a->begin(), a->end(), metadata);
+	collectProperties(a->begin(), a->end(), metadata);
 
 	return std::make_unique<repo::core::model::MetadataNode>(repo::core::model::RepoBSONFactory::makeMetaDataNode(map, {}, {}));
 }
