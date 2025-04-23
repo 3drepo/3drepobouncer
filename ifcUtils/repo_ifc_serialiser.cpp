@@ -679,6 +679,10 @@ void IfcSerialiser::configureSettings()
 
 void IfcSerialiser::setLevelOfDetail(int lod)
 {
+	// The default parameters (i.e. case 0), are the same as those in
+	// ConversionSettings.h. The others have been calibrated by eye
+	// to approximate the detail that the same levels give in ODA.
+
 	std::pair<double, double> params = { 0.001, 0.5 };
 
 	switch (lod) {
@@ -702,8 +706,8 @@ void IfcSerialiser::setLevelOfDetail(int lod)
 		break;
 	}
 
-	settings.get<ifcopenshell::geometry::settings::MesherLinearDeflection>().value = std::get<0>(params);
-	settings.get<ifcopenshell::geometry::settings::MesherAngularDeflection>().value = std::get<1>(params);
+	settings.get<ifcopenshell::geometry::settings::MesherLinearDeflection>().value = params.first;
+	settings.get<ifcopenshell::geometry::settings::MesherAngularDeflection>().value = params.second;
 }
 
 void IfcSerialiser::setNumThreads(int numThreads)
