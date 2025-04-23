@@ -1499,7 +1499,7 @@ void IfcSerialiser::collectMetadata(const IfcUtil::IfcBaseInterface* object, Met
 /*
 For some types, build explicit metadata entries
 */
-void IfcSerialiser::collectAdditionalAttributes(const IfcSchema::IfcObjectDefinition* object, Metadata& metadata)
+void IfcSerialiser::collectSpecialAttributes(const IfcSchema::IfcObjectDefinition* object, Metadata& metadata)
 {
 	auto location = metadata.setGroup(LOCATION_LABEL);
 
@@ -1538,7 +1538,7 @@ std::unique_ptr<repo::core::model::MetadataNode> IfcSerialiser::createMetadataNo
 
 	collectAttributes(object, metadata);
 
-	collectAdditionalAttributes(object, metadata);
+	collectSpecialAttributes(object, metadata);
 
 	// Ifc objects are given properties by associating with containers, such as
 	// Property Sets, using instances of IfcRelationship. IfcRelationship
@@ -1556,8 +1556,7 @@ std::unique_ptr<repo::core::model::MetadataNode> IfcSerialiser::createMetadataNo
 	auto a = file->getInverse(object->id(), &(IfcSchema::IfcRelAssociates::Class()), -1);
 	collectMetadata(a->begin(), a->end(), metadata);
 
-	auto metadataNode = std::make_unique<repo::core::model::MetadataNode>(repo::core::model::RepoBSONFactory::makeMetaDataNode(map, {}, {}));
-	return metadataNode;
+	return std::make_unique<repo::core::model::MetadataNode>(repo::core::model::RepoBSONFactory::makeMetaDataNode(map, {}, {}));
 }
 
 void IfcSerialiser::updateUnits()

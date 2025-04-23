@@ -347,7 +347,7 @@ namespace ifcUtils
 		std::optional<repo::lib::RepoVariant> getValue(aggregate_of<IfcSchema::IfcValue>::ptr list);
 		std::optional<repo::lib::RepoVariant> getValue(boost::optional<aggregate_of<IfcSchema::IfcValue>::ptr> list);
 
-		void collectAdditionalAttributes(
+		void collectSpecialAttributes(
 			const IfcSchema::IfcObjectDefinition* object,
 			Metadata& metadata);
 
