@@ -48,6 +48,15 @@ void MeshNode::deserialise(RepoBSON& bson)
 	if (bson.hasField(REPO_NODE_MESH_LABEL_GROUPING))
 		grouping = bson.getStringField(REPO_NODE_MESH_LABEL_GROUPING);
 
+	if (bson.hasField(REPO_FILTER_TAG_OPAQUE))
+		isOpaque = bson.getBoolField(REPO_FILTER_TAG_OPAQUE);
+
+	if (bson.hasField(REPO_FILTER_TAG_TRANSPARENT))
+		isTransparent = bson.getBoolField(REPO_FILTER_TAG_TRANSPARENT);
+
+	if (bson.hasField(REPO_FILTER_TAG_TEXTURE_ID))
+		textureId = bson.getUUIDField(REPO_FILTER_TAG_TEXTURE_ID);
+
 	primitive = MeshNode::Primitive::TRIANGLES;
 	if (bson.hasField(REPO_NODE_MESH_LABEL_PRIMITIVE))
 		primitive = static_cast<MeshNode::Primitive>(bson.getIntField(REPO_NODE_MESH_LABEL_PRIMITIVE));
@@ -212,6 +221,26 @@ void appendUVChannels(RepoBSONBuilder& builder, size_t numChannels, const std::v
 	}
 }
 
+void appendFilterTags(
+	RepoBSONBuilder& builder,
+	std::string grouping,
+	bool isOpaque,
+	bool isTransparent,
+	repo::lib::RepoUUID textureId)
+{
+	if (!grouping.empty())
+		builder.append(REPO_NODE_MESH_LABEL_GROUPING, grouping);
+
+	if(isOpaque) // The flags only exist when they are true
+		builder.append(REPO_FILTER_TAG_OPAQUE, true);
+
+	if (isTransparent) // The flags only exist when they are true
+		builder.append(REPO_FILTER_TAG_TRANSPARENT, true);
+
+	if (!textureId.isDefaultValue())
+		builder.append(REPO_FILTER_TAG_TEXTURE_ID, textureId);
+}
+
 void MeshNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 {
 	RepoNode::serialise(builder);
@@ -220,6 +249,7 @@ void MeshNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 	appendFaces(builder, faces);
 	appendNormals(builder, normals);
 	appendUVChannels(builder, channels.size(), getUVChannelsSerialised());
+	appendFilterTags(builder, grouping, isOpaque, isTransparent, textureId);	
 }
 
 std::vector<repo::lib::RepoVector2D> MeshNode::getUVChannelsSerialised() const

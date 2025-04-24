@@ -191,6 +191,20 @@ std::shared_ptr<T> RepoSceneBuilder::addNode(const T& node)
 
 void RepoSceneBuilder::addNode(std::unique_ptr<repo::core::model::RepoNode> node)
 {
+
+	// If it is a mesh node, we need to handle materials and textures
+	auto meshNode = dynamic_cast<repo::core::model::MeshNode*>(node.get());
+	if (meshNode) {
+		auto material = meshNode->getMaterial();
+		addMaterialReference(material, meshNode->getSharedID());
+
+		if (material.hasTexture()) {
+			if(textureToUniqueId.find(material.texturePath) != textureToUniqueId.end())
+				meshNode->setTextureId(textureToUniqueId[material.texturePath]);
+		}
+	}
+
+
 	node->setRevision(revisionId);
 	queueNode(node.release());
 }
