@@ -115,64 +115,13 @@ void MultipartOptimizer::processScene(
 	// Get lookup map for material properties
 	auto matPropMap = getAllMaterials(handler, database, collection, revId);
 
-	// Process Group (Opaque, prim 2)
-	processUntexturedGroup(
-		database,
-		collection,
-		revId,
-		handler,
-		exporter.get(),
-		transformMap,
-		matPropMap,
-		true,
-		2
-	);
+	// Get all groupings
+	auto groupings = getAllGroupings(handler, database, collection, revId);
 
-	// Process Group (Opaque, prim 3)
-	processUntexturedGroup(
-		database,
-		collection,
-		revId,
-		handler,
-		exporter.get(),
-		transformMap,
-		matPropMap,
-		true,
-		3
-	);
+	for (auto grouping : groupings) {
 
-	// Process Group (Transparent, prim 2)
-	processUntexturedGroup(
-		database,
-		collection,
-		revId,
-		handler,
-		exporter.get(),
-		transformMap,
-		matPropMap,
-		false,
-		2
-	);
-
-	// Process Group (Transparent, prim 3)
-	processUntexturedGroup(
-		database,
-		collection,
-		revId,
-		handler,
-		exporter.get(),
-		transformMap,
-		matPropMap,
-		false,
-		3
-	);
-
-	// Get Texture IDs
-	auto texIds = getAllTextureIds(handler, database, collection, revId);
-
-	// Process each texture group
-	for (auto texId : texIds) {
-		processTexturedGroup(
+		// Process Group (Opaque, prim 2)
+		processUntexturedGroup(
 			database,
 			collection,
 			revId,
@@ -180,8 +129,71 @@ void MultipartOptimizer::processScene(
 			exporter.get(),
 			transformMap,
 			matPropMap,
-			texId
+			true,
+			2,
+			grouping
 		);
+
+		// Process Group (Opaque, prim 3)
+		processUntexturedGroup(
+			database,
+			collection,
+			revId,
+			handler,
+			exporter.get(),
+			transformMap,
+			matPropMap,
+			true,
+			3,
+			grouping
+		);
+
+		// Process Group (Transparent, prim 2)
+		processUntexturedGroup(
+			database,
+			collection,
+			revId,
+			handler,
+			exporter.get(),
+			transformMap,
+			matPropMap,
+			false,
+			2,
+			grouping
+		);
+
+		// Process Group (Transparent, prim 3)
+		processUntexturedGroup(
+			database,
+			collection,
+			revId,
+			handler,
+			exporter.get(),
+			transformMap,
+			matPropMap,
+			false,
+			3,
+			grouping
+		);
+
+		// Get Texture IDs
+		auto texIds = getAllTextureIds(handler, database, collection, revId);
+
+		// Process each texture group
+		for (auto texId : texIds) {
+			processTexturedGroup(
+				database,
+				collection,
+				revId,
+				handler,
+				exporter.get(),
+				transformMap,
+				matPropMap,
+				texId,
+				grouping
+			);
+		}
+
 	}
 
 	// Finalise export
@@ -340,6 +352,44 @@ MultipartOptimizer::MaterialPropMap MultipartOptimizer::getAllMaterials(
 	return matMap;
 }
 
+std::vector<std::string> MultipartOptimizer::getAllGroupings(
+	repo::core::handler::AbstractDatabaseHandler* handler,
+	const std::string& database,
+	const std::string& collection,
+	const repo::lib::RepoUUID& revId
+) {
+	// Create filter
+	repo::core::handler::database::query::RepoQueryBuilder filter;
+	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));
+	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_MESH));
+	filter.append(repo::core::handler::database::query::Exists(REPO_NODE_MESH_LABEL_GROUPING, true));
+
+	repo::core::handler::database::query::RepoProjectionBuilder projection;
+	projection.excludeField(REPO_NODE_LABEL_ID);
+	projection.includeField(REPO_NODE_MESH_LABEL_GROUPING);
+
+	std::vector<std::string> groupings;
+
+	std::shared_ptr<repo::core::handler::database::Cursor> cursor;
+	auto success = handler->findCursorByCriteria(database, collection, filter, projection, cursor);
+
+	if (success) {
+		for (auto document : (*cursor)) {
+			auto bson = repo::core::model::RepoBSON(document);
+			groupings.push_back(bson.getStringField(REPO_NODE_MESH_LABEL_GROUPING));
+		}
+	}
+	else {
+		repoWarning << "getAllGroupings; getting cursor was not successful; no groupings from db in output vector";
+	}
+
+	// If we found no groupings, then we have just one pass without so we add "".
+	if (groupings.size() == 0)
+		groupings.push_back("");
+
+	return groupings;
+}
+
 std::vector<repo::lib::RepoUUID> MultipartOptimizer::getAllTextureIds(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	const std::string &database,
@@ -382,16 +432,19 @@ void MultipartOptimizer::processUntexturedGroup(
 	const TransformMap& transformMap,
 	const MaterialPropMap& matPropMap,
 	const bool isOpaque,
-	const int primitive)
+	const int primitive,
+	const std::string& grouping)
 {
 	// Create filter
 	repo::core::handler::database::query::RepoQueryBuilder filter;
 	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));
 	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_PRIMITIVE, primitive));
+	if (!grouping.empty())
+		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_GROUPING, grouping));
 	if (isOpaque)
 		filter.append(repo::core::handler::database::query::Eq(REPO_FILTER_TAG_OPAQUE, true));
 	else
-		filter.append(repo::core::handler::database::query::Eq(REPO_FILTER_TAG_TRANSPARENT, true));
+		filter.append(repo::core::handler::database::query::Eq(REPO_FILTER_TAG_TRANSPARENT, true));	
 
 	// Use filter to cluster and supermesh
 	clusterAndSupermesh(
@@ -412,12 +465,15 @@ void MultipartOptimizer::processTexturedGroup(
 	repo::manipulator::modelconvertor::RepoBundleExport *exporter,
 	const TransformMap& transformMap,
 	const MaterialPropMap& matPropMap,
-	const repo::lib::RepoUUID texId)
+	const repo::lib::RepoUUID texId,
+	const std::string& grouping)
 {
 	// Create filter
 	repo::core::handler::database::query::RepoQueryBuilder filter;
 	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));	
 	filter.append(repo::core::handler::database::query::Eq(REPO_FILTER_TAG_TEXTURE_ID, texId));
+	if (!grouping.empty())
+		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_GROUPING, grouping));
 	
 
 	// Use filter to cluster and supermesh

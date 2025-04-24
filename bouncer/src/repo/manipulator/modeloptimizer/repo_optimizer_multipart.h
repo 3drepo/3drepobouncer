@@ -405,6 +405,13 @@ namespace repo {
 					const repo::lib::RepoUUID &revId
 				);
 
+				std::vector<std::string> getAllGroupings(
+					repo::core::handler::AbstractDatabaseHandler* handler,
+					const std::string& database,
+					const std::string& collection,
+					const repo::lib::RepoUUID& revId
+				);
+
 				std::vector < repo::lib::RepoUUID> getAllTextureIds(
 					repo::core::handler::AbstractDatabaseHandler *handler,
 					const std::string &database,
@@ -421,7 +428,8 @@ namespace repo {
 					const TransformMap& transformMap,
 					const MaterialPropMap& matPropMap,
 					const bool isOpaque,
-					const int primitive);
+					const int primitive,
+					const std::string& grouping);
 
 				void processTexturedGroup(
 					const std::string &database,
@@ -431,7 +439,8 @@ namespace repo {
 					repo::manipulator::modelconvertor::RepoBundleExport *exporter,
 					const TransformMap& transformMap,
 					const MaterialPropMap& matPropMap,
-					const repo::lib::RepoUUID texId);
+					const repo::lib::RepoUUID texId,
+					const std::string& grouping);
 
 				void clusterAndSupermesh(
 					const std::string &database,
