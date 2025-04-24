@@ -37,8 +37,8 @@ uint8_t SceneManager::commitScene(
 	const std::string												&tag,
 	const std::string												&desc,
 	const repo::lib::RepoUUID										&revId,
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler>	handler,
-	std::shared_ptr <repo::core::handler::fileservice::FileManager>	fileManager
+	repo::core::handler::AbstractDatabaseHandler					*handler,
+	repo::core::handler::fileservice::FileManager					*fileManager
 ) {
 	uint8_t errCode = REPOERR_UPLOAD_FAILED;
 	std::string msg;
@@ -106,7 +106,7 @@ uint8_t SceneManager::commitScene(
 }
 
 repo::core::model::RepoScene* SceneManager::fetchScene(
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+	repo::core::handler::AbstractDatabaseHandler  *handler,
 	const std::string                             &database,
 	const std::string                             &project,
 	const repo::lib::RepoUUID                     &uuid,
@@ -167,7 +167,7 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 }
 
 void SceneManager::fetchScene(
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+	repo::core::handler::AbstractDatabaseHandler *handler,
 	repo::core::model::RepoScene              *scene)
 {
 	if (scene)
@@ -212,7 +212,7 @@ void SceneManager::fetchScene(
 bool SceneManager::generateWebViewBuffers(
 	repo::core::model::RepoScene									*scene,
 	const repo::manipulator::modelconvertor::WebExportType			&exType,
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler>	handler)
+	repo::core::handler::AbstractDatabaseHandler					*handler)
 {
 	bool validScene =
 		scene
@@ -253,9 +253,9 @@ bool SceneManager::generateWebViewBuffers(
 }
 
 bool SceneManager::generateAndCommitSelectionTree(
-	repo::core::model::RepoScene									*scene,
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler>	handler,
-	std::shared_ptr <repo::core::handler::fileservice::FileManager>	fileManager)
+	repo::core::model::RepoScene					*scene,
+	repo::core::handler::AbstractDatabaseHandler	*handler,
+	repo::core::handler::fileservice::FileManager	*fileManager)
 {
 	bool success = false;
 	if (success = scene && scene->isRevisioned() && handler)
@@ -299,15 +299,15 @@ bool SceneManager::generateAndCommitSelectionTree(
 	return success;
 }
 
-bool isAddOnEnabled(std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, const std::string &database, const std::string addOn) {
+bool isAddOnEnabled(repo::core::handler::AbstractDatabaseHandler *handler, const std::string &database, const std::string addOn) {
 
 	auto teamspace = repo::core::model::RepoTeamspace(handler->findOneByUniqueID(database, "teamspace", database));
 	return teamspace.isAddOnEnabled(addOn);
 }
 
 bool SceneManager::isVrEnabled(
-	const repo::core::model::RepoScene                 *scene,
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler) const
+	const repo::core::model::RepoScene           *scene,
+	repo::core::handler::AbstractDatabaseHandler *handler) const
 {
 	auto dbName = scene->getDatabaseName();
 	return isAddOnEnabled(handler, dbName, REPO_USER_LABEL_VR_ENABLED);

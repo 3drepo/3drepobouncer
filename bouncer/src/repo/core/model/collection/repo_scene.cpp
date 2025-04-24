@@ -552,8 +552,8 @@ void RepoScene::clearStash()
 }
 
 uint8_t RepoScene::commit(
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-	std::shared_ptr < repo::core::handler::fileservice::FileManager> manager,
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	repo::core::handler::fileservice::FileManager *manager,
 	std::string &errMsg,
 	const std::string &userName,
 	const std::string &message,
@@ -634,8 +634,8 @@ uint8_t RepoScene::commit(
 }
 
 bool RepoScene::commitSequence(
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-	std::shared_ptr <repo::core::handler::fileservice::FileManager> manager,
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	repo::core::handler::fileservice::FileManager *manager,
 	const repo::lib::RepoUUID &revID,
 	std::string &err
 ) {
@@ -660,7 +660,7 @@ bool RepoScene::commitSequence(
 }
 
 void RepoScene::addErrorStatusToProjectSettings(
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler
+	repo::core::handler::AbstractDatabaseHandler *handler
 )
 {
 	auto projectsettings = RepoProjectSettings(handler->findOneByUniqueID(databaseName, REPO_COLLECTION_SETTINGS, projectName));
@@ -669,7 +669,7 @@ void RepoScene::addErrorStatusToProjectSettings(
 }
 
 void RepoScene::addTimestampToProjectSettings(
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler
+	repo::core::handler::AbstractDatabaseHandler *handler
 )
 {
 	auto projectsettings = RepoProjectSettings(handler->findOneByUniqueID(databaseName, REPO_COLLECTION_SETTINGS, projectName));
@@ -678,8 +678,8 @@ void RepoScene::addTimestampToProjectSettings(
 }
 
 bool RepoScene::commitRevisionNode(
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-	std::shared_ptr <repo::core::handler::fileservice::FileManager> manager,
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	repo::core::handler::fileservice::FileManager *manager,
 	std::string &errMsg,
 	ModelRevisionNode *&newRevNode,
 	const std::string &userName,
@@ -771,7 +771,7 @@ bool RepoScene::commitRevisionNode(
 }
 
 bool RepoScene::commitNodes(
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+	repo::core::handler::AbstractDatabaseHandler *handler,
 	const std::vector<repo::lib::RepoUUID> &nodesToCommit,
 	const repo::lib::RepoUUID &revId,
 	const GraphType &gType,
@@ -803,7 +803,7 @@ bool RepoScene::commitNodes(
 }
 
 bool RepoScene::commitSceneChanges(
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+	repo::core::handler::AbstractDatabaseHandler *handler,
 	const repo::lib::RepoUUID &revId,
 	std::string &errMsg)
 {
@@ -1055,7 +1055,7 @@ void RepoScene::setOriginalFiles(std::vector<std::string> fileNames)
 }
 
 bool RepoScene::loadRevision(
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+	repo::core::handler::AbstractDatabaseHandler *handler,
 	std::string &errMsg,
 	const std::vector<ModelRevisionNode::UploadStatus> &includeStatus) {
 	bool success = true;
@@ -1120,7 +1120,7 @@ bool RepoScene::loadRevision(
 }
 
 bool RepoScene::loadScene(
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+	repo::core::handler::AbstractDatabaseHandler *handler,
 	std::string &errMsg) {
 	bool success = true;
 
@@ -1145,7 +1145,7 @@ bool RepoScene::loadScene(
 }
 
 bool RepoScene::loadStash(
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+	repo::core::handler::AbstractDatabaseHandler *handler,
 	std::string &errMsg) {
 	bool success = true;
 	if (!handler)
@@ -1259,7 +1259,7 @@ void RepoScene::removeNode(
 
 bool RepoScene::populate(
 	const GraphType &gtype,
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+	repo::core::handler::AbstractDatabaseHandler *handler,
 	std::vector<RepoBSON> nodes,
 	std::string &errMsg)
 {
@@ -1538,7 +1538,7 @@ void RepoScene::shiftModel(
 }
 
 bool RepoScene::updateRevisionStatus(
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+	repo::core::handler::AbstractDatabaseHandler *handler,
 	const ModelRevisionNode::UploadStatus &status)
 {
 	bool success = false;

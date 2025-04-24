@@ -196,7 +196,7 @@ namespace repo {
 				* Add error message to project settings
 				*/
 				void addErrorStatusToProjectSettings(
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler
+					repo::core::handler::AbstractDatabaseHandler *handler
 				);
 
 				/**
@@ -205,7 +205,7 @@ namespace repo {
 				* @param handler database handler to perform the commit
 				*/
 				void addTimestampToProjectSettings(
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler
+					repo::core::handler::AbstractDatabaseHandler *handler
 				);
 
 				/**
@@ -255,8 +255,8 @@ namespace repo {
 				* @return returns true upon success
 				*/
 				uint8_t commit(
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-					std::shared_ptr <repo::core::handler::fileservice::FileManager> manager,
+					repo::core::handler::AbstractDatabaseHandler *handler,
+					repo::core::handler::fileservice::FileManager *manager,
 					std::string &errMsg,
 					const std::string &userName,
 					const std::string &message = std::string(),
@@ -441,7 +441,7 @@ namespace repo {
 				* @return return true upon success
 				*/
 				bool loadRevision(
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+					repo::core::handler::AbstractDatabaseHandler *handler,
 					std::string &errMsg,
 					const std::vector<ModelRevisionNode::UploadStatus> &includeStatus = {});
 
@@ -453,7 +453,7 @@ namespace repo {
 				* @return return true upon success
 				*/
 				bool loadScene(
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+					repo::core::handler::AbstractDatabaseHandler *handler,
 					std::string &errMsg);
 
 				/**
@@ -463,7 +463,7 @@ namespace repo {
 				* @return return true upon success
 				*/
 				bool loadStash(
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+					repo::core::handler::AbstractDatabaseHandler *handler,
 					std::string &errMsg);
 
 				/*
@@ -481,7 +481,7 @@ namespace repo {
 				* @param status status of the revision
 				*/
 				bool updateRevisionStatus(
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+					repo::core::handler::AbstractDatabaseHandler *handler,
 					const ModelRevisionNode::UploadStatus &status);
 
 				/**
@@ -908,15 +908,15 @@ namespace repo {
 				* @return returns true upon success
 				*/
 				bool commitNodes(
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+					repo::core::handler::AbstractDatabaseHandler *handler,
 					const std::vector<repo::lib::RepoUUID> &nodesToCommit,
 					const repo::lib::RepoUUID &revId,
 					const GraphType &gType,
 					std::string &errMsg);
 
 				bool commitSequence(
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-					std::shared_ptr <repo::core::handler::fileservice::FileManager> manager,
+					repo::core::handler::AbstractDatabaseHandler *handler,
+					repo::core::handler::fileservice::FileManager *manager,
 					const repo::lib::RepoUUID &revID,
 					std::string &err
 				);
@@ -932,8 +932,8 @@ namespace repo {
 				* @return returns true upon success
 				*/
 				bool commitRevisionNode(
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-					std::shared_ptr <repo::core::handler::fileservice::FileManager> manager,
+					repo::core::handler::AbstractDatabaseHandler *handler,
+					repo::core::handler::fileservice::FileManager *manager,
 					std::string &errMsg,
 					ModelRevisionNode *&newRevNode,
 					const std::string &userName,
@@ -948,7 +948,7 @@ namespace repo {
 				* @return returns true upon success
 				*/
 				bool commitSceneChanges(
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+					repo::core::handler::AbstractDatabaseHandler *handler,
 					const repo::lib::RepoUUID &revId,
 					std::string &errMsg);
 
@@ -975,7 +975,7 @@ namespace repo {
 				*/
 				bool populate(
 					const GraphType &gtype,
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+					repo::core::handler::AbstractDatabaseHandler *handler,
 					std::vector<RepoBSON> nodes,
 					std::string &errMsg);
 

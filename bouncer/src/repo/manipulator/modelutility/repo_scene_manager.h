@@ -35,8 +35,8 @@ namespace repo {
 					const std::string												&tag,
 					const std::string												&desc,
 					const repo::lib::RepoUUID										&revId,
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler>	handler,
-					std::shared_ptr<repo::core::handler::fileservice::FileManager>	fileManager
+					repo::core::handler::AbstractDatabaseHandler					*handler,
+					repo::core::handler::fileservice::FileManager					*fileManager
 				);
 
 				/**
@@ -50,7 +50,7 @@ namespace repo {
 				* @return returns a pointer to a repoScene.
 				*/
 				repo::core::model::RepoScene* fetchScene(
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+					repo::core::handler::AbstractDatabaseHandler  *handler,
 					const std::string                             &database,
 					const std::string                             &project,
 					const repo::lib::RepoUUID                     &uuid,
@@ -60,7 +60,7 @@ namespace repo {
 					const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus = {});
 
 				repo::core::model::RepoScene* fetchScene(
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+					repo::core::handler::AbstractDatabaseHandler  *handler,
 					const std::string                             &database,
 					const std::string                             &project,
 					const bool                             &ignoreRefScene = false,
@@ -76,7 +76,7 @@ namespace repo {
 				* @param scene scene to fully load
 				*/
 				void fetchScene(
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+					repo::core::handler::AbstractDatabaseHandler *handler,
 					repo::core::model::RepoScene              *scene);
 
 				/**
@@ -89,8 +89,8 @@ namespace repo {
 				*/
 				bool generateAndCommitSelectionTree(
 					repo::core::model::RepoScene										*scene,
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler>		handler,
-					std::shared_ptr < repo::core::handler::fileservice::FileManager>	fileManager
+					repo::core::handler::AbstractDatabaseHandler						*handler,
+					repo::core::handler::fileservice::FileManager						*fileManager
 				);
 
 				/**
@@ -102,8 +102,8 @@ namespace repo {
 				* @return returns true if VR is enabled
 				*/
 				bool isVrEnabled(
-					const repo::core::model::RepoScene                 *scene,
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler) const;
+					const repo::core::model::RepoScene					*scene,
+					repo::core::handler::AbstractDatabaseHandler		*handler) const;
 
 				/**
 				* Generate a `exType` encoding for the given scene
@@ -117,7 +117,7 @@ namespace repo {
 				bool generateWebViewBuffers(
 					repo::core::model::RepoScene									*scene,
 					const repo::manipulator::modelconvertor::WebExportType			&exType,
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler>	handler = nullptr);
+					repo::core::handler::AbstractDatabaseHandler					*handler = nullptr);
 
 				/**
 				* Remove stash graph entry for the given scene

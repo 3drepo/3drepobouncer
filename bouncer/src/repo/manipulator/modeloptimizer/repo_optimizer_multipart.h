@@ -52,7 +52,7 @@ namespace repo {
 					std::string database,
 					std::string collection,
 					repo::lib::RepoUUID revId,
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler
+					repo::core::handler::AbstractDatabaseHandler *handler
 				);
 
 
@@ -387,7 +387,7 @@ namespace repo {
 				typedef std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> TransformMap;
 
 				std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> getAllTransforms(
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+					repo::core::handler::AbstractDatabaseHandler *handler,
 					const std::string &database,
 					const std::string &collection,
 					const repo::lib::RepoUUID &revId
@@ -399,14 +399,14 @@ namespace repo {
 					std::unordered_map<repo::lib::RepoUUID,	repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> &leafTransforms);
 
 				MaterialPropMap getAllMaterials(
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+					repo::core::handler::AbstractDatabaseHandler *handler,
 					const std::string &database,
 					const std::string &collection,
 					const repo::lib::RepoUUID &revId
 				);
 
 				std::vector < repo::lib::RepoUUID> getAllTextureIds(
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+					repo::core::handler::AbstractDatabaseHandler *handler,
 					const std::string &database,
 					const std::string &collection,
 					const repo::lib::RepoUUID &revId
@@ -416,8 +416,8 @@ namespace repo {
 					const std::string &database,
 					const std::string &collection,
 					const repo::lib::RepoUUID &revId,
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-					std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
+					repo::core::handler::AbstractDatabaseHandler *handler,
+					repo::manipulator::modelconvertor::RepoBundleExport *exporter,
 					const TransformMap& transformMap,
 					const MaterialPropMap& matPropMap,
 					const bool isOpaque,
@@ -427,8 +427,8 @@ namespace repo {
 					const std::string &database,
 					const std::string &collection,
 					const repo::lib::RepoUUID &revId,
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-					std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
+					repo::core::handler::AbstractDatabaseHandler *handler,
+					repo::manipulator::modelconvertor::RepoBundleExport *exporter,
 					const TransformMap& transformMap,
 					const MaterialPropMap& matPropMap,
 					const repo::lib::RepoUUID texId);
@@ -436,8 +436,8 @@ namespace repo {
 				void clusterAndSupermesh(
 					const std::string &database,
 					const std::string &collection,
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-					std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
+					repo::core::handler::AbstractDatabaseHandler *handler,
+					repo::manipulator::modelconvertor::RepoBundleExport *exporter,
 					const TransformMap& transformMap,
 					const MaterialPropMap& matPropMap,
 					const repo::core::handler::database::query::RepoQuery filter,
@@ -447,8 +447,8 @@ namespace repo {
 				void createSuperMeshes(
 					const std::string &database,
 					const std::string &collection,
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-					std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
+					repo::core::handler::AbstractDatabaseHandler *handler,
+					repo::manipulator::modelconvertor::RepoBundleExport *exporter,
 					const TransformMap& transformMap,
 					const MaterialPropMap& matPropMap,
 					std::vector<StreamingMeshNode>& meshNodes,
@@ -457,7 +457,7 @@ namespace repo {
 				);
 
 				void createSuperMesh(
-					std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
+					repo::manipulator::modelconvertor::RepoBundleExport *exporter,
 					const mapped_mesh_t& mappedMesh
 				);
 
@@ -465,7 +465,7 @@ namespace repo {
 					const std::string &database,
 					const std::string &collection,
 					const repo::lib::RepoUUID &revId,
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler);
+					repo::core::handler::AbstractDatabaseHandler *handler);
 
 				void appendMesh(					
 					StreamingMeshNode &node,
@@ -500,7 +500,7 @@ namespace repo {
 				*/
 				void splitMesh(
 					StreamingMeshNode &node,
-					std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
+					repo::manipulator::modelconvertor::RepoBundleExport *exporter,
 					const MaterialPropMap &matPropMap,
 					const repo::lib::RepoUUID &texId
 				);

@@ -57,12 +57,12 @@ void MultipartOptimizer::processScene(
 	std::string database,
 	std::string collection,
 	repo::lib::RepoUUID revId,
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler)
+	repo::core::handler::AbstractDatabaseHandler *handler)
 {
 	// Initialise exporter
 #ifdef REPO_ASSET_GENERATOR_SUPPORT
 	auto worldOffset = getWorldOffset(database, collection, revId, handler);
-	auto exporter = std::make_shared<repo::manipulator::modelconvertor::RepoBundleExport>(
+	auto exporter = std::make_unique<repo::manipulator::modelconvertor::RepoBundleExport>(
 		database,
 		collection,
 		revId,
@@ -121,7 +121,7 @@ void MultipartOptimizer::processScene(
 		collection,
 		revId,
 		handler,
-		exporter,
+		exporter.get(),
 		transformMap,
 		matPropMap,
 		true,
@@ -134,7 +134,7 @@ void MultipartOptimizer::processScene(
 		collection,
 		revId,
 		handler,
-		exporter,
+		exporter.get(),
 		transformMap,
 		matPropMap,
 		true,
@@ -147,7 +147,7 @@ void MultipartOptimizer::processScene(
 		collection,
 		revId,
 		handler,
-		exporter,
+		exporter.get(),
 		transformMap,
 		matPropMap,
 		false,
@@ -160,7 +160,7 @@ void MultipartOptimizer::processScene(
 		collection,
 		revId,
 		handler,
-		exporter,
+		exporter.get(),
 		transformMap,
 		matPropMap,
 		false,
@@ -177,7 +177,7 @@ void MultipartOptimizer::processScene(
 			collection,
 			revId,
 			handler,
-			exporter,
+			exporter.get(),
 			transformMap,
 			matPropMap,
 			texId
@@ -189,7 +189,7 @@ void MultipartOptimizer::processScene(
 }
 
 std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> MultipartOptimizer::getAllTransforms(
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+	repo::core::handler::AbstractDatabaseHandler *handler,
 	const std::string &database,
 	const std::string &collection,
 	const repo::lib::RepoUUID &revId
@@ -289,7 +289,7 @@ void MultipartOptimizer::traverseTransformTree(
 }
 
 MultipartOptimizer::MaterialPropMap MultipartOptimizer::getAllMaterials(
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+	repo::core::handler::AbstractDatabaseHandler *handler,
 	const std::string &database,
 	const std::string &collection,
 	const repo::lib::RepoUUID &revId)
@@ -341,7 +341,7 @@ MultipartOptimizer::MaterialPropMap MultipartOptimizer::getAllMaterials(
 }
 
 std::vector<repo::lib::RepoUUID> MultipartOptimizer::getAllTextureIds(
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+	repo::core::handler::AbstractDatabaseHandler *handler,
 	const std::string &database,
 	const std::string &collection,
 	const repo::lib::RepoUUID &revId) {
@@ -377,8 +377,8 @@ void MultipartOptimizer::processUntexturedGroup(
 	const std::string &database,
 	const std::string &collection,
 	const repo::lib::RepoUUID &revId,
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-	std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	repo::manipulator::modelconvertor::RepoBundleExport *exporter,
 	const TransformMap& transformMap,
 	const MaterialPropMap& matPropMap,
 	const bool isOpaque,
@@ -408,8 +408,8 @@ void MultipartOptimizer::processTexturedGroup(
 	const std::string &database,
 	const std::string &collection,
 	const repo::lib::RepoUUID &revId,
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-	std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	repo::manipulator::modelconvertor::RepoBundleExport *exporter,
 	const TransformMap& transformMap,
 	const MaterialPropMap& matPropMap,
 	const repo::lib::RepoUUID texId)
@@ -435,8 +435,8 @@ void MultipartOptimizer::processTexturedGroup(
 void MultipartOptimizer::clusterAndSupermesh(
 	const std::string &database,
 	const std::string &collection,
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-	std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	repo::manipulator::modelconvertor::RepoBundleExport *exporter,
 	const TransformMap& transformMap,
 	const MaterialPropMap& matPropMap,
 	const repo::core::handler::database::query::RepoQuery filter,
@@ -492,8 +492,8 @@ void MultipartOptimizer::clusterAndSupermesh(
 void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 	const std::string &database,
 	const std::string &collection,
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-	std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	repo::manipulator::modelconvertor::RepoBundleExport *exporter,
 	const TransformMap& transformMap,
 	const MaterialPropMap& matPropMap,
 	std::vector<StreamingMeshNode>& meshNodes,
@@ -589,7 +589,7 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 }
 
 void MultipartOptimizer::createSuperMesh(
-	std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
+	repo::manipulator::modelconvertor::RepoBundleExport *exporter,
 	const mapped_mesh_t& mappedMesh)
 {
 	// Create supermesh node
@@ -602,7 +602,7 @@ std::vector<double> MultipartOptimizer::getWorldOffset(
 	const std::string &database,
 	const std::string &collection,
 	const repo::lib::RepoUUID &revId,
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler)
+	repo::core::handler::AbstractDatabaseHandler *handler)
 {
 	auto bson = handler->findOneByUniqueID(database, collection + "." + REPO_COLLECTION_HISTORY, revId);
 	if (bson.hasField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT))
@@ -888,7 +888,7 @@ std::vector<size_t> MultipartOptimizer::getSupermeshBranchNodes(
 
 void MultipartOptimizer::splitMesh(
 	StreamingMeshNode &node,
-	std::shared_ptr<repo::manipulator::modelconvertor::RepoBundleExport> exporter,
+	repo::manipulator::modelconvertor::RepoBundleExport *exporter,
 	const MaterialPropMap &matPropMap,
 	const repo::lib::RepoUUID &texId
 )

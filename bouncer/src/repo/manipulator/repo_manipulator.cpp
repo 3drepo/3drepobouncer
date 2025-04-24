@@ -149,7 +149,7 @@ uint8_t RepoManipulator::commitScene(
 	}
 
 	modelutility::SceneManager sceneManager;
-	return sceneManager.commitScene(scene, projOwner, tag, desc, revId, dbHandler, dbHandler->getFileManager());
+	return sceneManager.commitScene(scene, projOwner, tag, desc, revId, dbHandler.get(), dbHandler->getFileManager().get());
 }
 
 repo::core::model::RepoScene* RepoManipulator::fetchScene(
@@ -162,7 +162,7 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 	const std::vector<repo::core::model::ModelRevisionNode::UploadStatus>& includeStatus)
 {
 	modelutility::SceneManager sceneManager;
-	return sceneManager.fetchScene(dbHandler, database, project, uuid, headRevision, ignoreRefScene, skeletonFetch, includeStatus);
+	return sceneManager.fetchScene(dbHandler.get(), database, project, uuid, headRevision, ignoreRefScene, skeletonFetch, includeStatus);
 }
 
 void RepoManipulator::fetchScene(
@@ -171,7 +171,7 @@ void RepoManipulator::fetchScene(
 	const bool& skeletonFetch)
 {
 	modelutility::SceneManager sceneManager;
-	return sceneManager.fetchScene(dbHandler, scene);
+	return sceneManager.fetchScene(dbHandler.get(), scene);
 }
 
 bool RepoManipulator::generateAndCommitRepoBundlesBuffer(
@@ -188,7 +188,7 @@ bool RepoManipulator::generateAndCommitSelectionTree(
 )
 {
 	modelutility::SceneManager SceneManager;
-	return SceneManager.generateAndCommitSelectionTree(scene, dbHandler, dbHandler->getFileManager());
+	return SceneManager.generateAndCommitSelectionTree(scene, dbHandler.get(), dbHandler->getFileManager().get());
 }
 
 bool RepoManipulator::generateAndCommitWebViewBuffer(
@@ -196,7 +196,7 @@ bool RepoManipulator::generateAndCommitWebViewBuffer(
 	const modelconvertor::WebExportType& exType)
 {
 	modelutility::SceneManager SceneManager;
-	return SceneManager.generateWebViewBuffers(scene, exType, dbHandler);
+	return SceneManager.generateWebViewBuffers(scene, exType, dbHandler.get());
 }
 
 std::vector<repo::core::model::RepoBSON>
@@ -334,7 +334,7 @@ bool RepoManipulator::init(
 bool RepoManipulator::isVREnabled(const repo::core::model::RepoScene* scene) const
 {
 	modelutility::SceneManager manager;
-	return manager.isVrEnabled(scene, dbHandler);
+	return manager.isVrEnabled(scene, dbHandler.get());
 }
 
 void RepoManipulator::updateRevisionStatus(
@@ -342,5 +342,5 @@ void RepoManipulator::updateRevisionStatus(
 	const ModelRevisionNode::UploadStatus& status
 )
 {
-	scene->updateRevisionStatus(dbHandler, status);
+	scene->updateRevisionStatus(dbHandler.get(), status);
 }
