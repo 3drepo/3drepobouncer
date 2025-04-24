@@ -23,8 +23,8 @@
 
 #include <string>
 #include "repo_model_import_abstract.h"
-#include "../../../core/model/bson/repo_node_material.h"
-#include "../../../core/model/bson/repo_node_mesh.h"
+#include "repo/core/model/bson/repo_node_material.h"
+#include "repo/core/model/bson/repo_node_mesh.h"
 
 namespace repo {
 	namespace manipulator {
@@ -65,15 +65,12 @@ namespace repo {
 				* @return returns true upon success
 				*/
 				virtual bool importModel(std::string filePath, uint8_t &err);
+				virtual bool importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err);
 
 				virtual bool requireReorientation() const { return true; }
 
 			protected:
-
-				std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> meshes;
-				std::unordered_map<std::string, repo::core::model::MaterialNode*> materials;
-				std::vector<double> offset;
-				std::string ifcFile;
+				repo::core::model::RepoScene* scene;
 				bool partialFailure;
 			};
 		} //namespace modelconvertor

@@ -54,6 +54,11 @@ SceneUtils::NodeInfo SceneUtils::getRootNode()
 	return getNodeInfo(scene->getRoot(repo::core::model::RepoScene::GraphType::DEFAULT));
 }
 
+bool SceneUtils::isPopulated()
+{
+	return scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size() > 0;
+}
+
 std::vector<SceneUtils::NodeInfo> SceneUtils::findTransformationNodesByName(std::string name)
 {
 	std::vector<NodeInfo> nodes;
@@ -122,9 +127,22 @@ std::vector<SceneUtils::NodeInfo> SceneUtils::NodeInfo::getMeshes()
 	return meshNodes;
 }
 
+std::unordered_map<std::string, repo::lib::RepoVariant> SceneUtils::NodeInfo::getMetadata()
+{
+	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
+	for (auto c : scene->getChildNodes(node, false))
+	{
+		if (dynamic_cast<MetadataNode*>(c.node)) {
+			auto m = dynamic_cast<MetadataNode*>(c.node)->getAllMetadata();
+			metadata.insert(m.begin(), m.end());
+		}
+	}
+	return metadata;
+}
+
 repo::lib::repo_material_t SceneUtils::NodeInfo::getMaterial()
 {
-	for (auto c : scene->getChildNodes(node, true))
+	for (auto& c : scene->getChildNodes(node, true))
 	{
 		if (dynamic_cast<MaterialNode*>(c.node)) {
 			return dynamic_cast<MaterialNode*>(c.node)->getMaterialStruct();
