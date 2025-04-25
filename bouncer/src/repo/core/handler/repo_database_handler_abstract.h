@@ -253,7 +253,8 @@ namespace repo {
 				virtual std::vector<repo::core::model::RepoBSON> findAllByCriteria(
 					const std::string& database,
 					const std::string& collection,
-					const database::query::RepoQuery& criteria) = 0;
+					const database::query::RepoQuery& criteria,
+					const bool loadBinaries = false) = 0;
 
 				/**
 				* Given a search criteria,  find all the documents that passes this query
@@ -267,7 +268,8 @@ namespace repo {
 					const std::string& database,
 					const std::string& collection,
 					const database::query::RepoQuery& filter,
-					const database::query::RepoQuery& projection) = 0;
+					const database::query::RepoQuery& projection,
+					const bool loadBinaries = false) = 0;
 
 
 

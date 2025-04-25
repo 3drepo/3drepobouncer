@@ -261,7 +261,8 @@ namespace repo {
 				std::vector<repo::core::model::RepoBSON> findAllByCriteria(
 					const std::string& database,
 					const std::string& collection,
-					const database::query::RepoQuery& criteria);
+					const database::query::RepoQuery& criteria,
+					const bool loadBinaries = false);
 
 				/**
 				* Given a search criteria,  find all the documents that passes this query
@@ -275,7 +276,8 @@ namespace repo {
 					const std::string& database,
 					const std::string& collection,
 					const database::query::RepoQuery& filter,
-					const database::query::RepoQuery& projection);
+					const database::query::RepoQuery& projection,
+					const bool loadBinaries = false);
 
 				/**
 				* Given a search criteria,  find all the documents that passes this query
@@ -466,6 +468,11 @@ namespace repo {
 				//// as large vectors of binary data. It must be set using setFileManager
 				//// before documents containing such members are uploaded.
 				//std::shared_ptr<repo::core::handler::fileservice::FileManager> fileManager;
+
+				repo::core::model::RepoBSON createRepoBSON(
+					const std::string& database,
+					const std::string& collection,
+					const bsoncxx::document::view& view);
 
 				/**
 				* Get large file off GridFS

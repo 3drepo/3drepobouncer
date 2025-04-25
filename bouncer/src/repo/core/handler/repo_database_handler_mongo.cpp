@@ -370,6 +370,26 @@ void MongoDatabaseHandler::createIndex(const std::string& database, const std::s
 	}
 }
 
+/*
+ * This helper function resolves the binary files for a given document. Any
+ * document that might have file mappings should be passed through here
+ * before being returned as a RepoBSON.
+ */
+repo::core::model::RepoBSON MongoDatabaseHandler::createRepoBSON(
+	const std::string& database,
+	const std::string& collection,
+	const bsoncxx::document::view& view)
+{
+	fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
+
+	repo::core::model::RepoBSON orgBson = repo::core::model::RepoBSON(view);
+	if (orgBson.hasFileReference()) {
+		auto ref = orgBson.getBinaryReference();
+		auto buffer = blobHandler.readToBuffer(fileservice::DataRef::deserialise(ref));
+		orgBson.initBinaryBuffer(buffer);
+	}
+	return orgBson;
+}
 
 
 void MongoDatabaseHandler::loadBinaries(const std::string& database,
@@ -441,17 +461,19 @@ void MongoDatabaseHandler::dropDocument(
 std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria(
 	const std::string& database,
 	const std::string& collection,
-	const database::query::RepoQuery& filter) {
+	const database::query::RepoQuery& filter,
+	const bool loadBinaries/* = false*/) {
 
 	auto projection = database::query::RepoProjectionBuilder();
-	return findAllByCriteria(database, collection, filter, projection);
+	return findAllByCriteria(database, collection, filter, projection, loadBinaries);
 }
 
 std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria(
 	const std::string& database,
 	const std::string& collection,
 	const database::query::RepoQuery& filter,
-	const database::query::RepoQuery& projection)
+	const database::query::RepoQuery& projection,
+	const bool loadBinaries/* = false*/)
 {
 	try
 	{
@@ -473,7 +495,10 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 			// Find all documents
 			auto cursor = col.find(criteria.view());
 			for (auto& doc : cursor) {
-				data.push_back(repo::core::model::RepoBSON(doc));
+				if (loadBinaries)
+					data.push_back(createRepoBSON(database, collection, doc));
+				else
+					data.push_back(repo::core::model::RepoBSON(doc));
 			}
 		}
 		return data;
