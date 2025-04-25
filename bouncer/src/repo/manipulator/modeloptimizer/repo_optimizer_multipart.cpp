@@ -177,7 +177,7 @@ void MultipartOptimizer::processScene(
 		);
 
 		// Get Texture IDs
-		auto texIds = getAllTextureIds(handler, database, collection, revId);
+		auto texIds = getAllTextureIds(handler, database, collection, revId, grouping);
 
 		// Process each texture group
 		for (auto texId : texIds) {
@@ -394,12 +394,15 @@ std::vector<repo::lib::RepoUUID> MultipartOptimizer::getAllTextureIds(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	const std::string &database,
 	const std::string &collection,
-	const repo::lib::RepoUUID &revId) {
+	const repo::lib::RepoUUID &revId,
+	const std::string& grouping) {
 
 	// Create filter
 	repo::core::handler::database::query::RepoQueryBuilder filter;
 	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));
 	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_TEXTURE));
+	if (!grouping.empty())
+		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_GROUPING, grouping));
 
 	repo::core::handler::database::query::RepoProjectionBuilder projection;
 	projection.excludeField(REPO_NODE_LABEL_ID);

@@ -416,7 +416,8 @@ namespace repo {
 					repo::core::handler::AbstractDatabaseHandler *handler,
 					const std::string &database,
 					const std::string &collection,
-					const repo::lib::RepoUUID &revId
+					const repo::lib::RepoUUID &revId,
+					const std::string& grouping
 				);
 
 				void processUntexturedGroup(
