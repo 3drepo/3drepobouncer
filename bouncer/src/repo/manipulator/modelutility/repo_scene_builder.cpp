@@ -365,14 +365,105 @@ repo::manipulator::modelconvertor::ModelUnits RepoSceneBuilder::getUnits()
 	return this->units;
 }
 
-void RepoSceneBuilder::createIndexes()
+void RepoSceneBuilder::createIndexes(bool groupingsEnabled)
 {
 	using namespace repo::core::handler::database::index;
-	handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, Descending({ REPO_NODE_REVISION_LABEL_TIMESTAMP }));
-	handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ REPO_NODE_REVISION_ID, "metadata.key", "metadata.value" }));
-	handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ "metadata.key", "metadata.value" }));
-	handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ REPO_NODE_REVISION_ID, REPO_NODE_LABEL_SHARED_ID, REPO_LABEL_TYPE }));
-	handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ REPO_NODE_LABEL_SHARED_ID }));
+	auto historyCollection = projectName + "." + REPO_COLLECTION_HISTORY;
+	auto sceneCollection = projectName + "." + REPO_COLLECTION_SCENE;
+
+	handler->createIndex(databaseName, historyCollection, Descending({ REPO_NODE_REVISION_LABEL_TIMESTAMP }));
+	handler->createIndex(databaseName, sceneCollection, Ascending({ REPO_NODE_REVISION_ID, "metadata.key", "metadata.value" }));
+	handler->createIndex(databaseName, sceneCollection, Ascending({ "metadata.key", "metadata.value" }));
+	handler->createIndex(databaseName, sceneCollection, Ascending({ REPO_NODE_REVISION_ID, REPO_NODE_LABEL_SHARED_ID, REPO_LABEL_TYPE }));
+	handler->createIndex(databaseName, sceneCollection, Ascending({ REPO_NODE_LABEL_SHARED_ID }));
+
+	// Indexes for filtering during the supermeshing
+
+	// For getting all Transforms and all Materials
+	// For transforms, this cannot be a covered query because REPO_NODE_LABEL_MATRIX and REPO_NODE_LABEL_PARENTS are both arrays
+	// For materials, this cannot be a covered query because parents, ambient, and diffuse are all arrays
+	handler->createIndex(databaseName, sceneCollection, Ascending({ REPO_NODE_REVISION_ID, REPO_NODE_LABEL_TYPE }));
+
+	// For all groupings
+	// Should be covered query
+	if (groupingsEnabled)
+		handler->createIndex(databaseName, sceneCollection, Ascending({ REPO_NODE_REVISION_ID, REPO_NODE_LABEL_TYPE, REPO_NODE_MESH_LABEL_GROUPING }), true);
+	
+	// For the opaque group
+	// Cannot be a covered query because parents and bounding box are both arrays
+	if(groupingsEnabled)
+		handler->createIndex(databaseName, sceneCollection, Ascending({
+			REPO_NODE_REVISION_ID,
+			REPO_NODE_MESH_LABEL_PRIMITIVE,
+			REPO_NODE_MESH_LABEL_GROUPING,
+			REPO_FILTER_TAG_OPAQUE
+			}), true);
+	else
+		handler->createIndex(databaseName, sceneCollection, Ascending({
+			REPO_NODE_REVISION_ID,
+			REPO_NODE_MESH_LABEL_PRIMITIVE,
+			REPO_FILTER_TAG_OPAQUE
+			}), true);
+
+	// For the transparent group
+	// Cannot be a covered query because parents and bounding box are both arrays
+	if (groupingsEnabled)
+		handler->createIndex(databaseName, sceneCollection, Ascending({
+			REPO_NODE_REVISION_ID,
+			REPO_NODE_MESH_LABEL_PRIMITIVE,
+			REPO_NODE_MESH_LABEL_GROUPING,
+			REPO_FILTER_TAG_TRANSPARENT
+			}), true);
+	else
+		handler->createIndex(databaseName, sceneCollection, Ascending({
+			REPO_NODE_REVISION_ID,
+			REPO_NODE_MESH_LABEL_PRIMITIVE,
+			REPO_FILTER_TAG_TRANSPARENT
+			}), true);
+
+	// Get all texture ids
+	// Should be a covered query
+	if (groupingsEnabled)
+		handler->createIndex(databaseName, sceneCollection, Ascending({
+			REPO_NODE_REVISION_ID,
+			REPO_NODE_LABEL_TYPE,
+			REPO_NODE_MESH_LABEL_GROUPING,			
+			REPO_NODE_LABEL_SHARED_ID
+			}), true);
+	// Would be this for without groupings, but already set above in the initial block
+	//else
+	//	handler->createIndex(databaseName, sceneCollection, Ascending({
+	//		REPO_NODE_REVISION_ID,
+	//		REPO_NODE_LABEL_TYPE,
+	//		REPO_NODE_LABEL_SHARED_ID
+	//		}));
+
+	// For the textured group
+	// Cannot be a covered query because parents and bounding box are both arrays
+	if (groupingsEnabled)
+		handler->createIndex(databaseName, sceneCollection, Ascending({
+			REPO_NODE_REVISION_ID,			
+			REPO_NODE_MESH_LABEL_GROUPING,
+			REPO_FILTER_TAG_TEXTURE_ID
+			}), true);
+	else
+		handler->createIndex(databaseName, sceneCollection, Ascending({
+			REPO_NODE_REVISION_ID,
+			REPO_FILTER_TAG_TEXTURE_ID
+			}), true);
+	
+	// For pulling extra mesh information during the supermeshing
+	// Should be a covered query
+	handler->createIndex(databaseName, sceneCollection, Ascending({
+		REPO_NODE_LABEL_SHARED_ID,
+		REPO_NODE_MESH_LABEL_VERTICES_COUNT,
+		REPO_NODE_MESH_LABEL_FACES_COUNT,
+		REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT,
+		REPO_NODE_MESH_LABEL_PRIMITIVE,
+		REPO_LABEL_BINARY_REFERENCE
+		}), true);
+
+
 }
 
 RepoSceneBuilder::AsyncImpl::AsyncImpl(RepoSceneBuilder* builder):

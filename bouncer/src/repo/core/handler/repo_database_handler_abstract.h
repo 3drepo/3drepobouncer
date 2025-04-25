@@ -166,6 +166,15 @@ namespace repo {
 				virtual void createIndex(const std::string &database, const std::string &collection, const database::index::RepoIndex&) = 0;
 
 				/**
+				* Create an index within the given collection
+				* @param database name of the database
+				* @param name name of the collection
+				* @param index BSONObj specifying the index
+				* @param bool whether this is a sparse index
+				*/
+				virtual void createIndex(const std::string& database, const std::string& collection, const database::index::RepoIndex& index, bool sparse) = 0;
+
+				/**
 				* Insert a single document in database.collection
 				* @param database name
 				* @param collection name
