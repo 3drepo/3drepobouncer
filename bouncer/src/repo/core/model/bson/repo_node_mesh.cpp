@@ -231,14 +231,18 @@ void appendFilterTags(
 	if (!grouping.empty())
 		builder.append(REPO_NODE_MESH_LABEL_GROUPING, grouping);
 
-	if(isOpaque) // The flags only exist when they are true
-		builder.append(REPO_FILTER_TAG_OPAQUE, true);
+	if (!textureId.isDefaultValue() || isOpaque || isTransparent) {
+		RepoBSONBuilder matProps;
 
-	if (isTransparent) // The flags only exist when they are true
-		builder.append(REPO_FILTER_TAG_TRANSPARENT, true);
+		if (!textureId.isDefaultValue())
+			matProps.append(REPO_FILTER_PROP_TEXTURE_ID, textureId);
+		else if (isOpaque) // The flags only exist when they are true
+			matProps.append(REPO_FILTER_PROP_OPAQUE, true);
+		else if (isTransparent) // The flags only exist when they are true
+			matProps.append(REPO_FILTER_PROP_TRANSPARENT, true);
 
-	if (!textureId.isDefaultValue())
-		builder.append(REPO_FILTER_TAG_TEXTURE_ID, textureId);
+		builder.append(REPO_FILTER_OBJECT_NAME, matProps.obj());
+	}
 }
 
 void MeshNode::serialise(repo::core::model::RepoBSONBuilder& builder) const

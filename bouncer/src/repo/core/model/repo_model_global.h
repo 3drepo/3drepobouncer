@@ -229,6 +229,10 @@
 // Filter tags
 //
 //-----------------------------------------------------------------------------
-#define REPO_FILTER_TAG_OPAQUE		"materialProperties.isOpaque"
-#define REPO_FILTER_TAG_TRANSPARENT	"materialProperties.isTransparent"
-#define REPO_FILTER_TAG_TEXTURE_ID	"materialProperties.textureId"
+#define REPO_FILTER_OBJECT_NAME			"materialProperties"
+#define REPO_FILTER_PROP_OPAQUE			"isOpaque"
+#define REPO_FILTER_PROP_TRANSPARENT	"isTransparent"
+#define REPO_FILTER_PROP_TEXTURE_ID		"textureId"
+#define REPO_FILTER_TAG_OPAQUE			"materialProperties.isOpaque"
+#define REPO_FILTER_TAG_TRANSPARENT		"materialProperties.isTransparent"
+#define REPO_FILTER_TAG_TEXTURE_ID		"materialProperties.textureId"
