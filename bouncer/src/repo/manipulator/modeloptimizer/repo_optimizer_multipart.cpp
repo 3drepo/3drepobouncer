@@ -308,7 +308,7 @@ MultipartOptimizer::MaterialPropMap MultipartOptimizer::getAllMaterials(
 {
 	repo::core::handler::database::query::RepoQueryBuilder filter;
 	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));
-	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_MATERIAL));
+	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_MATERIAL)));
 
 	auto materialBsons = handler->findAllByCriteria(database, collection, filter);
 
@@ -361,7 +361,7 @@ std::vector<std::string> MultipartOptimizer::getAllGroupings(
 	// Create filter
 	repo::core::handler::database::query::RepoQueryBuilder filter;
 	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));
-	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_MESH));
+	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_MESH)));
 	filter.append(repo::core::handler::database::query::Exists(REPO_NODE_MESH_LABEL_GROUPING, true));
 
 	repo::core::handler::database::query::RepoProjectionBuilder projection;
@@ -399,7 +399,7 @@ std::vector<repo::lib::RepoUUID> MultipartOptimizer::getAllTextureIds(
 	// Create filter
 	repo::core::handler::database::query::RepoQueryBuilder filter;
 	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));
-	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_TEXTURE));
+	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_TEXTURE)));
 	if (!grouping.empty())
 		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_GROUPING, grouping));
 
