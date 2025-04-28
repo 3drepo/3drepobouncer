@@ -509,56 +509,6 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 	}
 }
 
-bool repo::core::handler::MongoDatabaseHandler::findCursorByCriteria(
-	const std::string& database,
-	const std::string& collection,
-	const database::query::RepoQuery& criteria,
-	std::shared_ptr<database::Cursor> cursor)
-{
-	auto projection = database::query::RepoProjectionBuilder();
-	return findCursorByCriteria(database, collection, criteria, projection, cursor);
-}
-
-bool repo::core::handler::MongoDatabaseHandler::findCursorByCriteria(
-	const std::string& database,
-	const std::string& collection,
-	const database::query::RepoQuery& filter,
-	const database::query::RepoQuery& projection,
-	std::shared_ptr<database::Cursor> cursor)
-{
-	try
-	{
-		repo::core::model::RepoBSON criteria = makeQueryFilterDocument(filter);
-		if (!criteria.isEmpty() && !database.empty() && !collection.empty())
-		{
-			auto client = clientPool->acquire();
-			auto db = client->database(database);
-			auto col = db.collection(collection);
-
-			std::string critString = criteria.toString();
-			std::cout << critString;
-
-			repo::core::model::RepoBSON projectionBson = makeQueryFilterDocument(projection);
-			mongocxx::v_noabi::options::find options;
-			options.projection(projectionBson.view());
-
-			// Find all documents and return cursor
-			auto mongoCursor = std::make_shared<MongoCursor>(std::move(col.find(criteria.view())), this);
-			cursor = std::static_pointer_cast<Cursor>(mongoCursor);
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-		
-	}
-	catch (...)
-	{
-		std::throw_with_nested(MongoDatabaseHandlerException(*this, "findCursorByCriteria", database, collection));
-	}
-}
-
 repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 	const std::string& database,
 	const std::string& collection,
@@ -1040,6 +990,56 @@ void MongoDatabaseHandler::updateMany(
 	{
 		std::cout << e.what() << std::endl;
 		std::throw_with_nested(MongoDatabaseHandlerException(*this, "updateMany", database, collection));
+	}
+}
+
+std::unique_ptr<Cursor> repo::core::handler::MongoDatabaseHandler::findCursorByCriteria(
+	const std::string& database,
+	const std::string& collection,
+	const database::query::RepoQuery& criteria)
+{
+	auto projection = database::query::RepoProjectionBuilder();
+	return findCursorByCriteria(database, collection, criteria, projection);
+}
+
+std::unique_ptr<Cursor> repo::core::handler::MongoDatabaseHandler::findCursorByCriteria(
+	const std::string& database,
+	const std::string& collection,
+	const database::query::RepoQuery& filter,
+	const database::query::RepoQuery& projection)
+{
+	try
+	{
+		repo::core::model::RepoBSON criteria = makeQueryFilterDocument(filter);
+		if (!criteria.isEmpty() && !database.empty() && !collection.empty())
+		{
+			auto client = clientPool->acquire();
+			auto db = client->database(database);
+			auto col = db.collection(collection);
+
+			std::string critString = criteria.toString();
+			std::cout << critString;
+
+			repo::core::model::RepoBSON projectionBson = makeQueryFilterDocument(projection);
+			mongocxx::v_noabi::options::find options;
+			options.projection(projectionBson.view());
+
+			// Find all documents and return cursor
+			// Some pointer magic, because we have to cast the mongo cursor to its base before returning it.
+			// Ownership will be the caller's after the two raw pointers go out of scope
+			MongoDatabaseHandler::MongoCursor* mongoCursor = new MongoDatabaseHandler::MongoCursor(std::move(col.find(criteria.view())), this);			
+			database::Cursor *baseCursor = mongoCursor;
+			return std::unique_ptr<database::Cursor>(baseCursor);			
+		}
+		else
+		{
+			return nullptr;
+		}
+
+	}
+	catch (...)
+	{
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "findCursorByCriteria", database, collection));
 	}
 }
 

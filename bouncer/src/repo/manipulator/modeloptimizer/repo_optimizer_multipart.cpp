@@ -218,12 +218,12 @@ std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUU
 	projection.includeField(REPO_NODE_LABEL_MATRIX);
 	projection.includeField(REPO_NODE_LABEL_PARENTS);
 	
-	std::shared_ptr<repo::core::handler::database::Cursor> cursor;
-	auto success = handler->findCursorByCriteria(database, collection, filter, projection, cursor);	
+	
+	auto cursor = handler->findCursorByCriteria(database, collection, filter, projection);	
 		
 	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> leafToTransformMap;
 
-	if (success) {
+	if (cursor) {
 		repo::core::model::RepoBSON rootNode;
 		std::unordered_map<repo::lib::RepoUUID, std::vector<repo::core::model::RepoBSON>, repo::lib::RepoUUIDHasher> childNodeMap;
 		for (auto bson : (*cursor)) {
@@ -370,10 +370,9 @@ std::vector<std::string> MultipartOptimizer::getAllGroupings(
 
 	std::vector<std::string> groupings;
 
-	std::shared_ptr<repo::core::handler::database::Cursor> cursor;
-	auto success = handler->findCursorByCriteria(database, collection, filter, projection, cursor);
+	auto cursor = handler->findCursorByCriteria(database, collection, filter, projection);
 
-	if (success) {
+	if (cursor) {
 		for (auto document : (*cursor)) {
 			auto bson = repo::core::model::RepoBSON(document);
 			groupings.push_back(bson.getStringField(REPO_NODE_MESH_LABEL_GROUPING));
@@ -410,10 +409,9 @@ std::vector<repo::lib::RepoUUID> MultipartOptimizer::getAllTextureIds(
 
 	std::vector<repo::lib::RepoUUID> texIds;
 
-	std::shared_ptr<repo::core::handler::database::Cursor> cursor;
-	auto success = handler->findCursorByCriteria(database, collection, filter, projection, cursor);
+	auto cursor = handler->findCursorByCriteria(database, collection, filter, projection);
 
-	if (success) {
+	if (cursor) {
 		for (auto document : (*cursor)) {
 			auto bson = repo::core::model::RepoBSON(document);
 			texIds.push_back(bson.getUUIDField(REPO_NODE_LABEL_SHARED_ID));
@@ -510,13 +508,12 @@ void MultipartOptimizer::clusterAndSupermesh(
 	projection.includeField(REPO_NODE_LABEL_PARENTS);
 
 	// Get cursor
-	std::shared_ptr<repo::core::handler::database::Cursor> cursor;
-	auto success = handler->findCursorByCriteria(database, collection, filter, projection, cursor);
+	auto cursor = handler->findCursorByCriteria(database, collection, filter, projection);
 
 
 	// iterate cursor and pack outcomes in lightweight mesh node structure
 	std::vector<StreamingMeshNode> nodes;
-	if (success) {
+	if (cursor) {
 		for (auto bson : (*cursor)) {
 			nodes.push_back(StreamingMeshNode(bson));
 		}

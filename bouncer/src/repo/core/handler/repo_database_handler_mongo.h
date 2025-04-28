@@ -286,11 +286,10 @@ namespace repo {
 				* @param criteria search criteria in a bson object
 				* @return a MongoCursor allowing traversal of the documents that satisfy the given criteria
 				*/
-				bool findCursorByCriteria(
+				std::unique_ptr<database::Cursor> findCursorByCriteria(
 					const std::string& database,
 					const std::string& collection,
-					const database::query::RepoQuery& criteria,
-					std::shared_ptr<database::Cursor> cursor);
+					const database::query::RepoQuery& criteria);
 
 				/**
 				* Given a search criteria,  find all the documents that passes this query
@@ -300,12 +299,11 @@ namespace repo {
 				* @param projection to define the fiels in the returned document
 				* @return a MongoCursor allowing traversal of the documents that satisfy the given criteria
 				*/
-				bool findCursorByCriteria(
+				std::unique_ptr<database::Cursor> findCursorByCriteria(
 					const std::string& database,
 					const std::string& collection,
 					const database::query::RepoQuery& filter,
-					const database::query::RepoQuery& projection,
-					std::shared_ptr<database::Cursor> cursor);
+					const database::query::RepoQuery& projection);
 
 				/**
 				* Given a search criteria,  find one documents that passes this query
