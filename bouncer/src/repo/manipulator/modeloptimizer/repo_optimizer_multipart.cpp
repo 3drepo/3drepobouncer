@@ -561,7 +561,8 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 	const repo::lib::RepoUUID &texId)
 {
 	// Get blobHandler
-	repo::core::handler::fileservice::BlobFilesHandler blobHandler(handler->getFileManager(), database, collection);
+	auto sceneCollection = collection + "." + REPO_COLLECTION_SCENE;
+	repo::core::handler::fileservice::BlobFilesHandler blobHandler(handler->getFileManager(), database, sceneCollection);
 	
 	for (auto cluster : clusters) {
 
@@ -588,7 +589,6 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 		projection.includeField(REPO_NODE_MESH_LABEL_PRIMITIVE);
 		projection.includeField(REPO_LABEL_BINARY_REFERENCE);
 
-		auto sceneCollection = collection + "." + REPO_COLLECTION_SCENE;
 		auto binNodes = handler->findAllByCriteria(database, sceneCollection, filter, projection);
 
 		// Iterate over the meshes and decide what to do with each. The options are
@@ -608,7 +608,8 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 			// Placed In its own scope so that buffer can be discarded as soon as it is processed
 			{
 				auto binRef = nodeBson.getBinaryReference();
-				auto buffer = blobHandler.readToBuffer(repo::core::handler::fileservice::DataRef::deserialise(binRef));
+				auto dataRef = repo::core::handler::fileservice::DataRef::deserialise(binRef);
+				auto buffer = blobHandler.readToBuffer(dataRef);
 				sNode.loadSupermeshingData(nodeBson, buffer);
 				
 			}
