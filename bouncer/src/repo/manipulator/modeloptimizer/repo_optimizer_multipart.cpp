@@ -210,7 +210,7 @@ std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUU
 
 	repo::core::handler::database::query::RepoQueryBuilder filter;
 	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));
-	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_TRANSFORMATION));
+	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_TRANSFORMATION)));
 
 	repo::core::handler::database::query::RepoProjectionBuilder projection;
 	projection.excludeField(REPO_NODE_LABEL_ID);	
@@ -218,8 +218,8 @@ std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUU
 	projection.includeField(REPO_NODE_LABEL_MATRIX);
 	projection.includeField(REPO_NODE_LABEL_PARENTS);
 	
-	
-	auto cursor = handler->findCursorByCriteria(database, collection, filter, projection);	
+	auto sceneCollection = collection + "." + REPO_COLLECTION_SCENE;
+	auto cursor = handler->findCursorByCriteria(database, sceneCollection, filter, projection);
 		
 	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> leafToTransformMap;
 
@@ -310,7 +310,8 @@ MultipartOptimizer::MaterialPropMap MultipartOptimizer::getAllMaterials(
 	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));
 	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_MATERIAL)));
 
-	auto materialBsons = handler->findAllByCriteria(database, collection, filter);
+	auto sceneCollection = collection + "." + REPO_COLLECTION_SCENE;
+	auto materialBsons = handler->findAllByCriteria(database, sceneCollection, filter);
 
 	MaterialPropMap matMap;
 	for (auto &materialBson : materialBsons) {
@@ -370,7 +371,8 @@ std::vector<std::string> MultipartOptimizer::getAllGroupings(
 
 	std::vector<std::string> groupings;
 
-	auto cursor = handler->findCursorByCriteria(database, collection, filter, projection);
+	auto sceneCollection = collection + "." + REPO_COLLECTION_SCENE;
+	auto cursor = handler->findCursorByCriteria(database, sceneCollection, filter, projection);
 
 	if (cursor) {
 		for (auto document : (*cursor)) {
@@ -409,7 +411,8 @@ std::vector<repo::lib::RepoUUID> MultipartOptimizer::getAllTextureIds(
 
 	std::vector<repo::lib::RepoUUID> texIds;
 
-	auto cursor = handler->findCursorByCriteria(database, collection, filter, projection);
+	auto sceneCollection = collection + "." + REPO_COLLECTION_SCENE;
+	auto cursor = handler->findCursorByCriteria(database, sceneCollection, filter, projection);
 
 	if (cursor) {
 		for (auto document : (*cursor)) {
@@ -508,7 +511,8 @@ void MultipartOptimizer::clusterAndSupermesh(
 	projection.includeField(REPO_NODE_LABEL_PARENTS);
 
 	// Get cursor
-	auto cursor = handler->findCursorByCriteria(database, collection, filter, projection);
+	auto sceneCollection = collection + "." + REPO_COLLECTION_SCENE;
+	auto cursor = handler->findCursorByCriteria(database, sceneCollection, filter, projection);
 
 
 	// iterate cursor and pack outcomes in lightweight mesh node structure
@@ -584,7 +588,8 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 		projection.includeField(REPO_NODE_MESH_LABEL_PRIMITIVE);
 		projection.includeField(REPO_LABEL_BINARY_REFERENCE);
 
-		auto binNodes = handler->findAllByCriteria(database, collection, filter, projection);
+		auto sceneCollection = collection + "." + REPO_COLLECTION_SCENE;
+		auto binNodes = handler->findAllByCriteria(database, sceneCollection, filter, projection);
 
 		// Iterate over the meshes and decide what to do with each. The options are
 		// to append to the existing supermesh, start a new supermesh, or split into
