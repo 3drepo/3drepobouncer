@@ -427,8 +427,7 @@ void RepoSceneBuilder::createIndexes(bool groupingsEnabled)
 		handler->createIndex(databaseName, sceneCollection, Ascending({
 			REPO_NODE_REVISION_ID,
 			REPO_NODE_LABEL_TYPE,
-			REPO_NODE_MESH_LABEL_GROUPING,			
-			REPO_NODE_LABEL_SHARED_ID
+			REPO_NODE_MESH_LABEL_GROUPING
 			}), true);
 	// Would be this for without groupings, but already set above in the initial block
 	//else
@@ -442,7 +441,8 @@ void RepoSceneBuilder::createIndexes(bool groupingsEnabled)
 	// Cannot be a covered query because parents and bounding box are both arrays
 	if (groupingsEnabled)
 		handler->createIndex(databaseName, sceneCollection, Ascending({
-			REPO_NODE_REVISION_ID,			
+			REPO_NODE_REVISION_ID,		
+			REPO_NODE_MESH_LABEL_PRIMITIVE,
 			REPO_NODE_MESH_LABEL_GROUPING,
 			REPO_FILTER_TAG_TEXTURE_ID
 			}), true);
