@@ -109,18 +109,23 @@ void MultipartOptimizer::processScene(
 #endif // REPO_ASSETGENERATOR
 
 
-	// Get transforms
+	// Getting Transforms
+	repoInfo << "Getting Transforms";
 	auto transformMap = getAllTransforms(handler, database, collection, revId);
 
 	// Get lookup map for material properties
+	repoInfo << "Getting Materials";
 	auto matPropMap = getAllMaterials(handler, database, collection, revId);
 
 	// Get all groupings
+	repoInfo << "Getting Groupings";
 	auto groupings = getAllGroupings(handler, database, collection, revId);
+	repoInfo << "Found " << groupings.size() << " groupings";
 
 	for (auto grouping : groupings) {
 
 		// Process Group (Opaque, prim 2)
+		repoInfo << "Process Group - Opaque, Primitive 2";
 		processUntexturedGroup(
 			database,
 			collection,
@@ -135,6 +140,7 @@ void MultipartOptimizer::processScene(
 		);
 
 		// Process Group (Opaque, prim 3)
+		repoInfo << "Process Group - Opaque, Primitive 3";
 		processUntexturedGroup(
 			database,
 			collection,
@@ -149,6 +155,7 @@ void MultipartOptimizer::processScene(
 		);
 
 		// Process Group (Transparent, prim 2)
+		repoInfo << "Process Group - Transparent, Primitive 2";
 		processUntexturedGroup(
 			database,
 			collection,
@@ -163,6 +170,7 @@ void MultipartOptimizer::processScene(
 		);
 
 		// Process Group (Transparent, prim 3)
+		repoInfo << "Process Group - Transparent, Primitive 3";
 		processUntexturedGroup(
 			database,
 			collection,
@@ -177,6 +185,7 @@ void MultipartOptimizer::processScene(
 		);
 
 		// Get Texture IDs
+		repoInfo << "Getting all texture Ids";
 		auto texIds = getAllTextureIds(handler, database, collection, revId, grouping);
 
 		// Process each texture group
@@ -262,7 +271,12 @@ std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUU
 				rootNode = bson;
 			}
 		}
+		if (childNodeMap.size() == 0) {
+			repoWarning << "getAllTransforms; no transformations returned by database query.";
+		}
+		else {
 		traverseTransformTree(rootNode, childNodeMap, leafToTransformMap);
+	}
 	}
 	else {
 		repoWarning << "getAllTransforms; getting cursor was not successful; no transforms in output map";
@@ -564,9 +578,11 @@ void MultipartOptimizer::clusterAndSupermesh(
 	}
 
 	// Cluster the mesh nodes
+	repoInfo << "Clustering Nodes";
 	auto clusters = clusterMeshNodes(nodes);
 
 	// Create Supermeshes from the clusters
+	repoInfo << "Creating Supermeshes from clustered Nodes";
 	createSuperMeshes(database, collection, handler, exporter, transformMap, matPropMap, nodes, clusters, texId);
 }
 
@@ -641,6 +657,10 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 			if (transformMap.contains(parentId)) {
 				auto transform = transformMap.at(parentId);
 			sNode.bakeVertices(transform);
+			}
+			else {
+				repoWarning << "createSuperMeshes; no transform found for this mesh node. Mesh will not be baked";
+			}
 			
 			if (currentSupermesh.vertices.size() + sNode.getNumVertices() <= REPO_MP_MAX_VERTEX_COUNT)
 			{
@@ -767,7 +787,7 @@ void MultipartOptimizer::appendMesh(
 		}
 		else
 		{
-			//This shouldn't happen, if it does, then it means the mFormat isn't set correctly
+			//This shouldn't happen, if it does, then it means that mesh nodes with and without uvs have been grouped together
 			repoError << "Unexpected transformedMesh format mismatch occured!";
 		}
 	}
