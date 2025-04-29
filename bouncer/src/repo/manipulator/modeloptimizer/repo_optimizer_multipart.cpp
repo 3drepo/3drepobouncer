@@ -406,8 +406,7 @@ std::vector<repo::lib::RepoUUID> MultipartOptimizer::getAllTextureIds(
 		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_GROUPING, grouping));
 
 	repo::core::handler::database::query::RepoProjectionBuilder projection;
-	projection.excludeField(REPO_NODE_LABEL_ID);
-	projection.includeField(REPO_NODE_LABEL_SHARED_ID);
+	projection.includeField(REPO_NODE_LABEL_ID);	
 
 	std::vector<repo::lib::RepoUUID> texIds;
 
@@ -417,7 +416,7 @@ std::vector<repo::lib::RepoUUID> MultipartOptimizer::getAllTextureIds(
 	if (cursor) {
 		for (auto document : (*cursor)) {
 			auto bson = repo::core::model::RepoBSON(document);
-			texIds.push_back(bson.getUUIDField(REPO_NODE_LABEL_SHARED_ID));
+			texIds.push_back(bson.getUUIDField(REPO_NODE_LABEL_ID));
 		}
 	}	
 	else {
