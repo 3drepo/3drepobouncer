@@ -616,7 +616,9 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 			
 			// Bake the streaming mesh node by applying the transformation to the vertices
 			// Note that the bounds have already been transformed by calling transformBounds earlier
-			auto transform = transformMap.at(sharedId);
+			auto parentId = sNode.getParent();
+			if (transformMap.contains(parentId)) {
+				auto transform = transformMap.at(parentId);
 			sNode.bakeVertices(transform);
 			
 			if (currentSupermesh.vertices.size() + sNode.getNumVertices() <= REPO_MP_MAX_VERTEX_COUNT)
