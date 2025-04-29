@@ -181,6 +181,11 @@ void MultipartOptimizer::processScene(
 
 		// Process each texture group
 		for (auto texId : texIds) {
+
+			// For line primitives (2)
+			// One cannot map a texture to a line, however, customers can assign materials with textures to lines
+			// so we need to be able to process them.
+			repoInfo << "Process Group - Textured, " << texId.toString();
 			processTexturedGroup(
 				database,
 				collection,
@@ -190,6 +195,21 @@ void MultipartOptimizer::processScene(
 				transformMap,
 				matPropMap,
 				texId,
+				2,
+				grouping
+			);
+
+			// For triangle primitives (3)
+			processTexturedGroup(
+				database,
+				collection,
+				revId,
+				handler,
+				exporter.get(),
+				transformMap,
+				matPropMap,
+				texId,
+				3,
 				grouping
 			);
 		}
@@ -469,12 +489,14 @@ void MultipartOptimizer::processTexturedGroup(
 	const TransformMap& transformMap,
 	const MaterialPropMap& matPropMap,
 	const repo::lib::RepoUUID texId,
+	const int primitive,
 	const std::string& grouping)
 {
 	// Create filter
 	repo::core::handler::database::query::RepoQueryBuilder filter;
 	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));	
 	filter.append(repo::core::handler::database::query::Eq(REPO_FILTER_TAG_TEXTURE_ID, texId));
+	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_PRIMITIVE, primitive));
 	if (!grouping.empty())
 		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_GROUPING, grouping));
 	

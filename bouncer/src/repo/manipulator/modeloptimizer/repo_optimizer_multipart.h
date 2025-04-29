@@ -441,6 +441,7 @@ namespace repo {
 					const TransformMap& transformMap,
 					const MaterialPropMap& matPropMap,
 					const repo::lib::RepoUUID texId,
+					const int primitive,
 					const std::string& grouping);
 
 				void clusterAndSupermesh(
