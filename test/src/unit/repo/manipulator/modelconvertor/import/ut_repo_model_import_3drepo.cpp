@@ -26,6 +26,7 @@
 #include "../../../../repo_test_database_info.h"
 #include "../../../../repo_test_scene_utils.h"
 #include "../../../../repo_test_mesh_utils.h"
+#include "../../../../repo_test_matchers.h"
 
 using namespace repo::manipulator::modelconvertor;
 using namespace testing;
@@ -273,4 +274,129 @@ TEST(RepoModelImport, EmptyTransforms)
 		auto mesh = node.getMeshesInProjectCoordinates()[0];
 		EXPECT_THAT(mesh::shortestDistance(mesh.getVertices(), { -13623.82985447024, 4000, -9214.240784344169 }), Lt(0.1));
 	}
+}
+
+#pragma optimize("", off)
+
+TEST(RepoModelImport, TransformHierarchy1)
+{
+	/*
+	* The following file has been exported from Civils3D containing nested Block
+	* References - which Civils exports using child transforms.
+	*/
+
+	// Note the normals in these files are not correct: https://github.com/3drepo/3D-Repo-Product-Team/issues/793
+
+	uint8_t errCode = 0;
+	SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/blockHierarchy.civils.bim004.bim"), errCode));
+
+	// From Civils, block instances have the same Id
+
+	{
+		auto nodes = scene.findLeafNodes("[711C]");
+		EXPECT_THAT(nodes.size(), Eq(3));
+
+		std::vector<repo::lib::RepoBounds> bounds;
+		for (auto& n : nodes) {
+			auto m = n.getMeshInProjectCoordinates();
+			bounds.push_back(m.getBoundingBox());
+		}
+
+		auto expected = {
+			repo::lib::RepoBounds(
+				repo::lib::RepoVector3D64(5.1069793701171875, 0, -11.161346435546875),
+				repo::lib::RepoVector3D64(15.106979370117188, 5, -21.161346435546875)
+			),
+			repo::lib::RepoBounds(
+				repo::lib::RepoVector3D64(-68.755371093750000, 0, -7.5416831970214844),
+				repo::lib::RepoVector3D64(-58.755371093750000, 5, 2.4583168029785156)
+			),
+			repo::lib::RepoBounds(
+				repo::lib::RepoVector3D64(-42.592697143554688, 0, -8.3890991210937500),
+				repo::lib::RepoVector3D64(-31.006179809570312, 5, 3.1974182128906250)
+			)
+		};
+
+		EXPECT_THAT(bounds, UnorderedBoundsAre(expected, 0.00000001));
+	}
+
+	{
+		auto nodes = scene.findLeafNodes("[7120]");
+		EXPECT_THAT(nodes.size(), Eq(3));
+
+		std::vector<repo::lib::RepoBounds> bounds;
+		for (auto& n : nodes) {
+			auto m = n.getMeshInProjectCoordinates();
+			bounds.push_back(m.getBoundingBox());
+		}
+
+		auto expected = {
+			repo::lib::RepoBounds(
+				repo::lib::RepoVector3D64(-66.811294555664062, 0, 15.182624816894531),
+				repo::lib::RepoVector3D64(-56.811294555664062, 5, 25.182624816894531)
+			),
+			repo::lib::RepoBounds(
+				repo::lib::RepoVector3D64(7.0510559082031250, 0, 1.5629615783691406),
+				repo::lib::RepoVector3D64(17.051055908203125, 5, 11.562961578369141)
+			),
+			repo::lib::RepoBounds(
+				repo::lib::RepoVector3D64(-36.726799011230469, 0, 13.650974273681641),
+				repo::lib::RepoVector3D64(-25.140281677246094, 5, 25.237491607666016)
+			)
+		};
+
+		EXPECT_THAT(bounds, UnorderedBoundsAre(expected, 0.00000001));
+	}
+}
+
+TEST(RepoModelImport, TransformHierarchy2)
+{
+	/*
+	* The following file has been manipulated with a hierarchy of boxes with multiple
+	* nested transforms (manipulated because the tools we've seen so far only create one
+	* nested transform - though we should support an arbitrary depth).
+	*/
+
+	// Note the normals in these files are not correct: https://github.com/3drepo/3D-Repo-Product-Team/issues/793
+
+	uint8_t errCode = 0;
+	SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/nestedBlocks.bim004.bim"), errCode));
+
+	{
+		auto n = scene.findTransformationNodeByName("[7004]");
+		EXPECT_THAT(n.getParent().name(), Eq(std::string("0")));
+		auto b = n.getMeshInProjectCoordinates().getBoundingBox();
+		EXPECT_THAT(n.getMeshInProjectCoordinates().getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(-1000, 0, -1000), repo::lib::RepoVector3D64(0, 500, 0)), 0.000001));
+	}
+
+	{
+		auto n = scene.findTransformationNodeByName("[7005]");
+		EXPECT_THAT(n.getParent().name(), Eq(std::string("[7004]")));
+		auto b = n.getMeshInProjectCoordinates().getBoundingBox();
+		EXPECT_THAT(n.getMeshInProjectCoordinates().getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(1000, 0, -2000), repo::lib::RepoVector3D64(2000, 500, -1000)), 0.000001));
+	}
+
+	{
+		auto n = scene.findTransformationNodeByName("[7006]");
+		EXPECT_THAT(n.getParent().name(), Eq(std::string("[7005]")));
+		auto b = n.getMeshInProjectCoordinates().getBoundingBox();
+		EXPECT_THAT(n.getMeshInProjectCoordinates().getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(3000, 0, -3000), repo::lib::RepoVector3D64(4000, 500, -2000)), 0.000001));
+	}
+
+	{
+		auto n = scene.findTransformationNodeByName("[7007]");
+		EXPECT_THAT(n.getParent().name(), Eq(std::string("[7006]")));
+		auto b = n.getMeshInProjectCoordinates().getBoundingBox();
+		EXPECT_THAT(n.getMeshInProjectCoordinates().getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(5000, 0, -4000), repo::lib::RepoVector3D64(6000, 500, -3000)), 0.000001));
+	}
+}
+
+TEST(RepoModelImport, Colours)
+{
+	uint8_t errCode = 0;
+	SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/colours.bim004.bim"), errCode));
+
+	EXPECT_THAT(scene.findLeafNode("[287]").getColours(), ElementsAre(repo::lib::repo_color4d_t(0.949019611, 0.403921604, 0.133333296, 1)));
+	EXPECT_THAT(scene.findLeafNode("[28B]").getColours(), ElementsAre(repo::lib::repo_color4d_t(0.898039222, 0.909803927, 0.470588207, 1)));
+	EXPECT_THAT(scene.findLeafNode("[28F]").getColours(), ElementsAre(repo::lib::repo_color4d_t(0.368627489, 0.403921604, 0.686274529, 1)));
 }

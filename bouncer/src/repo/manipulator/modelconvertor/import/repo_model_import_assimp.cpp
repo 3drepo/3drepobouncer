@@ -292,7 +292,7 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 	const std::string &name,
 	const std::unordered_map<std::string, repo::core::model::RepoNode *> &nameToTexture)
 {
-	repo::core::model::MaterialNode *materialNode;
+	repo::core::model::MaterialNode *materialNode = nullptr;
 
 	if (material) {
 		repo::lib::repo_material_t repo_material = repo::lib::repo_material_t::DefaultMaterial();
