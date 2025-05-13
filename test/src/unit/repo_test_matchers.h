@@ -21,6 +21,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest-matchers.h>
 #include "repo/lib/datastructure/repo_variant_utils.h"
+#include "repo/lib/datastructure/repo_bounds.h"
 
 /* As we sometimes deal with very large coordinate systems, we expect positions
  * to have a low tolerance, approaching floating point quantisation itself.
@@ -155,6 +156,38 @@ namespace testing {
 	MATCHER_P(Vq, s, "")
 	{
 		return boost::apply_visitor(repo::lib::DuplicationVisitor(), arg, repo::lib::RepoVariant(s));
+	}
+
+	static bool compareBounds(const repo::lib::RepoBounds& a, const repo::lib::RepoBounds& b, double tolerance)
+	{
+		return
+			abs(a.min().x - b.min().x) < tolerance &&
+			abs(a.min().y - b.min().y) < tolerance &&
+			abs(a.min().z - b.min().z) < tolerance &&
+			abs(a.max().x - b.max().x) < tolerance &&
+			abs(a.max().y - b.max().y) < tolerance &&
+			abs(a.max().z - b.max().z) < tolerance;
+	}
+
+	MATCHER_P2(BoundsAre, bounds, tolerance, "")
+	{
+		return compareBounds(arg, bounds, tolerance);
+	}
+
+	MATCHER_P2(UnorderedBoundsAre, elements, tolerance, "")
+	{
+		std::vector<repo::lib::RepoBounds> bounds(elements);
+
+		for (auto& r : arg) {
+			for (auto i = 0; i < bounds.size(); i++) {
+				if (compareBounds(r, bounds[i], tolerance)) {
+					bounds.erase(bounds.begin() + i);
+					break;
+				}
+			}
+		}
+
+		return !bounds.size(); // If every element has been matched, they should by now have all been removed.
 	}
 }
 

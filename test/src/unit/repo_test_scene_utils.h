@@ -58,6 +58,8 @@ namespace testing {
 				return node->getName();
 			}
 
+			NodeInfo getParent() const;
+
 			SceneUtils* scene;
 			repo::core::model::RepoNode* node;
 
@@ -96,6 +98,7 @@ namespace testing {
 		NodeInfo findNodeByMetadata(std::string key, std::string value);
 		NodeInfo findTransformationNodeByName(std::string name);
 		NodeInfo findLeafNode(std::string name);
+		std::vector<NodeInfo> findLeafNodes(std::string name);
 		std::vector<NodeInfo> findTransformationNodesByName(std::string name);
 		std::vector<NodeInfo> getChildNodes(repo::core::model::RepoNode* node, bool ignoreMeta);
 		std::vector<NodeInfo> getParentNodes(repo::core::model::RepoNode* node);

@@ -88,7 +88,7 @@ struct MeshAttributeView : public View
 		node(node)
 	{}
 
-	std::vector<T> vector(char* data)
+	virtual std::vector<T> vector(char* data)
 	{
 		std::vector<T> vector;
 		vector.resize(size() / sizeof(T));
@@ -97,14 +97,43 @@ struct MeshAttributeView : public View
 	}
 };
 
-struct VerticesView : public MeshAttributeView<repo::lib::RepoVector3D64>
+template<typename T>
+struct TransformedAttributeView : public MeshAttributeView<T>
 {
-	using MeshAttributeView::MeshAttributeView;
+	repo::lib::RepoMatrix64 matrix;
+
+	TransformedAttributeView(const Range& range, std::shared_ptr<repo::core::model::MeshNode> node, repo::lib::RepoMatrix64 matrix):
+		MeshAttributeView<T>(range, node),
+		matrix(matrix)
+	{}
+
+	std::vector<T> vector(char* data) override
+	{
+		auto vector = MeshAttributeView<T>::vector(data);
+		for (auto& v : vector) {
+			v = matrix * v;
+		}
+		return vector;
+	}
 };
 
-struct NormalsView : public MeshAttributeView<repo::lib::RepoVector3D>
+struct VerticesView : public TransformedAttributeView<repo::lib::RepoVector3D64>
 {
-	using MeshAttributeView::MeshAttributeView;
+	using TransformedAttributeView::TransformedAttributeView;
+};
+
+struct NormalsView : public TransformedAttributeView<repo::lib::RepoVector3D>
+{
+	using TransformedAttributeView::TransformedAttributeView;
+
+	std::vector<repo::lib::RepoVector3D> vector(char* data) override
+	{
+		auto vector = TransformedAttributeView<repo::lib::RepoVector3D>::vector(data);
+		for (auto& v : vector) {
+			v.normalize();
+		}
+		return vector;
+	}
 };
 
 struct UvsView : public MeshAttributeView<repo::lib::RepoVector2D>
@@ -164,13 +193,13 @@ public:
 	};
 
 	std::unordered_map<int, repo::lib::RepoUUID> transformSharedIds;
+	std::unordered_map<int, repo::lib::RepoMatrix64> modelToWorld;
 	std::unordered_map<int, Ids> materialIds;
 	std::unordered_map<int, Ids> textureIds;
 	size_t numMaterials;
 	std::vector<View*> dataMap;
 	size_t minBufferSize;
 	repo::lib::RepoVector3D64 offset; // Applied to the vertex data
-	repo::lib::RepoMatrix64 rootTransform; // For BIM004 and below, there is one (root) transform that is applied to all geometry
 
 	/* 
 	* Used to set the parents once all nodes have been read in. This is used
@@ -179,29 +208,29 @@ public:
 	*/
 	std::vector<std::pair<repo::lib::RepoUUID, repo::lib::RepoUUID>> references; // From uniqueId to sharedId
 
-	void getParent(int id, std::vector<repo::lib::RepoUUID>& parents)
+	void getParent(int id, std::vector<repo::lib::RepoUUID>& parents, repo::lib::RepoMatrix64& matrix)
 	{
 		auto it = transformSharedIds.find(id);
 		if (it != transformSharedIds.end())
 		{
 			parents.push_back(it->second);
 		}
+		if (id >= 0) {
+			matrix = modelToWorld[id];
+		}
 	}
 
 	void createNode(const NodeRecord& r) override
 	{
+		repo::lib::RepoMatrix64 matrix;
 		std::vector<repo::lib::RepoUUID> parentIds;
-		getParent(r.parentId, parentIds);
-
-		if (parentIds.empty()) {
-			rootTransform = r.matrix;
-		}
+		getParent(r.parentId, parentIds, matrix);
 
 		bool isEntity = !r.name.empty() || !r.matrix.isIdentity();
 		if (isEntity)
 		{
 			auto node = repo::core::model::RepoBSONFactory::makeTransformationNode(
-				(repo::lib::RepoMatrix)r.matrix, // When this downcast is performed the world offset should have already been removed from the root
+				{},
 				r.name,
 				parentIds
 			);
@@ -214,6 +243,15 @@ public:
 		{
 			transformSharedIds[r.id] = parentIds[0]; // If the TransformationNode is effectively a noop, any child nodes go directly to its parent
 		}
+
+		// For BIM004 and below, the importer bakes everything on import, including the root transform
+
+		if (!r.matrix.isIdentity())
+		{
+			matrix = matrix * r.matrix;
+		}
+
+		modelToWorld[r.id] = matrix;
 
 		// Take care that this comes before the metadata node creation, as it can modify
 		// the parentIds vector.
@@ -233,14 +271,14 @@ public:
 				parentIds = { node->getSharedID() };
 			}
 
-			dataMap.push_back(new VerticesView(r.geometry.vertices, node));
+			dataMap.push_back(new VerticesView(r.geometry.vertices, node, matrix));
 
 			if (r.geometry.indices.size()) {
 				dataMap.push_back(new IndicesView(r.geometry.indices, node, r.geometry.primitive));
 			}
 
 			if (r.geometry.normals.size()) {
-				dataMap.push_back(new NormalsView(r.geometry.normals, node));
+				dataMap.push_back(new NormalsView(r.geometry.normals, node, matrix.invert().transpose().rotation()));
 			}
 
 			if (r.geometry.uv.size()) {
@@ -491,6 +529,7 @@ bool RepoModelImport::importModel(std::string filePath, std::shared_ptr<repo::co
 
 		// For BIM005, we should introduce instancing, and along with that, the
 		// primary offset applied at the root node transform.
+		// https://github.com/3drepo/3D-Repo-Product-Team/issues/794
 
 		auto bounds = builder->readBoundsFromData(inbuf);
 		builder->offset = bounds.min();
@@ -523,7 +562,7 @@ bool RepoModelImport::importModel(std::string filePath, std::shared_ptr<repo::co
 			settings.getDatabaseName(),
 			settings.getProjectName()
 		);
-		scene->setWorldOffset(builder->rootTransform * builder->offset);
+		scene->setWorldOffset(builder->offset);
 
 		scene->setRevision(settings.getRevisionId());
 		scene->setOriginalFiles({ filePath });

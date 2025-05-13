@@ -258,6 +258,18 @@ namespace repo {
 				return _RepoMatrix<T>(result);
 			}
 
+			_RepoMatrix<T> rotation() const {
+				auto result = *this;
+				auto data = result.getData();
+				data[3] = 0;
+				data[7] = 0;
+				data[11] = 0;
+				data[12] = 0;
+				data[13] = 0;
+				data[14] = 0;
+				return result;
+			}
+
 			static _RepoMatrix<T> rotationX(T angle)
 			{
 				return _RepoMatrix<T>(std::vector<T>({
