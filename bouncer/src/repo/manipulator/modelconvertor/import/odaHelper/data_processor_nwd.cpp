@@ -158,7 +158,7 @@ using OdVectorizerPtr = OdSharedPtr<OdVectorizer>;
 struct RepoNwTraversalContext {
 	OdNwModelItemPtr layer;
 	OdNwPartitionPtr partition;
-	repo::manipulator::modelutility::RepoSceneBuilder* sceneBuilder;
+	repo::manipulator::modelutility::RepoSceneBuilder* sceneBuilder = nullptr;
 	std::shared_ptr<repo::core::model::TransformationNode> parentNode;
 	std::unordered_map<std::string, repo::lib::RepoVariant> parentMetadata;
 	OdVectorizerPtr vectorizer;
