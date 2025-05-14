@@ -374,7 +374,7 @@ uint8_t FileProcessorRvt::readFile()
 
 	// Extensions should be initialised after the loader module, but before reading
 	// a file
-	//OdRxSystemServices::desc()->addX(OdBmSystemServicesPE::desc(), static_cast<OdBmSystemServicesPE*>(&svcs));
+	OdRxSystemServices::desc()->addX(OdBmSystemServicesPE::desc(), static_cast<OdBmSystemServicesPE*>(&svcs));
 
 	odgsInitialize();
 	try
