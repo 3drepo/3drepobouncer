@@ -33,8 +33,9 @@ namespace RepoModelImportUtils
 		uint8_t& impModelErrCode)
 	{
 		ModelImportConfig config;
+		auto handler = getHandler();
 		auto modelConvertor = std::unique_ptr<AbstractModelImport>(new RepoModelImport(config));
-		modelConvertor->importModel(bimFilePath, impModelErrCode);
+		modelConvertor->importModel(bimFilePath, handler, impModelErrCode);
 		return modelConvertor;
 	}
 

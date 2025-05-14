@@ -33,8 +33,9 @@ namespace RepoModelImportUtils
 		uint8_t& impModelErrCode)
 	{
 		ModelImportConfig config;
+		auto handler = getHandler();
 		auto modelConvertor = std::unique_ptr<AssimpModelImport>(new AssimpModelImport(config));
-		modelConvertor->importModel(filePath, impModelErrCode);
+		modelConvertor->importModel(filePath, handler, impModelErrCode);
 		return modelConvertor;
 	}
 

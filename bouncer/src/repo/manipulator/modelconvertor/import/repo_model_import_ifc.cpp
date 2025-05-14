@@ -39,11 +39,6 @@ IFCModelImport::~IFCModelImport()
 {
 }
 
-bool IFCModelImport::importModel(std::string filePath, uint8_t& err)
-{
-	throw repo::lib::RepoException("Classic import is no longer supported for IFCs. Please use the streaming import.");
-}
-
 repo::core::model::RepoScene* IFCModelImport::generateRepoScene(uint8_t& errCode)
 {
 	return scene;

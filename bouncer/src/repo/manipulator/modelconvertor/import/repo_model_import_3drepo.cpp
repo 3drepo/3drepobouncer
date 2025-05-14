@@ -418,9 +418,10 @@ void RepoModelImport::skipAheadInFile(long amount)
 * Will parse the entire BIM file and store the results in
 * temporary datastructures in preperation for scene generation.
 * @param filePath
+* @param database handler
 * @param err
 */
-bool RepoModelImport::importModel(std::string filePath, uint8_t& err)
+bool RepoModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err)
 {
 	orgFile = filePath;
 	std::string fileName = getFileName(filePath);

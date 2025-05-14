@@ -75,10 +75,11 @@ namespace repo {
 				/**
 				* Import model from a given file
 				* @param path to the file
+				* @param database handler
 				* @param error message if failed
 				* @return returns true upon success
 				*/
-				bool importModel(std::string filePath, uint8_t &errMsg);
+				bool importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t &errMsg);
 
 				/**
 				* Attempts to convert the assimp metadata entry into a RepoVariant

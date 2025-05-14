@@ -1110,7 +1110,7 @@ std::string AssimpModelImport::getFileExtension(const std::string &filePath) con
 	return fileExt;
 }
 
-bool AssimpModelImport::importModel(std::string filePath, uint8_t &err)
+bool AssimpModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t &err)
 {
 	bool success = true;
 	orgFile = filePath;

@@ -61,10 +61,10 @@ namespace repo {
 				* This does not generate the Repo Scene Graph
 				* Use getRepoScene() to generate a Repo Scene Graph.
 				* @param path to the file
+				* @param database handler
 				* @param error message if failed
 				* @return returns true upon success
-				*/
-				virtual bool importModel(std::string filePath, uint8_t &err);
+				*/				
 				virtual bool importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err);
 
 				virtual bool requireReorientation() const { return true; }
