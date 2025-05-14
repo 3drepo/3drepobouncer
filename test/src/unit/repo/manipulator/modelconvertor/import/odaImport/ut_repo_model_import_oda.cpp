@@ -301,7 +301,7 @@ TEST(ODAModelImport, NwdDwgText2)
 
 TEST(ODAModelImport, RevitHideCategories)
 {
-	auto scene = ODAModelImportUtils::ModelImportManagerImport("RevitHideCategories", getDataPath("unwantedCategoriesExample.rvt"));
+	auto scene = ODAModelImportUtils::ModelImportManagerImport("RevitHideCategories", getDataPath("annotationsExample.rvt"));
 	SceneUtils utils(scene);
 
 	EXPECT_THAT(utils.findNodesByMetadata("Category", "Sun Path"), IsEmpty());
@@ -309,4 +309,5 @@ TEST(ODAModelImport, RevitHideCategories)
 	EXPECT_THAT(utils.findNodesByMetadata("Category", "Scope Boxes"), IsEmpty());
 	EXPECT_THAT(utils.findNodesByMetadata("Category", "Levels"), IsEmpty());
 	EXPECT_THAT(utils.findNodesByMetadata("Category", "Grids"), IsEmpty());
+	EXPECT_THAT(utils.findNodesByMetadata("Spot Coordinates", "Grids"), IsEmpty());
 }

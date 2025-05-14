@@ -253,8 +253,6 @@ void setupRenderMode(OdBmDatabasePtr database, OdGsDevicePtr device, OdGiDefault
 	view->setMode(renderMode);
 }
 
-#pragma optimize("", off)
-
 /*
 * Updates the view with some additional overrides, such as hiding section boxes.
 */
@@ -263,31 +261,41 @@ void setupViewOverrides(OdBmDBViewPtr pView)
 	auto db = pView->database();
 
 	ODBM_TRANSACTION_BEGIN(viewUpdate, db)
-		viewUpdate.start();
+	viewUpdate.start();
 
-	auto iterator = db->getElementTable()->newIterator();
-	while (!iterator->done()) {
-		iterator->next();
-	}
+	// This snippet uses the definitions in BmBuiltInCategory.h to collect all the
+	// categories with the type Annotation, so we can turn them off.
 
+	// Ideally, we would use the db->getCategoriesData() & getCategoryType()
+	// methods, but getCategoriesData doesn't appear to have been exported in this
+	// version of ODA.
+
+	// The following macro invocations work by creating definitions for each
+	// possible token of the KIND entry in the ODBM_ACTUAL_BUILTIN_CATEGORIES
+	// def/table. For now, we are only interested in Annotations (which we add to a
+	// list).
+	// We undef the KIND tokens immediately after as they are common words that may
+	// be used elsewhere.
+
+#define Annotation(VALUE) ids.push_back(db->getObjectId(VALUE));
+#define Invalid(VALUE)
+#define Model(VALUE)
+#define Internal(VALUE)
+#define AnalyticalModel(VALUE)
+#define ODBM_BUILTIN_ENUM_ADD(NAME, VALUE, PARENT_CATEGORY, KIND) KIND(VALUE)
 
 	OdBmObjectIdArray ids;
-	/*
-	for (auto& cd : db->getCategoriesData()) {
-		if (cd.second->getCategoryType() == OdBm::CategoryType::Annotation) {
-			ids.push_back(db->getObjectId(cd.first));
-		}
-	}
-	*/
+	ODBM_BUILTIN_CATEGORIES(ODBM_BUILTIN_ENUM_ADD);
 
-	auto objectId = db->getObjectId(OdBm::BuiltInCategory::OST_Levels);
-	OdBmCategoryElemPtr category = objectId.safeOpenObject();
+#undef Annotation
+#undef Invalid
+#undef Model
+#undef Internal
+#undef AnalyticalModel
 
-	//category->
+	// SunStudy is part of the Model category. We need to hide this explicitly.
 
-	int64_t handle = objectId.getHandle();
-
-	auto header = category->getHeader();
+	ids.push_back(db->getObjectId(OdBm::BuiltInCategory::OST_SunStudy));
 
 	pView->setCategoryHidden(ids, true);
 
