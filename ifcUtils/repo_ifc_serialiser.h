@@ -347,7 +347,7 @@ namespace ifcUtils
 		std::optional<repo::lib::RepoVariant> getValue(aggregate_of<IfcSchema::IfcValue>::ptr list);
 		std::optional<repo::lib::RepoVariant> getValue(boost::optional<aggregate_of<IfcSchema::IfcValue>::ptr> list);
 
-		void collectAdditionalAttributes(
+		void collectSpecialAttributes(
 			const IfcSchema::IfcObjectDefinition* object,
 			Metadata& metadata);
 
@@ -363,13 +363,13 @@ namespace ifcUtils
 		* as IfcProperty, and the relationship objects that compose sets of metadata,
 		* such as ifcRelDefines or IfcRelNests.
 		*/
-		void collectMetadata(
+		void collectProperties(
 			const IfcUtil::IfcBaseInterface* object,
 			Metadata& metadata
 		);
 
 		template<typename T>
-		void collectMetadata(
+		void collectProperties(
 			T begin,
 			T end,
 			Metadata& metadata

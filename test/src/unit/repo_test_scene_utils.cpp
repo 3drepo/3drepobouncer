@@ -81,7 +81,7 @@ SceneUtils::NodeInfo SceneUtils::findTransformationNodeByName(std::string name)
 	return nodes[0];
 }
 
-SceneUtils::NodeInfo SceneUtils::findLeafNode(std::string name)
+std::vector<SceneUtils::NodeInfo> SceneUtils::findLeafNodes(std::string name)
 {
 	std::vector<NodeInfo> nodes;
 
@@ -103,6 +103,13 @@ SceneUtils::NodeInfo SceneUtils::findLeafNode(std::string name)
 			nodes.push_back(i);
 		}
 	}
+
+	return nodes;
+}
+
+SceneUtils::NodeInfo SceneUtils::findLeafNode(std::string name)
+{
+	auto nodes = findLeafNodes(name);
 
 	if (nodes.size() > 1) {
 		throw std::runtime_error("Found too many matching nodes for call.");
@@ -172,9 +179,17 @@ std::vector<SceneUtils::NodeInfo> SceneUtils::NodeInfo::getMeshes()
 
 repo::core::model::MeshNode SceneUtils::NodeInfo::getMeshInProjectCoordinates()
 {
-	return dynamic_cast<repo::core::model::MeshNode*>(node)->
-		cloneAndApplyTransformation(
-			repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(scene->scene->getWorldOffset())) * scene->getWorldTransform(node)
+	auto mesh = dynamic_cast<repo::core::model::MeshNode*>(node);
+	if (!mesh) {
+		auto meshes = getMeshes();
+		if (meshes.size() > 1) {
+			throw std::runtime_error("getMeshInProjectCoordinates called for transform node with more than one mesh.");
+		}
+		mesh = dynamic_cast<repo::core::model::MeshNode*>(meshes[0].node);
+	}
+
+	return mesh->cloneAndApplyTransformation(
+		repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(scene->scene->getWorldOffset())) * scene->getWorldTransform(node)
 	);
 }
 
@@ -273,6 +288,12 @@ std::vector<std::string> SceneUtils::NodeInfo::getChildNames()
 		}
 	}
 	return names;
+}
+
+SceneUtils::NodeInfo SceneUtils::NodeInfo::getParent() const
+{
+	auto parents = scene->getParentNodes(node);
+	return parents[0];
 }
 
 std::string SceneUtils::NodeInfo::getPath() const
