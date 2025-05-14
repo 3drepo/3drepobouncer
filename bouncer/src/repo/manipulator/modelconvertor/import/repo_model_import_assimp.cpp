@@ -981,24 +981,6 @@ repo::core::model::RepoNode* AssimpModelImport::duplicateMesh(
 	return newMesh;
 }
 
-repo::core::model::RepoScene * AssimpModelImport::generateRepoScene(uint8_t &errMsg)
-{
-	repo::core::model::RepoScene *scene;
-
-	//Make sure we are using 64bit (issue 4 branch) of assimp
-	aiVector3D test;
-	if (sizeof(test.x) != sizeof(double))
-	{
-		repoWarning << "Bouncer library is compiled against a 32bit assimp library. Results may be sub-optimal.";
-	}
-
-	//This will generate the non optimised scene
-	repoTrace << "Converting AiScene to repoScene";
-	importer.ApplyPostProcessing(composeAssimpPostProcessingFlags());
-	scene = convertAiSceneToRepoScene();
-
-	return scene;
-}
 
 std::vector<std::vector<double>> AssimpModelImport::getSceneBoundingBox() const
 {
@@ -1110,7 +1092,7 @@ std::string AssimpModelImport::getFileExtension(const std::string &filePath) con
 	return fileExt;
 }
 
-bool AssimpModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t &err)
+repo::core::model::RepoScene* AssimpModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t &err)
 {
 	bool success = true;
 	orgFile = filePath;
@@ -1130,7 +1112,7 @@ bool AssimpModelImport::importModel(std::string filePath, std::shared_ptr<repo::
 		repoDebug << "Failed to find file";
 		err = REPOERR_MODEL_FILE_READ;
 
-		return false;
+		return nullptr;
 	}
 
 	keepMetadata = getFileExtension(filePath) == ".IFC";
@@ -1152,7 +1134,8 @@ bool AssimpModelImport::importModel(std::string filePath, std::shared_ptr<repo::
 		}
 		else
 			err = REPOERR_FILE_ASSIMP_GEN;
-		success = false;
+		
+		return nullptr;
 	}
 	else
 	{
@@ -1171,9 +1154,26 @@ bool AssimpModelImport::importModel(std::string filePath, std::shared_ptr<repo::
 
 		repoInfo << "=== IMPORTING MODEL WITH ASSIMP MODEL CONVERTOR ===";
 		repoInfo << "Loaded " << fileName << " with " << polyCount << " polygons in " << assimpScene->mNumMeshes << " " << ((assimpScene->mNumMeshes == 1) ? "mesh" : "meshes");
-	}
+	
 
-	return success;
+		// Generate Scene
+		repoTrace << "model Imported, generating Repo Scene";
+		repo::core::model::RepoScene* scene;
+
+		//Make sure we are using 64bit (issue 4 branch) of assimp
+		aiVector3D test;
+		if (sizeof(test.x) != sizeof(double))
+		{
+			repoWarning << "Bouncer library is compiled against a 32bit assimp library. Results may be sub-optimal.";
+		}
+
+		//This will generate the non optimised scene
+		repoTrace << "Converting AiScene to repoScene";
+		importer.ApplyPostProcessing(composeAssimpPostProcessingFlags());
+		scene = convertAiSceneToRepoScene();
+
+		return scene;
+	}
 }
 
 void AssimpModelImport::setAssimpProperties() {

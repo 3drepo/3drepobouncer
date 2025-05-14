@@ -421,7 +421,7 @@ void RepoModelImport::skipAheadInFile(long amount)
 * @param database handler
 * @param err
 */
-bool RepoModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err)
+repo::core::model::RepoScene* RepoModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err)
 {
 	orgFile = filePath;
 	std::string fileName = getFileName(filePath);
@@ -451,7 +451,7 @@ bool RepoModelImport::importModel(std::string filePath, std::shared_ptr<repo::co
 		{
 			repoError << "Unsupported BIM file version: " << fileVersion;
 			err = REPOERR_UNSUPPORTED_BIM_VERSION;
-			return false;
+			return nullptr;
 		}
 
 		// Loading file metadata
@@ -492,7 +492,7 @@ bool RepoModelImport::importModel(std::string filePath, std::shared_ptr<repo::co
 		{
 			repoError << "File " << fileName << " does not have a \"materials\" node";
 			err = REPOERR_MODEL_FILE_READ;
-			return false;
+			return nullptr;
 		}
 		boost::optional<ptree&> sizesRoot = jsonRoot.get_child_optional("sizes");
 		if (sizesRoot)
@@ -503,7 +503,7 @@ bool RepoModelImport::importModel(std::string filePath, std::shared_ptr<repo::co
 		{
 			repoError << "File " << fileName << " does not have a \"sizes\" node";
 			err = REPOERR_MODEL_FILE_READ;
-			return false;
+			return nullptr;
 		}
 		boost::optional<ptree&> texturesRoot = jsonRoot.get_child_optional("textures");
 		if (texturesRoot)
@@ -547,12 +547,13 @@ bool RepoModelImport::importModel(std::string filePath, std::shared_ptr<repo::co
 		fin = new std::istream(inbuf);
 		skipAheadInFile(sizes[0]);
 
-		return true;
+		repoTrace << "model Imported, generating Repo Scene";
+		return generateRepoScene(err);
 	}
 	else {
 		repoError << "File " << fileName << " not found.";
 		err = REPOERR_MODEL_FILE_READ;
-		return false;
+		return nullptr;
 	}
 }
 

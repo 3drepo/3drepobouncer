@@ -46,13 +46,12 @@ repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 		return nullptr;
 	}
 
-	repo::core::model::RepoScene* scene = nullptr;
 	repoTrace << "Importing model...";
-	if (modelConvertor->importModel(file, handler, error)) {
+	repo::core::model::RepoScene* scene = modelConvertor->importModel(file, handler, error);
+	if (scene) {
 		repoTrace << "model Imported, generating Repo Scene";
 		uint8_t errCode = REPOERR_LOAD_SCENE_FAIL;
-		scene = modelConvertor->generateRepoScene(errCode);
-
+		
 		scene->setDatabaseAndProjectName(config.getDatabaseName(), config.getProjectName());
 
 		auto fileUnits = modelConvertor->getUnits();

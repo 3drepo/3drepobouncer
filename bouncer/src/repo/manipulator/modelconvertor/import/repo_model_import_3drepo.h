@@ -128,6 +128,14 @@ namespace repo {
 				*/
 				void createObject(const boost::property_tree::ptree& tree);
 
+				/**
+				* Generates a repo scene graph
+				* an internal representation needs to have
+				* been created before this call (e.g. by means of importModel())
+				* @return returns a populated RepoScene upon success.
+				*/
+				repo::core::model::RepoScene* generateRepoScene(uint8_t& errMsg);
+
 				// File handling variables
 				std::string orgFile;
 				std::ifstream *finCompressed;
@@ -175,14 +183,6 @@ namespace repo {
 				virtual ~RepoModelImport();
 
 				/**
-				* Generates a repo scene graph
-				* an internal representation needs to have
-				* been created before this call (e.g. by means of importModel())
-				* @return returns a populated RepoScene upon success.
-				*/
-				virtual repo::core::model::RepoScene* generateRepoScene(uint8_t &errMsg);
-
-				/**
 				* Import model from a given file.
 				* Loads material nodes.
 				* This does not generate the Repo Scene Graph
@@ -190,9 +190,9 @@ namespace repo {
 				* @param path to the file
 				* @param database handler
 				* @param error message if failed
-				* @return returns true upon success
+				* @return returns a populated RepoScene upon success
 				*/
-				virtual bool importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t &errMsg);
+				virtual repo::core::model::RepoScene* importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t &errMsg);
 			};
 
 			//http://stackoverflow.com/questions/23481262/using-boost-property-tree-to-read-int-array

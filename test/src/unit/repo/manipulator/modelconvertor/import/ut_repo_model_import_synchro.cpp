@@ -37,10 +37,7 @@ TEST(SynchroModelImport, ImportModel)
 	auto import = SynchroModelImport(ModelImportConfig());
 	auto handler = getHandler();
 	uint8_t errCode = 0;
-	EXPECT_TRUE(import.importModel(getDataPath(synchroVersion6_4), handler, errCode));
+	auto scene = import.importModel(getDataPath(synchroVersion6_4), handler, errCode);	
 	EXPECT_EQ(0, errCode);
-
-	auto scene = import.generateRepoScene(errCode);
-
 	ASSERT_TRUE(scene);
 }

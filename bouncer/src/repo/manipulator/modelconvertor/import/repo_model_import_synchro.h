@@ -52,22 +52,15 @@ namespace repo {
 				virtual bool requireReorientation() const { return true; }
 
 #ifdef SYNCHRO_SUPPORT
-				/**
-				* Generates a repo scene graph
-				* an internal representation needs to have
-				* been created before this call
-				* @return returns a populated RepoScene upon success.
-				*/
-				repo::core::model::RepoScene* generateRepoScene(uint8_t &errMsg);
 
 				/**
 				* Import model from a given file
 				* @param path to the file
 				* @param database handler
 				* @param error message if failed
-				* @return returns true upon success
+				* @return returns a populated RepoScene upon success.
 				*/
-				bool importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t &errMsg);
+				repo::core::model::RepoScene* importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t &errMsg);
 
 			private:
 				class CameraChange;
@@ -93,6 +86,14 @@ namespace repo {
 				const std::string TASK_END_DATE = "endDate";
 				const std::string TASK_CHILDREN = "subActivities";
 				repo::lib::RepoMatrix64 scaleMatrix, reverseScaleMatrix;
+
+				/**
+				* Generates a repo scene graph
+				* an internal representation needs to have
+				* been created before this call
+				* @return returns a populated RepoScene upon success.
+				*/
+				repo::core::model::RepoScene* generateRepoScene(uint8_t& errMsg);
 
 				repo::lib::RepoMatrix64 convertMatrixTo3DRepoWorld(
 					const repo::lib::RepoMatrix64 &matrix,
