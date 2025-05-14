@@ -39,8 +39,6 @@
 #include <Database/BmGsView.h>
 #include <Database/Entities/BmBasicFileInfo.h>
 #include <Database/Entities/BmDBView3d.h>
-#include <Database/Entities/BmElemTable.h>
-#include <Database/Entities/BmCategoryElem.h>
 
 #include "repo/lib/repo_utils.h"
 
