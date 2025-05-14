@@ -38,6 +38,9 @@
 #include <Database/BmGsManager.h>
 #include <Database/BmGsView.h>
 #include <Database/Entities/BmBasicFileInfo.h>
+#include <Database/Entities/BmDBView3d.h>
+#include <Database/Entities/BmElemTable.h>
+#include <Database/Entities/BmCategoryElem.h>
 
 #include "repo/lib/repo_utils.h"
 
@@ -49,6 +52,7 @@
 
 //help
 #include "vectorise_device_rvt.h"
+#include <Database/BmTransaction.h>
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
@@ -249,6 +253,50 @@ void setupRenderMode(OdBmDatabasePtr database, OdGsDevicePtr device, OdGiDefault
 	view->setMode(renderMode);
 }
 
+#pragma optimize("", off)
+
+/*
+* Updates the view with some additional overrides, such as hiding section boxes.
+*/
+void setupViewOverrides(OdBmDBViewPtr pView)
+{
+	auto db = pView->database();
+
+	ODBM_TRANSACTION_BEGIN(viewUpdate, db)
+		viewUpdate.start();
+
+	auto iterator = db->getElementTable()->newIterator();
+	while (!iterator->done()) {
+		iterator->next();
+	}
+
+
+	OdBmObjectIdArray ids;
+	/*
+	for (auto& cd : db->getCategoriesData()) {
+		if (cd.second->getCategoryType() == OdBm::CategoryType::Annotation) {
+			ids.push_back(db->getObjectId(cd.first));
+		}
+	}
+	*/
+
+	auto objectId = db->getObjectId(OdBm::BuiltInCategory::OST_Levels);
+	OdBmCategoryElemPtr category = objectId.safeOpenObject();
+
+	//category->
+
+	int64_t handle = objectId.getHandle();
+
+	auto header = category->getHeader();
+
+	pView->setCategoryHidden(ids, true);
+
+	pView->setActiveWorkPlaneVisibility(false);
+
+	viewUpdate.commit();
+	ODBM_TRANSACTION_END()
+}
+
 OdGeExtents3d getModelBounds(OdBmDBViewPtr view)
 {
 	OdBmObjectIdArray elements;
@@ -320,7 +368,7 @@ uint8_t FileProcessorRvt::readFile()
 
 	// Extensions should be initialised after the loader module, but before reading
 	// a file
-	OdRxSystemServices::desc()->addX(OdBmSystemServicesPE::desc(), static_cast<OdBmSystemServicesPE*>(&svcs));
+	//OdRxSystemServices::desc()->addX(OdBmSystemServicesPE::desc(), static_cast<OdBmSystemServicesPE*>(&svcs));
 
 	odgsInitialize();
 	try
@@ -334,7 +382,7 @@ uint8_t FileProcessorRvt::readFile()
 		}
 		setTessellationParams(triParams);
 
-		OdBmDatabasePtr pDb = svcs.readFile(OdString(file.c_str()));	
+		OdBmDatabasePtr pDb = svcs.readFile(OdString(file.c_str()));
 		if (!pDb.isNull())
 		{
 			// The 'drawing' object corresponds to a named entry in the 'Views' list in
@@ -343,6 +391,7 @@ uint8_t FileProcessorRvt::readFile()
 			// properties.
 
 			OdDbBaseDatabasePEPtr pDbPE(pDb);
+
 			auto drawing = findView(pDbPE, pDb);
 
 			if (!drawing) {
@@ -350,7 +399,8 @@ uint8_t FileProcessorRvt::readFile()
 			}
 			repoInfo << "Using 3D View: " << convertToStdString(drawing->getShortDescriptiveName());
 
-			OdBmDBViewPtr pView = drawing->getBaseDBViewId().safeOpenObject();
+			OdBmDBView3dPtr pView = drawing->getBaseDBViewId().safeOpenObject();
+			setupViewOverrides(pView);
 			auto modelToWorld = getModelToWorldMatrix(pDb); // World here is the shared or 'project' coordinate system			
 
 			auto bounds = getModelBounds(pView);

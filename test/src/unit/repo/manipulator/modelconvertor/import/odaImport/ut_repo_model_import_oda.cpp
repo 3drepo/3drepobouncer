@@ -302,3 +302,15 @@ TEST(ODAModelImport, NwdDwgText2)
 		EXPECT_THAT(n.getColours(), ElementsAre(repo::lib::repo_color3d_t(0.803921580, 0.125490203, 0.152941182)));
 	}
 }
+
+TEST(ODAModelImport, RevitHideCategories)
+{
+	auto scene = ODAModelImportUtils::ModelImportManagerImport("RevitHideCategories", getDataPath("unwantedCategoriesExample.rvt"));
+	SceneUtils utils(scene);
+
+	EXPECT_THAT(utils.findNodesByMetadata("Category", "Sun Path"), IsEmpty());
+	EXPECT_THAT(utils.findNodesByMetadata("Category", "Work Plane Grid"), IsEmpty());
+	EXPECT_THAT(utils.findNodesByMetadata("Category", "Scope Boxes"), IsEmpty());
+	EXPECT_THAT(utils.findNodesByMetadata("Category", "Levels"), IsEmpty());
+	EXPECT_THAT(utils.findNodesByMetadata("Category", "Grids"), IsEmpty());
+}
