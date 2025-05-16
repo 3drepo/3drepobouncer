@@ -256,7 +256,7 @@ void setupViewOverrides(OdBmDBViewPtr pView)
 #define Model(VALUE)
 #define Internal(VALUE)
 #define AnalyticalModel(VALUE)
-#define ODBM_BUILTIN_ENUM_FN(NAME, VALUE, PARENT_CATEGORY, KIND) KIND(VALUE)
+#define ODBM_BUILTIN_ENUM_FN(NAME, VALUE, PARENT_CATEGORY, KIND, ...) KIND(VALUE)
 
 	OdBmObjectIdArray ids;
 	ODBM_BUILTIN_CATEGORIES(ODBM_BUILTIN_ENUM_FN);
@@ -327,7 +327,7 @@ OdBmDBView3dPtr createDefault3DView(OdBmDatabasePtr pDb, std::string style)
 #define Model(NAME) pDBView3d->setCategoryOverrides(OdBm::BuiltInCategory::NAME, overrides);
 #define Internal(NAME)
 #define AnalyticalModel(NAME)
-#define ODBM_BUILTIN_ENUM_FN(NAME, VALUE, PARENT_CATEGORY, KIND) KIND(NAME)
+#define ODBM_BUILTIN_ENUM_FN(NAME, VALUE, PARENT_CATEGORY, KIND, ...) KIND(NAME)
 
 		ODBM_BUILTIN_CATEGORIES(ODBM_BUILTIN_ENUM_FN);
 
