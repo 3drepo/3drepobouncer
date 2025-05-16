@@ -306,7 +306,7 @@ std::vector<repo::lib::repo_color4d_t> SceneUtils::NodeInfo::getColours()
 bool SceneUtils::NodeInfo::hasTransparency()
 {
 	for (auto& c : getColours()) {
-		if (c.a < 0, 9999) {
+		if (c.a < 0.9999) {
 			return true;
 		}
 	}
