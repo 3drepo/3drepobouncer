@@ -315,7 +315,7 @@ TEST(ODAModelImport, RevitHideCategories)
 	EXPECT_THAT(utils.findNodesByMetadata("Spot Coordinates", "Grids"), IsEmpty());
 }
 
-TEST(ODAModelImport, DefaultView)
+TEST(ODAModelImport, DefaultViewVisibility)
 {
 	// If there is no named view provided for Revit files, all geometry should
 	// be imported.
@@ -430,5 +430,73 @@ TEST(ODAModelImport, InvalidNamedView2)
 	}
 	catch (repo::lib::RepoException& e) {
 		EXPECT_THAT(e.repoCode(), Eq(REPOERR_VIEW_NOT_FOUND));
+	}
+}
+
+TEST(ODAModelImport, DefaultViewDisplayOptions)
+{
+	{
+		ModelImportConfig config(
+			repo::lib::RepoUUID::createUUID(),
+			TESTDB,
+			"RevitNamedView"
+		);
+		config.targetUnits = ModelUnits::MILLIMETRES;
+
+		// Default (nothing or a string that doesn't match the others) is shaded with edges
+
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport(getDataPath("sample2025.rvt"), config));
+
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::TRIANGLES).size(), Eq(3)); // Two textures and a flat surface
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::LINES).size(), Gt(0));
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").hasTextures(), IsTrue());
+	}
+
+	{
+		ModelImportConfig config(
+			repo::lib::RepoUUID::createUUID(),
+			TESTDB,
+			"RevitNamedView"
+		);
+		config.targetUnits = ModelUnits::MILLIMETRES;
+		config.viewStyle = "shaded";
+
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport(getDataPath("sample2025.rvt"), config));
+
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::TRIANGLES).size(), Gt(0)); // Two textures and a flat surface
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::LINES).size(), Eq(0));
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").hasTextures(), IsTrue());
+	}
+
+	{
+		ModelImportConfig config(
+			repo::lib::RepoUUID::createUUID(),
+			TESTDB,
+			"RevitNamedView"
+		);
+		config.targetUnits = ModelUnits::MILLIMETRES;
+		config.viewStyle = "hiddenline";
+
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport(getDataPath("sample2025.rvt"), config));
+
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::TRIANGLES).size(), Gt(0)); // No textures means meshes are combined
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::LINES).size(), Gt(0));
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").hasTextures(), IsFalse());
+	}
+
+	{
+		ModelImportConfig config(
+			repo::lib::RepoUUID::createUUID(),
+			TESTDB,
+			"RevitNamedView"
+		);
+		config.targetUnits = ModelUnits::MILLIMETRES;
+		config.viewStyle = "wireframe";
+
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport(getDataPath("sample2025.rvt"), config));
+
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::TRIANGLES).size(), Eq(0)); // No textures means meshes are combined
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::LINES).size(), Gt(0));
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").hasTextures(), IsFalse());
 	}
 }

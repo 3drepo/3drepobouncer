@@ -45,6 +45,7 @@ namespace repo {
 				std::string projectName;
 				int numThreads;
 				std::string viewName;
+				std::string viewStyle;
 
 				ModelImportConfig();
 

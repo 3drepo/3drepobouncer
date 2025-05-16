@@ -39,6 +39,7 @@
 #include <Database/BmGsView.h>
 #include <Database/Entities/BmBasicFileInfo.h>
 #include <Database/Entities/BmDBView3d.h>
+#include <Database/Entities/BmOverrideGraphicSettings.h>
 #include <Database/Managers/BmViewTable.h>
 
 #include "repo/lib/repo_utils.h"
@@ -278,7 +279,7 @@ void setupViewOverrides(OdBmDBViewPtr pView)
 	ODBM_TRANSACTION_END()
 }
 
-OdBmDBView3dPtr createDefault3DView(OdBmDatabasePtr pDb)
+OdBmDBView3dPtr createDefault3DView(OdBmDatabasePtr pDb, std::string style)
 {
 	// (This implementation is based on the BmDBView3dCreateCmd.cpp TB_Commands
 	// example in the BimRv samples.)
@@ -291,12 +292,51 @@ OdBmDBView3dPtr createDefault3DView(OdBmDatabasePtr pDb)
 	pDBView3d = OdBmDBView3d::createObject();
 	pDb->addElement(pDBView3d); // element must be added to DB before setDefaultOrigin, createDefaultDrawingAndViewport, setPerspective
 
+	if (style == "wireframe") {
+		pDBView3d->setDisplayStyle(OdBm::ViewDisplayStyle::Wireframe);
+	}
+	else if (style == "hiddenline") {
+		pDBView3d->setDisplayStyle(OdBm::ViewDisplayStyle::HiddenLine);
+	}
+	else if (style == "shaded") {
+		pDBView3d->setDisplayStyle(OdBm::ViewDisplayStyle::Shaded);
+	}
+	else {
+		pDBView3d->setDisplayStyle(OdBm::ViewDisplayStyle::ShadedWithEdges);
+	}
+
 	pDBView3d->setDetailLevel(OdBm::ViewDetailLevel::Fine);
-	pDBView3d->setDisplayStyle(OdBm::ViewDisplayStyle::ConsistentColors);
 	pDBView3d->setViewDiscipline(OdBm::ViewDiscipline::Architectural); // Architectural shows all elements (search "About the View Discipline" in the Revit docs)
 	pDBView3d->setParam(OdBm::BuiltInParameter::VIEW_PHASE_FILTER, OdBmObjectId::kNull); // Set the Phasing filter to None so no objects are filtered out
 	pDBView3d->setDefaultOrigin();
 	pDBView3d->setPerspective();
+
+	// Shaded is the only style that does not draw lines - in this mode, we also
+	// want to disable surface patterns, to be consistent with Revit's UI.
+	// This is done by setting a Graphics Override for every Model category.
+
+	if (style == "shaded") {
+		OdBmOverrideGraphicSettingsPtr overrides = OdBmOverrideGraphicSettings::createObject();
+		overrides->setProjForegroundPatternVisible(false);
+		overrides->setSurfaceBackgroundPatternVisible(false);
+
+		// See the comments in setupViewOverrides for how this macro works.
+
+#define Annotation(NAME)
+#define Invalid(NAME)
+#define Model(NAME) pDBView3d->setCategoryOverrides(OdBm::BuiltInCategory::NAME, overrides);
+#define Internal(NAME)
+#define AnalyticalModel(NAME)
+#define ODBM_BUILTIN_ENUM_FN(NAME, VALUE, PARENT_CATEGORY, KIND) KIND(NAME)
+
+		ODBM_BUILTIN_CATEGORIES(ODBM_BUILTIN_ENUM_FN);
+
+#undef Annotation
+#undef Invalid
+#undef Model
+#undef Internal
+#undef AnalyticalModel
+	}
 
 	repoInfo << "Created view...";
 
@@ -406,7 +446,7 @@ uint8_t FileProcessorRvt::readFile()
 				pView = findView(pDb, importConfig.getViewName());
 			}
 			else {
-				pView = createDefault3DView(pDb);
+				pView = createDefault3DView(pDb, importConfig.viewStyle);
 			}
 
 			setupViewOverrides(pView);

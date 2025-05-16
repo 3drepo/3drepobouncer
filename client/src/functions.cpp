@@ -380,6 +380,7 @@ int32_t importFileAndCommit(
 			config.lod = jsonTree.get<int>("lod", config.lod);
 			config.importAnimations = jsonTree.get<bool>("importAnimations", config.importAnimations);
 			config.viewName = jsonTree.get<std::string>("view", config.viewName);
+			config.viewStyle = jsonTree.get<std::string>("style", "");
 			auto revIdStr = jsonTree.get<std::string>("revId", "");
 			if (!revIdStr.empty()) {
 				config.revisionId = repo::lib::RepoUUID(revIdStr);
