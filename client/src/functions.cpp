@@ -352,18 +352,15 @@ int32_t importFileAndCommit(
 		return REPOERR_INVALID_ARG;
 	}
 
-	std::string timeZone;
+	repo::manipulator::modelconvertor::ModelImportConfig config;
+
+	config.revisionId = repo::lib::RepoUUID::createUUID(); // If the caller does not specify one
+
 	std::string fileLoc;
-	std::string database;
-	std::string project;
-	std::string  owner, tag, desc, units;
-	repo::lib::RepoUUID revId = repo::lib::RepoUUID::createUUID();
-	int lod = 0;
-	int numThreads = 0;
+	std::string  owner, tag, desc;
 
 	bool success = true;
 	bool rotate = false;
-	bool importAnimations = true;
 	if (usingSettingFiles)
 	{
 		//if we're using settings file then arg[1] must be file path
@@ -371,24 +368,25 @@ int32_t importFileAndCommit(
 		try {
 			boost::property_tree::read_json(command.args[1], jsonTree);
 
-			database = jsonTree.get<std::string>("database", "");
-			project = jsonTree.get<std::string>("project", "");
-
+			fileLoc = jsonTree.get<std::string>("file", "");
 			owner = jsonTree.get<std::string>("owner", "");
 			tag = jsonTree.get<std::string>("tag", "");
 			desc = jsonTree.get<std::string>("desc", "");
-			timeZone = jsonTree.get<std::string>("timezone", "");
-			units = jsonTree.get<std::string>("units", "");
-			lod = jsonTree.get<int>("lod", 0);
-			importAnimations = jsonTree.get<bool>("importAnimations", importAnimations);
-			fileLoc = jsonTree.get<std::string>("file", "");
+
+			config.databaseName = jsonTree.get<std::string>("database", "");
+			config.projectName = jsonTree.get<std::string>("project", "");
+			config.timeZone = jsonTree.get<std::string>("timezone", config.timeZone);
+			config.targetUnits = determineUnits(jsonTree.get<std::string>("units", ""));
+			config.lod = jsonTree.get<int>("lod", config.lod);
+			config.importAnimations = jsonTree.get<bool>("importAnimations", config.importAnimations);
+			config.viewName = jsonTree.get<std::string>("view", config.viewName);
 			auto revIdStr = jsonTree.get<std::string>("revId", "");
 			if (!revIdStr.empty()) {
-				revId = repo::lib::RepoUUID(revIdStr);
+				config.revisionId = repo::lib::RepoUUID(revIdStr);
 			}
-			numThreads = jsonTree.get<int>("numThreads", numThreads);
+			config.numThreads = jsonTree.get<int>("numThreads", config.numThreads);
 
-			if (database.empty() || project.empty() || fileLoc.empty())
+			if (config.databaseName.empty() || config.projectName.empty() || fileLoc.empty())
 			{
 				return REPOERR_LOAD_SCENE_FAIL;
 			}
@@ -401,8 +399,8 @@ int32_t importFileAndCommit(
 	else
 	{
 		fileLoc = command.args[0];
-		database = command.args[1];
-		project = command.args[2];
+		config.databaseName = command.args[1];
+		config.projectName = command.args[2];
 
 		if (command.nArgcs > 3)
 		{
@@ -414,29 +412,18 @@ int32_t importFileAndCommit(
 	std::string fileExt = filePath.extension().string();
 	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
 
-	auto targetUnits = repo::manipulator::modelconvertor::ModelUnits::UNKNOWN;
-
-	if (!units.empty()) {
-		targetUnits = determineUnits(units);
-	}
-
 	//FIXME: This is getting complicated, we should consider using boost::program_options and start utilising flags...
 	//Something like this: http://stackoverflow.com/questions/15541498/how-to-implement-subcommands-using-boost-program-options
 
-	repoLog("File: " + fileLoc + " database: " + database
-		+ " project: " + project + " target units: " + (units.empty() ? "none" : units) + " owner :" + owner + " importAnimations: " + (importAnimations ? "true" : "false")
-		+ " lod: " + std::to_string(lod) + " revisionId: " + revId.toString() + "num threads: " + std::to_string(numThreads)
-	);
+	repoLog("File: " + fileLoc + " owner: " + owner + " " + config.prettyPrint());
 
 	uint8_t err;
-
-	repo::manipulator::modelconvertor::ModelImportConfig config(importAnimations, targetUnits, timeZone, lod, revId, database, project, numThreads);
 	repo::core::model::RepoScene* graph = controller->loadSceneFromFile(fileLoc, err, config);
 	if (graph)
 	{
-		repoLog("Trying to commit this scene to database as " + database + "." + project);
+		repoLog("Trying to commit this scene to database as " + config.getDatabaseName() + "." + config.getProjectName());
 
-		err = controller->commitScene(token, graph, owner, tag, desc, revId);
+		err = controller->commitScene(token, graph, owner, tag, desc, config.revisionId);
 
 		if (err == REPOERR_OK)
 		{

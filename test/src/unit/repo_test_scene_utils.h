@@ -75,11 +75,15 @@ namespace testing {
 
 			std::vector<NodeInfo> getMeshes();
 
+			std::vector<NodeInfo> getMeshes(repo::core::model::MeshNode::Primitive);
+
 			repo::core::model::MeshNode getMeshInProjectCoordinates();
 
 			std::vector<repo::core::model::MeshNode> getMeshesInProjectCoordinates();
 
 			std::vector<NodeInfo> getTextures();
+
+			bool hasTextures();
 
 			std::unordered_map<std::string, repo::lib::RepoVariant> getMetadata();
 
@@ -90,6 +94,8 @@ namespace testing {
 			* directly below this node.
 			*/
 			std::vector<repo::lib::repo_color4d_t> getColours();
+
+			bool hasTransparency();
 
 			std::string getPath() const;
 		};

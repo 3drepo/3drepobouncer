@@ -277,9 +277,18 @@ TEST(RepoClientTest, UploadTestRVT)
 	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload2));
 	EXPECT_TRUE(projectExists(db, "rvtTest2"));
 
-	//Upload RVT file with no valid 3D view
+	//Upload RVT file with no valid 3D view (should create a default view)
 	std::string rvtUpload3 = produceUploadArgs(db, "rvtTest3", getDataPath(rvtNo3DViewModel));
-	EXPECT_EQ((int)REPOERR_VALID_3D_VIEW_NOT_FOUND, runProcess(rvtUpload3));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload3));
+	EXPECT_TRUE(projectExists(db, "rvtTest3"));
+
+	//Upload RVT file with a named view that does not exist
+	std::string rvtUpload4 = produceUploadFileArgs(getDataPath("importRvtNonExistentView.json"));
+	EXPECT_EQ((int)REPOERR_VIEW_NOT_FOUND, runProcess(rvtUpload4));
+
+	//Upload RVT file with a named view that is not 3D
+	std::string rvtUpload5 = produceUploadFileArgs(getDataPath("importRvtNon3DView.json"));
+	EXPECT_EQ((int)REPOERR_VIEW_NOT_3D, runProcess(rvtUpload5));
 }
 
 TEST(RepoClientTest, UploadTestRVT2021)

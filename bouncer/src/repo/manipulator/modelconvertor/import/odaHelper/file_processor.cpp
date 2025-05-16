@@ -28,7 +28,7 @@ using namespace repo::manipulator::modelconvertor::odaHelper;
 
 FileProcessor::FileProcessor(const std::string& inputFile, repo::manipulator::modelutility::DrawingImageInfo* collector)
 	: file(inputFile),
-	importConfig({}),
+	importConfig(repo::manipulator::modelconvertor::ModelImportConfig()),
 	drawingCollector(collector),
 	repoSceneBuilder(nullptr)
 {
