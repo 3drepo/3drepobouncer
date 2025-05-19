@@ -139,6 +139,8 @@ namespace repo {
 
 			std::vector<T> getData() const { return data; }
 
+			std::vector<T>& getData() { return data; }
+
 			_RepoMatrix<T> invert() const {
 				std::vector<T> result;
 				result.resize(16);
@@ -256,6 +258,18 @@ namespace repo {
 				return _RepoMatrix<T>(result);
 			}
 
+			_RepoMatrix<T> rotation() const {
+				auto result = *this;
+				auto data = result.getData();
+				data[3] = 0;
+				data[7] = 0;
+				data[11] = 0;
+				data[12] = 0;
+				data[13] = 0;
+				data[14] = 0;
+				return result;
+			}
+
 			static _RepoMatrix<T> rotationX(T angle)
 			{
 				return _RepoMatrix<T>(std::vector<T>({
@@ -294,6 +308,15 @@ namespace repo {
 					0, 0, 1, t.z,
 					0, 0, 0, 1
 				}));
+			}
+
+			explicit operator repo::lib::_RepoMatrix<float>() const
+			{
+				auto m = repo::lib::_RepoMatrix<float>();
+				for (auto i = 0; i < data.size(); i++) {
+					m.getData()[i] = (float)data[i];
+				}
+				return m;
 			}
 
 		private:
