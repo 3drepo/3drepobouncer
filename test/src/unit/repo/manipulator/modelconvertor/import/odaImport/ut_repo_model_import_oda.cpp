@@ -285,7 +285,7 @@ TEST(ODAModelImport, NwdDwgText2)
 		auto mesh = n.getMeshesInProjectCoordinates()[0];
 		mesh.updateBoundingBox();
 		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(-2618.1, 0, -10862.1), repo::lib::RepoVector3D64(352.2, 0, -288.3)), 100));
-		EXPECT_TRUE(ODAModelImportUtils::allNormalsAre(mesh, repo::lib::RepoVector3D(0, -1, 0), 0.01, 10));
+		EXPECT_TRUE(ODAModelImportUtils::allNormalsAre(mesh, repo::lib::RepoVector3D(0, 1, 0), 0.01, 10));
 		EXPECT_THAT(n.getColours(), ElementsAre(repo::lib::repo_color3d_t(0.760784328, 0.807843149, 0.839215696)));
 	}
 
@@ -294,7 +294,7 @@ TEST(ODAModelImport, NwdDwgText2)
 		auto mesh = n.getMeshesInProjectCoordinates()[0];
 		mesh.updateBoundingBox();
 		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(-30056.1, -14139.8, -67539.2), repo::lib::RepoVector3D64(23685.1, 15713.8, -34265.1)), 100));
-		EXPECT_TRUE(ODAModelImportUtils::allNormalsAre(mesh, repo::lib::RepoVector3D(-0.531980395, -0.310758412, -0.787671328), 0.01, 10));
+		EXPECT_TRUE(ODAModelImportUtils::allNormalsAre(mesh, repo::lib::RepoVector3D(0.531980395, 0.310758412, 0.787671328), 0.01, 10));
 		EXPECT_THAT(n.getColours(), ElementsAre(repo::lib::repo_color3d_t(0.803921580, 0.125490203, 0.152941182)));
 	}
 }
