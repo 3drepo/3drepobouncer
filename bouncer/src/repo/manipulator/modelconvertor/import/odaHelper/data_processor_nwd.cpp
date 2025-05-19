@@ -109,6 +109,18 @@ public:
 		}));
 	}
 
+	virtual void polylineOut(OdInt32 numPoints,
+		const OdInt32* vertexIndexList) override
+	{
+		auto vertices = (repo::lib::RepoVector3D64*)vertexDataList();
+		for (int i = 0; i < numPoints - 1; i++) {
+			builder->addFace(RepoMeshBuilder::face({
+				vertices[vertexIndexList[i]],
+				vertices[vertexIndexList[i + 1]]
+			}));
+		}
+	}
+
 	void setMeshBuilder(RepoMeshBuilder& builder)
 	{
 		this->builder = &builder;
