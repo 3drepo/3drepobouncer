@@ -280,7 +280,7 @@ void setupViewOverrides(OdBmDBViewPtr pView)
 #define Model(VALUE)
 #define Internal(VALUE)
 #define AnalyticalModel(VALUE)
-#define ODBM_BUILTIN_ENUM_FN(NAME, VALUE, PARENT_CATEGORY, KIND) KIND(VALUE)
+#define ODBM_BUILTIN_ENUM_FN(NAME, VALUE, PARENT_CATEGORY, KIND, ...) KIND(VALUE)
 
 	OdBmObjectIdArray ids;
 	ODBM_BUILTIN_CATEGORIES(ODBM_BUILTIN_ENUM_FN);
