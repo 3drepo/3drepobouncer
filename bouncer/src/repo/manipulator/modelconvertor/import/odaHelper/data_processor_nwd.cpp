@@ -102,11 +102,14 @@ public:
 		const OdGeVector3d* pNormal) override
 	{
 		auto vertices = (repo::lib::RepoVector3D64*)vertexDataList();
-		builder->addFace(RepoMeshBuilder::face({
+		builder->addFace(
+			RepoMeshBuilder::face({
 			vertices[indices[0]],
 			vertices[indices[1]],
 			vertices[indices[2]]
-		}));
+		},
+		*(repo::lib::RepoVector3D64*)pNormal
+		));
 	}
 
 	void setMeshBuilder(RepoMeshBuilder& builder)
