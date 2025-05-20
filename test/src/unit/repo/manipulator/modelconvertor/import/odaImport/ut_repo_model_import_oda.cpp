@@ -76,7 +76,26 @@ namespace ODAModelImportUtils
 	}
 }
 
-TEST(ODAModelImport, Sample2025NWDTree)
+/*
+* Some ODA functionality uses global states and so must only be initialised/
+* deinitialised once per-process. This test suite manages those resources
+* for the NwdFileProcessor, for which there is a known issue on Linux.
+* See this page for how the Test class works:
+* https://google.github.io/googletest/advanced.html#sharing-resources-between-tests-in-the-same-test-suite
+*/
+class NwdTestSuite : public testing::Test
+{
+protected:
+	static void SetUpTestSuite() {
+		::odaHelper::FileProcessorNwd::createSharedSystemServices();
+	}
+
+	static void TearDownTestSuite() {
+		::odaHelper::FileProcessorNwd::destorySharedSystemServices();
+	}
+};
+
+TEST(NwdTestSuite, Sample2025NWDTree)
 {
 	auto scene = ODAModelImportUtils::ModelImportManagerImport("Sample2025NWD", getDataPath(nwdModel2025));
 
@@ -228,25 +247,6 @@ TEST(ODAModelImport, RevitMEPSystems)
 		EXPECT_THAT(nodes[0].hasGeometry(), IsTrue());
 	}
 }
-
-/*
-* Some ODA functionality uses global states and so must only be initialised/
-* deinitialised once per-process. This test suite manages those resources
-* for the NwdFileProcessor, for which there is a known issue on Linux.
-* See this page for how the Test class works:
-* https://google.github.io/googletest/advanced.html#sharing-resources-between-tests-in-the-same-test-suite
-*/
-class NwdTestSuite : public testing::Test
-{
-protected:
-	static void SetUpTestSuite() {
-		::odaHelper::FileProcessorNwd::createSharedSystemServices();
-	}
-
-	static void TearDownTestSuite() {
-		::odaHelper::FileProcessorNwd::destorySharedSystemServices();
-	}
-};
 
 TEST_F(NwdTestSuite, NwdDwgText1)
 {
