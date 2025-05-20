@@ -65,8 +65,8 @@ bool FileProcessorNwd::createSharedSystemServices()
 
 void FileProcessorNwd::destorySharedSystemServices()
 {
-	svcs = nullptr;
 	odrxUninitialize();
+	svcs = nullptr;
 }
 
 uint8_t FileProcessorNwd::readFile()
