@@ -43,7 +43,7 @@ public:
 
 class RepoNwServices : public OdExNwSystemServices, public OdNwHostAppServices
 {
-protected:
+public:
 	ODRX_USING_HEAP_OPERATORS(OdExNwSystemServices);
 };
 
@@ -51,16 +51,33 @@ repo::manipulator::modelconvertor::odaHelper::FileProcessorNwd::~FileProcessorNw
 {
 }
 
+static OdSharedPtr<RepoNwServices> svcs;
+
+bool FileProcessorNwd::createSharedSystemServices()
+{
+	if (!svcs) {
+		svcs = new OdStaticRxObject<RepoNwServices>();
+		odrxInitialize(svcs); // (Unfortunately odrxInitialize cannot be called in the constructor, so we cannot rely on the object's lifetime to manage these.)
+		return true;
+	}
+	return false;
+}
+
+void FileProcessorNwd::destorySharedSystemServices()
+{
+	svcs = nullptr;
+	odrxUninitialize();
+}
+
 uint8_t FileProcessorNwd::readFile()
 {
 	int nRes = REPOERR_OK;
 
-	OdStaticRxObject<RepoNwServices> svcs;
-	odrxInitialize(&svcs);
+	bool shouldDeInitialise = createSharedSystemServices();
 	OdRxModule* pModule = ::odrxDynamicLinker()->loadModule(sNwDbModuleName, false);
 	try
 	{
-		OdNwDatabasePtr pNwDb = svcs.readFile(OdString(file.c_str()));
+		OdNwDatabasePtr pNwDb = svcs->readFile(OdString(file.c_str()));
 
 		if (pNwDb.isNull())
 		{
@@ -111,7 +128,10 @@ uint8_t FileProcessorNwd::readFile()
 			nRes = REPOERR_LOAD_SCENE_FAIL;
 		}
 	}
-	odrxUninitialize();
+
+	if (shouldDeInitialise) {
+		odrxUninitialize();
+	}
 
 	return nRes;
 }
