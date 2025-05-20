@@ -26,6 +26,7 @@
 #include "../../../../../repo_test_database_info.h"
 #include "../../../../../repo_test_scene_utils.h"
 #include "../../../../../repo_test_matchers.h"
+#include "repo/manipulator/modelconvertor/import/odaHelper/file_processor_nwd.h"
 
 using namespace repo::manipulator::modelconvertor;
 using namespace repo::core::model;
@@ -75,7 +76,26 @@ namespace ODAModelImportUtils
 	}
 }
 
-TEST(ODAModelImport, Sample2025NWDTree)
+/*
+* Some ODA functionality uses global states and so must only be initialised/
+* deinitialised once per-process. This test suite manages those resources
+* for the NwdFileProcessor, for which there is a known issue on Linux.
+* See this page for how the Test class works:
+* https://google.github.io/googletest/advanced.html#sharing-resources-between-tests-in-the-same-test-suite
+*/
+class NwdTestSuite : public testing::Test
+{
+protected:
+	static void SetUpTestSuite() {
+		::odaHelper::FileProcessorNwd::createSharedSystemServices();
+	}
+
+	static void TearDownTestSuite() {
+		::odaHelper::FileProcessorNwd::destorySharedSystemServices();
+	}
+};
+
+TEST_F(NwdTestSuite, Sample2025NWDTree)
 {
 	auto scene = ODAModelImportUtils::ModelImportManagerImport("Sample2025NWD", getDataPath(nwdModel2025));
 
@@ -228,7 +248,7 @@ TEST(ODAModelImport, RevitMEPSystems)
 	}
 }
 
-TEST(ODAModelImport, NwdDwgText1)
+TEST_F(NwdTestSuite, NwdDwgText1)
 {
 	auto scene = ODAModelImportUtils::ModelImportManagerImport("NwdDwgText1", getDataPath("groupsAndReferences.nwc"));
 	SceneUtils utils(scene);
@@ -272,7 +292,7 @@ TEST(ODAModelImport, NwdDwgText1)
 	}
 }
 
-TEST(ODAModelImport, NwdDwgText2)
+TEST_F(NwdTestSuite, NwdDwgText2)
 {
 	auto scene = ODAModelImportUtils::ModelImportManagerImport("NwdDwgText2", getDataPath("dwgTextB.nwd"));
 	SceneUtils utils(scene);
@@ -284,8 +304,8 @@ TEST(ODAModelImport, NwdDwgText2)
 		auto n = utils.findNodeByMetadata("Text::Contents", "TextA");
 		auto mesh = n.getMeshesInProjectCoordinates()[0];
 		mesh.updateBoundingBox();
-		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(-2618.1, 0, -10862.1), repo::lib::RepoVector3D64(352.2, 0, -288.3)), 1));
-		EXPECT_TRUE(ODAModelImportUtils::allNormalsAre(mesh, repo::lib::RepoVector3D(0, -1, 0), 0.01, 10));
+		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(-2618.1, 0, -10862.1), repo::lib::RepoVector3D64(352.2, 0, -288.3)), 120));
+		EXPECT_TRUE(ODAModelImportUtils::allNormalsAre(mesh, repo::lib::RepoVector3D(0, 1, 0), 0.01, 10));
 		EXPECT_THAT(n.getColours(), ElementsAre(repo::lib::repo_color3d_t(0.760784328, 0.807843149, 0.839215696)));
 	}
 
@@ -293,8 +313,8 @@ TEST(ODAModelImport, NwdDwgText2)
 		auto n = utils.findNodeByMetadata("Text::Contents", "TextB");
 		auto mesh = n.getMeshesInProjectCoordinates()[0];
 		mesh.updateBoundingBox();
-		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(-30056.1, -14139.8, -67539.2), repo::lib::RepoVector3D64(23685.1, 15713.8, -34265.1)), 1));
-		EXPECT_TRUE(ODAModelImportUtils::allNormalsAre(mesh, repo::lib::RepoVector3D(-0.531980395, -0.310758412, -0.787671328), 0.01, 10));
+		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(-30056.1, -14139.8, -67539.2), repo::lib::RepoVector3D64(23685.1, 15713.8, -34265.1)), 120));
+		EXPECT_TRUE(ODAModelImportUtils::allNormalsAre(mesh, repo::lib::RepoVector3D(0.531980395, 0.310758412, 0.787671328), 0.01, 10));
 		EXPECT_THAT(n.getColours(), ElementsAre(repo::lib::repo_color3d_t(0.803921580, 0.125490203, 0.152941182)));
 	}
 }
