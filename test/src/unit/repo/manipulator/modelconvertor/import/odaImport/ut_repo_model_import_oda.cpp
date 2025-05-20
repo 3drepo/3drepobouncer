@@ -95,7 +95,7 @@ protected:
 	}
 };
 
-TEST(NwdTestSuite, Sample2025NWDTree)
+TEST_F(NwdTestSuite, Sample2025NWDTree)
 {
 	auto scene = ODAModelImportUtils::ModelImportManagerImport("Sample2025NWD", getDataPath(nwdModel2025));
 
