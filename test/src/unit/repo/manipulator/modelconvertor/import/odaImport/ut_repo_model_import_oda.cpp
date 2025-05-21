@@ -77,6 +77,18 @@ namespace ODAModelImportUtils
 		}
 		return true;
 	}
+
+	void setupTextures()
+	{
+		//Upload RVT file with texture directory set
+		std::string texturePath = "REPO_RVT_TEXTURES=" + getDataPath("textures");
+
+		//Linux putenv takes in a char* instead of const char* - need a copy of the const char*
+		char* texturePathEnv = new char[texturePath.size() + 1];
+		strncpy(texturePathEnv, texturePath.c_str(), texturePath.size() + 1);
+
+		putenv(texturePathEnv);
+	}
 }
 
 /*
@@ -340,6 +352,8 @@ TEST(ODAModelImport, DefaultViewVisibility)
 	// If there is no named view provided for Revit files, all geometry should
 	// be imported.
 
+	ODAModelImportUtils::setupTextures();
+
 	auto scene = ODAModelImportUtils::ModelImportManagerImport("RevitHideCategories", getDataPath("partiallyHiddenModel.rvt"));
 	SceneUtils utils(scene);
 
@@ -382,6 +396,8 @@ TEST(ODAModelImport, NamedView)
 {
 	// If a named view is provided, the view should adopt the visibility settings
 	// of that view.
+
+	ODAModelImportUtils::setupTextures();
 
 	ModelImportConfig config(
 		repo::lib::RepoUUID::createUUID(),
@@ -455,6 +471,8 @@ TEST(ODAModelImport, InvalidNamedView2)
 
 TEST(ODAModelImport, DefaultViewDisplayOptions)
 {
+	ODAModelImportUtils::setupTextures();
+
 	{
 		ModelImportConfig config(
 			repo::lib::RepoUUID::createUUID(),
