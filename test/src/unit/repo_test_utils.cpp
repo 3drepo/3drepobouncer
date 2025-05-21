@@ -358,3 +358,20 @@ int testing::runProcess(
 	return status;
 #endif
 }
+
+void testing::setupTextures()
+{
+	//Upload RVT file with texture directory set
+	std::string texturePath = "REPO_RVT_TEXTURES=" + getDataPath("textures");
+
+	//Linux putenv takes in a char* instead of const char* - need a copy of the const char*
+	char* texturePathEnv = new char[texturePath.size() + 1];
+	strncpy(texturePathEnv, texturePath.c_str(), texturePath.size() + 1);
+
+	putenv(texturePathEnv);
+}
+
+void testing::unsetupTextures()
+{
+	unsetenv("REPO_RVT_TEXTURES");
+}
