@@ -373,5 +373,9 @@ void testing::setupTextures()
 
 void testing::unsetupTextures()
 {
+#ifdef WIN32
+	_putenv("REPO_RVT_TEXTURES=");
+#else
 	unsetenv("REPO_RVT_TEXTURES");
+#endif // WIN32
 }
