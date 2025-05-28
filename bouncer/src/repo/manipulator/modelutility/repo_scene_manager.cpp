@@ -27,6 +27,8 @@
 #include <submodules/asset_generator/src/repo_model_export_repobundle.h>
 #endif
 
+#include "../modelconvertor/export/repo_model_export_scs.h"
+
 using namespace repo::lib;
 using namespace repo::manipulator::modelutility;
 
@@ -308,9 +310,10 @@ bool SceneManager::generateWebViewBuffers(
 				std::string msg;
 				scene->loadScene(handler, msg);
 			}
-			generateStashGraph(scene);
+			//generateStashGraph(scene);
 		}
 
+		/*
 		switch (exType)
 		{
 		case repo::manipulator::modelconvertor::WebExportType::REPO:
@@ -321,17 +324,13 @@ bool SceneManager::generateWebViewBuffers(
 			repoError << "Unknown export type with enum:  " << (uint16_t)exType;
 			return false;
 		}
+		*/
+		geoStashExt = REPO_COLLECTION_STASH_BUNDLE;
+		resultBuffers = generateScsBuffer(scene);
 
-		if (success = resultBuffers.geoFiles.size())
+		if (toCommit)
 		{
-			if (toCommit)
-			{
-				success = commitWebBuffers(scene, geoStashExt, resultBuffers, handler, fileManager);
-			}
-		}
-		else
-		{
-			repoError << "Failed to generate web buffers: no geometry file generated";
+			success = commitWebBuffers(scene, geoStashExt, resultBuffers, handler, fileManager);
 		}
 	}
 	else
@@ -407,6 +406,22 @@ repo::lib::repo_web_buffers_t SceneManager::generateRepoBundleBuffer(
 	repoError << "Bouncer must be built with REPO_ASSET_GENERATOR_SUPPORT ON in order to generate Repo Bundles.";
 #endif // REPO_ASSETGENERATOR
 
+	return result;
+}
+
+repo::lib::repo_web_buffers_t SceneManager::generateScsBuffer(
+	repo::core::model::RepoScene* scene)
+{
+	repo_web_buffers_t result;
+	repo::manipulator::modelconvertor::ScsExport scsExport(scene);
+	if (scsExport.isOk()) {
+		repoTrace << "Exporting Default Scene as Hoops SCS...";
+		result = scsExport.getAllFilesExportedAsBuffer();
+	}
+	else
+	{
+		repoError << "Export of SCS failed.";
+	}
 	return result;
 }
 

@@ -242,7 +242,7 @@ namespace repo {
 				/**
 				* Retrieve a vector of UV Channels, separated by channels
 				*/
-				std::vector<std::vector<repo::lib::RepoVector2D>> getUVChannelsSeparated() const
+				const std::vector<std::vector<repo::lib::RepoVector2D>>& getUVChannelsSeparated() const
 				{
 					return channels;
 				}

@@ -169,6 +169,9 @@ namespace repo {
 				*/
 				repo::lib::repo_web_buffers_t generateRepoBundleBuffer(
 					repo::core::model::RepoScene* scene);
+
+				repo::lib::repo_web_buffers_t generateScsBuffer(
+					repo::core::model::RepoScene* scene);
 			};
 		}
 	}
