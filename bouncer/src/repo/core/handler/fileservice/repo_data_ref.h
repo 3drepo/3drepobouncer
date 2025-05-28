@@ -31,7 +31,7 @@ namespace repo {
 				private:
 					const std::string fileName;
 					const int32_t startPos;
-					const int32_t size;
+					const int64_t size;
 				public:
 					DataRef(const std::string &fileName, const unsigned int &startPos, const unsigned int &size)
 						: fileName(fileName), startPos(startPos), size(size) {}
