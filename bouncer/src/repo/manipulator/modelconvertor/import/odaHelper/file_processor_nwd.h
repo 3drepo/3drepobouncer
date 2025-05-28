@@ -51,6 +51,20 @@ namespace repo {
 					~FileProcessorNwd() override;
 
 					uint8_t readFile() override;
+
+					/*
+					* If the FileProcessorNwd will be used multiple times within a single
+					* process - such as in the unit tests - then a shared system services
+					* must be used, due to a possible ODA bug on Linux:
+					* https://forum.opendesign.com/showthread.php?24792-Fonts-stop-working-after-odrxInitialize-odrxUninitialize
+					*
+					* To do so, call createSharedSystemServices() before readFile(). If
+					* this is done, the responsibility for cleaning up the shared services
+					* will fall to the caller. Otherwise, readFile will create and destroy
+					* the services automatically, but must not be called again.
+					*/
+					static bool createSharedSystemServices();
+					static void destorySharedSystemServices();
 				};
 			}
 		}
