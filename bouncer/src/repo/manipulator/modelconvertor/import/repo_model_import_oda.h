@@ -49,7 +49,7 @@ namespace repo {
 				* @param error message if failed
 				* @return returns a populated RepoScene upon success
 				*/
-				virtual virtual repo::core::model::RepoScene* importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err);
+				virtual repo::core::model::RepoScene* importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err);
 
 				virtual bool applyReduction() const { return shouldReduce; }
 				virtual bool requireReorientation() const { return true; }
