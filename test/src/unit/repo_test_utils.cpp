@@ -125,6 +125,9 @@ bool testing::projectIsPopulated(
 	repo::RepoController* controller = new repo::RepoController();
 	auto token = initController(controller);
 	auto scene = controller->fetchScene(token, db, project);
+	if (!scene) {
+		return false;
+	}
 	if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT)) {
 		return false;
 	}
