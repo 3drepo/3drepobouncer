@@ -712,7 +712,7 @@ TEST(RepoClientTest, UnicodeFilenames)
 	* but is low priority because the Linux versions of the plugins do.
 	*/
 #ifndef WIN32
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadArgs("unicodeImport", "spm", getDataPath("КР3_очищено.spm"))));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadArgs("unicodeImport", "spm", getDataPath("КР3_очищено.6_4.spm"))));
 	EXPECT_TRUE(projectIsPopulated("unicodeImport", "spm"));
 #endif
 }
