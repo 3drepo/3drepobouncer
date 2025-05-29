@@ -14,23 +14,25 @@
 *  You should have received a copy of the GNU Affero General Public License
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #pragma once
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <string>
+
 namespace repo {
 	namespace lib {
-		static bool doesFileExist(const boost::filesystem::path& inputPath)
+		static bool doesFileExist(const std::filesystem::path& inputPath)
 		{
-			return boost::filesystem::exists(inputPath) && boost::filesystem::is_regular_file(inputPath);
+			return std::filesystem::exists(inputPath) && std::filesystem::is_regular_file(inputPath);
 		}
 
-		static bool doesDirExist(const boost::filesystem::path& inputPath)
+		static bool doesDirExist(const std::filesystem::path& inputPath)
 		{
-			return boost::filesystem::exists(inputPath) && boost::filesystem::is_directory(inputPath);
+			return std::filesystem::exists(inputPath) && std::filesystem::is_directory(inputPath);
 		}
 
-		static std::string getExtension(const boost::filesystem::path &inputPath)
+		static std::string getExtension(const std::filesystem::path &inputPath)
 		{
 			return inputPath.extension().string();
 		}

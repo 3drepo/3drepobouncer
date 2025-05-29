@@ -77,7 +77,7 @@ uint8_t FileProcessorNwd::readFile()
 	OdRxModule* pModule = ::odrxDynamicLinker()->loadModule(sNwDbModuleName, false);
 	try
 	{
-		OdNwDatabasePtr pNwDb = svcs->readFile(OdString(file.c_str()));
+		OdNwDatabasePtr pNwDb = svcs->readFile(getFilename());
 
 		if (pNwDb.isNull())
 		{

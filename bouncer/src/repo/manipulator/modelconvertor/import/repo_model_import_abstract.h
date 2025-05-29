@@ -76,22 +76,6 @@ namespace repo {
 				ModelUnits getUnits() const { return modelUnits; }
 
 			protected:
-				/**
-				* Retrieve the directory to the file
-				* e.g /home/user/file.txt would return /home/user
-				* @param full path of the file
-				* @return returns the path of the directory
-				*/
-				std::string  getDirPath(std::string fullPath);
-
-				/**
-				* Retrieve the filename from a full path
-				* e.g /home/user/file.txt would return file.txt
-				* @param full path of the file
-				* @return returns the file name
-				*/
-				std::string  getFileName(std::string fullPath);
-
 				const ModelImportConfig settings; /*! Stores related settings for model import */
 				ModelUnits modelUnits = ModelUnits::UNKNOWN;
 			};

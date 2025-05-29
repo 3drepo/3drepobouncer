@@ -24,7 +24,7 @@
 #include "repo_model_import_oda.h"
 #include "repo_model_import_synchro.h"
 #include "repo_model_units.h"
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -34,7 +34,7 @@ repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
 	uint8_t &error
 ) const {
-	if (!repo::lib::doesFileExist(file)) {
+	if (!repo::lib::doesFileExist(std::filesystem::u8path(file))) {
 		error = REPOERR_MODEL_FILE_READ;
 		repoError << "Cannot find file: " << file;
 		return nullptr;

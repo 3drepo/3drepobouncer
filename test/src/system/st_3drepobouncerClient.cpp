@@ -1,4 +1,4 @@
-/**
+﻿/**
 *  Copyright (C) 2015 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
@@ -681,4 +681,31 @@ TEST(RepoClientTest, ProcessDrawing)
 	EXPECT_EQ(refNode.getUUIDField("project"), project);
 	EXPECT_EQ(refNode.getStringField("model"), model);
 	EXPECT_EQ(refNode.getUUIDField("rev_id"), rid);
+}
+
+TEST(RepoClientTest, UnicodeFilenames)
+{
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadArgs("unicodeImport", "dgn", getDataPath("КР3_очищено.dgn"))));
+	EXPECT_TRUE(projectIsPopulated("unicodeImport", "dgn"));
+
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadArgs("unicodeImport", "dwg", getDataPath("КР3_очищено.dwg"))));
+	EXPECT_TRUE(projectIsPopulated("unicodeImport", "dwg"));
+
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadArgs("unicodeImport", "nwc", getDataPath("КР3_очищено.nwc"))));
+	EXPECT_TRUE(projectIsPopulated("unicodeImport", "nwc"));
+
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadArgs("unicodeImport", "rvt", getDataPath("КР3_очищено.rvt"))));
+	EXPECT_TRUE(projectIsPopulated("unicodeImport", "rvt"));
+
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadArgs("unicodeImport", "bim004", getDataPath("КР3_очищено.bim004.bim"))));
+	EXPECT_TRUE(projectIsPopulated("unicodeImport", "bim004"));
+
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadArgs("unicodeImport", "obj", getDataPath("КР3_очищено.obj")))); // Assimp
+	EXPECT_TRUE(projectIsPopulated("unicodeImport", "obj"));
+
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadArgs("unicodeImport", "ifc", getDataPath("КР3_очищено.ifc"))));
+	EXPECT_TRUE(projectIsPopulated("unicodeImport", "ifc"));
+
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadArgs("unicodeImport", "spm", getDataPath("КР3_очищено.spm"))));
+	EXPECT_TRUE(projectIsPopulated("unicodeImport", "spm"));
 }

@@ -51,9 +51,7 @@ repo::core::model::RepoScene* IFCModelImport::generateRepoScene(uint8_t& errCode
 
 bool IFCModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err)
 {
-	std::string fileName = getFileName(filePath);
-
-	repoInfo << "IMPORT [" << fileName << "]";
+	repoInfo << "IMPORT [" << filePath << "]";
 	repoInfo << "=== IMPORTING MODEL WITH IFC OPEN SHELL ===";
 
 	auto sceneBuilder = std::make_unique<repo::manipulator::modelutility::RepoSceneBuilder>(

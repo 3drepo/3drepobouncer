@@ -24,15 +24,15 @@
 #include <algorithm>
 #include <fstream>
 #include <regex>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 #include <assimp/importerdesc.h>
 
-#include "../../../core/model/bson/repo_node_mesh.h"
-#include "../../../core/model/bson/repo_bson_factory.h"
-#include "../../../lib/repo_utils.h"
-#include "../../../error_codes.h"
-#include "./repo_model_import_config_default_values.h"
+#include "repo/core/model/bson/repo_node_mesh.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/lib/repo_utils.h"
+#include "repo/error_codes.h"
+#include "repo_model_import_config_default_values.h"
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -762,9 +762,8 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 							repoTrace << "External texture name: " << texName;
 							//External texture
 							std::ifstream::pos_type size;
-							std::string dirPath = getDirPath(orgFile);
-							boost::filesystem::path filePath = boost::filesystem::absolute(texName, dirPath);
-							std::ifstream file(filePath.string(), std::ios::in | std::ios::binary | std::ios::ate);
+							auto filePath = std::filesystem::u8path(orgFile).parent_path() / std::filesystem::u8path(texName);
+							std::ifstream file(filePath, std::ios::in | std::ios::binary | std::ios::ate);
 							char *memblock = nullptr;
 							if (!file.is_open())
 							{
@@ -1102,11 +1101,8 @@ std::vector<std::vector<double>> AssimpModelImport::getAiMeshBoundingBox(
 }
 
 std::string AssimpModelImport::getFileExtension(const std::string &filePath) const {
-	boost::filesystem::path filePathP(filePath);
-	std::string fileExt = filePathP.extension().string();
-
+	auto fileExt = std::filesystem::u8path(filePath).extension().string();
 	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
-
 	return fileExt;
 }
 
@@ -1119,12 +1115,10 @@ bool AssimpModelImport::importModel(std::string filePath, uint8_t &err)
 	//-------------------------------------------------------------------------
 	// Import model
 
-	std::string fileName = getFileName(filePath);
-
-	repoInfo << "IMPORT [" << fileName << "]";
+	repoInfo << "IMPORT [" << filePath << "]";
 
 	//check if a file exist first
-	std::ifstream fs(filePath);
+	std::ifstream fs(std::filesystem::u8path(filePath));
 	if (!fs.is_open() || !fs.good())
 	{
 		repoDebug << "Failed to find file";
@@ -1170,7 +1164,7 @@ bool AssimpModelImport::importModel(std::string filePath, uint8_t &err)
 			polyCount += assimpScene->mMeshes[i]->mNumFaces;
 
 		repoInfo << "=== IMPORTING MODEL WITH ASSIMP MODEL CONVERTOR ===";
-		repoInfo << "Loaded " << fileName << " with " << polyCount << " polygons in " << assimpScene->mNumMeshes << " " << ((assimpScene->mNumMeshes == 1) ? "mesh" : "meshes");
+		repoInfo << "Loaded " << filePath << " with " << polyCount << " polygons in " << assimpScene->mNumMeshes << " " << ((assimpScene->mNumMeshes == 1) ? "mesh" : "meshes");
 	}
 
 	return success;

@@ -26,6 +26,7 @@
 #include <iostream>
 #include <fstream>
 #include <boost/interprocess/streams/bufferstream.hpp>
+#include <filesystem>
 
 #include "repo_file_handler_abstract.h"
 
@@ -98,7 +99,7 @@ namespace repo {
 					 */
 					std::vector<std::string> determineHierachy(const std::string &name) const;
 
-					const std::string dirPath;
+					const std::filesystem::path dirPath;
 					const int level;
 					const static int minChunkLength = 4;
 				};

@@ -117,6 +117,26 @@ bool testing::projectExists(
 	return false;
 }
 
+bool testing::projectIsPopulated(
+	const std::string& db,
+	const std::string& project
+)
+{
+	repo::RepoController* controller = new repo::RepoController();
+	auto token = initController(controller);
+	auto scene = controller->fetchScene(token, db, project);
+	if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT)) {
+		return false;
+	}
+	if (!scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()) {
+		return false;
+	}
+	if (!scene->getAllTransformations(repo::core::model::RepoScene::GraphType::DEFAULT).size()) {
+		return false;
+	}
+	return true;
+}
+
 bool testing::projectSettingsCheck(
 	const std::string& dbName, const std::string& projectName, const std::string& owner, const std::string& tag, const std::string& desc)
 {
