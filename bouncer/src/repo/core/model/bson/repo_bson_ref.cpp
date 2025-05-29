@@ -48,7 +48,7 @@ RepoRef::RepoRef(
 RepoRef::RepoRef(RepoBSON bson)
 {
 	type = RefType::UNKNOWN;
-	size = bson.getIntField(REPO_REF_LABEL_SIZE);
+	size = bson.getLongField(REPO_REF_LABEL_SIZE);
 	link = bson.getStringField(REPO_REF_LABEL_LINK);
 	if (bson.hasField(REPO_NODE_LABEL_NAME))
 	{
@@ -72,7 +72,7 @@ void RepoRef::serialise(RepoBSONBuilder& builder) const
 {
 	builder.append(REPO_REF_LABEL_TYPE, RepoRef::convertTypeAsString(type));
 	builder.append(REPO_REF_LABEL_LINK, link);
-	builder.append(REPO_REF_LABEL_SIZE, (int32_t)size);
+	builder.append(REPO_REF_LABEL_SIZE, (int64_t)size);
 	if (!name.empty())
 	{
 		builder.append(REPO_NODE_LABEL_NAME, name);

@@ -207,10 +207,10 @@ std::pair<repo::core::model::RepoBSON, std::vector<uint8_t>> RepoBSON::getBinari
 		for (const auto &entry : bigFiles) {
 			RepoBSONBuilder entryBuilder;
 
-			entryBuilder.append(REPO_LABEL_BINARY_START, (int32_t)buffer.size());
+			entryBuilder.append(REPO_LABEL_BINARY_START, (int64_t)buffer.size());
 
 			buffer.insert(buffer.end(), entry.second.begin(), entry.second.end());
-			entryBuilder.append(REPO_LABEL_BINARY_SIZE, (int32_t)entry.second.size());
+			entryBuilder.append(REPO_LABEL_BINARY_SIZE, (int64_t)entry.second.size());
 
 			elemsBuilder.append(entry.first, entryBuilder.obj());
 		}
@@ -339,8 +339,8 @@ void RepoBSON::initBinaryBuffer(const std::vector<uint8_t> &buffer)
 
 		for (const auto &elem : elemRefs.getFieldNames()) {
 			auto elemRefBson = elemRefs.getObjectField(elem);
-			size_t start = elemRefBson.getIntField(REPO_LABEL_BINARY_START);
-			size_t size = elemRefBson.getIntField(REPO_LABEL_BINARY_SIZE);
+			size_t start = elemRefBson.getLongField(REPO_LABEL_BINARY_START);
+			size_t size = elemRefBson.getLongField(REPO_LABEL_BINARY_SIZE);
 
 			bigFiles[elem] = std::vector<uint8_t>(buffer.begin() + start, buffer.begin() + start + size);
 		}
