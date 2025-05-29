@@ -38,6 +38,7 @@
 #include <Database/BmGsManager.h>
 #include <Database/BmGsView.h>
 #include <Database/Entities/BmBasicFileInfo.h>
+#include <Database/Entities/BmDBView3d.h>
 
 #include "repo/lib/repo_utils.h"
 
@@ -49,6 +50,7 @@
 
 //help
 #include "vectorise_device_rvt.h"
+#include <Database/BmTransaction.h>
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
@@ -249,6 +251,58 @@ void setupRenderMode(OdBmDatabasePtr database, OdGsDevicePtr device, OdGiDefault
 	view->setMode(renderMode);
 }
 
+/*
+* Updates the view with some additional overrides, such as hiding section boxes.
+*/
+void setupViewOverrides(OdBmDBViewPtr pView)
+{
+	auto db = pView->database();
+
+	ODBM_TRANSACTION_BEGIN(viewUpdate, db)
+	viewUpdate.start();
+
+	// This snippet uses the definitions in BmBuiltInCategory.h to collect all the
+	// categories with the type Annotation, so we can turn them off.
+
+	// Ideally, we would use the db->getCategoriesData() & getCategoryType()
+	// methods, but getCategoriesData doesn't appear to have been exported in this
+	// version of ODA.
+
+	// The following macro invocations work by creating definitions for each
+	// possible token of the KIND entry in the ODBM_ACTUAL_BUILTIN_CATEGORIES
+	// def/table. For now, we are only interested in Annotations (which we add to a
+	// list).
+	// We undef the KIND tokens immediately after as they are common words that may
+	// be used elsewhere.
+
+#define Annotation(VALUE) ids.push_back(db->getObjectId(VALUE));
+#define Invalid(VALUE)
+#define Model(VALUE)
+#define Internal(VALUE)
+#define AnalyticalModel(VALUE)
+#define ODBM_BUILTIN_ENUM_FN(NAME, VALUE, PARENT_CATEGORY, KIND, ...) KIND(VALUE)
+
+	OdBmObjectIdArray ids;
+	ODBM_BUILTIN_CATEGORIES(ODBM_BUILTIN_ENUM_FN);
+
+#undef Annotation
+#undef Invalid
+#undef Model
+#undef Internal
+#undef AnalyticalModel
+
+	// SunStudy is part of the Model category. We need to hide this explicitly.
+
+	ids.push_back(db->getObjectId(OdBm::BuiltInCategory::OST_SunStudy));
+
+	pView->setCategoryHidden(ids, true);
+
+	pView->setActiveWorkPlaneVisibility(false);
+
+	viewUpdate.commit();
+	ODBM_TRANSACTION_END()
+}
+
 OdGeExtents3d getModelBounds(OdBmDBViewPtr view)
 {
 	OdBmObjectIdArray elements;
@@ -334,7 +388,7 @@ uint8_t FileProcessorRvt::readFile()
 		}
 		setTessellationParams(triParams);
 
-		OdBmDatabasePtr pDb = svcs.readFile(OdString(file.c_str()));	
+		OdBmDatabasePtr pDb = svcs.readFile(OdString(file.c_str()));
 		if (!pDb.isNull())
 		{
 			// The 'drawing' object corresponds to a named entry in the 'Views' list in
@@ -343,6 +397,7 @@ uint8_t FileProcessorRvt::readFile()
 			// properties.
 
 			OdDbBaseDatabasePEPtr pDbPE(pDb);
+
 			auto drawing = findView(pDbPE, pDb);
 
 			if (!drawing) {
@@ -350,7 +405,8 @@ uint8_t FileProcessorRvt::readFile()
 			}
 			repoInfo << "Using 3D View: " << convertToStdString(drawing->getShortDescriptiveName());
 
-			OdBmDBViewPtr pView = drawing->getBaseDBViewId().safeOpenObject();
+			OdBmDBView3dPtr pView = drawing->getBaseDBViewId().safeOpenObject();
+			setupViewOverrides(pView);
 			auto modelToWorld = getModelToWorldMatrix(pDb); // World here is the shared or 'project' coordinate system			
 
 			auto bounds = getModelBounds(pView);
