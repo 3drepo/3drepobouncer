@@ -47,6 +47,7 @@ namespace repo {
 
 						face();
 						face(std::initializer_list<repo::lib::RepoVector3D64> vertices);
+						face(std::initializer_list<repo::lib::RepoVector3D64> vertices, repo::lib::RepoVector3D64 normal);
 						face(const repo::lib::RepoVector3D64* vertices, size_t numVertices);
 						face(const repo::lib::RepoVector3D64* vertices, size_t numVertices, const repo::lib::RepoVector2D* uvs, size_t numUvs);
 

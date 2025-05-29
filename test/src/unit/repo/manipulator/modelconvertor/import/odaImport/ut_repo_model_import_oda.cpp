@@ -25,6 +25,8 @@
 #include "../../../../../repo_test_utils.h"
 #include "../../../../../repo_test_database_info.h"
 #include "../../../../../repo_test_scene_utils.h"
+#include "../../../../../repo_test_matchers.h"
+#include "repo/manipulator/modelconvertor/import/odaHelper/file_processor_nwd.h"
 
 using namespace repo::manipulator::modelconvertor;
 using namespace repo::core::model;
@@ -32,21 +34,10 @@ using namespace testing;
 
 #define TESTDB "ODAModelImportTest"
 
-#pragma optimize("", off)
-
 namespace ODAModelImportUtils
 {
-	repo::core::model::RepoScene* ModelImportManagerImport(std::string collection, std::string filename)
+	repo::core::model::RepoScene* ModelImportManagerImport(std::string filename, const ModelImportConfig& config)
 	{
-		ModelImportConfig config(
-			true,
-			ModelUnits::MILLIMETRES,
-			"",
-			0,
-			repo::lib::RepoUUID::createUUID(),
-			TESTDB,
-			collection);
-
 		auto handler = getHandler();
 
 		uint8_t err;
@@ -59,9 +50,55 @@ namespace ODAModelImportUtils
 
 		return scene;
 	}
+
+	repo::core::model::RepoScene* ModelImportManagerImport(std::string collection, std::string filename)
+	{
+		ModelImportConfig config(
+			repo::lib::RepoUUID::createUUID(),
+			TESTDB,
+			collection
+		);
+		config.targetUnits = ModelUnits::MILLIMETRES;
+
+		return ModelImportManagerImport(filename, config);
+	}
+
+	bool allNormalsAre(const repo::core::model::MeshNode& mesh, repo::lib::RepoVector3D normal, float tolerance, size_t count = ULONG_MAX)
+	{
+		auto normals = mesh.getNormals();
+		if (mesh.getNormals().size() <= 0) {
+			return false;
+		}
+		for (size_t i = 0; i < std::min(count, normals.size()); i++)
+		{
+			if ((normals[i] - normal).norm() > tolerance) {
+				return false;
+			}
+		}
+		return true;
+	}
 }
 
-TEST(ODAModelImport, Sample2025NWDTree)
+/*
+* Some ODA functionality uses global states and so must only be initialised/
+* deinitialised once per-process. This test suite manages those resources
+* for the NwdFileProcessor, for which there is a known issue on Linux.
+* See this page for how the Test class works:
+* https://google.github.io/googletest/advanced.html#sharing-resources-between-tests-in-the-same-test-suite
+*/
+class NwdTestSuite : public testing::Test
+{
+protected:
+	static void SetUpTestSuite() {
+		::odaHelper::FileProcessorNwd::createSharedSystemServices();
+	}
+
+	static void TearDownTestSuite() {
+		::odaHelper::FileProcessorNwd::destorySharedSystemServices();
+	}
+};
+
+TEST_F(NwdTestSuite, Sample2025NWDTree)
 {
 	auto scene = ODAModelImportUtils::ModelImportManagerImport("Sample2025NWD", getDataPath(nwdModel2025));
 
@@ -211,5 +248,281 @@ TEST(ODAModelImport, RevitMEPSystems)
 		EXPECT_THAT(nodes.size(), Eq(1));
 		EXPECT_THAT(nodes[0].isLeaf(), IsTrue());
 		EXPECT_THAT(nodes[0].hasGeometry(), IsTrue());
+	}
+}
+
+TEST_F(NwdTestSuite, NwdDwgText1)
+{
+	auto scene = ODAModelImportUtils::ModelImportManagerImport("NwdDwgText1", getDataPath("groupsAndReferences.nwc"));
+	SceneUtils utils(scene);
+
+	// Check that the text objects are transformed correctly regardless of how
+	// they're nested in the Dwg.
+
+	{
+		auto n = utils.findNodeByMetadata("Text::Contents", "Elements");
+		auto mesh = n.getMeshesInProjectCoordinates()[0];
+		mesh.updateBoundingBox();
+		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(77.1, 0, -182.6), repo::lib::RepoVector3D64(745.4, 0, -62.6)), 1));
+	}
+
+	{
+		auto n = utils.findNodeByMetadata("Text::Contents", "Groups");
+		auto mesh = n.getMeshesInProjectCoordinates()[0];
+		mesh.updateBoundingBox();
+		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(1405.8, 0, -183.3), repo::lib::RepoVector3D64(1931.7, 0, -30.4)), 1));
+	}
+
+	{
+		auto n = utils.findNodeByMetadata("Text::Contents", "Block");
+		auto mesh = n.getMeshesInProjectCoordinates()[0];
+		mesh.updateBoundingBox();
+		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(2861.6, 0, -181.7), repo::lib::RepoVector3D64(3252.4, 0, -61.7)), 1));
+	}
+
+	{
+		auto n = utils.findNodeByMetadata("Text::Contents", "Block References");
+		auto mesh = n.getMeshesInProjectCoordinates()[0];
+		mesh.updateBoundingBox();
+		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(4076.1, 0, -181.7), repo::lib::RepoVector3D64(5350.7, 0, -59.7)), 1));
+	}
+
+	{
+		auto n = utils.findNodeByMetadata("Text::Contents", "Group of References");
+		auto mesh = n.getMeshesInProjectCoordinates()[0];
+		mesh.updateBoundingBox();
+		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(6012.2, 0, -136.7), repo::lib::RepoVector3D64(6801.8, 0, -57.1)), 1));
+	}
+}
+
+TEST_F(NwdTestSuite, NwdDwgText2)
+{
+	auto scene = ODAModelImportUtils::ModelImportManagerImport("NwdDwgText2", getDataPath("dwgTextB.nwd"));
+	SceneUtils utils(scene);
+
+	// Check that the text objects are transformed correctly if they are rotated
+	// in 3D, including normals.
+
+	{
+		auto n = utils.findNodeByMetadata("Text::Contents", "TextA");
+		auto mesh = n.getMeshesInProjectCoordinates()[0];
+		mesh.updateBoundingBox();
+		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(-2618.1, 0, -10862.1), repo::lib::RepoVector3D64(352.2, 0, -288.3)), 120));
+		EXPECT_TRUE(ODAModelImportUtils::allNormalsAre(mesh, repo::lib::RepoVector3D(0, 1, 0), 0.01, 10));
+		EXPECT_THAT(n.getColours(), ElementsAre(repo::lib::repo_color3d_t(0.760784328, 0.807843149, 0.839215696)));
+	}
+
+	{
+		auto n = utils.findNodeByMetadata("Text::Contents", "TextB");
+		auto mesh = n.getMeshesInProjectCoordinates()[0];
+		mesh.updateBoundingBox();
+		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(-30056.1, -14139.8, -67539.2), repo::lib::RepoVector3D64(23685.1, 15713.8, -34265.1)), 120));
+		EXPECT_TRUE(ODAModelImportUtils::allNormalsAre(mesh, repo::lib::RepoVector3D(0.531980395, 0.310758412, 0.787671328), 0.01, 10));
+		EXPECT_THAT(n.getColours(), ElementsAre(repo::lib::repo_color3d_t(0.803921580, 0.125490203, 0.152941182)));
+	}
+}
+
+TEST(ODAModelImport, RevitHideCategories)
+{
+	auto scene = ODAModelImportUtils::ModelImportManagerImport("RevitHideCategories", getDataPath("annotationsExample.rvt"));
+	SceneUtils utils(scene);
+
+	EXPECT_THAT(utils.findNodesByMetadata("Category", "Sun Path"), IsEmpty());
+	EXPECT_THAT(utils.findNodesByMetadata("Category", "Work Plane Grid"), IsEmpty());
+	EXPECT_THAT(utils.findNodesByMetadata("Category", "Scope Boxes"), IsEmpty());
+	EXPECT_THAT(utils.findNodesByMetadata("Category", "Levels"), IsEmpty());
+	EXPECT_THAT(utils.findNodesByMetadata("Category", "Grids"), IsEmpty());
+	EXPECT_THAT(utils.findNodesByMetadata("Spot Coordinates", "Grids"), IsEmpty());
+}
+
+TEST(ODAModelImport, DefaultViewVisibility)
+{
+	// If there is no named view provided for Revit files, all geometry should
+	// be imported.
+
+	::setupTextures();
+
+	auto scene = ODAModelImportUtils::ModelImportManagerImport("RevitHideCategories", getDataPath("partiallyHiddenModel.rvt"));
+	SceneUtils utils(scene);
+
+	// All model categories, even those hidden in the default view
+	EXPECT_THAT(utils.findNodesByMetadata("Category", "Stairs"), Not(IsEmpty()));
+
+	// Cropping and sectioning should also be ignored
+	auto bounds = scene->getSceneBoundingBox();
+	EXPECT_THAT(bounds.size().x, Gt(197091));
+	EXPECT_THAT(bounds.size().y, Gt(100899));
+	EXPECT_THAT(bounds.size().z, Gt(106445));
+
+	// Geometry from all phases should be included
+	EXPECT_THAT(utils.findNodesByMetadata("Element ID", "2927126"), Not(IsEmpty())); // New Construction
+	EXPECT_THAT(utils.findNodesByMetadata("Element ID", "2926032"), Not(IsEmpty())); // Outfitting (after current phase)
+	EXPECT_THAT(utils.findNodesByMetadata("Element ID", "2926070"), Not(IsEmpty())); // Demolished
+
+	// All details (Fine) should be included.
+	// (The Handles for the Doors are only present when rendering in Fine mode)
+	auto door = utils.findNodeByMetadata("Element ID", "2861117");
+	auto doorMeshes = door.getMeshes(repo::core::model::MeshNode::Primitive::TRIANGLES);
+	EXPECT_THAT(doorMeshes.size(), Eq(3));
+
+	// Textures should be supported
+	EXPECT_THAT(utils.findNodeByMetadata("Element ID", "2637395").hasTextures(), IsTrue());
+	EXPECT_THAT(utils.findNodeByMetadata("Element ID", "2928303").hasTextures(), IsTrue());
+	EXPECT_THAT(utils.findNodeByMetadata("Element ID", "2285130").hasTextures(), IsTrue());
+	EXPECT_THAT(utils.findNodeByMetadata("Element ID", "2926032").hasTextures(), IsTrue());
+
+	// Transparency should work as well
+	EXPECT_THAT(door.hasTransparency(), IsTrue());
+
+	// Should include 3d geometry and lines
+	auto floorNode = utils.findNodeByMetadata("Element ID", "2928847");
+	EXPECT_THAT(floorNode.getMeshes(repo::core::model::MeshNode::Primitive::TRIANGLES), Not(IsEmpty()));
+	EXPECT_THAT(floorNode.getMeshes(repo::core::model::MeshNode::Primitive::LINES), Not(IsEmpty()));
+}
+
+TEST(ODAModelImport, NamedView)
+{
+	// If a named view is provided, the view should adopt the visibility settings
+	// of that view.
+
+	::setupTextures();
+
+	ModelImportConfig config(
+		repo::lib::RepoUUID::createUUID(),
+		TESTDB,
+		"RevitNamedView"
+	);
+	config.targetUnits = ModelUnits::MILLIMETRES;
+	config.viewName = "3D Repo";
+
+	auto scene = ODAModelImportUtils::ModelImportManagerImport(getDataPath("partiallyHiddenModel.rvt"), config);
+	SceneUtils utils(scene);
+
+	// The saved/named view hides the Stairs category
+	EXPECT_THAT(utils.findNodesByMetadata("Category", "Stairs"), IsEmpty());
+
+	// The named view should be level Coarse (so hide door handles)
+	auto door = utils.findNodeByMetadata("Element ID", "2861117");
+	auto doorMeshes = door.getMeshes(repo::core::model::MeshNode::Primitive::TRIANGLES);
+	EXPECT_THAT(doorMeshes.size(), Eq(1));
+
+	// The named view has a sectioning box applied
+	auto bounds = scene->getSceneBoundingBox();
+	EXPECT_THAT(bounds.size().x, Lt(126729));
+	EXPECT_THAT(bounds.size().y, Lt(52193));
+	EXPECT_THAT(bounds.size().z, Lt(63451));
+
+	// The named view should only show the Phase up to New Construction
+	EXPECT_THAT(utils.findNodesByMetadata("Element ID", "2926032"), IsEmpty()); // Outfitting (after current phase)
+	EXPECT_THAT(utils.findNodesByMetadata("Element ID", "2926070"), Not(IsEmpty())); // Demolished
+
+	// The named view is in Hidden Lines mode, so won't include any textures
+	EXPECT_THAT(utils.findNodeByMetadata("Element ID", "2928303").hasTextures(), IsFalse());
+	EXPECT_THAT(utils.findNodeByMetadata("Element ID", "2285130").hasTextures(), IsFalse());
+}
+
+TEST(ODAModelImport, InvalidNamedView1)
+{
+	ModelImportConfig config(
+		repo::lib::RepoUUID::createUUID(),
+		TESTDB,
+		"RevitNamedView"
+	);
+	config.targetUnits = ModelUnits::MILLIMETRES;
+	config.viewName = "Level 0";
+
+	try {
+		ODAModelImportUtils::ModelImportManagerImport(getDataPath("partiallyHiddenModel.rvt"), config);
+	}
+	catch (repo::lib::RepoException& e){
+		EXPECT_THAT(e.repoCode(), Eq(REPOERR_VIEW_NOT_3D));
+	}
+}
+
+TEST(ODAModelImport, InvalidNamedView2)
+{
+	ModelImportConfig config(
+		repo::lib::RepoUUID::createUUID(),
+		TESTDB,
+		"RevitNamedView"
+	);
+	config.targetUnits = ModelUnits::MILLIMETRES;
+	config.viewName = "Not A View";
+
+	try {
+		ODAModelImportUtils::ModelImportManagerImport(getDataPath("partiallyHiddenModel.rvt"), config);
+	}
+	catch (repo::lib::RepoException& e) {
+		EXPECT_THAT(e.repoCode(), Eq(REPOERR_VIEW_NOT_FOUND));
+	}
+}
+
+TEST(ODAModelImport, DefaultViewDisplayOptions)
+{
+	::setupTextures();
+
+	{
+		ModelImportConfig config(
+			repo::lib::RepoUUID::createUUID(),
+			TESTDB,
+			"RevitNamedView"
+		);
+		config.targetUnits = ModelUnits::MILLIMETRES;
+
+		// Default (nothing or a string that doesn't match the others) is shaded with edges
+
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport(getDataPath("sample2025.rvt"), config));
+
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::TRIANGLES).size(), Eq(3)); // Two textures and a flat surface
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::LINES).size(), Gt(0));
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").hasTextures(), IsTrue());
+	}
+
+	{
+		ModelImportConfig config(
+			repo::lib::RepoUUID::createUUID(),
+			TESTDB,
+			"RevitNamedView"
+		);
+		config.targetUnits = ModelUnits::MILLIMETRES;
+		config.viewStyle = "shaded";
+
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport(getDataPath("sample2025.rvt"), config));
+
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::TRIANGLES).size(), Gt(0)); // Two textures and a flat surface
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::LINES).size(), Eq(0));
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").hasTextures(), IsTrue());
+	}
+
+	{
+		ModelImportConfig config(
+			repo::lib::RepoUUID::createUUID(),
+			TESTDB,
+			"RevitNamedView"
+		);
+		config.targetUnits = ModelUnits::MILLIMETRES;
+		config.viewStyle = "hiddenline";
+
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport(getDataPath("sample2025.rvt"), config));
+
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::TRIANGLES).size(), Gt(0)); // No textures means meshes are combined
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::LINES).size(), Gt(0));
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").hasTextures(), IsFalse());
+	}
+
+	{
+		ModelImportConfig config(
+			repo::lib::RepoUUID::createUUID(),
+			TESTDB,
+			"RevitNamedView"
+		);
+		config.targetUnits = ModelUnits::MILLIMETRES;
+		config.viewStyle = "wireframe";
+
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport(getDataPath("sample2025.rvt"), config));
+
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::TRIANGLES).size(), Eq(0)); // No textures means meshes are combined
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::LINES).size(), Gt(0));
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").hasTextures(), IsFalse());
 	}
 }
