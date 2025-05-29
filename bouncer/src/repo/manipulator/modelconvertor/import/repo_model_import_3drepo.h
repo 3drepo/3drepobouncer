@@ -85,25 +85,6 @@ namespace repo {
 				*/
 				virtual repo::core::model::RepoScene* importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t &errMsg);
 			};
-
-			//http://stackoverflow.com/questions/23481262/using-boost-property-tree-to-read-int-array
-			template <typename T>
-			inline std::vector<T> as_vector(const boost::property_tree::ptree &pt, const boost::property_tree::ptree::key_type &key)
-			{
-				std::vector<T> r;
-				for (const auto& item : pt.get_child(key))
-					r.push_back(item.second.get_value<T>());
-				return r;
-			}
-
-			template <typename T>
-			inline std::vector<T> as_vector(const boost::property_tree::ptree &pt)
-			{
-				std::vector<T> r;
-				for (const auto& item : pt)
-					r.push_back(item.second.get_value<T>());
-				return r;
-			}
 		}
 	}
 }

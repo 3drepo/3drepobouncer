@@ -54,11 +54,6 @@ RepoModelImport::~RepoModelImport()
 {
 }
 
-bool RepoModelImport::importModel(std::string filePath, uint8_t& errMsg)
-{
-	throw repo::lib::RepoException("Classic import is no longer supported for .bim. Please use the streaming import.");
-}
-
 struct View
 {
 	size_t begin;
@@ -578,16 +573,11 @@ repo::core::model::RepoScene* RepoModelImport::importModel(std::string filePath,
 
 		delete builder;
 
-		return generateRepoScene(err);
+		return scene;
 	}
 	else {
 		repoError << "File " << fileName << " not found.";
 		err = REPOERR_MODEL_FILE_READ;
 		return nullptr;
 	}
-}
-
-repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t& errCode)
-{
-	return scene;
 }
