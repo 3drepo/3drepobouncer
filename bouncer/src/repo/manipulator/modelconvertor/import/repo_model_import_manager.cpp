@@ -46,12 +46,10 @@ repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 		return nullptr;
 	}
 
-	repoTrace << "Importing model...";
+	repoTrace << "Importing model and generating Repo Scene";
 	repo::core::model::RepoScene* scene = modelConvertor->importModel(file, handler, error);
 	if (scene) {
-		repoTrace << "model Imported, generating Repo Scene";
-		uint8_t errCode = REPOERR_LOAD_SCENE_FAIL;
-		
+
 		scene->setDatabaseAndProjectName(config.getDatabaseName(), config.getProjectName());
 
 		auto fileUnits = modelConvertor->getUnits();
@@ -65,25 +63,22 @@ repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 			scene->applyScaleFactor(unitsScale);
 		}
 
-		if (!scene) {
-			error = errCode;
+		if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT)) {
+			delete scene;
+			scene = nullptr;
+			error = REPOERR_NO_MESHES;
 		}
 		else {
-			if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT)) {
-				delete scene;
-				scene = nullptr;
-				error = REPOERR_NO_MESHES;
+			if (modelConvertor->requireReorientation()) {
+				repoTrace << "rotating model by 270 degress on the x axis...";
+				scene->reorientateDirectXModel();
 			}
-			else {
-				if (modelConvertor->requireReorientation()) {
-					repoTrace << "rotating model by 270 degress on the x axis...";
-					scene->reorientateDirectXModel();
-				}
 
-				error = REPOERR_OK;
-			}
+			error = REPOERR_OK;
 		}
+		
 	}
+
 	return scene;
 }
 
