@@ -49,8 +49,6 @@ namespace repo {
 
 				/**
 				* Import model from a given file
-				* This does not generate the Repo Scene Graph
-				* Use getRepoScene() to generate a Repo Scene Graph.
 				* @param path to the file
 				* @param database handler
 				* @param error message if failed

@@ -74,10 +74,7 @@ namespace repo {
 				virtual ~RepoModelImport();
 
 				/**
-				* Import model from a given file.
-				* Loads material nodes.
-				* This does not generate the Repo Scene Graph
-				* Use generateRepoScene() to generate a Repo Scene Graph.
+				* Import model from a given file.				
 				* @param path to the file
 				* @param database handler
 				* @param error message if failed
