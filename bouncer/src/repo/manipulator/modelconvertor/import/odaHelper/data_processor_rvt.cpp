@@ -177,6 +177,11 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 {
 	// Try to extract one valid paths if multiple paths are provided
 	auto pathStr = inputPath.substr(0, inputPath.find("|", 0));
+
+	// All Autodesk textures are resolved lowercase, to emulate Windows' case
+	// insensitivity
+	repo::lib::toLower(pathStr);
+
 	std::replace(pathStr.begin(), pathStr.end(), '\\', '/');
 	auto texturePath = boost::filesystem::path(pathStr); // explictly store the value before calling make_preferred().
 	texturePath = texturePath.make_preferred();

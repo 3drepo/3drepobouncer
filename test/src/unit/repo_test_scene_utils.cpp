@@ -47,6 +47,7 @@ SceneUtils::NodeInfo SceneUtils::findNodeByMetadata(std::string key, std::string
 	if (nodes.size() > 1) {
 		throw std::runtime_error("Found too many matching nodes for call.");
 	}
+
 	return nodes[0];
 }
 
@@ -162,6 +163,20 @@ SceneUtils::NodeInfo SceneUtils::getNodeInfo(repo::core::model::RepoNode* node)
 	return info;
 }
 
+std::vector<SceneUtils::NodeInfo> SceneUtils::NodeInfo::getMeshes(repo::core::model::MeshNode::Primitive primitive)
+{
+	std::vector<SceneUtils::NodeInfo> meshNodes;
+	for (auto& n : getMeshes()) {
+		if (auto m = dynamic_cast<MeshNode*>(n.node)) {
+			if (m->getPrimitive() == primitive) {
+				meshNodes.push_back(n);
+			}
+		}
+	}
+	return meshNodes;
+}
+
+
 std::vector<SceneUtils::NodeInfo> SceneUtils::NodeInfo::getMeshes()
 {
 	std::vector<SceneUtils::NodeInfo> meshNodes;
@@ -202,12 +217,22 @@ std::vector<repo::core::model::MeshNode> SceneUtils::NodeInfo::getMeshesInProjec
 	return meshes;
 }
 
+bool SceneUtils::NodeInfo::hasTextures()
+{
+	return getTextures().size();
+}
 
 std::vector<SceneUtils::NodeInfo> SceneUtils::NodeInfo::getTextures()
 {
 	std::vector<MeshNode*> meshes;
 	std::vector<MaterialNode*> materials;
 	std::vector<SceneUtils::NodeInfo> textures;
+
+	if (auto n = dynamic_cast<TransformationNode*>(node)) {
+		for (auto m : getMeshes()) {
+			meshes.push_back(dynamic_cast<MeshNode*>(m.node));
+		}
+	}
 
 	if (auto mesh = dynamic_cast<MeshNode*>(node)) {
 		meshes.push_back(mesh);
@@ -276,6 +301,16 @@ std::vector<repo::lib::repo_color4d_t> SceneUtils::NodeInfo::getColours()
 		colours.push_back(repo::lib::repo_color4d_t(c.getMaterial().diffuse, c.getMaterial().opacity));
 	}
 	return colours;
+}
+
+bool SceneUtils::NodeInfo::hasTransparency()
+{
+	for (auto& c : getColours()) {
+		if (c.a < 0.9999) {
+			return true;
+		}
+	}
+	return false;
 }
 
 std::vector<std::string> SceneUtils::NodeInfo::getChildNames()

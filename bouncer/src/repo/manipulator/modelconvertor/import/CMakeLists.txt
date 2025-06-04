@@ -14,6 +14,7 @@ set(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_3drepo.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_abstract.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_assimp.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_config.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_ifc.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_manager.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_oda.cpp

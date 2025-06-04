@@ -131,4 +131,7 @@ namespace testing {
 		const std::string& configPath = getConnConfig());
 
 	int runProcess(const std::string& cmd);
+
+	void setupTextures();
+	void unsetupTextures();
 }

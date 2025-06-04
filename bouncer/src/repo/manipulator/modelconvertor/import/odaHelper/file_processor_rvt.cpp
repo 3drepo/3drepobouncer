@@ -39,8 +39,12 @@
 #include <Database/BmGsView.h>
 #include <Database/Entities/BmBasicFileInfo.h>
 #include <Database/Entities/BmDBView3d.h>
+#include <Database/Entities/BmOverrideGraphicSettings.h>
+#include <Database/Managers/BmViewTable.h>
 
 #include "repo/lib/repo_utils.h"
+#include "repo/lib/repo_exception.h"
+#include "repo/error_codes.h"
 
 //3d repo bouncer
 #include "file_processor_rvt.h"
@@ -155,53 +159,25 @@ protected:
 	bool useUnload = false;
 };
 
-OdBmDBDrawingPtr findView(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimDatabase)
+OdBmDBView3dPtr findView(OdBmDatabasePtr pDb, std::string name)
 {
-	// Layouts correspond to the Views listed in the Project Browser in Revit.
-
-	OdRxIteratorPtr layouts = baseDatabase->layouts(bimDatabase);
-	bool navisNameFound = false;
-
-	OdBmDBDrawingPtr currentpDBDrawing;
-	for (; !layouts->done(); layouts->next())
-	{
-		OdBmDBDrawingPtr pDBDrawing = layouts->object();
-		if (pDBDrawing->getBaseViewType() == OdBm::ViewType::ThreeD)
-		{
-			OdDbBaseLayoutPEPtr pLayout(pDBDrawing);
-			auto viewNameStr = convertToStdString(pDBDrawing->getTitle());
-
-			//set first 3D view available
-			if (!currentpDBDrawing) {
-				currentpDBDrawing = pDBDrawing;
-				repoInfo << "First layout name is " << viewNameStr;
-			}
-
-			// Make lowercase for the comparisons below
-			repo::lib::toLower(viewNameStr);
-
-			//3D view called "3D Repo" should return straight away
-			if (viewNameStr.find("3drepo") != std::string::npos || viewNameStr.find("3d repo") != std::string::npos) {
-				repoInfo << "Found 3D view named 3D Repo.";
-				return pDBDrawing;
-			}
-
-			if (!navisNameFound) {
-				navisNameFound = viewNameStr.find("navis") != std::string::npos;
-				if (navisNameFound) {
-					//3D View called "navis" has precedence over default 3D view
-					repoInfo << "Found view containing \"navis\".";
-					currentpDBDrawing = pDBDrawing;
-				}
-				else if (pDBDrawing->getName().iCompare("{3D}") == 0) { // For checking default 3D view, we use the drawings true name for an exact match
-					repoInfo << "Found default named 3D view.";
-					currentpDBDrawing = pDBDrawing;
-				}
-			}
+	OdBmViewTablePtr pViewTable = pDb->getAppInfo(OdBm::ManagerType::ViewTable);
+	OdBmObjectId idView = pViewTable->findViewIdByName(name.c_str());
+	try {
+		OdBmDBView3dPtr pView = idView.safeOpenObject();
+		repoInfo << "Using view " << convertToStdString(pView->getElementName());
+		return pView;
+	}
+	catch (OdError& e) {
+		switch (e.code()) {
+		case OdResult::eNullObjectId:
+			throw repo::lib::RepoSceneProcessingException("Cannot find view: " + name, REPOERR_VIEW_NOT_FOUND);
+		case OdResult::eNotThatKindOfClass:
+			throw repo::lib::RepoSceneProcessingException("View " + name + " is not a 3D view.", REPOERR_VIEW_NOT_3D);
+		default:
+			throw;
 		}
 	}
-
-	return currentpDBDrawing;
 }
 
 FileProcessorRvt::FileProcessorRvt(const std::string& inputFile,
@@ -303,6 +279,73 @@ void setupViewOverrides(OdBmDBViewPtr pView)
 	ODBM_TRANSACTION_END()
 }
 
+OdBmDBView3dPtr createDefault3DView(OdBmDatabasePtr pDb, std::string style)
+{
+	// (This implementation is based on the BmDBView3dCreateCmd.cpp TB_Commands
+	// example in the BimRv samples.)
+
+	OdBmDBView3dPtr pDBView3d; // (ODBM_TRANSACTION_BEGIN/END actually creates a try..catch block, so this must be defined outside for it to be returned.)
+
+	ODBM_TRANSACTION_BEGIN(viewCreate, pDb)
+	viewCreate.start();
+
+	pDBView3d = OdBmDBView3d::createObject();
+	pDb->addElement(pDBView3d); // element must be added to DB before setDefaultOrigin, createDefaultDrawingAndViewport, setPerspective
+
+	if (style == "wireframe") {
+		pDBView3d->setDisplayStyle(OdBm::ViewDisplayStyle::Wireframe);
+	}
+	else if (style == "hiddenline") {
+		pDBView3d->setDisplayStyle(OdBm::ViewDisplayStyle::HiddenLine);
+	}
+	else if (style == "shaded") {
+		pDBView3d->setDisplayStyle(OdBm::ViewDisplayStyle::Shaded);
+	}
+	else {
+		pDBView3d->setDisplayStyle(OdBm::ViewDisplayStyle::ShadedWithEdges);
+	}
+
+	pDBView3d->setDetailLevel(OdBm::ViewDetailLevel::Fine);
+	pDBView3d->setViewDiscipline(OdBm::ViewDiscipline::Architectural); // Architectural shows all elements (search "About the View Discipline" in the Revit docs)
+	pDBView3d->setParam(OdBm::BuiltInParameter::VIEW_PHASE_FILTER, OdBmObjectId::kNull); // Set the Phasing filter to None so no objects are filtered out
+	pDBView3d->setDefaultOrigin();
+	pDBView3d->setPerspective();
+
+	// Shaded is the only style that does not draw lines - in this mode, we also
+	// want to disable surface patterns, to be consistent with Revit's UI.
+	// This is done by setting a Graphics Override for every Model category.
+
+	if (style == "shaded") {
+		OdBmOverrideGraphicSettingsPtr overrides = OdBmOverrideGraphicSettings::createObject();
+		overrides->setProjForegroundPatternVisible(false);
+		overrides->setSurfaceBackgroundPatternVisible(false);
+
+		// See the comments in setupViewOverrides for how this macro works.
+
+#define Annotation(NAME)
+#define Invalid(NAME)
+#define Model(NAME) pDBView3d->setCategoryOverrides(OdBm::BuiltInCategory::NAME, overrides);
+#define Internal(NAME)
+#define AnalyticalModel(NAME)
+#define ODBM_BUILTIN_ENUM_FN(NAME, VALUE, PARENT_CATEGORY, KIND, ...) KIND(NAME)
+
+		ODBM_BUILTIN_CATEGORIES(ODBM_BUILTIN_ENUM_FN);
+
+#undef Annotation
+#undef Invalid
+#undef Model
+#undef Internal
+#undef AnalyticalModel
+	}
+
+	repoInfo << "Created view...";
+
+	viewCreate.commit();
+	ODBM_TRANSACTION_END();
+
+	return pDBView3d;
+}
+
 OdGeExtents3d getModelBounds(OdBmDBViewPtr view)
 {
 	OdBmObjectIdArray elements;
@@ -398,14 +441,14 @@ uint8_t FileProcessorRvt::readFile()
 
 			OdDbBaseDatabasePEPtr pDbPE(pDb);
 
-			auto drawing = findView(pDbPE, pDb);
-
-			if (!drawing) {
-				throw repo::lib::RepoSceneProcessingException("Could not find a suitable view.", REPOERR_VALID_3D_VIEW_NOT_FOUND);
+			OdBmDBView3dPtr pView;
+			if (!importConfig.getViewName().empty()) {
+				pView = findView(pDb, importConfig.getViewName());
 			}
-			repoInfo << "Using 3D View: " << convertToStdString(drawing->getShortDescriptiveName());
+			else {
+				pView = createDefault3DView(pDb, importConfig.viewStyle);
+			}
 
-			OdBmDBView3dPtr pView = drawing->getBaseDBViewId().safeOpenObject();
 			setupViewOverrides(pView);
 			auto modelToWorld = getModelToWorldMatrix(pDb); // World here is the shared or 'project' coordinate system			
 
@@ -420,7 +463,7 @@ uint8_t FileProcessorRvt::readFile()
 			((StubDeviceModuleRvt*)pGsModule.get())->init(&collector, pDb, pView, modelToWorld);
 			OdGsDevicePtr pDevice = pGsModule->createDevice();
 
-			pDbPE->setupLayoutView(pDevice, pBimContext, drawing->objectId());
+			pDbPE->setupLayoutView(pDevice, pBimContext, pView->getDbDrawingId());
 			
 			// NOTE: Render mode can be kFlatShaded, kGouraudShaded, kFlatShadedWithWireframe, kGouraudShadedWithWireframe
 			// kHiddenLine mode prevents materails from being uploaded
