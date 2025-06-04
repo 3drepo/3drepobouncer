@@ -354,6 +354,9 @@ MultipartOptimizer::MaterialPropMap MultipartOptimizer::getAllMaterials(
 		repo::lib::RepoUUID uniqueId = materialBson.getUUIDField(REPO_NODE_LABEL_ID);
 		auto material = std::make_shared<std::pair<repo::lib::RepoUUID, repo_material_t>>();
 
+		// Set material id
+		material->first = materialBson.getUUIDField(REPO_NODE_LABEL_ID);
+
 		// Fill material struct with values
 		if (materialBson.hasField(REPO_NODE_MATERIAL_LABEL_AMBIENT))
 			material->second.ambient = materialBson.getColourField(REPO_NODE_MATERIAL_LABEL_AMBIENT);
