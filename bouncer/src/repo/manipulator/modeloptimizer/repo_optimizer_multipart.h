@@ -112,9 +112,13 @@ namespace repo {
 							return vertices;
 						}
 
-						void bakeVertices(const repo::lib::RepoMatrix& transform) {
+						void bakeMeshes(const repo::lib::RepoMatrix& transform) {
 							for (int i = 0; i < vertices.size(); i++) {
 								vertices[i] = transform * vertices[i];
+							}
+
+							for (int i = 0; i < normals.size(); i++) {
+								normals[i] = transform * normals[i];
 							}
 						}
 
@@ -142,8 +146,8 @@ namespace repo {
 							}
 
 							if (elementsBson.hasField(REPO_NODE_MESH_LABEL_NORMALS)) {
-								auto vertBson = elementsBson.getObjectField(REPO_NODE_MESH_LABEL_NORMALS);
-								deserialiseVector(vertBson, buffer, normals);
+								auto normBson = elementsBson.getObjectField(REPO_NODE_MESH_LABEL_NORMALS);
+								deserialiseVector(normBson, buffer, normals);
 							}
 
 							if (elementsBson.hasField(REPO_NODE_MESH_LABEL_FACES)) {
@@ -349,11 +353,11 @@ namespace repo {
 						}
 					}
 
-					void bakeVertices(const repo::lib::RepoMatrix &transform) {
+					void bakeMeshes(const repo::lib::RepoMatrix &transform) {
 						if (supermeshingDataLoaded()) {
-							return supermeshingData->bakeVertices(transform);
+							return supermeshingData->bakeMeshes(transform);
 						}
-						else {							
+						else {
 							repoError << "Tried to access supermesh geometry of StreamingMeshNode without loading geometry first. No action performed.";
 						}
 					}

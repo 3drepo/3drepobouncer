@@ -660,6 +660,7 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 			if (transformMap.contains(parentId)) {
 				auto transform = transformMap.at(parentId);
 			sNode.bakeVertices(transform);
+				sNode.bakeNormals(transform);
 			}
 			else {
 				repoWarning << "createSuperMeshes; no transform found for this mesh node. Mesh will not be baked";
