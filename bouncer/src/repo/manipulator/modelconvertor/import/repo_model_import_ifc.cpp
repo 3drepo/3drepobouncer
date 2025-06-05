@@ -39,17 +39,7 @@ IFCModelImport::~IFCModelImport()
 {
 }
 
-bool IFCModelImport::importModel(std::string filePath, uint8_t& err)
-{
-	throw repo::lib::RepoException("Classic import is no longer supported for IFCs. Please use the streaming import.");
-}
-
-repo::core::model::RepoScene* IFCModelImport::generateRepoScene(uint8_t& errCode)
-{
-	return scene;
-}
-
-bool IFCModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err)
+repo::core::model::RepoScene* IFCModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err)
 {
 	std::string fileName = getFileName(filePath);
 
@@ -86,5 +76,5 @@ bool IFCModelImport::importModel(std::string filePath, std::shared_ptr<repo::cor
 		scene->setMissingTexture();
 	}
 
-	return true;
+	return scene;
 }

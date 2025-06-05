@@ -54,11 +54,6 @@ RepoModelImport::~RepoModelImport()
 {
 }
 
-bool RepoModelImport::importModel(std::string filePath, uint8_t& errMsg)
-{
-	throw repo::lib::RepoException("Classic import is no longer supported for .bim. Please use the streaming import.");
-}
-
 struct View
 {
 	size_t begin;
@@ -455,9 +450,10 @@ public:
 * Will parse the entire BIM file and store the results in
 * temporary datastructures in preperation for scene generation.
 * @param filePath
+* @param database handler
 * @param err
 */
-bool RepoModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err)
+repo::core::model::RepoScene* RepoModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err)
 {
 	std::string fileName = getFileName(filePath);
 
@@ -481,7 +477,7 @@ bool RepoModelImport::importModel(std::string filePath, std::shared_ptr<repo::co
 		{
 			repoError << "Unsupported BIM file version: " << fileVersion;
 			err = REPOERR_UNSUPPORTED_BIM_VERSION;
-			return false;
+			return nullptr;
 		}
 
 		// Loading file metadata
@@ -577,16 +573,11 @@ bool RepoModelImport::importModel(std::string filePath, std::shared_ptr<repo::co
 
 		delete builder;
 
-		return true;
+		return scene;
 	}
 	else {
 		repoError << "File " << fileName << " not found.";
 		err = REPOERR_MODEL_FILE_READ;
-		return false;
+		return nullptr;
 	}
-}
-
-repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t& errCode)
-{
-	return scene;
 }

@@ -48,27 +48,13 @@ namespace repo {
 				virtual ~AbstractModelImport() {};
 
 				/**
-				* Generates a repo scene graph
-				* an internal representation needs to have
-				* been created before this call (e.g. by means of importModel())
-				* @return returns a populated RepoScene upon success.
-				*/
-				virtual repo::core::model::RepoScene* generateRepoScene(uint8_t &errMsg) = 0;
-
-				/**
 				* Import model from a given file
-				* This does not generate the Repo Scene Graph
-				* Use getRepoScene() to generate a Repo Scene Graph.
 				* @param path to the file
+				* @param database handler
 				* @param error message if failed
-				* @return returns true upon success
+				* @return returns a populated RepoScene upon success
 				*/
-				virtual bool importModel(std::string filePath, uint8_t& errMsg) = 0;
-
-				virtual bool importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& errMsg)
-				{
-					return importModel(filePath, errMsg);
-				}
+				virtual repo::core::model::RepoScene* importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& errMsg) = 0;
 
 				virtual bool applyReduction() const { return true; }
 				virtual bool requireReorientation() const { return false; }
