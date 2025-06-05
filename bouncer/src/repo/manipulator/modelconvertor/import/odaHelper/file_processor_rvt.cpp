@@ -292,6 +292,10 @@ OdBmDBView3dPtr createDefault3DView(OdBmDatabasePtr pDb, std::string style)
 	pDBView3d = OdBmDBView3d::createObject();
 	pDb->addElement(pDBView3d); // element must be added to DB before setDefaultOrigin, createDefaultDrawingAndViewport, setPerspective
 
+	if (style.empty()) {
+		style = std::string("shaded");
+	}
+
 	if (style == "wireframe") {
 		pDBView3d->setDisplayStyle(OdBm::ViewDisplayStyle::Wireframe);
 	}
@@ -301,8 +305,11 @@ OdBmDBView3dPtr createDefault3DView(OdBmDatabasePtr pDb, std::string style)
 	else if (style == "shaded") {
 		pDBView3d->setDisplayStyle(OdBm::ViewDisplayStyle::Shaded);
 	}
-	else {
+	else if (style == "shadedwithedges"){
 		pDBView3d->setDisplayStyle(OdBm::ViewDisplayStyle::ShadedWithEdges);
+	}
+	else {
+		throw repo::lib::RepoSceneProcessingException("Style: " + style + " is not a valid style. Must be wireframe, hiddenline, shadedwithedges or shaded");
 	}
 
 	pDBView3d->setDetailLevel(OdBm::ViewDetailLevel::Fine);
