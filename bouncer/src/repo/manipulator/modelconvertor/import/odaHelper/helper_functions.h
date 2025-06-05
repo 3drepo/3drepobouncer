@@ -30,6 +30,7 @@
 #include <Database/Enums/BmViewTypeEnum.h>
 
 #include "repo/lib/datastructure/repo_structs.h"
+#include "repo/lib/datastructure/repo_bounds.h"
 
 namespace repo {
 	namespace manipulator {
@@ -72,6 +73,8 @@ namespace repo {
 				repo::lib::RepoVector3D64 calcNormal(repo::lib::RepoVector3D64 p1, repo::lib::RepoVector3D64 p2, repo::lib::RepoVector3D64 p3);
 
 				repo::lib::RepoVector3D64 toRepoVector(const OdGePoint3d& p);
+				repo::lib::RepoVector3D64 toRepoVector(const OdGeVector3d& p);
+				repo::lib::RepoBounds toRepoBounds(const OdGeExtents3d& b);
 			}
 		}
 	}

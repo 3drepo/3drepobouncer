@@ -78,3 +78,13 @@ repo::lib::RepoVector3D64 repo::manipulator::modelconvertor::odaHelper::toRepoVe
 {
 	return repo::lib::RepoVector3D64(p.x, p.y, p.z);
 }
+
+repo::lib::RepoVector3D64 repo::manipulator::modelconvertor::odaHelper::toRepoVector(const OdGeVector3d& p)
+{
+	return repo::lib::RepoVector3D64(p.x, p.y, p.z);
+}
+
+repo::lib::RepoBounds repo::manipulator::modelconvertor::odaHelper::toRepoBounds(const OdGeExtents3d& b)
+{
+	return *(repo::lib::RepoBounds*)(&b);
+}
