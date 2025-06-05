@@ -409,10 +409,10 @@ TEST(ODAModelImport, DefaultViewVisibility)
 	// Transparency should work as well
 	EXPECT_THAT(door.hasTransparency(), IsTrue());
 
-	// Should include 3d geometry and lines
+	// Should include 3d geometry without edges
 	auto floorNode = utils.findNodeByMetadata("Element ID", "2928847");
 	EXPECT_THAT(floorNode.getMeshes(repo::core::model::MeshNode::Primitive::TRIANGLES), Not(IsEmpty()));
-	EXPECT_THAT(floorNode.getMeshes(repo::core::model::MeshNode::Primitive::LINES), Not(IsEmpty()));
+	EXPECT_THAT(floorNode.getMeshes(repo::core::model::MeshNode::Primitive::LINES), IsEmpty());
 }
 
 TEST(ODAModelImport, NamedView)
