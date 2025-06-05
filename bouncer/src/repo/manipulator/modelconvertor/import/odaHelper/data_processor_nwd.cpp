@@ -164,6 +164,7 @@ struct RepoNwTraversalContext {
 	repo::manipulator::modelutility::RepoSceneBuilder* sceneBuilder = nullptr;
 	std::shared_ptr<repo::core::model::TransformationNode> parentNode;
 	std::unordered_map<std::string, repo::lib::RepoVariant> parentMetadata;
+	OdGeMatrix3d transform;
 	OdVectorizerPtr vectorizer;
 };
 
@@ -716,7 +717,7 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 		if (!(*itFrag).isNull())
 		{
 			OdNwFragmentPtr pFrag = OdNwFragment::cast((*itFrag).safeOpenObject());
-			OdGeMatrix3d transformMatrix = pFrag->getTransformation();
+			OdGeMatrix3d transformMatrix = context.transform * pFrag->getTransformation();
 			OdNwObjectId geometryId = pFrag->getGeometryId(); // Returns an object ID of the base class OdNwGeometry object with geometry data.
 
 			if (geometryId.isNull() || !geometryId.isValid())
@@ -953,18 +954,79 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 	return eOk;
 }
 
+// Given a Partition (a file linkage, in an NWF), get the transform that converts
+// from its local coordinate system to the 3DR Project Coordinate system.
+
+OdGeMatrix3d getPartitionTransform(OdNwPartitionPtr pPartition)
+{
+	auto y = pPartition->getUpVector();
+	if (y.isZeroLength()) {
+		y = OdGeVector3d::kZAxis; // 0,0,1 and 0,1,0 are the defaults for Up and North in Navis.
+	}
+
+	auto z = pPartition->getNorthVector();
+	if (z.isZeroLength()) {
+		z = OdGeVector3d::kYAxis;
+	}
+
+	auto x = z.crossProduct(y);
+
+	// As a reminder, the Project/3DR coordinate system conventions are:
+	// +Y -> North
+	// +X -> East
+	// +Z -> Elevation
+
+	return OdGeMatrix3d::alignCoordSys(
+		OdGePoint3d::kOrigin,
+		x,
+		y,
+		z,
+		OdGePoint3d::kOrigin,
+		OdGeVector3d::kXAxis,
+		OdGeVector3d::kZAxis,
+		OdGeVector3d::kYAxis
+	);
+}
+
 void DataProcessorNwd::process(OdNwDatabasePtr pNwDb)
 {
-	OdNwObjectId modelItemRootId = pNwDb->getModelItemRootId();
-	if (!modelItemRootId.isNull())
+	repo::lib::RepoBounds bounds;
+
+	OdNwObjectIdArray models;
+	pNwDb->getModels(models);
+	for (auto& model : models)
 	{
-		OdNwModelItemPtr pModelItemRoot = OdNwModelItem::cast(modelItemRootId.safeOpenObject());
-		RepoNwTraversalContext context;
-		context.sceneBuilder = this->builder;
-		context.sceneBuilder->setWorldOffset(toRepoVector(pModelItemRoot->getBoundingBox().minPoint()));
+		OdNwModelPtr pModel = model.safeOpenObject();
+		OdNwModelItemPtr pModelItemRoot = pModel->getRootItem().safeOpenObject();
+
+		// The world-offset is applied in processGeometry after conversion to project
+		// coordinates, so the bounds must also be calculated in project coordinates
+
+		auto b = pModelItemRoot->getBoundingBox();
+		b.transformBy(getPartitionTransform(OdNwPartition::cast(pModelItemRoot)));
+		bounds.encapsulate(toRepoBounds(b));
+	}
+
+	RepoNwTraversalContext context;
+	context.sceneBuilder = this->builder;
+	context.sceneBuilder->setWorldOffset(bounds.min());
+	context.vectorizer = OdVectorizer::createObject(pNwDb);
+	context.parentNode = context.sceneBuilder->addNode(RepoBSONFactory::makeTransformationNode({}, "rootNode"));
+
+	for (auto& model : models)
+	{
+		OdNwModelPtr pModel = model.safeOpenObject();
+		OdNwModelItemPtr pModelItemRoot = pModel->getRootItem().safeOpenObject();
 		context.layer = pModelItemRoot;
-		context.parentNode = context.sceneBuilder->addNode(RepoBSONFactory::makeTransformationNode({}, "rootNode"));
-		context.vectorizer = OdVectorizer::createObject(pNwDb);
+
+		// Each linked file (Model) can have its own World Orientation and Units and
+		// Transformations set. In practice though, when saving an NWD/NWC (the only
+		// files we support), Navis introduces a root node for the new NWD itself,
+		// and bakes the federation under it, so we only ever really have the World
+		// Orientation to worry about.
+
+		OdNwPartitionPtr pPartition = OdNwPartition::cast(pModelItemRoot);
+		context.transform = getPartitionTransform(pPartition);
 
 		traverseSceneGraph(pModelItemRoot, context);
 	}
