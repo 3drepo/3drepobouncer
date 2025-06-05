@@ -77,6 +77,14 @@ namespace ODAModelImportUtils
 		}
 		return true;
 	}
+
+	repo::lib::RepoBounds getBounds(const std::vector<repo::core::model::MeshNode>& meshes) {
+		repo::lib::RepoBounds bounds;
+		for (auto& m : meshes) {
+			bounds.encapsulate(m.getBoundingBox());
+		}
+		return bounds;
+	}
 }
 
 /*
@@ -320,6 +328,33 @@ TEST_F(NwdTestSuite, NwdDwgText2)
 		EXPECT_TRUE(ODAModelImportUtils::allNormalsAre(mesh, repo::lib::RepoVector3D(0.531980395, 0.310758412, 0.787671328), 0.01, 10));
 		EXPECT_THAT(n.getColours(), ElementsAre(repo::lib::repo_color3d_t(0.803921580, 0.125490203, 0.152941182)));
 	}
+}
+
+TEST_F(NwdTestSuite, NwdWorldOrientation)
+{
+	auto scene = ODAModelImportUtils::ModelImportManagerImport("NwdWorldOrientation", getDataPath("orientedColumns.nwd"));
+	SceneUtils utils(scene);
+
+	// The orientedColumns file contains two colums. One modelled Y-Up and imported
+	// into Navis with the World Orientation set to Y-Up, and one modelled Z-Up,
+	// imported into Navis with a Transform of 90 degrees around the X-Axis applied
+	// using the Units and Transforms Dialog (which was baked when Navis saved the
+	// NWD).
+
+	// Both columns should be oriented directly (+Z), and the higher column should
+	// sit further North (i.e. along the 3DR +Y axis) than the other.
+
+	auto column1 = ODAModelImportUtils::getBounds(utils.findLeafNode("Column1.obj").getMeshesInProjectCoordinates());
+	auto column2 = ODAModelImportUtils::getBounds(utils.findLeafNode("Column2.obj").getMeshesInProjectCoordinates());
+
+	// (These comparisons also consider the direct-x reorientation, because this is
+	// applied by the ModelImportManager to all ODA imports at the root of the scene
+	// graph. This may change in the future if we move it to the multipart optimiser
+	// /repobundle export).
+
+	EXPECT_THAT(column1, BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(-34, 0, -34), repo::lib::RepoVector3D64(34, 267, 34)), 2.0));
+	EXPECT_THAT(column2, BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(-34, -102, 84), repo::lib::RepoVector3D64(34, 165, 152)), 2.0));
+	EXPECT_THAT(repo::lib::RepoVector3D64(scene->getWorldOffset()), VectorNear(repo::lib::RepoVector3D64(-34, -102, 152), 1.0));
 }
 
 TEST(ODAModelImport, RevitHideCategories)
