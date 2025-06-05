@@ -409,10 +409,10 @@ TEST(ODAModelImport, DefaultViewVisibility)
 	// Transparency should work as well
 	EXPECT_THAT(door.hasTransparency(), IsTrue());
 
-	// Should include 3d geometry and lines
+	// Should include 3d geometry without edges
 	auto floorNode = utils.findNodeByMetadata("Element ID", "2928847");
 	EXPECT_THAT(floorNode.getMeshes(repo::core::model::MeshNode::Primitive::TRIANGLES), Not(IsEmpty()));
-	EXPECT_THAT(floorNode.getMeshes(repo::core::model::MeshNode::Primitive::LINES), Not(IsEmpty()));
+	EXPECT_THAT(floorNode.getMeshes(repo::core::model::MeshNode::Primitive::LINES), IsEmpty());
 }
 
 TEST(ODAModelImport, NamedView)
@@ -503,8 +503,7 @@ TEST(ODAModelImport, DefaultViewDisplayOptions)
 			"RevitNamedView"
 		);
 		config.targetUnits = ModelUnits::MILLIMETRES;
-
-		// Default (nothing or a string that doesn't match the others) is shaded with edges
+		config.viewStyle = "shadedwithedges";
 
 		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport(getDataPath("sample2025.rvt"), config));
 
@@ -520,13 +519,29 @@ TEST(ODAModelImport, DefaultViewDisplayOptions)
 			"RevitNamedView"
 		);
 		config.targetUnits = ModelUnits::MILLIMETRES;
-		config.viewStyle = "shaded";
+
+		// Default (empty string) is shaded
 
 		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport(getDataPath("sample2025.rvt"), config));
 
 		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::TRIANGLES).size(), Gt(0)); // Two textures and a flat surface
 		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::LINES).size(), Eq(0));
 		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").hasTextures(), IsTrue());
+	}
+
+	{
+		ModelImportConfig config(
+			repo::lib::RepoUUID::createUUID(),
+			TESTDB,
+			"RevitNamedView"
+		);
+		config.targetUnits = ModelUnits::MILLIMETRES;
+		config.viewStyle = "notsupported";
+
+		EXPECT_THROW({
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport(getDataPath("sample2025.rvt"), config));
+		},
+		repo::lib::RepoSceneProcessingException);
 	}
 
 	{
