@@ -271,6 +271,13 @@ void setupViewOverrides(OdBmDBViewPtr pView)
 
 	ids.push_back(db->getObjectId(OdBm::BuiltInCategory::OST_SunStudy));
 
+	// We also want to hide topography contours
+
+	ids.push_back(db->getObjectId(OdBm::BuiltInCategory::OST_TopographyContours));
+	ids.push_back(db->getObjectId(OdBm::BuiltInCategory::OST_SecondaryTopographyContours));
+	ids.push_back(db->getObjectId(OdBm::BuiltInCategory::OST_ToposolidContours));
+	ids.push_back(db->getObjectId(OdBm::BuiltInCategory::OST_ToposolidSecondaryContours));
+
 	pView->setCategoryHidden(ids, true);
 
 	pView->setActiveWorkPlaneVisibility(false);
