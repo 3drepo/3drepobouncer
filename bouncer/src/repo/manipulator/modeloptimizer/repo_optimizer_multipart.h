@@ -85,12 +85,12 @@ namespace repo {
 					public:
 						SupermeshingData(
 							const repo::core::model::RepoBSON& bson,
-							const std::vector<uint8_t>& buffer)
+							const std::vector<uint8_t>& buffer,
 						{
 
 							this->uniqueId = bson.getUUIDField(REPO_NODE_LABEL_ID);
 
-							deserialise(bson, buffer);
+							deserialise(bson, buffer, ignoreUVs);
 						}
 
 						repo::lib::RepoUUID getUniqueId() const {
@@ -135,7 +135,8 @@ namespace repo {
 					private:
 						void deserialise(
 							const repo::core::model::RepoBSON& bson,
-							const std::vector<uint8_t>& buffer)
+							const std::vector<uint8_t>& buffer,
+							const bool ignoreUVs)
 						{
 							auto blobRefBson = bson.getObjectField(REPO_LABEL_BINARY_REFERENCE);
 							auto elementsBson = blobRefBson.getObjectField(REPO_LABEL_BINARY_ELEMENTS);
@@ -185,7 +186,7 @@ namespace repo {
 
 							}
 
-							if (elementsBson.hasField(REPO_NODE_MESH_LABEL_UV_CHANNELS)) {
+							if (!ignoreUVs && elementsBson.hasField(REPO_NODE_MESH_LABEL_UV_CHANNELS)) {
 								std::vector<repo::lib::RepoVector2D> serialisedChannels;
 								auto uvBson = elementsBson.getObjectField(REPO_NODE_MESH_LABEL_UV_CHANNELS);
 								deserialiseVector(uvBson, buffer, serialisedChannels);
@@ -262,14 +263,15 @@ namespace repo {
 
 					void loadSupermeshingData(
 						const repo::core::model::RepoBSON &bson,
-						const std::vector<uint8_t>& buffer) {
+						const std::vector<uint8_t>& buffer,
+						const bool ignoreUVs) {
 						if (supermeshingDataLoaded())
 						{							
 							repoWarning << "StreamingMeshNode instructed to load geometry data, but geometry data is already loaded.";
 							unloadSupermeshingData();
 						}
 
-						supermeshingData = std::make_unique<SupermeshingData>(bson, buffer);
+						supermeshingData = std::make_unique<SupermeshingData>(bson, buffer, ignoreUVs);
 					}
 
 					void unloadSupermeshingData() {

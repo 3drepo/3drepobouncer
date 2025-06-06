@@ -564,6 +564,12 @@ void MultipartOptimizer::clusterAndSupermesh(
 		repoWarning << "clusterAndSupermesh; getting cursor was not successful; no nodes filtered for processing";
 	}
 
+	// Check whether there are any nodes in this group
+	if (nodes.size() == 0) {
+		repoInfo << "No nodes to process in this group. Returning.";
+		return;
+	}
+
 	// Transform bounds before clustering
 	for (auto& node : nodes) {
 		auto bounds = node.getBoundingBox();
