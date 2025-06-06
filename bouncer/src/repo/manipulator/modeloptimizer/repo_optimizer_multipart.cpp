@@ -704,7 +704,7 @@ void MultipartOptimizer::createSuperMesh(
 	// Create supermesh node
 	auto supermeshNode = createSupermeshNode(mappedMesh);
 
-	exporter->addSupermesh(supermeshNode);
+	exporter->addSupermesh(supermeshNode.get());
 }
 
 std::vector<double> MultipartOptimizer::getWorldOffset(
@@ -1154,7 +1154,7 @@ void MultipartOptimizer::splitMesh(
 
 
 
-repo::core::model::SupermeshNode* MultipartOptimizer::createSupermeshNode(
+std::unique_ptr<repo::core::model::SupermeshNode> MultipartOptimizer::createSupermeshNode(
 	const mapped_mesh_t &mapped
 )
 {
@@ -1183,7 +1183,7 @@ repo::core::model::SupermeshNode* MultipartOptimizer::createSupermeshNode(
 		"",
 		meshMapping);
 
-	return new repo::core::model::SupermeshNode(supermesh);
+	return std::make_unique<repo::core::model::SupermeshNode>(supermesh);
 }
 
 
