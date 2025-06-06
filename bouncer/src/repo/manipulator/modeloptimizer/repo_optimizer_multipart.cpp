@@ -650,7 +650,12 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 				auto binRef = nodeBson.getBinaryReference();
 				auto dataRef = repo::core::handler::fileservice::DataRef::deserialise(binRef);
 				auto buffer = blobHandler.readToBuffer(dataRef);
-				sNode.loadSupermeshingData(nodeBson, buffer);
+				
+				// If there is no texture present, we ignore UV values.
+				// This allows us to group more meshes together.
+				bool ignoreUVs = texId.isDefaultValue();
+
+				sNode.loadSupermeshingData(nodeBson, buffer, ignoreUVs);
 				
 			}
 			
@@ -659,8 +664,7 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 			auto parentId = sNode.getParent();
 			if (transformMap.contains(parentId)) {
 				auto transform = transformMap.at(parentId);
-			sNode.bakeVertices(transform);
-				sNode.bakeNormals(transform);
+				sNode.bakeMeshes(transform);
 			}
 			else {
 				repoWarning << "createSuperMeshes; no transform found for this mesh node. Mesh will not be baked";
@@ -1174,7 +1178,7 @@ std::unique_ptr<repo::core::model::SupermeshNode> MultipartOptimizer::createSupe
 		bbox.encapsulate(meshMapping[i].max);
 	}
 
-	auto supermesh = repo::core::model::RepoBSONFactory::makeSupermeshNode(
+	return repo::core::model::RepoBSONFactory::makeSupermeshNode(
 		mapped.vertices,
 		mapped.faces,
 		mapped.normals,
@@ -1182,8 +1186,6 @@ std::unique_ptr<repo::core::model::SupermeshNode> MultipartOptimizer::createSupe
 		mapped.uvChannels,
 		"",
 		meshMapping);
-
-	return std::make_unique<repo::core::model::SupermeshNode>(supermesh);
 }
 
 

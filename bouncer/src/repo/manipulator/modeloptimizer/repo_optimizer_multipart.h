@@ -523,7 +523,7 @@ namespace repo {
 				/*
 				* Turns a mapped_mesh_t into a MeshNode that can be added to the database
 				*/
-				repo::core::model::SupermeshNode* createSupermeshNode(
+				std::unique_ptr < repo::core::model::SupermeshNode> createSupermeshNode(
 					const mapped_mesh_t &mapped
 				);
 
