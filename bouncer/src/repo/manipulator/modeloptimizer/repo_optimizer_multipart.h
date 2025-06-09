@@ -48,7 +48,7 @@ namespace repo {
 
 			public:
 				
-				void processScene(
+				bool processScene(
 					std::string database,
 					std::string collection,
 					repo::lib::RepoUUID revId,

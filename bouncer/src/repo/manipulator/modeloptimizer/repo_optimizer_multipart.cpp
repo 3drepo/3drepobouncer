@@ -53,7 +53,7 @@ static const size_t REPO_MODEL_LOW_CLUSTERING_RATIO = 0.2f;
 
 #define CHRONO_DURATION(start) std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count()
 
-void MultipartOptimizer::processScene(
+bool MultipartOptimizer::processScene(
 	std::string database,
 	std::string collection,
 	repo::lib::RepoUUID revId,
@@ -76,12 +76,12 @@ void MultipartOptimizer::processScene(
 		);
 #else
 		repoError << "Bouncer must be built with REPO_ASSET_GENERATOR_SUPPORT ON in order to generate Repo Bundles.";
-		return;
+		return false;
 #endif // REPO_ASSETGENERATOR
 		break;
 	default:
 		repoError << "Unknown export type with enum:  " << (uint16_t)exType;
-		return;
+		return false;
 	}
 
 	// Set file upload callback via std::function and lambdas
@@ -237,6 +237,8 @@ void MultipartOptimizer::processScene(
 
 	// Finalise export
 	exporter->Finalise();
+
+	return true;
 }
 
 std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> MultipartOptimizer::getAllTransforms(
