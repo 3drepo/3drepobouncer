@@ -19,6 +19,7 @@
 
 #include <list>
 #include <map>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include "repo/lib/datastructure/repo_variant.h"

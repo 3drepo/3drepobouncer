@@ -424,10 +424,13 @@ size_t MeshNode::getSize() const
 	return size;
 }
 
-void hash_combine(size_t& seed, float v)
+// Common constant used to get good hash scattering
+#define GOLDEN_RATIO 0x9e3779b9
+
+static void hashCombine(size_t& seed, float v)
 {
 	std::hash<float> hasher;
-	seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+	seed ^= hasher(v) + GOLDEN_RATIO + (seed << 6) + (seed >> 2);
 }
 
 struct Vertex
@@ -439,19 +442,19 @@ struct Vertex
 	size_t hash()
 	{
 		size_t hash = 0;
-		hash_combine(hash, position.x);
-		hash_combine(hash, position.y);
-		hash_combine(hash, position.z);
+		hashCombine(hash, position.x);
+		hashCombine(hash, position.y);
+		hashCombine(hash, position.z);
 		if (normal)
 		{
-			hash_combine(hash, normal->x);
-			hash_combine(hash, normal->y);
-			hash_combine(hash, normal->z);
+			hashCombine(hash, normal->x);
+			hashCombine(hash, normal->y);
+			hashCombine(hash, normal->z);
 		}
 		if (uv)
 		{
-			hash_combine(hash, uv->x);
-			hash_combine(hash, uv->y);
+			hashCombine(hash, uv->x);
+			hashCombine(hash, uv->y);
 		}
 		return hash;
 	}

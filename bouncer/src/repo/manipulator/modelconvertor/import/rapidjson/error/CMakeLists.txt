@@ -4,16 +4,9 @@
 #If you really need to overwrite this file, be aware that it will be overwritten if updateSources.py is executed.
 
 
-set(SOURCES
-	${SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_ifc_helper_geometry.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_ifc_helper_parser.cpp
-	CACHE STRING "SOURCES" FORCE)
-
 set(HEADERS
 	${HEADERS}
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_ifc_helper_common.h
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_ifc_helper_geometry.h
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_ifc_helper_parser.h
+	${CMAKE_CURRENT_SOURCE_DIR}/en.h
+	${CMAKE_CURRENT_SOURCE_DIR}/error.h
 	CACHE STRING "HEADERS" FORCE)
 

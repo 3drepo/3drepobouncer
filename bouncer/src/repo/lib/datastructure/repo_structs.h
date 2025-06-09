@@ -279,6 +279,8 @@ namespace repo {
 				return material;
 			}
 
+			bool operator==(const repo_material_t& other) const = default;
+
 		private:
 			template<typename T>
 			static void checksum(size_t& seed, const T& v)

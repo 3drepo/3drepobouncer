@@ -4,8 +4,9 @@
 #If you really need to overwrite this file, be aware that it will be overwritten if updateSources.py is executed.
 
 
-add_subdirectory(ifcHelper)
 add_subdirectory(odaHelper)
+add_subdirectory(rapidjson)
+add_subdirectory(repoHelper)
 set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing_import_manager.cpp
@@ -13,6 +14,7 @@ set(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_3drepo.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_abstract.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_assimp.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_config.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_ifc.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_manager.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_oda.cpp

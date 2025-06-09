@@ -20,9 +20,9 @@
 
 include(CMakeDependentOption)
 
-project("3drepobouncer")
+cmake_minimum_required(VERSION 3.11)
 
-cmake_minimum_required(VERSION 2.8)
+project("3drepobouncer")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
 set(CMAKE_CXX_STANDARD 20)
@@ -111,16 +111,6 @@ if(NOT ${ASSIMPM_FOUND})
 	message(FATAL_ERROR "Cannot find assimp")
 endif()
 
-#===============IFCOPENSHELL SETTINGS==================
-find_package(OCCT REQUIRED)
-find_package(IFCOPENSHELL REQUIRED)
-if(NOT ${OCCT_FOUND})
-	message(FATAL_ERROR "Cannot find OCCT")
-endif()
-if(NOT ${IFCOPENSHELL_FOUND})
-	message(FATAL_ERROR "Cannot find IFCOpenShell")
-endif()
-
 #===================== ODA ============================
 if (ODA_SUPPORT)
 	add_definitions(-D_TOOLKIT_IN_DLL_)
@@ -133,8 +123,6 @@ endif()
 if (SYNCHRO_SUPPORT)
 	add_definitions(-DSYNCHRO_SUPPORT)
 	find_package(SYNCHROREADER REQUIRED)
-	find_package(THRIFT REQUIRED)
-	find_package(ZLIB REQUIRED)
 endif()
 
 
@@ -181,7 +169,6 @@ endif()
 option (REPO_BUILD_CLIENT "If the Command Line Client is built in addition to the library" ON)
 option (REPO_BUILD_TOOLS "If the Command Line Tool is built in addition to the library" OFF)
 option (REPO_BUILD_TESTS "If the test suite for the core bouncer logic is built in addition to the library" OFF)
-option (REPO_NO_GZIP "If zlib is not compiled into boost" OFF)
 option (REPO_ASSET_GENERATOR_SUPPORT "If the AssetGenerator is present and compiled into the library" ON)
 option (REPO_SVG_EXPORT_SUPPORT "If the customised Svg Exporter is present and compiled into the library" ON)
 
@@ -189,12 +176,8 @@ option (REPO_SVG_EXPORT_SUPPORT "If the customised Svg Exporter is present and c
 # use the same instance.
 add_subdirectory(log)
 
-#Build IFCUtils
+# Build IFCUtils
 add_subdirectory(ifcUtils)
-
-if(REPO_NO_GZIP)
-	add_definitions(-DREPO_BOOST_NO_GZIP)
-endif()
 
 # Include the asset generators. This should be called before the bouncer
 # subdirectory is added, as that is the point the SOURCES variable is

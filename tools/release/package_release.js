@@ -37,7 +37,7 @@ const externalLibraries = [
 	{
 		rootEnvVar: "IFCOPENSHELL_ROOT",
 		subPath: ["lib"],
-		extensions: [...exts, ".6"]
+		extensions: [...exts, ".8"]
 	},
 	{
 		rootEnvVar: "SYNCHRO_READER_ROOT",
@@ -89,12 +89,11 @@ const copyDir = (src, dest) => {
 };
 
 const folderPath = process.argv[2] || `3drepobouncer`
-/*
- uncomment when we upgrade nodejs.
+
 if(fs.existsSync(folderPath)) {
 	fs.rmSync(folderPath, {recursive: true});
 }
-	*/
+
 fs.mkdirSync(folderPath);
 
 externalLibraries.forEach(({rootEnvVar, subPath, subFolder, extensions}) => {

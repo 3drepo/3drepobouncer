@@ -18,6 +18,7 @@
 #pragma once
 
 #include <repo/core/model/collection/repo_scene.h>
+#include <repo/core/model/bson/repo_node_mesh.h>
 
 namespace testing {
 
@@ -57,6 +58,8 @@ namespace testing {
 				return node->getName();
 			}
 
+			NodeInfo getParent() const;
+
 			SceneUtils* scene;
 			repo::core::model::RepoNode* node;
 
@@ -72,6 +75,18 @@ namespace testing {
 
 			std::vector<NodeInfo> getMeshes();
 
+			std::vector<NodeInfo> getMeshes(repo::core::model::MeshNode::Primitive);
+
+			repo::core::model::MeshNode getMeshInProjectCoordinates();
+
+			std::vector<repo::core::model::MeshNode> getMeshesInProjectCoordinates();
+
+			std::vector<NodeInfo> getTextures();
+
+			bool hasTextures();
+
+			std::unordered_map<std::string, repo::lib::RepoVariant> getMetadata();
+
 			repo::lib::repo_material_t getMaterial();
 
 			/*
@@ -80,16 +95,25 @@ namespace testing {
 			*/
 			std::vector<repo::lib::repo_color4d_t> getColours();
 
+			bool hasTransparency();
+
 			std::string getPath() const;
 		};
 
 		std::vector<NodeInfo> findNodesByMetadata(std::string key, std::string value);
 		NodeInfo findNodeByMetadata(std::string key, std::string value);
+		NodeInfo findTransformationNodeByName(std::string name);
+		NodeInfo findLeafNode(std::string name);
+		std::vector<NodeInfo> findLeafNodes(std::string name);
 		std::vector<NodeInfo> findTransformationNodesByName(std::string name);
 		std::vector<NodeInfo> getChildNodes(repo::core::model::RepoNode* node, bool ignoreMeta);
 		std::vector<NodeInfo> getParentNodes(repo::core::model::RepoNode* node);
+		std::vector<NodeInfo> getMeshes();
+		repo::lib::RepoMatrix getWorldTransform(repo::core::model::RepoNode* node);
 		NodeInfo getNodeInfo(repo::core::model::RepoNode* node);
 		NodeInfo getRootNode();
+
+		bool isPopulated();
 	};
 
 	

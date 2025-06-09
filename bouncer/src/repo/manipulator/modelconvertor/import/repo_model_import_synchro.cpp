@@ -65,7 +65,7 @@ public:
 	const bool isPerspective;
 };
 
-bool SynchroModelImport::importModel(std::string filePath, uint8_t &errCode) {
+repo::core::model::RepoScene* SynchroModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t &errCode) {
 	orgFile = filePath;
 	reader = std::make_shared<synchro_reader::SynchroReader>(filePath, settings.getTimeZone());
 	repoInfo << "=== IMPORTING MODEL WITH SYNCHRO MODEL CONVERTOR (animations: " << settings.shouldImportAnimations() << ") ===";
@@ -81,12 +81,13 @@ bool SynchroModelImport::importModel(std::string filePath, uint8_t &errCode) {
 		else
 			errCode = REPOERR_LOAD_SCENE_FAIL;
 		repoError << msg;
-		return false;
+		return nullptr;
 	}
 
 	repoInfo << "Initialisation successful";
 
-	return true;
+	repoTrace << "model Imported, generating Repo Scene";
+	return generateRepoScene(errCode);
 }
 
 std::pair<repo::core::model::RepoNodeSet, repo::core::model::RepoNodeSet> SynchroModelImport::generateMatNodes(

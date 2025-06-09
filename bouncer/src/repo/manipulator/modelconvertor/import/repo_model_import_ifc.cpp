@@ -20,17 +20,17 @@
 */
 
 #include "repo_model_import_ifc.h"
-#include "ifcHelper/repo_ifc_helper_geometry.h"
-#include "ifcHelper/repo_ifc_helper_parser.h"
-#include "../../../core/model/bson/repo_bson_factory.h"
-#include "../../../error_codes.h"
+#include "repo/manipulator/modelutility/repo_scene_builder.h"
+#include "repo_ifc_utils.h"
+#include "repo/error_codes.h"
 #include <boost/filesystem.hpp>
 
 using namespace repo::manipulator::modelconvertor;
 
 IFCModelImport::IFCModelImport(const ModelImportConfig &settings) :
 	AbstractModelImport(settings),
-	partialFailure(false)
+	partialFailure(false),
+	scene(nullptr)
 {
 	modelUnits = ModelUnits::METRES;
 }
@@ -39,43 +39,42 @@ IFCModelImport::~IFCModelImport()
 {
 }
 
-repo::core::model::RepoScene* IFCModelImport::generateRepoScene(uint8_t &errCode)
+repo::core::model::RepoScene* IFCModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err)
 {
-	ifcHelper::IFCUtilsParser parserUtil(ifcFile);
-	std::string errMsg;
-	auto scene = parserUtil.generateRepoScene(errMsg, meshes, materials, offset);
-	if (!scene) {
-		repoError << "Failed to generate Repo Scene: " << errMsg;
-		errCode = REPOERR_LOAD_SCENE_FAIL;
-	}
-	if (partialFailure) scene->setMissingNodes();
-	return scene;
-}
-
-bool IFCModelImport::importModel(std::string filePath, uint8_t &err)
-{
-	ifcFile = filePath;
 	std::string fileName = getFileName(filePath);
 
 	repoInfo << "IMPORT [" << fileName << "]";
 	repoInfo << "=== IMPORTING MODEL WITH IFC OPEN SHELL ===";
 
-	bool success = false;
-	std::string errMsg;
-	ifcHelper::IFCUtilsGeometry geoUtil(filePath, settings);
-	if (success = geoUtil.generateGeometry(errMsg, partialFailure))
-	{
-		//generate tree;
-		repoInfo << "Geometry generated successfully";
-		meshes = geoUtil.getGeneratedMeshes();
-		materials = geoUtil.getGeneratedMaterials();
-		offset = geoUtil.getGeometryOffset();
-	}
-	else
-	{
-		repoError << "Failed to generate geometry: " << errMsg;
-		err = REPOERR_FILE_IFC_GEO_GEN;
+	auto sceneBuilder = std::make_unique<repo::manipulator::modelutility::RepoSceneBuilder>(
+		handler,
+		settings.getDatabaseName(),
+		settings.getProjectName(),
+		settings.getRevisionId()
+		);
+	sceneBuilder->createIndexes();
+
+	auto serialiser = ifcUtils::IfcUtils::CreateSerialiser(filePath);
+
+	serialiser->setNumThreads(settings.getNumThreads());
+	serialiser->setLevelOfDetail(settings.getLevelOfDetail());
+
+	serialiser->import(sceneBuilder.get());
+
+	sceneBuilder->finalise();
+
+	scene = new repo::core::model::RepoScene(
+		settings.getDatabaseName(),
+		settings.getProjectName()
+	);
+	scene->setRevision(settings.getRevisionId());
+	scene->setOriginalFiles({ filePath });
+	scene->loadRootNode(handler.get());
+	scene->setWorldOffset(sceneBuilder->getWorldOffset());
+
+	if (sceneBuilder->hasMissingTextures()) {
+		scene->setMissingTexture();
 	}
 
-	return success;
+	return scene;
 }
