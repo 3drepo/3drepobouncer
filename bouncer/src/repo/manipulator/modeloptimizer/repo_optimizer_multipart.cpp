@@ -69,11 +69,11 @@ void MultipartOptimizer::processScene(
 	case repo::manipulator::modelconvertor::ExportType::REPO:
 #ifdef REPO_ASSET_GENERATOR_SUPPORT
 		exporter = std::make_unique<repo::manipulator::modelconvertor::RepoBundleExport>(
-		database,
-		collection,
-		revId,
-		worldOffset
-	);
+			database,
+			collection,
+			revId,
+			worldOffset
+		);
 #else
 		repoError << "Bouncer must be built with REPO_ASSET_GENERATOR_SUPPORT ON in order to generate Repo Bundles.";
 		return;
@@ -283,10 +283,10 @@ std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUU
 		}
 		if (childNodeMap.size() == 0) {
 			repoWarning << "getAllTransforms; no transformations returned by database query.";
-		}
+		} 
 		else {
-		traverseTransformTree(rootNode, childNodeMap, leafToTransformMap);
-	}
+			traverseTransformTree(rootNode, childNodeMap, leafToTransformMap);
+		}
 	}
 	else {
 		repoWarning << "getAllTransforms; getting cursor was not successful; no transforms in output map";
@@ -644,7 +644,7 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 		projection.includeField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT);
 		projection.includeField(REPO_NODE_MESH_LABEL_PRIMITIVE);
 		projection.includeField(REPO_LABEL_BINARY_REFERENCE);
-
+		
 		auto binNodes = handler->findAllByCriteria(database, sceneCollection, filter, projection);
 
 		// Iterate over the meshes and decide what to do with each. The options are
@@ -656,7 +656,7 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 		for (auto& nodeBson : binNodes) {
 
 			// Find streamed node
-			auto sharedId = nodeBson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);
+			auto sharedId = nodeBson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);			
 			auto nodeIndex = clusterMap.at(sharedId);
 			auto& sNode = meshNodes[nodeIndex];
 			
@@ -666,7 +666,7 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 				auto binRef = nodeBson.getBinaryReference();
 				auto dataRef = repo::core::handler::fileservice::DataRef::deserialise(binRef);
 				auto buffer = blobHandler.readToBuffer(dataRef);
-				
+
 				// If there is no texture present, we ignore UV values.
 				// This allows us to group more meshes together.
 				bool ignoreUVs = texId.isDefaultValue();
@@ -688,7 +688,7 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 			
 			if (currentSupermesh.vertices.size() + sNode.getNumVertices() <= REPO_MP_MAX_VERTEX_COUNT)
 			{
-				// The current node can be added to the supermesh OK
+				// The current node can be added to the supermesh OK				
 				appendMesh(sNode, matPropMap, currentSupermesh, texId);
 			}
 			else if (sNode.getNumVertices() > REPO_MP_MAX_VERTEX_COUNT)
@@ -1201,7 +1201,7 @@ std::unique_ptr<repo::core::model::SupermeshNode> MultipartOptimizer::createSupe
 		bbox,
 		mapped.uvChannels,
 		"",
-		meshMapping);
+		meshMapping);	
 }
 
 

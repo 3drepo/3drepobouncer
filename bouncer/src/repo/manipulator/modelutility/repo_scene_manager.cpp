@@ -220,14 +220,14 @@ bool SceneManager::generateWebViewBuffers(
 		
 	if (validScene)
 	{
-			repo::manipulator::modeloptimizer::MultipartOptimizer mpOpt;
-			mpOpt.processScene(
-				scene->getDatabaseName(),
-				scene->getProjectName(),
-				scene->getRevisionID(),
+		repo::manipulator::modeloptimizer::MultipartOptimizer mpOpt;
+		mpOpt.processScene(
+			scene->getDatabaseName(),
+			scene->getProjectName(),
+			scene->getRevisionID(),
 			exType,
-				handler
-			);
+			handler
+		);
 	}
 	else
 	{

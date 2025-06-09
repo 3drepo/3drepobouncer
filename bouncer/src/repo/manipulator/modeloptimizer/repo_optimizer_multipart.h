@@ -87,6 +87,7 @@ namespace repo {
 						SupermeshingData(
 							const repo::core::model::RepoBSON& bson,
 							const std::vector<uint8_t>& buffer,
+							const bool ignoreUVs)
 						{
 
 							this->uniqueId = bson.getUUIDField(REPO_NODE_LABEL_ID);
@@ -360,7 +361,7 @@ namespace repo {
 						if (supermeshingDataLoaded()) {
 							return supermeshingData->bakeMeshes(transform);
 						}
-						else {
+						else {							
 							repoError << "Tried to access supermesh geometry of StreamingMeshNode without loading geometry first. No action performed.";
 						}
 					}
