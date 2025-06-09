@@ -179,7 +179,7 @@ bool RepoManipulator::generateAndCommitRepoBundlesBuffer(
 {
 	return generateAndCommitWebViewBuffer(
 		scene,
-		modelconvertor::WebExportType::REPO
+		modelconvertor::ExportType::REPO
 	);
 }
 
@@ -193,7 +193,7 @@ bool RepoManipulator::generateAndCommitSelectionTree(
 
 bool RepoManipulator::generateAndCommitWebViewBuffer(
 	repo::core::model::RepoScene* scene,
-	const modelconvertor::WebExportType& exType)
+	const modelconvertor::ExportType& exType)
 {
 	modelutility::SceneManager SceneManager;
 	return SceneManager.generateWebViewBuffers(scene, exType, dbHandler.get());

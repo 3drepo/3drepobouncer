@@ -28,7 +28,7 @@
 #include "../core/model/bson/repo_node_mesh.h"
 #include "../core/model/collection/repo_scene.h"
 #include "../lib/repo_config.h"
-#include "modelconvertor/export/repo_model_export_web.h"
+#include "modelconvertor/export/repo_model_export_abstract.h"
 #include "modelconvertor/import/repo_model_import_config.h"
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_abstract.h"
 
@@ -121,7 +121,7 @@ namespace repo {
 			*/
 			bool generateAndCommitWebViewBuffer(
 				repo::core::model::RepoScene          *scene,
-				const modelconvertor::WebExportType   &exType);
+				const modelconvertor::ExportType   &exType);
 
 			/**
 			* Generate and commit RepoBundles for the given scene

@@ -57,17 +57,32 @@ void MultipartOptimizer::processScene(
 	std::string database,
 	std::string collection,
 	repo::lib::RepoUUID revId,
+	repo::manipulator::modelconvertor::ExportType exType,
 	repo::core::handler::AbstractDatabaseHandler *handler)
 {
 	// Initialise exporter
-#ifdef REPO_ASSET_GENERATOR_SUPPORT
 	auto worldOffset = getWorldOffset(database, collection, revId, handler);
-	auto exporter = std::make_unique<repo::manipulator::modelconvertor::RepoBundleExport>(
+	std::unique_ptr<repo::manipulator::modelconvertor::AbstractModelExport> exporter = nullptr;
+
+	switch (exType)
+	{	
+	case repo::manipulator::modelconvertor::ExportType::REPO:
+#ifdef REPO_ASSET_GENERATOR_SUPPORT
+		exporter = std::make_unique<repo::manipulator::modelconvertor::RepoBundleExport>(
 		database,
 		collection,
 		revId,
 		worldOffset
 	);
+#else
+		repoError << "Bouncer must be built with REPO_ASSET_GENERATOR_SUPPORT ON in order to generate Repo Bundles.";
+		return;
+#endif // REPO_ASSETGENERATOR
+		break;
+	default:
+		repoError << "Unknown export type with enum:  " << (uint16_t)exType;
+		return;
+	}
 
 	// Set file upload callback via std::function and lambdas
 	auto fileManager = handler->getFileManager();
@@ -103,11 +118,6 @@ void MultipartOptimizer::processScene(
 				overwrite
 			);
 		});
-#else
-	repoError << "Bouncer must be built with REPO_ASSET_GENERATOR_SUPPORT ON in order to generate Repo Bundles.";
-	return;
-#endif // REPO_ASSETGENERATOR
-
 
 	// Getting Transforms
 	repoInfo << "Getting Transforms";
@@ -468,7 +478,7 @@ void MultipartOptimizer::processUntexturedGroup(
 	const std::string &collection,
 	const repo::lib::RepoUUID &revId,
 	repo::core::handler::AbstractDatabaseHandler *handler,
-	repo::manipulator::modelconvertor::RepoBundleExport *exporter,
+	repo::manipulator::modelconvertor::AbstractModelExport *exporter,
 	const TransformMap& transformMap,
 	const MaterialPropMap& matPropMap,
 	const bool isOpaque,
@@ -502,7 +512,7 @@ void MultipartOptimizer::processTexturedGroup(
 	const std::string &collection,
 	const repo::lib::RepoUUID &revId,
 	repo::core::handler::AbstractDatabaseHandler *handler,
-	repo::manipulator::modelconvertor::RepoBundleExport *exporter,
+	repo::manipulator::modelconvertor::AbstractModelExport *exporter,
 	const TransformMap& transformMap,
 	const MaterialPropMap& matPropMap,
 	const repo::lib::RepoUUID texId,
@@ -534,7 +544,7 @@ void MultipartOptimizer::clusterAndSupermesh(
 	const std::string &database,
 	const std::string &collection,
 	repo::core::handler::AbstractDatabaseHandler *handler,
-	repo::manipulator::modelconvertor::RepoBundleExport *exporter,
+	repo::manipulator::modelconvertor::AbstractModelExport *exporter,
 	const TransformMap& transformMap,
 	const MaterialPropMap& matPropMap,
 	const repo::core::handler::database::query::RepoQuery filter,
@@ -599,7 +609,7 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 	const std::string &database,
 	const std::string &collection,
 	repo::core::handler::AbstractDatabaseHandler *handler,
-	repo::manipulator::modelconvertor::RepoBundleExport *exporter,
+	repo::manipulator::modelconvertor::AbstractModelExport *exporter,
 	const TransformMap& transformMap,
 	const MaterialPropMap& matPropMap,
 	std::vector<StreamingMeshNode>& meshNodes,
@@ -708,7 +718,7 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 }
 
 void MultipartOptimizer::createSuperMesh(
-	repo::manipulator::modelconvertor::RepoBundleExport *exporter,
+	repo::manipulator::modelconvertor::AbstractModelExport *exporter,
 	const mapped_mesh_t& mappedMesh)
 {
 	// Create supermesh node
@@ -1007,7 +1017,7 @@ std::vector<size_t> MultipartOptimizer::getSupermeshBranchNodes(
 
 void MultipartOptimizer::splitMesh(
 	StreamingMeshNode &node,
-	repo::manipulator::modelconvertor::RepoBundleExport *exporter,
+	repo::manipulator::modelconvertor::AbstractModelExport *exporter,
 	const MaterialPropMap &matPropMap,
 	const repo::lib::RepoUUID &texId
 )

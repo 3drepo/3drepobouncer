@@ -18,7 +18,7 @@
 #include "../../core/model/collection/repo_scene.h"
 #include "../../core/handler/repo_database_handler_abstract.h"
 #include "../../core/handler/fileservice/repo_file_manager.h"
-#include "../modelconvertor/export/repo_model_export_web.h"
+#include "../modelconvertor/export/repo_model_export_abstract.h"
 
 namespace repo {
 	namespace manipulator {
@@ -116,7 +116,7 @@ namespace repo {
 				*/
 				bool generateWebViewBuffers(
 					repo::core::model::RepoScene									*scene,
-					const repo::manipulator::modelconvertor::WebExportType			&exType,
+					const repo::manipulator::modelconvertor::ExportType				&exType,
 					repo::core::handler::AbstractDatabaseHandler					*handler = nullptr);
 
 				/**

@@ -20,7 +20,6 @@
 #include "repo/core/model/bson/repo_bson_teamspace.h"
 #include "../../error_codes.h"
 #include "../modeloptimizer/repo_optimizer_multipart.h"
-#include "../modeloptimizer/repo_optimizer_multipart.h"
 #include "../modelutility/repo_maker_selection_tree.h"
 
 #ifdef REPO_ASSET_GENERATOR_SUPPORT
@@ -72,7 +71,7 @@ uint8_t SceneManager::commitScene(
 			{
 				repoInfo << "Generating Repo Bundles...";
 				scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::GEN_WEB_STASH);
-				if (success = generateWebViewBuffers(scene, repo::manipulator::modelconvertor::WebExportType::REPO, handler))
+				if (success = generateWebViewBuffers(scene, repo::manipulator::modelconvertor::ExportType::REPO, handler))
 					repoInfo << "Repo Bundles for Stash stored into the database";
 				else
 					repoError << "failed to commit Repo Bundles";
@@ -211,7 +210,7 @@ void SceneManager::fetchScene(
 
 bool SceneManager::generateWebViewBuffers(
 	repo::core::model::RepoScene									*scene,
-	const repo::manipulator::modelconvertor::WebExportType			&exType,
+	const repo::manipulator::modelconvertor::ExportType				&exType,
 	repo::core::handler::AbstractDatabaseHandler					*handler)
 {
 	bool validScene =
@@ -221,28 +220,14 @@ bool SceneManager::generateWebViewBuffers(
 		
 	if (validScene)
 	{
-		std::string geoStashExt;
-		std::string jsonStashExt = REPO_COLLECTION_STASH_JSON;
-
-		switch (exType)
-		{
-		case repo::manipulator::modelconvertor::WebExportType::REPO:
-			geoStashExt = REPO_COLLECTION_STASH_BUNDLE;
-			
-
 			repo::manipulator::modeloptimizer::MultipartOptimizer mpOpt;
 			mpOpt.processScene(
 				scene->getDatabaseName(),
 				scene->getProjectName(),
 				scene->getRevisionID(),
+			exType,
 				handler
 			);
-
-			return true;
-		default:
-			repoError << "Unknown export type with enum:  " << (uint16_t)exType;
-			return false;
-		}
 	}
 	else
 	{
