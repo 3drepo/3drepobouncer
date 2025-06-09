@@ -3819,3 +3819,61 @@ TEST(Sandbox, StreamingMeshNodeTest) {
 
 	repo::lib::RepoUUID sid3 = sNode.getSharedId();	
 }
+
+TEST(Sandbox, NewQueryTest) {
+	std::shared_ptr<FileManager> fileManager;
+	auto handler = getLocalHandler(fileManager);
+
+	std::string database = "fthiel";
+	// XXL Model
+	std::string collection = "624bc24b-00b8-4434-ac21-e73fb819b529.scene";
+	repo::lib::RepoUUID revId = repo::lib::RepoUUID("63752F30-0EB9-4090-8233-AE1B63B86E32");
+
+	int rawCursorCount = 0;
+	int newCursorCount = 0;
+
+	// Get nodes the previous way
+	{
+		// Construct filter
+		repo::core::model::RepoBSONBuilder filter;
+		filter.append("rev_id", revId);
+		filter.append("type", "transformation");
+
+		// Construct projection
+		repo::core::model::RepoBSONBuilder projection;
+		projection.append("_id", 0);
+		projection.append("shared_id", 1);
+		projection.append("matrix", 1);
+		projection.append("parents", 1);
+
+		auto rawCursor = handler->rawCursorFind(database, collection, filter.obj(), projection.obj());
+	
+		for (auto doc : rawCursor) {
+			rawCursorCount++;
+		}
+	}
+
+
+	// Get nodes the "new and proper" way
+	{
+		repo::core::handler::database::query::RepoQueryBuilder filter;
+		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));
+		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_TRANSFORMATION)));
+
+		repo::core::handler::database::query::RepoProjectionBuilder projection;
+		projection.excludeField(REPO_NODE_LABEL_ID);
+		projection.includeField(REPO_NODE_LABEL_SHARED_ID);
+		projection.includeField(REPO_NODE_LABEL_MATRIX);
+		projection.includeField(REPO_NODE_LABEL_PARENTS);
+
+		auto cursor = handler->findCursorByCriteria(database, collection, filter, projection);
+
+		for (auto bson : (*cursor)) {
+			newCursorCount++;
+		}
+	}
+
+	EXPECT_THAT(rawCursorCount, Gt(0));
+	EXPECT_THAT(newCursorCount, Gt(0));
+	EXPECT_THAT(newCursorCount, Eq(rawCursorCount));
+}
