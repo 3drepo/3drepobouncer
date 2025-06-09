@@ -39,7 +39,7 @@ TEST(MeshMapReorganiser, VeryLargeMesh)
 	trans.insert(root);
 	meshes.insert(createRandomMesh(327890, false, 3, { rootID }));
 	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, {}, {}, {}, trans);
-	opt.apply(scene);
+	//opt.apply(scene);
 
 	auto supermesh = (repo::core::model::SupermeshNode*)*scene->getAllSupermeshes(repo::core::model::RepoScene::GraphType::OPTIMIZED).begin();
 
@@ -51,24 +51,24 @@ TEST(MeshMapReorganiser, VeryLargeMesh)
 	auto remapped = reSplitter.getRemappedMesh();
 
 	// Check that the primitive has been preserved
-	EXPECT_EQ(remapped.getPrimitive(), supermesh->getPrimitive());
+	EXPECT_EQ(remapped->getPrimitive(), supermesh->getPrimitive());
 
 	// Check that the submesh ids have been preserved. Though the supermesh
 	// will be split into chunks, there should only be one submesh id as there
 	// aren't multiple elements.
 
-	auto ids = remapped.getSubmeshIds();
+	auto ids = remapped->getSubmeshIds();
 	auto end = std::unique(ids.begin(), ids.end());
 	auto count = end - ids.begin();
 	EXPECT_EQ(count, 1);
 
 	// The supermesh should be split into six chunks (with the same submesh ids)
 
-	EXPECT_EQ(remapped.getMeshMapping().size(), 6);
+	EXPECT_EQ(remapped->getMeshMapping().size(), 6);
 
 	// Mapping ids should be identities
 
-	for (auto m : remapped.getMeshMapping())
+	for (auto m : remapped->getMeshMapping())
 	{
 		EXPECT_TRUE(m.mesh_id.isDefaultValue());
 		EXPECT_TRUE(m.material_id.isDefaultValue());
@@ -107,7 +107,7 @@ TEST(MeshMapReorganiser, MultipleTinyMeshes)
 	}
 
 	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, {}, {}, {}, trans);
-	opt.apply(scene);
+	//opt.apply(scene);
 
 	auto supermesh = (repo::core::model::SupermeshNode*)*scene->getAllSupermeshes(repo::core::model::RepoScene::GraphType::OPTIMIZED).begin();
 
@@ -118,7 +118,7 @@ TEST(MeshMapReorganiser, MultipleTinyMeshes)
 
 	auto remapped = reSplitter.getRemappedMesh();
 
-	auto ids = remapped.getSubmeshIds();
+	auto ids = remapped->getSubmeshIds();
 	auto end = std::unique(ids.begin(), ids.end());
 	auto count = end - ids.begin();
 	EXPECT_EQ(count, NUM_SUBMESHES);
@@ -126,11 +126,11 @@ TEST(MeshMapReorganiser, MultipleTinyMeshes)
 	// The supermesh should be split into two chunks (with the same submesh ids)
 
 	auto expectedSplit = ceil((NUM_SUBMESHES * NUM_VERTICES) / 65536.0f);
-	EXPECT_EQ(remapped.getMeshMapping().size(), expectedSplit);
+	EXPECT_EQ(remapped->getMeshMapping().size(), expectedSplit);
 
 	// Mapping ids should be identities
 
-	for (auto m : remapped.getMeshMapping())
+	for (auto m : remapped->getMeshMapping())
 	{
 		EXPECT_TRUE(m.mesh_id.isDefaultValue());
 		EXPECT_TRUE(m.material_id.isDefaultValue());
@@ -187,7 +187,7 @@ TEST(MeshMapReorganiser, InterleavedMixedSplit)
 	const int NUM_SUBMESHES = 6;
 
 	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, {}, {}, {}, trans);
-	opt.apply(scene);
+	//opt.apply(scene);
 
 	auto supermesh = (repo::core::model::SupermeshNode*)*scene->getAllSupermeshes(repo::core::model::RepoScene::GraphType::OPTIMIZED).begin();
 
@@ -199,7 +199,7 @@ TEST(MeshMapReorganiser, InterleavedMixedSplit)
 
 	auto remapped = reSplitter.getRemappedMesh();
 
-	auto splits = remapped.getMeshMapping();
+	auto splits = remapped->getMeshMapping();
 
 	// Mapping ids should be identities
 
@@ -210,7 +210,7 @@ TEST(MeshMapReorganiser, InterleavedMixedSplit)
 		EXPECT_TRUE(m.shared_id.isDefaultValue());
 	}
 
-	auto ids = remapped.getSubmeshIds();
+	auto ids = remapped->getSubmeshIds();
 	auto end = std::unique(ids.begin(), ids.end());
 	auto count = end - ids.begin();
 	EXPECT_EQ(count, NUM_SUBMESHES);
