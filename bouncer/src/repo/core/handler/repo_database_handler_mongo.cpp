@@ -485,9 +485,6 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 			auto db = client->database(database);
 			auto col = db.collection(collection);
 
-			std::string critString = criteria.toString();
-			std::cout << critString;
-
 			repo::core::model::RepoBSON projectionBson = makeQueryFilterDocument(projection);
 			mongocxx::v_noabi::options::find options;
 			options.projection(projectionBson.view());
