@@ -69,8 +69,8 @@
 #define REPOERR_MAX_NODES_EXCEEDED 25
 //When ODA not compiled in but dgn import requested
 #define REPOERR_ODA_UNAVAILABLE 26
-//No valid 3D view found (for Revit format)
-#define REPOERR_VALID_3D_VIEW_NOT_FOUND 27
+//The specified view (if any) was not found (for Revit format)
+#define REPOERR_VIEW_NOT_FOUND 27
 //Failed reading configuration file
 #define REPOERR_INVALID_CONFIG_FILE 28
 //Process timed out (only used in bouncer_worker)
@@ -93,3 +93,7 @@
 #define REPOERR_FILE_IS_ENCRYPTED 37
 //When image processing failed (only used by bouncer_worker)
 #define REPOERR_IMAGE_PROCESSING_FAILED 38
+//When the Ifc file uses a schema that is not supported by the importer
+#define REPOERR_FILE_IFC_UNSUPPORTED_SCHEMA 39
+//The specified view was found, but it is not a 3D view
+#define REPOERR_VIEW_NOT_3D 40

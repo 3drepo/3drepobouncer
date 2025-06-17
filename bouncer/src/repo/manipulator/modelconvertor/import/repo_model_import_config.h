@@ -35,7 +35,7 @@ namespace repo {
 		namespace modelconvertor {
 			class REPO_API_EXPORT ModelImportConfig
 			{
-			private:
+			public:
 				bool importAnimations;
 				int lod;
 				std::string timeZone;
@@ -43,24 +43,25 @@ namespace repo {
 				repo::lib::RepoUUID revisionId;
 				std::string databaseName;
 				std::string projectName;
-			public:
+				int numThreads;
+				std::string viewName;
+				std::string viewStyle;
+
+				ModelImportConfig();
+
 				ModelImportConfig(
-					const bool importAnimations = true,
-					const ModelUnits targetUnits = ModelUnits::UNKNOWN,
-					const std::string timeZone = "",
-					const int lod = 0,
-					const repo::lib::RepoUUID revisionId = repo::lib::RepoUUID::defaultValue,
-					const std::string databaseName = "",
-					const std::string projectName = ""
-				):
-					importAnimations(importAnimations),
-					targetUnits(targetUnits),
-					timeZone(timeZone),
-					lod(lod),
-					revisionId(revisionId),
-					databaseName(databaseName),
-					projectName(projectName)
-				{}
+					bool importAnimations,
+					ModelUnits targetUnits,
+					std::string timeZone,
+					int lod,
+					repo::lib::RepoUUID revisionId,
+					std::string database,
+					std::string collection);
+
+				ModelImportConfig(
+					repo::lib::RepoUUID revisionId,
+					std::string database,
+					std::string collection);
 
 				~ModelImportConfig() {}
 
@@ -71,6 +72,10 @@ namespace repo {
 				repo::lib::RepoUUID getRevisionId() const { return revisionId; }
 				std::string getDatabaseName() const { return databaseName; }
 				std::string getProjectName() const { return projectName; }
+				int getNumThreads() const { return numThreads; }
+				std::string getViewName() const { return viewName; }
+
+				std::string prettyPrint();
 			};
 		}//namespace modelconvertor
 	}//namespace manipulator

@@ -3,9 +3,9 @@ matrix:
   include:
     - language: node_js
       name: Bouncer Worker linter check
-      dist: focal
+      dist: noble
       node_js:
-        - "18.20.6"
+        - "22.14.0"
       script:
         - cd tools/bouncer_worker && yarn install && yarn lint
 
@@ -13,10 +13,10 @@ matrix:
           submodules: false
 
     - language: cpp
-      dist: focal
+      dist: noble
       name: Unit tests and integration tests
       node_js:
-        - "18.20.6"
+        - "22.14.0"
       compiler:
            - gcc
 
@@ -37,12 +37,9 @@ matrix:
           - sudo apt-get install gnupg curl
           - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
           - sudo apt update
-          - sudo apt install gcc-11 g++-11 -y
-          - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 11
-          - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 11
           - sudo apt remove mongodb && sudo apt purge mongodb && sudo apt autoremove && sudo rm -rf /var/lib/mongodb
           - curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-8.0.gpg --dearmor
-          - echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
+          - echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
           - sudo apt-get update
           - sudo apt-get install -y mongodb-org mongodb-org-database mongodb-org-server mongodb-org-mongos mongodb-org-tools
           - sudo mkdir -p /var/lib/mongodb
@@ -58,21 +55,22 @@ matrix:
           - cd  testData/bouncer/data/database/
           - mongorestore -u "testUser" -p "3drepotest" --authenticationDatabase admin --quiet
           - cd ../../../../
-          - export CXX="g++"
-          - export CC="gcc"
+          - echo ========= INSTALL WINDOWS FONTS =========
+          - sudo apt-get install -y --no-install-recommends software-properties-common
+          - echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | sudo debconf-set-selections
+          - sudo apt-get install -y ttf-mscorefonts-installer fontconfig
+          - sudo fc-cache -f -v
           - echo ============ BOOST  INSTALL =============
           - sudo apt-get install libboost-all-dev
           - echo ============ MONGO  INSTALL =============
-          - tar -zxf testData/bouncer/ext_libs/focal/mongo-cxx-driver.tgz
+          - tar -zxf testData/bouncer/ext_libs/noble/mongo-cxx-driver.tgz
           - export MONGO_ROOT=$PWD/mongo-cxx-driver
           - echo ============ ASSIMP INSTALL =============
-          - tar -zxf testData/bouncer/ext_libs/focal/assimp-5.0.1.tgz
+          - tar -zxf testData/bouncer/ext_libs/noble/assimp-5.4.3.tgz
           - export ASSIMP_ROOT=$PWD/assimp
           - echo ============ IFCOPENSHELL INSTALL =============
-          - tar -zxf testData/bouncer/ext_libs/focal/IfcOpenShell_v0.6.0/OCCT_3drepoFix.tgz
-          - tar -zxf testData/bouncer/ext_libs/focal/IfcOpenShell_v0.6.0/IfcOpenShell_3drepofix.tgz
-          - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev
-          - export OCCT_ROOT=$PWD/OCCT
+          - tar -zxf testData/bouncer/ext_libs/noble/IfcOpenShell-0.8.0.tgz
+          - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev libboost-all-dev libcgal-dev libocct-data-exchange-dev libocct-draw-dev libocct-foundation-dev libocct-modeling-algorithms-dev libocct-modeling-data-dev libocct-ocaf-dev libocct-visualization-dev libgmp-dev libmpfr-dev libxml2-dev libeigen3-dev
           - export IFCOPENSHELL_ROOT=$PWD/IfcOpenShell
           - echo ============ TEIGHA INSTALL =============
           - cat testData/bouncer/ext_libs/focal/teigha/2025.11/teighaLinuxGCC8.3.tgz* | tar -zxf -
@@ -81,15 +79,13 @@ matrix:
           - ls $ODA_ROOT/BimRv/Include/Database
           - echo ============ SYNCHRO INSTALL =============
           - sudo apt-get install zlib1g-dev libssl-dev libxft-dev
-          - tar -zxf testData/bouncer/ext_libs/focal/thrift-0.12.0.tgz
-          - tar -zxf testData/bouncer/ext_libs/focal/3drepoSynchroReader-4.0.2.tgz
+          - tar -zxf testData/bouncer/ext_libs/noble/thrift-0.12.0.tgz
+          - tar -zxf testData/bouncer/ext_libs/noble/3drepoSynchroReader.tgz
           - tar -zxf testData/bouncer/ext_libs/focal/date.tgz
           - export THRIFT_ROOT=$PWD/thrift-0.12.0
           - export DATE_ROOT=$PWD/date
           - export SYNCHRO_READER_ROOT=$PWD/3drepoSynchroReader
 
-      install:
-          - sudo pip install cpp-coveralls
       services:
           - mongodb
       before_script:
@@ -108,14 +104,12 @@ matrix:
           - ln -s $REPO_MODEL_PATH/fileShare fileShare
           - LD_LIBRARY_PATH=$PWD/3drepobouncer PATH=$PWD/3drepobouncer:$PATH ./3drepobouncer/3drepobouncerTest
 
-      after_success:
-          - cd $BOUNCER_DIR - && coveralls --root . -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "mongo" -e "assimp" -e "assimp-install" -e "mongo-cxx-1.1.0" -e "aws-install"
 
     - language: cpp
-      dist: focal
+      dist: noble
       name: license support compilation check
       node_js:
-        - "18.20.6"
+        - "22.14.0"
       compiler:
            - gcc
 
@@ -133,31 +127,26 @@ matrix:
           - echo -e "machine github.com\n  login $TESTUSER\n  password $TESTPW" >~/.netrc
           - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
           - sudo apt update
-          - sudo apt install gcc-11 g++-11 -y
-          - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 11
-          - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 11
           - git submodule update --init --recursive
           - export BOUNCER_DIR=$PWD
-          - export CXX="g++"
-          - export CC="gcc"
           - mkdir testData && cd testData
           - git clone --filter=blob:none --sparse https://$TESTUSER:$TESTPW@github.com/3drepo/tests.git .
           - git sparse-checkout add cplusplus/bouncer/ext_libs/focal
+          - git sparse-checkout add cplusplus/bouncer/ext_libs/noble
           - mv cplusplus/bouncer/ext_libs/focal/ .
+          - mv cplusplus/bouncer/ext_libs/noble/ .
           - cd ../
           - echo ============ BOOST  INSTALL =============
           - sudo apt-get install libboost-all-dev
           - echo ============ MONGO  INSTALL =============
-          - tar -zxf testData/focal/mongo-cxx-driver.tgz
+          - tar -zxf testData/noble/mongo-cxx-driver.tgz
           - export MONGO_ROOT=$PWD/mongo-cxx-driver
           - echo ============ ASSIMP INSTALL =============
-          - tar -zxf testData/focal/assimp-5.0.1.tgz
+          - tar -zxf testData/noble/assimp-5.4.3.tgz
           - export ASSIMP_ROOT=$PWD/assimp
           - echo ============ IFCOPENSHELL INSTALL =============
-          - tar -zxf testData/focal/IfcOpenShell_v0.6.0/OCCT_3drepoFix.tgz
-          - tar -zxf testData/focal/IfcOpenShell_v0.6.0/IfcOpenShell_3drepofix.tgz
-          - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev
-          - export OCCT_ROOT=$PWD/OCCT
+          - tar -zxf testData/noble/IfcOpenShell-0.8.0.tgz
+          - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev libboost-all-dev libcgal-dev libocct-data-exchange-dev libocct-draw-dev libocct-foundation-dev libocct-modeling-algorithms-dev libocct-modeling-data-dev libocct-ocaf-dev libocct-visualization-dev libgmp-dev libmpfr-dev libxml2-dev libeigen3-dev
           - export IFCOPENSHELL_ROOT=$PWD/IfcOpenShell
           - echo ============ TEIGHA INSTALL =============
           - cat testData/focal/teigha/2025.11/teighaLinuxGCC8.3.tgz* | tar -zxf -
@@ -165,13 +154,15 @@ matrix:
           - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_8.3dll/
           - echo ============ SYNCHRO INSTALL =============
           - sudo apt-get install zlib1g-dev libssl-dev libxft-dev
-          - tar -zxf testData/focal/thrift-0.12.0.tgz
-          - tar -zxf testData/focal/3drepoSynchroReader-4.0.2.tgz
+          - tar -zxf testData/noble/thrift-0.12.0.tgz
+          - tar -zxf testData/noble/3drepoSynchroReader.tgz
+          - tar -zxf testData/focal/date.tgz
           - export THRIFT_ROOT=$PWD/thrift-0.12.0
+          - export DATE_ROOT=$PWD/date
           - export SYNCHRO_READER_ROOT=$PWD/3drepoSynchroReader
           - echo ============ CRYPTOLENS INSTALL =============
           - sudo apt-get install libcurl4-openssl-dev
-          - tar -zxf testData/focal/cryptoLens.tgz
+          - tar -zxf testData/noble/cryptoLens.tgz
           - export CRYPTOLENS_ROOT=$PWD/cryptoLens
             # dummy values just to ensure it compiles
           - export LICENSE_RSA_PUB_KEY_MOD="1bc"

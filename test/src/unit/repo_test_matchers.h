@@ -20,6 +20,8 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest-matchers.h>
+#include "repo/lib/datastructure/repo_variant_utils.h"
+#include "repo/lib/datastructure/repo_bounds.h"
 
 /* As we sometimes deal with very large coordinate systems, we expect positions
  * to have a low tolerance, approaching floating point quantisation itself.
@@ -27,8 +29,8 @@
  * error but is far less noticable, so the tolerance is higher.
  */
 
-#define POSITION_TOLERANCE 0.0000001f
-#define DIRECTION_TOLERANCE 0.00001f
+#define POSITION_TOLERANCE 0.0000001
+#define DIRECTION_TOLERANCE 0.00001
 
 namespace testing {
 
@@ -54,24 +56,30 @@ namespace testing {
 	* matcher to compare vectors having undergone transformations such as
 	* rotations or scales.
 	*/
-	MATCHER_P(VectorNear, a, "")
+
+	MATCHER_P2(VectorNear, a, tolerance, "")
 	{
-		if (!::testing::ExplainMatchResult(::testing::FloatNear(arg.x, POSITION_TOLERANCE), a.x, result_listener))
+		if (!::testing::ExplainMatchResult(::testing::NanSensitiveDoubleNear((double)arg.x, tolerance), (double)a.x, result_listener))
 		{
 			*result_listener << " in the z axis.";
 			return false;
 		}
-		if (!::testing::ExplainMatchResult(::testing::FloatNear(arg.y, POSITION_TOLERANCE), a.y, result_listener))
+		if (!::testing::ExplainMatchResult(::testing::NanSensitiveDoubleNear((double)arg.y, tolerance), (double)a.y, result_listener))
 		{
 			*result_listener << " in the y axis.";
 			return false;
 		}
-		if (!::testing::ExplainMatchResult(::testing::FloatNear(arg.z, POSITION_TOLERANCE), a.z, result_listener))
+		if (!::testing::ExplainMatchResult(::testing::NanSensitiveDoubleNear((double)arg.z, tolerance), (double)a.z, result_listener))
 		{
 			*result_listener << " in the z axis.";
 			return false;
 		}
 		return true;
+	}
+
+	MATCHER_P(VectorNear, a, "")
+	{
+		return ::testing::ExplainMatchResult(VectorNear(a, POSITION_TOLERANCE), arg, result_listener);
 	}
 
 	MATCHER_P(VectorGe, a, "")
@@ -142,6 +150,50 @@ namespace testing {
 	MATCHER(HasBinaryFields, "")
 	{
 		return arg.hasOversizeFiles();
+	}
+
+	// Allows using the string value of a variant directly in an expects statement
+	MATCHER_P(Vs, s, "")
+	{
+		auto asString = boost::apply_visitor(repo::lib::StringConversionVisitor(), arg);
+		return asString == s;
+	}
+
+	MATCHER_P(Vq, s, "")
+	{
+		return boost::apply_visitor(repo::lib::DuplicationVisitor(), arg, repo::lib::RepoVariant(s));
+	}
+
+	static bool compareBounds(const repo::lib::RepoBounds& a, const repo::lib::RepoBounds& b, double tolerance, testing::MatchResultListener* listener)
+	{
+		if (abs(a.min().x - b.min().x) > tolerance) { *listener << "Bounds Min x exceeds tolerance."; return false; }
+		if (abs(a.min().y - b.min().y) > tolerance) { *listener << "Bounds Min y exceeds tolerance."; return false; }
+		if (abs(a.min().z - b.min().z) > tolerance) { *listener << "Bounds Min z exceeds tolerance."; return false; }
+		if (abs(a.max().x - b.max().x) > tolerance) { *listener << "Bounds Max x exceeds tolerance."; return false; }
+		if (abs(a.max().y - b.max().y) > tolerance) { *listener << "Bounds Max y exceeds tolerance."; return false; }
+		if (abs(a.max().z - b.max().z) > tolerance) { *listener << "Bounds Max z exceeds tolerance."; return false; }
+		return true;
+	}
+
+	MATCHER_P2(BoundsAre, bounds, tolerance, "")
+	{
+		return compareBounds(arg, bounds, tolerance, result_listener);
+	}
+
+	MATCHER_P2(UnorderedBoundsAre, elements, tolerance, "")
+	{
+		std::vector<repo::lib::RepoBounds> bounds(elements);
+
+		for (auto& r : arg) {
+			for (auto i = 0; i < bounds.size(); i++) {
+				if (compareBounds(r, bounds[i], tolerance, result_listener)) {
+					bounds.erase(bounds.begin() + i);
+					break;
+				}
+			}
+		}
+
+		return !bounds.size(); // If every element has been matched, they should by now have all been removed.
 	}
 }
 
