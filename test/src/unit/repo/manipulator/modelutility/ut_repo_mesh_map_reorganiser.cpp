@@ -33,11 +33,12 @@ TEST(MeshMapReorganiser, VeryLargeMesh)
 	// This snippet creates a Supermesh using the Multipart Optimizer
 
 	auto opt = MultipartOptimizer();
-	auto root = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode());
+	auto root = std::make_unique<repo::core::model::TransformationNode>(repo::core::model::RepoBSONFactory::makeTransformationNode());
 	auto rootID = root->getSharedID();
 	repo::core::model::RepoNodeSet meshes, trans;
-	trans.insert(root);
-	meshes.insert(createRandomMesh(327890, false, 3, { rootID }));
+	trans.insert(root.get());
+	auto randomMesh = createRandomMesh(327890, false, 3, { rootID });
+	meshes.insert(randomMesh.get());
 	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, {}, {}, {}, trans);
 	//opt.apply(scene);
 
@@ -101,9 +102,12 @@ TEST(MeshMapReorganiser, MultipleTinyMeshes)
 	const int NUM_SUBMESHES = 789;
 	const int NUM_VERTICES = 256;
 
+	std::vector<std::unique_ptr<repo::core::model::MeshNode>> randomNodes;
 	for (int i = 0; i < NUM_SUBMESHES; i++)
 	{
-		meshes.insert(createRandomMesh(NUM_VERTICES, false, 3, { rootID }));
+		auto randomNode = createRandomMesh(NUM_VERTICES, false, 3, { rootID });
+		meshes.insert(randomNode.get());
+		randomNodes.push_back(std::move(randomNode));
 	}
 
 	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, {}, {}, {}, trans);
@@ -177,12 +181,19 @@ TEST(MeshMapReorganiser, InterleavedMixedSplit)
 	repo::core::model::RepoNodeSet meshes, trans;
 	trans.insert(root);
 
-	meshes.insert(createRandomMesh(129, false, 3, { rootID }));
-	meshes.insert(createRandomMesh(65537, false, 3, { rootID }));
-	meshes.insert(createRandomMesh(1341, false, 3, { rootID }));
-	meshes.insert(createRandomMesh(68, false, 3, { rootID }));
-	meshes.insert(createRandomMesh(80000, false, 3, { rootID }));
-	meshes.insert(createRandomMesh(17981, false, 3, { rootID }));
+	auto randNode1 = createRandomMesh(129, false, 3, { rootID });
+	auto randNode2 = createRandomMesh(65537, false, 3, { rootID });
+	auto randNode3 = createRandomMesh(1341, false, 3, { rootID });
+	auto randNode4 = createRandomMesh(68, false, 3, { rootID });
+	auto randNode5 = createRandomMesh(80000, false, 3, { rootID });
+	auto randNode6 = createRandomMesh(17981, false, 3, { rootID });
+
+	meshes.insert(randNode1.get());
+	meshes.insert(randNode2.get());
+	meshes.insert(randNode3.get());
+	meshes.insert(randNode4.get());
+	meshes.insert(randNode5.get());
+	meshes.insert(randNode6.get());
 
 	const int NUM_SUBMESHES = 6;
 

@@ -56,34 +56,10 @@ static const size_t REPO_MODEL_LOW_CLUSTERING_RATIO = 0.2f;
 bool MultipartOptimizer::processScene(
 	std::string database,
 	std::string collection,
-	repo::lib::RepoUUID revId,
-	repo::manipulator::modelconvertor::ExportType exType,
-	repo::core::handler::AbstractDatabaseHandler *handler)
+	repo::lib::RepoUUID revId,	
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	repo::manipulator::modelconvertor::AbstractModelExport* exporter)
 {
-	// Initialise exporter
-	auto worldOffset = getWorldOffset(database, collection, revId, handler);
-	std::unique_ptr<repo::manipulator::modelconvertor::AbstractModelExport> exporter = nullptr;
-
-	switch (exType)
-	{	
-	case repo::manipulator::modelconvertor::ExportType::REPO:
-#ifdef REPO_ASSET_GENERATOR_SUPPORT
-		exporter = std::make_unique<repo::manipulator::modelconvertor::RepoBundleExport>(
-			database,
-			collection,
-			revId,
-			worldOffset
-		);
-#else
-		repoError << "Bouncer must be built with REPO_ASSET_GENERATOR_SUPPORT ON in order to generate Repo Bundles.";
-		return false;
-#endif // REPO_ASSETGENERATOR
-		break;
-	default:
-		repoError << "Unknown export type with enum:  " << (uint16_t)exType;
-		return false;
-	}
-
 	// Set file upload callback via std::function and lambdas
 	auto fileManager = handler->getFileManager();
 	exporter->setFileCallback([&](
@@ -141,7 +117,7 @@ bool MultipartOptimizer::processScene(
 			collection,
 			revId,
 			handler,
-			exporter.get(),
+			exporter,
 			transformMap,
 			matPropMap,
 			true,
@@ -156,7 +132,7 @@ bool MultipartOptimizer::processScene(
 			collection,
 			revId,
 			handler,
-			exporter.get(),
+			exporter,
 			transformMap,
 			matPropMap,
 			true,
@@ -171,7 +147,7 @@ bool MultipartOptimizer::processScene(
 			collection,
 			revId,
 			handler,
-			exporter.get(),
+			exporter,
 			transformMap,
 			matPropMap,
 			false,
@@ -186,7 +162,7 @@ bool MultipartOptimizer::processScene(
 			collection,
 			revId,
 			handler,
-			exporter.get(),
+			exporter,
 			transformMap,
 			matPropMap,
 			false,
@@ -210,7 +186,7 @@ bool MultipartOptimizer::processScene(
 				collection,
 				revId,
 				handler,
-				exporter.get(),
+				exporter,
 				transformMap,
 				matPropMap,
 				texId,
@@ -224,7 +200,7 @@ bool MultipartOptimizer::processScene(
 				collection,
 				revId,
 				handler,
-				exporter.get(),
+				exporter,
 				transformMap,
 				matPropMap,
 				texId,
@@ -727,21 +703,6 @@ void MultipartOptimizer::createSuperMesh(
 	auto supermeshNode = createSupermeshNode(mappedMesh);
 
 	exporter->addSupermesh(supermeshNode.get());
-}
-
-std::vector<double> MultipartOptimizer::getWorldOffset(
-	const std::string &database,
-	const std::string &collection,
-	const repo::lib::RepoUUID &revId,
-	repo::core::handler::AbstractDatabaseHandler *handler)
-{
-	auto bson = handler->findOneByUniqueID(database, collection + "." + REPO_COLLECTION_HISTORY, revId);
-	if (bson.hasField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT))
-	{
-		return bson.getDoubleVectorField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT);
-	}
-
-	return std::vector<double>({ 0, 0, 0 });
 }
 
 void MultipartOptimizer::appendMesh(	

@@ -28,11 +28,10 @@
 #include "../../core/handler/database/repo_query.h"
 #include "../../core/handler/fileservice/repo_blob_files_handler.h"
 #include "../../lib/datastructure/repo_structs.h"
-
-#include <submodules/asset_generator/src/repo_model_export_repobundle.h>
-
 #include "bvh/bvh.hpp"
 #include "bvh/sweep_sah_builder.hpp"
+#include <repo/manipulator/modelconvertor/export/repo_model_export_abstract.h>
+#include <repo/core/model/bson/repo_bson.h>
 
 
 
@@ -52,8 +51,8 @@ namespace repo {
 					std::string database,
 					std::string collection,
 					repo::lib::RepoUUID revId,
-					repo::manipulator::modelconvertor::ExportType exType,
-					repo::core::handler::AbstractDatabaseHandler *handler
+					repo::core::handler::AbstractDatabaseHandler *handler,
+					repo::manipulator::modelconvertor::AbstractModelExport *exporter
 				);
 
 
@@ -479,12 +478,6 @@ namespace repo {
 					repo::manipulator::modelconvertor::AbstractModelExport *exporter,
 					const mapped_mesh_t& mappedMesh
 				);
-
-				std::vector<double> getWorldOffset(
-					const std::string &database,
-					const std::string &collection,
-					const repo::lib::RepoUUID &revId,
-					repo::core::handler::AbstractDatabaseHandler *handler);
 
 				void appendMesh(					
 					StreamingMeshNode &node,

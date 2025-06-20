@@ -220,13 +220,52 @@ bool SceneManager::generateWebViewBuffers(
 		
 	if (validScene)
 	{
+		auto database = scene->getDatabaseName();
+		auto collection = scene->getProjectName();
+		auto revId = scene->getRevisionID();
+
+		// Get world offset
+		std::vector<double> worldOffset;
+		auto bson = handler->findOneByUniqueID(database, collection + "." + REPO_COLLECTION_HISTORY, revId);
+		if (bson.hasField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT))
+		{
+			worldOffset = bson.getDoubleVectorField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT);
+		}
+		else {
+			worldOffset = std::vector<double>({ 0, 0, 0 });
+		}
+
+		// Initialise exporter		
+		std::unique_ptr<repo::manipulator::modelconvertor::AbstractModelExport> exporter = nullptr;
+
+		switch (exType)
+		{
+		case repo::manipulator::modelconvertor::ExportType::REPO:
+#ifdef REPO_ASSET_GENERATOR_SUPPORT
+			exporter = std::make_unique<repo::manipulator::modelconvertor::RepoBundleExport>(
+				database,
+				collection,
+				revId,
+				worldOffset
+			);
+#else
+			repoError << "Bouncer must be built with REPO_ASSET_GENERATOR_SUPPORT ON in order to generate Repo Bundles.";
+			return false;
+#endif // REPO_ASSETGENERATOR
+			break;
+		default:
+			repoError << "Unknown export type with enum:  " << (uint16_t)exType;
+			return false;
+		}
+
+
 		repo::manipulator::modeloptimizer::MultipartOptimizer mpOpt;
 		return mpOpt.processScene(
 			scene->getDatabaseName(),
 			scene->getProjectName(),
 			scene->getRevisionID(),
-			exType,
-			handler
+			handler,
+			exporter.get() 
 		);
 	}
 	else

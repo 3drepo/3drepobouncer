@@ -52,7 +52,7 @@ repo::core::model::RepoScene* IFCModelImport::importModel(std::string filePath, 
 		settings.getProjectName(),
 		settings.getRevisionId()
 		);
-	sceneBuilder->createIndexes();
+	sceneBuilder->createIndexes(false);
 
 	auto serialiser = ifcUtils::IfcUtils::CreateSerialiser(filePath);
 
