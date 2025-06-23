@@ -30,6 +30,7 @@
 #include "../../../core/model/bson/repo_node_mesh.h"
 #include "../../../core/model/bson/repo_node_metadata.h"
 #include "../../../core/model/bson/repo_node_transformation.h"
+#include "../../../core/model/bson/repo_node_texture.h"
 #include "../../../lib/repo_property_tree.h"
 #include "../../../error_codes.h"
 
@@ -101,7 +102,8 @@ namespace repo {
 
 				std::pair<repo::core::model::RepoNodeSet, repo::core::model::RepoNodeSet> generateMatNodes(
 					std::unordered_map<std::string, repo::lib::RepoUUID> &synchroIDtoRepoID,
-					std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> &repoIDToNode);
+					std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> &repoIDToNode,
+					std::unordered_map<repo::lib::RepoUUID, repo::core::model::TextureNode*, repo::lib::RepoUUIDHasher> &matIDToTex);
 
 				repo::core::model::MetadataNode* createMetaNode(
 					const std::unordered_map<std::string, std::string> &metadata,

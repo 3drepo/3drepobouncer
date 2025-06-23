@@ -92,7 +92,8 @@ repo::core::model::RepoScene* SynchroModelImport::importModel(std::string filePa
 
 std::pair<repo::core::model::RepoNodeSet, repo::core::model::RepoNodeSet> SynchroModelImport::generateMatNodes(
 	std::unordered_map<std::string, repo::lib::RepoUUID> &synchroIDtoRepoID,
-	std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> &repoIDToNode) {
+	std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> &repoIDToNode,
+	std::unordered_map<repo::lib::RepoUUID, repo::core::model::TextureNode*, repo::lib::RepoUUIDHasher>& matIDToTex) {
 	repo::core::model::RepoNodeSet matNodes, textNodes;
 
 	for (const auto matEntry : reader->getMaterials()) {
@@ -111,6 +112,7 @@ std::pair<repo::core::model::RepoNodeSet, repo::core::model::RepoNodeSet> Synchr
 				textBuff.size(), matEntry.second.texture.width, matEntry.second.texture.height, { matNode->getSharedID() }));
 			textNodes.insert(textNode);
 			repoIDToNode[textNode->getUniqueID()] = textNode;
+			matIDToTex[matNode->getUniqueID()] = textNode;
 		}
 
 		repoIDToNode[matNode->getUniqueID()] = matNode;
@@ -276,8 +278,9 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 	repo::core::model::RepoNodeSet transNodes, matNodes, textNodes, meshNodes, metaNodes;
 	std::unordered_map<std::string, repo::lib::RepoUUID> synchroIDToRepoID;
 	std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> repoIDToNode;
+	std::unordered_map<repo::lib::RepoUUID, repo::core::model::TextureNode*, repo::lib::RepoUUIDHasher> matIDToTex;
 	repoInfo << "Generating materials.... ";
-	auto matPairs = generateMatNodes(synchroIDToRepoID, repoIDToNode);
+	auto matPairs = generateMatNodes(synchroIDToRepoID, repoIDToNode, matIDToTex);
 	matNodes = matPairs.first;
 	textNodes = matPairs.second;
 
@@ -357,6 +360,14 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 
 			auto matNode = repoIDToNode[synchroIDToRepoID[matID]];
 			auto matNodeID = matNode->getUniqueID();
+
+			// Shim to enable the new multipart optimiser to read Synchro models until this importer
+			// is refactored to use the scene builder.
+			mesh->setMaterial(((repo::core::model::MaterialNode*)matNode)->getMaterialStruct());
+			auto tex = matIDToTex.find(matNode->getUniqueID());
+			if (tex != matIDToTex.end()) {
+				mesh->setTextureId(tex->second->getUniqueID());
+			}
 
 			if (nodeToParents.find(matNodeID) == nodeToParents.end())
 				nodeToParents[matNodeID] = { mesh->getSharedID() };
