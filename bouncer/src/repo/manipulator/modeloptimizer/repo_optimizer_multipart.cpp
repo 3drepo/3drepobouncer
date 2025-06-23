@@ -259,7 +259,7 @@ std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUU
 				rootNode = bson;
 			}
 		}
-		if (childNodeMap.size() == 0) {
+		if (rootNode.isEmpty()) {
 			repoWarning << "getAllTransforms; no transformations returned by database query.";
 		} 
 		else {

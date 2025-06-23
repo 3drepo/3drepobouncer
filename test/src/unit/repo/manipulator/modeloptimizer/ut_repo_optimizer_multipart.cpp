@@ -379,6 +379,8 @@ TEST(MultipartOptimizer, TestMultiplesMeshes)
 		projectName,
 		revId,
 		mockExporter.get()));
+
+	EXPECT_TRUE(false);
 }
 
 TEST(MultipartOptimizer, TestMultipleSmallAndLargeMeshes)
