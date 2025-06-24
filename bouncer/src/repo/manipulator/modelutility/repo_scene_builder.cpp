@@ -26,7 +26,6 @@
 #include "repo/core/model/bson/repo_bson_factory.h"
 #include "repo/core/handler/database/repo_query.h"
 
-#include <thread>
 #include <variant>
 #include <semaphore>
 #include <thread>
@@ -205,7 +204,6 @@ void RepoSceneBuilder::addNode(std::unique_ptr<repo::core::model::RepoNode> node
 				meshNode->setTextureId(textureToUniqueId[material.texturePath]);
 		}
 	}
-
 
 	node->setRevision(revisionId);
 	queueNode(node.release());
@@ -464,8 +462,6 @@ void RepoSceneBuilder::createIndexes(bool groupingsEnabled)
 		REPO_NODE_MESH_LABEL_PRIMITIVE,
 		REPO_LABEL_BINARY_REFERENCE
 		}), true);
-
-
 }
 
 RepoSceneBuilder::AsyncImpl::AsyncImpl(RepoSceneBuilder* builder):

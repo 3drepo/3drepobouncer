@@ -35,11 +35,6 @@ using namespace repo::manipulator::modeloptimizer;
 
 auto defaultGraph = repo::core::model::RepoScene::GraphType::DEFAULT;
 
-//using Scalar = float;
-//using Bvh = bvh::Bvh<Scalar>;
-//using BvhVector3 = bvh::Vector3<Scalar>;
-
-
 // The vertex count is used as a rough approximation of the total geometry size.
 // This figure is empirically set to end up with an average bundle size of 24 Mb.
 static const size_t REPO_MP_MAX_VERTEX_COUNT = 1200000;
@@ -540,7 +535,6 @@ void MultipartOptimizer::clusterAndSupermesh(
 	auto sceneCollection = collection + "." + REPO_COLLECTION_SCENE;
 	auto cursor = handler->findCursorByCriteria(database, sceneCollection, filter, projection);
 
-
 	// iterate cursor and pack outcomes in lightweight mesh node structure
 	std::vector<StreamingMeshNode> nodes;
 	if (cursor) {
@@ -649,8 +643,7 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 				// This allows us to group more meshes together.
 				bool ignoreUVs = texId.isDefaultValue();
 
-				sNode.loadSupermeshingData(nodeBson, buffer, ignoreUVs);
-				
+				sNode.loadSupermeshingData(nodeBson, buffer, ignoreUVs);				
 			}
 			
 			// Bake the streaming mesh node by applying the transformation to the vertices
@@ -684,14 +677,12 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 
 			// Unload the streaming node
 			sNode.unloadSupermeshingData();
-
 		}
 
 		// Add the last supermesh to be built
 		if (currentSupermesh.vertices.size()) {
 			createSuperMesh(exporter, currentSupermesh);
 		}
-
 	}
 }
 

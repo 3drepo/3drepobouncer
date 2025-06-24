@@ -33,8 +33,6 @@
 #include <repo/manipulator/modelconvertor/export/repo_model_export_abstract.h>
 #include <repo/core/model/bson/repo_bson.h>
 
-
-
 namespace repo {
 	namespace manipulator {
 		namespace modeloptimizer {
@@ -68,8 +66,7 @@ namespace repo {
 					std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
 					std::vector<repo::lib::repo_mesh_mapping_t> meshMapping;
 				};
-
-				// TODO: Is this in the right place here?
+								
 				class StreamingMeshNode {
 
 					class SupermeshingData {
@@ -225,15 +222,12 @@ namespace repo {
 						}
 					};
 
-
-
 					repo::lib::RepoUUID sharedId;
 					std::uint32_t numVertices = 0;
 					repo::lib::RepoUUID parent;
 					repo::lib::RepoBounds bounds;
 
 					std::unique_ptr<SupermeshingData> supermeshingData;
-
 
 				public:
 					StreamingMeshNode()
@@ -388,8 +382,6 @@ namespace repo {
 					}
 				};
 
-
-				// TODO: Right location?
 				typedef std::unordered_map <repo::lib::RepoUUID, std::shared_ptr<std::pair<repo::lib::RepoUUID, repo::lib::repo_material_t>>, repo::lib::RepoUUIDHasher> MaterialPropMap;
 				typedef std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> TransformMap;
 

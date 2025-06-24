@@ -112,10 +112,10 @@ TEST(SupermeshNodeTest, Methods)
 	});
 
 	node.setMeshMapping(mappings1);
-	// EXPECT_THAT(node.getMeshMapping(), ElementsAreArray(mappings1));
+	EXPECT_THAT(node.getMeshMapping(), ElementsAreArray(mappings1));
 
 	node.setMeshMapping(mappings2);
-	// EXPECT_THAT(node.getMeshMapping(), Eq(mappings2));
+	EXPECT_THAT(node.getMeshMapping(), Eq(mappings2));
 
 	auto ids = makeSubmeshIds(1000);
 	node.setSubmeshIds(ids);

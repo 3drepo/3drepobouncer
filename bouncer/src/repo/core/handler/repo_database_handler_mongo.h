@@ -366,69 +366,6 @@ namespace repo {
 					const std::string& collection,
 					const database::query::RepoQuery& criteria);
 
-				std::unique_ptr<repo::core::handler::database::Cursor> getAllByCriteria(
-					const std::string& database,
-					const std::string& collection,
-					const database::query::RepoQuery& criteria
-				);
-
-				void updateManyWithAggregate(
-					const std::string& database,
-					const std::string& collection,
-					const repo::core::model::RepoBSON filter,
-					const mongocxx::pipeline& pipeline);
-
-				void updateOne(
-					const std::string& database,
-					const std::string& collection,
-					const repo::core::model::RepoBSON filter,
-					const repo::core::model::RepoBSON update);
-
-				void updateMany(
-					const std::string& database,
-					const std::string& collection,
-					const repo::core::model::RepoBSON filter,
-					const repo::core::model::RepoBSON update);
-
-				mongocxx::v_noabi::cursor specialFind(
-					const std::string& database,
-					const std::string& collection,
-					const repo::core::model::RepoBSON filter,
-					const repo::core::model::RepoBSON projection);
-
-				mongocxx::v_noabi::cursor specialFindPerf(
-					const std::string& database,
-					const std::string& collection,
-					const repo::core::model::RepoBSON filter,
-					const repo::core::model::RepoBSON projection,
-					long long& duration);
-
-				repo::core::model::RepoBSON rawFindOne(
-					const std::string& database,
-					const std::string& collection,
-					const repo::core::model::RepoBSON filter,
-					const repo::core::model::RepoBSON projection);
-
-				mongocxx::v_noabi::cursor rawCursorFind(
-					const std::string& database,
-					const std::string& collection,
-					const repo::core::model::RepoBSON filter,
-					const repo::core::model::RepoBSON projection);
-
-				std::unique_ptr<database::Cursor> runAggregatePipeline(
-					const std::string& database,
-					const std::string& collection,
-					const mongocxx::pipeline& pipeline);
-
-				std::unique_ptr<repo::core::handler::database::Cursor> getTransformsForLeaf(
-					const std::string& database,
-					const std::string& collection,
-					const repo::lib::RepoUUID& id);
-
-				std::unique_ptr<repo::core::handler::database::Cursor> getTransformsForAllLeaves(
-					const std::string& database,
-					const std::string& collection);
-
 				std::unique_ptr<database::BulkWriteContext> getBulkWriteContext(
 					const std::string& database,
 					const std::string& collection);
@@ -461,11 +398,6 @@ namespace repo {
 				// We can work with either clients or pool as the top level, connection
 				// specific, container for getting connections. pool pool is threadsafe.
 				std::unique_ptr<mongocxx::pool> clientPool;
-
-				//// The fileManager is used in the storage of certain member types, such
-				//// as large vectors of binary data. It must be set using setFileManager
-				//// before documents containing such members are uploaded.
-				//std::shared_ptr<repo::core::handler::fileservice::FileManager> fileManager;
 
 				repo::core::model::RepoBSON createRepoBSON(
 					const std::string& database,

@@ -233,7 +233,7 @@ namespace repo {
 			}
 		};
 
-		struct repo_material_t {			
+		struct repo_material_t {
 			repo_color3d_t ambient;
 			repo_color3d_t diffuse;
 			repo_color3d_t specular;

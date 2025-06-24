@@ -799,7 +799,7 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 	for (auto& mesh : nodes)
 	{
 		mesh.setMaterial(meshBuilder.getMaterial());
-		context.sceneBuilder->addNode(mesh);		
+		context.sceneBuilder->addNode(mesh);
 	}
 
 	return eOk;

@@ -87,7 +87,7 @@ namespace repo {
 						const std::string                            &databaseName,
 						const std::string                            &collectionNamePrefix,
 						const IdType                                 &id,
-						const Encoding								 & encoding
+						const Encoding								 &encoding
 					);
 
 					/**

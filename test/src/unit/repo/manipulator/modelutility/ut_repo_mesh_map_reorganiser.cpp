@@ -53,7 +53,6 @@ TEST(MeshMapReorganiser, VeryLargeMesh)
 	
 	sceneBuilder.finalise();
 
-
 	auto mockExporter = std::make_unique<TestModelExport>(database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
 
 	bool result = opt.processScene(

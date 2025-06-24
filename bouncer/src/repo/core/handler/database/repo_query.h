@@ -181,7 +181,6 @@ namespace repo {
 						std::vector<std::string> includedFields;
 						std::vector<std::string> excludedFields;
 					};
-
 				}
 
 				namespace index

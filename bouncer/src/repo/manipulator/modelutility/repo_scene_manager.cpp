@@ -258,7 +258,6 @@ bool SceneManager::generateWebViewBuffers(
 			return false;
 		}
 
-
 		repo::manipulator::modeloptimizer::MultipartOptimizer mpOpt;
 		return mpOpt.processScene(
 			scene->getDatabaseName(),
