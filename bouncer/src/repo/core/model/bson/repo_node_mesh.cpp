@@ -111,7 +111,7 @@ void MeshNode::deserialise(RepoBSON& bson)
 	}
 
 
-	if (bson.hasField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT))
+	if (bson.hasField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT) && bson.hasField(REPO_NODE_MESH_LABEL_UV_CHANNELS))
 	{
 		std::vector<repo::lib::RepoVector2D> serialisedChannels;
 		bson.getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_UV_CHANNELS, serialisedChannels);
