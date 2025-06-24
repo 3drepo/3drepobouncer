@@ -157,14 +157,6 @@ std::vector<repo::test::utils::mesh::GenericFace> repo::test::utils::mesh::getFa
 			deserialiseVector(normBson, buffer, normals);
 		}
 
-		auto fields = bson.getFieldNames();
-		std::string fieldsString;
-		for (auto field : fields) {
-			fieldsString += " " + field;
-		}
-		repoInfo << fieldsString;
-
-		
 		if (bson.hasField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT))
 		{
 			// The new multipart optimiser drops UVs of meshes that have no texture,
