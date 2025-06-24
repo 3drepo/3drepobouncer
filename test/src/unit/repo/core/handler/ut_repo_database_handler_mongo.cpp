@@ -21,6 +21,7 @@
 #include <repo/core/model/bson/repo_bson_element.h>
 #include <repo/core/model/bson/repo_node.h>
 #include <repo/core/model/bson/repo_bson_builder.h>
+#include <repo/core/handler/fileservice/repo_blob_files_handler.h>
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
@@ -205,6 +206,38 @@ MATCHER_P(GetAllFromCollectionTailable_CounterIsDecreasing, start, "")
 	return true;
 }
 
+void populateBinaryData(
+	MongoDatabaseHandler* handler,
+	std::string db,
+	std::string col,
+	std::vector<repo::core::model::RepoBSON>& bsons
+) {
+	repo::core::handler::fileservice::BlobFilesHandler blobHandler(handler->getFileManager(), db, col);
+
+	for (auto& bson : bsons) {
+		if (bson.hasFileReference()) {
+			auto ref = bson.getBinaryReference();
+			auto buffer = blobHandler.readToBuffer(fileservice::DataRef::deserialise(ref));
+			bson.initBinaryBuffer(buffer);
+		}
+	}
+}
+
+void populateBinaryData(
+	MongoDatabaseHandler* handler,
+	std::string db,
+	std::string col,
+	repo::core::model::RepoBSON& bson
+) {
+	repo::core::handler::fileservice::BlobFilesHandler blobHandler(handler->getFileManager(), db, col);
+	
+	if (bson.hasFileReference()) {
+		auto ref = bson.getBinaryReference();
+		auto buffer = blobHandler.readToBuffer(fileservice::DataRef::deserialise(ref));
+		bson.initBinaryBuffer(buffer);
+	}	
+}
+
 TEST(MongoDatabaseHandlerTest, GetAllFromCollectionTailable)
 {
 	auto handler = getHandler();
@@ -230,6 +263,7 @@ TEST(MongoDatabaseHandlerTest, GetAllFromCollectionTailable)
 
 	{
 		auto bsons = handler->getAllFromCollectionTailable(db, col);
+		populateBinaryData(handler.get(), db, col, bsons);
 		EXPECT_THAT(bsons, UnorderedElementsAreArray(goldenData));
 	}
 
@@ -237,6 +271,8 @@ TEST(MongoDatabaseHandlerTest, GetAllFromCollectionTailable)
 	{
 		auto bsons1 = handler->getAllFromCollectionTailable(db, col, 0, 25);
 		auto bsons2 = handler->getAllFromCollectionTailable(db, col, 25, 25);
+		populateBinaryData(handler.get(), db, col, bsons1);
+		populateBinaryData(handler.get(), db, col, bsons2);
 
 		// Sets should be disjoint to eachother
 
@@ -258,6 +294,7 @@ TEST(MongoDatabaseHandlerTest, GetAllFromCollectionTailable)
 	// Reading over the end shouldn't result in an error
 	{
 		auto bsons = handler->getAllFromCollectionTailable(db, col, 40, 100);
+		populateBinaryData(handler.get(), db, col, bsons);
 		EXPECT_THAT(bsons.size(), Eq(10));
 		EXPECT_THAT(bsons, IsSubsetOf(goldenData));
 	}
@@ -301,6 +338,7 @@ TEST(MongoDatabaseHandlerTest, GetAllFromCollectionTailable)
 	// Test sort
 	{
 		auto sorted = handler->getAllFromCollectionTailable(db, col, 0, 0, {}, "counter", 1);
+		populateBinaryData(handler.get(), db, col, sorted);
 
 		// Counter should be increasing
 
@@ -524,6 +562,7 @@ TEST(MongoDatabaseHandlerTest, FindOneByCriteria)
 		auto id = repo::lib::RepoUUID("c9bed762-9b63-4307-824d-40261ce7f022");
 		query::Eq search("_id", id);
 		auto result = handler->findOneByCriteria(db, col, search);
+		populateBinaryData(handler.get(), db, col, result);
 
 		EXPECT_THAT(result.getStringField("type"), Eq("mesh"));
 		EXPECT_THAT(result.getBinary("faces"), Not(IsEmpty()));
@@ -535,6 +574,7 @@ TEST(MongoDatabaseHandlerTest, FindOneByCriteria)
 		auto id = std::string("9ecbebbc-c24d-4da5-b69b-388abfcfe314");
 		query::Eq search("_id", id);
 		auto result = handler->findOneByCriteria(db, col, search);
+		populateBinaryData(handler.get(), db, col, result);
 
 		EXPECT_THAT(result.getStringField("type"), Eq("mesh"));
 		EXPECT_THAT(result.getBinary("faces"), Not(IsEmpty()));
@@ -648,6 +688,7 @@ TEST(MongoDatabaseHandlerTest, FindOneByUniqueID)
 	{
 		auto id = repo::lib::RepoUUID("f6d60d2c-5e78-4725-86c1-05b2fcff44fa");
 		auto document = handler->findOneByUniqueID(db, col, id);
+		populateBinaryData(handler.get(), db, col, document);
 
 		EXPECT_THAT(document.getUUIDField("_id"), Eq(id));
 		EXPECT_THAT(document.getStringField("x"), Eq("document4"));
@@ -658,6 +699,7 @@ TEST(MongoDatabaseHandlerTest, FindOneByUniqueID)
 	{
 		auto id = "9ecbebbc-c24d-4da5-b69b-388abfcfe314";
 		auto document = handler->findOneByUniqueID(db, col, id);
+		populateBinaryData(handler.get(), db, col, document);
 
 		EXPECT_THAT(document.getStringField("_id"), Eq(id));
 		EXPECT_THAT(document.getStringField("x"), Eq("document6"));
@@ -887,6 +929,7 @@ TEST(MongoDatabaseHandlerTest, InsertManyDocumentsBinary)
 	// Read back the documents; this should also populate the binary buffers
 
 	auto actual = handler->getAllFromCollectionTailable(REPO_GTEST_DBNAME3, collection);
+	populateBinaryData(handler.get(), REPO_GTEST_DBNAME3, collection, actual);
 
 	// The original documents won't have the _blobRef document as this isn't
 	// created until inside the handler, so we convert both sets to RepoBSONs
