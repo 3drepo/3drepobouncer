@@ -22,7 +22,7 @@
 #include <test/src/unit/repo_test_mesh_utils.h>
 #include <repo/core/model/bson/repo_bson_factory.h>
 #include <repo/manipulator/modelutility/repo_scene_builder.h>
-#include <test/src/unit//repo_test_database_info.h>
+#include <test/src/unit/repo_test_database_info.h>
 
 using namespace repo::manipulator::modeloptimizer;
 using namespace repo::test::utils::mesh;
@@ -379,8 +379,6 @@ TEST(MultipartOptimizer, TestMultiplesMeshes)
 		projectName,
 		revId,
 		mockExporter.get()));
-
-	EXPECT_TRUE(false);
 }
 
 TEST(MultipartOptimizer, TestMultipleSmallAndLargeMeshes)
