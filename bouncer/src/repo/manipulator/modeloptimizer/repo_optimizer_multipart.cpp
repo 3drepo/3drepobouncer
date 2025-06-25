@@ -275,25 +275,22 @@ void MultipartOptimizer::traverseTransformTree(
 {
 
 	// Create stacks for the nodes and the matrices
-	std::stack<repo::core::model::RepoBSON> bsonStack;
-	std::stack<repo::lib::RepoMatrix> matStack;
+	std::stack<std::pair<repo::core::model::RepoBSON, repo::lib::RepoMatrix>> stack;
 
 	// Starting matrix
 	repo::lib::RepoMatrix identity;
 
-	// Push starting node and starting matrix on the respective stacks
-	bsonStack.push(root);
-	matStack.push(identity);
+	// Push starting node and starting matrix on the stack
+	stack.push({ root, identity });
 
 	// DFS traversal of the transformation tree, summing up the matrices along the way
-	while (!bsonStack.empty()) {
+	while (!stack.empty()) {
 
 		// Remove top node from the stack
-		auto topBson = bsonStack.top();
-		bsonStack.pop();
-		auto topMat = matStack.top();
-		matStack.pop();
-
+		auto top = stack.top();
+		auto topBson = top.first;		
+		auto topMat = top.second;
+		
 		// Get node information
 		auto nodeId = topBson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);
 		auto matrix = topBson.getMatrixField(REPO_NODE_LABEL_MATRIX);
@@ -305,8 +302,7 @@ void MultipartOptimizer::traverseTransformTree(
 			// If the node has children, push children on the stack
 			auto children = childNodeMap.at(nodeId);
 			for (auto child : children) {
-				bsonStack.push(child);
-				matStack.push(newMat);
+				stack.push({ child, newMat });
 			}
 		}
 		else {
