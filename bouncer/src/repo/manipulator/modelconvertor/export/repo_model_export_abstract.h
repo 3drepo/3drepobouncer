@@ -24,34 +24,93 @@
 #include <string>
 
 #include "../../../core/model/collection/repo_scene.h"
+#include <repo/core/model/bson/repo_bson_factory.h>
 
 namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
+
+			enum class ExportType { REPO };
+
 			class AbstractModelExport
 			{
 			public:
+
+				// Type used to pass in the callback for file export.
+				// This will be used by the exporter to send data to be
+				// written out as a file.
+				typedef std::function<void(
+					const std::string&,												// databaseName
+					const std::string&,												// id
+					const std::string&,												// collectionNamePrefix
+					const std::vector<uint8_t>&,									// bin
+					const std::unordered_map<std::string, repo::lib::RepoVariant>&,	// metadata
+					const repo::core::handler::fileservice::FileManager::Encoding&	// encoding
+					)> FileCallback;
+
+				// Type used to pass in the callback for database upsertion.
+				// This will be used by the exporter for database interactions.
+				typedef std::function<void(
+					const std::string&,					// database
+					const std::string&,					// collection
+					const repo::core::model::RepoBSON&,	// obj
+					const bool&							// overwrite
+					)> UpsertCallback;
+
+
 				/**
 				* Default Constructor, export model with default settings
-				*/
-				AbstractModelExport(const repo::core::model::RepoScene *scene);
+				*/				
+				AbstractModelExport(
+					const std::string databaseName,
+					const std::string projectName,
+					const repo::lib::RepoUUID revId,
+					const std::vector<double> worldOffset);
 
 				/**
 				* Default Deconstructor
 				*/
 				virtual ~AbstractModelExport();
+								
+				/**
+				* Exports supermesh to file and adds its information to the ongoing export process.
+				* @param a pointer to the supermesh
+				*/
+				virtual void addSupermesh(repo::core::model::SupermeshNode* supermesh) = 0;
 
 				/**
-				* Export a repo scene graph to file
-				* @param scene repo scene representation
-				* @param filePath path to destination file
-				* @return returns true upon success
+				* Finalises the export by writing out the metadata and mapping information collected
+				* during the ongoing export process.
 				*/
-				virtual bool exportToFile(
-					const std::string &filePath) = 0; //FIXME: this shoudl be const, but it requires quite a major refactoring on assimp export
+				virtual void Finalise() = 0;
+
+				/**
+				* Sets the callback for file operations used by the exporter.
+				* @param A callback to a method for writing out a file.
+				*/
+				void setFileCallback(FileCallback _fileCallback) {
+					fileCallback = _fileCallback;
+				}
+
+				/**
+				* Sets the callback for upsert operations used by the exporter.
+				* @param A callback to a method for upserting a document.
+				*/
+				void setUpsertCallback(UpsertCallback _upsertCallback) {
+					upsertCallback = _upsertCallback;
+				}
 
 			protected:
-				const repo::core::model::RepoScene *scene;
+
+				// Callbacks for file and database operations
+				FileCallback fileCallback;
+				UpsertCallback upsertCallback;
+
+				// Model info
+				std::string databaseName;
+				std::string projectName;
+				repo::lib::RepoUUID revId;
+				std::vector<double> worldOffset;
 			};
 		} //namespace modelconvertor
 	} //namespace manipulator

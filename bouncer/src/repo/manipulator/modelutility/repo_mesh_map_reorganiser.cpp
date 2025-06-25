@@ -142,7 +142,7 @@ MeshMapReorganiser::getSplitMapping() const {
 	return reMapSuccess ? splitMap : std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher>();
 }
 
-repo::core::model::SupermeshNode MeshMapReorganiser::getRemappedMesh() const
+std::unique_ptr<repo::core::model::SupermeshNode> MeshMapReorganiser::getRemappedMesh() const
 {
 	if (reMapSuccess)
 	{
@@ -153,7 +153,7 @@ repo::core::model::SupermeshNode MeshMapReorganiser::getRemappedMesh() const
 			newIds.insert(newIds.end(), buf.begin(), buf.end());
 		}
 
-		auto newMesh = repo::core::model::RepoBSONFactory::makeSupermeshNode(
+		return repo::core::model::RepoBSONFactory::makeSupermeshNode(
 			newVertices,
 			newFaces,
 			newNormals,
@@ -162,13 +162,11 @@ repo::core::model::SupermeshNode MeshMapReorganiser::getRemappedMesh() const
 			reMappedMappings,
 			mesh->getUniqueID(),
 			mesh->getSharedID(),
-			newIds);
-
-		return newMesh;
+			newIds);		
 	}
 	else
 	{
-		return repo::core::model::SupermeshNode();
+		return std::make_unique<repo::core::model::SupermeshNode>();
 	}
 }
 

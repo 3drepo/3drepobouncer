@@ -74,6 +74,10 @@
 #include <Attribute/NwURLAttribute.h>
 #include <NwDataProperty.h>
 
+#include <NwGiContext.h>
+#include <Gi/GiBaseVectorizer.h>
+#include <Gi/GiGeometrySimplifier.h>
+
 // boost
 #include <boost/tokenizer.hpp>
 #include <boost/lexical_cast.hpp>
@@ -88,12 +92,80 @@ static std::vector<std::string> ignoredKeys = { "Item::Source File Name" };
 static std::vector<std::string> keysForPathSanitation = { "Item::Source File", "Item::File Name" };
 static std::string sElementIdKey = "Element ID::Value";
 
+// The Vectorizer and Simplifier are used to tessellate objects that are not
+// stored as meshes in the Nwd, such as text.
+
+class Simplifier : public OdGiGeometrySimplifier
+{
+public:
+	virtual void triangleOut(const OdInt32* indices,
+		const OdGeVector3d* pNormal) override
+	{
+		auto vertices = (repo::lib::RepoVector3D64*)vertexDataList();
+		builder->addFace(
+			RepoMeshBuilder::face({
+			vertices[indices[0]],
+			vertices[indices[1]],
+			vertices[indices[2]]
+		},
+		*(repo::lib::RepoVector3D64*)pNormal
+		));
+	}
+
+	void setMeshBuilder(RepoMeshBuilder& builder)
+	{
+		this->builder = &builder;
+	}
+
+private:
+	RepoMeshBuilder* builder;
+};
+
+class OdVectorizer : protected OdGiBaseVectorizer
+{
+private:
+	OdGiContextForNwDatabasePtr pContext;
+	Simplifier simplifier;
+
+public:
+	ODRX_HEAP_OPERATORS();
+	virtual ~OdVectorizer() = default;
+
+	static OdSharedPtr<OdVectorizer> createObject(OdNwDatabasePtr pNwDb)
+	{
+		auto context = OdGiContextForNwDatabase::createObject();
+		context->setDatabase(pNwDb);
+		auto pThis = new OdStaticRxObject<OdVectorizer>;
+		pThis->setContext(context);
+		return pThis;
+	}
+
+	void setContext(OdGiContextForNwDatabasePtr context)
+	{
+		pContext = context; // context is a smart pointer so this member keeps it alive until we're done with it
+		OdGiBaseVectorizer::setContext(pContext);
+		m_pModelToEyeProc->setDrawContext(drawContext());
+		output().setDestGeometry(simplifier);
+		simplifier.setDrawContext(drawContext());
+	}
+
+	void draw(const OdGiDrawable* drawable, RepoMeshBuilder& builder)
+	{
+		simplifier.setMeshBuilder(builder);
+		OdGiBaseVectorizer::draw(drawable);
+	}
+};
+
+using OdVectorizerPtr = OdSharedPtr<OdVectorizer>;
+
 struct RepoNwTraversalContext {
 	OdNwModelItemPtr layer;
 	OdNwPartitionPtr partition;
-	repo::manipulator::modelutility::RepoSceneBuilder* sceneBuilder;
+	repo::manipulator::modelutility::RepoSceneBuilder* sceneBuilder = nullptr;
 	std::shared_ptr<repo::core::model::TransformationNode> parentNode;
 	std::unordered_map<std::string, repo::lib::RepoVariant> parentMetadata;
+	OdGeMatrix3d transform;
+	OdVectorizerPtr vectorizer;
 };
 
 repo::lib::RepoVector3D64 convertPoint(OdGePoint3d pnt, OdGeMatrix3d& transform)
@@ -576,6 +648,40 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 	}
 }
 
+void addTriangleData(
+	const OdNwVerticesDataPtr aVertexesData,
+	const OdNwTriangleIndexes* aTrianglesBegin,
+	const OdNwTriangleIndexes* aTrianglesEnd,
+	OdGeMatrix3d& transformMatrix,
+	RepoMeshBuilder& meshBuilder)
+{
+	const OdGePoint3dArray& aVertices = aVertexesData->getVertices();
+	const OdGeVector3dArray& aNormals = aVertexesData->getNormals();
+	const OdGePoint2dArray& aUvs = aVertexesData->getTexCoords();
+
+	for (auto triangle = aTrianglesBegin; triangle != aTrianglesEnd; triangle++)
+	{
+		RepoMeshBuilder::face face;
+
+		face.setVertices({
+			convertPoint(aVertices[triangle->pointIndex1], transformMatrix),
+			convertPoint(aVertices[triangle->pointIndex2], transformMatrix),
+			convertPoint(aVertices[triangle->pointIndex3], transformMatrix)
+			});
+
+		if (aUvs.length())
+		{
+			face.setUvs({
+				convertPoint(aUvs[triangle->pointIndex1]),
+				convertPoint(aUvs[triangle->pointIndex2]),
+				convertPoint(aUvs[triangle->pointIndex3])
+				});
+		}
+
+		meshBuilder.addFace(face);
+	}
+}
+
 OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 {
 	// OdNwComponent instances contain geometry in the form of a set of OdNwFragments.
@@ -611,7 +717,7 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 		if (!(*itFrag).isNull())
 		{
 			OdNwFragmentPtr pFrag = OdNwFragment::cast((*itFrag).safeOpenObject());
-			OdGeMatrix3d transformMatrix = pFrag->getTransformation();
+			OdGeMatrix3d transformMatrix = context.transform * pFrag->getTransformation();
 			OdNwObjectId geometryId = pFrag->getGeometryId(); // Returns an object ID of the base class OdNwGeometry object with geometry data.
 
 			if (geometryId.isNull() || !geometryId.isValid())
@@ -652,45 +758,35 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 				continue;
 			}
 
-			OdNwGeometryMeshPtr pGeometryMesh = OdNwGeometryMesh::cast(pFrag->getGeometryId().safeOpenObject());
+			OdNwGeometryMeshPtr pGeometryMesh = OdNwGeometryMesh::cast(pGeometry);
 			if (!pGeometryMesh.isNull())
 			{
-				const OdArray<OdNwTriangleIndexes>& aTriangles = pGeometryMesh->getTriangles();
-
-				if (pGeometryMesh->getIndices().length() && !aTriangles.length())
-				{
-					repoError << "Mesh " << convertToStdString(pNode->getDisplayName().c_str()) << " has indices but does not have a triangulation. Only triangulated meshes are supported.";
-				}
-
-				const OdNwVerticesDataPtr aVertexesData = pGeometryMesh->getVerticesData();
-
-				const OdGePoint3dArray& aVertices = aVertexesData->getVertices();
-				const OdGeVector3dArray& aNormals = aVertexesData->getNormals();
-				const OdGePoint2dArray& aUvs = aVertexesData->getTexCoords();
-
-				for (auto triangle = aTriangles.begin(); triangle != aTriangles.end(); triangle++)
-				{
-					RepoMeshBuilder::face face;
-
-					face.setVertices({
-						convertPoint(aVertices[triangle->pointIndex1], transformMatrix),
-						convertPoint(aVertices[triangle->pointIndex2], transformMatrix),
-						convertPoint(aVertices[triangle->pointIndex3], transformMatrix)
-					});
-
-					if (aUvs.length())
-					{
-						face.setUvs({
-							convertPoint(aUvs[triangle->pointIndex1]),
-							convertPoint(aUvs[triangle->pointIndex2]),
-							convertPoint(aUvs[triangle->pointIndex3])
-						});
-					}
-
-					meshBuilder.addFace(face);
-				}
-
+				auto triangles = pGeometryMesh->getTriangles();
+				auto vertices = pGeometryMesh->getVerticesData();
+				addTriangleData(vertices, triangles.begin(), triangles.end(), transformMatrix, meshBuilder);
 				continue;
+			}
+
+			OdNwGeometryEllipticalShapePtr pGeometryEllipse = OdNwGeometryEllipticalShape::cast(pGeometry);
+			if (!pGeometryEllipse.isNull())
+			{
+				auto shell = pGeometryEllipse->toShell(8);
+				addTriangleData(shell.first, shell.second.begin(), shell.second.end(), transformMatrix, meshBuilder);
+				continue;
+			}
+
+			OdNwGeometryCylinderPtr pGeometryCylinder = OdNwGeometryCylinder::cast(pGeometry);
+			if (!pGeometryCylinder.isNull())
+			{
+				auto shell = pGeometryCylinder->toShell(8);
+				addTriangleData(shell.first, shell.second.begin(), shell.second.end(), transformMatrix, meshBuilder);
+				continue;
+			}
+
+			OdNwGeometryTextPtr pGeometryText = OdNwGeometryText::cast(pGeometry);
+			if (!pGeometryText.isNull())
+			{
+				context.vectorizer->draw(pNode, meshBuilder);
 			}
 
 			// The full set of types that the OdNwGeometry could be are described
@@ -702,8 +798,8 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 	meshBuilder.extractMeshes(nodes);
 	for (auto& mesh : nodes)
 	{
+		mesh.setMaterial(meshBuilder.getMaterial());
 		context.sceneBuilder->addNode(mesh);
-		context.sceneBuilder->addMaterialReference(meshBuilder.getMaterial(), mesh.getSharedID());
 	}
 
 	return eOk;
@@ -858,17 +954,79 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 	return eOk;
 }
 
+// Given a Partition (a file linkage, in an NWF), get the transform that converts
+// from its local coordinate system to the 3DR Project Coordinate system.
+
+OdGeMatrix3d getPartitionTransform(OdNwPartitionPtr pPartition)
+{
+	auto y = pPartition->getUpVector();
+	if (y.isZeroLength()) {
+		y = OdGeVector3d::kZAxis; // 0,0,1 and 0,1,0 are the defaults for Up and North in Navis.
+	}
+
+	auto z = pPartition->getNorthVector();
+	if (z.isZeroLength()) {
+		z = OdGeVector3d::kYAxis;
+	}
+
+	auto x = z.crossProduct(y);
+
+	// As a reminder, the Project/3DR coordinate system conventions are:
+	// +Y -> North
+	// +X -> East
+	// +Z -> Elevation
+
+	return OdGeMatrix3d::alignCoordSys(
+		OdGePoint3d::kOrigin,
+		x,
+		y,
+		z,
+		OdGePoint3d::kOrigin,
+		OdGeVector3d::kXAxis,
+		OdGeVector3d::kZAxis,
+		OdGeVector3d::kYAxis
+	);
+}
+
 void DataProcessorNwd::process(OdNwDatabasePtr pNwDb)
 {
-	OdNwObjectId modelItemRootId = pNwDb->getModelItemRootId();
-	if (!modelItemRootId.isNull())
+	repo::lib::RepoBounds bounds;
+
+	OdNwObjectIdArray models;
+	pNwDb->getModels(models);
+	for (auto& model : models)
 	{
-		OdNwModelItemPtr pModelItemRoot = OdNwModelItem::cast(modelItemRootId.safeOpenObject());
-		RepoNwTraversalContext context;
-		context.sceneBuilder = this->builder;
-		context.sceneBuilder->setWorldOffset(toRepoVector(pModelItemRoot->getBoundingBox().minPoint()));
+		OdNwModelPtr pModel = model.safeOpenObject();
+		OdNwModelItemPtr pModelItemRoot = pModel->getRootItem().safeOpenObject();
+
+		// The world-offset is applied in processGeometry after conversion to project
+		// coordinates, so the bounds must also be calculated in project coordinates
+
+		auto b = pModelItemRoot->getBoundingBox();
+		b.transformBy(getPartitionTransform(OdNwPartition::cast(pModelItemRoot)));
+		bounds.encapsulate(toRepoBounds(b));
+	}
+
+	RepoNwTraversalContext context;
+	context.sceneBuilder = this->builder;
+	context.sceneBuilder->setWorldOffset(bounds.min());
+	context.vectorizer = OdVectorizer::createObject(pNwDb);
+	context.parentNode = context.sceneBuilder->addNode(RepoBSONFactory::makeTransformationNode({}, "rootNode"));
+
+	for (auto& model : models)
+	{
+		OdNwModelPtr pModel = model.safeOpenObject();
+		OdNwModelItemPtr pModelItemRoot = pModel->getRootItem().safeOpenObject();
 		context.layer = pModelItemRoot;
-		context.parentNode = context.sceneBuilder->addNode(RepoBSONFactory::makeTransformationNode({}, "rootNode"));
+
+		// Each linked file (Model) can have its own World Orientation and Units and
+		// Transformations set. In practice though, when saving an NWD/NWC (the only
+		// files we support), Navis introduces a root node for the new NWD itself,
+		// and bakes the federation under it, so we only ever really have the World
+		// Orientation to worry about.
+
+		OdNwPartitionPtr pPartition = OdNwPartition::cast(pModelItemRoot);
+		context.transform = getPartitionTransform(pPartition);
 
 		traverseSceneGraph(pModelItemRoot, context);
 	}

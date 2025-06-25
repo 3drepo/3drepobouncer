@@ -24,8 +24,14 @@
 using namespace repo::manipulator::modelconvertor;
 
 AbstractModelExport::AbstractModelExport(
-	const repo::core::model::RepoScene *scene)
-	: scene(scene)
+	const std::string databaseName,
+	const std::string projectName,
+	const repo::lib::RepoUUID revId,
+	const std::vector<double> worldOffset)
+	: databaseName(databaseName),
+	projectName(projectName),
+	revId(revId),
+	worldOffset(worldOffset)
 {
 }
 

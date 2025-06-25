@@ -55,6 +55,11 @@ matrix:
           - cd  testData/bouncer/data/database/
           - mongorestore -u "testUser" -p "3drepotest" --authenticationDatabase admin --quiet
           - cd ../../../../
+          - echo ========= INSTALL WINDOWS FONTS =========
+          - sudo apt-get install -y --no-install-recommends software-properties-common
+          - echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | sudo debconf-set-selections
+          - sudo apt-get install -y ttf-mscorefonts-installer fontconfig
+          - sudo fc-cache -f -v
           - echo ============ BOOST  INSTALL =============
           - sudo apt-get install libboost-all-dev
           - echo ============ MONGO  INSTALL =============

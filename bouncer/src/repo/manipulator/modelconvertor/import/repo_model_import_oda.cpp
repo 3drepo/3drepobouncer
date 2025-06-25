@@ -48,37 +48,7 @@ bool OdaModelImport::isSupportedExts(const std::string &testExt)
 	return supportedExtensions.find(lowerExt) != std::string::npos;
 }
 
-repo::core::model::RepoScene* OdaModelImport::generateRepoScene(uint8_t &errMsg)
-{
-	// RepoSceneBuilder has already populated the collection with nodes having a
-	// fixed revision id. This method creates a RepoScene instance that sits
-	// those nodes to finalise the import.
-
-	#ifdef ODA_SUPPORT
-		repoInfo << "Initialising Repo Scene...";
-
-		this->modelUnits = sceneBuilder->getUnits();
-
-		repo::core::model::RepoScene* scene = new repo::core::model::RepoScene(
-			settings.getDatabaseName(),
-			settings.getProjectName()
-		);
-		scene->setRevision(settings.getRevisionId());
-		scene->setOriginalFiles({ filePath });
-		scene->loadRootNode(handler.get());
-		scene->setWorldOffset(sceneBuilder->getWorldOffset());
-		if (sceneBuilder->hasMissingTextures()) {
-			scene->setMissingTexture();
-		}
-
-		return scene;
-
-	#else
-		throw repo::lib::RepoImporterUnavailable("ODA support has not been compiled in. Please rebuild with ODA_SUPPORT ON", REPOERR_ODA_UNAVAILABLE);
-	#endif
-}
-
-bool OdaModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err)
+repo::core::model::RepoScene* OdaModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err)
 {
 #ifdef ODA_SUPPORT
 	this->filePath = filePath;
@@ -90,7 +60,7 @@ bool OdaModelImport::importModel(std::string filePath, std::shared_ptr<repo::cor
 		settings.getProjectName(),
 		settings.getRevisionId()
 	);
-	sceneBuilder->createIndexes();
+	sceneBuilder->createIndexes(false);
 
 	odaProcessor = odaHelper::FileProcessor::getFileProcessor(filePath, sceneBuilder.get(), settings);
 	auto result = odaProcessor->readFile();
@@ -101,7 +71,23 @@ bool OdaModelImport::importModel(std::string filePath, std::shared_ptr<repo::cor
 
 	sceneBuilder->finalise();
 
-	return true;
+	repoInfo << "Initialising Repo Scene...";
+
+	this->modelUnits = sceneBuilder->getUnits();
+
+	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene(
+		settings.getDatabaseName(),
+		settings.getProjectName()
+	);
+	scene->setRevision(settings.getRevisionId());
+	scene->setOriginalFiles({ filePath });
+	scene->loadRootNode(handler.get());
+	scene->setWorldOffset(sceneBuilder->getWorldOffset());
+	if (sceneBuilder->hasMissingTextures()) {
+		scene->setMissingTexture();
+	}
+
+	return scene;
 #else
 	throw repo::lib::RepoImporterUnavailable("ODA support has not been compiled in. Please rebuild with ODA_SUPPORT ON", REPOERR_ODA_UNAVAILABLE);
 #endif

@@ -197,9 +197,19 @@ repo::core::model::RepoRefT<repo::lib::RepoUUID> FileManager::getFileRef(
 
 template<typename IdType>
 std::vector<uint8_t> FileManager::getFile(
+	const std::string& databaseName,
+	const std::string& collectionNamePrefix,
+	const IdType& fileName
+) {
+	return getFile(databaseName, collectionNamePrefix, fileName, Encoding::None);
+}
+
+template<typename IdType>
+std::vector<uint8_t> FileManager::getFile(
 	const std::string                            &databaseName,
 	const std::string                            &collectionNamePrefix,
-	const IdType                                 &fileName
+	const IdType                                 &fileName,
+	const Encoding								 &encoding
 ) {
 	std::vector<uint8_t> file;
 	auto ref = getFileRef(databaseName, collectionNamePrefix, fileName);
@@ -211,6 +221,27 @@ std::vector<uint8_t> FileManager::getFile(
 	{
 		repoTrace << "Getting file (" << keyName << ") from FS";
 		file = fsHandler->getFile(databaseName, collectionNamePrefix, keyName);
+
+		switch (encoding) {
+		case Encoding::Gzip:
+			// Use stringstream as a binary container to hold the uncompressed data
+			std::ostringstream uncompressedstream;
+
+			// Bufferstream operates directly over the user provided array
+			boost::interprocess::bufferstream compressed((char*)file.data(), file.size());
+
+			// In stream form for filtering_istream
+			std::istream compressedStream(compressed.rdbuf());
+
+			boost::iostreams::filtering_istream in;
+			in.push(boost::iostreams::gzip_decompressor());
+			in.push(compressedStream); // For some reason bufferstream is ambigous between stream and streambuf, so wrap it unambiguously
+
+			boost::iostreams::copy(in, uncompressedstream);
+
+			auto uncompresseddata = uncompressedstream.str();
+			file = std::vector<uint8_t>(uncompresseddata.begin(), uncompresseddata.end());
+		}
 	}
 	break;
 	default:
@@ -224,6 +255,8 @@ std::vector<uint8_t> FileManager::getFile(
 
 template std::vector<uint8_t> FileManager::getFile(const std::string&, const std::string&, const std::string&);
 template std::vector<uint8_t> FileManager::getFile(const std::string&, const std::string&, const repo::lib::RepoUUID&);
+template std::vector<uint8_t> FileManager::getFile(const std::string&, const std::string&, const std::string&, const Encoding&);
+template std::vector<uint8_t> FileManager::getFile(const std::string&, const std::string&, const repo::lib::RepoUUID&, const Encoding&);
 
 /**
  * Get the file base on the the ref entry in database

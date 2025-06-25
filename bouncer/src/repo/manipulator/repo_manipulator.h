@@ -28,7 +28,7 @@
 #include "../core/model/bson/repo_node_mesh.h"
 #include "../core/model/collection/repo_scene.h"
 #include "../lib/repo_config.h"
-#include "modelconvertor/export/repo_model_export_web.h"
+#include "modelconvertor/export/repo_model_export_abstract.h"
 #include "modelconvertor/import/repo_model_import_config.h"
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_abstract.h"
 
@@ -121,8 +121,7 @@ namespace repo {
 			*/
 			bool generateAndCommitWebViewBuffer(
 				repo::core::model::RepoScene          *scene,
-				repo::lib::repo_web_buffers_t         &buffers,
-				const modelconvertor::WebExportType   &exType);
+				const modelconvertor::ExportType   &exType);
 
 			/**
 			* Generate and commit RepoBundles for the given scene
@@ -132,16 +131,6 @@ namespace repo {
 
 			bool generateAndCommitRepoBundlesBuffer(
 				repo::core::model::RepoScene* scene);
-
-			/**
-			* Generate a stash graph for the given scene and populate it
-			* into the given scene
-			* @param scene scene to generate stash graph for
-			* @return returns true upon success
-			*/
-			bool generateStashGraph(
-				repo::core::model::RepoScene              *scene
-			);
 
 			/**
 			* Retrieve documents from a specified collection

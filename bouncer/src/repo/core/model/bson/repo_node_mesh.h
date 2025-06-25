@@ -126,13 +126,21 @@ namespace repo {
 				}
 
 			protected:
-				std::string grouping;
 				MeshNode::Primitive primitive;
 				repo::lib::RepoBounds boundingBox;
 				std::vector<repo::lib::repo_face_t> faces;
 				std::vector<repo::lib::RepoVector3D> vertices;
 				std::vector<repo::lib::RepoVector3D> normals;
 				std::vector<std::vector<repo::lib::RepoVector2D>> channels;
+
+				// Filters for supermeshing
+				std::string grouping;
+				bool isOpaque = false;
+				bool isTransparent = false;
+				repo::lib::RepoUUID textureId;
+
+				// Material struct
+				repo::lib::repo_material_t material;
 
 			public:
 				/**
@@ -182,6 +190,22 @@ namespace repo {
 				void setGrouping(const std::string& grouping)
 				{
 					this->grouping = grouping;
+				}
+
+				void setMaterial(const repo::lib::repo_material_t& m) {
+					this->material = m;
+
+					// Set filter flags from material properties
+					this->isOpaque = (m.opacity == 1.f);
+					this->isTransparent = !(this->isOpaque);
+				}
+
+				const repo::lib::repo_material_t& getMaterial() {
+					return material;
+				}
+
+				void setTextureId(const repo::lib::RepoUUID textureId) {
+					this->textureId = textureId;
 				}
 
 				/**
