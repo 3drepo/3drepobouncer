@@ -82,7 +82,7 @@ namespace repo{
 				* Finalises the export by writing out the metadata and mapping information collected
 				* during the ongoing export process.
 				*/
-				virtual void Finalise() = 0;
+				virtual void finalise() = 0;
 
 				/**
 				* Sets the callback for file operations used by the exporter.

@@ -207,7 +207,7 @@ bool MultipartOptimizer::processScene(
 	}
 
 	// Finalise export
-	exporter->Finalise();
+	exporter->finalise();
 
 	return true;
 }
