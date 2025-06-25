@@ -369,7 +369,7 @@ MultipartOptimizer::MaterialPropMap MultipartOptimizer::getAllMaterials(
 	return matMap;
 }
 
-std::vector<std::string> MultipartOptimizer::getAllGroupings(
+std::set<std::string> MultipartOptimizer::getAllGroupings(
 	repo::core::handler::AbstractDatabaseHandler* handler,
 	const std::string& database,
 	const std::string& collection,
@@ -385,7 +385,7 @@ std::vector<std::string> MultipartOptimizer::getAllGroupings(
 	projection.excludeField(REPO_NODE_LABEL_ID);
 	projection.includeField(REPO_NODE_MESH_LABEL_GROUPING);
 
-	std::vector<std::string> groupings;
+	std::set<std::string> groupings;
 
 	auto sceneCollection = collection + "." + REPO_COLLECTION_SCENE;
 	auto cursor = handler->findCursorByCriteria(database, sceneCollection, filter, projection);
@@ -393,7 +393,7 @@ std::vector<std::string> MultipartOptimizer::getAllGroupings(
 	if (cursor) {
 		for (auto document : (*cursor)) {
 			auto bson = repo::core::model::RepoBSON(document);
-			groupings.push_back(bson.getStringField(REPO_NODE_MESH_LABEL_GROUPING));
+			groupings.insert(bson.getStringField(REPO_NODE_MESH_LABEL_GROUPING));
 		}
 	}
 	else {
@@ -402,7 +402,7 @@ std::vector<std::string> MultipartOptimizer::getAllGroupings(
 
 	// If we found no groupings, then we have just one pass without so we add "".
 	if (groupings.size() == 0)
-		groupings.push_back("");
+		groupings.insert("");
 
 	return groupings;
 }

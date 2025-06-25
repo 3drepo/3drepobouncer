@@ -404,7 +404,7 @@ namespace repo {
 					const repo::lib::RepoUUID &revId
 				);
 
-				std::vector<std::string> getAllGroupings(
+				std::set<std::string> getAllGroupings(
 					repo::core::handler::AbstractDatabaseHandler* handler,
 					const std::string& database,
 					const std::string& collection,
