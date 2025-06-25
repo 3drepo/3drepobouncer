@@ -45,8 +45,6 @@
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/json.hpp>
 
-#include <chrono>
-
 using namespace repo::core::handler;
 using namespace repo::core::handler::fileservice;
 using namespace repo::core::handler::database;
@@ -916,7 +914,7 @@ std::unique_ptr<Cursor> repo::core::handler::MongoDatabaseHandler::findCursorByC
 	const std::string& database,
 	const std::string& collection,
 	const database::query::RepoQuery& criteria)
-{
+{	
 	return findCursorByCriteria(database, collection, criteria, database::query::RepoProjectionBuilder{});
 }
 
