@@ -463,8 +463,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 	const database::query::RepoQuery& filter,
 	const bool loadBinaries/* = false*/) {
 
-	auto projection = database::query::RepoProjectionBuilder();
-	return findAllByCriteria(database, collection, filter, projection, loadBinaries);
+	return findAllByCriteria(database, collection, filter, database::query::RepoProjectionBuilder{}, loadBinaries);
 }
 
 std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria(
@@ -918,8 +917,7 @@ std::unique_ptr<Cursor> repo::core::handler::MongoDatabaseHandler::findCursorByC
 	const std::string& collection,
 	const database::query::RepoQuery& criteria)
 {
-	auto projection = database::query::RepoProjectionBuilder();
-	return findCursorByCriteria(database, collection, criteria, projection);
+	return findCursorByCriteria(database, collection, criteria, database::query::RepoProjectionBuilder{});
 }
 
 std::unique_ptr<Cursor> repo::core::handler::MongoDatabaseHandler::findCursorByCriteria(
