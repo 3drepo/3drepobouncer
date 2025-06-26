@@ -49,13 +49,15 @@ void MeshNode::deserialise(RepoBSON& bson)
 		grouping = bson.getStringField(REPO_NODE_MESH_LABEL_GROUPING);
 
 	if (bson.hasField(REPO_FILTER_TAG_OPAQUE))
-		isOpaque = bson.getBoolField(REPO_FILTER_TAG_OPAQUE);
+		matProps = MaterialProperties::OPAQUEMAT;
 
 	if (bson.hasField(REPO_FILTER_TAG_TRANSPARENT))
-		isTransparent = bson.getBoolField(REPO_FILTER_TAG_TRANSPARENT);
+		matProps = MaterialProperties::TRANSPARENTMAT;
 
-	if (bson.hasField(REPO_FILTER_TAG_TEXTURE_ID))
+	if (bson.hasField(REPO_FILTER_TAG_TEXTURE_ID)) {
+		matProps = MaterialProperties::TEXTUREDMAT;
 		textureId = bson.getUUIDField(REPO_FILTER_TAG_TEXTURE_ID);
+	}
 
 	primitive = MeshNode::Primitive::TRIANGLES;
 	if (bson.hasField(REPO_NODE_MESH_LABEL_PRIMITIVE))
@@ -224,25 +226,27 @@ void appendUVChannels(RepoBSONBuilder& builder, size_t numChannels, const std::v
 void appendFilterTags(
 	RepoBSONBuilder& builder,
 	std::string grouping,
-	bool isOpaque,
-	bool isTransparent,
+	MeshNode::MaterialProperties matProps,
 	repo::lib::RepoUUID textureId)
 {
 	if (!grouping.empty())
 		builder.append(REPO_NODE_MESH_LABEL_GROUPING, grouping);
 
-	if (!textureId.isDefaultValue() || isOpaque || isTransparent) {
-		RepoBSONBuilder matProps;
-
-		if (!textureId.isDefaultValue())
-			matProps.append(REPO_FILTER_PROP_TEXTURE_ID, textureId);
-		else if (isOpaque) // The flags only exist when they are true
-			matProps.append(REPO_FILTER_PROP_OPAQUE, true);
-		else if (isTransparent) // The flags only exist when they are true
-			matProps.append(REPO_FILTER_PROP_TRANSPARENT, true);
-
-		builder.append(REPO_FILTER_OBJECT_NAME, matProps.obj());
+	RepoBSONBuilder matPropsBson;
+	switch (matProps) {
+	case MeshNode::MaterialProperties::OPAQUEMAT:
+		matPropsBson.append(REPO_FILTER_PROP_OPAQUE, true);
+		break;
+	case MeshNode::MaterialProperties::TRANSPARENTMAT:
+		matPropsBson.append(REPO_FILTER_PROP_TRANSPARENT, true);
+		break;
+	case MeshNode::MaterialProperties::TEXTUREDMAT:
+		matPropsBson.append(REPO_FILTER_PROP_TEXTURE_ID, textureId);
+	default:
+		repoWarning << "MeshNode is getting serialised without having filter tags set. This node will be ignored during processing";
 	}
+		
+	builder.append(REPO_FILTER_OBJECT_NAME, matPropsBson.obj());
 }
 
 void MeshNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
@@ -253,7 +257,7 @@ void MeshNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 	appendFaces(builder, faces);
 	appendNormals(builder, normals);
 	appendUVChannels(builder, channels.size(), getUVChannelsSerialised());
-	appendFilterTags(builder, grouping, isOpaque, isTransparent, textureId);	
+	appendFilterTags(builder, grouping, matProps, textureId);	
 }
 
 std::vector<repo::lib::RepoVector2D> MeshNode::getUVChannelsSerialised() const

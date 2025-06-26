@@ -75,6 +75,13 @@ namespace repo {
 					QUADS = 4
 				};
 
+				enum class MaterialProperties {
+					UNSET = 0,
+					OPAQUEMAT = 1,
+					TRANSPARENTMAT = 2,
+					TEXTUREDMAT = 3
+				};
+
 				/**
 				* Default constructor
 				*/
@@ -135,8 +142,7 @@ namespace repo {
 
 				// Filters for supermeshing
 				std::string grouping;
-				bool isOpaque = false;
-				bool isTransparent = false;
+				MaterialProperties matProps;
 				repo::lib::RepoUUID textureId;
 
 				// Material struct
@@ -196,8 +202,12 @@ namespace repo {
 					this->material = m;
 
 					// Set filter flags from material properties
-					this->isOpaque = (m.opacity == 1.f);
-					this->isTransparent = !(this->isOpaque);
+					if (m.opacity == 1.f) {
+						this->matProps = MaterialProperties::OPAQUEMAT;
+					}
+					else {
+						this->matProps = MaterialProperties::TRANSPARENTMAT;
+					}
 				}
 
 				const repo::lib::repo_material_t& getMaterial() {
@@ -205,6 +215,7 @@ namespace repo {
 				}
 
 				void setTextureId(const repo::lib::RepoUUID textureId) {
+					this->matProps = MaterialProperties::TEXTUREDMAT;
 					this->textureId = textureId;
 				}
 
