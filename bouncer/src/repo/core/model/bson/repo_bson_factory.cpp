@@ -101,7 +101,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 	return node;
 }
 
-SupermeshNode RepoBSONFactory::makeSupermeshNode(
+std::unique_ptr<SupermeshNode> RepoBSONFactory::makeSupermeshNode(
 	const std::vector<repo::lib::RepoVector3D>& vertices,
 	const std::vector<repo::lib::repo_face_t>& faces,
 	const std::vector<repo::lib::RepoVector3D>& normals,
@@ -111,21 +111,21 @@ SupermeshNode RepoBSONFactory::makeSupermeshNode(
 	const std::vector<repo::lib::repo_mesh_mapping_t>& mappings
 )
 {
-	SupermeshNode node;
-	node.setVertices(vertices);
-	node.setFaces(faces);
-	node.setNormals(normals);
-	node.setBoundingBox(boundingBox);
+	auto node = std::make_unique<SupermeshNode>();
+	node->setVertices(vertices);
+	node->setFaces(faces);
+	node->setNormals(normals);
+	node->setBoundingBox(boundingBox);
 	for (size_t i = 0; i < uvChannels.size(); i++)
 	{
-		node.setUVChannel(i, uvChannels[i]);
+		node->setUVChannel(i, uvChannels[i]);
 	}
-	node.changeName(name, true);
-	node.setMeshMapping(mappings);
+	node->changeName(name, true);
+	node->setMeshMapping(mappings);
 	return node;
 }
 
-SupermeshNode RepoBSONFactory::makeSupermeshNode(
+std::unique_ptr<SupermeshNode> RepoBSONFactory::makeSupermeshNode(
 	const std::vector<repo::lib::RepoVector3D>& vertices,
 	const std::vector<repo::lib::repo_face_t>& faces,
 	const std::vector<repo::lib::RepoVector3D>& normals,
@@ -137,19 +137,19 @@ SupermeshNode RepoBSONFactory::makeSupermeshNode(
 	const std::vector<float> mappingIds
 )
 {
-	SupermeshNode node;
-	node.setVertices(vertices);
-	node.setFaces(faces);
-	node.setNormals(normals);
-	node.setBoundingBox(boundingBox);
+	auto node = std::make_unique<SupermeshNode>();
+	node->setVertices(vertices);
+	node->setFaces(faces);
+	node->setNormals(normals);
+	node->setBoundingBox(boundingBox);
 	for (size_t i = 0; i < uvChannels.size(); i++)
 	{
-		node.setUVChannel(i, uvChannels[i]);
+		node->setUVChannel(i, uvChannels[i]);
 	}
-	node.setUniqueID(id);
-	node.setSharedID(id);
-	node.setMeshMapping(mappings);
-	node.setSubmeshIds(mappingIds);
+	node->setUniqueID(id);
+	node->setSharedID(id);
+	node->setMeshMapping(mappings);
+	node->setSubmeshIds(mappingIds);
 	return node;
 }
 

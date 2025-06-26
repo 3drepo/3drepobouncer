@@ -171,7 +171,7 @@ namespace repo {
 					const std::string& name = std::string(),
 					const std::vector<repo::lib::RepoUUID>& parents = {});
 
-				static SupermeshNode makeSupermeshNode(
+				static std::unique_ptr<SupermeshNode> makeSupermeshNode(
 					const std::vector<repo::lib::RepoVector3D>& vertices,
 					const std::vector<repo::lib::repo_face_t>& faces,
 					const std::vector<repo::lib::RepoVector3D>& normals,
@@ -181,7 +181,7 @@ namespace repo {
 					const std::vector<repo::lib::repo_mesh_mapping_t>& mappings
 				);
 
-				static SupermeshNode makeSupermeshNode(
+				static std::unique_ptr<SupermeshNode> makeSupermeshNode(
 					const std::vector<repo::lib::RepoVector3D>& vertices,
 					const std::vector<repo::lib::repo_face_t>& faces,
 					const std::vector<repo::lib::RepoVector3D>& normals,

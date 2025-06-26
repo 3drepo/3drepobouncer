@@ -73,7 +73,7 @@ namespace repo {
 				* Get the mesh, with mesh mappings and buffers modified
 				* @return returns the modified mesh
 				*/
-				repo::core::model::SupermeshNode getRemappedMesh() const;
+				std::unique_ptr<repo::core::model::SupermeshNode> getRemappedMesh() const;
 
 				/**
 				* Return serialised faces of the modified mesh

@@ -18,7 +18,7 @@
 #include "../../core/model/collection/repo_scene.h"
 #include "../../core/handler/repo_database_handler_abstract.h"
 #include "../../core/handler/fileservice/repo_file_manager.h"
-#include "../modelconvertor/export/repo_model_export_web.h"
+#include "../modelconvertor/export/repo_model_export_abstract.h"
 
 namespace repo {
 	namespace manipulator {
@@ -29,30 +29,14 @@ namespace repo {
 				SceneManager() {}
 				~SceneManager() {}
 
-				/**
-				* Commit web buffers
-				* @param scene repo scene related to repo scene
-				* @param geoStashExt geometry stash extension
-				* @param resultBuffers buffers to write
-				* @param hander mongo handler
-				* @param addTimestampToSettings whether we should be adding timestamp to settings upon success
-				*/
-				bool commitWebBuffers(
-					repo::core::model::RepoScene                          *scene,
-					const std::string                                     &geoStashExt,
-					const repo::lib::repo_web_buffers_t                   &resultBuffers,
-					repo::core::handler::AbstractDatabaseHandler          *handler,
-					repo::core::handler::fileservice::FileManager         *fileManager
-				);
-
 				uint8_t commitScene(
-					repo::core::model::RepoScene                          *scene,
-					const std::string									  &owner,
-					const std::string									  &tag,
-					const std::string									  &desc,
-					const repo::lib::RepoUUID                             &revId,
-					repo::core::handler::AbstractDatabaseHandler          *handler,
-					repo::core::handler::fileservice::FileManager         *fileManager
+					repo::core::model::RepoScene									*scene,
+					const std::string												&owner,
+					const std::string												&tag,
+					const std::string												&desc,
+					const repo::lib::RepoUUID										&revId,
+					repo::core::handler::AbstractDatabaseHandler					*handler,
+					repo::core::handler::fileservice::FileManager					*fileManager
 				);
 
 				/**
@@ -66,7 +50,7 @@ namespace repo {
 				* @return returns a pointer to a repoScene.
 				*/
 				repo::core::model::RepoScene* fetchScene(
-					repo::core::handler::AbstractDatabaseHandler *handler,
+					repo::core::handler::AbstractDatabaseHandler  *handler,
 					const std::string                             &database,
 					const std::string                             &project,
 					const repo::lib::RepoUUID                     &uuid,
@@ -76,7 +60,7 @@ namespace repo {
 					const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus = {});
 
 				repo::core::model::RepoScene* fetchScene(
-					repo::core::handler::AbstractDatabaseHandler *handler,
+					repo::core::handler::AbstractDatabaseHandler  *handler,
 					const std::string                             &database,
 					const std::string                             &project,
 					const bool                             &ignoreRefScene = false,
@@ -104,22 +88,10 @@ namespace repo {
 				* @return return true upon success
 				*/
 				bool generateAndCommitSelectionTree(
-					repo::core::model::RepoScene                          *scene,
-					repo::core::handler::AbstractDatabaseHandler          *handler,
-					repo::core::handler::fileservice::FileManager         *fileManager
+					repo::core::model::RepoScene										*scene,
+					repo::core::handler::AbstractDatabaseHandler						*handler,
+					repo::core::handler::fileservice::FileManager						*fileManager
 				);
-
-				/**
-				* Generate a stash graph for the given scene and populate it
-				* into the given scene
-				* If a databasehandler is given and the scene is revisioned,
-				* it will commit the stash to database
-				* @param scene scene to generate stash graph for
-				* @param handler hander to the database
-				* @return returns true upon success
-				*/
-				bool generateStashGraph(
-					repo::core::model::RepoScene *scene);
 
 				/**
 				* Check if the scene is VR enabled
@@ -130,8 +102,8 @@ namespace repo {
 				* @return returns true if VR is enabled
 				*/
 				bool isVrEnabled(
-					const repo::core::model::RepoScene                 *scene,
-					repo::core::handler::AbstractDatabaseHandler *handler) const;
+					const repo::core::model::RepoScene					*scene,
+					repo::core::handler::AbstractDatabaseHandler		*handler) const;
 
 				/**
 				* Generate a `exType` encoding for the given scene
@@ -143,11 +115,9 @@ namespace repo {
 				* @return returns repo_web_buffers upon success
 				*/
 				bool generateWebViewBuffers(
-					repo::core::model::RepoScene                           *scene,
-					const repo::manipulator::modelconvertor::WebExportType &exType,
-					repo::lib::repo_web_buffers_t                          &resultBuffers,
-					repo::core::handler::AbstractDatabaseHandler           *handler = nullptr,
-					repo::core::handler::fileservice::FileManager         *fileManager = nullptr);
+					repo::core::model::RepoScene									*scene,
+					const repo::manipulator::modelconvertor::ExportType				&exType,
+					repo::core::handler::AbstractDatabaseHandler					*handler = nullptr);
 
 				/**
 				* Remove stash graph entry for the given scene

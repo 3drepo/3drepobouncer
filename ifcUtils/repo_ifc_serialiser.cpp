@@ -1043,9 +1043,9 @@ void IfcSerialiser::import(const IfcGeom::TriangulationElement* triangulation)
 		);
 		mesh.applyTransformation(matrix);
 		mesh.updateBoundingBox();
+		mesh.setMaterial(resolveMaterial(materials[pair.first]));
 		builder->addNode(mesh);
-		builder->addMaterialReference(resolveMaterial(materials[pair.first]), mesh.getSharedID());
-
+		
 		if (metaNode) {
 			metaNode->addParent(mesh.getSharedID());
 		}

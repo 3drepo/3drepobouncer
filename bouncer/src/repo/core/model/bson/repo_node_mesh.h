@@ -75,6 +75,13 @@ namespace repo {
 					QUADS = 4
 				};
 
+				enum class MaterialProperties {
+					UNSET = 0,
+					OPAQUEMAT = 1,
+					TRANSPARENTMAT = 2,
+					TEXTUREDMAT = 3
+				};
+
 				/**
 				* Default constructor
 				*/
@@ -126,13 +133,20 @@ namespace repo {
 				}
 
 			protected:
-				std::string grouping;
 				MeshNode::Primitive primitive;
 				repo::lib::RepoBounds boundingBox;
 				std::vector<repo::lib::repo_face_t> faces;
 				std::vector<repo::lib::RepoVector3D> vertices;
 				std::vector<repo::lib::RepoVector3D> normals;
 				std::vector<std::vector<repo::lib::RepoVector2D>> channels;
+
+				// Filters for supermeshing
+				std::string grouping;
+				MaterialProperties matProps;
+				repo::lib::RepoUUID textureId;
+
+				// Material struct
+				repo::lib::repo_material_t material;
 
 			public:
 				/**
@@ -182,6 +196,27 @@ namespace repo {
 				void setGrouping(const std::string& grouping)
 				{
 					this->grouping = grouping;
+				}
+
+				void setMaterial(const repo::lib::repo_material_t& m) {
+					this->material = m;
+
+					// Set filter flags from material properties
+					if (m.opacity == 1.f) {
+						this->matProps = MaterialProperties::OPAQUEMAT;
+					}
+					else {
+						this->matProps = MaterialProperties::TRANSPARENTMAT;
+					}
+				}
+
+				const repo::lib::repo_material_t& getMaterial() {
+					return material;
+				}
+
+				void setTextureId(const repo::lib::RepoUUID textureId) {
+					this->matProps = MaterialProperties::TEXTUREDMAT;
+					this->textureId = textureId;
 				}
 
 				/**
