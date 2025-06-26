@@ -51,7 +51,7 @@ static const size_t REPO_MODEL_LOW_CLUSTERING_RATIO = 0.2f;
 bool MultipartOptimizer::processScene(
 	std::string database,
 	std::string collection,
-	repo::lib::RepoUUID revId,	
+	repo::lib::RepoUUID revId,
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	repo::manipulator::modelconvertor::AbstractModelExport* exporter)
 {
@@ -74,7 +74,7 @@ bool MultipartOptimizer::processScene(
 				encoding
 			);
 		});
-	
+
 	// Set document upsert callback via std::function and lambdas
 	exporter->setUpsertCallback([&](
 		const std::string& database,
@@ -103,107 +103,70 @@ bool MultipartOptimizer::processScene(
 	auto groupings = getAllGroupings(handler, database, collection, revId);
 	repoInfo << "Found " << groupings.size() << " groupings";
 
+	// Create jobs
+	repoInfo << "Creating Processing Jobs";
+	std::vector<ProcessingJob> jobs;
 	for (auto grouping : groupings) {
 
-		// Process Group (Opaque, prim 2)
-		repoInfo << "Process Group - Opaque, Primitive 2";
-		processUntexturedGroup(
-			database,
-			collection,
-			revId,
-			handler,
-			exporter,
-			transformMap,
-			matPropMap,
-			true,
-			2,
-			grouping
-		);
-
-		// Process Group (Opaque, prim 3)
-		repoInfo << "Process Group - Opaque, Primitive 3";
-		processUntexturedGroup(
-			database,
-			collection,
-			revId,
-			handler,
-			exporter,
-			transformMap,
-			matPropMap,
-			true,
-			3,
-			grouping
-		);
-
-		// Process Group (Transparent, prim 2)
-		repoInfo << "Process Group - Transparent, Primitive 2";
-		processUntexturedGroup(
-			database,
-			collection,
-			revId,
-			handler,
-			exporter,
-			transformMap,
-			matPropMap,
-			false,
-			2,
-			grouping
-		);
-
-		// Process Group (Transparent, prim 3)
-		repoInfo << "Process Group - Transparent, Primitive 3";
-		processUntexturedGroup(
-			database,
-			collection,
-			revId,
-			handler,
-			exporter,
-			transformMap,
-			matPropMap,
-			false,
-			3,
-			grouping
-		);
-
-		// Get Texture IDs
-		repoInfo << "Getting all texture Ids";
-		auto texIds = getAllTextureIds(handler, database, collection, revId, grouping);
-
-		// Process each texture group
-		for (auto texId : texIds) {
-
-			// For line primitives (2)
-			// One cannot map a texture to a line, however, customers can assign materials with textures to lines
-			// so we need to be able to process them.
-			repoInfo << "Process Group - Textured, " << texId.toString();
-			processTexturedGroup(
-				database,
-				collection,
-				revId,
-				handler,
-				exporter,
-				transformMap,
-				matPropMap,
-				texId,
-				2,
-				grouping
-			);
-
-			// For triangle primitives (3)
-			processTexturedGroup(
-				database,
-				collection,
-				revId,
-				handler,
-				exporter,
-				transformMap,
-				matPropMap,
-				texId,
-				3,
-				grouping
-			);
+		// Job for opaque, prim 2
+		{
+			std::string description = "Grouping: " + grouping + ", Opaque, Primitive 2";			
+			jobs.push_back(createUntexturedJob(description, revId, 2, grouping, true));
 		}
 
+		// Job for opaque, prim 3
+		{
+			std::string description = "Grouping: " + grouping + ", Opaque, Primitive 3";
+			jobs.push_back(createUntexturedJob(description, revId, 3, grouping, true));
+		}
+
+		// Job for transparent, prim 2
+		{
+			std::string description = "Grouping: " + grouping + ", Transparent, Primitive 2";
+			jobs.push_back(createUntexturedJob(description, revId, 2, grouping, false));
+		}
+
+		// Job for transparent, prim 3
+		{
+			std::string description = "Grouping: " + grouping + ", Transparent, Primitive 3";
+			jobs.push_back(createUntexturedJob(description, revId, 3, grouping, false));
+		}
+
+		// Get Texture IDs
+		repoInfo << "Getting all texture Ids for grouping " << grouping;
+		auto texIds = getAllTextureIds(handler, database, collection, revId, grouping);
+
+		// Create jobs for each texture group
+		for (auto texId : texIds) {
+
+			// Job for textured, prim 2
+			// One cannot map a texture to a line, however, customers can assign materials with textures to lines
+			// so we need to be able to process them.
+			{
+				std::string description = "Grouping: " + grouping + ", Textured " + texId.toString() + " , Primitive 2";
+				jobs.push_back(createTexturedJob(description, revId, 2, grouping, texId));
+			}
+
+			// Job for textured, prim 3
+			{
+				std::string description = "Grouping: " + grouping + ", Textured " + texId.toString() + " , Primitive 3";
+				jobs.push_back(createTexturedJob(description, revId, 3, grouping, texId));
+			}
+		}
+	}
+
+	// Process jobs
+	repoInfo << "Processing Jobs";
+
+	for (auto job : jobs) {
+		clusterAndSupermesh(
+			database,
+			collection,
+			handler,
+			exporter,
+			transformMap,
+			matPropMap,
+			job);
 	}
 
 	// Finalise export
@@ -225,14 +188,14 @@ std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUU
 	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_TRANSFORMATION)));
 
 	repo::core::handler::database::query::RepoProjectionBuilder projection;
-	projection.excludeField(REPO_NODE_LABEL_ID);	
+	projection.excludeField(REPO_NODE_LABEL_ID);
 	projection.includeField(REPO_NODE_LABEL_SHARED_ID);
 	projection.includeField(REPO_NODE_LABEL_MATRIX);
 	projection.includeField(REPO_NODE_LABEL_PARENTS);
-	
+
 	auto sceneCollection = collection + "." + REPO_COLLECTION_SCENE;
 	auto cursor = handler->findCursorByCriteria(database, sceneCollection, filter, projection);
-		
+
 	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> leafToTransformMap;
 
 	if (cursor) {
@@ -256,7 +219,7 @@ std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUU
 		}
 		if (rootNode.isEmpty()) {
 			repoWarning << "getAllTransforms; no transformations returned by database query.";
-		} 
+		}
 		else {
 			traverseTransformTree(rootNode, childNodeMap, leafToTransformMap);
 		}
@@ -288,16 +251,16 @@ void MultipartOptimizer::traverseTransformTree(
 
 		// Remove top node from the stack
 		auto top = stack.top();
-		auto topBson = top.first;		
+		auto topBson = top.first;
 		auto topMat = top.second;
-		
+
 		// Get node information
 		auto nodeId = topBson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);
 		auto matrix = topBson.getMatrixField(REPO_NODE_LABEL_MATRIX);
 
 		// Apply the node's trnsaformation
 		auto newMat = matrix * topMat;
-				
+
 		if (childNodeMap.contains(nodeId)) {
 			// If the node has children, push children on the stack
 			auto children = childNodeMap.at(nodeId);
@@ -328,7 +291,7 @@ MultipartOptimizer::MaterialPropMap MultipartOptimizer::getAllMaterials(
 
 	MaterialPropMap matMap;
 	for (auto &materialBson : materialBsons) {
-		
+
 		// Create material struct
 		repo::lib::RepoUUID uniqueId = materialBson.getUUIDField(REPO_NODE_LABEL_ID);
 		auto material = std::make_shared<std::pair<repo::lib::RepoUUID, repo_material_t>>();
@@ -422,7 +385,7 @@ std::vector<repo::lib::RepoUUID> MultipartOptimizer::getAllTextureIds(
 		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_GROUPING, grouping));
 
 	repo::core::handler::database::query::RepoProjectionBuilder projection;
-	projection.includeField(REPO_NODE_LABEL_ID);	
+	projection.includeField(REPO_NODE_LABEL_ID);
 
 	std::vector<repo::lib::RepoUUID> texIds;
 
@@ -434,7 +397,7 @@ std::vector<repo::lib::RepoUUID> MultipartOptimizer::getAllTextureIds(
 			auto bson = repo::core::model::RepoBSON(document);
 			texIds.push_back(bson.getUUIDField(REPO_NODE_LABEL_ID));
 		}
-	}	
+	}
 	else {
 		repoWarning << "getAllTextureIds; getting cursor was not successful; no texture Ids in output vector";
 	}
@@ -442,17 +405,12 @@ std::vector<repo::lib::RepoUUID> MultipartOptimizer::getAllTextureIds(
 	return texIds;
 }
 
-void MultipartOptimizer::processUntexturedGroup(
-	const std::string &database,
-	const std::string &collection,
+MultipartOptimizer::ProcessingJob repo::manipulator::modeloptimizer::MultipartOptimizer::createUntexturedJob(
+	const std::string &description,
 	const repo::lib::RepoUUID &revId,
-	repo::core::handler::AbstractDatabaseHandler *handler,
-	repo::manipulator::modelconvertor::AbstractModelExport *exporter,
-	const TransformMap& transformMap,
-	const MaterialPropMap& matPropMap,
-	const bool isOpaque,
 	const int primitive,
-	const std::string& grouping)
+	const std::string &grouping,
+	const bool isOpaque)
 {
 	// Create filter
 	repo::core::handler::database::query::RepoQueryBuilder filter;
@@ -463,50 +421,29 @@ void MultipartOptimizer::processUntexturedGroup(
 	if (isOpaque)
 		filter.append(repo::core::handler::database::query::Eq(REPO_FILTER_TAG_OPAQUE, true));
 	else
-		filter.append(repo::core::handler::database::query::Eq(REPO_FILTER_TAG_TRANSPARENT, true));	
+		filter.append(repo::core::handler::database::query::Eq(REPO_FILTER_TAG_TRANSPARENT, true));
 
-	// Use filter to cluster and supermesh
-	clusterAndSupermesh(
-		database,
-		collection,
-		handler,
-		exporter,
-		transformMap,
-		matPropMap,
-		filter);	
+	// Create job
+	return ProcessingJob({ description, filter, {} });
 }
 
-void MultipartOptimizer::processTexturedGroup(
-	const std::string &database,
-	const std::string &collection,
+MultipartOptimizer::ProcessingJob repo::manipulator::modeloptimizer::MultipartOptimizer::createTexturedJob(
+	const std::string &description,
 	const repo::lib::RepoUUID &revId,
-	repo::core::handler::AbstractDatabaseHandler *handler,
-	repo::manipulator::modelconvertor::AbstractModelExport *exporter,
-	const TransformMap& transformMap,
-	const MaterialPropMap& matPropMap,
-	const repo::lib::RepoUUID texId,
 	const int primitive,
-	const std::string& grouping)
+	const std::string &grouping,
+	const repo::lib::RepoUUID &texId)
 {
 	// Create filter
 	repo::core::handler::database::query::RepoQueryBuilder filter;
-	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));	
+	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));
 	filter.append(repo::core::handler::database::query::Eq(REPO_FILTER_TAG_TEXTURE_ID, texId));
 	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_PRIMITIVE, primitive));
 	if (!grouping.empty())
 		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_GROUPING, grouping));
-	
 
-	// Use filter to cluster and supermesh
-	clusterAndSupermesh(
-		database,
-		collection,
-		handler,
-		exporter,
-		transformMap,
-		matPropMap,
-		filter,
-		texId);
+	// Create job
+	return ProcessingJob({ description, filter, texId });
 }
 
 void MultipartOptimizer::clusterAndSupermesh(
@@ -516,9 +453,10 @@ void MultipartOptimizer::clusterAndSupermesh(
 	repo::manipulator::modelconvertor::AbstractModelExport *exporter,
 	const TransformMap& transformMap,
 	const MaterialPropMap& matPropMap,
-	const repo::core::handler::database::query::RepoQuery filter,
-	const repo::lib::RepoUUID &texId /* = repo::lib::RepoUUID() */
+	const MultipartOptimizer::ProcessingJob &job
 ) {
+	repoInfo << "Processing Job: " << job.description;
+
 	// Create projection
 	repo::core::handler::database::query::RepoProjectionBuilder projection;
 	projection.excludeField(REPO_NODE_LABEL_ID);
@@ -529,7 +467,7 @@ void MultipartOptimizer::clusterAndSupermesh(
 
 	// Get cursor
 	auto sceneCollection = collection + "." + REPO_COLLECTION_SCENE;
-	auto cursor = handler->findCursorByCriteria(database, sceneCollection, filter, projection);
+	auto cursor = handler->findCursorByCriteria(database, sceneCollection, job.filter, projection);
 
 	// iterate cursor and pack outcomes in lightweight mesh node structure
 	std::vector<StreamingMeshNode> nodes;
@@ -553,7 +491,7 @@ void MultipartOptimizer::clusterAndSupermesh(
 		auto bounds = node.getBoundingBox();
 
 		// Transform bounds
-		auto parentId = node.getParent();		
+		auto parentId = node.getParent();
 
 		if (transformMap.contains(parentId)) {
 			auto transMat = transformMap.at(node.getParent());
@@ -561,7 +499,7 @@ void MultipartOptimizer::clusterAndSupermesh(
 		}
 		else {
 			repoWarning << "clusterAndSupermesh; current node has no transform parents; this should not happen; malformed file?";
-		}		
+		}
 	}
 
 	// Cluster the mesh nodes
@@ -570,6 +508,7 @@ void MultipartOptimizer::clusterAndSupermesh(
 
 	// Create Supermeshes from the clusters
 	repoInfo << "Creating Supermeshes from clustered Nodes";
+	auto texId = job.isTexturedJob() ? job.texId : repo::lib::RepoUUID();
 	createSuperMeshes(database, collection, handler, exporter, transformMap, matPropMap, nodes, clusters, texId);
 }
 
@@ -587,7 +526,7 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 	// Get blobHandler
 	auto sceneCollection = collection + "." + REPO_COLLECTION_SCENE;
 	repo::core::handler::fileservice::BlobFilesHandler blobHandler(handler->getFileManager(), database, sceneCollection);
-	
+
 	for (auto cluster : clusters) {
 
 		std::unordered_map<repo::lib::RepoUUID, int, repo::lib::RepoUUIDHasher> clusterMap;
@@ -612,7 +551,7 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 		projection.includeField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT);
 		projection.includeField(REPO_NODE_MESH_LABEL_PRIMITIVE);
 		projection.includeField(REPO_LABEL_BINARY_REFERENCE);
-		
+
 		auto binNodes = handler->findAllByCriteria(database, sceneCollection, filter, projection);
 
 		// Iterate over the meshes and decide what to do with each. The options are
@@ -624,10 +563,10 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 		for (auto& nodeBson : binNodes) {
 
 			// Find streamed node
-			auto sharedId = nodeBson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);			
+			auto sharedId = nodeBson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);
 			auto nodeIndex = clusterMap.at(sharedId);
 			auto& sNode = meshNodes[nodeIndex];
-			
+
 			// Load geometry for this node.
 			// Placed In its own scope so that buffer can be discarded as soon as it is processed
 			{
@@ -639,9 +578,9 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 				// This allows us to group more meshes together.
 				bool ignoreUVs = texId.isDefaultValue();
 
-				sNode.loadSupermeshingData(nodeBson, buffer, ignoreUVs);				
+				sNode.loadSupermeshingData(nodeBson, buffer, ignoreUVs);
 			}
-			
+
 			// Bake the streaming mesh node by applying the transformation to the vertices
 			// Note that the bounds have already been transformed by calling transformBounds earlier
 			auto parentId = sNode.getParent();
@@ -652,7 +591,7 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 			else {
 				repoWarning << "createSuperMeshes; no transform found for this mesh node. Mesh will not be baked";
 			}
-			
+
 			if (currentSupermesh.vertices.size() + sNode.getNumVertices() <= REPO_MP_MAX_VERTEX_COUNT)
 			{
 				// The current node can be added to the supermesh OK				
@@ -692,7 +631,7 @@ void MultipartOptimizer::createSuperMesh(
 	exporter->addSupermesh(supermeshNode.get());
 }
 
-void MultipartOptimizer::appendMesh(	
+void MultipartOptimizer::appendMesh(
 	StreamingMeshNode &node,
 	const MaterialPropMap &matPropMap,
 	mapped_mesh_t &mapped,
@@ -705,7 +644,7 @@ void MultipartOptimizer::appendMesh(
 	auto matPair = matPropMap.at(node.getSharedId());
 	meshMap.material_id = matPair->first;
 	meshMap.material = matPair->second;
-	
+
 	// set texture id if passed in
 	if (!texId.isDefaultValue())
 		meshMap.texture_id = texId;
@@ -1108,7 +1047,7 @@ void MultipartOptimizer::splitMesh(
 		// Get material information
 		auto matPair = matPropMap.at(node.getSharedId());
 		mapping.material_id = matPair->first;
-		mapping.material = matPair->second;		
+		mapping.material = matPair->second;
 
 		// set texture id if passed in
 		if (!texId.isDefaultValue())
@@ -1116,7 +1055,7 @@ void MultipartOptimizer::splitMesh(
 
 		mapped.meshMapping.push_back(mapping);
 
-		createSuperMesh(exporter, mapped);		
+		createSuperMesh(exporter, mapped);
 	}
 
 	repoInfo << "Split mesh with " << node.getNumVertices() << " vertices into " << branchNodes.size() << " submeshes in " << CHRONO_DURATION(start) << " ms";
@@ -1151,7 +1090,7 @@ std::unique_ptr<repo::core::model::SupermeshNode> MultipartOptimizer::createSupe
 		bbox,
 		mapped.uvChannels,
 		"",
-		meshMapping);	
+		meshMapping);
 }
 
 
@@ -1346,7 +1285,7 @@ std::vector<std::vector<int>> MultipartOptimizer::clusterMeshNodes(
 	std::vector<meshMetric> metrics(meshes.size());
 	for (size_t i = 0; i < meshes.size(); i++)
 	{
-		auto& mesh = metrics[i];	
+		auto& mesh = metrics[i];
 		mesh.nodeIndex = i;
 		auto& node = meshes[i];
 		auto bounds = node.getBoundingBox();
@@ -1360,7 +1299,7 @@ std::vector<std::vector<int>> MultipartOptimizer::clusterMeshNodes(
 
 	std::sort(metrics.begin(), metrics.end(), [](meshMetric a, meshMetric b) {
 		return a.efficiency < b.efficiency;
-	});
+		});
 
 	// Bin the nodes based on vertex count. The bottom 20% will form pure-LOD
 	// groups, while the top 80% will be spatialised.

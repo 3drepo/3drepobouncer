@@ -66,6 +66,16 @@ namespace repo {
 					std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
 					std::vector<repo::lib::repo_mesh_mapping_t> meshMapping;
 				};
+
+				struct ProcessingJob {
+					std::string description;
+					repo::core::handler::database::query::RepoQuery filter;
+					repo::lib::RepoUUID texId;
+
+					bool isTexturedJob() const {
+						return !texId.isDefaultValue();
+					}
+				};
 								
 				class StreamingMeshNode {
 
@@ -419,29 +429,21 @@ namespace repo {
 					const std::string& grouping
 				);
 
-				void processUntexturedGroup(
-					const std::string &database,
-					const std::string &collection,
+				ProcessingJob createUntexturedJob(
+					const std::string &description,
 					const repo::lib::RepoUUID &revId,
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					repo::manipulator::modelconvertor::AbstractModelExport *exporter,
-					const TransformMap& transformMap,
-					const MaterialPropMap& matPropMap,
-					const bool isOpaque,
 					const int primitive,
-					const std::string& grouping);
+					const std::string &grouping,
+					const bool isOpaque
+				);
 
-				void processTexturedGroup(
-					const std::string &database,
-					const std::string &collection,
+				ProcessingJob createTexturedJob(
+					const std::string &description,
 					const repo::lib::RepoUUID &revId,
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					repo::manipulator::modelconvertor::AbstractModelExport *exporter,
-					const TransformMap& transformMap,
-					const MaterialPropMap& matPropMap,
-					const repo::lib::RepoUUID texId,
 					const int primitive,
-					const std::string& grouping);
+					const std::string &grouping,
+					const repo::lib::RepoUUID &texId
+				);
 
 				void clusterAndSupermesh(
 					const std::string &database,
@@ -450,8 +452,7 @@ namespace repo {
 					repo::manipulator::modelconvertor::AbstractModelExport *exporter,
 					const TransformMap& transformMap,
 					const MaterialPropMap& matPropMap,
-					const repo::core::handler::database::query::RepoQuery filter,
-					const repo::lib::RepoUUID &texId = repo::lib::RepoUUID()
+					const ProcessingJob &job
 				);
 
 				void createSuperMeshes(
