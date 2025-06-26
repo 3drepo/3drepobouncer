@@ -530,17 +530,17 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 	for (auto cluster : clusters) {
 
 		std::unordered_map<repo::lib::RepoUUID, int, repo::lib::RepoUUIDHasher> clusterMap;
-		std::vector<repo::lib::RepoUUID> clusterIds;
+		std::vector<repo::lib::RepoUUID> sharedIdsInCluster;
 		for (auto& index : cluster) {
 			auto& node = meshNodes[index];
 			auto sharedId = node.getSharedId();
 			clusterMap.insert({ sharedId, index });
 
-			clusterIds.push_back(sharedId);
+			sharedIdsInCluster.push_back(sharedId);
 		}
 
 		// Create filter
-		auto filter = repo::core::handler::database::query::Eq(REPO_NODE_LABEL_SHARED_ID, clusterIds);
+		auto filter = repo::core::handler::database::query::Eq(REPO_NODE_LABEL_SHARED_ID, sharedIdsInCluster);
 
 		// Create projection
 		repo::core::handler::database::query::RepoProjectionBuilder projection;
