@@ -214,8 +214,8 @@ namespace repo {
 							const std::vector<uint8_t>& buffer,
 							std::vector<T>& vec)
 						{
-							auto start = bson.getIntField(REPO_LABEL_BINARY_START);
-							auto size = bson.getIntField(REPO_LABEL_BINARY_SIZE);
+							auto start = bson.getLongField(REPO_LABEL_BINARY_START);
+							auto size = bson.getLongField(REPO_LABEL_BINARY_SIZE);
 
 							vec.resize(size / sizeof(T));
 							memcpy(vec.data(), buffer.data() + (sizeof(uint8_t) * start), size);
