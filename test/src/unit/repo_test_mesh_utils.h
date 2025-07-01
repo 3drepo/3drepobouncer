@@ -111,7 +111,7 @@ namespace repo {
 						supermeshNodes.push_back(*supermesh);
 					}
 
-					void Finalise() {
+					void finalise() {
 						finalised = true;
 						// Do nothing else
 					};
