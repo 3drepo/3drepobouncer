@@ -370,26 +370,10 @@ void MongoDatabaseHandler::createIndex(const std::string& database, const std::s
 
 /*
  * This helper function resolves the binary files for a given document. Any
- * document that might have file mappings should be passed through here
- * before being returned as a RepoBSON.
+ * document that might have file mappings that are not loaded manually later
+ * should be passed through here before being returned as a RepoBSON.
  */
-repo::core::model::RepoBSON MongoDatabaseHandler::createRepoBSON(
-	const std::string& database,
-	const std::string& collection,
-	const bsoncxx::document::view& view)
-{
-	fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-
-	repo::core::model::RepoBSON orgBson = repo::core::model::RepoBSON(view);
-	if (orgBson.hasFileReference()) {
-		auto ref = orgBson.getBinaryReference();
-		auto buffer = blobHandler.readToBuffer(fileservice::DataRef::deserialise(ref));
-		orgBson.initBinaryBuffer(buffer);
-	}
-	return orgBson;
-}
-
-void MongoDatabaseHandler::loadBinaries(const std::string& database,
+void MongoDatabaseHandler::loadBinaryBuffers(const std::string& database,
 	const std::string& collection, 
 	repo::core::model::RepoBSON& bson)
 {
@@ -488,10 +472,11 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 			// Find all documents
 			auto cursor = col.find(criteria.view());
 			for (auto& doc : cursor) {
+				auto bson = repo::core::model::RepoBSON(doc);
 				if (loadBinaries)
-					data.push_back(createRepoBSON(database, collection, doc));
-				else
-					data.push_back(repo::core::model::RepoBSON(doc));
+					MongoDatabaseHandler::loadBinaryBuffers(database, collection, bson);
+					
+				data.push_back(bson);
 			}
 		}
 		return data;
@@ -856,7 +841,7 @@ public:
 
 		virtual const repo::core::model::RepoBSON operator*()
 		{
-			return cursor->createRepoBSON(mongocxx::v_noabi::cursor::iterator::operator*());
+			return repo::core::model::RepoBSON(mongocxx::v_noabi::cursor::iterator::operator*());
 		}
 
 		virtual void operator++()
@@ -903,11 +888,6 @@ private:
 	std::string database;
 	std::string collection;
 	MongoDatabaseHandler* handler;
-
-	repo::core::model::RepoBSON createRepoBSON(const bsoncxx::document::view& view)
-	{
-		return repo::core::model::RepoBSON(view);
-	}
 };
 
 std::unique_ptr<Cursor> repo::core::handler::MongoDatabaseHandler::findCursorByCriteria(
