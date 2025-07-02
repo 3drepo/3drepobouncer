@@ -392,7 +392,7 @@ namespace repo {
 					}
 				};
 
-				typedef std::unordered_map <repo::lib::RepoUUID, std::shared_ptr<std::pair<repo::lib::RepoUUID, repo::lib::repo_material_t>>, repo::lib::RepoUUIDHasher> MaterialPropMap;
+				typedef std::unordered_map <repo::lib::RepoUUID, std::shared_ptr<repo::core::model::MaterialNode>, repo::lib::RepoUUIDHasher> MaterialPropMap;
 				typedef std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> TransformMap;
 
 				std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> getAllTransforms(

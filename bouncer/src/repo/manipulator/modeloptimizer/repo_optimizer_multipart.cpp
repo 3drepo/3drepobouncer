@@ -259,40 +259,14 @@ MultipartOptimizer::MaterialPropMap MultipartOptimizer::getAllMaterials(
 	MaterialPropMap matMap;
 	for (auto &materialBson : materialBsons) {
 
-		// Create material struct
-		repo::lib::RepoUUID uniqueId = materialBson.getUUIDField(REPO_NODE_LABEL_ID);
-		auto material = std::make_shared<std::pair<repo::lib::RepoUUID, repo_material_t>>();
-
-		// Set material id
-		material->first = materialBson.getUUIDField(REPO_NODE_LABEL_ID);
-
-		// Fill material struct with values
-		if (materialBson.hasField(REPO_NODE_MATERIAL_LABEL_AMBIENT))
-			material->second.ambient = materialBson.getColourField(REPO_NODE_MATERIAL_LABEL_AMBIENT);
-		if (materialBson.hasField(REPO_NODE_MATERIAL_LABEL_DIFFUSE))
-			material->second.diffuse = materialBson.getColourField(REPO_NODE_MATERIAL_LABEL_DIFFUSE);
-		if (materialBson.hasField(REPO_NODE_MATERIAL_LABEL_SPECULAR))
-			material->second.specular = materialBson.getColourField(REPO_NODE_MATERIAL_LABEL_SPECULAR);
-		if (materialBson.hasField(REPO_NODE_MATERIAL_LABEL_EMISSIVE))
-			material->second.emissive = materialBson.getColourField(REPO_NODE_MATERIAL_LABEL_EMISSIVE);
-		if (materialBson.hasField(REPO_NODE_MATERIAL_LABEL_OPACITY))
-			material->second.opacity = materialBson.getDoubleField(REPO_NODE_MATERIAL_LABEL_OPACITY);
-		if (materialBson.hasField(REPO_NODE_MATERIAL_LABEL_SHININESS))
-			material->second.shininess = materialBson.getDoubleField(REPO_NODE_MATERIAL_LABEL_SHININESS);
-		if (materialBson.hasField(REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH))
-			material->second.shininessStrength = materialBson.getDoubleField(REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH);
-		if (materialBson.hasField(REPO_NODE_MATERIAL_LABEL_LINE_WEIGHT))
-			material->second.lineWeight = materialBson.getDoubleField(REPO_NODE_MATERIAL_LABEL_LINE_WEIGHT);
-		if (materialBson.hasField(REPO_NODE_MATERIAL_LABEL_WIREFRAME))
-			material->second.isWireframe = materialBson.getBoolField(REPO_NODE_MATERIAL_LABEL_WIREFRAME);
-		if (materialBson.hasField(REPO_NODE_MATERIAL_LABEL_TWO_SIDED))
-			material->second.opacity = materialBson.getBoolField(REPO_NODE_MATERIAL_LABEL_TWO_SIDED);
-
+		// Create material node
+		auto matNode = std::make_shared<repo::core::model::MaterialNode>(materialBson);			
+				
 		// Go over the parents and add the pointer for each so that the map can be used to lookup
 		// the material for a given meshNode
 		auto parents = materialBson.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
 		for (auto parent : parents) {
-			matMap.insert({ parent, material });
+			matMap.insert({ parent, matNode });
 		}
 	}
 
@@ -608,9 +582,9 @@ void MultipartOptimizer::appendMesh(
 	repo_mesh_mapping_t meshMap;
 
 	// Get material information
-	auto matPair = matPropMap.at(node.getSharedId());
-	meshMap.material_id = matPair->first;
-	meshMap.material = matPair->second;
+	auto matNode = matPropMap.at(node.getSharedId());
+	meshMap.material_id = matNode->getUniqueID();
+	meshMap.material = matNode->getMaterialStruct();
 
 	// set texture id if passed in
 	if (!texId.isDefaultValue())
@@ -1012,9 +986,9 @@ void MultipartOptimizer::splitMesh(
 		mapping.shared_id = node.getSharedId();
 
 		// Get material information
-		auto matPair = matPropMap.at(node.getSharedId());
-		mapping.material_id = matPair->first;
-		mapping.material = matPair->second;
+		auto matNode = matPropMap.at(node.getSharedId());
+		mapping.material_id = matNode->getUniqueID();
+		mapping.material = matNode->getMaterialStruct();
 
 		// set texture id if passed in
 		if (!texId.isDefaultValue())
