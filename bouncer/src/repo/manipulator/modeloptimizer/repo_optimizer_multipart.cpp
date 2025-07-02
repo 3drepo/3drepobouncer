@@ -251,6 +251,8 @@ void MultipartOptimizer::traverseTransformTree(
 
 		// Remove top node from the stack
 		auto top = stack.top();
+		stack.pop();
+
 		auto topBson = top.first;
 		auto topMat = top.second;
 
