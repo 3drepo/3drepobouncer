@@ -56,7 +56,7 @@ TEST(MultipartOptimizer, TestAllMerged)
 
 	sceneBuilder.finalise();
 	
-	auto mockExporter = std::make_unique<TestModelExport>(database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
+	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
 
 	bool result = opt.processScene(
 		database,
@@ -111,7 +111,7 @@ TEST(MultipartOptimizer, TestWithUV)
 
 	sceneBuilder.finalise();
 
-	auto mockExporter = std::make_unique<TestModelExport>(database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
+	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
 
 	bool result = opt.processScene(
 		database,
@@ -159,7 +159,7 @@ TEST(MultipartOptimizer, TestMixedPrimitives)
 
 	sceneBuilder.finalise();
 
-	auto mockExporter = std::make_unique<TestModelExport>(database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
+	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
 
 	bool result = opt.processScene(
 		database,
@@ -221,7 +221,7 @@ TEST(MultipartOptimizer, TestSingleLargeMesh)
 	
 	sceneBuilder.finalise();
 
-	auto mockExporter = std::make_unique<TestModelExport>(database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
+	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
 
 	bool result = opt.processScene(
 		database,
@@ -264,7 +264,7 @@ TEST(MultipartOptimizer, TestSingleOversizedMesh)
 
 	sceneBuilder.finalise();
 
-	auto mockExporter = std::make_unique<TestModelExport>(database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
+	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
 
 	bool result = opt.processScene(
 		database,
@@ -308,7 +308,7 @@ TEST(MultipartOptimizer, TestMultipleOversizedMeshes)
 
 	sceneBuilder.finalise();
 
-	auto mockExporter = std::make_unique<TestModelExport>(database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
+	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
 
 	bool result = opt.processScene(
 		database,
@@ -358,7 +358,7 @@ TEST(MultipartOptimizer, TestMultiplesMeshes)
 
 	sceneBuilder.finalise();
 
-	auto mockExporter = std::make_unique<TestModelExport>(database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
+	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
 
 	bool result = opt.processScene(
 		database,
@@ -407,7 +407,7 @@ TEST(MultipartOptimizer, TestMultipleSmallAndLargeMeshes)
 
 	sceneBuilder.finalise();
 
-	auto mockExporter = std::make_unique<TestModelExport>(database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
+	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
 
 	bool result = opt.processScene(
 		database,
@@ -450,7 +450,7 @@ TEST(MultipartOptimizer, TestTinyMeshes)
 
 	sceneBuilder.finalise();
 
-	auto mockExporter = std::make_unique<TestModelExport>(database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
+	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
 
 	bool result = opt.processScene(
 		database,

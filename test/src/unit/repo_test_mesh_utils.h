@@ -99,11 +99,12 @@ namespace repo {
 				{
 				public:
 					TestModelExport(
+						repo::core::handler::AbstractDatabaseHandler *dbHandler,
 						const std::string databaseName,
 						const std::string projectName,
 						const repo::lib::RepoUUID revId,
 						const std::vector<double> worldOffset
-					) : AbstractModelExport(databaseName, projectName, revId, worldOffset)
+					) : AbstractModelExport(dbHandler, databaseName, projectName, revId, worldOffset)
 					{						
 					}
 

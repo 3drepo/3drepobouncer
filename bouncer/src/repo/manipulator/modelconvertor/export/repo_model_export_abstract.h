@@ -36,32 +36,11 @@ namespace repo{
 			{
 			public:
 
-				// Type used to pass in the callback for file export.
-				// This will be used by the exporter to send data to be
-				// written out as a file.
-				typedef std::function<void(
-					const std::string&,												// databaseName
-					const std::string&,												// id
-					const std::string&,												// collectionNamePrefix
-					const std::vector<uint8_t>&,									// bin
-					const std::unordered_map<std::string, repo::lib::RepoVariant>&,	// metadata
-					const repo::core::handler::fileservice::FileManager::Encoding&	// encoding
-					)> FileCallback;
-
-				// Type used to pass in the callback for database upsertion.
-				// This will be used by the exporter for database interactions.
-				typedef std::function<void(
-					const std::string&,					// database
-					const std::string&,					// collection
-					const repo::core::model::RepoBSON&,	// obj
-					const bool&							// overwrite
-					)> UpsertCallback;
-
-
 				/**
 				* Default Constructor, export model with default settings
 				*/				
 				AbstractModelExport(
+					repo::core::handler::AbstractDatabaseHandler* dbHandler,
 					const std::string databaseName,
 					const std::string projectName,
 					const repo::lib::RepoUUID revId,
@@ -84,27 +63,10 @@ namespace repo{
 				*/
 				virtual void finalise() = 0;
 
-				/**
-				* Sets the callback for file operations used by the exporter.
-				* @param A callback to a method for writing out a file.
-				*/
-				void setFileCallback(FileCallback _fileCallback) {
-					fileCallback = _fileCallback;
-				}
-
-				/**
-				* Sets the callback for upsert operations used by the exporter.
-				* @param A callback to a method for upserting a document.
-				*/
-				void setUpsertCallback(UpsertCallback _upsertCallback) {
-					upsertCallback = _upsertCallback;
-				}
-
 			protected:
 
-				// Callbacks for file and database operations
-				FileCallback fileCallback;
-				UpsertCallback upsertCallback;
+				// Database handler
+				repo::core::handler::AbstractDatabaseHandler* dbHandler;
 
 				// Model info
 				std::string databaseName;

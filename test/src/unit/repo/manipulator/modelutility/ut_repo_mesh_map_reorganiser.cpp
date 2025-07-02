@@ -53,7 +53,7 @@ TEST(MeshMapReorganiser, VeryLargeMesh)
 	
 	sceneBuilder.finalise();
 
-	auto mockExporter = std::make_unique<TestModelExport>(database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
+	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
 
 	bool result = opt.processScene(
 		database,
@@ -145,7 +145,7 @@ TEST(MeshMapReorganiser, MultipleTinyMeshes)
 
 	sceneBuilder.finalise();
 
-	auto mockExporter = std::make_unique<TestModelExport>(database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
+	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
 
 	bool result = opt.processScene(
 		database,
@@ -260,7 +260,7 @@ TEST(MeshMapReorganiser, InterleavedMixedSplit)
 
 	sceneBuilder.finalise();
 
-	auto mockExporter = std::make_unique<TestModelExport>(database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
+	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
 
 	bool result = opt.processScene(
 		database,

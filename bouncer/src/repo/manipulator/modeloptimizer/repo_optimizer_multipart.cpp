@@ -55,41 +55,6 @@ bool MultipartOptimizer::processScene(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	repo::manipulator::modelconvertor::AbstractModelExport* exporter)
 {
-	// Set file upload callback via std::function and lambdas
-	auto fileManager = handler->getFileManager();
-	exporter->setFileCallback([&](
-		const std::string& databaseName,
-		const std::string& id,
-		const std::string& collectionNamePrefix,
-		const std::vector<uint8_t>& bin,
-		const std::unordered_map < std::string, repo::lib::RepoVariant>& metadata,
-		const repo::core::handler::fileservice::FileManager::Encoding& encoding)
-		{
-			fileManager->uploadFileAndCommit(
-				databaseName,
-				id,
-				collectionNamePrefix,
-				bin,
-				metadata,
-				encoding
-			);
-		});
-
-	// Set document upsert callback via std::function and lambdas
-	exporter->setUpsertCallback([&](
-		const std::string& database,
-		const std::string& collection,
-		const repo::core::model::RepoBSON& obj,
-		const bool& overwrite)
-		{
-			return handler->upsertDocument(
-				database,
-				collection,
-				obj,
-				overwrite
-			);
-		});
-
 	// Getting Transforms
 	repoInfo << "Getting Transforms";
 	auto transformMap = getAllTransforms(handler, database, collection, revId);

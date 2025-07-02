@@ -243,6 +243,7 @@ bool SceneManager::generateWebViewBuffers(
 		case repo::manipulator::modelconvertor::ExportType::REPO:
 #ifdef REPO_ASSET_GENERATOR_SUPPORT
 			exporter = std::make_unique<repo::manipulator::modelconvertor::RepoBundleExport>(
+				handler,
 				database,
 				collection,
 				revId,
