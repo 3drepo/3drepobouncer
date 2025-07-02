@@ -411,10 +411,10 @@ void MultipartOptimizer::clusterAndSupermesh(
 	auto cursor = handler->findCursorByCriteria(database, sceneCollection, job.filter, projection);
 
 	// iterate cursor and pack outcomes in lightweight mesh node structure
-	std::vector<StreamingMeshNode> nodes;
+	std::vector<repo::core::model::StreamingMeshNode> nodes;
 	if (cursor) {
 		for (auto bson : (*cursor)) {
-			nodes.push_back(StreamingMeshNode(bson));
+			nodes.push_back(repo::core::model::StreamingMeshNode(bson));
 		}
 	}
 	else {
@@ -460,7 +460,7 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 	repo::manipulator::modelconvertor::AbstractModelExport *exporter,
 	const TransformMap& transformMap,
 	const MaterialPropMap& matPropMap,
-	std::vector<StreamingMeshNode>& meshNodes,
+	std::vector<repo::core::model::StreamingMeshNode>& meshNodes,
 	const std::vector<std::vector<int>>& clusters,
 	const repo::lib::RepoUUID &texId)
 {
@@ -573,7 +573,7 @@ void MultipartOptimizer::createSuperMesh(
 }
 
 void MultipartOptimizer::appendMesh(
-	StreamingMeshNode &node,
+	repo::core::model::StreamingMeshNode &node,
 	const MaterialPropMap &matPropMap,
 	mapped_mesh_t &mapped,
 	const repo::lib::RepoUUID &texId
@@ -654,7 +654,7 @@ void MultipartOptimizer::appendMesh(
 // Constructs a bounding volumne hierarchy of all the Faces in the MeshNode
 
 MultipartOptimizer::Bvh MultipartOptimizer::buildFacesBvh(
-	StreamingMeshNode &node
+	repo::core::model::StreamingMeshNode &node
 )
 {
 	// Create a set of bounding boxes & centers for each Face in the oversized
@@ -846,7 +846,7 @@ std::vector<size_t> MultipartOptimizer::getSupermeshBranchNodes(
 }
 
 void MultipartOptimizer::splitMesh(
-	StreamingMeshNode &node,
+	repo::core::model::StreamingMeshNode &node,
 	repo::manipulator::modelconvertor::AbstractModelExport *exporter,
 	const MaterialPropMap &matPropMap,
 	const repo::lib::RepoUUID &texId
@@ -1041,7 +1041,7 @@ std::unique_ptr<repo::core::model::SupermeshNode> MultipartOptimizer::createSupe
 
 MultipartOptimizer::Bvh MultipartOptimizer::buildBoundsBvh(
 	const std::vector<int>& binIndexes,
-	const std::vector<StreamingMeshNode>& meshes
+	const std::vector<repo::core::model::StreamingMeshNode>& meshes
 )
 {
 	// The BVH builder requires a set of bounding boxes and centers to work with.
@@ -1082,7 +1082,7 @@ MultipartOptimizer::Bvh MultipartOptimizer::buildBoundsBvh(
 std::vector<size_t> MultipartOptimizer::getVertexCounts(
 	const Bvh& bvh,
 	const std::vector<int>& binIndexes,
-	const std::vector<StreamingMeshNode>& meshes
+	const std::vector<repo::core::model::StreamingMeshNode>& meshes
 )
 {	// To do this, get the nodes in list form, 'bottom up', in order to set the
 	// vertex counts of each leaf node.
@@ -1133,7 +1133,7 @@ std::vector<size_t> MultipartOptimizer::getVertexCounts(
 // and vertex count.
 
 void MultipartOptimizer::clusterMeshNodesBvh(
-	const std::vector<StreamingMeshNode> &meshes,
+	const std::vector<repo::core::model::StreamingMeshNode> &meshes,
 	const std::vector<int> &binIndexes,
 	std::vector<std::vector<int>> &clusters)
 {
@@ -1206,7 +1206,7 @@ void MultipartOptimizer::splitBigClusters(
 }
 
 std::vector<std::vector<int>> MultipartOptimizer::clusterMeshNodes(
-	const std::vector<MultipartOptimizer::StreamingMeshNode>& meshes
+	const std::vector<repo::core::model::StreamingMeshNode>& meshes
 )
 {
 	// Takes one set of MeshNodes and groups them into N sets of MeshNodes,
