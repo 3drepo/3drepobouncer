@@ -279,30 +279,6 @@ repo::lib::repo_color3d_t repo::core::model::RepoBSON::getColourField(const std:
 	}
 }
 
-repo::lib::RepoMatrix RepoBSON::getMatrixField(const std::string& label) const
-{
-	std::vector<float> transformationMatrix;
-	transformationMatrix.resize(16);
-	float* transArr = &transformationMatrix.at(0);
-
-	// matrix is stored as array of arrays, row first
-
-	auto matrixObj = getField(label);
-	const bsoncxx::array::view& rows = matrixObj.get_array();
-	for (uint32_t rowInd = 0; rowInd < 4; rowInd++)
-	{
-		const bsoncxx::array::view& cols = rows[rowInd].get_array();
-		for (uint32_t colInd = 0; colInd < 4; colInd++)
-		{
-			const auto& e = cols[colInd];
-			uint32_t index = rowInd * 4 + colInd;
-			transArr[index] = e.get_double();
-		}
-	}
-
-	return repo::lib::RepoMatrix(transformationMatrix);
-}
-
 std::vector<repo::lib::RepoMatrix> RepoBSON::getMatrixFieldArray(const std::string& label) const
 {
 	return getArray<repo::lib::RepoMatrix>(label, true);
@@ -427,6 +403,27 @@ int64_t RepoBSON::getLongField(const std::string& label) const
 	}
 }
 
+repo::lib::RepoMatrix getMatrixFromArray(const bsoncxx::array::view& rows) {
+	
+	std::vector<float> transformationMatrix;
+
+	transformationMatrix.resize(16);
+	float* transArr = &transformationMatrix.at(0);
+	
+	for (uint32_t rowInd = 0; rowInd < 4; rowInd++)
+	{
+		const bsoncxx::array::view& cols = rows[rowInd].get_array();
+		for (uint32_t colInd = 0; colInd < 4; colInd++)
+		{
+			const auto& e = cols[colInd];
+			uint32_t index = rowInd * 4 + colInd;
+			transArr[index] = e.get_double();
+		}
+	}
+
+	return repo::lib::RepoMatrix(transformationMatrix);
+}
+
 // These specialisations perform the concrete type conversion for the getArray
 // method.
 
@@ -472,28 +469,14 @@ template<> repo::lib::RepoMatrix getValue<repo::lib::RepoMatrix>(const bsoncxx::
 {
 	if (e.type() == bsoncxx::type::k_array)
 	{
-		std::vector<float> transformationMatrix;
-
-		transformationMatrix.resize(16);
-		float* transArr = &transformationMatrix.at(0);
-
-		// matrix is stored as array of arrays, row first
-
-		const bsoncxx::array::view& rows = e.get_array();
-		for (uint32_t rowInd = 0; rowInd < 4; rowInd++)
-		{
-			const bsoncxx::array::view& cols = rows[rowInd].get_array();
-			for (uint32_t colInd = 0; colInd < 4; colInd++)
-			{
-				const auto& e = cols[colInd];
-				uint32_t index = rowInd * 4 + colInd;
-				transArr[index] = e.get_double();
-			}
-		}
-
-		return repo::lib::RepoMatrix(transformationMatrix);
+		return getMatrixFromArray(e.get_array());
 	}
 	throw repo::lib::RepoBSONException("Cannot convert array field to RepoMatrix because it has the wrong subtype");
+}
+
+repo::lib::RepoMatrix RepoBSON::getMatrixField(const std::string& label) const
+{	
+	return getMatrixFromArray(getField(label).get_array());
 }
 
 template<typename T>
