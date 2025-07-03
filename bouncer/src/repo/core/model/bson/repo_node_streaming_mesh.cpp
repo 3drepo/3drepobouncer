@@ -25,12 +25,24 @@ repo::core::model::StreamingMeshNode::SupermeshingData::SupermeshingData(const r
 
 void repo::core::model::StreamingMeshNode::SupermeshingData::bakeMeshes(const repo::lib::RepoMatrix& transform)
 {
+	// Vertices
 	for (int i = 0; i < vertices.size(); i++) {
 		vertices[i] = transform * vertices[i];
 	}
 
+	// Normals
+	auto matInverse = transform.invert();
+	auto worldMat = matInverse.transpose();
+
+	auto data = worldMat.getData();
+	data[3] = data[7] = data[11] = 0;
+	data[12] = data[13] = data[14] = 0;
+
+	repo::lib::RepoMatrix multMat(data);
+
 	for (int i = 0; i < normals.size(); i++) {
-		normals[i] = transform * normals[i];
+		normals[i] = multMat * normals[i];
+		normals[i].normalize();
 	}
 }
 
