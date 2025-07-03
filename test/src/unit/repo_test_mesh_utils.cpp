@@ -51,7 +51,7 @@ bool repo::test::utils::mesh::compareMeshes(
 	// Get unprocessed geometry from the database
 	auto unprocessedFaces = getFacesFromDatabase(database, projectName, revId);
 
-	// Check for lenght equality first
+	// Check for length equality first
 	if (unprocessedFaces.size() != processedFaces.size())
 	{
 		return false;
