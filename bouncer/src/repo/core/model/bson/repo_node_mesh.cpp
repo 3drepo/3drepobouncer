@@ -242,6 +242,7 @@ void appendFilterTags(
 		break;
 	case MeshNode::MaterialProperties::TEXTUREDMAT:
 		matPropsBson.append(REPO_FILTER_PROP_TEXTURE_ID, textureId);
+		break;
 	default:
 		repoWarning << "MeshNode is getting serialised without having filter tags set. This node will be ignored during processing";
 	}
