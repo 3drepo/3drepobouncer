@@ -31,7 +31,7 @@ repo::core::model::RepoBSON DataRef::serialise() const {
 DataRef DataRef::deserialise(const repo::core::model::RepoBSON &serialisedObj) {
 	return DataRef(
 		serialisedObj.getStringField(REPO_LABEL_BINARY_FILENAME),
-		serialisedObj.getIntField(REPO_LABEL_BINARY_START),
-		serialisedObj.getIntField(REPO_LABEL_BINARY_SIZE)
+		serialisedObj.getLongField(REPO_LABEL_BINARY_START),
+		serialisedObj.getLongField(REPO_LABEL_BINARY_SIZE)
 	);
 }

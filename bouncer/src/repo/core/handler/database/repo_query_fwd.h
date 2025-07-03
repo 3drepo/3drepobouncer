@@ -28,10 +28,11 @@ namespace repo {
 					class Exists;
 					class Or;
 					class RepoQueryBuilder;
+					class RepoProjectionBuilder;
 
 					class AddParent;
 
-					using RepoQuery = std::variant<Eq, Exists, Or, RepoQueryBuilder>;
+					using RepoQuery = std::variant<Eq, Exists, Or, RepoQueryBuilder, RepoProjectionBuilder>;
 
 					using RepoUpdate = std::variant<AddParent>;
 				}

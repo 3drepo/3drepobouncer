@@ -172,7 +172,7 @@ public:
 		minBufferSize(0),
 		numMaterials(0)
 	{
-		createIndexes();
+		createIndexes(false);
 	}
 
 	struct Ids

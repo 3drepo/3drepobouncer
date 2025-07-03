@@ -45,6 +45,8 @@
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/json.hpp>
 
+#include <chrono>
+
 using namespace repo::core::handler;
 using namespace repo::core::handler::fileservice;
 using namespace repo::core::handler::database;
@@ -204,6 +206,19 @@ struct MongoQueryFilterVistior
 			std::visit(*this, q);
 		}
 	}
+
+	void operator() (const query::RepoProjectionBuilder& n) const {
+		// RepoProjectionBuilder allows to construct projections by providing
+		// fields to be included and fields to be excluded
+
+		for (std::string field : n.includedFields) {
+			builder->append(field, 1);
+		}
+
+		for (std::string field : n.excludedFields) {
+			builder->append(field, 0);
+		}
+	}
 };
 
 /*
@@ -325,6 +340,11 @@ bool MongoDatabaseHandler::caseInsensitiveStringCompare(
 
 void MongoDatabaseHandler::createIndex(const std::string& database, const std::string& collection, const database::index::RepoIndex& index)
 {
+	createIndex(database, collection, index, false);
+}
+
+void MongoDatabaseHandler::createIndex(const std::string& database, const std::string& collection, const database::index::RepoIndex& index, bool sparse)
+{
 	try
 	{
 		if (!(database.empty() || collection.empty()))
@@ -334,9 +354,14 @@ void MongoDatabaseHandler::createIndex(const std::string& database, const std::s
 			auto col = db.collection(collection);
 			auto obj = (repo::core::model::RepoBSON)index;
 
-			repoInfo << "Creating index for :" << database << "." << collection << " : index: " << obj.toString();
+			repoInfo << "Creating index for :" << database << "." << collection << " : index: " << obj.toString() << " sparse: " << sparse;
 
-			col.create_index(obj.view());
+			mongocxx::v_noabi::options::index options;			
+			if (sparse) {
+				options.sparse(true);
+			}
+
+			col.create_index(obj.view(), options);
 		}
 	}
 	catch (...)
@@ -351,8 +376,8 @@ void MongoDatabaseHandler::createIndex(const std::string& database, const std::s
  * before being returned as a RepoBSON.
  */
 repo::core::model::RepoBSON MongoDatabaseHandler::createRepoBSON(
-	const std::string& database, 
-	const std::string& collection, 
+	const std::string& database,
+	const std::string& collection,
 	const bsoncxx::document::view& view)
 {
 	fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
@@ -435,7 +460,19 @@ void MongoDatabaseHandler::dropDocument(
 std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria(
 	const std::string& database,
 	const std::string& collection,
-	const database::query::RepoQuery& filter)
+	const database::query::RepoQuery& filter,
+	const bool loadBinaries/* = false*/) {
+
+	auto projection = database::query::RepoProjectionBuilder();
+	return findAllByCriteria(database, collection, filter, projection, loadBinaries);
+}
+
+std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria(
+	const std::string& database,
+	const std::string& collection,
+	const database::query::RepoQuery& filter,
+	const database::query::RepoQuery& projection,
+	const bool loadBinaries/* = false*/)
 {
 	try
 	{
@@ -447,10 +484,17 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 			auto db = client->database(database);
 			auto col = db.collection(collection);
 
+			repo::core::model::RepoBSON projectionBson = makeQueryFilterDocument(projection);
+			mongocxx::v_noabi::options::find options;
+			options.projection(projectionBson.view());
+
 			// Find all documents
 			auto cursor = col.find(criteria.view());
 			for (auto& doc : cursor) {
-				data.push_back(createRepoBSON(database, collection, doc));
+				if (loadBinaries)
+					data.push_back(createRepoBSON(database, collection, doc));
+				else
+					data.push_back(repo::core::model::RepoBSON(doc));
 			}
 		}
 		return data;
@@ -485,7 +529,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 			auto findResult = col.find_one(criteria.view(), options);
 			if (findResult.has_value()) {
 				fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-				return createRepoBSON(database, collection, findResult.value());
+				return repo::core::model::RepoBSON(findResult.value());
 			}
 		}
 		return {};
@@ -568,7 +612,7 @@ MongoDatabaseHandler::getAllFromCollectionTailable(
 
 		auto cursor = col.find({}, options);
 		for (auto doc : cursor) {
-			bsons.push_back(createRepoBSON(database, collection, doc));
+			bsons.push_back(repo::core::model::RepoBSON(doc));
 		}
 
 		return bsons;
@@ -865,28 +909,57 @@ private:
 
 	repo::core::model::RepoBSON createRepoBSON(const bsoncxx::document::view& view)
 	{
-		return handler->createRepoBSON(database, collection, view);
+		return repo::core::model::RepoBSON(view);
 	}
 };
 
-std::unique_ptr<repo::core::handler::database::Cursor> MongoDatabaseHandler::getAllByCriteria(
+std::unique_ptr<Cursor> repo::core::handler::MongoDatabaseHandler::findCursorByCriteria(
 	const std::string& database,
 	const std::string& collection,
-	const database::query::RepoQuery& criteria
-)
+	const database::query::RepoQuery& criteria)
+{
+	auto projection = database::query::RepoProjectionBuilder();
+	return findCursorByCriteria(database, collection, criteria, projection);
+}
+
+std::unique_ptr<Cursor> repo::core::handler::MongoDatabaseHandler::findCursorByCriteria(
+	const std::string& database,
+	const std::string& collection,
+	const database::query::RepoQuery& filter,
+	const database::query::RepoQuery& projection)
 {
 	try
 	{
-		auto client = clientPool->acquire();
-		auto db = client->database(database);
-		auto col = db.collection(collection);
+		repo::core::model::RepoBSON criteria = makeQueryFilterDocument(filter);
+		if (!criteria.isEmpty() && !database.empty() && !collection.empty())
+		{
+			auto client = clientPool->acquire();
+			auto db = client->database(database);
+			auto col = db.collection(collection);
 
-		repo::core::model::RepoBSON q = makeQueryFilterDocument(criteria);
-		return std::make_unique<MongoCursor>(std::move(col.find(q.view())), this);
+			std::string critString = criteria.toString();
+			std::cout << critString;
+
+			repo::core::model::RepoBSON projectionBson = makeQueryFilterDocument(projection);
+			mongocxx::v_noabi::options::find options;
+			options.projection(projectionBson.view());
+
+			// Find all documents and return cursor
+			// Some pointer magic, because we have to cast the mongo cursor to its base before returning it.
+			// Ownership will be the caller's after the two raw pointers go out of scope
+			MongoDatabaseHandler::MongoCursor* mongoCursor = new MongoDatabaseHandler::MongoCursor(std::move(col.find(criteria.view())), this);			
+			database::Cursor *baseCursor = mongoCursor;
+			return std::unique_ptr<database::Cursor>(baseCursor);			
+		}
+		else
+		{
+			return nullptr;
+		}
+
 	}
 	catch (...)
 	{
-		std::throw_with_nested(MongoDatabaseHandlerException(*this, "getAllByCriteria (cursor)", database, collection));
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "findCursorByCriteria", database, collection));
 	}
 }
 

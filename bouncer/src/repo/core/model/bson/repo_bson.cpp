@@ -207,10 +207,10 @@ std::pair<repo::core::model::RepoBSON, std::vector<uint8_t>> RepoBSON::getBinari
 		for (const auto &entry : bigFiles) {
 			RepoBSONBuilder entryBuilder;
 
-			entryBuilder.append(REPO_LABEL_BINARY_START, (int32_t)buffer.size());
+			entryBuilder.append(REPO_LABEL_BINARY_START, (int64_t)buffer.size());
 
 			buffer.insert(buffer.end(), entry.second.begin(), entry.second.end());
-			entryBuilder.append(REPO_LABEL_BINARY_SIZE, (int32_t)entry.second.size());
+			entryBuilder.append(REPO_LABEL_BINARY_SIZE, (int64_t)entry.second.size());
 
 			elemsBuilder.append(entry.first, entryBuilder.obj());
 		}
@@ -263,6 +263,22 @@ repo::lib::RepoVector3D RepoBSON::getVector3DField(const std::string& label) con
 	return v;
 }
 
+repo::lib::repo_color3d_t repo::core::model::RepoBSON::getColourField(const std::string& label) const
+{
+	auto arr = getFloatArray(label);
+	if (arr.size() < 3)
+	{
+		return repo::lib::repo_color3d_t();
+	}
+	else {
+		repo::lib::repo_color3d_t c;
+		c.r = arr[0];
+		c.g = arr[1];
+		c.b = arr[2];
+		return c;
+	}
+}
+
 repo::lib::RepoMatrix RepoBSON::getMatrixField(const std::string& label) const
 {
 	std::vector<float> transformationMatrix;
@@ -285,6 +301,11 @@ repo::lib::RepoMatrix RepoBSON::getMatrixField(const std::string& label) const
 	}
 
 	return repo::lib::RepoMatrix(transformationMatrix);
+}
+
+std::vector<repo::lib::RepoMatrix> RepoBSON::getMatrixFieldArray(const std::string& label) const
+{
+	return getArray<repo::lib::RepoMatrix>(label, true);
 }
 
 std::vector<double> RepoBSON::getDoubleVectorField(const std::string& label) const
@@ -339,8 +360,8 @@ void RepoBSON::initBinaryBuffer(const std::vector<uint8_t> &buffer)
 
 		for (const auto &elem : elemRefs.getFieldNames()) {
 			auto elemRefBson = elemRefs.getObjectField(elem);
-			size_t start = elemRefBson.getIntField(REPO_LABEL_BINARY_START);
-			size_t size = elemRefBson.getIntField(REPO_LABEL_BINARY_SIZE);
+			size_t start = elemRefBson.getLongField(REPO_LABEL_BINARY_START);
+			size_t size = elemRefBson.getLongField(REPO_LABEL_BINARY_SIZE);
 
 			bigFiles[elem] = std::vector<uint8_t>(buffer.begin() + start, buffer.begin() + start + size);
 		}
@@ -445,6 +466,34 @@ template<> repo::lib::RepoUUID getValue<repo::lib::RepoUUID>(const bsoncxx::arra
 		}
 	}
 	throw repo::lib::RepoBSONException("Cannot convert binary field to RepoUUID because it has the wrong subtype");
+}
+
+template<> repo::lib::RepoMatrix getValue<repo::lib::RepoMatrix>(const bsoncxx::array::element& e)
+{
+	if (e.type() == bsoncxx::type::k_array)
+	{
+		std::vector<float> transformationMatrix;
+
+		transformationMatrix.resize(16);
+		float* transArr = &transformationMatrix.at(0);
+
+		// matrix is stored as array of arrays, row first
+
+		const bsoncxx::array::view& rows = e.get_array();
+		for (uint32_t rowInd = 0; rowInd < 4; rowInd++)
+		{
+			const bsoncxx::array::view& cols = rows[rowInd].get_array();
+			for (uint32_t colInd = 0; colInd < 4; colInd++)
+			{
+				const auto& e = cols[colInd];
+				uint32_t index = rowInd * 4 + colInd;
+				transArr[index] = e.get_double();
+			}
+		}
+
+		return repo::lib::RepoMatrix(transformationMatrix);
+	}
+	throw repo::lib::RepoBSONException("Cannot convert array field to RepoMatrix because it has the wrong subtype");
 }
 
 template<typename T>
