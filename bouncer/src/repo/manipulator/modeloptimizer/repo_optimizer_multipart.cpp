@@ -291,6 +291,9 @@ std::set<std::string> MultipartOptimizer::getAllGroupings(
 
 	std::set<std::string> groupings;
 
+	// Add default grouping
+	groupings.insert("");
+
 	auto sceneCollection = collection + "." + REPO_COLLECTION_SCENE;
 	auto cursor = handler->findCursorByCriteria(database, sceneCollection, filter, projection);
 
@@ -303,10 +306,6 @@ std::set<std::string> MultipartOptimizer::getAllGroupings(
 	else {
 		repoWarning << "getAllGroupings; getting cursor was not successful; no groupings from db in output vector";
 	}
-
-	// If we found no groupings, then we have just one pass without so we add "".
-	if (groupings.size() == 0)
-		groupings.insert("");
 
 	return groupings;
 }
@@ -324,6 +323,8 @@ std::vector<repo::lib::RepoUUID> MultipartOptimizer::getAllTextureIds(
 	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_TEXTURE)));
 	if (!grouping.empty())
 		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_GROUPING, grouping));
+	else
+		filter.append(repo::core::handler::database::query::Exists(REPO_NODE_MESH_LABEL_GROUPING, false));
 
 	repo::core::handler::database::query::RepoProjectionBuilder projection;
 	projection.includeField(REPO_NODE_LABEL_ID);
@@ -359,6 +360,8 @@ MultipartOptimizer::ProcessingJob repo::manipulator::modeloptimizer::MultipartOp
 	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_PRIMITIVE, primitive));
 	if (!grouping.empty())
 		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_GROUPING, grouping));
+	else
+		filter.append(repo::core::handler::database::query::Exists(REPO_NODE_MESH_LABEL_GROUPING, false));
 	if (isOpaque)
 		filter.append(repo::core::handler::database::query::Eq(REPO_FILTER_TAG_OPAQUE, true));
 	else
@@ -382,6 +385,8 @@ MultipartOptimizer::ProcessingJob repo::manipulator::modeloptimizer::MultipartOp
 	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_PRIMITIVE, primitive));
 	if (!grouping.empty())
 		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_GROUPING, grouping));
+	else
+		filter.append(repo::core::handler::database::query::Exists(REPO_NODE_MESH_LABEL_GROUPING, false));
 
 	// Create job
 	return ProcessingJob({ description, filter, texId });
