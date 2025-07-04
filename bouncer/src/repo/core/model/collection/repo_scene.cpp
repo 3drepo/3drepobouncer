@@ -1136,7 +1136,7 @@ bool RepoScene::loadScene(
 	}
 
 	std::vector<RepoBSON> nodes = handler->findAllByCriteria(
-		databaseName, projectName + "." + REPO_COLLECTION_SCENE, core::handler::database::query::Eq(REPO_NODE_STASH_REF, revNode->getUniqueID())
+		databaseName, projectName + "." + REPO_COLLECTION_SCENE, core::handler::database::query::Eq(REPO_NODE_STASH_REF, revNode->getUniqueID()), true
 	);
 
 	repoInfo << "# of nodes in this unoptimised scene = " << nodes.size();

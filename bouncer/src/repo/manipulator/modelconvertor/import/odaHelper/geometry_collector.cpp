@@ -136,8 +136,8 @@ void GeometryCollector::addMeshes(std::string id, std::vector<std::pair<repo::co
 	auto parent = getSharedId(id);
 	for (auto& p : meshes) {
 		p.first.setParents({ parent });
+		p.first.setMaterial(p.second);
 		addNode(p.first);
-		addMaterialReference(p.second, p.first.getSharedID());
 	}
 }
 

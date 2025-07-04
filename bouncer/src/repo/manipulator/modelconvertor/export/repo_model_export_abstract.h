@@ -24,34 +24,55 @@
 #include <string>
 
 #include "../../../core/model/collection/repo_scene.h"
+#include <repo/core/model/bson/repo_bson_factory.h>
 
 namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
+
+			enum class ExportType { REPO };
+
 			class AbstractModelExport
 			{
 			public:
+
 				/**
 				* Default Constructor, export model with default settings
-				*/
-				AbstractModelExport(const repo::core::model::RepoScene *scene);
+				*/				
+				AbstractModelExport(
+					repo::core::handler::AbstractDatabaseHandler* dbHandler,
+					const std::string databaseName,
+					const std::string projectName,
+					const repo::lib::RepoUUID revId,
+					const std::vector<double> worldOffset);
 
 				/**
 				* Default Deconstructor
 				*/
 				virtual ~AbstractModelExport();
+								
+				/**
+				* Exports supermesh to file and adds its information to the ongoing export process.
+				* @param a pointer to the supermesh
+				*/
+				virtual void addSupermesh(repo::core::model::SupermeshNode* supermesh) = 0;
 
 				/**
-				* Export a repo scene graph to file
-				* @param scene repo scene representation
-				* @param filePath path to destination file
-				* @return returns true upon success
+				* Finalises the export by writing out the metadata and mapping information collected
+				* during the ongoing export process.
 				*/
-				virtual bool exportToFile(
-					const std::string &filePath) = 0; //FIXME: this shoudl be const, but it requires quite a major refactoring on assimp export
+				virtual void finalise() = 0;
 
 			protected:
-				const repo::core::model::RepoScene *scene;
+
+				// Database handler
+				repo::core::handler::AbstractDatabaseHandler* dbHandler;
+
+				// Model info
+				std::string databaseName;
+				std::string projectName;
+				repo::lib::RepoUUID revId;
+				std::vector<double> worldOffset;
 			};
 		} //namespace modelconvertor
 	} //namespace manipulator

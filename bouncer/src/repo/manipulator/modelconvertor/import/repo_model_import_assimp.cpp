@@ -408,6 +408,7 @@ repo::core::model::MeshNode AssimpModelImport::createMeshRepoNode(
 	const std::vector<repo::core::model::RepoNode *> &materials,
 	std::unordered_map < repo::core::model::RepoNode*, std::vector<repo::lib::RepoUUID>> &matMap,
 	const bool hasTexture,
+	const repo::lib::RepoUUID& texId,
 	const std::vector<double> &offset)
 {
 	repo::core::model::MeshNode meshNode;
@@ -519,6 +520,15 @@ repo::core::model::MeshNode AssimpModelImport::createMeshRepoNode(
 	{
 		repo::core::model::RepoNode *materialNode = materials[assimpMesh->mMaterialIndex];
 		matMap[materialNode].push_back(meshNode.getSharedID());
+
+		// Shim to enable the new multipart optimiser to read Assimp models until this importer
+		// is refactored to use the scene builder.
+		auto matNode = ((repo::core::model::MaterialNode*)materialNode);
+		auto material = matNode->getMaterialStruct();
+		meshNode.setMaterial(material);
+				
+		if(hasTexture)
+			meshNode.setTextureId(texId);		
 	}
 
 	///*
@@ -869,11 +879,26 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 					repoInfo << "Constructing " << i << " of " << assimpScene->mNumMeshes;
 				}
 
-				int numTextures = assimpScene->mMaterials[assimpScene->mMeshes[i]->mMaterialIndex]->GetTextureCount(aiTextureType_DIFFUSE);
+				auto aiMaterial = assimpScene->mMaterials[assimpScene->mMeshes[i]->mMaterialIndex];
+				int numTextures = aiMaterial->GetTextureCount(aiTextureType_DIFFUSE);
+
+				repo::lib::RepoUUID texId;
+				if (numTextures > 0) {
+					aiString texPath;
+					aiMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &texPath);
+					auto texture = nameToTexture.find(texPath.data);
+
+					if (nameToTexture.end() != texture)
+					{
+						texId = texture->second->getUniqueID();
+					}
+				}
+				
 				auto mesh = createMeshRepoNode(
 					assimpScene->mMeshes[i],
 					originalOrderMaterial,
 					matParents, numTextures > 0,
+					texId,
 					sceneBbox.size() ? sceneBbox[0] : std::vector<double>());
 
 				if (!mesh.getNumVertices())
