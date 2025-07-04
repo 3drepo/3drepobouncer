@@ -215,8 +215,11 @@ namespace repo {
 				}
 
 				void setTextureId(const repo::lib::RepoUUID textureId) {
-					this->matProps = MaterialProperties::TEXTUREDMAT;
-					this->textureId = textureId;
+					// Only set texture ID if there is a uv channel present
+					if (channels.size() > 0) {
+						this->matProps = MaterialProperties::TEXTUREDMAT;
+						this->textureId = textureId;
+					}
 				}
 
 				/**

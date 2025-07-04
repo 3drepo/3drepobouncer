@@ -646,7 +646,7 @@ void MultipartOptimizer::appendMesh(
 		else
 		{
 			//This shouldn't happen, if it does, then it means that mesh nodes with and without uvs have been grouped together
-			repoError << "Unexpected transformedMesh format mismatch occured!";
+			repoError << "Unexpected mismatch occured! Meshes with and without UVs grouped together!";
 		}
 	}
 	else
