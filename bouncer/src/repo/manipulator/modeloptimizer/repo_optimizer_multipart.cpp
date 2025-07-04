@@ -161,7 +161,7 @@ std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUU
 	auto sceneCollection = collection + "." + REPO_COLLECTION_SCENE;
 	auto cursor = handler->findCursorByCriteria(database, sceneCollection, filter, projection);
 
-	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> leafToTransformMap;
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> transformMap;
 
 	if (cursor) {
 		repo::core::model::RepoBSON rootNode;
@@ -186,20 +186,20 @@ std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUU
 			repoWarning << "getAllTransforms; no transformations returned by database query.";
 		}
 		else {
-			traverseTransformTree(rootNode, childNodeMap, leafToTransformMap);
+			traverseTransformTree(rootNode, childNodeMap, transformMap);
 		}
 	}
 	else {
 		repoWarning << "getAllTransforms; getting cursor was not successful; no transforms in output map";
 	}
 
-	return leafToTransformMap;
+	return transformMap;
 }
 
 void MultipartOptimizer::traverseTransformTree(
 	const repo::core::model::RepoBSON &root,
 	const std::unordered_map<repo::lib::RepoUUID, std::vector<repo::core::model::RepoBSON>,	repo::lib::RepoUUIDHasher> &childNodeMap,
-	std::unordered_map<repo::lib::RepoUUID,	repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> &leafTransforms)
+	std::unordered_map<repo::lib::RepoUUID,	repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> &transforms)
 {
 
 	// Create stacks for the nodes and the matrices
@@ -228,18 +228,17 @@ void MultipartOptimizer::traverseTransformTree(
 		// Apply the node's trnsaformation
 		auto newMat = topMat * matrix;
 
-		if (childNodeMap.contains(nodeId)) {
-			// If the node has children, push children on the stack
+		// Insert the transform for children of this node into the map
+		transforms.insert({ nodeId, newMat });
+
+		// if this node has other transforms as children, push them on the stack
+		if (childNodeMap.contains(nodeId)) {			
 			auto children = childNodeMap.at(nodeId);
 			for (auto child : children) {
 				stack.push({ child, newMat });
 			}
 		}
-		else {
-			// If it has no children, it is a leaf.
-			// Put result matrix in the final map
-			leafTransforms.insert({ nodeId, newMat });
-		}
+
 	}
 }
 
@@ -444,7 +443,7 @@ void MultipartOptimizer::clusterAndSupermesh(
 			node.transformBounds(transMat);
 		}
 		else {
-			repoWarning << "clusterAndSupermesh; current node has no transform parents; this should not happen; malformed file?";
+			repoWarning << "clusterAndSupermesh; current node " << node.getSharedId().toString() << " has no transform parents; this should not happen; malformed file?";
 		}
 	}
 

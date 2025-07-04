@@ -92,7 +92,7 @@ namespace repo {
 				void traverseTransformTree(
 					const repo::core::model::RepoBSON &root,
 					const std::unordered_map<repo::lib::RepoUUID, std::vector<repo::core::model::RepoBSON>, repo::lib::RepoUUIDHasher> &childNodeMap,
-					std::unordered_map<repo::lib::RepoUUID,	repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> &leafTransforms);
+					std::unordered_map<repo::lib::RepoUUID,	repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> &transforms);
 
 				MaterialPropMap getAllMaterials(
 					repo::core::handler::AbstractDatabaseHandler *handler,
