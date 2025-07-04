@@ -226,7 +226,7 @@ void MultipartOptimizer::traverseTransformTree(
 		auto matrix = topBson.getMatrixField(REPO_NODE_LABEL_MATRIX);
 
 		// Apply the node's trnsaformation
-		auto newMat = matrix * topMat;
+		auto newMat = topMat * matrix;
 
 		if (childNodeMap.contains(nodeId)) {
 			// If the node has children, push children on the stack
