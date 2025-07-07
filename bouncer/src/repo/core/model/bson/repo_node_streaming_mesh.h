@@ -102,6 +102,11 @@ namespace repo {
 
 				std::unique_ptr<SupermeshingData> supermeshingData;
 
+				// Empty vectors as standins when the supermeshingData is not loaded
+				std::vector<repo::lib::repo_face_t> emptyFace;
+				std::vector<repo::lib::RepoVector3D> empty3D;
+				std::vector<std::vector<repo::lib::RepoVector2D>> emptyUV;
+
 			public:
 				StreamingMeshNode()
 				{

@@ -183,7 +183,7 @@ const std::vector<repo::lib::repo_face_t>& repo::core::model::StreamingMeshNode:
 	}
 	else {
 		repoError << "Tried to access supermesh geometry of StreamingMeshNode without loading geometry first. Empty returned.";
-		return std::vector<repo::lib::repo_face_t>();
+		return emptyFace;
 	}
 }
 
@@ -203,13 +203,13 @@ const std::vector<repo::lib::RepoVector3D>& repo::core::model::StreamingMeshNode
 	}
 	else {
 		repoError << "Tried to access supermesh geometry of StreamingMeshNode without loading geometry first. Empty returned.";
-		return std::vector < repo::lib::RepoVector3D>();
+		return empty3D;
 	}
 }
 
 void repo::core::model::StreamingMeshNode::bakeLoadedMeshes(const repo::lib::RepoMatrix& transform) {
 	if (supermeshingDataLoaded()) {
-		return supermeshingData->bakeMeshes(transform);
+		supermeshingData->bakeMeshes(transform);
 	}
 	else {
 		repoError << "Tried to access supermesh geometry of StreamingMeshNode without loading geometry first. No action performed.";
@@ -223,7 +223,7 @@ const std::vector<repo::lib::RepoVector3D>& repo::core::model::StreamingMeshNode
 	}
 	else {
 		repoError << "Tried to access supermesh geometry of StreamingMeshNode without loading geometry first. Empty returned.";
-		return std::vector<repo::lib::RepoVector3D>();
+		return empty3D;
 	}
 }
 
@@ -234,6 +234,6 @@ const std::vector<std::vector<repo::lib::RepoVector2D>>& repo::core::model::Stre
 	}
 	else {
 		repoError << "Tried to access supermesh geometry of StreamingMeshNode without loading geometry first. Empty returned.";
-		return std::vector<std::vector<repo::lib::RepoVector2D>>();
+		return emptyUV;
 	}
 }
