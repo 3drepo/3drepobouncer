@@ -531,18 +531,18 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 			auto parentId = sNode.getParent();
 			if (transformMap.contains(parentId)) {
 				auto transform = transformMap.at(parentId);
-				sNode.bakeMeshes(transform);
+				sNode.bakeLoadedMeshes(transform);
 			}
 			else {
 				repoWarning << "createSuperMeshes; no transform found for this mesh node. Mesh will not be baked";
 			}
 
-			if (currentSupermesh.vertices.size() + sNode.getNumVertices() <= REPO_MP_MAX_VERTEX_COUNT)
+			if (currentSupermesh.vertices.size() + sNode.getNumLoadedVertices() <= REPO_MP_MAX_VERTEX_COUNT)
 			{
 				// The current node can be added to the supermesh OK				
 				appendMesh(sNode, matPropMap, currentSupermesh, texId);
 			}
-			else if (sNode.getNumVertices() > REPO_MP_MAX_VERTEX_COUNT)
+			else if (sNode.getNumLoadedVertices() > REPO_MP_MAX_VERTEX_COUNT)
 			{
 				// The node is too big to fit into any supermesh, so it must be split
 				splitMesh(sNode, exporter, matPropMap, texId);
@@ -601,10 +601,10 @@ void MultipartOptimizer::appendMesh(
 	meshMap.min = (repo::lib::RepoVector3D)bbox.min();
 	meshMap.max = (repo::lib::RepoVector3D)bbox.max();
 
-	std::vector<repo::lib::RepoVector3D> submVertices = node.getVertices();
-	std::vector<repo::lib::RepoVector3D> submNormals = node.getNormals();
-	std::vector<repo_face_t> submFaces = node.getFaces();
-	std::vector<std::vector<repo::lib::RepoVector2D>> submUVs = node.getUVChannelsSeparated();
+	std::vector<repo::lib::RepoVector3D> submVertices = node.getLoadedVertices();
+	std::vector<repo::lib::RepoVector3D> submNormals = node.getLoadedNormals();
+	std::vector<repo_face_t> submFaces = node.getLoadedFaces();
+	std::vector<std::vector<repo::lib::RepoVector2D>> submUVs = node.getLoadedUVChannelsSeparated();
 
 	if (submVertices.size() && submFaces.size())
 	{
@@ -665,8 +665,8 @@ MultipartOptimizer::Bvh MultipartOptimizer::buildFacesBvh(
 	// mesh.
 	// The BVH builder expects a set of bounding boxes and centers to work with.
 
-	auto faces = node.getFaces();
-	auto vertices = node.getVertices();
+	auto faces = node.getLoadedFaces();
+	auto vertices = node.getLoadedVertices();
 	auto boundingBoxes = std::vector<bvh::BoundingBox<Scalar>>();
 	auto centers = std::vector<BvhVector3>();
 
@@ -872,7 +872,7 @@ void MultipartOptimizer::splitMesh(
 	// We get the vertex counts by first computing all the vertices referenced
 	// by the node(s), which will be used in the re-indexing.
 
-	auto faces = node.getFaces();
+	auto faces = node.getLoadedFaces();
 	auto uniqueVerticesByNode = getUniqueVertices(bvh, faces);
 
 	auto vertexCounts = std::vector<size_t>();
@@ -911,9 +911,9 @@ void MultipartOptimizer::splitMesh(
 
 	// Get the vertex attributes for building the sub mapped meshes
 
-	auto vertices = node.getVertices();
-	auto normals = node.getNormals();
-	auto uvChannels = node.getUVChannelsSeparated();
+	auto vertices = node.getLoadedVertices();
+	auto normals = node.getLoadedNormals();
+	auto uvChannels = node.getLoadedUVChannelsSeparated();
 
 	for (const auto head : branchNodes)
 	{
@@ -1003,7 +1003,7 @@ void MultipartOptimizer::splitMesh(
 		createSuperMesh(exporter, mapped);
 	}
 
-	repoInfo << "Split mesh with " << node.getNumVertices() << " vertices into " << branchNodes.size() << " submeshes in " << CHRONO_DURATION(start) << " ms";
+	repoInfo << "Split mesh with " << node.getNumLoadedVertices() << " vertices into " << branchNodes.size() << " submeshes in " << CHRONO_DURATION(start) << " ms";
 }
 
 

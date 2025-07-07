@@ -23,17 +23,6 @@
 #include <repo/core/model/bson/repo_bson.h>
 #include <repo/core/model/bson/repo_node_mesh.h>
 
-//#include <repo/core/model/collection/repo_scene.h>
-//#include <repo/core/model/bson/repo_node_mesh.h>
-//#include <repo/core/model/bson/repo_node_supermesh.h>
-//#include <repo/core/model/bson/repo_node_material.h>
-//#include <repo/core/handler/database/repo_query.h>
-//#include <repo/core/handler/fileservice/repo_blob_files_handler.h>
-//#include <repo/lib/datastructure/repo_structs.h>
-//#include <repo/manipulator/modelconvertor/export/repo_model_export_abstract.h>
-//#include <repo/core/model/bson/repo_bson.h>
-//#include <repo/core/model/bson/repo_node_streaming_mesh.h>
-
 namespace repo {
 	namespace core {
 		namespace model {
@@ -159,19 +148,19 @@ namespace repo {
 
 				const repo::lib::RepoUUID getUniqueId();
 
-				const std::uint32_t getNumFaces();
+				const std::uint32_t getNumLoadedFaces();
 
-				const std::vector<repo::lib::repo_face_t>& getFaces();
+				const std::vector<repo::lib::repo_face_t>& getLoadedFaces();
 
-				const std::uint32_t getNumVertices();
+				const std::uint32_t getNumLoadedVertices();
 
-				const std::vector<repo::lib::RepoVector3D>& getVertices();
+				const std::vector<repo::lib::RepoVector3D>& getLoadedVertices();
 
-				void bakeMeshes(const repo::lib::RepoMatrix& transform);
+				void bakeLoadedMeshes(const repo::lib::RepoMatrix& transform);
 
-				const std::vector<repo::lib::RepoVector3D>& getNormals();
+				const std::vector<repo::lib::RepoVector3D>& getLoadedNormals();
 
-				const std::vector<std::vector<repo::lib::RepoVector2D>>& getUVChannelsSeparated();
+				const std::vector<std::vector<repo::lib::RepoVector2D>>& getLoadedUVChannelsSeparated();
 			};
 		}
 	}

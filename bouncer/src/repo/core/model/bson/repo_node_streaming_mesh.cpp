@@ -166,7 +166,7 @@ const repo::lib::RepoUUID repo::core::model::StreamingMeshNode::getUniqueId()
 	}
 }
 
-const std::uint32_t repo::core::model::StreamingMeshNode::getNumFaces() {
+const std::uint32_t repo::core::model::StreamingMeshNode::getNumLoadedFaces() {
 	if (supermeshingDataLoaded()) {
 		return supermeshingData->getNumFaces();
 	}
@@ -176,7 +176,7 @@ const std::uint32_t repo::core::model::StreamingMeshNode::getNumFaces() {
 	}
 }
 
-const std::vector<repo::lib::repo_face_t>& repo::core::model::StreamingMeshNode::getFaces()
+const std::vector<repo::lib::repo_face_t>& repo::core::model::StreamingMeshNode::getLoadedFaces()
 {
 	if (supermeshingDataLoaded()) {
 		return supermeshingData->getFaces();
@@ -187,7 +187,7 @@ const std::vector<repo::lib::repo_face_t>& repo::core::model::StreamingMeshNode:
 	}
 }
 
-const std::uint32_t repo::core::model::StreamingMeshNode::getNumVertices() {
+const std::uint32_t repo::core::model::StreamingMeshNode::getNumLoadedVertices() {
 	if (supermeshingDataLoaded()) {
 		return supermeshingData->getNumVertices();
 	}
@@ -197,7 +197,7 @@ const std::uint32_t repo::core::model::StreamingMeshNode::getNumVertices() {
 	}
 }
 
-const std::vector<repo::lib::RepoVector3D>& repo::core::model::StreamingMeshNode::getVertices() {
+const std::vector<repo::lib::RepoVector3D>& repo::core::model::StreamingMeshNode::getLoadedVertices() {
 	if (supermeshingDataLoaded()) {
 		return supermeshingData->getVertices();
 	}
@@ -207,7 +207,7 @@ const std::vector<repo::lib::RepoVector3D>& repo::core::model::StreamingMeshNode
 	}
 }
 
-void repo::core::model::StreamingMeshNode::bakeMeshes(const repo::lib::RepoMatrix& transform) {
+void repo::core::model::StreamingMeshNode::bakeLoadedMeshes(const repo::lib::RepoMatrix& transform) {
 	if (supermeshingDataLoaded()) {
 		return supermeshingData->bakeMeshes(transform);
 	}
@@ -216,7 +216,7 @@ void repo::core::model::StreamingMeshNode::bakeMeshes(const repo::lib::RepoMatri
 	}
 }
 
-const std::vector<repo::lib::RepoVector3D>& repo::core::model::StreamingMeshNode::getNormals()
+const std::vector<repo::lib::RepoVector3D>& repo::core::model::StreamingMeshNode::getLoadedNormals()
 {
 	if (supermeshingDataLoaded()) {
 		return supermeshingData->getNormals();
@@ -227,7 +227,7 @@ const std::vector<repo::lib::RepoVector3D>& repo::core::model::StreamingMeshNode
 	}
 }
 
-const std::vector<std::vector<repo::lib::RepoVector2D>>& repo::core::model::StreamingMeshNode::getUVChannelsSeparated()
+const std::vector<std::vector<repo::lib::RepoVector2D>>& repo::core::model::StreamingMeshNode::getLoadedUVChannelsSeparated()
 {
 	if (supermeshingDataLoaded()) {
 		return supermeshingData->getUVChannelsSeparated();
