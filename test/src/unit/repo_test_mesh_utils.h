@@ -142,6 +142,7 @@ namespace repo {
 					const int nVertices,
 					const bool hasUV,
 					const int primitiveSize,
+					const std::string grouping,
 					const std::vector<repo::lib::RepoUUID>& parent);
 
 				/*

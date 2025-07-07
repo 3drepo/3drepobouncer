@@ -27,13 +27,15 @@
 using namespace repo::core::model;
 using namespace testing;
 
-std::unique_ptr<MeshNode> repo::test::utils::mesh::createRandomMesh(const int nVertices, const bool hasUV, const int primitiveSize, const std::vector<repo::lib::RepoUUID>& parent)
+std::unique_ptr<MeshNode> repo::test::utils::mesh::createRandomMesh(const int nVertices, const bool hasUV, const int primitiveSize, const std::string grouping, const std::vector<repo::lib::RepoUUID>& parent)
 {
 	auto mesh = makeMeshNode(mesh_data(true, true, 0, primitiveSize, false, hasUV ? 1 : 0, nVertices));
 	mesh.addParents(parent);
 
 	// The new mpOpt drops geometry that has no material, so we set the default here
 	mesh.setMaterial(repo::lib::repo_material_t::DefaultMaterial());
+
+	mesh.setGrouping(grouping);
 
 	return std::make_unique<MeshNode>(mesh);
 }

@@ -49,7 +49,7 @@ TEST(MeshMapReorganiser, VeryLargeMesh)
 	sceneBuilder.addNode(rootNode);
 	auto rootNodeId = rootNode.getSharedID();
 
-	sceneBuilder.addNode(createRandomMesh(327890, false, 3, { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(327890, false, 3, "", { rootNodeId }));
 	
 	sceneBuilder.finalise();
 
@@ -138,7 +138,7 @@ TEST(MeshMapReorganiser, MultipleTinyMeshes)
 	std::vector<repo::lib::RepoUUID> meshIds;
 	for (int i = 0; i < NUM_SUBMESHES; i++)
 	{
-		auto node = createRandomMesh(NUM_VERTICES, false, 3, { rootNodeId });
+		auto node = createRandomMesh(NUM_VERTICES, false, 3, "", { rootNodeId });
 		meshIds.push_back(node->getUniqueID());
 		sceneBuilder.addNode(std::move(node));
 	}
@@ -236,12 +236,12 @@ TEST(MeshMapReorganiser, InterleavedMixedSplit)
 	sceneBuilder.addNode(rootNode);
 	auto rootNodeId = rootNode.getSharedID();
 		
-	auto randNode1 = createRandomMesh(129, false, 3, { rootNodeId });
-	auto randNode2 = createRandomMesh(65537, false, 3, { rootNodeId });
-	auto randNode3 = createRandomMesh(1341, false, 3, { rootNodeId });
-	auto randNode4 = createRandomMesh(68, false, 3, { rootNodeId });
-	auto randNode5 = createRandomMesh(80000, false, 3, { rootNodeId });
-	auto randNode6 = createRandomMesh(17981, false, 3, { rootNodeId });
+	auto randNode1 = createRandomMesh(129, false, 3, "", { rootNodeId });
+	auto randNode2 = createRandomMesh(65537, false, 3, "", { rootNodeId });
+	auto randNode3 = createRandomMesh(1341, false, 3, "", { rootNodeId });
+	auto randNode4 = createRandomMesh(68, false, 3, "", { rootNodeId });
+	auto randNode5 = createRandomMesh(80000, false, 3, "", { rootNodeId });
+	auto randNode6 = createRandomMesh(17981, false, 3, "", { rootNodeId });
 	
 	std::vector<repo::lib::RepoUUID> meshIds;
 	meshIds.push_back(randNode1->getUniqueID());

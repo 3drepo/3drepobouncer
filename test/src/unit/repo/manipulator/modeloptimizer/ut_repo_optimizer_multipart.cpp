@@ -50,7 +50,7 @@ TEST(MultipartOptimizer, TestAllMerged)
 	auto nMesh = 3;
 	
 	for (int i = 0; i < nMesh; ++i) {
-		auto randNode = createRandomMesh(10, false, 3, { rootNodeId });
+		auto randNode = createRandomMesh(10, false, 3, "", { rootNodeId });
 		sceneBuilder.addNode(std::move(randNode));			
 	}
 
@@ -102,7 +102,7 @@ TEST(MultipartOptimizer, TestWithUV)
 	auto nMesh = 3;
 	
 	for (int i = 0; i < nMesh; ++i) {
-		auto randNode = createRandomMesh(10, i == 1, 3, { rootNodeId });
+		auto randNode = createRandomMesh(10, i == 1, 3, "", { rootNodeId });
 		if (i == 1) {
 			randNode->setTextureId(texNodeId);
 		}
@@ -150,12 +150,12 @@ TEST(MultipartOptimizer, TestMixedPrimitives)
 	auto rootNodeId = rootNode.getSharedID();
 
 	auto nVertices = 10;
-	sceneBuilder.addNode(createRandomMesh(nVertices, false, 2, { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(nVertices, false, 2, { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(nVertices, false, 3, { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(nVertices, false, 3, { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(nVertices, false, 3, { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(nVertices, false, 1, { rootNodeId })); // unsupported primitive types must be identified as such and not combined with known types
+	sceneBuilder.addNode(createRandomMesh(nVertices, false, 2, "", { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(nVertices, false, 2, "", { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(nVertices, false, 3, "", { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(nVertices, false, 3, "", { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(nVertices, false, 3, "", { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(nVertices, false, 1, "", { rootNodeId })); // unsupported primitive types must be identified as such and not combined with known types
 
 	sceneBuilder.finalise();
 
@@ -216,7 +216,7 @@ TEST(MultipartOptimizer, TestSingleLargeMesh)
 	sceneBuilder.addNode(rootNode);
 	auto rootNodeId = rootNode.getSharedID();
 	
-	auto largeMesh = createRandomMesh(65536, false, 2, { rootNodeId });
+	auto largeMesh = createRandomMesh(65536, false, 2, "", { rootNodeId });
 	sceneBuilder.addNode(std::move(largeMesh));
 	
 	sceneBuilder.finalise();
@@ -260,7 +260,7 @@ TEST(MultipartOptimizer, TestSingleOversizedMesh)
 	auto rootNodeId = rootNode.getSharedID();
 
 		
-	sceneBuilder.addNode(createRandomMesh(1200000 + 1, false, 3, { rootNodeId })); // 1200000 comes from the const in repo_optimizer_multipart.cpp
+	sceneBuilder.addNode(createRandomMesh(1200000 + 1, false, 3, "", { rootNodeId })); // 1200000 comes from the const in repo_optimizer_multipart.cpp
 
 	sceneBuilder.finalise();
 
@@ -302,9 +302,9 @@ TEST(MultipartOptimizer, TestMultipleOversizedMeshes)
 	sceneBuilder.addNode(rootNode);
 	auto rootNodeId = rootNode.getSharedID();
 
-	sceneBuilder.addNode(createRandomMesh(65536, false, 3, { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(65537, false, 3, { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(128537, false, 3, { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(65536, false, 3, "", { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(65537, false, 3, "", { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(128537, false, 3, "", { rootNodeId }));
 
 	sceneBuilder.finalise();
 
@@ -351,10 +351,10 @@ TEST(MultipartOptimizer, TestMultiplesMeshes)
 	// These vertex counts, along with the primitive size, are multiples of
 	// the max supermesh size and are designed to trip up supermeshing edge
 	// cases
-	sceneBuilder.addNode(createRandomMesh(16384, false, 2, { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(16384, false, 2, { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(16384, false, 2, { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(16384, false, 2, { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(16384, false, 2, "", { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(16384, false, 2, "", { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(16384, false, 2, "", { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(16384, false, 2, "", { rootNodeId }));
 
 	sceneBuilder.finalise();
 
@@ -396,14 +396,14 @@ TEST(MultipartOptimizer, TestMultipleSmallAndLargeMeshes)
 	sceneBuilder.addNode(rootNode);
 	auto rootNodeId = rootNode.getSharedID();
 
-	sceneBuilder.addNode(createRandomMesh(16384, false, 2, { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(16384, false, 2, { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(16384, false, 2, { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(16384, false, 2, { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(65536, false, 2, { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(128000, false, 3, { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(16384, false, 3, { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(8000, false, 3, { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(16384, false, 2, "", { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(16384, false, 2, "", { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(16384, false, 2, "", { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(16384, false, 2, "", { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(65536, false, 2, "", { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(128000, false, 3, "", { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(16384, false, 3, "", { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(8000, false, 3, "", { rootNodeId }));
 
 	sceneBuilder.finalise();
 
@@ -445,7 +445,7 @@ TEST(MultipartOptimizer, TestTinyMeshes)
 
 	for (size_t i = 0; i < 10000; i++)
 	{
-		sceneBuilder.addNode(createRandomMesh(4, false, 3, { rootNodeId }));
+		sceneBuilder.addNode(createRandomMesh(4, false, 3, "", { rootNodeId }));
 	}
 
 	sceneBuilder.finalise();
@@ -473,6 +473,54 @@ TEST(MultipartOptimizer, TestTinyMeshes)
 		auto mapping = supermeshNode.getMeshMapping();
 		EXPECT_LE(mapping.size(), 5000);
 	}
+
+	EXPECT_TRUE(compareMeshes(
+		database,
+		projectName,
+		revId,
+		mockExporter.get()));
+}
+
+TEST(MultipartOptimizer, TestGroupings)
+{
+	auto opt = MultipartOptimizer();
+
+	auto handler = getHandler();
+	std::string database = DBMULTIPARTOPTIMIZERTEST;
+	std::string projectName = "TestAllMerged";
+	auto revId = repo::lib::RepoUUID::createUUID();
+
+	auto sceneBuilder = repo::manipulator::modelutility::RepoSceneBuilder(handler, database, projectName, revId);
+
+	auto rootNode = repo::core::model::RepoBSONFactory::makeTransformationNode({}, "rootNode", {});
+	sceneBuilder.addNode(rootNode);
+	auto rootNodeId = rootNode.getSharedID();
+
+	auto nVertices = 10;
+	sceneBuilder.addNode(createRandomMesh(nVertices, false, 2, "", { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(nVertices, false, 2, "group1", { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(nVertices, false, 2, "group2", { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(nVertices, false, 3, "", { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(nVertices, false, 3, "group1", { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(nVertices, false, 3, "group2", { rootNodeId }));
+
+	sceneBuilder.finalise();
+
+	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
+
+	bool result = opt.processScene(
+		database,
+		projectName,
+		revId,
+		handler.get(),
+		mockExporter.get()
+	);
+
+	EXPECT_TRUE(result);
+
+	EXPECT_TRUE(mockExporter->isFinalised());
+
+	EXPECT_EQ(mockExporter->getSupermeshCount(), 6); // Six groups should have been formed
 
 	EXPECT_TRUE(compareMeshes(
 		database,
