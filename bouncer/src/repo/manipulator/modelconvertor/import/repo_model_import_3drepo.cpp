@@ -193,6 +193,7 @@ public:
 	std::unordered_map<int, Ids> textureIds;
 	std::unordered_map<repo::lib::RepoUUID, std::vector<std::shared_ptr<repo::core::model::MeshNode>>, repo::lib::RepoUUIDHasher> matToMeshNodes;
 	std::unordered_map<repo::lib::RepoUUID, repo::lib::repo_material_t, repo::lib::RepoUUIDHasher> matIdToStruct;
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher> matIdToTexId;
 	size_t numMaterials;
 	std::vector<View*> dataMap;
 	size_t minBufferSize;
@@ -309,7 +310,9 @@ public:
 		matIdToStruct.insert({ ids.uniqueId, n.getMaterialStruct() });
 
 		if (texture != -1) {
-			references.push_back({ textureIds[texture].uniqueId, ids.sharedId });
+			auto texId =  textureIds[texture].uniqueId;
+			references.push_back({texId, ids.sharedId });
+			matIdToTexId.insert({ ids.uniqueId, texId });
 		}
 	}
 
@@ -454,6 +457,11 @@ public:
 				auto nodes = pair.second;
 				for (auto meshNode : nodes) {					
 					meshNode->setMaterial(matPair->second);
+					
+					auto texId = matIdToTexId.find(matId);
+					if (texId != matIdToTexId.end()) {
+						meshNode->setTextureId(texId->second);
+					}
 				}
 			}			
 		}
