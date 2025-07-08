@@ -44,6 +44,7 @@
 #include "repo/lib/datastructure/repo_bounds.h"
 #include "repo/lib/repo_exception.h"
 #include "repo/core/model/bson/repo_bson_element.h"
+#include "repo/lib/datastructure/repo_structs.h"
 
 #include <bsoncxx/document/value.hpp>
 
@@ -117,7 +118,11 @@ namespace repo {
 
 				lib::RepoVector3D getVector3DField(const std::string& label) const;
 
+				lib::repo_color3d_t getColourField(const std::string& label) const;
+
 				repo::lib::RepoMatrix getMatrixField(const std::string& label) const;
+
+				std::vector<repo::lib::RepoMatrix> getMatrixFieldArray(const std::string& label) const;
 
 				std::vector<double> getDoubleVectorField(const std::string& label) const;
 

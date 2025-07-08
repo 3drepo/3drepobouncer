@@ -48,6 +48,10 @@ void MeshNode::deserialise(RepoBSON& bson)
 	if (bson.hasField(REPO_NODE_MESH_LABEL_GROUPING))
 		grouping = bson.getStringField(REPO_NODE_MESH_LABEL_GROUPING);
 
+	if (bson.hasField(REPO_FILTER_TAG_TEXTURE_ID)) {		
+		textureId = bson.getUUIDField(REPO_FILTER_TAG_TEXTURE_ID);
+	}
+
 	primitive = MeshNode::Primitive::TRIANGLES;
 	if (bson.hasField(REPO_NODE_MESH_LABEL_PRIMITIVE))
 		primitive = static_cast<MeshNode::Primitive>(bson.getIntField(REPO_NODE_MESH_LABEL_PRIMITIVE));
@@ -102,7 +106,7 @@ void MeshNode::deserialise(RepoBSON& bson)
 	}
 
 
-	if (bson.hasField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT))
+	if (bson.hasField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT) && bson.hasBinField(REPO_NODE_MESH_LABEL_UV_CHANNELS))
 	{
 		std::vector<repo::lib::RepoVector2D> serialisedChannels;
 		bson.getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_UV_CHANNELS, serialisedChannels);
@@ -212,6 +216,49 @@ void appendUVChannels(RepoBSONBuilder& builder, size_t numChannels, const std::v
 	}
 }
 
+MeshNode::MaterialProperties determineMaterialProperties(
+	repo::lib::repo_material_t material,
+	repo::lib::RepoUUID texId,
+	int numUvChannels
+) {
+	if (!texId.isDefaultValue() && numUvChannels > 0) {
+		return MeshNode::MaterialProperties::TEXTUREDMAT;
+	}
+	else if (material.opacity == 1.f) {
+		return MeshNode::MaterialProperties::OPAQUEMAT;
+	}
+	else {
+		return MeshNode::MaterialProperties::TRANSPARENTMAT;
+	}
+}
+
+void appendFilterTags(
+	RepoBSONBuilder& builder,
+	std::string grouping,
+	MeshNode::MaterialProperties matProps,
+	repo::lib::RepoUUID textureId)
+{
+	if (!grouping.empty())
+		builder.append(REPO_NODE_MESH_LABEL_GROUPING, grouping);
+
+	RepoBSONBuilder matPropsBson;
+	switch (matProps) {
+	case MeshNode::MaterialProperties::OPAQUEMAT:
+		matPropsBson.append(REPO_FILTER_PROP_OPAQUE, true);
+		break;
+	case MeshNode::MaterialProperties::TRANSPARENTMAT:
+		matPropsBson.append(REPO_FILTER_PROP_TRANSPARENT, true);
+		break;
+	case MeshNode::MaterialProperties::TEXTUREDMAT:
+		matPropsBson.append(REPO_FILTER_PROP_TEXTURE_ID, textureId);
+		break;
+	default:
+		repoWarning << "MeshNode is getting serialised without having filter tags set. This node will be ignored during processing";
+	}
+		
+	builder.append(REPO_FILTER_OBJECT_NAME, matPropsBson.obj());
+}
+
 void MeshNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 {
 	RepoNode::serialise(builder);
@@ -220,6 +267,14 @@ void MeshNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 	appendFaces(builder, faces);
 	appendNormals(builder, normals);
 	appendUVChannels(builder, channels.size(), getUVChannelsSerialised());
+
+	auto matProps = determineMaterialProperties(material, textureId, getNumUVChannels());
+	appendFilterTags(builder, grouping, matProps, textureId);	
+}
+
+MeshNode::MaterialProperties repo::core::model::MeshNode::getMaterialProperties() const
+{
+	return determineMaterialProperties(material, textureId, getNumUVChannels());
 }
 
 std::vector<repo::lib::RepoVector2D> MeshNode::getUVChannelsSerialised() const

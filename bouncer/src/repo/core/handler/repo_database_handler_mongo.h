@@ -38,6 +38,8 @@
 #include <mongocxx/client-fwd.hpp>
 #include <mongocxx/pool-fwd.hpp>
 #include <bsoncxx/document/view-fwd.hpp>
+#include <mongocxx/pipeline.hpp>
+#include <mongocxx/cursor.hpp>
 
 namespace repo {
 	namespace core {
@@ -172,6 +174,15 @@ namespace repo {
 				virtual void createIndex(const std::string &database, const std::string &collection, const database::index::RepoIndex& index);
 
 				/**
+				* Create an index within the given collection
+				* @param database name of the database
+				* @param name name of the collection
+				* @param index BSONObj specifying the index
+				* @param bool whether this is a sparse index
+				*/
+				virtual void createIndex(const std::string& database, const std::string& collection, const database::index::RepoIndex& index, bool sparse);
+
+				/**
 				* Remove a collection from the database
 				* @param database the database the collection resides in
 				* @param collection name of the collection to drop
@@ -250,7 +261,49 @@ namespace repo {
 				std::vector<repo::core::model::RepoBSON> findAllByCriteria(
 					const std::string& database,
 					const std::string& collection,
+					const database::query::RepoQuery& criteria,
+					const bool loadBinaries = false);
+
+				/**
+				* Given a search criteria,  find all the documents that passes this query
+				* @param database name of database
+				* @param collection name of collection
+				* @param criteria search criteria in a bson object
+				* @param projection to define the fiels in the returned document
+				* @return a vector of RepoBSON objects satisfy the given criteria
+				*/
+				std::vector<repo::core::model::RepoBSON> findAllByCriteria(
+					const std::string& database,
+					const std::string& collection,
+					const database::query::RepoQuery& filter,
+					const database::query::RepoQuery& projection,
+					const bool loadBinaries = false);
+
+				/**
+				* Given a search criteria,  find all the documents that passes this query
+				* @param database name of database
+				* @param collection name of collection
+				* @param criteria search criteria in a bson object
+				* @return a MongoCursor allowing traversal of the documents that satisfy the given criteria
+				*/
+				std::unique_ptr<database::Cursor> findCursorByCriteria(
+					const std::string& database,
+					const std::string& collection,
 					const database::query::RepoQuery& criteria);
+
+				/**
+				* Given a search criteria,  find all the documents that passes this query
+				* @param database name of database
+				* @param collection name of collection
+				* @param criteria search criteria in a bson object
+				* @param projection to define the fiels in the returned document
+				* @return a MongoCursor allowing traversal of the documents that satisfy the given criteria
+				*/
+				std::unique_ptr<database::Cursor> findCursorByCriteria(
+					const std::string& database,
+					const std::string& collection,
+					const database::query::RepoQuery& filter,
+					const database::query::RepoQuery& projection);
 
 				/**
 				* Given a search criteria,  find one documents that passes this query
@@ -313,12 +366,6 @@ namespace repo {
 					const std::string& collection,
 					const database::query::RepoQuery& criteria);
 
-				std::unique_ptr<repo::core::handler::database::Cursor> getAllByCriteria(
-					const std::string& database,
-					const std::string& collection,
-					const database::query::RepoQuery& criteria
-				);
-
 				std::unique_ptr<database::BulkWriteContext> getBulkWriteContext(
 					const std::string& database,
 					const std::string& collection);
@@ -330,7 +377,7 @@ namespace repo {
 				/*
 				* If a RepoBSON comes from somewhere else, populate the binaries.
 				*/
-				void loadBinaries(const std::string& database,
+				void loadBinaryBuffers(const std::string& database,
 					const std::string& collection, 
 					repo::core::model::RepoBSON& bson);
 
@@ -351,16 +398,6 @@ namespace repo {
 				// We can work with either clients or pool as the top level, connection
 				// specific, container for getting connections. pool pool is threadsafe.
 				std::unique_ptr<mongocxx::pool> clientPool;
-
-				// The fileManager is used in the storage of certain member types, such
-				// as large vectors of binary data. It must be set using setFileManager
-				// before documents containing such members are uploaded.
-				std::shared_ptr<repo::core::handler::fileservice::FileManager> fileManager;
-
-				repo::core::model::RepoBSON createRepoBSON(
-					const std::string& database,
-					const std::string& collection,
-					const bsoncxx::document::view& view);
 
 				/**
 				* Get large file off GridFS

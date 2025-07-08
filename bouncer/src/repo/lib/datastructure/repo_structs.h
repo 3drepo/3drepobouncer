@@ -38,19 +38,6 @@ namespace repo {
 			repo::core::model::RepoAssets repoAssets; //RepoBundles assets list
 		};
 
-		//This is used to map info for multipart optimization
-		typedef struct {
-			repo::lib::RepoVector3D min;
-			repo::lib::RepoVector3D max;
-			repo::lib::RepoUUID  mesh_id;
-			repo::lib::RepoUUID  shared_id;
-			repo::lib::RepoUUID  material_id; // MaterialNode Unique Id
-			int32_t       vertFrom;
-			int32_t       vertTo;
-			int32_t       triFrom;
-			int32_t       triTo;
-		}repo_mesh_mapping_t;
-
 		struct repo_mesh_entry_t
 		{
 			std::vector<float> min;
@@ -302,6 +289,21 @@ namespace repo {
 				seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 			}
 		};
+
+		//This is used to map info for multipart optimization		
+		typedef struct {
+			repo::lib::RepoVector3D min;
+			repo::lib::RepoVector3D max;
+			repo::lib::RepoUUID  mesh_id;
+			repo::lib::RepoUUID  shared_id;
+			repo::lib::RepoUUID  material_id; // MaterialNode Unique Id
+			repo::lib::repo_material_t material;
+			repo::lib::RepoUUID  texture_id;
+			int32_t       vertFrom;
+			int32_t       vertTo;
+			int32_t       triFrom;
+			int32_t       triTo;
+		}repo_mesh_mapping_t;
 
 		/*
 		* A single object intended to be passed by value type that expresses a face with

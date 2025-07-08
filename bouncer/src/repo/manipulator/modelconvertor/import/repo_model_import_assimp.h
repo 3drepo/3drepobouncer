@@ -115,6 +115,7 @@ namespace repo {
 					const std::vector<repo::core::model::RepoNode *> &materials,
 					std::unordered_map < repo::core::model::RepoNode*, std::vector<repo::lib::RepoUUID>> &matMap,
 					const bool hasTexture,
+					const repo::lib::RepoUUID& texId,
 					const std::vector<double> &offset);
 
 				/**

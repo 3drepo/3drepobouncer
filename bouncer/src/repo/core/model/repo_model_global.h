@@ -189,6 +189,7 @@
 #define REPO_NODE_STASH_REF             "rev_id"
 #define REPO_NODE_LABEL_EXTENSION		"extension"
 #define REPO_NODE_LABEL_FORMAT			"format"
+#define REPO_NODE_LABEL_MATRIX			"matrix"
 
 //-----------------------------------------------------------------------------
 
@@ -222,3 +223,16 @@
 #define REPO_ASSETS_LABEL_MIN			"min"
 #define REPO_ASSETS_LABEL_MAX			"max"
 #define REPO_ASSETS_LABEL_METADATA      "metadata"
+
+//-----------------------------------------------------------------------------
+//
+// Filter tags
+//
+//-----------------------------------------------------------------------------
+#define REPO_FILTER_OBJECT_NAME			"materialProperties"
+#define REPO_FILTER_PROP_OPAQUE			"isOpaque"
+#define REPO_FILTER_PROP_TRANSPARENT	"isTransparent"
+#define REPO_FILTER_PROP_TEXTURE_ID		"textureId"
+#define REPO_FILTER_TAG_OPAQUE			"materialProperties.isOpaque"
+#define REPO_FILTER_TAG_TRANSPARENT		"materialProperties.isTransparent"
+#define REPO_FILTER_TAG_TEXTURE_ID		"materialProperties.textureId"

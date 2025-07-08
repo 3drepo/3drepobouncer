@@ -23,6 +23,7 @@ set(TEST_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node_metadata.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node_model_revision.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node_reference.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node_streaming_mesh.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node_supermesh.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node_texture.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node_transformation.cpp

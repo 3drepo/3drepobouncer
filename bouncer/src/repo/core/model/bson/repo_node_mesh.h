@@ -75,6 +75,13 @@ namespace repo {
 					QUADS = 4
 				};
 
+				enum class MaterialProperties {
+					UNSET = 0,
+					OPAQUEMAT = 1,
+					TRANSPARENTMAT = 2,
+					TEXTUREDMAT = 3
+				};
+
 				/**
 				* Default constructor
 				*/
@@ -126,13 +133,19 @@ namespace repo {
 				}
 
 			protected:
-				std::string grouping;
 				MeshNode::Primitive primitive;
 				repo::lib::RepoBounds boundingBox;
 				std::vector<repo::lib::repo_face_t> faces;
 				std::vector<repo::lib::RepoVector3D> vertices;
 				std::vector<repo::lib::RepoVector3D> normals;
 				std::vector<std::vector<repo::lib::RepoVector2D>> channels;
+
+				// Filters for supermeshing
+				std::string grouping;
+				repo::lib::RepoUUID textureId;
+
+				// Material struct
+				repo::lib::repo_material_t material;
 
 			public:
 				/**
@@ -184,6 +197,22 @@ namespace repo {
 					this->grouping = grouping;
 				}
 
+				void setMaterial(const repo::lib::repo_material_t& m) {
+					this->material = m;
+				}
+
+				const repo::lib::repo_material_t& getMaterial() {
+					return material;
+				}
+
+				void setTextureId(const repo::lib::RepoUUID textureId) {
+					this->textureId = textureId;
+				}
+
+				repo::lib::RepoUUID getTextureId() {					
+					return this->textureId;
+				}
+
 				/**
 				* --------- Convenience functions -----------
 				*/
@@ -218,11 +247,14 @@ namespace repo {
 					}
 				}
 
-				// get sepcific grouping for mesh batching (empty string if not specified)
+				// get specific grouping for mesh batching (empty string if not specified)
 				std::string getGrouping() const
 				{
 					return grouping;
 				}
+
+				// get material property
+				MaterialProperties getMaterialProperties() const;
 
 				/**
 				* Retrieve a vector of vertices from the bson object

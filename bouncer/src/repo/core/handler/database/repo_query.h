@@ -163,6 +163,24 @@ namespace repo {
 						std::vector<repo::lib::RepoUUID> parentIds;
 					};
 
+					/*
+					 * Convenience type to build a projection in multiple stages.
+					 */
+					class REPO_API_EXPORT RepoProjectionBuilder
+					{
+					public:
+						
+						void includeField(std::string field) {
+							includedFields.push_back(field);
+						};
+
+						void excludeField(std::string field) {
+							excludedFields.push_back(field);
+						}
+
+						std::vector<std::string> includedFields;
+						std::vector<std::string> excludedFields;
+					};
 				}
 
 				namespace index

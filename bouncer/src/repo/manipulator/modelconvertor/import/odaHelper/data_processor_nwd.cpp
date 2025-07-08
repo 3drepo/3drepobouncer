@@ -798,8 +798,8 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 	meshBuilder.extractMeshes(nodes);
 	for (auto& mesh : nodes)
 	{
+		mesh.setMaterial(meshBuilder.getMaterial());
 		context.sceneBuilder->addNode(mesh);
-		context.sceneBuilder->addMaterialReference(meshBuilder.getMaterial(), mesh.getSharedID());
 	}
 
 	return eOk;
