@@ -191,9 +191,7 @@ public:
 	std::unordered_map<int, repo::lib::RepoMatrix64> modelToWorld;
 	std::unordered_map<int, Ids> materialIds;
 	std::unordered_map<int, Ids> textureIds;
-	std::unordered_map<repo::lib::RepoUUID, std::vector<std::shared_ptr<repo::core::model::MeshNode>>, repo::lib::RepoUUIDHasher> matToMeshNodes;
-	std::unordered_map<repo::lib::RepoUUID, repo::lib::repo_material_t, repo::lib::RepoUUIDHasher> matIdToStruct;
-	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher> matIdToTexId;
+	std::unordered_map<repo::lib::RepoUUID, std::vector<std::shared_ptr<repo::core::model::MeshNode>>, repo::lib::RepoUUIDHasher> matToMeshNodes;	
 	size_t numMaterials;
 	std::vector<View*> dataMap;
 	size_t minBufferSize;
@@ -306,14 +304,23 @@ public:
 		n.setUniqueID(ids.uniqueId);
 		n.setSharedID(ids.sharedId);
 		addNode(n);
-
-		matIdToStruct.insert({ ids.uniqueId, n.getMaterialStruct() });
+				
+		auto matStruct = n.getMaterialStruct();
+		auto& nodes = matToMeshNodes[ids.uniqueId];
+		for (auto& node : nodes) {
+			node->setMaterial(matStruct);
+		}
 
 		if (texture != -1) {
-			auto texId =  textureIds[texture].uniqueId;
-			references.push_back({texId, ids.sharedId });
-			matIdToTexId.insert({ ids.uniqueId, texId });
+			auto texId = textureIds[texture].uniqueId;
+			references.push_back({ texId, ids.sharedId });
+			for (auto& node : nodes) {
+				node->setTextureId(texId);
+			}
 		}
+		
+		// Remove entry from the map to release nodes
+		matToMeshNodes.erase(ids.uniqueId);		
 	}
 
 	void createTexture(const TextureRecord& t) override
@@ -334,6 +341,11 @@ public:
 		for (auto view : dataMap) {
 			minBufferSize = std::max(minBufferSize, view->size());
 		}
+
+		// Release all node references in the map for the material properties.
+		// They should already have been released individually, but this guarantees
+		// that none are missed.
+		matToMeshNodes.clear();
 	}
 
 	void readView(View* v, char* buffer)
@@ -446,28 +458,6 @@ public:
 			addParent(r.first, r.second);
 		}
 
-		// Set material and texture properties on the MeshNodes
-		// Can't be done earlier since we create them as they
-		// come in and the mesh nodes might not exist yet for
-		// the material and the other way around.
-		for (auto pair : matToMeshNodes) {
-			auto matId = pair.first;
-			auto matPair = matIdToStruct.find(matId);
-			if (matPair != matIdToStruct.end()) {
-				auto nodes = pair.second;
-				for (auto meshNode : nodes) {					
-					meshNode->setMaterial(matPair->second);
-					
-					auto texId = matIdToTexId.find(matId);
-					if (texId != matIdToTexId.end()) {
-						meshNode->setTextureId(texId->second);
-					}
-				}
-			}			
-		}
-		matToMeshNodes.clear();
-		matIdToStruct.clear();
-
 		RepoSceneBuilder::finalise();
 	}
 
@@ -547,7 +537,7 @@ repo::core::model::RepoScene* RepoModelImport::importModel(std::string filePath,
 		TreeParser::ParseJson(jsonBuf, builder);
 
 		builder->prepareDataMap();
-
+		
 		repoInfo << "Pre-processing scene bounds (BIM004 and below)...";
 
 		// Get offset

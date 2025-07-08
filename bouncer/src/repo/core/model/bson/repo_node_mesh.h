@@ -142,7 +142,6 @@ namespace repo {
 
 				// Filters for supermeshing
 				std::string grouping;
-				MaterialProperties matProps;
 				repo::lib::RepoUUID textureId;
 
 				// Material struct
@@ -200,14 +199,6 @@ namespace repo {
 
 				void setMaterial(const repo::lib::repo_material_t& m) {
 					this->material = m;
-
-					// Set filter flags from material properties
-					if (m.opacity == 1.f) {
-						this->matProps = MaterialProperties::OPAQUEMAT;
-					}
-					else {
-						this->matProps = MaterialProperties::TRANSPARENTMAT;
-					}
 				}
 
 				const repo::lib::repo_material_t& getMaterial() {
@@ -215,11 +206,11 @@ namespace repo {
 				}
 
 				void setTextureId(const repo::lib::RepoUUID textureId) {
-					// Only set texture ID if there is a uv channel present
-					if (channels.size() > 0) {
-						this->matProps = MaterialProperties::TEXTUREDMAT;
-						this->textureId = textureId;
-					}
+					this->textureId = textureId;
+				}
+
+				repo::lib::RepoUUID getTextureId() {					
+					return this->textureId;
 				}
 
 				/**
@@ -256,11 +247,14 @@ namespace repo {
 					}
 				}
 
-				// get sepcific grouping for mesh batching (empty string if not specified)
+				// get specific grouping for mesh batching (empty string if not specified)
 				std::string getGrouping() const
 				{
 					return grouping;
 				}
+
+				// get material property
+				MaterialProperties getMaterialProperties() const;
 
 				/**
 				* Retrieve a vector of vertices from the bson object
