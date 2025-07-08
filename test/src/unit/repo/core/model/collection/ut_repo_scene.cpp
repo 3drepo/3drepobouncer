@@ -61,7 +61,8 @@ static MeshNode makeMeshNode(
 		3,
 		false,
 		0,
-		1024
+		1024,
+		""
 	));
 	m.changeName(name, true);
 	m.setSharedID(repo::lib::RepoUUID::createUUID());

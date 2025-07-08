@@ -46,7 +46,8 @@ namespace repo {
 						int faceSize,
 						bool normals,
 						int numUvChannels,
-						int numVertices
+						int numVertices,
+						std::string grouping
 					);
 
 					std::string name;
@@ -58,6 +59,7 @@ namespace repo {
 					std::vector<repo::lib::repo_face_t> faces;
 					std::vector<repo::lib::RepoVector3D> normals;
 					std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
+					std::string grouping;
 				};
 
 				struct GenericFace

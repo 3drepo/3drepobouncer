@@ -51,7 +51,7 @@ TEST(StreamingMeshNodeTest, EmptyConstructor)
 TEST(StreamingMeshNodeTest, LoadBasicStreamingMeshNode) {
 
 	// Create mesh Data and StreamingMeshNode
-	auto meshData = mesh_data(false, true, 3, 2, true, 1, 100);
+	auto meshData = mesh_data(false, true, 3, 2, true, 1, 100, "");
 	auto bson = meshNodeTestBSONFactory(meshData);
 	StreamingMeshNode limited = StreamingMeshNode(bson);
 
@@ -119,33 +119,33 @@ void TestLoadSupermeshingData(mesh_data meshData) {
 }
 
 TEST(StreamingMeshNodeTest, LoadSupermeshingData) {
-	TestLoadSupermeshingData(mesh_data(false, false, 0, 2, false, 0, 100));
-	TestLoadSupermeshingData(mesh_data(false, false, 0, 2, false, 1, 100));
-	TestLoadSupermeshingData(mesh_data(false, false, 0, 2, false, 2, 100));
-	TestLoadSupermeshingData(mesh_data(false, false, 0, 2, true, 0, 100));
-	TestLoadSupermeshingData(mesh_data(false, false, 0, 2, true, 1, 100));
-	TestLoadSupermeshingData(mesh_data(false, false, 0, 2, true, 2, 100));
-	TestLoadSupermeshingData(mesh_data(false, false, 0, 3, false, 0, 100));
-	TestLoadSupermeshingData(mesh_data(false, false, 0, 3, false, 1, 100));
-	TestLoadSupermeshingData(mesh_data(false, false, 0, 3, false, 2, 100));
-	TestLoadSupermeshingData(mesh_data(false, false, 0, 3, true, 0, 100));
-	TestLoadSupermeshingData(mesh_data(false, false, 0, 3, true, 1, 100));
-	TestLoadSupermeshingData(mesh_data(false, false, 0, 3, true, 2, 100));
+	TestLoadSupermeshingData(mesh_data(false, false, 0, 2, false, 0, 100, ""));
+	TestLoadSupermeshingData(mesh_data(false, false, 0, 2, false, 1, 100, ""));
+	TestLoadSupermeshingData(mesh_data(false, false, 0, 2, false, 2, 100, ""));
+	TestLoadSupermeshingData(mesh_data(false, false, 0, 2, true, 0, 100, ""));
+	TestLoadSupermeshingData(mesh_data(false, false, 0, 2, true, 1, 100, ""));
+	TestLoadSupermeshingData(mesh_data(false, false, 0, 2, true, 2, 100, ""));
+	TestLoadSupermeshingData(mesh_data(false, false, 0, 3, false, 0, 100, ""));
+	TestLoadSupermeshingData(mesh_data(false, false, 0, 3, false, 1, 100, ""));
+	TestLoadSupermeshingData(mesh_data(false, false, 0, 3, false, 2, 100, ""));
+	TestLoadSupermeshingData(mesh_data(false, false, 0, 3, true, 0, 100, ""));
+	TestLoadSupermeshingData(mesh_data(false, false, 0, 3, true, 1, 100, ""));
+	TestLoadSupermeshingData(mesh_data(false, false, 0, 3, true, 2, 100, ""));
 
-	TestLoadSupermeshingData(mesh_data(false, false, 0, 3, false, 0, 100));
-	TestLoadSupermeshingData(mesh_data(false, false, 1, 3, false, 0, 100));
-	TestLoadSupermeshingData(mesh_data(false, true, 0, 3, false, 0, 100));
-	TestLoadSupermeshingData(mesh_data(false, true, 1, 3, false, 0, 100));
-	TestLoadSupermeshingData(mesh_data(true, false, 0, 3, false, 0, 100));
-	TestLoadSupermeshingData(mesh_data(true, false, 1, 3, false, 0, 100));
-	TestLoadSupermeshingData(mesh_data(true, true, 1, 3, false, 0, 100));
+	TestLoadSupermeshingData(mesh_data(false, false, 0, 3, false, 0, 100, ""));
+	TestLoadSupermeshingData(mesh_data(false, false, 1, 3, false, 0, 100, ""));
+	TestLoadSupermeshingData(mesh_data(false, true, 0, 3, false, 0, 100, ""));
+	TestLoadSupermeshingData(mesh_data(false, true, 1, 3, false, 0, 100, ""));
+	TestLoadSupermeshingData(mesh_data(true, false, 0, 3, false, 0, 100, ""));
+	TestLoadSupermeshingData(mesh_data(true, false, 1, 3, false, 0, 100, ""));
+	TestLoadSupermeshingData(mesh_data(true, true, 1, 3, false, 0, 100, ""));
 
-	TestLoadSupermeshingData(mesh_data(true, true, 3, 3, false, 0, 100));
+	TestLoadSupermeshingData(mesh_data(true, true, 3, 3, false, 0, 100, ""));
 }
 
 TEST(StreamingMeshNodeTest, TransformBounds) {
 	// Create mesh Data and StreamingMeshNode
-	auto meshData = mesh_data(false, true, 3, 2, true, 1, 100);
+	auto meshData = mesh_data(false, true, 3, 2, true, 1, 100, "");
 	auto bson = meshNodeTestBSONFactory(meshData);
 	StreamingMeshNode limited = StreamingMeshNode(bson);
 
@@ -177,7 +177,7 @@ TEST(StreamingMeshNodeTest, TransformBounds) {
 }
 TEST(StreamingMeshNodeTest, BakeMeshData) {
 	// Create mesh Data and StreamingMeshNode
-	auto meshData = mesh_data(false, true, 3, 2, true, 1, 100);
+	auto meshData = mesh_data(false, true, 3, 2, true, 1, 100, "");
 	auto bson = meshNodeTestBSONFactory(meshData);
 	StreamingMeshNode node = StreamingMeshNode(bson);
 

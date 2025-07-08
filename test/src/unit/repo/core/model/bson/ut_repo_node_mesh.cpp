@@ -52,28 +52,39 @@ void MeshNodeTestDeserialise(mesh_data data)
 
 TEST(MeshNodeTest, Deserialise)
 {
-	MeshNodeTestDeserialise(mesh_data(false, false, 0, 2, false, 0, 100));
-	MeshNodeTestDeserialise(mesh_data(false, false, 0, 2, false, 1, 100));
-	MeshNodeTestDeserialise(mesh_data(false, false, 0, 2, false, 2, 100));
-	MeshNodeTestDeserialise(mesh_data(false, false, 0, 2, true, 0, 100));
-	MeshNodeTestDeserialise(mesh_data(false, false, 0, 2, true, 1, 100));
-	MeshNodeTestDeserialise(mesh_data(false, false, 0, 2, true, 2, 100));
-	MeshNodeTestDeserialise(mesh_data(false, false, 0, 3, false, 0, 100));
-	MeshNodeTestDeserialise(mesh_data(false, false, 0, 3, false, 1, 100));
-	MeshNodeTestDeserialise(mesh_data(false, false, 0, 3, false, 2, 100));
-	MeshNodeTestDeserialise(mesh_data(false, false, 0, 3, true, 0, 100));
-	MeshNodeTestDeserialise(mesh_data(false, false, 0, 3, true, 1, 100));
-	MeshNodeTestDeserialise(mesh_data(false, false, 0, 3, true, 2, 100));
+	MeshNodeTestDeserialise(mesh_data(false, false, 0, 2, false, 0, 100, ""));
+	MeshNodeTestDeserialise(mesh_data(false, false, 0, 2, false, 1, 100, ""));
+	MeshNodeTestDeserialise(mesh_data(false, false, 0, 2, false, 2, 100, ""));
+	MeshNodeTestDeserialise(mesh_data(false, false, 0, 2, true, 0, 100, ""));
+	MeshNodeTestDeserialise(mesh_data(false, false, 0, 2, true, 1, 100, ""));
+	MeshNodeTestDeserialise(mesh_data(false, false, 0, 2, true, 2, 100, ""));
+	MeshNodeTestDeserialise(mesh_data(false, false, 0, 3, false, 0, 100, ""));
+	MeshNodeTestDeserialise(mesh_data(false, false, 0, 3, false, 1, 100, ""));
+	MeshNodeTestDeserialise(mesh_data(false, false, 0, 3, false, 2, 100, ""));
+	MeshNodeTestDeserialise(mesh_data(false, false, 0, 3, true, 0, 100, ""));
+	MeshNodeTestDeserialise(mesh_data(false, false, 0, 3, true, 1, 100, ""));
+	MeshNodeTestDeserialise(mesh_data(false, false, 0, 3, true, 2, 100, ""));
 
-	MeshNodeTestDeserialise(mesh_data(false, false, 0, 3, false, 0, 100));
-	MeshNodeTestDeserialise(mesh_data(false, false, 1, 3, false, 0, 100));
-	MeshNodeTestDeserialise(mesh_data(false, true, 0, 3, false, 0, 100));
-	MeshNodeTestDeserialise(mesh_data(false, true, 1, 3, false, 0, 100));
-	MeshNodeTestDeserialise(mesh_data(true, false, 0, 3, false, 0, 100));
-	MeshNodeTestDeserialise(mesh_data(true, false, 1, 3, false, 0, 100));
-	MeshNodeTestDeserialise(mesh_data(true, true, 1, 3, false, 0, 100));
+	MeshNodeTestDeserialise(mesh_data(false, false, 0, 3, false, 0, 100, ""));
+	MeshNodeTestDeserialise(mesh_data(false, false, 1, 3, false, 0, 100, ""));
+	MeshNodeTestDeserialise(mesh_data(false, true, 0, 3, false, 0, 100, ""));
+	MeshNodeTestDeserialise(mesh_data(false, true, 1, 3, false, 0, 100, ""));
+	MeshNodeTestDeserialise(mesh_data(true, false, 0, 3, false, 0, 100, ""));
+	MeshNodeTestDeserialise(mesh_data(true, false, 1, 3, false, 0, 100, ""));
+	MeshNodeTestDeserialise(mesh_data(true, true, 1, 3, false, 0, 100, ""));
 
-	MeshNodeTestDeserialise(mesh_data(true, true, 3, 3, false, 0, 100));
+	MeshNodeTestDeserialise(mesh_data(true, true, 3, 3, false, 0, 100, ""));
+}
+
+TEST(MeshNodeTest, DeserialiseGroupings) {
+	auto meshDataNoGrouping = mesh_data(false, false, 0, 2, false, 0, 100, "");
+	auto meshNodeNoGrouping = MeshNode(meshNodeTestBSONFactory(meshDataNoGrouping));
+	EXPECT_EQ(meshNodeNoGrouping.getGrouping(), "");
+
+	auto grouping = getRandomString(10);
+	auto meshDataGrouping = mesh_data(false, false, 0, 2, false, 0, 100, grouping);
+	auto meshNodeGrouping = MeshNode(meshNodeTestBSONFactory(meshDataGrouping));
+	EXPECT_EQ(meshNodeGrouping.getGrouping(), grouping);
 }
 
 TEST(MeshNodeTest, Serialise)
@@ -150,6 +161,30 @@ TEST(MeshNodeTest, Serialise)
 	EXPECT_THAT(((RepoBSON)node).getIntField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT), Eq(node.getNumUVChannels()));
 	((RepoBSON)node).getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_UV_CHANNELS, uvs);
 	EXPECT_THAT(uvs, ElementsAreArray(node.getUVChannelsSerialised()));
+
+	// Grouping
+	auto grouping = getRandomString(10);
+	node.setGrouping(grouping);
+	EXPECT_EQ(((RepoBSON)node).getStringField(REPO_NODE_MESH_LABEL_GROUPING), grouping);
+
+	// Material properties
+	auto mat = repo::lib::repo_material_t::DefaultMaterial();
+	
+	mat.opacity = 1.f;
+	node.setMaterial(mat);	
+	EXPECT_EQ(((RepoBSON)node).getObjectField(REPO_FILTER_OBJECT_NAME).getBoolField(REPO_FILTER_PROP_OPAQUE), true);
+
+	mat.opacity = 0.5f;
+	node.setMaterial(mat);
+	EXPECT_EQ(((RepoBSON)node).getObjectField(REPO_FILTER_OBJECT_NAME).getBoolField(REPO_FILTER_PROP_TRANSPARENT), true);
+
+	auto texId = repo::lib::RepoUUID::createUUID();
+	node.setTextureId(texId);
+	EXPECT_EQ(((RepoBSON)node).getObjectField(REPO_FILTER_OBJECT_NAME).getUUIDField(REPO_FILTER_PROP_TEXTURE_ID), texId);
+
+	MeshNode nodeNoUv;
+	nodeNoUv.setTextureId(texId);
+	EXPECT_FALSE(((RepoBSON)nodeNoUv).getObjectField(REPO_FILTER_OBJECT_NAME).hasField(REPO_FILTER_PROP_TEXTURE_ID));
 }
 
 TEST(MeshNodeTest, TypeTest)

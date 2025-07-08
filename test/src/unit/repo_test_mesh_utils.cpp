@@ -27,15 +27,18 @@
 using namespace repo::core::model;
 using namespace testing;
 
-std::unique_ptr<MeshNode> repo::test::utils::mesh::createRandomMesh(const int nVertices, const bool hasUV, const int primitiveSize, const std::string grouping, const std::vector<repo::lib::RepoUUID>& parent)
+std::unique_ptr<MeshNode> repo::test::utils::mesh::createRandomMesh(
+	const int nVertices,
+	const bool hasUV,
+	const int primitiveSize,
+	const std::string grouping,
+	const std::vector<repo::lib::RepoUUID>& parent)
 {
-	auto mesh = makeMeshNode(mesh_data(true, true, 0, primitiveSize, false, hasUV ? 1 : 0, nVertices));
+	auto mesh = makeMeshNode(mesh_data(true, true, 0, primitiveSize, false, hasUV ? 1 : 0, nVertices, grouping));
 	mesh.addParents(parent);
 
 	// The new mpOpt drops geometry that has no material, so we set the default here
-	mesh.setMaterial(repo::lib::repo_material_t::DefaultMaterial());
-
-	mesh.setGrouping(grouping);
+	mesh.setMaterial(repo::lib::repo_material_t::DefaultMaterial());	
 
 	return std::make_unique<MeshNode>(mesh);
 }
@@ -416,6 +419,11 @@ RepoBSON repo::test::utils::mesh::meshNodeTestBSONFactory(mesh_data data)
 		}
 	}
 
+	// Grouping
+	if (!data.grouping.empty()) {
+		builder.append(REPO_NODE_MESH_LABEL_GROUPING, data.grouping);
+	}
+
 	return builder.obj();
 }
 
@@ -427,7 +435,7 @@ MeshNode repo::test::utils::mesh::makeMeshNode(mesh_data data)
 MeshNode repo::test::utils::mesh::makeDeterministicMeshNode(int primitive, bool normals, int uvs)
 {
 	restartRand();
-	return makeMeshNode(mesh_data(false, false, false, primitive, normals, uvs, 100));
+	return makeMeshNode(mesh_data(false, false, false, primitive, normals, uvs, 100, ""));
 }
 
 std::vector<repo::lib::RepoVector3D> repo::test::utils::mesh::makeVertices(int num)
@@ -501,7 +509,8 @@ repo::test::utils::mesh::mesh_data::mesh_data(
 	int faceSize,
 	bool normals,
 	int numUvChannels,
-	int numVertices
+	int numVertices,
+	std::string grouping
 )
 {
 	if (name) {
@@ -556,6 +565,8 @@ repo::test::utils::mesh::mesh_data::mesh_data(
 	this->boundingBox.push_back({
 		max.x, max.y, max.z
 		});
+
+	this->grouping = grouping;
 }
 
 repo::lib::RepoMatrix repo::test::utils::mesh::makeTransform(bool translation, bool rotation)
@@ -591,6 +602,7 @@ void repo::test::utils::mesh::compareMeshNode(mesh_data expected, MeshNode actua
 	{
 		EXPECT_THAT(actual.getUVChannelsSeparated()[i], ElementsAreArray(expected.uvChannels[i]));
 	}
+	EXPECT_EQ(actual.getGrouping(), expected.grouping);
 }
 
 float repo::test::utils::mesh::hausdorffDistance(const std::vector<repo::core::model::MeshNode>& meshes)
