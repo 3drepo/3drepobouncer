@@ -89,8 +89,7 @@ namespace repo {
 				*/
 				bool generateAndCommitSelectionTree(
 					repo::core::model::RepoScene										*scene,
-					repo::core::handler::AbstractDatabaseHandler						*handler,
-					repo::core::handler::fileservice::FileManager						*fileManager
+					repo::core::handler::AbstractDatabaseHandler						*handler
 				);
 
 				/**

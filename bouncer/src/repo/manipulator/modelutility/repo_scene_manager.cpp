@@ -61,7 +61,7 @@ uint8_t SceneManager::commitScene(
 
 				repoInfo << "Generating Selection Tree JSON...";
 				scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::GEN_SEL_TREE);
-				if (generateAndCommitSelectionTree(scene, handler, fileManager))
+				if (generateAndCommitSelectionTree(scene, handler))
 					repoInfo << "Selection Tree Stored into the database";
 				else
 					repoError << "failed to commit selection tree";
@@ -278,8 +278,7 @@ bool SceneManager::generateWebViewBuffers(
 
 bool SceneManager::generateAndCommitSelectionTree(
 	repo::core::model::RepoScene					*scene,
-	repo::core::handler::AbstractDatabaseHandler	*handler,
-	repo::core::handler::fileservice::FileManager	*fileManager)
+	repo::core::handler::AbstractDatabaseHandler	*handler)
 {
 	bool success = false;
 	if (success = scene && scene->isRevisioned() && handler)
@@ -299,7 +298,7 @@ bool SceneManager::generateAndCommitSelectionTree(
 			{
 				std::string fileName = fileNamePrefix + file.first;
 
-				if (handler && fileManager->uploadFileAndCommit(
+				if (handler && handler->getFileManager()->uploadFileAndCommit(
 					databaseName,
 					projectName + "." + REPO_COLLECTION_STASH_JSON,
 					fileName,
