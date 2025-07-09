@@ -313,7 +313,7 @@ std::map<std::string, repo::lib::PropertyTree> SelectionTreeMaker::getSelectionT
 	}
 
 	repo::lib::PropertyTree treePathTree;
-	for (auto& p : trees.idToMeshes) {
+	for (auto& p : trees.idToPath) {
 		treePathTree.addToTree("idToPath." + p.first.toString(), childPathToString(p.second));
 	}
 
