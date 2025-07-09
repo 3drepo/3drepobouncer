@@ -21,10 +21,6 @@
 */
 
 #pragma once
-#if defined(_WIN32) || defined(_WIN64)
-#include <WinSock2.h>
-#include <Windows.h>
-#endif
 
 #include "repo_log.h"
 #include "repo/repo_bouncer_global.h"

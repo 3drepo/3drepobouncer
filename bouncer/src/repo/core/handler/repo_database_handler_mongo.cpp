@@ -329,13 +329,6 @@ std::shared_ptr<FileManager> MongoDatabaseHandler::getFileManager()
 	return this->fileManager;
 }
 
-bool MongoDatabaseHandler::caseInsensitiveStringCompare(
-	const std::string& s1,
-	const std::string& s2)
-{
-	return strcasecmp(s1.c_str(), s2.c_str()) <= 0;
-}
-
 void MongoDatabaseHandler::createIndex(const std::string& database, const std::string& collection, const database::index::RepoIndex& index)
 {
 	createIndex(database, collection, index, false);
@@ -1047,4 +1040,19 @@ std::unique_ptr<database::BulkWriteContext> MongoDatabaseHandler::getBulkWriteCo
 	// is threadsafe.
 
 	return std::make_unique<MongoWriteContext>(this, database, collection);
+}
+
+// Use platform implementation of case-insensitive comparision. This is defined
+// at the end of the file as Windows.h tends to pollute a lot of defines.
+
+#if defined(_WIN32) || defined(_WIN64)
+#include <Windows.h>
+#define strcasecmp _stricmp
+#endif
+
+bool MongoDatabaseHandler::caseInsensitiveStringCompare(
+	const std::string& s1,
+	const std::string& s2)
+{
+	return strcasecmp(s1.c_str(), s2.c_str()) <= 0;
 }

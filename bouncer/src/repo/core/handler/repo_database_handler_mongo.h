@@ -25,13 +25,6 @@
 #include <iostream>
 #include <sstream>
 
-#if defined(_WIN32) || defined(_WIN64)
-#include <WinSock2.h>
-#include <Windows.h>
-
-#define strcasecmp _stricmp
-#endif
-
 #include "repo_database_handler_abstract.h"
 #include "repo/lib/repo_stack.h"
 
