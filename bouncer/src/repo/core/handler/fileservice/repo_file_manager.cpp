@@ -177,7 +177,7 @@ repo::core::model::RepoRefT<std::string> FileManager::getFileRef(
 		getDbHandler()->findOneByUniqueID(
 			databaseName,
 			collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
-			cleanFileName(fileName)
+			fileName
 		)
 	);
 }
