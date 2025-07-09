@@ -21,6 +21,64 @@
 namespace repo{
 	namespace manipulator{
 		namespace modelutility{
+			class SelectionTree
+			{
+			public:
+				class Container {
+				public:
+					std::string account;
+					std::string project;
+				};
+
+				class Node {
+				public:
+					repo::core::model::NodeType type;
+					std::string name;
+					std::vector<repo::lib::RepoUUID> path;
+					repo::lib::RepoUUID _id;
+					repo::lib::RepoUUID shared_id;
+					std::vector<Node> children;
+					std::vector<repo::lib::RepoUUID> meta;
+
+					enum ToggleState {
+						SHOW,
+						HIDDEN,
+						HALF_HIDDEN
+					};
+
+					ToggleState toggleState;
+				};
+
+				Container container;
+				Node nodes;
+
+				using ChildPath = std::vector<repo::lib::RepoUUID>;
+			};
+
+			using IdToName = std::unordered_map<repo::lib::RepoUUID, std::string, repo::lib::RepoUUIDHasher>;
+
+			using IdToPath = std::unordered_map<repo::lib::RepoUUID, SelectionTree::ChildPath, repo::lib::RepoUUIDHasher>;
+
+			using IdToMeshes = std::unordered_map<repo::lib::RepoUUID, std::vector<repo::lib::RepoUUID>, repo::lib::RepoUUIDHasher>;
+
+			using IdMap = std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>;
+
+			class Settings
+			{
+			public:
+				std::vector<repo::lib::RepoUUID> hiddenNodes;
+			};
+
+			struct SelectionTreesSet
+			{
+				SelectionTree fullTree;
+				IdToPath idToPath;
+				IdToMeshes idToMeshes;
+				IdToName idToName;
+				IdMap idMap;
+				Settings modelSettings;
+			};
+
 			class SelectionTreeMaker
 			{
 			public:
@@ -60,15 +118,19 @@ namespace repo{
 				* @param hiddenOnDefault (return value) shows if the subtree has hidden nodes
 				* @param hiddenNode A list of vector of nodes that are hidden by default
 				*/
-				repo::lib::PropertyTree generatePTree(
-					const repo::core::model::RepoNode            *currentNode,
-					std::unordered_map < std::string, std::pair < std::string, std::string >> &idMaps,
-					std::vector<std::pair<std::string, std::string>>        &sharedIDToUniqueID,
-					repo::lib::PropertyTree                      &idToMeshes,
-					const std::string                            &currentPath,
-					bool                                         &hiddenOnDefault,
-					std::vector<std::string>                     &hiddenNode,
-					std::vector<std::string>                     &meshIds) const;
+				SelectionTree::Node generatePTree(
+					const repo::core::model::RepoNode			*currentNode,
+					std::unordered_map<std::string, std::pair<std::string, SelectionTree::ChildPath>>	&idMaps,
+					IdMap										&uniqueIdToSharedId,
+					IdToMeshes									&idToMeshes,
+					std::vector<repo::lib::RepoUUID>            currentPath,
+					bool                                        &hiddenOnDefault,
+					std::vector<repo::lib::RepoUUID>			&hiddenNode,
+					std::vector<repo::lib::RepoUUID>			&meshIds) const;
+
+				SelectionTreesSet trees;
+
+				void generateSelectionTrees();
 			};
 		}
 	}

@@ -29,28 +29,86 @@ SelectionTreeMaker::SelectionTreeMaker(
 	const repo::core::model::RepoScene *scene)
 	: scene(scene)
 {
+	generateSelectionTrees();
 }
 
-repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
-	const repo::core::model::RepoNode            *currentNode,
-	std::unordered_map < std::string, std::pair < std::string, std::string >> &idMaps,
-	std::vector<std::pair<std::string, std::string>>        &sharedIDToUniqueID,
-	repo::lib::PropertyTree                      &idToMeshesTree,
-	const std::string                            &currentPath,
-	bool                                         &hiddenOnDefault,
-	std::vector<std::string>                     &hiddenNode,
-	std::vector<std::string>                     &meshIds) const
+static std::string nodeTypeToString(repo::core::model::NodeType type)
 {
-	repo::lib::PropertyTree tree;
+	switch (type) {
+	case repo::core::model::NodeType::MESH:
+		return REPO_NODE_TYPE_MESH;
+	case repo::core::model::NodeType::TRANSFORMATION:
+		return REPO_NODE_TYPE_TRANSFORMATION;
+	case repo::core::model::NodeType::REFERENCE:
+		return REPO_NODE_TYPE_REFERENCE;
+	case repo::core::model::NodeType::METADATA:
+		return REPO_NODE_TYPE_METADATA;
+	case repo::core::model::NodeType::MATERIAL:
+		return REPO_NODE_TYPE_MATERIAL;
+	case repo::core::model::NodeType::REVISION:
+		return REPO_NODE_TYPE_REVISION;
+	case repo::core::model::NodeType::TEXTURE:
+		return REPO_NODE_TYPE_TEXTURE;
+	default:
+		return "UNKNOWN";
+	}
+}
+
+static std::string childPathToString(const SelectionTree::ChildPath& path)
+{
+	std::string result;
+	for (size_t i = 0; i < path.size(); ++i) {
+		result += path[i].toString();
+		if (i != path.size() - 1) {
+			result += "__";
+		}
+	}
+	return result;
+}
+
+static std::vector<std::string> getAsString(const std::vector<repo::lib::RepoUUID>& uuids)
+{
+	std::vector<std::string> array;
+	for (auto& uuid : uuids) {
+		array.push_back(uuid.toString());
+	}
+	return array;
+}
+
+static std::string getAsString(SelectionTree::Node::ToggleState state)
+{
+	switch (state) {
+	case SelectionTree::Node::ToggleState::SHOW:
+		return REPO_VISIBILITY_STATE_SHOW;
+	case SelectionTree::Node::ToggleState::HIDDEN:
+		return REPO_VISIBILITY_STATE_HIDDEN;
+	case SelectionTree::Node::ToggleState::HALF_HIDDEN:
+		return REPO_VISIBILITY_STATE_HALF_HIDDEN;
+	}
+	throw new repo::lib::RepoException("Unknown visibility type");
+}
+
+SelectionTree::Node SelectionTreeMaker::generatePTree(
+	const repo::core::model::RepoNode			*currentNode,
+	std::unordered_map<std::string, std::pair<std::string, SelectionTree::ChildPath>> &idMaps,
+	IdMap							&uniqueIDToSharedId,
+	IdToMeshes									&idToMeshesTree,
+	std::vector<repo::lib::RepoUUID>			currentPath,
+	bool										&hiddenOnDefault,
+	std::vector<repo::lib::RepoUUID>			&hiddenNode,
+	std::vector<repo::lib::RepoUUID>			&meshIds) const
+{
+	SelectionTree::Node tree;
 	if (currentNode)
 	{
-		std::string idString = currentNode->getUniqueID().toString();
-
 		repo::lib::RepoUUID sharedID = currentNode->getSharedID();
-		std::string childPath = currentPath.empty() ? idString : currentPath + "__" + idString;
+
+		// currentPath is passed as a copy so we can update it directly
+
+		currentPath.push_back(currentNode->getUniqueID());
 
 		auto children = scene->getChildrenAsNodes(repo::core::model::RepoScene::GraphType::DEFAULT, sharedID);
-		std::vector<repo::lib::PropertyTree> childrenTrees;
+		std::vector<SelectionTree::Node> childrenTrees;
 
 		std::vector<repo::core::model::RepoNode*> childrenTypes[2];
 		std::vector<repo::lib::RepoUUID> metaIDs;
@@ -85,8 +143,8 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 					case repo::core::model::NodeType::REFERENCE:
 					{
 						bool hiddenChild = false;
-						std::vector<std::string> childrenMeshes;
-						childrenTrees.push_back(generatePTree(child, idMaps, sharedIDToUniqueID, idToMeshesTree, childPath, hiddenChild, hiddenNode, childrenMeshes));
+						std::vector<repo::lib::RepoUUID> childrenMeshes;
+						childrenTrees.push_back(generatePTree(child, idMaps, uniqueIDToSharedId, idToMeshesTree, currentPath, hiddenChild, hiddenNode, childrenMeshes));
 						hasHiddenChildren = hasHiddenChildren || hiddenChild;
 						meshIds.insert(meshIds.end(), childrenMeshes.begin(), childrenMeshes.end());
 					}
@@ -94,7 +152,7 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 				}
 				else
 				{
-					repoDebug << "Null pointer for child node at generatePTree, current path : " << currentPath;
+					repoDebug << "Null pointer for child node at generatePTree, current path : " << childPathToString(currentPath);
 					repoError << "Unexpected error at selection tree generation, the tree may not be complete.";
 				}
 			}
@@ -109,48 +167,46 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 			}
 		}
 
-		tree.addToTree("account", scene->getDatabaseName());
-		tree.addToTree("project", scene->getProjectName());
-		tree.addToTree("type", currentNode->getType());
-		if (!name.empty())
-			tree.addToTree("name", name);
-		tree.addToTree("path", childPath);
-		tree.addToTree("_id", idString);
-		tree.addToTree("shared_id", sharedID.toString());
-		tree.addToTree("children", childrenTrees);
-		if (metaIDs.size())
-			tree.addToTree("meta", metaIDs);
+		tree.type = currentNode->getTypeAsEnum();
+		tree.name = name;
+		tree.path = currentPath;
+		tree._id = currentNode->getUniqueID();
+		tree.shared_id = sharedID;
+		tree.children = childrenTrees;
+		tree.meta = metaIDs;
+
+		std::string idString = currentNode->getUniqueID().toString();
 
 		if (scene->isHiddenByDefault(currentNode->getUniqueID()) ||
 			(name.find(IFC_TYPE_SPACE_LABEL) != std::string::npos
 				&& currentNode->getTypeAsEnum() == repo::core::model::NodeType::MESH))
 		{
-			tree.addToTree(REPO_LABEL_VISIBILITY_STATE, REPO_VISIBILITY_STATE_HIDDEN);
+			tree.toggleState = SelectionTree::Node::ToggleState::HIDDEN;
 			hiddenOnDefault = true;
-			hiddenNode.push_back(idString);
+			hiddenNode.push_back(currentNode->getUniqueID());
 		}
 		else if (hiddenOnDefault || hasHiddenChildren)
 		{
 			hiddenOnDefault = (hiddenOnDefault || hasHiddenChildren);
-			tree.addToTree(REPO_LABEL_VISIBILITY_STATE, REPO_VISIBILITY_STATE_HALF_HIDDEN);
+			tree.toggleState = SelectionTree::Node::ToggleState::HALF_HIDDEN;
 		}
 		else
 		{
-			tree.addToTree(REPO_LABEL_VISIBILITY_STATE, REPO_VISIBILITY_STATE_SHOW);
+			tree.toggleState = SelectionTree::Node::ToggleState::SHOW;
 		}
 
-		idMaps[idString] = { name, childPath };
-		sharedIDToUniqueID.push_back({ idString, sharedID.toString() });
+		idMaps[idString] = { name, currentPath };
+		uniqueIDToSharedId[currentNode->getUniqueID()] = sharedID;
 		if (meshIds.size())
-			idToMeshesTree.addToTree(idString, meshIds);
+			idToMeshesTree[currentNode->getUniqueID()] = meshIds;
 		else if (currentNode->getTypeAsEnum() == repo::core::model::NodeType::MESH) {
 			std::vector<repo::lib::RepoUUID> self = { currentNode->getUniqueID() };
-			idToMeshesTree.addToTree(idString, self);
+			idToMeshesTree[currentNode->getUniqueID()] = self;
 		}
 	}
 	else
 	{
-		repoDebug << "Null pointer at generatePTree, current path : " << currentPath;
+		repoDebug << "Null pointer at generatePTree, current path : " << childPathToString(currentPath);
 		repoError << "Unexpected error at selection tree generation, the tree may not be complete.";
 	}
 
@@ -182,47 +238,107 @@ std::map<std::string, std::vector<uint8_t>> SelectionTreeMaker::getSelectionTree
 	return buffer;
 }
 
-std::map<std::string, repo::lib::PropertyTree>  SelectionTreeMaker::getSelectionTreeAsPropertyTree() const
+void SelectionTreeMaker::generateSelectionTrees()
 {
-	std::map<std::string, repo::lib::PropertyTree> trees;
+	trees.fullTree.container.account = scene->getDatabaseName();
+	trees.fullTree.container.project = scene->getProjectName();
 
-	repo::core::model::RepoNode *root;
+	repo::core::model::RepoNode* root;
 	if (scene && (root = scene->getRoot(repo::core::model::RepoScene::GraphType::DEFAULT)))
 	{
-		std::unordered_map< std::string, std::pair<std::string, std::string>> map;
-		std::vector<std::string> hiddenNodes, childrenMeshes;
+		std::unordered_map<std::string, std::pair<std::string, SelectionTree::ChildPath>> map;
+		IdToMeshes idToMeshes;
+		std::vector<repo::lib::RepoUUID> childrenMeshes;
+		std::vector<repo::lib::RepoUUID> hiddenNodes;
 		bool dummy = false;
-		repo::lib::PropertyTree tree, settingsTree, treePathTree, shareIDToUniqueIDMap, idToMeshes;
-		std::vector<std::pair<std::string, std::string>>  sharedIDToUniqueID;
-		tree.mergeSubTree("nodes", generatePTree(root, map, sharedIDToUniqueID, idToMeshes, "", dummy, hiddenNodes, childrenMeshes));
+		repo::lib::PropertyTree settingsTree, treePathTree, shareIDToUniqueIDMap;
+		IdMap  uniqueIdToSharedId;
+
+		trees.fullTree.nodes = generatePTree(root, map, uniqueIdToSharedId, idToMeshes, {}, dummy, hiddenNodes, childrenMeshes);
+		trees.idMap = uniqueIdToSharedId;
+
 		for (const auto pair : map)
 		{
-			//if there's an entry in maps it must have an entry in paths
-			tree.addToTree("idToName." + pair.first, pair.second.first);
-			treePathTree.addToTree("idToPath." + pair.first, pair.second.second);
-		}
-		for (const auto pair : sharedIDToUniqueID)
-		{
-			shareIDToUniqueIDMap.addToTree("idMap." + pair.first, pair.second);
+			trees.idToName[pair.first] = pair.second.first;
+			trees.idToPath[pair.first] = pair.second.second;
 		}
 
-		trees["fulltree.json"] = tree;
-		trees["tree_path.json"] = treePathTree;
-		trees["idMap.json"] = shareIDToUniqueIDMap;
-		trees["idToMeshes.json"] = idToMeshes;
-
-		if (hiddenNodes.size())
-		{
-			settingsTree.addToTree("hiddenNodes", hiddenNodes);
-			trees["modelProperties.json"] = settingsTree;
-		}
+		trees.idToMeshes = idToMeshes;
+		trees.modelSettings.hiddenNodes = hiddenNodes;
 	}
 	else
 	{
-		repoError << "Failed to generate selection tree: scene is empty or default scene is not loaded";
+		throw new repo::lib::RepoException("Failed to generate selection tree: scene is empty or default scene is not loaded");
+	}
+}
+
+static repo::lib::PropertyTree getAsPropertyTree(const SelectionTree::Node& node, const SelectionTree& tree) 
+{
+	repo::lib::PropertyTree ptree;
+
+	ptree.addToTree("account", tree.container.account);
+	ptree.addToTree("project", tree.container.project);
+
+	ptree.addToTree("type", nodeTypeToString(node.type));
+	if (!node.name.empty()) {
+		ptree.addToTree("name", node.name);
+	}
+	ptree.addToTree("path", childPathToString(node.path));
+	ptree.addToTree("_id", node._id.toString());
+	ptree.addToTree("shared_id", node.shared_id.toString());
+	
+	std::vector<repo::lib::PropertyTree> children;
+	for (auto& child : node.children) {
+		children.push_back(getAsPropertyTree(child, tree));
+	}
+	ptree.addToTree("children", children);
+
+	if (node.meta.size()) {
+		ptree.addToTree("meta", getAsString(node.meta));
 	}
 
-	return trees;
+	ptree.addToTree(REPO_LABEL_VISIBILITY_STATE, getAsString(node.toggleState));
+
+	return ptree;
+}
+
+std::map<std::string, repo::lib::PropertyTree> SelectionTreeMaker::getSelectionTreeAsPropertyTree() const
+{
+	std::map<std::string, repo::lib::PropertyTree> map;
+
+	repo::lib::PropertyTree fullTree;
+	fullTree.mergeSubTree("nodes", getAsPropertyTree(trees.fullTree.nodes, trees.fullTree));
+	for (auto& p : trees.idToName) {
+		fullTree.addToTree("idToName." + p.first.toString(), p.second);
+	}
+
+	repo::lib::PropertyTree treePathTree;
+	for (auto& p : trees.idToMeshes) {
+		treePathTree.addToTree("idToPath." + p.first.toString(), childPathToString(p.second));
+	}
+
+	repo::lib::PropertyTree shareIDToUniqueIDMap;
+	for (auto& p : trees.idMap) {
+		shareIDToUniqueIDMap.addToTree("idMap." + p.first.toString(), p.second.toString());
+	}
+
+	repo::lib::PropertyTree idToMeshes;
+	for (auto& p : trees.idToMeshes) {
+		idToMeshes.addToTree(p.first.toString(), getAsString(p.second));
+	}
+
+	map["fulltree.json"] = fullTree;
+	map["tree_path.json"] = treePathTree;
+	map["idMap.json"] = shareIDToUniqueIDMap;
+	map["idToMeshes.json"] = idToMeshes;
+
+	if (trees.modelSettings.hiddenNodes.size()) {
+		repo::lib::PropertyTree settingsTree;
+		settingsTree.addToTree("hiddenNodes", getAsString(trees.modelSettings.hiddenNodes));
+		map["modelProperties.json"] = settingsTree;
+	}
+
+	return map;
 }
 
 SelectionTreeMaker::~SelectionTreeMaker()
