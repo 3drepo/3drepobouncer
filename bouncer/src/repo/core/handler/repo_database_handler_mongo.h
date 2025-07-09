@@ -377,7 +377,7 @@ namespace repo {
 				/*
 				* If a RepoBSON comes from somewhere else, populate the binaries.
 				*/
-				void loadBinaries(const std::string& database,
+				void loadBinaryBuffers(const std::string& database,
 					const std::string& collection, 
 					repo::core::model::RepoBSON& bson);
 
@@ -398,11 +398,6 @@ namespace repo {
 				// We can work with either clients or pool as the top level, connection
 				// specific, container for getting connections. pool pool is threadsafe.
 				std::unique_ptr<mongocxx::pool> clientPool;
-
-				repo::core::model::RepoBSON createRepoBSON(
-					const std::string& database,
-					const std::string& collection,
-					const bsoncxx::document::view& view);
 
 				/**
 				* Get large file off GridFS

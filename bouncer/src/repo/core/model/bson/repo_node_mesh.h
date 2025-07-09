@@ -75,6 +75,13 @@ namespace repo {
 					QUADS = 4
 				};
 
+				enum class MaterialProperties {
+					UNSET = 0,
+					OPAQUEMAT = 1,
+					TRANSPARENTMAT = 2,
+					TEXTUREDMAT = 3
+				};
+
 				/**
 				* Default constructor
 				*/
@@ -135,8 +142,6 @@ namespace repo {
 
 				// Filters for supermeshing
 				std::string grouping;
-				bool isOpaque = false;
-				bool isTransparent = false;
 				repo::lib::RepoUUID textureId;
 
 				// Material struct
@@ -194,10 +199,6 @@ namespace repo {
 
 				void setMaterial(const repo::lib::repo_material_t& m) {
 					this->material = m;
-
-					// Set filter flags from material properties
-					this->isOpaque = (m.opacity == 1.f);
-					this->isTransparent = !(this->isOpaque);
 				}
 
 				const repo::lib::repo_material_t& getMaterial() {
@@ -206,6 +207,10 @@ namespace repo {
 
 				void setTextureId(const repo::lib::RepoUUID textureId) {
 					this->textureId = textureId;
+				}
+
+				repo::lib::RepoUUID getTextureId() {					
+					return this->textureId;
 				}
 
 				/**
@@ -242,11 +247,14 @@ namespace repo {
 					}
 				}
 
-				// get sepcific grouping for mesh batching (empty string if not specified)
+				// get specific grouping for mesh batching (empty string if not specified)
 				std::string getGrouping() const
 				{
 					return grouping;
 				}
+
+				// get material property
+				MaterialProperties getMaterialProperties() const;
 
 				/**
 				* Retrieve a vector of vertices from the bson object

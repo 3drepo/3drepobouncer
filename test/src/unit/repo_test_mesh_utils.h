@@ -46,7 +46,8 @@ namespace repo {
 						int faceSize,
 						bool normals,
 						int numUvChannels,
-						int numVertices
+						int numVertices,
+						std::string grouping
 					);
 
 					std::string name;
@@ -58,6 +59,7 @@ namespace repo {
 					std::vector<repo::lib::repo_face_t> faces;
 					std::vector<repo::lib::RepoVector3D> normals;
 					std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
+					std::string grouping;
 				};
 
 				struct GenericFace
@@ -99,11 +101,12 @@ namespace repo {
 				{
 				public:
 					TestModelExport(
+						repo::core::handler::AbstractDatabaseHandler *dbHandler,
 						const std::string databaseName,
 						const std::string projectName,
 						const repo::lib::RepoUUID revId,
 						const std::vector<double> worldOffset
-					) : AbstractModelExport(databaseName, projectName, revId, worldOffset)
+					) : AbstractModelExport(dbHandler, databaseName, projectName, revId, worldOffset)
 					{						
 					}
 
@@ -111,7 +114,7 @@ namespace repo {
 						supermeshNodes.push_back(*supermesh);
 					}
 
-					void Finalise() {
+					void finalise() {
 						finalised = true;
 						// Do nothing else
 					};
@@ -141,6 +144,7 @@ namespace repo {
 					const int nVertices,
 					const bool hasUV,
 					const int primitiveSize,
+					const std::string grouping,
 					const std::vector<repo::lib::RepoUUID>& parent);
 
 				/*
