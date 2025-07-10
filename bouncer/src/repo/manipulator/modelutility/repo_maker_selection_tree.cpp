@@ -221,33 +221,6 @@ SelectionTree::Node SelectionTreeMaker::generatePTree(
 	return tree;
 }
 
-std::map<std::string, std::vector<uint8_t>> SelectionTreeMaker::getSelectionTreeAsBuffer() const
-{
-	auto trees = getSelectionTreeAsPropertyTree();
-	std::map<std::string, std::vector<uint8_t>> buffer;
-	for (const auto &tree : trees)
-	{
-		rapidjson::StringBuffer b;
-		rapidjson::Writer<rapidjson::StringBuffer> writer(b);
-		tree.second.Accept(writer);
-
-		std::string jsonString = b.GetString();
-		if (!jsonString.empty())
-		{
-			size_t byteLength = jsonString.size() * sizeof(*jsonString.data());
-			buffer[tree.first] = std::vector<uint8_t>();
-			buffer[tree.first].resize(byteLength);
-			memcpy(buffer[tree.first].data(), jsonString.data(), byteLength);
-		}
-		else
-		{
-			repoError << "Failed to write selection tree into the buffer: JSON string is empty.";
-		}
-	}
-
-	return buffer;
-}
-
 void SelectionTreeMaker::generateSelectionTrees()
 {
 	trees.fullTree.container.account = scene->getDatabaseName();
@@ -282,137 +255,171 @@ void SelectionTreeMaker::generateSelectionTrees()
 	}
 }
 
-static rapidjson::Value getAsPropertyTree(const SelectionTree::Node& node, const SelectionTree& tree, rapidjson::Document::AllocatorType& allocator)
+static void getAsPropertyTree(const SelectionTree::Node& node, const SelectionTree& tree, rapidjson::Writer<rapidjson::StringBuffer>& writer)
 {
-	rapidjson::Value ptree(rapidjson::kObjectType);
+	writer.StartObject();
 
-	ptree.AddMember("account", tree.container.account, allocator);
-	ptree.AddMember("project", tree.container.project, allocator);
+	writer.Key("account");	writer.String(tree.container.account);
+	writer.Key("project");	writer.String(tree.container.project);
 
-	ptree.AddMember("type", nodeTypeToString(node.type), allocator);
+	writer.Key("type");	writer.String(nodeTypeToString(node.type));
+
 	if (!node.name.empty()) {
-		ptree.AddMember("name", node.name, allocator);
+		writer.Key("name"); writer.String(node.name);
 	}
-	ptree.AddMember("path", childPathToString(node.path), allocator);
-	ptree.AddMember("_id", node._id.toString(), allocator);
-	ptree.AddMember("shared_id", node.shared_id.toString(), allocator);
-	
-	rapidjson::Value children(rapidjson::kArrayType);
+
+	writer.Key("path");	writer.String(childPathToString(node.path));
+	writer.Key("_id");	writer.String(node._id.toString());	
+	writer.Key("shared_id"); writer.String(node.shared_id.toString());
+
+	writer.Key("children");	
+	writer.StartArray();
 	for (auto& child : node.children) {
-		children.PushBack(getAsPropertyTree(child, tree, allocator), allocator);
+		getAsPropertyTree(child, tree, writer);
 	}
-	ptree.AddMember("children", children, allocator);
+	writer.EndArray();
 
 	if (node.meta.size()) {
-		rapidjson::Value meta(rapidjson::kArrayType);
+
+		writer.Key("meta");
+		writer.StartArray();
 		for (const auto& metaId : node.meta) {
-			meta.PushBack(rapidjson::Value(metaId.toString(), allocator).Move(), allocator);
+			writer.String(metaId.toString());
 		}
-		ptree.AddMember("meta", meta, allocator);
+		writer.EndArray();
 	}
 
-	ptree.AddMember(REPO_LABEL_VISIBILITY_STATE, getAsString(node.toggleState), allocator);
+	writer.Key("toggleState");	writer.String(getAsString(node.toggleState));
 
-	return ptree;
+	writer.EndObject();
 }
 
-std::map<std::string, rapidjson::Document> SelectionTreeMaker::getSelectionTreeAsPropertyTree() const
+std::map<std::string, std::string> SelectionTreeMaker::getSelectionTreeAsPropertyTree() const
 {
-	std::map<std::string, rapidjson::Document> map;
+	std::map<std::string, std::string> map;
 
 	{
-		rapidjson::Document fullTree;
-		fullTree.SetObject();
-		rapidjson::Document::AllocatorType& allocator = fullTree.GetAllocator();
+		rapidjson::StringBuffer buffer;
+		rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 
-		fullTree.AddMember("nodes", getAsPropertyTree(trees.fullTree.nodes, trees.fullTree, allocator), allocator);
+		writer.StartObject();
 
-		rapidjson::Value idToName(rapidjson::kObjectType);
-		for (auto& p : trees.idToName) {
-			idToName.AddMember(
-				rapidjson::Value(p.first.toString(), allocator).Move(), 
-				rapidjson::Value(p.second, allocator).Move(),
-				allocator);
+		writer.Key("nodes");
+		getAsPropertyTree(trees.fullTree.nodes, trees.fullTree, writer);
+
+		writer.Key("idToName");
+		writer.StartObject();
+		for (const auto& p : trees.idToName) {
+			writer.Key(p.first.toString());
+			writer.String(p.second);
 		}
-		fullTree.AddMember("idToName", idToName, allocator);
+		writer.EndObject();
 
-		map["fulltree.json"] = std::move(fullTree);
+		writer.EndObject();
+
+		map["fulltree.json"] = std::string(buffer.GetString(), buffer.GetSize());
 	}
 	
 	{
-		rapidjson::Document treePathTree;
-		treePathTree.SetObject();
-		rapidjson::Document::AllocatorType& allocator = treePathTree.GetAllocator();
+		rapidjson::StringBuffer buffer;
+		rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 
-		rapidjson::Value idToPath(rapidjson::kObjectType);
+		writer.StartObject();
+		
+		writer.Key("idToPath");
+		writer.StartObject();
 		for (auto& p : trees.idToPath) {
-			idToPath.AddMember(
-				rapidjson::Value(p.first.toString(), allocator).Move(),
-				rapidjson::Value(childPathToString(p.second), allocator).Move(),
-				allocator);
+			writer.Key(p.first.toString());
+			writer.String(childPathToString(p.second));
 		}
+		writer.EndObject();
 
-		treePathTree.AddMember("idToPath", idToPath, allocator);
+		writer.EndObject();
 
-		map["tree_path.json"] = std::move(treePathTree);
+		map["tree_path.json"] = std::string(buffer.GetString(), buffer.GetSize());
 	}
 
 	{
-		rapidjson::Document shareIDToUniqueIDMap;
-		shareIDToUniqueIDMap.SetObject();
-		rapidjson::Document::AllocatorType& allocator = shareIDToUniqueIDMap.GetAllocator();
+		rapidjson::StringBuffer buffer;
+		rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 
-		rapidjson::Value idMap(rapidjson::kObjectType);
+		writer.StartObject();
+
+		writer.Key("idMap");
+		writer.StartObject();
 		for (auto& p : trees.idMap) {
-			idMap.AddMember(
-				rapidjson::Value(p.first.toString(), allocator).Move(),
-				rapidjson::Value(p.second.toString(), allocator).Move(),
-				allocator);
+			writer.Key(p.first.toString());
+			writer.String(p.second.toString());
 		}
+		writer.EndObject();
 
-		shareIDToUniqueIDMap.AddMember("idMap", idMap, allocator);
+		writer.EndObject();
 
-		map["idMap.json"] = std::move(shareIDToUniqueIDMap);
+		map["idMap.json"] = std::string(buffer.GetString(), buffer.GetSize());
 	}
 
 	{
-		rapidjson::Document idToMeshes;
-		idToMeshes.SetObject();
-		rapidjson::Document::AllocatorType& allocator = idToMeshes.GetAllocator();
+		rapidjson::StringBuffer buffer;
+		rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+
+		writer.StartObject();
 
 		for (auto& p : trees.idToMeshes) {
-			rapidjson::Value meshArray(rapidjson::kArrayType);
+			writer.Key(p.first.toString());
+			writer.StartArray();
 			for (const auto& meshId : p.second) {
-				meshArray.PushBack(rapidjson::Value(meshId.toString(), allocator).Move(), allocator);
+				writer.String(meshId.toString());
 			}
-
-			idToMeshes.AddMember(
-				rapidjson::Value(p.first.toString(), allocator).Move(),
-				meshArray, 
-				allocator);
+			writer.EndArray();
 		}
 
-		map["idToMeshes.json"] = std::move(idToMeshes);
+		writer.EndObject();
+
+		map["idToMeshes.json"] = std::string(buffer.GetString(), buffer.GetSize());
 	}
 
 
-	if (trees.modelSettings.hiddenNodes.size()) {
+	if (trees.modelSettings.hiddenNodes.size()) 
+	{
+		rapidjson::StringBuffer buffer;
+		rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 
-		rapidjson::Document settingsTree;
-		settingsTree.SetObject();
-		rapidjson::Document::AllocatorType& allocator = settingsTree.GetAllocator();
-
-		rapidjson::Value hiddenNodes(rapidjson::kArrayType);
-		for(auto& node : trees.modelSettings.hiddenNodes) {
-			hiddenNodes.PushBack(rapidjson::Value(node.toString(), allocator).Move(), allocator);
+		writer.StartObject();
+		writer.Key("hiddenNodes");
+		writer.StartArray();
+		for (auto& node : trees.modelSettings.hiddenNodes) {
+			writer.String(node.toString());
 		}
+		writer.EndArray();
+		writer.EndObject();
 
-		settingsTree.AddMember("hiddenNodes", hiddenNodes, allocator);
-
-		map["modelProperties.json"] = std::move(settingsTree);
+		map["modelProperties.json"] = std::string(buffer.GetString(), buffer.GetSize());
 	}
 
 	return map;
+}
+
+std::map<std::string, std::vector<uint8_t>> SelectionTreeMaker::getSelectionTreeAsBuffer() const
+{
+	auto trees = getSelectionTreeAsPropertyTree();
+	std::map<std::string, std::vector<uint8_t>> buffer;
+	for (const auto& tree : trees)
+	{
+		const std::string& jsonString = tree.second;
+		if (!jsonString.empty())
+		{
+			size_t byteLength = jsonString.size() * sizeof(*jsonString.data());
+			buffer[tree.first] = std::vector<uint8_t>();
+			buffer[tree.first].resize(byteLength);
+			memcpy(buffer[tree.first].data(), jsonString.data(), byteLength);
+		}
+		else
+		{
+			repoError << "Failed to write selection tree into the buffer: JSON string is empty.";
+		}
+	}
+
+	return buffer;
 }
 
 SelectionTreeMaker::~SelectionTreeMaker()
