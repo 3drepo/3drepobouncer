@@ -15,8 +15,9 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #pragma once
-#include "../../core/model/collection/repo_scene.h"
-#include "../../lib/repo_property_tree.h"
+#include "repo/core/model/collection/repo_scene.h"
+#include "repo/lib/repo_property_tree.h"
+#include "repo/manipulator/modelutility/rapidjson/fwd.h"
 
 namespace repo{
 	namespace manipulator{
@@ -97,7 +98,7 @@ namespace repo{
 				* or the default graph is not loaded.
 				* @return returns the selection tree as a property tree
 				*/
-				std::map<std::string, repo::lib::PropertyTree> getSelectionTreeAsPropertyTree() const;
+				std::map<std::string, rapidjson::Document> getSelectionTreeAsPropertyTree() const;
 
 				/**
 				* Construct and return the selection tree as a Property Tree As a buffer
