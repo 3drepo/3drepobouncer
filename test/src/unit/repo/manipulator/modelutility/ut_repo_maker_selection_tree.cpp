@@ -39,8 +39,6 @@ using namespace rapidjson;
 
 #define TESTDB "SelectionTreeTest"
 
-#pragma optimize("", off)
-
 repo::core::model::RepoScene* ModelImportManagerImport(std::string filename, const ModelImportConfig& config)
 {
 	auto handler = getHandler();

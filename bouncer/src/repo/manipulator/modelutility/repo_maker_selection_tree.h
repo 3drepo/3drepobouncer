@@ -93,14 +93,6 @@ namespace repo{
 				~SelectionTreeMaker();
 
 				/**
-				* Construct and return the selection tree as a Property Tree
-				* The method will return an empty tree if the scene is null
-				* or the default graph is not loaded.
-				* @return returns the selection tree as a property tree
-				*/
-				std::map<std::string, std::string> getSelectionTreeAsPropertyTree() const;
-
-				/**
 				* Construct and return the selection tree as a Property Tree As a buffer
 				* The method will return an empty tree if the scene is null
 				* or the default graph is not loaded.

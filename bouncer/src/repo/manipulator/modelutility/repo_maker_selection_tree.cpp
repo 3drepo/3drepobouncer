@@ -74,16 +74,7 @@ static std::string childPathToString(const SelectionTree::ChildPath& path)
 	return result;
 }
 
-static std::vector<std::string> getAsString(const std::vector<repo::lib::RepoUUID>& uuids)
-{
-	std::vector<std::string> array;
-	for (auto& uuid : uuids) {
-		array.push_back(uuid.toString());
-	}
-	return array;
-}
-
-static std::string getAsString(SelectionTree::Node::ToggleState state)
+static std::string toggleStateToString(SelectionTree::Node::ToggleState state)
 {
 	switch (state) {
 	case SelectionTree::Node::ToggleState::SHOW:
@@ -255,7 +246,7 @@ void SelectionTreeMaker::generateSelectionTrees()
 	}
 }
 
-static void getAsPropertyTree(const SelectionTree::Node& node, const SelectionTree& tree, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+static void writePropertyTree(const SelectionTree::Node& node, const SelectionTree& tree, rapidjson::Writer<rapidjson::StringBuffer>& writer)
 {
 	writer.StartObject();
 
@@ -275,7 +266,7 @@ static void getAsPropertyTree(const SelectionTree::Node& node, const SelectionTr
 	writer.Key("children");	
 	writer.StartArray();
 	for (auto& child : node.children) {
-		getAsPropertyTree(child, tree, writer);
+		writePropertyTree(child, tree, writer);
 	}
 	writer.EndArray();
 
@@ -289,12 +280,12 @@ static void getAsPropertyTree(const SelectionTree::Node& node, const SelectionTr
 		writer.EndArray();
 	}
 
-	writer.Key("toggleState");	writer.String(getAsString(node.toggleState));
+	writer.Key("toggleState");	writer.String(toggleStateToString(node.toggleState));
 
 	writer.EndObject();
 }
 
-std::map<std::string, std::string> SelectionTreeMaker::getSelectionTreeAsPropertyTree() const
+std::map<std::string, std::string> serialiseSelectionTreesToJson(const SelectionTreesSet& trees)
 {
 	std::map<std::string, std::string> map;
 
@@ -305,7 +296,7 @@ std::map<std::string, std::string> SelectionTreeMaker::getSelectionTreeAsPropert
 		writer.StartObject();
 
 		writer.Key("nodes");
-		getAsPropertyTree(trees.fullTree.nodes, trees.fullTree, writer);
+		writePropertyTree(trees.fullTree.nodes, trees.fullTree, writer);
 
 		writer.Key("idToName");
 		writer.StartObject();
@@ -401,24 +392,23 @@ std::map<std::string, std::string> SelectionTreeMaker::getSelectionTreeAsPropert
 
 std::map<std::string, std::vector<uint8_t>> SelectionTreeMaker::getSelectionTreeAsBuffer() const
 {
-	auto trees = getSelectionTreeAsPropertyTree();
+	auto maps = serialiseSelectionTreesToJson(trees);
 	std::map<std::string, std::vector<uint8_t>> buffer;
-	for (const auto& tree : trees)
+	for (const auto& map : maps)
 	{
-		const std::string& jsonString = tree.second;
+		const std::string& jsonString = map.second;
 		if (!jsonString.empty())
 		{
 			size_t byteLength = jsonString.size() * sizeof(*jsonString.data());
-			buffer[tree.first] = std::vector<uint8_t>();
-			buffer[tree.first].resize(byteLength);
-			memcpy(buffer[tree.first].data(), jsonString.data(), byteLength);
+			buffer[map.first] = std::vector<uint8_t>();
+			buffer[map.first].resize(byteLength);
+			memcpy(buffer[map.first].data(), jsonString.data(), byteLength);
 		}
 		else
 		{
 			repoError << "Failed to write selection tree into the buffer: JSON string is empty.";
 		}
 	}
-
 	return buffer;
 }
 
