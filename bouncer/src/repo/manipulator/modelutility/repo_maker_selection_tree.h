@@ -16,8 +16,7 @@
 */
 #pragma once
 #include "repo/core/model/collection/repo_scene.h"
-#include "repo/lib/repo_property_tree.h"
-#include "repo/manipulator/modelutility/rapidjson/fwd.h"
+#include "repo/core/handler/repo_database_handler_abstract.h"
 
 namespace repo{
 	namespace manipulator{
@@ -35,11 +34,11 @@ namespace repo{
 				public:
 					repo::core::model::NodeType type;
 					std::string name;
-					std::vector<repo::lib::RepoUUID> path;
 					repo::lib::RepoUUID _id;
 					repo::lib::RepoUUID shared_id;
-					std::vector<Node> children;
 					std::vector<repo::lib::RepoUUID> meta;
+					std::vector<Node*> children; // Use pointers here because references are not assignable so cant be used in a vector
+					std::vector<repo::lib::RepoUUID> path;
 
 					enum ToggleState {
 						SHOW,
@@ -48,10 +47,17 @@ namespace repo{
 					};
 
 					ToggleState toggleState;
+
+					Node() :
+						toggleState(ToggleState::SHOW),
+						type(repo::core::model::NodeType::UNKNOWN)
+					{
+					}
 				};
 
 				Container container;
-				Node nodes;
+				Node* root;
+				std::vector<Node> nodes; // This vector holds the memory containing the actual nodes
 
 				using ChildPath = std::vector<repo::lib::RepoUUID>;
 			};
@@ -89,7 +95,7 @@ namespace repo{
 				* @params scene scene to construct from
 				*/
 				SelectionTreeMaker(
-					const repo::core::model::RepoScene *scene);
+					const repo::core::model::RepoScene *scene, repo::core::handler::AbstractDatabaseHandler* handler);
 				~SelectionTreeMaker();
 
 				/**
@@ -102,25 +108,7 @@ namespace repo{
 
 			private:
 				const repo::core::model::RepoScene *scene;
-
-				/**
-				* Recurse function to generate property tree for a specific node
-				* @param currentNode node to parse
-				* @param idMap a map of pairs of id to name mapping (to insert)
-				* @param currentPath the current path that leads to this node.
-				* @param hiddenOnDefault (return value) shows if the subtree has hidden nodes
-				* @param hiddenNode A list of vector of nodes that are hidden by default
-				*/
-				SelectionTree::Node generatePTree(
-					const repo::core::model::RepoNode			*currentNode,
-					std::unordered_map<std::string, std::pair<std::string, SelectionTree::ChildPath>>	&idMaps,
-					IdMap										&uniqueIdToSharedId,
-					IdToMeshes									&idToMeshes,
-					std::vector<repo::lib::RepoUUID>            currentPath,
-					bool                                        &hiddenOnDefault,
-					std::vector<repo::lib::RepoUUID>			&hiddenNode,
-					std::vector<repo::lib::RepoUUID>			&meshIds) const;
-
+				repo::core::handler::AbstractDatabaseHandler* handler;
 				SelectionTreesSet trees;
 
 				void generateSelectionTrees();

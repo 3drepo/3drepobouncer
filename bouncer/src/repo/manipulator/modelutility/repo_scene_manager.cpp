@@ -283,7 +283,7 @@ bool SceneManager::generateAndCommitSelectionTree(
 	bool success = false;
 	if (success = scene && scene->isRevisioned() && handler)
 	{
-		SelectionTreeMaker treeMaker(scene);
+		SelectionTreeMaker treeMaker(scene, handler);
 		auto buffer = treeMaker.getSelectionTreeAsBuffer();
 
 		if (success = buffer.size())
