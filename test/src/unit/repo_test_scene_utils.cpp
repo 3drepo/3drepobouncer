@@ -56,6 +56,16 @@ SceneUtils::NodeInfo SceneUtils::getRootNode()
 	return getNodeInfo(scene->getRoot(repo::core::model::RepoScene::GraphType::DEFAULT));
 }
 
+std::string testing::SceneUtils::getTeamspaceName()
+{
+	return scene->getDatabaseName();
+}
+
+std::string testing::SceneUtils::getContainerName()
+{
+	return scene->getProjectName();
+}
+
 bool SceneUtils::isPopulated()
 {
 	return scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size() > 0;
@@ -117,6 +127,11 @@ SceneUtils::NodeInfo SceneUtils::findLeafNode(std::string name)
 	}
 
 	return nodes[0];
+}
+
+SceneUtils::NodeInfo testing::SceneUtils::findNodeByUniqueId(repo::lib::RepoUUID uniqueId)
+{
+	return getNodeInfo(scene->getNodeByUniqueID(repo::core::model::RepoScene::GraphType::DEFAULT, uniqueId));
 }
 
 std::vector<SceneUtils::NodeInfo> SceneUtils::getChildNodes(repo::core::model::RepoNode* node, bool ignoreMeta)
@@ -185,6 +200,20 @@ std::vector<SceneUtils::NodeInfo> SceneUtils::NodeInfo::getMeshes()
 		if (dynamic_cast<MeshNode*>(c.node)) {
 			meshNodes.push_back(c);
 		}
+	}
+	if (dynamic_cast<MeshNode*>(this->node)) {
+		meshNodes.push_back(*this);
+	}
+	return meshNodes;
+}
+
+std::vector<SceneUtils::NodeInfo> SceneUtils::NodeInfo::getMeshesRecursive()
+{
+	std::vector<SceneUtils::NodeInfo> meshNodes;
+	for (auto& c : scene->getChildNodes(node, true))
+	{
+		auto childMeshNodes = c.getMeshesRecursive();
+		meshNodes.insert(meshNodes.end(), childMeshNodes.begin(), childMeshNodes.end());
 	}
 	if (dynamic_cast<MeshNode*>(this->node)) {
 		meshNodes.push_back(*this);
@@ -270,17 +299,34 @@ std::vector<SceneUtils::NodeInfo> SceneUtils::getMeshes()
 	return meshes;
 }
 
+std::vector<SceneUtils::NodeInfo> SceneUtils::getTransformations()
+{
+	std::vector<SceneUtils::NodeInfo> meshes;
+	for (auto n : scene->getAllTransformations(repo::core::model::RepoScene::GraphType::DEFAULT)) {
+		meshes.push_back(getNodeInfo(n));
+	}
+	return meshes;
+}
+
 std::unordered_map<std::string, repo::lib::RepoVariant> SceneUtils::NodeInfo::getMetadata()
 {
 	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
-	for (auto c : scene->getChildNodes(node, false))
-	{
-		if (dynamic_cast<MetadataNode*>(c.node)) {
-			auto m = dynamic_cast<MetadataNode*>(c.node)->getAllMetadata();
-			metadata.insert(m.begin(), m.end());
-		}
+	for (const auto& c : getMetadataNodes()) {
+		auto m = dynamic_cast<MetadataNode*>(c.node)->getAllMetadata();
+		metadata.insert(m.begin(), m.end());
 	}
 	return metadata;
+}
+
+std::vector<SceneUtils::NodeInfo> SceneUtils::NodeInfo::getMetadataNodes()
+{
+	std::vector<SceneUtils::NodeInfo> metadataNodes;
+	for (const auto& c : scene->getChildNodes(node, false)) {
+		if (dynamic_cast<MetadataNode*>(c.node)) {
+			metadataNodes.push_back(c);
+		}
+	}
+	return metadataNodes;
 }
 
 repo::lib::repo_material_t SceneUtils::NodeInfo::getMaterial()
@@ -329,6 +375,19 @@ SceneUtils::NodeInfo SceneUtils::NodeInfo::getParent() const
 {
 	auto parents = scene->getParentNodes(node);
 	return parents[0];
+}
+
+std::vector<SceneUtils::NodeInfo> SceneUtils::NodeInfo::getParents() const
+{
+	std::vector<SceneUtils::NodeInfo> path;
+
+	auto parents = scene->getParentNodes(node);
+	if (parents.size()) {
+		path = parents[0].getParents();
+	}
+	path.push_back(*this);
+
+	return path;
 }
 
 std::string SceneUtils::NodeInfo::getPath() const
