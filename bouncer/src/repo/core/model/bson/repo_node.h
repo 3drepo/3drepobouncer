@@ -283,6 +283,12 @@ namespace repo {
 				{
 					return sizeof(*this);
 				}
+
+				/**
+				* Gets the node type corresponding to the string representation
+				* defined in repo_bouncer_global.h.
+				*/
+				static NodeType parseType(const std::string& nodeType);
 			};
 
 			/*!
