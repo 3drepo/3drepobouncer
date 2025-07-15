@@ -348,6 +348,7 @@ SceneUtils::NodeInfo SceneUtils::NodeInfo::getParent() const
 std::vector<SceneUtils::NodeInfo> SceneUtils::NodeInfo::getParents(SceneUtils::Filter filter) const
 {
 	auto parents = scene->getParentNodes(node, filter);
+	return parents;
 }
 
 std::string SceneUtils::NodeInfo::getPath() const
