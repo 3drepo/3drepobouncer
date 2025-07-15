@@ -131,7 +131,7 @@ TEST_F(NwdTestSuite, Sample2025NWDTree)
 	nodes = utils.findTransformationNodesByName("Wall-Ext_102Bwk-75Ins-100LBlk-12P");
 	EXPECT_THAT(nodes.size(), Eq(1));
 
-	auto children = nodes[0].getChildren();
+	auto children = nodes[0].getChildren({repo::core::model::NodeType::MESH, repo::core::model::NodeType::TRANSFORMATION});
 	EXPECT_THAT(children.size(), Eq(6));
 
 	for (auto n : children) {
@@ -576,3 +576,21 @@ TEST(ODAModelImport, DefaultViewDisplayOptions)
 		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").hasTextures(), IsFalse());
 	}
 }
+
+/*
+TEST(ODAModelImport, MetadataParents)
+{
+	// All metadata nodes must also have their sibling meshnodes as parents,
+	// in order to resolve ids by mesh node in the frontend
+
+	{
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport("Sample2025NWD", getDataPath(nwdModel2025)));
+		for (auto& metadata : scene.getMetadataNodes())
+		{
+			auto meshParents = metadata.getParents({ repo::core::model::NodeType::MESH });
+			auto meshSiblings = metadata.getSiblings({ repo::core::model::NodeType::TRANSFORMATION }, { repo::core::model::NodeType::MESH });
+			EXPECT_THAT(meshSiblings, UnorderedElementsAreArray(meshParents));
+		}
+	}
+}
+*/
