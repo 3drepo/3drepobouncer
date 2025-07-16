@@ -117,7 +117,8 @@ namespace repo {
 				bool generateWebViewBuffers(
 					repo::core::model::RepoScene									*scene,
 					const repo::manipulator::modelconvertor::ExportType				&exType,
-					repo::core::handler::AbstractDatabaseHandler					*handler = nullptr);
+					repo::core::handler::AbstractDatabaseHandler					*handler,
+					repo::lib::repo_web_buffers_t& buffers);
 
 				/**
 				* Remove stash graph entry for the given scene

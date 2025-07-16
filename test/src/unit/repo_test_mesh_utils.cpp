@@ -43,6 +43,13 @@ std::unique_ptr<MeshNode> repo::test::utils::mesh::createRandomMesh(
 	return std::make_unique<MeshNode>(mesh);
 }
 
+MeshNode* repo::test::utils::mesh::createRandomMesh(const int nVertices, const bool hasUV, const int primitiveSize, const std::vector<repo::lib::RepoUUID>& parent)
+{
+	auto mesh = makeMeshNode(mesh_data(true, true, 0, primitiveSize, false, hasUV ? 1 : 0, nVertices, {}));
+	mesh.addParents(parent);
+	return new MeshNode(mesh);
+}
+
 bool repo::test::utils::mesh::compareMeshes(
 	std::string database,
 	std::string projectName,
@@ -100,6 +107,98 @@ bool repo::test::utils::mesh::compareMeshes(
 	return true;
 }
 
+bool repo::test::utils::mesh::compareMeshes(repo::core::model::RepoNodeSet original, repo::core::model::RepoNodeSet stash)
+{
+	std::vector<GenericFace> defaultFaces;
+	for (const auto node : original)
+	{
+		addFaces(dynamic_cast<repo::core::model::MeshNode*>(node), defaultFaces);
+	}
+
+	std::vector<GenericFace> stashFaces;
+	for (const auto node : stash)
+	{
+		addFaces(dynamic_cast<repo::core::model::MeshNode*>(node), stashFaces);
+	}
+
+	if (defaultFaces.size() != stashFaces.size())
+	{
+		return false;
+	}
+
+	// Faces are compared exactly using a hash table for speed.
+
+	std::map<long, std::vector<GenericFace>> actual;
+
+	for (auto& face : stashFaces)
+	{
+		actual[face.hash()].push_back(face);
+	}
+
+	for (auto& face : defaultFaces)
+	{
+		auto& others = actual[face.hash()];
+		for (auto& other : others) {
+			if (other.hit)
+			{
+				continue; // Each actual face may only be matched once
+			}
+			if (other.equals(face))
+			{
+				face.hit++;
+				other.hit++;
+				break;
+			}
+		}
+	}
+
+	// Did we find a match for all faces?
+
+	for (const auto& face : defaultFaces)
+	{
+		if (!face.hit)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+void repo::test::utils::mesh::addFaces(repo::core::model::MeshNode* mesh, std::vector<GenericFace>& faces)
+{
+	if (mesh == nullptr)
+	{
+		return;
+	}
+
+	auto vertices = mesh->getVertices();
+	auto channels = mesh->getUVChannelsSeparated();
+	auto normals = mesh->getNormals();
+
+	for (const auto face : mesh->getFaces())
+	{
+		GenericFace portableFace;
+		portableFace.hit = 0;
+
+		for (const auto index : face)
+		{
+			portableFace.push(vertices[index]);
+
+			for (const auto channel : channels)
+			{
+				portableFace.push(channel[index]);
+			}
+
+			if (normals.size())
+			{
+				portableFace.push(normals[index]);
+			}
+		}
+
+		faces.push_back(portableFace);
+	}
+}
 
 // Helper method for getting binary data from the nodes in getFacesFromDatabase(...)
 template <class T>

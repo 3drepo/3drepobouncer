@@ -147,6 +147,12 @@ namespace repo {
 					const std::string grouping,
 					const std::vector<repo::lib::RepoUUID>& parent);
 
+				repo::core::model::MeshNode* createRandomMesh(
+					const int nVertices,
+					const bool hasUV,
+					const int primitiveSize,
+					const std::vector<repo::lib::RepoUUID>& parent);
+
 				/*
 				* Compare the geometric content of two meshes to determine if their
 				* hulls are identical.
@@ -157,6 +163,14 @@ namespace repo {
 					repo::lib::RepoUUID revId,
 					TestModelExport* mockExporter
 				);
+
+				bool compareMeshes(
+					repo::core::model::RepoNodeSet original,
+					repo::core::model::RepoNodeSet stash);
+
+				void addFaces(
+					repo::core::model::MeshNode* mesh,
+					std::vector<GenericFace>& faces);
 
 				std::vector<GenericFace> getFacesFromDatabase(
 					std::string database,

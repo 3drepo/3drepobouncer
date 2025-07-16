@@ -21,510 +21,307 @@
 #include <limits>
 #include <test/src/unit/repo_test_mesh_utils.h>
 #include <repo/core/model/bson/repo_bson_factory.h>
-#include <repo/manipulator/modelutility/repo_scene_builder.h>
-#include <test/src/unit/repo_test_database_info.h>
 
 using namespace repo::manipulator::modeloptimizer;
 using namespace repo::test::utils::mesh;
 
-#define DBMULTIPARTOPTIMIZERTEST "multipartOptimiserTest"
+const static repo::core::model::RepoScene::GraphType DEFAULT_GRAPH = repo::core::model::RepoScene::GraphType::DEFAULT;
+const static repo::core::model::RepoScene::GraphType OPTIMIZED_GRAPH = repo::core::model::RepoScene::GraphType::OPTIMIZED;
+
+TEST(MultipartOptimizer, ConstructorTest)
+{
+	MultipartOptimizer();
+}
+
+TEST(MultipartOptimizer, DeconstructorTest)
+{
+	auto ptr = new MultipartOptimizer();
+	delete ptr;
+}
+
+TEST(MultipartOptimizer, ApplyOptimizationTestEmpty)
+{
+	auto opt = MultipartOptimizer();
+	repo::core::model::RepoScene* empty = nullptr;
+	repo::core::model::RepoScene* empty2 = new repo::core::model::RepoScene();
+
+	EXPECT_FALSE(opt.apply(empty));
+	EXPECT_FALSE(opt.apply(empty2));
+
+	delete empty2;
+}
 
 // The functions below compare the geometry of the original MeshNodes with the
 // stash MeshNodes as a triangle soup. The geometry should be identical.
 
+
 TEST(MultipartOptimizer, TestAllMerged)
 {
 	auto opt = MultipartOptimizer();
-
-	auto handler = getHandler();
-	std::string database = DBMULTIPARTOPTIMIZERTEST;
-	std::string projectName = "TestAllMerged";
-	auto revId = repo::lib::RepoUUID::createUUID();
-
-	auto sceneBuilder = repo::manipulator::modelutility::RepoSceneBuilder(handler, database, projectName, revId);
-
-	auto rootNode = repo::core::model::RepoBSONFactory::makeTransformationNode({}, "rootNode", {});
-	sceneBuilder.addNode(rootNode);
-	auto rootNodeId = rootNode.getSharedID();
+	auto root = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode());
+	auto rootID = root->getSharedID();
 
 	auto nMesh = 3;
-	
-	for (int i = 0; i < nMesh; ++i) {
-		auto randNode = createRandomMesh(10, false, 3, "", { rootNodeId });
-		sceneBuilder.addNode(std::move(randNode));			
-	}
+	repo::core::model::RepoNodeSet meshes, trans, dummy;
+	trans.insert(root);
+	for (int i = 0; i < nMesh; ++i)
+		meshes.insert(createRandomMesh(10, false, 3, { rootID }));
 
-	sceneBuilder.finalise();
-	
-	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
+	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, dummy, dummy, dummy, trans);
+	ASSERT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
+	ASSERT_FALSE(scene->hasRoot(OPTIMIZED_GRAPH));
 
-	bool result = opt.processScene(
-		database,
-		projectName,
-		revId,
-		handler.get(),
-		mockExporter.get()
-	);
+	EXPECT_TRUE(opt.apply(scene));
+	EXPECT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
+	EXPECT_TRUE(scene->hasRoot(OPTIMIZED_GRAPH));
 
-	EXPECT_TRUE(result);
+	EXPECT_EQ(1, scene->getAllMeshes(OPTIMIZED_GRAPH).size());
 
-	EXPECT_TRUE(mockExporter->isFinalised());
-
-	EXPECT_EQ(mockExporter->getSupermeshCount(), 1);
-	
-	EXPECT_TRUE(compareMeshes(
-		database,
-		projectName,
-		revId,
-		mockExporter.get()));
+	EXPECT_TRUE(compareMeshes(scene->getAllMeshes(DEFAULT_GRAPH), scene->getAllMeshes(OPTIMIZED_GRAPH)));
 }
 
 TEST(MultipartOptimizer, TestWithUV)
 {
 	auto opt = MultipartOptimizer();
-
-	auto handler = getHandler();
-	std::string database = DBMULTIPARTOPTIMIZERTEST;
-	std::string projectName = "TestWithUV";
-	auto revId = repo::lib::RepoUUID::createUUID();
-
-	auto sceneBuilder = repo::manipulator::modelutility::RepoSceneBuilder(handler, database, projectName, revId);
-
-	auto rootNode = repo::core::model::RepoBSONFactory::makeTransformationNode({}, "rootNode", {});
-	sceneBuilder.addNode(rootNode);
-	auto rootNodeId = rootNode.getSharedID();
-
-	// The new mpOpt drops geometry that has no material, so we add a texture node as well
-	auto texNode = repo::core::model::RepoBSONFactory::makeTextureNode("", 0, 0, 0, 0, { rootNodeId });
-	sceneBuilder.addNode(texNode);
-	auto texNodeId = texNode.getUniqueID();
+	auto root = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode());
+	auto rootID = root->getSharedID();
 
 	auto nMesh = 3;
-	
-	for (int i = 0; i < nMesh; ++i) {
-		auto randNode = createRandomMesh(10, i == 1, 3, "", { rootNodeId });
-		if (i == 1) {
-			randNode->setTextureId(texNodeId);
-		}
-		sceneBuilder.addNode(std::move(randNode));
-	}
+	repo::core::model::RepoNodeSet meshes, trans, dummy;
+	trans.insert(root);
+	for (int i = 0; i < nMesh; ++i)
+		meshes.insert(createRandomMesh(10, i == 1, 3, { rootID }));
 
-	sceneBuilder.finalise();
+	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, dummy, dummy, dummy, trans);
+	ASSERT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
+	ASSERT_FALSE(scene->hasRoot(OPTIMIZED_GRAPH));
 
-	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
+	EXPECT_TRUE(opt.apply(scene));
+	EXPECT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
+	EXPECT_TRUE(scene->hasRoot(OPTIMIZED_GRAPH));
 
-	bool result = opt.processScene(
-		database,
-		projectName,
-		revId,
-		handler.get(),
-		mockExporter.get()
-	);
+	EXPECT_EQ(2, scene->getAllMeshes(OPTIMIZED_GRAPH).size());
 
-	EXPECT_TRUE(result);
-
-	EXPECT_TRUE(mockExporter->isFinalised());
-
-	EXPECT_EQ(mockExporter->getSupermeshCount(), 2);
-	
-	EXPECT_TRUE(compareMeshes(
-		database,
-		projectName,
-		revId,
-		mockExporter.get()));
+	EXPECT_TRUE(compareMeshes(scene->getAllMeshes(DEFAULT_GRAPH), scene->getAllMeshes(OPTIMIZED_GRAPH)));
 }
 
 TEST(MultipartOptimizer, TestMixedPrimitives)
 {
 	auto opt = MultipartOptimizer();
-
-	auto handler = getHandler();
-	std::string database = DBMULTIPARTOPTIMIZERTEST;
-	std::string projectName = "TestMixedPrimitives";
-	auto revId = repo::lib::RepoUUID::createUUID();
-
-	auto sceneBuilder = repo::manipulator::modelutility::RepoSceneBuilder(handler, database, projectName, revId);
-
-	auto rootNode = repo::core::model::RepoBSONFactory::makeTransformationNode({}, "rootNode", {});
-	sceneBuilder.addNode(rootNode);
-	auto rootNodeId = rootNode.getSharedID();
+	auto root = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode());
+	auto rootID = root->getSharedID();
 
 	auto nVertices = 10;
-	sceneBuilder.addNode(createRandomMesh(nVertices, false, 2, "", { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(nVertices, false, 2, "", { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(nVertices, false, 3, "", { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(nVertices, false, 3, "", { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(nVertices, false, 3, "", { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(nVertices, false, 1, "", { rootNodeId })); // unsupported primitive types must be identified as such and not combined with known types
+	repo::core::model::RepoNodeSet meshes, trans, dummy;
+	trans.insert(root);
+	meshes.insert(createRandomMesh(nVertices, false, 2, { rootID }));
+	meshes.insert(createRandomMesh(nVertices, false, 2, { rootID }));
+	meshes.insert(createRandomMesh(nVertices, false, 3, { rootID }));
+	meshes.insert(createRandomMesh(nVertices, false, 3, { rootID }));
+	meshes.insert(createRandomMesh(nVertices, false, 3, { rootID }));
+	meshes.insert(createRandomMesh(nVertices, false, 1, { rootID })); // unsupported primitive types must be identified as such and not combined with known types
 
-	sceneBuilder.finalise();
+	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, dummy, dummy, dummy, trans);
+	ASSERT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
+	ASSERT_FALSE(scene->hasRoot(OPTIMIZED_GRAPH));
 
-	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
+	EXPECT_TRUE(opt.apply(scene));
+	EXPECT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
+	EXPECT_TRUE(scene->hasRoot(OPTIMIZED_GRAPH));
 
-	bool result = opt.processScene(
-		database,
-		projectName,
-		revId,
-		handler.get(),
-		mockExporter.get()
-	);
+	EXPECT_EQ(3, scene->getAllMeshes(OPTIMIZED_GRAPH).size());
 
-	EXPECT_TRUE(result);
+	// ensure that the batching has been successful.
 
-	EXPECT_TRUE(mockExporter->isFinalised());
-
-	EXPECT_EQ(mockExporter->getSupermeshCount(), 2); // The new mpOpt just ignores unsupported primitives
-	
-	// ensure that the batching has been successful.	
-	for (auto& node : mockExporter->getSupermeshes())
-	{		
-		switch (node.getPrimitive())
+	auto nodes = scene->getAllMeshes(OPTIMIZED_GRAPH);
+	for (auto& node : nodes)
+	{
+		auto meshNode = dynamic_cast<repo::core::model::MeshNode*>(node);
+		switch (meshNode->getPrimitive())
 		{
 		case repo::core::model::MeshNode::Primitive::LINES:
-			ASSERT_EQ(nVertices * 2, node.getVertices().size());
+			ASSERT_EQ(nVertices * 2, meshNode->getVertices().size());
 			break;
 		case repo::core::model::MeshNode::Primitive::TRIANGLES:
-			ASSERT_EQ(nVertices * 3, node.getVertices().size());
+			ASSERT_EQ(nVertices * 3, meshNode->getVertices().size());
+			break;
+		case repo::core::model::MeshNode::Primitive::POINTS:
+			ASSERT_EQ(nVertices * 1, meshNode->getVertices().size());
 			break;
 		default:
-			repoTrace << (int)node.getPrimitive();
+			repoTrace << (int)meshNode->getPrimitive();
 			EXPECT_TRUE(false); // No other topologies should be encountered in this test.
 			break;
 		}
 	}
 
-	EXPECT_TRUE(compareMeshes(
-		database,
-		projectName,
-		revId,
-		mockExporter.get()));
+	EXPECT_TRUE(compareMeshes(scene->getAllMeshes(DEFAULT_GRAPH), scene->getAllMeshes(OPTIMIZED_GRAPH)));
 }
 
 TEST(MultipartOptimizer, TestSingleLargeMesh)
 {
 	auto opt = MultipartOptimizer();
+	auto root = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode());
+	auto rootID = root->getSharedID();
 
-	auto handler = getHandler();
-	std::string database = DBMULTIPARTOPTIMIZERTEST;
-	std::string projectName = "TestSingleLargeMesh";
-	auto revId = repo::lib::RepoUUID::createUUID();
+	auto nMesh = 3;
+	repo::core::model::RepoNodeSet meshes, trans, dummy;
+	trans.insert(root);
+	meshes.insert(createRandomMesh(65536, false, 2, { rootID }));
 
+	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, dummy, dummy, dummy, trans);
+	ASSERT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
+	ASSERT_FALSE(scene->hasRoot(OPTIMIZED_GRAPH));
 
-	auto sceneBuilder = repo::manipulator::modelutility::RepoSceneBuilder(handler, database, projectName, revId);
+	EXPECT_TRUE(opt.apply(scene));
+	EXPECT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
+	EXPECT_TRUE(scene->hasRoot(OPTIMIZED_GRAPH));
 
-	auto rootNode = repo::core::model::RepoBSONFactory::makeTransformationNode({}, "rootNode", {});
-	sceneBuilder.addNode(rootNode);
-	auto rootNodeId = rootNode.getSharedID();
-	
-	auto largeMesh = createRandomMesh(65536, false, 2, "", { rootNodeId });
-	sceneBuilder.addNode(std::move(largeMesh));
-	
-	sceneBuilder.finalise();
+	EXPECT_EQ(1, scene->getAllMeshes(OPTIMIZED_GRAPH).size());
 
-	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
-
-	bool result = opt.processScene(
-		database,
-		projectName,
-		revId,
-		handler.get(),
-		mockExporter.get()
-	);
-
-	EXPECT_TRUE(result);
-
-	EXPECT_TRUE(mockExporter->isFinalised());
-
-	EXPECT_EQ(mockExporter->getSupermeshCount(), 1);
-
-	EXPECT_TRUE(compareMeshes(
-		database,
-		projectName,
-		revId,
-		mockExporter.get()));
+	EXPECT_TRUE(compareMeshes(scene->getAllMeshes(DEFAULT_GRAPH), scene->getAllMeshes(OPTIMIZED_GRAPH)));
 }
 
 TEST(MultipartOptimizer, TestSingleOversizedMesh)
 {
 	auto opt = MultipartOptimizer();
+	auto root = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode());
+	auto rootID = root->getSharedID();
 
-	auto handler = getHandler();
-	std::string database = DBMULTIPARTOPTIMIZERTEST;
-	std::string projectName = "TestSingleOversizedMesh";
-	auto revId = repo::lib::RepoUUID::createUUID();
+	auto nMesh = 3;
+	repo::core::model::RepoNodeSet meshes, trans, dummy;
+	trans.insert(root);
+	meshes.insert(createRandomMesh(1200000 + 1, false, 3, { rootID })); // 1200000 comes from the const in repo_optimizer_multipart.cpp
 
-	auto sceneBuilder = repo::manipulator::modelutility::RepoSceneBuilder(handler, database, projectName, revId);
+	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, dummy, dummy, dummy, trans);
+	ASSERT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
+	ASSERT_FALSE(scene->hasRoot(OPTIMIZED_GRAPH));
 
-	auto rootNode = repo::core::model::RepoBSONFactory::makeTransformationNode({}, "rootNode", {});
-	sceneBuilder.addNode(rootNode);
-	auto rootNodeId = rootNode.getSharedID();
+	EXPECT_TRUE(opt.apply(scene));
+	EXPECT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
+	EXPECT_TRUE(scene->hasRoot(OPTIMIZED_GRAPH));
 
-		
-	sceneBuilder.addNode(createRandomMesh(1200000 + 1, false, 3, "", { rootNodeId })); // 1200000 comes from the const in repo_optimizer_multipart.cpp
+	EXPECT_EQ(2, scene->getAllMeshes(OPTIMIZED_GRAPH).size()); // even with one triangle over, large meshes should be split
 
-	sceneBuilder.finalise();
-
-	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
-
-	bool result = opt.processScene(
-		database,
-		projectName,
-		revId,
-		handler.get(),
-		mockExporter.get()
-	);
-
-	EXPECT_TRUE(result);
-
-	EXPECT_TRUE(mockExporter->isFinalised());
-
-	EXPECT_EQ(mockExporter->getSupermeshCount(), 2); // even with one triangle over, large meshes should be split
-
-	EXPECT_TRUE(compareMeshes(
-		database,
-		projectName,
-		revId,
-		mockExporter.get()));
+	EXPECT_TRUE(compareMeshes(scene->getAllMeshes(DEFAULT_GRAPH), scene->getAllMeshes(OPTIMIZED_GRAPH)));
 }
 
 TEST(MultipartOptimizer, TestMultipleOversizedMeshes)
 {
 	auto opt = MultipartOptimizer();
+	auto root = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode());
+	auto rootID = root->getSharedID();
 
-	auto handler = getHandler();
-	std::string database = DBMULTIPARTOPTIMIZERTEST;
-	std::string projectName = "TestMultipleOversizedMeshes";
-	auto revId = repo::lib::RepoUUID::createUUID();
+	auto nMesh = 3;
+	repo::core::model::RepoNodeSet meshes, trans, dummy;
+	trans.insert(root);
+	meshes.insert(createRandomMesh(65536, false, 3, { rootID }));
+	meshes.insert(createRandomMesh(65537, false, 3, { rootID }));
+	meshes.insert(createRandomMesh(128537, false, 3, { rootID }));
 
-	auto sceneBuilder = repo::manipulator::modelutility::RepoSceneBuilder(handler, database, projectName, revId);
+	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, dummy, dummy, dummy, trans);
+	ASSERT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
+	ASSERT_FALSE(scene->hasRoot(OPTIMIZED_GRAPH));
 
-	auto rootNode = repo::core::model::RepoBSONFactory::makeTransformationNode({}, "rootNode", {});
-	sceneBuilder.addNode(rootNode);
-	auto rootNodeId = rootNode.getSharedID();
-
-	sceneBuilder.addNode(createRandomMesh(65536, false, 3, "", { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(65537, false, 3, "", { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(128537, false, 3, "", { rootNodeId }));
-
-	sceneBuilder.finalise();
-
-	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
-
-	bool result = opt.processScene(
-		database,
-		projectName,
-		revId,
-		handler.get(),
-		mockExporter.get()
-	);
-
-	EXPECT_TRUE(result);
-
-	EXPECT_TRUE(mockExporter->isFinalised());
+	EXPECT_TRUE(opt.apply(scene));
+	EXPECT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
+	EXPECT_TRUE(scene->hasRoot(OPTIMIZED_GRAPH));
 
 	// Mesh splitting is not determinsitic so we don't check the final mesh
 	// count in this test
 
-	EXPECT_TRUE(compareMeshes(
-		database,
-		projectName,
-		revId,
-		mockExporter.get()));
+	EXPECT_TRUE(compareMeshes(scene->getAllMeshes(DEFAULT_GRAPH), scene->getAllMeshes(OPTIMIZED_GRAPH)));
 }
 
 TEST(MultipartOptimizer, TestMultiplesMeshes)
 {
 	auto opt = MultipartOptimizer();
-
-	auto handler = getHandler();
-	std::string database = DBMULTIPARTOPTIMIZERTEST;
-	std::string projectName = "TestMultiplesMeshes";
-	auto revId = repo::lib::RepoUUID::createUUID();
-
-	auto sceneBuilder = repo::manipulator::modelutility::RepoSceneBuilder(handler, database, projectName, revId);
-
-	auto rootNode = repo::core::model::RepoBSONFactory::makeTransformationNode({}, "rootNode", {});
-	sceneBuilder.addNode(rootNode);
-	auto rootNodeId = rootNode.getSharedID();
+	auto root = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode());
+	auto rootID = root->getSharedID();
 
 
 	// These vertex counts, along with the primitive size, are multiples of
 	// the max supermesh size and are designed to trip up supermeshing edge
 	// cases
-	sceneBuilder.addNode(createRandomMesh(16384, false, 2, "", { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(16384, false, 2, "", { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(16384, false, 2, "", { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(16384, false, 2, "", { rootNodeId }));
 
-	sceneBuilder.finalise();
+	repo::core::model::RepoNodeSet meshes, trans, dummy;
+	trans.insert(root);
+	meshes.insert(createRandomMesh(16384, false, 2, { rootID }));
+	meshes.insert(createRandomMesh(16384, false, 2, { rootID }));
+	meshes.insert(createRandomMesh(16384, false, 2, { rootID }));
+	meshes.insert(createRandomMesh(16384, false, 2, { rootID }));
 
-	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
+	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, dummy, dummy, dummy, trans);
+	ASSERT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
+	ASSERT_FALSE(scene->hasRoot(OPTIMIZED_GRAPH));
 
-	bool result = opt.processScene(
-		database,
-		projectName,
-		revId,
-		handler.get(),
-		mockExporter.get()
-	);
+	EXPECT_TRUE(opt.apply(scene));
+	EXPECT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
+	EXPECT_TRUE(scene->hasRoot(OPTIMIZED_GRAPH));
 
-	EXPECT_TRUE(result);
+	EXPECT_EQ(1, scene->getAllMeshes(OPTIMIZED_GRAPH).size());
 
-	EXPECT_TRUE(mockExporter->isFinalised());
-
-	EXPECT_EQ(mockExporter->getSupermeshCount(), 1);
-
-	EXPECT_TRUE(compareMeshes(
-		database,
-		projectName,
-		revId,
-		mockExporter.get()));
+	EXPECT_TRUE(compareMeshes(scene->getAllMeshes(DEFAULT_GRAPH), scene->getAllMeshes(OPTIMIZED_GRAPH)));
 }
 
 TEST(MultipartOptimizer, TestMultipleSmallAndLargeMeshes)
 {
 	auto opt = MultipartOptimizer();
+	auto root = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode());
+	auto rootID = root->getSharedID();
 
-	auto handler = getHandler();
-	std::string database = DBMULTIPARTOPTIMIZERTEST;
-	std::string projectName = "TestMultipleSmallAndLargeMeshes";
-	auto revId = repo::lib::RepoUUID::createUUID();
+	repo::core::model::RepoNodeSet meshes, trans, dummy;
+	trans.insert(root);
+	meshes.insert(createRandomMesh(16384, false, 2, { rootID }));
+	meshes.insert(createRandomMesh(16384, false, 2, { rootID }));
+	meshes.insert(createRandomMesh(16384, false, 2, { rootID }));
+	meshes.insert(createRandomMesh(16384, false, 2, { rootID }));
+	meshes.insert(createRandomMesh(65536, false, 2, { rootID }));
+	meshes.insert(createRandomMesh(128000, false, 3, { rootID }));
+	meshes.insert(createRandomMesh(16384, false, 3, { rootID }));
+	meshes.insert(createRandomMesh(8000, false, 3, { rootID }));
 
-	auto sceneBuilder = repo::manipulator::modelutility::RepoSceneBuilder(handler, database, projectName, revId);
+	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, dummy, dummy, dummy, trans);
+	ASSERT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
+	ASSERT_FALSE(scene->hasRoot(OPTIMIZED_GRAPH));
 
-	auto rootNode = repo::core::model::RepoBSONFactory::makeTransformationNode({}, "rootNode", {});
-	sceneBuilder.addNode(rootNode);
-	auto rootNodeId = rootNode.getSharedID();
+	EXPECT_TRUE(opt.apply(scene));
+	EXPECT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
+	EXPECT_TRUE(scene->hasRoot(OPTIMIZED_GRAPH));
 
-	sceneBuilder.addNode(createRandomMesh(16384, false, 2, "", { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(16384, false, 2, "", { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(16384, false, 2, "", { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(16384, false, 2, "", { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(65536, false, 2, "", { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(128000, false, 3, "", { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(16384, false, 3, "", { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(8000, false, 3, "", { rootNodeId }));
-
-	sceneBuilder.finalise();
-
-	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
-
-	bool result = opt.processScene(
-		database,
-		projectName,
-		revId,
-		handler.get(),
-		mockExporter.get()
-	);
-
-	EXPECT_TRUE(result);
-
-	EXPECT_TRUE(mockExporter->isFinalised());
-
-	EXPECT_TRUE(compareMeshes(
-		database,
-		projectName,
-		revId,
-		mockExporter.get()));
+	EXPECT_TRUE(compareMeshes(scene->getAllMeshes(DEFAULT_GRAPH), scene->getAllMeshes(OPTIMIZED_GRAPH)));
 }
 
 TEST(MultipartOptimizer, TestTinyMeshes)
 {
 	auto opt = MultipartOptimizer();
+	auto root = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode());
+	auto rootID = root->getSharedID();
 
-	auto handler = getHandler();
-	std::string database = DBMULTIPARTOPTIMIZERTEST;
-	std::string projectName = "TestTinyMeshes";
-	auto revId = repo::lib::RepoUUID::createUUID();
-
-	auto sceneBuilder = repo::manipulator::modelutility::RepoSceneBuilder(handler, database, projectName, revId);
-
-	auto rootNode = repo::core::model::RepoBSONFactory::makeTransformationNode({}, "rootNode", {});
-	sceneBuilder.addNode(rootNode);
-	auto rootNodeId = rootNode.getSharedID();
-
+	repo::core::model::RepoNodeSet meshes, trans, dummy;
+	trans.insert(root);
 	for (size_t i = 0; i < 10000; i++)
 	{
-		sceneBuilder.addNode(createRandomMesh(4, false, 3, "", { rootNodeId }));
+		meshes.insert(createRandomMesh(4, false, 3, { rootID }));
 	}
 
-	sceneBuilder.finalise();
+	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, dummy, dummy, dummy, trans);
+	ASSERT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
+	ASSERT_FALSE(scene->hasRoot(OPTIMIZED_GRAPH));
 
-	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
-
-	bool result = opt.processScene(
-		database,
-		projectName,
-		revId,
-		handler.get(),
-		mockExporter.get()
-	);
-
-	EXPECT_TRUE(result);
-
-	EXPECT_TRUE(mockExporter->isFinalised());
+	EXPECT_TRUE(opt.apply(scene));
+	EXPECT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
+	EXPECT_TRUE(scene->hasRoot(OPTIMIZED_GRAPH));
 
 	// Make sure no supermesh has more than 5000 mappings (submeshes). We won't
 	// see the effects in the unit test but when we try to commit the node
 	// it will fail.
 
-	for (const auto supermeshNode : mockExporter->getSupermeshes())
+	for (const auto stash : scene->getAllMeshes(OPTIMIZED_GRAPH))
 	{
-		auto mapping = supermeshNode.getMeshMapping();
+		auto mapping = dynamic_cast<repo::core::model::SupermeshNode*>(stash)->getMeshMapping();
 		EXPECT_LE(mapping.size(), 5000);
 	}
 
-	EXPECT_TRUE(compareMeshes(
-		database,
-		projectName,
-		revId,
-		mockExporter.get()));
-}
-
-TEST(MultipartOptimizer, TestGroupings)
-{
-	auto opt = MultipartOptimizer();
-
-	auto handler = getHandler();
-	std::string database = DBMULTIPARTOPTIMIZERTEST;
-	std::string projectName = "TestAllMerged";
-	auto revId = repo::lib::RepoUUID::createUUID();
-
-	auto sceneBuilder = repo::manipulator::modelutility::RepoSceneBuilder(handler, database, projectName, revId);
-
-	auto rootNode = repo::core::model::RepoBSONFactory::makeTransformationNode({}, "rootNode", {});
-	sceneBuilder.addNode(rootNode);
-	auto rootNodeId = rootNode.getSharedID();
-
-	auto nVertices = 10;
-	sceneBuilder.addNode(createRandomMesh(nVertices, false, 2, "", { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(nVertices, false, 2, "group1", { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(nVertices, false, 2, "group2", { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(nVertices, false, 3, "", { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(nVertices, false, 3, "group1", { rootNodeId }));
-	sceneBuilder.addNode(createRandomMesh(nVertices, false, 3, "group2", { rootNodeId }));
-
-	sceneBuilder.finalise();
-
-	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
-
-	bool result = opt.processScene(
-		database,
-		projectName,
-		revId,
-		handler.get(),
-		mockExporter.get()
-	);
-
-	EXPECT_TRUE(result);
-
-	EXPECT_TRUE(mockExporter->isFinalised());
-
-	EXPECT_EQ(mockExporter->getSupermeshCount(), 6); // Six groups should have been formed
-
-	EXPECT_TRUE(compareMeshes(
-		database,
-		projectName,
-		revId,
-		mockExporter.get()));
+	EXPECT_TRUE(compareMeshes(scene->getAllMeshes(DEFAULT_GRAPH), scene->getAllMeshes(OPTIMIZED_GRAPH)));
 }

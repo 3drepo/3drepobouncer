@@ -196,7 +196,8 @@ bool RepoManipulator::generateAndCommitWebViewBuffer(
 	const modelconvertor::ExportType& exType)
 {
 	modelutility::SceneManager SceneManager;
-	return SceneManager.generateWebViewBuffers(scene, exType, dbHandler.get());
+	repo::lib::repo_web_buffers_t buffers;
+	return SceneManager.generateWebViewBuffers(scene, exType, dbHandler.get(), buffers);
 }
 
 std::vector<repo::core::model::RepoBSON>

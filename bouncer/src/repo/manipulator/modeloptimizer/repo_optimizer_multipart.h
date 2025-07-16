@@ -25,37 +25,47 @@
 #include "../../core/model/bson/repo_node_mesh.h"
 #include "../../core/model/bson/repo_node_supermesh.h"
 #include "../../core/model/bson/repo_node_material.h"
-#include "../../core/handler/database/repo_query.h"
-#include "../../core/handler/fileservice/repo_blob_files_handler.h"
-#include "../../lib/datastructure/repo_structs.h"
-#include "bvh/bvh.hpp"
-#include "bvh/sweep_sah_builder.hpp"
-#include <repo/manipulator/modelconvertor/export/repo_model_export_abstract.h>
-#include <repo/core/model/bson/repo_bson.h>
-#include <repo/core/model/bson/repo_node_streaming_mesh.h>
 
 namespace repo {
 	namespace manipulator {
 		namespace modeloptimizer {
 			class MultipartOptimizer
 			{
-				
-				typedef float Scalar;
-				typedef bvh::Bvh<Scalar> Bvh;
-				typedef bvh::Vector3<Scalar> BvhVector3;
-
 			public:
-				
-				bool processScene(
-					std::string database,
-					std::string collection,
-					repo::lib::RepoUUID revId,
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					repo::manipulator::modelconvertor::AbstractModelExport *exporter
-				);
-
+				/**
+				* Apply optimisation on the given repoScene
+				* @param scene takes in a repoScene to optimise
+				* @return returns true upon success
+				*/
+				bool apply(repo::core::model::RepoScene* scene);
 
 			private:
+				/*
+				* Maps between two Repo UUIDs
+				*/
+				using UUIDMap = std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>;
+
+				/*
+				* A dictionary of MaterialNodes indexed by UUIDs
+				*/
+				using MaterialMap = std::unordered_map<repo::lib::RepoUUID, repo::core::model::MaterialNode*, repo::lib::RepoUUIDHasher>;
+
+				/*
+				* A dictionary of MeshNodes indexed by UUIDs. Each UUID may map to multiple nodes.
+				*/
+				using MeshMap = std::unordered_multimap<repo::lib::RepoUUID, repo::core::model::MeshNode, repo::lib::RepoUUIDHasher>;
+
+				/**
+				* Recursively enumerates scene to find all the instances of
+				* MeshNodes that match the Id, and returns copies of them
+				* with geometry baked to its world space location in the
+				* scene graph.
+				*/
+				bool getBakedMeshNodes(
+					const repo::core::model::RepoScene* scene,
+					const repo::core::model::RepoNode* node,
+					repo::lib::RepoMatrix mat,
+					MeshMap& nodes);
 
 				/**
 				* Represents a batched set of geometry.
@@ -68,122 +78,10 @@ namespace repo {
 					std::vector<repo::lib::repo_mesh_mapping_t> meshMapping;
 				};
 
-				struct ProcessingJob {
-					std::string description;
-					repo::core::handler::database::query::RepoQuery filter;
-					repo::lib::RepoUUID texId;
-
-					bool isTexturedJob() const {
-						return !texId.isDefaultValue();
-					}
-				};							
-				
-
-				typedef std::unordered_map <repo::lib::RepoUUID, std::shared_ptr<repo::core::model::MaterialNode>, repo::lib::RepoUUIDHasher> MaterialPropMap;
-				typedef std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> TransformMap;
-
-				std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> getAllTransforms(
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					const std::string &database,
-					const std::string &collection,
-					const repo::lib::RepoUUID &revId
-				);
-
-				void traverseTransformTree(
-					const repo::core::model::RepoBSON &root,
-					const std::unordered_map<repo::lib::RepoUUID, std::vector<repo::core::model::RepoBSON>, repo::lib::RepoUUIDHasher> &childNodeMap,
-					std::unordered_map<repo::lib::RepoUUID,	repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> &transforms);
-
-				MaterialPropMap getAllMaterials(
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					const std::string &database,
-					const std::string &collection,
-					const repo::lib::RepoUUID &revId
-				);
-
-				std::set<std::string> getAllGroupings(
-					repo::core::handler::AbstractDatabaseHandler* handler,
-					const std::string& database,
-					const std::string& collection,
-					const repo::lib::RepoUUID& revId
-				);
-
-				std::vector < repo::lib::RepoUUID> getAllTextureIds(
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					const std::string &database,
-					const std::string &collection,
-					const repo::lib::RepoUUID &revId,
-					const std::string& grouping
-				);
-
-				ProcessingJob createUntexturedJob(
-					const std::string &description,
-					const repo::lib::RepoUUID &revId,
-					const int primitive,
-					const std::string &grouping,
-					const bool isOpaque
-				);
-
-				ProcessingJob createTexturedJob(
-					const std::string &description,
-					const repo::lib::RepoUUID &revId,
-					const int primitive,
-					const std::string &grouping,
-					const repo::lib::RepoUUID &texId
-				);
-
-				void clusterAndSupermesh(
-					const std::string &database,
-					const std::string &collection,
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					repo::manipulator::modelconvertor::AbstractModelExport *exporter,
-					const TransformMap& transformMap,
-					const MaterialPropMap& matPropMap,
-					const ProcessingJob &job
-				);
-
-				void createSuperMeshes(
-					const std::string &database,
-					const std::string &collection,
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					repo::manipulator::modelconvertor::AbstractModelExport *exporter,
-					const TransformMap& transformMap,
-					const MaterialPropMap& matPropMap,
-					std::vector<repo::core::model::StreamingMeshNode>& meshNodes,
-					const std::vector<std::vector<int>>& clusters,
-					const repo::lib::RepoUUID &texId
-				);
-
-				void createSuperMesh(
-					repo::manipulator::modelconvertor::AbstractModelExport *exporter,
-					const mapped_mesh_t& mappedMesh
-				);
-
-				void appendMesh(					
-					repo::core::model::StreamingMeshNode &node,
-					const MaterialPropMap &matPropMap,
-					mapped_mesh_t &mappedMesh,
-					const repo::lib::RepoUUID &texId
-				);
-
-				Bvh buildFacesBvh(
-					repo::core::model::StreamingMeshNode &node
-				);
-
-				void flattenBvh(
-					const Bvh &bvh,
-					std::vector<size_t> &leaves,
-					std::vector<size_t> &branches
-				);
-
-				std::vector<size_t> getBranchPrimitives(
-					const Bvh& bvh,
-					size_t head
-				);
-
-				std::vector<std::set<uint32_t>> getUniqueVertices(
-					const Bvh& bvh,
-					const std::vector<repo::lib::repo_face_t>& primitives // The primitives in this tree are faces
+				void appendMesh(
+					const repo::core::model::RepoScene* scene,
+					repo::core::model::MeshNode node,
+					mapped_mesh_t& mappedMesh
 				);
 
 				/*
@@ -191,52 +89,119 @@ namespace repo {
 				* each mapped_mesh_t has a vertex count below a certain size.
 				*/
 				void splitMesh(
-					repo::core::model::StreamingMeshNode &node,
-					repo::manipulator::modelconvertor::AbstractModelExport *exporter,
-					const MaterialPropMap &matPropMap,
-					const repo::lib::RepoUUID &texId
+					const repo::core::model::RepoScene* scene,
+					repo::core::model::MeshNode node,
+					std::vector<mapped_mesh_t>& mappedMeshes
 				);
 
 				/*
 				* Turns a mapped_mesh_t into a MeshNode that can be added to the database
 				*/
-				std::unique_ptr < repo::core::model::SupermeshNode> createSupermeshNode(
-					const mapped_mesh_t &mapped
+				repo::core::model::SupermeshNode* createSupermeshNode(
+					const mapped_mesh_t& mapped,
+					bool isGrouped
 				);
 
+				/**
+				* Builds a set of Supermesh MeshNodes, based on the UUIDs in meshGroup.
+				* The method may output an arbitrary number (including 1) supermeshes,
+				* from an arbitrary number (including 1) UUIDs. If no UUIDs are provided,
+				* no Supermeshes are created.
+				* Each Supermesh mapping re-maps its Material UUID to a new UUID, which
+				* is used to copy the materials. If an existing remapping exists, it is
+				* used, otherwise one is created on demand.
+				* Each Supermesh is guaranteed to be below a certain size.
+				*/
+				void createSuperMeshes(
+					const repo::core::model::RepoScene* scene,
+					const std::vector<repo::core::model::MeshNode>& nodes,
+					const bool isGrouped,
+					std::vector<repo::core::model::SupermeshNode*>& supermeshNodes);
+
+				/**
+				* Generate the multipart scene
+				* @param scene scene to base on, this will also be modified to store the stash graph
+				* @return returns true upon success
+				*/
+				bool generateMultipartScene(repo::core::model::RepoScene* scene);
+
+				/**
+				* Get child's material id from a mesh
+				* @param scene scene it belongs to
+				* @param mesh mesh in question
+				* @return returns unqiue ID of the material
+				*/
+				repo::lib::RepoUUID getMaterialID(
+					const repo::core::model::RepoScene* scene,
+					const repo::core::model::MeshNode* mesh
+				);
+
+				/**
+				* Check if the mesh has texture
+				* @param scene scene as reference
+				* @param mesh mesh to check
+				* @param texID texID to return (if any)
+				* @return returns true if there is texture
+				*/
+				bool hasTexture(
+					const repo::core::model::RepoScene* scene,
+					const repo::core::model::MeshNode* mesh,
+					repo::lib::RepoUUID& texID);
+
+				/**
+				* Check if the mesh is (semi) Transparent
+				* @param scene scene as reference
+				* @param mesh mesh to check
+				* @return returns true if the mesh is not fully opaque
+				*/
+				bool isTransparent(
+					const repo::core::model::RepoScene* scene,
+					const repo::core::model::MeshNode* mesh);
+
+				/**
+				* Creates a set of supermesh MeshNodes which contain the submeshes
+				* in meshes (passed by UUID), along with a set of duplicate material
+				* nodes for use by the supermeshes.
+				* Multiple supermeshes may be created, depending on the composition
+				* of meshes.
+				* Supermeshes and duplicated materials are passed back via the
+				* mergedMeshes and matNodes arrays.
+				* The matIDs map is used to map between the original graph materials
+				* and the stash graph materials, in case this method is called multiple
+				* times for one graph.
+				*/
+				bool processMeshGroup(
+					const repo::core::model::RepoScene* scene,
+					const MeshMap& bakedMeshNodes,
+					const std::set<repo::lib::RepoUUID>& groupMeshIds,
+					const repo::lib::RepoUUID& rootID,
+					repo::core::model::RepoNodeSet& mergedMeshes,
+					const bool isGrouped);
 
 				/**
 				* Groups the MeshNodes into sets based on their location and
 				* geometry size.
 				*/
-				std::vector<std::vector<int>> clusterMeshNodes(
-					const std::vector<repo::core::model::StreamingMeshNode>& nodes
+				std::vector<std::vector<repo::core::model::MeshNode>> clusterMeshNodes(
+					const std::vector<repo::core::model::MeshNode>& nodes
 				);
 
-				void clusterMeshNodesBvh(
-					const std::vector<repo::core::model::StreamingMeshNode>& meshes,
-					const std::vector<int>& binIndexes,
-					std::vector<std::vector<int>>& clusters);
-
-				Bvh buildBoundsBvh(
-					const std::vector<int>& binIndexes,
-					const std::vector<repo::core::model::StreamingMeshNode>& meshes
+				/**
+				* Sort the given RepoNodeSet of meshes for multipart merging
+				* @param scene             scene as reference
+				* @param meshes            meshes to sort
+				* @param normalMeshes      container to store normal meshes
+				* @param transparentMeshes container to store (semi)transparent meshes
+				* @param texturedMeshes    container to store textured meshes
+				*/
+				void sortMeshes(
+					const repo::core::model::RepoScene* scene,
+					const repo::core::model::RepoNodeSet& meshes,
+					std::unordered_map<std::string, std::unordered_map<uint32_t, std::vector<std::set<repo::lib::RepoUUID>>>>& normalMeshes,
+					std::unordered_map < std::string, std::unordered_map<uint32_t, std::vector<std::set<repo::lib::RepoUUID>>>>& transparentMeshes,
+					std::unordered_map < std::string, std::unordered_map < uint32_t, std::unordered_map < repo::lib::RepoUUID,
+					std::vector<std::set<repo::lib::RepoUUID>>, repo::lib::RepoUUIDHasher >>>& texturedMeshes
 				);
-
-				std::vector<size_t> getVertexCounts(
-					const Bvh& bvh,
-					const std::vector<int>& binIndexes,
-					const std::vector<repo::core::model::StreamingMeshNode>& meshes
-				);
-
-				std::vector<size_t> getSupermeshBranchNodes(
-					const Bvh &bvh,
-					const std::vector<size_t> &vertexCounts);
-
-				void splitBigClusters(
-					std::vector<std::vector<int>>& clusters
-				);
-								
 			};
 		}
 	}
