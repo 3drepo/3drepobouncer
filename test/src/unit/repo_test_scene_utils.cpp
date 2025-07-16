@@ -27,18 +27,56 @@ using namespace testing;
 
 std::vector<SceneUtils::NodeInfo> SceneUtils::findNodesByMetadata(std::string key, std::string value)
 {
-	std::vector<NodeInfo> info;
+	std::vector<repo::core::model::RepoNode*> transforms;
+	std::vector<repo::core::model::RepoNode*> meshes;
+	std::set<repo::lib::RepoUUID> parents;
 	for (auto& n : scene->getAllMetadata(repo::core::model::RepoScene::GraphType::DEFAULT))
 	{
 		auto m = dynamic_cast<MetadataNode*>(n);
 		auto metadata = m->getAllMetadata();
 		if (boost::apply_visitor(repo::lib::StringConversionVisitor(), metadata[key]) == value) {
 			for (auto p : m->getParentIDs()) {
-				info.push_back(getNodeInfo(scene->getNodeBySharedID(repo::core::model::RepoScene::GraphType::DEFAULT, p)));
+
+				auto n = scene->getNodeBySharedID(repo::core::model::RepoScene::GraphType::DEFAULT, p);
+
+				if (n->getTypeAsEnum() == repo::core::model::NodeType::MESH) {
+					meshes.push_back(n);
+				}
+				else if (n->getTypeAsEnum() == repo::core::model::NodeType::TRANSFORMATION) {
+					transforms.push_back(n);
+				}
 			}
 		}
 	}
-	return info;
+
+	std::vector<NodeInfo> nodes;
+
+	for (auto& t : transforms) {
+		nodes.push_back(getNodeInfo(t));
+		parents.insert(t->getSharedID());
+	}
+
+	for (auto& m : meshes) {
+		if (m->getName().size()) {
+			nodes.push_back(getNodeInfo(m));
+			continue;
+		}
+
+		bool hasParentInList = false;
+		for (auto& p : transforms) {
+			for (auto& mp : m->getParentIDs()) {
+				if (p->getSharedID() == mp) {
+					hasParentInList = true;
+				}
+			}
+		}
+
+		if (!hasParentInList) {
+			nodes.push_back(getNodeInfo(m));
+		}
+	}
+
+	return nodes;
 }
 
 SceneUtils::NodeInfo SceneUtils::findNodeByMetadata(std::string key, std::string value)
