@@ -44,6 +44,11 @@ namespace repo {
 					const std::string &file,
 					const repo::manipulator::modelconvertor::ModelImportConfig &config
 				) const;
+
+				void connectMetadataNodes(repo::core::model::RepoScene* scene,
+					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler) const;
+
+				void connectMetadataNodes(repo::core::model::RepoScene* scene) const;
 			};
 		} //namespace modelconvertor
 	} //namespace manipulator

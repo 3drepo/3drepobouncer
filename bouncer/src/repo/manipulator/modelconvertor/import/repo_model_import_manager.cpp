@@ -25,6 +25,10 @@
 #include "repo_model_import_synchro.h"
 #include "repo_model_units.h"
 #include <boost/filesystem.hpp>
+#include <repo/core/handler/repo_database_handler_abstract.h>
+#include <repo/core/handler/database/repo_query.h>
+#include <repo/core/model/bson/repo_bson.h>
+#include <repo/core/model/bson/repo_node.h>
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -76,7 +80,18 @@ repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 
 			error = REPOERR_OK;
 		}
-		
+
+		// Apply the in-leaf node metadata shim, on the scene directly or the db,
+		// depending on whether this was a streamed import or not.
+		if (scene) {
+			repoInfo << "Connecting metadata within leaf nodes...";
+			if (scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()) {
+				connectMetadataNodes(scene);
+			}
+			else {
+				connectMetadataNodes(scene, handler);
+			}
+		}
 	}
 
 	return scene;
@@ -104,4 +119,127 @@ std::shared_ptr<AbstractModelImport> ModelImportManager::chooseModelConvertor(
 		modelConvertor = std::shared_ptr<AbstractModelImport>(new repo::manipulator::modelconvertor::SynchroModelImport(config));
 
 	return modelConvertor;
+}
+
+void ModelImportManager::connectMetadataNodes(repo::core::model::RepoScene* scene) const
+{
+	for (auto& metadata : scene->getAllMetadata(repo::core::model::RepoScene::GraphType::DEFAULT)) {
+		for (auto& parent : scene->getParentNodesFiltered(repo::core::model::RepoScene::GraphType::DEFAULT, metadata, repo::core::model::NodeType::TRANSFORMATION)) {
+
+			if (scene->getChildrenNodesFiltered(repo::core::model::RepoScene::GraphType::DEFAULT,
+				parent->getSharedID(),
+				repo::core::model::NodeType::TRANSFORMATION).size())
+			{
+				continue;
+			}
+
+			bool isLeafNode = true;
+
+			repo::core::model::RepoNodeSet meshNodes;
+
+			for (auto& mesh : scene->getChildrenNodesFiltered(repo::core::model::RepoScene::GraphType::DEFAULT,
+				parent->getSharedID(),
+				repo::core::model::NodeType::MESH))
+			{
+				if (mesh->getName().size()) {
+					isLeafNode = false;
+					break;
+				}
+
+				meshNodes.insert(mesh);
+			}
+
+			if (!isLeafNode) {
+				continue;
+			}
+
+			scene->addInheritance(repo::core::model::RepoScene::GraphType::DEFAULT,
+				meshNodes,
+				metadata);
+		}
+	}
+}
+
+void ModelImportManager::connectMetadataNodes(repo::core::model::RepoScene* scene,
+	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler) const
+{
+	// This is a shim that parents metadata nodes to any hidden meshes of leaf
+	// nodes for an already committed scene.
+
+	using namespace repo::core::handler::database;
+
+	query::RepoQueryBuilder filter;
+	filter.append(query::Eq(REPO_NODE_REVISION_ID, scene->getRevisionID()));
+	filter.append(query::Eq(REPO_NODE_LABEL_TYPE, {
+		std::string(REPO_NODE_TYPE_TRANSFORMATION),
+		std::string(REPO_NODE_TYPE_MESH),
+		std::string(REPO_NODE_TYPE_METADATA)
+	}));
+
+	repo::core::handler::database::query::RepoProjectionBuilder projection;
+	projection.includeField(REPO_NODE_LABEL_ID);
+	projection.includeField(REPO_NODE_LABEL_SHARED_ID);
+	projection.includeField(REPO_NODE_LABEL_PARENTS);
+	projection.includeField(REPO_NODE_LABEL_TYPE);
+	projection.includeField(REPO_NODE_LABEL_NAME);
+
+	struct TransformationNode {
+		std::set<repo::lib::RepoUUID> meshSharedIds;
+		std::set<repo::lib::RepoUUID> metadataUniqueIds;
+
+		bool isLeafNode;
+
+		TransformationNode()
+			:isLeafNode(true)
+		{
+		}
+	};
+
+	// Indexed by shared id, as is used to determine relationships within the db
+	std::unordered_map<repo::lib::RepoUUID, TransformationNode, repo::lib::RepoUUIDHasher> nodes;
+
+	auto cursor = handler->findCursorByCriteria(scene->getDatabaseName(), scene->getProjectName() + ".scene", filter, projection);
+	for (auto bson : *cursor)
+	{
+		auto node = repo::core::model::RepoNode(bson);
+
+		auto type = bson.getStringField(REPO_NODE_LABEL_TYPE);
+		if (type == REPO_NODE_TYPE_TRANSFORMATION) {
+			for (auto& p : node.getParentIDs()) {
+				auto& n = nodes[p];
+				n.isLeafNode = false; // Nodes that have transformations as children cannot be leaf nodes
+			}
+		}
+		else if (type == REPO_NODE_TYPE_MESH) {
+			for (auto& p : node.getParentIDs()) {
+				auto& n = nodes[p];
+				if (node.getName().size()) {
+					n.isLeafNode = false; // Nodes that have named meshes as children cannot be leaf nodes
+				}
+				else
+				{
+					n.meshSharedIds.insert(node.getSharedID());
+				}
+			}
+		}
+		else if (type == REPO_NODE_TYPE_METADATA) {
+			for (auto& p : node.getParentIDs()) {
+				auto& n = nodes[p];
+				n.metadataUniqueIds.insert(node.getUniqueID());
+			}
+		}
+	}
+
+	// The nodes map now has everything required to work out which metadata
+	// nodes need additional parents.
+
+	auto context = handler->getBulkWriteContext(scene->getDatabaseName(), scene->getProjectName() + ".scene");
+	for (auto& p : nodes) {
+		auto& t = p.second;
+		if (t.isLeafNode) {
+			for (auto& m : t.metadataUniqueIds) {
+				context->updateDocument(query::AddParent(m, t.meshSharedIds));
+			}
+		}
+	}
 }
