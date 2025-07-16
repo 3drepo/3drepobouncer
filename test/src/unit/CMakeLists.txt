@@ -7,6 +7,7 @@
 add_subdirectory(repo)
 set(TEST_SOURCES
 	${TEST_SOURCES}
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_common_tests.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_database_info.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_matchers.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_mesh_utils.cpp
@@ -16,6 +17,7 @@ set(TEST_SOURCES
 
 set(TEST_HEADERS
 	${TEST_HEADERS}
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_common_tests.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_database_info.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_fileservice_info.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_matchers.h

@@ -27,6 +27,7 @@
 #include "../../../../repo_test_scene_utils.h"
 #include "../../../../repo_test_mesh_utils.h"
 #include "../../../../repo_test_matchers.h"
+#include "../../../../repo_test_common_tests.h"
 
 using namespace repo::manipulator::modelconvertor;
 using namespace testing;
@@ -276,8 +277,6 @@ TEST(RepoModelImport, EmptyTransforms)
 	}
 }
 
-#pragma optimize("", off)
-
 TEST(RepoModelImport, TransformHierarchy1)
 {
 	/*
@@ -399,4 +398,29 @@ TEST(RepoModelImport, Colours)
 	EXPECT_THAT(scene.findLeafNode("[287]").getColours(), ElementsAre(repo::lib::repo_color4d_t(0.949019611, 0.403921604, 0.133333296, 1)));
 	EXPECT_THAT(scene.findLeafNode("[28B]").getColours(), ElementsAre(repo::lib::repo_color4d_t(0.898039222, 0.909803927, 0.470588207, 1)));
 	EXPECT_THAT(scene.findLeafNode("[28F]").getColours(), ElementsAre(repo::lib::repo_color4d_t(0.368627489, 0.403921604, 0.686274529, 1)));
+}
+
+TEST(RepoModelImport, MetadataParents)
+{
+	uint8_t errCode;
+
+	{
+		SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/columns_navis.bim"), errCode));
+		common::checkMetadataInheritence(scene);
+	}
+
+	{
+		SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/blockHierarchy.civils.bim004.bim"), errCode));
+		common::checkMetadataInheritence(scene);
+	}
+
+	{
+		SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/columns_revit.bim"), errCode));
+		common::checkMetadataInheritence(scene);
+	}
+
+	{
+		SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/metadata.bim004.bim"), errCode));
+		common::checkMetadataInheritence(scene);
+	}
 }

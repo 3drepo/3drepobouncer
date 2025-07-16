@@ -332,7 +332,7 @@ void RepoSceneBuilder::addParent(repo::lib::RepoUUID nodeUniqueId, repo::lib::Re
 
 	if (parentUpdates.find(nodeUniqueId) != parentUpdates.end())
 	{
-		parentUpdates[nodeUniqueId]->parentIds.push_back(parentSharedId);
+		parentUpdates[nodeUniqueId]->parentIds.insert(parentSharedId);
 	}
 	else
 	{

@@ -90,6 +90,21 @@ namespace repo {
 					append(vec);
 				}
 
+				template <class T>
+				void appendIteratable(
+					const std::string& label,
+					T begin,
+					T end
+				)
+				{
+					core::key_owned(label);
+					core::open_array();
+					for (auto it = begin; it != end; it++) {
+						append(*it);
+					}
+					core::close_array();
+				}
+
 				template<class T>
 				void append(
 					const std::string& label,
