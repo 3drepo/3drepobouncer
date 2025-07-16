@@ -17,9 +17,33 @@
 
 #include <gtest/gtest.h>
 #include <repo/manipulator/modelconvertor/import/repo_model_import_synchro.h>
+#include <repo/manipulator/modelconvertor/import/repo_model_import_manager.h>
 #include "../../../../repo_test_database_info.h"
+#include "../../../../repo_test_utils.h"
+#include "../../../../repo_test_scene_utils.h"
+#include "../../../../repo_test_common_tests.h"
 
 using namespace repo::manipulator::modelconvertor;
+using namespace testing;
+
+repo::core::model::RepoScene* ModelImportManagerImport(std::string db, std::string path)
+{
+	auto config = ModelImportConfig();
+	config.databaseName = "SynchroTestDb";
+	config.revisionId = repo::lib::RepoUUID::createUUID();
+	config.projectName = db;
+
+	auto handler = getHandler();
+
+	uint8_t err;
+	std::string msg;
+
+	ModelImportManager manager;
+	auto scene = manager.ImportFromFile(path, config, handler, err);
+	scene->commit(handler.get(), handler->getFileManager().get(), msg, "testuser", "", "", config.getRevisionId());
+
+	return scene;
+}
 
 TEST(SynchroModelImport, ConstructorTest)
 {
@@ -40,4 +64,20 @@ TEST(SynchroModelImport, ImportModel)
 	auto scene = import.importModel(getDataPath(synchroVersion6_4), handler, errCode);	
 	EXPECT_EQ(0, errCode);
 	ASSERT_TRUE(scene);
+}
+
+TEST(SynchroModelImport, MetadataParents)
+{
+	uint8_t errCode;
+
+	{
+		SceneUtils scene(ModelImportManagerImport("SynchroMetadataTests", getDataPath("synchro6_4.spm")));
+		common::checkMetadataInheritence(scene);
+	}
+
+	{
+		SceneUtils scene(ModelImportManagerImport("SynchroMetadataTests", getDataPath("synchro6_5.spm")));
+		common::checkMetadataInheritence(scene);
+	}
+
 }
