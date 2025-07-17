@@ -60,7 +60,7 @@ repo::core::model::RepoScene* OdaModelImport::importModel(std::string filePath, 
 		settings.getProjectName(),
 		settings.getRevisionId()
 	);
-	sceneBuilder->createIndexes(false);
+	sceneBuilder->createIndexes();
 
 	odaProcessor = odaHelper::FileProcessor::getFileProcessor(filePath, sceneBuilder.get(), settings);
 	auto result = odaProcessor->readFile();
