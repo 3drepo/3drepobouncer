@@ -236,3 +236,4 @@
 #define REPO_FILTER_TAG_OPAQUE			"materialProperties.isOpaque"
 #define REPO_FILTER_TAG_TRANSPARENT		"materialProperties.isTransparent"
 #define REPO_FILTER_TAG_TEXTURE_ID		"materialProperties.textureId"
+#define REPO_FILTER_TAG_NORMALS			"_blobRef.elements.normals"
