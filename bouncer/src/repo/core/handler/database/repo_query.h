@@ -22,6 +22,7 @@
 #include "repo_query_fwd.h"
 
 #include <vector>
+#include <set>
 #include <string>
 #include <memory>
 #include <variant>
@@ -149,6 +150,12 @@ namespace repo {
 					public:
 						AddParent(const repo::lib::RepoUUID& uniqueId, std::vector<repo::lib::RepoUUID> parentIds) :
 							uniqueId(uniqueId),
+							parentIds(parentIds.begin(), parentIds.end())
+						{
+						}
+
+						AddParent(const repo::lib::RepoUUID& uniqueId, std::set<repo::lib::RepoUUID> parentIds) :
+							uniqueId(uniqueId),
 							parentIds(parentIds)
 						{
 						}
@@ -160,7 +167,7 @@ namespace repo {
 						}
 
 						repo::lib::RepoUUID uniqueId;
-						std::vector<repo::lib::RepoUUID> parentIds;
+						std::set<repo::lib::RepoUUID> parentIds;
 					};
 
 					/*

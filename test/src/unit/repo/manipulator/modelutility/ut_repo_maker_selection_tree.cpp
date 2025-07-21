@@ -50,6 +50,8 @@ repo::core::model::RepoScene* ModelImportManagerImport(std::string filename, con
 	auto scene = manager.ImportFromFile(filename, config, handler, err);
 	scene->commit(handler.get(), handler->getFileManager().get(), msg, "testuser", "", "", config.getRevisionId());
 
+	// The Selection Tree Maker no longer needs a populated scene, but SceneUtils
+	// still does in order to validate it...
 	if (!scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()) {
 		scene->loadScene(handler.get(), msg);
 	}
@@ -100,12 +102,18 @@ class TreeTestUtilities
 	// This snippet serialises the path in the same way as the exporter.
 
 	std::string getPathAsString(const SceneUtils::NodeInfo& node) {
-		auto path = node.getParents();
 		std::string result;
-		for (size_t i = 0; i < path.size(); ++i) {
-			result += path[i].getUniqueId().toString();
-			if (i != path.size() - 1) {
-				result += "__";
+		auto n = node;
+		while (true) {
+			result = n.getUniqueId().toString() + result;
+			auto p = n.getParents({});
+			if (p.size()) {
+				n = p[0];
+				result = "__" + result;
+			}
+			else
+			{
+				break;
 			}
 		}
 		return result;
@@ -279,7 +287,7 @@ class TreeTestUtilities
 				expected.push_back(m.getUniqueId());
 			}
 
-			EXPECT_THAT(actual, Eq(expected));
+			EXPECT_THAT(actual, UnorderedElementsAreArray(expected));
 		}
 	}
 
@@ -466,3 +474,8 @@ TEST(RepoSelectionTreeTest, HiddenSynchro)
 
 	EXPECT_THAT(tree.invisibleNodeIds, UnorderedElementsAreArray(expected));
 }
+
+// Todo..
+
+// 1. Check naming of reference nodes
+// 2. Check ordering of IFC spaces

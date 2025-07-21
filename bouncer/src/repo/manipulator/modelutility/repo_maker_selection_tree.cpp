@@ -35,8 +35,6 @@ using namespace repo::manipulator::modelutility;
 
 const static std::string IFC_TYPE_SPACE_LABEL = "(IFC Space)";
 
-#pragma optimize("", off)
-
 SelectionTreeMaker::SelectionTreeMaker(
 	const repo::core::model::RepoScene *scene,
 	repo::core::handler::AbstractDatabaseHandler* handler)
@@ -158,14 +156,12 @@ void SelectionTreeMaker::generateSelectionTrees()
 
 	repo::core::handler::database::query::RepoQueryBuilder filter;
 	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, scene->getRevisionID()));
-	//filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_TRANSFORMATION)));
 
-	// This method builds the tree in stages. In the first all Nodes that exist
-	// individually in the tree (Transformations, References and Meshes) are read
-	// into a map.
+	// This method builds the tree in stages. In the first the minimal number of
+	// fields to fill out the tree are read for all nodes in the scene collection.
 	// 
 	// Once this is done - and the memory of the map will no longer change - the
-	// inheritence is used to wire up references between the nodes for quick
+	// inheritence information is used to create edges between the nodes for quick
 	// traversal.
 
 	repo::core::handler::database::query::RepoProjectionBuilder projection;

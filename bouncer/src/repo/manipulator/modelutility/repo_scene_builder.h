@@ -115,7 +115,7 @@ namespace repo {
 				* an index on a large number of nodes at the end.
 				* Some of the indexes this creats could be moved to .io in the future.
 				*/
-				void createIndexes(bool groupingsEnabled);
+				void createIndexes();
 
 			private:
 

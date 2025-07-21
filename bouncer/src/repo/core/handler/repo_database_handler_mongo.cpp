@@ -239,12 +239,12 @@ struct MongoUpdateVisitor
 
 		if (u.parentIds.size() == 1)
 		{
-			operation.append(REPO_NODE_LABEL_PARENTS, u.parentIds[0]);
+			operation.append(REPO_NODE_LABEL_PARENTS, *u.parentIds.begin());
 		}
 		else
 		{
 			repo::core::model::RepoBSONBuilder array;
-			array.appendArray("$each", u.parentIds);
+			array.appendIteratable("$each", u.parentIds.begin(), u.parentIds.end());
 			operation.append(REPO_NODE_LABEL_PARENTS, array.obj());
 		}
 
