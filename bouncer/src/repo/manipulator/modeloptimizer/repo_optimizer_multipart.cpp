@@ -73,28 +73,44 @@ bool MultipartOptimizer::processScene(
 	std::vector<ProcessingJob> jobs;
 	for (auto grouping : groupings) {
 
-		// Job for opaque, prim 2
+		// Jobs for opaque, prim 2
 		{
-			std::string description = "Grouping: " + grouping + ", Opaque, Primitive 2";			
-			jobs.push_back(createUntexturedJob(description, revId, 2, grouping, true));
+			std::string description = "Grouping: " + grouping + ", Opaque, Primitive 2, No Normals";			
+			jobs.push_back(createUntexturedJob(description, revId, 2, grouping, true, false));
+		}
+		{
+			std::string description = "Grouping: " + grouping + ", Opaque, Primitive 2, Normals";
+			jobs.push_back(createUntexturedJob(description, revId, 2, grouping, true, true));
 		}
 
-		// Job for opaque, prim 3
+		// Jobs for opaque, prim 3
 		{
-			std::string description = "Grouping: " + grouping + ", Opaque, Primitive 3";
-			jobs.push_back(createUntexturedJob(description, revId, 3, grouping, true));
+			std::string description = "Grouping: " + grouping + ", Opaque, Primitive 3, No Normals";
+			jobs.push_back(createUntexturedJob(description, revId, 3, grouping, true, false));
+		}
+		{
+			std::string description = "Grouping: " + grouping + ", Opaque, Primitive 3, Normals";
+			jobs.push_back(createUntexturedJob(description, revId, 3, grouping, true, true));
 		}
 
-		// Job for transparent, prim 2
+		// Jobs for transparent, prim 2
 		{
-			std::string description = "Grouping: " + grouping + ", Transparent, Primitive 2";
-			jobs.push_back(createUntexturedJob(description, revId, 2, grouping, false));
+			std::string description = "Grouping: " + grouping + ", Transparent, Primitive 2, No Normals";
+			jobs.push_back(createUntexturedJob(description, revId, 2, grouping, false, false));
+		}
+		{
+			std::string description = "Grouping: " + grouping + ", Transparent, Primitive 2, Normals";
+			jobs.push_back(createUntexturedJob(description, revId, 2, grouping, false, true));
 		}
 
-		// Job for transparent, prim 3
+		// Jobs for transparent, prim 3
 		{
-			std::string description = "Grouping: " + grouping + ", Transparent, Primitive 3";
-			jobs.push_back(createUntexturedJob(description, revId, 3, grouping, false));
+			std::string description = "Grouping: " + grouping + ", Transparent, Primitive 3, No Normals";
+			jobs.push_back(createUntexturedJob(description, revId, 3, grouping, false, false));
+		}
+		{
+			std::string description = "Grouping: " + grouping + ", Transparent, Primitive 3, Normals";
+			jobs.push_back(createUntexturedJob(description, revId, 3, grouping, false, true));
 		}
 
 		// Get Texture IDs
@@ -104,18 +120,26 @@ bool MultipartOptimizer::processScene(
 		// Create jobs for each texture group
 		for (auto texId : texIds) {
 
-			// Job for textured, prim 2
+			// Jobs for textured, prim 2
 			// One cannot map a texture to a line, however, customers can assign materials with textures to lines
 			// so we need to be able to process them.
 			{
-				std::string description = "Grouping: " + grouping + ", Textured " + texId.toString() + " , Primitive 2";
-				jobs.push_back(createTexturedJob(description, revId, 2, grouping, texId));
+				std::string description = "Grouping: " + grouping + ", Textured " + texId.toString() + " , Primitive 2, No Normals";
+				jobs.push_back(createTexturedJob(description, revId, 2, grouping, false, texId));
+			}
+			{
+				std::string description = "Grouping: " + grouping + ", Textured " + texId.toString() + " , Primitive 2, Normals";
+				jobs.push_back(createTexturedJob(description, revId, 2, grouping, true, texId));
 			}
 
 			// Job for textured, prim 3
 			{
-				std::string description = "Grouping: " + grouping + ", Textured " + texId.toString() + " , Primitive 3";
-				jobs.push_back(createTexturedJob(description, revId, 3, grouping, texId));
+				std::string description = "Grouping: " + grouping + ", Textured " + texId.toString() + " , Primitive 3, No Normals";
+				jobs.push_back(createTexturedJob(description, revId, 3, grouping, false, texId));
+			}
+			{
+				std::string description = "Grouping: " + grouping + ", Textured " + texId.toString() + " , Primitive 3, Normals";
+				jobs.push_back(createTexturedJob(description, revId, 3, grouping, true, texId));
 			}
 		}
 	}
@@ -351,7 +375,8 @@ MultipartOptimizer::ProcessingJob repo::manipulator::modeloptimizer::MultipartOp
 	const repo::lib::RepoUUID &revId,
 	const int primitive,
 	const std::string &grouping,
-	const bool isOpaque)
+	const bool isOpaque,
+	const bool hasNormals)
 {
 	// Create filter
 	repo::core::handler::database::query::RepoQueryBuilder filter;
@@ -365,6 +390,7 @@ MultipartOptimizer::ProcessingJob repo::manipulator::modeloptimizer::MultipartOp
 		filter.append(repo::core::handler::database::query::Eq(REPO_FILTER_TAG_OPAQUE, true));
 	else
 		filter.append(repo::core::handler::database::query::Eq(REPO_FILTER_TAG_TRANSPARENT, true));
+	filter.append(repo::core::handler::database::query::Exists(REPO_FILTER_TAG_NORMALS, hasNormals));
 
 	// Create job
 	return ProcessingJob({ description, filter, {} });
@@ -375,6 +401,7 @@ MultipartOptimizer::ProcessingJob repo::manipulator::modeloptimizer::MultipartOp
 	const repo::lib::RepoUUID &revId,
 	const int primitive,
 	const std::string &grouping,
+	const bool hasNormals,
 	const repo::lib::RepoUUID &texId)
 {
 	// Create filter
@@ -386,6 +413,7 @@ MultipartOptimizer::ProcessingJob repo::manipulator::modeloptimizer::MultipartOp
 		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_GROUPING, grouping));
 	else
 		filter.append(repo::core::handler::database::query::Exists(REPO_NODE_MESH_LABEL_GROUPING, false));
+	filter.append(repo::core::handler::database::query::Exists(REPO_FILTER_TAG_NORMALS, hasNormals));
 
 	// Create job
 	return ProcessingJob({ description, filter, texId });
