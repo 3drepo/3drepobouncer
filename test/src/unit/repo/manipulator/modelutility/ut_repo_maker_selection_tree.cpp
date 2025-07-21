@@ -22,6 +22,15 @@
 #include <repo/manipulator/modelconvertor/import/repo_model_import_manager.h>
 #include <repo/manipulator/modelutility/repo_scene_manager.h>
 #include <repo/manipulator/modelutility/repo_maker_selection_tree.h>
+
+// The ODA NWD importer also uses rapidjson, so make sure to import our
+// copy into a different namespace to avoid interference between two
+// possibly different versions.
+
+#define RAPIDJSON_NAMESPACE repo::rapidjson
+#define RAPIDJSON_NAMESPACE_BEGIN namespace repo { namespace rapidjson {
+#define RAPIDJSON_NAMESPACE_END } }
+
 #include <repo/manipulator/modelutility/rapidjson/rapidjson.h>
 #include <repo/manipulator/modelutility/rapidjson/document.h>
 
@@ -35,7 +44,7 @@ using namespace repo::core::model;
 using namespace testing;
 using namespace repo::manipulator::modelconvertor;
 using namespace repo::manipulator::modelutility;
-using namespace rapidjson;
+using namespace repo;
 
 #define TESTDB "SelectionTreeTest"
 
@@ -301,7 +310,7 @@ class TreeTestUtilities
 		EXPECT_THAT(uuids, UnorderedElementsAreArray(invisibleNodeIds));
 	}
 
-	Document getJsonFile(const RepoScene* scene, std::string file)
+	rapidjson::Document getJsonFile(const RepoScene* scene, std::string file)
 	{
 		auto handler = getHandler();
 
@@ -311,7 +320,7 @@ class TreeTestUtilities
 			scene->getRevisionID().toString() + std::string("/") + file
 		);
 
-		Document document;
+		rapidjson::Document document;
 		document.Parse(reinterpret_cast<const char*>(fullTree.data()), fullTree.size());
 	
 		EXPECT_FALSE(document.HasParseError());
