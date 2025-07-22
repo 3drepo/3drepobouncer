@@ -142,6 +142,7 @@ namespace testing {
 		std::vector<NodeInfo> getMeshes();
 		std::vector<NodeInfo> getTransformations();
 		std::vector<NodeInfo> getMetadataNodes();
+		std::vector<NodeInfo> getReferenceNodes();
 		repo::lib::RepoMatrix getWorldTransform(repo::core::model::RepoNode* node);
 		NodeInfo getNodeInfo(repo::core::model::RepoNode* node);
 		NodeInfo getRootNode();

@@ -101,10 +101,11 @@ void traversePtree(
 {
     //Ensure IFC Space (if any) are put into the tree first.
 
-    std::sort(node->children.begin(), node->children.end(), 
+	std::sort(node->children.begin(), node->children.end(),
 		[](const SelectionTree::Node* a, const SelectionTree::Node* b) {
 			return a->name.find(IFC_TYPE_SPACE_LABEL) != std::string::npos && b->name.find(IFC_TYPE_SPACE_LABEL) == std::string::npos;
-    });
+		}
+	);
 
 	// currentPath is passed as a copy so we can update it directly
 
@@ -274,12 +275,14 @@ static void writePropertyTree(const SelectionTree::Node& node, const SelectionTr
 	writer.Key("_id");	writer.String(node._id.toString());	
 	writer.Key("shared_id"); writer.String(node.shared_id.toString());
 
-	writer.Key("children");	
-	writer.StartArray();
-	for (auto& child : node.children) {
-		writePropertyTree(*child, tree, writer);
+	if (node.children.size()) {
+		writer.Key("children");
+		writer.StartArray();
+		for (auto& child : node.children) {
+			writePropertyTree(*child, tree, writer);
+		}
+		writer.EndArray();
 	}
-	writer.EndArray();
 
 	if (node.meta.size()) {
 

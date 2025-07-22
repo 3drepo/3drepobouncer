@@ -364,6 +364,15 @@ std::vector<SceneUtils::NodeInfo> SceneUtils::getMetadataNodes()
 	return metadata;
 }
 
+std::vector<SceneUtils::NodeInfo> SceneUtils::getReferenceNodes()
+{
+	std::vector<SceneUtils::NodeInfo> references;
+	for (auto n : scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT)) {
+		references.push_back(getNodeInfo(n));
+	}
+	return references;
+}
+
 std::unordered_map<std::string, repo::lib::RepoVariant> SceneUtils::NodeInfo::getMetadata()
 {
 	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
