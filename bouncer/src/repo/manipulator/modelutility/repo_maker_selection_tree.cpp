@@ -88,7 +88,7 @@ static std::string toggleStateToString(SelectionTree::Node::ToggleState state)
 	case SelectionTree::Node::ToggleState::HALF_HIDDEN:
 		return REPO_VISIBILITY_STATE_HALF_HIDDEN;
 	}
-	throw new repo::lib::RepoException("Unknown visibility type");
+	throw repo::lib::RepoException("Unknown visibility type");
 }
 
 void traversePtree(
