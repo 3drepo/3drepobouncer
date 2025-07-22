@@ -30,10 +30,10 @@ namespace repo {
 					friend class BlobFilesHandler;
 				private:
 					const std::string fileName;
-					const int32_t startPos;
-					const int32_t size;
+					const int64_t startPos;
+					const int64_t size;
 				public:
-					DataRef(const std::string &fileName, const unsigned int &startPos, const unsigned int &size)
+					DataRef(const std::string &fileName, const int64_t &startPos, const int64_t &size)
 						: fileName(fileName), startPos(startPos), size(size) {}
 
 					repo::core::model::RepoBSON serialise() const;

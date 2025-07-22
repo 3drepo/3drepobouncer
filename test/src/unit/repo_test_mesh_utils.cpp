@@ -56,7 +56,7 @@ bool repo::test::utils::mesh::compareMeshes(
 	// Get unprocessed geometry from the database
 	auto unprocessedFaces = getFacesFromDatabase(database, projectName, revId);
 
-	// Check for lenght equality first
+	// Check for length equality first
 	if (unprocessedFaces.size() != processedFaces.size())
 	{
 		return false;
@@ -108,8 +108,8 @@ void deserialiseVector(
 	const std::vector<uint8_t>& buffer,
 	std::vector<T>& vec)
 {
-	auto start = bson.getIntField(REPO_LABEL_BINARY_START);
-	auto size = bson.getIntField(REPO_LABEL_BINARY_SIZE);
+	auto start = bson.getLongField(REPO_LABEL_BINARY_START);
+	auto size = bson.getLongField(REPO_LABEL_BINARY_SIZE);
 
 	vec.resize(size / sizeof(T));
 	memcpy(vec.data(), buffer.data() + (sizeof(uint8_t) * start), size);
