@@ -25,6 +25,7 @@
 #include "../../../../repo_test_database_info.h"
 #include "../../../../repo_test_scene_utils.h"
 #include "../../../../repo_test_matchers.h"
+#include "../../../../repo_test_common_tests.h"
 
 using namespace repo::manipulator::modelconvertor;
 using namespace repo::core::model;
@@ -814,4 +815,39 @@ TEST(IFCModelImport, Ifc4x3_Add2)
 	auto scene = IfcModelImportUtils::ModelImportManagerImport("VersionTests", getDataPath(ifc4x3_add2Model));
 	SceneUtils utils(scene);
 	EXPECT_TRUE(utils.isPopulated());
+}
+
+TEST(IFCModelImport, MetadataParents)
+{
+	uint8_t errCode;
+
+	{
+		SceneUtils scene(IfcModelImportUtils::ModelImportManagerImport("IfcMetadataTests", getDataPath("duct.ifc")));
+		common::checkMetadataInheritence(scene);
+	}
+
+	{
+		SceneUtils scene(IfcModelImportUtils::ModelImportManagerImport("IfcMetadataTests", getDataPath("duplex.ifc")));
+		common::checkMetadataInheritence(scene);
+	}
+
+	{
+		SceneUtils scene(IfcModelImportUtils::ModelImportManagerImport("IfcMetadataTests", getDataPath("ifc4x3.ifc")));
+		common::checkMetadataInheritence(scene);
+	}
+
+	{
+		SceneUtils scene(IfcModelImportUtils::ModelImportManagerImport("IfcMetadataTests", getDataPath("ifc2x3.ifc")));
+		common::checkMetadataInheritence(scene);
+	}
+
+	{
+		SceneUtils scene(IfcModelImportUtils::ModelImportManagerImport("IfcMetadataTests", getDataPath("simpleHouse1.ifc")));
+		common::checkMetadataInheritence(scene);
+	}
+
+	{
+		SceneUtils scene(IfcModelImportUtils::ModelImportManagerImport("IfcMetadataTests", getDataPath("Wall.ifc")));
+		common::checkMetadataInheritence(scene);
+	}
 }

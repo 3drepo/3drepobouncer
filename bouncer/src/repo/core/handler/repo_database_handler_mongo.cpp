@@ -239,12 +239,12 @@ struct MongoUpdateVisitor
 
 		if (u.parentIds.size() == 1)
 		{
-			operation.append(REPO_NODE_LABEL_PARENTS, u.parentIds[0]);
+			operation.append(REPO_NODE_LABEL_PARENTS, *u.parentIds.begin());
 		}
 		else
 		{
 			repo::core::model::RepoBSONBuilder array;
-			array.appendArray("$each", u.parentIds);
+			array.appendIteratable("$each", u.parentIds.begin(), u.parentIds.end());
 			operation.append(REPO_NODE_LABEL_PARENTS, array.obj());
 		}
 
@@ -293,8 +293,8 @@ MongoDatabaseHandler::MongoDatabaseHandler(
 	std::string optionsPrefix = s.find("?") == std::string::npos ? "/?" : "&";
 	s += optionsPrefix + "maxConnecting=" + std::to_string(options.maxConnections) +
 		"&socketTimeoutMS=" + std::to_string(options.timeout) +
-		"&serverSelectionTimeoutMS=" + std::to_string(options.timeout) +
-		"&connectTimeoutMS=" + std::to_string(options.timeout);
+		"&serverSelectionTimeoutMS=" + std::to_string(options.connectionTimeout) +
+		"&connectTimeoutMS=" + std::to_string(options.connectionTimeout);
 
 	mongocxx::uri uri(s);
 	clientPool = std::make_unique<mongocxx::pool>(uri);

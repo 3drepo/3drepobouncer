@@ -121,7 +121,8 @@ namespace repo {
 					const repo::lib::RepoUUID &revId,
 					const int primitive,
 					const std::string &grouping,
-					const bool isOpaque
+					const bool isOpaque,
+					const bool hasNormals
 				);
 
 				ProcessingJob createTexturedJob(
@@ -129,6 +130,7 @@ namespace repo {
 					const repo::lib::RepoUUID &revId,
 					const int primitive,
 					const std::string &grouping,
+					const bool hasNormals,
 					const repo::lib::RepoUUID &texId
 				);
 

@@ -26,6 +26,7 @@
 #include "../../../../../repo_test_database_info.h"
 #include "../../../../../repo_test_scene_utils.h"
 #include "../../../../../repo_test_matchers.h"
+#include "../../../../../repo_test_common_tests.h"
 #include "repo/manipulator/modelconvertor/import/odaHelper/file_processor_nwd.h"
 
 using namespace repo::manipulator::modelconvertor;
@@ -131,7 +132,7 @@ TEST_F(NwdTestSuite, Sample2025NWDTree)
 	nodes = utils.findTransformationNodesByName("Wall-Ext_102Bwk-75Ins-100LBlk-12P");
 	EXPECT_THAT(nodes.size(), Eq(1));
 
-	auto children = nodes[0].getChildren();
+	auto children = nodes[0].getChildren({repo::core::model::NodeType::MESH, repo::core::model::NodeType::TRANSFORMATION});
 	EXPECT_THAT(children.size(), Eq(6));
 
 	for (auto n : children) {
@@ -574,5 +575,54 @@ TEST(ODAModelImport, DefaultViewDisplayOptions)
 		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::TRIANGLES).size(), Eq(0)); // No textures means meshes are combined
 		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::LINES).size(), Gt(0));
 		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").hasTextures(), IsFalse());
+	}
+}
+
+TEST_F(NwdTestSuite, MetadataParentsNWD)
+{
+	// All metadata nodes must also have their sibling meshnodes as parents,
+	// in order to resolve ids by mesh node in the frontend
+
+	{
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport("MetadataParentsNWD", getDataPath(nwdModel2025)));
+		common::checkMetadataInheritence(scene);
+	}
+
+	{
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport("MetadataParentsNWD", getDataPath("groupsAndReferences.nwc")));
+		common::checkMetadataInheritence(scene);
+	}
+
+	{
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport("MetadataParentsNWD", getDataPath("orientedColumns.nwd")));
+		common::checkMetadataInheritence(scene);
+	}
+}
+
+TEST(ODAModelImport, MetadataParents)
+{
+	{
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport("MetadataParentsRVT", getDataPath("sample2025.rvt")));
+		common::checkMetadataInheritence(scene);
+	}
+
+	{
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport("MetadataParentsRVT", getDataPath("MetaTest2.rvt")));
+		common::checkMetadataInheritence(scene);
+	}
+
+	{
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport("MetadataParentsDWG", getDataPath("nestedBlocks.dwg")));
+		common::checkMetadataInheritence(scene);
+	}
+
+	{
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport("MetadataParentsDWG", getDataPath("colouredBoxes.dwg")));
+		common::checkMetadataInheritence(scene);
+	}
+
+	{
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport("MetadataParentsDGN", getDataPath("sample.dgn")));
+		common::checkMetadataInheritence(scene);
 	}
 }

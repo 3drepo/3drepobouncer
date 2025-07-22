@@ -74,7 +74,8 @@ namespace repo {
 				struct ConnectionOptions
 				{
 					uint32_t maxConnections = 1;
-					uint32_t timeout = 10000; // Common timeout for socket, connection and server selection, in milliseconds
+					uint32_t connectionTimeout = 10000; // Timeout for establishing a connection, in milliseconds
+					uint32_t timeout = 3600000; // Common timeout for socket, connection and server selection, in milliseconds
 
 					ConnectionOptions(){} // Explicit default constructor required for gcc
 				};
