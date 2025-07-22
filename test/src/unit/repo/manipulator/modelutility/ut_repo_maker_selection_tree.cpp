@@ -258,6 +258,7 @@ class TreeTestUtilities
 		switch (toggleState) {
 		case Visibility::Visible:
 		{
+			repo::core::model::MeshNode* meshNode = nullptr; // Example of explicit namespace qualification
 			EXPECT_THAT(numInvisibleChildren, Eq(0));
 			EXPECT_THAT(numMixedChildren, Eq(0));
 		}
