@@ -243,7 +243,7 @@ class TreeTestUtilities
 			if (nameHasIfcSpace.size()) {
 				for (auto i = 1; i < nameHasIfcSpace.size(); i++) {
 					if (nameHasIfcSpace[i] && !nameHasIfcSpace[i - 1]) {
-						FAIL("Ifc Spaces should always be before any other children");
+						FAIL(); // Ifc Spaces should always be before any other children
 					}
 				}
 			}
