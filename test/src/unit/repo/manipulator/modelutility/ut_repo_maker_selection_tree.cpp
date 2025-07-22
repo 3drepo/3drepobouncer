@@ -105,7 +105,7 @@ class TreeTestUtilities
 		else if (v == "parentOfInvisible") {
 			return Visibility::Mixed;
 		}
-		throw "Invalid state exception";
+		throw std::invalid_argument("Invalid state exception");
 	}
 
 	// This snippet serialises the path in the same way as the exporter.
