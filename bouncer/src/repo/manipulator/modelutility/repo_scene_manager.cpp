@@ -51,14 +51,6 @@ uint8_t SceneManager::commitScene(
 
 			if (success)
 			{
-				// Loading the full scene is required for the tree generation, for now.
-				if (!isFederation && !scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size())
-				{
-					// Scene is just a container - load all the actual meshes
-					std::string msg;
-					scene->loadScene(handler, msg);
-				}
-
 				repoInfo << "Generating Selection Tree JSON...";
 				scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::GEN_SEL_TREE);
 				if (generateAndCommitSelectionTree(scene, handler))
