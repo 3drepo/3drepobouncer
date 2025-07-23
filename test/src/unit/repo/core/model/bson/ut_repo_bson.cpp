@@ -487,8 +487,8 @@ TEST(RepoBSONTest, GetBinariesAsBuffer)
 
 		auto range = elements.getObjectField(originalName);
 
-		auto start = range.getIntField(REPO_LABEL_BINARY_START);
-		auto size = range.getIntField(REPO_LABEL_BINARY_SIZE);
+		auto start = range.getLongField(REPO_LABEL_BINARY_START);
+		auto size = range.getLongField(REPO_LABEL_BINARY_SIZE);
 
 		auto actualData = std::vector<uint8_t>(buffer.data() + start, buffer.data() + start + size);
 
@@ -505,17 +505,17 @@ TEST(RepoBSONTest, ReplaceBinaryWithReference)
 	for (int i = 0; i < 10; i++)
 	{
 		RepoBSONBuilder rangeBuilder;
-		rangeBuilder.append(REPO_LABEL_BINARY_START, (int32_t)counter);
+		rangeBuilder.append(REPO_LABEL_BINARY_START, (int64_t)counter);
 		auto size = rand();
-		rangeBuilder.append(REPO_LABEL_BINARY_SIZE, (int32_t)size);
+		rangeBuilder.append(REPO_LABEL_BINARY_SIZE, (int64_t)size);
 		counter += size;
 		elementsBuilder.append(repo::lib::RepoUUID::createUUID().toString(), rangeBuilder.obj());
 	}
 	auto elemRef = elementsBuilder.obj();
 
 	RepoBSONBuilder fileRefBuilder;
-	fileRefBuilder.append(REPO_LABEL_BINARY_START, (int32_t)0);
-	fileRefBuilder.append(REPO_LABEL_BINARY_SIZE, (int32_t)rand());
+	fileRefBuilder.append(REPO_LABEL_BINARY_START, (int64_t)0);
+	fileRefBuilder.append(REPO_LABEL_BINARY_SIZE, (int64_t)rand());
 	fileRefBuilder.append(REPO_LABEL_BINARY_FILENAME, repo::lib::RepoUUID::createUUID().toString()); // File references use strings, even though they are all typically UUIDs now
 	auto fileRef = fileRefBuilder.obj();
 
@@ -603,8 +603,8 @@ TEST(RepoBSONTest, InitBinaryBuffer)
 	// because we will pass the buffer in directly).
 
 	RepoBSONBuilder fileRefBuilder;
-	fileRefBuilder.append(REPO_LABEL_BINARY_START, (int32_t)0);
-	fileRefBuilder.append(REPO_LABEL_BINARY_SIZE, (int32_t)file.size());
+	fileRefBuilder.append(REPO_LABEL_BINARY_START, (int64_t)0);
+	fileRefBuilder.append(REPO_LABEL_BINARY_SIZE, (int64_t)file.size());
 	fileRefBuilder.append(REPO_LABEL_BINARY_FILENAME, repo::lib::RepoUUID::createUUID().toString()); // File references use strings, even though they are all typically UUIDs now
 	auto fileRef = fileRefBuilder.obj();
 
