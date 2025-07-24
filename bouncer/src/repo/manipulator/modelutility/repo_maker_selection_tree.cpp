@@ -253,9 +253,12 @@ void SelectionTreeMaker::generateSelectionTrees()
 	// Now that the tree is fully connected, we can update inter-dependent states
 	// such as the visibility.
 
-	bool dummy1 = false;
-	std::vector<repo::lib::RepoUUID> dummy2;
-	traversePtree(trees.fullTree.root, dummy1, {}, dummy2, scene, trees);
+	// traversePtree is recursive and uses the following two parameters to pass
+	// information back between levels, so we need something to provide references
+	// of to start it off even if we don't care about their contents here.
+	bool hasHiddenChildren = false;
+	std::vector<repo::lib::RepoUUID> meshIds;
+	traversePtree(trees.fullTree.root, hasHiddenChildren, {}, meshIds, scene, trees);
 }
 
 static void writePropertyTree(const SelectionTree::Node& node, const SelectionTree& tree, rapidjson::Writer<rapidjson::StringBuffer>& writer)
