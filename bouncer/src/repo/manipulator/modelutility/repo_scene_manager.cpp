@@ -283,8 +283,7 @@ bool SceneManager::generateAndCommitSelectionTree(
 			std::string databaseName = scene->getDatabaseName();
 			std::string projectName = scene->getProjectName();
 			std::string errMsg;
-			std::string fileNamePrefix = "/" + databaseName + "/" + projectName + "/revision/"
-				+ scene->getRevisionID().toString() + "/";
+			std::string fileNamePrefix = scene->getRevisionID().toString() + "/";
 
 			for (const auto & file : buffer)
 			{
