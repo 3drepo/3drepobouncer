@@ -129,16 +129,6 @@ namespace repo {
 
 				private:
 					/**
-					 * Cleans given filename by removing teamspace and model strings.
-					 * e.g. cleanFileName("/teamspaceA/modelB/file.obj")
-					 *        => "file.obj"
-					 *      cleanFileName("/teamspaceA/modelB/revision/revC/file.obj")
-					 *        => "revC/file.obj"
-					 */
-					std::string cleanFileName(
-						const std::string &fileName);
-
-					/**
 					 * Remove ref entry for file to database.
 					 */
 					bool dropFileRef(

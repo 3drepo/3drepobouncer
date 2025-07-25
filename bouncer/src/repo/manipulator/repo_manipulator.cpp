@@ -188,7 +188,7 @@ bool RepoManipulator::generateAndCommitSelectionTree(
 )
 {
 	modelutility::SceneManager SceneManager;
-	return SceneManager.generateAndCommitSelectionTree(scene, dbHandler.get(), dbHandler->getFileManager().get());
+	return SceneManager.generateAndCommitSelectionTree(scene, dbHandler.get());
 }
 
 bool RepoManipulator::generateAndCommitWebViewBuffer(

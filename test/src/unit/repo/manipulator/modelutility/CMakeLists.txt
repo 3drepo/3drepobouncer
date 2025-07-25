@@ -6,6 +6,7 @@
 
 set(TEST_SOURCES
 	${TEST_SOURCES}
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_maker_selection_tree.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_mesh_map_reorganiser.cpp
 	CACHE STRING "TEST_SOURCES" FORCE)
 

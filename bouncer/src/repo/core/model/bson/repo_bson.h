@@ -26,13 +26,6 @@
 
 #pragma once
 
-#if defined(_WIN32) || defined(_WIN64)
-#include <WinSock2.h>
-#include <Windows.h>
-
-#define strcasecmp _stricmp
-#endif
-
 #include <unordered_map>
 #include <set>
 #include <repo_log.h>

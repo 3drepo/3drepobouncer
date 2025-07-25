@@ -94,6 +94,16 @@ SceneUtils::NodeInfo SceneUtils::getRootNode()
 	return getNodeInfo(scene->getRoot(repo::core::model::RepoScene::GraphType::DEFAULT));
 }
 
+std::string testing::SceneUtils::getTeamspaceName()
+{
+	return scene->getDatabaseName();
+}
+
+std::string testing::SceneUtils::getContainerName()
+{
+	return scene->getProjectName();
+}
+
 bool SceneUtils::isPopulated()
 {
 	return scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size() > 0;
@@ -155,6 +165,11 @@ SceneUtils::NodeInfo SceneUtils::findLeafNode(std::string name)
 	}
 
 	return nodes[0];
+}
+
+SceneUtils::NodeInfo testing::SceneUtils::findNodeByUniqueId(repo::lib::RepoUUID uniqueId)
+{
+	return getNodeInfo(scene->getNodeByUniqueID(repo::core::model::RepoScene::GraphType::DEFAULT, uniqueId));
 }
 
 std::vector<SceneUtils::NodeInfo> SceneUtils::getChildNodes(repo::core::model::RepoNode* node, Filter filter)
@@ -223,6 +238,20 @@ std::vector<SceneUtils::NodeInfo> SceneUtils::NodeInfo::getMeshes()
 	for (auto& c : scene->getChildNodes(node, { repo::core::model::NodeType::MESH }))
 	{
 		meshNodes.push_back(c);
+	}
+	if (dynamic_cast<MeshNode*>(this->node)) {
+		meshNodes.push_back(*this);
+	}
+	return meshNodes;
+}
+
+std::vector<SceneUtils::NodeInfo> SceneUtils::NodeInfo::getMeshesRecursive()
+{
+	std::vector<SceneUtils::NodeInfo> meshNodes;
+	for (auto& c : scene->getChildNodes(node, { repo::core::model::NodeType::TRANSFORMATION, repo::core::model::NodeType::MESH }))
+	{
+		auto childMeshNodes = c.getMeshesRecursive();
+		meshNodes.insert(meshNodes.end(), childMeshNodes.begin(), childMeshNodes.end());
 	}
 	if (dynamic_cast<MeshNode*>(this->node)) {
 		meshNodes.push_back(*this);
@@ -317,6 +346,15 @@ std::vector<SceneUtils::NodeInfo> SceneUtils::getMeshes()
 	return meshes;
 }
 
+std::vector<SceneUtils::NodeInfo> SceneUtils::getTransformations()
+{
+	std::vector<SceneUtils::NodeInfo> transforms;
+	for (auto n : scene->getAllTransformations(repo::core::model::RepoScene::GraphType::DEFAULT)) {
+		transforms.push_back(getNodeInfo(n));
+	}
+	return transforms;
+}
+
 std::vector<SceneUtils::NodeInfo> SceneUtils::getMetadataNodes()
 {
 	std::vector<SceneUtils::NodeInfo> metadata;
@@ -326,15 +364,28 @@ std::vector<SceneUtils::NodeInfo> SceneUtils::getMetadataNodes()
 	return metadata;
 }
 
+std::vector<SceneUtils::NodeInfo> SceneUtils::getReferenceNodes()
+{
+	std::vector<SceneUtils::NodeInfo> references;
+	for (auto n : scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT)) {
+		references.push_back(getNodeInfo(n));
+	}
+	return references;
+}
+
 std::unordered_map<std::string, repo::lib::RepoVariant> SceneUtils::NodeInfo::getMetadata()
 {
 	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
-	for (auto c : scene->getChildNodes(node, { repo::core::model::NodeType::METADATA }))
-	{
+	for (const auto& c : getMetadataNodes()) {
 		auto m = dynamic_cast<MetadataNode*>(c.node)->getAllMetadata();
 		metadata.insert(m.begin(), m.end());
 	}
 	return metadata;
+}
+
+std::vector<SceneUtils::NodeInfo> SceneUtils::NodeInfo::getMetadataNodes()
+{
+	return scene->getChildNodes(node, { repo::core::model::NodeType::METADATA });
 }
 
 repo::lib::repo_material_t SceneUtils::NodeInfo::getMaterial()

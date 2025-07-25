@@ -129,13 +129,13 @@ bool FileManager::deleteFileAndRef(
 	repo::core::model::RepoBSON node = getDbHandler()->findOneByUniqueID(
 		databaseName,
 		collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
-		cleanFileName(fileName)
+		fileName
 	);
 
 	if (node.isEmpty())
 	{
 		repoTrace << "Failed: cannot find file ref "
-			<< cleanFileName(fileName) << " from "
+			<< fileName << " from "
 			<< databaseName << "/"
 			<< collectionNamePrefix << "." << REPO_COLLECTION_EXT_REF;
 		success = false;
@@ -177,7 +177,7 @@ repo::core::model::RepoRefT<std::string> FileManager::getFileRef(
 		getDbHandler()->findOneByUniqueID(
 			databaseName,
 			collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
-			cleanFileName(fileName)
+			fileName
 		)
 	);
 }
@@ -297,21 +297,6 @@ std::string FileManager::getFilePath(
 	return fsHandler->getFilePath(ref.getRefLink());
 }
 
-std::string FileManager::cleanFileName(
-	const std::string &fileName)
-{
-	std::string result;
-	std::regex matchAllSlashes("(.*\/)+");
-	std::regex matchUpToRevision(".*revision\/");
-
-	result = std::regex_replace(fileName, matchUpToRevision, "");
-
-	if (fileName.length() == result.length())
-		result = std::regex_replace(fileName, matchAllSlashes, "");
-
-	return result;
-}
-
 bool FileManager::dropFileRef(
 	const repo::core::model::RepoBSON            bson,
 	const std::string                            &databaseName,
@@ -339,7 +324,7 @@ repo::core::model::RepoRefT<std::string> FileManager::makeRefNode(
 	const uint32_t& size,
 	const repo::core::model::RepoRef::Metadata& metadata)
 {
-	return repo::core::model::RepoBSONFactory::makeRepoRef(cleanFileName(id), type, link, size, metadata);
+	return repo::core::model::RepoBSONFactory::makeRepoRef(id, type, link, size, metadata);
 }
 
 repo::core::model::RepoRefT<repo::lib::RepoUUID> FileManager::makeRefNode(

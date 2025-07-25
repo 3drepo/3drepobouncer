@@ -51,17 +51,9 @@ uint8_t SceneManager::commitScene(
 
 			if (success)
 			{
-				// Loading the full scene is required for the tree generation, for now.
-				if (!isFederation && !scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size())
-				{
-					// Scene is just a container - load all the actual meshes
-					std::string msg;
-					scene->loadScene(handler, msg);
-				}
-
 				repoInfo << "Generating Selection Tree JSON...";
 				scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::GEN_SEL_TREE);
-				if (generateAndCommitSelectionTree(scene, handler, fileManager))
+				if (generateAndCommitSelectionTree(scene, handler))
 					repoInfo << "Selection Tree Stored into the database";
 				else
 					repoError << "failed to commit selection tree";
@@ -278,13 +270,12 @@ bool SceneManager::generateWebViewBuffers(
 
 bool SceneManager::generateAndCommitSelectionTree(
 	repo::core::model::RepoScene					*scene,
-	repo::core::handler::AbstractDatabaseHandler	*handler,
-	repo::core::handler::fileservice::FileManager	*fileManager)
+	repo::core::handler::AbstractDatabaseHandler	*handler)
 {
 	bool success = false;
 	if (success = scene && scene->isRevisioned() && handler)
 	{
-		SelectionTreeMaker treeMaker(scene);
+		SelectionTreeMaker treeMaker(scene, handler);
 		auto buffer = treeMaker.getSelectionTreeAsBuffer();
 
 		if (success = buffer.size())
@@ -292,14 +283,13 @@ bool SceneManager::generateAndCommitSelectionTree(
 			std::string databaseName = scene->getDatabaseName();
 			std::string projectName = scene->getProjectName();
 			std::string errMsg;
-			std::string fileNamePrefix = "/" + databaseName + "/" + projectName + "/revision/"
-				+ scene->getRevisionID().toString() + "/";
+			std::string fileNamePrefix = scene->getRevisionID().toString() + "/";
 
 			for (const auto & file : buffer)
 			{
 				std::string fileName = fileNamePrefix + file.first;
 
-				if (handler && fileManager->uploadFileAndCommit(
+				if (handler && handler->getFileManager()->uploadFileAndCommit(
 					databaseName,
 					projectName + "." + REPO_COLLECTION_STASH_JSON,
 					fileName,

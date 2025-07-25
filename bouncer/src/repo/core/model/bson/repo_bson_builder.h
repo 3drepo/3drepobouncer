@@ -23,13 +23,6 @@
 
 #pragma once
 
-#if defined(_WIN32) || defined(_WIN64)
-#include <WinSock2.h>
-#include <Windows.h>
-
-#define strcasecmp _stricmp
-#endif
-
 #include "repo_bson.h"
 #include "repo/lib/datastructure/repo_matrix.h"
 #include "repo/lib/datastructure/repo_uuid.h"
