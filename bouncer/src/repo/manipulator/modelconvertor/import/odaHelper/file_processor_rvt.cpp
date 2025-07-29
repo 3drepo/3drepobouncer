@@ -271,6 +271,10 @@ void setupViewOverrides(OdBmDBViewPtr pView)
 
 	ids.push_back(db->getObjectId(OdBm::BuiltInCategory::OST_SunStudy));
 
+	// As are a number of Lines
+
+	ids.push_back(db->getObjectId(OdBm::BuiltInCategory::OST_Lines));
+
 	// We also want to hide topography contours
 
 	ids.push_back(db->getObjectId(OdBm::BuiltInCategory::OST_TopographyContours));
