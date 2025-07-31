@@ -18,6 +18,8 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest-matchers.h>
+#include <iomanip>
+#include <ctime>
 
 #include "repo_test_matchers.h"
 #include "repo/core/model/bson/repo_bson.h"
