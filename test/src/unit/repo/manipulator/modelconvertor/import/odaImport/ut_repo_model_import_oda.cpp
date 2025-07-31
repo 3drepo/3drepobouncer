@@ -414,6 +414,10 @@ TEST(ODAModelImport, DefaultViewVisibility)
 	auto floorNode = utils.findNodeByMetadata("Element ID", "2928847");
 	EXPECT_THAT(floorNode.getMeshes(repo::core::model::MeshNode::Primitive::TRIANGLES), Not(IsEmpty()));
 	EXPECT_THAT(floorNode.getMeshes(repo::core::model::MeshNode::Primitive::LINES), IsEmpty());
+
+	// The Lines model category should be treated as an annotation, and not
+	// processed
+	EXPECT_THAT(utils.findNodesByMetadata("Category", "Lines"), IsEmpty());
 }
 
 TEST(ODAModelImport, NamedView)
