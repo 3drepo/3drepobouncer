@@ -27,42 +27,50 @@
 using namespace repo::core::model;
 using namespace testing;
 
-MeshNode* repo::test::utils::mesh::createRandomMesh(const int nVertices, const bool hasUV, const int primitiveSize, const std::vector<repo::lib::RepoUUID>& parent)
+std::unique_ptr<MeshNode> repo::test::utils::mesh::createRandomMesh(
+	const int nVertices,
+	const bool hasUV,
+	const int primitiveSize,
+	const std::string grouping,
+	const std::vector<repo::lib::RepoUUID>& parent)
 {
-	auto mesh = makeMeshNode(mesh_data(true, true, 0, primitiveSize, false, hasUV ? 1 : 0, nVertices));
+	auto mesh = makeMeshNode(mesh_data(true, true, 0, primitiveSize, false, hasUV ? 1 : 0, nVertices, grouping));
 	mesh.addParents(parent);
-	return new MeshNode(mesh);
+
+	// The new mpOpt drops geometry that has no material, so we set the default here
+	mesh.setMaterial(repo::lib::repo_material_t::DefaultMaterial());	
+
+	return std::make_unique<MeshNode>(mesh);
 }
 
-bool repo::test::utils::mesh::compareMeshes(repo::core::model::RepoNodeSet original, repo::core::model::RepoNodeSet stash)
+bool repo::test::utils::mesh::compareMeshes(
+	std::string database,
+	std::string projectName,
+	repo::lib::RepoUUID revId,
+	TestModelExport* mockExporter
+) 
 {
-	std::vector<GenericFace> defaultFaces;
-	for (const auto node : original)
-	{
-		addFaces(dynamic_cast<repo::core::model::MeshNode*>(node), defaultFaces);
-	}
+	// Get processed geometry from the mock exporter
+	auto processedFaces = getFacesFromMockExporter(mockExporter);
 
-	std::vector<GenericFace> stashFaces;
-	for (const auto node : stash)
-	{
-		addFaces(dynamic_cast<repo::core::model::MeshNode*>(node), stashFaces);
-	}
+	// Get unprocessed geometry from the database
+	auto unprocessedFaces = getFacesFromDatabase(database, projectName, revId);
 
-	if (defaultFaces.size() != stashFaces.size())
+	// Check for length equality first
+	if (unprocessedFaces.size() != processedFaces.size())
 	{
 		return false;
 	}
 
 	// Faces are compared exactly using a hash table for speed.
-
 	std::map<long, std::vector<GenericFace>> actual;
 
-	for (auto& face : stashFaces)
+	for (auto& face : processedFaces)
 	{
 		actual[face.hash()].push_back(face);
 	}
 
-	for (auto& face : defaultFaces)
+	for (auto& face : unprocessedFaces)
 	{
 		auto& others = actual[face.hash()];
 		for (auto& other : others) {
@@ -81,7 +89,7 @@ bool repo::test::utils::mesh::compareMeshes(repo::core::model::RepoNodeSet origi
 
 	// Did we find a match for all faces?
 
-	for (const auto& face : defaultFaces)
+	for (const auto& face : unprocessedFaces)
 	{
 		if (!face.hit)
 		{
@@ -92,18 +100,156 @@ bool repo::test::utils::mesh::compareMeshes(repo::core::model::RepoNodeSet origi
 	return true;
 }
 
-void repo::test::utils::mesh::addFaces(repo::core::model::MeshNode* mesh, std::vector<GenericFace>& faces)
+
+// Helper method for getting binary data from the nodes in getFacesFromDatabase(...)
+template <class T>
+void deserialiseVector(
+	const repo::core::model::RepoBSON& bson,
+	const std::vector<uint8_t>& buffer,
+	std::vector<T>& vec)
 {
-	if (mesh == nullptr)
-	{
-		return;
+	auto start = bson.getLongField(REPO_LABEL_BINARY_START);
+	auto size = bson.getLongField(REPO_LABEL_BINARY_SIZE);
+
+	vec.resize(size / sizeof(T));
+	memcpy(vec.data(), buffer.data() + (sizeof(uint8_t) * start), size);
+}
+
+std::vector<repo::test::utils::mesh::GenericFace> repo::test::utils::mesh::getFacesFromDatabase(std::string database, std::string projectName, repo::lib::RepoUUID revId)
+{
+	std::vector<GenericFace> genericFaces;
+	
+	// Assemble query for db.
+	auto handler = getHandler();
+	std::string sceneCollection = projectName + "." + REPO_COLLECTION_SCENE;
+	repo::core::handler::fileservice::BlobFilesHandler blobHandler(handler->getFileManager(), database, sceneCollection);
+
+	repo::core::handler::database::query::RepoQueryBuilder filter;
+	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));
+	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_MESH)));
+
+	// One test inserts unknown primitive types in the database to see whether the mpOpt processes them. For a accurate comparison we need to ignore them.
+	filter.append(repo::core::handler::database::query::Or(
+		repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_PRIMITIVE, 2),
+		repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_PRIMITIVE, 3)
+	));
+
+	// Query
+	auto cursor = handler->findCursorByCriteria(database, sceneCollection, filter);
+
+	// Process the results
+	for (auto bson : (*cursor)) {
+
+		std::vector<repo::lib::RepoVector3D> vertices;
+		std::vector<repo::lib::RepoVector3D> normals;
+		std::vector<repo::lib::repo_face_t> faces;
+		std::vector < std::vector<repo::lib::RepoVector2D>> channels;
+
+		auto binRef = bson.getBinaryReference();
+		auto dataRef = repo::core::handler::fileservice::DataRef::deserialise(binRef);
+		auto buffer = blobHandler.readToBuffer(dataRef);
+
+		auto blobRefBson = bson.getObjectField(REPO_LABEL_BINARY_REFERENCE);
+		auto elementsBson = blobRefBson.getObjectField(REPO_LABEL_BINARY_ELEMENTS);
+
+		if (elementsBson.hasField(REPO_NODE_MESH_LABEL_VERTICES)) {
+			auto vertBson = elementsBson.getObjectField(REPO_NODE_MESH_LABEL_VERTICES);
+			deserialiseVector(vertBson, buffer, vertices);
+		}
+
+		if (elementsBson.hasField(REPO_NODE_MESH_LABEL_NORMALS)) {
+			auto normBson = elementsBson.getObjectField(REPO_NODE_MESH_LABEL_NORMALS);
+			deserialiseVector(normBson, buffer, normals);
+		}
+
+		if (bson.hasField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT))
+		{
+			// The new multipart optimiser drops UVs of meshes that have no texture,
+			// so we need to make sure that we drop it here too.
+			auto matFilterBson = bson.getObjectField(REPO_FILTER_OBJECT_NAME);
+			if (matFilterBson.hasField(REPO_FILTER_PROP_TEXTURE_ID)) {
+								
+				std::vector<repo::lib::RepoVector2D> serialisedChannels;
+				auto uvBson = elementsBson.getObjectField(REPO_NODE_MESH_LABEL_UV_CHANNELS);
+				deserialiseVector(uvBson, buffer, serialisedChannels);
+
+				if (serialisedChannels.size())
+				{
+					//get number of channels and split the serialised.
+					uint32_t nChannels = bson.getIntField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT);
+					uint32_t vecPerChannel = serialisedChannels.size() / nChannels;
+					channels.reserve(nChannels);
+					for (uint32_t i = 0; i < nChannels; i++)
+					{
+						channels.push_back(std::vector<repo::lib::RepoVector2D>());
+						channels[i].reserve(vecPerChannel);
+
+						uint32_t offset = i * vecPerChannel;
+						channels[i].insert(channels[i].begin(), serialisedChannels.begin() + offset,
+							serialisedChannels.begin() + offset + vecPerChannel);
+					}
+				}
+			}
+		}
+
+		if (elementsBson.hasField(REPO_NODE_MESH_LABEL_FACES)) {
+
+			int32_t faceCount = bson.getIntField(REPO_NODE_MESH_LABEL_FACES_COUNT);
+			faces.reserve(faceCount);
+
+			std::vector<uint32_t> serialisedFaces = std::vector<uint32_t>();
+			auto faceBson = elementsBson.getObjectField(REPO_NODE_MESH_LABEL_FACES);
+			deserialiseVector(faceBson, buffer, serialisedFaces);
+
+			int mNumIndicesIndex = 0;
+			while (serialisedFaces.size() > mNumIndicesIndex)
+			{
+				int mNumIndices = serialisedFaces[mNumIndicesIndex];
+				if (serialisedFaces.size() > mNumIndicesIndex + mNumIndices)
+				{
+					repo::lib::repo_face_t face;
+					face.resize(mNumIndices);
+					for (int i = 0; i < mNumIndices; ++i)
+						face[i] = serialisedFaces[mNumIndicesIndex + 1 + i];
+					faces.push_back(face);
+					mNumIndicesIndex += mNumIndices + 1;
+				}
+				else
+				{
+					repoError << "Cannot copy all faces. Buffer size is smaller than expected!";
+				}
+			}
+
+		}
+
+		// Add this mesh's faces
+		addFaces(vertices, normals, faces, channels, genericFaces);
+
+	}
+	
+	return genericFaces;
+}
+
+std::vector<repo::test::utils::mesh::GenericFace> repo::test::utils::mesh::getFacesFromMockExporter(TestModelExport* mockExporter)
+{
+	std::vector<GenericFace> genericFaces;
+
+	auto meshes = mockExporter->getSupermeshes();
+
+	for (auto& supermesh : meshes) {
+		addFaces(supermesh, genericFaces);
 	}
 
-	auto vertices = mesh->getVertices();
-	auto channels = mesh->getUVChannelsSeparated();
-	auto normals = mesh->getNormals();
+	return genericFaces;
+}
 
-	for (const auto face : mesh->getFaces())
+void repo::test::utils::mesh::addFaces(repo::core::model::MeshNode &mesh, std::vector<GenericFace>& faces)
+{
+	auto vertices = mesh.getVertices();
+	auto channels = mesh.getUVChannelsSeparated();
+	auto normals = mesh.getNormals();
+
+	for (const auto face : mesh.getFaces())
 	{
 		GenericFace portableFace;
 		portableFace.hit = 0;
@@ -124,6 +270,37 @@ void repo::test::utils::mesh::addFaces(repo::core::model::MeshNode* mesh, std::v
 		}
 
 		faces.push_back(portableFace);
+	}
+}
+
+void repo::test::utils::mesh::addFaces(
+	const std::vector<repo::lib::RepoVector3D>& vertices,
+	const std::vector<repo::lib::RepoVector3D>& normals,
+	const std::vector<repo::lib::repo_face_t>& faces,
+	const std::vector<std::vector<repo::lib::RepoVector2D>> &uvChannels,
+	std::vector<GenericFace>& genericFaces)
+{
+	for (const auto face : faces)
+	{
+		GenericFace portableFace;
+		portableFace.hit = 0;
+
+		for (const auto index : face)
+		{
+			portableFace.push(vertices[index]);
+
+			for (const auto channel : uvChannels)
+			{
+				portableFace.push(channel[index]);
+			}
+
+			if (normals.size())
+			{
+				portableFace.push(normals[index]);
+			}
+		}
+
+		genericFaces.push_back(portableFace);
 	}
 }
 
@@ -242,6 +419,11 @@ RepoBSON repo::test::utils::mesh::meshNodeTestBSONFactory(mesh_data data)
 		}
 	}
 
+	// Grouping
+	if (!data.grouping.empty()) {
+		builder.append(REPO_NODE_MESH_LABEL_GROUPING, data.grouping);
+	}
+
 	return builder.obj();
 }
 
@@ -253,7 +435,7 @@ MeshNode repo::test::utils::mesh::makeMeshNode(mesh_data data)
 MeshNode repo::test::utils::mesh::makeDeterministicMeshNode(int primitive, bool normals, int uvs)
 {
 	restartRand();
-	return makeMeshNode(mesh_data(false, false, false, primitive, normals, uvs, 100));
+	return makeMeshNode(mesh_data(false, false, false, primitive, normals, uvs, 100, ""));
 }
 
 std::vector<repo::lib::RepoVector3D> repo::test::utils::mesh::makeVertices(int num)
@@ -327,7 +509,8 @@ repo::test::utils::mesh::mesh_data::mesh_data(
 	int faceSize,
 	bool normals,
 	int numUvChannels,
-	int numVertices
+	int numVertices,
+	std::string grouping
 )
 {
 	if (name) {
@@ -382,6 +565,8 @@ repo::test::utils::mesh::mesh_data::mesh_data(
 	this->boundingBox.push_back({
 		max.x, max.y, max.z
 		});
+
+	this->grouping = grouping;
 }
 
 repo::lib::RepoMatrix repo::test::utils::mesh::makeTransform(bool translation, bool rotation)
@@ -417,6 +602,7 @@ void repo::test::utils::mesh::compareMeshNode(mesh_data expected, MeshNode actua
 	{
 		EXPECT_THAT(actual.getUVChannelsSeparated()[i], ElementsAreArray(expected.uvChannels[i]));
 	}
+	EXPECT_EQ(actual.getGrouping(), expected.grouping);
 }
 
 float repo::test::utils::mesh::hausdorffDistance(const std::vector<repo::core::model::MeshNode>& meshes)

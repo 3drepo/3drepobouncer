@@ -707,7 +707,7 @@ TEST(RepoClientTest, UnicodeFilenames)
 	EXPECT_TRUE(projectIsPopulated("unicodeImport", "ifc"));
 
 	/*
-	* Synchro does not support Unicode filenames. This is a known issue,
+	* Synchro does not support Unicode filenames on Windows. This is a known issue,
 	* https://github.com/3drepo/SynchroReader/issues/16/
 	* but is low priority because the Linux versions of the plugins do.
 	*/

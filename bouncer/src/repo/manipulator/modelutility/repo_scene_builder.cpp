@@ -192,6 +192,19 @@ std::shared_ptr<T> RepoSceneBuilder::addNode(const T& node)
 
 void RepoSceneBuilder::addNode(std::unique_ptr<repo::core::model::RepoNode> node)
 {
+
+	// If it is a mesh node, we need to handle materials and textures
+	auto meshNode = dynamic_cast<repo::core::model::MeshNode*>(node.get());
+	if (meshNode) {
+		auto material = meshNode->getMaterial();
+		addMaterialReference(material, meshNode->getSharedID());
+
+		if (material.hasTexture()) {
+			if(textureToUniqueId.find(material.texturePath) != textureToUniqueId.end())
+				meshNode->setTextureId(textureToUniqueId[material.texturePath]);
+		}
+	}
+
 	node->setRevision(revisionId);
 	queueNode(node.release());
 }
@@ -319,7 +332,7 @@ void RepoSceneBuilder::addParent(repo::lib::RepoUUID nodeUniqueId, repo::lib::Re
 
 	if (parentUpdates.find(nodeUniqueId) != parentUpdates.end())
 	{
-		parentUpdates[nodeUniqueId]->parentIds.push_back(parentSharedId);
+		parentUpdates[nodeUniqueId]->parentIds.insert(parentSharedId);
 	}
 	else
 	{
@@ -355,11 +368,14 @@ repo::manipulator::modelconvertor::ModelUnits RepoSceneBuilder::getUnits()
 void RepoSceneBuilder::createIndexes()
 {
 	using namespace repo::core::handler::database::index;
-	handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, Descending({ REPO_NODE_REVISION_LABEL_TIMESTAMP }));
-	handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ REPO_NODE_REVISION_ID, "metadata.key", "metadata.value" }));
-	handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ "metadata.key", "metadata.value" }));
-	handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ REPO_NODE_REVISION_ID, REPO_NODE_LABEL_SHARED_ID, REPO_LABEL_TYPE }));
-	handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ REPO_NODE_LABEL_SHARED_ID }));
+	auto historyCollection = projectName + "." + REPO_COLLECTION_HISTORY;
+	auto sceneCollection = projectName + "." + REPO_COLLECTION_SCENE;
+
+	handler->createIndex(databaseName, historyCollection, Descending({ REPO_NODE_REVISION_LABEL_TIMESTAMP }));
+	handler->createIndex(databaseName, sceneCollection, Ascending({ REPO_NODE_REVISION_ID, "metadata.key", "metadata.value" }));
+	handler->createIndex(databaseName, sceneCollection, Ascending({ "metadata.key", "metadata.value" }));
+	handler->createIndex(databaseName, sceneCollection, Ascending({ REPO_NODE_REVISION_ID, REPO_NODE_LABEL_SHARED_ID, REPO_LABEL_TYPE }));
+	handler->createIndex(databaseName, sceneCollection, Ascending({ REPO_NODE_LABEL_SHARED_ID }));	
 }
 
 RepoSceneBuilder::AsyncImpl::AsyncImpl(RepoSceneBuilder* builder):

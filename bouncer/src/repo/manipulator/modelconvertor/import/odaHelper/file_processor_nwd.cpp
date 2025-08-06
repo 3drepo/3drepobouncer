@@ -73,6 +73,8 @@ uint8_t FileProcessorNwd::readFile()
 {
 	int nRes = REPOERR_OK;
 
+	// When running under 3drepobouncerClient, create a set of system services on demand
+	// for this one invocation. This is a workaround for a bug. See header for details.
 	bool shouldDeInitialise = createSharedSystemServices();
 	OdRxModule* pModule = ::odrxDynamicLinker()->loadModule(sNwDbModuleName, false);
 	try

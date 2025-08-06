@@ -23,52 +23,79 @@
 #include <limits>
 #include <unordered_set>
 #include <test/src/unit/repo_test_mesh_utils.h>
+#include <test/src/unit/repo_test_database_info.h>
+#include <repo/manipulator/modelutility/repo_scene_builder.h>
 
 using namespace repo::test::utils::mesh;
 using namespace repo::manipulator::modelutility;
 using namespace repo::manipulator::modeloptimizer;
+
+#define DBMESHMAPREORGANISERTEST "meshMapReorganiserTest"
 
 TEST(MeshMapReorganiser, VeryLargeMesh)
 {
 	// This snippet creates a Supermesh using the Multipart Optimizer
 
 	auto opt = MultipartOptimizer();
-	auto root = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode());
-	auto rootID = root->getSharedID();
-	repo::core::model::RepoNodeSet meshes, trans;
-	trans.insert(root);
-	meshes.insert(createRandomMesh(327890, false, 3, { rootID }));
-	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, {}, {}, {}, trans);
-	opt.apply(scene);
 
-	auto supermesh = (repo::core::model::SupermeshNode*)*scene->getAllSupermeshes(repo::core::model::RepoScene::GraphType::OPTIMIZED).begin();
+	auto handler = getHandler();
+	std::string database = DBMESHMAPREORGANISERTEST;
+	std::string projectName = "VeryLargeMesh";
+	auto revId = repo::lib::RepoUUID::createUUID();
 
+	auto sceneBuilder = repo::manipulator::modelutility::RepoSceneBuilder(handler, database, projectName, revId);
+
+	auto rootNode = repo::core::model::RepoBSONFactory::makeTransformationNode({}, "rootNode", {});
+	sceneBuilder.addNode(rootNode);
+	auto rootNodeId = rootNode.getSharedID();
+
+	sceneBuilder.addNode(createRandomMesh(327890, false, 3, "", { rootNodeId }));
+	
+	sceneBuilder.finalise();
+
+	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
+
+	bool result = opt.processScene(
+		database,
+		projectName,
+		revId,
+		handler.get(),
+		mockExporter.get()
+	);
+
+	EXPECT_TRUE(result);
+
+	EXPECT_TRUE(mockExporter->isFinalised());
+
+	EXPECT_EQ(mockExporter->getSupermeshCount(), 1);
+	
 	// Check our test data - the supermesh at this stage should have one, large mapping.
-	EXPECT_EQ(supermesh->getMeshMapping().size(), 1);
+	auto supermesh = mockExporter->getSupermeshes()[0];
+	EXPECT_EQ(supermesh.getMeshMapping().size(), 1);
 
-	MeshMapReorganiser reSplitter(supermesh, 65536, SIZE_MAX);
+	MeshMapReorganiser reSplitter(&supermesh, 65536, SIZE_MAX);
 
 	auto remapped = reSplitter.getRemappedMesh();
 
 	// Check that the primitive has been preserved
-	EXPECT_EQ(remapped.getPrimitive(), supermesh->getPrimitive());
+	EXPECT_EQ(remapped->getPrimitive(), supermesh.getPrimitive());
 
 	// Check that the submesh ids have been preserved. Though the supermesh
 	// will be split into chunks, there should only be one submesh id as there
 	// aren't multiple elements.
 
-	auto ids = remapped.getSubmeshIds();
+	auto ids = remapped->getSubmeshIds();
 	auto end = std::unique(ids.begin(), ids.end());
 	auto count = end - ids.begin();
 	EXPECT_EQ(count, 1);
 
 	// The supermesh should be split into six chunks (with the same submesh ids)
 
-	EXPECT_EQ(remapped.getMeshMapping().size(), 6);
+	EXPECT_EQ(remapped->getMeshMapping().size(), 6);
 
 	// Mapping ids should be identities
 
-	for (auto m : remapped.getMeshMapping())
+	for (auto m : remapped->getMeshMapping())
 	{
 		EXPECT_TRUE(m.mesh_id.isDefaultValue());
 		EXPECT_TRUE(m.material_id.isDefaultValue());
@@ -80,7 +107,7 @@ TEST(MeshMapReorganiser, VeryLargeMesh)
 
 	auto splitMapping = reSplitter.getSplitMapping();
 	EXPECT_EQ(splitMapping.size(), 1);
-	auto originalId = supermesh->getMeshMapping()[0].mesh_id;
+	auto originalId = supermesh.getMeshMapping()[0].mesh_id;
 	auto usageIt = splitMapping.find(originalId);
 	EXPECT_FALSE(usageIt == splitMapping.end());
 	auto usage = usageIt->second;
@@ -93,32 +120,57 @@ TEST(MeshMapReorganiser, MultipleTinyMeshes)
 	// This snippet creates a Supermesh using the Multipart Optimizer
 
 	auto opt = MultipartOptimizer();
-	auto root = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode());
-	auto rootID = root->getSharedID();
-	repo::core::model::RepoNodeSet meshes, trans;
-	trans.insert(root);
 
+	auto handler = getHandler();
+	std::string database = DBMESHMAPREORGANISERTEST;
+	std::string projectName = "InterleavedMixedSplit";
+	auto revId = repo::lib::RepoUUID::createUUID();
+
+	auto sceneBuilder = repo::manipulator::modelutility::RepoSceneBuilder(handler, database, projectName, revId);
+
+	auto rootNode = repo::core::model::RepoBSONFactory::makeTransformationNode({}, "rootNode", {});
+	sceneBuilder.addNode(rootNode);
+	auto rootNodeId = rootNode.getSharedID();
+		
 	const int NUM_SUBMESHES = 789;
 	const int NUM_VERTICES = 256;
-
+		
+	std::vector<repo::lib::RepoUUID> meshIds;
 	for (int i = 0; i < NUM_SUBMESHES; i++)
 	{
-		meshes.insert(createRandomMesh(NUM_VERTICES, false, 3, { rootID }));
+		auto node = createRandomMesh(NUM_VERTICES, false, 3, "", { rootNodeId });
+		meshIds.push_back(node->getUniqueID());
+		sceneBuilder.addNode(std::move(node));
 	}
 
-	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, {}, {}, {}, trans);
-	opt.apply(scene);
+	sceneBuilder.finalise();
 
-	auto supermesh = (repo::core::model::SupermeshNode*)*scene->getAllSupermeshes(repo::core::model::RepoScene::GraphType::OPTIMIZED).begin();
+	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
+
+	bool result = opt.processScene(
+		database,
+		projectName,
+		revId,
+		handler.get(),
+		mockExporter.get()
+	);
+
+	EXPECT_TRUE(result);
+
+	EXPECT_TRUE(mockExporter->isFinalised());
+
+	EXPECT_EQ(mockExporter->getSupermeshCount(), 1);
 
 	// Check our test data - the supermesh at this stage should have one, large mapping.
-	EXPECT_EQ(supermesh->getMeshMapping().size(), NUM_SUBMESHES);
+	auto supermesh = mockExporter->getSupermeshes()[0];
+	
+	EXPECT_EQ(supermesh.getMeshMapping().size(), NUM_SUBMESHES);
 
-	MeshMapReorganiser reSplitter(supermesh, 65536, SIZE_MAX);
+	MeshMapReorganiser reSplitter(&supermesh, 65536, SIZE_MAX);
 
 	auto remapped = reSplitter.getRemappedMesh();
 
-	auto ids = remapped.getSubmeshIds();
+	auto ids = remapped->getSubmeshIds();
 	auto end = std::unique(ids.begin(), ids.end());
 	auto count = end - ids.begin();
 	EXPECT_EQ(count, NUM_SUBMESHES);
@@ -126,11 +178,11 @@ TEST(MeshMapReorganiser, MultipleTinyMeshes)
 	// The supermesh should be split into two chunks (with the same submesh ids)
 
 	auto expectedSplit = ceil((NUM_SUBMESHES * NUM_VERTICES) / 65536.0f);
-	EXPECT_EQ(remapped.getMeshMapping().size(), expectedSplit);
+	EXPECT_EQ(remapped->getMeshMapping().size(), expectedSplit);
 
 	// Mapping ids should be identities
 
-	for (auto m : remapped.getMeshMapping())
+	for (auto m : remapped->getMeshMapping())
 	{
 		EXPECT_TRUE(m.mesh_id.isDefaultValue());
 		EXPECT_TRUE(m.material_id.isDefaultValue());
@@ -147,9 +199,9 @@ TEST(MeshMapReorganiser, MultipleTinyMeshes)
 
 	std::unordered_set<int> usages;
 
-	for (auto m : meshes)
+	for (auto id : meshIds)
 	{
-		auto split = splitMapping.find(m->getUniqueID());
+		auto split = splitMapping.find(id);
 
 		// Every original mesh id should be present in the split mappings
 		EXPECT_TRUE(split != splitMapping.end());
@@ -172,34 +224,69 @@ TEST(MeshMapReorganiser, InterleavedMixedSplit)
 	// that will need to be split.
 
 	auto opt = MultipartOptimizer();
-	auto root = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode());
-	auto rootID = root->getSharedID();
-	repo::core::model::RepoNodeSet meshes, trans;
-	trans.insert(root);
 
-	meshes.insert(createRandomMesh(129, false, 3, { rootID }));
-	meshes.insert(createRandomMesh(65537, false, 3, { rootID }));
-	meshes.insert(createRandomMesh(1341, false, 3, { rootID }));
-	meshes.insert(createRandomMesh(68, false, 3, { rootID }));
-	meshes.insert(createRandomMesh(80000, false, 3, { rootID }));
-	meshes.insert(createRandomMesh(17981, false, 3, { rootID }));
+	auto handler = getHandler();
+	std::string database = DBMESHMAPREORGANISERTEST;
+	std::string projectName = "InterleavedMixedSplit";
+	auto revId = repo::lib::RepoUUID::createUUID();
 
+	auto sceneBuilder = repo::manipulator::modelutility::RepoSceneBuilder(handler, database, projectName, revId);
+	
+	auto rootNode = repo::core::model::RepoBSONFactory::makeTransformationNode({}, "rootNode", {});
+	sceneBuilder.addNode(rootNode);
+	auto rootNodeId = rootNode.getSharedID();
+		
+	auto randNode1 = createRandomMesh(129, false, 3, "", { rootNodeId });
+	auto randNode2 = createRandomMesh(65537, false, 3, "", { rootNodeId });
+	auto randNode3 = createRandomMesh(1341, false, 3, "", { rootNodeId });
+	auto randNode4 = createRandomMesh(68, false, 3, "", { rootNodeId });
+	auto randNode5 = createRandomMesh(80000, false, 3, "", { rootNodeId });
+	auto randNode6 = createRandomMesh(17981, false, 3, "", { rootNodeId });
+	
+	std::vector<repo::lib::RepoUUID> meshIds;
+	meshIds.push_back(randNode1->getUniqueID());
+	meshIds.push_back(randNode2->getUniqueID());
+	meshIds.push_back(randNode3->getUniqueID());
+	meshIds.push_back(randNode4->getUniqueID());
+	meshIds.push_back(randNode5->getUniqueID());
+	meshIds.push_back(randNode6->getUniqueID());
+
+	sceneBuilder.addNode(std::move(randNode1));
+	sceneBuilder.addNode(std::move(randNode2));
+	sceneBuilder.addNode(std::move(randNode3));
+	sceneBuilder.addNode(std::move(randNode4));
+	sceneBuilder.addNode(std::move(randNode5));
+	sceneBuilder.addNode(std::move(randNode6));
+
+	sceneBuilder.finalise();
+
+	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
+
+	bool result = opt.processScene(
+		database,
+		projectName,
+		revId,
+		handler.get(),
+		mockExporter.get()
+	);
+
+	EXPECT_TRUE(result);
+
+	EXPECT_TRUE(mockExporter->isFinalised());
+
+	EXPECT_EQ(mockExporter->getSupermeshCount(), 1);
+		
+	// Check our test data	
+	auto supermesh = mockExporter->getSupermeshes()[0];
+	
 	const int NUM_SUBMESHES = 6;
+	EXPECT_EQ(supermesh.getMeshMapping().size(), NUM_SUBMESHES);
 
-	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene({}, meshes, {}, {}, {}, trans);
-	opt.apply(scene);
-
-	auto supermesh = (repo::core::model::SupermeshNode*)*scene->getAllSupermeshes(repo::core::model::RepoScene::GraphType::OPTIMIZED).begin();
-
-	// Check our test data
-
-	EXPECT_EQ(supermesh->getMeshMapping().size(), NUM_SUBMESHES);
-
-	MeshMapReorganiser reSplitter(supermesh, 65536, SIZE_MAX);
+	MeshMapReorganiser reSplitter(&supermesh, 65536, SIZE_MAX);
 
 	auto remapped = reSplitter.getRemappedMesh();
 
-	auto splits = remapped.getMeshMapping();
+	auto splits = remapped->getMeshMapping();
 
 	// Mapping ids should be identities
 
@@ -210,7 +297,7 @@ TEST(MeshMapReorganiser, InterleavedMixedSplit)
 		EXPECT_TRUE(m.shared_id.isDefaultValue());
 	}
 
-	auto ids = remapped.getSubmeshIds();
+	auto ids = remapped->getSubmeshIds();
 	auto end = std::unique(ids.begin(), ids.end());
 	auto count = end - ids.begin();
 	EXPECT_EQ(count, NUM_SUBMESHES);
@@ -222,9 +309,9 @@ TEST(MeshMapReorganiser, InterleavedMixedSplit)
 	EXPECT_EQ(splitMapping.size(), NUM_SUBMESHES);
 
 	std::unordered_set<int> usages;
-	for (auto m : meshes)
+	for (auto id : meshIds)
 	{
-		auto split = splitMapping.find(m->getUniqueID());
+		auto split = splitMapping.find(id);
 
 		// Every original mesh id should be present in the split mappings
 		EXPECT_TRUE(split != splitMapping.end());

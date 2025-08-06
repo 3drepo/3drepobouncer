@@ -5,7 +5,6 @@
 
 
 add_subdirectory(odaHelper)
-add_subdirectory(rapidjson)
 add_subdirectory(repoHelper)
 set(SOURCES
 	${SOURCES}

@@ -18,7 +18,7 @@
 #pragma once
 
 #include "repo/lib/datastructure/repo_structs.h"
-#include "../rapidjson/reader.h"
+#include "repo/manipulator/modelutility/rapidjson/reader.h"
 
 namespace repo {
 	namespace manipulator {

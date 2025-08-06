@@ -22,6 +22,7 @@
 #include "repo_query_fwd.h"
 
 #include <vector>
+#include <set>
 #include <string>
 #include <memory>
 #include <variant>
@@ -149,6 +150,12 @@ namespace repo {
 					public:
 						AddParent(const repo::lib::RepoUUID& uniqueId, std::vector<repo::lib::RepoUUID> parentIds) :
 							uniqueId(uniqueId),
+							parentIds(parentIds.begin(), parentIds.end())
+						{
+						}
+
+						AddParent(const repo::lib::RepoUUID& uniqueId, std::set<repo::lib::RepoUUID> parentIds) :
+							uniqueId(uniqueId),
 							parentIds(parentIds)
 						{
 						}
@@ -160,9 +167,27 @@ namespace repo {
 						}
 
 						repo::lib::RepoUUID uniqueId;
-						std::vector<repo::lib::RepoUUID> parentIds;
+						std::set<repo::lib::RepoUUID> parentIds;
 					};
 
+					/*
+					 * Convenience type to build a projection in multiple stages.
+					 */
+					class REPO_API_EXPORT RepoProjectionBuilder
+					{
+					public:
+						
+						void includeField(std::string field) {
+							includedFields.push_back(field);
+						};
+
+						void excludeField(std::string field) {
+							excludedFields.push_back(field);
+						}
+
+						std::vector<std::string> includedFields;
+						std::vector<std::string> excludedFields;
+					};
 				}
 
 				namespace index

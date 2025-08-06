@@ -25,12 +25,14 @@ namespace testing {
 	class SceneUtils
 	{
 	public:
-		repo::core::model::RepoScene* scene;
+		const repo::core::model::RepoScene* scene;
 
-		SceneUtils(repo::core::model::RepoScene* scene) :
+		SceneUtils(const repo::core::model::RepoScene* scene) :
 			scene(scene)
 		{
 		}
+
+		using Filter = std::initializer_list<repo::core::model::NodeType>;
 
 		struct NodeInfo
 		{
@@ -60,12 +62,14 @@ namespace testing {
 
 			NodeInfo getParent() const;
 
+			std::vector<NodeInfo> getParents(Filter parents) const;
+
 			SceneUtils* scene;
 			repo::core::model::RepoNode* node;
 
-			std::vector<NodeInfo> getChildren()
+			std::vector<NodeInfo> getChildren(Filter children)
 			{
-				return scene->getChildNodes(node, true);
+				return scene->getChildNodes(node, children);
 			}
 
 			/* Names of all children (excluding metadata); children that don't
@@ -77,15 +81,21 @@ namespace testing {
 
 			std::vector<NodeInfo> getMeshes(repo::core::model::MeshNode::Primitive);
 
+			std::vector<NodeInfo> getMeshesRecursive();
+
 			repo::core::model::MeshNode getMeshInProjectCoordinates();
 
 			std::vector<repo::core::model::MeshNode> getMeshesInProjectCoordinates();
 
 			std::vector<NodeInfo> getTextures();
 
+			std::vector<NodeInfo> getSiblings(Filter parents, Filter siblings);
+
 			bool hasTextures();
 
 			std::unordered_map<std::string, repo::lib::RepoVariant> getMetadata();
+
+			std::vector<NodeInfo> getMetadataNodes();
 
 			repo::lib::repo_material_t getMaterial();
 
@@ -98,23 +108,47 @@ namespace testing {
 			bool hasTransparency();
 
 			std::string getPath() const;
+
+			repo::lib::RepoUUID getUniqueId() const
+			{
+				return node->getUniqueID();
+			}
+
+			repo::lib::RepoUUID getSharedId() const
+			{
+				return node->getSharedID();
+			}
+
+            bool operator==(const NodeInfo& other) const
+            {
+				return node->getUniqueID() == other.node->getUniqueID();
+            }
+
+            bool operator!=(const NodeInfo& other) const
+            {
+				return !(*this == other);
+            }
 		};
 
 		std::vector<NodeInfo> findNodesByMetadata(std::string key, std::string value);
 		NodeInfo findNodeByMetadata(std::string key, std::string value);
 		NodeInfo findTransformationNodeByName(std::string name);
 		NodeInfo findLeafNode(std::string name);
+		NodeInfo findNodeByUniqueId(repo::lib::RepoUUID uniqueId);
 		std::vector<NodeInfo> findLeafNodes(std::string name);
 		std::vector<NodeInfo> findTransformationNodesByName(std::string name);
-		std::vector<NodeInfo> getChildNodes(repo::core::model::RepoNode* node, bool ignoreMeta);
-		std::vector<NodeInfo> getParentNodes(repo::core::model::RepoNode* node);
+		std::vector<NodeInfo> getChildNodes(repo::core::model::RepoNode* node, Filter filter);
+		std::vector<NodeInfo> getParentNodes(repo::core::model::RepoNode* node, Filter filter);
 		std::vector<NodeInfo> getMeshes();
+		std::vector<NodeInfo> getTransformations();
+		std::vector<NodeInfo> getMetadataNodes();
+		std::vector<NodeInfo> getReferenceNodes();
 		repo::lib::RepoMatrix getWorldTransform(repo::core::model::RepoNode* node);
 		NodeInfo getNodeInfo(repo::core::model::RepoNode* node);
 		NodeInfo getRootNode();
+		std::string getTeamspaceName();
+		std::string getContainerName();
 
 		bool isPopulated();
 	};
-
-	
 }

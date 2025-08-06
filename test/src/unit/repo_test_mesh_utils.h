@@ -22,6 +22,10 @@
 
 #include <boost/functional/hash.hpp>
 #include <repo/core/model/bson/repo_node_mesh.h>
+#include <repo/manipulator/modelconvertor/export/repo_model_export_abstract.h>
+#include <repo/core/handler/database/repo_query.h>
+#include <repo/core/handler/fileservice/repo_data_ref.h>
+#include <repo/core/handler/fileservice/repo_blob_files_handler.h>
 
 namespace repo {
 	namespace test {
@@ -42,7 +46,8 @@ namespace repo {
 						int faceSize,
 						bool normals,
 						int numUvChannels,
-						int numVertices
+						int numVertices,
+						std::string grouping
 					);
 
 					std::string name;
@@ -54,6 +59,7 @@ namespace repo {
 					std::vector<repo::lib::repo_face_t> faces;
 					std::vector<repo::lib::RepoVector3D> normals;
 					std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
+					std::string grouping;
 				};
 
 				struct GenericFace
@@ -90,14 +96,55 @@ namespace repo {
 					}
 				};
 
+				// Dummy exporter to catch geometry produced by the multipart optimizer
+				class TestModelExport : public repo::manipulator::modelconvertor::AbstractModelExport
+				{
+				public:
+					TestModelExport(
+						repo::core::handler::AbstractDatabaseHandler *dbHandler,
+						const std::string databaseName,
+						const std::string projectName,
+						const repo::lib::RepoUUID revId,
+						const std::vector<double> worldOffset
+					) : AbstractModelExport(dbHandler, databaseName, projectName, revId, worldOffset)
+					{						
+					}
+
+					void addSupermesh(repo::core::model::SupermeshNode* supermesh) {
+						supermeshNodes.push_back(*supermesh);
+					}
+
+					void finalise() {
+						finalised = true;
+						// Do nothing else
+					};
+
+					bool isFinalised() {
+						return finalised;
+					};
+
+					std::vector<repo::core::model::SupermeshNode> getSupermeshes() {
+						return supermeshNodes;
+					};
+
+					int getSupermeshCount() {
+						return supermeshNodes.size();
+					};
+
+				private:
+					bool finalised = false;
+					std::vector<repo::core::model::SupermeshNode> supermeshNodes;
+				};
+
 				/**
 				* Builds a triangle soup MeshNode with exactly nVertices, and faces
 				* constructed such that each vertex is referenced at least once.
 				*/
-				repo::core::model::MeshNode* createRandomMesh(
+				std::unique_ptr<repo::core::model::MeshNode> createRandomMesh(
 					const int nVertices,
 					const bool hasUV,
 					const int primitiveSize,
+					const std::string grouping,
 					const std::vector<repo::lib::RepoUUID>& parent);
 
 				/*
@@ -105,12 +152,32 @@ namespace repo {
 				* hulls are identical.
 				*/
 				bool compareMeshes(
-					repo::core::model::RepoNodeSet original,
-					repo::core::model::RepoNodeSet stash);
+					std::string database,
+					std::string projectName,
+					repo::lib::RepoUUID revId,
+					TestModelExport* mockExporter
+				);
+
+				std::vector<GenericFace> getFacesFromDatabase(
+					std::string database,
+					std::string projectName,
+					repo::lib::RepoUUID revId
+				);
+
+				std::vector<GenericFace> getFacesFromMockExporter(
+					TestModelExport* mockExporter
+				);
 
 				void addFaces(
-					repo::core::model::MeshNode* mesh,
+					repo::core::model::MeshNode &mesh,
 					std::vector<GenericFace>& faces);
+
+				void addFaces(
+					const std::vector<repo::lib::RepoVector3D> &vertices,
+					const std::vector<repo::lib::RepoVector3D> &normals,
+					const std::vector<repo::lib::repo_face_t> &faces,
+					const std::vector < std::vector<repo::lib::RepoVector2D>>& uvChannels,
+					std::vector<GenericFace>& genericFaces);
 
 				/*
 				* Creates a RepoBSON for a MeshNode based on the mesh_data

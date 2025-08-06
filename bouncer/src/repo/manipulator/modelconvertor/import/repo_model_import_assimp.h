@@ -62,23 +62,16 @@ namespace repo {
 
 				static std::string getSupportedFormats();
 
-				/**
-				* Generates a repo scene graph
-				* an internal representation(aiscene) needs to have
-				* been created before this call
-				* @return returns a populated RepoScene upon success.
-				*/
-				repo::core::model::RepoScene* generateRepoScene(uint8_t &errMsg);
-
 				virtual bool requireReorientation() const;
 
 				/**
 				* Import model from a given file
 				* @param path to the file
+				* @param database handler
 				* @param error message if failed
-				* @return returns true upon success
+				* @return returns a populated RepoScene upon success
 				*/
-				bool importModel(std::string filePath, uint8_t &errMsg);
+				repo::core::model::RepoScene* importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t &errMsg);
 
 				/**
 				* Attempts to convert the assimp metadata entry into a RepoVariant
@@ -122,6 +115,7 @@ namespace repo {
 					const std::vector<repo::core::model::RepoNode *> &materials,
 					std::unordered_map < repo::core::model::RepoNode*, std::vector<repo::lib::RepoUUID>> &matMap,
 					const bool hasTexture,
+					const repo::lib::RepoUUID& texId,
 					const std::vector<double> &offset);
 
 				/**

@@ -74,9 +74,20 @@ namespace repo {
 					 */
 					template<typename IdType>
 					std::vector<uint8_t> getFile(
+						const std::string& databaseName,
+						const std::string& collectionNamePrefix,
+						const IdType& id						
+					);
+
+					/**
+					 * Get the file base on the the ref entry in database
+					 */
+					template<typename IdType>
+					std::vector<uint8_t> getFile(
 						const std::string                            &databaseName,
 						const std::string                            &collectionNamePrefix,
-						const IdType                                 &id
+						const IdType                                 &id,
+						const Encoding								 &encoding
 					);
 
 					/**
@@ -117,16 +128,6 @@ namespace repo {
 					);
 
 				private:
-					/**
-					 * Cleans given filename by removing teamspace and model strings.
-					 * e.g. cleanFileName("/teamspaceA/modelB/file.obj")
-					 *        => "file.obj"
-					 *      cleanFileName("/teamspaceA/modelB/revision/revC/file.obj")
-					 *        => "revC/file.obj"
-					 */
-					std::string cleanFileName(
-						const std::string &fileName);
-
 					/**
 					 * Remove ref entry for file to database.
 					 */

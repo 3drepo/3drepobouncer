@@ -26,6 +26,7 @@
 #include "../../../../../repo_test_database_info.h"
 #include "../../../../../repo_test_scene_utils.h"
 #include "../../../../../repo_test_matchers.h"
+#include "../../../../../repo_test_common_tests.h"
 #include "repo/manipulator/modelconvertor/import/odaHelper/file_processor_nwd.h"
 
 using namespace repo::manipulator::modelconvertor;
@@ -131,7 +132,7 @@ TEST_F(NwdTestSuite, Sample2025NWDTree)
 	nodes = utils.findTransformationNodesByName("Wall-Ext_102Bwk-75Ins-100LBlk-12P");
 	EXPECT_THAT(nodes.size(), Eq(1));
 
-	auto children = nodes[0].getChildren();
+	auto children = nodes[0].getChildren({repo::core::model::NodeType::MESH, repo::core::model::NodeType::TRANSFORMATION});
 	EXPECT_THAT(children.size(), Eq(6));
 
 	for (auto n : children) {
@@ -409,10 +410,14 @@ TEST(ODAModelImport, DefaultViewVisibility)
 	// Transparency should work as well
 	EXPECT_THAT(door.hasTransparency(), IsTrue());
 
-	// Should include 3d geometry and lines
+	// Should include 3d geometry without edges
 	auto floorNode = utils.findNodeByMetadata("Element ID", "2928847");
 	EXPECT_THAT(floorNode.getMeshes(repo::core::model::MeshNode::Primitive::TRIANGLES), Not(IsEmpty()));
-	EXPECT_THAT(floorNode.getMeshes(repo::core::model::MeshNode::Primitive::LINES), Not(IsEmpty()));
+	EXPECT_THAT(floorNode.getMeshes(repo::core::model::MeshNode::Primitive::LINES), IsEmpty());
+
+	// The Lines model category should be treated as an annotation, and not
+	// processed
+	EXPECT_THAT(utils.findNodesByMetadata("Category", "Lines"), IsEmpty());
 }
 
 TEST(ODAModelImport, NamedView)
@@ -503,8 +508,7 @@ TEST(ODAModelImport, DefaultViewDisplayOptions)
 			"RevitNamedView"
 		);
 		config.targetUnits = ModelUnits::MILLIMETRES;
-
-		// Default (nothing or a string that doesn't match the others) is shaded with edges
+		config.viewStyle = "shadedwithedges";
 
 		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport(getDataPath("sample2025.rvt"), config));
 
@@ -520,13 +524,29 @@ TEST(ODAModelImport, DefaultViewDisplayOptions)
 			"RevitNamedView"
 		);
 		config.targetUnits = ModelUnits::MILLIMETRES;
-		config.viewStyle = "shaded";
+
+		// Default (empty string) is shaded
 
 		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport(getDataPath("sample2025.rvt"), config));
 
 		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::TRIANGLES).size(), Gt(0)); // Two textures and a flat surface
 		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::LINES).size(), Eq(0));
 		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").hasTextures(), IsTrue());
+	}
+
+	{
+		ModelImportConfig config(
+			repo::lib::RepoUUID::createUUID(),
+			TESTDB,
+			"RevitNamedView"
+		);
+		config.targetUnits = ModelUnits::MILLIMETRES;
+		config.viewStyle = "notsupported";
+
+		EXPECT_THROW({
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport(getDataPath("sample2025.rvt"), config));
+		},
+		repo::lib::RepoSceneProcessingException);
 	}
 
 	{
@@ -559,5 +579,54 @@ TEST(ODAModelImport, DefaultViewDisplayOptions)
 		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::TRIANGLES).size(), Eq(0)); // No textures means meshes are combined
 		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::LINES).size(), Gt(0));
 		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").hasTextures(), IsFalse());
+	}
+}
+
+TEST_F(NwdTestSuite, MetadataParentsNWD)
+{
+	// All metadata nodes must also have their sibling meshnodes as parents,
+	// in order to resolve ids by mesh node in the frontend
+
+	{
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport("MetadataParentsNWD", getDataPath(nwdModel2025)));
+		common::checkMetadataInheritence(scene);
+	}
+
+	{
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport("MetadataParentsNWD", getDataPath("groupsAndReferences.nwc")));
+		common::checkMetadataInheritence(scene);
+	}
+
+	{
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport("MetadataParentsNWD", getDataPath("orientedColumns.nwd")));
+		common::checkMetadataInheritence(scene);
+	}
+}
+
+TEST(ODAModelImport, MetadataParents)
+{
+	{
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport("MetadataParentsRVT", getDataPath("sample2025.rvt")));
+		common::checkMetadataInheritence(scene);
+	}
+
+	{
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport("MetadataParentsRVT", getDataPath("MetaTest2.rvt")));
+		common::checkMetadataInheritence(scene);
+	}
+
+	{
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport("MetadataParentsDWG", getDataPath("nestedBlocks.dwg")));
+		common::checkMetadataInheritence(scene);
+	}
+
+	{
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport("MetadataParentsDWG", getDataPath("colouredBoxes.dwg")));
+		common::checkMetadataInheritence(scene);
+	}
+
+	{
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport("MetadataParentsDGN", getDataPath("sample.dgn")));
+		common::checkMetadataInheritence(scene);
 	}
 }

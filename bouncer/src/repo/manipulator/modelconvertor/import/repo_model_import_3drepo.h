@@ -74,25 +74,13 @@ namespace repo {
 				virtual ~RepoModelImport();
 
 				/**
-				* Generates a repo scene graph
-				* an internal representation needs to have
-				* been created before this call (e.g. by means of importModel())
-				* @return returns a populated RepoScene upon success.
-				*/
-				virtual repo::core::model::RepoScene* generateRepoScene(uint8_t &errMsg);
-
-				/**
-				* Import model from a given file.
-				* Loads material nodes.
-				* This does not generate the Repo Scene Graph
-				* Use generateRepoScene() to generate a Repo Scene Graph.
+				* Import model from a given file.				
 				* @param path to the file
+				* @param database handler
 				* @param error message if failed
-				* @return returns true upon success
+				* @return returns a populated RepoScene upon success
 				*/
-				virtual bool importModel(std::string filePath, uint8_t &errMsg);
-
-				virtual bool importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& errMsg);
+				virtual repo::core::model::RepoScene* importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t &errMsg);
 			};
 		}
 	}

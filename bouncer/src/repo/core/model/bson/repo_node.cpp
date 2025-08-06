@@ -99,26 +99,35 @@ RepoNode::~RepoNode()
 
 NodeType RepoNode::getTypeAsEnum() const
 {
-	std::string type = getType();
+	return parseType(getType());
+}
 
-	NodeType enumType = NodeType::UNKNOWN;
-
-	if (REPO_NODE_TYPE_MATERIAL == type)
-		enumType = NodeType::MATERIAL;
-	else if (REPO_NODE_TYPE_MESH == type)
-		enumType = NodeType::MESH;
-	else if (REPO_NODE_TYPE_METADATA == type)
-		enumType = NodeType::METADATA;
-	else if (REPO_NODE_TYPE_REFERENCE == type)
-		enumType = NodeType::REFERENCE;
-	else if (REPO_NODE_TYPE_REVISION == type)
-		enumType = NodeType::REVISION;
-	else if (REPO_NODE_TYPE_TEXTURE == type)
-		enumType = NodeType::TEXTURE;
-	else if (REPO_NODE_TYPE_TRANSFORMATION == type)
-		enumType = NodeType::TRANSFORMATION;
-
-	return enumType;
+NodeType RepoNode::parseType(const std::string& nodeType)
+{
+	if (REPO_NODE_TYPE_TRANSFORMATION == nodeType) {
+		return repo::core::model::NodeType::TRANSFORMATION;
+	}
+	else if (REPO_NODE_TYPE_MESH == nodeType) {
+		return repo::core::model::NodeType::MESH;
+	}
+	else if (REPO_NODE_TYPE_MATERIAL == nodeType) {
+		return repo::core::model::NodeType::MATERIAL;
+	}
+	else if (REPO_NODE_TYPE_TEXTURE == nodeType) {
+		return repo::core::model::NodeType::TEXTURE;
+	}
+	else if (REPO_NODE_TYPE_REFERENCE == nodeType) {
+		return repo::core::model::NodeType::REFERENCE;
+	}
+	else if (REPO_NODE_TYPE_METADATA == nodeType) {
+		return repo::core::model::NodeType::METADATA;
+	}
+	else if (REPO_NODE_TYPE_REVISION == nodeType) {
+		return repo::core::model::NodeType::REVISION;
+	}
+	else {
+		return repo::core::model::NodeType::UNKNOWN;
+	}
 }
 
 bool RepoNode::sEqual(const RepoNode& other) const

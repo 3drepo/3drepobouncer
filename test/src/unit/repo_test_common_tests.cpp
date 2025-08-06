@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2024 3D Repo Ltd
+*  Copyright (C) 2025 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -15,29 +15,32 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "repo_test_common_tests.h"
+
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest-matchers.h>
-#include <iomanip>
-#include <ctime>
 
-#include "repo_test_matchers.h"
-#include "repo/core/model/bson/repo_bson.h"
-
-using namespace repo::core::model;
 using namespace testing;
+using namespace testing::common;
 
-void repo::core::model::PrintTo(const repo::core::model::RepoBSON& point, std::ostream* os)
+void testing::common::checkMetadataInheritence(SceneUtils& scene)
 {
-	*os << point.toString();
-}
+	for (auto& metadata : scene.getMetadataNodes())
+	{
+		auto meshParents = metadata.getParents({ repo::core::model::NodeType::MESH });
 
-bool operator== (tm a, tm b)
-{
-	return difftime(std::mktime(&a), std::mktime(&b)) == 0;
-}
+		for (auto& parent : metadata.getParents({ repo::core::model::NodeType::TRANSFORMATION }))
+		{
+			// When a metadata node is a child of transformation leaf node (i.e.
+			// with only unnamed meshes), it should also be a child of those mesh
+			// nodes.
 
-void operator<< (std::basic_ostream<char, std::char_traits<char>>& out, tm a)
-{
-	out << std::put_time(&a, "%d-%m-%Y %H-%M-%S");
+			if (parent.isLeaf())
+			{
+				auto meshSiblings = parent.getMeshes();
+				EXPECT_THAT(meshSiblings, IsSubsetOf(meshParents));
+			}
+		}
+	}
 }
