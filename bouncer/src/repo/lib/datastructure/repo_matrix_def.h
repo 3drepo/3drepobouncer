@@ -35,6 +35,16 @@ namespace repo {
 					0, 0, 0, 1 };
 			}
 
+			template<typename U, typename = std::enable_if_t<!std::is_same_v<T, U>>>
+			_RepoMatrix(const _RepoMatrix<U>& other)
+			{
+				data.resize(16);
+				const auto& o = other.getData();
+				for (size_t i = 0; i < data.size(); ++i) {
+					data[i] = static_cast<T>(o[i]);
+				}
+			}
+
 			_RepoMatrix(const std::vector<float> &mat)
 			{
 				data = { 1, 0, 0, 0,
