@@ -449,7 +449,7 @@ uint8_t FileProcessorRvt::readFile()
 		}
 		setTessellationParams(triParams);
 
-		OdBmDatabasePtr pDb = svcs.readFile(OdString(file.c_str()));
+		OdBmDatabasePtr pDb = svcs.readFile(getFilename());
 		if (!pDb.isNull())
 		{
 			// The 'drawing' object corresponds to a named entry in the 'Views' list in

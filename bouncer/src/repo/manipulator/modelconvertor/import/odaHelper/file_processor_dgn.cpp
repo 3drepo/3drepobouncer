@@ -91,8 +91,7 @@ repo::manipulator::modelconvertor::odaHelper::FileProcessorDgn::~FileProcessorDg
 }
 
 OdDgDatabasePtr FileProcessorDgn::initialiseOdDatabase() {
-	OdString fileSource = file.c_str();
-	return svcs.readFile(fileSource);
+	return svcs.readFile(getFilename());
 }
 
 ModelUnits FileProcessorDgn::determineModelUnits(const OdDgModel::UnitMeasure &units) {

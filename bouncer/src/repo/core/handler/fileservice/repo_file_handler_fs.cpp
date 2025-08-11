@@ -15,6 +15,7 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include <stdio.h>
+#include <filesystem>
 #include <boost/thread.hpp>
 #include <repo_log.h>
 #include "repo_file_handler_fs.h"
@@ -28,7 +29,7 @@ FSFileHandler::FSFileHandler(
 	const std::string &dir,
 	const int &nLevel) :
 	AbstractFileHandler(),
-	dirPath(dir),
+	dirPath(std::filesystem::u8path(dir)),
 	level(nLevel)
 {
 	if (!repo::lib::doesDirExist(dir)) {
@@ -51,7 +52,7 @@ bool FSFileHandler::deleteFile(
 {
 	bool success = false;
 
-	auto fullPath = boost::filesystem::absolute(keyName, dirPath);
+	auto fullPath = dirPath / keyName;
 	if (repo::lib::doesFileExist(fullPath)) {
 		auto fileStr = fullPath.string();
 		success = std::remove(fileStr.c_str()) == 0;
@@ -81,7 +82,7 @@ std::ifstream FSFileHandler::getFileStream(
 	const std::string          &collection,
 	const std::string          &keyName)
 {
-	auto fullPath = boost::filesystem::absolute(keyName, dirPath);
+	auto fullPath = dirPath / keyName;
 	if (repo::lib::doesFileExist(fullPath)) {
 		auto fileStr = fullPath.string();
 		std::ifstream stream(fileStr, std::ios::in | std::ios::binary);
@@ -95,7 +96,7 @@ std::ifstream FSFileHandler::getFileStream(
 std::string FSFileHandler::getFilePath(
 	const std::string& link)
 {
-	auto fullPath = boost::filesystem::absolute(link, dirPath);
+	auto fullPath = dirPath / link;
 	return fullPath.string();
 }
 
@@ -126,13 +127,13 @@ std::string FSFileHandler::uploadFile(
 {
 	auto hierachy = level > 0 ? determineHierachy(keyName) : std::vector<std::string>();
 
-	boost::filesystem::path path(dirPath);
+	auto path = dirPath;
 	std::stringstream ss;
 	for (const auto &levelName : hierachy) {
 		path /= levelName;
 		ss << levelName << "/";
 		if (!repo::lib::doesDirExist(path)) {
-			boost::filesystem::create_directories(path);
+			std::filesystem::create_directories(path);
 		}
 	}
 

@@ -15,7 +15,7 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <OdPlatformSettings.h>
 
 #include "vectorise_device_rvt.h"
@@ -183,7 +183,7 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 	repo::lib::toLower(pathStr);
 
 	std::replace(pathStr.begin(), pathStr.end(), '\\', '/');
-	auto texturePath = boost::filesystem::path(pathStr); // explictly store the value before calling make_preferred().
+	auto texturePath = std::filesystem::u8path(pathStr); // explictly store the value before calling make_preferred().
 	texturePath = texturePath.make_preferred();
 	if (repo::lib::doesFileExist(texturePath))
 		return texturePath.generic_string();
@@ -193,12 +193,12 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 	if (env.empty())
 		return std::string();
 
-	auto absolutePath = boost::filesystem::absolute(texturePath, env);
+	auto absolutePath = env / texturePath;
 	if (repo::lib::doesFileExist(absolutePath))
 		return absolutePath.generic_string();
 
 	// Sometimes the texture path has subdirectories like "./mat/1" remove it and see if we can find it.
-	auto altPath = boost::filesystem::absolute(texturePath.filename(), env);
+	auto altPath = env / texturePath.filename();
 	if (repo::lib::doesFileExist(altPath))
 		return altPath.generic_string();
 
