@@ -37,29 +37,42 @@ namespace repo {
 
 				using Bvh = bvh::Bvh<double>;
 
+				// Pipeline stages, such as a BVH traversal, often have to maintain a state.
+				// Therefore stages are implemented as functors, which can be created and
+				// re-used (per thread, where necessary).
+
+				struct Broadphase
+				{
+					virtual void operator()(const Bvh& a, const Bvh& b, std::vector<std::pair<int, int>>& results) = 0;
+				};
+
+				struct Narrowphase
+				{
+					// If the narrowphase functor returns true, it is passed to the append
+					// function.
+
+					virtual bool operator()(const repo::lib::RepoTriangle& a, const repo::lib::RepoTriangle& b) = 0;
+				};
+
 				// Tests may pass parameters between stages using subclasses of the following
 				// structs.
-
-				struct NarrowphaseResult
-				{
-				};
 
 				struct CompositeClash
 				{
 				};
 
-				struct UnorderedPair
+				// The clash engine will return composite object a on the left, and b on the
+				// right, always. Though it is good practice when matching the result
+				// downstream to ignore the order.
+
+				struct OrderedPair
 				{
 					repo::lib::RepoUUID a;
 					repo::lib::RepoUUID b;
 
-					UnorderedPair(const repo::lib::RepoUUID& a, const repo::lib::RepoUUID& b)
+					OrderedPair(const repo::lib::RepoUUID& a, const repo::lib::RepoUUID& b)
 						:a(a), b(b)
 					{
-						if(b < a)
-						{
-							std::swap(this->a, this->b);
-						}
 					}
 
 					size_t getHash() const
@@ -67,15 +80,15 @@ namespace repo {
 						return a.getHash() ^ b.getHash();
 					}
 
-					bool operator == (const UnorderedPair& other) const
+					bool operator == (const OrderedPair& other) const
 					{
 						return (a == other.a && b == other.b);
 					}
 				};
 
-				struct UnorderedPairHasher
+				struct OrderedPairHasher
 				{
-					std::size_t operator()(const UnorderedPair& p) const
+					std::size_t operator()(const OrderedPair& p) const
 					{
 						return p.getHash();
 					}
@@ -91,23 +104,25 @@ namespace repo {
 					Pipeline(DatabasePtr, const repo::manipulator::modelutility::ClashDetectionConfig&);
 					ClashDetectionReport runPipeline();
 
-					virtual std::unique_ptr<NarrowphaseResult> createNarrowphaseResult() = 0;
-					virtual CompositeClash* createCompositeClash() = 0; // This needs to be typical pointer so it can be stored in the map below.
-
 					/*
 					* The broadphase test operates on BVHs. These may created at multiple
 					* levels of granularity, depending on the stage.
 					*/
-					virtual void broadphase(const Bvh& a, const Bvh& b, BroadphaseResults& results) const = 0;
-					virtual bool narrowphase(const repo::lib::RepoTriangle& a, const repo::lib::RepoTriangle& b, NarrowphaseResult&) const = 0;
-					virtual void append(CompositeClash& clash, const NarrowphaseResult& result) const = 0;
-					virtual void createClashReport(const UnorderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const = 0;
+					virtual std::unique_ptr<Broadphase> createBroadphase() const = 0;
+
+					virtual std::unique_ptr<Narrowphase> createNarrowphase() const = 0;
+
+					virtual CompositeClash* createCompositeClash() = 0; // This needs to be typical pointer so it can be stored in the map below.
+
+					virtual void append(CompositeClash& clash, const Narrowphase& result) const = 0;
+
+					virtual void createClashReport(const OrderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const = 0;
 
 				protected:
 					DatabasePtr handler;
 					const repo::manipulator::modelutility::ClashDetectionConfig& config;
 					RepoUUIDMap uniqueToCompositeId;
-					std::unordered_map<UnorderedPair, CompositeClash*, UnorderedPairHasher> clashes;
+					std::unordered_map<OrderedPair, CompositeClash*, OrderedPairHasher> clashes;
 				};
 			}
 		}

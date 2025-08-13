@@ -28,7 +28,6 @@
 #include <repo/core/model/bson/repo_node.h>
 #include <repo/core/model/bson/repo_node_mesh.h>
 #include <repo/core/model/bson/repo_node_transformation.h>
-#include <repo/core/model/bson/repo_node_streaming_mesh.h>
 
 #include <repo/manipulator/modeloptimizer/bvh/bvh.hpp>
 #include <repo/manipulator/modeloptimizer/bvh/sweep_sah_builder.hpp>
@@ -37,13 +36,18 @@ using namespace repo::lib;
 using namespace repo::manipulator::modelutility;
 using namespace repo::manipulator::modelutility::clash;
 
-using ContainerGroups = std::unordered_map<const repo::lib::Container*, std::vector<repo::lib::RepoUUID>>;
-using Bvh = bvh::Bvh<double>;
+#pragma optimize("", off)
 
+using ContainerGroups = std::unordered_map<repo::lib::Container*, std::vector<repo::lib::RepoUUID>>;
+using Bvh = bvh::Bvh<double>;
 
 static inline bvh::BoundingBox<double> operator*(const RepoMatrix64& matrix, const repo::lib::RepoBounds& bounds)
 {
-	throw std::exception("not implemented");
+	repo::lib::RepoBounds b(
+		matrix * bounds.min(),
+		matrix * bounds.max()
+	);
+	return *reinterpret_cast<bvh::BoundingBox<double>*>(&b);
 }
 
 struct Graph
@@ -75,9 +79,15 @@ struct Graph
 		builder.build(globalBounds, boundingBoxes.data(), centers.data(), boundingBoxes.size());
 	}
 
-	const sparse::Node& getNode(size_t bvhNodeIdx) const
+	sparse::Node& getNode(size_t primitive) const
 	{
-		return meshes[bvh.primitive_indices[bvh.nodes[bvhNodeIdx].first_child_or_primitive]];
+		// The const_cast removes the const qualifier from the node itself. It is
+		// important the vector doesn't change once initialised, as we don't want
+		// the memory layout to change while there are references to the nodes
+		// held. It is acceptable for the non-const members of the nodes themselves
+		// to change however.
+
+		return const_cast<sparse::Node&>(meshes[primitive]);
 	}
 };
 
@@ -90,15 +100,15 @@ class MeshNodeBvh : public Bvh
 public:
 	// This assumes the node has already been transformed into the correct
 	// coordinate system.
-	MeshNodeBvh(const repo::core::model::StreamingMeshNode& node)
+	MeshNodeBvh(const repo::core::model::MeshNode& node)
 		: Bvh(),
 		mesh(node)
 	{
 		auto boundingBoxes = std::vector<bvh::BoundingBox<double>>();
 		auto centers = std::vector<bvh::Vector3<double>>();
 
-		auto vertices = mesh.getLoadedVertices();
-		for (const auto& face : mesh.getLoadedFaces())
+		auto vertices = mesh.getVertices();
+		for (const auto& face : mesh.getFaces())
 		{
 			auto bbox = bvh::BoundingBox<double>::empty();
 			for (size_t i = 0; i < face.sides; i++) {
@@ -116,17 +126,15 @@ public:
 		builder.build(globalBounds, boundingBoxes.data(), centers.data(), boundingBoxes.size());
 	}
 
-	const repo::core::model::StreamingMeshNode& mesh;
+	const repo::core::model::MeshNode& mesh;
 
-	repo::lib::RepoTriangle getTriangle(int nodeIdx) const
+	repo::lib::RepoTriangle getTriangle(int primitive) const
 	{
-		auto node = nodes[nodeIdx];
-		auto primitive = primitive_indices[node.first_child_or_primitive];
-		auto& face = mesh.getLoadedFaces()[primitive];
+		auto& face = mesh.getFaces()[primitive];
 		if (face.sides < 3) {
 			throw std::runtime_error("Clash detection engine only supports Triangles.");
 		}
-		auto& vertices = mesh.getLoadedVertices();
+		auto& vertices = mesh.getVertices();
 		return repo::lib::RepoTriangle(
 			vertices[face[0]],
 			vertices[face[1]],
@@ -138,14 +146,14 @@ public:
 Graph createSceneGraph(
 	Pipeline::DatabasePtr handler, 
 	const std::vector<CompositeObject>& set, 
-	Pipeline::RepoUUIDMap uniqueToCompositeId)
+	Pipeline::RepoUUIDMap& uniqueToCompositeId)
 {
 	ContainerGroups containers;
 	for (auto& composite : set)
 	{
 		for (auto& mesh : composite.meshes)
 		{
-			containers[&mesh.container].push_back(mesh.uniqueId);
+			containers[mesh.container].push_back(mesh.uniqueId);
 			uniqueToCompositeId[mesh.uniqueId] = composite.id;
 		}
 	}
@@ -177,12 +185,15 @@ ClashDetectionReport Pipeline::runPipeline()
 	auto graphB = createSceneGraph(handler, config.setB, uniqueToCompositeId);
 
 	BroadphaseResults broadphaseResults;
-	broadphase(graphA.bvh, graphB.bvh, broadphaseResults);
+
+	auto broadphase = createBroadphase();
+
+	broadphase->operator()(graphA.bvh, graphB.bvh, broadphaseResults);
 
 	for (const auto& [aIndex, bIndex] : broadphaseResults)
 	{
-		const auto& a = graphA.getNode(aIndex);
-		const auto& b = graphB.getNode(bIndex);
+		auto& a = graphA.getNode(aIndex);
+		auto& b = graphB.getNode(bIndex);
 
 		// For now, we do the actual tests in Project Coordinates, even if the
 		// offset may be quite large.
@@ -191,29 +202,43 @@ ClashDetectionReport Pipeline::runPipeline()
 		// the matrices of the two nodes, then transforming the bounds of b by
 		// this. The reference for the final results would be a.
 
-		// Load the supermeshing data
+		// Load the binary data
 
-		// todo...
+		handler->loadBinaryBuffers(
+			a.container->teamspace,
+			a.container->container + "." + REPO_COLLECTION_SCENE,
+			a.mesh
+		);
+
+		handler->loadBinaryBuffers(
+			b.container->teamspace,
+			b.container->container + "." + REPO_COLLECTION_SCENE,
+			b.mesh
+		);
 
 		// Put the meshes in project coordinates
 
-		MeshNodeBvh bvhA(a.mesh);
-		MeshNodeBvh bvhB(b.mesh);
+		auto nodeA = repo::core::model::MeshNode(a.mesh);
+		nodeA.applyTransformation(a.matrix);
+		auto nodeB = repo::core::model::MeshNode(b.mesh);
+		nodeB.applyTransformation(b.matrix);
+
+		MeshNodeBvh bvhA(nodeA);
+		MeshNodeBvh bvhB(nodeB);
 
 		BroadphaseResults results;
-		broadphase(bvhA, bvhB, results);
+		broadphase->operator()(bvhA, bvhB, results);
+
+		auto narrowphase = createNarrowphase();
 
 		for (const auto& [aIndex, bIndex] : results)
 		{
-			auto c = createNarrowphaseResult();
-
-			if (narrowphase(
-				bvhA.getTriangle(aIndex),
-				bvhB.getTriangle(bIndex),
-				*c
-			))
+			if (narrowphase->operator()(
+					bvhA.getTriangle(aIndex),
+					bvhB.getTriangle(bIndex))
+				)
 			{
-				UnorderedPair pair(
+				OrderedPair pair(
 					uniqueToCompositeId[a.uniqueId],
 					uniqueToCompositeId[b.uniqueId]
 				);
@@ -225,9 +250,14 @@ ClashDetectionReport Pipeline::runPipeline()
 					it = clashes.emplace(pair, std::move(clash)).first;
 				}
 
-				append(*it->second, *c);
+				append(*it->second, *narrowphase);
 			}
 		}
+
+		// Unload the binaries
+
+		a.mesh.unloadBinaryBuffers();
+		b.mesh.unloadBinaryBuffers();
 	}
 
 	ClashDetectionReport report;
@@ -237,5 +267,8 @@ ClashDetectionReport Pipeline::runPipeline()
 		ClashDetectionResult r;
 		createClashReport(key, *clash, r);
 		delete clash;
+		report.clashes.push_back(std::move(r));
 	}
+
+	return report;
 }

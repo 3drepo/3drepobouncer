@@ -25,10 +25,13 @@
 #include <repo/core/model/bson/repo_bson.h>
 #include <repo/core/model/bson/repo_node.h>
 #include <repo/core/model/bson/repo_node_mesh.h>
+#include <repo/core/model/bson/repo_node_model_revision.h>
 #include <repo/core/model/bson/repo_node_transformation.h>
 #include <repo/core/model/bson/repo_node_streaming_mesh.h>
 
 using namespace repo::manipulator::modelutility::sparse;
+
+#pragma optimize ("", off)
 
 void SceneGraph::populate(
 	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
@@ -69,7 +72,7 @@ void SceneGraph::populate(
 		ids.clear();
 		auto cursor = handler->findCursorByCriteria(
 			container->teamspace,
-			container->container,
+			container->container + "." + REPO_COLLECTION_SCENE,
 			query,
 			projection);
 
@@ -77,28 +80,28 @@ void SceneGraph::populate(
 		{
 			repo::core::model::RepoNode node(bson);
 
+			// The sparse graph assumes a unidirectional tree.
+
+			std::vector<repo::lib::RepoUUID>* children = nullptr;
+			if (node.getParentIDs().size()) {
+				children = &parentToChild[node.getParentIDs()[0]];
+			}
+
 			auto type = bson.getStringField(REPO_NODE_LABEL_TYPE);
 			if (type == REPO_NODE_TYPE_TRANSFORMATION)
 			{
 				auto transform = repo::core::model::TransformationNode(bson);
 
-				// The sparse graph assumes a unidirectional tree.
-
-				std::vector<repo::lib::RepoUUID>* children = nullptr;
-				if (node.getParentIDs().size()) {
-					children = &parentToChild[node.getParentIDs()[0]];
-				}
-
 				// Transformations are always processed bottom-up, so we can
 				// pre-multiply
 
 				for (auto& uniqueId : parentToChild[node.getSharedID()]) {
-					auto& instance = nodes[node.getUniqueID()];
+					auto& instance = nodes[uniqueId];
 					instance.matrix = repo::lib::RepoMatrix64(transform.getTransMatrix()) * instance.matrix;
 
-					// Transforms are not stored in the sparse graph - instead, associate the
-					// premultiplied node with the current transforms parent, for when we get
-					// round to processing it.
+					// Transforms are not stored in the sparse graph - instead, make the
+					// pre-multiplied mesh node appear as if its the direct child of the
+					// next level up.
 
 					if (children) {
 						children->push_back(uniqueId);
@@ -115,6 +118,10 @@ void SceneGraph::populate(
 				instance.uniqueId = node.getUniqueID();
 				instance.matrix = repo::lib::RepoMatrix64();
 				instance.mesh = bson;
+
+				if (children) {
+					children->push_back(instance.uniqueId);
+				}
 			} 
 
 			for (auto& p : node.getParentIDs()) {
@@ -125,7 +132,22 @@ void SceneGraph::populate(
 		useSharedId = true;
 	}
 
-	// The final step is to premultiply the offset.
+	// The final step is to premultiply the world offset.
+
+	auto bson = handler->findOneByCriteria(
+		container->teamspace,
+		container->container + "." + REPO_COLLECTION_HISTORY,
+		repo::core::handler::database::query::Eq(REPO_NODE_LABEL_ID, container->revision)
+	);
+	repo::core::model::ModelRevisionNode history(bson);
+
+	auto offset = history.getCoordOffset();
+	auto rootTransform = repo::lib::RepoMatrix64::translate(offset);
+	for(auto& id : uniqueIds)
+	{
+		auto& node = nodes[id];
+		node.matrix = rootTransform * node.matrix;
+	}
 }
 
 void SceneGraph::getNodes(std::vector<Node>& nodes) const

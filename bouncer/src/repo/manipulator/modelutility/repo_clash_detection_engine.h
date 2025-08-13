@@ -60,8 +60,14 @@ namespace repo {
 
 			struct MeshReference
 			{
-				repo::lib::Container& container;
+				repo::lib::Container* container;
 				repo::lib::RepoUUID uniqueId;
+
+				MeshReference(repo::lib::Container* container, const repo::lib::RepoUUID& uniqueId)
+					:container(container),
+					uniqueId(uniqueId)
+				{
+				}
 			};
 
 			struct CompositeObject

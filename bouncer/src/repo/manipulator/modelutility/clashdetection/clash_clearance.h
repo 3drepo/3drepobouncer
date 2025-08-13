@@ -20,7 +20,7 @@
 #include "clash_pipelines.h"
 #include "repo/lib/datastructure/repo_uuid.h"
 #include "repo/lib/datastructure/repo_line.h"
-#include "geometry_tests.h"
+
 
 namespace repo {
 	namespace manipulator {
@@ -49,55 +49,31 @@ namespace repo {
 						}
 					};
 
-					class Result : public NarrowphaseResult
-					{
-					public:
-						repo::lib::RepoLine line;
-					};
-
 					Clearance(DatabasePtr handler, const ClashDetectionConfig& config)
 						: Pipeline(handler, config), tolerance(config.tolerance)
 					{
 					}
 
-					void broadphase(const Bvh& a, const Bvh& b, BroadphaseResults& results) const override
-					{
-						// The clearance clash detection does not require a broadphase step.
-						// It is assumed that the input BVH is already filtered to only include relevant nodes.
-						// Therefore, we can skip this step and directly proceed to the narrowphase.
+					std::unique_ptr<Broadphase> createBroadphase() const override;
 
-						throw new std::exception("Not Implemented Yet");
-					}
-
-					bool narrowphase(const repo::lib::RepoTriangle& a, const repo::lib::RepoTriangle& b, NarrowphaseResult& c) const override
-					{
-						auto& result = static_cast<Result&>(c);
-						result.line = geometry::closestPointTriangleTriangle(a, b);
-						return result.line.magnitude() < tolerance;
-					}
-
-					std::unique_ptr<NarrowphaseResult> createNarrowphaseResult() override
-					{
-						return std::make_unique<Result>();
-					}
+					std::unique_ptr<Narrowphase> createNarrowphase() const override;
 
 					CompositeClash* createCompositeClash() override
 					{
 						return new ClearanceClash();
 					}
 
-					virtual void append(CompositeClash& c, const NarrowphaseResult& r) const
-					{
-						auto& clash = static_cast<ClearanceClash&>(c);
-						auto& result = static_cast<const Result&>(r);
-						if (result.line.magnitude() < clash.line.magnitude()) {
-							clash.line = result.line;
-						}
-					}
+					virtual void append(CompositeClash& c, const Narrowphase& r) const;
 
-					virtual void createClashReport(const UnorderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const
+					virtual void createClashReport(const OrderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const
 					{
-						throw std::exception("Not Implemented Yet");
+						result.idA = objects.a;
+						result.idB = objects.b;
+						result.positions = {
+							static_cast<const ClearanceClash&>(clash).line.start,
+							static_cast<const ClearanceClash&>(clash).line.end
+						};
+						result.fingerprint = 0;
 					}
 
 				protected:

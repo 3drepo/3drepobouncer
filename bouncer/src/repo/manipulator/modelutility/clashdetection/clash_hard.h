@@ -32,19 +32,14 @@ namespace repo {
 					{
 					}
 
-					void broadphase(const Bvh& a, const Bvh& b, BroadphaseResults& results) const override
+					std::unique_ptr<Broadphase> createBroadphase() const override
 					{
 						throw std::exception("not implemented");
 					}
 
-					bool narrowphase(const repo::lib::RepoTriangle& a, const repo::lib::RepoTriangle& b, NarrowphaseResult& c) const override
+					std::unique_ptr<Narrowphase> createNarrowphase() const override
 					{
 						throw std::exception("not implemented");
-					}
-
-					std::unique_ptr<NarrowphaseResult> createNarrowphaseResult() override
-					{
-						return nullptr;
 					}
 
 					CompositeClash* createCompositeClash() override
@@ -52,11 +47,11 @@ namespace repo {
 						return nullptr;
 					}
 
-					virtual void append(CompositeClash& c, const NarrowphaseResult& r) const
+					virtual void append(CompositeClash& c, const Narrowphase& r) const
 					{
 					}
 
-					virtual void createClashReport(const UnorderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const
+					virtual void createClashReport(const OrderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const
 					{
 						throw std::exception("Not Implemented Yet");
 					}

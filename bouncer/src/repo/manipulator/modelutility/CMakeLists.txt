@@ -4,11 +4,13 @@
 #If you really need to overwrite this file, be aware that it will be overwritten if updateSources.py is executed.
 
 
+add_subdirectory(clashdetection)
 add_subdirectory(rapidjson)
 add_subdirectory(spatialpartitioning)
 add_subdirectory(spscqueue)
 set(SOURCES
 	${SOURCES}
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_clash_detection_engine.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing_manager.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_maker_selection_tree.cpp
@@ -19,6 +21,7 @@ set(SOURCES
 
 set(HEADERS
 	${HEADERS}
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_clash_detection_engine.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing_manager.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_maker_selection_tree.h
