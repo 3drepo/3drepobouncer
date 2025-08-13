@@ -366,6 +366,11 @@ namespace repo {
 
 				virtual std::shared_ptr<repo::core::handler::fileservice::FileManager> getFileManager() = 0;
 
+				virtual void loadBinaryBuffers(
+					const std::string& database,
+					const std::string& collection,
+					repo::core::model::RepoBSON& bson) = 0;
+
 			protected:
 				/**
 				* Default constructor
