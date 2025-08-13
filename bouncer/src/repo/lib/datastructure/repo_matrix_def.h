@@ -372,7 +372,7 @@ namespace repo {
 		inline repo::lib::RepoVector3D64 operator*(const _RepoMatrix<T> &matrix, const repo::lib::RepoVector3D64 &vec)
 		{
 			repo::lib::RepoVector3D64 result;
-			auto mat = matrix.getData();
+			const auto& mat = matrix.getData();
 			/*
 			00 01 02 03
 			04 05 06 07
