@@ -193,6 +193,12 @@ namespace repo {
 				*/
 				bool hasBinField(const std::string &label) const;
 
+				/*
+				* Unloads the bigfiles mappings from memory. These may be reloaded
+				* using the database handler's loadBinaryBuffers method.
+				*/
+				void unloadBinaryBuffers();
+
 				uint64_t objsize() const;
 
 				std::string toString() const;

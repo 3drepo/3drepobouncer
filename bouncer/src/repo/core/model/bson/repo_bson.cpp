@@ -349,6 +349,11 @@ bool RepoBSON::hasBinField(const std::string &label) const
 	return bigFiles.find(label) != bigFiles.end();
 }
 
+void RepoBSON::unloadBinaryBuffers()
+{
+	bigFiles.clear();
+}
+
 bool RepoBSON::hasFileReference() const
 {
 	return hasField(REPO_LABEL_BINARY_REFERENCE);
