@@ -195,6 +195,28 @@ namespace testing {
 
 		return !bounds.size(); // If every element has been matched, they should by now have all been removed.
 	}
+
+	static bool compareVectors(const repo::lib::RepoVector3D64& a, const repo::lib::RepoVector3D64& b, double tolerance, testing::MatchResultListener* listener)
+	{
+		if (abs(a.x - b.x) > tolerance) { *listener << "Vector x exceeds tolerance."; return false; }
+		if (abs(a.y - b.y) > tolerance) { *listener << "Vector y exceeds tolerance."; return false; }
+		if (abs(a.z - b.z) > tolerance) { *listener << "Vector z exceeds tolerance."; return false; }
+		return true;
+	}
+
+	MATCHER_P2(UnorderedVectorsAre, elements, tolerance, "")
+	{
+		std::vector<repo::lib::RepoVector3D64> vectors(elements);
+		for (auto& r : arg) {
+			for (auto i = 0; i < vectors.size(); i++) {
+				if (compareVectors(r, vectors[i], tolerance, result_listener)) {
+					vectors.erase(vectors.begin() + i);
+					break;
+				}
+			}
+		}
+		return !vectors.size(); // If every element has been matched, they should by now have all been removed.
+	}
 }
 
 namespace repo {
