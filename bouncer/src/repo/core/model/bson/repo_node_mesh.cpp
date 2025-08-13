@@ -95,10 +95,6 @@ void MeshNode::deserialise(RepoBSON& bson)
 	{
 		bson.getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_VERTICES, vertices);
 	}
-	else
-	{
-		repoWarning << "Could not find any vertices within mesh node (" << getUniqueID() << ")";
-	}
 
 	if (bson.hasBinField(REPO_NODE_MESH_LABEL_NORMALS))
 	{

@@ -234,7 +234,7 @@ namespace repo {
 				/**
 				* Retrieve a vector of faces from the bson object
 				*/
-				std::vector<repo::lib::repo_face_t> getFaces() const
+				const std::vector<repo::lib::repo_face_t>& getFaces() const
 				{
 					return faces;
 				}
