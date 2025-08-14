@@ -32,8 +32,7 @@ namespace repo {
 				// by which geometric tests are used.
 				// 
 				// All clash modes are implemented as subclasses of a pipeline, overriding
-				// a small subset of methods to implement these tests. For most modes, the
-				// overrides should be simple enough to allow header only definitions.
+				// a small subset of methods to implement these tests.
 
 				using Bvh = bvh::Bvh<double>;
 

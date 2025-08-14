@@ -32,6 +32,7 @@
 #include <repo/manipulator/modelutility/rapidjson/document.h>
 
 #include <repo/manipulator/modelutility/repo_clash_detection_engine.h>
+#include <repo/manipulator/modelutility/clashdetection/clash_config_parser.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_pipelines.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_clearance.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_hard.h>
@@ -559,6 +560,72 @@ TEST(Clash, Clearance1)
 
 TEST(Clash, Clearance2)
 {
-	//todo: make sure clearance tests are deterministic
-// append in a different order explicitiy to test this...
+	// Clash fingerprints are used to determine if a clash is the same across
+	// multiple runs. If multiple primitives are involved, the fingerprint should
+	// remain the same, regardless of the order in which they are processed.
+	// Similarly, if an algorithm takes advantage of early termination, the
+	// fingerprinting method should be able to handle this as well.
+
+	ClashDetectionConfig config;
+	auto handler = getHandler();
+
+	auto pipeline = new clash::Clearance(handler, config);
+	
+	auto composite = pipeline->createCompositeClash();
+
+	struct NarrowphaseResult
+	{
+
+	};
+
+
+
+}
+
+TEST(Clash, Config)
+{
+	ClashDetectionConfig config;
+
+	auto configPath = getDataPath("/clash/config1.json");
+	std::ifstream fileStream(configPath, std::ios::in | std::ios::binary);
+	std::ostringstream contentStream;
+	contentStream << fileStream.rdbuf();
+	auto content = contentStream.str();
+
+	clash::ClashConfigParser::ParseJson(content.data(), config);
+
+	EXPECT_THAT(config.type, Eq(ClashDetectionType::Clearance));
+	EXPECT_THAT(config.tolerance, Eq(0.0001));
+	
+	EXPECT_THAT(config.setA.size(), Eq(2));
+
+	EXPECT_THAT(config.setA[0].id, Eq(repo::lib::RepoUUID("898f194c-3852-43ac-9be5-85d315838768")));
+	EXPECT_THAT(config.setA[0].meshes[0].uniqueId, Eq(repo::lib::RepoUUID("266f6406-105f-4c43-b958-5a758eb15982")));
+	EXPECT_THAT(config.setA[0].meshes[0].container->teamspace, StrEq("clash"));
+	EXPECT_THAT(config.setA[0].meshes[0].container->container, StrEq("7cfef3ac-c133-417d-8bbe-c299a4725a95"));
+	EXPECT_THAT(config.setA[0].meshes[0].container->revision == repo::lib::RepoUUID("f70777ea-1f05-4f2a-b71b-1578d0710deb"), IsTrue());
+
+	EXPECT_THAT(config.setA[1].id, Eq(repo::lib::RepoUUID("a8f4761c-1b8a-4191-8e55-6096f602ca6e")));
+	EXPECT_THAT(config.setA[1].meshes[0].uniqueId, Eq(repo::lib::RepoUUID("b5ac2ae0-13de-4e68-8188-01bf04233e39")));
+	EXPECT_THAT(config.setA[1].meshes[0].container->teamspace, StrEq("clash"));
+	EXPECT_THAT(config.setA[1].meshes[0].container->container, StrEq("7cfef3ac-c133-417d-8bbe-c299a4725a95"));
+	EXPECT_THAT(config.setA[1].meshes[0].container->revision == repo::lib::RepoUUID("f70777ea-1f05-4f2a-b71b-1578d0710deb"), IsTrue());
+
+	EXPECT_THAT(config.setB[0].id, Eq(repo::lib::RepoUUID("06208325-6ea7-45a8-b5a1-ab8be8c4da79")));
+	EXPECT_THAT(config.setB[0].meshes[0].uniqueId, Eq(repo::lib::RepoUUID("8e8a7c81-a7df-4587-9976-190ff5680a97")));
+	EXPECT_THAT(config.setB[0].meshes[0].container->teamspace, StrEq("clash"));
+	EXPECT_THAT(config.setB[0].meshes[0].container->container, StrEq("ea72bf4b-ab53-4f59-bef3-694b66484192"));
+	EXPECT_THAT(config.setB[0].meshes[0].container->revision == repo::lib::RepoUUID("95988a2e-f71a-462d-9d00-de724fc7cd05"), IsTrue());
+
+	EXPECT_THAT(config.setB[1].id, Eq(repo::lib::RepoUUID("22ea928f-920d-493e-b6b8-7d510842a43f")));
+	EXPECT_THAT(config.setB[1].meshes[0].uniqueId, Eq(repo::lib::RepoUUID("655b8b50-70d3-4b8a-b4bf-02eed23202e3")));
+	EXPECT_THAT(config.setB[1].meshes[0].container->teamspace, StrEq("clash"));
+	EXPECT_THAT(config.setB[1].meshes[0].container->container, StrEq("ea72bf4b-ab53-4f59-bef3-694b66484192"));
+	EXPECT_THAT(config.setB[1].meshes[0].container->revision == repo::lib::RepoUUID("95988a2e-f71a-462d-9d00-de724fc7cd05"), IsTrue());
+
+	EXPECT_THAT(config.containers.size(), Eq(2));
+
+	// todo: check support for multiple containers
+
+
 }

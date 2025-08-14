@@ -17,6 +17,7 @@
 
 #include "repo_clash_detection_engine.h"
 
+#include "clashdetection/clash_config_parser.h"
 #include "clashdetection/clash_hard.h"
 #include "clashdetection/clash_clearance.h"
 
