@@ -21,88 +21,13 @@
 #include <vector>
 #include <memory>
 #include <repo/repo_bouncer_global.h>
-#include <repo/lib/datastructure/repo_container.h>
-#include <repo/lib/datastructure/repo_uuid.h>
 #include <repo/lib/datastructure/repo_vector.h>
+#include <repo/manipulator/modelutility/repo_clash_detection_config_fwd.h>
 #include <repo/core/handler/repo_database_handler_abstract.h>
 
 namespace repo {
 	namespace manipulator {
 		namespace modelutility {
-
-			enum class ClashDetectionType
-			{
-				/*
-				* Finds the minimum distance between any two primitives of the composite
-				* objects in the sets. A clash is reported if the distance is less than
-				* the tolerance.
-				*/
-				Clearance = 1,
-
-				/*
-				* Finds an intersection between any two primitives of the composite objects
-				* objects in the sets. A clash is reported if the penetration depth is
-				* greater than the tolerance.
-				*/
-				Hard = 2,
-			};
-
-			/*
-			* A selection of MeshNodes that when transformed into project space are
-			* considered as a single object for the purposes of clash detection.
-			* 
-			* How MeshNodes are arranged into Composites will affect the estimated
-			* penetration depth.
-			* 
-			* In most cases, a CompositeObject will be the TransformationNode above
-			* one or more MeshNodes, but in theory it could be any set of MeshNodes.
-			*/
-
-			struct MeshReference
-			{
-				repo::lib::Container* container;
-				repo::lib::RepoUUID uniqueId;
-
-				MeshReference(repo::lib::Container* container, const repo::lib::RepoUUID& uniqueId)
-					:container(container),
-					uniqueId(uniqueId)
-				{
-				}
-			};
-
-			struct CompositeObject
-			{
-				repo::lib::RepoUUID id;
-
-				/*
-				* Composite objects are made up of MeshNode instances. Each MeshNode
-				* is transformed into project space before clash detection is performed.
-				* MeshNodes must come from the same teamspace, but can be from different
-				* Containers.
-				*/
-				std::vector<MeshReference> meshes;
-			};
-
-			struct ClashDetectionConfig
-			{
-				ClashDetectionType type = ClashDetectionType::Clearance;
-
-				double tolerance = 0.0;
-
-				/*
-				* Each clash test will compare all objects in set A against all objects in
-				* set B. Objects in set A will not be compared against each other. Objects
-				* are compared in Project Space.
-				*/
-				std::vector<CompositeObject> setA;
-				std::vector<CompositeObject> setB;
-
-				/* 
-				* Containers which hold the meshes referenced by the composite objects. This
-				* vector exists to store the container info which is referenced by the meshes.
-				*/
-				std::vector<std::unique_ptr<repo::lib::Container>> containers;
-			};
 
 			struct ClashDetectionResult
 			{
@@ -146,9 +71,6 @@ namespace repo {
 
 			protected:
 				std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler;
-
-
-
 			};
 		} // namespace modelutility
 	} // namespace manipulator

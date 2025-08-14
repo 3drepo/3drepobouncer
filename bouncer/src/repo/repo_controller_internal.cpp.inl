@@ -384,6 +384,15 @@ RepoController::_RepoControllerImpl::processDrawingRevision(
 	workerPool.push(worker);
 }
 
+void RepoController::_RepoControllerImpl::performClashDetection(
+	const RepoController::RepoToken* token,
+	const repo::manipulator::modelutility::ClashDetectionConfig& config)
+{
+	manipulator::RepoManipulator* worker = workerPool.pop();
+	worker->performClashDetection(config);
+	workerPool.push(worker);
+}
+
 void RepoController::_RepoControllerImpl::updateRevisionStatus(
 	repo::core::model::RepoScene* scene,
 	const repo::core::model::ModelRevisionNode::UploadStatus& status)

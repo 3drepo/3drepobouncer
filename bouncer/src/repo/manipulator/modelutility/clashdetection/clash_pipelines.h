@@ -19,6 +19,7 @@
 
 #include <vector>
 #include <repo/manipulator/modelutility/repo_clash_detection_engine.h>
+#include <repo/manipulator/modelutility/repo_clash_detection_config.h>
 #include <repo/manipulator/modeloptimizer/bvh/bvh.hpp>
 #include <repo/lib/datastructure/repo_triangle.h>
 #include "sparse_scene_graph.h"

@@ -19,6 +19,8 @@
 * Repo Manipulator which handles all the manipulation
 */
 
+#include "repo_manipulator.h"
+
 #include <boost/filesystem.hpp>
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
@@ -36,9 +38,7 @@
 #include "modelutility/repo_scene_manager.h"
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
 #include "modelutility/repo_drawing_manager.h"
-#include "repo_manipulator.h"
-
-
+#include "modelutility/repo_clash_detection_engine.h"
 
 using namespace repo::manipulator;
 
@@ -313,6 +313,13 @@ void RepoManipulator::processDrawingRevision(
 	if (error == REPOERR_OK) {
 		error = manager.commitImage(dbHandler.get(), dbHandler->getFileManager().get(), teamspace, revisionNode, drawing);
 	}
+}
+
+void RepoManipulator::performClashDetection(
+	const ClashDetectionConfig& config)
+{
+	modelutility::ClashDetectionEngine clashEngine(dbHandler);
+	clashEngine.runClashDetection(config);
 }
 
 bool RepoManipulator::init(

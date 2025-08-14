@@ -284,6 +284,10 @@ public:
 		uint8_t& err,
 		const std::string &imagePath);
 
+	void performClashDetection(
+		const RepoController::RepoToken* token,
+		const repo::manipulator::modelutility::ClashDetectionConfig& config);
+
 	/**
 	* Load metadata from a file
 	* @param filePath path to file

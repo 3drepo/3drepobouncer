@@ -32,7 +32,7 @@
 #include <repo/manipulator/modelutility/rapidjson/document.h>
 
 #include <repo/manipulator/modelutility/repo_clash_detection_engine.h>
-#include <repo/manipulator/modelutility/clashdetection/clash_config_parser.h>
+#include <repo/manipulator/modelutility/repo_clash_detection_config.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_pipelines.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_clearance.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_hard.h>
@@ -585,14 +585,7 @@ TEST(Clash, Clearance2)
 TEST(Clash, Config)
 {
 	ClashDetectionConfig config;
-
-	auto configPath = getDataPath("/clash/config1.json");
-	std::ifstream fileStream(configPath, std::ios::in | std::ios::binary);
-	std::ostringstream contentStream;
-	contentStream << fileStream.rdbuf();
-	auto content = contentStream.str();
-
-	clash::ClashConfigParser::ParseJson(content.data(), config);
+	ClashDetectionConfig::ParseJsonFile(getDataPath("/clash/config1.json"), config);
 
 	EXPECT_THAT(config.type, Eq(ClashDetectionType::Clearance));
 	EXPECT_THAT(config.tolerance, Eq(0.0001));

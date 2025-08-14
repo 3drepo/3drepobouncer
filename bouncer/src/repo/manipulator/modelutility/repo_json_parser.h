@@ -20,12 +20,14 @@
 #include "repo/manipulator/modelutility/rapidjson/reader.h"
 
 #include <stack>
+#include <map>
 
 #include <repo/lib/datastructure/repo_uuid.h>
 #include <repo/lib/datastructure/repo_bounds.h>
 #include <repo/lib/datastructure/repo_matrix.h>
 #include <repo/lib/datastructure/repo_vector.h>
 #include <repo/lib/datastructure/repo_structs.h>
+#include <repo/lib/datastructure/repo_variant.h>
 
 /**
 * This file contains a set of types to help process tree structured data using

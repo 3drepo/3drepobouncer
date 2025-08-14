@@ -17,13 +17,14 @@
 
 #include "repo_clash_detection_engine.h"
 
-#include "clashdetection/clash_config_parser.h"
 #include "clashdetection/clash_hard.h"
 #include "clashdetection/clash_clearance.h"
 
 using namespace repo::lib;
 using namespace repo::manipulator::modelutility;
 using namespace repo::manipulator::modelutility::clash;
+
+#pragma optimize("", off)
 
 ClashDetectionReport ClashDetectionEngine::runClashDetection
 	(const ClashDetectionConfig& config)
@@ -32,13 +33,17 @@ ClashDetectionReport ClashDetectionEngine::runClashDetection
 	switch (config.type) {
 	case ClashDetectionType::Clearance:
 		pipeline = new clash::Clearance(handler, config);
+		break;
 	case ClashDetectionType::Hard:
 		pipeline = new clash::Hard(handler, config);
+		break;
 	default:
 		throw std::invalid_argument("Unknown clash detection type");
 	}
 
-	return pipeline->runPipeline();
+	auto results = pipeline->runPipeline();
+
+	return results;
 }
 
 ClashDetectionEngine::ClashDetectionEngine(std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler)

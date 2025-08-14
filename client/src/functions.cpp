@@ -28,10 +28,13 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/filesystem.hpp>
 
+#include <repo/manipulator/modelutility/repo_clash_detection_config.h>
+
 static const std::string FBX_EXTENSION = ".FBX";
 
 static const std::string cmdCreateFed = "genFed"; //create a federation
 static const std::string cmdGenStash = "genStash";   //test the connection
+static const std::string cmdClash = "clash";   //perform a clash detection operation
 static const std::string cmdImportFile = "import"; //file import
 static const std::string cmdProcessDrawing = "processDrawing"; //drawing import from revision node
 static const std::string cmdTestConn = "test";   //test the connection
@@ -46,6 +49,7 @@ std::string helpInfo()
 	ss << cmdImportFile << "\t\tImport file to database. (args: {file database project [dxrotate] [owner] [configfile]} or {-f parameterFile} )\n";
 	ss << cmdProcessDrawing << "\t\tProcess drawing revision node into an image. (args: parameterFile)\n";
 	ss << cmdCreateFed << "\t\tGenerate a federation. (args: fedDetails [owner])\n";
+	ss << cmdClash << "\t\tPerform a clash detection operation. (args: [configfile])\n";
 	ss << cmdTestConn << "\t\tTest the client and database connection is working. (args: none)\n";
 	ss << cmdVersion << "[-v]\tPrints the version of Repo Bouncer Client/Library\n";
 
@@ -71,6 +75,8 @@ int32_t knownValid(const std::string& cmd)
 		return 0;
 	if (cmd == cmdVersion || cmd == cmdVersion2)
 		return 0;
+	if (cmd == cmdClash)
+		return 1;
 	return -1;
 }
 
@@ -127,6 +133,21 @@ int32_t performOperation(
 		catch (const std::exception& e)
 		{
 			repoLogError("Failed to generate federation: " + std::string(e.what()));
+			errCode = REPOERR_UNKNOWN_ERR;
+		}
+	}
+	else if (command.command == cmdClash)
+	{
+		try {
+			performClashDetection(controller, token, command);
+			errCode = REPOERR_OK;
+		}
+		catch (const repo::lib::RepoException& e) {
+			throw; // RepoExceptions have additional context as well as an embedded return code, so let these bubble up
+		}
+		catch (const std::exception& e)
+		{
+			repoLogError("Failed to perform clash detection: " + std::string(e.what()));
 			errCode = REPOERR_UNKNOWN_ERR;
 		}
 	}
@@ -333,6 +354,16 @@ repo::manipulator::modelconvertor::ModelUnits determineUnits(const std::string& 
 	if (units == "ft") return repo::manipulator::modelconvertor::ModelUnits::FEET;
 
 	return repo::manipulator::modelconvertor::ModelUnits::UNKNOWN;
+}
+
+void performClashDetection(
+	std::shared_ptr<repo::RepoController> controller,
+	const repo::RepoController::RepoToken* token,
+	const repo_op_t& command)
+{
+	repo::manipulator::modelutility::ClashDetectionConfig clashConfig;
+	repo::manipulator::modelutility::ClashDetectionConfig::ParseJsonFile(command.args[0], clashConfig);
+	controller->performClashDetection(token, clashConfig);
 }
 
 int32_t importFileAndCommit(

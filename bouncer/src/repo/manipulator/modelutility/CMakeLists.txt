@@ -10,6 +10,7 @@ add_subdirectory(spatialpartitioning)
 add_subdirectory(spscqueue)
 set(SOURCES
 	${SOURCES}
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_clash_detection_config.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_clash_detection_engine.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing_manager.cpp
@@ -21,9 +22,12 @@ set(SOURCES
 
 set(HEADERS
 	${HEADERS}
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_clash_detection_config.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_clash_detection_config_fwd.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_clash_detection_engine.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing_manager.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_json_parser.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_maker_selection_tree.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_mesh_map_reorganiser.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_scene_builder.h

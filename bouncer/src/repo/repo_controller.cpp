@@ -175,6 +175,13 @@ void RepoController::processDrawingRevision(
 	return impl->processDrawingRevision(token, teamspace, revision, err, imagePath);
 }
 
+void RepoController::performClashDetection(
+	const RepoToken* token,
+	const repo::manipulator::modelutility::ClashDetectionConfig& config)
+{
+	impl->performClashDetection(token, config);
+}
+
 void RepoController::updateRevisionStatus(
 	repo::core::model::RepoScene* scene,
 	const repo::core::model::ModelRevisionNode::UploadStatus& status)

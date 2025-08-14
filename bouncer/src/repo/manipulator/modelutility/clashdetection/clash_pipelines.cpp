@@ -190,6 +190,8 @@ ClashDetectionReport Pipeline::runPipeline()
 
 	broadphase->operator()(graphA.bvh, graphB.bvh, broadphaseResults);
 
+	//todo: create a set of jobs that reference a particular 
+
 	for (const auto& [aIndex, bIndex] : broadphaseResults)
 	{
 		auto& a = graphA.getNode(aIndex);
