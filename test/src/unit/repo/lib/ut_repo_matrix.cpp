@@ -397,3 +397,8 @@ TEST(RepoMatrixTest, Translate)
 
 	EXPECT_THAT(RepoMatrix::translate(a) * b, VectorNear(c));
 }
+
+TEST(RepoMatrixTest, IsUniformScaling)
+{
+
+}
