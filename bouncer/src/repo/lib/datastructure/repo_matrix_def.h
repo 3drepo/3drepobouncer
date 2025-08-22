@@ -102,7 +102,7 @@ namespace repo {
 				}
 			}
 
-			float determinant() const {
+			T determinant() const {
 				/*
 				00 01 02 03
 				04 05 06 07
@@ -110,26 +110,26 @@ namespace repo {
 				12 13 14 15
 				*/
 
-				float a1 = data[0], a2 = data[1], a3 = data[2], a4 = data[3];
-				float b1 = data[4], b2 = data[5], b3 = data[6], b4 = data[7];
-				float c1 = data[8], c2 = data[9], c3 = data[10], c4 = data[11];
-				float d1 = data[12], d2 = data[13], d3 = data[14], d4 = data[15];
+				T a1 = data[0], a2 = data[1], a3 = data[2], a4 = data[3];
+				T b1 = data[4], b2 = data[5], b3 = data[6], b4 = data[7];
+				T c1 = data[8], c2 = data[9], c3 = data[10], c4 = data[11];
+				T d1 = data[12], d2 = data[13], d3 = data[14], d4 = data[15];
 
-				float a1b2 = (a1 * b2) *(c3 * d4 - c4 * d3);
-				float a1b3 = (a1 * b3) *(c4 * d2 - c2 * d4);
-				float a1b4 = (a1 * b4) *(c2 * d3 - c3 * d2);
+				T a1b2 = (a1 * b2) *(c3 * d4 - c4 * d3);
+				T a1b3 = (a1 * b3) *(c4 * d2 - c2 * d4);
+				T a1b4 = (a1 * b4) *(c2 * d3 - c3 * d2);
 
-				float a2b1 = -(a2 * b1) *(c3 * d4 - c4 * d3);
-				float a2b3 = -(a2 * b3) *(c4 * d1 - c1 * d4);
-				float a2b4 = -(a2 * b4) *(c1 * d3 - c3 * d1);
+				T a2b1 = -(a2 * b1) *(c3 * d4 - c4 * d3);
+				T a2b3 = -(a2 * b3) *(c4 * d1 - c1 * d4);
+				T a2b4 = -(a2 * b4) *(c1 * d3 - c3 * d1);
 
-				float a3b1 = (a3 * b1) *(c2 * d4 - c4 * d2);
-				float a3b2 = (a3 * b2) *(c4 * d1 - c1 * d4);
-				float a3b4 = (a3 * b4) *(c1 * d2 - c2 * d1);
+				T a3b1 = (a3 * b1) *(c2 * d4 - c4 * d2);
+				T a3b2 = (a3 * b2) *(c4 * d1 - c1 * d4);
+				T a3b4 = (a3 * b4) *(c1 * d2 - c2 * d1);
 
-				float a4b1 = -(a4 * b1) *(c2 * d3 - c3 * d2);
-				float a4b2 = -(a4 * b2) *(c3 * d1 - c1 * d3);
-				float a4b3 = -(a4 * b3) *(c1 * d2 - c2 * d1);
+				T a4b1 = -(a4 * b1) *(c2 * d3 - c3 * d2);
+				T a4b2 = -(a4 * b2) *(c3 * d1 - c1 * d3);
+				T a4b3 = -(a4 * b3) *(c1 * d2 - c2 * d1);
 
 				return a1b2 + a1b3 + a1b4
 					+ a2b1 + a2b3 + a2b4
@@ -155,19 +155,19 @@ namespace repo {
 				std::vector<T> result;
 				result.resize(16);
 
-				const float det = determinant();
+				const T det = determinant();
 				if (det == 0)
 				{
 					repoError << "Trying to invert a matrix with determinant = 0!";
 				}
 				else
 				{
-					const float inv_det = 1. / det;
+					const T inv_det = 1. / det;
 
-					float a1 = data[0], a2 = data[1], a3 = data[2], a4 = data[3];
-					float b1 = data[4], b2 = data[5], b3 = data[6], b4 = data[7];
-					float c1 = data[8], c2 = data[9], c3 = data[10], c4 = data[11];
-					float d1 = data[12], d2 = data[13], d3 = data[14], d4 = data[15];
+					T a1 = data[0], a2 = data[1], a3 = data[2], a4 = data[3];
+					T b1 = data[4], b2 = data[5], b3 = data[6], b4 = data[7];
+					T c1 = data[8], c2 = data[9], c3 = data[10], c4 = data[11];
+					T d1 = data[12], d2 = data[13], d3 = data[14], d4 = data[15];
 
 					result[0] = inv_det * (b2 * (c3 * d4 - c4 * d3) + b3 * (c4 * d2 - c2 * d4) + b4 * (c2 * d3 - c3 * d2));
 					result[1] = -inv_det * (a2 * (c3 * d4 - c4 * d3) + a3 * (c4 * d2 - c2 * d4) + a4 * (c2 * d3 - c3 * d2));
@@ -222,6 +222,15 @@ namespace repo {
 			repo::lib::RepoVector3D transformDirection(const repo::lib::RepoVector3D& vec) const
 			{
 				repo::lib::RepoVector3D result;
+				result.x = data[0] * vec.x + data[1] * vec.y + data[2] * vec.z;
+				result.y = data[4] * vec.x + data[5] * vec.y + data[6] * vec.z;
+				result.z = data[8] * vec.x + data[9] * vec.y + data[10] * vec.z;
+				return result;
+			}
+
+			repo::lib::RepoVector3D64 transformDirection(const repo::lib::RepoVector3D64& vec) const
+			{
+				repo::lib::RepoVector3D64 result;
 				result.x = data[0] * vec.x + data[1] * vec.y + data[2] * vec.z;
 				result.y = data[4] * vec.x + data[5] * vec.y + data[6] * vec.z;
 				result.z = data[8] * vec.x + data[9] * vec.y + data[10] * vec.z;
@@ -320,6 +329,16 @@ namespace repo {
 				}));
 			}
 
+			static _RepoMatrix<T> scale(lib::_RepoVector3D<T> s)
+			{
+				return _RepoMatrix<T>(std::vector<T>({
+					s.x, 0, 0, 0,
+					0, s.y, 0, 0,
+					0, 0, s.z, 0,
+					0, 0, 0, 1
+				}));
+			}
+
 			explicit operator repo::lib::_RepoMatrix<float>() const
 			{
 				auto m = repo::lib::_RepoMatrix<float>();
@@ -352,9 +371,9 @@ namespace repo {
 			12 13 14 15
 			*/
 
-			result.x = mat[0] * vec.x + mat[1] * vec.y + mat[2] * vec.z + mat[3];
-			result.y = mat[4] * vec.x + mat[5] * vec.y + mat[6] * vec.z + mat[7];
-			result.z = mat[8] * vec.x + mat[9] * vec.y + mat[10] * vec.z + mat[11];
+			result.x = (float)(mat[0] * (double)vec.x + mat[1] * (double)vec.y + mat[2] * (double)vec.z + mat[3]);
+			result.y = (float)(mat[4] * (double)vec.x + mat[5] * (double)vec.y + mat[6] * (double)vec.z + mat[7]);
+			result.z = (float)(mat[8] * (double)vec.x + mat[9] * (double)vec.y + mat[10] * (double)vec.z + mat[11]);
 
 			float sig = 1e-5;
 
@@ -399,7 +418,7 @@ namespace repo {
 		template <class T>
 		inline _RepoMatrix<T> operator*(const _RepoMatrix<T> &matrix1, const _RepoMatrix<T> &matrix2)
 		{
-			std::vector<float> result;
+			std::vector<T> result;
 			result.resize(16);
 
 			auto mat1 = matrix1.getData();
