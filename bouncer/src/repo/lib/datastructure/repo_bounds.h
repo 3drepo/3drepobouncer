@@ -23,6 +23,9 @@
 namespace repo {
 	namespace lib {
 
+		template <typename T>
+		class _RepoMatrix;
+
 		/*
 		* Represents a bounding box in 3D
 		*/
@@ -39,6 +42,8 @@ namespace repo {
 
 			bool operator==(const RepoBounds& other) const;
 
+			bool contains(const RepoVector3D64& p) const;
+
 			const RepoVector3D64& min() const;
 			const RepoVector3D64& max() const;
 
@@ -48,5 +53,7 @@ namespace repo {
 			RepoVector3D64 bmin;
 			RepoVector3D64 bmax;
 		};
+
+		REPO_API_EXPORT repo::lib::RepoBounds operator*(const _RepoMatrix<double>& matrix, const repo::lib::RepoBounds& bounds);
 	}
 }
