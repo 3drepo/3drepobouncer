@@ -20,6 +20,16 @@
 #include "clashdetection/clash_hard.h"
 #include "clashdetection/clash_clearance.h"
 
+// ---
+// The following are only for writeTicketImportJson
+#define RAPIDJSON_HAS_STDSTRING 1
+#include "repo/manipulator/modelutility/rapidjson/rapidjson.h"
+#include "repo/manipulator/modelutility/rapidjson/document.h"
+#include "repo/manipulator/modelutility/rapidjson/writer.h"
+#include "repo/manipulator/modelutility/rapidjson/stringbuffer.h"
+#include <fstream>
+//-----
+
 using namespace repo::lib;
 using namespace repo::manipulator::modelutility;
 using namespace repo::manipulator::modelutility::clash;
@@ -49,4 +59,41 @@ ClashDetectionReport ClashDetectionEngine::runClashDetection
 ClashDetectionEngine::ClashDetectionEngine(std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler)
 	:handler(handler)
 {
+}
+
+void ClashDetectionEngine::writeClashDetectionResultsJson(const ClashDetectionReport& report, const ClashDetectionConfig& config)
+{
+	rapidjson::StringBuffer buffer;
+	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+
+	writer.StartObject();
+
+	writer.Key("config");
+	writer.String(config.path);
+
+	writer.Key("clashes");
+
+	writer.StartArray();
+
+	for (const auto& clash : report.clashes)
+	{
+		writer.StartObject();
+		writer.Key("a");
+		writer.String(clash.idA.toString());
+		writer.Key("b");
+		writer.String(clash.idB.toString());
+		writer.EndObject();
+	}
+
+	writer.EndArray();
+
+	writer.EndObject();
+
+	std::ofstream outFile("C:\\3drepo\\3drepobouncer_ISSUE797\\results.json", std::ios::out | std::ios::trunc);
+	if (!outFile.is_open())
+	{
+		throw std::ios_base::failure("Failed to open file");
+	}
+	outFile << buffer.GetString();
+	outFile.close();
 }

@@ -73,8 +73,7 @@ namespace repo {
 				/*
 				* Composite objects are made up of MeshNode instances. Each MeshNode
 				* is transformed into project space before clash detection is performed.
-				* MeshNodes must come from the same teamspace, but can be from different
-				* Containers.
+				* MeshNodes can be from different Containers.
 				*/
 				std::vector<MeshReference> meshes;
 			};
@@ -87,19 +86,27 @@ namespace repo {
 
 				/*
 				* Each clash test will compare all objects in set A against all objects in
-				* set B. Objects in set A will not be compared against each other. Objects
-				* are compared in Project Space.
+				* set B. All Objects will be compared in Project Coordinates. It is
+				* allowed for Set A and Set B to be identical - this can be used to check
+				* that all objects in a single set have a given clearance. For this case,
+				* the Composite Ids must also be the same. The engine will not ignore
+				* pairs that have the same Composite Ids.
 				*/
 				std::vector<CompositeObject> setA;
 				std::vector<CompositeObject> setB;
 
+				std::string path;
+
+				REPO_API_EXPORT static void ParseJsonFile(const std::string& jsonFilePath, ClashDetectionConfig& config);
+
 				/*
 				* Containers which hold the meshes referenced by the composite objects. This
 				* vector exists to store the container info which is referenced by the meshes.
+				* This is a convenience and implementation detail only: references may point
+				* to containers outside of this. There may be multiple entries for semantically
+				* identical containers.
 				*/
 				std::vector<std::unique_ptr<repo::lib::Container>> containers;
-
-				REPO_API_EXPORT static void ParseJsonFile(const std::string& jsonFilePath, ClashDetectionConfig& config);
 			};
 		}
 	}

@@ -190,4 +190,5 @@ void ClashDetectionConfig::ParseJsonFile(const std::string& jsonFilePath, ClashD
 	contentStream << fileStream.rdbuf();
 	auto content = contentStream.str();
 	ClashConfigParser::ParseJson(content.data(), config);
+	config.path = jsonFilePath;
 }

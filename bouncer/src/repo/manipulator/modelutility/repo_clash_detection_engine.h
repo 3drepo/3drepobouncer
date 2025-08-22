@@ -69,6 +69,9 @@ namespace repo {
 
 				ClashDetectionReport runClashDetection(const ClashDetectionConfig& config);
 
+				// temporary for testing
+				void writeClashDetectionResultsJson(const ClashDetectionReport&, const ClashDetectionConfig&);
+
 			protected:
 				std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler;
 			};
