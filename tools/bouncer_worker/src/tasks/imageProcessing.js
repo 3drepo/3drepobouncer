@@ -36,7 +36,7 @@ ImageProcessing.testImageClient = async () => {
 ImageProcessing.generateSVG = async (file, output, taskInfo) => {
 	const retVal = await run(
 		PDF2SVG,
-		[file,output,'all'],
+		[file, output, 'all'],
 		{ label: 'PDF2SVG' },
 		taskInfo,
 	);
