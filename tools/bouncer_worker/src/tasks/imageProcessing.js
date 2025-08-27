@@ -23,21 +23,21 @@ const {
 } = require('../constants/errorCodes');
 
 const ImageProcessing = {};
-const MUTOOL = 'mutool';
+const PDF2SVG = 'pdf2svg';
 
 ImageProcessing.testImageClient = async () => {
 	try {
-		await run(MUTOOL, [], { label: 'INIT' });
+		await run(PDF2SVG, [], { label: 'INIT' });
 	} catch (err) {
-		throw new Error(`Failed to call ${MUTOOL}: ${err?.message}`);
+		throw new Error(`Failed to call ${PDF2SVG}: ${err?.message}`);
 	}
 };
 
 ImageProcessing.generateSVG = async (file, output, taskInfo) => {
 	const retVal = await run(
-		MUTOOL,
-		['convert', '-o', output, file],
-		{ label: 'MUTOOL' },
+		PDF2SVG,
+		[file,output,'all'],
+		{ label: 'PDF2SVG' },
 		taskInfo,
 	);
 	if (retVal !== ERRCODE_OK) return retVal;
