@@ -23,28 +23,28 @@ const {
 } = require('../constants/errorCodes');
 
 const ImageProcessing = {};
-const INKSCAPE = 'inkscape';
+const MUTOOL = 'mutool';
 
 ImageProcessing.testImageClient = async () => {
 	try {
-		await run(INKSCAPE, ['--version'], { label: 'INIT' });
+		await run(MUTOOL, [], { label: 'INIT' });
 	} catch (err) {
-		throw new Error(`Failed to call ${INKSCAPE}: ${err?.message}`);
+		throw new Error(`Failed to call ${MUTOOL}: ${err?.message}`);
 	}
 };
 
 ImageProcessing.generateSVG = async (file, output, taskInfo) => {
 	const retVal = await run(
-		INKSCAPE,
-		['--export-type="svg"', file, '-o', output, '-n', '1', '-D', '--export-background=white', '--export-background-opacity=255'],
-		{ label: 'INKSCAPE' },
+		MUTOOL,
+		['convert', '-o', output, file],
+		{ label: 'MUTOOL' },
 		taskInfo,
 	);
 	if (retVal !== ERRCODE_OK) return retVal;
 
 	try {
-		// Inkscape doesn't always exit with non 0 values, so we need to check
-		// if the file exists, see https://gitlab.com/inkscape/inkscape/-/issues/270
+		// Not using inkscape anymore, but probably still sensible to check if the
+		// file exists with non 0 values.
 		await access(output);
 		return ERRCODE_OK;
 	} catch {
