@@ -29,7 +29,10 @@ ImageProcessing.testImageClient = async () => {
 	try {
 		await run(PDF2SVG, [], { label: 'INIT' });
 	} catch (err) {
-		throw new Error(`Failed to call ${PDF2SVG}: ${err?.message}`);
+		// Check for error codes indicating that the tool is not installed
+		if(err == 127 || err == 9009){
+			throw new Error(`Failed to call ${PDF2SVG}: ${err?.message}`);
+		}
 	}
 };
 
