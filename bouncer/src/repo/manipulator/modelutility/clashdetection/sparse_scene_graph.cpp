@@ -97,7 +97,7 @@ void SceneGraph::populate(
 
 				for (auto& uniqueId : parentToChild[node.getSharedID()]) {
 					auto& instance = nodes[uniqueId];
-					instance.matrix = repo::lib::RepoMatrix64(transform.getTransMatrix()) * instance.matrix;
+					instance.matrix = repo::lib::RepoMatrix(transform.getTransMatrix()) * instance.matrix;
 
 					// Transforms are not stored in the sparse graph - instead, make the
 					// pre-multiplied mesh node appear as if its the direct child of the
@@ -116,7 +116,7 @@ void SceneGraph::populate(
 				auto& instance = nodes[node.getUniqueID()];
 				instance.container = container;
 				instance.uniqueId = node.getUniqueID();
-				instance.matrix = repo::lib::RepoMatrix64();
+				instance.matrix = repo::lib::RepoMatrix();
 				instance.mesh = bson;
 
 				if (children) {
@@ -142,7 +142,7 @@ void SceneGraph::populate(
 	repo::core::model::ModelRevisionNode history(bson);
 
 	auto offset = history.getCoordOffset();
-	auto rootTransform = repo::lib::RepoMatrix64::translate(offset);
+	auto rootTransform = repo::lib::RepoMatrix::translate(offset);
 	for(auto& id : uniqueIds)
 	{
 		auto& node = nodes[id];

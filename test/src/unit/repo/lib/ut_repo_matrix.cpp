@@ -31,11 +31,15 @@ using namespace testing;
 
 bool checkIsIdentity(const RepoMatrix &mat)
 {
-	std::vector <float> identity = {1,0,0,0,
-									0,1,0,0,
-									0,0,1,0,
-									0,0,0,1};
-	return compareStdVectors(identity, mat.getData());
+	return RepoMatrix().equals(mat);
+}
+
+std::vector<double> asVector(const RepoMatrix &mat)
+{
+	std::vector<double> res;
+	res.resize(16);
+	memcpy(res.data(), mat.getData(), 16 * sizeof(double));
+	return res;
 }
 
 TEST(RepoMatrixTest, constructorTest)
@@ -45,24 +49,21 @@ TEST(RepoMatrixTest, constructorTest)
 	std::vector<double> sourceMat3;
 	RepoMatrix matrix;
 	RepoMatrix matrix2(sourceMat1);
-	RepoMatrix matrix3(sourceMat2);
 	RepoMatrix matrix4(sourceMat3);
 
 	for (int i = 0; i < 16; ++i)
 	{
 		sourceMat1.push_back((rand()%1000) / 1000.f);
-		if (i % 4 == 0) sourceMat2.push_back(std::vector<float>());
-		sourceMat2.back().push_back((rand() % 1000) / 1000.f);
 		sourceMat3.push_back((rand() % 1000) / 1000.f);
 	}
 
-	RepoMatrix matrix7(sourceMat1), matrix5(sourceMat2), matrix6(sourceMat3);
+	RepoMatrix matrix7(sourceMat1), matrix6(sourceMat3);
 
 	std::vector<double> sourceMat64 = {
-	0.41611923158633757, 0.41192361684200907, 0.3802399115383849, 1383.5544861408555,
-	0.3102479090644362, 0.8211657559760365, 0.42445244930658144, 6159.647077873367,
-	0.4608093818203498, 0.18089090705175348, 0.9258387270989096, 7714.581019037681,
-	0, 0, 0, 1
+		0.41611923158633757, 0.41192361684200907, 0.3802399115383849, 1383.5544861408555,
+		0.3102479090644362, 0.8211657559760365, 0.42445244930658144, 6159.647077873367,
+		0.4608093818203498, 0.18089090705175348, 0.9258387270989096, 7714.581019037681,
+		0, 0, 0, 1
 	};
 
 	std::vector<float> sourceMat32;
@@ -72,23 +73,16 @@ TEST(RepoMatrixTest, constructorTest)
 		sourceMat32[i] = (double)sourceMat64[i];
 	}
 
-	RepoMatrix singleFromSingle(sourceMat32.data());
-	RepoMatrix singleFromDouble(sourceMat64.data());
-	RepoMatrix64 doubleFromSingle(sourceMat32.data());
-	RepoMatrix64 doubleFromDouble(sourceMat64.data());
+	RepoMatrix doubleFromSingle(sourceMat32.data());
+	RepoMatrix doubleFromDouble(sourceMat64.data());
 
-	EXPECT_THAT(singleFromSingle.isIdentity(), IsFalse());
-	EXPECT_THAT(singleFromDouble.isIdentity(), IsFalse());
 	EXPECT_THAT(doubleFromSingle.isIdentity(), IsFalse());
 	EXPECT_THAT(doubleFromDouble.isIdentity(), IsFalse());
 
-	EXPECT_THAT(singleFromSingle.getData(), ElementsAreArray(sourceMat32));
-	EXPECT_THAT(singleFromDouble.getData(), ElementsAreArray(sourceMat32));
+	EXPECT_THAT(asVector(doubleFromSingle), ElementsAreArray(sourceMat32));
+	EXPECT_THAT(asVector(doubleFromDouble), ElementsAreArray(sourceMat64));
 
-	EXPECT_THAT(doubleFromSingle.getData(), ElementsAreArray(sourceMat32));
-	EXPECT_THAT(doubleFromDouble.getData(), ElementsAreArray(sourceMat64));
-
-	RepoMatrix64 colMajor(sourceMat64.data(), false);
+	RepoMatrix colMajor(sourceMat64.data(), false);
 	EXPECT_THAT(colMajor, Eq(doubleFromDouble.transpose()));
 }
 
@@ -96,16 +90,15 @@ TEST(RepoMatrixTest, determinantTest)
 {
 	RepoMatrix id;
 	EXPECT_EQ(1, id.determinant());
-	std::vector<float> matValues = { 2, 0.3f,   0.4f, 1.23f,
+	std::vector<double> matValues = { 2, 0.3f,   0.4f, 1.23f,
 		0.45f,    1, 0.488f, 12345,
 		0,   0,     3.5f,     0,
 		0,   0,       0,     1
 	};
 	RepoMatrix rand(matValues);
 
-	EXPECT_EQ(6.5275f, rand.determinant());
+	EXPECT_EQ(6.5274999937415128, rand.determinant());
 }
-
 
 TEST(RepoMatrixTest, equalsTest)
 {
@@ -134,8 +127,8 @@ TEST(RepoMatrixTest, equalsTest)
 
 TEST(RepoMatrixTest, getDataTest)
 {
-	std::vector<float> sourceMat1, sourceMat2_;
-	std::vector<std::vector<float>> sourceMat2;
+	std::vector<double> sourceMat1, sourceMat2_;
+	std::vector<std::vector<double>> sourceMat2;
 	RepoMatrix matrix;
 	RepoMatrix matrix2(sourceMat1);
 	RepoMatrix matrix3(sourceMat2);
@@ -147,35 +140,37 @@ TEST(RepoMatrixTest, getDataTest)
 	for (int i = 0; i < 16; ++i)
 	{
 		sourceMat1.push_back((rand() % 1000) / 1000.f);
-		if (i % 4 == 0) sourceMat2.push_back(std::vector<float>());
+		if (i % 4 == 0) sourceMat2.push_back(std::vector<double>());
 		sourceMat2.back().push_back((rand() % 1000) / 1000.f);
 		sourceMat2_.push_back(sourceMat2.back().back());
 	}
 
 	RepoMatrix matrix4(sourceMat1), matrix5(sourceMat2);
 
-	EXPECT_TRUE(compareStdVectors(sourceMat1, matrix4.getData()));
-	EXPECT_TRUE(compareStdVectors(sourceMat2_, matrix5.getData()));
+	EXPECT_THAT(memcmp(sourceMat1.data(), matrix4.getData(), 16), Eq(0));
+	EXPECT_THAT(memcmp(sourceMat2_.data(), matrix5.getData(), 16), Eq(0));
 }
 
 TEST(RepoMatrixTest, invertTest)
 {
 	RepoMatrix id;
 	EXPECT_TRUE(checkIsIdentity(id.invert()));
-	std::vector<float> matValues = { 2, 0.3f, 0.4f, 1.23f,
+	std::vector<double> matValues = { 
+		2, 0.3f, 0.4f, 1.23f,
 		0.45f, 1, 0.488f, 12345,
 		0, 0, 3.5f, 0,
 		0, 0, 0, 1
 	};
 	RepoMatrix rand(matValues);
+	auto inverted = rand.invert();
 
-	std::vector<float> expectedRes = {
-		0.5361930294906166f, -0.16085790884718498f, -0.038851014936805824f, 1985.13146972656250000f,
-		-0.24128684401512146f, 1.0723860589812333f, -0.12194561470700879f, -13238.30859375000000000f,
-		0, 0, 0.28571426868438721f, 0,
+	std::vector<double> expectedRes = {
+		0.53619303000471197, -0.16085791539333261, -0.038851014743946609, 1985.1314480935582,
+		-0.24128685711020137, 1.0723860600094239, -0.12194561682368632, -13238.309127977491,
+		0, 0, 0.28571428571428575, 0,
 		0,	0,	0,	1 };
 
-	EXPECT_TRUE(compareStdVectors(expectedRes, rand.invert().getData()));
+	EXPECT_THAT(RepoMatrix(expectedRes), Eq(inverted));
 }
 
 TEST(RepoMatrixTest, isIdentityTest)
@@ -237,17 +232,32 @@ TEST(RepoMatrixTest, toStringTest)
 
 TEST(RepoMatrixTest, transposeTest)
 {
-	EXPECT_TRUE(checkIsIdentity(RepoMatrix().transpose()));
-	std::vector<float> data(16), transposedData(16);
-
-	for (int i = 0; i < 16; ++i)
+	std::vector<float> values;
+	values.resize(16);
+	for (auto i = 0; i < 16; i++)
 	{
-		data[i] = (rand() % 1000) / 1000.f;
-		int row = i % 4;
-		transposedData[(row * 4) + (i / 4)] = data[i];
+		values[i] = rand() / 1000.f;
 	}
-	EXPECT_TRUE(compareStdVectors(RepoMatrix(data).transpose().getData(), transposedData));
 
+	auto a = RepoMatrix(values);
+	auto b = a.transpose();
+
+	EXPECT_THAT(a.getData()[1], Eq(b.getData()[4]));
+	EXPECT_THAT(a.getData()[4], Eq(b.getData()[1]));
+	EXPECT_THAT(a.getData()[2], Eq(b.getData()[8]));
+	EXPECT_THAT(a.getData()[8], Eq(b.getData()[2]));
+	EXPECT_THAT(a.getData()[3], Eq(b.getData()[12]));
+	EXPECT_THAT(a.getData()[12], Eq(b.getData()[3]));
+	EXPECT_THAT(a.getData()[6], Eq(b.getData()[9]));
+	EXPECT_THAT(a.getData()[9], Eq(b.getData()[6]));
+	EXPECT_THAT(a.getData()[7], Eq(b.getData()[13]));
+	EXPECT_THAT(a.getData()[13], Eq(b.getData()[7]));
+	EXPECT_THAT(a.getData()[11], Eq(b.getData()[14]));
+	EXPECT_THAT(a.getData()[14], Eq(b.getData()[11]));
+	EXPECT_THAT(a.getData()[0], Eq(b.getData()[0]));
+	EXPECT_THAT(a.getData()[5], Eq(b.getData()[5]));
+	EXPECT_THAT(a.getData()[10], Eq(b.getData()[10]));
+	EXPECT_THAT(a.getData()[15], Eq(b.getData()[15]));
 }
 
 TEST(RepoMatrixTest, matVecTest)
@@ -277,14 +287,16 @@ TEST(RepoMatrixTest, matMatTest)
 {
 	EXPECT_TRUE(checkIsIdentity(RepoMatrix()*RepoMatrix()));
 
-	std::vector <float> matValues = { 2, 0.3f, 0.4f, 1.23f,
+	std::vector <double> matValues = {
+		2, 0.3f, 0.4f, 1.23f,
 		0.45f, 1, 0.488f, 12345,
 		0.5f, 0, 3.5f, 0,
 		0, 4.56f, 0.0001f, 1
 	};
 	RepoMatrix rand(matValues);
 
-	std::vector<float> matValues2 = { 3.254f, 13.12456f, 0.0001f, 1.264f,
+	std::vector<double> matValues2 = {
+		3.254f, 13.12456f, 0.0001f, 1.264f,
 		0.5f,   0.645f,   10, 321.02f,
 		0.7892f, 10.3256f, 1, 0.5f,
 		0.5f, 0.6f, 0.7f, 1
@@ -296,13 +308,14 @@ TEST(RepoMatrixTest, matMatTest)
 	EXPECT_EQ(rand, rand*RepoMatrix());
 	auto resultRand = rand * rand2;
 
-	std::vector<float> expectedRes =
-	{ 7.58868026733398440f, 31.31086158752441400f, 4.26119995117187500f, 100.26399993896484000f,
-	6174.84960937500000000f, 7418.59033203125000000f, 8651.98828125000000000f, 12666.83300781250000000f,
-	4.38920021057128910f, 42.70187759399414100f, 3.50005006790161130f, 2.38199996948242190f,
-	2.78007888793945310f, 3.54223251342773440f, 46.30009841918945300f, 1464.85107421875000000f };
+	std::vector<double> expectedRes ={
+		7.5886799203705788, 31.310860684726237, 4.2612001238533992, 100.26400066936003,
+		6174.8494295462251, 7418.5902390082501, 8651.9878978416127, 12666.832789027523,
+		4.3892000019550323, 42.701879024505615, 3.5000499999987369, 2.3820000290870667,
+		2.7800788913885683, 3.5422324599005215, 46.300099415871955, 1464.8511815334314 
+	};
 
-	EXPECT_TRUE(compareStdVectors(expectedRes, resultRand.getData()));
+	EXPECT_THAT(RepoMatrix(expectedRes), Eq(resultRand));
 }
 
 TEST(RepoMatrixTest, eqOpTest)
@@ -313,7 +326,7 @@ TEST(RepoMatrixTest, eqOpTest)
 	EXPECT_TRUE(id2==id);
 	EXPECT_TRUE(id==id);
 
-	std::vector<float> ranV, ranV2;
+	std::vector<double> ranV, ranV2;
 	for (int i = 0; i < 16; ++i)
 	{
 		ranV.push_back((rand() % 1000) / 1000.f);
@@ -338,7 +351,7 @@ TEST(RepoMatrixTest, neqOpTest)
 	EXPECT_FALSE(id2 != id);
 	EXPECT_FALSE(id != id);
 
-	std::vector<float> ranV, ranV2;
+	std::vector<double> ranV, ranV2;
 	for (int i = 0; i < 16; ++i)
 	{
 		ranV.push_back((rand() % 1000) / 1000.f);

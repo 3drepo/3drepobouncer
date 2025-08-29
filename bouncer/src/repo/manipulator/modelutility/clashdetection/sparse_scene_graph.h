@@ -39,7 +39,7 @@ namespace repo {
 				struct Node
 				{
 					repo::lib::RepoUUID uniqueId;
-					repo::lib::RepoMatrix64 matrix;
+					repo::lib::RepoMatrix matrix;
 					repo::core::model::RepoBSON mesh;
 					const repo::lib::Container* container;
 				};

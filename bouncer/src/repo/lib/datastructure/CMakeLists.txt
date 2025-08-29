@@ -7,6 +7,7 @@
 set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bounds.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_matrix.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_uuid.cpp
 	CACHE STRING "SOURCES" FORCE)
 

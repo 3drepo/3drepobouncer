@@ -410,10 +410,8 @@ int64_t RepoBSON::getLongField(const std::string& label) const
 
 repo::lib::RepoMatrix getMatrixFromArray(const bsoncxx::array::view& rows) {
 	
-	std::vector<float> transformationMatrix;
-
-	transformationMatrix.resize(16);
-	float* transArr = &transformationMatrix.at(0);
+	repo::lib::RepoMatrix transformationMatrix;
+	double* transArr = transformationMatrix.getData();
 	
 	for (uint32_t rowInd = 0; rowInd < 4; rowInd++)
 	{
@@ -426,7 +424,7 @@ repo::lib::RepoMatrix getMatrixFromArray(const bsoncxx::array::view& rows) {
 		}
 	}
 
-	return repo::lib::RepoMatrix(transformationMatrix);
+	return transformationMatrix;
 }
 
 // These specialisations perform the concrete type conversion for the getArray

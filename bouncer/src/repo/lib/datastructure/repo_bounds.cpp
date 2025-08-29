@@ -92,8 +92,8 @@ REPO_API_EXPORT repo::lib::RepoBounds repo::lib::operator*(const _RepoMatrix<dou
 
 	auto transformedCenter = matrix * center;
 
-	repo::lib::RepoMatrix64 mAbs(matrix.getData());
-	auto& data = mAbs.getData();
+	repo::lib::RepoMatrix mAbs(matrix.getData());
+	auto data = mAbs.getData();
 	for(int i = 0; i < 3; ++i)
 	{
 		for(int j = 0; j < 3; ++j)

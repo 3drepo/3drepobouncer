@@ -17,14 +17,78 @@
 
 #pragma once
 
-#include "repo_vector.h"
-#include "repo_matrix_def.h"
-#include <repo_log.h>
 #include <string>
+#include <vector>
+#include "repo_vector.h"
 
 namespace repo {
 	namespace lib {
-		using RepoMatrix = _RepoMatrix<float>;
-		using RepoMatrix64 = _RepoMatrix<double>;
+
+		template <class T>
+		class REPO_API_EXPORT _RepoMatrix
+		{
+		public:
+			_RepoMatrix();
+
+			_RepoMatrix(const std::vector<float>& mat);
+			_RepoMatrix(const std::vector<double>& mat);
+
+			_RepoMatrix(const std::vector<std::vector<T>>& mat);
+
+			template<typename T2>
+			_RepoMatrix(const T2* coefficients, bool rowMajor = true);
+
+			T determinant() const;
+
+			bool equals(const _RepoMatrix<T>& other) const;
+
+			const T* getData() const;
+
+			T* getData();
+
+			_RepoMatrix<T> invert() const;
+
+			bool isIdentity(const float& eps = 10e-5) const;
+
+			repo::lib::RepoVector3D transformDirection(const repo::lib::RepoVector3D& vec) const;
+
+			repo::lib::RepoVector3D64 transformDirection(const repo::lib::RepoVector3D64& vec) const;
+
+			std::string toString() const;
+
+			_RepoMatrix<T> transpose() const;
+
+			_RepoMatrix<T> rotation() const;
+
+			static _RepoMatrix<T> rotationX(T angle);
+
+			static _RepoMatrix<T> rotationY(T angle);
+
+			static _RepoMatrix<T> rotationZ(T angle);
+
+			static _RepoMatrix<T> translate(lib::_RepoVector3D<T> t);
+
+			static _RepoMatrix<T> scale(lib::_RepoVector3D<T> s);
+
+		private:
+			T data[16];
+		};
+
+		template <class T>
+		inline repo::lib::RepoVector3D operator*(const _RepoMatrix<T>& matrix, const repo::lib::RepoVector3D& vec);
+
+		template <class T>
+		inline repo::lib::RepoVector3D64 operator*(const _RepoMatrix<T>& matrix, const repo::lib::RepoVector3D64& vec);
+
+		template <class T>
+		inline _RepoMatrix<T> operator*(const _RepoMatrix<T>& matrix1, const _RepoMatrix<T>& matrix2);
+
+		template <class T>
+		inline bool operator==(const _RepoMatrix<T>& matrix1, const _RepoMatrix<T>& matrix2);
+
+		template <class T>
+		inline bool operator!=(const _RepoMatrix<T>& matrix1, const _RepoMatrix<T>& matrix2);
+
+		using RepoMatrix = _RepoMatrix<double>;
 	}
 }

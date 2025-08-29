@@ -86,7 +86,7 @@ namespace repo {
 				const std::string TASK_START_DATE = "startDate";
 				const std::string TASK_END_DATE = "endDate";
 				const std::string TASK_CHILDREN = "subActivities";
-				repo::lib::RepoMatrix64 scaleMatrix, reverseScaleMatrix;
+				repo::lib::RepoMatrix scaleMatrix, reverseScaleMatrix;
 
 				/**
 				* Generates a repo scene graph
@@ -96,8 +96,8 @@ namespace repo {
 				*/
 				repo::core::model::RepoScene* generateRepoScene(uint8_t& errMsg);
 
-				repo::lib::RepoMatrix64 convertMatrixTo3DRepoWorld(
-					const repo::lib::RepoMatrix64 &matrix,
+				repo::lib::RepoMatrix convertMatrixTo3DRepoWorld(
+					const repo::lib::RepoMatrix &matrix,
 					const std::vector<double> &offset);
 
 				std::pair<repo::core::model::RepoNodeSet, repo::core::model::RepoNodeSet> generateMatNodes(
@@ -141,7 +141,7 @@ namespace repo {
 				void updateFrameState(
 					const std::vector<std::shared_ptr<synchro_reader::AnimationTask>> &tasks,
 					const std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
-					const std::unordered_map<std::string, repo::lib::RepoMatrix64> &resourceIDLastTrans,
+					const std::unordered_map<std::string, repo::lib::RepoMatrix> &resourceIDLastTrans,
 					std::unordered_map<float, std::set<std::string>> &alphaValueToIDs,
 					std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
 					std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState,

@@ -213,7 +213,7 @@ namespace repo {
 				* This is typically done for units conversion.
 				* @param scale the scaling factor to apply
 				*/
-				void applyScaleFactor(const float &scale);
+				void applyScaleFactor(const double& scale);
 
 				void addSequence(
 					const RepoSequence &animationSequence,

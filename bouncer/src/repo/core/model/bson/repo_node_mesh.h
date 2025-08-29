@@ -190,7 +190,7 @@ namespace repo {
 					const repo::lib::RepoMatrix &matrix) const;
 
 				void applyTransformation(
-					const repo::lib::RepoMatrix64& matrix);
+					const repo::lib::RepoMatrix& matrix);
 
 				void setGrouping(const std::string& grouping)
 				{

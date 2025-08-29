@@ -98,7 +98,7 @@ namespace repo {
 					int id;
 					int parentId;
 					std::string name;
-					repo::lib::RepoMatrix64 matrix;
+					repo::lib::RepoMatrix matrix;
 					std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
 					GeometryRecord geometry;
 					repo::lib::RepoBounds bounds;

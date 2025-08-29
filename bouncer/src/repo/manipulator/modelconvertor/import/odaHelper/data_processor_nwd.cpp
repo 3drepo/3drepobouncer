@@ -25,6 +25,8 @@
 #include "repo/core/model/bson/repo_node_transformation.h"
 #include "repo/core/model/bson/repo_bson_factory.h"
 
+#include <repo_log.h>
+
 // ODA
 #include <OdaCommon.h>
 #include <RxDynamicModule.h>

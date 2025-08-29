@@ -250,23 +250,23 @@ namespace repo {
 
 				struct RepoMatrixParser : public NumberParserBase<float>
 				{
-					repo::lib::RepoMatrix64& matrix;
+					repo::lib::RepoMatrix& matrix;
 					int i;
 
-					RepoMatrixParser(repo::lib::RepoMatrix64& matrix)
+					RepoMatrixParser(repo::lib::RepoMatrix& matrix)
 						:matrix(matrix),
 						i(0)
 					{
 					}
 
 					virtual Parser* StartArray() {
-						matrix = repo::lib::RepoMatrix64();
+						matrix = repo::lib::RepoMatrix();
 						i = 0;
 						return this;
 					}
 
 					void Number(float d) override {
-						if (i < matrix.getData().size()) {
+						if (i < 16) {
 							matrix.getData()[i++] = d;
 						}
 					}

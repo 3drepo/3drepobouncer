@@ -18,6 +18,7 @@
 #include "repo_ifc_serialiser.h"
 #include "repo_ifc_constants.h"
 
+#include <repo_log.h>
 #include <repo/repo_bouncer_global.h>
 #include <repo/lib/repo_utils.h>
 #include <repo/lib/datastructure/repo_vector.h>

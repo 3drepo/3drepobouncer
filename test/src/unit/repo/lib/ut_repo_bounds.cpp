@@ -126,7 +126,7 @@ struct DoubleMesh
 		return bounds;
 	}
 
-	void applyTransformation(const repo::lib::RepoMatrix64& matrix)
+	void applyTransformation(const repo::lib::RepoMatrix& matrix)
 	{
 		for (auto& v : vertices)
 		{
@@ -144,11 +144,13 @@ TEST(RepoBoundsTest, TransformBounds)
 {
 	using namespace repo::lib;
 
+	//Todo: update these to use the random generator to get many more transforms involved.
+
 	restartRand(0);
 	auto m = DoubleMesh(*repo::test::utils::mesh::createRandomMesh(1000, false, 3, {}, {}));
 
 	{
-		auto transform = RepoMatrix64::translate(RepoVector3D64(1000, -1, 254));
+		auto transform = RepoMatrix::translate(RepoVector3D64(1000, -1, 254));
 		auto copy(m);
 		copy.applyTransformation(transform);
 
@@ -158,7 +160,7 @@ TEST(RepoBoundsTest, TransformBounds)
 	}
 
 	{
-		auto transform = RepoMatrix64::rotationX(6) * RepoMatrix64::rotationY(11) * RepoMatrix64::rotationZ(27);
+		auto transform = RepoMatrix::rotationX(6) * RepoMatrix::rotationY(11) * RepoMatrix::rotationZ(27);
 		auto copy(m);
 		copy.applyTransformation(transform);
 
@@ -171,7 +173,7 @@ TEST(RepoBoundsTest, TransformBounds)
 	// cannot assume this, so make sure whatever we use is...
 
 	{
-		auto transform = RepoMatrix64::scale(RepoVector3D64(0.93, 12.4, 1));
+		auto transform = RepoMatrix::scale(RepoVector3D64(0.93, 12.4, 1));
 		auto copy(m);
 		copy.applyTransformation(transform);
 
@@ -181,7 +183,7 @@ TEST(RepoBoundsTest, TransformBounds)
 	}
 
 	{
-		auto transform = RepoMatrix64::translate(RepoVector3D64(1000, -1, 254)) * RepoMatrix64::rotationX(6) * RepoMatrix64::scale(RepoVector3D64(0.93, 12.4, 1));
+		auto transform = RepoMatrix::translate(RepoVector3D64(1000, -1, 254)) * RepoMatrix::rotationX(6) * RepoMatrix::scale(RepoVector3D64(0.93, 12.4, 1));
 		auto copy(m);
 		copy.applyTransformation(transform);
 
@@ -191,7 +193,7 @@ TEST(RepoBoundsTest, TransformBounds)
 	}
 
 	{
-		auto transform = RepoMatrix64::translate(RepoVector3D64(1000, -1, 254)) * RepoMatrix64::rotationX(6) * RepoMatrix64::scale(RepoVector3D64(-2, 2, 2));
+		auto transform = RepoMatrix::translate(RepoVector3D64(1000, -1, 254)) * RepoMatrix::rotationX(6) * RepoMatrix::scale(RepoVector3D64(-2, 2, 2));
 		auto copy(m);
 		copy.applyTransformation(transform);
 
@@ -204,10 +206,10 @@ TEST(RepoBoundsTest, TransformBounds)
 	// to ensure the matrix doesn't solely consist of a translation, which is
 	// too easy to subtract without any loss.
 
-	auto smallRotation = RepoMatrix64::rotationX(6.1) * RepoMatrix64::rotationY(11.27) * RepoMatrix64::rotationZ(27.45);
+	auto smallRotation = RepoMatrix::rotationX(6.1) * RepoMatrix::rotationY(11.27) * RepoMatrix::rotationZ(27.45);
 
 	{
-		auto transform = RepoMatrix64::translate(RepoVector3D64(99000, -12001, 76000)) * smallRotation;
+		auto transform = RepoMatrix::translate(RepoVector3D64(99000, -12001, 76000)) * smallRotation;
 		auto copy(m);
 		copy.applyTransformation(transform);
 
@@ -217,7 +219,7 @@ TEST(RepoBoundsTest, TransformBounds)
 	}
 
 	{
-		auto transform = RepoMatrix64::translate(RepoVector3D64(990001, -120012, 760003)) * smallRotation;
+		auto transform = RepoMatrix::translate(RepoVector3D64(990001, -120012, 760003)) * smallRotation;
 		auto copy(m);
 		copy.applyTransformation(transform);
 
@@ -227,7 +229,7 @@ TEST(RepoBoundsTest, TransformBounds)
 	}
 
 	{
-		auto transform = RepoMatrix64::translate(RepoVector3D64(9900012.1, -1200123.2, 7600034.34)) * smallRotation;
+		auto transform = RepoMatrix::translate(RepoVector3D64(9900012.1, -1200123.2, 7600034.34)) * smallRotation;
 		auto copy(m);
 		copy.applyTransformation(transform);
 
@@ -237,7 +239,7 @@ TEST(RepoBoundsTest, TransformBounds)
 	}
 
 	{
-		auto transform = RepoMatrix64::translate(RepoVector3D64(99000125.56, -12001236.78, 76000347.91)) * smallRotation;
+		auto transform = RepoMatrix::translate(RepoVector3D64(99000125.56, -12001236.78, 76000347.91)) * smallRotation;
 		auto copy(m);
 		copy.applyTransformation(transform);
 
@@ -247,7 +249,7 @@ TEST(RepoBoundsTest, TransformBounds)
 	}
 
 	{
-		auto transform = RepoMatrix64::translate(RepoVector3D64(99000125.11, -12001236.12, 76000347.23)) * smallRotation;
+		auto transform = RepoMatrix::translate(RepoVector3D64(99000125.11, -12001236.12, 76000347.23)) * smallRotation;
 		auto copy(m);
 		copy.applyTransformation(transform);
 
@@ -257,7 +259,7 @@ TEST(RepoBoundsTest, TransformBounds)
 	}
 
 	{
-		auto transform = RepoMatrix64::translate(RepoVector3D64(990001256.13, -120012367.34, 760003478.456)) * smallRotation;
+		auto transform = RepoMatrix::translate(RepoVector3D64(990001256.13, -120012367.34, 760003478.456)) * smallRotation;
 		auto copy(m);
 		copy.applyTransformation(transform);
 
@@ -271,7 +273,7 @@ TEST(RepoBoundsTest, TransformBounds)
 	// interest - 10^9 is accurate to the millimeter over 1000 km.
 
 	{
-		auto transform = RepoMatrix64::translate(RepoVector3D64(9900012567.56, -1200123678.567, 7600034789.987)) * smallRotation;
+		auto transform = RepoMatrix::translate(RepoVector3D64(9900012567.56, -1200123678.567, 7600034789.987)) * smallRotation;
 		auto copy(m);
 		copy.applyTransformation(transform);
 

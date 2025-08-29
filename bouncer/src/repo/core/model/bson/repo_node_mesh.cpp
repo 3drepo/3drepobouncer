@@ -314,7 +314,7 @@ MeshNode MeshNode::cloneAndApplyTransformation(
 }
 
 void MeshNode::applyTransformation(
-	const repo::lib::RepoMatrix64& matrix)
+	const repo::lib::RepoMatrix& matrix)
 {
 	if (!matrix.isIdentity())
 	{
