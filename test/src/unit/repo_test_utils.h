@@ -34,6 +34,16 @@ namespace testing {
 		const std::string& db,
 		const std::string& project);
 
+	/*
+	* Checks the contents of the projects head revision to ensure
+	* it has valid some transformation and mesh nodes, indicating
+	* a successful import.
+	*/
+	bool projectIsPopulated(
+		const std::string& db,
+		const std::string& project
+	);
+
 	bool projectSettingsCheck(
 		const std::string& dbName,
 		const std::string& projectName,

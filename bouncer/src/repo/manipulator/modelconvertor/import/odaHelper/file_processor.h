@@ -23,6 +23,7 @@
 #include <string>
 
 class OdGsView; // Forward declaration from ODA's Gs.h
+class OdString; // Forward declaration from ODA's OdString.h
 
 namespace repo {
 	namespace manipulator {
@@ -41,7 +42,6 @@ namespace repo {
 					bool shouldApplyReduction = false;
 
 				protected:
-					const std::string file;
 					modelutility::DrawingImageInfo* drawingCollector;
 					const ModelImportConfig& importConfig;
 					modelutility::RepoSceneBuilder* repoSceneBuilder;
@@ -49,6 +49,11 @@ namespace repo {
 					// Helper function to update the DrawingCalibration's horizontal calibration
 					// based on the MVP matrix of the view.
 					static void updateDrawingHorizontalCalibration(const OdGsView* view, modelutility::DrawingCalibration& calibration);
+
+					OdString getFilename();
+
+				private:
+					std::string file;
 				};
 			}
 		}

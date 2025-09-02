@@ -23,6 +23,7 @@
 #include <istream>
 #include <ranges>
 #include <iomanip>
+#include <filesystem>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
@@ -478,13 +479,13 @@ public:
 */
 repo::core::model::RepoScene* RepoModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err)
 {
-	std::string fileName = getFileName(filePath);
+	auto path = std::filesystem::u8path(filePath);
 
-	repoInfo << "IMPORT [" << fileName << "]";
+	repoInfo << "IMPORT [" << filePath << "]";
 	repoInfo << "=== IMPORTING MODEL WITH REPO IMPORTER ===";
 
 	// Reading in file
-	std::ifstream finCompressed(filePath, std::ios_base::in | std::ios::binary);
+	std::ifstream finCompressed(path, std::ios_base::in | std::ios::binary);
 	if (finCompressed)
 	{
 		auto inbuf = new boost::iostreams::filtering_istream();
@@ -599,7 +600,7 @@ repo::core::model::RepoScene* RepoModelImport::importModel(std::string filePath,
 		return scene;
 	}
 	else {
-		repoError << "File " << fileName << " not found.";
+		repoError << "File " << path << " not found.";
 		err = REPOERR_MODEL_FILE_READ;
 		return nullptr;
 	}
