@@ -3,7 +3,7 @@
 add_subdirectory(src)
 
 set(VERSION_MAJOR 5)
-set(VERSION_MINOR 18_3)
+set(VERSION_MINOR 18_4)
 
 include_directories(
 	${MONGO_CXX_DRIVER_MONGO_INCLUDE_DIR}
