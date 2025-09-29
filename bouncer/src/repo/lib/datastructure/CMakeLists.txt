@@ -17,7 +17,6 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_container.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_line.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_matrix.h
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_matrix_def.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_structs.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_triangle.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_uuid.h
