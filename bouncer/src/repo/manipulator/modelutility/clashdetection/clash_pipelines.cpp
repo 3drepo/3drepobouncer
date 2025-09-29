@@ -16,6 +16,8 @@
 */
 
 #include "clash_pipelines.h"
+#include "clash_scheduler.h"
+#include "clash_node_cache.h"
 #include "sparse_scene_graph.h"
 
 #include <repo/lib/datastructure/repo_matrix.h>
@@ -41,15 +43,6 @@ using namespace repo::manipulator::modelutility::clash;
 using ContainerGroups = std::unordered_map<repo::lib::Container*, std::vector<repo::lib::RepoUUID>>;
 using Bvh = bvh::Bvh<double>;
 
-static inline bvh::BoundingBox<double> operator*(const RepoMatrix64& matrix, const repo::lib::RepoBounds& bounds)
-{
-	repo::lib::RepoBounds b(
-		matrix * bounds.min(),
-		matrix * bounds.max()
-	);
-	return *reinterpret_cast<bvh::BoundingBox<double>*>(&b);
-}
-
 struct Graph
 {
 	// Once this is initialised, it should not be changed, as the bvh will use
@@ -68,7 +61,8 @@ struct Graph
 
 		for (const auto& node : meshes)
 		{
-			boundingBoxes.push_back(node.matrix * node.mesh.getBoundsField(REPO_NODE_MESH_LABEL_BOUNDING_BOX));
+			auto bounds = node.matrix * node.mesh.getBoundsField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
+			boundingBoxes.push_back(*(reinterpret_cast<bvh::BoundingBox<double>*>(&bounds)));
 			centers.push_back(boundingBoxes.back().center());
 		}
 
@@ -88,58 +82,6 @@ struct Graph
 		// to change however.
 
 		return const_cast<sparse::Node&>(meshes[primitive]);
-	}
-};
-
-/*
-* Non - intrusive convenience type that stores some information about the mesh
-* with the Bvh
-*/
-class MeshNodeBvh : public Bvh
-{
-public:
-	// This assumes the node has already been transformed into the correct
-	// coordinate system.
-	MeshNodeBvh(const repo::core::model::MeshNode& node)
-		: Bvh(),
-		mesh(node)
-	{
-		auto boundingBoxes = std::vector<bvh::BoundingBox<double>>();
-		auto centers = std::vector<bvh::Vector3<double>>();
-
-		auto vertices = mesh.getVertices();
-		for (const auto& face : mesh.getFaces())
-		{
-			auto bbox = bvh::BoundingBox<double>::empty();
-			for (size_t i = 0; i < face.sides; i++) {
-				auto v = vertices[face[i]];
-				bbox.extend(bvh::Vector3<double>(v.x, v.y, v.z));
-			}
-			boundingBoxes.push_back(bbox);
-			centers.push_back(boundingBoxes.back().center());
-		}
-
-		auto globalBounds = bvh::compute_bounding_boxes_union(boundingBoxes.data(), boundingBoxes.size());
-
-		bvh::SweepSahBuilder<Bvh> builder(*this);
-		builder.max_leaf_size = 1;
-		builder.build(globalBounds, boundingBoxes.data(), centers.data(), boundingBoxes.size());
-	}
-
-	const repo::core::model::MeshNode& mesh;
-
-	repo::lib::RepoTriangle getTriangle(int primitive) const
-	{
-		auto& face = mesh.getFaces()[primitive];
-		if (face.sides < 3) {
-			throw std::runtime_error("Clash detection engine only supports Triangles.");
-		}
-		auto& vertices = mesh.getVertices();
-		return repo::lib::RepoTriangle(
-			vertices[face[0]],
-			vertices[face[1]],
-			vertices[face[2]]
-		);
 	}
 };
 
@@ -190,59 +132,49 @@ ClashDetectionReport Pipeline::runPipeline()
 
 	broadphase->operator()(graphA.bvh, graphB.bvh, broadphaseResults);
 
-	//todo: create a set of jobs that reference a particular 
+	ClashScheduler::schedule(broadphaseResults);
 
-	for (const auto& [aIndex, bIndex] : broadphaseResults)
+	NodeCache cache(handler);
+
+	std::vector<std::pair<
+		std::shared_ptr<NodeCache::Node>,
+		std::shared_ptr<NodeCache::Node>
+		>> narrowphaseTests;
+
+	for (auto r : broadphaseResults) {
+		narrowphaseTests.push_back({
+			cache.getNode(graphA.getNode(r.first)),
+			cache.getNode(graphB.getNode(r.second))
+		});
+	}
+
+	for (const auto& [a, b] : narrowphaseTests)
 	{
-		auto& a = graphA.getNode(aIndex);
-		auto& b = graphB.getNode(bIndex);
+		a->initialise();
+		b->initialise();
 
-		// For now, we do the actual tests in Project Coordinates, even if the
-		// offset may be quite large.
-		// If experiments show we are vulnerable to numerical errors, we could
-		// move them into a common space by computing the difference between
-		// the matrices of the two nodes, then transforming the bounds of b by
-		// this. The reference for the final results would be a.
-
-		// Load the binary data
-
-		handler->loadBinaryBuffers(
-			a.container->teamspace,
-			a.container->container + "." + REPO_COLLECTION_SCENE,
-			a.mesh
-		);
-
-		handler->loadBinaryBuffers(
-			b.container->teamspace,
-			b.container->container + "." + REPO_COLLECTION_SCENE,
-			b.mesh
-		);
-
-		// Put the meshes in project coordinates
-
-		auto nodeA = repo::core::model::MeshNode(a.mesh);
-		nodeA.applyTransformation(a.matrix);
-		auto nodeB = repo::core::model::MeshNode(b.mesh);
-		nodeB.applyTransformation(b.matrix);
-
-		MeshNodeBvh bvhA(nodeA);
-		MeshNodeBvh bvhB(nodeB);
+		// The current implementation of the pipeline uses double precision floating
+		// point throughout. This is because the way the scene data is stored limits
+		// the accuracy of the engine, and double precision exceeds the requirments
+		// for our guaranteed range (as verified by unit tests). It is therefore the
+		// most straightforward solution. If any of the above should change however, a
+		// dedicated library such as MPIR should be used insted.
 
 		BroadphaseResults results;
-		broadphase->operator()(bvhA, bvhB, results);
+		broadphase->operator()(a->getBvh(), b->getBvh(), results);
 
 		auto narrowphase = createNarrowphase();
 
 		for (const auto& [aIndex, bIndex] : results)
 		{
 			if (narrowphase->operator()(
-					bvhA.getTriangle(aIndex),
-					bvhB.getTriangle(bIndex))
+					a->getTriangle(aIndex),
+					b->getTriangle(bIndex))
 				)
 			{
 				OrderedPair pair(
-					uniqueToCompositeId[a.uniqueId],
-					uniqueToCompositeId[b.uniqueId]
+					uniqueToCompositeId[a->getUniqueId()],
+					uniqueToCompositeId[b->getUniqueId()]
 				);
 
 				auto it = clashes.find(pair);
@@ -255,11 +187,6 @@ ClashDetectionReport Pipeline::runPipeline()
 				append(*it->second, *narrowphase);
 			}
 		}
-
-		// Unload the binaries
-
-		a.mesh.unloadBinaryBuffers();
-		b.mesh.unloadBinaryBuffers();
 	}
 
 	ClashDetectionReport report;

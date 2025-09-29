@@ -86,7 +86,9 @@ struct ClearanceBroadphase: public Broadphase
 			auto& left = a.nodes[idxLeft];
 			auto& right = b.nodes[idxRight];
 
-			if (minDistanceSq(left.bounding_box_proxy(), right.bounding_box_proxy()) > clearanceSq)
+			auto mds = minDistanceSq(left.bounding_box_proxy(), right.bounding_box_proxy());
+
+			if (mds > clearanceSq)
 			{
 				continue; // No possible intersection within the tolerance
 			}
@@ -137,7 +139,8 @@ struct ClearanceNarrowphase: public Narrowphase
 	bool operator()(const repo::lib::RepoTriangle& a, const repo::lib::RepoTriangle& b) override
 	{
 		line = geometry::closestPointTriangleTriangle(a, b);
-		return line.magnitude() <= tolerance;
+		auto m = line.magnitude();
+		return m <= tolerance;
 	}
 };
 

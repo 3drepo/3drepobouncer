@@ -7,7 +7,9 @@
 set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_clearance.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/clash_node_cache.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_pipelines.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/clash_scheduler.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/geometry_tests.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/sparse_scene_graph.cpp
 	CACHE STRING "SOURCES" FORCE)
@@ -15,9 +17,10 @@ set(SOURCES
 set(HEADERS
 	${HEADERS}
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_clearance.h
-	${CMAKE_CURRENT_SOURCE_DIR}/clash_config_parser.h
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_hard.h
+	${CMAKE_CURRENT_SOURCE_DIR}/clash_node_cache.h
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_pipelines.h
+	${CMAKE_CURRENT_SOURCE_DIR}/clash_scheduler.h
 	${CMAKE_CURRENT_SOURCE_DIR}/geometry_tests.h
 	${CMAKE_CURRENT_SOURCE_DIR}/sparse_scene_graph.h
 	CACHE STRING "HEADERS" FORCE)

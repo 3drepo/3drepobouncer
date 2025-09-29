@@ -19,6 +19,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest-matchers.h>
 #include <numeric>
+#include <random>
+#include <exception>
+#include <repo_log.h>
 
 // The ODA NWD importer also uses rapidjson, so make sure to import our
 // copy into a different namespace to avoid interference between two
@@ -31,19 +34,30 @@
 #include <repo/manipulator/modelutility/rapidjson/rapidjson.h>
 #include <repo/manipulator/modelutility/rapidjson/document.h>
 
+#include <repo/manipulator/modelutility/repo_scene_builder.h>
+#include <repo/manipulator/modelutility/repo_scene_manager.h>
+
+#include <repo/core/model/bson/repo_bson.h>
+
 #include <repo/manipulator/modelutility/repo_clash_detection_engine.h>
 #include <repo/manipulator/modelutility/repo_clash_detection_config.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_pipelines.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_clearance.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_hard.h>
 #include <repo/manipulator/modelutility/clashdetection/sparse_scene_graph.h>
+#include <repo/manipulator/modelutility/clashdetection/geometry_tests.h>
+#include <repo/manipulator/modelutility/clashdetection/clash_scheduler.h>
 
 #include "../../../repo_test_utils.h"
+#include "../../../repo_test_clash_utils.h"
 #include "../../../repo_test_mesh_utils.h"
 #include "../../../repo_test_database_info.h"
 #include "../../../repo_test_fileservice_info.h"
 #include "../../../repo_test_scene_utils.h"
 #include "../../../repo_test_matchers.h"
+#include "../../../repo_test_mock_database.h"
+#include "../../../repo_test_mock_clash_scene.h"
+#include "../../../repo_test_random_generator.h"
 
 using namespace testing;
 using namespace repo;
@@ -52,18 +66,9 @@ using namespace repo::core::handler::database;
 using namespace repo::manipulator::modelconvertor;
 using namespace repo::manipulator::modelutility;
 
-// The ClashDetection unit tests all use the ClashDetection database. This is
-// a dump from a fully functional teamspce. Once restored, the team_member role
-// can be added to a user allowing the database to be inspected or maintained
-// using the frontend.
-// If uploading a new file, remember to copy the links into the tests fileShare
-// folder as well.
-
 #define TESTDB "ClashDetection"
 
 #pragma optimize ("", off)
-
-using DatabasePtr = std::shared_ptr<repo::core::handler::MongoDatabaseHandler>;
 
 repo::core::model::MeshNode createPointMesh(std::initializer_list<repo::lib::RepoVector3D> points)
 {
@@ -80,92 +85,79 @@ repo::core::model::MeshNode createPointMesh(std::initializer_list<repo::lib::Rep
 	);
 }
 
-struct ClashDetectionTestHelper
+struct BasisVectors
 {
-	ClashDetectionTestHelper(DatabasePtr handler)
-		:handler(handler)
-	{
-	}
-
-	DatabasePtr handler;
-
-	// Searches for mesh nodes only
-	repo::lib::RepoUUID getUniqueIdByName(
-		lib::Container* container,
-		std::string name)
-	{
-		repo::core::handler::database::query::RepoQueryBuilder query;
-		query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_MESH)));
-		query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_NAME, name));
-
-		// We only ever expect one result, but use findAllByCriteria because it allows
-		// skipping the binaries & other fields we are not interested in here.
-
-		repo::core::handler::database::query::RepoProjectionBuilder projection;
-		projection.includeField(REPO_NODE_LABEL_ID);
-
-		auto bson = handler->findAllByCriteria(
-			container->teamspace,
-			container->container + "." + REPO_COLLECTION_SCENE,
-			query,
-			projection,
-			true
-		);
-
-		MeshNode m(bson[0]);
-
-		return bson[0].getUUIDField(REPO_NODE_LABEL_ID);
-	}
-
-	CompositeObject createCompositeObject(
-		repo::lib::Container* container,
-		std::string name
-	)
-	{
-		CompositeObject composite;
-		composite.id = repo::lib::RepoUUID::createUUID();
-		composite.meshes.push_back(MeshReference(container, getUniqueIdByName(container, name)));
-		return composite;
-	}
-
-	// Will replace anything in the existing sets
-	void setCompositeObjectSetsByName(
-		ClashDetectionConfig& config,
-		std::initializer_list<std::string> a,
-		std::initializer_list<std::string> b)
-	{
-		config.setA.clear();
-		for (const auto& name : a) {
-			config.setA.push_back(createCompositeObject(config.containers[0].get(), name));
-		}
-		config.setB.clear();
-		for (const auto& name : b) {
-			config.setB.push_back(createCompositeObject(config.containers[0].get(), name));
-		}
-	}
-
-	std::unique_ptr<repo::lib::Container> getContainerByName(
-		std::string name)
-	{
-		auto container = std::make_unique<repo::lib::Container>();
-		container->teamspace = TESTDB;
-
-		auto settings = handler->findOneByCriteria(
-			TESTDB,
-			"settings",
-			query::Eq(REPO_NODE_LABEL_NAME, name)
-		);
-		container->container = settings.getStringField(REPO_NODE_LABEL_ID);
-
-		auto revisions = handler->getAllFromCollectionTailable(
-			TESTDB,
-			container->container + "." + REPO_COLLECTION_HISTORY
-		);
-		container->revision = revisions[0].getUUIDField(REPO_NODE_LABEL_ID);
-
-		return container;
+	repo::lib::RepoVector3D64 x = {1, 0, 0};
+	repo::lib::RepoVector3D64 y = {0, 1, 0};
+	repo::lib::RepoVector3D64 z = {0, 0, 1};
+	BasisVectors() = default;
+	BasisVectors(repo::lib::RepoVector3D64 x, repo::lib::RepoVector3D64 y, repo::lib::RepoVector3D64 z)
+		:x(x), y(y), z(z) {
 	}
 };
+
+struct ProceduralBox
+{
+	std::vector<repo::lib::RepoVector3D64> vertices;
+	
+	ProceduralBox(repo::lib::RepoVector3D64 size)
+		:vertices({
+				{-size.x, -size.y, -size.z}, // Bottom-left-front
+				{ size.x, -size.y, -size.z}, // Bottom-right-front
+				{ size.x,  size.y, -size.z}, // Top-right-front
+				{-size.x,  size.y, -size.z}, // Top-left-front
+				{-size.x, -size.y,  size.z}, // Bottom-left-back
+				{ size.x, -size.y,  size.z}, // Bottom-right-back
+				{ size.x,  size.y,  size.z}, // Top-right-back
+				{-size.x,  size.y,  size.z}  // Top-left-back
+			})
+	{
+	}
+
+	repo::core::model::MeshNode getMeshNode() const {
+		std::vector<repo::lib::repo_face_t> faces = {
+			{0, 1, 2}, {0, 2, 3}, // Front face
+			{4, 5, 6}, {4, 6, 7}, // Back face
+			{0, 1, 5}, {0, 5, 4}, // Bottom face
+			{2, 3, 7}, {2, 7, 6}, // Top face
+			{0, 3, 7}, {0, 7, 4}, // Left face
+			{1, 2, 6}, {1, 6, 5}  // Right face
+		};
+
+		std::vector<repo::lib::RepoVector3D> vv;
+		for (auto& v : vertices) {
+			vv.push_back(repo::lib::RepoVector3D(v.x, v.y, v.z));
+		}
+
+		auto n = RepoBSONFactory::makeMeshNode(
+			vv,
+			faces,
+			{},
+			{}
+		);
+
+		n.updateBoundingBox();
+
+		return n;
+	}
+
+	operator repo::core::model::MeshNode() const
+	{
+		return getMeshNode();
+	}
+};
+
+repo::core::model::MeshNode createBoxMesh(
+	repo::lib::RepoVector3D64 size,
+	repo::lib::RepoVector3D64 origin,
+	repo::lib::RepoUUID parentId)
+{
+	auto n = ProceduralBox(size).getMeshNode();
+	n.addParents({ parentId });
+	n.setMaterial(repo::lib::repo_material_t::DefaultMaterial());
+	n.changeName("Box");
+	return n;
+}
 
 TEST(Clash, SparseSceneGraph)
 {
@@ -356,12 +348,255 @@ TEST(Clash, SparseSceneGraph)
 	}
 }
 
+TEST(Clash, Config)
+{
+	ClashDetectionConfig config;
+	ClashDetectionConfig::ParseJsonFile(getDataPath("/clash/config1.json"), config);
+
+	EXPECT_THAT(config.type, Eq(ClashDetectionType::Clearance));
+	EXPECT_THAT(config.tolerance, Eq(0.0001));
+	
+	EXPECT_THAT(config.setA.size(), Eq(2));
+
+	EXPECT_THAT(config.setA[0].id, Eq(repo::lib::RepoUUID("898f194c-3852-43ac-9be5-85d315838768")));
+	EXPECT_THAT(config.setA[0].meshes[0].uniqueId, Eq(repo::lib::RepoUUID("266f6406-105f-4c43-b958-5a758eb15982")));
+	EXPECT_THAT(config.setA[0].meshes[0].container->teamspace, StrEq("clash"));
+	EXPECT_THAT(config.setA[0].meshes[0].container->container, StrEq("7cfef3ac-c133-417d-8bbe-c299a4725a95"));
+	EXPECT_THAT(config.setA[0].meshes[0].container->revision == repo::lib::RepoUUID("f70777ea-1f05-4f2a-b71b-1578d0710deb"), IsTrue());
+
+	EXPECT_THAT(config.setA[1].id, Eq(repo::lib::RepoUUID("a8f4761c-1b8a-4191-8e55-6096f602ca6e")));
+	EXPECT_THAT(config.setA[1].meshes[0].uniqueId, Eq(repo::lib::RepoUUID("b5ac2ae0-13de-4e68-8188-01bf04233e39")));
+	EXPECT_THAT(config.setA[1].meshes[0].container->teamspace, StrEq("clash"));
+	EXPECT_THAT(config.setA[1].meshes[0].container->container, StrEq("7cfef3ac-c133-417d-8bbe-c299a4725a95"));
+	EXPECT_THAT(config.setA[1].meshes[0].container->revision == repo::lib::RepoUUID("f70777ea-1f05-4f2a-b71b-1578d0710deb"), IsTrue());
+
+	EXPECT_THAT(config.setB[0].id, Eq(repo::lib::RepoUUID("06208325-6ea7-45a8-b5a1-ab8be8c4da79")));
+	EXPECT_THAT(config.setB[0].meshes[0].uniqueId, Eq(repo::lib::RepoUUID("8e8a7c81-a7df-4587-9976-190ff5680a97")));
+	EXPECT_THAT(config.setB[0].meshes[0].container->teamspace, StrEq("clash"));
+	EXPECT_THAT(config.setB[0].meshes[0].container->container, StrEq("ea72bf4b-ab53-4f59-bef3-694b66484192"));
+	EXPECT_THAT(config.setB[0].meshes[0].container->revision == repo::lib::RepoUUID("95988a2e-f71a-462d-9d00-de724fc7cd05"), IsTrue());
+
+	EXPECT_THAT(config.setB[1].id, Eq(repo::lib::RepoUUID("22ea928f-920d-493e-b6b8-7d510842a43f")));
+	EXPECT_THAT(config.setB[1].meshes[0].uniqueId, Eq(repo::lib::RepoUUID("655b8b50-70d3-4b8a-b4bf-02eed23202e3")));
+	EXPECT_THAT(config.setB[1].meshes[0].container->teamspace, StrEq("clash"));
+	EXPECT_THAT(config.setB[1].meshes[0].container->container, StrEq("ea72bf4b-ab53-4f59-bef3-694b66484192"));
+	EXPECT_THAT(config.setB[1].meshes[0].container->revision == repo::lib::RepoUUID("95988a2e-f71a-462d-9d00-de724fc7cd05"), IsTrue());
+
+	EXPECT_THAT(config.containers.size(), Eq(2));
+
+	// todo: check support for multiple containers
+
+
+}
+
+TEST(Clash, Scheduler)
+{
+	// Tests if the ClashScheduler returns a sensible narrowphase set.
+	// The scheduling problem is NP-Hard, so this test doesn't check if the
+	// order is optimal, just that all the original broadphase tests still
+	// exist, with no duplicates.
+
+	std::vector<std::pair<int, int>> broadphaseResults;
+
+	RepoRandomGenerator random;
+
+	for (auto i = 0; i < 1000; i++) {
+		if (random.boolean()) {
+			int refs = random.range(1, 10);
+			for (auto r = 0; r < refs; r++) {
+				broadphaseResults.push_back({ i, random.range(0, 1000) });
+			}
+		}
+		if (random.boolean()) {
+			int refs = random.range(1, 10);
+			for (auto r = 0; r < refs; r++) {
+				broadphaseResults.push_back({ random.range(0, 1000), i });
+			}
+		}
+	}
+
+	auto copy = broadphaseResults;
+
+	clash::ClashScheduler::schedule(broadphaseResults);
+
+	EXPECT_THAT(broadphaseResults, UnorderedElementsAreArray(copy));
+}
+
+/*
+* This next set of tests checks the accuracy of the engine. Accuracy is tested
+* numerically. Primitives are generated in different known configurations as a
+* ground truth, to which the measured distances are compared.
+* 
+* These tests use mixed precision libraries to build the ground truth, after
+* which they are downcast to the expected precision the engine will have to work
+* with: single precision for vertices, and double for transformations. These are
+* what are used to store scenes in the database.
+* 
+* Accuracy is tested at both the unit and end-to-end level. The current guaranteed
+* accuracy is 1 in 8e6 - that is, an error of at most 0.5 is allowed on 'either
+* side' of the expected distance.
+*/
+
+ClashGenerator clashGenerator;
+
+TEST(Clash, LineLineDistanceUnit)
+{
+	// Tests the accuracy of the line-line distance test across different scales.
+	// The test must be accurate for any pair of lines to within 1 in 8e6.
+
+	std::vector<int> meshPowers = { 2, 3, 4, 5, 6 };
+	std::vector<double> distances = { 0, 0.1, 1, 2, 10 };
+
+	for (auto d : distances) {
+		for (auto pM : meshPowers) {
+
+			double minError = DBL_MAX;
+			double maxError = -DBL_MAX;
+
+			double scale = 8 * std::pow(10, pM);
+			for (int i = 0; i < 1000000; ++i) {
+
+				auto p = clashGenerator.createLines(scale, d, 0);
+
+				bool downcast = true;
+				if (downcast) {
+					p.first.start = repo::lib::RepoVector3D(p.first.start);
+					p.first.end = repo::lib::RepoVector3D(p.first.end);
+					p.second.start = repo::lib::RepoVector3D(p.second.start);
+					p.second.end = repo::lib::RepoVector3D(p.second.end);
+				}
+
+				auto line = geometry::closestPointLineLine(p.first, p.second);
+				auto m = line.magnitude();
+				auto e = abs(m - d);
+
+				minError = std::min(minError, e);
+				maxError = std::max(maxError, e);
+
+				// 0.5 on either side of d, for a total permissible error of 1
+				EXPECT_THAT(e, Lt(0.5));
+			}
+
+			std::cout << "Scale: " << scale << " Expected Distance: " << d << ", Max Error: " << maxError << std::endl;
+		}
+	}
+}
+
+TEST(Clash, LineLineDistanceE2E)
+{
+	// Test the accuracy of the end-to-end pipeline in Clearance mode, for line-line
+	// distances.
+
+	auto db = std::make_shared<MockDatabase>();
+
+	std::vector<double> meshPowers = { 0.01, 1, 4, 6 };
+	std::vector<double> transformPowers = { 0, 2, 5, 8, 11 };
+	std::vector<double> distances = { 0, 1, 2 };
+
+	for (auto pT : transformPowers) {
+		for (auto pM : meshPowers) {
+			for (auto d : distances) {
+
+				double meshScale = 8 * std::pow(10, pM);
+				double transformScale = std::pow(10, pT);
+
+				for (int i = 0; i < 1000; ++i) {
+
+					ClashDetectionConfigHelper config;
+					config.type = ClashDetectionType::Clearance;
+					config.containers[0]->revision = repo::lib::RepoUUID::createUUID();
+
+					MockClashScene scene(config.containers[0]->revision);
+
+					auto p = clashGenerator.createLinesTransformed(meshScale, d, transformScale);
+					auto ids = scene.add(p, config);
+
+					db->setDocuments(scene.bsons);
+					
+					{
+						config.tolerance = d + 0.5;
+						clash::Clearance pipeline(db, config);
+						auto results = pipeline.runPipeline();
+						EXPECT_THAT(results.clashes.size(), Eq(1));
+					}
+
+					{
+						config.tolerance = d - 0.5;
+						clash::Clearance pipeline(db, config);
+						auto results = pipeline.runPipeline();
+						EXPECT_THAT(results.clashes.size(), Eq(0));
+					}
+				}
+			}
+		}
+	}
+}
+
+TEST(Clash, SupportedRanges)
+{
+	// If a mesh is greater than 8e6 in any dimension after being subject to scale
+	// or two transformations have a difference in offset greater than 10e10,
+	// then we cannot guarantee accuracy of the algorithm as the precision in the
+	// original vertices will have been lost.
+	// In this case we should issue a warning and refuse to return any results.
+
+
+
+
+
+}
+
+TEST(Clash, SelfClearance)
+{
+	// Test a single set (duplicated between A and B) for self-clearance.
+	// Identical Composite ids should not be tested against eachother.
+
+
+}
+
+TEST(Clash, Rvt)
+{
+	// Clash tests should be robust to quantisation from large offsets and
+	// rotations.
+
+	auto handler = getHandler();
+	ClashDetectionConfig config;
+	ClashDetectionDatabaseHelper helper(handler);
+
+	auto container = helper.getContainerByName("clearance_1_rvt");
+	config.containers.push_back(std::move(container));
+
+	helper.setCompositeObjectSetsByName(config,
+		{
+			"Casework 1_323641",
+		},
+		{
+			"Casework 1_323623",
+			"Casework 1_323729",
+			"Casework 1_323902",
+		}
+		);
+
+	config.tolerance = 0.001;
+
+	auto pipeline = new clash::Clearance(handler, config);
+	auto results = pipeline->runPipeline();
+
+	EXPECT_THAT(results.clashes.size(), Eq(3));
+}
+
 TEST(Clash, Clearance1)
 {
+	/*
+	* Performs Clearance tests against a number of manually configured imports.
+	* This test is used to verify end-to-end functionality against a real
+	* collection.
+	*/
+
 	auto handler = getHandler();
 	ClashDetectionConfig config;
 
-	ClashDetectionTestHelper helper(handler);
+	ClashDetectionDatabaseHelper helper(handler);
 
 	auto container = helper.getContainerByName("clearance_1");
 	config.containers.push_back(std::move(container));
@@ -384,7 +619,7 @@ TEST(Clash, Clearance1)
 		EXPECT_THAT(results.clashes[0].idA, Eq(config.setA[0].id));
 		EXPECT_THAT(results.clashes[0].idB, Eq(config.setB[0].id));
 	}
-	
+
 	// Check objects that are touching via conincident edges
 
 	{
@@ -412,7 +647,7 @@ TEST(Clash, Clearance1)
 		EXPECT_THAT(results.clashes[0].idB, Eq(config.setB[0].id));
 	}
 
-	
+
 	// Check objects for which the closest distance is a point to another point
 
 	{
@@ -439,12 +674,12 @@ TEST(Clash, Clearance1)
 		// to each other out of all pairs that violate the tolerance.
 
 		EXPECT_THAT(
-			results.clashes[0].positions, 
+			results.clashes[0].positions,
 			UnorderedVectorsAre(std::initializer_list<repo::lib::RepoVector3D64>({
 				repo::lib::RepoVector3D64(25.540725708007812, 0.1723330020904541, -2.916276693344116),
 				repo::lib::RepoVector3D64(25.541114807128906, -0.011896967887878418, -1.731921672821045)
-			}),
-			0.00001
+				}),
+				0.00001
 			)
 		);
 	}
@@ -570,7 +805,7 @@ TEST(Clash, Clearance2)
 	auto handler = getHandler();
 
 	auto pipeline = new clash::Clearance(handler, config);
-	
+
 	auto composite = pipeline->createCompositeClash();
 
 	struct NarrowphaseResult
@@ -578,47 +813,6 @@ TEST(Clash, Clearance2)
 
 	};
 
-
-
-}
-
-TEST(Clash, Config)
-{
-	ClashDetectionConfig config;
-	ClashDetectionConfig::ParseJsonFile(getDataPath("/clash/config1.json"), config);
-
-	EXPECT_THAT(config.type, Eq(ClashDetectionType::Clearance));
-	EXPECT_THAT(config.tolerance, Eq(0.0001));
-	
-	EXPECT_THAT(config.setA.size(), Eq(2));
-
-	EXPECT_THAT(config.setA[0].id, Eq(repo::lib::RepoUUID("898f194c-3852-43ac-9be5-85d315838768")));
-	EXPECT_THAT(config.setA[0].meshes[0].uniqueId, Eq(repo::lib::RepoUUID("266f6406-105f-4c43-b958-5a758eb15982")));
-	EXPECT_THAT(config.setA[0].meshes[0].container->teamspace, StrEq("clash"));
-	EXPECT_THAT(config.setA[0].meshes[0].container->container, StrEq("7cfef3ac-c133-417d-8bbe-c299a4725a95"));
-	EXPECT_THAT(config.setA[0].meshes[0].container->revision == repo::lib::RepoUUID("f70777ea-1f05-4f2a-b71b-1578d0710deb"), IsTrue());
-
-	EXPECT_THAT(config.setA[1].id, Eq(repo::lib::RepoUUID("a8f4761c-1b8a-4191-8e55-6096f602ca6e")));
-	EXPECT_THAT(config.setA[1].meshes[0].uniqueId, Eq(repo::lib::RepoUUID("b5ac2ae0-13de-4e68-8188-01bf04233e39")));
-	EXPECT_THAT(config.setA[1].meshes[0].container->teamspace, StrEq("clash"));
-	EXPECT_THAT(config.setA[1].meshes[0].container->container, StrEq("7cfef3ac-c133-417d-8bbe-c299a4725a95"));
-	EXPECT_THAT(config.setA[1].meshes[0].container->revision == repo::lib::RepoUUID("f70777ea-1f05-4f2a-b71b-1578d0710deb"), IsTrue());
-
-	EXPECT_THAT(config.setB[0].id, Eq(repo::lib::RepoUUID("06208325-6ea7-45a8-b5a1-ab8be8c4da79")));
-	EXPECT_THAT(config.setB[0].meshes[0].uniqueId, Eq(repo::lib::RepoUUID("8e8a7c81-a7df-4587-9976-190ff5680a97")));
-	EXPECT_THAT(config.setB[0].meshes[0].container->teamspace, StrEq("clash"));
-	EXPECT_THAT(config.setB[0].meshes[0].container->container, StrEq("ea72bf4b-ab53-4f59-bef3-694b66484192"));
-	EXPECT_THAT(config.setB[0].meshes[0].container->revision == repo::lib::RepoUUID("95988a2e-f71a-462d-9d00-de724fc7cd05"), IsTrue());
-
-	EXPECT_THAT(config.setB[1].id, Eq(repo::lib::RepoUUID("22ea928f-920d-493e-b6b8-7d510842a43f")));
-	EXPECT_THAT(config.setB[1].meshes[0].uniqueId, Eq(repo::lib::RepoUUID("655b8b50-70d3-4b8a-b4bf-02eed23202e3")));
-	EXPECT_THAT(config.setB[1].meshes[0].container->teamspace, StrEq("clash"));
-	EXPECT_THAT(config.setB[1].meshes[0].container->container, StrEq("ea72bf4b-ab53-4f59-bef3-694b66484192"));
-	EXPECT_THAT(config.setB[1].meshes[0].container->revision == repo::lib::RepoUUID("95988a2e-f71a-462d-9d00-de724fc7cd05"), IsTrue());
-
-	EXPECT_THAT(config.containers.size(), Eq(2));
-
-	// todo: check support for multiple containers
 
 
 }

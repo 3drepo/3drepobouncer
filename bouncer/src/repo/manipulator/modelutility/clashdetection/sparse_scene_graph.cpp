@@ -31,8 +31,6 @@
 
 using namespace repo::manipulator::modelutility::sparse;
 
-#pragma optimize ("", off)
-
 void SceneGraph::populate(
 	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
 	const repo::lib::Container* container, 

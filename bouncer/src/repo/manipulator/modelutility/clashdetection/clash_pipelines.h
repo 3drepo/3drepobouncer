@@ -63,7 +63,8 @@ namespace repo {
 
 				// The clash engine will return composite object a on the left, and b on the
 				// right, always. Though it is good practice when matching the result
-				// downstream to ignore the order.
+				// downstream to ignore the order, in case the user swaps the sets between
+				// runs.
 
 				struct OrderedPair
 				{

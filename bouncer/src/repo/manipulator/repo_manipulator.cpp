@@ -319,7 +319,8 @@ void RepoManipulator::performClashDetection(
 	const ClashDetectionConfig& config)
 {
 	modelutility::ClashDetectionEngine clashEngine(dbHandler);
-	clashEngine.runClashDetection(config);
+	auto results = clashEngine.runClashDetection(config);
+	clashEngine.writeClashDetectionResultsJson(results, config);
 }
 
 bool RepoManipulator::init(
