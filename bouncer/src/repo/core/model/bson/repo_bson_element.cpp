@@ -124,6 +124,9 @@ repo::lib::RepoVariant RepoBSONElement::repoVariant() const
 	case ElementType::STRING:
 		v = String();
 		break;
+	case ElementType::UUID:
+		v = UUID();
+		break;
 	default:
 		throw repo::lib::RepoException("Cannot convert BSONElement to Variant because Variant will not accept the type.");
 	}
