@@ -40,8 +40,9 @@ RepoBounds::RepoBounds(const RepoVector3D& min, const RepoVector3D& max)
 }
 
 repo::lib::RepoBounds::RepoBounds(std::initializer_list<RepoVector3D64> points)
+	:RepoBounds()
 {
-	for (auto p : points) {
+	for (auto& p : points) {
 		encapsulate(p);
 	}
 }
