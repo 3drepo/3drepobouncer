@@ -44,6 +44,12 @@ namespace testing {
 			const repo::lib::RepoUUID& uniqueIdA, 
 			const repo::lib::RepoUUID& uniqueIdB
 		);
+
+		/*
+		* Gets the revision for Container 0, which is the container created by the
+		* constructor, and to which composite objects are added by the helper methods.
+		*/
+		const repo::lib::RepoUUID& getRevision();
 	};
 
 	/*

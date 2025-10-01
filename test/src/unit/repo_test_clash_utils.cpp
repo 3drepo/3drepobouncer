@@ -102,16 +102,17 @@ CompositeObject ClashDetectionDatabaseHelper::createCompositeObject(
 // Will replace anything in the existing sets
 void ClashDetectionDatabaseHelper::setCompositeObjectSetsByName(
 	ClashDetectionConfig& config,
+	const std::unique_ptr<repo::lib::Container>& container,
 	std::initializer_list<std::string> a,
 	std::initializer_list<std::string> b)
 {
 	config.setA.clear();
 	for (const auto& name : a) {
-		config.setA.push_back(createCompositeObject(config.containers[0].get(), name));
+		config.setA.push_back(createCompositeObject(container.get(), name));
 	}
 	config.setB.clear();
 	for (const auto& name : b) {
-		config.setB.push_back(createCompositeObject(config.containers[0].get(), name));
+		config.setB.push_back(createCompositeObject(container.get(), name));
 	}
 }
 

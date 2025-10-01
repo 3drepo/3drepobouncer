@@ -24,11 +24,13 @@
 using namespace repo::manipulator::modelutility;
 using namespace repo::manipulator::modelutility::json;
 
+using CompositeObjectMap = std::unordered_map<repo::lib::RepoUUID, CompositeObject, repo::lib::RepoUUIDHasher>;
+
 class ICompositeObjectSet
 {
 public:
 	repo::lib::Container* container;
-	virtual CompositeObject& createCompositeObject() = 0;
+	virtual CompositeObject& getCompositeObject(const repo::lib::RepoUUID&) = 0;
 };
 
 class IContainerSet
@@ -73,9 +75,13 @@ struct CompositeObjectParser : public ObjectParser
 
 	virtual void EndObject() override
 	{
-		auto& obj = set->createCompositeObject();
-		obj.id = id;
-		obj.meshes = std::move(meshIds);
+		auto& obj = set->getCompositeObject(id);
+		if (obj.meshes.size()) {
+			obj.meshes.insert(obj.meshes.end(), meshIds.begin(), meshIds.end());
+		}
+		else {
+			obj.meshes = std::move(meshIds);
+		}
 		meshIds = {};
 	}
 };
@@ -86,10 +92,10 @@ struct CompositeObjectSetParser : public ObjectParser, public ICompositeObjectSe
 	std::string containerName;
 	repo::lib::RepoUUID revision;
 
-	std::vector<CompositeObject>& set;
+	CompositeObjectMap& set;
 	IContainerSet* containers;
 
-	CompositeObjectSetParser(IContainerSet* containers, std::vector<CompositeObject>& set)
+	CompositeObjectSetParser(IContainerSet* containers, CompositeObjectMap& set)
 		:set(set),
 		containers(containers)
 	{
@@ -99,11 +105,11 @@ struct CompositeObjectSetParser : public ObjectParser, public ICompositeObjectSe
 		parsers["objects"] = new ArrayParser(new CompositeObjectParser(this));
 	}
 
-	CompositeObject& createCompositeObject() override
+	CompositeObject& getCompositeObject(const repo::lib::RepoUUID& id) override
 	{
-		CompositeObject obj;
-		set.push_back(obj);
-		return set.back();
+		auto& obj = set[id];
+		obj.id = id;
+		return obj;
 	}
 
 	virtual Parser* Key(const std::string_view& key) override
@@ -143,14 +149,16 @@ struct ClashConfigParser : public ObjectParser, public IContainerSet
 {
 	ClashDetectionConfig& config;
 	std::unordered_map<std::string, repo::lib::Container*> containers;
+	CompositeObjectMap mapA;
+	CompositeObjectMap mapB;
 
 	ClashConfigParser(ClashDetectionConfig& config)
 		:config(config)
 	{
 		parsers["type"] = new ClashTypeParser(config.type);
 		parsers["tolerance"] = new NumberParser<double>(config.tolerance);
-		parsers["setA"] = new ArrayParser(new CompositeObjectSetParser(this, config.setA));
-		parsers["setB"] = new ArrayParser(new CompositeObjectSetParser(this, config.setB));
+		parsers["setA"] = new ArrayParser(new CompositeObjectSetParser(this, mapA));
+		parsers["setB"] = new ArrayParser(new CompositeObjectSetParser(this, mapB));
 	}
 
 	virtual repo::lib::Container* getContainer(
@@ -173,6 +181,18 @@ struct ClashConfigParser : public ObjectParser, public IContainerSet
 		}
 		else {
 			return it->second;
+		}
+	}
+
+	virtual void EndObject() override
+	{
+		config.setA.clear();
+		for (auto& [id, obj] : mapA) {
+			config.setA.push_back(std::move(obj));
+		}
+		config.setB.clear();
+		for (auto& [id, obj] : mapB) {
+			config.setB.push_back(std::move(obj));
 		}
 	}
 

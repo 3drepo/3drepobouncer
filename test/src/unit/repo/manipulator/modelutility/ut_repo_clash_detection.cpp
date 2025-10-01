@@ -370,23 +370,32 @@ TEST(Clash, Config)
 	EXPECT_THAT(config.setA[1].meshes[0].container->container, StrEq("7cfef3ac-c133-417d-8bbe-c299a4725a95"));
 	EXPECT_THAT(config.setA[1].meshes[0].container->revision == repo::lib::RepoUUID("f70777ea-1f05-4f2a-b71b-1578d0710deb"), IsTrue());
 
+	EXPECT_THAT(config.setB.size(), Eq(3));
+
 	EXPECT_THAT(config.setB[0].id, Eq(repo::lib::RepoUUID("06208325-6ea7-45a8-b5a1-ab8be8c4da79")));
+	EXPECT_THAT(config.setB[0].meshes.size(), Eq(1));
 	EXPECT_THAT(config.setB[0].meshes[0].uniqueId, Eq(repo::lib::RepoUUID("8e8a7c81-a7df-4587-9976-190ff5680a97")));
 	EXPECT_THAT(config.setB[0].meshes[0].container->teamspace, StrEq("clash"));
 	EXPECT_THAT(config.setB[0].meshes[0].container->container, StrEq("ea72bf4b-ab53-4f59-bef3-694b66484192"));
 	EXPECT_THAT(config.setB[0].meshes[0].container->revision == repo::lib::RepoUUID("95988a2e-f71a-462d-9d00-de724fc7cd05"), IsTrue());
 
 	EXPECT_THAT(config.setB[1].id, Eq(repo::lib::RepoUUID("22ea928f-920d-493e-b6b8-7d510842a43f")));
+	EXPECT_THAT(config.setB[1].meshes.size(), Eq(2));
 	EXPECT_THAT(config.setB[1].meshes[0].uniqueId, Eq(repo::lib::RepoUUID("655b8b50-70d3-4b8a-b4bf-02eed23202e3")));
 	EXPECT_THAT(config.setB[1].meshes[0].container->teamspace, StrEq("clash"));
 	EXPECT_THAT(config.setB[1].meshes[0].container->container, StrEq("ea72bf4b-ab53-4f59-bef3-694b66484192"));
 	EXPECT_THAT(config.setB[1].meshes[0].container->revision == repo::lib::RepoUUID("95988a2e-f71a-462d-9d00-de724fc7cd05"), IsTrue());
+	EXPECT_THAT(config.setB[1].meshes[1].uniqueId, Eq(repo::lib::RepoUUID("8ff6d436-91eb-45ed-b110-d8a21354a16d")));
+	EXPECT_THAT(config.setB[1].meshes[1].container->teamspace, StrEq("clash"));
+	EXPECT_THAT(config.setB[1].meshes[1].container->container, StrEq("d6741305-7014-4d4c-af41-a1b743a35412"));
+	EXPECT_THAT(config.setB[1].meshes[1].container->revision == repo::lib::RepoUUID("f7caff9d-d2c2-440e-8b32-7cee46c23f32"), IsTrue());
 
-	EXPECT_THAT(config.containers.size(), Eq(2));
-
-	// todo: check support for multiple containers
-
-
+	EXPECT_THAT(config.setB[2].meshes.size(), Eq(1));
+	EXPECT_THAT(config.setB[2].id, Eq(repo::lib::RepoUUID("44fd3346-c9cb-4858-b13e-3683c8fe75bb")));
+	EXPECT_THAT(config.setB[2].meshes[0].uniqueId, Eq(repo::lib::RepoUUID("2fc9c8e0-57a4-4b0b-a6f9-1d1a68db3cc4")));
+	EXPECT_THAT(config.setB[2].meshes[0].container->teamspace, StrEq("clash"));
+	EXPECT_THAT(config.setB[2].meshes[0].container->container, StrEq("d6741305-7014-4d4c-af41-a1b743a35412"));
+	EXPECT_THAT(config.setB[2].meshes[0].container->revision == repo::lib::RepoUUID("f7caff9d-d2c2-440e-8b32-7cee46c23f32"), IsTrue());
 }
 
 TEST(Clash, Scheduler)
@@ -501,9 +510,8 @@ TEST(Clash, LineLineDistanceE2E)
 
 		ClashDetectionConfigHelper config;
 		config.type = ClashDetectionType::Clearance;
-		config.containers[0]->revision = repo::lib::RepoUUID::createUUID();
 
-		MockClashScene scene(config.containers[0]->revision);
+		MockClashScene scene(config.getRevision());
 
 		for (auto d : distances) {
 			clashGenerator.distance.set(d);
@@ -540,8 +548,8 @@ TEST(Clash, LineLineDistanceE2E)
 
 TEST(Clash, SupportedRanges)
 {
-	// If a mesh is greater than 8e6 in any dimension after being subject to scale
-	// or two transformations have a difference in offset greater than 10e10,
+	// If a mesh is greater than 8e6 in any dimension after being subject to scale,
+	// or two transformations have a difference in offset greater than 1e11,
 	// then we cannot guarantee accuracy of the algorithm as the precision in the
 	// original vertices will have been lost.
 	// In this case we should issue a warning and refuse to return any results.
@@ -570,9 +578,9 @@ TEST(Clash, Rvt)
 	ClashDetectionDatabaseHelper helper(handler);
 
 	auto container = helper.getContainerByName("clearance_1_rvt");
-	config.containers.push_back(std::move(container));
 
 	helper.setCompositeObjectSetsByName(config,
+		container,
 		{
 			"Casework 1_323641",
 		},
@@ -605,7 +613,6 @@ TEST(Clash, Clearance1)
 	ClashDetectionDatabaseHelper helper(handler);
 
 	auto container = helper.getContainerByName("clearance_1");
-	config.containers.push_back(std::move(container));
 
 
 	// Check objects that are touching via coincident vertices
@@ -616,7 +623,7 @@ TEST(Clash, Clearance1)
 	config.tolerance = 0.000001;
 
 	{
-		helper.setCompositeObjectSetsByName(config, { "TouchingPointsA" }, { "TouchingPointsB" });
+		helper.setCompositeObjectSetsByName(config, container, { "TouchingPointsA" }, { "TouchingPointsB" });
 
 		auto pipeline = new clash::Clearance(handler, config);
 		auto results = pipeline->runPipeline();
@@ -629,7 +636,7 @@ TEST(Clash, Clearance1)
 	// Check objects that are touching via conincident edges
 
 	{
-		helper.setCompositeObjectSetsByName(config, { "TouchingEdgeA" }, { "TouchingEdgeB" });
+		helper.setCompositeObjectSetsByName(config, container, { "TouchingEdgeA" }, { "TouchingEdgeB" });
 
 		auto pipeline = new clash::Clearance(handler, config);
 		auto results = pipeline->runPipeline();
@@ -643,7 +650,7 @@ TEST(Clash, Clearance1)
 	// Check objects that are touching via coincident faces
 
 	{
-		helper.setCompositeObjectSetsByName(config, { "TouchingFaceA" }, { "TouchingFaceB" });
+		helper.setCompositeObjectSetsByName(config, container, { "TouchingFaceA" }, { "TouchingFaceB" });
 
 		auto pipeline = new clash::Clearance(handler, config);
 		auto results = pipeline->runPipeline();
@@ -657,7 +664,7 @@ TEST(Clash, Clearance1)
 	// Check objects for which the closest distance is a point to another point
 
 	{
-		helper.setCompositeObjectSetsByName(config, { "ClosestPointPoint1A" }, { "ClosestPointPoint1B" });
+		helper.setCompositeObjectSetsByName(config, container, { "ClosestPointPoint1A" }, { "ClosestPointPoint1B" });
 
 		config.tolerance = 1.0;
 
@@ -693,7 +700,7 @@ TEST(Clash, Clearance1)
 	// Check objects for which the closest distance is a point to a face
 
 	{
-		helper.setCompositeObjectSetsByName(config, { "ClosestPointFace1A" }, { "ClosestPointFace1B" });
+		helper.setCompositeObjectSetsByName(config, container, { "ClosestPointFace1A" }, { "ClosestPointFace1B" });
 
 		config.tolerance = 0.1;
 
@@ -729,7 +736,7 @@ TEST(Clash, Clearance1)
 	// Check objects for which the closest distance is a point to an edge
 
 	{
-		helper.setCompositeObjectSetsByName(config, { "ClosestPointEdge1A" }, { "ClosestPointEdge1B" });
+		helper.setCompositeObjectSetsByName(config, container, { "ClosestPointEdge1A" }, { "ClosestPointEdge1B" });
 
 		config.tolerance = 0.1;
 
@@ -765,7 +772,7 @@ TEST(Clash, Clearance1)
 	// Check objects for which the closest distance is an edge to an edge
 
 	{
-		helper.setCompositeObjectSetsByName(config, { "ClosestEdgeEdge1A" }, { "ClosestEdgeEdge1B" });
+		helper.setCompositeObjectSetsByName(config, container, { "ClosestEdgeEdge1A" }, { "ClosestEdgeEdge1B" });
 
 		config.tolerance = 0.5;
 

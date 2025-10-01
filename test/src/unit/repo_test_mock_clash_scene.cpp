@@ -49,6 +49,11 @@ void ClashDetectionConfigHelper::addCompositeObjects(
 	);
 }
 
+const repo::lib::RepoUUID& testing::ClashDetectionConfigHelper::getRevision()
+{
+	return this->containers[0]->revision;
+}
+
 MockClashScene::MockClashScene(const RepoUUID& revision) {
 	auto n = RepoBSONFactory::makeTransformationNode({}, "rootNode");
 	root = n.getSharedID();

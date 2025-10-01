@@ -48,10 +48,10 @@ namespace repo {
 			* considered as a single object for the purposes of clash detection.
 			*
 			* How MeshNodes are arranged into Composites will affect the estimated
-			* penetration depth.
+			* penetration depth, if any.
 			*
 			* In most cases, a CompositeObject will be the TransformationNode above
-			* one or more MeshNodes, but in theory it could be any set of MeshNodes.
+			* one or more MeshNodes.
 			*/
 
 			struct MeshReference
@@ -68,6 +68,9 @@ namespace repo {
 
 			struct CompositeObject
 			{
+				/*
+				* Unique identifier of this Composite Object for correlation purposes.
+				*/
 				repo::lib::RepoUUID id;
 
 				/*
@@ -95,6 +98,9 @@ namespace repo {
 				std::vector<CompositeObject> setA;
 				std::vector<CompositeObject> setB;
 
+				/*
+				* Where to write the results of clash detection, as Json.
+				*/
 				std::string path;
 
 				REPO_API_EXPORT static void ParseJsonFile(const std::string& jsonFilePath, ClashDetectionConfig& config);
@@ -102,9 +108,9 @@ namespace repo {
 				/*
 				* Containers which hold the meshes referenced by the composite objects. This
 				* vector exists to store the container info which is referenced by the meshes.
-				* This is a convenience and implementation detail only: references may point
-				* to containers outside of this. There may be multiple entries for semantically
-				* identical containers.
+				* This is a convenience, and implementation detail only: references may point
+				* to containers outside of this. There may also be multiple entries to
+				* semantically identical containers.
 				*/
 				std::vector<std::unique_ptr<repo::lib::Container>> containers;
 			};

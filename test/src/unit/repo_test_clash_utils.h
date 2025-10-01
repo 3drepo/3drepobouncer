@@ -53,6 +53,7 @@ namespace testing {
 		// Will replace anything in the existing sets
 		void setCompositeObjectSetsByName(
 			repo::manipulator::modelutility::ClashDetectionConfig& config,
+			const std::unique_ptr<repo::lib::Container>& container,
 			std::initializer_list<std::string> a,
 			std::initializer_list<std::string> b);
 
