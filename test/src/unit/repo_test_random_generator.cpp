@@ -21,13 +21,26 @@ using namespace testing;
 
 #define PI 3.14159265358979323846
 
-repo::lib::RepoVector3D64 RepoRandomGenerator::vector(double scale)
+repo::lib::RepoVector3D64 RepoRandomGenerator::vector(const repo::lib::RepoRange& range)
 {
-	std::uniform_real_distribution<> d(-scale, scale);
+	auto v = direction();
+	std::uniform_real_distribution<> d(range.x, range.y);
+	return v * d(gen);
+}
+
+repo::lib::RepoVector3D64 RepoRandomGenerator::vector(
+	const repo::lib::RepoRange& x,
+	const repo::lib::RepoRange& y,
+	const repo::lib::RepoRange& z
+)
+{
+	std::uniform_real_distribution<> dx(x.min(), x.max());
+	std::uniform_real_distribution<> dy(y.min(), y.max());
+	std::uniform_real_distribution<> dz(z.min(), z.max());
 	return repo::lib::RepoVector3D64(
-		d(gen),
-		d(gen),
-		d(gen)
+		dx(gen),
+		dy(gen),
+		dz(gen)
 	);
 }
 
@@ -57,13 +70,16 @@ double RepoRandomGenerator::number(double upper)
 
 int64_t RepoRandomGenerator::range(int64_t lower, int64_t upper)
 {
+	if (lower > upper) {
+		std::swap(lower, upper);
+	}
 	std::uniform_int_distribution<int64_t> d(lower, upper);
 	return d(gen);
 }
 
-double RepoRandomGenerator::number(double lower, double upper)
+double RepoRandomGenerator::number(const repo::lib::RepoRange& range)
 {
-	std::uniform_real_distribution<> d(lower, upper);
+	std::uniform_real_distribution<> d(range.x, range.y);
 	return d(gen);
 }
 
@@ -78,7 +94,9 @@ bool RepoRandomGenerator::boolean()
 	return scalar() > 0.5;
 }
 
-repo::lib::RepoMatrix RepoRandomGenerator::transform(bool rotation, bool scale)
+repo::lib::RepoMatrix RepoRandomGenerator::transform(bool rotation,
+	const repo::lib::RepoRange& translate,
+	const repo::lib::RepoRange& scale)
 {
 	repo::lib::RepoMatrix m;
 
@@ -89,13 +107,12 @@ repo::lib::RepoMatrix RepoRandomGenerator::transform(bool rotation, bool scale)
 			repo::lib::RepoMatrix::rotationZ(angle());
 	}
 
-	if (scale)
-	{
-		m = m * repo::lib::RepoMatrix::scale({
-			number(-1000.0, 1000.0),
-			number(-1000.0, 1000.0),
-			number(-1000.0, 1000.0)
-			});
+	if (scale.length()) {
+		m = m * repo::lib::RepoMatrix::scale(vector(scale));
+	}
+
+	if (translate.length()) {
+		m = m * repo::lib::RepoMatrix::translate(vector(translate));
 	}
 
 	return m;

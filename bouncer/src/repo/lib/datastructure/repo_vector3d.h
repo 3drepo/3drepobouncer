@@ -131,6 +131,14 @@ namespace repo{
 				return _RepoVector3D<T>(x + other.x, y + other.y, z + other.z);
 			}
 
+			inline _RepoVector3D<T>& operator+=(const _RepoVector3D<T>& other)
+			{
+				x += other.x;
+				y += other.y;
+				z += other.z;
+				return *this;
+			}
+
 			inline _RepoVector3D<T> operator-(const _RepoVector3D<T> &other) const
 			{
 				return _RepoVector3D<T>(x - other.x, y - other.y, z - other.z);

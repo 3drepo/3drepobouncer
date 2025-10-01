@@ -8,6 +8,8 @@ set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bounds.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_matrix.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_range.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_triangle.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_uuid.cpp
 	CACHE STRING "SOURCES" FORCE)
 
@@ -17,6 +19,7 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_container.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_line.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_matrix.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_range.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_structs.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_triangle.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_uuid.h

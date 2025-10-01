@@ -19,9 +19,9 @@
 
 #include "repo_vector.h"
 
-namespace repo{
-	namespace lib{
-		template<typename T>
+namespace repo {
+    namespace lib {
+        template<typename T>
         struct REPO_API_EXPORT _RepoTriangle
         {
             repo::lib::_RepoVector3D<T> a;
@@ -32,11 +32,25 @@ namespace repo{
                 repo::lib::_RepoVector3D<T> a,
                 repo::lib::_RepoVector3D<T> b,
                 repo::lib::_RepoVector3D<T> c)
-				:a(a), b(b), c(c)
+                :a(a), b(b), c(c)
             {
+            }
+
+            _RepoTriangle& operator+=(const _RepoVector3D<T>& v)
+            {
+                a += v;
+                b += v;
+                c += v;
+                return *this;
             }
         };
 
-		using RepoTriangle = _RepoTriangle<double>;
-	}
+        using RepoTriangle = _RepoTriangle<double>;
+
+		template<typename N>
+        class _RepoMatrix;
+
+		template<typename T, typename N>
+        inline _RepoTriangle<T> operator*(const _RepoMatrix<N>& m, const _RepoTriangle<T>& t);
+    }
 }

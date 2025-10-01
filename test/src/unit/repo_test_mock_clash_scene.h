@@ -22,6 +22,8 @@
 #include <repo/lib/datastructure/repo_uuid.h>
 #include <repo/lib/datastructure/repo_matrix.h>
 #include <repo/lib/datastructure/repo_line.h>
+#include <repo/lib/datastructure/repo_triangle.h>
+#include <repo/lib/datastructure/repo_range.h>
 #include <repo/core/model/bson/repo_bson.h>
 #include <repo/core/model/bson/repo_bson_factory.h>
 #include <vector>
@@ -32,8 +34,9 @@
 namespace testing {
 
 	using TransformLine = std::pair<repo::lib::RepoLine, repo::lib::RepoMatrix>;
+	using TransformTriangle = std::pair<repo::lib::RepoTriangle, repo::lib::RepoMatrix>;
 	using TransformLines = std::pair<TransformLine, TransformLine>;
-	using Lines = std::pair<repo::lib::RepoLine, repo::lib::RepoLine>;
+	using TransformTriangles = std::pair<TransformTriangle, TransformTriangle>;
 	using UUIDPair = std::pair<repo::lib::RepoUUID, repo::lib::RepoUUID>;
 
 	struct ClashDetectionConfigHelper : public repo::manipulator::modelutility::ClashDetectionConfig
@@ -81,15 +84,7 @@ namespace testing {
 	{
 		RepoRandomGenerator random;
 
-		struct Range {
-			double min;
-			double max;
-
-			void set(double v) {
-				min = v;
-				max = v;
-			}
-		};
+		using Range = repo::lib::RepoRange;
 
 		// The scenes are generated using the inbuilt rng object, using a subset of the
 		// following ranges. Which ranges are used depends on the scene being generated.
@@ -98,6 +93,12 @@ namespace testing {
 		Range size2 = { 0.001, 8e6 };
 
 		Range distance = { 0, 100 };
+
+		// When true, any "vertices" such as the vectors of lines and triangles will be
+		// downcast to single precision, even if the eventual return type is double
+		// precision.
+
+		bool downcastVertices = true;
 
 		// Creates a pair of lines that are separated by the given distance exactly 
 		// when transformed by their respective matrices. The problem will be centered
@@ -108,6 +109,52 @@ namespace testing {
 		TransformLines createLinesTransformed(
 			const repo::lib::RepoBounds& bounds
 		);
+
+		// These next methods create pairs of triangles that are separated by the given
+		// distance exactly when transformed by their respective matrices.
+
+		// Triangles are closest at two vertices
+
+		TransformTriangles createTrianglesVV(
+			const repo::lib::RepoBounds& bounds
+		);
+
+		// Triangles are closest at a vertex and an edge
+
+		TransformTriangles createTrianglesVE(
+			const repo::lib::RepoBounds& bounds
+		);
+
+		// Triangles are closest at two edges
+
+		TransformTriangles createTrianglesEE(
+			const repo::lib::RepoBounds& bounds
+		);
+
+		// Triangles are closest at the face of one triangle and a vertex of the other
+
+		TransformTriangles createTrianglesFV(
+			const repo::lib::RepoBounds& bounds
+		);
+
+		// Triangles are closest at the face of one triangle and an edge of the other
+		// (like above, but the vertices of the edge are equidistant from the face).
+
+		TransformTriangles createTrianglesFE(
+			const repo::lib::RepoBounds& bounds
+		);
+
+		void moveToBounds(TransformLines& problem, const repo::lib::RepoBounds& bounds);
+
+		void moveToBounds(TransformTriangles& problem, const repo::lib::RepoBounds& bounds);
+
+		void downcast(TransformTriangles& problem);
+
+		void downcast(TransformLines& line);
+
+		void downcast(repo::lib::RepoTriangle& triangle);
+
+		void downcast(repo::lib::RepoLine& line);
 	};
 
 	struct MockClashScene

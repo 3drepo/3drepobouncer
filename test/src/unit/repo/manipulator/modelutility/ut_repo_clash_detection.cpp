@@ -456,20 +456,9 @@ TEST(Clash, LineLineDistanceUnit)
 
 	std::vector<double> distances = { 0, 1, 2 };
 	for (auto d : distances) {
-		clashGenerator.distance.set(d);
+		clashGenerator.distance = d;
 		for (int i = 0; i < 1000000; ++i) {
 			auto p = clashGenerator.createLinesTransformed(space.sample());
-
-			// In this test we downcast before the transformation to emulate what
-			// happens inside the engine.
-
-			bool downcast = true;
-			if (downcast) {
-				p.first.first.start = repo::lib::RepoVector3D(p.first.first.start);
-				p.first.first.end = repo::lib::RepoVector3D(p.first.first.end);
-				p.second.first.start = repo::lib::RepoVector3D(p.second.first.start);
-				p.second.first.end = repo::lib::RepoVector3D(p.second.first.end);
-			}
 
 			repo::lib::RepoLine a(
 				p.first.second * p.first.first.start,
@@ -514,7 +503,7 @@ TEST(Clash, LineLineDistanceE2E)
 		MockClashScene scene(config.getRevision());
 
 		for (auto d : distances) {
-			clashGenerator.distance.set(d);
+			clashGenerator.distance = d;
 			for (int i = 0; i < samplesPerDistance; ++i) {
 				auto p = clashGenerator.createLinesTransformed(space.sample());
 				auto ids = scene.add(p, config);
@@ -544,6 +533,96 @@ TEST(Clash, LineLineDistanceE2E)
 			EXPECT_THAT(results.clashes.size(), Eq(samplesPerDistance * 3));
 		}
 	}
+}
+
+TEST(Clash, TrianglesUnit)
+{
+	CellDistribution space(8e6, 1e11);
+	ClashGenerator clashGenerator;
+
+	std::vector<double> distances = { 0, 1, 2 };
+	for (auto d : distances) {
+		clashGenerator.distance = d;
+
+		for (int i = 0; i < 100000; ++i) {
+
+			auto p = clashGenerator.createTrianglesVV(space.sample());
+
+			auto a = p.first.second * p.first.first;
+			auto b = p.second.second * p.second.first;
+
+			auto line = geometry::closestPointTriangleTriangle(a, b);
+			auto m = line.magnitude();
+			auto e = abs(m - d);
+
+			EXPECT_THAT(e, Lt(0.5));
+
+			// Todo: expect that the line connects two vertices within a tolerance
+
+			// Todo: make sure sampling is working properly (i.e. test the range
+			// of the vertices and transforms)
+
+
+
+		}
+	}
+}
+
+TEST(Clash, TriangleDistanceE2E) 
+{
+	// Test the accuracy of the end-to-end pipeline in Clearance mode, for multiple
+	// problem configurations.
+
+	ClashGenerator clashGenerator;
+
+	auto db = std::make_shared<MockDatabase>();
+
+	const int numIterations = 1;
+	const int samplesPerDistance = 10000;
+	std::vector<double> distances = { 0, 1, 2 };
+
+	for (int i = 0; i < numIterations; ++i)
+	{
+		CellDistribution space(8e6, 1e11);
+
+		ClashDetectionConfigHelper config;
+		config.type = ClashDetectionType::Clearance;
+
+		MockClashScene scene(config.getRevision());
+
+		for (auto d : distances) {
+			clashGenerator.distance = d;
+			for (int i = 0; i < samplesPerDistance; ++i) {
+				auto p = clashGenerator.createLinesTransformed(space.sample());
+				auto ids = scene.add(p, config);
+			}
+		}
+
+		db->setDocuments(scene.bsons);
+
+		{
+			config.tolerance = 0.5;
+			clash::Clearance pipeline(db, config);
+			auto results = pipeline.runPipeline();
+			EXPECT_THAT(results.clashes.size(), Eq(samplesPerDistance));
+		}
+
+		{
+			config.tolerance = 1 + 0.5;
+			clash::Clearance pipeline(db, config);
+			auto results = pipeline.runPipeline();
+			EXPECT_THAT(results.clashes.size(), Eq(samplesPerDistance * 2));
+		}
+
+		{
+			config.tolerance = 2 + 0.5;
+			clash::Clearance pipeline(db, config);
+			auto results = pipeline.runPipeline();
+			EXPECT_THAT(results.clashes.size(), Eq(samplesPerDistance * 3));
+		}
+	}
+
+
 }
 
 TEST(Clash, SupportedRanges)

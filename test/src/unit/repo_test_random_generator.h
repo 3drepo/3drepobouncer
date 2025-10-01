@@ -19,6 +19,7 @@
 
 #include <repo/lib/datastructure/repo_vector3d.h>
 #include <repo/lib/datastructure/repo_matrix.h>
+#include <repo/lib/datastructure/repo_range.h>
 #include <random>
 
 namespace testing {
@@ -32,7 +33,15 @@ namespace testing {
 		{
 		}
 
-		repo::lib::RepoVector3D64 vector(double scale);
+		// Returns a vector with a length between lower and upper
+
+		repo::lib::RepoVector3D64 vector(const repo::lib::RepoRange& range);
+
+		repo::lib::RepoVector3D64 vector(
+			const repo::lib::RepoRange& x, 
+			const repo::lib::RepoRange& y, 
+			const repo::lib::RepoRange& z
+		);
 
 		repo::lib::RepoVector3D64 direction();
 
@@ -42,11 +51,14 @@ namespace testing {
 
 		double number(double range);
 
-		double number(double lower, double upper);
+		double number(const repo::lib::RepoRange& range);
 
 		double angle();
 
-		repo::lib::RepoMatrix transform(bool rotation, bool scale);
+		repo::lib::RepoMatrix transform(
+			bool rotation, 
+			const repo::lib::RepoRange& translate, 
+			const repo::lib::RepoRange& scale);
 
 		bool boolean();
 	};

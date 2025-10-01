@@ -111,6 +111,58 @@ UUIDPair MockClashScene::add(TransformLines lines, ClashDetectionConfigHelper& c
 	return { m1.getUniqueID(), m2.getUniqueID() };
 }
 
+void ClashGenerator::downcast(repo::lib::RepoLine& line) {
+	line.start = repo::lib::RepoVector3D(line.start);
+	line.end = repo::lib::RepoVector3D(line.end);
+}
+
+void ClashGenerator::downcast(repo::lib::RepoTriangle& triangle) {
+	triangle.a = repo::lib::RepoVector3D(triangle.a);
+	triangle.b = repo::lib::RepoVector3D(triangle.b);
+	triangle.c = repo::lib::RepoVector3D(triangle.c);
+}
+
+void ClashGenerator::downcast(TransformTriangles& problem)
+{
+	downcast(problem.first.first);
+	downcast(problem.second.first);
+}
+
+void ClashGenerator::downcast(TransformLines& problem)
+{
+	downcast(problem.first.first);
+	downcast(problem.second.first);
+}
+
+void ClashGenerator::moveToBounds(TransformTriangles& problem, const repo::lib::RepoBounds& bounds)
+{
+	auto& a = problem.first.first;
+	auto& ma = problem.first.second;
+	auto& b = problem.second.first;
+	auto& mb = problem.second.second;
+	auto pb = repo::lib::RepoBounds({ ma * a.a, ma * a.b, ma * a.c, mb * b.a, mb * b.b, mb * b.c });
+	auto offset = bounds.center() - pb.center();
+	ma = repo::lib::RepoMatrix::translate(offset) * ma;
+	mb = repo::lib::RepoMatrix::translate(offset) * mb;
+}
+
+void ClashGenerator::moveToBounds(TransformLines& problem, const repo::lib::RepoBounds& bounds)
+{
+	auto& a = problem.first.first;
+	auto& ma = problem.first.second;
+	auto& b = problem.second.first;
+	auto& mb = problem.second.second;
+	auto pb = repo::lib::RepoBounds({
+		ma * a.start,
+		ma * a.end,
+		mb * b.start,
+		mb * b.end
+	});
+	auto offset = bounds.center() - pb.center();
+	ma = repo::lib::RepoMatrix::translate(offset) * ma;
+	mb = repo::lib::RepoMatrix::translate(offset) * mb;
+}
+
 TransformLines ClashGenerator::createLinesTransformed(
 	const repo::lib::RepoBounds& bounds
 )
@@ -119,25 +171,15 @@ TransformLines ClashGenerator::createLinesTransformed(
 	// coming up with a translation that moves them together by the required
 	// distance, and appending that to the otherwise random transforms.
 
-	auto length1 = random.number(size1.min, size1.max);
-	auto length2 = random.number(size2.min, size2.max);
-
-	repo::lib::RepoLine a(
-		random.vector(length1 * 0.5),
-		random.vector(length1 * 0.5)
-	);
-
-	repo::lib::RepoLine b(
-		random.vector(length2 * 0.5),
-		random.vector(length2 * 0.5)
-	);
+	repo::lib::RepoLine a(random.vector(size1 * 0.5), random.vector(size1 * 0.5));
+	repo::lib::RepoLine b(random.vector(size2 * 0.5), random.vector(size2 * 0.5));
 
 	// We must be very careful with scales; if two vectors are some distance
 	// apart under a scaling transform, if those vectors are downcasted, then
 	// the rounding error will be amplified by the scale.
 
-	auto ma = random.transform(true, false);
-	auto mb = random.transform(true, false);
+	auto ma = random.transform(true, {}, {});
+	auto mb = random.transform(true, {}, {});
 
 	auto v1 = ma * a.start;
 	auto v2 = ma * a.end;
@@ -164,7 +206,7 @@ TransformLines ClashGenerator::createLinesTransformed(
 	// The offset that is applied to push the lines *away* again after applying
 	// d1/d2, so that they are exactly 'distance' apart.
 
-	auto distance = random.number(this->distance.min, this->distance.max);
+	auto distance = random.number(this->distance);
 
 	auto dir = (v2 + d1 - mp).crossProduct(v4 + d2 - mp);
 	dir.normalize();
@@ -176,20 +218,132 @@ TransformLines ClashGenerator::createLinesTransformed(
 	ma = repo::lib::RepoMatrix::translate(d1 + dir * 0.5) * ma;
 	mb = repo::lib::RepoMatrix::translate(d2 - dir * 0.5) * mb;
 
-	auto pb = repo::lib::RepoBounds({
-		ma * a.start,
-		ma * a.end,
-		mb * b.start,
-		mb * b.end
-	});
+	TransformLines problem({ a, ma }, { b, mb });
 
-	auto offset = bounds.center() - pb.center();
+	moveToBounds(problem, bounds);
 
-	ma = repo::lib::RepoMatrix::translate(offset) * ma;
-	mb = repo::lib::RepoMatrix::translate(offset) * mb;
+	if (downcastVertices) {
+		downcast(problem);
+	}
 
-	return { { a, ma }, { b, mb } };
+	return problem;
 }
+
+// The triangle generation methods follow a similar pattern. Triangles are
+// created in a known configuration using the ZY plane as a separator. Transforms
+// that do not effect the distance of the primitives are then applied to introduce
+// additional variation. Finally the whole problem as a unit is offset from the
+// origin.
+
+TransformTriangles testing::ClashGenerator::createTrianglesVV(const repo::lib::RepoBounds& bounds)
+{
+	// Create two triangles which meet at the origin at vertex zero.
+
+	auto d = random.number(distance);
+
+	// One triangle should have its other vertices along -x (by at least d), and
+	// the other along +x.
+
+	auto margin = d + 0.1;
+
+	repo::lib::RepoTriangle a(
+		repo::lib::RepoVector3D64(0, 0, 0),
+		random.vector({ -margin, -size1.max() }, size1, size1),
+		random.vector({ -margin, -size1.max() }, size1, size1)
+	);
+
+	repo::lib::RepoTriangle b(
+		repo::lib::RepoVector3D64(0, 0, 0),
+		random.vector({ margin, size2.max() }, size2, size2),
+		random.vector({ margin, size2.max() }, size2, size2)
+	);
+
+	// Separate the triangles by d
+
+	b += repo::lib::RepoVector3D64(d, 0, 0);
+
+	// Apply a rotation to move Triangle B away to a random place;
+	// the inverse of this will be applied to B's transform.
+
+	auto mb = random.transform(true, size2, {});
+	b = mb.invert() * b;
+
+	auto ma = random.transform(true, size2, {});
+	mb = ma * mb;
+
+	TransformTriangles problem({ a, ma }, { b, mb });
+
+	moveToBounds(problem, bounds);
+
+	if (downcastVertices) {
+		downcast(problem);
+	}
+
+	return problem;
+}
+
+TransformTriangles testing::ClashGenerator::createTrianglesVE(const repo::lib::RepoBounds& bounds)
+{
+	// Two triangles, one with an edge coplanar in ZY and overlapping the origin.
+	// The other, with one vertex at the origin. All other vertices separated from
+	// the XY plane by a safe margin around 'distance'.
+
+	auto d = random.number(distance);
+
+	auto margin = d + 0.1;
+
+	auto edgeDirection = random.direction();
+	edgeDirection.x = 0;
+	edgeDirection.normalize();
+
+	repo::lib::RepoTriangle a(
+		edgeDirection * random.number({ margin, size1.max() }),
+		edgeDirection * random.number({ -margin, -size1.max() }),
+		random.vector({ -margin, -size1.max() }, size1, size1)
+	);
+
+	repo::lib::RepoTriangle b(
+		repo::lib::RepoVector3D64(0, 0, 0),
+		random.vector({ margin, size2.max() }, size2, size2),
+		random.vector({ margin, size2.max() }, size2, size2)
+	);
+
+	// Separate the triangles by d
+
+	b += repo::lib::RepoVector3D64(d, 0, 0);
+
+	auto mb = random.transform(true, size2, {});
+	b = mb.invert() * b;
+
+	auto ma = random.transform(true, size2, {});
+	mb = ma * mb;
+
+	TransformTriangles problem({ a, ma }, { b, mb });
+
+	moveToBounds(problem, bounds);
+
+	if (downcastVertices) {
+		downcast(problem);
+	}
+
+	return problem;
+}
+
+TransformTriangles testing::ClashGenerator::createTrianglesEE(const repo::lib::RepoBounds& bounds)
+{
+	throw std::exception("Not implemented yet");
+}
+
+TransformTriangles testing::ClashGenerator::createTrianglesFE(const repo::lib::RepoBounds& bounds)
+{
+	throw std::exception("Not implemented yet");
+}
+
+TransformTriangles testing::ClashGenerator::createTrianglesFV(const repo::lib::RepoBounds& bounds)
+{
+	throw std::exception("Not implemented yet");
+}
+
 
 CellDistribution::CellDistribution(size_t cellSize, size_t spaceSize)
 	:cellSize(cellSize)
