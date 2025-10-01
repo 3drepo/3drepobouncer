@@ -49,19 +49,19 @@ double RepoRandomGenerator::scalar()
 	return d(gen);
 }
 
-double RepoRandomGenerator::number(double range)
+double RepoRandomGenerator::number(double upper)
 {
-	std::uniform_real_distribution<> d(0, range);
+	std::uniform_real_distribution<> d(0, upper);
 	return d(gen);
 }
 
-int RepoRandomGenerator::range(int lower, int upper)
+int64_t RepoRandomGenerator::range(int64_t lower, int64_t upper)
 {
-	std::uniform_int_distribution<> d(lower, upper);
+	std::uniform_int_distribution<int64_t> d(lower, upper);
 	return d(gen);
 }
 
-double RepoRandomGenerator::number(double upper, double lower)
+double RepoRandomGenerator::number(double lower, double upper)
 {
 	std::uniform_real_distribution<> d(lower, upper);
 	return d(gen);

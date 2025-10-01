@@ -25,6 +25,7 @@
 #include <repo/core/model/bson/repo_bson.h>
 #include <repo/core/model/bson/repo_bson_factory.h>
 #include <vector>
+#include <set>
 
 #include "repo_test_random_generator.h"
 
@@ -45,27 +46,61 @@ namespace testing {
 		);
 	};
 
+	/*
+	* Helper class that partitions space into separate cells in which clash problems
+	* can be created so that they don't overlap.
+	*/
+
+	struct CellDistribution
+	{
+		CellDistribution(size_t cellSize, size_t spaceSize);
+
+		// Gets a cell from the distribution, using uniform sampling. Each cell may
+		// only be returned once for a given distribution.
+
+		repo::lib::RepoBounds sample();
+
+		repo::lib::RepoBounds getBounds(size_t cell) const;
+
+	private:
+		std::set<size_t> used;
+		RepoRandomGenerator random;
+		size_t cellSize;
+		size_t cellsPerAxis;
+		size_t totalCells;
+		repo::lib::RepoVector3D64 start;
+	};
+
 	struct ClashGenerator
 	{
 		RepoRandomGenerator random;
 
-		// Creates a pair of lines of a given length, that are separated by the given
-		// distance exactly, offset from the origin by distance offset.
+		struct Range {
+			double min;
+			double max;
 
-		Lines createLines(
-			double length,
-			double distance,
-			double offset
-		);
+			void set(double v) {
+				min = v;
+				max = v;
+			}
+		};
 
-		// Creates a pair of lines that are separated by the given distance exactly when
-		// transformed by their respective matrices. The magnitude of the offset of the
-		// matrix will be on the order of offset.
+		// The scenes are generated using the inbuilt rng object, using a subset of the
+		// following ranges. Which ranges are used depends on the scene being generated.
+
+		Range size1 = { 0.001, 8e6 };
+		Range size2 = { 0.001, 8e6 };
+
+		Range distance = { 0, 100 };
+
+		// Creates a pair of lines that are separated by the given distance exactly 
+		// when transformed by their respective matrices. The problem will be centered
+		// within the given bounds (it may not be constrained by the bounds, if size1 
+		// or size2 exceed them). This method uses size1 and size2 for the line
+		// lengths, and distance.
 
 		TransformLines createLinesTransformed(
-			double length,
-			double distance,
-			double offset
+			const repo::lib::RepoBounds& bounds
 		);
 	};
 

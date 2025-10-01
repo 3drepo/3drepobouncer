@@ -50,6 +50,8 @@ namespace repo {
 
 			RepoVector3D64 size() const;
 
+			RepoVector3D64 center() const;
+
 		private:
 			RepoVector3D64 bmin;
 			RepoVector3D64 bmax;

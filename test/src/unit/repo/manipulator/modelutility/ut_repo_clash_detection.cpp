@@ -427,57 +427,57 @@ TEST(Clash, Scheduler)
 * numerically. Primitives are generated in different known configurations as a
 * ground truth, to which the measured distances are compared.
 * 
-* These tests use mixed precision libraries to build the ground truth, after
-* which they are downcast to the expected precision the engine will have to work
-* with: single precision for vertices, and double for transformations. These are
-* what are used to store scenes in the database.
-* 
 * Accuracy is tested at both the unit and end-to-end level. The current guaranteed
 * accuracy is 1 in 8e6 - that is, an error of at most 0.5 is allowed on 'either
 * side' of the expected distance.
+* 
+* This domain is determined by the source data the engine has to work with: single
+* precision vertices from the binary buffers, and double precision transformations
+* stored in Mongo.
 */
-
-ClashGenerator clashGenerator;
 
 TEST(Clash, LineLineDistanceUnit)
 {
-	// Tests the accuracy of the line-line distance test across different scales.
-	// The test must be accurate for any pair of lines to within 1 in 8e6.
+	// Tests the accuracy of the line-line distance test across the supported
+	// domain. The test must be accurate for any pair of lines to within 1 in 8e6
+	// anywhere within 1e11 of the origin.
 
-	std::vector<int> meshPowers = { 2, 3, 4, 5, 6 };
-	std::vector<double> distances = { 0, 0.1, 1, 2, 10 };
+	CellDistribution space(8e6, 1e11);
+	ClashGenerator clashGenerator;
 
+	std::vector<double> distances = { 0, 1, 2 };
 	for (auto d : distances) {
-		for (auto pM : meshPowers) {
+		clashGenerator.distance.set(d);
+		for (int i = 0; i < 1000000; ++i) {
+			auto p = clashGenerator.createLinesTransformed(space.sample());
 
-			double minError = DBL_MAX;
-			double maxError = -DBL_MAX;
+			// In this test we downcast before the transformation to emulate what
+			// happens inside the engine.
 
-			double scale = 8 * std::pow(10, pM);
-			for (int i = 0; i < 1000000; ++i) {
-
-				auto p = clashGenerator.createLines(scale, d, 0);
-
-				bool downcast = true;
-				if (downcast) {
-					p.first.start = repo::lib::RepoVector3D(p.first.start);
-					p.first.end = repo::lib::RepoVector3D(p.first.end);
-					p.second.start = repo::lib::RepoVector3D(p.second.start);
-					p.second.end = repo::lib::RepoVector3D(p.second.end);
-				}
-
-				auto line = geometry::closestPointLineLine(p.first, p.second);
-				auto m = line.magnitude();
-				auto e = abs(m - d);
-
-				minError = std::min(minError, e);
-				maxError = std::max(maxError, e);
-
-				// 0.5 on either side of d, for a total permissible error of 1
-				EXPECT_THAT(e, Lt(0.5));
+			bool downcast = true;
+			if (downcast) {
+				p.first.first.start = repo::lib::RepoVector3D(p.first.first.start);
+				p.first.first.end = repo::lib::RepoVector3D(p.first.first.end);
+				p.second.first.start = repo::lib::RepoVector3D(p.second.first.start);
+				p.second.first.end = repo::lib::RepoVector3D(p.second.first.end);
 			}
 
-			std::cout << "Scale: " << scale << " Expected Distance: " << d << ", Max Error: " << maxError << std::endl;
+			repo::lib::RepoLine a(
+				p.first.second * p.first.first.start,
+				p.first.second * p.first.first.end
+			);
+
+			repo::lib::RepoLine b(
+				p.second.second * p.second.first.start,
+				p.second.second * p.second.first.end
+			);
+
+			auto line = geometry::closestPointLineLine(a, b);
+			auto m = line.magnitude();
+			auto e = abs(m - d);
+
+			// 0.5 on either side of d, for a total permissible error of 1
+			EXPECT_THAT(e, Lt(0.5));
 		}
 	}
 }
@@ -487,47 +487,53 @@ TEST(Clash, LineLineDistanceE2E)
 	// Test the accuracy of the end-to-end pipeline in Clearance mode, for line-line
 	// distances.
 
+	ClashGenerator clashGenerator;
+
 	auto db = std::make_shared<MockDatabase>();
 
-	std::vector<double> meshPowers = { 0.01, 1, 4, 6 };
-	std::vector<double> transformPowers = { 0, 2, 5, 8, 11 };
+	const int numIterations = 1;
+	const int samplesPerDistance = 10000;
 	std::vector<double> distances = { 0, 1, 2 };
 
-	for (auto pT : transformPowers) {
-		for (auto pM : meshPowers) {
-			for (auto d : distances) {
+	for (int i = 0; i < numIterations; ++i)
+	{
+		CellDistribution space(8e6, 1e11);
 
-				double meshScale = 8 * std::pow(10, pM);
-				double transformScale = std::pow(10, pT);
+		ClashDetectionConfigHelper config;
+		config.type = ClashDetectionType::Clearance;
+		config.containers[0]->revision = repo::lib::RepoUUID::createUUID();
 
-				for (int i = 0; i < 1000; ++i) {
+		MockClashScene scene(config.containers[0]->revision);
 
-					ClashDetectionConfigHelper config;
-					config.type = ClashDetectionType::Clearance;
-					config.containers[0]->revision = repo::lib::RepoUUID::createUUID();
-
-					MockClashScene scene(config.containers[0]->revision);
-
-					auto p = clashGenerator.createLinesTransformed(meshScale, d, transformScale);
-					auto ids = scene.add(p, config);
-
-					db->setDocuments(scene.bsons);
-					
-					{
-						config.tolerance = d + 0.5;
-						clash::Clearance pipeline(db, config);
-						auto results = pipeline.runPipeline();
-						EXPECT_THAT(results.clashes.size(), Eq(1));
-					}
-
-					{
-						config.tolerance = d - 0.5;
-						clash::Clearance pipeline(db, config);
-						auto results = pipeline.runPipeline();
-						EXPECT_THAT(results.clashes.size(), Eq(0));
-					}
-				}
+		for (auto d : distances) {
+			clashGenerator.distance.set(d);
+			for (int i = 0; i < samplesPerDistance; ++i) {
+				auto p = clashGenerator.createLinesTransformed(space.sample());
+				auto ids = scene.add(p, config);
 			}
+		}
+
+		db->setDocuments(scene.bsons);
+
+		{
+			config.tolerance = 0.5;
+			clash::Clearance pipeline(db, config);
+			auto results = pipeline.runPipeline();
+			EXPECT_THAT(results.clashes.size(), Eq(samplesPerDistance));
+		}
+
+		{
+			config.tolerance = 1 + 0.5;
+			clash::Clearance pipeline(db, config);
+			auto results = pipeline.runPipeline();
+			EXPECT_THAT(results.clashes.size(), Eq(samplesPerDistance * 2));
+		}
+
+		{
+			config.tolerance = 2 + 0.5;
+			clash::Clearance pipeline(db, config);
+			auto results = pipeline.runPipeline();
+			EXPECT_THAT(results.clashes.size(), Eq(samplesPerDistance * 3));
 		}
 	}
 }

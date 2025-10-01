@@ -17,6 +17,8 @@
 
 #include "repo_test_mock_clash_scene.h"
 
+#pragma optimize("", off)
+
 using namespace testing;
 using namespace repo::core::model;
 using namespace repo::manipulator::modelutility;
@@ -104,55 +106,25 @@ UUIDPair MockClashScene::add(TransformLines lines, ClashDetectionConfigHelper& c
 	return { m1.getUniqueID(), m2.getUniqueID() };
 }
 
-Lines ClashGenerator::createLines(
-	double length,
-	double distance,
-	double offset
-)
-{
-	auto start = random.vector(offset);
-
-	auto d1 = random.direction() * length;
-	auto d2 = random.direction() * length;
-
-	auto d3 = d1.crossProduct(d2);
-	d3.normalize();
-
-	repo::lib::RepoLine a(
-		start + d1 * random.scalar(),
-		start - d1 * random.scalar()
-	);
-
-	repo::lib::RepoLine b(
-		start + d2 * random.scalar() + d3 * distance,
-		start - d2 * random.scalar() + d3 * distance
-	);
-
-	return { a, b };
-}
-
-// Creates a pair of lines that are separated by the given distance exactly when
-// transformed by their respective matrices. The magnitude of the offset of the
-// matrix will be on the order of offset.
-
 TransformLines ClashGenerator::createLinesTransformed(
-	double length,
-	double distance,
-	double offset
+	const repo::lib::RepoBounds& bounds
 )
 {
 	// This method works by creating two randomly transformed lines, then
 	// coming up with a translation that moves them together by the required
 	// distance, and appending that to the otherwise random transforms.
 
+	auto length1 = random.number(size1.min, size1.max);
+	auto length2 = random.number(size2.min, size2.max);
+
 	repo::lib::RepoLine a(
-		random.vector(length * 0.5),
-		random.vector(length * 0.5)
+		random.vector(length1 * 0.5),
+		random.vector(length1 * 0.5)
 	);
 
 	repo::lib::RepoLine b(
-		random.vector(length * 0.5),
-		random.vector(length * 0.5)
+		random.vector(length2 * 0.5),
+		random.vector(length2 * 0.5)
 	);
 
 	// We must be very careful with scales; if two vectors are some distance
@@ -175,6 +147,8 @@ TransformLines ClashGenerator::createLinesTransformed(
 
 	auto d = p2 - p1;
 
+	// The movement for lines 1 and 2 required for p1 and p2 to meet.
+
 	auto d1 = d * 0.5;
 	auto d2 = -d * 0.5;
 
@@ -182,14 +156,70 @@ TransformLines ClashGenerator::createLinesTransformed(
 
 	auto mp = p1 + d1;
 
+	// The offset that is applied to push the lines *away* again after applying
+	// d1/d2, so that they are exactly 'distance' apart.
+
+	auto distance = random.number(this->distance.min, this->distance.max);
+
 	auto dir = (v2 + d1 - mp).crossProduct(v4 + d2 - mp);
 	dir.normalize();
 	dir = dir * distance;
 
-	auto as = random.direction() * (abs(d.norm() - offset));
+	// Get the bounds of the transformed problem, and move them so they are centered
+	// within the given bounds.
 
-	ma = repo::lib::RepoMatrix::translate(as + d1 + dir * 0.5) * ma;
-	mb = repo::lib::RepoMatrix::translate(as + d2 - dir * 0.5) * mb;
+	ma = repo::lib::RepoMatrix::translate(d1 + dir * 0.5) * ma;
+	mb = repo::lib::RepoMatrix::translate(d2 - dir * 0.5) * mb;
+
+	auto pb = repo::lib::RepoBounds({
+		ma * a.start,
+		ma * a.end,
+		mb * b.start,
+		mb * b.end
+	});
+
+	auto offset = bounds.center() - pb.center();
+
+	ma = repo::lib::RepoMatrix::translate(offset) * ma;
+	mb = repo::lib::RepoMatrix::translate(offset) * mb;
 
 	return { { a, ma }, { b, mb } };
+}
+
+CellDistribution::CellDistribution(size_t cellSize, size_t spaceSize)
+	:cellSize(cellSize)
+{
+	cellsPerAxis = (spaceSize / cellSize) * 2;
+	totalCells = cellsPerAxis * cellsPerAxis * cellsPerAxis;
+	start = repo::lib::RepoVector3D64(-(double)spaceSize, -(double)spaceSize, -(double)spaceSize);
+}
+
+repo::lib::RepoBounds CellDistribution::getBounds(size_t cell) const
+{
+	auto z = cell / (cellsPerAxis * cellsPerAxis);
+	auto y = (cell / cellsPerAxis) % cellsPerAxis;
+	auto x = cell % cellsPerAxis;
+	return repo::lib::RepoBounds(
+		repo::lib::RepoVector3D64(
+			x * cellSize,
+			y * cellSize,
+			z * cellSize
+		) + start,
+		repo::lib::RepoVector3D64(
+			(x + 1) * cellSize,
+			(y + 1) * cellSize,
+			(z + 1) * cellSize
+		) + start
+	);
+}
+
+repo::lib::RepoBounds CellDistribution::sample()
+{
+	while(true) {
+		auto cell = random.range(0, totalCells);
+		if (used.find(cell) == used.end()) {
+			used.insert(cell);
+			return getBounds(cell);
+		}
+	}
 }
