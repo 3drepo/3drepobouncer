@@ -37,8 +37,8 @@ namespace repo {
 
 				/*
 				* Finds an intersection between any two primitives of the composite objects
-				* objects in the sets. A clash is reported if the penetration depth is
-				* greater than the tolerance.
+				* objects in the sets. A clash is reported if the penetration depth of the
+				* whole objects is greater than the tolerance.
 				*/
 				Hard = 2,
 			};
@@ -51,7 +51,7 @@ namespace repo {
 			* penetration depth, if any.
 			*
 			* In most cases, a CompositeObject will be the TransformationNode above
-			* one or more MeshNodes.
+			* one or more MeshNodes, but it can be far more complex than that.
 			*/
 
 			struct MeshReference
@@ -91,9 +91,9 @@ namespace repo {
 				* Each clash test will compare all objects in set A against all objects in
 				* set B. All Objects will be compared in Project Coordinates. It is
 				* allowed for Set A and Set B to be identical - this can be used to check
-				* that all objects in a single set have a given clearance. For this case,
-				* the Composite Ids must also be the same. The engine will not ignore
-				* pairs that have the same Composite Ids.
+				* that all objects in a single set have a given clearance to eachother. For
+				* this case the Composite Ids must be the same - the engine will ignore pairs
+				* with the same Composite Id.
 				*/
 				std::vector<CompositeObject> setA;
 				std::vector<CompositeObject> setB;
