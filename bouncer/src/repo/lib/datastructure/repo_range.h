@@ -44,7 +44,7 @@ namespace repo {
 			{
 				if (positions.size()) {
 					this->x = *positions.begin();
-					this->y = *positions.end();
+					this->y = *positions.begin();
 					for (auto p : positions) {
 						this->x = std::min(this->x, p);
 						this->y = std::max(this->y, p);

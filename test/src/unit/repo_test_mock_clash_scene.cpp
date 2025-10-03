@@ -134,6 +134,34 @@ void ClashGenerator::downcast(TransformLines& problem)
 	downcast(problem.second.first);
 }
 
+void ClashGenerator::moveB(TransformTriangles& problem, const repo::lib::RepoRange& range)
+{
+	// As this method will modify the vertices before the downcast, we may only apply
+	// transforms that do not move the vertex beyond the supported range (currently 8e6).
+
+	auto largestDimension = std::max({
+		std::abs(problem.second.first.a.x),
+		std::abs(problem.second.first.a.y),
+		std::abs(problem.second.first.a.z),
+		std::abs(problem.second.first.b.x),
+		std::abs(problem.second.first.b.y),
+		std::abs(problem.second.first.b.z),
+		std::abs(problem.second.first.c.x),
+		std::abs(problem.second.first.c.y),
+		std::abs(problem.second.first.c.z)
+		});
+	auto remainingRange = std::max(0.0, range.max() - largestDimension);
+
+	problem.second.second = random.transform(true, { 0, remainingRange }, {});
+	problem.second.first = problem.second.second.invert() * problem.second.first;
+}
+
+void ClashGenerator::moveProblem(TransformTriangles& problem, const repo::lib::RepoRange& range)
+{
+	problem.first.second = random.transform(true, range, {});
+	problem.second.second = problem.first.second * problem.second.second;
+}
+
 void ClashGenerator::moveToBounds(TransformTriangles& problem, const repo::lib::RepoBounds& bounds)
 {
 	auto& a = problem.first.first;
@@ -161,6 +189,14 @@ void ClashGenerator::moveToBounds(TransformLines& problem, const repo::lib::Repo
 	auto offset = bounds.center() - pb.center();
 	ma = repo::lib::RepoMatrix::translate(offset) * ma;
 	mb = repo::lib::RepoMatrix::translate(offset) * mb;
+}
+
+TrianglePair ClashGenerator::applyTransforms(TransformTriangles& problem)
+{
+	return {
+		problem.first.second * problem.first.first,
+		problem.second.second * problem.second.first
+	};
 }
 
 TransformLines ClashGenerator::createLinesTransformed(
@@ -244,37 +280,29 @@ TransformTriangles testing::ClashGenerator::createTrianglesVV(const repo::lib::R
 	// One triangle should have its other vertices along -x (by at least d), and
 	// the other along +x.
 
-	auto margin = d + 0.1;
+	auto margin = d + d * std::min(size1.min(), size2.min());
 
 	repo::lib::RepoTriangle a(
 		repo::lib::RepoVector3D64(0, 0, 0),
-		random.vector({ -margin, -size1.max() }, size1, size1),
-		random.vector({ -margin, -size1.max() }, size1, size1)
+		random.vector({ -margin, -size1.max() }, { -size1.max(), size1.max() }, { -size1.max(), size1.max() }),
+		random.vector({ -margin, -size1.max() }, { -size1.max(), size1.max() }, { -size1.max(), size1.max() })
 	);
 
 	repo::lib::RepoTriangle b(
 		repo::lib::RepoVector3D64(0, 0, 0),
-		random.vector({ margin, size2.max() }, size2, size2),
-		random.vector({ margin, size2.max() }, size2, size2)
+		random.vector({ margin, size2.max() }, { -size2.max(), size2.max() }, { -size2.max(), size2.max() }),
+		random.vector({ margin, size2.max() }, { -size2.max(), size2.max() }, { -size2.max(), size2.max() })
 	);
 
 	// Separate the triangles by d
 
 	b += repo::lib::RepoVector3D64(d, 0, 0);
 
-	// Apply a rotation to move Triangle B away to a random place;
-	// the inverse of this will be applied to B's transform.
+	TransformTriangles problem({ a, RepoMatrix() }, {b, RepoMatrix() });
 
-	auto mb = random.transform(true, size2, {});
-	b = mb.invert() * b;
-
-	auto ma = random.transform(true, size2, {});
-	mb = ma * mb;
-
-	TransformTriangles problem({ a, ma }, { b, mb });
-
+	moveB(problem, size2);
+	moveProblem(problem, size2);
 	moveToBounds(problem, bounds);
-
 	if (downcastVertices) {
 		downcast(problem);
 	}

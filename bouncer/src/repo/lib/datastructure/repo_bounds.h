@@ -52,6 +52,8 @@ namespace repo {
 
 			RepoVector3D64 center() const;
 
+			static repo::lib::RepoBounds empty();
+
 		private:
 			RepoVector3D64 bmin;
 			RepoVector3D64 bmax;

@@ -22,6 +22,8 @@
 #include <gtest/gtest-matchers.h>
 #include "repo/lib/datastructure/repo_variant_utils.h"
 #include "repo/lib/datastructure/repo_bounds.h"
+#include "repo/lib/datastructure/repo_line.h"
+#include "repo/lib/datastructure/repo_triangle.h"
 
 /* As we sometimes deal with very large coordinate systems, we expect positions
  * to have a low tolerance, approaching floating point quantisation itself.
@@ -216,6 +218,100 @@ namespace testing {
 			}
 		}
 		return !vectors.size(); // If every element has been matched, they should by now have all been removed.
+	}
+
+	namespace vectors {
+
+		// The vectors namespace contains a set of types to manage comparisons between
+		// RepoVectors, including types that are composed of RepoVectors, such as
+		// Containers, but also Lines and Triangles.
+
+		// GMOCK matchers are templated, however they do have constraints; for example,
+		// the EXPECT statement does not support initialiser lists as its first
+		// argument. The types below work together, to transform input arguments for
+		// both the macro and matcher itself, so that EXPECT can be used cleanly, and
+		// inside the common matcher to implement specialised behaviour where necessary.
+
+		// The actual matcher - this macro creates a templated class. The overloads below
+		// should return an instance of this type.
+
+		MATCHER_P2(RepoVectorsGeneric, elements, tolerance, "")
+		{
+			// elements is always expected to be an iterable type, even if it has
+			// only one elment.
+			// arg may be one of a number of high level types, which we convert
+			// using one of the above overloads.
+
+			size_t matched = 0;
+			size_t expected = 0;
+			for (auto& a : arg) {
+				expected++;
+				for(auto& b : elements) {
+					if (compareVectors(a, b, tolerance, result_listener)) {
+						matched++;
+						break;
+					}
+				}
+
+				if (matched < expected) {
+					*result_listener << " No match for element " << a.toString() << ".";
+				}
+			}
+
+			if (matched != expected) {
+				*result_listener << " Only " << matched << " of " << expected << " elements matched.";
+				return false;
+			}
+
+			return true;
+		}
+
+		// The following overloads perform type-specific transforms of the arguments
+		// into a form the vector matcher can deal with. These must all return a suitable
+		// matcher.
+
+		static RepoVectorsGenericMatcherP2<
+			std::initializer_list<repo::lib::RepoVector3D64>,
+			double
+		> AreSubsetOf(
+			std::initializer_list<repo::lib::RepoVector3D64> elements,
+			double tolerance = POSITION_TOLERANCE)
+		{
+			return RepoVectorsGeneric(elements, tolerance);
+		}
+
+		// Helper object to present different types as iterators of vectors, where
+		// necessary. This is used to pass high level types to the EXPECT macro,
+		// which is constrained in what it can accept, as well as make it clear
+		// that we want to iterate over the vectors within the type.
+
+		template<typename T>
+		struct Iterator
+		{
+			Iterator(const repo::lib::_RepoTriangle<T>& triangle)
+			{
+				_begin = &triangle.a;
+				_end = &triangle.c + 1;
+			}
+
+			Iterator(const repo::lib::_RepoLine<T>& line)
+			{
+				_begin = &line.start;
+				_end = &line.end + 1;
+			}
+
+			const repo::lib::_RepoVector3D<T>* begin() const {
+				return _begin;
+			}
+
+			const repo::lib::_RepoVector3D<T>* end() const {
+				return _end;
+			}
+
+		private:
+			const repo::lib::_RepoVector3D<T>* _begin;
+			const repo::lib::_RepoVector3D<T>* _end;
+		};
 	}
 }
 

@@ -91,6 +91,11 @@ RepoVector3D64 RepoBounds::center() const
 	return (bmin + bmax) * 0.5;
 }
 
+repo::lib::RepoBounds RepoBounds::empty()
+{
+	return RepoBounds(repo::lib::RepoVector3D64(0, 0, 0), repo::lib::RepoVector3D64(0, 0, 0));
+}
+
 REPO_API_EXPORT repo::lib::RepoBounds repo::lib::operator*(const _RepoMatrix<double>& matrix, const repo::lib::RepoBounds& bounds)
 {
 	/**

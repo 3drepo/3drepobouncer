@@ -548,8 +548,7 @@ TEST(Clash, TrianglesUnit)
 
 			auto p = clashGenerator.createTrianglesVV(space.sample());
 
-			auto a = p.first.second * p.first.first;
-			auto b = p.second.second * p.second.first;
+			auto [a, b] = ClashGenerator::applyTransforms(p);
 
 			auto line = geometry::closestPointTriangleTriangle(a, b);
 			auto m = line.magnitude();
@@ -557,11 +556,14 @@ TEST(Clash, TrianglesUnit)
 
 			EXPECT_THAT(e, Lt(0.5));
 
-			// Todo: expect that the line connects two vertices within a tolerance
+			// For VV, the line should connect two vertices. Note that we use the same
+			// tolerance as the distance test, as quantisation error may move the
+			// closest points around slightly.
+
+			EXPECT_THAT(vectors::Iterator(line), vectors::AreSubsetOf({ a.a, a.b, a.c, b.a, b.b, b.c }, 1));
 
 			// Todo: make sure sampling is working properly (i.e. test the range
 			// of the vertices and transforms)
-
 
 
 		}

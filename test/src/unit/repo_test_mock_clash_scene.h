@@ -38,6 +38,7 @@ namespace testing {
 	using TransformLines = std::pair<TransformLine, TransformLine>;
 	using TransformTriangles = std::pair<TransformTriangle, TransformTriangle>;
 	using UUIDPair = std::pair<repo::lib::RepoUUID, repo::lib::RepoUUID>;
+	using TrianglePair = std::pair<repo::lib::RepoTriangle, repo::lib::RepoTriangle>;
 
 	struct ClashDetectionConfigHelper : public repo::manipulator::modelutility::ClashDetectionConfig
 	{
@@ -119,26 +120,35 @@ namespace testing {
 			const repo::lib::RepoBounds& bounds
 		);
 
-		// Triangles are closest at a vertex and an edge
+		// Triangles are closest between a vertex from one triangle, and an edge
+		// from the other.
 
 		TransformTriangles createTrianglesVE(
 			const repo::lib::RepoBounds& bounds
 		);
 
-		// Triangles are closest at two edges
+		// Triangles are closest at two edges, where the closest points are *not*
+		// conincident with vertices of either edge.
 
 		TransformTriangles createTrianglesEE(
 			const repo::lib::RepoBounds& bounds
 		);
 
 		// Triangles are closest at the face of one triangle and a vertex of the other
+		// (the point on the face is farther from the face's own vertices or edges than
+		// the vertex on the other triangle). This test includes the case where two
+		// vertices from one triangle have the same distance (i.e. the edge itself has
+		// a constant distance to the face).
 
 		TransformTriangles createTrianglesFV(
 			const repo::lib::RepoBounds& bounds
 		);
 
-		// Triangles are closest at the face of one triangle and an edge of the other
-		// (like above, but the vertices of the edge are equidistant from the face).
+		// One edge from one triangle intersects the face of the other triangle. 
+		// (Imagine, the triangle borders are like links in a chain.) The true distance
+		// in this case is always zero. The point of intersection on the face is
+		// farther from the face's own vertices or edges than any distance between the
+		// pairs of vertices or edges forming the two triangles.
 
 		TransformTriangles createTrianglesFE(
 			const repo::lib::RepoBounds& bounds
@@ -148,6 +158,10 @@ namespace testing {
 
 		void moveToBounds(TransformTriangles& problem, const repo::lib::RepoBounds& bounds);
 
+		void moveB(TransformTriangles& problem, const repo::lib::RepoRange& range);
+
+		void moveProblem(TransformTriangles& problem, const repo::lib::RepoRange& range);
+
 		void downcast(TransformTriangles& problem);
 
 		void downcast(TransformLines& line);
@@ -155,6 +169,8 @@ namespace testing {
 		void downcast(repo::lib::RepoTriangle& triangle);
 
 		void downcast(repo::lib::RepoLine& line);
+
+		static TrianglePair applyTransforms(TransformTriangles& problem);
 	};
 
 	struct MockClashScene
