@@ -39,12 +39,12 @@
 #include <NwMaterial.h>
 #include <NwComponent.h>
 #include <NwFragment.h>
-#include <NwGeometryEllipticalShape.h>
+#include <NwGeometryCircle.h>
 #include <NwGeometryLineSet.h>
-#include <NwGeometryMesh.h>
+#include <NwGeometryShell.h>
 #include <NwGeometryPointSet.h>
 #include <NwGeometryText.h>
-#include <NwGeometryTube.h>
+#include <NwGeometryCylinder.h>
 #include <NwTexture.h>
 #include <NwColor.h>
 #include <NwBackgroundElement.h>
@@ -758,7 +758,7 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 				continue;
 			}
 
-			OdNwGeometryMeshPtr pGeometryMesh = OdNwGeometryMesh::cast(pGeometry);
+			OdNwGeometryShellPtr pGeometryMesh = OdNwGeometryShell::cast(pGeometry);
 			if (!pGeometryMesh.isNull())
 			{
 				auto triangles = pGeometryMesh->getTriangles();
@@ -766,8 +766,8 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 				addTriangleData(vertices, triangles.begin(), triangles.end(), transformMatrix, meshBuilder);
 				continue;
 			}
-
-			OdNwGeometryEllipticalShapePtr pGeometryEllipse = OdNwGeometryEllipticalShape::cast(pGeometry);
+			
+			OdNwGeometryCirclePtr pGeometryEllipse = OdNwGeometryCircle::cast(pGeometry);
 			if (!pGeometryEllipse.isNull())
 			{
 				auto shell = pGeometryEllipse->toShell(8);

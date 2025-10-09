@@ -49,8 +49,8 @@
 #include <Database/Entities/BmUnitsElem.h>
 #include <Database/Entities/BmViewport.h>
 #include <Database/Entities/BmHiddenElementsViewSettings.h>
-#include <Database/Entities/BmBasePoint.h>
-#include <Database/Entities/BmGeoLocation.h>
+#include <Essential/Entities/BmBasePoint.h>
+#include <Essential/Entities/BmGeoLocation.h>
 #include <Tf/TfVariant.h>
 
 #include <TB_ExLabelUtils/BmSampleLabelUtilsPE.h>
