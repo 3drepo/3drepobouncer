@@ -40,7 +40,8 @@ static const std::string REVIT_ELEMENT_ID = "Element ID";
 //These metadata params are not of interest to users. Do not read.
 const std::set<std::string> IGNORE_PARAMS = {
 	"RENDER APPEARANCE",
-	"RENDER APPEARANCE PROPERTIES"
+	"RENDER APPEARANCE PROPERTIES",
+	"REBAR_NUMBER"
 };
 
 bool DataProcessorRvt::tryConvertMetadataEntry(const OdTfVariant& metaEntry, OdBmLabelUtilsPEPtr labelUtils, OdBmParamDefPtr paramDef, OdBm::BuiltInParameter::Enum param, repo::lib::RepoVariant& v)
@@ -563,6 +564,8 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 		std::string builtInName = convertToStdString(OdBm::BuiltInParameter(entry).toString());
 
 		//.. HOTFIX: handle access violation exception (reported to ODA)
+		// https://forum.opendesign.com/showthread.php?25064-Access-Violation-in-OdBmElement-getParam&p=102079#post102079
+		// https://account.opendesign.com/support/issue-tracking/BIM-7094
 		if (ignoreParam(builtInName)) continue;
 
 		auto paramId = element->database()->getObjectId(entry);

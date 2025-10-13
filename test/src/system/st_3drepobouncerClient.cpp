@@ -379,6 +379,32 @@ TEST(RepoClientTest, UploadTestNWD2025)
 	EXPECT_TRUE(projectExists(db, "nwdTest2025"));
 }
 
+TEST(RepoClientTest, UploadTestRVT2026)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+	std::string db = "stUpload";
+
+	testing::setupTextures();
+
+	//Upload RVT file
+	std::string rvtUpload = produceUploadArgs(db, "rvtTest2026", getDataPath(rvtModel2026));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload));
+	EXPECT_TRUE(projectExists(db, "rvtTest2025"));
+}
+
+TEST(RepoClientTest, UploadTestNWD2026)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+	std::string db = "stUpload";
+
+	//Upload NWD file
+	std::string nwdUpload = produceUploadArgs(db, "nwdTest2026", getDataPath(nwdModel2026));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(nwdUpload));
+	EXPECT_TRUE(projectExists(db, "nwdTest2026"));
+}
+
 TEST(RepoClientTest, UploadTestNWDProtected)
 {
 	//this ensures we can run processes
