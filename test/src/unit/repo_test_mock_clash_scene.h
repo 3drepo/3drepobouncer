@@ -111,6 +111,15 @@ namespace testing {
 			const repo::lib::RepoBounds& bounds
 		);
 
+		// Creates a pair of triangles that are separated by the given distance exactly
+		// when transformed by their respective matrices. The problem will be centered
+		// within the given bounds, depending on the settings of size1 and size2. The
+		// problem will be a random selection of VV, VE, EE, VF or FE.
+
+		TransformTriangles createTrianglesTransformed(
+			const repo::lib::RepoBounds& bounds
+		);
+
 		// These next methods create pairs of triangles that are separated by the given
 		// distance exactly when transformed by their respective matrices.
 
@@ -193,8 +202,12 @@ namespace testing {
 
 		const repo::core::model::MeshNode add(repo::lib::RepoLine line, const repo::lib::RepoUUID& parentSharedId);
 
+		const repo::core::model::MeshNode add(repo::lib::RepoTriangle triangle, const repo::lib::RepoUUID& parentSharedId);
+
 		const repo::core::model::TransformationNode add(const repo::lib::RepoMatrix& matrix);
 
 		UUIDPair add(TransformLines lines, ClashDetectionConfigHelper& config);
+
+		UUIDPair add(TransformTriangles triangles, ClashDetectionConfigHelper& config);
 	};
 }

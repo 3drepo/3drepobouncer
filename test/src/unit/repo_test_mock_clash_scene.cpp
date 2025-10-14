@@ -86,6 +86,20 @@ const MeshNode MockClashScene::add(RepoLine line, const RepoUUID& parentSharedId
 	return m1;
 }
 
+const MeshNode MockClashScene::add(RepoTriangle triangle, const RepoUUID& parentSharedId) {
+	auto m1 = RepoBSONFactory::makeMeshNode(
+		{ triangle.a, triangle.b, triangle.c },
+		{ {0, 1, 2} },
+		{},
+		repo::lib::RepoBounds({ triangle.a, triangle.b, triangle.c }),
+		{},
+		{},
+		{ parentSharedId }
+	);
+	bsons.push_back(m1.getBSON());
+	return m1;
+}
+
 const TransformationNode MockClashScene::add(const RepoMatrix& matrix) {
 	auto t1 = RepoBSONFactory::makeTransformationNode(
 		matrix,
@@ -107,6 +121,19 @@ UUIDPair MockClashScene::add(TransformLines lines, ClashDetectionConfigHelper& c
 
 	auto t2 = add(lines.second.second);
 	auto m2 = add(lines.second.first, t2.getSharedID());
+
+	config.addCompositeObjects(m1.getUniqueID(), m2.getUniqueID());
+
+	return { m1.getUniqueID(), m2.getUniqueID() };
+}
+
+UUIDPair MockClashScene::add(TransformTriangles triangles, ClashDetectionConfigHelper& config)
+{
+	auto t1 = add(triangles.first.second);
+	auto m1 = add(triangles.first.first, t1.getSharedID());
+
+	auto t2 = add(triangles.second.second);
+	auto m2 = add(triangles.second.first, t2.getSharedID());
 
 	config.addCompositeObjects(m1.getUniqueID(), m2.getUniqueID());
 
@@ -289,6 +316,29 @@ TransformLines ClashGenerator::createLinesTransformed(
 	return problem;
 }
 
+TransformTriangles testing::ClashGenerator::createTrianglesTransformed(
+	const repo::lib::RepoBounds& bounds
+)
+{
+	// If the nominal distance can never be zero, then don't generate FE,
+	// configurations, as these always have a distance of zero.
+
+	auto u = distance.min() > 0 ? 3 : 4;
+
+	switch (random.range(0, u)) {
+	case 0:
+		return createTrianglesVV(bounds);
+	case 1:
+		return createTrianglesVE(bounds);
+	case 2:
+		return createTrianglesEE(bounds);
+	case 3:
+		return createTrianglesVF(bounds);
+	case 4:
+		return createTrianglesFE(bounds);
+	};
+}
+
 // The triangle generation methods follow a similar pattern. Triangles are
 // created in a known configuration using the ZY plane as a separator. Transforms
 // that do not effect the distance of the primitives are then applied to introduce
@@ -449,9 +499,36 @@ TransformTriangles testing::ClashGenerator::createTrianglesVF(const repo::lib::R
 
 TransformTriangles testing::ClashGenerator::createTrianglesFE(const repo::lib::RepoBounds& bounds)
 {
-	throw std::exception("Not implemented yet");
-}
+	repo::lib::RepoTriangle a(
+		random.vector(size1),
+		random.vector(size1),
+		random.vector(size1)
+	);
 
+	auto p = random.barycentric();
+	auto pointOnA = a.a * p.x + a.b * p.y + a.c * p.z;
+
+	auto edgeDirection = random.rotation(random.direction(), { 0, 1.57 }) * a.normal();
+
+	repo::lib::RepoTriangle b(
+		pointOnA + edgeDirection * random.number(size2),
+		pointOnA - edgeDirection * random.number(size2),
+		random.vector(size2)
+	);
+
+	shiftTriangles(b);
+
+	TransformTriangles problem({ a, RepoMatrix() }, { b, RepoMatrix() });
+
+	moveB(problem, size2);
+	moveProblem(problem, size2);
+	moveToBounds(problem, bounds);
+	if (downcastVertices) {
+		downcast(problem);
+	}
+
+	return problem;
+}
 
 CellDistribution::CellDistribution(size_t cellSize, size_t spaceSize)
 	:cellSize(cellSize)

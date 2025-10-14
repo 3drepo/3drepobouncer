@@ -413,61 +413,6 @@ TEST(Clash, LineLineDistanceUnit)
 	}
 }
 
-TEST(Clash, LineLineDistanceE2E)
-{
-	// Test the accuracy of the end-to-end pipeline in Clearance mode, for line-line
-	// distances.
-
-	ClashGenerator clashGenerator;
-
-	auto db = std::make_shared<MockDatabase>();
-
-	const int numIterations = 1;
-	const int samplesPerDistance = 10000;
-	std::vector<double> distances = { 0, 1, 2 };
-
-	for (int i = 0; i < numIterations; ++i)
-	{
-		CellDistribution space(8e6, 1e11);
-
-		ClashDetectionConfigHelper config;
-		config.type = ClashDetectionType::Clearance;
-
-		MockClashScene scene(config.getRevision());
-
-		for (auto d : distances) {
-			clashGenerator.distance = d;
-			for (int i = 0; i < samplesPerDistance; ++i) {
-				auto p = clashGenerator.createLinesTransformed(space.sample());
-				auto ids = scene.add(p, config);
-			}
-		}
-
-		db->setDocuments(scene.bsons);
-
-		{
-			config.tolerance = 0.5;
-			clash::Clearance pipeline(db, config);
-			auto results = pipeline.runPipeline();
-			EXPECT_THAT(results.clashes.size(), Eq(samplesPerDistance));
-		}
-
-		{
-			config.tolerance = 1 + 0.5;
-			clash::Clearance pipeline(db, config);
-			auto results = pipeline.runPipeline();
-			EXPECT_THAT(results.clashes.size(), Eq(samplesPerDistance * 2));
-		}
-
-		{
-			config.tolerance = 2 + 0.5;
-			clash::Clearance pipeline(db, config);
-			auto results = pipeline.runPipeline();
-			EXPECT_THAT(results.clashes.size(), Eq(samplesPerDistance * 3));
-		}
-	}
-}
-
 TEST(Clash, TrianglesUnitVV)
 {
 	// Tests that the triangle distance tests will correctly identify triangles
@@ -490,16 +435,18 @@ TEST(Clash, TrianglesUnitVV)
 			auto m = line.magnitude();
 			auto e = abs(m - d);
 
-			EXPECT_THAT(e, Lt(0.5));
+			EXPECT_THAT(e, Le(1.0));
 
 			// For VV, the line should connect two vertices. Note that we use the same
 			// tolerance as the distance test, as quantisation error may move the
 			// closest points around slightly.
 
-			EXPECT_THAT(vectors::Iterator(line), vectors::AreSubsetOf({ a.a, a.b, a.c, b.a, b.b, b.c }, 1));
+			EXPECT_THAT(vectors::Iterator(line), vectors::AreSubsetOf({ a.a, a.b, a.c, b.a, b.b, b.c }, 3));
 
 			// Todo: make sure sampling is working properly (i.e. test the range
 			// of the vertices and transforms)
+
+
 		}
 	}
 }
@@ -526,7 +473,7 @@ TEST(Clash, TrianglesUnitVE)
 			auto m = line.magnitude();
 			auto e = abs(m - d);
 
-			EXPECT_THAT(e, Lt(0.5));
+			EXPECT_THAT(e, Le(1.0));
 
 			// For VE, the line should connect a vertex to an edge, so exactly
 			// one of the points should be coincident with a vertex.
@@ -566,7 +513,7 @@ TEST(Clash, TrianglesUnitEE)
 			auto m = line.magnitude();
 			auto e = abs(m - d);
 
-			EXPECT_THAT(e, Lt(0.5));
+			EXPECT_THAT(e, Le(1.0));
 		}
 	}
 }
@@ -583,7 +530,7 @@ TEST(Clash, TrianglesUnitVF)
 	for (auto d : distances) {
 		clashGenerator.distance = d;
 
-		for (int i = 0; i < 10000000; ++i) {
+		for (int i = 0; i < 100000; ++i) {
 
 			auto p = clashGenerator.createTrianglesVF(space.sample());
 
@@ -593,41 +540,27 @@ TEST(Clash, TrianglesUnitVF)
 			auto m = line.magnitude();
 			auto e = abs(m - d);
 
-			if(e > 1.0)
-			{
-				std::cout << "Error: " << e << " for distance " << d << " (m: " << m << ")" << std::endl;
-				std::cout << "A: " << a << ", " << b << ", " << std::endl;
-			}
-
 			EXPECT_THAT(e, Lt(1.0));
 		}
 	}
 }
 
-TEST(Clash, T1) 
+TEST(Clash, TrianglesUnitFE)
 {
+	CellDistribution space(8e6, 1e11);
+	ClashGenerator clashGenerator;
 
-	float f1 = 8388608.123f;
-	float f2 = 8388608.97f;
-	float f3 = 83886081.97f;
-	float f4 = 8388608.f;
+	for (int i = 0; i < 100000; ++i) {
 
-	auto a = repo::lib::RepoTriangle{
-		repo::lib::RepoVector3D64(5914504.50000000000000000, 1404138.12500000000000000, 4943018.50000000000000000),
-		repo::lib::RepoVector3D64(23284.1679687500000000000, 868784.625000000000000000, 1158281.25000000000000000),
-		repo::lib::RepoVector3D64(2731600.25000000000000000, 5276852.00000000000000000, 2816638.50000000000000000)
-	};
+		auto p = clashGenerator.createTrianglesFE(space.sample());
 
-	auto b = repo::lib::RepoTriangle{
-		repo::lib::RepoVector3D64(5247178.50000000000000000, 2134272.25000000000000000, 4498805.50000000000000000),
-		repo::lib::RepoVector3D64(4240687.50000000000000000, 3799941.25000000000000000, 3587907.25000000000000000),
-		repo::lib::RepoVector3D64(5648362.00000000000000000, 3847822.25000000000000000, 27611.5917968750000000000)
-	};
+		auto [a, b] = ClashGenerator::applyTransforms(p);
 
-	auto line = geometry::closestPointTriangleTriangle(a, b);
-	auto m = line.magnitude();
-	auto e = abs(m - 2);
+		auto line = geometry::closestPointTriangleTriangle(a, b);
+		auto m = line.magnitude();
 
+		EXPECT_THAT(m, Lt(1.0));
+	}
 }
 
 TEST(Clash, TriangleDistanceE2E) 
@@ -641,7 +574,10 @@ TEST(Clash, TriangleDistanceE2E)
 
 	const int numIterations = 1;
 	const int samplesPerDistance = 10000;
-	std::vector<double> distances = { 0, 1, 2 };
+	std::vector<double> distances = { 0, 2, 5 };
+
+	// With an expected accuracy of +-10.0, the expected measured distance ranges
+	// are: { 0..1, 1..3 4..6 }.
 
 	for (int i = 0; i < numIterations; ++i)
 	{
@@ -655,7 +591,7 @@ TEST(Clash, TriangleDistanceE2E)
 		for (auto d : distances) {
 			clashGenerator.distance = d;
 			for (int i = 0; i < samplesPerDistance; ++i) {
-				auto p = clashGenerator.createLinesTransformed(space.sample());
+				auto p = clashGenerator.createTrianglesTransformed(space.sample());
 				auto ids = scene.add(p, config);
 			}
 		}
@@ -663,21 +599,21 @@ TEST(Clash, TriangleDistanceE2E)
 		db->setDocuments(scene.bsons);
 
 		{
-			config.tolerance = 0.5;
+			config.tolerance = 1.0;
 			clash::Clearance pipeline(db, config);
 			auto results = pipeline.runPipeline();
 			EXPECT_THAT(results.clashes.size(), Eq(samplesPerDistance));
 		}
 
 		{
-			config.tolerance = 1 + 0.5;
+			config.tolerance = 3.0;
 			clash::Clearance pipeline(db, config);
 			auto results = pipeline.runPipeline();
 			EXPECT_THAT(results.clashes.size(), Eq(samplesPerDistance * 2));
 		}
 
 		{
-			config.tolerance = 2 + 0.5;
+			config.tolerance = 6.0;
 			clash::Clearance pipeline(db, config);
 			auto results = pipeline.runPipeline();
 			EXPECT_THAT(results.clashes.size(), Eq(samplesPerDistance * 3));

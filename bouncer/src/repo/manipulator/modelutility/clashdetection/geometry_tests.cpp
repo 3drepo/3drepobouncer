@@ -151,6 +151,50 @@ repo::lib::RepoLine geometry::closestPointLineLine(const repo::lib::RepoLine& A,
     return result;
 }
 
+// Returns a line of zero length if B intersects the face of A, otherwise returns
+// a line of infinite length.
+
+repo::lib::RepoLine lineFaceIntersection(const repo::lib::RepoLine& B, const repo::lib::RepoTriangle& A)
+{
+    // Möller, T., & Trumbore, B. (1997). Fast, minimum storage ray-triangle intersection.
+
+    auto dir = B.d();
+    auto o = B.start;
+
+    auto e1 = A.b - A.a;
+    auto e2 = A.c - A.a;
+    auto c2 = dir.crossProduct(e2);
+    float det = e1.dotProduct(c2);
+
+    if (det > -DBL_EPSILON && det < DBL_EPSILON) {
+        return repo::lib::RepoLine::Max();
+    }
+
+    float inv_det = 1.0 / det;
+    auto s = o - A.a;
+    float u = inv_det * s.dotProduct(c2);
+
+    if ((u < 0 && abs(u) > DBL_EPSILON) || (u > 1 && abs(u - 1) > DBL_EPSILON))
+        return repo::lib::RepoLine::Max();
+
+    auto c1 = s.crossProduct(e1);
+    float v = inv_det * dir.dotProduct(c1);
+
+    if ((v < 0 && abs(v) > DBL_EPSILON) || (u + v > 1 && abs(u + v - 1) > DBL_EPSILON))
+        return repo::lib::RepoLine::Max();
+
+    float t = inv_det * e2.dotProduct(c1);
+
+    if (t > DBL_EPSILON && t < 1.0)
+    {
+        return { o + dir * t, o + dir * t };
+    }
+    else
+    {
+        return repo::lib::RepoLine::Max();
+    }
+}
+
 repo::lib::RepoLine geometry::closestPointTriangleTriangle(const repo::lib::RepoTriangle& A, const repo::lib::RepoTriangle& B)
 {
     // Ericson, C. (2004). Real-Time Collision Detection. CRC Press.
@@ -162,7 +206,7 @@ repo::lib::RepoLine geometry::closestPointTriangleTriangle(const repo::lib::Repo
     repo::lib::RepoLine Eb2(B.b, B.c);
     repo::lib::RepoLine Eb3(B.c, B.a);
 
-    repo::lib::RepoLine results[15];
+    repo::lib::RepoLine results[21];
 
     results[0] = closestPointLineLine(Ea1, Eb1);
     results[1] = closestPointLineLine(Ea1, Eb2);
@@ -181,8 +225,15 @@ repo::lib::RepoLine geometry::closestPointTriangleTriangle(const repo::lib::Repo
     results[13] = closestPointPointTriangle(B.b, A);
     results[14] = closestPointPointTriangle(B.c, A);
 
+	results[15] = lineFaceIntersection(Eb1, A);
+	results[16] = lineFaceIntersection(Eb2, A);
+	results[17] = lineFaceIntersection(Eb3, A);
+	results[18] = lineFaceIntersection(Ea1, B);
+	results[19] = lineFaceIntersection(Ea2, B);
+	results[20] = lineFaceIntersection(Ea3, B);
+
     repo::lib::RepoLine min = results[0];
-    for (int i = 1; i < 15; i++)
+    for (int i = 1; i < 21; i++)
     {
         if (results[i].magnitude() < min.magnitude())
         {
