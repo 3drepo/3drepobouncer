@@ -24,6 +24,8 @@
 #include "repo/lib/datastructure/repo_bounds.h"
 #include "repo/lib/datastructure/repo_line.h"
 #include "repo/lib/datastructure/repo_triangle.h"
+#include "repo/lib/datastructure/repo_range.h"
+#include <optional>
 
 /* As we sometimes deal with very large coordinate systems, we expect positions
  * to have a low tolerance, approaching floating point quantisation itself.
@@ -235,31 +237,44 @@ namespace testing {
 		// The actual matcher - this macro creates a templated class. The overloads below
 		// should return an instance of this type.
 
-		MATCHER_P2(RepoVectorsGeneric, elements, tolerance, "")
+		MATCHER_P3(IntsersectsGeneric, elements, range, tolerance, "")
 		{
 			// elements is always expected to be an iterable type, even if it has
 			// only one elment.
 			// arg may be one of a number of high level types, which we convert
 			// using one of the above overloads.
 
+			// n is the number of vectors from arg that should match to an element.
+			// if n is -1, then all vectors in arg must match.
+
 			size_t matched = 0;
 			size_t expected = 0;
 			for (auto& a : arg) {
 				expected++;
+
+				bool matchedElement = false;
+
+				double minDistance = std::numeric_limits<double>::max();
+
 				for(auto& b : elements) {
-					if (compareVectors(a, b, tolerance, result_listener)) {
-						matched++;
+					auto d = a - b;
+					minDistance = std::min(minDistance, d.norm());
+					if (minDistance < tolerance) {
+						matchedElement = true;
 						break;
 					}
 				}
 
-				if (matched < expected) {
-					*result_listener << " No match for element " << a.toString() << ".";
+				if (matchedElement) {
+					matched++;
+				}
+				else {
+					*result_listener << " No match for actual " << a.toString() << ". Shortest distance: " << minDistance << ".\r\n";
 				}
 			}
 
-			if (matched != expected) {
-				*result_listener << " Only " << matched << " of " << expected << " elements matched.";
+			if (!range.value_or(repo::lib::_RepoRange<size_t>(expected, expected)).contains(matched)) {
+				*result_listener << matched << " of " << expected << " elements matched.";
 				return false;
 			}
 
@@ -270,14 +285,39 @@ namespace testing {
 		// into a form the vector matcher can deal with. These must all return a suitable
 		// matcher.
 
-		static RepoVectorsGenericMatcherP2<
+		/*
+		* All vectors in actual must be present in element at least once.
+		* Vectors may match the same element multiple times.
+		*/
+		static IntsersectsGenericMatcherP3<
 			std::initializer_list<repo::lib::RepoVector3D64>,
+			std::optional<repo::lib::_RepoRange<size_t>>,
 			double
 		> AreSubsetOf(
 			std::initializer_list<repo::lib::RepoVector3D64> elements,
 			double tolerance = POSITION_TOLERANCE)
 		{
-			return RepoVectorsGeneric(elements, tolerance);
+			return IntsersectsGeneric(elements, 
+				std::optional<repo::lib::_RepoRange<size_t>>(std::nullopt),
+				tolerance);
+		}
+
+		/*
+		* At least n vectors in actual must much one of the vectors in elements.
+		* Vectors may match the same element multiple times.
+		*/
+		static IntsersectsGenericMatcherP3<
+			std::initializer_list<repo::lib::RepoVector3D64>,
+			std::optional<repo::lib::_RepoRange<size_t>>,
+			double
+		> Intersects(
+			std::initializer_list<repo::lib::RepoVector3D64> elements,
+			repo::lib::_RepoRange<size_t> range,
+			double tolerance = POSITION_TOLERANCE)
+		{
+			return IntsersectsGeneric(elements,
+				std::optional<repo::lib::_RepoRange<size_t>>(range), 
+				tolerance);
 		}
 
 		// Helper object to present different types as iterators of vectors, where

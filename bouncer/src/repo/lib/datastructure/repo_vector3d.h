@@ -73,7 +73,7 @@ namespace repo{
 				return product;
 			}
 
-			T dotProduct(const _RepoVector3D<T> &vec)
+			T dotProduct(const _RepoVector3D<T> &vec) const
 			{
 				return x*vec.x + y*vec.y + z*vec.z;
 			}

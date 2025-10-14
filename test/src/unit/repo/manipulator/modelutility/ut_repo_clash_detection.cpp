@@ -70,6 +70,12 @@ using namespace repo::manipulator::modelutility;
 
 #pragma optimize ("", off)
 
+std::ostream& operator<<(std::ostream& os, const repo::lib::RepoTriangle& t)
+{
+	os << "Triangle(" << t.a << " -> " << t.b << " -> " << t.c << ")";
+	return os;
+}
+
 repo::core::model::MeshNode createPointMesh(std::initializer_list<repo::lib::RepoVector3D> points)
 {
 	std::vector<repo::lib::repo_face_t> faces;
@@ -83,80 +89,6 @@ repo::core::model::MeshNode createPointMesh(std::initializer_list<repo::lib::Rep
 		{},
 		{}
 	);
-}
-
-struct BasisVectors
-{
-	repo::lib::RepoVector3D64 x = {1, 0, 0};
-	repo::lib::RepoVector3D64 y = {0, 1, 0};
-	repo::lib::RepoVector3D64 z = {0, 0, 1};
-	BasisVectors() = default;
-	BasisVectors(repo::lib::RepoVector3D64 x, repo::lib::RepoVector3D64 y, repo::lib::RepoVector3D64 z)
-		:x(x), y(y), z(z) {
-	}
-};
-
-struct ProceduralBox
-{
-	std::vector<repo::lib::RepoVector3D64> vertices;
-	
-	ProceduralBox(repo::lib::RepoVector3D64 size)
-		:vertices({
-				{-size.x, -size.y, -size.z}, // Bottom-left-front
-				{ size.x, -size.y, -size.z}, // Bottom-right-front
-				{ size.x,  size.y, -size.z}, // Top-right-front
-				{-size.x,  size.y, -size.z}, // Top-left-front
-				{-size.x, -size.y,  size.z}, // Bottom-left-back
-				{ size.x, -size.y,  size.z}, // Bottom-right-back
-				{ size.x,  size.y,  size.z}, // Top-right-back
-				{-size.x,  size.y,  size.z}  // Top-left-back
-			})
-	{
-	}
-
-	repo::core::model::MeshNode getMeshNode() const {
-		std::vector<repo::lib::repo_face_t> faces = {
-			{0, 1, 2}, {0, 2, 3}, // Front face
-			{4, 5, 6}, {4, 6, 7}, // Back face
-			{0, 1, 5}, {0, 5, 4}, // Bottom face
-			{2, 3, 7}, {2, 7, 6}, // Top face
-			{0, 3, 7}, {0, 7, 4}, // Left face
-			{1, 2, 6}, {1, 6, 5}  // Right face
-		};
-
-		std::vector<repo::lib::RepoVector3D> vv;
-		for (auto& v : vertices) {
-			vv.push_back(repo::lib::RepoVector3D(v.x, v.y, v.z));
-		}
-
-		auto n = RepoBSONFactory::makeMeshNode(
-			vv,
-			faces,
-			{},
-			{}
-		);
-
-		n.updateBoundingBox();
-
-		return n;
-	}
-
-	operator repo::core::model::MeshNode() const
-	{
-		return getMeshNode();
-	}
-};
-
-repo::core::model::MeshNode createBoxMesh(
-	repo::lib::RepoVector3D64 size,
-	repo::lib::RepoVector3D64 origin,
-	repo::lib::RepoUUID parentId)
-{
-	auto n = ProceduralBox(size).getMeshNode();
-	n.addParents({ parentId });
-	n.setMaterial(repo::lib::repo_material_t::DefaultMaterial());
-	n.changeName("Box");
-	return n;
 }
 
 TEST(Clash, SparseSceneGraph)
@@ -401,6 +333,7 @@ TEST(Clash, Config)
 TEST(Clash, Scheduler)
 {
 	// Tests if the ClashScheduler returns a sensible narrowphase set.
+
 	// The scheduling problem is NP-Hard, so this test doesn't check if the
 	// order is optimal, just that all the original broadphase tests still
 	// exist, with no duplicates.
@@ -438,7 +371,8 @@ TEST(Clash, Scheduler)
 * 
 * Accuracy is tested at both the unit and end-to-end level. The current guaranteed
 * accuracy is 1 in 8e6 - that is, an error of at most 0.5 is allowed on 'either
-* side' of the expected distance.
+* side' of the true distance - for vertices, with transforms up to 1e11 from the
+* origin.
 * 
 * This domain is determined by the source data the engine has to work with: single
 * precision vertices from the binary buffers, and double precision transformations
@@ -448,8 +382,7 @@ TEST(Clash, Scheduler)
 TEST(Clash, LineLineDistanceUnit)
 {
 	// Tests the accuracy of the line-line distance test across the supported
-	// domain. The test must be accurate for any pair of lines to within 1 in 8e6
-	// anywhere within 1e11 of the origin.
+	// domain.
 
 	CellDistribution space(8e6, 1e11);
 	ClashGenerator clashGenerator;
@@ -535,8 +468,11 @@ TEST(Clash, LineLineDistanceE2E)
 	}
 }
 
-TEST(Clash, TrianglesUnit)
+TEST(Clash, TrianglesUnitVV)
 {
+	// Tests that the triangle distance tests will correctly identify triangles
+	// which are closest at their vertices.
+
 	CellDistribution space(8e6, 1e11);
 	ClashGenerator clashGenerator;
 
@@ -564,10 +500,134 @@ TEST(Clash, TrianglesUnit)
 
 			// Todo: make sure sampling is working properly (i.e. test the range
 			// of the vertices and transforms)
-
-
 		}
 	}
+}
+
+TEST(Clash, TrianglesUnitVE)
+{
+	// Tests that the triangle distance tests correctly identify triangles
+	// which are closest at an edge and a vertex.
+
+	CellDistribution space(8e6, 1e11);
+	ClashGenerator clashGenerator;
+
+	std::vector<double> distances = { 0, 1, 2 };
+	for (auto d : distances) {
+		clashGenerator.distance = d;
+
+		for (int i = 0; i < 100000; ++i) {
+
+			auto p = clashGenerator.createTrianglesVE(space.sample());
+
+			auto [a, b] = ClashGenerator::applyTransforms(p);
+
+			auto line = geometry::closestPointTriangleTriangle(a, b);
+			auto m = line.magnitude();
+			auto e = abs(m - d);
+
+			EXPECT_THAT(e, Lt(0.5));
+
+			// For VE, the line should connect a vertex to an edge, so exactly
+			// one of the points should be coincident with a vertex.
+
+			// (Note that if the the distance is small enough, both points will
+			// match to the vertex, so be robust to that case too.)
+
+			EXPECT_THAT(vectors::Iterator(line), vectors::Intersects({ a.a, a.b, a.c, b.a, b.b, b.c }, {1, 2}, ClashGenerator::suggestTolerance({ a, b })));
+
+			auto line2 = geometry::closestPointTriangleTriangle(a, b);
+
+			// Todo: make sure sampling is working properly (i.e. test the range
+			// of the vertices and transforms)
+		}
+	}
+}
+
+TEST(Clash, TrianglesUnitEE)
+{
+	// Tests that the triangle distance tests correctly identify triangles
+	// which are closest at an edge and a vertex.
+
+	CellDistribution space(8e6, 1e11);
+	ClashGenerator clashGenerator;
+
+	std::vector<double> distances = { 0, 1, 2 };
+	for (auto d : distances) {
+		clashGenerator.distance = d;
+
+		for (int i = 0; i < 100000; ++i) {
+
+			auto p = clashGenerator.createTrianglesEE(space.sample());
+
+			auto [a, b] = ClashGenerator::applyTransforms(p);
+
+			auto line = geometry::closestPointTriangleTriangle(a, b);
+			auto m = line.magnitude();
+			auto e = abs(m - d);
+
+			EXPECT_THAT(e, Lt(0.5));
+		}
+	}
+}
+
+TEST(Clash, TrianglesUnitVF)
+{
+	// Tests that the triangle distance tests correctly identify triangles
+	// which are closest at an edge and a vertex.
+
+	CellDistribution space(8e6, 1e11);
+	ClashGenerator clashGenerator;
+
+	std::vector<double> distances = { 0, 1, 2 };
+	for (auto d : distances) {
+		clashGenerator.distance = d;
+
+		for (int i = 0; i < 10000000; ++i) {
+
+			auto p = clashGenerator.createTrianglesVF(space.sample());
+
+			auto [a, b] = ClashGenerator::applyTransforms(p);
+
+			auto line = geometry::closestPointTriangleTriangle(a, b);
+			auto m = line.magnitude();
+			auto e = abs(m - d);
+
+			if(e > 1.0)
+			{
+				std::cout << "Error: " << e << " for distance " << d << " (m: " << m << ")" << std::endl;
+				std::cout << "A: " << a << ", " << b << ", " << std::endl;
+			}
+
+			EXPECT_THAT(e, Lt(1.0));
+		}
+	}
+}
+
+TEST(Clash, T1) 
+{
+
+	float f1 = 8388608.123f;
+	float f2 = 8388608.97f;
+	float f3 = 83886081.97f;
+	float f4 = 8388608.f;
+
+	auto a = repo::lib::RepoTriangle{
+		repo::lib::RepoVector3D64(5914504.50000000000000000, 1404138.12500000000000000, 4943018.50000000000000000),
+		repo::lib::RepoVector3D64(23284.1679687500000000000, 868784.625000000000000000, 1158281.25000000000000000),
+		repo::lib::RepoVector3D64(2731600.25000000000000000, 5276852.00000000000000000, 2816638.50000000000000000)
+	};
+
+	auto b = repo::lib::RepoTriangle{
+		repo::lib::RepoVector3D64(5247178.50000000000000000, 2134272.25000000000000000, 4498805.50000000000000000),
+		repo::lib::RepoVector3D64(4240687.50000000000000000, 3799941.25000000000000000, 3587907.25000000000000000),
+		repo::lib::RepoVector3D64(5648362.00000000000000000, 3847822.25000000000000000, 27611.5917968750000000000)
+	};
+
+	auto line = geometry::closestPointTriangleTriangle(a, b);
+	auto m = line.magnitude();
+	auto e = abs(m - 2);
+
 }
 
 TEST(Clash, TriangleDistanceE2E) 

@@ -55,11 +55,26 @@ namespace testing {
 
 		double angle();
 
+		double angle(const repo::lib::RepoRange& radians);
+
 		repo::lib::RepoMatrix transform(
 			bool rotation, 
 			const repo::lib::RepoRange& translate, 
 			const repo::lib::RepoRange& scale);
 
+		repo::lib::RepoMatrix rotation(
+			const repo::lib::RepoRange& x,
+			const repo::lib::RepoRange& y,
+			const repo::lib::RepoRange& z
+		);
+
+		repo::lib::RepoMatrix rotation(
+			const repo::lib::RepoVector3D64& axis,
+			const repo::lib::RepoRange& angle
+		);
+
 		bool boolean();
+
+		repo::lib::RepoVector3D64 barycentric();
 	};
 }

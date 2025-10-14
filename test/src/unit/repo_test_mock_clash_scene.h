@@ -140,7 +140,7 @@ namespace testing {
 		// vertices from one triangle have the same distance (i.e. the edge itself has
 		// a constant distance to the face).
 
-		TransformTriangles createTrianglesFV(
+		TransformTriangles createTrianglesVF(
 			const repo::lib::RepoBounds& bounds
 		);
 
@@ -162,6 +162,11 @@ namespace testing {
 
 		void moveProblem(TransformTriangles& problem, const repo::lib::RepoRange& range);
 
+		// Circular shift the vertices by a random amount, so that if a procedural triangle
+		// is created such that vertex a is always, for example, the closest feature, then
+		// other vertices may be that feature.
+		void shiftTriangles(repo::lib::RepoTriangle& problem);
+
 		void downcast(TransformTriangles& problem);
 
 		void downcast(TransformLines& line);
@@ -171,6 +176,12 @@ namespace testing {
 		void downcast(repo::lib::RepoLine& line);
 
 		static TrianglePair applyTransforms(TransformTriangles& problem);
+
+		// Returns a value that can be used as a tolerance when checking if a vector
+		// is close to a particular element of the triangle, based on the size of 
+		// the provided triangles.
+
+		static double suggestTolerance(std::initializer_list<repo::lib::RepoTriangle> triangles);
 	};
 
 	struct MockClashScene

@@ -43,6 +43,15 @@ namespace repo {
                 c += v;
                 return *this;
             }
+
+            repo::lib::_RepoVector3D<T> normal() const
+            {
+                auto ab = b - a;
+                auto ac = c - a;
+                auto n = ab.crossProduct(ac);
+                n.normalize();
+                return n;
+			}
         };
 
         using RepoTriangle = _RepoTriangle<double>;

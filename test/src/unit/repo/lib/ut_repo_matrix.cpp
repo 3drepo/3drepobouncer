@@ -415,3 +415,18 @@ TEST(RepoMatrixTest, IsUniformScaling)
 {
 
 }
+
+TEST(RepoMatrixTest, AxisAngleRotation)
+{
+	repo::lib::RepoVector3D x(1, 0, 0);
+	repo::lib::RepoVector3D y(0, 1, 0);
+	repo::lib::RepoVector3D z(0, 0, 1);
+	repo::lib::RepoVector3D xy(1, 1, 0);
+	xy.normalize();
+	repo::lib::RepoVector3D xz(1, 0, 1);
+	xz.normalize();
+
+	EXPECT_THAT(repo::lib::RepoMatrix::rotation(x, RAD(90)) * y, VectorNear(z));
+	EXPECT_THAT(repo::lib::RepoMatrix::rotation(x, RAD(90)) * x, VectorNear(x));
+	EXPECT_THAT(repo::lib::RepoMatrix::rotation(x, RAD(90)) * xy, VectorNear(xz));
+}

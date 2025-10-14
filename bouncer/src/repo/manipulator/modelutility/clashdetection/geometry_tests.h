@@ -24,6 +24,14 @@ namespace geometry {
 
     repo::lib::RepoVector3D64 closestPointTriangle(const repo::lib::RepoVector3D64& p, const repo::lib::RepoTriangle& T);
     repo::lib::RepoLine closestPointPointTriangle(const repo::lib::RepoVector3D64& p, const repo::lib::RepoTriangle& T);
+
     repo::lib::RepoLine closestPointLineLine(const repo::lib::RepoLine& A, const repo::lib::RepoLine& B);
+
+    /*
+    * Given two Triangles, A & B, return a Line that connects the A and B at
+    * their closest points to eachother. The Line's start and end points are
+    * *not* guaranteed to always be on the same triangle (i.e. they could be
+	* from A to B in one case, and from B to A in another).
+    */
     repo::lib::RepoLine closestPointTriangleTriangle(const repo::lib::RepoTriangle& A, const repo::lib::RepoTriangle& B);
 }

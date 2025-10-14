@@ -85,13 +85,24 @@ double RepoRandomGenerator::number(const repo::lib::RepoRange& range)
 
 double RepoRandomGenerator::angle() // in radians
 {
-	std::uniform_real_distribution<> d(-2 * PI, 2 * PI);
-	return d(gen);
+	return angle({ -2 * PI, 2 * PI });
+}
+
+double RepoRandomGenerator::angle(const repo::lib::RepoRange& radians)
+{
+	return number(radians);
 }
 
 bool RepoRandomGenerator::boolean()
 {
 	return scalar() > 0.5;
+}
+
+repo::lib::RepoVector3D64 RepoRandomGenerator::barycentric()
+{
+	auto b = repo::lib::RepoVector3D64(scalar(), scalar(), scalar());
+	b = b / (b.x + b.y + b.z);
+	return b;
 }
 
 repo::lib::RepoMatrix RepoRandomGenerator::transform(bool rotation,
@@ -116,4 +127,24 @@ repo::lib::RepoMatrix RepoRandomGenerator::transform(bool rotation,
 	}
 
 	return m;
+}
+
+repo::lib::RepoMatrix RepoRandomGenerator::rotation(
+	const repo::lib::RepoRange& x,
+	const repo::lib::RepoRange& y,
+	const repo::lib::RepoRange& z
+)
+{
+	return 
+		repo::lib::RepoMatrix::rotationX(angle(x)) *
+		repo::lib::RepoMatrix::rotationY(angle(y)) *
+		repo::lib::RepoMatrix::rotationZ(angle(z));
+}
+
+repo::lib::RepoMatrix RepoRandomGenerator::rotation(
+	const repo::lib::RepoVector3D64& axis,
+	const repo::lib::RepoRange& angle
+) 
+{
+	return repo::lib::RepoMatrix::rotation(axis, this->angle(angle));
 }

@@ -17,6 +17,8 @@
 
 #include "repo_test_mock_clash_scene.h"
 
+#include "repo/lib/datastructure/repo_vector.h"
+
 #pragma optimize("", off)
 
 using namespace testing;
@@ -134,6 +136,17 @@ void ClashGenerator::downcast(TransformLines& problem)
 	downcast(problem.second.first);
 }
 
+void ClashGenerator::shiftTriangles(repo::lib::RepoTriangle& b)
+{
+	for (int i = 0; i < random.range(0, 3); ++i) {
+		auto t = b.a;
+		b.a = b.b;
+		b.b = b.c;
+		b.c = t;
+	}
+}
+
+
 void ClashGenerator::moveB(TransformTriangles& problem, const repo::lib::RepoRange& range)
 {
 	// As this method will modify the vertices before the downcast, we may only apply
@@ -197,6 +210,17 @@ TrianglePair ClashGenerator::applyTransforms(TransformTriangles& problem)
 		problem.first.second * problem.first.first,
 		problem.second.second * problem.second.first
 	};
+}
+
+double ClashGenerator::suggestTolerance(std::initializer_list<repo::lib::RepoTriangle> triangles)
+{
+	auto min = DBL_MAX;
+	for (auto& t : triangles) {
+		min = std::min(min, (t.a - t.b).norm());
+		min = std::min(min, (t.b - t.c).norm());
+		min = std::min(min, (t.c - t.a).norm());
+	}
+	return min * 0.001;
 }
 
 TransformLines ClashGenerator::createLinesTransformed(
@@ -276,10 +300,6 @@ TransformTriangles testing::ClashGenerator::createTrianglesVV(const repo::lib::R
 	// Create two triangles which meet at the origin at vertex zero.
 
 	auto d = random.number(distance);
-
-	// One triangle should have its other vertices along -x (by at least d), and
-	// the other along +x.
-
 	auto margin = d + d * std::min(size1.min(), size2.min());
 
 	repo::lib::RepoTriangle a(
@@ -298,7 +318,10 @@ TransformTriangles testing::ClashGenerator::createTrianglesVV(const repo::lib::R
 
 	b += repo::lib::RepoVector3D64(d, 0, 0);
 
-	TransformTriangles problem({ a, RepoMatrix() }, {b, RepoMatrix() });
+	shiftTriangles(a);
+	shiftTriangles(b);
+
+	TransformTriangles problem({ a, RepoMatrix() }, { b, RepoMatrix() });
 
 	moveB(problem, size2);
 	moveProblem(problem, size2);
@@ -317,8 +340,7 @@ TransformTriangles testing::ClashGenerator::createTrianglesVE(const repo::lib::R
 	// the XY plane by a safe margin around 'distance'.
 
 	auto d = random.number(distance);
-
-	auto margin = d + 0.1;
+	auto margin = d + d * std::min(size1.min(), size2.min());
 
 	auto edgeDirection = random.direction();
 	edgeDirection.x = 0;
@@ -327,29 +349,27 @@ TransformTriangles testing::ClashGenerator::createTrianglesVE(const repo::lib::R
 	repo::lib::RepoTriangle a(
 		edgeDirection * random.number({ margin, size1.max() }),
 		edgeDirection * random.number({ -margin, -size1.max() }),
-		random.vector({ -margin, -size1.max() }, size1, size1)
+		random.vector({ -margin, -size1.max() }, { -size1.max(), size1.max() }, { -size1.max(), size1.max() })
 	);
 
 	repo::lib::RepoTriangle b(
 		repo::lib::RepoVector3D64(0, 0, 0),
-		random.vector({ margin, size2.max() }, size2, size2),
-		random.vector({ margin, size2.max() }, size2, size2)
+		random.vector({ margin, size2.max() }, { -size2.max(), size2.max() }, { -size2.max(), size2.max() }),
+		random.vector({ margin, size2.max() }, { -size2.max(), size2.max() }, { -size2.max(), size2.max() })
 	);
 
 	// Separate the triangles by d
 
+	shiftTriangles(a);
+	shiftTriangles(b);
+
 	b += repo::lib::RepoVector3D64(d, 0, 0);
 
-	auto mb = random.transform(true, size2, {});
-	b = mb.invert() * b;
+	TransformTriangles problem({ a, RepoMatrix() }, { b, RepoMatrix() });
 
-	auto ma = random.transform(true, size2, {});
-	mb = ma * mb;
-
-	TransformTriangles problem({ a, ma }, { b, mb });
-
+	moveB(problem, size2);
+	moveProblem(problem, size2);
 	moveToBounds(problem, bounds);
-
 	if (downcastVertices) {
 		downcast(problem);
 	}
@@ -359,15 +379,75 @@ TransformTriangles testing::ClashGenerator::createTrianglesVE(const repo::lib::R
 
 TransformTriangles testing::ClashGenerator::createTrianglesEE(const repo::lib::RepoBounds& bounds)
 {
-	throw std::exception("Not implemented yet");
+	auto d = random.number(distance);
+	auto margin = d + d * std::min(size1.min(), size2.min());
+
+	// Like VE, but with the second triangle's meeting vertex being somwhere
+	// along the first's edge.
+
+	repo::lib::RepoTriangle a(
+		random.vector({ 0, 0 }, { 0, size1.max() }, { 0, 0 }),
+		random.vector({ 0, 0 }, { 0, -size1.max() }, { 0, 0 }),
+		random.vector({ -margin, -size1.max() }, { -size1.max(), size1.max() }, { -size1.max(), size1.max() })
+	);
+
+	repo::lib::RepoTriangle b(
+		random.vector({ 0, 0 }, { 0, size2.max() }, { 0, 0 }),
+		random.vector({ 0, 0 }, { 0, -size2.max() }, { 0, 0 }),
+		random.vector({ margin, size2.max() }, { -size2.max(), size2.max() }, { -size2.max(), size2.max() })
+	);
+
+	b = random.rotation({ 0.01, 3.14 }, { 0, 0 }, { 0, 0 }) * b;
+	b += repo::lib::RepoVector3D64(d, 0, 0);
+
+	shiftTriangles(b);
+
+	TransformTriangles problem({ a, RepoMatrix() }, { b, RepoMatrix() });
+
+	moveB(problem, size2);
+	moveProblem(problem, size2);
+	moveToBounds(problem, bounds);
+	if (downcastVertices) {
+		downcast(problem);
+	}
+
+	return problem;
+}
+
+TransformTriangles testing::ClashGenerator::createTrianglesVF(const repo::lib::RepoBounds& bounds)
+{
+	repo::lib::RepoTriangle a(
+		random.vector(size1),
+		random.vector(size1),
+		random.vector(size1)
+	);
+
+	auto p = random.barycentric();
+	auto pointOnA = a.a * p.x + a.b * p.y + a.c * p.z;
+
+	pointOnA += a.normal() * random.number(distance);
+
+	repo::lib::RepoTriangle b(
+		pointOnA,
+		pointOnA + random.rotation(random.direction(), { 0, 1.57 }) * a.normal() * random.number(size2),
+		pointOnA + random.rotation(random.direction(), { 0, 1.57 }) * a.normal() * random.number(size2)
+	);
+
+	shiftTriangles(b);
+
+	TransformTriangles problem({ a, RepoMatrix() }, { b, RepoMatrix() });
+
+	moveB(problem, size2);
+	moveProblem(problem, size2);
+	moveToBounds(problem, bounds);
+	if (downcastVertices) {
+		downcast(problem);
+	}
+
+	return problem;
 }
 
 TransformTriangles testing::ClashGenerator::createTrianglesFE(const repo::lib::RepoBounds& bounds)
-{
-	throw std::exception("Not implemented yet");
-}
-
-TransformTriangles testing::ClashGenerator::createTrianglesFV(const repo::lib::RepoBounds& bounds)
 {
 	throw std::exception("Not implemented yet");
 }

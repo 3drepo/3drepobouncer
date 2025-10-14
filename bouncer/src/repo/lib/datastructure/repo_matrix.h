@@ -66,6 +66,8 @@ namespace repo {
 
 			static _RepoMatrix<T> rotationZ(T angle);
 
+			static _RepoMatrix<T> rotation(const repo::lib::_RepoVector3D<T>& axis, T angle);
+
 			static _RepoMatrix<T> translate(lib::_RepoVector3D<T> t);
 
 			static _RepoMatrix<T> scale(lib::_RepoVector3D<T> s);

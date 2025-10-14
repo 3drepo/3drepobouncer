@@ -304,6 +304,39 @@ _RepoMatrix<T> _RepoMatrix<T>::translate(lib::_RepoVector3D<T> t)
 }
 
 template<typename T>
+_RepoMatrix<T> _RepoMatrix<T>::rotation(const repo::lib::_RepoVector3D<T>& axis, T angle)
+{
+	T c = cos(angle);
+	T s = sin(angle);
+	T t = 1.0 - c;
+
+	_RepoMatrix<T> m;
+
+	m.data[0] = c + axis.x * axis.x * t;
+	m.data[5] = c + axis.y * axis.y * t;
+	m.data[10] = c + axis.z * axis.z * t;
+
+	double j = axis.x * axis.y * t;
+	double k = axis.z * s;
+	m.data[4] = j + k;
+	m.data[1] = j - k;
+	
+	j = axis.x * axis.z * t;
+	k = axis.y * s;
+	m.data[2] = j + k;
+	m.data[8] = j - k;
+
+	j = axis.y * axis.z * t;
+	k = axis.x * s;
+	m.data[9] = j + k;
+	m.data[6] = j - k;
+
+	m.data[15] = 1;
+
+	return m;
+}
+
+template<typename T>
 _RepoMatrix<T> _RepoMatrix<T>::scale(lib::_RepoVector3D<T> s)
 {
 	_RepoMatrix<T> m;
