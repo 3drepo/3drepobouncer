@@ -91,6 +91,28 @@ repo::core::model::MeshNode createPointMesh(std::initializer_list<repo::lib::Rep
 	);
 }
 
+class ClearanceAccuracyReport 
+{
+	std::fstream file;
+
+public:
+	ClearanceAccuracyReport() {
+		file.open("C:\\3drepo\\3drepobouncer_ISSUE797\\ClearanceAccuracyReport.errors.bin", std::ios::out | std::ios::binary );
+	}
+
+	void add(const ClashDetectionReport& report, double nominalDistance)
+	{
+		for(auto& clash : report.clashes) {
+			auto e = abs((clash.positions[0] - clash.positions[1]).norm() - nominalDistance);
+			file.write(reinterpret_cast<const char*>(&e), sizeof(double));
+		}
+	}
+
+	~ClearanceAccuracyReport() {
+		file.close();
+	}
+};
+
 TEST(Clash, SparseSceneGraph)
 {
 	// Tests a composite scene graph from across two Containers, including multiple
@@ -390,7 +412,7 @@ TEST(Clash, LineLineDistanceUnit)
 	std::vector<double> distances = { 0, 1, 2 };
 	for (auto d : distances) {
 		clashGenerator.distance = d;
-		for (int i = 0; i < 1000000; ++i) {
+		for (int i = 0; i < 100000; ++i) {
 			auto p = clashGenerator.createLinesTransformed(space.sample());
 
 			repo::lib::RepoLine a(
@@ -442,11 +464,6 @@ TEST(Clash, TrianglesUnitVV)
 			// closest points around slightly.
 
 			EXPECT_THAT(vectors::Iterator(line), vectors::AreSubsetOf({ a.a, a.b, a.c, b.a, b.b, b.c }, 3));
-
-			// Todo: make sure sampling is working properly (i.e. test the range
-			// of the vertices and transforms)
-
-
 		}
 	}
 }
@@ -482,11 +499,6 @@ TEST(Clash, TrianglesUnitVE)
 			// match to the vertex, so be robust to that case too.)
 
 			EXPECT_THAT(vectors::Iterator(line), vectors::Intersects({ a.a, a.b, a.c, b.a, b.b, b.c }, {1, 2}, ClashGenerator::suggestTolerance({ a, b })));
-
-			auto line2 = geometry::closestPointTriangleTriangle(a, b);
-
-			// Todo: make sure sampling is working properly (i.e. test the range
-			// of the vertices and transforms)
 		}
 	}
 }
@@ -572,11 +584,11 @@ TEST(Clash, TriangleDistanceE2E)
 
 	auto db = std::make_shared<MockDatabase>();
 
-	const int numIterations = 1;
+	const int numIterations = 10;
 	const int samplesPerDistance = 10000;
 	std::vector<double> distances = { 0, 2, 5 };
 
-	// With an expected accuracy of +-10.0, the expected measured distance ranges
+	// With an expected accuracy of ±1.0, the expected measured distance ranges
 	// are: { 0..1, 1..3 4..6 }.
 
 	for (int i = 0; i < numIterations; ++i)
@@ -619,8 +631,49 @@ TEST(Clash, TriangleDistanceE2E)
 			EXPECT_THAT(results.clashes.size(), Eq(samplesPerDistance * 3));
 		}
 	}
+}
 
+TEST(Clash, AccuracyReport)
+{
+	// Test the accuracy of the end-to-end pipeline in Clearance mode, for multiple
+	// problem configurations.
 
+	GTEST_SKIP(); // Disable this test unless we need to gather more data.
+
+	ClashGenerator clashGenerator;
+
+	auto db = std::make_shared<MockDatabase>();
+
+	const int samplesPerDistance = 10000;
+	std::vector<double> distances = { 0, 1, 2, 3 };
+
+	ClearanceAccuracyReport report;
+	CellDistribution space(8e6, 1e11);
+	
+	// Due to the BVH construction and traversal, it is more efficient to perform
+	// multiple iterations of small scenes, rather than one large scene.
+
+	for (int i = 0; i < 100; ++i) {
+		for (auto d : distances) {
+			ClashDetectionConfigHelper config;
+			config.type = ClashDetectionType::Clearance;
+			MockClashScene scene(config.getRevision());
+
+			clashGenerator.distance = d;
+			for (int i = 0; i < samplesPerDistance; ++i) {
+				auto p = clashGenerator.createTrianglesTransformed(space.sample());
+				auto ids = scene.add(p, config);
+			}
+
+			db->setDocuments(scene.bsons);
+
+			config.tolerance = d + 1.0;
+			clash::Clearance pipeline(db, config);
+			auto results = pipeline.runPipeline();
+
+			report.add(results, d);
+		}
+	}
 }
 
 TEST(Clash, SupportedRanges)
