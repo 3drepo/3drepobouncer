@@ -48,6 +48,8 @@
 #include <repo/manipulator/modelutility/clashdetection/geometry_tests.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_scheduler.h>
 
+#include <repo/manipulator/modelconvertor/import/repo_model_import_manager.h>
+
 #include "../../../repo_test_utils.h"
 #include "../../../repo_test_clash_utils.h"
 #include "../../../repo_test_mesh_utils.h"
@@ -67,6 +69,7 @@ using namespace repo::manipulator::modelconvertor;
 using namespace repo::manipulator::modelutility;
 
 #define TESTDB "ClashDetection"
+#define TESTDBTMP "ClashDetectionTmp"
 
 #pragma optimize ("", off)
 
@@ -112,6 +115,28 @@ public:
 		file.close();
 	}
 };
+
+static repo::core::model::RepoScene* ModelImportManagerImport(std::string collection, std::string filename)
+{
+	ModelImportConfig config(
+		repo::lib::RepoUUID::createUUID(),
+		TESTDBTMP,
+		collection
+	);
+	config.targetUnits = ModelUnits::MILLIMETRES;
+
+	auto handler = getHandler();
+
+	uint8_t err;
+	std::string msg;
+
+	ModelImportManager manager;
+	auto scene = manager.ImportFromFile(filename, config, handler, err);
+	scene->commit(handler.get(), handler->getFileManager().get(), msg, "testuser", "", "", config.getRevisionId());
+	scene->loadScene(handler.get(), msg);
+
+	return scene;
+}
 
 TEST(Clash, SparseSceneGraph)
 {
@@ -685,9 +710,6 @@ TEST(Clash, SupportedRanges)
 	// In this case we should issue a warning and refuse to return any results.
 
 
-
-
-
 }
 
 TEST(Clash, SelfClearance)
@@ -700,33 +722,30 @@ TEST(Clash, SelfClearance)
 
 TEST(Clash, Rvt)
 {
-	// Clash tests should be robust to quantisation from large offsets and
-	// rotations.
+	// Tests that geometry of a known distance is correctly measured after
+	// going through the bouncer import pipeline.
 
 	auto handler = getHandler();
+
+	auto collection = repo::lib::RepoUUID::createUUID().toString();
+	auto scene = ModelImportManagerImport(collection, getDataPath("/clash/clearance.rvt"));
+
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
-	auto container = helper.getContainerByName("clearance_1_rvt");
+	auto container = std::make_unique<lib::Container>();
+	container->container = collection;
+	container->revision = scene->getRevisionID();
+	container->teamspace = TESTDBTMP;
 
-	helper.setCompositeObjectSetsByName(config,
-		container,
-		{
-			"Casework 1_323641",
-		},
-		{
-			"Casework 1_323623",
-			"Casework 1_323729",
-			"Casework 1_323902",
-		}
-		);
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
 
-	config.tolerance = 0.001;
+	config.tolerance = 2;
 
 	auto pipeline = new clash::Clearance(handler, config);
 	auto results = pipeline->runPipeline();
 
-	EXPECT_THAT(results.clashes.size(), Eq(3));
+	EXPECT_THAT(results.clashes.size(), Eq(5));
 }
 
 TEST(Clash, Clearance1)

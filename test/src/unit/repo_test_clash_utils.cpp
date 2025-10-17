@@ -32,11 +32,11 @@ using namespace repo::manipulator::modelutility;
 
 #define TESTDB "ClashDetection"
 
-void ClashDetectionDatabaseHelper::getChildMeshNodes(repo::lib::Container* container, const repo::core::model::RepoBSON& bson, std::vector<repo::lib::RepoUUID>& uuids)
+void ClashDetectionDatabaseHelper::getChildMeshNodes(repo::lib::Container* container, const repo::core::model::RepoBSON& bson, std::set<repo::lib::RepoUUID>& uuids)
 {
 	if (bson.getStringField(REPO_NODE_LABEL_TYPE) == REPO_NODE_TYPE_MESH)
 	{
-		uuids.push_back(bson.getUUIDField(REPO_NODE_LABEL_ID));
+		uuids.insert(bson.getUUIDField(REPO_NODE_LABEL_ID));
 		return;
 	}
 
@@ -52,11 +52,11 @@ void ClashDetectionDatabaseHelper::getChildMeshNodes(repo::lib::Container* conta
 }
 
 // Searches for mesh nodes only
-std::vector<repo::lib::RepoUUID> ClashDetectionDatabaseHelper::getUniqueIdsByName(
+std::set<repo::lib::RepoUUID> ClashDetectionDatabaseHelper::getUniqueIdsByName(
 	repo::lib::Container* container,
 	std::string name)
 {
-	std::vector<repo::lib::RepoUUID> uuids;
+	std::set<repo::lib::RepoUUID> uuids;
 
 	repo::core::handler::database::query::RepoQueryBuilder query;
 
@@ -136,4 +136,60 @@ std::unique_ptr<repo::lib::Container> ClashDetectionDatabaseHelper::getContainer
 	container->revision = revisions[0].getUUIDField(REPO_NODE_LABEL_ID);
 
 	return container;
+}
+
+void ClashDetectionDatabaseHelper::setCompositeObjectsByMetadataValue(
+	repo::manipulator::modelutility::ClashDetectionConfig& config,
+	const std::unique_ptr<repo::lib::Container>& container,
+	const std::string& valueSetA,
+	const std::string& valueSetB)
+{
+	config.setA.clear();
+	createCompositeObjectsByMetadataValue(config.setA, container.get(), valueSetA);
+	config.setB.clear();
+	createCompositeObjectsByMetadataValue(config.setB, container.get(), valueSetB);
+}
+
+void ClashDetectionDatabaseHelper::createCompositeObjectsByMetadataValue(
+	std::vector<repo::manipulator::modelutility::CompositeObject>& objects,
+	repo::lib::Container* container,
+	const std::string& value)
+{
+
+	repo::core::handler::database::query::RepoQueryBuilder query;
+	query.append(repo::core::handler::database::query::Eq("metadata.value", value));
+
+	repo::core::handler::database::query::RepoProjectionBuilder projection;
+	projection.includeField(REPO_NODE_LABEL_PARENTS);
+
+	auto cursor = handler->findCursorByCriteria(
+		container->teamspace,
+		container->container + "." + REPO_COLLECTION_SCENE,
+		query,
+		projection
+	);
+
+	for (auto& bson : *cursor)
+	{
+		auto parents = handler->findCursorByCriteria(
+			container->teamspace,
+			container->container + "." + REPO_COLLECTION_SCENE,
+			repo::core::handler::database::query::Eq(REPO_NODE_LABEL_SHARED_ID, bson.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS))
+		);
+
+		std::set<repo::lib::RepoUUID> uuids;
+
+		for (auto& parentBson : *parents) {
+			getChildMeshNodes(container, parentBson, uuids);
+		}
+
+		CompositeObject composite;
+		composite.id = repo::lib::RepoUUID::createUUID();
+		for (auto& uuid : uuids)
+		{
+			composite.meshes.push_back(MeshReference(container, uuid));
+		}
+
+		objects.push_back(composite);
+	}
 }

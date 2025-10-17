@@ -37,7 +37,7 @@ using namespace testing;
 
 namespace ODAModelImportUtils
 {
-	repo::core::model::RepoScene* ModelImportManagerImport(std::string filename, const ModelImportConfig& config)
+	static repo::core::model::RepoScene* ModelImportManagerImport(std::string filename, const ModelImportConfig& config)
 	{
 		auto handler = getHandler();
 
@@ -52,7 +52,7 @@ namespace ODAModelImportUtils
 		return scene;
 	}
 
-	repo::core::model::RepoScene* ModelImportManagerImport(std::string collection, std::string filename)
+	static repo::core::model::RepoScene* ModelImportManagerImport(std::string collection, std::string filename)
 	{
 		ModelImportConfig config(
 			repo::lib::RepoUUID::createUUID(),

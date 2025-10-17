@@ -19,6 +19,7 @@
 
 #include <repo/manipulator/modelutility/repo_clash_detection_config.h>
 #include <repo/core/handler/repo_database_handler_mongo.h>
+#include <set>
 
 namespace testing {
 
@@ -38,10 +39,11 @@ namespace testing {
 
 		void getChildMeshNodes(repo::lib::Container* container, 
 			const repo::core::model::RepoBSON& bson, 
-			std::vector<repo::lib::RepoUUID>& uuids);
+			std::set<repo::lib::RepoUUID>& uuids);
 
 		// Searches for mesh nodes only
-		std::vector<repo::lib::RepoUUID> getUniqueIdsByName(
+
+		std::set<repo::lib::RepoUUID> getUniqueIdsByName(
 			repo::lib::Container* container,
 			std::string name);
 
@@ -51,11 +53,27 @@ namespace testing {
 		);
 
 		// Will replace anything in the existing sets
+
 		void setCompositeObjectSetsByName(
 			repo::manipulator::modelutility::ClashDetectionConfig& config,
 			const std::unique_ptr<repo::lib::Container>& container,
 			std::initializer_list<std::string> a,
 			std::initializer_list<std::string> b);
+
+		// Sets the members of the sets by the existance of a metadata node with the
+		// given value. This method does not care to which key the value belons,
+		// so ensure it is sufficiently unique. Will replace the existing sets.
+
+		void setCompositeObjectsByMetadataValue(
+			repo::manipulator::modelutility::ClashDetectionConfig& config,
+			const std::unique_ptr<repo::lib::Container>& container,
+			const std::string& valueSetA,
+			const std::string& valueSetB);
+
+		void createCompositeObjectsByMetadataValue(
+			std::vector<repo::manipulator::modelutility::CompositeObject>& objects,
+			repo::lib::Container* container,
+			const std::string& value);
 
 		std::unique_ptr<repo::lib::Container> getContainerByName(
 			std::string name);
