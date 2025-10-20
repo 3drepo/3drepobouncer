@@ -17,8 +17,13 @@
 
 #pragma once
 
+#include <repo/lib/datastructure/repo_vector.h>
+#include <repo/lib/datastructure/repo_container.h>
+#include <repo/manipulator/modelutility/repo_clash_detection_engine.h>
 #include <repo/manipulator/modelutility/repo_clash_detection_config.h>
 #include <repo/core/handler/repo_database_handler_mongo.h>
+#include <repo/core/model/bson/repo_node_mesh.h>
+
 #include <set>
 
 namespace testing {
@@ -79,5 +84,40 @@ namespace testing {
 			std::string name);
 	};
 
+	/*
+	* This class is used to collect the outputs from the clash detection engine and
+	* from them collect the measured distances, writing the errors when compared
+	* with a ground truth to disk.
+	*
+	* The purpose is to generate a set of samples that describe the error distribution
+	* of the engine, that can be analysed later in another tool.
+	*
+	* This class is used by AccuracyReport test, which is disabled by default. Comment
+	* out the skip macro and run that test in isolation to generate a new report.
+	*/
+	class ClearanceAccuracyReport
+	{
+		std::fstream file;
+
+	public:
+		ClearanceAccuracyReport();
+		void add(const repo::manipulator::modelutility::ClashDetectionReport& report, double nominalDistance);
+		~ClearanceAccuracyReport();
+	};
+
+	/*
+	* Creates a Container populated with suitabily unique uuids for importing
+	* into the Temporary Clash Test Database. (This does not create the container
+	* in the database - just the description.)
+	*/
+	std::unique_ptr<repo::lib::Container> makeTemporaryContainer();
+
+	/*
+	* Imports a model into the given Container. This only imports the scene,
+	* it does not generate any assets such as RepoBundles.
+	*/
+	void importModel(std::string filename, const repo::lib::Container& container);
+
+	repo::core::model::MeshNode createPointMesh(std::initializer_list<repo::lib::RepoVector3D> points);
 
 }

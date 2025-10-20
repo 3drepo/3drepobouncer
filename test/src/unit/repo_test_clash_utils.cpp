@@ -16,9 +16,12 @@
 */
 
 #include "repo_test_clash_utils.h"
+#include "repo_test_database_info.h"
 
 #include <repo/core/model/bson/repo_bson.h>
+#include <repo/core/model/bson/repo_bson_factory.h>
 #include <repo/core/handler/database/repo_query.h>
+#include <repo/manipulator/modelconvertor/import/repo_model_import_manager.h>
 
 using namespace testing;
 using namespace repo::manipulator::modelutility;
@@ -31,6 +34,7 @@ using namespace repo::manipulator::modelutility;
 // folder as well.
 
 #define TESTDB "ClashDetection"
+#define TESTDBTMP "ClashDetectionTmp"
 
 void ClashDetectionDatabaseHelper::getChildMeshNodes(repo::lib::Container* container, const repo::core::model::RepoBSON& bson, std::set<repo::lib::RepoUUID>& uuids)
 {
@@ -212,4 +216,68 @@ void ClashDetectionDatabaseHelper::createCompositeObjectsByMetadataValue(
 			objects.push_back(composite);
 		}
 	}
+}
+
+std::unique_ptr<repo::lib::Container> testing::makeTemporaryContainer()
+{
+	auto container = std::make_unique<repo::lib::Container>();
+	container->container = repo::lib::RepoUUID::createUUID().toString();
+	container->revision = repo::lib::RepoUUID::createUUID();
+	container->teamspace = TESTDBTMP;
+	return container;
+}
+
+void testing::importModel(std::string filename, const repo::lib::Container& container)
+{
+	using namespace repo::manipulator::modelutility;
+	using namespace repo::manipulator::modelconvertor;
+
+	ModelImportConfig config(
+		container.revision,
+		container.teamspace,
+		container.container
+	);
+	config.targetUnits = ModelUnits::MILLIMETRES;
+
+	auto handler = getHandler();
+
+	uint8_t err;
+	std::string msg;
+
+	ModelImportManager manager;
+	auto scene = manager.ImportFromFile(filename, config, handler, err);
+	scene->commit(handler.get(), handler->getFileManager().get(), msg, "testuser", "", "", config.getRevisionId());
+
+	delete scene;
+}
+
+repo::core::model::MeshNode testing::createPointMesh(std::initializer_list<repo::lib::RepoVector3D> points)
+{
+	std::vector<repo::lib::repo_face_t> faces;
+	for (size_t i = 0; i < points.size(); ++i)
+	{
+		faces.push_back({ i });
+	}
+	return repo::core::model::RepoBSONFactory::makeMeshNode(
+		std::vector<repo::lib::RepoVector3D>(points),
+		faces,
+		{},
+		{}
+	);
+}
+
+ClearanceAccuracyReport::ClearanceAccuracyReport() {
+	file.open("clearanceAccuracyReport.errors.bin", std::ios::out | std::ios::binary);
+}
+
+void ClearanceAccuracyReport::add(const ClashDetectionReport& report, double nominalDistance)
+{
+	for (auto& clash : report.clashes) {
+		auto e = abs((clash.positions[0] - clash.positions[1]).norm() - nominalDistance);
+		file.write(reinterpret_cast<const char*>(&e), sizeof(double));
+	}
+}
+
+ClearanceAccuracyReport::~ClearanceAccuracyReport() {
+	file.close();
 }

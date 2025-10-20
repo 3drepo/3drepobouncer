@@ -48,8 +48,6 @@
 #include <repo/manipulator/modelutility/clashdetection/geometry_tests.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_scheduler.h>
 
-#include <repo/manipulator/modelconvertor/import/repo_model_import_manager.h>
-
 #include "../../../repo_test_utils.h"
 #include "../../../repo_test_clash_utils.h"
 #include "../../../repo_test_mesh_utils.h"
@@ -69,7 +67,6 @@ using namespace repo::manipulator::modelconvertor;
 using namespace repo::manipulator::modelutility;
 
 #define TESTDB "ClashDetection"
-#define TESTDBTMP "ClashDetectionTmp"
 
 #pragma optimize ("", off)
 
@@ -77,64 +74,6 @@ std::ostream& operator<<(std::ostream& os, const repo::lib::RepoTriangle& t)
 {
 	os << "Triangle(" << t.a << " -> " << t.b << " -> " << t.c << ")";
 	return os;
-}
-
-repo::core::model::MeshNode createPointMesh(std::initializer_list<repo::lib::RepoVector3D> points)
-{
-	std::vector<repo::lib::repo_face_t> faces;
-	for(size_t i = 0; i < points.size(); ++i)
-	{
-		faces.push_back({i});
-	}
-	return RepoBSONFactory::makeMeshNode(
-		std::vector<repo::lib::RepoVector3D>(points),
-		faces,
-		{},
-		{}
-	);
-}
-
-class ClearanceAccuracyReport 
-{
-	std::fstream file;
-
-public:
-	ClearanceAccuracyReport() {
-		file.open("C:\\3drepo\\3drepobouncer_ISSUE797\\ClearanceAccuracyReport.errors.bin", std::ios::out | std::ios::binary );
-	}
-
-	void add(const ClashDetectionReport& report, double nominalDistance)
-	{
-		for(auto& clash : report.clashes) {
-			auto e = abs((clash.positions[0] - clash.positions[1]).norm() - nominalDistance);
-			file.write(reinterpret_cast<const char*>(&e), sizeof(double));
-		}
-	}
-
-	~ClearanceAccuracyReport() {
-		file.close();
-	}
-};
-
-static repo::core::model::RepoScene* ModelImportManagerImport(std::string filename, const repo::lib::Container& container)
-{
-	ModelImportConfig config(
-		container.revision,
-		TESTDBTMP,
-		container.container
-	);
-	config.targetUnits = ModelUnits::MILLIMETRES;
-
-	auto handler = getHandler();
-
-	uint8_t err;
-	std::string msg;
-
-	ModelImportManager manager;
-	auto scene = manager.ImportFromFile(filename, config, handler, err);
-	scene->commit(handler.get(), handler->getFileManager().get(), msg, "testuser", "", "", config.getRevisionId());
-
-	return scene;
 }
 
 TEST(Clash, SparseSceneGraph)
@@ -328,6 +267,10 @@ TEST(Clash, SparseSceneGraph)
 
 TEST(Clash, Config)
 {
+	// Tests the parsing of a clash detection config file. This test does not
+	// validate the config for internal consistency, which is the responsibility
+	// of whatever creates it.
+
 	ClashDetectionConfig config;
 	ClashDetectionConfig::ParseJsonFile(getDataPath("/clash/config1.json"), config);
 
@@ -378,7 +321,7 @@ TEST(Clash, Config)
 
 TEST(Clash, Scheduler)
 {
-	// Tests if the ClashScheduler returns a sensible narrowphase set.
+	// Tests if the ClashScheduler returns a sensible narrowphase set order.
 
 	// The scheduling problem is NP-Hard, so this test doesn't check if the
 	// order is optimal, just that all the original broadphase tests still
@@ -412,13 +355,12 @@ TEST(Clash, Scheduler)
 
 /*
 * This next set of tests checks the accuracy of the engine. Accuracy is tested
-* numerically. Primitives are generated in different known configurations as a
-* ground truth, to which the measured distances are compared.
+* probabilisitcally. Primitives are generated in different known configurations
+* as a ground truth, to which the measured distances are compared.
 * 
 * Accuracy is tested at both the unit and end-to-end level. The current guaranteed
-* accuracy is 1 in 8e6 - that is, an error of at most 0.5 is allowed on 'either
-* side' of the true distance - for vertices, with transforms up to 1e11 from the
-* origin.
+* accuracy is 1 in 8e6 for vertices, with transforms up to 1e11 from the origin.
+* For models imported in mm, this represents an error of ±1 mm.
 * 
 * This domain is determined by the source data the engine has to work with: single
 * precision vertices from the binary buffers, and double precision transformations
@@ -429,6 +371,8 @@ TEST(Clash, LineLineDistanceUnit)
 {
 	// Tests the accuracy of the line-line distance test across the supported
 	// domain.
+	// Remark: the engine doesn't yet support true line-line clashes, so this test
+	// is really to make sure the geometry library does not degenerate until then.
 
 	CellDistribution space(8e6, 1e11);
 	ClashGenerator clashGenerator;
@@ -583,6 +527,12 @@ TEST(Clash, TrianglesUnitVF)
 
 TEST(Clash, TrianglesUnitFE)
 {
+	// Tests that the triangle distance tests correctly identify triangles
+	// where the edge of one penetrates the face of another.
+	// Note that the distance in this case should always be zero - if a
+	// there is no intersection, then the closest points will be on an edge
+	// or a vertex, covered by the tests above.
+
 	CellDistribution space(8e6, 1e11);
 	ClashGenerator clashGenerator;
 
@@ -601,8 +551,8 @@ TEST(Clash, TrianglesUnitFE)
 
 TEST(Clash, TriangleDistanceE2E) 
 {
-	// Test the accuracy of the end-to-end pipeline in Clearance mode, for multiple
-	// problem configurations.
+	// Test the accuracy of the end-to-end pipeline in Clearance mode, for
+	// multiple problem configurations.
 
 	ClashGenerator clashGenerator;
 
@@ -719,15 +669,6 @@ TEST(Clash, SelfClearance)
 
 }
 
-std::unique_ptr<repo::lib::Container> makeTemporaryContainer()
-{
-	auto container = std::make_unique<lib::Container>();
-	container->container = repo::lib::RepoUUID::createUUID().toString();
-	container->revision = repo::lib::RepoUUID::createUUID();
-	container->teamspace = TESTDBTMP;
-	return container;
-}
-
 TEST(Clash, Rvt)
 {
 	// Tests that geometry of a known distance is correctly measured after
@@ -736,7 +677,7 @@ TEST(Clash, Rvt)
 	auto handler = getHandler();
 	auto container = makeTemporaryContainer();
 
-	ModelImportManagerImport(getDataPath("/clash/clearance.rvt"), *container);
+	importModel(getDataPath("/clash/clearance.rvt"), *container);
 
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
@@ -759,7 +700,7 @@ TEST(Clash, Nwd)
 	auto handler = getHandler();
 	auto container = makeTemporaryContainer();
 
-	ModelImportManagerImport(getDataPath("/clash/clearance.nwd"), *container);
+	importModel(getDataPath("/clash/clearance.nwd"), *container);
 
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
@@ -788,7 +729,6 @@ TEST(Clash, Clearance1)
 	ClashDetectionDatabaseHelper helper(handler);
 
 	auto container = helper.getContainerByName("clearance_1");
-
 
 	// Check objects that are touching via coincident vertices
 
