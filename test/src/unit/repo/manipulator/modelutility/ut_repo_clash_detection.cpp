@@ -116,12 +116,12 @@ public:
 	}
 };
 
-static repo::core::model::RepoScene* ModelImportManagerImport(std::string collection, std::string filename, const repo::lib::RepoUUID& revisionId)
+static repo::core::model::RepoScene* ModelImportManagerImport(std::string filename, const repo::lib::Container& container)
 {
 	ModelImportConfig config(
-		revisionId,
+		container.revision,
 		TESTDBTMP,
-		collection
+		container.container
 	);
 	config.targetUnits = ModelUnits::MILLIMETRES;
 
@@ -719,24 +719,50 @@ TEST(Clash, SelfClearance)
 
 }
 
+std::unique_ptr<repo::lib::Container> makeTemporaryContainer()
+{
+	auto container = std::make_unique<lib::Container>();
+	container->container = repo::lib::RepoUUID::createUUID().toString();
+	container->revision = repo::lib::RepoUUID::createUUID();
+	container->teamspace = TESTDBTMP;
+	return container;
+}
+
 TEST(Clash, Rvt)
 {
 	// Tests that geometry of a known distance is correctly measured after
 	// going through the bouncer import pipeline.
 
 	auto handler = getHandler();
+	auto container = makeTemporaryContainer();
 
-	auto collection = repo::lib::RepoUUID::createUUID().toString();
-	auto revision = repo::lib::RepoUUID::createUUID();
-	ModelImportManagerImport(collection, getDataPath("/clash/clearance.rvt"), revision);
+	ModelImportManagerImport(getDataPath("/clash/clearance.rvt"), *container);
 
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
-	auto container = std::make_unique<lib::Container>();
-	container->container = collection;
-	container->revision = revision;
-	container->teamspace = TESTDBTMP;
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
+
+	config.tolerance = 2;
+
+	auto pipeline = new clash::Clearance(handler, config);
+	auto results = pipeline->runPipeline();
+
+	EXPECT_THAT(results.clashes.size(), Eq(10000));
+}
+
+TEST(Clash, Nwd)
+{
+	// Tests that geometry of a known distance is correctly measured after
+	// going through the bouncer import pipeline.
+
+	auto handler = getHandler();
+	auto container = makeTemporaryContainer();
+
+	ModelImportManagerImport(getDataPath("/clash/clearance.nwd"), *container);
+
+	ClashDetectionConfig config;
+	ClashDetectionDatabaseHelper helper(handler);
 
 	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
 

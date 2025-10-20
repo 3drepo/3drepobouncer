@@ -806,12 +806,31 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 		}
 	}
 
-	std::vector<repo::core::model::MeshNode> nodes;
-	meshBuilder.extractMeshes(nodes, {});
-	for (auto& mesh : nodes)
-	{
-		mesh.setMaterial(meshBuilder.getMaterial());
-		context.sceneBuilder->addNode(mesh);
+	if (meshBuilder.hasMeshes()) {
+
+		// Just before the meshes are stored, try to move any large offsets into the 
+		// parent's transformation. It is possible for multiple meshBuilders to
+		// contribute to the same parent, but for well constructed scenes meshes under
+		// those parents should be nearby.
+
+		// This condition should only ever be true once - it is possible for it to be true
+		// if we get a valid mesh that has zero size. Currently this is not possible as we
+		// only handle triangles and lines - but if we add support for points that will no
+		// longer hold.
+
+		if (context.parentNode->getTransMatrix().isIdentity()) {
+			repo::lib::RepoBounds bounds;
+			meshBuilder.getBounds(bounds);
+			context.parentNode->setTransformation(repo::lib::RepoMatrix::translate(bounds.center()));
+		}
+
+		std::vector<repo::core::model::MeshNode> nodes;
+		meshBuilder.extractMeshes(nodes, context.parentNode->getTransMatrix().inverse());
+		for (auto& mesh : nodes)
+		{
+			mesh.setMaterial(meshBuilder.getMaterial());
+			context.sceneBuilder->addNode(mesh);
+		}
 	}
 
 	return eOk;
