@@ -292,9 +292,8 @@ void DataProcessorRvt::draw(const OdGiDrawable* pDrawable)
 		// no way to know for sure an element will result in geometry on the screen
 		// until it starts outputting vertices. Therefore, we only commit transform
 		// nodes the first time we actually get meshes for them.
-
-		auto meshes = ctx->extractMeshes();
-		if (meshes.size())
+		
+		if (ctx->hasMeshes())
 		{
 			// For Revit files, drawable elements are arranged into layers, not unlike
 			// drawings. This means we can get everything from just the element.
@@ -304,8 +303,14 @@ void DataProcessorRvt::draw(const OdGiDrawable* pDrawable)
 
 			// These methods create the transformation nodes on-demand
 
-			collector->createLayer(levelName, levelName, {});
-			collector->createLayer(elementName, elementName, levelName);
+			collector->createLayer(levelName, levelName, {}, {});
+
+			// This call does not necessarily update the transform, so make sure to get
+			// the transform explicitly when processing the meshes.
+
+			collector->createLayer(elementName, elementName, levelName, repo::lib::RepoMatrix::translate(ctx->getBounds().min()));
+
+			auto meshes = ctx->extractMeshes(collector->getLayerTransform(elementName).inverse());
 			collector->addMeshes(elementName, meshes);
 
 			try

@@ -807,7 +807,7 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 	}
 
 	std::vector<repo::core::model::MeshNode> nodes;
-	meshBuilder.extractMeshes(nodes);
+	meshBuilder.extractMeshes(nodes, {});
 	for (auto& mesh : nodes)
 	{
 		mesh.setMaterial(meshBuilder.getMaterial());

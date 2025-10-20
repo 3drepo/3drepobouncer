@@ -106,9 +106,8 @@ bool DataProcessorDgn::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	collector->pushDrawContext(ctx.get());
 	auto ret = OdGsBaseMaterialView::doDraw(i, pDrawable);
 	collector->popDrawContext(ctx.get());
-
-	auto meshes = ctx->extractMeshes();
-	if (meshes.size())
+	
+	if (ctx->hasMeshes())
 	{
 		OdDgElementId idLevel = traits.layer();
 		std::string layerName;
@@ -119,7 +118,7 @@ bool DataProcessorDgn::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 			OdDgLevelTableRecordPtr pLevel = idLevel.openObject(OdDg::kForRead);
 			layerId = convertToStdString(toString(idLevel.getHandle()));
 			layerName = convertToStdString(pLevel->getName());
-			collector->createLayer(layerId, layerName, {});
+			collector->createLayer(layerId, layerName, {}, {});
 
 			if (!collector->hasMetadata(layerId)) {
 				collector->setMetadata(layerId, extractXMLLinkages(pLevel));
@@ -140,7 +139,9 @@ bool DataProcessorDgn::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 
 		std::string groupID = convertToStdString(toString(previousItem->elementId().getHandle()));
 
-		collector->createLayer(groupID, groupID, layerId);
+		collector->createLayer(groupID, groupID, layerId, repo::lib::RepoMatrix::translate(ctx->getBounds().min()));
+
+		auto meshes = ctx->extractMeshes(collector->getLayerTransform(groupID).inverse());
 		collector->addMeshes(groupID, meshes);
 
 		if (!collector->hasMetadata(groupID)) {

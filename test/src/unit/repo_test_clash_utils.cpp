@@ -155,41 +155,61 @@ void ClashDetectionDatabaseHelper::createCompositeObjectsByMetadataValue(
 	repo::lib::Container* container,
 	const std::string& value)
 {
+	std::vector<repo::lib::RepoUUID> parentSharedIds;
 
-	repo::core::handler::database::query::RepoQueryBuilder query;
-	query.append(repo::core::handler::database::query::Eq("metadata.value", value));
-
-	repo::core::handler::database::query::RepoProjectionBuilder projection;
-	projection.includeField(REPO_NODE_LABEL_PARENTS);
-
-	auto cursor = handler->findCursorByCriteria(
-		container->teamspace,
-		container->container + "." + REPO_COLLECTION_SCENE,
-		query,
-		projection
-	);
-
-	for (auto& bson : *cursor)
 	{
-		auto parents = handler->findCursorByCriteria(
+		repo::core::handler::database::query::RepoQueryBuilder query;
+		query.append(repo::core::handler::database::query::Eq("metadata.value", value));
+
+		repo::core::handler::database::query::RepoProjectionBuilder projection;
+		projection.includeField(REPO_NODE_LABEL_PARENTS);
+
+		auto cursor = handler->findCursorByCriteria(
 			container->teamspace,
 			container->container + "." + REPO_COLLECTION_SCENE,
-			repo::core::handler::database::query::Eq(REPO_NODE_LABEL_SHARED_ID, bson.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS))
+			query,
+			projection
 		);
 
-		std::set<repo::lib::RepoUUID> uuids;
-
-		for (auto& parentBson : *parents) {
-			getChildMeshNodes(container, parentBson, uuids);
+		for (auto& bson : *cursor) {
+			auto p = bson.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
+			parentSharedIds.insert(
+				parentSharedIds.end(),
+				p.begin(),
+				p.end()
+			);
 		}
+	}
 
-		CompositeObject composite;
-		composite.id = repo::lib::RepoUUID::createUUID();
-		for (auto& uuid : uuids)
-		{
+	// By convention, all metadata nodes should wire to both the parent transform,
+	// but also any mesh descendents.
+
+	// This method assumes that the import settings are such that each element has
+	// only one mesh. This is for performance reasons, as otherwise it would
+	// require nested queries which can be very expensive. If this is the case,
+	// another method will need to be used.
+
+	{
+		repo::core::handler::database::query::RepoQueryBuilder query;
+		query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_SHARED_ID, parentSharedIds));
+		query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_MESH)));
+
+		repo::core::handler::database::query::RepoProjectionBuilder projection;
+		projection.includeField(REPO_NODE_LABEL_ID);
+
+		auto cursor = handler->findCursorByCriteria(
+			container->teamspace,
+			container->container + "." + REPO_COLLECTION_SCENE,
+			query,
+			projection
+		);
+
+		for (auto& bson : *cursor) {
+			auto uuid = bson.getUUIDField(REPO_NODE_LABEL_ID);
+			CompositeObject composite;
+			composite.id = repo::lib::RepoUUID::createUUID();
 			composite.meshes.push_back(MeshReference(container, uuid));
+			objects.push_back(composite);
 		}
-
-		objects.push_back(composite);
 	}
 }

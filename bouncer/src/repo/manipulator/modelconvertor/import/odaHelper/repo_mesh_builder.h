@@ -76,7 +76,11 @@ namespace repo {
 
 					void addFace(const face& face);
 
-					void extractMeshes(std::vector<repo::core::model::MeshNode>& nodes);
+					bool hasMeshes() const;
+
+					void getBounds(repo::lib::RepoBounds& bounds) const;
+
+					void extractMeshes(std::vector<repo::core::model::MeshNode>& nodes, const repo::lib::RepoMatrix& m);
 
 					const std::vector<repo::lib::RepoUUID>& getParents();
 					repo::lib::repo_material_t getMaterial();

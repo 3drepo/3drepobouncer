@@ -93,7 +93,7 @@ void GeometryCollector::popDrawContext(Context* ctx)
 	}
 }
 
-void GeometryCollector::createLayer(std::string id, std::string name, std::string parentId)
+void GeometryCollector::createLayer(std::string id, std::string name, std::string parentId, const repo::lib::RepoMatrix& transform)
 {
 	if (!hasLayer(id)) {
 		auto parentSharedId = rootNodeId;
@@ -103,11 +103,24 @@ void GeometryCollector::createLayer(std::string id, std::string name, std::strin
 			parentSharedId = parentIdItr->second;
 		}
 
-		auto node = repo::core::model::RepoBSONFactory::makeTransformationNode({}, name, { parentSharedId });
+		auto node = repo::core::model::RepoBSONFactory::makeTransformationNode(transform, name, { parentSharedId });
 		layerIdToSharedId[id] = node.getSharedID();
+
+		if (!transform.isIdentity()) {
+			layerIdToMatrix[id] = transform;
+		}
 
 		sceneBuilder->addNode(node);
 	}
+}
+
+repo::lib::RepoMatrix GeometryCollector::getLayerTransform(std::string id)
+{
+	auto it = layerIdToMatrix.find(id);
+	if (it != layerIdToMatrix.end()) {
+		return it->second;
+	}
+	return {};
 }
 
 bool GeometryCollector::hasLayer(std::string id)
@@ -160,12 +173,31 @@ void GeometryCollector::Context::setMaterial(const repo_material_t& material)
 	}
 }
 
-std::vector<std::pair<repo::core::model::MeshNode, repo_material_t>> GeometryCollector::Context::extractMeshes()
+bool GeometryCollector::Context::hasMeshes() const
+{
+	for(auto& p : meshBuilders) {
+		if (p.second->hasMeshes()) {
+			return true;
+		}
+	}
+	return false;
+}
+
+repo::lib::RepoBounds GeometryCollector::Context::getBounds() const
+{
+	repo::lib::RepoBounds bounds;
+	for (auto& p : meshBuilders) {
+		p.second->getBounds(bounds);
+	}
+	return bounds;
+}
+
+std::vector<std::pair<repo::core::model::MeshNode, repo_material_t>> GeometryCollector::Context::extractMeshes(const repo::lib::RepoMatrix& m)
 {
 	std::vector<std::pair<repo::core::model::MeshNode, repo_material_t>> pairs;
 	for (auto& p : meshBuilders) {
 		std::vector<repo::core::model::MeshNode> meshes;
-		p.second->extractMeshes(meshes);
+		p.second->extractMeshes(meshes, m);
 		for (auto& m : meshes)
 		{
 			pairs.push_back({ m, p.second->getMaterial() });
@@ -177,7 +209,7 @@ std::vector<std::pair<repo::core::model::MeshNode, repo_material_t>> GeometryCol
 
 GeometryCollector::Context::~Context()
 {
-	if (meshBuilders.size()) {
+	if (hasMeshes()) {
 		throw repo::lib::RepoGeometryProcessingException("GeometryCollector draw context is being destroyed before extract has been called.");
 	}
 }

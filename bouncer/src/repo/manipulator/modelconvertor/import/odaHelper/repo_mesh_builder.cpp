@@ -230,7 +230,24 @@ void RepoMeshBuilder::addFace(const face& bf)
 	meshData->faces.push_back(face);
 }
 
-void RepoMeshBuilder::extractMeshes(std::vector<MeshNode>& nodes)
+bool RepoMeshBuilder::hasMeshes() const
+{
+	for (auto& m : meshes) {
+		if (m.second->faces.size()) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void RepoMeshBuilder::getBounds(repo::lib::RepoBounds& bounds) const
+{
+	for (auto& m : meshes) {
+		bounds.encapsulate(m.second->boundingBox);
+	}
+}
+
+void RepoMeshBuilder::extractMeshes(std::vector<MeshNode>& nodes, const repo::lib::RepoMatrix& m)
 {
 	for (auto pair : meshes)
 	{
@@ -259,8 +276,19 @@ void RepoMeshBuilder::extractMeshes(std::vector<MeshNode>& nodes)
 
 			normals32.reserve(meshData->vertexMap.normals.size());
 
+			// todo: this is the second place this exists - can we put it elsewhere to make it neater?
+	
+			auto matInverse = m.inverse();
+			auto worldMat = matInverse.transpose();
+
+			auto data = worldMat.getData();
+			data[3] = data[7] = data[11] = 0;
+			data[12] = data[13] = data[14] = 0;
+
+			repo::lib::RepoMatrix nmat(data);
+
 			for (int i = 0; i < meshData->vertexMap.vertices.size(); ++i) {
-				auto& n = meshData->vertexMap.normals[i];
+				auto n = nmat * meshData->vertexMap.normals[i];
 				normals32.push_back({ (float)(n.x), (float)(n.y), (float)(n.z) });
 			}
 		}
@@ -269,7 +297,7 @@ void RepoMeshBuilder::extractMeshes(std::vector<MeshNode>& nodes)
 		vertices32.reserve(meshData->vertexMap.vertices.size());
 
 		for (int i = 0; i < meshData->vertexMap.vertices.size(); ++i) {
-			auto& v = meshData->vertexMap.vertices[i];
+			auto v = m * meshData->vertexMap.vertices[i];
 			vertices32.push_back({ (float)(v.x), (float)(v.y), (float)(v.z) });
 		}
 
@@ -277,11 +305,13 @@ void RepoMeshBuilder::extractMeshes(std::vector<MeshNode>& nodes)
 			vertices32,
 			meshData->faces,
 			normals32,
-			meshData->boundingBox,
+			{},
 			uvChannels,
 			{},
 			parents
 		);
+
+		meshNode.updateBoundingBox();
 
 		delete meshData;
 

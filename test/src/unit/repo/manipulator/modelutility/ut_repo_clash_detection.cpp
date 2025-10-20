@@ -116,10 +116,10 @@ public:
 	}
 };
 
-static repo::core::model::RepoScene* ModelImportManagerImport(std::string collection, std::string filename)
+static repo::core::model::RepoScene* ModelImportManagerImport(std::string collection, std::string filename, const repo::lib::RepoUUID& revisionId)
 {
 	ModelImportConfig config(
-		repo::lib::RepoUUID::createUUID(),
+		revisionId,
 		TESTDBTMP,
 		collection
 	);
@@ -133,7 +133,6 @@ static repo::core::model::RepoScene* ModelImportManagerImport(std::string collec
 	ModelImportManager manager;
 	auto scene = manager.ImportFromFile(filename, config, handler, err);
 	scene->commit(handler.get(), handler->getFileManager().get(), msg, "testuser", "", "", config.getRevisionId());
-	scene->loadScene(handler.get(), msg);
 
 	return scene;
 }
@@ -728,14 +727,15 @@ TEST(Clash, Rvt)
 	auto handler = getHandler();
 
 	auto collection = repo::lib::RepoUUID::createUUID().toString();
-	auto scene = ModelImportManagerImport(collection, getDataPath("/clash/clearance.rvt"));
+	auto revision = repo::lib::RepoUUID::createUUID();
+	ModelImportManagerImport(collection, getDataPath("/clash/clearance.rvt"), revision);
 
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
 	auto container = std::make_unique<lib::Container>();
 	container->container = collection;
-	container->revision = scene->getRevisionID();
+	container->revision = revision;
 	container->teamspace = TESTDBTMP;
 
 	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
@@ -745,7 +745,7 @@ TEST(Clash, Rvt)
 	auto pipeline = new clash::Clearance(handler, config);
 	auto results = pipeline->runPipeline();
 
-	EXPECT_THAT(results.clashes.size(), Eq(5));
+	EXPECT_THAT(results.clashes.size(), Eq(10000));
 }
 
 TEST(Clash, Clearance1)
