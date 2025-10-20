@@ -621,7 +621,7 @@ TEST(Clash, AccuracyReport)
 	const int samplesPerDistance = 10000;
 	std::vector<double> distances = { 0, 1, 2, 3 };
 
-	ClearanceAccuracyReport report;
+	ClearanceAccuracyReport report("clearanceAccuracyReport.errors.bin");
 	CellDistribution space(8e6, 1e11);
 	
 	// Due to the BVH construction and traversal, it is more efficient to perform

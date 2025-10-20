@@ -100,7 +100,7 @@ namespace testing {
 		std::fstream file;
 
 	public:
-		ClearanceAccuracyReport();
+		ClearanceAccuracyReport(std::string filename);
 		void add(const repo::manipulator::modelutility::ClashDetectionReport& report, double nominalDistance);
 		~ClearanceAccuracyReport();
 	};

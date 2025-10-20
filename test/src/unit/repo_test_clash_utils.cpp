@@ -266,8 +266,8 @@ repo::core::model::MeshNode testing::createPointMesh(std::initializer_list<repo:
 	);
 }
 
-ClearanceAccuracyReport::ClearanceAccuracyReport() {
-	file.open("clearanceAccuracyReport.errors.bin", std::ios::out | std::ios::binary);
+ClearanceAccuracyReport::ClearanceAccuracyReport(std::string filename) {
+	file.open(filename, std::ios::out | std::ios::binary);
 }
 
 void ClearanceAccuracyReport::add(const ClashDetectionReport& report, double nominalDistance)
