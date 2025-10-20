@@ -29,13 +29,3 @@ AbstractModelImport::AbstractModelImport(
 ) : settings(settings)
 {
 }
-
-std::string AbstractModelImport::getDirPath(std::string fullPath) {
-	boost::filesystem::path p{ fullPath };
-	return p.parent_path().string();
-}
-
-std::string AbstractModelImport::getFileName(std::string fullPath) {
-	boost::filesystem::path p{ fullPath };
-	return p.filename().string();
-}

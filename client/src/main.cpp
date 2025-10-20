@@ -18,6 +18,7 @@
 #include <repo_log.h>
 #include <repo/lib/repo_exception.h>
 #include "functions.h"
+#include <locale>
 
 static const uint32_t minArgs = 3;  //exe configFile command
 
@@ -72,6 +73,12 @@ void logCommand(int argc, char* argv[])
 }
 
 int main(int argc, char* argv[]) {
+	
+	// The following line sets the locale to the system's one, instead of the C
+	// minimal default. This ensures string and formatting functions work as
+	// expected with extended character sets.
+	setlocale(LC_ALL, "");
+
 	std::shared_ptr<repo::RepoController> controller = instantiateController();
 	if (argc < minArgs) {
 		if (argc == 2 && isSpecialCommand(argv[1]))

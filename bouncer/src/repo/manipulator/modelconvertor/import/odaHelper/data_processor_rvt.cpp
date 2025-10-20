@@ -15,7 +15,7 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <OdPlatformSettings.h>
 
 #include "vectorise_device_rvt.h"
@@ -40,7 +40,8 @@ static const std::string REVIT_ELEMENT_ID = "Element ID";
 //These metadata params are not of interest to users. Do not read.
 const std::set<std::string> IGNORE_PARAMS = {
 	"RENDER APPEARANCE",
-	"RENDER APPEARANCE PROPERTIES"
+	"RENDER APPEARANCE PROPERTIES",
+	"REBAR_NUMBER"
 };
 
 bool DataProcessorRvt::tryConvertMetadataEntry(const OdTfVariant& metaEntry, OdBmLabelUtilsPEPtr labelUtils, OdBmParamDefPtr paramDef, OdBm::BuiltInParameter::Enum param, repo::lib::RepoVariant& v)
@@ -183,7 +184,7 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 	repo::lib::toLower(pathStr);
 
 	std::replace(pathStr.begin(), pathStr.end(), '\\', '/');
-	auto texturePath = boost::filesystem::path(pathStr); // explictly store the value before calling make_preferred().
+	auto texturePath = std::filesystem::u8path(pathStr); // explictly store the value before calling make_preferred().
 	texturePath = texturePath.make_preferred();
 	if (repo::lib::doesFileExist(texturePath))
 		return texturePath.generic_string();
@@ -193,12 +194,12 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 	if (env.empty())
 		return std::string();
 
-	auto absolutePath = boost::filesystem::absolute(texturePath, env);
+	auto absolutePath = env / texturePath;
 	if (repo::lib::doesFileExist(absolutePath))
 		return absolutePath.generic_string();
 
 	// Sometimes the texture path has subdirectories like "./mat/1" remove it and see if we can find it.
-	auto altPath = boost::filesystem::absolute(texturePath.filename(), env);
+	auto altPath = env / texturePath.filename();
 	if (repo::lib::doesFileExist(altPath))
 		return altPath.generic_string();
 
@@ -563,6 +564,8 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 		std::string builtInName = convertToStdString(OdBm::BuiltInParameter(entry).toString());
 
 		//.. HOTFIX: handle access violation exception (reported to ODA)
+		// https://forum.opendesign.com/showthread.php?25064-Access-Violation-in-OdBmElement-getParam&p=102079#post102079
+		// https://account.opendesign.com/support/issue-tracking/BIM-7094
 		if (ignoreParam(builtInName)) continue;
 
 		auto paramId = element->database()->getObjectId(entry);

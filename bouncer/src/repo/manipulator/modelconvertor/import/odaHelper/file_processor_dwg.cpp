@@ -218,8 +218,7 @@ uint8_t FileProcessorDwg::readFile()
 		::odrxDynamicLinker()->loadModule(DbPropertiesModuleName, false);
 		::odrxDynamicLinker()->loadModule(RxCommonDataAccessModuleName, false);
 
-		OdString f = file.c_str();
-		OdDbDatabasePtr pDb = svcs.readFile(f);
+		OdDbDatabasePtr pDb = svcs.readFile(getFilename());
 
 		if (repoSceneBuilder)
 		{

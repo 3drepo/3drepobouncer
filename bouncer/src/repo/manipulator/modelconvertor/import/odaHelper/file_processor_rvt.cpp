@@ -38,9 +38,11 @@
 #include <Database/BmGsManager.h>
 #include <Database/BmGsView.h>
 #include <Database/Entities/BmBasicFileInfo.h>
-#include <Database/Entities/BmDBView3d.h>
 #include <Database/Entities/BmOverrideGraphicSettings.h>
 #include <Database/Managers/BmViewTable.h>
+#include <Essential/Entities/BmDBView3d.h>
+#include <Essential/Entities/BmBasePoint.h>
+#include <Essential/Entities/BmGeoLocation.h>
 
 #include "repo/lib/repo_utils.h"
 #include "repo/lib/repo_exception.h"
@@ -449,7 +451,7 @@ uint8_t FileProcessorRvt::readFile()
 		}
 		setTessellationParams(triParams);
 
-		OdBmDatabasePtr pDb = svcs.readFile(OdString(file.c_str()));
+		OdBmDatabasePtr pDb = svcs.readFile(getFilename());
 		if (!pDb.isNull())
 		{
 			// The 'drawing' object corresponds to a named entry in the 'Views' list in

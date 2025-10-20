@@ -97,3 +97,8 @@ void FileProcessor::updateDrawingHorizontalCalibration(const OdGsView* pGsView, 
 	calibration.horizontalCalibration3d.push_back(repo::lib::RepoVector3D(a3d.x, a3d.z, -a3d.y));
 	calibration.horizontalCalibration3d.push_back(repo::lib::RepoVector3D(b3d.x, b3d.z, -b3d.y));
 }
+
+OdString FileProcessor::getFilename()
+{
+	return OdString(this->file.c_str(), OdCodePageId::CP_UTF_8);
+}
