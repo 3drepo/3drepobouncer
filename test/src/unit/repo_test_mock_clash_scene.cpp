@@ -193,7 +193,7 @@ void ClashGenerator::moveB(TransformTriangles& problem, const repo::lib::RepoRan
 	auto remainingRange = std::max(0.0, range.max() - largestDimension);
 
 	problem.second.second = random.transform(true, { 0, remainingRange }, {});
-	problem.second.first = problem.second.second.invert() * problem.second.first;
+	problem.second.first = problem.second.second.inverse() * problem.second.first;
 }
 
 void ClashGenerator::moveProblem(TransformTriangles& problem, const repo::lib::RepoRange& range)

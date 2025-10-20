@@ -415,7 +415,7 @@ OdGeMatrix3d getModelToWorldMatrix(OdBmDatabasePtr pDb)
 
 				OdBmGeoLocationPtr pActiveLocation = OdBmGeoLocation::getActiveLocationId(pThis->database()).safeOpenObject();
 				OdGeMatrix3d activeTransform = pActiveLocation->getTransform();
-				activeTransform.invert();
+				activeTransform.inverse();
 
 				auto units = DataProcessorRvt::getLengthUnits(pDb);
 				auto scaleCoef = 1.0 / OdBmUnitUtils::getUnitTypeIdInfo(units).inIntUnitsCoeff;

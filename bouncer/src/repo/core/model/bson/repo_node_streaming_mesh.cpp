@@ -31,7 +31,7 @@ void repo::core::model::StreamingMeshNode::SupermeshingData::bakeMeshes(const re
 	}
 
 	// Normals
-	auto matInverse = transform.invert();
+	auto matInverse = transform.inverse();
 	auto worldMat = matInverse.transpose();
 
 	auto data = worldMat.getData();

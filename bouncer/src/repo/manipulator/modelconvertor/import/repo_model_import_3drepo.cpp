@@ -275,7 +275,7 @@ public:
 			}
 
 			if (r.geometry.normals.size()) {
-				dataMap.push_back(new NormalsView(r.geometry.normals, node, matrix.invert().transpose().rotation()));
+				dataMap.push_back(new NormalsView(r.geometry.normals, node, matrix.inverse().transpose().rotation()));
 			}
 
 			if (r.geometry.uv.size()) {

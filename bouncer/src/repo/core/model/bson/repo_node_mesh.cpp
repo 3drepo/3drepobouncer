@@ -327,7 +327,7 @@ void MeshNode::applyTransformation(
 
 		if (normals.size())
 		{
-			auto matInverse = matrix.invert();
+			auto matInverse = matrix.inverse();
 			auto worldMat = matInverse.transpose();
 
 			auto data = worldMat.getData();

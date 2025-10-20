@@ -130,7 +130,7 @@ template<typename T>
 T* _RepoMatrix<T>::getData() { return data; }
 
 template<typename T>
-_RepoMatrix<T> _RepoMatrix<T>::invert() const {
+_RepoMatrix<T> _RepoMatrix<T>::inverse() const {
 	std::vector<T> result;
 	result.resize(16);
 

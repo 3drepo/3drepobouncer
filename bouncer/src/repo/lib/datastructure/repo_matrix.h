@@ -46,7 +46,7 @@ namespace repo {
 
 			T* getData();
 
-			_RepoMatrix<T> invert() const;
+			_RepoMatrix<T> inverse() const;
 
 			bool isIdentity(const float& eps = 10e-5) const;
 

@@ -194,7 +194,7 @@ TEST(StreamingMeshNodeTest, BakeMeshData) {
 	}
 
 	// Apply matrix to normals
-	auto matInverse = m.invert();
+	auto matInverse = m.inverse();
 	auto worldMat = matInverse.transpose();
 	auto mData = worldMat.getData();
 	mData[3] = mData[7] = mData[11] = 0;

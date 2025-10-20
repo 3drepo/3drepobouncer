@@ -154,7 +154,7 @@ TEST(RepoMatrixTest, getDataTest)
 TEST(RepoMatrixTest, invertTest)
 {
 	RepoMatrix id;
-	EXPECT_TRUE(checkIsIdentity(id.invert()));
+	EXPECT_TRUE(checkIsIdentity(id.inverse()));
 	std::vector<double> matValues = { 
 		2, 0.3f, 0.4f, 1.23f,
 		0.45f, 1, 0.488f, 12345,
@@ -162,7 +162,7 @@ TEST(RepoMatrixTest, invertTest)
 		0, 0, 0, 1
 	};
 	RepoMatrix rand(matValues);
-	auto inverted = rand.invert();
+	auto inverted = rand.inverse();
 
 	std::vector<double> expectedRes = {
 		0.53619303000471197, -0.16085791539333261, -0.038851014743946609, 1985.1314480935582,

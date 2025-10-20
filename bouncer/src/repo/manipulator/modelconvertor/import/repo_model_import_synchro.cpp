@@ -547,7 +547,7 @@ repo::lib::RepoMatrix SynchroModelImport::convertMatrixTo3DRepoWorld(
 	repo::lib::RepoMatrix matDX(toDX);
 	repo::lib::RepoMatrix matGL(toGL);
 	repo::lib::RepoMatrix matToWorld(toWorld);
-	auto fromWorld = matToWorld.invert();
+	auto fromWorld = matToWorld.inverse();
 
 	return scaleMatrix * ((matToWorld * matGL * matrix * matDX * fromWorld) * reverseScaleMatrix);
 }
@@ -643,7 +643,7 @@ void SynchroModelImport::updateFrameState(
 				if (isTransforming) {
 					if (resourceIDLastTrans.find(transTask->resourceID) != resourceIDLastTrans.end()) {
 						//the geometry takes the transformation of the final frame as the default position. undo it before applying a new transformation.
-						matrix = matrix * resourceIDLastTrans.at(transTask->resourceID).invert();
+						matrix = matrix * resourceIDLastTrans.at(transTask->resourceID).inverse();
 					}
 
 					matrix = convertMatrixTo3DRepoWorld(matrix, offset);
@@ -861,7 +861,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 					node->applyTransformation(matrix.getData());
 				}
 
-				auto matInverse = matrix.invert();
+				auto matInverse = matrix.inverse();
 
 				auto world = convertMatrixTo3DRepoWorld(matInverse, offset);
 				resourceIDTransState[lastStateEntry.first] = std::vector<double>(world.getData(), world.getData() + 16);
