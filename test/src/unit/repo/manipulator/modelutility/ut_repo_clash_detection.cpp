@@ -69,8 +69,6 @@ using namespace repo::manipulator::modelutility;
 
 #define TESTDB "ClashDetection"
 
-// #pragma optimize ("", off)
-
 std::ostream& operator<<(std::ostream& os, const repo::lib::RepoTriangle& t)
 {
 	os << "Triangle(" << t.a << " -> " << t.b << " -> " << t.c << ")";
@@ -277,6 +275,7 @@ TEST(Clash, Config)
 
 	EXPECT_THAT(config.type, Eq(ClashDetectionType::Clearance));
 	EXPECT_THAT(config.tolerance, Eq(0.0001));
+	EXPECT_THAT(config.resultsFile, StrEq("results/clash_results.json"));
 	
 	EXPECT_THAT(config.setA.size(), Eq(2));
 
@@ -585,7 +584,7 @@ TEST(Clash, TriangleDistanceE2E)
 			clashGenerator.distance = d;
 			for (int i = 0; i < samplesPerDistance; ++i) {
 				auto p = clashGenerator.createTrianglesTransformed(space.sample());
-				auto ids = scene.add(p, config);
+				scene.add(p, config);
 			}
 		}
 
@@ -619,7 +618,7 @@ TEST(Clash, AccuracyReport)
 	// Test the accuracy of the end-to-end pipeline in Clearance mode, for multiple
 	// problem configurations.
 
-	GTEST_SKIP(); // Disable this test unless we need to gather more data.
+	//GTEST_SKIP(); // Disable this test unless we need to gather more data.
 
 	ClashGenerator clashGenerator;
 
@@ -628,7 +627,7 @@ TEST(Clash, AccuracyReport)
 	const int samplesPerDistance = 10000;
 	std::vector<double> distances = { 0, 1, 2, 3 };
 
-	ClearanceAccuracyReport report("clearanceAccuracyReport.errors.bin");
+	ClearanceAccuracyReport report("C://3drepo//3drepobouncer_ISSUE797//clearanceAccuracyReport.errors.bin");
 	CellDistribution space;
 	
 	// Due to the BVH construction and traversal, it is more efficient to perform
@@ -1026,13 +1025,30 @@ TEST(Clash, SupportedRanges)
 	}
 }
 
-TEST(Clash, SelfClearance)
-{
-	// Test a single set (duplicated between A and B) for self-clearance.
-	// Identical Composite ids should not be tested against eachother.
+struct PipelineRunner {
+	ClashDetectionConfigHelper& config;
+	std::shared_ptr<MockDatabase> db;
 
+	PipelineRunner(ClashDetectionConfigHelper& config):
+		config(config), db(std::make_shared<MockDatabase>())
+	{
+	}
 
-}
+	ClashDetectionReport run(std::initializer_list<testing::TransformTriangles> problems)
+	{ 
+		config.clearObjectSets();
+
+		MockClashScene scene(config.getRevision());
+
+		for (auto& problem : problems) {
+			scene.add(problem, config);
+		}
+
+		db->setDocuments(scene.bsons);
+		clash::Clearance pipeline(db, config);
+		return pipeline.runPipeline();
+	}
+};
 
 TEST(Clash, Fingerprinting)
 {
@@ -1042,6 +1058,52 @@ TEST(Clash, Fingerprinting)
 	// Similarly, if an algorithm takes advantage of early termination, the
 	// fingerprinting method should be able to handle this as well.
 
+	ClashGenerator clashGenerator;
+	clashGenerator.distance = 0;
 
+	ClashDetectionConfigHelper config;
+	config.type = ClashDetectionType::Clearance;
+	PipelineRunner pipeline(config);
+
+	{	
+		config.tolerance = 100;
+
+		auto p = clashGenerator.createTrianglesVF(repo::lib::RepoBounds({ repo::lib::RepoVector3D64(0, 0, 0) }));
+
+		auto run1 = pipeline.run({ p });
+		auto run2 = pipeline.run({ p });
+
+		// Running the clash with the same primitives should result in the same
+		// fingerprints, even though by calling the runClearancePipeline helper
+		// method, the UUIDs will have changed.
+
+		EXPECT_THAT(run1.clashes[0].fingerprint, Eq(run2.clashes[0].fingerprint));
+
+		// The tolerance for this test is set very high so we can make minor adjustments
+		// to the same problem to test the fingerprinting sensitivity.
+
+		p.first.second = repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(1, 0, 0)) * p.first.second;
+
+		auto run3 = pipeline.run({ p });
+
+		EXPECT_THAT(run1.clashes[0].fingerprint, Not(Eq(run3.clashes[0].fingerprint)));
+
+		// We don't care too much about fingerprints being unique - as they
+		// should be evaluated in the context of the ids as well.
+	}
+}
+
+TEST(Clash, ResultsSerialisation)
+{
+	
+
+
+
+}
+
+TEST(Clash, SelfClearance)
+{
+	// Test a single set (duplicated between A and B) for self-clearance.
+	// Identical Composite ids should not be tested against eachother.
 
 }

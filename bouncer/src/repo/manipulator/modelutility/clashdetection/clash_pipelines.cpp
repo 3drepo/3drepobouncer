@@ -48,8 +48,6 @@ using namespace repo::manipulator::modelutility::clash;
 #define MESH_LIMIT 8e6
 #define TRANSLATION_LIMIT 1e11
 
-// #pragma optimize("", off)
-
 using ContainerGroups = std::unordered_map<repo::lib::Container*, std::vector<repo::lib::RepoUUID>>;
 using Bvh = bvh::Bvh<double>;
 

@@ -26,15 +26,15 @@ MeshBoundsException::MeshBoundsException(const repo::lib::Container& container, 
 {
 }
 
-const char* MeshBoundsException::what() const noexcept {
-	return "Mesh has exceeded the maximum dimensions. See exception object members for identity information.";
-}
-
 TransformBoundsException::TransformBoundsException(const repo::lib::Container& container, const repo::lib::RepoUUID& uniqueId)
 	: container(container), uniqueId(uniqueId)
 {
-
 }
-const char* TransformBoundsException::what() const noexcept {
-	return "Mesh has a World transform that exceeds the maximum dimensions in either scale or translation. See exception object members for identity information.";
+
+std::shared_ptr<ClashDetectionException> MeshBoundsException::clone() const {
+	return std::make_shared<MeshBoundsException>(*this);
+}
+
+std::shared_ptr<ClashDetectionException> TransformBoundsException::clone() const {
+	return std::make_shared<TransformBoundsException>(*this);
 }

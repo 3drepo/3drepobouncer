@@ -15,13 +15,10 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "clash_clearance.h"
-
-#include "geometry_tests.h"
-
 #include <stack>
 
-#pragma optimize("", off)
+#include "clash_clearance.h"
+#include "geometry_tests.h"
 
 using namespace repo::manipulator::modelutility::clash;
 
@@ -161,4 +158,24 @@ void Clearance::append(CompositeClash& c, const Narrowphase& r) const
 	if (result.line.magnitude() < clash.line.magnitude()) {
 		clash.line = result.line;
 	}
+}
+
+void Clearance::createClashReport(const OrderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const
+{
+	result.idA = objects.a;
+	result.idB = objects.b;
+
+	result.positions = {
+		static_cast<const ClearanceClash&>(clash).line.start,
+		static_cast<const ClearanceClash&>(clash).line.end
+	};
+
+	size_t hash = 0;
+	std::hash<double> hasher;
+	for (auto& p : result.positions) {
+		hash ^= hasher(p.x) + 0x9e3779b9;
+		hash ^= hasher(p.y) + 0x9e3779b9;
+		hash ^= hasher(p.z) + 0x9e3779b9;
+	}
+	result.fingerprint = hash;
 }

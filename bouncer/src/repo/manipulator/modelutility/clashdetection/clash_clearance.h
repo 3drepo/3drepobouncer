@@ -65,16 +65,7 @@ namespace repo {
 
 					virtual void append(CompositeClash& c, const Narrowphase& r) const;
 
-					virtual void createClashReport(const OrderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const
-					{
-						result.idA = objects.a;
-						result.idB = objects.b;
-						result.positions = {
-							static_cast<const ClearanceClash&>(clash).line.start,
-							static_cast<const ClearanceClash&>(clash).line.end
-						};
-						result.fingerprint = 0;
-					}
+					virtual void createClashReport(const OrderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const;
 
 				protected:
 					double tolerance;

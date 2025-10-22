@@ -19,8 +19,9 @@
 
 #include <exception>
 #include <string>
+#include <memory>
+#include <variant>
 
-#include <repo/manipulator/modelutility/repo_clash_detection_config_fwd.h>
 #include <repo/lib/datastructure/repo_container.h>
 
 namespace repo {
@@ -28,34 +29,34 @@ namespace repo {
 		namespace modelutility {
 			namespace clash {
 
-				struct ClashDetectionException : public std::exception 
+				struct ClashDetectionException
 				{
+					virtual std::shared_ptr<ClashDetectionException> clone() const = 0;
+					~ClashDetectionException() = default;
 				};
 
 				struct ValidationException : public ClashDetectionException {
-					const char* what() const noexcept override {
-						return "Input data (such as the scene graph) failed validation during clash detection. Check the exception subclass for details.";
-					}
+
 				};
 
 				struct MeshBoundsException : public ValidationException
 				{
 					MeshBoundsException(const repo::lib::Container& container, const repo::lib::RepoUUID& uniqueId);
 
-					const char* what() const noexcept override;
-
 					repo::lib::Container container;
 					repo::lib::RepoUUID uniqueId;
+
+					virtual std::shared_ptr<ClashDetectionException> clone() const override;
 				};
 
 				struct TransformBoundsException : public ValidationException
 				{
 					TransformBoundsException(const repo::lib::Container& container, const repo::lib::RepoUUID& uniqueId);
 
-					const char* what() const noexcept override;
-
 					repo::lib::Container container;
 					repo::lib::RepoUUID uniqueId;
+
+					virtual std::shared_ptr<ClashDetectionException> clone() const override;
 				};
 			}
 		}

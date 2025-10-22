@@ -99,9 +99,10 @@ namespace repo {
 				std::vector<CompositeObject> setB;
 
 				/*
-				* Where to write the results of clash detection, as Json.
+				* Where to write the results of clash detection. This should be a fully
+				* qualified (.json) file name.
 				*/
-				std::string path;
+				std::string resultsFile;
 
 				REPO_API_EXPORT static void ParseJsonFile(const std::string& jsonFilePath, ClashDetectionConfig& config);
 

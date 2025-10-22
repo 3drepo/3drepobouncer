@@ -56,6 +56,12 @@ const repo::lib::RepoUUID& testing::ClashDetectionConfigHelper::getRevision()
 	return this->containers[0]->revision;
 }
 
+void testing::ClashDetectionConfigHelper::clearObjectSets()
+{
+	this->setA.clear();
+	this->setB.clear();
+}
+
 MockClashScene::MockClashScene(const RepoUUID& revision) {
 	auto n = RepoBSONFactory::makeTransformationNode({}, "rootNode");
 	root = n.getSharedID();

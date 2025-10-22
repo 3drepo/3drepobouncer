@@ -54,6 +54,8 @@ namespace testing {
 		* constructor, and to which composite objects are added by the helper methods.
 		*/
 		const repo::lib::RepoUUID& getRevision();
+
+		void clearObjectSets();
 	};
 
 	/*

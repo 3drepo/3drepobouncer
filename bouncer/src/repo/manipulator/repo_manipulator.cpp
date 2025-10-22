@@ -320,7 +320,7 @@ void RepoManipulator::performClashDetection(
 {
 	modelutility::ClashDetectionEngine clashEngine(dbHandler);
 	auto results = clashEngine.runClashDetection(config);
-	clashEngine.writeClashDetectionResultsJson(results, config);
+	ClashDetectionEngineUtils::writeJson(results, config);
 }
 
 bool RepoManipulator::init(

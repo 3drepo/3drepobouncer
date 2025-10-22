@@ -157,6 +157,7 @@ struct ClashConfigParser : public ObjectParser, public IContainerSet
 	{
 		parsers["type"] = new ClashTypeParser(config.type);
 		parsers["tolerance"] = new NumberParser<double>(config.tolerance);
+		parsers["resultsFile"] = new StringParser(config.resultsFile);
 		parsers["setA"] = new ArrayParser(new CompositeObjectSetParser(this, mapA));
 		parsers["setB"] = new ArrayParser(new CompositeObjectSetParser(this, mapB));
 	}
@@ -210,5 +211,4 @@ void ClashDetectionConfig::ParseJsonFile(const std::string& jsonFilePath, ClashD
 	contentStream << fileStream.rdbuf();
 	auto content = contentStream.str();
 	ClashConfigParser::ParseJson(content.data(), config);
-	config.path = jsonFilePath;
 }

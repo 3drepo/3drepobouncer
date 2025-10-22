@@ -20,10 +20,11 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include <exception>
+#include <ostream>
 #include <repo/repo_bouncer_global.h>
 #include <repo/lib/datastructure/repo_vector.h>
 #include <repo/manipulator/modelutility/repo_clash_detection_config_fwd.h>
+#include <repo/manipulator/modelutility/clashdetection/clash_exceptions.h>
 #include <repo/core/handler/repo_database_handler_abstract.h>
 
 namespace repo {
@@ -59,6 +60,7 @@ namespace repo {
 			struct ClashDetectionReport
 			{
 				std::vector<ClashDetectionResult> clashes;
+				std::vector<std::shared_ptr<clash::ClashDetectionException>> errors;
 			};
 
 			REPO_API_EXPORT class ClashDetectionEngine
@@ -69,12 +71,16 @@ namespace repo {
 
 				ClashDetectionReport runClashDetection(const ClashDetectionConfig& config);
 
-				// temporary for testing
-				void writeClashDetectionResultsJson(const ClashDetectionReport&, const ClashDetectionConfig&);
-
 			protected:
 				std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler;
 			};
+
+			class ClashDetectionEngineUtils {
+			public:
+				static void writeJson(const ClashDetectionReport& report, const ClashDetectionConfig& config);
+				static void writeJson(const ClashDetectionReport& report, std::basic_ostream<char, std::char_traits<char>>& stream);
+			};
+
 		} // namespace modelutility
 	} // namespace manipulator
 }
