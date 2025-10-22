@@ -137,3 +137,8 @@ REPO_API_EXPORT repo::lib::RepoBounds repo::lib::operator*(const _RepoMatrix<dou
 
 	return transformed;
 }
+
+REPO_API_EXPORT repo::lib::RepoBounds repo::lib::operator*(const _RepoVector3D<double>& scalars, const repo::lib::RepoBounds& bounds)
+{
+	return { bounds.min() * scalars, bounds.max() * scalars };
+}

@@ -21,6 +21,7 @@ namespace repo {
 	namespace manipulator {
 		namespace modelutility {
 			struct ClashDetectionConfig;
+			struct MeshReference;
 		}
 	}
 }

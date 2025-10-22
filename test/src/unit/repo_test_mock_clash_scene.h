@@ -63,7 +63,12 @@ namespace testing {
 
 	struct CellDistribution
 	{
-		CellDistribution(size_t cellSize, size_t spaceSize);
+		// These default parameters correspond to the currently supported domain
+		// of the clash detection engine. The cell size is double the maximum
+		// bounds of a single mesh, since two meshes of that size may be placed
+		// side-by-side in a cell.
+
+		CellDistribution(size_t cellSize = 16e6, size_t spaceSize = 1e11);
 
 		// Gets a cell from the distribution, using uniform sampling. Each cell may
 		// only be returned once for a given distribution.

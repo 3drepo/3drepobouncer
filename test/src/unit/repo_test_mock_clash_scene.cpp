@@ -19,7 +19,7 @@
 
 #include "repo/lib/datastructure/repo_vector.h"
 
-#pragma optimize("", off)
+//#pragma optimize("", off)
 
 using namespace testing;
 using namespace repo::core::model;
@@ -173,27 +173,51 @@ void ClashGenerator::shiftTriangles(repo::lib::RepoTriangle& b)
 	}
 }
 
-
 void ClashGenerator::moveB(TransformTriangles& problem, const repo::lib::RepoRange& range)
 {
-	// As this method will modify the vertices before the downcast, we may only apply
-	// transforms that do not move the vertex beyond the supported range (currently 8e6).
+	// As this method will modify the vertices before the downcast, we may only
+	// apply transforms that do not move the vertex beyond the supported range
+	// (default 8e6).
 
-	auto largestDimension = std::max({
-		std::abs(problem.second.first.a.x),
-		std::abs(problem.second.first.a.y),
-		std::abs(problem.second.first.a.z),
-		std::abs(problem.second.first.b.x),
-		std::abs(problem.second.first.b.y),
-		std::abs(problem.second.first.b.z),
-		std::abs(problem.second.first.c.x),
-		std::abs(problem.second.first.c.y),
-		std::abs(problem.second.first.c.z)
-		});
-	auto remainingRange = std::max(0.0, range.max() - largestDimension);
+	// This method serves to move triangle B to a random location, improving the
+	// sampling, but it also ensures that B ends within the supported range if it
+	// starts outside of it - say because B was created relative to A.
 
-	problem.second.second = random.transform(true, { 0, remainingRange }, {});
-	problem.second.first = problem.second.second.inverse() * problem.second.first;
+	auto& b = problem.second.first;
+	auto& m = problem.second.second;
+
+	//m = random.transform(true, range, {});
+
+	auto tmp = b;
+
+	auto bounds = repo::lib::RepoBounds({ m * b.a, m * b.b, m * b.c });
+
+	// todo fix this...
+
+	repo::lib::RepoVector3D64 offset;
+	if (bounds.min().x < -range.max()) {
+		offset.x = -range.max() - bounds.min().x;
+	}
+	else if (bounds.max().x > range.max()) {
+		offset.x = range.max() - bounds.max().x;
+	}
+
+	if (bounds.min().y < -range.max()) {
+		offset.y = -range.max() - bounds.min().y;
+	}
+	else if (bounds.max().y > range.max()) {
+		offset.y = range.max() - bounds.max().y;
+	}
+
+	if (bounds.min().z < -range.max()) {
+		offset.z = -range.max() - bounds.min().z;
+	}
+	else if (bounds.max().z > range.max()) {
+		offset.z = range.max() - bounds.max().z;	
+	}
+
+	m = repo::lib::RepoMatrix::translate(-offset);
+	b = m.inverse() * b;
 }
 
 void ClashGenerator::moveProblem(TransformTriangles& problem, const repo::lib::RepoRange& range)
@@ -358,10 +382,12 @@ TransformTriangles testing::ClashGenerator::createTrianglesVV(const repo::lib::R
 		random.vector({ -margin, -size1.max() }, { -size1.max(), size1.max() }, { -size1.max(), size1.max() })
 	);
 
+	// Create b slightly smaller as it will be moved by d
+
 	repo::lib::RepoTriangle b(
 		repo::lib::RepoVector3D64(0, 0, 0),
-		random.vector({ margin, size2.max() }, { -size2.max(), size2.max() }, { -size2.max(), size2.max() }),
-		random.vector({ margin, size2.max() }, { -size2.max(), size2.max() }, { -size2.max(), size2.max() })
+		random.vector({ margin, size2.max() - margin }, { -size2.max(), size2.max() - margin }, { -size2.max(), size2.max() - margin }),
+		random.vector({ margin, size2.max() - margin }, { -size2.max(), size2.max() - margin }, { -size2.max(), size2.max() - margin })
 	);
 
 	// Separate the triangles by d
@@ -404,8 +430,8 @@ TransformTriangles testing::ClashGenerator::createTrianglesVE(const repo::lib::R
 
 	repo::lib::RepoTriangle b(
 		repo::lib::RepoVector3D64(0, 0, 0),
-		random.vector({ margin, size2.max() }, { -size2.max(), size2.max() }, { -size2.max(), size2.max() }),
-		random.vector({ margin, size2.max() }, { -size2.max(), size2.max() }, { -size2.max(), size2.max() })
+		random.vector({ margin, size2.max() - margin }, { -size2.max(), size2.max() - margin }, { -size2.max(), size2.max() - margin }),
+		random.vector({ margin, size2.max() - margin }, { -size2.max(), size2.max() - margin }, { -size2.max(), size2.max() - margin })
 	);
 
 	// Separate the triangles by d
@@ -435,16 +461,20 @@ TransformTriangles testing::ClashGenerator::createTrianglesEE(const repo::lib::R
 	// Like VE, but with the second triangle's meeting vertex being somwhere
 	// along the first's edge.
 
+	BoundedContext ctx(random, 8e6);
+
 	repo::lib::RepoTriangle a(
-		random.vector({ 0, 0 }, { 0, size1.max() }, { 0, 0 }),
-		random.vector({ 0, 0 }, { 0, -size1.max() }, { 0, 0 }),
-		random.vector({ -margin, -size1.max() }, { -size1.max(), size1.max() }, { -size1.max(), size1.max() })
+		ctx.vector({ 0, 0 }, { 0, size1.max() }, { 0, 0 }),
+		ctx.vector({ 0, 0 }, { 0, -size1.max() }, { 0, 0 }),
+		ctx.vector({ -margin, -size1.max() }, { -size1.max(), size1.max() }, { -size1.max(), size1.max() })
 	);
 
+	ctx.reset();
+
 	repo::lib::RepoTriangle b(
-		random.vector({ 0, 0 }, { 0, size2.max() }, { 0, 0 }),
-		random.vector({ 0, 0 }, { 0, -size2.max() }, { 0, 0 }),
-		random.vector({ margin, size2.max() }, { -size2.max(), size2.max() }, { -size2.max(), size2.max() })
+		ctx.vector({ 0, 0 }, { 0, size2.max() - margin }, { 0, 0 }),
+		ctx.vector({ 0, 0 }, { 0, -size2.max() + margin }, { 0, 0 }),
+		ctx.vector({ margin, size2.max() - margin }, { -size2.max(), size2.max() - margin }, { -size2.max(), size2.max() - margin })
 	);
 
 	b = random.rotation({ 0.01, 3.14 }, { 0, 0 }, { 0, 0 }) * b;
@@ -479,8 +509,8 @@ TransformTriangles testing::ClashGenerator::createTrianglesVF(const repo::lib::R
 
 	repo::lib::RepoTriangle b(
 		pointOnA,
-		pointOnA + random.rotation(random.direction(), { 0, 1.57 }) * a.normal() * random.number(size2),
-		pointOnA + random.rotation(random.direction(), { 0, 1.57 }) * a.normal() * random.number(size2)
+		pointOnA + random.rotation(random.direction(), { 0, 1.57 }) * a.normal() * 0.5 * random.number(size2),
+		pointOnA + random.rotation(random.direction(), { 0, 1.57 }) * a.normal() * 0.5 * random.number(size2)
 	);
 
 	shiftTriangles(b);
@@ -508,7 +538,7 @@ TransformTriangles testing::ClashGenerator::createTrianglesFE(const repo::lib::R
 	auto p = random.barycentric();
 	auto pointOnA = a.a * p.x + a.b * p.y + a.c * p.z;
 
-	auto edgeDirection = random.rotation(random.direction(), { 0, 1.57 }) * a.normal();
+	auto edgeDirection = random.rotation(random.direction(), { 0, 1.57 }) * a.normal() * 0.5;
 
 	repo::lib::RepoTriangle b(
 		pointOnA + edgeDirection * random.number(size2),

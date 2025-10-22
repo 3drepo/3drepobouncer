@@ -18,6 +18,7 @@
 #include "clash_pipelines.h"
 #include "clash_scheduler.h"
 #include "clash_node_cache.h"
+#include "clash_exceptions.h"
 #include "sparse_scene_graph.h"
 
 #include <repo/lib/datastructure/repo_matrix.h>
@@ -38,7 +39,16 @@ using namespace repo::lib;
 using namespace repo::manipulator::modelutility;
 using namespace repo::manipulator::modelutility::clash;
 
-#pragma optimize("", off)
+// Maximum supported dimension on any axis (positive or negative) for vertices
+// and translation components, respectively.
+// Currently the engine has a fixed supported input range so these are set at
+// compile time. In the future we may support dynamic limits for adaptive
+// accuracy levels.
+
+#define MESH_LIMIT 8e6
+#define TRANSLATION_LIMIT 1e11
+
+// #pragma optimize("", off)
 
 using ContainerGroups = std::unordered_map<repo::lib::Container*, std::vector<repo::lib::RepoUUID>>;
 using Bvh = bvh::Bvh<double>;
@@ -85,7 +95,7 @@ struct Graph
 	}
 };
 
-Graph createSceneGraph(
+static Graph createSceneGraph(
 	Pipeline::DatabasePtr handler, 
 	const std::vector<CompositeObject>& set, 
 	Pipeline::RepoUUIDMap& uniqueToCompositeId)
@@ -114,6 +124,85 @@ Graph createSceneGraph(
 	return graph;
 }
 
+static bool isWithinLimits(const repo::lib::RepoVector3D64& v, double limit)
+{
+	return std::abs(v.x) <= limit && std::abs(v.y) <= limit && std::abs(v.z) <= limit;
+}
+
+static bool isWithinLimits(const repo::lib::RepoBounds& bounds, double limit)
+{
+	if (!isWithinLimits(bounds.min(), limit)) return false;
+	if (!isWithinLimits(bounds.max(), limit)) return false;
+	return true;
+}
+
+static bool isWithinLimits(const Bvh::Node& node, double limit)
+{
+	for (size_t i = 0; i < 6; i++) {
+		if (std::abs(node.bounds[i]) > limit) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static bool validateSceneGraph(const Graph& graph)
+{
+	// This method traverses the scene graph looking for any nodes where (a) the
+	// matrix has a translation of more than 1e11, or the scaled mesh bounds
+	// exceed 8e6: these situations are not supported, because they can lead to
+	// rounding errors beyond our guaranteed accuracy range.
+
+	std::stack<size_t> nodesToProcess;
+	nodesToProcess.push(0);
+	while (!nodesToProcess.empty()) 
+	{
+		const auto& node = graph.bvh.nodes[nodesToProcess.top()];
+		nodesToProcess.pop();
+		bvh::BoundingBox<double> bb = node.bounding_box_proxy();
+
+		// The bvh is constructed in world space, so if a box is within 8e6, we
+		// know the mesh and all transforms involved will be within limits without
+		// further checks and can terminate early.
+
+		if (!isWithinLimits(node, MESH_LIMIT)) {
+			if (node.is_leaf()) {
+
+				// For leaf nodes, check how the mesh bounds grow beyond 8e6 and
+				// ensure it is via an acceptable transform.
+
+				for (auto i = 0; i < node.primitive_count; i++) {
+					const auto& meshNode = graph.meshes[graph.bvh.primitive_indices[node.first_child_or_primitive + i]];
+					
+					auto meshBounds = meshNode.mesh.getBoundsField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
+					if (!isWithinLimits(meshBounds, MESH_LIMIT)) {
+						throw MeshBoundsException(*meshNode.container, meshNode.uniqueId);
+					}
+
+					// For evaluating the effect on scale on the bounds, we must be cautious
+					// that scale decomposition is potentially lossy.
+					// As the purpose of this test is to ensure effective scale does not
+					// introduce significant error into the single-precision vertices, we only
+					// care about changes greater than the ULP of the supported range (8e6).
+
+					auto scaledBounds = meshNode.matrix.scale() * meshBounds;
+					if (!isWithinLimits(scaledBounds, MESH_LIMIT + 1)) {
+						throw TransformBoundsException(*meshNode.container, meshNode.uniqueId);
+					}
+
+					if (!isWithinLimits(meshNode.matrix.translation(), TRANSLATION_LIMIT)) {
+						throw TransformBoundsException(*meshNode.container, meshNode.uniqueId);
+					}
+				}
+			}
+			else {
+				nodesToProcess.push(node.first_child_or_primitive);
+				nodesToProcess.push(node.first_child_or_primitive + 1);
+			}
+		}
+	}
+}
+
 Pipeline::Pipeline(
 	DatabasePtr handler, const repo::manipulator::modelutility::ClashDetectionConfig& config)
 	: handler(handler),
@@ -125,6 +214,9 @@ ClashDetectionReport Pipeline::runPipeline()
 {
 	auto graphA = createSceneGraph(handler, config.setA, uniqueToCompositeId);
 	auto graphB = createSceneGraph(handler, config.setB, uniqueToCompositeId);
+
+	validateSceneGraph(graphA);
+	validateSceneGraph(graphB);
 
 	BroadphaseResults broadphaseResults;
 

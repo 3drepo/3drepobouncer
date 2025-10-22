@@ -148,3 +148,49 @@ repo::lib::RepoMatrix RepoRandomGenerator::rotation(
 {
 	return repo::lib::RepoMatrix::rotation(axis, this->angle(angle));
 }
+
+BoundedContext::BoundedContext(RepoRandomGenerator& random, double limit)
+	:random(random), limit(limit)
+{
+	reset();
+}
+
+void BoundedContext::reset()
+{
+	sampled = repo::lib::RepoBounds();
+	min = repo::lib::RepoVector3D64(-DBL_MAX, -DBL_MAX, -DBL_MAX);
+	max = repo::lib::RepoVector3D64(DBL_MAX, DBL_MAX, DBL_MAX);
+}
+
+repo::lib::RepoVector3D64 BoundedContext::vector(
+	const repo::lib::RepoRange& x,
+	const repo::lib::RepoRange& y,
+	const repo::lib::RepoRange& z
+)
+{
+	// Take care that depending on the sampling so far, there may be no overlap
+	// between the requested range and the available range. In this case the result
+	// will be clamped to the available range. There will be no warning of this -
+	// the caller should ensure that this situation cannot arise.
+
+	auto v = repo::lib::RepoVector3D64(
+		random.number({ std::max(min.x, x.x), std::min(max.x, x.y) }),
+		random.number({ std::max(min.y, y.x), std::min(max.y, y.y) }),
+		random.number({ std::max(min.z, z.x), std::min(max.z, z.y) })
+	);
+
+	// This snippet dynamically adjusts the range for future points so they remain
+	// within bounds.
+	// Note that this does not simply place the limit symmetrically, because that
+	// would be overconstrained - we want the rng to be able to utilise all the
+	// space until its constrained from the other direction.
+
+	sampled.encapsulate(v);
+
+	auto remaining = -(sampled.size() - limit);
+	min = sampled.min() - remaining;
+	max = sampled.max() + remaining;
+
+	return v;
+}
+

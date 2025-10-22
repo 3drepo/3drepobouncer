@@ -60,6 +60,10 @@ namespace repo {
 
 			_RepoMatrix<T> rotation() const;
 
+			repo::lib::_RepoVector3D<T> translation() const;
+
+			repo::lib::_RepoVector3D<T> scale() const;
+
 			static _RepoMatrix<T> rotationX(T angle);
 
 			static _RepoMatrix<T> rotationY(T angle);

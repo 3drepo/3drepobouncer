@@ -47,6 +47,7 @@
 #include <repo/manipulator/modelutility/clashdetection/sparse_scene_graph.h>
 #include <repo/manipulator/modelutility/clashdetection/geometry_tests.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_scheduler.h>
+#include <repo/manipulator/modelutility/clashdetection/clash_exceptions.h>
 
 #include "../../../repo_test_utils.h"
 #include "../../../repo_test_clash_utils.h"
@@ -68,7 +69,7 @@ using namespace repo::manipulator::modelutility;
 
 #define TESTDB "ClashDetection"
 
-#pragma optimize ("", off)
+// #pragma optimize ("", off)
 
 std::ostream& operator<<(std::ostream& os, const repo::lib::RepoTriangle& t)
 {
@@ -358,6 +359,10 @@ TEST(Clash, Scheduler)
 * probabilisitcally. Primitives are generated in different known configurations
 * as a ground truth, to which the measured distances are compared.
 * 
+* The per-configuration unit tests evaulate the error of the geometry queries,
+* which serves to test these methods, but also to validate the clash generator
+* algorithms as well to an extent, before they are used in the end-to-end tests.
+* 
 * Accuracy is tested at both the unit and end-to-end level. The current guaranteed
 * accuracy is 1 in 8e6 for vertices, with transforms up to 1e11 from the origin.
 * For models imported in mm, this represents an error of ±1 mm.
@@ -374,7 +379,7 @@ TEST(Clash, LineLineDistanceUnit)
 	// Remark: the engine doesn't yet support true line-line clashes, so this test
 	// is really to make sure the geometry library does not degenerate until then.
 
-	CellDistribution space(8e6, 1e11);
+	CellDistribution space;
 	ClashGenerator clashGenerator;
 
 	std::vector<double> distances = { 0, 1, 2 };
@@ -408,14 +413,17 @@ TEST(Clash, TrianglesUnitVV)
 	// Tests that the triangle distance tests will correctly identify triangles
 	// which are closest at their vertices.
 
-	CellDistribution space(8e6, 1e11);
+	// Note that the space sizes are double the expected maximums for a single
+	// mesh - as two meshes of those sizes may sit side-by-side.
+
+	CellDistribution space;
 	ClashGenerator clashGenerator;
 
 	std::vector<double> distances = { 0, 1, 2 };
 	for (auto d : distances) {
 		clashGenerator.distance = d;
 
-		for (int i = 0; i < 100000; ++i) {
+		for (int i = 0; i < 1000000; ++i) {
 
 			auto p = clashGenerator.createTrianglesVV(space.sample());
 
@@ -427,11 +435,10 @@ TEST(Clash, TrianglesUnitVV)
 
 			EXPECT_THAT(e, Le(1.0));
 
-			// For VV, the line should connect two vertices. Note that we use the same
-			// tolerance as the distance test, as quantisation error may move the
-			// closest points around slightly.
+			// For VV, the line should connect two vertices (or very close, providing for
+			// rounding error).
 
-			EXPECT_THAT(vectors::Iterator(line), vectors::AreSubsetOf({ a.a, a.b, a.c, b.a, b.b, b.c }, 3));
+			EXPECT_THAT(vectors::Iterator(line), vectors::AreSubsetOf({ a.a, a.b, a.c, b.a, b.b, b.c }, ClashGenerator::suggestTolerance({ a, b })));
 		}
 	}
 }
@@ -441,7 +448,7 @@ TEST(Clash, TrianglesUnitVE)
 	// Tests that the triangle distance tests correctly identify triangles
 	// which are closest at an edge and a vertex.
 
-	CellDistribution space(8e6, 1e11);
+	CellDistribution space;
 	ClashGenerator clashGenerator;
 
 	std::vector<double> distances = { 0, 1, 2 };
@@ -476,7 +483,7 @@ TEST(Clash, TrianglesUnitEE)
 	// Tests that the triangle distance tests correctly identify triangles
 	// which are closest at an edge and a vertex.
 
-	CellDistribution space(8e6, 1e11);
+	CellDistribution space;
 	ClashGenerator clashGenerator;
 
 	std::vector<double> distances = { 0, 1, 2 };
@@ -503,7 +510,7 @@ TEST(Clash, TrianglesUnitVF)
 	// Tests that the triangle distance tests correctly identify triangles
 	// which are closest at an edge and a vertex.
 
-	CellDistribution space(8e6, 1e11);
+	CellDistribution space;
 	ClashGenerator clashGenerator;
 
 	std::vector<double> distances = { 0, 1, 2 };
@@ -533,7 +540,7 @@ TEST(Clash, TrianglesUnitFE)
 	// there is no intersection, then the closest points will be on an edge
 	// or a vertex, covered by the tests above.
 
-	CellDistribution space(8e6, 1e11);
+	CellDistribution space;
 	ClashGenerator clashGenerator;
 
 	for (int i = 0; i < 100000; ++i) {
@@ -567,7 +574,7 @@ TEST(Clash, TriangleDistanceE2E)
 
 	for (int i = 0; i < numIterations; ++i)
 	{
-		CellDistribution space(8e6, 1e11);
+		CellDistribution space;
 
 		ClashDetectionConfigHelper config;
 		config.type = ClashDetectionType::Clearance;
@@ -622,7 +629,7 @@ TEST(Clash, AccuracyReport)
 	std::vector<double> distances = { 0, 1, 2, 3 };
 
 	ClearanceAccuracyReport report("clearanceAccuracyReport.errors.bin");
-	CellDistribution space(8e6, 1e11);
+	CellDistribution space;
 	
 	// Due to the BVH construction and traversal, it is more efficient to perform
 	// multiple iterations of small scenes, rather than one large scene.
@@ -650,24 +657,12 @@ TEST(Clash, AccuracyReport)
 	}
 }
 
-TEST(Clash, SupportedRanges)
-{
-	// If a mesh is greater than 8e6 in any dimension after being subject to scale,
-	// or two transformations have a difference in offset greater than 1e11,
-	// then we cannot guarantee accuracy of the algorithm as the precision in the
-	// original vertices will have been lost.
-	// In this case we should issue a warning and refuse to return any results.
-
-
-}
-
-TEST(Clash, SelfClearance)
-{
-	// Test a single set (duplicated between A and B) for self-clearance.
-	// Identical Composite ids should not be tested against eachother.
-
-
-}
+/*
+* These next tests check the accuracy of the clash detection when running on
+* real imports. The purpose of these tests is to ensure the import pipeline
+* does not degrade the accuracy of the geometry beyond acceptable limits. A
+* test should exist for all supported file formats.
+*/
 
 TEST(Clash, Rvt)
 {
@@ -720,7 +715,9 @@ TEST(Clash, Clearance1)
 	/*
 	* Performs Clearance tests against a number of manually configured imports.
 	* This test is used to verify end-to-end functionality against a real
-	* collection.
+	* collection with pre-defined ground truth. It covers the same functionality
+	* as the accuracy tests above but with a different approach to the tests
+	* to maximise robustness.
 	*/
 
 	auto handler = getHandler();
@@ -921,25 +918,129 @@ TEST(Clash, Clearance1)
 	}
 }
 
-TEST(Clash, Clearance2)
+/*
+* This next set of tests checks specific features of the engine, such as its
+* error handling.
+*/
+
+TEST(Clash, SupportedRanges)
+{
+	// If a mesh is greater than 8e6 in any dimension after being subject to scale,
+	// or two transformations have a difference in offset greater than 1e11,
+	// then we cannot guarantee accuracy of the algorithm as the precision in the
+	// original vertices will have been lost.
+	// In this case we should issue a warning and refuse to return any results.
+
+	auto db = std::make_shared<MockDatabase>();
+
+	ClashGenerator clashGenerator;
+	clashGenerator.distance = 1;
+	
+	{
+		// These settings will generate primitives that are larger than 8e6 in at
+		// least one dimension.
+
+		clashGenerator.size1 = 8e8;
+		clashGenerator.size2 = 8e8;
+
+		ClashDetectionConfigHelper config;
+		config.type = ClashDetectionType::Clearance;
+		MockClashScene scene(config.getRevision());
+		scene.add(clashGenerator.createTrianglesVF(
+			repo::lib::RepoBounds({ repo::lib::RepoVector3D64(0, 0, 0) })),
+			config
+		);
+
+		db->setDocuments(scene.bsons);
+
+		clash::Clearance pipeline(db, config);
+		try {
+			auto results = pipeline.runPipeline();
+			FAIL() << "Expected MeshBoundsException due to unsupported mesh size.";
+		}
+		catch (const clash::ClashDetectionException& ex) {
+			auto meshException = dynamic_cast<const clash::MeshBoundsException*>(&ex);
+			EXPECT_THAT(meshException != nullptr, IsTrue());
+		}
+		catch (std::exception& e) {
+			FAIL() << "Expected MeshBoundsException due to unsupported mesh size: " << e.what();
+		}
+	}
+
+	{
+		clashGenerator.size1 = 1e6;
+		clashGenerator.size2 = 1e6;
+
+		ClashDetectionConfigHelper config;
+		config.type = ClashDetectionType::Clearance;
+		MockClashScene scene(config.getRevision());
+		scene.add(clashGenerator.createTrianglesVF(
+			repo::lib::RepoBounds({ repo::lib::RepoVector3D64(1e12, 1e12, 1e12), repo::lib::RepoVector3D64(2e12, 2e12, 2e12) })),
+			config
+		);
+
+		db->setDocuments(scene.bsons);
+
+		clash::Clearance pipeline(db, config);
+		try {
+			auto results = pipeline.runPipeline();
+			FAIL() << "Expected TransformBoundsException due to unsupported transform size.";
+		}
+		catch (const clash::ClashDetectionException& ex) {
+			auto transformException = dynamic_cast<const clash::TransformBoundsException*>(&ex);
+			EXPECT_THAT(transformException != nullptr, IsTrue());
+		}
+		catch (std::exception& e) {
+			FAIL() << "Expected TransformBoundsException due to offset: " << e.what();
+		}
+	}
+
+	{
+		clashGenerator.size1 = 1e6;
+		clashGenerator.size2 = 1e6;
+
+		ClashDetectionConfigHelper config;
+		config.type = ClashDetectionType::Clearance;
+		MockClashScene scene(config.getRevision());
+
+		auto problem = clashGenerator.createTrianglesVF(repo::lib::RepoBounds({ repo::lib::RepoVector3D64(0, 0, 0) }));
+
+		problem.first.second = repo::lib::RepoMatrix::scale(repo::lib::RepoVector3D64(1e6, 1e6, 1e6)) * problem.first.second;
+
+		scene.add(problem, config);
+
+		db->setDocuments(scene.bsons);
+
+		clash::Clearance pipeline(db, config);
+		try {
+			auto results = pipeline.runPipeline();
+			FAIL() << "Expected TransformBoundsException due to unsupported transform size.";
+		}
+		catch (const clash::ClashDetectionException& ex) {
+			auto transformException = dynamic_cast<const clash::TransformBoundsException*>(&ex);
+			EXPECT_THAT(transformException != nullptr, IsTrue());
+		}
+		catch (std::exception& e) {
+			FAIL() << "Expected TransformBoundsException due to scale: " << e.what();
+		}
+	}
+}
+
+TEST(Clash, SelfClearance)
+{
+	// Test a single set (duplicated between A and B) for self-clearance.
+	// Identical Composite ids should not be tested against eachother.
+
+
+}
+
+TEST(Clash, Fingerprinting)
 {
 	// Clash fingerprints are used to determine if a clash is the same across
 	// multiple runs. If multiple primitives are involved, the fingerprint should
 	// remain the same, regardless of the order in which they are processed.
 	// Similarly, if an algorithm takes advantage of early termination, the
 	// fingerprinting method should be able to handle this as well.
-
-	ClashDetectionConfig config;
-	auto handler = getHandler();
-
-	auto pipeline = new clash::Clearance(handler, config);
-
-	auto composite = pipeline->createCompositeClash();
-
-	struct NarrowphaseResult
-	{
-
-	};
 
 
 

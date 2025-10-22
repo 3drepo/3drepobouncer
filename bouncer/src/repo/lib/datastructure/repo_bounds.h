@@ -60,5 +60,12 @@ namespace repo {
 		};
 
 		REPO_API_EXPORT repo::lib::RepoBounds operator*(const _RepoMatrix<double>& matrix, const repo::lib::RepoBounds& bounds);
+
+		/**
+		* Multiplies (scales) the min and max of the bounds by the components of the
+		* vector.
+		*/
+		REPO_API_EXPORT repo::lib::RepoBounds operator*(const _RepoVector3D<double>& scalars, const repo::lib::RepoBounds& bounds);
+
 	}
 }

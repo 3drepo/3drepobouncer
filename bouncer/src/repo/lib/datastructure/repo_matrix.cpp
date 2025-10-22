@@ -261,6 +261,20 @@ _RepoMatrix<T> _RepoMatrix<T>::rotation() const {
 }
 
 template<typename T>
+repo::lib::_RepoVector3D<T> _RepoMatrix<T>::translation() const {
+	return repo::lib::_RepoVector3D<T>(data[3], data[7], data[11]);
+}
+
+template<typename T>
+repo::lib::_RepoVector3D<T> _RepoMatrix<T>::scale() const {
+	return repo::lib::_RepoVector3D<T>(
+		std::sqrt(data[0] * data[0] + data[4] * data[4] + data[8] * data[8]),
+		std::sqrt(data[1] * data[1] + data[5] * data[5] + data[9] * data[9]),
+		std::sqrt(data[2] * data[2] + data[6] * data[6] + data[10] * data[10])
+	);
+}
+
+template<typename T>
 _RepoMatrix<T> _RepoMatrix<T>::rotationX(T angle)
 {
 	_RepoMatrix<T> m;

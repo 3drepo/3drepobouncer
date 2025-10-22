@@ -411,9 +411,60 @@ TEST(RepoMatrixTest, Translate)
 	EXPECT_THAT(RepoMatrix::translate(a) * b, VectorNear(c));
 }
 
-TEST(RepoMatrixTest, IsUniformScaling)
+TEST(RepoMatrixTest, Scale)
 {
+	{
+		auto scale = repo::lib::RepoVector3D64(1, 1, 1);
+		auto m = repo::lib::RepoMatrix::scale(scale);
+		EXPECT_TRUE(m.isIdentity());
+		EXPECT_THAT(m.scale(), VectorNear(scale));
+	}
 
+	{
+		auto scale = repo::lib::RepoVector3D64(2, 2, 2);
+		auto m = repo::lib::RepoMatrix::scale(scale);
+		EXPECT_THAT(m.scale(), VectorNear(scale));
+	}
+
+	{
+		auto scale = repo::lib::RepoVector3D64(0.1, 2, 30);
+		auto m = repo::lib::RepoMatrix::scale(scale);
+		EXPECT_THAT(m.scale(), VectorNear(scale));
+	}
+
+	{
+		auto scale = repo::lib::RepoVector3D64(0.1, 2, 30);
+		auto translation = repo::lib::RepoVector3D64(10, 20, 30);
+		auto m = repo::lib::RepoMatrix::translate(translation) * repo::lib::RepoMatrix::scale(scale);
+		EXPECT_THAT(m.scale(), VectorNear(scale));
+	}
+
+	{
+		auto scale = repo::lib::RepoVector3D64(1, 1, 1);
+		auto translation = repo::lib::RepoVector3D64(10, 20, 30);
+		auto m = repo::lib::RepoMatrix::translate(translation) * repo::lib::RepoMatrix::rotationX(RAD(13)) * repo::lib::RepoMatrix::rotationY(RAD(27)) * repo::lib::RepoMatrix::rotationZ(RAD(41));
+		EXPECT_THAT(m.scale(), VectorNear(scale));
+	}
+
+	{
+		auto scale = repo::lib::RepoVector3D64(2, 2, 2);
+		auto translation = repo::lib::RepoVector3D64(10, 20, 30);
+		auto m = repo::lib::RepoMatrix::translate(translation) * repo::lib::RepoMatrix::scale(scale) * repo::lib::RepoMatrix::rotationX(RAD(13)) * repo::lib::RepoMatrix::rotationY(RAD(27)) * repo::lib::RepoMatrix::rotationZ(RAD(41));
+		EXPECT_THAT(m.scale(), VectorNear(scale));
+	}
+
+	// The scale extraction should show a non-uniform scale when a shear is combined
+	// with a rotation - in this case we can't assume we get the exact scale because
+	// this case is underdetermined.
+
+	{
+		auto scale = repo::lib::RepoVector3D64(0.1, 2, 30);
+		auto translation = repo::lib::RepoVector3D64(10, 20, 30);
+		auto m = repo::lib::RepoMatrix::translate(translation) * repo::lib::RepoMatrix::scale(scale) * repo::lib::RepoMatrix::rotationX(RAD(13)) * repo::lib::RepoMatrix::rotationY(RAD(27)) * repo::lib::RepoMatrix::rotationZ(RAD(41));
+		EXPECT_THAT(m.scale().x != 1, IsTrue());
+		EXPECT_THAT(m.scale().y != 1, IsTrue());
+		EXPECT_THAT(m.scale().z != 1, IsTrue());
+	}
 }
 
 TEST(RepoMatrixTest, AxisAngleRotation)

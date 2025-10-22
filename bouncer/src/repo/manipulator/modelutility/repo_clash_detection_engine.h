@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <exception>
 #include <repo/repo_bouncer_global.h>
 #include <repo/lib/datastructure/repo_vector.h>
 #include <repo/manipulator/modelutility/repo_clash_detection_config_fwd.h>
@@ -59,7 +60,6 @@ namespace repo {
 			{
 				std::vector<ClashDetectionResult> clashes;
 			};
-
 
 			REPO_API_EXPORT class ClashDetectionEngine
 			{
