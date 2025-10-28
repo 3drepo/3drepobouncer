@@ -19,6 +19,7 @@
 #include "clash_scheduler.h"
 #include "clash_node_cache.h"
 #include "clash_exceptions.h"
+#include "clash_constants.h"
 #include "sparse_scene_graph.h"
 
 #include <repo/lib/datastructure/repo_matrix.h>
@@ -38,15 +39,6 @@
 using namespace repo::lib;
 using namespace repo::manipulator::modelutility;
 using namespace repo::manipulator::modelutility::clash;
-
-// Maximum supported dimension on any axis (positive or negative) for vertices
-// and translation components, respectively.
-// Currently the engine has a fixed supported input range so these are set at
-// compile time. In the future we may support dynamic limits for adaptive
-// accuracy levels.
-
-#define MESH_LIMIT 8e6
-#define TRANSLATION_LIMIT 1e11
 
 using ContainerGroups = std::unordered_map<repo::lib::Container*, std::vector<repo::lib::RepoUUID>>;
 using Bvh = bvh::Bvh<double>;
@@ -147,9 +139,10 @@ static bool isWithinLimits(const Bvh::Node& node, double limit)
 static bool validateSceneGraph(const Graph& graph)
 {
 	// This method traverses the scene graph looking for any nodes where (a) the
-	// matrix has a translation of more than 1e11, or the scaled mesh bounds
-	// exceed 8e6: these situations are not supported, because they can lead to
-	// rounding errors beyond our guaranteed accuracy range.
+	// matrix has a translation of more than TRANSLATION_LIMIT (1e11), or the
+	// scaled mesh bounds exceed MESH_LIMIT (8e6): these situations are not
+	// supported, because they can lead to rounding errors beyond our guaranteed
+	// accuracy range.
 
 	std::stack<size_t> nodesToProcess;
 	nodesToProcess.push(0);
@@ -159,14 +152,14 @@ static bool validateSceneGraph(const Graph& graph)
 		nodesToProcess.pop();
 		bvh::BoundingBox<double> bb = node.bounding_box_proxy();
 
-		// The bvh is constructed in world space, so if a box is within 8e6, we
-		// know the mesh and all transforms involved will be within limits without
+		// The bvh is constructed in world space, so if a box is within the mesh limits,
+		// we know the mesh and all transforms involved will be within limits without
 		// further checks and can terminate early.
 
 		if (!isWithinLimits(node, MESH_LIMIT)) {
 			if (node.is_leaf()) {
 
-				// For leaf nodes, check how the mesh bounds grow beyond 8e6 and
+				// For leaf nodes, check how the mesh bounds grow beyond the mesh limits and
 				// ensure it is via an acceptable transform.
 
 				for (auto i = 0; i < node.primitive_count; i++) {
@@ -181,7 +174,7 @@ static bool validateSceneGraph(const Graph& graph)
 					// that scale decomposition is potentially lossy.
 					// As the purpose of this test is to ensure effective scale does not
 					// introduce significant error into the single-precision vertices, we only
-					// care about changes greater than the ULP of the supported range (8e6).
+					// care about changes greater than the ULP of the supported range.
 
 					auto scaledBounds = meshNode.matrix.scale() * meshBounds;
 					if (!isWithinLimits(scaledBounds, MESH_LIMIT + 1)) {

@@ -23,7 +23,7 @@
 
 using namespace::repo::manipulator::modelutility::clash;
 
-ClashScheduler::ClashScheduler(std::vector<std::pair<int, int>> broadphaseResults)
+ClashScheduler::ClashScheduler(std::vector<std::pair<size_t, size_t>> broadphaseResults)
 {
 	createGraph(broadphaseResults);
 
@@ -71,7 +71,7 @@ void ClashScheduler::sortByEdges(std::vector<Node*>& set)
 	});
 }
 
-void ClashScheduler::addNode(size_t index, std::unordered_map<int, int>& map) 
+void ClashScheduler::addNode(size_t index, std::unordered_map<size_t, size_t>& map)
 {
 	auto it = map.find(index);
 	if (it == map.end()) {
@@ -80,10 +80,10 @@ void ClashScheduler::addNode(size_t index, std::unordered_map<int, int>& map)
 	}
 }
 
-void ClashScheduler::createGraph(std::vector<std::pair<int, int>> edges)
+void ClashScheduler::createGraph(std::vector<std::pair<size_t, size_t>> edges)
 {
-	std::unordered_map<int, int> nodesA;
-	std::unordered_map<int, int> nodesB;
+	std::unordered_map<size_t, size_t> nodesA;
+	std::unordered_map<size_t, size_t> nodesB;
 
 	for (const auto& e : edges) {
 		addNode(e.first, nodesA);
@@ -125,7 +125,7 @@ bool ClashScheduler::Node::remove(Edge e)
 	return edges.size();
 }
 
-void ClashScheduler::schedule(std::vector<std::pair<int, int>>& broadphaseResults)
+void ClashScheduler::schedule(std::vector<std::pair<size_t, size_t>>& broadphaseResults)
 {
 	ClashScheduler scheduler(broadphaseResults);
 	broadphaseResults.swap(scheduler.results);

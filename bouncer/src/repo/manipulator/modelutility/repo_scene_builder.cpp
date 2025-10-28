@@ -33,6 +33,7 @@
 
 using namespace repo::manipulator::modelutility;
 using namespace repo::core::model;
+using namespace repo::lib;
 
 // 500 Mb
 #define DEFAULT_THRESHOLD 1024*1024*500
@@ -159,7 +160,7 @@ RepoSceneBuilder::RepoSceneBuilder(
 	nodeCount(0),
 	isMissingTextures(false),
 	offset({}),
-	units(repo::manipulator::modelconvertor::ModelUnits::UNKNOWN),
+	units(repo::lib::ModelUnits::UNKNOWN),
 	impl(std::make_unique<AsyncImpl>(this))
 {
 }
@@ -355,12 +356,12 @@ bool RepoSceneBuilder::hasMissingTextures()
 	return isMissingTextures;
 }
 
-void RepoSceneBuilder::setUnits(repo::manipulator::modelconvertor::ModelUnits units) 
+void RepoSceneBuilder::setUnits(ModelUnits units) 
 {
 	this->units = units;
 }
 
-repo::manipulator::modelconvertor::ModelUnits RepoSceneBuilder::getUnits()
+ModelUnits RepoSceneBuilder::getUnits()
 {
 	return this->units;
 }

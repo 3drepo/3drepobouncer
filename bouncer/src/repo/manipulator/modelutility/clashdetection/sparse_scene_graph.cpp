@@ -28,8 +28,10 @@
 #include <repo/core/model/bson/repo_node_model_revision.h>
 #include <repo/core/model/bson/repo_node_transformation.h>
 #include <repo/core/model/bson/repo_node_streaming_mesh.h>
+#include <repo/core/model/bson/repo_bson_project_settings.h>
 
 using namespace repo::manipulator::modelutility::sparse;
+using namespace repo::lib;
 
 void SceneGraph::populate(
 	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
@@ -97,17 +99,12 @@ void SceneGraph::populate(
 					auto& instance = nodes[uniqueId];
 					instance.matrix = repo::lib::RepoMatrix(transform.getTransMatrix()) * instance.matrix;
 
-					// Transforms are not stored in the sparse graph - instead, make the
-					// pre-multiplied mesh node appear as if its the direct child of the
-					// next level up.
-
 					if (children) {
 						children->push_back(uniqueId);
 					}
 				}
 
 				parentToChild.erase(node.getSharedID());
-
 			} 
 			else if (type == REPO_NODE_TYPE_MESH)
 			{
@@ -130,17 +127,26 @@ void SceneGraph::populate(
 		useSharedId = true;
 	}
 
-	// The final step is to premultiply the world offset.
+	// The final step is to premultiply the world offset and units
 
-	auto bson = handler->findOneByCriteria(
+	repo::core::model::ModelRevisionNode history(handler->findOneByCriteria(
 		container->teamspace,
 		container->container + "." + REPO_COLLECTION_HISTORY,
 		repo::core::handler::database::query::Eq(REPO_NODE_LABEL_ID, container->revision)
-	);
-	repo::core::model::ModelRevisionNode history(bson);
-
+	));
 	auto offset = history.getCoordOffset();
-	auto rootTransform = repo::lib::RepoMatrix::translate(offset);
+
+	// In the future we may want to store the units with the revision node, as then
+	// it is unambiguous what scale was applied on import for BIM formats
+
+	repo::core::model::RepoProjectSettings settings(handler->findOneByCriteria(
+		container->teamspace,
+		REPO_COLLECTION_SETTINGS,
+		repo::core::handler::database::query::Eq(REPO_NODE_LABEL_ID, container->container)
+	));
+	auto scale = units::determineScaleFactor(settings.getUnits(), ModelUnits::MILLIMETRES);
+
+	auto rootTransform = repo::lib::RepoMatrix::scale(scale) * repo::lib::RepoMatrix::translate(offset);
 	for(auto& id : uniqueIds)
 	{
 		auto& node = nodes[id];

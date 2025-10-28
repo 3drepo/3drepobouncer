@@ -28,7 +28,7 @@
 #include <repo_log.h>
 #include "repo/lib/datastructure/repo_uuid.h"
 #include "repo/repo_bouncer_global.h"
-#include "repo_model_units.h"
+#include "repo/lib/repo_units.h"
 
 namespace repo {
 	namespace manipulator {
@@ -39,7 +39,7 @@ namespace repo {
 				bool importAnimations;
 				int lod;
 				std::string timeZone;
-				ModelUnits targetUnits;
+				repo::lib::ModelUnits targetUnits;
 				repo::lib::RepoUUID revisionId;
 				std::string databaseName;
 				std::string projectName;
@@ -51,7 +51,7 @@ namespace repo {
 
 				ModelImportConfig(
 					bool importAnimations,
-					ModelUnits targetUnits,
+					repo::lib::ModelUnits targetUnits,
 					std::string timeZone,
 					int lod,
 					repo::lib::RepoUUID revisionId,
@@ -67,7 +67,7 @@ namespace repo {
 
 				bool shouldImportAnimations() const { return importAnimations; }
 				std::string getTimeZone() const { return timeZone; }
-				ModelUnits getTargetUnits() const { return targetUnits; }
+				repo::lib::ModelUnits getTargetUnits() const { return targetUnits; }
 				int getLevelOfDetail() const { return lod; }
 				repo::lib::RepoUUID getRevisionId() const { return revisionId; }
 				std::string getDatabaseName() const { return databaseName; }

@@ -22,6 +22,7 @@
 #pragma once
 
 #include "repo/repo_bouncer_global.h"
+#include "repo/lib/repo_units.h"
 #include <string>
 #include <ctime>
 
@@ -33,6 +34,8 @@ namespace repo {
 
 			#define REPO_PROJECT_SETTINGS_LABEL_STATUS "status"
 			#define REPO_PROJECT_SETTINGS_LABEL_TIMESTAMP "timestamp"
+			#define REPO_PROJECT_SETTINGS_LABEL_PROPERTIES "properties"
+			#define REPO_PROJECT_SETTINGS_LABEL_UNITS "unit"
 
 			class REPO_API_EXPORT RepoProjectSettings
 			{
@@ -61,9 +64,15 @@ namespace repo {
 					return status;
 				}
 
+				const repo::lib::ModelUnits getUnits() const
+				{
+					return units;
+				}
+
 			private:
 				std::string id;
 				std::string status;
+				repo::lib::ModelUnits units;
 			};
 		}// end namespace model
 	} // end namespace core

@@ -24,6 +24,7 @@
 #include "repo_model_import_config.h"
 
 using namespace repo::manipulator::modelconvertor;
+using namespace repo::lib;
 
 ModelImportConfig::ModelImportConfig() :
 	importAnimations(true),
@@ -67,7 +68,7 @@ std::string ModelImportConfig::prettyPrint()
 {
 	return (" database: " + databaseName
 		+ " project: " + projectName
-		+ " target units: " + toUnitsString(targetUnits)
+		+ " target units: " + units::toUnitsString(targetUnits)
 		+ " importAnimations: " + (importAnimations ? "true" : "false")
 		+ " lod: " + std::to_string(lod)
 		+ " revisionId: " + revisionId.toString()

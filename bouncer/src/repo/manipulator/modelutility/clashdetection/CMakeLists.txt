@@ -18,6 +18,7 @@ set(SOURCES
 set(HEADERS
 	${HEADERS}
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_clearance.h
+	${CMAKE_CURRENT_SOURCE_DIR}/clash_constants.h
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_exceptions.h
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_hard.h
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_node_cache.h

@@ -360,6 +360,16 @@ _RepoMatrix<T> _RepoMatrix<T>::scale(lib::_RepoVector3D<T> s)
 	return m;
 }
 
+template<typename T>
+_RepoMatrix<T> _RepoMatrix<T>::scale(T s)
+{
+	_RepoMatrix<T> m;
+	m.data[0] = s;
+	m.data[5] = s;
+	m.data[10] = s;
+	return m;
+}
+
 /**
 * Matrix x vector multiplication
 * NOTE: this assumes matrix has row as fast dimension!

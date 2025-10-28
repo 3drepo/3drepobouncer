@@ -26,6 +26,7 @@
 #include <boost/filesystem.hpp>
 
 using namespace repo::manipulator::modelconvertor;
+using namespace repo::lib;
 
 IFCModelImport::IFCModelImport(const ModelImportConfig &settings) :
 	AbstractModelImport(settings),

@@ -18,6 +18,7 @@
 #pragma once
 
 #include <repo/manipulator/modelutility/repo_clash_detection_config.h>
+#include <repo/manipulator/modelutility/clashdetection/clash_constants.h>
 #include <repo/lib/datastructure/repo_container.h>
 #include <repo/lib/datastructure/repo_uuid.h>
 #include <repo/lib/datastructure/repo_matrix.h>
@@ -70,7 +71,7 @@ namespace testing {
 		// bounds of a single mesh, since two meshes of that size may be placed
 		// side-by-side in a cell.
 
-		CellDistribution(size_t cellSize = 16e6, size_t spaceSize = 1e11);
+		CellDistribution(size_t cellSize = MESH_LIMIT * 2, size_t spaceSize = TRANSLATION_LIMIT);
 
 		// Gets a cell from the distribution, using uniform sampling. Each cell may
 		// only be returned once for a given distribution.
@@ -97,8 +98,8 @@ namespace testing {
 		// The scenes are generated using the inbuilt rng object, using a subset of the
 		// following ranges. Which ranges are used depends on the scene being generated.
 
-		Range size1 = { 0.001, 8e6 };
-		Range size2 = { 0.001, 8e6 };
+		Range size1 = { 0.001, MESH_LIMIT };
+		Range size2 = { 0.001, MESH_LIMIT };
 
 		Range distance = { 0, 100 };
 

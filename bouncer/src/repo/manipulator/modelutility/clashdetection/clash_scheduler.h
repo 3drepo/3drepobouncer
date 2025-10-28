@@ -53,10 +53,10 @@ namespace repo {
 				class ClashScheduler
 				{
 				public:
-					static void schedule(std::vector<std::pair<int, int>>& broadphaseResults);
+					static void schedule(std::vector<std::pair<size_t, size_t>>& broadphaseResults);
 
 				private:
-					ClashScheduler(std::vector<std::pair<int, int>> broadphaseResults);
+					ClashScheduler(std::vector<std::pair<size_t, size_t>> broadphaseResults);
 
 					struct Node;
 
@@ -84,11 +84,11 @@ namespace repo {
 
 					std::vector<Node*> allNodes;
 
-					std::vector<std::pair<int, int>> results;
+					std::vector<std::pair<size_t, size_t>> results;
 
-					void createGraph(std::vector<std::pair<int, int>> edges);
+					void createGraph(std::vector<std::pair<size_t, size_t>> edges);
 
-					void addNode(size_t index, std::unordered_map<int, int>& map);
+					void addNode(size_t index, std::unordered_map<size_t, size_t>& map);
 
 					void remove(Edge e);
 

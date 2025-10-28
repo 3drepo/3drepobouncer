@@ -18,7 +18,7 @@
 #pragma once
 
 #include "repo/error_codes.h"
-#include "repo/manipulator/modelconvertor/import/repo_model_units.h"
+#include "repo/lib/repo_units.h"
 #include "repo/lib/datastructure/repo_structs.h"
 #include "repo/manipulator/modelutility/repo_scene_builder.h"
 #include "repo/core/model/bson/repo_bson_factory.h"
@@ -122,7 +122,7 @@ namespace repo {
 						sceneBuilder->addMaterialReference(material, parentId);
 					}
 
-					void setUnits(repo::manipulator::modelconvertor::ModelUnits units) {
+					void setUnits(repo::lib::ModelUnits units) {
 						sceneBuilder->setUnits(units);
 					}
 

@@ -21,11 +21,13 @@
 
 #include "repo/core/model/bson/repo_bson_factory.h"
 #include <repo_log.h>
+#include "repo/lib/repo_units.h"
 #include "repo/lib/datastructure/repo_matrix.h"
 #include "repo/lib/datastructure/repo_bounds.h"
 #include "repo/error_codes.h"
 
 using namespace repo::manipulator::modelconvertor;
+using namespace repo::lib;
 
 const std::string RESOURCE_ID_NAME = "Resource ID";
 const std::string DEFAULT_SEQUENCE_NAME = "Unnamed Sequence";
@@ -287,25 +289,11 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 	auto identity = repo::lib::RepoMatrix();
 	determineUnits(reader->getUnits());
 
-	auto unitsScale = determineScaleFactor(modelUnits, settings.getTargetUnits());
-	auto reverseUnitsScale = determineScaleFactor(settings.getTargetUnits(), modelUnits);
+	auto unitsScale = units::determineScaleFactor(modelUnits, settings.getTargetUnits());
+	auto reverseUnitsScale = units::determineScaleFactor(settings.getTargetUnits(), modelUnits);
 
-	std::vector<float> scalingMatrixArr = {
-		unitsScale, 0, 0, 0,
-		0, unitsScale, 0, 0,
-		0, 0, unitsScale, 0,
-		0, 0, 0, 1
-	};
-
-	std::vector<float> reverseScalingMatrixArr = {
-		reverseUnitsScale, 0, 0, 0,
-		0, reverseUnitsScale, 0, 0,
-		0, 0, reverseUnitsScale, 0,
-		0, 0, 0, 1
-	};
-
-	scaleMatrix = repo::lib::RepoMatrix(scalingMatrixArr);
-	reverseScaleMatrix = repo::lib::RepoMatrix(reverseScalingMatrixArr);
+	scaleMatrix = repo::lib::RepoMatrix::scale(unitsScale);
+	reverseScaleMatrix = repo::lib::RepoMatrix::scale(reverseUnitsScale);
 
 	auto root = createTransNode(identity, reader->getProjectName());
 	transNodes.insert(root);

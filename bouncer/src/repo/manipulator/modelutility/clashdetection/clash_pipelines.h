@@ -41,9 +41,11 @@ namespace repo {
 				// Therefore stages are implemented as functors, which can be created and
 				// re-used (per thread, where necessary).
 
+				using BroadphaseResults = std::vector<std::pair<size_t, size_t>>;
+
 				struct Broadphase
 				{
-					virtual void operator()(const Bvh& a, const Bvh& b, std::vector<std::pair<int, int>>& results) = 0;
+					virtual void operator()(const Bvh& a, const Bvh& b, BroadphaseResults& results) = 0;
 				};
 
 				struct Narrowphase
@@ -100,7 +102,6 @@ namespace repo {
 				public:
 					using DatabasePtr = std::shared_ptr<repo::core::handler::AbstractDatabaseHandler>;
 					using RepoUUIDMap = std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>;
-					using BroadphaseResults = std::vector<std::pair<int, int>>;
 
 					Pipeline(DatabasePtr, const repo::manipulator::modelutility::ClashDetectionConfig&);
 					ClashDetectionReport runPipeline();

@@ -45,6 +45,7 @@ using namespace testing;
 using namespace repo::manipulator::modelconvertor;
 using namespace repo::manipulator::modelutility;
 using namespace repo;
+using namespace repo::lib;
 
 #define TESTDB "SelectionTreeTest"
 

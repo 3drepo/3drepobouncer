@@ -30,6 +30,7 @@
 #include "../../../../repo_test_common_tests.h"
 
 using namespace repo::manipulator::modelconvertor;
+using namespace repo::lib;
 using namespace testing;
 using namespace repo::test::utils;
 

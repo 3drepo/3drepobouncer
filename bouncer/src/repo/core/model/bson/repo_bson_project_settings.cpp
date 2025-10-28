@@ -24,6 +24,7 @@
 #include <repo_log.h>
 
 using namespace repo::core::model;
+using namespace repo::lib;
 
 const std::string STATUS_OK = "ok";
 const std::string STATUS_ERROR = "error";
@@ -35,6 +36,15 @@ RepoProjectSettings::RepoProjectSettings(RepoBSON bson)
 	if (bson.hasField(REPO_PROJECT_SETTINGS_LABEL_STATUS))
 	{
 		status = bson.getStringField(REPO_PROJECT_SETTINGS_LABEL_STATUS);
+	}
+	units =ModelUnits::UNKNOWN;
+	if (bson.hasField(REPO_PROJECT_SETTINGS_LABEL_PROPERTIES)) 
+	{
+		auto properties = bson.getObjectField(REPO_PROJECT_SETTINGS_LABEL_PROPERTIES);
+		if (properties.hasField(REPO_PROJECT_SETTINGS_LABEL_UNITS)) 
+		{
+			units = units::fromString(properties.getStringField(REPO_PROJECT_SETTINGS_LABEL_UNITS));
+		}
 	}
 }
 

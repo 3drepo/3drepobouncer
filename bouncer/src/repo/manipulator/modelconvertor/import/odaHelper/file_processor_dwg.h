@@ -26,6 +26,7 @@
 #include "file_processor.h"
 #include "geometry_collector.h"
 #include "repo_system_services.h"
+#include "repo/lib/repo_units.h"
 
 namespace repo {
 	namespace manipulator {
@@ -52,7 +53,7 @@ namespace repo {
 				private:
 					void importModel(OdDbDatabasePtr pDb);
 					void importDrawing(OdDbDatabasePtr pDb);
-					ModelUnits determineModelUnits(const OdDb::UnitsValue units);
+					repo::lib::ModelUnits determineModelUnits(const OdDb::UnitsValue units);
 				};
 			}
 		}

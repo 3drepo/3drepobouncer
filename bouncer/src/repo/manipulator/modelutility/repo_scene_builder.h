@@ -24,7 +24,7 @@
 #include "repo/core/handler/fileservice/repo_file_handler_abstract.h"
 #include "repo/lib/datastructure/repo_structs.h"
 #include "repo/lib/datastructure/repo_variant.h"
-#include "repo/manipulator/modelconvertor/import/repo_model_units.h"
+#include "repo/lib/repo_units.h"
 
 #include <memory>
 #include <vector>
@@ -107,8 +107,8 @@ namespace repo {
 				void setMissingTextures();
 				bool hasMissingTextures();
 
-				void setUnits(repo::manipulator::modelconvertor::ModelUnits units);
-				repo::manipulator::modelconvertor::ModelUnits getUnits();
+				void setUnits(repo::lib::ModelUnits units);
+				repo::lib::ModelUnits getUnits();
 
 				/*
 				* Creates a common set of indices prior to import, to avoid Mongo having to build
@@ -128,7 +128,7 @@ namespace repo {
 				// All nodes will be committed with this as the revision id
 				repo::lib::RepoUUID revisionId;
 
-				repo::manipulator::modelconvertor::ModelUnits units;
+				repo::lib::ModelUnits units;
 
 				std::string databaseName;
 				std::string projectName;

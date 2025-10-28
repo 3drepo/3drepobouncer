@@ -30,6 +30,7 @@
 #include "repo/manipulator/modelconvertor/import/odaHelper/file_processor_nwd.h"
 
 using namespace repo::manipulator::modelconvertor;
+using namespace repo::lib;
 using namespace repo::core::model;
 using namespace testing;
 

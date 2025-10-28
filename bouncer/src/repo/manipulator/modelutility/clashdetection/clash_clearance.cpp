@@ -72,7 +72,7 @@ struct ClearanceBroadphase: public Broadphase
 
 	std::stack<std::pair<size_t, size_t>> pairs;
 
-	void operator()(const Bvh& a, const Bvh& b, std::vector<std::pair<int, int>>& results) override
+	void operator()(const Bvh& a, const Bvh& b, BroadphaseResults& results) override
 	{
 		pairs.push({ 0, 0 });
 		while (!pairs.empty())

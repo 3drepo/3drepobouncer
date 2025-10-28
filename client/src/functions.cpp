@@ -17,8 +17,10 @@
 
 #include "functions.h"
 
+#include <repo/lib/repo_units.h>
 #include <repo/core/model/bson/repo_bson.h>
 #include <repo/core/model/bson/repo_bson_factory.h>
+#include <repo/manipulator/modelutility/repo_clash_detection_config.h>
 
 #include <sstream>
 #include <fstream>
@@ -28,7 +30,7 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/filesystem.hpp>
 
-#include <repo/manipulator/modelutility/repo_clash_detection_config.h>
+using namespace repo::lib;
 
 static const std::string FBX_EXTENSION = ".FBX";
 
@@ -346,16 +348,6 @@ int32_t generateStash(
 	return success ? REPOERR_OK : REPOERR_STASH_GEN_FAIL;
 }
 
-repo::manipulator::modelconvertor::ModelUnits determineUnits(const std::string& units) {
-	if (units == "m") return repo::manipulator::modelconvertor::ModelUnits::METRES;
-	if (units == "cm") return repo::manipulator::modelconvertor::ModelUnits::CENTIMETRES;
-	if (units == "mm") return repo::manipulator::modelconvertor::ModelUnits::MILLIMETRES;
-	if (units == "dm") return repo::manipulator::modelconvertor::ModelUnits::DECIMETRES;
-	if (units == "ft") return repo::manipulator::modelconvertor::ModelUnits::FEET;
-
-	return repo::manipulator::modelconvertor::ModelUnits::UNKNOWN;
-}
-
 void performClashDetection(
 	std::shared_ptr<repo::RepoController> controller,
 	const repo::RepoController::RepoToken* token,
@@ -407,7 +399,7 @@ int32_t importFileAndCommit(
 			config.databaseName = jsonTree.get<std::string>("database", "");
 			config.projectName = jsonTree.get<std::string>("project", "");
 			config.timeZone = jsonTree.get<std::string>("timezone", config.timeZone);
-			config.targetUnits = determineUnits(jsonTree.get<std::string>("units", ""));
+			config.targetUnits = units::fromString(jsonTree.get<std::string>("units", ""));
 			config.lod = jsonTree.get<int>("lod", config.lod);
 			config.importAnimations = jsonTree.get<bool>("importAnimations", config.importAnimations);
 			config.viewName = jsonTree.get<std::string>("view", config.viewName);

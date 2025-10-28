@@ -19,8 +19,6 @@
 
 #include "repo/lib/datastructure/repo_vector.h"
 
-//#pragma optimize("", off)
-
 using namespace testing;
 using namespace repo::core::model;
 using namespace repo::manipulator::modelutility;
@@ -182,8 +180,7 @@ void ClashGenerator::shiftTriangles(repo::lib::RepoTriangle& b)
 void ClashGenerator::moveB(TransformTriangles& problem, const repo::lib::RepoRange& range)
 {
 	// As this method will modify the vertices before the downcast, we may only
-	// apply transforms that do not move the vertex beyond the supported range
-	// (default 8e6).
+	// apply transforms that do not move the vertex beyond the supported range.
 
 	// This method serves to move triangle B to a random location, improving the
 	// sampling, but it also ensures that B ends within the supported range if it
@@ -467,7 +464,7 @@ TransformTriangles testing::ClashGenerator::createTrianglesEE(const repo::lib::R
 	// Like VE, but with the second triangle's meeting vertex being somwhere
 	// along the first's edge.
 
-	BoundedContext ctx(random, 8e6);
+	BoundedContext ctx(random, MESH_LIMIT);
 
 	repo::lib::RepoTriangle a(
 		ctx.vector({ 0, 0 }, { 0, size1.max() }, { 0, 0 }),

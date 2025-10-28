@@ -25,6 +25,7 @@
 
 using namespace testing;
 using namespace repo::manipulator::modelutility;
+using namespace repo::lib;
 
 // Unit tests using use the ClashDetectionDatabaseHelper all use the ClashDetection
 // database. This is a dump from a fully functional teamspace. Once restored,
@@ -128,7 +129,7 @@ std::unique_ptr<repo::lib::Container> ClashDetectionDatabaseHelper::getContainer
 
 	auto settings = handler->findOneByCriteria(
 		TESTDB,
-		"settings",
+		REPO_COLLECTION_SETTINGS,
 		repo::core::handler::database::query::Eq(REPO_NODE_LABEL_NAME, name)
 	);
 	container->container = settings.getStringField(REPO_NODE_LABEL_ID);

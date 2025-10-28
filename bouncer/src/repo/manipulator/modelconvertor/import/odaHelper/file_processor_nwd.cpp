@@ -19,7 +19,7 @@
 #include "file_processor_nwd.h"
 #include "data_processor_nwd.h"
 #include "repo_system_services.h"
-#include "repo/manipulator/modelconvertor/import/repo_model_units.h"
+#include "repo/lib/repo_units.h"
 #include "helper_functions.h"
 
 // ODA
@@ -31,7 +31,7 @@
 #include <NwDatabase.h>
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
-using ModelUnits = repo::manipulator::modelconvertor::ModelUnits;
+using namespace repo::lib;
 
 static OdString sNwDbModuleName = L"TNW_Db";
 

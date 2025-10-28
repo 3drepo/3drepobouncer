@@ -69,12 +69,6 @@ using namespace repo::manipulator::modelutility;
 
 #define TESTDB "ClashDetection"
 
-std::ostream& operator<<(std::ostream& os, const repo::lib::RepoTriangle& t)
-{
-	os << "Triangle(" << t.a << " -> " << t.b << " -> " << t.c << ")";
-	return os;
-}
-
 TEST(Clash, SparseSceneGraph)
 {
 	// Tests a composite scene graph from across two Containers, including multiple
@@ -327,7 +321,7 @@ TEST(Clash, Scheduler)
 	// order is optimal, just that all the original broadphase tests still
 	// exist, with no duplicates.
 
-	std::vector<std::pair<int, int>> broadphaseResults;
+	clash::BroadphaseResults broadphaseResults;
 
 	RepoRandomGenerator random;
 
@@ -618,7 +612,7 @@ TEST(Clash, AccuracyReport)
 	// Test the accuracy of the end-to-end pipeline in Clearance mode, for multiple
 	// problem configurations.
 
-	//GTEST_SKIP(); // Disable this test unless we need to gather more data.
+	GTEST_SKIP(); // Disable this test unless we need to gather more data.
 
 	ClashGenerator clashGenerator;
 
@@ -924,11 +918,11 @@ TEST(Clash, Clearance1)
 
 TEST(Clash, SupportedRanges)
 {
-	// If a mesh is greater than 8e6 in any dimension after being subject to scale,
-	// or two transformations have a difference in offset greater than 1e11,
-	// then we cannot guarantee accuracy of the algorithm as the precision in the
-	// original vertices will have been lost.
-	// In this case we should issue a warning and refuse to return any results.
+	// If a mesh is greater than the mesh limits in any dimension after being subject
+	// to scale, or two transformations have a difference in offset greater than the
+	// translation limit, then we cannot guarantee accuracy of the algorithm as the
+	// precision in the original vertices will have been lost. In this case we should
+	// issue a warning and refuse to return any results.
 
 	auto db = std::make_shared<MockDatabase>();
 
@@ -936,11 +930,11 @@ TEST(Clash, SupportedRanges)
 	clashGenerator.distance = 1;
 	
 	{
-		// These settings will generate primitives that are larger than 8e6 in at
-		// least one dimension.
+		// These settings will generate primitives that are larger than the mesh limit
+		// in at least one dimension.
 
-		clashGenerator.size1 = 8e8;
-		clashGenerator.size2 = 8e8;
+		clashGenerator.size1 = MESH_LIMIT + 1e6;
+		clashGenerator.size2 = MESH_LIMIT + 1e6;
 
 		ClashDetectionConfigHelper config;
 		config.type = ClashDetectionType::Clearance;
@@ -1093,12 +1087,45 @@ TEST(Clash, Fingerprinting)
 	}
 }
 
+TEST(Clash, Units)
+{
+	// The clash engine should respect the units in the model settings, with
+	// clashes only being detected when units are properly applied, including
+	// where clash detection sets mix containers of different units.
+
+	auto handler = getHandler();
+	ClashDetectionConfig config;
+
+	ClashDetectionDatabaseHelper helper(handler);
+
+	auto m = helper.getContainerByName("cone_m");
+	auto mm = helper.getContainerByName("cone_mm");
+	auto ft = helper.getContainerByName("cone_ft");
+
+
+	helper.createCompositeObjectsByMetadataValue(config.setA, m.get(), "Cone");
+
+	helper.createCompositeObjectsByMetadataValue(config.setB, mm.get(), "Cone");
+	helper.createCompositeObjectsByMetadataValue(config.setB, ft.get(), "Cone");
+
+	config.tolerance = 10; // 10 mm
+	auto pipeline = new clash::Clearance(handler, config);
+	auto results = pipeline->runPipeline();
+
+	EXPECT_THAT(results.clashes.size(), Eq(2));
+
+	// Clash results though are always given in mm, in Project Coordinates.
+
+	for (const auto& clash : results.clashes) {
+		for (const auto& position : clash.positions) {
+			EXPECT_THAT(position, VectorNear(repo::lib::RepoVector3D64(-2540.357666, 0.000075, -1926.315186), 1));
+		}
+	}
+}
+
 TEST(Clash, ResultsSerialisation)
 {
 	
-
-
-
 }
 
 TEST(Clash, SelfClearance)

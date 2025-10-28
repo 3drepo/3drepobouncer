@@ -31,8 +31,7 @@
 #include <Base/BmSpecTypeId.h>
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
-
-using ModelUnits = repo::manipulator::modelconvertor::ModelUnits;
+using ModelUnits = repo::lib::ModelUnits;
 
 static const char* ODA_CSV_LOCATION = "ODA_CSV_LOCATION";
 static const std::string REVIT_ELEMENT_ID = "Element ID";

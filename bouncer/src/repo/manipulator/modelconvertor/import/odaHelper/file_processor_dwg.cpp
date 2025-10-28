@@ -170,8 +170,8 @@ void FileProcessorDwg::importDrawing(OdDbDatabasePtr pDb)
 
 		const OdGsView* pGsView = pDeviceSvg->viewAt(0);
 		updateDrawingHorizontalCalibration(pGsView, drawingCollector->calibration);
-		repo::manipulator::modelconvertor::ModelUnits units = determineModelUnits(pDb->getINSUNITS());
-		drawingCollector->calibration.units = repo::manipulator::modelconvertor::toUnitsString(units);
+		repo::lib::ModelUnits units = determineModelUnits(pDb->getINSUNITS());
+		drawingCollector->calibration.units = repo::lib::units::toUnitsString(units);
 
 		// Render the SVG
 
@@ -187,17 +187,17 @@ void FileProcessorDwg::importDrawing(OdDbDatabasePtr pDb)
 	}
 }
 
-repo::manipulator::modelconvertor::ModelUnits FileProcessorDwg::determineModelUnits(const OdDb::UnitsValue units){
+repo::lib::ModelUnits FileProcessorDwg::determineModelUnits(const OdDb::UnitsValue units){
 	switch (units) {
-		case OdDb::kUnitsMeters: return ModelUnits::METRES;
-		case OdDb::kUnitsDecimeters: return ModelUnits::DECIMETRES;
-		case OdDb::kUnitsCentimeters: return ModelUnits::CENTIMETRES;
-		case OdDb::kUnitsMillimeters: return ModelUnits::MILLIMETRES;
-		case OdDb::kUnitsFeet: return ModelUnits::FEET;
-		case OdDb::kUnitsInches: return ModelUnits::INCHES;
+		case OdDb::kUnitsMeters: return repo::lib::ModelUnits::METRES;
+		case OdDb::kUnitsDecimeters: return repo::lib::ModelUnits::DECIMETRES;
+		case OdDb::kUnitsCentimeters: return repo::lib::ModelUnits::CENTIMETRES;
+		case OdDb::kUnitsMillimeters: return repo::lib::ModelUnits::MILLIMETRES;
+		case OdDb::kUnitsFeet: return repo::lib::ModelUnits::FEET;
+		case OdDb::kUnitsInches: return repo::lib::ModelUnits::INCHES;
 		default:
 			repoWarning << "Unrecognised unit measure: " << (int)units;
-			return ModelUnits::UNKNOWN;
+			return repo::lib::ModelUnits::UNKNOWN;
 	}
 }
 

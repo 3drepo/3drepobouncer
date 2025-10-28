@@ -76,6 +76,8 @@ namespace repo {
 
 			static _RepoMatrix<T> scale(lib::_RepoVector3D<T> s);
 
+			static _RepoMatrix<T> scale(T s);
+
 		private:
 			T data[16];
 		};
