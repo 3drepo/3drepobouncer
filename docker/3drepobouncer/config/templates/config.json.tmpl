@@ -1,0 +1,33 @@
+{
+    "logLocation": "/tmp/bouncer.log",
+	"umask": 2,
+	"rabbitmq": {
+		"host": "amqp://{{ getv "/app/queue/bouncer/username" }}:{{ getv "/app/queue/bouncer/password" }}@{{ getv "/app/queue/dns" }}:5672",{{if exists "/app/queue/jobq"}}
+		"worker_queue": "{{getv "/app/queue/jobq"}}",{{end}}
+		"callback_queue": "{{getv "/app/queue/callbackq"}}",{{if exists "/app/queue/modelq"}}
+		"model_queue": "{{getv "/app/queue/modelq"}}",{{if exists "/app/queue/drawingq"}}
+		"drawing_queue": "{{getv "/app/queue/drawingq"}}",{{end}}
+		"task_prefetch": 4,
+		"model_prefetch": 1,
+		"drawing_prefetch": 1,
+		"sharedDir": "{{getv "/app/efs/queue"}}"
+	},
+	"bouncer": {
+		"path" : "{{getv "/app/bouncer/bouncerbin"}}/3drepobouncerClient",
+		"log_dir" : "{{getv "/app/efs/queue"}}",
+		"envars": {
+			"REPO_RVT_TEXTURES": "/home/bouncer/revit_materials_edited"
+		}
+	},
+	"db": {
+		"dbhost" :"{{getv "/app/mongo/primary/dns"}}",
+		"dbport": {{getv "/app/mongo/primary/port"}},
+		"username" : "{{getv "/app/mongo/admin/username"}}",
+		"password" : "{{getv "/app/mongo/admin/password"}}"
+	},
+	"fs": {
+		"path" : "{{getv "/app/efs/models"}}",
+		"level": 2
+	},
+	"defaultStorage": "fs"
+}

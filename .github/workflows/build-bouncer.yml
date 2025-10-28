@@ -1,0 +1,107 @@
+name: Build and Push Bouncer
+
+on:
+  #  Manual trigger via GitHub UI (“Run workflow” button)
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Bouncer version or branch to build (e.g. tag, branch name, commit hash)"
+        required: true
+        default: "staging"  # Default branch for manual runs
+
+  #  Trigger when a user comments "/build-bouncer" on a PR
+  issue_comment:
+    types: [created]
+
+jobs:
+  build-bouncer:
+    # Only run the job if manually triggered OR the comment matches "/build-bouncer"
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issue_comment' &&
+       contains(github.event.comment.body, '/build-bouncer'))
+
+    runs-on: ubuntu-latest
+
+    env:
+      #Global environment variables used during the build
+      DOCKER_BUILDKIT: 1                # Enables modern Docker build system
+      LICENSE_CHECK: 1                  # Flag used by the Dockerfile for license verification
+      ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+      ACR_TOKEN: ${{ secrets.ACR_TOKEN }}
+      AZURE_REGISTRY: ${{ secrets.AZURE_REGISTRY }}
+      RSAKEY: ${{ secrets.RSAKEY }}
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+    steps:
+      # ---------------------------------------------------------------
+      # STEP 1: Checkout the source code
+      # ---------------------------------------------------------------
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          # 👇 This logic ensures flexibility for both triggers:
+          # - If manually triggered: use the input branch/version
+          # - If triggered via comment: default to 'staging' branch
+          ref: ${{ github.event.inputs.version || 'staging' }}
+
+      # ---------------------------------------------------------------
+      # STEP 2: Define build metadata
+      # ---------------------------------------------------------------
+      - name: Set build metadata
+        id: vars
+        run: |
+          # Generate timestamp for tagging the image
+          APP_BUILD_NOW=$(date '+%Y%m%d%H%M%S')
+          # Capture short commit hash for traceability
+          GIT_NOW=$(git rev-parse --short HEAD)
+          
+          # Expose variables to later steps
+          echo "app_build_now=$APP_BUILD_NOW" >> $GITHUB_OUTPUT
+          echo "git_now=$GIT_NOW" >> $GITHUB_OUTPUT
+          echo "version=${{ github.event.inputs.version || 'staging' }}" >> $GITHUB_OUTPUT
+
+          echo "######################################################"
+          echo "📦 Build Information:"
+          echo "Build Timestamp: $APP_BUILD_NOW"
+          echo "Git Commit: $GIT_NOW"
+          echo "Version: ${{ github.event.inputs.version || 'staging' }}"
+          echo "######################################################"
+
+      # ---------------------------------------------------------------
+      # STEP 3: Authenticate to Azure Container Registry (ACR)
+      # ---------------------------------------------------------------
+      - name: Log in to Azure Container Registry
+        run: echo "${ACR_TOKEN}" | docker login $AZURE_REGISTRY -u "${ACR_USERNAME}" --password-stdin
+
+      # ---------------------------------------------------------------
+      # STEP 4: Build and Push the Docker Image
+      # ---------------------------------------------------------------
+      - name: Build and push Docker image
+        run: |
+          VERSION="${{ steps.vars.outputs.version }}"
+          APP_BUILD_NOW="${{ steps.vars.outputs.app_build_now }}"
+
+          echo "🚀 Building Docker image for version: ${VERSION}"
+          
+          docker build --no-cache \
+            -t $AZURE_REGISTRY/3drepobouncer:${VERSION} \    # Tag for Azure registry
+            -t dev/3drepobouncer:${APP_BUILD_NOW} \           # Local dev tag with timestamp
+            --build-arg app_3drepobouncer_version=${VERSION} \# Passes version to Dockerfile
+            --build-arg GITHUB_TOKEN=${{ secrets.GH_TOKEN }} \# Used for private repo access
+            --build-arg LICENSE_CHECK=1 \                     # Enables license check logic
+            -f ./docker/3drepobouncer/Dockerfile \             # Path to Dockerfile
+            ./docker/3drepobouncer/                            # Build context
+
+          echo "✅ Build complete. Pushing to ACR..."
+          docker push $AZURE_REGISTRY/3drepobouncer:${VERSION}
+
+      # ---------------------------------------------------------------
+      # STEP 5: Logout and cleanup
+      # ---------------------------------------------------------------
+      - name: Cleanup
+        if: always()
+        run: |
+          docker logout $AZURE_REGISTRY
+          echo "🧹 Docker cleanup complete."
+
