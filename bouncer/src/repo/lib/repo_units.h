@@ -41,15 +41,15 @@ namespace repo {
 		};
 
 		namespace units {
-			std::string toUnitsString(const ModelUnits& units);
+			REPO_API_EXPORT std::string toUnitsString(const ModelUnits& units);
 
-			ModelUnits fromString(const std::string& unitsStr);
+			REPO_API_EXPORT ModelUnits fromString(const std::string& unitsStr);
 
-			double scaleFactorToMetres(const ModelUnits& units);
+			REPO_API_EXPORT double scaleFactorToMetres(const ModelUnits& units);
 
-			double scaleFactorFromMetres(const ModelUnits& units);
+			REPO_API_EXPORT double scaleFactorFromMetres(const ModelUnits& units);
 
-			double determineScaleFactor(const ModelUnits& base, const ModelUnits& target);
+			REPO_API_EXPORT double determineScaleFactor(const ModelUnits& base, const ModelUnits& target);
 		}
 	}
 }

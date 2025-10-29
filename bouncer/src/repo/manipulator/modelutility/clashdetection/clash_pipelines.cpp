@@ -194,6 +194,33 @@ static bool validateSceneGraph(const Graph& graph)
 	}
 }
 
+static void validateSets(const repo::manipulator::modelutility::ClashDetectionConfig& config)
+{
+	// Checks for any overlaps. Currently this is not supported in any mode.
+
+	std::set<repo::lib::RepoUUID> a;
+	std::set<repo::lib::RepoUUID> b;
+
+	auto getId = [](const repo::manipulator::modelutility::CompositeObject& obj) {
+		return obj.id;
+	};
+
+	std::transform(config.setA.begin(), config.setA.end(), std::inserter(a, a.begin()), getId);
+	std::transform(config.setB.begin(), config.setB.end(), std::inserter(b, b.begin()), getId);
+
+	std::set<repo::lib::RepoUUID> intersection;
+
+	std::set_intersection(
+		a.begin(), a.end(),
+		b.begin(), b.end(),
+		std::inserter(intersection, intersection.begin())
+	);
+
+	if(!intersection.empty()) {
+		throw OverlappingSetsException(intersection);
+	}
+}
+
 Pipeline::Pipeline(
 	DatabasePtr handler, const repo::manipulator::modelutility::ClashDetectionConfig& config)
 	: handler(handler),
@@ -203,6 +230,8 @@ Pipeline::Pipeline(
 
 ClashDetectionReport Pipeline::runPipeline()
 {
+	validateSets(config);
+
 	auto graphA = createSceneGraph(handler, config.setA, uniqueToCompositeId);
 	auto graphB = createSceneGraph(handler, config.setB, uniqueToCompositeId);
 

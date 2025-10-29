@@ -21,6 +21,7 @@
 #include <string>
 #include <memory>
 #include <variant>
+#include <set>
 
 #include <repo/lib/datastructure/repo_container.h>
 
@@ -55,6 +56,15 @@ namespace repo {
 
 					repo::lib::Container container;
 					repo::lib::RepoUUID uniqueId;
+
+					virtual std::shared_ptr<ClashDetectionException> clone() const override;
+				};
+
+				struct OverlappingSetsException : public ValidationException
+				{
+					OverlappingSetsException(std::set<repo::lib::RepoUUID> overlappingCompositeIds);
+					
+					std::set<repo::lib::RepoUUID> compositeIds;
 
 					virtual std::shared_ptr<ClashDetectionException> clone() const override;
 				};

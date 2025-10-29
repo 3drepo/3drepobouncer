@@ -1075,6 +1075,8 @@ TEST(Clash, Fingerprinting)
 
 		// The tolerance for this test is set very high so we can make minor adjustments
 		// to the same problem to test the fingerprinting sensitivity.
+		// Small changes to the primitives (and so intersection location) should result
+		// in different fingerprints.
 
 		p.first.second = repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(1, 0, 0)) * p.first.second;
 
@@ -1095,13 +1097,11 @@ TEST(Clash, Units)
 
 	auto handler = getHandler();
 	ClashDetectionConfig config;
-
 	ClashDetectionDatabaseHelper helper(handler);
 
 	auto m = helper.getContainerByName("cone_m");
 	auto mm = helper.getContainerByName("cone_mm");
 	auto ft = helper.getContainerByName("cone_ft");
-
 
 	helper.createCompositeObjectsByMetadataValue(config.setA, m.get(), "Cone");
 
@@ -1123,14 +1123,48 @@ TEST(Clash, Units)
 	}
 }
 
-TEST(Clash, ResultsSerialisation)
-{
-	
-}
-
 TEST(Clash, SelfClearance)
 {
-	// Test a single set (duplicated between A and B) for self-clearance.
-	// Identical Composite ids should not be tested against eachother.
+	// Self-Clearance is not currently supported - sets must be disjoint and
+	// an exception will be thrown if they are not. This is a future feature.
+
+	auto handler = getHandler();
+	ClashDetectionConfig config;
+	ClashDetectionDatabaseHelper helper(handler);
+
+	auto c = helper.getContainerByName("cubes_self");
+
+	auto set = {
+		helper.createCompositeObject(c.get(), "Cube1"),
+		helper.createCompositeObject(c.get(), "Cube2"),
+		helper.createCompositeObject(c.get(), "Cube3"),
+		helper.createCompositeObject(c.get(), "Cube4"),
+		helper.createCompositeObject(c.get(), "Cube5"),
+		helper.createCompositeObject(c.get(), "Cube6"),
+		helper.createCompositeObject(c.get(), "Cube7")
+	};
+	
+	config.setA.insert(config.setA.end(), set.begin(), set.end());
+	config.setB.insert(config.setB.end(), set.begin(), set.end());
+
+	config.tolerance = 1;
+	config.type = ClashDetectionType::Clearance;
+
+	auto pipeline = new clash::Clearance(handler, config);
+	try {
+		auto results = pipeline->runPipeline();
+		FAIL() << "Expected OverlappingSetsException due to due to self-tests.";
+	}
+	catch (const clash::ClashDetectionException& ex) {
+		auto exception = dynamic_cast<const clash::OverlappingSetsException*>(&ex);
+		EXPECT_THAT(exception != nullptr, IsTrue());
+	}
+	catch (std::exception& e) {
+		FAIL() << "Expected OverlappingSetsException due to self-tests: " << e.what();
+	}
+}
+
+TEST(Clash, ResultsSerialisation)
+{
 
 }

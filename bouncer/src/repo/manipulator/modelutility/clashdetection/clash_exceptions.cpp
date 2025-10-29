@@ -26,15 +26,26 @@ MeshBoundsException::MeshBoundsException(const repo::lib::Container& container, 
 {
 }
 
+std::shared_ptr<ClashDetectionException> MeshBoundsException::clone() const {
+	return std::make_shared<MeshBoundsException>(*this);
+}
+
 TransformBoundsException::TransformBoundsException(const repo::lib::Container& container, const repo::lib::RepoUUID& uniqueId)
 	: container(container), uniqueId(uniqueId)
 {
 }
 
-std::shared_ptr<ClashDetectionException> MeshBoundsException::clone() const {
-	return std::make_shared<MeshBoundsException>(*this);
-}
-
 std::shared_ptr<ClashDetectionException> TransformBoundsException::clone() const {
 	return std::make_shared<TransformBoundsException>(*this);
 }
+
+OverlappingSetsException::OverlappingSetsException(std::set<repo::lib::RepoUUID> overlappingCompositeIds)
+	:compositeIds(overlappingCompositeIds)
+{
+}
+
+std::shared_ptr<ClashDetectionException> OverlappingSetsException::clone() const {
+	return std::make_shared<OverlappingSetsException>(*this);
+}
+
+
