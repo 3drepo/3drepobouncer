@@ -87,6 +87,8 @@ namespace testing {
 
 			std::vector<repo::core::model::MeshNode> getMeshesInProjectCoordinates();
 
+			repo::lib::RepoBounds getProjectBounds();
+
 			std::vector<NodeInfo> getTextures();
 
 			std::vector<NodeInfo> getSiblings(Filter parents, Filter siblings);

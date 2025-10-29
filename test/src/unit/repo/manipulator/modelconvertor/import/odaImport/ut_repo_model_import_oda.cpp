@@ -582,6 +582,47 @@ TEST(ODAModelImport, DefaultViewDisplayOptions)
 	}
 }
 
+TEST(ODAModelImport, RvtUnits)
+{
+	// In mm
+	auto expectedBounds = repo::lib::RepoBounds(
+		repo::lib::RepoVector3D64(-708.47, -2500.0, -62.05),
+		repo::lib::RepoVector3D64(-403.17, 0.0, 245.84)
+	);
+
+	// Regardless of what the project units are, the geometry should always be
+	// imported in the target units of the import config (and correctly scaled
+	// to those units).
+
+	{
+		ModelImportConfig config(repo::lib::RepoUUID::createUUID(), TESTDB, "RevitUnitsMillimeters");
+		config.targetUnits = ModelUnits::MILLIMETRES;
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport(getDataPath("rvt_mm.rvt"), config));
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "330859").getProjectBounds(), BoundsAre(expectedBounds, 0.5));
+	}
+
+	{
+		ModelImportConfig config(repo::lib::RepoUUID::createUUID(), TESTDB, "RevitUnitsFeet");
+		config.targetUnits = ModelUnits::MILLIMETRES;
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport(getDataPath("rvt_ft.rvt"), config));
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "330859").getProjectBounds(), BoundsAre(expectedBounds, 0.5));
+	}
+
+	{
+		ModelImportConfig config(repo::lib::RepoUUID::createUUID(), TESTDB, "RevitUnitsFeetandFractionalInches");
+		config.targetUnits = ModelUnits::MILLIMETRES;
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport(getDataPath("rvt_ft-in.rvt"), config));
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "330859").getProjectBounds(), BoundsAre(expectedBounds, 0.5));
+	}
+
+	{
+		ModelImportConfig config(repo::lib::RepoUUID::createUUID(), TESTDB, "RevitUnitsShaku");
+		config.targetUnits = ModelUnits::MILLIMETRES;
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport(getDataPath("rvt_shaku.rvt"), config));
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "330859").getProjectBounds(), BoundsAre(expectedBounds, 0.5));
+	}
+}
+
 TEST_F(NwdTestSuite, MetadataParentsNWD)
 {
 	// All metadata nodes must also have their sibling meshnodes as parents,

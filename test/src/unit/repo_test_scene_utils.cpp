@@ -284,6 +284,15 @@ std::vector<repo::core::model::MeshNode> SceneUtils::NodeInfo::getMeshesInProjec
 	return meshes;
 }
 
+repo::lib::RepoBounds SceneUtils::NodeInfo::getProjectBounds()
+{
+	repo::lib::RepoBounds bounds;
+	for (auto& m : getMeshesInProjectCoordinates()) {
+		bounds.encapsulate(m.getBoundingBox());
+	}
+	return bounds;
+}
+
 bool SceneUtils::NodeInfo::hasTextures()
 {
 	return getTextures().size();
