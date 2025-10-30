@@ -37,7 +37,7 @@ RepoProjectSettings::RepoProjectSettings(RepoBSON bson)
 	{
 		status = bson.getStringField(REPO_PROJECT_SETTINGS_LABEL_STATUS);
 	}
-	units =ModelUnits::UNKNOWN;
+	units = ModelUnits::UNKNOWN;
 	if (bson.hasField(REPO_PROJECT_SETTINGS_LABEL_PROPERTIES)) 
 	{
 		auto properties = bson.getObjectField(REPO_PROJECT_SETTINGS_LABEL_PROPERTIES);

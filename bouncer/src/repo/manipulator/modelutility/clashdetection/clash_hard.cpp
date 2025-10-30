@@ -17,7 +17,7 @@
 
 #include <stack>
 
-#include "clash_clearance.h"
+#include "clash_hard.h"
 #include "geometry_tests.h"
 
 using namespace repo::manipulator::modelutility::clash;
@@ -51,7 +51,7 @@ static double minDistanceSq(const bvh::BoundingBox<double>& a, const bvh::Boundi
 }
 
 /*
-* The Clearance broadphase returns all bounds that have a minimum distance
+* The Hard broadphase returns all bounds that have a minimum distance
 * smaller than the tolerance.
 * Even if two bounds are intersecting, it does not necessarily mean that the
 * primitives within them have a distance of zero. The best we can say is that
@@ -61,14 +61,14 @@ static double minDistanceSq(const bvh::BoundingBox<double>& a, const bvh::Boundi
 * is only ever interested in the closest pair, then early termination based on
 * tracking the smallest maxmimum distance could be applied.
 */
-struct ClearanceBroadphase: public Broadphase
+struct HardBroadphase: public Broadphase
 {
-	ClearanceBroadphase(double clearance)
-		:clearanceSq(clearance* clearance)
+	HardBroadphase(double Hard)
+		:HardSq(Hard* Hard)
 	{
 	}
 
-	double clearanceSq;
+	double HardSq;
 
 	std::stack<std::pair<size_t, size_t>> pairs;
 
@@ -85,7 +85,7 @@ struct ClearanceBroadphase: public Broadphase
 
 			auto mds = minDistanceSq(left.bounding_box_proxy(), right.bounding_box_proxy());
 
-			if (mds > clearanceSq)
+			if (mds > HardSq)
 			{
 				continue; // No possible intersection within the tolerance
 			}
@@ -122,9 +122,9 @@ struct ClearanceBroadphase: public Broadphase
 	}
 };
 
-struct ClearanceNarrowphase: public Narrowphase
+struct HardNarrowphase: public Narrowphase
 {
-	ClearanceNarrowphase(double tolerance)
+	HardNarrowphase(double tolerance)
 		:tolerance(tolerance),
 		line(repo::lib::RepoLine::Max())
 	{
@@ -141,33 +141,38 @@ struct ClearanceNarrowphase: public Narrowphase
 	}
 };
 
-std::unique_ptr<Broadphase> Clearance::createBroadphase() const
+std::unique_ptr<Broadphase> Hard::createBroadphase() const
 {
-	return std::make_unique<ClearanceBroadphase>(tolerance);
+	return std::make_unique<HardBroadphase>(tolerance);
 }
 
-std::unique_ptr<Narrowphase> Clearance::createNarrowphase() const
+std::unique_ptr<Narrowphase> Hard::createNarrowphase() const
 {
-	return std::make_unique<ClearanceNarrowphase>(tolerance);
+	return std::make_unique<HardNarrowphase>(tolerance);
 }
 
-void Clearance::append(CompositeClash& c, const Narrowphase& r) const
+struct HardClash : public CompositeClash
 {
-	auto& clash = static_cast<ClearanceClash&>(c);
-	auto& result = static_cast<const ClearanceNarrowphase&>(r);
+	repo::lib::RepoLine line;
+};
+
+void Hard::append(CompositeClash& c, const Narrowphase& r) const
+{
+	auto& clash = static_cast<HardClash&>(c);
+	auto& result = static_cast<const HardNarrowphase&>(r);
 	if (result.line.magnitude() < clash.line.magnitude()) {
 		clash.line = result.line;
 	}
 }
 
-void Clearance::createClashReport(const OrderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const
+void Hard::createClashReport(const OrderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const
 {
 	result.idA = objects.a;
 	result.idB = objects.b;
 
 	result.positions = {
-		static_cast<const ClearanceClash&>(clash).line.start,
-		static_cast<const ClearanceClash&>(clash).line.end
+		static_cast<const HardClash&>(clash).line.start,
+		static_cast<const HardClash&>(clash).line.end
 	};
 
 	size_t hash = 0;

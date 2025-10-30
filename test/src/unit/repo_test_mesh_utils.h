@@ -239,6 +239,23 @@ namespace repo {
 				float shortestDistance(const repo::core::model::MeshNode& m, repo::lib::RepoVector3D p);
 				float shortestDistance(const std::vector<repo::core::model::MeshNode>& m, repo::lib::RepoVector3D p);
 				float shortestDistance(const std::vector<repo::lib::RepoVector3D>& v, repo::lib::RepoVector3D p);
+
+				/*
+				* Creates a cube centered on 0,0,0 with a side length of 1 in all dimensions.
+				*/
+				repo::core::model::MeshNode makeUnitCube();
+
+				/*
+				* Creates a cone centered on 0,0,0 with a height of 1 and a base radius of 1.
+				*/
+				repo::core::model::MeshNode makeUnitCone();
+
+				/*
+				* Creates a sphere centered on 0,0,0 with a diameter of 1. This uses uv/lat
+				* -long grid approach, as opposed to the geodesic/icosahedron approach. This
+				* is chosen as it is arguably the more challenging mesh for testing purposes.
+				*/
+				repo::core::model::MeshNode makeUnitSphere();
 			}
 		}
 	}

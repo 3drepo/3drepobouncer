@@ -24,6 +24,8 @@
 #include "repo/core/model/bson/repo_bson_factory.h"
 #include "repo/core/model/bson/repo_bson_builder.h"
 
+#include <numbers>
+
 using namespace repo::core::model;
 using namespace testing;
 
@@ -652,4 +654,170 @@ float repo::test::utils::mesh::shortestDistance(const std::vector<repo::lib::Rep
 		d = std::min(d, (v - p).norm2());
 	}
 	return std::sqrt(d);
+}
+
+repo::core::model::MeshNode repo::test::utils::mesh::makeUnitCube()
+{
+	// Define the 8 vertices of the unit cube centered at (0,0,0)
+	std::vector<repo::lib::RepoVector3D> vertices = {
+		{-0.5, -0.5, -0.5}, // 0
+		{ 0.5, -0.5, -0.5}, // 1
+		{ 0.5,  0.5, -0.5}, // 2
+		{-0.5,  0.5, -0.5}, // 3
+		{-0.5, -0.5,  0.5}, // 4
+		{ 0.5, -0.5,  0.5}, // 5
+		{ 0.5,  0.5,  0.5}, // 6
+		{-0.5,  0.5,  0.5}  // 7
+	};
+
+	// Define the 12 triangular faces of the cube
+	std::vector<repo::lib::repo_face_t> faces = {
+		{0, 1, 2}, {0, 2, 3}, // Bottom face
+		{4, 5, 6}, {4, 6, 7}, // Top face
+		{0, 1, 5}, {0, 5, 4}, // Front face
+		{1, 2, 6}, {1, 6, 5}, // Right face
+		{2, 3, 7}, {2, 7, 6}, // Back face
+		{3, 0, 4}, {3, 4, 7}  // Left face
+	};
+
+	repo::lib::RepoBounds boundingBox = getBoundingBox(vertices);
+
+	return RepoBSONFactory::makeMeshNode(
+		vertices,
+		faces,
+		{},
+		boundingBox,
+		{},
+		"UnitCube"
+	);
+}
+
+repo::core::model::MeshNode repo::test::utils::mesh::makeUnitCone()
+{
+	// Number of segments for the circular base
+	const size_t segments = 16;
+
+	repo::lib::RepoVector3D apex(0.0, 0.0, 0.5);
+	repo::lib::RepoVector3D baseCenter(0.0, 0.0, -0.5);
+
+	// Define the vertices of the base
+	std::vector<repo::lib::RepoVector3D> vertices;
+	vertices.push_back(apex); // Add the apex as the first vertex
+
+	for (size_t i = 0; i < segments; ++i)
+	{
+		double angle = 2.0 * std::numbers::pi * i / segments;
+		double x = 0.5 * cos(angle);
+		double y = 0.5 * sin(angle);
+		vertices.emplace_back(x, y, -0.5);
+	}
+	vertices.push_back(baseCenter); // Add the center of the base
+
+	// Define the faces of the cone
+	std::vector<repo::lib::repo_face_t> faces;
+
+	// Create faces for the sides of the cone
+	for (size_t i = 1; i <= segments; ++i)
+	{
+		size_t next = (i % segments) + 1;
+		faces.push_back({ 0, i, next }); // Apex to two consecutive base vertices
+	}
+
+	// Create faces for the base
+	size_t baseCenterIndex = static_cast<size_t>(vertices.size() - 1);
+	for (size_t i = 1; i <= segments; ++i)
+	{
+		size_t next = (i % segments) + 1;
+		faces.push_back({ baseCenterIndex, next, i }); // Base center to two consecutive base vertices
+	}
+
+	// Compute the bounding box for the cone
+	repo::lib::RepoBounds boundingBox = getBoundingBox(vertices);
+
+	return RepoBSONFactory::makeMeshNode(
+		vertices,
+		faces,
+		{},
+		boundingBox,
+		{},
+		"UnitCone"
+	);
+}
+
+repo::core::model::MeshNode repo::test::utils::mesh::makeUnitSphere()
+{
+	// Number of segments for latitude and longitude
+	const size_t latitudeSegments = 16;
+	const size_t longitudeSegments = 32;
+
+	// Define the vertices
+	std::vector<repo::lib::RepoVector3D> vertices;
+
+	// Add the top vertex (north pole)
+	vertices.emplace_back(0.0, 0.0, 0.5);
+
+	// Add vertices for each latitude ring
+	for (int lat = 1; lat < latitudeSegments; ++lat)
+	{
+		double theta = std::numbers::pi * lat / latitudeSegments; // Polar angle
+		double sinTheta = sin(theta);
+		double cosTheta = cos(theta);
+
+		for (int lon = 0; lon < longitudeSegments; ++lon)
+		{
+			double phi = 2.0 * std::numbers::pi * lon / longitudeSegments; // Azimuthal angle
+			double x = 0.5 * sinTheta * cos(phi);
+			double y = 0.5 * sinTheta * sin(phi);
+			double z = 0.5 * cosTheta;
+			vertices.emplace_back(x, y, z);
+		}
+	}
+
+	// Add the bottom vertex (south pole)
+	vertices.emplace_back(0.0, 0.0, -0.5);
+
+	// Define the faces
+	std::vector<repo::lib::repo_face_t> faces;
+
+	// Create faces for the top cap
+	for (size_t lon = 0; lon < longitudeSegments; ++lon)
+	{
+		size_t nextLon = (lon + 1) % longitudeSegments;
+		faces.push_back({ 0, 1 + lon, 1 + nextLon });
+	}
+
+	// Create faces for the middle latitude rings
+	for (size_t lat = 0; lat < latitudeSegments - 2; ++lat)
+	{
+		for (size_t lon = 0; lon < longitudeSegments; ++lon)
+		{
+			size_t current = 1 + lat * longitudeSegments + lon;
+			size_t next = 1 + lat * longitudeSegments + (lon + 1) % longitudeSegments;
+			size_t below = current + longitudeSegments;
+			size_t belowNext = next + longitudeSegments;
+
+			faces.push_back({ current, below, next });
+			faces.push_back({ next, below, belowNext });
+		}
+	}
+
+	// Create faces for the bottom cap
+	size_t bottomIndex = static_cast<size_t>(vertices.size() - 1);
+	for (int lon = 0; lon < longitudeSegments; ++lon)
+	{
+		size_t current = bottomIndex - longitudeSegments + lon;
+		size_t next = bottomIndex - longitudeSegments + (lon + 1) % longitudeSegments;
+		faces.push_back({ bottomIndex, current, next });
+	}
+
+	repo::lib::RepoBounds boundingBox = getBoundingBox(vertices);
+
+	return RepoBSONFactory::makeMeshNode(
+		vertices,
+		faces,
+		{},
+		boundingBox,
+		{},
+		"UnitSphere"
+	);
 }

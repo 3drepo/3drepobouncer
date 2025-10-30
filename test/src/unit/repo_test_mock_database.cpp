@@ -16,6 +16,7 @@
 */
 
 #include "repo_test_mock_database.h"
+#include "repo_test_utils.h"
 
 #include "repo/core/model/bson/repo_bson.h"
 #include "repo/core/handler/database/repo_query.h"
@@ -51,7 +52,7 @@ struct MockQueryFilterVisitor
 	std::unordered_map<std::string, MockDatabase::Index*>* indexes = nullptr;
 	std::vector<repo::core::model::RepoBSON> results;
 
-	void operator() (const  query::Eq& n)
+	void operator() (const query::Eq& n)
 	{
 		auto index = indexes->operator[](n.field);
 		if(!index) {
@@ -83,16 +84,27 @@ struct MockQueryFilterVisitor
 	}
 };
 
+MockDatabase::MockDatabase()
+	: repo::core::handler::AbstractDatabaseHandler(16000) 
+{
+	projectSettings = testing::makeProjectSettings("Mock Database Project");
+}
+
 repo::core::model::RepoBSON MockDatabase::findOneByCriteria(
 	const std::string& database,
 	const std::string& collection,
 	const repo::core::handler::database::query::RepoQuery& criteria,
 	const std::string& sortField)
 {
-	MockQueryFilterVisitor visitor;
-	visitor.indexes = &indexes;
-	std::visit(visitor, criteria);
-	return visitor.results.size() ? visitor.results[0] : repo::core::model::RepoBSON();
+	if (collection == std::string("settings")) {
+		return projectSettings;
+	}
+	else {
+		MockQueryFilterVisitor visitor;
+		visitor.indexes = &indexes;
+		std::visit(visitor, criteria);
+		return visitor.results.size() ? visitor.results[0] : repo::core::model::RepoBSON();
+	}
 }
 
 repo::core::model::RepoBSON MockDatabase::findOneBySharedID(

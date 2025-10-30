@@ -19,6 +19,10 @@
 
 #include "repo/lib/datastructure/repo_vector.h"
 
+#include "repo_test_mesh_utils.h"
+
+#include <numbers>
+
 using namespace testing;
 using namespace repo::core::model;
 using namespace repo::manipulator::modelutility;
@@ -138,6 +142,24 @@ UUIDPair MockClashScene::add(TransformTriangles triangles, ClashDetectionConfigH
 
 	auto t2 = add(triangles.second.second);
 	auto m2 = add(triangles.second.first, t2.getSharedID());
+
+	config.addCompositeObjects(m1.getUniqueID(), m2.getUniqueID());
+
+	return { m1.getUniqueID(), m2.getUniqueID() };
+}
+
+UUIDPair MockClashScene::add(TransformMeshes meshes, ClashDetectionConfigHelper& config)
+{
+	auto t1 = add(meshes.first.second);
+	auto& m1 = meshes.first.first;
+	m1.addParent(t1.getSharedID());
+
+	auto t2 = add(meshes.second.second);
+	auto& m2 = meshes.second.first;
+	m2.addParent(t2.getSharedID());
+
+	bsons.push_back(m1.getBSON());
+	bsons.push_back(m2.getBSON());
 
 	config.addCompositeObjects(m1.getUniqueID(), m2.getUniqueID());
 
@@ -561,6 +583,21 @@ TransformTriangles testing::ClashGenerator::createTrianglesFE(const repo::lib::R
 	}
 
 	return problem;
+}
+
+TransformMeshes testing::ClashGenerator::createHard1(
+	const repo::lib::RepoBounds& bounds
+)
+{
+	auto cube = repo::test::utils::mesh::makeUnitCube();
+	auto cone = repo::test::utils::mesh::makeUnitCone();
+
+	auto d = random.number(distance);
+
+	auto t = RepoMatrix::translate(repo::lib::RepoVector3D64(0, 0, 0.5 -d)) * RepoMatrix::rotationX(std::numbers::pi);
+	cone.applyTransformation(t);
+
+	return { { cube, {} }, { cone, {} } };
 }
 
 CellDistribution::CellDistribution(size_t cellSize, size_t spaceSize)

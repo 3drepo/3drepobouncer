@@ -18,6 +18,7 @@
 #pragma once
 
 #include "repo/core/handler/repo_database_handler_abstract.h"
+#include "repo/core/model/bson/repo_bson.h"
 
 namespace testing {
 
@@ -36,12 +37,14 @@ namespace testing {
 		// A mock database that can be used to test the clash pipeline without actually
 		// going to Mongo, which would be prohibitive for test with many permutations.
 
-		MockDatabase() : repo::core::handler::AbstractDatabaseHandler(16000) {}
+		MockDatabase();
 
 		std::vector<repo::core::model::RepoBSON> documents;
 
 		struct Index;
 		std::unordered_map<std::string, Index*> indexes;
+
+		repo::core::model::RepoBSON projectSettings;
 
 		void setDocuments(const std::vector<repo::core::model::RepoBSON>& documents);
 

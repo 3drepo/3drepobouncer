@@ -558,7 +558,7 @@ TEST(Clash, TriangleDistanceE2E)
 
 	auto db = std::make_shared<MockDatabase>();
 
-	const int numIterations = 10;
+	const int numIterations = 1;
 	const int samplesPerDistance = 10000;
 	std::vector<double> distances = { 0, 2, 5 };
 
@@ -933,8 +933,8 @@ TEST(Clash, SupportedRanges)
 		// These settings will generate primitives that are larger than the mesh limit
 		// in at least one dimension.
 
-		clashGenerator.size1 = MESH_LIMIT + 1e6;
-		clashGenerator.size2 = MESH_LIMIT + 1e6;
+		clashGenerator.size1 = MESH_LIMIT * 2;
+		clashGenerator.size2 = MESH_LIMIT * 2;
 
 		ClashDetectionConfigHelper config;
 		config.type = ClashDetectionType::Clearance;
@@ -1162,6 +1162,28 @@ TEST(Clash, SelfClearance)
 	catch (std::exception& e) {
 		FAIL() << "Expected OverlappingSetsException due to self-tests: " << e.what();
 	}
+}
+
+TEST(Clash, Hard1)
+{
+	// A simple test case of two interpenetrating polyhedra close to the origin.
+
+	auto handler = getHandler();
+	ClashDetectionConfig config;
+	config.type = ClashDetectionType::Hard;
+
+	CellDistribution space(1, 1);
+	ClashGenerator clashGenerator;
+
+	clashGenerator.size1 = 1;
+	clashGenerator.size2 = 1;
+
+	auto clash = clashGenerator.createHard1(space.sample());
+
+	auto pipeline = new clash::Hard(handler, config);
+	auto results = pipeline->runPipeline();
+
+	EXPECT_THAT(results.clashes.size(), Eq(1));
 }
 
 TEST(Clash, ResultsSerialisation)

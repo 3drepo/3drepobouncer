@@ -27,8 +27,10 @@
 #include <repo/lib/datastructure/repo_range.h>
 #include <repo/core/model/bson/repo_bson.h>
 #include <repo/core/model/bson/repo_bson_factory.h>
+#include <repo/core/model/bson/repo_node_mesh.h>
 #include <vector>
 #include <set>
+#include <variant>
 
 #include "repo_test_random_generator.h"
 
@@ -36,8 +38,10 @@ namespace testing {
 
 	using TransformLine = std::pair<repo::lib::RepoLine, repo::lib::RepoMatrix>;
 	using TransformTriangle = std::pair<repo::lib::RepoTriangle, repo::lib::RepoMatrix>;
+	using TransformMesh = std::pair<repo::core::model::MeshNode, repo::lib::RepoMatrix>;
 	using TransformLines = std::pair<TransformLine, TransformLine>;
 	using TransformTriangles = std::pair<TransformTriangle, TransformTriangle>;
+	using TransformMeshes = std::pair<TransformMesh, TransformMesh>;
 	using UUIDPair = std::pair<repo::lib::RepoUUID, repo::lib::RepoUUID>;
 	using TrianglePair = std::pair<repo::lib::RepoTriangle, repo::lib::RepoTriangle>;
 
@@ -171,6 +175,10 @@ namespace testing {
 			const repo::lib::RepoBounds& bounds
 		);
 
+		TransformMeshes createHard1(
+			const repo::lib::RepoBounds& bounds
+		);
+
 		void moveToBounds(TransformLines& problem, const repo::lib::RepoBounds& bounds);
 
 		void moveToBounds(TransformTriangles& problem, const repo::lib::RepoBounds& bounds);
@@ -217,5 +225,7 @@ namespace testing {
 		UUIDPair add(TransformLines lines, ClashDetectionConfigHelper& config);
 
 		UUIDPair add(TransformTriangles triangles, ClashDetectionConfigHelper& config);
+
+		UUIDPair add(TransformMeshes meshes, ClashDetectionConfigHelper& config);
 	};
 }

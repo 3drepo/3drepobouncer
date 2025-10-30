@@ -88,6 +88,20 @@ repo::core::model::RepoBSON testing::makeRandomRepoBSON(int seed, size_t numBinF
 	return builder.obj();
 }
 
+repo::core::model::RepoBSON testing::makeProjectSettings(const std::string& id)
+{
+	repo::core::model::RepoBSONBuilder settings;
+
+	repo::core::model::RepoBSONBuilder properties;
+	properties.append(REPO_PROJECT_SETTINGS_LABEL_UNITS, repo::lib::units::toUnitsString(repo::lib::ModelUnits::MILLIMETRES));
+
+	settings.append(REPO_PROJECT_SETTINGS_LABEL_PROPERTIES, properties.obj());
+	settings.append(REPO_LABEL_ID, id);
+	settings.append(REPO_PROJECT_SETTINGS_LABEL_STATUS, "ok");
+
+	return settings.obj();
+}
+
 repo::lib::RepoUUID testing::getRandUUID()
 {
 	if (!uuidPool.size()) {

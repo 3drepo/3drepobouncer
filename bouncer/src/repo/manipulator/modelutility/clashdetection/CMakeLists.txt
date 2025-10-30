@@ -8,6 +8,7 @@ set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_clearance.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_exceptions.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/clash_hard.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_node_cache.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_pipelines.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_scheduler.cpp

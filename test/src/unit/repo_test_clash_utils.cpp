@@ -15,6 +15,7 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "repo_test_utils.h"
 #include "repo_test_clash_utils.h"
 #include "repo_test_database_info.h"
 
@@ -248,6 +249,14 @@ void testing::importModel(std::string filename, const repo::lib::Container& cont
 	ModelImportManager manager;
 	auto scene = manager.ImportFromFile(filename, config, handler, err);
 	scene->commit(handler.get(), handler->getFileManager().get(), msg, "testuser", "", "", config.getRevisionId());
+
+	// Clash detection expects the units to be stored in model settings
+	handler->upsertDocument(
+		container.teamspace,
+		REPO_COLLECTION_SETTINGS,
+		testing::makeProjectSettings(container.container),
+		false
+	);
 
 	delete scene;
 }
