@@ -22,6 +22,7 @@
 #include "data_processor_rvt.h"
 #include "helper_functions.h"
 #include "repo/lib/repo_utils.h"
+#include "repo/lib/repo_units.h"
 #include "repo/core/model/bson/repo_bson_builder.h"
 #include <Database/BmTransaction.h>
 #include <Database/BmUnitUtils.h>
@@ -31,7 +32,6 @@
 #include <Base/BmSpecTypeId.h>
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
-using ModelUnits = repo::lib::ModelUnits;
 
 static const char* ODA_CSV_LOCATION = "ODA_CSV_LOCATION";
 static const std::string REVIT_ELEMENT_ID = "Element ID";
@@ -211,7 +211,7 @@ void DataProcessorRvt::initialise(GeometryCollector* collector, OdBmDatabasePtr 
 	this->collector = collector;
 	this->view = view;
 	this->modelToProjectCoordinates = modelToWorld;
-	collector->setUnits(getProjectUnits(pDb));
+	collector->setUnits(repo::lib::ModelUnits::FEET); // For Revit, the API always uses the internal coordinate system units, which are ft.
 }
 
 void DataProcessorRvt::beginViewVectorization()
@@ -728,27 +728,6 @@ OdBmAUnitsPtr DataProcessorRvt::getUnits(OdBmDatabasePtr database)
 	OdBmUnitsElemPtr pUnitsElem = pUnitsTracking->getUnitsElemId().safeOpenObject();
 	OdBmAUnitsPtr ptrAUnits = pUnitsElem->getUnits().get();
 	return ptrAUnits;
-}
-
-OdBmForgeTypeId DataProcessorRvt::getLengthUnits(OdBmDatabasePtr database)
-{
-	OdBmFormatOptionsPtr formatOptionsLength = getUnits(database)->getFormatOptions(OdBmSpecTypeId::kLength);
-	return formatOptionsLength->getUnitTypeId();
-}
-
-ModelUnits DataProcessorRvt::getProjectUnits(OdBmDatabasePtr pDb) {
-	initLabelUtils();
-	auto unitsStr = convertToStdString(labelUtils->getLabelForUnit(getLengthUnits(pDb)));
-
-	if (unitsStr == "Millimeters") return ModelUnits::MILLIMETRES;
-	if (unitsStr == "Centimeters") return ModelUnits::CENTIMETRES;
-	if (unitsStr == "Decimeters") return ModelUnits::DECIMETRES;
-	if (unitsStr == "Meters") return ModelUnits::METRES;
-	if (unitsStr == "Feet") return ModelUnits::FEET;
-	if (unitsStr == "Inches") return ModelUnits::INCHES;
-
-	repoWarning << "Unrecognised model units: " << unitsStr;
-	return ModelUnits::UNKNOWN;
 }
 
 repo::lib::RepoVector3D64 DataProcessorRvt::convertToRepoWorldCoordinates(OdGePoint3d p)
