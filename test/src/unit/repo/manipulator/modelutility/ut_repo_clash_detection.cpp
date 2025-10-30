@@ -313,6 +313,22 @@ TEST(Clash, Config)
 	EXPECT_THAT(config.setB[2].meshes[0].container->revision == repo::lib::RepoUUID("f7caff9d-d2c2-440e-8b32-7cee46c23f32"), IsTrue());
 }
 
+TEST(Clash, EmptySets) 
+{
+	// If the sets are empty, the engine should do nothing, and it should not crash
+	// or leak.
+
+	auto handler = getHandler();
+	ClashDetectionEngine engine(handler);
+
+	ClashDetectionConfig config;
+	config.type = ClashDetectionType::Clearance;
+	config.resultsFile = "clash_results.json";
+	config.tolerance = 1;
+
+	engine.runClashDetection(config);
+}
+
 TEST(Clash, Scheduler)
 {
 	// Tests if the ClashScheduler returns a sensible narrowphase set order.

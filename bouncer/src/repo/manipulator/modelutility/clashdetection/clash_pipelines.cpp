@@ -145,7 +145,10 @@ static bool validateSceneGraph(const Graph& graph)
 	// accuracy range.
 
 	std::stack<size_t> nodesToProcess;
-	nodesToProcess.push(0);
+
+	if (graph.meshes.size()) {
+		nodesToProcess.push(0);
+	}
 	while (!nodesToProcess.empty()) 
 	{
 		const auto& node = graph.bvh.nodes[nodesToProcess.top()];
