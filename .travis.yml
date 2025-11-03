@@ -73,7 +73,7 @@ matrix:
           - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev libboost-all-dev libcgal-dev libocct-data-exchange-dev libocct-draw-dev libocct-foundation-dev libocct-modeling-algorithms-dev libocct-modeling-data-dev libocct-ocaf-dev libocct-visualization-dev libgmp-dev libmpfr-dev libxml2-dev libeigen3-dev
           - export IFCOPENSHELL_ROOT=$PWD/IfcOpenShell
           - echo ============ TEIGHA INSTALL =============
-          - cat testData/bouncer/ext_libs/focal/teigha/2025.11/teighaLinuxGCC8.3.tgz* | tar -zxf -
+          - cat testData/bouncer/ext_libs/focal/teigha/2026.9/teighaLinuxGCC8.3.tgz* | tar -zxf -
           - export ODA_ROOT=$PWD/teighaLinuxGCC8.3
           - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_8.3dll/
           - ls $ODA_ROOT/BimRv/Include/Database
@@ -149,7 +149,7 @@ matrix:
           - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev libboost-all-dev libcgal-dev libocct-data-exchange-dev libocct-draw-dev libocct-foundation-dev libocct-modeling-algorithms-dev libocct-modeling-data-dev libocct-ocaf-dev libocct-visualization-dev libgmp-dev libmpfr-dev libxml2-dev libeigen3-dev
           - export IFCOPENSHELL_ROOT=$PWD/IfcOpenShell
           - echo ============ TEIGHA INSTALL =============
-          - cat testData/focal/teigha/2025.11/teighaLinuxGCC8.3.tgz* | tar -zxf -
+          - cat testData/focal/teigha/2026.9/teighaLinuxGCC8.3.tgz* | tar -zxf -
           - export ODA_ROOT=$PWD/teighaLinuxGCC8.3
           - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_8.3dll/
           - echo ============ SYNCHRO INSTALL =============

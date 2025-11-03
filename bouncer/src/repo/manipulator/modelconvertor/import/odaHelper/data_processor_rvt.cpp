@@ -40,7 +40,8 @@ static const std::string REVIT_ELEMENT_ID = "Element ID";
 //These metadata params are not of interest to users. Do not read.
 const std::set<std::string> IGNORE_PARAMS = {
 	"RENDER APPEARANCE",
-	"RENDER APPEARANCE PROPERTIES"
+	"RENDER APPEARANCE PROPERTIES",
+	"REBAR_NUMBER"
 };
 
 bool DataProcessorRvt::tryConvertMetadataEntry(const OdTfVariant& metaEntry, OdBmLabelUtilsPEPtr labelUtils, OdBmParamDefPtr paramDef, OdBm::BuiltInParameter::Enum param, repo::lib::RepoVariant& v)
@@ -211,7 +212,7 @@ void DataProcessorRvt::initialise(GeometryCollector* collector, OdBmDatabasePtr 
 	this->collector = collector;
 	this->view = view;
 	this->modelToProjectCoordinates = modelToWorld;
-	collector->setUnits(getProjectUnits(pDb));
+	collector->setUnits(repo::manipulator::modelconvertor::ModelUnits::FEET); // For Revit, the API always uses the internal coordinate system units, which are ft.
 }
 
 void DataProcessorRvt::beginViewVectorization()
@@ -563,6 +564,8 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 		std::string builtInName = convertToStdString(OdBm::BuiltInParameter(entry).toString());
 
 		//.. HOTFIX: handle access violation exception (reported to ODA)
+		// https://forum.opendesign.com/showthread.php?25064-Access-Violation-in-OdBmElement-getParam&p=102079#post102079
+		// https://account.opendesign.com/support/issue-tracking/BIM-7094
 		if (ignoreParam(builtInName)) continue;
 
 		auto paramId = element->database()->getObjectId(entry);
@@ -721,27 +724,6 @@ OdBmAUnitsPtr DataProcessorRvt::getUnits(OdBmDatabasePtr database)
 	OdBmUnitsElemPtr pUnitsElem = pUnitsTracking->getUnitsElemId().safeOpenObject();
 	OdBmAUnitsPtr ptrAUnits = pUnitsElem->getUnits().get();
 	return ptrAUnits;
-}
-
-OdBmForgeTypeId DataProcessorRvt::getLengthUnits(OdBmDatabasePtr database)
-{
-	OdBmFormatOptionsPtr formatOptionsLength = getUnits(database)->getFormatOptions(OdBmSpecTypeId::kLength);
-	return formatOptionsLength->getUnitTypeId();
-}
-
-ModelUnits DataProcessorRvt::getProjectUnits(OdBmDatabasePtr pDb) {
-	initLabelUtils();
-	auto unitsStr = convertToStdString(labelUtils->getLabelForUnit(getLengthUnits(pDb)));
-
-	if (unitsStr == "Millimeters") return ModelUnits::MILLIMETRES;
-	if (unitsStr == "Centimeters") return ModelUnits::CENTIMETRES;
-	if (unitsStr == "Decimeters") return ModelUnits::DECIMETRES;
-	if (unitsStr == "Meters") return ModelUnits::METRES;
-	if (unitsStr == "Feet") return ModelUnits::FEET;
-	if (unitsStr == "Inches") return ModelUnits::INCHES;
-
-	repoWarning << "Unrecognised model units: " << unitsStr;
-	return ModelUnits::UNKNOWN;
 }
 
 repo::lib::RepoVector3D64 DataProcessorRvt::convertToRepoWorldCoordinates(OdGePoint3d p)

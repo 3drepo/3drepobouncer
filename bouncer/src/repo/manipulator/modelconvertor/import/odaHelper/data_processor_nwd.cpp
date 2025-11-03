@@ -39,12 +39,12 @@
 #include <NwMaterial.h>
 #include <NwComponent.h>
 #include <NwFragment.h>
-#include <NwGeometryEllipticalShape.h>
+#include <NwGeometryCircle.h>
 #include <NwGeometryLineSet.h>
-#include <NwGeometryMesh.h>
+#include <NwGeometryShell.h>
 #include <NwGeometryPointSet.h>
 #include <NwGeometryText.h>
-#include <NwGeometryTube.h>
+#include <NwGeometryCylinder.h>
 #include <NwTexture.h>
 #include <NwColor.h>
 #include <NwBackgroundElement.h>
@@ -728,65 +728,75 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 			OdNwObjectPtr pGeometry = geometryId.safeOpenObject();
 
 			// If the fragment has geometry, see if it is of a type that we support
-
-			OdNwGeometryLineSetPtr pGeomertyLineSet = OdNwGeometryLineSet::cast(pGeometry);
-			if (!pGeomertyLineSet.isNull())
+			if (pGeometry->isA() == OdNwGeometryLineSet::desc())
 			{
-				// BimNv lines also have colours, but these are not supported yet.
-
-				OdNwVerticesDataPtr aVertexesData = pGeomertyLineSet->getVerticesData();
-				OdGePoint3dArray aVertexes = aVertexesData->getVertices();
-				OdUInt16Array aVertexPerLine = pGeomertyLineSet->getVerticesCountPerLine();
-
-				// Each entry in aVertexPerLine corresponds to one line, which is a vertex strip. This snippet
-				// converts each strip into a set of 2-vertex line segments.
-
-				auto index = 0;
-				for (auto line = aVertexPerLine.begin(); line != aVertexPerLine.end(); line++)
+				OdNwGeometryLineSetPtr pGeomertyLineSet = OdNwGeometryLineSet::cast(pGeometry);
+				if (!pGeomertyLineSet.isNull())
 				{
-					for (auto i = 0; i < (*line - 1); i++)
+					// BimNv lines also have colours, but these are not supported yet.
+
+					OdNwVerticesDataPtr aVertexesData = pGeomertyLineSet->getVerticesData();
+					OdGePoint3dArray aVertexes = aVertexesData->getVertices();
+					OdUInt16Array aVertexPerLine = pGeomertyLineSet->getVerticesCountPerLine();
+
+					// Each entry in aVertexPerLine corresponds to one line, which is a vertex strip. This snippet
+					// converts each strip into a set of 2-vertex line segments.
+
+					auto index = 0;
+					for (auto line = aVertexPerLine.begin(); line != aVertexPerLine.end(); line++)
 					{
-						meshBuilder.addFace(RepoMeshBuilder::face({
-							convertPoint(aVertexes[index + 0], transformMatrix),
-							convertPoint(aVertexes[index + 1], transformMatrix)
-						}));
+						for (auto i = 0; i < (*line - 1); i++)
+						{
+							meshBuilder.addFace(RepoMeshBuilder::face({
+								convertPoint(aVertexes[index + 0], transformMatrix),
+								convertPoint(aVertexes[index + 1], transformMatrix)
+								}));
+							index++;
+						}
 						index++;
 					}
-					index++;
+
+					continue;
 				}
-
-				continue;
 			}
-
-			OdNwGeometryMeshPtr pGeometryMesh = OdNwGeometryMesh::cast(pGeometry);
-			if (!pGeometryMesh.isNull())
+			else if (pGeometry->isA() == OdNwGeometryShell::desc())
 			{
-				auto triangles = pGeometryMesh->getTriangles();
-				auto vertices = pGeometryMesh->getVerticesData();
-				addTriangleData(vertices, triangles.begin(), triangles.end(), transformMatrix, meshBuilder);
-				continue;
+				OdNwGeometryShellPtr pGeometryMesh = OdNwGeometryShell::cast(pGeometry);
+				if (!pGeometryMesh.isNull())
+				{
+					auto triangles = pGeometryMesh->getTriangles();
+					auto vertices = pGeometryMesh->getVerticesData();
+					addTriangleData(vertices, triangles.begin(), triangles.end(), transformMatrix, meshBuilder);
+					continue;
+				}
 			}
-
-			OdNwGeometryEllipticalShapePtr pGeometryEllipse = OdNwGeometryEllipticalShape::cast(pGeometry);
-			if (!pGeometryEllipse.isNull())
+			else if (pGeometry->isA() == OdNwGeometryCircle::desc())
 			{
-				auto shell = pGeometryEllipse->toShell(8);
-				addTriangleData(shell.first, shell.second.begin(), shell.second.end(), transformMatrix, meshBuilder);
-				continue;
+				OdNwGeometryCirclePtr pGeometryEllipse = OdNwGeometryCircle::cast(pGeometry);
+				if (!pGeometryEllipse.isNull())
+				{
+					auto shell = pGeometryEllipse->toShell(8);
+					addTriangleData(shell.first, shell.second.begin(), shell.second.end(), transformMatrix, meshBuilder);
+					continue;
+				}
 			}
-
-			OdNwGeometryCylinderPtr pGeometryCylinder = OdNwGeometryCylinder::cast(pGeometry);
-			if (!pGeometryCylinder.isNull())
+			else if (pGeometry->isA() == OdNwGeometryCylinder::desc())
 			{
-				auto shell = pGeometryCylinder->toShell(8);
-				addTriangleData(shell.first, shell.second.begin(), shell.second.end(), transformMatrix, meshBuilder);
-				continue;
+				OdNwGeometryCylinderPtr pGeometryCylinder = OdNwGeometryCylinder::cast(pGeometry);
+				if (!pGeometryCylinder.isNull())
+				{
+					auto shell = pGeometryCylinder->toShell(8);
+					addTriangleData(shell.first, shell.second.begin(), shell.second.end(), transformMatrix, meshBuilder);
+					continue;
+				}
 			}
-
-			OdNwGeometryTextPtr pGeometryText = OdNwGeometryText::cast(pGeometry);
-			if (!pGeometryText.isNull())
+			else if (pGeometry->isA() == OdNwGeometryText::desc())
 			{
-				context.vectorizer->draw(pNode, meshBuilder);
+				OdNwGeometryTextPtr pGeometryText = OdNwGeometryText::cast(pGeometry);
+				if (!pGeometryText.isNull())
+				{
+					context.vectorizer->draw(pNode, meshBuilder);
+				}
 			}
 
 			// The full set of types that the OdNwGeometry could be are described

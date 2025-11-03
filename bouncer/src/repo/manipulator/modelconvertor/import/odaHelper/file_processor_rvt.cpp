@@ -38,9 +38,11 @@
 #include <Database/BmGsManager.h>
 #include <Database/BmGsView.h>
 #include <Database/Entities/BmBasicFileInfo.h>
-#include <Database/Entities/BmDBView3d.h>
 #include <Database/Entities/BmOverrideGraphicSettings.h>
 #include <Database/Managers/BmViewTable.h>
+#include <Essential/Entities/BmDBView3d.h>
+#include <Essential/Entities/BmBasePoint.h>
+#include <Essential/Entities/BmGeoLocation.h>
 
 #include "repo/lib/repo_utils.h"
 #include "repo/lib/repo_exception.h"
@@ -414,10 +416,6 @@ OdGeMatrix3d getModelToWorldMatrix(OdBmDatabasePtr pDb)
 				OdBmGeoLocationPtr pActiveLocation = OdBmGeoLocation::getActiveLocationId(pThis->database()).safeOpenObject();
 				OdGeMatrix3d activeTransform = pActiveLocation->getTransform();
 				activeTransform.invert();
-
-				auto units = DataProcessorRvt::getLengthUnits(pDb);
-				auto scaleCoef = 1.0 / OdBmUnitUtils::getUnitTypeIdInfo(units).inIntUnitsCoeff;
-				activeTransform.preMultBy(OdGeMatrix3d::scaling(OdGeScale3d(scaleCoef)));
 
 				return activeTransform;
 			}

@@ -272,35 +272,35 @@ TEST_F(NwdTestSuite, NwdDwgText1)
 		auto n = utils.findNodeByMetadata("Text::Contents", "Elements");
 		auto mesh = n.getMeshesInProjectCoordinates()[0];
 		mesh.updateBoundingBox();
-		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(77.1, 0, -182.6), repo::lib::RepoVector3D64(745.4, 0, -62.6)), 1));
+		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(73.5607, 0, -150.424), repo::lib::RepoVector3D64(559.571, 0, -63.1341)), 1));
 	}
 
 	{
 		auto n = utils.findNodeByMetadata("Text::Contents", "Groups");
 		auto mesh = n.getMeshesInProjectCoordinates()[0];
 		mesh.updateBoundingBox();
-		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(1405.8, 0, -183.3), repo::lib::RepoVector3D64(1931.7, 0, -30.4)), 1));
+		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(1403.44, 0, -150.563), repo::lib::RepoVector3D64(1785.87, 0, -39.3713)), 1));
 	}
 
 	{
 		auto n = utils.findNodeByMetadata("Text::Contents", "Block");
 		auto mesh = n.getMeshesInProjectCoordinates()[0];
 		mesh.updateBoundingBox();
-		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(2861.6, 0, -181.7), repo::lib::RepoVector3D64(3252.4, 0, -61.7)), 1));
+		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(2858.4, 0, -149.527), repo::lib::RepoVector3D64(3142.53, 0, -62.2378)), 1));
 	}
 
 	{
 		auto n = utils.findNodeByMetadata("Text::Contents", "Block References");
 		auto mesh = n.getMeshesInProjectCoordinates()[0];
 		mesh.updateBoundingBox();
-		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(4076.1, 0, -181.7), repo::lib::RepoVector3D64(5350.7, 0, -59.7)), 1));
+		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(4072.89, 0, -148.987), repo::lib::RepoVector3D64(4999.74, 0, -60.2323)), 1));
 	}
 
 	{
 		auto n = utils.findNodeByMetadata("Text::Contents", "Group of References");
 		auto mesh = n.getMeshesInProjectCoordinates()[0];
 		mesh.updateBoundingBox();
-		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(6012.2, 0, -136.7), repo::lib::RepoVector3D64(6801.8, 0, -57.1)), 1));
+		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(6011.03, 0, -119.712), repo::lib::RepoVector3D64(6585.21, 0, -61.8148)), 1));
 	}
 }
 
@@ -316,7 +316,7 @@ TEST_F(NwdTestSuite, NwdDwgText2)
 		auto n = utils.findNodeByMetadata("Text::Contents", "TextA");
 		auto mesh = n.getMeshesInProjectCoordinates()[0];
 		mesh.updateBoundingBox();
-		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(-2618.1, 0, -10862.1), repo::lib::RepoVector3D64(352.2, 0, -288.3)), 120));
+		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(-1820.88, 0, -7951.47), repo::lib::RepoVector3D64(339.193, 0, -262.202)), 120));
 		EXPECT_TRUE(ODAModelImportUtils::allNormalsAre(mesh, repo::lib::RepoVector3D(0, 1, 0), 0.01, 10));
 		EXPECT_THAT(n.getColours(), ElementsAre(repo::lib::repo_color3d_t(0.760784328, 0.807843149, 0.839215696)));
 	}
@@ -325,7 +325,7 @@ TEST_F(NwdTestSuite, NwdDwgText2)
 		auto n = utils.findNodeByMetadata("Text::Contents", "TextB");
 		auto mesh = n.getMeshesInProjectCoordinates()[0];
 		mesh.updateBoundingBox();
-		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(-30056.1, -14139.8, -67539.2), repo::lib::RepoVector3D64(23685.1, 15713.8, -34265.1)), 120));
+		EXPECT_THAT(mesh.getBoundingBox(), BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(-30309.4, -10499.1, -57602.3), repo::lib::RepoVector3D64(8771.25, 11210.5, -33405.4)), 120));
 		EXPECT_TRUE(ODAModelImportUtils::allNormalsAre(mesh, repo::lib::RepoVector3D(0.531980395, 0.310758412, 0.787671328), 0.01, 10));
 		EXPECT_THAT(n.getColours(), ElementsAre(repo::lib::repo_color3d_t(0.803921580, 0.125490203, 0.152941182)));
 	}
@@ -579,6 +579,47 @@ TEST(ODAModelImport, DefaultViewDisplayOptions)
 		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::TRIANGLES).size(), Eq(0)); // No textures means meshes are combined
 		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").getMeshes(repo::core::model::MeshNode::Primitive::LINES).size(), Gt(0));
 		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "307098").hasTextures(), IsFalse());
+	}
+}
+
+TEST(ODAModelImport, RvtUnits)
+{
+	// In mm
+	auto expectedBounds = repo::lib::RepoBounds(
+		repo::lib::RepoVector3D64(-708.47, -2500.0, -62.05),
+		repo::lib::RepoVector3D64(-403.17, 0.0, 245.84)
+	);
+
+	// Regardless of what the project units are, the geometry should always be
+	// imported in the target units of the import config (and correctly scaled
+	// to those units).
+
+	{
+		ModelImportConfig config(repo::lib::RepoUUID::createUUID(), TESTDB, "RevitUnitsMillimeters");
+		config.targetUnits = ModelUnits::MILLIMETRES;
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport(getDataPath("rvt_mm.rvt"), config));
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "330859").getProjectBounds(), BoundsAre(expectedBounds, 0.5));
+	}
+
+	{
+		ModelImportConfig config(repo::lib::RepoUUID::createUUID(), TESTDB, "RevitUnitsFeet");
+		config.targetUnits = ModelUnits::MILLIMETRES;
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport(getDataPath("rvt_ft.rvt"), config));
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "330859").getProjectBounds(), BoundsAre(expectedBounds, 0.5));
+	}
+
+	{
+		ModelImportConfig config(repo::lib::RepoUUID::createUUID(), TESTDB, "RevitUnitsFeetandFractionalInches");
+		config.targetUnits = ModelUnits::MILLIMETRES;
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport(getDataPath("rvt_ft-in.rvt"), config));
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "330859").getProjectBounds(), BoundsAre(expectedBounds, 0.5));
+	}
+
+	{
+		ModelImportConfig config(repo::lib::RepoUUID::createUUID(), TESTDB, "RevitUnitsShaku");
+		config.targetUnits = ModelUnits::MILLIMETRES;
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport(getDataPath("rvt_shaku.rvt"), config));
+		EXPECT_THAT(scene.findNodeByMetadata("Element ID", "330859").getProjectBounds(), BoundsAre(expectedBounds, 0.5));
 	}
 }
 
