@@ -18,11 +18,13 @@
 #include "repo/lib/datastructure/repo_vector.h"
 #include "repo/lib/datastructure/repo_line.h"
 #include "repo/lib/datastructure/repo_triangle.h"
+#include "repo/lib/datastructure/repo_bounds.h"
 #include <algorithm>
 
 namespace geometry {
 
     repo::lib::RepoVector3D64 closestPointTriangle(const repo::lib::RepoVector3D64& p, const repo::lib::RepoTriangle& T);
+    
     repo::lib::RepoLine closestPointPointTriangle(const repo::lib::RepoVector3D64& p, const repo::lib::RepoTriangle& T);
 
     repo::lib::RepoLine closestPointLineLine(const repo::lib::RepoLine& A, const repo::lib::RepoLine& B);
@@ -34,4 +36,27 @@ namespace geometry {
 	* from A to B in one case, and from B to A in another).
     */
     repo::lib::RepoLine closestPointTriangleTriangle(const repo::lib::RepoTriangle& A, const repo::lib::RepoTriangle& B);
+
+    /*
+    * Orient predicate in 3D - this returns whether point d is above, below or
+    * on the plane defined by a, b and c. The sign is negative if above, and 
+    * positive if below (the opposite to the cross-product).
+    */
+    double orient(const repo::lib::RepoVector3D64& a, const repo::lib::RepoVector3D64& b, const repo::lib::RepoVector3D64& c, const repo::lib::RepoVector3D64& d);
+
+    /*
+    * Determines if two triangles intersect, and if so returns an upper bound on
+    * the distance one triangle must move to completely resolve the intersection.
+	* Unambiguously disjoint triangles will return exactly zero. Triangles that
+    * are in-contact or coplanar will return a small values, or zero.
+    */
+	double intersects(const repo::lib::RepoTriangle& a, const repo::lib::RepoTriangle& b);
+
+    /*
+    * Given two bounds, return the minimum separating axis between them, in the
+    * form of a vector, such that if a is moved by that vector, the two bounds
+    * will touch on that axis. If the bounds do not intersect, the vector will
+    * be empty.
+    */
+    repo::lib::RepoVector3D64 minimumSeparatingAxis(const repo::lib::RepoBounds& a, repo::lib::RepoBounds& b);
 }

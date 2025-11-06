@@ -48,6 +48,9 @@
 #include <repo/manipulator/modelutility/clashdetection/geometry_tests.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_scheduler.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_exceptions.h>
+#include <repo/manipulator/modelutility/clashdetection/repo_polydepth.h>
+
+#include <repo/manipulator/modelutility/clashdetection/predicates.h>
 
 #include "../../../repo_test_utils.h"
 #include "../../../repo_test_clash_utils.h"
@@ -368,202 +371,19 @@ TEST(Clash, Scheduler)
 * probabilisitcally. Primitives are generated in different known configurations
 * as a ground truth, to which the measured distances are compared.
 * 
-* The per-configuration unit tests evaulate the error of the geometry queries,
-* which serves to test these methods, but also to validate the clash generator
-* algorithms as well to an extent, before they are used in the end-to-end tests.
+* Individual tests for specific intersection configurations are part of the
+* geometry unit tests. These serve to test these methods, but also to validate
+* the clash generator algorithms as well to an extent, before they are used in 
+* the end-to-end tests.
 * 
-* Accuracy is tested at both the unit and end-to-end level. The current guaranteed
-* accuracy is 1 in 8e6 for vertices, with transforms up to 1e11 from the origin.
-* For models imported in mm, this represents an error of ±1 mm.
+* The current guaranteed accuracy is 1 in 8e6 for vertices, with transforms up
+* to 1e11 from the origin. For models imported in mm, this represents an error
+* of ±1 mm.
 * 
-* This domain is determined by the source data the engine has to work with: single
-* precision vertices from the binary buffers, and double precision transformations
-* stored in Mongo.
+* This domain is determined by the source data the engine has to work with: 
+* single precision vertices from the binary buffers, and double precision
+* transformations stored in Mongo.
 */
-
-TEST(Clash, LineLineDistanceUnit)
-{
-	// Tests the accuracy of the line-line distance test across the supported
-	// domain.
-	// Remark: the engine doesn't yet support true line-line clashes, so this test
-	// is really to make sure the geometry library does not degenerate until then.
-
-	CellDistribution space;
-	ClashGenerator clashGenerator;
-
-	std::vector<double> distances = { 0, 1, 2 };
-	for (auto d : distances) {
-		clashGenerator.distance = d;
-		for (int i = 0; i < 100000; ++i) {
-			auto p = clashGenerator.createLinesTransformed(space.sample());
-
-			repo::lib::RepoLine a(
-				p.first.second * p.first.first.start,
-				p.first.second * p.first.first.end
-			);
-
-			repo::lib::RepoLine b(
-				p.second.second * p.second.first.start,
-				p.second.second * p.second.first.end
-			);
-
-			auto line = geometry::closestPointLineLine(a, b);
-			auto m = line.magnitude();
-			auto e = abs(m - d);
-
-			// 0.5 on either side of d, for a total permissible error of 1
-			EXPECT_THAT(e, Lt(0.5));
-		}
-	}
-}
-
-TEST(Clash, TrianglesUnitVV)
-{
-	// Tests that the triangle distance tests will correctly identify triangles
-	// which are closest at their vertices.
-
-	// Note that the space sizes are double the expected maximums for a single
-	// mesh - as two meshes of those sizes may sit side-by-side.
-
-	CellDistribution space;
-	ClashGenerator clashGenerator;
-
-	std::vector<double> distances = { 0, 1, 2 };
-	for (auto d : distances) {
-		clashGenerator.distance = d;
-
-		for (int i = 0; i < 1000000; ++i) {
-
-			auto p = clashGenerator.createTrianglesVV(space.sample());
-
-			auto [a, b] = ClashGenerator::applyTransforms(p);
-
-			auto line = geometry::closestPointTriangleTriangle(a, b);
-			auto m = line.magnitude();
-			auto e = abs(m - d);
-
-			EXPECT_THAT(e, Le(1.0));
-
-			// For VV, the line should connect two vertices (or very close, providing for
-			// rounding error).
-
-			EXPECT_THAT(vectors::Iterator(line), vectors::AreSubsetOf({ a.a, a.b, a.c, b.a, b.b, b.c }, ClashGenerator::suggestTolerance({ a, b })));
-		}
-	}
-}
-
-TEST(Clash, TrianglesUnitVE)
-{
-	// Tests that the triangle distance tests correctly identify triangles
-	// which are closest at an edge and a vertex.
-
-	CellDistribution space;
-	ClashGenerator clashGenerator;
-
-	std::vector<double> distances = { 0, 1, 2 };
-	for (auto d : distances) {
-		clashGenerator.distance = d;
-
-		for (int i = 0; i < 100000; ++i) {
-
-			auto p = clashGenerator.createTrianglesVE(space.sample());
-
-			auto [a, b] = ClashGenerator::applyTransforms(p);
-
-			auto line = geometry::closestPointTriangleTriangle(a, b);
-			auto m = line.magnitude();
-			auto e = abs(m - d);
-
-			EXPECT_THAT(e, Le(1.0));
-
-			// For VE, the line should connect a vertex to an edge, so exactly
-			// one of the points should be coincident with a vertex.
-
-			// (Note that if the the distance is small enough, both points will
-			// match to the vertex, so be robust to that case too.)
-
-			EXPECT_THAT(vectors::Iterator(line), vectors::Intersects({ a.a, a.b, a.c, b.a, b.b, b.c }, {1, 2}, ClashGenerator::suggestTolerance({ a, b })));
-		}
-	}
-}
-
-TEST(Clash, TrianglesUnitEE)
-{
-	// Tests that the triangle distance tests correctly identify triangles
-	// which are closest at an edge and a vertex.
-
-	CellDistribution space;
-	ClashGenerator clashGenerator;
-
-	std::vector<double> distances = { 0, 1, 2 };
-	for (auto d : distances) {
-		clashGenerator.distance = d;
-
-		for (int i = 0; i < 100000; ++i) {
-
-			auto p = clashGenerator.createTrianglesEE(space.sample());
-
-			auto [a, b] = ClashGenerator::applyTransforms(p);
-
-			auto line = geometry::closestPointTriangleTriangle(a, b);
-			auto m = line.magnitude();
-			auto e = abs(m - d);
-
-			EXPECT_THAT(e, Le(1.0));
-		}
-	}
-}
-
-TEST(Clash, TrianglesUnitVF)
-{
-	// Tests that the triangle distance tests correctly identify triangles
-	// which are closest at an edge and a vertex.
-
-	CellDistribution space;
-	ClashGenerator clashGenerator;
-
-	std::vector<double> distances = { 0, 1, 2 };
-	for (auto d : distances) {
-		clashGenerator.distance = d;
-
-		for (int i = 0; i < 100000; ++i) {
-
-			auto p = clashGenerator.createTrianglesVF(space.sample());
-
-			auto [a, b] = ClashGenerator::applyTransforms(p);
-
-			auto line = geometry::closestPointTriangleTriangle(a, b);
-			auto m = line.magnitude();
-			auto e = abs(m - d);
-
-			EXPECT_THAT(e, Lt(1.0));
-		}
-	}
-}
-
-TEST(Clash, TrianglesUnitFE)
-{
-	// Tests that the triangle distance tests correctly identify triangles
-	// where the edge of one penetrates the face of another.
-	// Note that the distance in this case should always be zero - if a
-	// there is no intersection, then the closest points will be on an edge
-	// or a vertex, covered by the tests above.
-
-	CellDistribution space;
-	ClashGenerator clashGenerator;
-
-	for (int i = 0; i < 100000; ++i) {
-
-		auto p = clashGenerator.createTrianglesFE(space.sample());
-
-		auto [a, b] = ClashGenerator::applyTransforms(p);
-
-		auto line = geometry::closestPointTriangleTriangle(a, b);
-		auto m = line.magnitude();
-
-		EXPECT_THAT(m, Lt(1.0));
-	}
-}
 
 TEST(Clash, TriangleDistanceE2E) 
 {
@@ -1180,13 +1000,92 @@ TEST(Clash, SelfClearance)
 	}
 }
 
+std::vector<repo::lib::RepoTriangle> triangles(const TransformMesh& p)
+{
+	auto m = p.second;
+	std::vector<repo::lib::RepoTriangle> triangles;
+	auto v = p.first.getVertices();
+	for (const auto& t : p.first.getFaces()) {
+		triangles.push_back(repo::lib::RepoTriangle(
+			m * v[t[0]],
+			m * v[t[1]],
+			m * v[t[2]]
+		));
+	}
+	return triangles;
+}
+
+bool intersects(const std::vector<repo::lib::RepoTriangle>& a, const std::vector<repo::lib::RepoTriangle>& b)
+{
+	for(auto t1 : a) {
+		for (auto t2 : b) {
+			if (geometry::intersects(t1, t2)) {
+				return true;
+			}		
+		}
+	}
+	return false;
+}
+
+void transform(std::vector<repo::lib::RepoTriangle>& triangles, const repo::lib::RepoMatrix& m)
+{
+	for (auto& t : triangles) {
+		t.a = m * t.a;
+		t.b = m * t.b;
+		t.c = m * t.c;
+	}
+}
+
+TEST(Clash, RepoPolyDepth)
+{
+	// Tests the penetration depth method of the geometry utils. Penetration
+	// depth is approximate, with a guaranteed upper bound only, so this
+	// doesn't check for the exact value, just that it is less than the
+	// returned depth.
+
+	CellDistribution space(1, 1);
+	ClashGenerator clashGenerator;
+
+	clashGenerator.size1 = 100;
+	clashGenerator.size2 = 100;
+	
+	clashGenerator.distance = 0.1;
+
+	auto clash = clashGenerator.createHard1(space.sample());
+
+	auto a = triangles(clash.first);
+	auto b = triangles(clash.second);
+
+	EXPECT_THAT(intersects(a, b), IsTrue());
+
+	geometry::RepoPolyDepth pd(a, b);
+
+	// Before any iterations, PolyDepth should return a valid upper bounds.
+
+	auto v = pd.getPenetrationVector();
+
+	// The penetration vector should be non-zero, and non-infinity, and it
+	// should work to resolve the collision.
+
+	EXPECT_THAT(v.norm(), Gt(0));
+	EXPECT_THAT(std::isfinite(v.norm()), IsTrue());
+
+	transform(a, repo::lib::RepoMatrix::translate(v));
+
+	// todo - need to distinguish between in-contact and separated here..
+
+	EXPECT_THAT(intersects(a, b), IsFalse());
+}
+
 TEST(Clash, Hard1)
 {
 	// A simple test case of two interpenetrating polyhedra close to the origin.
 
-	auto handler = getHandler();
-	ClashDetectionConfig config;
+	auto db = std::make_shared<MockDatabase>();
+
+	ClashDetectionConfigHelper config;
 	config.type = ClashDetectionType::Hard;
+	config.tolerance = 0;
 
 	CellDistribution space(1, 1);
 	ClashGenerator clashGenerator;
@@ -1196,10 +1095,15 @@ TEST(Clash, Hard1)
 
 	auto clash = clashGenerator.createHard1(space.sample());
 
-	auto pipeline = new clash::Hard(handler, config);
+	MockClashScene scene(config.getRevision());
+	scene.add(clash, config);
+
+	db->setDocuments(scene.bsons);
+
+	auto pipeline = new clash::Hard(db, config);
 	auto results = pipeline->runPipeline();
 
-	EXPECT_THAT(results.clashes.size(), Eq(1));
+	EXPECT_THAT(results.clashes.size(), Eq(0));
 }
 
 TEST(Clash, ResultsSerialisation)

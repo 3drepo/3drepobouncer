@@ -4,11 +4,8 @@
 #If you really need to overwrite this file, be aware that it will be overwritten if updateSources.py is executed.
 
 
-add_subdirectory(clashdetection)
 set(TEST_SOURCES
 	${TEST_SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_clash_detection.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_maker_selection_tree.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_mesh_map_reorganiser.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_geometry.cpp
 	CACHE STRING "TEST_SOURCES" FORCE)
 
