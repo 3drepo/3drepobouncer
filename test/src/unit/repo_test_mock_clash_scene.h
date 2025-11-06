@@ -175,6 +175,16 @@ namespace testing {
 			const repo::lib::RepoBounds& bounds
 		);
 
+		// Triangles that have a hard intersection, with one or two edges of one
+		// triangle penetrating the face of the other. This is a superset of
+		// createTrianglesFE.
+
+		TransformTriangles createTrianglesFF(
+			const repo::lib::RepoBounds& bounds
+		);
+
+		// Creates a intersection between a cone and a cube
+
 		TransformMeshes createHard1(
 			const repo::lib::RepoBounds& bounds
 		);

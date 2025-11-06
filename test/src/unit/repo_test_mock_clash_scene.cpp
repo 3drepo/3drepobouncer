@@ -585,6 +585,51 @@ TransformTriangles testing::ClashGenerator::createTrianglesFE(const repo::lib::R
 	return problem;
 }
 
+TransformTriangles testing::ClashGenerator::createTrianglesFF(const repo::lib::RepoBounds& bounds) 
+{
+	repo::lib::RepoTriangle a(
+		random.vector(size1),
+		random.vector(size1),
+		random.vector(size1)
+	);
+
+	repo::lib::RepoTriangle b(
+		random.vector(size2),
+		random.vector(size2),
+		random.vector(size2)
+	);
+
+	// todo: another version of this will create a segment on t1 and from that project out a triangle t2 in an arbitrary direction.
+
+	// Pick a random point on each triangle, then perform a translation so that
+	// they become coincident.
+
+	auto pa = random.barycentric();
+	auto pointOnA = a.a * pa.x + a.b * pa.y + a.c * pa.z;
+
+	auto pb = random.barycentric();
+	auto pointOnB = b.a * pb.x + b.b * pb.y + b.c * pb.z;
+
+	auto d = pointOnB - pointOnA;
+
+	a.a += d;
+	a.b += d;
+	a.c += d;
+
+	shiftTriangles(b);
+
+	TransformTriangles problem({ a, RepoMatrix() }, { b, RepoMatrix() });
+
+	moveB(problem, size2);
+	moveProblem(problem, size2);
+	moveToBounds(problem, bounds);
+	if (downcastVertices) {
+		downcast(problem);
+	}
+
+	return problem;
+}
+
 TransformMeshes testing::ClashGenerator::createHard1(
 	const repo::lib::RepoBounds& bounds
 )
@@ -594,7 +639,7 @@ TransformMeshes testing::ClashGenerator::createHard1(
 
 	auto d = random.number(distance);
 
-	auto t = RepoMatrix::translate(repo::lib::RepoVector3D64(0, 0, 0.5 -d)) * RepoMatrix::rotationX(std::numbers::pi);
+	auto t = RepoMatrix::translate(repo::lib::RepoVector3D64(0, 0, 1.0 - d)) * RepoMatrix::rotationX(std::numbers::pi);
 	cone.applyTransformation(t);
 
 	return { { cube, {} }, { cone, {} } };
