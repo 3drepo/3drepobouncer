@@ -446,28 +446,28 @@ double geometry::intersects(const repo::lib::RepoTriangle& A, const repo::lib::R
 #define INTERSECT(p1,q1,r1,p2,q2,r2) return checkMinMax(p1,q1,r1,p2,q2,r2);
 
 #define PERMUTE2(p1,q1,r1,p2,q2,r2,dp2,dq2,dr2) { \
-      if (dp2 > 0.0f) { \
-         if (dq2 > 0.0f) INTERSECT(p1,r1,q1,r2,p2,q2) \
-         else if (dr2 > 0.0f) INTERSECT(p1,r1,q1,q2,r2,p2)\
-         else INTERSECT(p1,q1,r1,p2,q2,r2) }\
-      else if (dp2 < 0.0f) { \
-        if (dq2 < 0.0f) INTERSECT(p1,q1,r1,r2,p2,q2)\
-        else if (dr2 < 0.0f) INTERSECT(p1,q1,r1,q2,r2,p2)\
-        else INTERSECT(p1,r1,q1,p2,q2,r2)\
-      } else { \
-        if (dq2 < 0.0f) { \
-          if (dr2 >= 0.0f)  INTERSECT(p1,r1,q1,q2,r2,p2)\
-          else INTERSECT(p1,q1,r1,p2,q2,r2)\
-        } \
-        else if (dq2 > 0.0f) { \
-          if (dr2 > 0.0f) INTERSECT(p1,r1,q1,p2,q2,r2)\
-          else  INTERSECT(p1,q1,r1,q2,r2,p2)\
-        } \
-        else  { \
-          if (dr2 > 0.0f) INTERSECT(p1,q1,r1,r2,p2,q2)\
-          else if (dr2 < 0.0f) INTERSECT(p1,r1,q1,r2,p2,q2)\
-          else return COPLANAR;\
-         }}}
+	if (dp2 > 0.0f) { \
+		if (dq2 > 0.0f) INTERSECT(p1,r1,q1,r2,p2,q2) \
+		else if (dr2 > 0.0f) INTERSECT(p1,r1,q1,q2,r2,p2)\
+		else INTERSECT(p1,q1,r1,p2,q2,r2) }\
+	else if (dp2 < 0.0f) { \
+		if (dq2 < 0.0f) INTERSECT(p1,q1,r1,r2,p2,q2)\
+		else if (dr2 < 0.0f) INTERSECT(p1,q1,r1,q2,r2,p2)\
+		else INTERSECT(p1,r1,q1,p2,q2,r2)\
+	} else { \
+		if (dq2 < 0.0f) { \
+			if (dr2 >= 0.0f)  INTERSECT(p1,r1,q1,q2,r2,p2)\
+			else INTERSECT(p1,q1,r1,p2,q2,r2)\
+		} \
+		else if (dq2 > 0.0f) { \
+			if (dr2 > 0.0f) INTERSECT(p1,r1,q1,p2,q2,r2)\
+			else  INTERSECT(p1,q1,r1,q2,r2,p2)\
+		} \
+		else  { \
+			if (dr2 > 0.0f) INTERSECT(p1,q1,r1,r2,p2,q2)\
+			else if (dr2 < 0.0f) INTERSECT(p1,r1,q1,r2,p2,q2)\
+			else return COPLANAR;\
+		}}}
 
 
     // Permute (circular shift) the vertices of the triangles such that it is
