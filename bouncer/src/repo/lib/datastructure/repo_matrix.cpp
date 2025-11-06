@@ -330,8 +330,8 @@ _RepoMatrix<T> _RepoMatrix<T>::rotation(const repo::lib::_RepoVector3D<T>& axis,
 	m.data[5] = c + axis.y * axis.y * t;
 	m.data[10] = c + axis.z * axis.z * t;
 
-	double j = axis.x * axis.y * t;
-	double k = axis.z * s;
+	T j = axis.x * axis.y * t;
+	T k = axis.z * s;
 	m.data[4] = j + k;
 	m.data[1] = j - k;
 	
