@@ -28,7 +28,7 @@ namespace repo {
 				{
 				public:
 					Hard(DatabasePtr handler, const ClashDetectionConfig& config)
-						: Pipeline(handler, config)
+						: Pipeline(handler, config), tolerance(config.tolerance)
 					{
 					}
 
@@ -46,6 +46,9 @@ namespace repo {
 					virtual void createClashReport(const OrderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const override;
 
 					double tolerance;
+
+				private:
+					double estimatePenetrationDepth(const OrderedPair& pair) const;
 				};
 			}
 		}

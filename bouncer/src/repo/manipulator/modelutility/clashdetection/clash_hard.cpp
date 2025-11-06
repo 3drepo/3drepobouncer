@@ -19,56 +19,24 @@
 
 #include "clash_hard.h"
 #include "geometry_tests.h"
+#include "repo_polydepth.h"
 
 using namespace repo::manipulator::modelutility::clash;
 
-static bvh::BoundingBox<double> intersection(const bvh::BoundingBox<double>& a, const bvh::BoundingBox<double>& b)
-{
-	bvh::BoundingBox<double> result;
-	result.min = {
-		std::max(a.min[0], b.min[0]),
-		std::max(a.min[1], b.min[1]),
-		std::max(a.min[2], b.min[2])
-	};
-	result.max = {
-		std::min(a.max[0], b.max[0]),
-		std::min(a.max[1], b.max[1]),
-		std::min(a.max[2], b.max[2])
-	};
-	return result;
-}
-
-static double minDistanceSq(const bvh::BoundingBox<double>& a, const bvh::BoundingBox<double>& b)
-{
-	auto ib = intersection(a, b);
-	double sq = 0.0;
-	for (auto i = 0; i < 3; ++i) {
-		if (ib.min[i] > ib.max[i]) {
-			sq += std::pow(ib.min[i] - ib.max[i], 2);
-		}
-	}
-	return sq;
-}
-
 /*
-* The Hard broadphase returns all bounds that have a minimum distance
-* smaller than the tolerance.
-* Even if two bounds are intersecting, it does not necessarily mean that the
-* primitives within them have a distance of zero. The best we can say is that
-* the closest two primitives will definitely have a distance smaller than the
-* running smallest distance between the maximum distance between any two bounds.
-* Therefore this test is conservative and returns all potential pairs. If a user
-* is only ever interested in the closest pair, then early termination based on
-* tracking the smallest maxmimum distance could be applied.
+* The Hard broadphase returns all bounds that have an overlap, as this is a
+* necessary condition for them to begin in an intersecting state. The overlap
+* must also exceed the tolerance, otherwise the leaf geometry cannot intersect
+* by more than that.
 */
 struct HardBroadphase: public Broadphase
 {
-	HardBroadphase(double Hard)
-		:HardSq(Hard* Hard)
+	HardBroadphase(double tolerance)
+		:toleranceSq(tolerance * tolerance)
 	{
 	}
 
-	double HardSq;
+	double toleranceSq;
 
 	std::stack<std::pair<size_t, size_t>> pairs;
 
@@ -83,11 +51,32 @@ struct HardBroadphase: public Broadphase
 			auto& left = a.nodes[idxLeft];
 			auto& right = b.nodes[idxRight];
 
-			auto mds = minDistanceSq(left.bounding_box_proxy(), right.bounding_box_proxy());
+			// This snippet computes the overlap
 
-			if (mds > HardSq)
+			bvh::BoundingBox<double> result;
+			result.min = {
+				std::max(left.bounds[0], right.bounds[0]),
+				std::max(left.bounds[1], right.bounds[1]),
+				std::max(left.bounds[2], right.bounds[2])
+			};
+			result.max = {
+				std::min(left.bounds[3], right.bounds[3]),
+				std::min(left.bounds[4], right.bounds[4]),
+				std::min(left.bounds[5], right.bounds[5])
+			};
+
+			if (result.max[0] < result.min[0] ||
+				result.max[1] < result.min[1] ||
+				result.max[2] < result.min[2])
 			{
-				continue; // No possible intersection within the tolerance
+				continue; // No overlap
+			}
+
+			auto overlapSq = bvh::dot(result.diagonal(), result.diagonal());
+
+			if (overlapSq < toleranceSq)
+			{
+				continue; // No possible intersection above the tolerance
 			}
 
 			if (left.is_leaf() && right.is_leaf())
@@ -122,22 +111,21 @@ struct HardBroadphase: public Broadphase
 	}
 };
 
-struct HardNarrowphase: public Narrowphase
+struct HardNarrowphase : public Narrowphase
 {
-	HardNarrowphase(double tolerance)
-		:tolerance(tolerance),
-		line(repo::lib::RepoLine::Max())
-	{
-	}
-
-	double tolerance;
-	repo::lib::RepoLine line;
-
 	bool operator()(const repo::lib::RepoTriangle& a, const repo::lib::RepoTriangle& b) override
 	{
-		line = geometry::closestPointTriangleTriangle(a, b);
+		// The true penetration depth cannot be estimated pair-wise in isolation,
+		// because geometry of one mesh that is deepest within the other may not
+		// intersect with that ones surface.
+		// For the narrowphase, we simply check if the triangles are touching, and
+		// then the depth estimation takes place in the composition step. This also
+		// means we can tolerate some false-positives here (though not false
+		// negatives).
+
+		auto line = geometry::closestPointTriangleTriangle(a, b);
 		auto m = line.magnitude();
-		return m <= tolerance;
+		return m < FLT_EPSILON;
 	}
 };
 
@@ -148,21 +136,13 @@ std::unique_ptr<Broadphase> Hard::createBroadphase() const
 
 std::unique_ptr<Narrowphase> Hard::createNarrowphase() const
 {
-	return std::make_unique<HardNarrowphase>(tolerance);
+	return std::make_unique<HardNarrowphase>();
 }
-
-struct HardClash : public CompositeClash
-{
-	repo::lib::RepoLine line;
-};
 
 void Hard::append(CompositeClash& c, const Narrowphase& r) const
 {
-	auto& clash = static_cast<HardClash&>(c);
-	auto& result = static_cast<const HardNarrowphase&>(r);
-	if (result.line.magnitude() < clash.line.magnitude()) {
-		clash.line = result.line;
-	}
+	// We don't need to do anything here because the keys of the composite clash
+	// hold the identities we need to recover.
 }
 
 void Hard::createClashReport(const OrderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const
@@ -170,9 +150,9 @@ void Hard::createClashReport(const OrderedPair& objects, const CompositeClash& c
 	result.idA = objects.a;
 	result.idB = objects.b;
 
+	auto pd = estimatePenetrationDepth(objects);
+
 	result.positions = {
-		static_cast<const HardClash&>(clash).line.start,
-		static_cast<const HardClash&>(clash).line.end
 	};
 
 	size_t hash = 0;
@@ -183,4 +163,12 @@ void Hard::createClashReport(const OrderedPair& objects, const CompositeClash& c
 		hash ^= hasher(p.z) + 0x9e3779b9;
 	}
 	result.fingerprint = hash;
+}
+
+double Hard::estimatePenetrationDepth(const OrderedPair& pair) const
+{
+	//todo: get all meshes from ordered pairs for polydepth
+
+	//geometry::RepoPolyDepth pd()
+	return 0;
 }
