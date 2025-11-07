@@ -505,8 +505,6 @@ TEST(Geometry, TrianglesTrianglesIntersects2)
 	clashGenerator.size1 = { 0.0001, 10000 };
 	clashGenerator.size2 = { 0.0001, 10000 };
 
-	ClashGenerator::DevillersGuigueIntermediates intermediates;
-
 	for (int itr = 0; itr < 1000000; ++itr) 
 	{
 		{
@@ -526,7 +524,7 @@ TEST(Geometry, TrianglesTrianglesIntersects2)
 			auto dq2 = random.number(clashGenerator.distance);
 			auto dr2 = random.number(clashGenerator.distance);
 
-			auto p = clashGenerator.createTrianglesDevillersGuigue({}, 0, k, j, l, dp1, dp2, dq1, dq2, dr1, dr2, &intermediates);
+			auto p = clashGenerator.createTrianglesDevillersGuigue({}, 0, k, j, l, dp1, dp2, dq1, dq2, dr1, dr2);
 			auto [a, b] = ClashGenerator::applyTransforms(p);
 
 			auto d = geometry::intersects(a, b);

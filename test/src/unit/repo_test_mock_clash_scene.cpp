@@ -611,15 +611,14 @@ TransformTriangles testing::ClashGenerator::createTrianglesDevillersGuigue(
 	double dq1,
 	double dq2,
 	double dr1,
-	double dr2,
-	DevillersGuigueIntermediates* intermediates
+	double dr2
 )
 {
 	// The way this method works is to first construct two arbitraty planes and
 	// then find L. L is used as the foundation to then construct i, k, j, l, based
 	// on the arguments. These points are used as origins from which rays are cast
 	// that intersect planes offset from π1 and π2 by d1 and d2 (thus ensuring
-	// p1 and p2 are exactly d1 and d2 from their counteparts).
+	// p1 and p2 are exactly d1 and d2 from their counterparts).
 	// Similar ray-casts are then performed from p1 and p2 to find r1,q1 and r2,q2.
 	// The only underconstrained parts of the problem are the initial points p1 and
 	// p2, which are generated using random directions along their support planes.
@@ -663,16 +662,6 @@ TransformTriangles testing::ClashGenerator::createTrianglesDevillersGuigue(
 	moveToBounds(problem, bounds);
 	if (downcastVertices) {
 		downcast(problem);
-	}
-
-	if(intermediates) {
-		intermediates->n1 = n1;
-		intermediates->n2 = n2;
-		intermediates->L = L;
-		intermediates->i = ii;
-		intermediates->k = kk;
-		intermediates->j = jj;
-		intermediates->l = ll;
 	}
 
 	return problem;

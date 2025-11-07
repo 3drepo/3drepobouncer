@@ -188,17 +188,6 @@ namespace testing {
 		// Philippe Guigue. (2002). Using the annotations in that figure as
 		// parameterisations.
 
-		struct DevillersGuigueIntermediates
-		{
-			repo::lib::RepoVector3D64 n1;
-			repo::lib::RepoVector3D64 n2;
-			repo::lib::RepoVector3D64 L;
-			repo::lib::RepoVector3D64 i;
-			repo::lib::RepoVector3D64 k;
-			repo::lib::RepoVector3D64 j;
-			repo::lib::RepoVector3D64 l;
-		};
-
 		TransformTriangles createTrianglesDevillersGuigue(
 			const repo::lib::RepoBounds& bounds,
 			double i,
@@ -210,8 +199,7 @@ namespace testing {
 			double dq1,
 			double dq2,
 			double dr1,
-			double dr2,
-			DevillersGuigueIntermediates* intermediates = nullptr
+			double dr2
 		);
 
 		// Creates a intersection between a cone and a cube
