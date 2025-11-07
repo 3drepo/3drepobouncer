@@ -82,6 +82,11 @@ namespace repo {
 				return { this->x * scalar, this->y * scalar };
 			}
 
+			inline _RepoRange<T> operator+(const T& scalar)
+			{
+				return { this->x + scalar, this->y + scalar };
+			}
+
 			std::string toString() const
 			{
 				std::stringstream sstr;

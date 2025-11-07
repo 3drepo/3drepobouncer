@@ -1,4 +1,4 @@
-/**
+﻿/**
 *  Copyright (C) 2025 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
@@ -585,6 +585,99 @@ TransformTriangles testing::ClashGenerator::createTrianglesFE(const repo::lib::R
 	return problem;
 }
 
+repo::lib::RepoVector3D64 rayPlaneIntersection(
+	repo::lib::RepoVector3D64 rayOrigin,
+	repo::lib::RepoVector3D64 rayDirection,
+	repo::lib::RepoVector3D64 planeNormal,
+	repo::lib::RepoVector3D64 planePoint
+)
+{
+	rayDirection.normalize();
+	auto denom = planeNormal.dotProduct(rayDirection);
+	auto t = (planePoint - rayOrigin).dotProduct(planeNormal) / denom;
+	return rayOrigin + rayDirection * t;
+}
+
+#pragma optimize("", off)
+
+TransformTriangles testing::ClashGenerator::createTrianglesDevillersGuigue(
+	const repo::lib::RepoBounds& bounds,
+	double i,
+	double k,
+	double j,
+	double l,
+	double dp1,
+	double dp2,
+	double dq1,
+	double dq2,
+	double dr1,
+	double dr2,
+	DevillersGuigueIntermediates* intermediates
+)
+{
+	// The way this method works is to first construct two arbitraty planes and
+	// then find L. L is used as the foundation to then construct i, k, j, l, based
+	// on the arguments. These points are used as origins from which rays are cast
+	// that intersect planes offset from π1 and π2 by d1 and d2 (thus ensuring
+	// p1 and p2 are exactly d1 and d2 from their counteparts).
+	// Similar ray-casts are then performed from p1 and p2 to find r1,q1 and r2,q2.
+	// The only underconstrained parts of the problem are the initial points p1 and
+	// p2, which are generated using random directions along their support planes.
+
+	auto n1 = random.direction();
+	auto n2 = random.direction();
+
+	auto L = n1.crossProduct(n2);
+	L.normalize();
+
+	// Pick points i,k,j,l
+	// i is always at 0,0,0 to begin with - the triangle is moved later
+
+	auto ii = repo::lib::RepoVector3D64(0, 0, 0);
+
+	k -= i;
+	j -= i;
+	l -= i;
+
+	auto kk = ii + L * k;
+	auto jj = ii + L * j;
+	auto ll = ii + L * l;
+
+	// Create p1 and p2, exactly at distance d1 and d2 from the planes
+
+	auto p1d = repo::lib::RepoMatrix::rotation(n1, random.angle({ 0.01, 3.12 })) * L;
+
+	auto p1 = rayPlaneIntersection(ii, p1d, n2, ii + n2 * dp1);
+	auto q1 = rayPlaneIntersection(p1, jj - p1, n2, kk - n2 * dq1);
+	auto r1 = rayPlaneIntersection(p1, ii - p1, n2, ii - n2 * dr1);
+
+	auto p2d = repo::lib::RepoMatrix::rotation(n2, random.angle({ 0.01, 3.12 })) * L;
+
+	auto p2 = rayPlaneIntersection(kk, p2d, n1, kk + n1 * dp2);
+	auto q2 = rayPlaneIntersection(p2, kk - p2, n1, kk - n1 * dr2);
+	auto r2 = rayPlaneIntersection(p2, ll - p2, n1, ll - n1 * dq2);
+
+	TransformTriangles problem({ repo::lib::RepoTriangle(p1, q1, r1), RepoMatrix() }, { repo::lib::RepoTriangle(p2, q2, r2), RepoMatrix() });
+
+	moveProblem(problem, size2);
+	moveToBounds(problem, bounds);
+	if (downcastVertices) {
+		downcast(problem);
+	}
+
+	if(intermediates) {
+		intermediates->n1 = n1;
+		intermediates->n2 = n2;
+		intermediates->L = L;
+		intermediates->i = ii;
+		intermediates->k = kk;
+		intermediates->j = jj;
+		intermediates->l = ll;
+	}
+
+	return problem;
+}
+
 TransformTriangles testing::ClashGenerator::createTrianglesFF(const repo::lib::RepoBounds& bounds) 
 {
 	repo::lib::RepoTriangle a(
@@ -600,6 +693,9 @@ TransformTriangles testing::ClashGenerator::createTrianglesFF(const repo::lib::R
 	);
 
 	// todo: another version of this will create a segment on t1 and from that project out a triangle t2 in an arbitrary direction.
+
+	// similar, start from the intersection points on L and project outwards, then permute the vertices.
+
 
 	// Pick a random point on each triangle, then perform a translation so that
 	// they become coincident.

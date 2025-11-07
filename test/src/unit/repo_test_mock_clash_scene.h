@@ -183,6 +183,37 @@ namespace testing {
 			const repo::lib::RepoBounds& bounds
 		);
 
+		// Creates a pair of triangles that intersect in the form illustrated in
+		// Figure 2 of Faster Triangle-Triangle Intersection Tests. Olivier Devillers,
+		// Philippe Guigue. (2002). Using the annotations in that figure as
+		// parameterisations.
+
+		struct DevillersGuigueIntermediates
+		{
+			repo::lib::RepoVector3D64 n1;
+			repo::lib::RepoVector3D64 n2;
+			repo::lib::RepoVector3D64 L;
+			repo::lib::RepoVector3D64 i;
+			repo::lib::RepoVector3D64 k;
+			repo::lib::RepoVector3D64 j;
+			repo::lib::RepoVector3D64 l;
+		};
+
+		TransformTriangles createTrianglesDevillersGuigue(
+			const repo::lib::RepoBounds& bounds,
+			double i,
+			double k,
+			double j,
+			double l,
+			double dp1,
+			double dp2,
+			double dq1,
+			double dq2,
+			double dr1,
+			double dr2,
+			DevillersGuigueIntermediates* intermediates = nullptr
+		);
+
 		// Creates a intersection between a cone and a cube
 
 		TransformMeshes createHard1(

@@ -304,16 +304,14 @@ repo::lib::RepoVector3D64 geometry::minimumSeparatingAxis(const repo::lib::RepoB
     return m;
 }
 
-repo::lib::RepoVector3D64 edgePlaneIntersection(
-    const repo::lib::RepoVector3D64& e1,
-    const repo::lib::RepoVector3D64& e2,
+static inline repo::lib::RepoVector3D64 edgePlaneIntersection(
+    const repo::lib::RepoVector3D64& ep,
+    const repo::lib::RepoVector3D64& ed,
     const repo::lib::RepoVector3D64& n,
     const repo::lib::RepoVector3D64& p
 )
 {
-	auto l = e2 - e1;
-    l.normalize();
-	return e1 + l * ((p - e1).dotProduct(n) / l.dotProduct(n));
+	return ep + ed * ((p - ep).dotProduct(n) / ed.dotProduct(n));
 }
 
 double checkMinMax(
@@ -341,7 +339,7 @@ double checkMinMax(
 	N1 = v1.crossProduct(v2);
 	v1 = r2 - p1;
     if (N1.dotProduct(v1) > 0.0) {
-       // return 0.0;
+        //return 0.0;
     }
 	
 	// If there is an overlap, estimate the minimum translation distance.
@@ -350,25 +348,29 @@ double checkMinMax(
 
     auto pr1 = r1 - p1;
     auto pq1 = q1 - p1;
+    pr1.normalize();
+	pq1.normalize();
     auto n1 = pq1.crossProduct(pr1);
     n1.normalize();
 
     auto pr2 = r2 - p2;
     auto pq2 = q2 - p2;
+    pr2.normalize();
+    pq2.normalize();
     auto n2 = pq2.crossProduct(pr2);
     n2.normalize();
-
+  
 	// i,j,k,l are the intersections of the edges with their counterpart's
     // plane.
 
-	auto i = edgePlaneIntersection(p1, r1, n2, p2);
-	auto j = edgePlaneIntersection(p1, q1, n2, p2);
-	auto k = edgePlaneIntersection(p2, q2, n1, p1);
-    auto l = edgePlaneIntersection(p2, r2, n1, p1);
+	auto i = edgePlaneIntersection(p1, pr1, n2, p2);
+	auto j = edgePlaneIntersection(p1, pq1, n2, p2);
+	auto k = edgePlaneIntersection(p2, pq2, n1, p1);
+    auto l = edgePlaneIntersection(p2, pr2, n1, p1);
 
     auto o = i;
-
 	auto L = n1.crossProduct(n2);
+    L.normalize();
     
 	auto ii = (i - o).dotProduct(L);
 	auto jj = (j - o).dotProduct(L);
@@ -381,11 +383,40 @@ double checkMinMax(
     if (ll < ii) {
         return 0;
     }
-    
-    return 1.0;
+
+    auto d = jj - kk;
+	auto d2 = ll - ii;
+    if(d2 < d) {
+        d = d2;
+	}
+
+    // This next snippet works out the minimum distance to move normal to the
+	// planes, in case they are smaller than the shift along L.
+
+	d2 = (p2 - p1).dotProduct(n1);
+    if(d2 < d) {
+        d = d2; // p2 is on the positive half-space so this will always be positive (and vice-versa for q & r below)
+	}
+
+    d2 = -std::min((q2 - p1).dotProduct(n1), (r2 - p1).dotProduct(n1));
+    if (d2 < d) {
+        d = d2;
+    }
+
+    d2 = (p1 - p2).dotProduct(n2);
+    if (d2 < d) {
+        d = d2;
+    }
+
+    d2 = -std::min((q1 - p2).dotProduct(n2), (r1 - p2).dotProduct(n2));
+    if (d2 < d) {
+        d = d2;
+    }
+
+    return d;
 }
 
-#define COPLANAR 0
+#define COPLANAR 1e-15
 
 double geometry::intersects(const repo::lib::RepoTriangle& A, const repo::lib::RepoTriangle& B)
 {

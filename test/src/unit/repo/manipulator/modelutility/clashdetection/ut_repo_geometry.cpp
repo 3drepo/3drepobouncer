@@ -381,43 +381,32 @@ void printTriangle(const repo::lib::RepoTriangle& t)
 		<< t.c.x << ", " << t.c.y << ", " << t.c.z << ")})" << std::endl;
 }
 
-TEST(Geometry, TriangleTriangleIntersects)
+
+void shift(repo::lib::RepoTriangle& b)
+{
+	auto t = b.a;
+	b.a = b.b;
+	b.b = b.c;
+	b.c = t;
+}
+
+TEST(Geometry, TriangleTriangleIntersects1)
 {
 	CellDistribution space;
 	ClashGenerator clashGenerator;
 
+	clashGenerator.size1 = { 10, 10 };
+	clashGenerator.size2 = { 10, 10 };
+
 	for (int i = 0; i < 500000; ++i) {
 
 		clashGenerator.distance = { -1, -1 };
-		clashGenerator.size1 = { 10, 10 };
-		clashGenerator.size2 = { 10, 10 };
 
 		{
 			auto p = clashGenerator.createTrianglesFF({});
 			auto [a, b] = ClashGenerator::applyTransforms(p);
 
-/*
-			a = repo::lib::RepoTriangle(
-				repo::lib::RepoVector3D64(1.150511, -1.000000, 0.680287),
-				repo::lib::RepoVector3D64(-1.00000, -0.828606, 0.680287),
-				repo::lib::RepoVector3D64(0.72974, 1.187543, 0.680287)
-			);
-			b = repo::lib::RepoTriangle(
-				repo::lib::RepoVector3D64(0.389865, 0.403005, 1.228200),
-				repo::lib::RepoVector3D64(-1.00000, 1.000000, -0.00000),
-				repo::lib::RepoVector3D64(1.000000, 1.000000, -0.00000)
-			);
-			*/
-
 			auto d = geometry::intersects(a, b);
-
-
-			if (!d) {
-				std::cout << "Failed at iteration " << i << std::endl;
-				printTriangle(a);
-				printTriangle(b);
-				std::cout << std::endl;
-			}
 
 			EXPECT_THAT(d, IsTrue());
 		}
@@ -432,5 +421,176 @@ TEST(Geometry, TriangleTriangleIntersects)
 
 			EXPECT_THAT(d, IsFalse());
 		}
+	}
+
+	clashGenerator.distance = { -1, -1 };
+
+	// intersects method should be invariant to all permutations of the
+	// triangle vertices, including winding order, as well as the order
+	// of the triangles themselves.
+
+	for (int i = 0; i < 10000; ++i) {
+
+		auto p = clashGenerator.createTrianglesFF({});
+		auto [a, b] = ClashGenerator::applyTransforms(p);
+
+		auto d = geometry::intersects(a, b);
+
+		EXPECT_THAT(d, DoubleNear(geometry::intersects(b, a), 1e-8));
+
+		shift(a);
+
+		EXPECT_THAT(d, DoubleNear(geometry::intersects(a, b), 1e-8));
+		EXPECT_THAT(d, DoubleNear(geometry::intersects(b, a), 1e-8));
+
+		shift(b);
+
+		EXPECT_THAT(d, DoubleNear(geometry::intersects(a, b), 1e-8));
+		EXPECT_THAT(d, DoubleNear(geometry::intersects(b, a), 1e-8));
+
+		shift(a);
+
+		EXPECT_THAT(d, DoubleNear(geometry::intersects(a, b), 1e-8));
+		EXPECT_THAT(d, DoubleNear(geometry::intersects(b, a), 1e-8));
+
+		shift(b);
+
+		EXPECT_THAT(d, DoubleNear(geometry::intersects(a, b), 1e-8));
+		EXPECT_THAT(d, DoubleNear(geometry::intersects(b, a), 1e-8));
+
+		std::swap(a.a, a.b);
+
+		EXPECT_THAT(d, DoubleNear(geometry::intersects(a, b), 1e-8));
+		EXPECT_THAT(d, DoubleNear(geometry::intersects(b, a), 1e-8));
+
+		std::swap(a.b, a.c);
+
+		EXPECT_THAT(d, DoubleNear(geometry::intersects(a, b), 1e-8));
+		EXPECT_THAT(d, DoubleNear(geometry::intersects(b, a), 1e-8));
+
+		std::swap(b.a, b.b);
+
+		EXPECT_THAT(d, DoubleNear(geometry::intersects(a, b), 1e-8));
+		EXPECT_THAT(d, DoubleNear(geometry::intersects(b, a), 1e-8));
+
+		std::swap(b.b, b.c);
+
+		EXPECT_THAT(d, DoubleNear(geometry::intersects(a, b), 1e-8));
+		EXPECT_THAT(d, DoubleNear(geometry::intersects(b, a), 1e-8));
+	}
+}
+
+#pragma optimize("", off)
+
+TEST(Geometry, TrianglesTrianglesIntersects2)
+{
+	CellDistribution space;
+	ClashGenerator clashGenerator;
+
+	// The intersects method for triangles contractually returns an upper bound
+	// on the distance.
+
+	// This method is a white-box test that relies on the implementation detail
+	// to know what the distances should be for specific configurations, and is
+	// mainly used for regression testing of optimisations.
+
+	// If the implementation of intersects changes, this test may need its
+	// acceptance criteria updated as well.
+
+	auto& random = clashGenerator.random;
+	clashGenerator.downcastVertices = false;
+
+	clashGenerator.distance = { 0.01, 10 };
+
+	clashGenerator.size1 = { 0.0001, 10000 };
+	clashGenerator.size2 = { 0.0001, 10000 };
+
+	ClashGenerator::DevillersGuigueIntermediates intermediates;
+
+	for (int itr = 0; itr < 1000000; ++itr) 
+	{
+		{
+			// i < k < j < l
+
+			repo::lib::RepoRange r = clashGenerator.distance;
+
+			auto k = random.number(r);
+			auto j = random.number(r + k);
+			auto l = random.number(r + j);
+
+			auto dp1 = random.number(clashGenerator.distance);
+			auto dq1 = random.number(clashGenerator.distance);
+			auto dr1 = random.number(clashGenerator.distance);
+
+			auto dp2 = random.number(clashGenerator.distance);
+			auto dq2 = random.number(clashGenerator.distance);
+			auto dr2 = random.number(clashGenerator.distance);
+
+			auto p = clashGenerator.createTrianglesDevillersGuigue({}, 0, k, j, l, dp1, dp2, dq1, dq2, dr1, dr2, &intermediates);
+			auto [a, b] = ClashGenerator::applyTransforms(p);
+
+			auto d = geometry::intersects(a, b);
+
+			auto expected = std::min({ j - k, l - 0, dp1, dp2, std::max(dq1, dr1), std::max(dq2, dr2) });
+
+			EXPECT_THAT(d, DoubleNear(expected, ClashGenerator::suggestTolerance({ a, b })));
+		}		
+		
+		{
+			// k < i < j < l
+
+			repo::lib::RepoRange r = clashGenerator.distance;
+
+			auto k = random.number(r);
+			auto i = random.number(r + k);
+			auto j = random.number(r + i);
+			auto l = random.number(r + j);
+
+			auto dp1 = random.number(clashGenerator.distance);
+			auto dq1 = random.number(clashGenerator.distance);
+			auto dr1 = random.number(clashGenerator.distance);
+
+			auto dp2 = random.number(clashGenerator.distance);
+			auto dq2 = random.number(clashGenerator.distance);
+			auto dr2 = random.number(clashGenerator.distance);
+
+			auto p = clashGenerator.createTrianglesDevillersGuigue({}, i, k, j, l, dp1, dp2, dq1, dq2, dr1, dr2);
+			auto [a, b] = ClashGenerator::applyTransforms(p);
+
+			auto d = geometry::intersects(a, b);
+
+			auto expected = std::min({ j - k, l - i, dp1, dp2, std::max(dq1, dr1), std::max(dq2, dr2) });
+
+			EXPECT_THAT(d, DoubleNear(expected, ClashGenerator::suggestTolerance({ a, b })));
+		}
+
+		{
+			// i < k < l < j
+
+			repo::lib::RepoRange r = clashGenerator.distance;
+
+			auto i = random.number(r);
+			auto k = random.number(r + i);
+			auto l = random.number(r + k);
+			auto j = random.number(r + l);
+
+			auto dp1 = random.number(clashGenerator.distance);
+			auto dq1 = random.number(clashGenerator.distance);
+			auto dr1 = random.number(clashGenerator.distance);
+
+			auto dp2 = random.number(clashGenerator.distance);
+			auto dq2 = random.number(clashGenerator.distance);
+			auto dr2 = random.number(clashGenerator.distance);
+
+			auto p = clashGenerator.createTrianglesDevillersGuigue({}, i, k, j, l, dp1, dp2, dq1, dq2, dr1, dr2);
+			auto [a, b] = ClashGenerator::applyTransforms(p);
+
+			auto d = geometry::intersects(a, b);
+
+			auto expected = std::min({ j - k, l - i, dp1, dp2, std::max(dq1, dr1), std::max(dq2, dr2) });
+
+			EXPECT_THAT(d, DoubleNear(expected, ClashGenerator::suggestTolerance({ a, b })));
+		}
+		
 	}
 }
