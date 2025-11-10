@@ -482,7 +482,7 @@ TEST(Geometry, TriangleTriangleIntersects1)
 
 #pragma optimize("", off)
 
-TEST(Geometry, TrianglesTrianglesIntersects2)
+TEST(Geometry, TriangleTriangleIntersects2)
 {
 	CellDistribution space;
 	ClashGenerator clashGenerator;
@@ -500,7 +500,7 @@ TEST(Geometry, TrianglesTrianglesIntersects2)
 	auto& random = clashGenerator.random;
 	clashGenerator.downcastVertices = false;
 
-	clashGenerator.distance = { 0.01, 10 };
+	clashGenerator.distance = { 0.01, 100 };
 
 	clashGenerator.size1 = { 0.0001, 10000 };
 	clashGenerator.size2 = { 0.0001, 10000 };
