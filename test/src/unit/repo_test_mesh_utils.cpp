@@ -821,3 +821,29 @@ repo::core::model::MeshNode repo::test::utils::mesh::makeUnitSphere()
 		"UnitSphere"
 	);
 }
+
+repo::core::model::MeshNode repo::test::utils::mesh::fromVertices(
+	const std::vector<repo::lib::RepoVector3D>& vertices, 
+	repo::core::model::MeshNode::Primitive primitive)
+{
+	std::vector<repo::lib::repo_face_t> faces;
+
+	for (size_t i = 0; i < vertices.size(); )
+	{
+		repo::lib::repo_face_t f;
+		for (size_t j = 0; j < static_cast<size_t>(primitive); j++) {
+			f.push_back(static_cast<uint32_t>(i + j));
+		}
+
+		faces.push_back(f);
+	}
+
+	return RepoBSONFactory::makeMeshNode(
+		vertices,
+		faces,
+		{},
+		getBoundingBox(vertices),
+		{},
+		"FromVertices_Triangles"
+	);
+}

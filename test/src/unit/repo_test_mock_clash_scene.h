@@ -36,12 +36,25 @@
 
 namespace testing {
 
-	using TransformLine = std::pair<repo::lib::RepoLine, repo::lib::RepoMatrix>;
-	using TransformTriangle = std::pair<repo::lib::RepoTriangle, repo::lib::RepoMatrix>;
-	using TransformMesh = std::pair<repo::core::model::MeshNode, repo::lib::RepoMatrix>;
-	using TransformLines = std::pair<TransformLine, TransformLine>;
-	using TransformTriangles = std::pair<TransformTriangle, TransformTriangle>;
-	using TransformMeshes = std::pair<TransformMesh, TransformMesh>;
+	template<typename T>
+	struct TransformedEntity {
+		T e;
+		repo::lib::RepoMatrix m;
+	};
+
+	template<typename T>
+	struct TransformedPair {
+		TransformedEntity<T> a;
+		TransformedEntity<T> b;
+	};
+
+	using TransformLine = TransformedEntity<repo::lib::RepoLine>;
+	using TransformTriangle = TransformedEntity<repo::lib::RepoTriangle>;
+	using TransformMesh = TransformedEntity<repo::core::model::MeshNode>;
+	using TransformLines = TransformedPair<repo::lib::RepoLine>;
+	using TransformTriangles = TransformedPair<repo::lib::RepoTriangle>;
+	using TransformMeshes = TransformedPair<repo::core::model::MeshNode>;
+
 	using UUIDPair = std::pair<repo::lib::RepoUUID, repo::lib::RepoUUID>;
 	using TrianglePair = std::pair<repo::lib::RepoTriangle, repo::lib::RepoTriangle>;
 
@@ -200,6 +213,15 @@ namespace testing {
 			double dq2,
 			double dr1,
 			double dr2
+		);
+
+		// Creates a pair of meshes that contain triangle pairs in both intersecting
+		// and non-intersecting configurations. The hard intersections will be within
+		// the range distance. For this test the distance range must be >0. The non-
+		// intersecting pairs will be at least max(distance) apart.
+
+		TransformMeshes createHardSoup(
+			const repo::lib::RepoBounds& bounds
 		);
 
 		// Creates a intersection between a cone and a cube

@@ -256,6 +256,11 @@ namespace repo {
 				* is chosen as it is arguably the more challenging mesh for testing purposes.
 				*/
 				repo::core::model::MeshNode makeUnitSphere();
+
+				repo::core::model::MeshNode fromVertices(
+					const std::vector<repo::lib::RepoVector3D>& vertices,
+					repo::core::model::MeshNode::Primitive primitive = repo::core::model::MeshNode::Primitive::TRIANGLES
+				);
 			}
 		}
 	}

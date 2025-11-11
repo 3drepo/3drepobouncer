@@ -22,6 +22,7 @@
 #include <repo/manipulator/modelutility/repo_clash_detection_config.h>
 #include <repo/manipulator/modeloptimizer/bvh/bvh.hpp>
 #include <repo/lib/datastructure/repo_triangle.h>
+#include "clash_node_cache.h"
 #include "sparse_scene_graph.h"
 
 namespace repo {
@@ -97,6 +98,8 @@ namespace repo {
 					}
 				};
 
+				class NodeCache;
+
 				class Pipeline
 				{
 				public:
@@ -125,6 +128,7 @@ namespace repo {
 					const repo::manipulator::modelutility::ClashDetectionConfig& config;
 					RepoUUIDMap uniqueToCompositeId;
 					std::unordered_map<OrderedPair, CompositeClash*, OrderedPairHasher> clashes;
+					NodeCache cache;
 				};
 			}
 		}

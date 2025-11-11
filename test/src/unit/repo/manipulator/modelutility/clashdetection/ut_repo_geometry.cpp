@@ -59,13 +59,13 @@ TEST(Geometry, LineLineDistanceUnit)
 			auto p = clashGenerator.createLinesTransformed(space.sample());
 
 			repo::lib::RepoLine a(
-				p.first.second * p.first.first.start,
-				p.first.second * p.first.first.end
+				p.a.m * p.a.e.start,
+				p.a.m * p.a.e.end
 			);
 
 			repo::lib::RepoLine b(
-				p.second.second * p.second.first.start,
-				p.second.second * p.second.first.end
+				p.b.m * p.b.e.start,
+				p.b.m * p.b.e.end
 			);
 
 			auto line = geometry::closestPointLineLine(a, b);

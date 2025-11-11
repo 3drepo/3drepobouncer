@@ -59,4 +59,10 @@ namespace geometry {
     * be empty.
     */
     repo::lib::RepoVector3D64 minimumSeparatingAxis(const repo::lib::RepoBounds& a, repo::lib::RepoBounds& b);
+
+    /*
+    * The distance threshold to use for coplanarity tests. This is primarily for
+	* the intersects method, but may be useful elsewhere.
+    */
+	const static double COPLANAR = 1e-15;
 }

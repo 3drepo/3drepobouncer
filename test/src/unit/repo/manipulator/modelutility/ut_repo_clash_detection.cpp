@@ -834,7 +834,7 @@ TEST(Clash, SupportedRanges)
 
 		auto problem = clashGenerator.createTrianglesVF(repo::lib::RepoBounds({ repo::lib::RepoVector3D64(0, 0, 0) }));
 
-		problem.first.second = repo::lib::RepoMatrix::scale(repo::lib::RepoVector3D64(1e6, 1e6, 1e6)) * problem.first.second;
+		problem.a.m = repo::lib::RepoMatrix::scale(repo::lib::RepoVector3D64(1e6, 1e6, 1e6)) * problem.a.m;
 
 		scene.add(problem, config);
 
@@ -914,7 +914,7 @@ TEST(Clash, Fingerprinting)
 		// Small changes to the primitives (and so intersection location) should result
 		// in different fingerprints.
 
-		p.first.second = repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(1, 0, 0)) * p.first.second;
+		p.a.m = repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(1, 0, 0)) * p.a.m;
 
 		auto run3 = pipeline.run({ p });
 
@@ -1002,10 +1002,10 @@ TEST(Clash, SelfClearance)
 
 std::vector<repo::lib::RepoTriangle> triangles(const TransformMesh& p)
 {
-	auto m = p.second;
+	auto m = p.m;
 	std::vector<repo::lib::RepoTriangle> triangles;
-	auto v = p.first.getVertices();
-	for (const auto& t : p.first.getFaces()) {
+	auto v = p.e.getVertices();
+	for (const auto& t : p.e.getFaces()) {
 		triangles.push_back(repo::lib::RepoTriangle(
 			m * v[t[0]],
 			m * v[t[1]],
@@ -1017,11 +1017,11 @@ std::vector<repo::lib::RepoTriangle> triangles(const TransformMesh& p)
 
 bool intersects(const std::vector<repo::lib::RepoTriangle>& a, const std::vector<repo::lib::RepoTriangle>& b)
 {
-	for(auto t1 : a) {
-		for (auto t2 : b) {
-			if (geometry::intersects(t1, t2)) {
+	for(const auto& t1 : a) {
+		for (const auto& t2 : b) {
+			if (geometry::intersects(t1, t2) > geometry::COPLANAR) {
 				return true;
-			}		
+			}
 		}
 	}
 	return false;
@@ -1036,12 +1036,13 @@ void transform(std::vector<repo::lib::RepoTriangle>& triangles, const repo::lib:
 	}
 }
 
-TEST(Clash, RepoPolyDepth)
+TEST(Clash, RepoPolyDepth1)
 {
-	// Tests the penetration depth method of the geometry utils. Penetration
-	// depth is approximate, with a guaranteed upper bound only, so this
-	// doesn't check for the exact value, just that it is less than the
-	// returned depth.
+	// Tests the penetration depth estimation (PolyDepth) of the geometry utils
+	// with procedural geometry. Penetration depth is approximate, with a
+	// guaranteed upper bound only, so the acceptance criteria is that the
+	// estimated depth is greater than or equal to the generated depth, and that
+	// applying the correction always resolves the collision. 
 
 	CellDistribution space(1, 1);
 	ClashGenerator clashGenerator;
@@ -1053,8 +1054,8 @@ TEST(Clash, RepoPolyDepth)
 
 	auto clash = clashGenerator.createHard1(space.sample());
 
-	auto a = triangles(clash.first);
-	auto b = triangles(clash.second);
+	auto a = triangles(clash.a);
+	auto b = triangles(clash.b);
 
 	EXPECT_THAT(intersects(a, b), IsTrue());
 
@@ -1072,9 +1073,17 @@ TEST(Clash, RepoPolyDepth)
 
 	transform(a, repo::lib::RepoMatrix::translate(v));
 
-	// todo - need to distinguish between in-contact and separated here..
-
 	EXPECT_THAT(intersects(a, b), IsFalse());
+}
+
+TEST(Clash, RepoPolyDepth2)
+{
+	// Tests the penetration depth estimation (PolyDepth) of the geometry utils
+	// on some difficult problems that we have an expected result for.
+	// Contractually PolyDepth only guarantees an upper bound, so if the
+	// implementation changes, the acceptance criteria may need to change as well.
+
+
 }
 
 TEST(Clash, Hard1)
@@ -1109,4 +1118,11 @@ TEST(Clash, Hard1)
 TEST(Clash, ResultsSerialisation)
 {
 
+}
+
+TEST(Clash, NodeCache)
+{
+	// need to make sure cache only returns one object even if called multiple times
+
+	// need to make sure cache doesn't go away until all references have gone.
 }

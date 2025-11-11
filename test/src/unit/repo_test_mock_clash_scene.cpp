@@ -124,11 +124,11 @@ UUIDPair MockClashScene::add(TransformLines lines, ClashDetectionConfigHelper& c
 	// for the tests, but the clash pipeline should explicitly handle these cases
 	// as they may be encountered in real data.
 
-	auto t1 = add(lines.first.second);
-	auto m1 = add(lines.first.first, t1.getSharedID());
+	auto t1 = add(lines.a.m);
+	auto m1 = add(lines.a.e, t1.getSharedID());
 
-	auto t2 = add(lines.second.second);
-	auto m2 = add(lines.second.first, t2.getSharedID());
+	auto t2 = add(lines.b.m);
+	auto m2 = add(lines.b.e, t2.getSharedID());
 
 	config.addCompositeObjects(m1.getUniqueID(), m2.getUniqueID());
 
@@ -137,11 +137,11 @@ UUIDPair MockClashScene::add(TransformLines lines, ClashDetectionConfigHelper& c
 
 UUIDPair MockClashScene::add(TransformTriangles triangles, ClashDetectionConfigHelper& config)
 {
-	auto t1 = add(triangles.first.second);
-	auto m1 = add(triangles.first.first, t1.getSharedID());
+	auto t1 = add(triangles.a.m);
+	auto m1 = add(triangles.a.e, t1.getSharedID());
 
-	auto t2 = add(triangles.second.second);
-	auto m2 = add(triangles.second.first, t2.getSharedID());
+	auto t2 = add(triangles.b.m);
+	auto m2 = add(triangles.b.e, t2.getSharedID());
 
 	config.addCompositeObjects(m1.getUniqueID(), m2.getUniqueID());
 
@@ -150,12 +150,12 @@ UUIDPair MockClashScene::add(TransformTriangles triangles, ClashDetectionConfigH
 
 UUIDPair MockClashScene::add(TransformMeshes meshes, ClashDetectionConfigHelper& config)
 {
-	auto t1 = add(meshes.first.second);
-	auto& m1 = meshes.first.first;
+	auto t1 = add(meshes.a.m);
+	auto& m1 = meshes.a.e;
 	m1.addParent(t1.getSharedID());
 
-	auto t2 = add(meshes.second.second);
-	auto& m2 = meshes.second.first;
+	auto t2 = add(meshes.b.m);
+	auto& m2 = meshes.b.e;
 	m2.addParent(t2.getSharedID());
 
 	bsons.push_back(m1.getBSON());
@@ -179,14 +179,14 @@ void ClashGenerator::downcast(repo::lib::RepoTriangle& triangle) {
 
 void ClashGenerator::downcast(TransformTriangles& problem)
 {
-	downcast(problem.first.first);
-	downcast(problem.second.first);
+	downcast(problem.a.e);
+	downcast(problem.b.e);
 }
 
 void ClashGenerator::downcast(TransformLines& problem)
 {
-	downcast(problem.first.first);
-	downcast(problem.second.first);
+	downcast(problem.a.e);
+	downcast(problem.b.e);
 }
 
 void ClashGenerator::shiftTriangles(repo::lib::RepoTriangle& b)
@@ -208,8 +208,8 @@ void ClashGenerator::moveB(TransformTriangles& problem, const repo::lib::RepoRan
 	// sampling, but it also ensures that B ends within the supported range if it
 	// starts outside of it - say because B was created relative to A.
 
-	auto& b = problem.second.first;
-	auto& m = problem.second.second;
+	auto& b = problem.b.e;
+	auto& m = problem.b.m;
 
 	//m = random.transform(true, range, {});
 
@@ -247,16 +247,16 @@ void ClashGenerator::moveB(TransformTriangles& problem, const repo::lib::RepoRan
 
 void ClashGenerator::moveProblem(TransformTriangles& problem, const repo::lib::RepoRange& range)
 {
-	problem.first.second = random.transform(true, range, {});
-	problem.second.second = problem.first.second * problem.second.second;
+	problem.a.m = random.transform(true, range, {});
+	problem.b.m = problem.a.m * problem.b.m;
 }
 
 void ClashGenerator::moveToBounds(TransformTriangles& problem, const repo::lib::RepoBounds& bounds)
 {
-	auto& a = problem.first.first;
-	auto& ma = problem.first.second;
-	auto& b = problem.second.first;
-	auto& mb = problem.second.second;
+	auto& a = problem.a.e;
+	auto& ma = problem.a.m;
+	auto& b = problem.b.e;
+	auto& mb = problem.b.m;
 	auto pb = repo::lib::RepoBounds({ ma * a.a, ma * a.b, ma * a.c, mb * b.a, mb * b.b, mb * b.c });
 	auto offset = bounds.center() - pb.center();
 	ma = repo::lib::RepoMatrix::translate(offset) * ma;
@@ -265,10 +265,10 @@ void ClashGenerator::moveToBounds(TransformTriangles& problem, const repo::lib::
 
 void ClashGenerator::moveToBounds(TransformLines& problem, const repo::lib::RepoBounds& bounds)
 {
-	auto& a = problem.first.first;
-	auto& ma = problem.first.second;
-	auto& b = problem.second.first;
-	auto& mb = problem.second.second;
+	auto& a = problem.a.e;
+	auto& ma = problem.a.m;
+	auto& b = problem.b.e;
+	auto& mb = problem.b.m;
 	auto pb = repo::lib::RepoBounds({
 		ma * a.start,
 		ma * a.end,
@@ -283,8 +283,8 @@ void ClashGenerator::moveToBounds(TransformLines& problem, const repo::lib::Repo
 TrianglePair ClashGenerator::applyTransforms(TransformTriangles& problem)
 {
 	return {
-		problem.first.second * problem.first.first,
-		problem.second.second * problem.second.first
+		problem.a.m * problem.a.e,
+		problem.b.m * problem.b.e
 	};
 }
 
@@ -681,11 +681,6 @@ TransformTriangles testing::ClashGenerator::createTrianglesFF(const repo::lib::R
 		random.vector(size2)
 	);
 
-	// todo: another version of this will create a segment on t1 and from that project out a triangle t2 in an arbitrary direction.
-
-	// similar, start from the intersection points on L and project outwards, then permute the vertices.
-
-
 	// Pick a random point on each triangle, then perform a translation so that
 	// they become coincident.
 
@@ -713,6 +708,41 @@ TransformTriangles testing::ClashGenerator::createTrianglesFF(const repo::lib::R
 	}
 
 	return problem;
+}
+
+TransformMeshes testing::ClashGenerator::createHardSoup(
+	const repo::lib::RepoBounds& bounds
+)
+{
+	auto tmp = downcastVertices;
+	downcastVertices = false;
+	
+	std::vector<repo::lib::RepoVector3D> a;
+	std::vector<repo::lib::RepoVector3D> b;
+
+	auto m = repo::lib::RepoMatrix::translate(-bounds.min());
+
+	// Creates a set of intersecting pairs
+
+	for (int i = 0; i < random.number({ 10, 20 }); i++) {
+		auto p = createTrianglesFF(bounds);
+		p.a.m = m * p.a.m;
+		p.b.m = m * p.b.m;
+		applyTransforms(p);
+	}
+
+	// Creates a set of non-intersecting pairs
+
+	for (int i = 0; i < random.number({ 10, 20 }); i++) {
+		auto p = createTrianglesTransformed(bounds);
+		p.a.m = m * p.a.m;
+		p.b.m = m * p.b.m;
+		applyTransforms(p);
+	}
+
+	downcastVertices = tmp;
+
+	return { { repo::test::utils::mesh::fromVertices(a), m.inverse() }, { repo::test::utils::mesh::fromVertices(b), m.inverse() }};
 }
 
 TransformMeshes testing::ClashGenerator::createHard1(

@@ -408,11 +408,9 @@ double checkMinMax(
     return d;
 }
 
-#define COPLANAR 1e-15
-
 double geometry::intersects(const repo::lib::RepoTriangle& A, const repo::lib::RepoTriangle& B)
 {
-    // Peforms a triangle-triangle intersection and returns the upper bound on
+    // Performs a triangle-triangle intersection and returns the upper bound on
 	// the distance either of the triangles must move to resolve the intersection.
 
     // This implementation is based on Faster Triangle-Triangle Intersection 
@@ -489,7 +487,7 @@ double geometry::intersects(const repo::lib::RepoTriangle& A, const repo::lib::R
 		else  { \
 			if (dr2 > 0.0f) INTERSECT(p1,q1,r1,r2,p2,q2)\
 			else if (dr2 < 0.0f) INTERSECT(p1,r1,q1,r2,p2,q2)\
-			else return COPLANAR;\
+			else return geometry::COPLANAR;\
 		}}}
 
 
@@ -520,7 +518,7 @@ double geometry::intersects(const repo::lib::RepoTriangle& A, const repo::lib::R
         else {
             if (dr1 > 0.0f) PERMUTE2(r1, p1, q1, p2, q2, r2, dp2, dq2, dr2)
             else if (dr1 < 0.0f) PERMUTE2(r1, p1, q1, p2, r2, q2, dp2, dr2, dq2)
-            else return COPLANAR;
+            else return geometry::COPLANAR;
         }
     }
 

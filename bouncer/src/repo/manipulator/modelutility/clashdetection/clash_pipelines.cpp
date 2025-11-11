@@ -83,6 +83,11 @@ struct Graph
 
 		return const_cast<sparse::Node&>(meshes[primitive]);
 	}
+
+	sparse::Node& getNode(repo::lib::RepoUUID& uniqueId) const
+	{
+		throw std::exception("Not implemented");
+	}
 };
 
 static Graph createSceneGraph(
@@ -227,7 +232,8 @@ static void validateSets(const repo::manipulator::modelutility::ClashDetectionCo
 Pipeline::Pipeline(
 	DatabasePtr handler, const repo::manipulator::modelutility::ClashDetectionConfig& config)
 	: handler(handler),
-	config(config)
+	config(config),
+	cache(handler)
 {
 }
 
@@ -248,8 +254,6 @@ ClashDetectionReport Pipeline::runPipeline()
 	broadphase->operator()(graphA.bvh, graphB.bvh, broadphaseResults);
 
 	ClashScheduler::schedule(broadphaseResults);
-
-	NodeCache cache(handler);
 
 	std::vector<std::pair<
 		std::shared_ptr<NodeCache::Node>,
@@ -292,6 +296,9 @@ ClashDetectionReport Pipeline::runPipeline()
 					uniqueToCompositeId[b->getUniqueId()]
 				);
 
+				// todo: here is where we (a) append all the meshnodes from cache for the penetration estimation
+				// then we need to (b) order by their reference counts
+
 				auto it = clashes.find(pair);
 				if(it == clashes.end())
 				{
@@ -309,7 +316,7 @@ ClashDetectionReport Pipeline::runPipeline()
 	for (auto& [key, clash] : clashes)
 	{
 		ClashDetectionResult r;
-		createClashReport(key, *clash, r);
+		createClashReport(key, *clash, r); // todo: the references can be dropped once the penetration estimation is resolved for the Composite object here...
 		delete clash;
 		report.clashes.push_back(std::move(r));
 	}
