@@ -832,7 +832,7 @@ repo::core::model::MeshNode repo::test::utils::mesh::fromVertices(
 	{
 		repo::lib::repo_face_t f;
 		for (size_t j = 0; j < static_cast<size_t>(primitive); j++) {
-			f.push_back(static_cast<uint32_t>(i + j));
+			f.push_back(static_cast<uint32_t>(i++));
 		}
 
 		faces.push_back(f);
@@ -844,6 +844,6 @@ repo::core::model::MeshNode repo::test::utils::mesh::fromVertices(
 		{},
 		getBoundingBox(vertices),
 		{},
-		"FromVertices_Triangles"
+		"fromVertices"
 	);
 }

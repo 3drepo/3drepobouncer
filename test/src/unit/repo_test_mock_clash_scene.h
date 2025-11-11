@@ -243,15 +243,29 @@ namespace testing {
 		// other vertices may be that feature.
 		void shiftTriangles(repo::lib::RepoTriangle& problem);
 
-		void downcast(TransformTriangles& problem);
+		template<typename T>
+		void downcast(TransformedPair<T>& pair) {
+			downcast(pair.a);
+			downcast(pair.b);
+		}
 
-		void downcast(TransformLines& line);
+		template<typename T>
+		void downcast(TransformedEntity<T>& entity) {
+			downcast(entity.e);
+		}
 
 		void downcast(repo::lib::RepoTriangle& triangle);
 
 		void downcast(repo::lib::RepoLine& line);
 
 		static TrianglePair applyTransforms(TransformTriangles& problem);
+
+		static void applyTransforms(
+			std::vector<repo::lib::RepoTriangle>& triangles, 
+			const repo::lib::RepoMatrix& m
+		);
+
+		static std::vector<repo::lib::RepoTriangle> triangles(const TransformMesh& p);
 
 		// Returns a value that can be used as a tolerance when checking if a vector
 		// is close to a particular element of the triangle, based on the size of 

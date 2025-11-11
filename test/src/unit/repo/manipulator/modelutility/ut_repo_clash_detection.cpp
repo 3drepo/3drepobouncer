@@ -1000,42 +1000,6 @@ TEST(Clash, SelfClearance)
 	}
 }
 
-std::vector<repo::lib::RepoTriangle> triangles(const TransformMesh& p)
-{
-	auto m = p.m;
-	std::vector<repo::lib::RepoTriangle> triangles;
-	auto v = p.e.getVertices();
-	for (const auto& t : p.e.getFaces()) {
-		triangles.push_back(repo::lib::RepoTriangle(
-			m * v[t[0]],
-			m * v[t[1]],
-			m * v[t[2]]
-		));
-	}
-	return triangles;
-}
-
-bool intersects(const std::vector<repo::lib::RepoTriangle>& a, const std::vector<repo::lib::RepoTriangle>& b)
-{
-	for(const auto& t1 : a) {
-		for (const auto& t2 : b) {
-			if (geometry::intersects(t1, t2) > geometry::COPLANAR) {
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
-void transform(std::vector<repo::lib::RepoTriangle>& triangles, const repo::lib::RepoMatrix& m)
-{
-	for (auto& t : triangles) {
-		t.a = m * t.a;
-		t.b = m * t.b;
-		t.c = m * t.c;
-	}
-}
-
 TEST(Clash, RepoPolyDepth1)
 {
 	// Tests the penetration depth estimation (PolyDepth) of the geometry utils
@@ -1044,36 +1008,38 @@ TEST(Clash, RepoPolyDepth1)
 	// estimated depth is greater than or equal to the generated depth, and that
 	// applying the correction always resolves the collision. 
 
-	CellDistribution space(1, 1);
+	CellDistribution space;
 	ClashGenerator clashGenerator;
-
-	clashGenerator.size1 = 100;
-	clashGenerator.size2 = 100;
 	
-	clashGenerator.distance = 0.1;
+	// For this test, the distance defines the spacing amongst the non-intersecting
+	// pairs.
+	clashGenerator.distance = {0.1, 4};
 
-	auto clash = clashGenerator.createHard1(space.sample());
+	for (int itr = 0; itr < 50000; ++itr)
+	{
+		auto clash = clashGenerator.createHardSoup(space.sample());
 
-	auto a = triangles(clash.a);
-	auto b = triangles(clash.b);
+		auto a = ClashGenerator::triangles(clash.a);
+		auto b = ClashGenerator::triangles(clash.b);
 
-	EXPECT_THAT(intersects(a, b), IsTrue());
+		EXPECT_THAT(intersects(a, b), IsTrue());
 
-	geometry::RepoPolyDepth pd(a, b);
+		geometry::RepoPolyDepth pd(a, b);
 
-	// Before any iterations, PolyDepth should return a valid upper bounds.
+		// Before any iterations, PolyDepth should return a valid upper bounds.
 
-	auto v = pd.getPenetrationVector();
+		auto v = pd.getPenetrationVector();
 
-	// The penetration vector should be non-zero, and non-infinity, and it
-	// should work to resolve the collision.
+		// The penetration vector should be non-zero, and non-infinity, and it
+		// should work to resolve the collision when applied to set a.
 
-	EXPECT_THAT(v.norm(), Gt(0));
-	EXPECT_THAT(std::isfinite(v.norm()), IsTrue());
+		EXPECT_THAT(v.norm(), Gt(0));
+		EXPECT_THAT(std::isfinite(v.norm()), IsTrue());
 
-	transform(a, repo::lib::RepoMatrix::translate(v));
+		ClashGenerator::applyTransforms(a, repo::lib::RepoMatrix::translate(v));
 
-	EXPECT_THAT(intersects(a, b), IsFalse());
+		EXPECT_THAT(intersects(a, b), IsFalse());
+	}
 }
 
 TEST(Clash, RepoPolyDepth2)

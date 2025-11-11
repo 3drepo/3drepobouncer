@@ -23,6 +23,7 @@
 #include <repo/core/model/bson/repo_bson_factory.h>
 #include <repo/core/handler/database/repo_query.h>
 #include <repo/manipulator/modelconvertor/import/repo_model_import_manager.h>
+#include <repo/manipulator/modelutility/clashdetection/geometry_tests.h>
 
 using namespace testing;
 using namespace repo::manipulator::modelutility;
@@ -274,6 +275,18 @@ repo::core::model::MeshNode testing::createPointMesh(std::initializer_list<repo:
 		{},
 		{}
 	);
+}
+
+bool testing::intersects(const std::vector<repo::lib::RepoTriangle>& a, const std::vector<repo::lib::RepoTriangle>& b)
+{
+	for (const auto& t1 : a) {
+		for (const auto& t2 : b) {
+			if (geometry::intersects(t1, t2) > geometry::COPLANAR) {
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 ClearanceAccuracyReport::ClearanceAccuracyReport(std::string filename) {

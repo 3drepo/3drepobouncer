@@ -19,6 +19,7 @@
 
 #include <repo/lib/datastructure/repo_vector.h>
 #include <repo/lib/datastructure/repo_container.h>
+#include <repo/lib/datastructure/repo_triangle.h>
 #include <repo/manipulator/modelutility/repo_clash_detection_engine.h>
 #include <repo/manipulator/modelutility/repo_clash_detection_config.h>
 #include <repo/core/handler/repo_database_handler_mongo.h>
@@ -120,4 +121,5 @@ namespace testing {
 
 	repo::core::model::MeshNode createPointMesh(std::initializer_list<repo::lib::RepoVector3D> points);
 
+	bool intersects(const std::vector<repo::lib::RepoTriangle>& a, const std::vector<repo::lib::RepoTriangle>& b);
 }

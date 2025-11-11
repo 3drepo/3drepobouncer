@@ -166,27 +166,17 @@ UUIDPair MockClashScene::add(TransformMeshes meshes, ClashDetectionConfigHelper&
 	return { m1.getUniqueID(), m2.getUniqueID() };
 }
 
-void ClashGenerator::downcast(repo::lib::RepoLine& line) {
+void ClashGenerator::downcast(repo::lib::RepoLine& line) 
+{
 	line.start = repo::lib::RepoVector3D(line.start);
 	line.end = repo::lib::RepoVector3D(line.end);
 }
 
-void ClashGenerator::downcast(repo::lib::RepoTriangle& triangle) {
+void ClashGenerator::downcast(repo::lib::RepoTriangle& triangle)
+{
 	triangle.a = repo::lib::RepoVector3D(triangle.a);
 	triangle.b = repo::lib::RepoVector3D(triangle.b);
 	triangle.c = repo::lib::RepoVector3D(triangle.c);
-}
-
-void ClashGenerator::downcast(TransformTriangles& problem)
-{
-	downcast(problem.a.e);
-	downcast(problem.b.e);
-}
-
-void ClashGenerator::downcast(TransformLines& problem)
-{
-	downcast(problem.a.e);
-	downcast(problem.b.e);
 }
 
 void ClashGenerator::shiftTriangles(repo::lib::RepoTriangle& b)
@@ -286,6 +276,18 @@ TrianglePair ClashGenerator::applyTransforms(TransformTriangles& problem)
 		problem.a.m * problem.a.e,
 		problem.b.m * problem.b.e
 	};
+}
+
+void ClashGenerator::applyTransforms(
+	std::vector<repo::lib::RepoTriangle>& triangles, 
+	const repo::lib::RepoMatrix& m
+)
+{
+	for (auto& t : triangles) {
+		t.a = m * t.a;
+		t.b = m * t.b;
+		t.c = m * t.c;
+	}
 }
 
 double ClashGenerator::suggestTolerance(std::initializer_list<repo::lib::RepoTriangle> triangles)
@@ -585,7 +587,7 @@ TransformTriangles testing::ClashGenerator::createTrianglesFE(const repo::lib::R
 	return problem;
 }
 
-repo::lib::RepoVector3D64 rayPlaneIntersection(
+static repo::lib::RepoVector3D64 rayPlaneIntersection(
 	repo::lib::RepoVector3D64 rayOrigin,
 	repo::lib::RepoVector3D64 rayDirection,
 	repo::lib::RepoVector3D64 planeNormal,
@@ -597,8 +599,6 @@ repo::lib::RepoVector3D64 rayPlaneIntersection(
 	auto t = (planePoint - rayOrigin).dotProduct(planeNormal) / denom;
 	return rayOrigin + rayDirection * t;
 }
-
-#pragma optimize("", off)
 
 TransformTriangles testing::ClashGenerator::createTrianglesDevillersGuigue(
 	const repo::lib::RepoBounds& bounds,
@@ -720,7 +720,7 @@ TransformMeshes testing::ClashGenerator::createHardSoup(
 	std::vector<repo::lib::RepoVector3D> a;
 	std::vector<repo::lib::RepoVector3D> b;
 
-	auto m = repo::lib::RepoMatrix::translate(-bounds.min());
+	auto m = repo::lib::RepoMatrix::translate(-bounds.center());
 
 	// Creates a set of intersecting pairs
 
@@ -729,7 +729,16 @@ TransformMeshes testing::ClashGenerator::createHardSoup(
 		p.a.m = m * p.a.m;
 		p.b.m = m * p.b.m;
 		applyTransforms(p);
+
+		a.push_back(p.a.e.a);
+		a.push_back(p.a.e.b);
+		a.push_back(p.a.e.c);
+
+		b.push_back(p.b.e.a);
+		b.push_back(p.b.e.b);
+		b.push_back(p.b.e.c);
 	}
+
 
 	// Creates a set of non-intersecting pairs
 
@@ -738,6 +747,14 @@ TransformMeshes testing::ClashGenerator::createHardSoup(
 		p.a.m = m * p.a.m;
 		p.b.m = m * p.b.m;
 		applyTransforms(p);
+
+		a.push_back(p.a.e.a);
+		a.push_back(p.a.e.b);
+		a.push_back(p.a.e.c);
+
+		b.push_back(p.b.e.a);
+		b.push_back(p.b.e.b);
+		b.push_back(p.b.e.c);
 	}
 
 	downcastVertices = tmp;
@@ -758,6 +775,21 @@ TransformMeshes testing::ClashGenerator::createHard1(
 	cone.applyTransformation(t);
 
 	return { { cube, {} }, { cone, {} } };
+}
+
+std::vector<repo::lib::RepoTriangle> testing::ClashGenerator::triangles(const TransformMesh& p)
+{
+	auto m = p.m;
+	std::vector<repo::lib::RepoTriangle> triangles;
+	auto v = p.e.getVertices();
+	for (const auto& t : p.e.getFaces()) {
+		triangles.push_back(repo::lib::RepoTriangle(
+			m * repo::lib::RepoVector3D64(v[t[0]]),
+			m * repo::lib::RepoVector3D64(v[t[1]]),
+			m * repo::lib::RepoVector3D64(v[t[2]])
+		));
+	}
+	return triangles;
 }
 
 CellDistribution::CellDistribution(size_t cellSize, size_t spaceSize)
