@@ -127,8 +127,6 @@ jobs:
               exit 1
             fi
             
-            VERSION="$PR_BRANCH"
-            
             # Checkout the PR branch
             git fetch origin "$PR_BRANCH"
             git checkout "$PR_BRANCH"
