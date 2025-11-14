@@ -184,6 +184,8 @@ repo::lib::RepoVector3D64 RepoPolyDepth::getPenetrationVector() const {
 
 void RepoPolyDepth::findInitialFreeConfiguration()
 {
+    //todo: check if already collision free and leave penetration vector as zero if so...
+
     // Finds a translation for a which is collision free. Currently this is
     // done simply by finding the minimum translation vector that can separate
     // the bounds.
@@ -208,6 +210,10 @@ void RepoPolyDepth::findInitialFreeConfiguration()
 
 void RepoPolyDepth::iterate(size_t n)
 {
+    if (qs.isIdentity()) {  // If we have begun in a collision-free state, there is nothing to do..
+        return;
+	}
+
     for (auto i = 0; i < n; i++) {
         // Perform out-projection to get an updated estimate of qi
 

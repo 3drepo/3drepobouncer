@@ -30,35 +30,15 @@ namespace repo {
 		namespace modelutility {
 			namespace clash {
 
-				// Clash tests follow a very similar pattern, being distinguished primarily
-				// by which geometric tests are used.
-				// 
-				// All clash modes are implemented as subclasses of a pipeline, overriding
-				// a small subset of methods to implement these tests.
+				// All Clash modes are implemented as subclasses of Pipeline, using common
+				// types to share data between stages and the output.
 
 				using Bvh = bvh::Bvh<double>;
 
-				// Pipeline stages, such as a BVH traversal, often have to maintain a state.
-				// Therefore stages are implemented as functors, which can be created and
-				// re-used (per thread, where necessary).
-
 				using BroadphaseResults = std::vector<std::pair<size_t, size_t>>;
 
-				struct Broadphase
-				{
-					virtual void operator()(const Bvh& a, const Bvh& b, BroadphaseResults& results) = 0;
-				};
-
-				struct Narrowphase
-				{
-					// If the narrowphase functor returns true, it is passed to the append
-					// function.
-
-					virtual bool operator()(const repo::lib::RepoTriangle& a, const repo::lib::RepoTriangle& b) = 0;
-				};
-
 				// Tests may pass parameters between stages using subclasses of the following
-				// structs.
+				// struct.
 
 				struct CompositeClash
 				{
@@ -98,7 +78,44 @@ namespace repo {
 					}
 				};
 
-				class NodeCache;
+				struct Graph
+				{
+					using CompositeMap = std::unordered_map<repo::lib::RepoUUID, size_t, repo::lib::RepoUUIDHasher>;
+
+					// Once this is initialised, it should not be changed, as the bvh will use
+					// indices into this vector to refer to the nodes.
+					const std::vector<sparse::Node> meshes;
+
+					// The bvh for the graph stores bounds in Project Coordinates.
+					Bvh bvh;
+
+					// Maps from unique mesh ids to indices into setA/B of the config
+					CompositeMap compositeMap;
+
+					Graph(std::vector<sparse::Node> nodes, CompositeMap& compositeMap);
+
+					sparse::Node& getNode(size_t primitive) const;
+
+					// Returns the index into the set of Composite Objects used to build this
+					// graph, for the given primitive (mesh) index.
+					size_t getCompositeIndex(size_t primitive) const;
+				};
+
+				struct CompositeObjectCache
+				{
+					std::vector<std::shared_ptr<NodeCache::Node>> meshNodes;
+
+					void initialise();
+
+					/*
+					* Loads the triangle soup of the meshNodes into memory and returns a
+					* reference to it. Initialises the triangles array on-demand if
+					* required.
+					*/
+					const std::vector<repo::lib::RepoTriangle>& getTriangles() const;
+
+					const repo::lib::RepoUUID& id() const;
+				};
 
 				class Pipeline
 				{
@@ -107,28 +124,41 @@ namespace repo {
 					using RepoUUIDMap = std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>;
 
 					Pipeline(DatabasePtr, const repo::manipulator::modelutility::ClashDetectionConfig&);
+
 					ClashDetectionReport runPipeline();
 
-					/*
-					* The broadphase test operates on BVHs. These may created at multiple
-					* levels of granularity, depending on the stage.
-					*/
-					virtual std::unique_ptr<Broadphase> createBroadphase() const = 0;
-
-					virtual std::unique_ptr<Narrowphase> createNarrowphase() const = 0;
-
-					virtual CompositeClash* createCompositeClash() = 0; // This needs to be typical pointer so it can be stored in the map below.
-
-					virtual void append(CompositeClash& clash, const Narrowphase& result) const = 0;
-
+				protected:
+					virtual void run(const Graph& graphA, const Graph& graphB) = 0;
 					virtual void createClashReport(const OrderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const = 0;
 
-				protected:
 					DatabasePtr handler;
+
 					const repo::manipulator::modelutility::ClashDetectionConfig& config;
+
+					// These are initialised at the beginning of runPipeline.
+					std::unique_ptr<Graph> graphA;
+					std::unique_ptr<Graph> graphB;
+
 					RepoUUIDMap uniqueToCompositeId;
 					std::unordered_map<OrderedPair, CompositeClash*, OrderedPairHasher> clashes;
 					NodeCache cache;
+
+					std::shared_ptr<CompositeObjectCache> getCompositeObjectCache(
+						const std::vector<CompositeObject>& set,
+						size_t index
+					);
+
+					template<class T>
+					T* createClash(const repo::lib::RepoUUID& a, const repo::lib::RepoUUID& b) {
+						OrderedPair pair(a, b);
+						auto it = clashes.find(pair);
+						if (it == clashes.end())
+						{
+							auto clash = new T();
+							it = clashes.emplace(pair, std::move(clash)).first;
+						}
+						return static_cast<T*>(it->second);
+					}
 				};
 			}
 		}

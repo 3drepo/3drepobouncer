@@ -58,8 +58,6 @@ namespace bvh {
 	*/
 	struct IntersectQuery
 	{
-		double tolerance;
-
 		virtual void intersect(size_t primA, size_t primB) = 0;
 
 		void operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double>& b);

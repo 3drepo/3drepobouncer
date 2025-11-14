@@ -47,19 +47,12 @@ static double distance2(const bvh::BoundingBox<double>& a, const bvh::BoundingBo
 	return sq;
 }
 
-static double intersection2(const bvh::BoundingBox<double>& a, const bvh::BoundingBox<double>& b)
+static bool intersects(const bvh::BoundingBox<double>& a, const bvh::BoundingBox<double>& b)
 {
-	auto ib = overlap(a, b);
-	double sq = 0.0;
-	for (auto i = 0; i < 3; ++i) {
-		if (ib.min[i] < ib.max[i]) {
-			sq += std::pow(ib.min[i] - ib.max[i], 2);
-		}
-		else {
-			return 0.0; // If the boxes are separated by any axis, there is no intersection.
-		}
-	}
-	return sq;
+	return 
+		a.min[0] <= b.max[0] && a.max[0] >= b.min[0] &&
+		a.min[1] <= b.max[1] && a.max[1] >= b.min[1] &&
+		a.min[2] <= b.max[2] && a.max[2] >= b.min[2];
 }
 
 void DistanceQuery::operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double>& b)
@@ -111,12 +104,8 @@ void DistanceQuery::operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double>
 	}
 }
 
-#pragma optimize("", off)	
-
 void IntersectQuery::operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double>& b)
 {
-	auto toleranceSq = tolerance * tolerance;
-
 	std::stack<std::pair<size_t, size_t>> pairs;
 	pairs.push({ 0, 0 });
 	while (!pairs.empty())
@@ -127,14 +116,13 @@ void IntersectQuery::operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double
 		auto& left = a.nodes[idxLeft];
 		auto& right = b.nodes[idxRight];
 
-		auto overlapSq = intersection2(
-			left.bounding_box_proxy(),
-			right.bounding_box_proxy()
-		);
+		// In hard mode, we can't apply the tolerance to the bounds intersection,
+		// because flat surfaces may have a zero volume overlap, but still
+		// intersect by a non-trivial amount that can be found during resolution
+		// stage.
 
-		if (overlapSq <= toleranceSq)
-		{
-			continue; // No possible intersection above the tolerance
+		if (!intersects(left.bounding_box_proxy(), right.bounding_box_proxy())) {
+			continue;
 		}
 
 		if (left.is_leaf() && right.is_leaf())

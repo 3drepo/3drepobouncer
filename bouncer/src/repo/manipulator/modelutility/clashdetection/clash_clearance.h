@@ -47,6 +47,8 @@ namespace repo {
 							:line(repo::lib::RepoLine::Max())
 						{
 						}
+
+						void append(const repo::lib::RepoLine& otherLine);
 					};
 
 					Clearance(DatabasePtr handler, const ClashDetectionConfig& config)
@@ -54,18 +56,9 @@ namespace repo {
 					{
 					}
 
-					std::unique_ptr<Broadphase> createBroadphase() const override;
+					void run(const Graph& graphA, const Graph& graphB) override;
 
-					std::unique_ptr<Narrowphase> createNarrowphase() const override;
-
-					CompositeClash* createCompositeClash() override
-					{
-						return new ClearanceClash();
-					}
-
-					virtual void append(CompositeClash& c, const Narrowphase& r) const;
-
-					virtual void createClashReport(const OrderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const;
+					void createClashReport(const OrderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const;
 
 				protected:
 					double tolerance;

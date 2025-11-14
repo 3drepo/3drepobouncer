@@ -32,24 +32,17 @@ namespace repo {
 					{
 					}
 
-					std::unique_ptr<Broadphase> createBroadphase() const override;
-
-					std::unique_ptr<Narrowphase> createNarrowphase() const override;
-
-					CompositeClash* createCompositeClash() override
+					struct HardClash : public CompositeClash
 					{
-						return nullptr;
-					}
+						repo::lib::RepoVector3D64 penetration;
+					};
 
-					virtual void append(CompositeClash& c, const Narrowphase& r) const override;
+					void run(const Graph& graphA, const Graph& graphB) override;
 
-					virtual void createClashReport(const OrderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const override;
+					void createClashReport(const OrderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const override;
 
+				protected:
 					double tolerance;
-
-				private:
-					double estimatePenetrationDepth(const OrderedPair& pair) const;
-					std::unordered_map<repo::lib::RepoUUID, CompositeObject&, repo::lib::RepoUUIDHasher> compositeObjects;
 				};
 			}
 		}

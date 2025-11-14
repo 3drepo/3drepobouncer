@@ -20,6 +20,7 @@
 #include "clash_clearance.h"
 #include "geometry_tests.h"
 #include "bvh_operators.h"
+#include "clash_scheduler.h"
 
 using namespace repo::manipulator::modelutility::clash;
 
@@ -34,7 +35,7 @@ using namespace repo::manipulator::modelutility::clash;
 * is only ever interested in the closest pair, then early termination based on
 * tracking the smallest maxmimum distance could be applied.
 */
-struct ClearanceBroadphase: public Broadphase, protected bvh::DistanceQuery
+struct ClearanceBroadphase : protected bvh::DistanceQuery
 {
 	ClearanceBroadphase(double clearance)
 		:results(nullptr)
@@ -44,7 +45,7 @@ struct ClearanceBroadphase: public Broadphase, protected bvh::DistanceQuery
 
 	BroadphaseResults* results;
 
-	void operator()(const Bvh& a, const Bvh& b, BroadphaseResults& results) override
+	void operator()(const Bvh& a, const Bvh& b, BroadphaseResults& results)
 	{
 		this->results = &results;
 		bvh::DistanceQuery::operator()(a, b);
@@ -56,41 +57,53 @@ struct ClearanceBroadphase: public Broadphase, protected bvh::DistanceQuery
 	}
 };
 
-struct ClearanceNarrowphase: public Narrowphase
+void Clearance::run(const Graph& graphA, const Graph& graphB)
 {
-	ClearanceNarrowphase(double tolerance)
-		:tolerance(tolerance),
-		line(repo::lib::RepoLine::Max())
-	{
+	BroadphaseResults broadphaseResults;
+
+	ClearanceBroadphase broadphase(tolerance);
+	broadphase.operator()(graphA.bvh, graphB.bvh, broadphaseResults);
+
+	ClashScheduler::schedule(broadphaseResults);
+
+	std::vector<std::pair<
+		std::shared_ptr<NodeCache::Node>,
+		std::shared_ptr<NodeCache::Node>
+		>> narrowphaseTests;
+
+	for (auto r : broadphaseResults) {
+		narrowphaseTests.push_back({
+			cache.getNode(graphA.getNode(r.first)),
+			cache.getNode(graphB.getNode(r.second))
+			});
 	}
 
-	double tolerance;
-	repo::lib::RepoLine line;
-
-	bool operator()(const repo::lib::RepoTriangle& a, const repo::lib::RepoTriangle& b) override
+	for (const auto& [a, b] : narrowphaseTests)
 	{
-		line = geometry::closestPointTriangleTriangle(a, b);
-		auto m = line.magnitude();
-		return m <= tolerance;
+		a->initialise();
+		b->initialise();
+
+		BroadphaseResults results;
+		broadphase.operator()(a->getBvh(), b->getBvh(), results);
+
+		for (const auto& [aIndex, bIndex] : results)
+		{
+			auto line = geometry::closestPointTriangleTriangle(a->getTriangle(aIndex), b->getTriangle(bIndex));
+			if (line.magnitude() < tolerance) {
+				auto clash = createClash<ClearanceClash>(
+					uniqueToCompositeId[a->getUniqueId()], 
+					uniqueToCompositeId[b->getUniqueId()]
+				);
+				clash->append(line);
+			}
+		}
 	}
-};
-
-std::unique_ptr<Broadphase> Clearance::createBroadphase() const
-{
-	return std::make_unique<ClearanceBroadphase>(tolerance);
 }
 
-std::unique_ptr<Narrowphase> Clearance::createNarrowphase() const
+void Clearance::ClearanceClash::append(const repo::lib::RepoLine& otherLine)
 {
-	return std::make_unique<ClearanceNarrowphase>(tolerance);
-}
-
-void Clearance::append(CompositeClash& c, const Narrowphase& r) const
-{
-	auto& clash = static_cast<ClearanceClash&>(c);
-	auto& result = static_cast<const ClearanceNarrowphase&>(r);
-	if (result.line.magnitude() < clash.line.magnitude()) {
-		clash.line = result.line;
+	if (otherLine.magnitude() < line.magnitude()) {
+		line = otherLine;
 	}
 }
 

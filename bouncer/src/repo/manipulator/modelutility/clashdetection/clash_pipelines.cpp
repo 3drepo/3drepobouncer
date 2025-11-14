@@ -41,67 +41,61 @@ using namespace repo::manipulator::modelutility;
 using namespace repo::manipulator::modelutility::clash;
 
 using ContainerGroups = std::unordered_map<repo::lib::Container*, std::vector<repo::lib::RepoUUID>>;
-using Bvh = bvh::Bvh<double>;
 
-struct Graph
+Graph::Graph(std::vector<sparse::Node> nodes, CompositeMap& compositeMap)
+	: meshes(std::move(nodes)),
+	compositeMap(std::move(compositeMap))
 {
-	// Once this is initialised, it should not be changed, as the bvh will use
-	// indices into this vector to refer to the nodes.
-	const std::vector<sparse::Node> meshes;
+	// create the bvh for the scene
+	auto boundingBoxes = std::vector<bvh::BoundingBox<double>>();
+	auto centers = std::vector<bvh::Vector3<double>>();
 
-	// The bvh for the graph stores bounds in Project Coordinates.
-	Bvh bvh;
-
-	Graph(std::vector<sparse::Node> nodes)
-		:meshes(std::move(nodes))
+	for (const auto& node : meshes)
 	{
-		// create the bvh for the scene
-		auto boundingBoxes = std::vector<bvh::BoundingBox<double>>();
-		auto centers = std::vector<bvh::Vector3<double>>();
-
-		for (const auto& node : meshes)
-		{
-			auto bounds = node.matrix * node.mesh.getBoundsField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
-			boundingBoxes.push_back(*(reinterpret_cast<bvh::BoundingBox<double>*>(&bounds)));
-			centers.push_back(boundingBoxes.back().center());
-		}
-
-		auto globalBounds = bvh::compute_bounding_boxes_union(boundingBoxes.data(), boundingBoxes.size());
-
-		bvh::SweepSahBuilder<Bvh> builder(bvh);
-		builder.max_leaf_size = 1;
-		builder.build(globalBounds, boundingBoxes.data(), centers.data(), boundingBoxes.size());
+		auto bounds = node.matrix * node.mesh.getBoundsField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
+		boundingBoxes.push_back(*(reinterpret_cast<bvh::BoundingBox<double>*>(&bounds)));
+		centers.push_back(boundingBoxes.back().center());
 	}
 
-	sparse::Node& getNode(size_t primitive) const
-	{
-		// The const_cast removes the const qualifier from the node itself. It is
-		// important the vector doesn't change once initialised, as we don't want
-		// the memory layout to change while there are references to the nodes
-		// held. It is acceptable for the non-const members of the nodes themselves
-		// to change however.
+	auto globalBounds = bvh::compute_bounding_boxes_union(boundingBoxes.data(), boundingBoxes.size());
 
-		return const_cast<sparse::Node&>(meshes[primitive]);
-	}
+	bvh::SweepSahBuilder<Bvh> builder(bvh);
+	builder.max_leaf_size = 1;
+	builder.build(globalBounds, boundingBoxes.data(), centers.data(), boundingBoxes.size());
+}
 
-	sparse::Node& getNode(repo::lib::RepoUUID& uniqueId) const
-	{
-		throw std::exception("Not implemented");
-	}
-};
+sparse::Node& Graph::getNode(size_t primitive) const
+{
+	// The const_cast removes the const qualifier from the node itself. It is
+	// important the vector doesn't change once initialised, as we don't want
+	// the memory layout to change while there are references to the nodes
+	// held. It is acceptable for the non-const members of the nodes themselves
+	// to change however.
 
-static Graph createSceneGraph(
+	return const_cast<sparse::Node&>(meshes[primitive]);
+}
+
+size_t Graph::getCompositeIndex(size_t primitive) const
+{
+	return compositeMap.at(getNode(primitive).uniqueId);
+}
+
+static std::unique_ptr<Graph> createSceneGraph(
 	Pipeline::DatabasePtr handler, 
 	const std::vector<CompositeObject>& set, 
 	Pipeline::RepoUUIDMap& uniqueToCompositeId)
 {
 	ContainerGroups containers;
-	for (auto& composite : set)
-	{
+	Graph::CompositeMap map;
+
+	for (size_t i = 0; i < set.size(); i++){
+	
+		auto& composite = set[i];
 		for (auto& mesh : composite.meshes)
 		{
 			containers[mesh.container].push_back(mesh.uniqueId);
 			uniqueToCompositeId[mesh.uniqueId] = composite.id;
+			map[mesh.uniqueId] = i;
 		}
 	}
 
@@ -114,9 +108,7 @@ static Graph createSceneGraph(
 	std::vector<sparse::Node> nodes;
 	scene.getNodes(nodes);
 
-	Graph graph(std::move(nodes));
-
-	return graph;
+	return std::make_unique<Graph>(std::move(nodes), map);
 }
 
 static bool isWithinLimits(const repo::lib::RepoVector3D64& v, double limit)
@@ -241,75 +233,13 @@ ClashDetectionReport Pipeline::runPipeline()
 {
 	validateSets(config);
 
-	auto graphA = createSceneGraph(handler, config.setA, uniqueToCompositeId);
-	auto graphB = createSceneGraph(handler, config.setB, uniqueToCompositeId);
+	graphA = createSceneGraph(handler, config.setA, uniqueToCompositeId);
+	graphB = createSceneGraph(handler, config.setB, uniqueToCompositeId);
 
-	validateSceneGraph(graphA);
-	validateSceneGraph(graphB);
+	validateSceneGraph(*graphA);
+	validateSceneGraph(*graphB);
 
-	BroadphaseResults broadphaseResults;
-
-	auto broadphase = createBroadphase();
-
-	broadphase->operator()(graphA.bvh, graphB.bvh, broadphaseResults);
-
-	ClashScheduler::schedule(broadphaseResults);
-
-	std::vector<std::pair<
-		std::shared_ptr<NodeCache::Node>,
-		std::shared_ptr<NodeCache::Node>
-		>> narrowphaseTests;
-
-	for (auto r : broadphaseResults) {
-		narrowphaseTests.push_back({
-			cache.getNode(graphA.getNode(r.first)),
-			cache.getNode(graphB.getNode(r.second))
-		});
-	}
-
-	for (const auto& [a, b] : narrowphaseTests)
-	{
-		a->initialise();
-		b->initialise();
-
-		// The current implementation of the pipeline uses double precision floating
-		// point throughout. This is because the way the scene data is stored limits
-		// the accuracy of the engine, and double precision exceeds the requirments
-		// for our guaranteed range (as verified by unit tests). It is therefore the
-		// most straightforward solution. If any of the above should change however, a
-		// dedicated library such as MPIR should be used insted.
-
-		BroadphaseResults results;
-		broadphase->operator()(a->getBvh(), b->getBvh(), results);
-
-		auto narrowphase = createNarrowphase();
-
-		for (const auto& [aIndex, bIndex] : results)
-		{
-			if (narrowphase->operator()(
-					a->getTriangle(aIndex),
-					b->getTriangle(bIndex))
-				)
-			{
-				OrderedPair pair(
-					uniqueToCompositeId[a->getUniqueId()],
-					uniqueToCompositeId[b->getUniqueId()]
-				);
-
-				// todo: here is where we (a) append all the meshnodes from cache for the penetration estimation
-				// then we need to (b) order by their reference counts
-
-				auto it = clashes.find(pair);
-				if(it == clashes.end())
-				{
-					auto clash = createCompositeClash();
-					it = clashes.emplace(pair, std::move(clash)).first;
-				}
-
-				append(*it->second, *narrowphase);
-			}
-		}
-	}
+	run(*graphA, *graphB);
 
 	ClashDetectionReport report;
 	report.clashes.reserve(clashes.size());
@@ -322,4 +252,19 @@ ClashDetectionReport Pipeline::runPipeline()
 	}
 
 	return report;
+}
+
+std::shared_ptr<CompositeObjectCache> repo::manipulator::modelutility::clash::Pipeline::getCompositeObjectCache(const std::vector<CompositeObject>& set, size_t index)
+{
+	throw "Not implemented exception";
+}
+
+const std::vector<repo::lib::RepoTriangle>& CompositeObjectCache::getTriangles() const
+{
+	throw "Not implemented exception";
+}
+
+const repo::lib::RepoUUID& CompositeObjectCache::id() const
+{
+	throw "Not implemented exception";
 }

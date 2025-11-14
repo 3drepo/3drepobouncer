@@ -15,12 +15,15 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stack>
-
 #include "clash_hard.h"
 #include "geometry_tests.h"
 #include "bvh_operators.h"
 #include "repo_polydepth.h"
+#include "clash_scheduler.h"
+#include "repo_polydepth.h"
+
+#include <stack>
+#include <set>
 
 using namespace repo::manipulator::modelutility::clash;
 
@@ -30,12 +33,11 @@ using namespace repo::manipulator::modelutility::clash;
 * must also exceed the tolerance, otherwise the leaf geometry cannot intersect
 * by more than that.
 */
-struct HardBroadphase: public Broadphase, public bvh::IntersectQuery
+struct HardBroadphase : public bvh::IntersectQuery
 {
-	HardBroadphase(double tolerance)
+	HardBroadphase()
 		:results(nullptr)
 	{
-		this->tolerance = tolerance;
 	}
 
 	BroadphaseResults* results;
@@ -45,43 +47,70 @@ struct HardBroadphase: public Broadphase, public bvh::IntersectQuery
 		results->push_back({ primA, primB });
 	}
 
-	void operator()(const Bvh& a, const Bvh& b, BroadphaseResults& results) override
+	void operator()(const Bvh& a, const Bvh& b, BroadphaseResults& results)
 	{
 		this->results = &results;
 		bvh::IntersectQuery::operator()(a, b);
 	}
 };
 
-struct HardNarrowphase : public Narrowphase
+void Hard::run(const Graph& graphA, const Graph& graphB)
 {
-	bool operator()(const repo::lib::RepoTriangle& a, const repo::lib::RepoTriangle& b) override
-	{
-		// The true penetration depth cannot be estimated pair-wise in isolation,
-		// because geometry of one mesh that is deepest within the other may not
-		// intersect with that ones surface.
-		// For the narrowphase, we simply check if the triangles are touching, and
-		// then the depth estimation takes place in the composition step. This also
-		// means we can tolerate some false-positives here (though not false
-		// negatives).
+	// Broadphase results are individual mesh nodes that potentially intersect.
+	// From these we need to build the full composite objects for the narrow-
+	// phase, which will work out penetration depth - if any - based on all the
+	// meshes in the composite object.
 
-		return geometry::intersects(a, b) > 0;
+	BroadphaseResults broadphaseResults;
+
+	HardBroadphase b;
+	b.operator()(graphA.bvh, graphB.bvh, broadphaseResults);
+
+	std::set<std::pair<size_t, size_t>> compositePairs;
+	for (auto [a, b] : broadphaseResults) {
+		compositePairs.insert({
+			graphA.getCompositeIndex(a),
+			graphB.getCompositeIndex(b)
+		});
 	}
-};
 
-std::unique_ptr<Broadphase> Hard::createBroadphase() const
-{
-	return std::make_unique<HardBroadphase>(tolerance);
-}
+	std::vector<std::pair<size_t, size_t>> orderedCompositePairs(
+		compositePairs.begin(),
+		compositePairs.end()
+	);
 
-std::unique_ptr<Narrowphase> Hard::createNarrowphase() const
-{
-	return std::make_unique<HardNarrowphase>();
-}
+	ClashScheduler::schedule(orderedCompositePairs);
+	
+	std::vector<std::pair<
+		std::shared_ptr<CompositeObjectCache>,
+		std::shared_ptr<CompositeObjectCache>
+		>> narrowphaseTests;
 
-void Hard::append(CompositeClash& c, const Narrowphase& r) const
-{
-	// We don't need to do anything here because the keys of the composite clash
-	// hold the identities we need to recover.
+	for (auto [a, b] : orderedCompositePairs) {
+		narrowphaseTests.push_back({
+			getCompositeObjectCache(config.setA, a),
+			getCompositeObjectCache(config.setB, b),
+		});
+	}
+
+	for (auto& n : narrowphaseTests) {
+		geometry::RepoPolyDepth pd(
+			n.first->getTriangles(),
+			n.second->getTriangles()
+		);
+
+		pd.iterate(20);
+
+		auto v = pd.getPenetrationVector();
+
+		if (v.norm() > FLT_EPSILON) {
+			auto clash = createClash<HardClash>(
+				n.first->id(),
+				n.second->id()
+			);
+			clash->penetration = pd.getPenetrationVector();
+		}
+	}
 }
 
 void Hard::createClashReport(const OrderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const
@@ -89,34 +118,15 @@ void Hard::createClashReport(const OrderedPair& objects, const CompositeClash& c
 	result.idA = objects.a;
 	result.idB = objects.b;
 
-	auto pd = estimatePenetrationDepth(objects);
+	auto p = static_cast<const HardClash&>(clash).penetration;
 
 	result.positions = {
 	};
 
 	size_t hash = 0;
 	std::hash<double> hasher;
-	for (auto& p : result.positions) {
-		hash ^= hasher(p.x) + 0x9e3779b9;
-		hash ^= hasher(p.y) + 0x9e3779b9;
-		hash ^= hasher(p.z) + 0x9e3779b9;
-	}
+	hash ^= hasher(p.x) + 0x9e3779b9;
+	hash ^= hasher(p.y) + 0x9e3779b9;
+	hash ^= hasher(p.z) + 0x9e3779b9;
 	result.fingerprint = hash;
-}
-
-double Hard::estimatePenetrationDepth(const OrderedPair& pair) const
-{
-	/*
-	const auto& a = compositeObjects.at(pair.a);
-	for (const auto& ref : a.meshes) {
-		ref.
-
-	}
-	*/
-	
-
-	//todo: get all meshes from ordered pairs for polydepth
-
-	//geometry::RepoPolyDepth pd()
-	return 0;
 }

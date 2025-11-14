@@ -1087,6 +1087,16 @@ TEST(Clash, RepoPolyDepth2)
 	EXPECT_THAT(intersects(copy, b), IsFalse());
 }
 
+TEST(Clash, PolyDepth3)
+{
+	// If geometry is provided to PolyDepth in a collision-free configuration,
+	// then the initial penetration vector should be zero, and calling iterate
+	// should not do anything.
+
+
+
+}
+
 TEST(Clash, Hard1)
 {
 	// A simple test case of two interpenetrating polyhedra close to the origin.
