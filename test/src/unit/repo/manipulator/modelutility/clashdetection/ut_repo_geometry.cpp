@@ -370,8 +370,6 @@ TEST(Geometry, Orient3D)
 	}
 }
 
-#pragma optimize("", off)
-
 void printTriangle(const repo::lib::RepoTriangle& t)
 {
 	std::cout << std::fixed << std::setprecision(std::numeric_limits<double>::max_digits10);
@@ -479,8 +477,6 @@ TEST(Geometry, TriangleTriangleIntersects1)
 		EXPECT_THAT(d, DoubleNear(geometry::intersects(b, a), 1e-8));
 	}
 }
-
-#pragma optimize("", off)
 
 TEST(Geometry, TriangleTriangleIntersects2)
 {
@@ -590,5 +586,51 @@ TEST(Geometry, TriangleTriangleIntersects2)
 			EXPECT_THAT(d, DoubleNear(expected, ClashGenerator::suggestTolerance({ a, b })));
 		}
 		
+	}
+}
+
+TEST(Geometry, CoplanarityThreshold)
+{
+	CellDistribution space;
+	ClashGenerator clashGenerator;
+
+	clashGenerator.downcastVertices = false;
+
+	for (int itr = 0; itr < 10000000; ++itr) {
+
+		auto r1 = clashGenerator.random.number({ 1, 7 });
+		auto r2 = clashGenerator.random.number({ 1, 7 });
+
+		clashGenerator.size1 = { std::pow(10, r1), std::pow(10, r1 + 1) };
+		clashGenerator.size2 = { std::pow(10, r2), std::pow(10, r2 + 1) };
+
+		clashGenerator.distance = { 1, 2 };
+
+		auto p = clashGenerator.createTrianglesTransformed({});
+		auto [a, b] = ClashGenerator::applyTransforms(p);
+
+		// The purpose of the threshold is to participate in the control flow
+		// of algorithms, so we test it in that context: triangles are positioned
+		// into what should be the closest we can get to an in-contact state.
+
+		auto line = geometry::closestPointTriangleTriangle(a, b);
+		a = repo::lib::RepoMatrix::translate(line.end - line.start) * a;
+
+		auto i = geometry::intersects(a, b);
+		auto th = geometry::coplanarityThreshold(a, b);
+
+		// The threshold is used to turn the intersects measure into a binary decision
+		// between in-contact and in-collision. As algorithm logic relies on this being
+		// robust, it should never fail.
+
+		EXPECT_THAT(i, Le(th));
+
+		// The threshold should be suitably small to avoid false positives, though
+		// what is positive is rather subjective.
+		// We test below that across the largest input range, the threshold is always
+		// within 1 mm (assuming units are mm), as this is consistent with our
+		// accuracy guarantees.
+
+		EXPECT_THAT(th, Lt(1.0));
 	}
 }

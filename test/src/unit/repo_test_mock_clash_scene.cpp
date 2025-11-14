@@ -374,7 +374,7 @@ TransformTriangles testing::ClashGenerator::createTrianglesTransformed(
 	// If the nominal distance can never be zero, then don't generate FE,
 	// configurations, as these always have a distance of zero.
 
-	auto u = distance.min() > 0 ? 3 : 4;
+	auto u = distance.min() >= 0 ? 3 : 4;
 
 	switch (random.range(0, u)) {
 	case 0:
@@ -771,10 +771,9 @@ TransformMeshes testing::ClashGenerator::createHard1(
 
 	auto d = random.number(distance);
 
-	auto t = RepoMatrix::translate(repo::lib::RepoVector3D64(0, 0, 1.0 - d)) * RepoMatrix::rotationX(std::numbers::pi);
-	cone.applyTransformation(t);
+	auto t = RepoMatrix::translate(repo::lib::RepoVector3D64(0, 0, 1.0 + d)) * RepoMatrix::rotationX(std::numbers::pi);
 
-	return { { cube, {} }, { cone, {} } };
+	return { { cube, {} }, { cone, t } };
 }
 
 std::vector<repo::lib::RepoTriangle> testing::ClashGenerator::triangles(const TransformMesh& p)
@@ -790,6 +789,35 @@ std::vector<repo::lib::RepoTriangle> testing::ClashGenerator::triangles(const Tr
 		));
 	}
 	return triangles;
+}
+
+std::vector<repo::lib::RepoTriangle> testing::ClashGenerator::triangles(const repo::core::model::MeshNode& mesh)
+{
+	std::vector<repo::lib::RepoTriangle> triangles;
+	auto v = mesh.getVertices();
+	for (const auto& t : mesh.getFaces()) {
+		triangles.push_back(repo::lib::RepoTriangle(
+			repo::lib::RepoVector3D64(v[t[0]]),
+			repo::lib::RepoVector3D64(v[t[1]]),
+			repo::lib::RepoVector3D64(v[t[2]])
+		));
+	}
+	return triangles;
+}
+
+std::vector<repo::lib::RepoTriangle> testing::ClashGenerator::triangles(const repo::core::model::RepoBSON& mesh)
+{
+	return triangles(repo::core::model::MeshNode(mesh));
+}
+
+std::vector<repo::lib::RepoTriangle> testing::ClashGenerator::triangles(const std::vector<repo::core::model::RepoBSON>& meshes)
+{
+	std::vector<repo::lib::RepoTriangle> superset;
+	for (const auto& mesh : meshes) {
+		auto tris = triangles(mesh);
+		superset.insert(superset.end(), tris.begin(), tris.end());
+	}
+	return superset;
 }
 
 CellDistribution::CellDistribution(size_t cellSize, size_t spaceSize)

@@ -396,7 +396,7 @@ TEST(Clash, TriangleDistanceE2E)
 
 	const int numIterations = 1;
 	const int samplesPerDistance = 10000;
-	std::vector<double> distances = { 0, 2, 5 };
+	std::vector<double> distances = { -0.001, 2, 5 };
 
 	// With an expected accuracy of ±1.0, the expected measured distance ranges
 	// are: { 0..1, 1..3 4..6 }.
@@ -1000,6 +1000,11 @@ TEST(Clash, SelfClearance)
 	}
 }
 
+TEST(Clash, CompositeClearance)
+{
+	// Tests that the distance query applied to the bvh
+}
+
 TEST(Clash, RepoPolyDepth1)
 {
 	// Tests the penetration depth estimation (PolyDepth) of the geometry utils
@@ -1042,6 +1047,8 @@ TEST(Clash, RepoPolyDepth1)
 	}
 }
 
+#pragma optimize("", off)
+
 TEST(Clash, RepoPolyDepth2)
 {
 	// Tests the penetration depth estimation (PolyDepth) of the geometry utils
@@ -1049,7 +1056,35 @@ TEST(Clash, RepoPolyDepth2)
 	// Contractually PolyDepth only guarantees an upper bound, so if the
 	// implementation changes, the acceptance criteria may need to change as well.
 
+	auto handler = getHandler();
+	ClashDetectionConfig config;
+	ClashDetectionDatabaseHelper helper(handler);
 
+	auto c = helper.getContainerByName("hard_1");
+
+	// Take care that the meshes returned here will not have any transformations applied.
+
+	auto a = ClashGenerator::triangles(helper.getChildMeshNodes(c.get(), "set5_a"));
+	auto b = ClashGenerator::triangles(helper.getChildMeshNodes(c.get(), "set5_b"));
+
+	EXPECT_THAT(intersects(a, b), IsTrue());
+
+	geometry::RepoPolyDepth pd(a, b);
+	auto v0 = pd.getPenetrationVector();
+
+	auto copy = a;
+	ClashGenerator::applyTransforms(copy, repo::lib::RepoMatrix::translate(v0));
+	EXPECT_THAT(intersects(copy, b), IsFalse());
+
+	pd.iterate(10);
+
+	auto v1 = pd.getPenetrationVector();
+
+	EXPECT_THAT(v1.norm(), Lt(v0.norm()));
+
+	copy = a;
+	ClashGenerator::applyTransforms(copy, repo::lib::RepoMatrix::translate(v0));
+	EXPECT_THAT(intersects(copy, b), IsFalse());
 }
 
 TEST(Clash, Hard1)
@@ -1067,6 +1102,7 @@ TEST(Clash, Hard1)
 
 	clashGenerator.size1 = 1;
 	clashGenerator.size2 = 1;
+	clashGenerator.distance = -0.1; // ensure interpenetration
 
 	auto clash = clashGenerator.createHard1(space.sample());
 
@@ -1078,12 +1114,23 @@ TEST(Clash, Hard1)
 	auto pipeline = new clash::Hard(db, config);
 	auto results = pipeline->runPipeline();
 
-	EXPECT_THAT(results.clashes.size(), Eq(0));
+	EXPECT_THAT(results.clashes.size(), Eq(1));
 }
 
 TEST(Clash, ResultsSerialisation)
 {
 
+}
+
+TEST(Clash, Overlapping)
+{
+	// Tests explicitly overlap case (g), e.g. where two open pipe-ends overlap.
+
+	// This case should be detectable because the bounds will overlap by a non-trivial
+	// amount, even though the triangles are pair-wise coplanar, and attempting to resolve
+	// the clash along any of the axes other than the pipe axis will not work (unless
+	// completely moving outside the AABBs).
+	// 
 }
 
 TEST(Clash, NodeCache)

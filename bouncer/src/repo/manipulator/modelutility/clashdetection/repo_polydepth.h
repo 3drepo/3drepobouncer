@@ -50,7 +50,10 @@ namespace geometry {
 	
 	struct RepoPolyDepth
 	{
-		RepoPolyDepth(const std::vector<repo::lib::RepoTriangle>& a, const std::vector<repo::lib::RepoTriangle>& b);
+		RepoPolyDepth(
+			const std::vector<repo::lib::RepoTriangle>& a, 
+			const std::vector<repo::lib::RepoTriangle>& b
+		);
 
 		/*
 		* A vector by which to translate the triangles in set A to completely resolve
@@ -60,6 +63,13 @@ namespace geometry {
 		* the more iterations are performed.
 		*/
 		repo::lib::RepoVector3D64 getPenetrationVector() const;
+
+		/*
+		* Updates qi to a better approximation of the nearest in-contact configuration,
+		* according to the PolyDepth algorithm. Terminates automatically, after at most
+		* n interations.
+		*/
+		void iterate(size_t n = 3);
 
 	private:
 		const std::vector<repo::lib::RepoTriangle>& a;
@@ -71,10 +81,22 @@ namespace geometry {
 		Bvh bvhB;
 
 		repo::lib::RepoMatrix qt;
-		repo::lib::RepoMatrix qf;
-		repo::lib::RepoMatrix qi;
+		repo::lib::RepoMatrix qs;
 
 		void findInitialFreeConfiguration();
 
+		/* 
+		* Performs continous collision detection between a and b, where a begins at
+		* q0 and ends at q1. Returns the transformation of a at the first point of
+		* contact between a and b. The returned transformation will be a linear
+		* interpolation between q0 and q1.
+		*/
+		repo::lib::RepoMatrix ccd(const repo::lib::RepoMatrix& q0, const repo::lib::RepoMatrix& q1);
+
+		/*
+		* Returns the minimum distance between a and b, where a is transformed by q.
+		* If the meshes are intersecting, the returned distance will be 0.
+		*/
+		double distance(const repo::lib::RepoMatrix& q);
 	};
 }

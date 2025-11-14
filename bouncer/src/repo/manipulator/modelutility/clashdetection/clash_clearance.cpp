@@ -19,36 +19,9 @@
 
 #include "clash_clearance.h"
 #include "geometry_tests.h"
+#include "bvh_operators.h"
 
 using namespace repo::manipulator::modelutility::clash;
-
-static bvh::BoundingBox<double> intersection(const bvh::BoundingBox<double>& a, const bvh::BoundingBox<double>& b)
-{
-	bvh::BoundingBox<double> result;
-	result.min = {
-		std::max(a.min[0], b.min[0]),
-		std::max(a.min[1], b.min[1]),
-		std::max(a.min[2], b.min[2])
-	};
-	result.max = {
-		std::min(a.max[0], b.max[0]),
-		std::min(a.max[1], b.max[1]),
-		std::min(a.max[2], b.max[2])
-	};
-	return result;
-}
-
-static double minDistanceSq(const bvh::BoundingBox<double>& a, const bvh::BoundingBox<double>& b)
-{
-	auto ib = intersection(a, b);
-	double sq = 0.0;
-	for (auto i = 0; i < 3; ++i) {
-		if (ib.min[i] > ib.max[i]) {
-			sq += std::pow(ib.min[i] - ib.max[i], 2);
-		}
-	}
-	return sq;
-}
 
 /*
 * The Clearance broadphase returns all bounds that have a minimum distance
@@ -61,64 +34,25 @@ static double minDistanceSq(const bvh::BoundingBox<double>& a, const bvh::Boundi
 * is only ever interested in the closest pair, then early termination based on
 * tracking the smallest maxmimum distance could be applied.
 */
-struct ClearanceBroadphase: public Broadphase
+struct ClearanceBroadphase: public Broadphase, protected bvh::DistanceQuery
 {
 	ClearanceBroadphase(double clearance)
-		:clearanceSq(clearance* clearance)
+		:results(nullptr)
 	{
+		this->d = clearance;
 	}
 
-	double clearanceSq;
-
-	std::stack<std::pair<size_t, size_t>> pairs;
+	BroadphaseResults* results;
 
 	void operator()(const Bvh& a, const Bvh& b, BroadphaseResults& results) override
 	{
-		pairs.push({ 0, 0 });
-		while (!pairs.empty())
-		{
-			auto [idxLeft, idxRight] = pairs.top();
-			pairs.pop();
+		this->results = &results;
+		bvh::DistanceQuery::operator()(a, b);
+	}
 
-			auto& left = a.nodes[idxLeft];
-			auto& right = b.nodes[idxRight];
-
-			auto mds = minDistanceSq(left.bounding_box_proxy(), right.bounding_box_proxy());
-
-			if (mds > clearanceSq)
-			{
-				continue; // No possible intersection within the tolerance
-			}
-
-			if (left.is_leaf() && right.is_leaf())
-			{
-				for (size_t l = 0; l < left.primitive_count; l++) {
-					for (size_t r = 0; r < right.primitive_count; r++) {
-						results.push_back({
-							a.primitive_indices[left.first_child_or_primitive + l],
-							b.primitive_indices[right.first_child_or_primitive + r]
-						});
-					}
-				}
-			}
-			else if (left.is_leaf() && !right.is_leaf())
-			{
-				pairs.push({ idxLeft, right.first_child_or_primitive + 0 });
-				pairs.push({ idxLeft, right.first_child_or_primitive + 1 });
-			}
-			else if (!left.is_leaf() && right.is_leaf())
-			{
-				pairs.push({ left.first_child_or_primitive + 0, idxRight });
-				pairs.push({ left.first_child_or_primitive + 1, idxRight });
-			}
-			else
-			{
-				pairs.push({ left.first_child_or_primitive + 0, right.first_child_or_primitive + 0 });
-				pairs.push({ left.first_child_or_primitive + 0, right.first_child_or_primitive + 1 });
-				pairs.push({ left.first_child_or_primitive + 1, right.first_child_or_primitive + 0 });
-				pairs.push({ left.first_child_or_primitive + 1, right.first_child_or_primitive + 1 });
-			}
-		}
+	void intersect(size_t primA, size_t primB) override
+	{
+		results->push_back({ primA, primB});
 	}
 };
 

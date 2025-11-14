@@ -19,6 +19,7 @@
 
 #include "clash_hard.h"
 #include "geometry_tests.h"
+#include "bvh_operators.h"
 #include "repo_polydepth.h"
 
 using namespace repo::manipulator::modelutility::clash;
@@ -29,85 +30,25 @@ using namespace repo::manipulator::modelutility::clash;
 * must also exceed the tolerance, otherwise the leaf geometry cannot intersect
 * by more than that.
 */
-struct HardBroadphase: public Broadphase
+struct HardBroadphase: public Broadphase, public bvh::IntersectQuery
 {
 	HardBroadphase(double tolerance)
-		:toleranceSq(tolerance * tolerance)
+		:results(nullptr)
 	{
+		this->tolerance = tolerance;
 	}
 
-	double toleranceSq;
+	BroadphaseResults* results;
 
-	std::stack<std::pair<size_t, size_t>> pairs;
+	void intersect(size_t primA, size_t primB) override
+	{
+		results->push_back({ primA, primB });
+	}
 
 	void operator()(const Bvh& a, const Bvh& b, BroadphaseResults& results) override
 	{
-		pairs.push({ 0, 0 });
-		while (!pairs.empty())
-		{
-			auto [idxLeft, idxRight] = pairs.top();
-			pairs.pop();
-
-			auto& left = a.nodes[idxLeft];
-			auto& right = b.nodes[idxRight];
-
-			// This snippet computes the overlap
-
-			bvh::BoundingBox<double> result;
-			result.min = {
-				std::max(left.bounds[0], right.bounds[0]),
-				std::max(left.bounds[1], right.bounds[1]),
-				std::max(left.bounds[2], right.bounds[2])
-			};
-			result.max = {
-				std::min(left.bounds[3], right.bounds[3]),
-				std::min(left.bounds[4], right.bounds[4]),
-				std::min(left.bounds[5], right.bounds[5])
-			};
-
-			if (result.max[0] < result.min[0] ||
-				result.max[1] < result.min[1] ||
-				result.max[2] < result.min[2])
-			{
-				continue; // No overlap
-			}
-
-			auto overlapSq = bvh::dot(result.diagonal(), result.diagonal());
-
-			if (overlapSq < toleranceSq)
-			{
-				continue; // No possible intersection above the tolerance
-			}
-
-			if (left.is_leaf() && right.is_leaf())
-			{
-				for (size_t l = 0; l < left.primitive_count; l++) {
-					for (size_t r = 0; r < right.primitive_count; r++) {
-						results.push_back({
-							a.primitive_indices[left.first_child_or_primitive + l],
-							b.primitive_indices[right.first_child_or_primitive + r]
-						});
-					}
-				}
-			}
-			else if (left.is_leaf() && !right.is_leaf())
-			{
-				pairs.push({ idxLeft, right.first_child_or_primitive + 0 });
-				pairs.push({ idxLeft, right.first_child_or_primitive + 1 });
-			}
-			else if (!left.is_leaf() && right.is_leaf())
-			{
-				pairs.push({ left.first_child_or_primitive + 0, idxRight });
-				pairs.push({ left.first_child_or_primitive + 1, idxRight });
-			}
-			else
-			{
-				pairs.push({ left.first_child_or_primitive + 0, right.first_child_or_primitive + 0 });
-				pairs.push({ left.first_child_or_primitive + 0, right.first_child_or_primitive + 1 });
-				pairs.push({ left.first_child_or_primitive + 1, right.first_child_or_primitive + 0 });
-				pairs.push({ left.first_child_or_primitive + 1, right.first_child_or_primitive + 1 });
-			}
-		}
+		this->results = &results;
+		bvh::IntersectQuery::operator()(a, b);
 	}
 };
 
@@ -123,9 +64,7 @@ struct HardNarrowphase : public Narrowphase
 		// means we can tolerate some false-positives here (though not false
 		// negatives).
 
-		auto line = geometry::closestPointTriangleTriangle(a, b);
-		auto m = line.magnitude();
-		return m < FLT_EPSILON;
+		return geometry::intersects(a, b) > 0;
 	}
 };
 
@@ -167,6 +106,15 @@ void Hard::createClashReport(const OrderedPair& objects, const CompositeClash& c
 
 double Hard::estimatePenetrationDepth(const OrderedPair& pair) const
 {
+	/*
+	const auto& a = compositeObjects.at(pair.a);
+	for (const auto& ref : a.meshes) {
+		ref.
+
+	}
+	*/
+	
+
 	//todo: get all meshes from ordered pairs for polydepth
 
 	//geometry::RepoPolyDepth pd()

@@ -6,6 +6,7 @@
 
 set(SOURCES
 	${SOURCES}
+	${CMAKE_CURRENT_SOURCE_DIR}/bvh_operators.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_clearance.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_exceptions.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_hard.cpp
@@ -20,6 +21,7 @@ set(SOURCES
 
 set(HEADERS
 	${HEADERS}
+	${CMAKE_CURRENT_SOURCE_DIR}/bvh_operators.h
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_clearance.h
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_constants.h
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_exceptions.h

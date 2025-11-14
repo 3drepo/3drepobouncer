@@ -267,6 +267,12 @@ namespace testing {
 
 		static std::vector<repo::lib::RepoTriangle> triangles(const TransformMesh& p);
 
+		static std::vector<repo::lib::RepoTriangle> triangles(const repo::core::model::MeshNode& mesh);
+
+		static std::vector<repo::lib::RepoTriangle> triangles(const repo::core::model::RepoBSON& mesh);
+
+		static std::vector<repo::lib::RepoTriangle> triangles(const std::vector<repo::core::model::RepoBSON>& meshes);
+
 		// Returns a value that can be used as a tolerance when checking if a vector
 		// is close to a particular element of the triangle, based on the size of 
 		// the provided triangles.

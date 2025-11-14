@@ -58,6 +58,17 @@ void ClashDetectionDatabaseHelper::getChildMeshNodes(repo::lib::Container* conta
 	}
 }
 
+
+std::vector<repo::core::model::RepoBSON> ClashDetectionDatabaseHelper::getChildMeshNodes(repo::lib::Container* container, std::string name)
+{
+	auto uuids = getUniqueIdsByName(container, name);
+	return handler->findAllByCriteria(container->teamspace,
+		container->container + "." + REPO_COLLECTION_SCENE,
+		repo::core::handler::database::query::Eq(REPO_NODE_LABEL_ID, uuids),
+		true
+	);
+}
+
 // Searches for mesh nodes only
 std::set<repo::lib::RepoUUID> ClashDetectionDatabaseHelper::getUniqueIdsByName(
 	repo::lib::Container* container,

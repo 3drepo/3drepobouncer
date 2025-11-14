@@ -25,6 +25,7 @@
 #include <repo/core/handler/repo_database_handler_mongo.h>
 #include <repo/core/model/bson/repo_node_mesh.h>
 
+#include <vector>
 #include <set>
 
 namespace testing {
@@ -46,6 +47,10 @@ namespace testing {
 		void getChildMeshNodes(repo::lib::Container* container, 
 			const repo::core::model::RepoBSON& bson, 
 			std::set<repo::lib::RepoUUID>& uuids);
+
+		std::vector<repo::core::model::RepoBSON> getChildMeshNodes(
+			repo::lib::Container* container,
+			const std::string name);
 
 		// Searches for mesh nodes only
 

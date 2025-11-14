@@ -21,6 +21,8 @@
 
 #include <cmath>
 
+#pragma optimize("", off)
+
 using namespace geometry;
 
 using Vector3 = repo::lib::RepoVector3D64;
@@ -216,7 +218,7 @@ repo::lib::RepoLine geometry::closestPointTriangleTriangle(const repo::lib::Repo
     repo::lib::RepoLine Eb2(B.b, B.c);
     repo::lib::RepoLine Eb3(B.c, B.a);
 
-    repo::lib::RepoLine results[21];
+    repo::lib::RepoLine results[15];
 
     results[0] = closestPointLineLine(Ea1, Eb1);
     results[1] = closestPointLineLine(Ea1, Eb2);
@@ -231,35 +233,74 @@ repo::lib::RepoLine geometry::closestPointTriangleTriangle(const repo::lib::Repo
     results[9] = closestPointPointTriangle(A.a, B);
     results[10] = closestPointPointTriangle(A.b, B);
     results[11] = closestPointPointTriangle(A.c, B);
+
     results[12] = closestPointPointTriangle(B.a, A);
     results[13] = closestPointPointTriangle(B.b, A);
     results[14] = closestPointPointTriangle(B.c, A);
 
-	results[15] = lineFaceIntersection(Eb1, A);
-	results[16] = lineFaceIntersection(Eb2, A);
-	results[17] = lineFaceIntersection(Eb3, A);
-	results[18] = lineFaceIntersection(Ea1, B);
-	results[19] = lineFaceIntersection(Ea2, B);
-	results[20] = lineFaceIntersection(Ea3, B);
+    repo::lib::RepoVector3D64 p;
+	auto i = intersects(A, B, &p);
+
+    // For the distance test, we do not care to disambiguate the contact from
+    // the coplanar case, as both mean the distance between the triangles is
+    // infinitesimal.
+
+    if (i > COPLANAR) {
+		return repo::lib::RepoLine { p, p };
+    }
 
     repo::lib::RepoLine min = results[0];
-    for (int i = 1; i < 21; i++)
+    for (int i = 1; i < 15; i++)
     {
         if (results[i].magnitude() < min.magnitude())
         {
             min = results[i];
+
+            if (i > 11) {
+				std::swap(min.start, min.end);
+            }
         }
     }
 
     return min;
 }
 
-double ulp(double x)
+double geometry::ulp(double x)
 {
     if (x > 0)
         return std::nexttoward(x, std::numeric_limits<double>::infinity()) - x;
     else
         return x - std::nexttoward(x, -std::numeric_limits<double>::infinity());
+}
+
+double geometry::coplanarityThreshold(const repo::lib::RepoTriangle& a, const repo::lib::RepoTriangle& b)
+{
+    repo::lib::RepoVector3D64 deltas[] = {
+        a.a - b.a,
+        a.a - b.b,
+        a.a - b.c,
+        a.b - b.a,
+        a.b - b.b,
+        a.b - b.c,
+        a.c - b.a,
+        a.c - b.b,
+        a.c - b.c,
+        a.a - a.b,
+        a.a - a.c,
+        a.b - a.c,
+        b.a - b.b,
+        b.a - b.c,
+        b.b - b.c
+    };
+    auto dd = reinterpret_cast<double*>(&deltas);
+    auto d = abs(dd[0]);
+    for (int i = 1; i < 15; ++i) {
+        auto ddd = std::abs(dd[i]);
+        if (ddd > d) {
+            d = ddd;
+        }
+    }
+    return d * 1e-9;
 }
 
 double geometry::orient(const repo::lib::RepoVector3D64& p, const repo::lib::RepoVector3D64& q, const repo::lib::RepoVector3D64& r, const repo::lib::RepoVector3D64& s)
@@ -316,7 +357,8 @@ double checkMinMax(
     const repo::lib::RepoVector3D64& r1,
     const repo::lib::RepoVector3D64& p2,
     const repo::lib::RepoVector3D64& q2,
-    const repo::lib::RepoVector3D64& r2)
+    const repo::lib::RepoVector3D64& r2,
+    repo::lib::RepoVector3D64* ip)
 {
     // This snippet performs an early rejection if the triangles are disjoint
     // on L. It works by finding whether the leftmost edge of one triangle is
@@ -382,6 +424,10 @@ double checkMinMax(
         d = d2;
 	}
 
+    if (ip) {
+		*ip = i + L * std::max((kk + jj) * 0.5, (ii + ll) * 0.5);
+	}
+
     // This next snippet works out the minimum distance to move normal to the
 	// planes, in case they are smaller than the shift along L.
 
@@ -408,7 +454,7 @@ double checkMinMax(
     return d;
 }
 
-double geometry::intersects(const repo::lib::RepoTriangle& A, const repo::lib::RepoTriangle& B)
+double geometry::intersects(const repo::lib::RepoTriangle& A, const repo::lib::RepoTriangle& B, repo::lib::RepoVector3D64* ip)
 {
     // Performs a triangle-triangle intersection and returns the upper bound on
 	// the distance either of the triangles must move to resolve the intersection.
@@ -450,7 +496,7 @@ double geometry::intersects(const repo::lib::RepoTriangle& A, const repo::lib::R
     auto dr1 = -geometry::orient(p2, q2, r2, r1);
 
     if (((dp1 * dq1) > 0.0) && ((dp1 * dr1) > 0.0)) {
-        return false;
+        return 0.0;
     }
 
     auto dp2 = -geometry::orient(p1, q1, r1, p2);
@@ -458,13 +504,13 @@ double geometry::intersects(const repo::lib::RepoTriangle& A, const repo::lib::R
     auto dr2 = -geometry::orient(p1, q1, r1, r2);
 
     if (((dp2 * dq2) > 0.0f) && ((dp2 * dr2) > 0.0f)) {
-        return false;
+        return 0.0;
     }
 
     // Even on modern compilers, Guigue and Devillers' macros are still faster
     // at working out the permutations than function calls, by a factor of 2.
 
-#define INTERSECT(p1,q1,r1,p2,q2,r2) return checkMinMax(p1,q1,r1,p2,q2,r2);
+#define INTERSECT(p1,q1,r1,p2,q2,r2) return checkMinMax(p1,q1,r1,p2,q2,r2,ip);
 
 #define PERMUTE2(p1,q1,r1,p2,q2,r2,dp2,dq2,dr2) { \
 	if (dp2 > 0.0f) { \

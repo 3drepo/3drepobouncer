@@ -19,6 +19,8 @@
 #include "geometry_tests.h"
 
 #include "repo/manipulator/modeloptimizer/bvh/sweep_sah_builder.hpp"
+#include "repo/manipulator/modeloptimizer/bvh/hierarchy_refitter.hpp"
+#include "bvh_operators.h"
 
 using namespace geometry;
 
@@ -54,6 +56,122 @@ Bvh buildBvh(const std::vector<repo::lib::RepoTriangle>& triangles)
     return bvh;
 }
 
+// Updates the Bvh bottom-up, refitting the bounds to the triangles under a given
+// transformation. The Bvh is updated in-place, but the original triangles are
+// not modified.
+
+struct BvhRefitter
+{
+    BvhRefitter(Bvh& bvh, const std::vector<repo::lib::RepoTriangle>& primitives)
+        : bvh(bvh), primitives(primitives)
+    {
+    }
+
+    Bvh& bvh;
+    const std::vector<repo::lib::RepoTriangle>& primitives;
+    repo::lib::RepoMatrix m;
+
+    void refit(const repo::lib::RepoMatrix& m)
+    {
+		this->m = m;
+        bvh::HierarchyRefitter<bvh::Bvh<double>> refitter(bvh);
+		refitter.refit(*this);
+    }
+
+    void updateLeaf(Bvh::Node& leaf, const repo::lib::RepoMatrix& m) const
+    {
+        auto b = bvh::BoundingBox<double>::empty();
+        for (size_t i = 0; i < leaf.primitive_count; i++) {
+            auto t = m * primitives[bvh.primitive_indices[leaf.first_child_or_primitive + i]];
+            b.extend(reinterpret_cast<const bvh::Vector3<double>&>(t.a));
+            b.extend(reinterpret_cast<const bvh::Vector3<double>&>(t.b));
+            b.extend(reinterpret_cast<const bvh::Vector3<double>&>(t.c));
+        }
+        leaf.bounding_box_proxy() = b;
+    }
+
+    void operator()(const Bvh::Node& node) const
+    {
+		updateLeaf(const_cast<Bvh::Node&>(node), m);
+    }
+};
+
+struct DistanceQuery : public bvh::DistanceQuery
+{
+    DistanceQuery(const std::vector<repo::lib::RepoTriangle>& A, const std::vector<repo::lib::RepoTriangle>& B)
+        : A(A), B(B)
+    {
+        this->d = std::numeric_limits<double>::max();
+    }
+
+    const std::vector<repo::lib::RepoTriangle>& A;
+    const std::vector<repo::lib::RepoTriangle>& B;
+    repo::lib::RepoMatrix m;
+
+    void intersect(size_t a, size_t b) override {
+        auto triA = m * A[a];
+        auto m = geometry::closestPointTriangleTriangle(triA, B[b]).magnitude();
+        if (m < d) {
+			d = m;
+        }
+    }
+
+    double operator()(Bvh& bvhA, const Bvh& bvhB, const repo::lib::RepoMatrix& m) {
+        this->m = m;
+
+        BvhRefitter refitter(bvhA, A);
+        refitter.refit(m);
+
+        bvh::DistanceQuery::operator()(bvhA, bvhB);
+
+        return d;
+    }
+};
+
+enum class Collision {
+    Collision,
+    Contact,
+    Free
+};
+
+struct IntersectionQuery : public bvh::IntersectQuery
+{
+    IntersectionQuery(const std::vector<repo::lib::RepoTriangle>& A, const std::vector<repo::lib::RepoTriangle>& B)
+        : A(A), B(B)
+    {
+    }
+    
+    const std::vector<repo::lib::RepoTriangle>& A;
+    const std::vector<repo::lib::RepoTriangle>& B;
+    repo::lib::RepoMatrix m;
+
+	Collision r = Collision::Free;
+
+    void intersect(size_t a, size_t b) override {
+        auto triA = m * A[a];      
+		auto d = geometry::intersects(triA, B[b]);
+
+        if (d > geometry::coplanarityThreshold(triA, B[b])) {
+            r = Collision::Collision;
+        }
+        else if (d > 0) {
+			if (r == Collision::Free) {
+				r = Collision::Contact;
+			}
+        }
+    }
+
+    Collision operator()(Bvh& bvhA, const Bvh& bvhB, const repo::lib::RepoMatrix& m) {
+        this->m = m;
+
+        BvhRefitter refitter(bvhA, A);
+        refitter.refit(m);
+
+        bvh::IntersectQuery::operator()(bvhA, bvhB);
+        return r;
+	}
+};
+
 RepoPolyDepth::RepoPolyDepth(const std::vector<repo::lib::RepoTriangle>& a, const std::vector<repo::lib::RepoTriangle>& b)
     : a(a), b(b), bvhA(buildBvh(a)), bvhB(buildBvh(b))
 {
@@ -61,7 +179,7 @@ RepoPolyDepth::RepoPolyDepth(const std::vector<repo::lib::RepoTriangle>& a, cons
 }
 
 repo::lib::RepoVector3D64 RepoPolyDepth::getPenetrationVector() const {
-    return qi.translation();
+    return qs.translation();
 }
 
 void RepoPolyDepth::findInitialFreeConfiguration()
@@ -85,6 +203,73 @@ void RepoPolyDepth::findInitialFreeConfiguration()
 
     auto v = geometry::minimumSeparatingAxis(a,b);
 
-    qt = repo::lib::RepoMatrix::translate(v);
-    qi = qt;
+    qs = repo::lib::RepoMatrix::translate(v);
+}
+
+void RepoPolyDepth::iterate(size_t n)
+{
+    for (auto i = 0; i < n; i++) {
+        // Perform out-projection to get an updated estimate of qi
+
+        // todo: need a termination criteria which looks at the changes in position between
+        // successive frames.
+
+        auto q = ccd(qs, qt);
+
+        // Check qi is collision free
+
+        IntersectionQuery iqd(a, b);
+        auto r = iqd(bvhA, bvhB, q);
+
+        switch (r) {
+        case Collision::Collision:
+            // qs remains unchanged..
+            qt = q;
+            break;
+        case Collision::Contact:
+            qs = q;
+            return;
+        case Collision::Free:
+            qs = q;
+            qt = {};
+            break;
+        }
+    }
+}
+
+double RepoPolyDepth::distance(const repo::lib::RepoMatrix& q)
+{
+    DistanceQuery qd(a, b);
+    return qd(bvhA, bvhB, q);
+}
+
+repo::lib::RepoMatrix RepoPolyDepth::ccd(const repo::lib::RepoMatrix& q0, const repo::lib::RepoMatrix& q1)
+{
+    // The CCD algorithm used is based on Conservative Advancement, as this is
+    // amenable to polygon soups.
+
+    // This algorithm works by advancing between q0 and q1 in bounded steps that
+	// are guaranteed to be collision free. This is done by computing the shortest
+    // vector between any two features, and advancing along it by a fraction. The
+    // fraction is the upper motion bound, which is the distance along the vector
+    // covered by any feature in the moving set during the transformation.
+
+    // See:
+    // Interactive Continuous Collision Detection for Non-Convex Polyhedra. Xinyu
+    // Zhang, Minkyoung Lee, Young J. Kim. The Visual Computer: International
+    // Journal of Computer Graphics, Volume 22, Issue 9. 
+    // https://graphics.ewha.ac.kr/FAST/FAST.pdf
+
+    // As we do not consider rotations, the upper motion bound can be set to 1, if
+    // this changes, this is where the computation would be implemented.
+
+	auto translation = q1.translation() - q0.translation();
+	auto d = this->distance(q0);
+
+    // Step q0 towards q1 by the maximum safe translation, which is d
+    
+    auto n = translation;
+    n.normalize();
+    auto dt = n * std::min(translation.norm(), d);
+	return repo::lib::RepoMatrix::translate(q0.translation() + dt);
 }

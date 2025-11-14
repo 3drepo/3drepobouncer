@@ -49,6 +49,7 @@ namespace repo {
 
 				private:
 					double estimatePenetrationDepth(const OrderedPair& pair) const;
+					std::unordered_map<repo::lib::RepoUUID, CompositeObject&, repo::lib::RepoUUIDHasher> compositeObjects;
 				};
 			}
 		}

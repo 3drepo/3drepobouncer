@@ -31,9 +31,9 @@ namespace geometry {
 
     /*
     * Given two Triangles, A & B, return a Line that connects the A and B at
-    * their closest points to eachother. The Line's start and end points are
-    * *not* guaranteed to always be on the same triangle (i.e. they could be
-	* from A to B in one case, and from B to A in another).
+    * their closest points to eachother. The line starts on A and ends on B;
+    * moving A by that line will bring the two triangles into contact. If the
+    * triangles are co-planar, will return a zero-length line.
     */
     repo::lib::RepoLine closestPointTriangleTriangle(const repo::lib::RepoTriangle& A, const repo::lib::RepoTriangle& B);
 
@@ -48,9 +48,11 @@ namespace geometry {
     * Determines if two triangles intersect, and if so returns an upper bound on
     * the distance one triangle must move to completely resolve the intersection.
 	* Unambiguously disjoint triangles will return exactly zero. Triangles that
-    * are in-contact or coplanar will return a small values, or zero.
+    * are in-contact or coplanar will return a small value, or zero.
+    * If ip is provided, it will be set to a point on the line of intersection,
+    * if any.
     */
-	double intersects(const repo::lib::RepoTriangle& a, const repo::lib::RepoTriangle& b);
+	double intersects(const repo::lib::RepoTriangle& a, const repo::lib::RepoTriangle& b, repo::lib::RepoVector3D64* ip = nullptr);
 
     /*
     * Given two bounds, return the minimum separating axis between them, in the
@@ -59,6 +61,18 @@ namespace geometry {
     * be empty.
     */
     repo::lib::RepoVector3D64 minimumSeparatingAxis(const repo::lib::RepoBounds& a, repo::lib::RepoBounds& b);
+
+    /*
+    * Returns a value approximating the unit of least precision.
+    */
+    double ulp(double x);
+
+    /*
+    * Given two triangles, return a value representing the uncertainty of queries
+    * run on them due to rounding error. This value is primarily for use with the
+    * intersects method to disambiguate the in-contact and in-collision states.
+    */
+    double coplanarityThreshold(const repo::lib::RepoTriangle& a, const repo::lib::RepoTriangle& b);
 
     /*
     * The distance threshold to use for coplanarity tests. This is primarily for
