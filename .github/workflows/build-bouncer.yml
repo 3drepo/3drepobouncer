@@ -1,0 +1,177 @@
+name: Build and Push Bouncer
+
+on:
+  push:
+    tags:
+      - "*"
+
+  issue_comment:
+    types: [created]
+
+jobs:
+  build-bouncer:
+    if: |
+      github.event_name == 'push' ||
+      (
+        github.event_name == 'issue_comment' &&
+        startsWith(github.event.comment.body, '/build-bouncer') &&
+        github.event.issue.pull_request != null
+      )
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+
+    env:
+      DOCKER_BUILDKIT: 1
+      LICENSE_CHECK: 1
+      ACR_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+      ACR_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+      AZURE_REGISTRY: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+      PROJ_MANAGEMENT_USER: ${{ secrets.PROJ_MANAGEMENT_USER }}
+      PROJ_MANAGEMENT_TOKEN: ${{ secrets.PROJ_MANAGEMENT_TOKEN }}
+      CRYPTOLENS_AUTH_TOKEN: ${{ secrets.CRYPTOLENS_AUTH_TOKEN }}
+      CRYPTOLENS_PUBLIC_KEY: ${{ secrets.CRYPTOLENS_PUBLIC_KEY }}
+      CRYPTOLENS_PRODUCT_ID: ${{ secrets.CRYPTOLENS_PRODUCT_ID }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+
+    steps:
+      # ---------------------------------------------------------------
+      # STEP 1: Restrict to org members
+      # ---------------------------------------------------------------
+      - name: Check organization membership
+        id: check_org
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ORG="3drepo"
+          USER="${{ github.actor }}"
+
+          echo "Checking if $USER belongs to $ORG..."
+
+          # Check if the user is a member of the organization (including private members)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/orgs/$ORG/members/$USER)
+
+          # 204 = public member, 302 = private member (redirect), 404 = not a member
+          if [ "$STATUS" = "204" ] || [ "$STATUS" = "302" ]; then
+            echo "User $USER is a member of $ORG."
+          else
+            echo "User $USER is not a member of $ORG (HTTP $STATUS)."
+            exit 1
+          fi
+
+
+      # ---------------------------------------------------------------
+      # STEP 2: Add comment reaction and feedback (if triggered by comment)
+      # ---------------------------------------------------------------
+      - name: React and comment on PR
+        if: github.event_name == 'issue_comment'
+        run: |
+          PR_NUMBER=$(jq -r .issue.number < "$GITHUB_EVENT_PATH")
+          COMMENT_ID=$(jq -r .comment.id < "$GITHUB_EVENT_PATH")
+          REPO_FULL_NAME="${{ github.repository }}"
+
+          # Add reaction to the triggering comment
+          curl -s -X POST \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Accept: application/vnd.github.squirrel-girl-preview+json" \
+            https://api.github.com/repos/$REPO_FULL_NAME/issues/comments/$COMMENT_ID/reactions \
+            -d '{"content":"rocket"}'
+
+          # Post a comment confirming build start
+          curl -s -X POST \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/$REPO_FULL_NAME/issues/$PR_NUMBER/comments \
+            -d '{"body":"Build triggered for `/build-bouncer` by @'${{ github.actor }}' — workflow is running..."}'
+
+      # ---------------------------------------------------------------
+      # STEP 3: Checkout source
+      # ---------------------------------------------------------------
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ---------------------------------------------------------------
+      # STEP 4: Set build metadata
+      # ---------------------------------------------------------------
+      - name: Set build metadata
+        id: vars
+        run: |
+          APP_BUILD_NOW=$(date '+%Y%m%d%H%M%S')
+          GIT_NOW=$(git rev-parse --short HEAD)
+
+          if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+            VERSION="${GITHUB_REF##*/}"
+          elif [[ "${GITHUB_EVENT_NAME}" == "issue_comment" ]]; then
+            # For PR comments, we need to get the PR branch name for the version tag
+            ISSUE_NUMBER=$(jq -r .issue.number < "$GITHUB_EVENT_PATH")
+            VERSION=$(curl -s -H "Authorization: token $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls/$ISSUE_NUMBER" | jq -r .head.ref)
+            
+            if [ "$VERSION" = "null" ] || [ -z "$VERSION" ]; then
+              echo "Failed to get PR branch name"
+              exit 1
+            fi
+          fi
+
+          echo "app_build_now=$APP_BUILD_NOW" >> $GITHUB_OUTPUT
+          echo "git_now=$GIT_NOW" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          echo "######################################################"
+          echo "Build Information:"
+          echo "Build Timestamp: $APP_BUILD_NOW"
+          echo "Git Commit: $GIT_NOW"
+          echo "Version/Branch: $VERSION"
+          echo "Triggered by: ${GITHUB_EVENT_NAME}"
+          echo "######################################################"
+
+      # ---------------------------------------------------------------
+      # STEP 5: Log in to Azure Container Registry
+      # ---------------------------------------------------------------
+      - name: Log in to Azure Container Registry
+        run: echo "${ACR_TOKEN}" | docker login $AZURE_REGISTRY -u "${ACR_USERNAME}" --password-stdin
+
+      # ---------------------------------------------------------------
+      # STEP 6: Build and Push Docker Image
+      # ---------------------------------------------------------------
+      - name: Build and push Docker image
+        run: |
+          VERSION="${{ steps.vars.outputs.version }}"
+          APP_BUILD_NOW="${{ steps.vars.outputs.app_build_now }}"
+
+          echo "Building Docker image for version/branch: ${VERSION}"
+
+          docker build --no-cache \
+            -t "${AZURE_REGISTRY}/3drepobouncer:${VERSION}" \
+            -t "dev/3drepobouncer:${APP_BUILD_NOW}" \
+            --build-arg app_3drepobouncer_version="${VERSION}" \
+            --build-arg GITHUB_TOKEN="${PROJ_MANAGEMENT_TOKEN}" \
+            --build-arg GITHUB_USER="${PROJ_MANAGEMENT_USER}" \
+            --build-arg LICENSE_CHECK=1 \
+            --build-arg LICENSE_AUTH_TOKEN="${CRYPTOLENS_AUTH_TOKEN}" \
+            --build-arg LICENSE_RSA_PUB_KEY_MOD="${CRYPTOLENS_PUBLIC_KEY}" \
+            --build-arg LICENSE_PRODUCT_ID="${CRYPTOLENS_PRODUCT_ID}" \
+            -f ./docker/3drepobouncer/Dockerfile \
+            ./docker/3drepobouncer/
+
+          echo "Build complete. Pushing to ACR..."
+          docker push "${AZURE_REGISTRY}/3drepobouncer:${VERSION}"
+
+      # ---------------------------------------------------------------
+      # STEP 7: Cleanup
+      # ---------------------------------------------------------------
+      - name: Cleanup
+        if: always()
+        run: |
+          docker logout "${AZURE_REGISTRY}"
+          echo "Docker cleanup complete."
