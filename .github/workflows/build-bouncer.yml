@@ -111,25 +111,16 @@ jobs:
           if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
             VERSION="${GITHUB_REF##*/}"
           elif [[ "${GITHUB_EVENT_NAME}" == "issue_comment" ]]; then
+            # For PR comments, we need to get the PR branch name for the version tag
             ISSUE_NUMBER=$(jq -r .issue.number < "$GITHUB_EVENT_PATH")
-            REPO_FULL_NAME="${GITHUB_REPOSITORY}"
-            
-            echo "Fetching PR #$ISSUE_NUMBER details..."
-            PR_DATA=$(curl -s -H "Authorization: token $GH_TOKEN" \
+            VERSION=$(curl -s -H "Authorization: token $GH_TOKEN" \
               -H "Accept: application/vnd.github+json" \
-              "https://api.github.com/repos/$REPO_FULL_NAME/pulls/$ISSUE_NUMBER")
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls/$ISSUE_NUMBER" | jq -r .head.ref)
             
-            PR_BRANCH=$(echo "$PR_DATA" | jq -r .head.ref)
-            
-            if [ "$PR_BRANCH" = "null" ] || [ -z "$PR_BRANCH" ]; then
-              echo "Failed to get PR branch. Response:"
-              echo "$PR_DATA" | jq .
+            if [ "$VERSION" = "null" ] || [ -z "$VERSION" ]; then
+              echo "Failed to get PR branch name"
               exit 1
             fi
-            
-            # Checkout the PR branch
-            git fetch origin "$PR_BRANCH"
-            git checkout "$PR_BRANCH"
           fi
 
           echo "app_build_now=$APP_BUILD_NOW" >> $GITHUB_OUTPUT
