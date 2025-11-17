@@ -49,7 +49,7 @@ jobs:
         run: |
           ORG="3drepo"
           USER="${{ github.actor }}"
-          echo "TESTING 123"
+          
           echo "Checking if $USER belongs to $ORG..."
 
           # Check if the user is a member of the organization (including private members)
