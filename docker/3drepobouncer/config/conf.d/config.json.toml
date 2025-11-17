@@ -1,0 +1,18 @@
+[template]
+src = "config.json.tmpl"
+dest = "/home/bouncer/3drepobouncer/tools/bouncer_worker/config.json"
+keys = [
+	"/app/bouncer/bouncerbin",
+    "/app/queue/bouncer/username",
+    "/app/queue/bouncer/password",
+	"/app/queue/dns",
+	"/app/queue/jobq",
+	"/app/queue/callbackq",
+	"/app/queue/modelq",
+	"/app/efs/models",
+	"/app/efs/queue",
+	"/app/mongo/primary/dns",
+	"/app/mongo/primary/port",
+	"/app/mongo/admin/username",
+	"/app/mongo/admin/password",
+]
