@@ -23,10 +23,6 @@ jobs:
       contents: read
       issues: write
       pull-requests: write
-
-    env:
-      DOCKER_BUILDKIT: 1
-      LICENSE_CHECK: 1
       
     steps:
       # ---------------------------------------------------------------
@@ -136,6 +132,8 @@ jobs:
       # ---------------------------------------------------------------
       - name: Build and push Docker image
         run: |
+          env:
+          DOCKER_BUILDKIT: 1
           VERSION="${{ steps.vars.outputs.version }}"
           APP_BUILD_NOW="${{ steps.vars.outputs.app_build_now }}"
 
