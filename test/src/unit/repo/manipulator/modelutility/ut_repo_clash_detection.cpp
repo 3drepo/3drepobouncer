@@ -19,6 +19,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest-matchers.h>
 #include <numeric>
+#include <numbers>
 #include <random>
 #include <exception>
 #include <repo_log.h>
@@ -1095,29 +1096,41 @@ TEST(Clash, RepoPolyDepth2)
 
 	auto c = helper.getContainerByName("hard_1");
 
-	// Take care that the meshes returned here will not have any transformations applied.
+	auto pairs = {
+		std::make_pair("set1_a", "set1_b1"),
+		std::make_pair("set2_a", "set2_b"),
+		std::make_pair("set3_a", "set3_b"),
+		std::make_pair("set4_a", "set4_b"),
+		std::make_pair("set5_a", "set5_b"),
+		std::make_pair("set6_a", "set6_b")
+	};
 
-	auto a = ClashGenerator::triangles(helper.getChildMeshNodes(c.get(), "set5_a"));
-	auto b = ClashGenerator::triangles(helper.getChildMeshNodes(c.get(), "set5_b"));
+	for (auto& pair : pairs) {
 
-	EXPECT_THAT(intersects(a, b), IsTrue());
+		// Take care that the meshes returned here will not have any transformations applied.
 
-	geometry::RepoPolyDepth pd(a, b);
-	auto v0 = pd.getPenetrationVector();
+		auto a = ClashGenerator::triangles(helper.getChildMeshNodes(c.get(), pair.first));
+		auto b = ClashGenerator::triangles(helper.getChildMeshNodes(c.get(), pair.second));
 
-	auto copy = a;
-	ClashGenerator::applyTransforms(copy, repo::lib::RepoMatrix::translate(v0));
-	EXPECT_THAT(intersects(copy, b), IsFalse());
+		EXPECT_THAT(intersects(a, b), IsTrue());
 
-	pd.iterate(10);
+		geometry::RepoPolyDepth pd(a, b);
+		auto v0 = pd.getPenetrationVector();
 
-	auto v1 = pd.getPenetrationVector();
+		auto copy = a;
+		ClashGenerator::applyTransforms(copy, repo::lib::RepoMatrix::translate(v0));
+		EXPECT_THAT(intersects(copy, b), IsFalse());
 
-	EXPECT_THAT(v1.norm(), Lt(v0.norm()));
+		pd.iterate(10);
 
-	copy = a;
-	ClashGenerator::applyTransforms(copy, repo::lib::RepoMatrix::translate(v0));
-	EXPECT_THAT(intersects(copy, b), IsFalse());
+		auto v1 = pd.getPenetrationVector();
+
+		EXPECT_THAT(v1.norm(), Lt(v0.norm()));
+
+		copy = a;
+		ClashGenerator::applyTransforms(copy, repo::lib::RepoMatrix::translate(v0));
+		EXPECT_THAT(intersects(copy, b), IsFalse());
+	}
 }
 
 TEST(Clash, PolyDepthBeginCollisionFree)
@@ -1126,12 +1139,16 @@ TEST(Clash, PolyDepthBeginCollisionFree)
 	// then the initial penetration vector should be zero, and calling iterate
 	// should not do anything.
 
-	ClashGenerator clashGenerator;
-	
-	clashGenerator.distance = 1;
-	auto clash = clashGenerator.createHard1({});
-	auto a = ClashGenerator::triangles(clash.a);
-	auto b = ClashGenerator::triangles(clash.b);
+	auto a = ClashGenerator::triangles(repo::test::utils::mesh::makeUnitCube());
+	auto b = ClashGenerator::triangles(repo::test::utils::mesh::makeUnitCone());
+
+	// This line moves the cone so that its bounds overlap the box, but
+	// it's surface doesn't actually intersect
+
+	auto t = repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(0.75, 0, -0.501));
+	ClashGenerator::applyTransforms(b, t);
+
+	EXPECT_THAT(intersects(a, b), IsFalse());
 
 	geometry::RepoPolyDepth pd(a, b);
 

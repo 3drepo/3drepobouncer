@@ -26,151 +26,152 @@ using namespace geometry;
 
 using Bvh = bvh::Bvh<double>;
 
-#pragma optimize("", off)
+namespace {
 
-Bvh buildBvh(const std::vector<repo::lib::RepoTriangle>& triangles)
-{
-    auto bounds = std::vector<bvh::BoundingBox<double>>();
-    auto centers = std::vector<bvh::Vector3<double>>();
-
-    bounds.reserve(triangles.size());
-	centers.reserve(triangles.size());
-
-    for (const auto& triangle : triangles)
+    Bvh buildBvh(const std::vector<repo::lib::RepoTriangle>& triangles)
     {
-        auto aabb = bvh::BoundingBox<double>::empty();
-        aabb.extend(reinterpret_cast<const bvh::Vector3<double>&>(triangle.a));
-        aabb.extend(reinterpret_cast<const bvh::Vector3<double>&>(triangle.b));
-        aabb.extend(reinterpret_cast<const bvh::Vector3<double>&>(triangle.c));
-        centers.push_back(aabb.center());
-		bounds.push_back(aabb);
+        auto bounds = std::vector<bvh::BoundingBox<double>>();
+        auto centers = std::vector<bvh::Vector3<double>>();
+
+        bounds.reserve(triangles.size());
+        centers.reserve(triangles.size());
+
+        for (const auto& triangle : triangles)
+        {
+            auto aabb = bvh::BoundingBox<double>::empty();
+            aabb.extend(reinterpret_cast<const bvh::Vector3<double>&>(triangle.a));
+            aabb.extend(reinterpret_cast<const bvh::Vector3<double>&>(triangle.b));
+            aabb.extend(reinterpret_cast<const bvh::Vector3<double>&>(triangle.c));
+            centers.push_back(aabb.center());
+            bounds.push_back(aabb);
+        }
+
+        auto globalBounds = bvh::compute_bounding_boxes_union(bounds.data(), bounds.size());
+
+        Bvh bvh;
+        bvh::SweepSahBuilder<Bvh> builder(bvh);
+        builder.max_leaf_size = 1;
+        builder.build(globalBounds, bounds.data(), centers.data(), bounds.size());
+
+        return bvh;
     }
 
-    auto globalBounds = bvh::compute_bounding_boxes_union(bounds.data(), bounds.size());
+    // Updates the Bvh bottom-up, refitting the bounds to the triangles under a given
+    // transformation. The Bvh is updated in-place, but the original triangles are
+    // not modified.
 
-    Bvh bvh;
-    bvh::SweepSahBuilder<Bvh> builder(bvh);
-    builder.max_leaf_size = 1;
-    builder.build(globalBounds, bounds.data(), centers.data(), bounds.size());
+    struct BvhRefitter
+    {
+        BvhRefitter(Bvh& bvh, const std::vector<repo::lib::RepoTriangle>& primitives)
+            : bvh(bvh), primitives(primitives)
+        {
+        }
 
-    return bvh;
+        Bvh& bvh;
+        const std::vector<repo::lib::RepoTriangle>& primitives;
+        repo::lib::RepoMatrix m;
+
+        void refit(const repo::lib::RepoMatrix& m)
+        {
+            this->m = m;
+            bvh::HierarchyRefitter<bvh::Bvh<double>> refitter(bvh);
+            refitter.refit(*this);
+        }
+
+        void updateLeaf(Bvh::Node& leaf, const repo::lib::RepoMatrix& m) const
+        {
+            auto b = bvh::BoundingBox<double>::empty();
+            for (size_t i = 0; i < leaf.primitive_count; i++) {
+                auto t = m * primitives[bvh.primitive_indices[leaf.first_child_or_primitive + i]];
+                b.extend(reinterpret_cast<const bvh::Vector3<double>&>(t.a));
+                b.extend(reinterpret_cast<const bvh::Vector3<double>&>(t.b));
+                b.extend(reinterpret_cast<const bvh::Vector3<double>&>(t.c));
+            }
+            leaf.bounding_box_proxy() = b;
+        }
+
+        void operator()(const Bvh::Node& node) const
+        {
+            updateLeaf(const_cast<Bvh::Node&>(node), m);
+        }
+    };
+
+    struct DistanceQuery : public bvh::DistanceQuery
+    {
+        DistanceQuery(const std::vector<repo::lib::RepoTriangle>& A, const std::vector<repo::lib::RepoTriangle>& B)
+            : A(A), B(B)
+        {
+            this->d = std::numeric_limits<double>::max();
+        }
+
+        const std::vector<repo::lib::RepoTriangle>& A;
+        const std::vector<repo::lib::RepoTriangle>& B;
+        repo::lib::RepoMatrix m;
+
+        void intersect(size_t a, size_t b) override {
+            auto triA = m * A[a];
+            auto m = geometry::closestPointTriangleTriangle(triA, B[b]).magnitude();
+            if (m < d) {
+                d = m;
+            }
+        }
+
+        double operator()(Bvh& bvhA, const Bvh& bvhB, const repo::lib::RepoMatrix& m) {
+            this->m = m;
+
+            BvhRefitter refitter(bvhA, A);
+            refitter.refit(m);
+
+            bvh::DistanceQuery::operator()(bvhA, bvhB);
+
+            return d;
+        }
+    };
+
+    enum class Collision {
+        Collision,
+        Contact,
+        Free
+    };
+
+    struct IntersectionQuery : public bvh::IntersectQuery
+    {
+        IntersectionQuery(const std::vector<repo::lib::RepoTriangle>& A, const std::vector<repo::lib::RepoTriangle>& B)
+            : A(A), B(B)
+        {
+        }
+
+        const std::vector<repo::lib::RepoTriangle>& A;
+        const std::vector<repo::lib::RepoTriangle>& B;
+        repo::lib::RepoMatrix m;
+
+        Collision r = Collision::Free;
+
+        void intersect(size_t a, size_t b) override {
+            auto triA = m * A[a];
+            auto d = geometry::intersects(triA, B[b]);
+
+            if (d > geometry::coplanarityThreshold(triA, B[b])) {
+                r = Collision::Collision;
+            }
+            else if (d > 0) {
+                if (r == Collision::Free) {
+                    r = Collision::Contact;
+                }
+            }
+        }
+
+        Collision operator()(Bvh& bvhA, const Bvh& bvhB, const repo::lib::RepoMatrix& m) {
+            this->m = m;
+
+            BvhRefitter refitter(bvhA, A);
+            refitter.refit(m);
+
+            bvh::IntersectQuery::operator()(bvhA, bvhB);
+            return r;
+        }
+    };
 }
-
-// Updates the Bvh bottom-up, refitting the bounds to the triangles under a given
-// transformation. The Bvh is updated in-place, but the original triangles are
-// not modified.
-
-struct BvhRefitter
-{
-    BvhRefitter(Bvh& bvh, const std::vector<repo::lib::RepoTriangle>& primitives)
-        : bvh(bvh), primitives(primitives)
-    {
-    }
-
-    Bvh& bvh;
-    const std::vector<repo::lib::RepoTriangle>& primitives;
-    repo::lib::RepoMatrix m;
-
-    void refit(const repo::lib::RepoMatrix& m)
-    {
-		this->m = m;
-        bvh::HierarchyRefitter<bvh::Bvh<double>> refitter(bvh);
-		refitter.refit(*this);
-    }
-
-    void updateLeaf(Bvh::Node& leaf, const repo::lib::RepoMatrix& m) const
-    {
-        auto b = bvh::BoundingBox<double>::empty();
-        for (size_t i = 0; i < leaf.primitive_count; i++) {
-            auto t = m * primitives[bvh.primitive_indices[leaf.first_child_or_primitive + i]];
-            b.extend(reinterpret_cast<const bvh::Vector3<double>&>(t.a));
-            b.extend(reinterpret_cast<const bvh::Vector3<double>&>(t.b));
-            b.extend(reinterpret_cast<const bvh::Vector3<double>&>(t.c));
-        }
-        leaf.bounding_box_proxy() = b;
-    }
-
-    void operator()(const Bvh::Node& node) const
-    {
-		updateLeaf(const_cast<Bvh::Node&>(node), m);
-    }
-};
-
-struct DistanceQuery : public bvh::DistanceQuery
-{
-    DistanceQuery(const std::vector<repo::lib::RepoTriangle>& A, const std::vector<repo::lib::RepoTriangle>& B)
-        : A(A), B(B)
-    {
-        this->d = std::numeric_limits<double>::max();
-    }
-
-    const std::vector<repo::lib::RepoTriangle>& A;
-    const std::vector<repo::lib::RepoTriangle>& B;
-    repo::lib::RepoMatrix m;
-
-    void intersect(size_t a, size_t b) override {
-        auto triA = m * A[a];
-        auto m = geometry::closestPointTriangleTriangle(triA, B[b]).magnitude();
-        if (m < d) {
-			d = m;
-        }
-    }
-
-    double operator()(Bvh& bvhA, const Bvh& bvhB, const repo::lib::RepoMatrix& m) {
-        this->m = m;
-
-        BvhRefitter refitter(bvhA, A);
-        refitter.refit(m);
-
-        bvh::DistanceQuery::operator()(bvhA, bvhB);
-
-        return d;
-    }
-};
-
-enum class Collision {
-    Collision,
-    Contact,
-    Free
-};
-
-struct IntersectionQuery : public bvh::IntersectQuery
-{
-    IntersectionQuery(const std::vector<repo::lib::RepoTriangle>& A, const std::vector<repo::lib::RepoTriangle>& B)
-        : A(A), B(B)
-    {
-    }
-    
-    const std::vector<repo::lib::RepoTriangle>& A;
-    const std::vector<repo::lib::RepoTriangle>& B;
-    repo::lib::RepoMatrix m;
-
-	Collision r = Collision::Free;
-
-    void intersect(size_t a, size_t b) override {
-        auto triA = m * A[a];      
-		auto d = geometry::intersects(triA, B[b]);
-
-        if (d > geometry::coplanarityThreshold(triA, B[b])) {
-            r = Collision::Collision;
-        }
-        else if (d > 0) {
-			if (r == Collision::Free) {
-				r = Collision::Contact;
-			}
-        }
-    }
-
-    Collision operator()(Bvh& bvhA, const Bvh& bvhB, const repo::lib::RepoMatrix& m) {
-        this->m = m;
-
-        BvhRefitter refitter(bvhA, A);
-        refitter.refit(m);
-
-        bvh::IntersectQuery::operator()(bvhA, bvhB);
-        return r;
-	}
-};
 
 RepoPolyDepth::RepoPolyDepth(const std::vector<repo::lib::RepoTriangle>& a, const std::vector<repo::lib::RepoTriangle>& b)
     : a(a), b(b), bvhA(buildBvh(a)), bvhB(buildBvh(b))
@@ -184,6 +185,11 @@ repo::lib::RepoVector3D64 RepoPolyDepth::getPenetrationVector() const {
 
 void RepoPolyDepth::findInitialFreeConfiguration()
 {
+    IntersectionQuery iqd(a, b);
+    if (iqd(bvhA, bvhB, {}) != Collision::Collision) {
+        return;
+	}
+
     // Finds a translation for a which is collision free. Currently this is
     // done simply by finding the minimum translation vector that can separate
     // the bounds.

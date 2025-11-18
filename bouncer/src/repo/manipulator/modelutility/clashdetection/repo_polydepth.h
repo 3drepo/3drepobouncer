@@ -74,7 +74,7 @@ namespace geometry {
 		* according to the PolyDepth algorithm. Terminates automatically, after at most
 		* n interations.
 		*/
-		void iterate(size_t n = 3);
+		void iterate(size_t n);
 
 	private:
 		const std::vector<repo::lib::RepoTriangle>& a;
