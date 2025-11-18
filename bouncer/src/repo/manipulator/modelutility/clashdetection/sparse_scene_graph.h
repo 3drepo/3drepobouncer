@@ -56,7 +56,26 @@ namespace repo {
 						const std::vector<repo::lib::RepoUUID>& uniqueIds
 					);
 
-					void getNodes(std::vector<Node>& nodes) const;
+					/*
+					* Gets all the loaded nodes as a flat list. This generic method allows
+					* callers to provide their own type, allowing them to append additional
+					* data to the nodes afterwards if required. The type N should be a
+					* subclass of Node, or have at least the same members.
+					*/
+					template<typename N>
+					void getNodes(std::vector<N>& dest) const
+					{
+						dest.reserve(this->nodes.size());
+						for (const auto& [id, node] : this->nodes)
+						{
+							N n;
+							n.container = node.container;
+							n.uniqueId = node.uniqueId;
+							n.matrix = node.matrix;
+							n.mesh = node.mesh;
+							dest.push_back(n);
+						}
+					}
 
 				protected:
 					std::unordered_map<repo::lib::RepoUUID, Node, repo::lib::RepoUUIDHasher> nodes; // by Unique Id

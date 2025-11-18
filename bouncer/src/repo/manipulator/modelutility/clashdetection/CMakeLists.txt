@@ -12,6 +12,7 @@ set(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_hard.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_node_cache.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_pipelines.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/clash_pipelines_utils.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_scheduler.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/geometry_tests.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/predicates.cpp
@@ -28,8 +29,10 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_hard.h
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_node_cache.h
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_pipelines.h
+	${CMAKE_CURRENT_SOURCE_DIR}/clash_pipelines_utils.h
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_scheduler.h
 	${CMAKE_CURRENT_SOURCE_DIR}/geometry_tests.h
+	${CMAKE_CURRENT_SOURCE_DIR}/ordered_pair.h
 	${CMAKE_CURRENT_SOURCE_DIR}/predicates.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_polydepth.h
 	${CMAKE_CURRENT_SOURCE_DIR}/sparse_scene_graph.h

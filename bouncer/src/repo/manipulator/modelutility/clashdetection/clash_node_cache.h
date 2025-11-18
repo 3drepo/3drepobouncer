@@ -18,15 +18,7 @@
 #pragma once
 
 #include <memory>
-
-#include "sparse_scene_graph.h"
-
-#include "repo/core/handler/repo_database_handler_abstract.h"
-#include "repo/lib/datastructure/repo_structs.h"
-#include "repo/lib/datastructure/repo_triangle.h"
-
-#include <repo/manipulator/modeloptimizer/bvh/bvh.hpp>
-
+#include <unordered_map>
 
 namespace repo {
 	namespace manipulator {
@@ -34,39 +26,86 @@ namespace repo {
 			namespace clash {
 
 				/*
-				* The cache stores MeshNodes, along with their binaries and BVHs ready for
-				* narrowphase tests.
-				* Each MeshNode may be used in a number of Narrowphase tests, so the cache
-				* uses reference counting to dispose of nodes when they are no longer
-				* needed.
+				* ResourceCache is a simple resource manager for use by the Clash Pipeline
+				* implementations. It allows them to cache intermediate data that might be
+				* reused across tests during each stage.
+				* 
+				* Records are keyed by the objects that are themselves used to initialise
+				* the intermediate structures (which should be done by the Cache itself
+				* in the overridden initialise method). The caller can specify anything they
+				* want to hold the intermediate data.
+				* 
+				* ResourceCache does not use the key's equality operators; do not use this
+				* outside the clash pipeline as the behaviour this way may be unexpected.
 				*/
 
-				class NodeCache
+				template<typename Key, typename Node>
+				class ResourceCache
 				{
-				public:
-
-					NodeCache(std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler);
-
-					class Node {
-						NodeCache& cache;
-						sparse::Node& sceneNode;
-						std::vector<repo::lib::RepoVector3D64> vertices;
-						std::vector<repo::lib::repo_face_t> faces;
-						bvh::Bvh<double> bvh;
-
-					public:
-						Node(NodeCache& cache, sparse::Node& sceneNode);
-
-						void initialise();
-						const bvh::Bvh<double>& getBvh() const;
-						repo::lib::RepoTriangle getTriangle(size_t primitive) const;
-						const repo::lib::RepoUUID& getUniqueId() const;
-					};
-
-					std::shared_ptr<Node> getNode(sparse::Node& sceneNode);
-
 				private:
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler;
+					struct Record {
+						Node node;
+						size_t referenceCount = 0;
+					};
+					
+					struct Deleter {
+						ResourceCache& cache;
+						Key* key;
+						void operator()(Node* ptr) {
+							cache.release(key);
+						}
+					};;
+
+				public:
+					using Entry = std::unique_ptr<Node, Deleter>;
+
+					Entry get(Key& key) {
+
+						Record* record = nullptr;
+						auto it = map.find(&key);
+						if (it == map.end())
+						{
+							record = &map[&key];
+							initialise(key, record->node);
+						}
+						else
+						{
+							record = &it->second;
+						}
+
+						record->referenceCount++;
+						Deleter deleter{ *this, &key };
+						return { &record->node, deleter };
+					}
+
+					/*
+					* Create a new cache entry node if one is requested for a key that does
+					* not yet exist. Nodes should be cheap to make (and copy), until their
+					* content is initialised downstream.
+					*/
+					virtual void initialise(Key& key, Node& node) const = 0;
+
+				protected:
+					// The map itself uses the pointers to the keying objects, as inbuilt hash
+					// and equality operators exist for pointers, but if we try and store
+					// references the map will expect operators for a semantic comparision of
+					// the actual types to be available.
+					// Since the pointer value is stored in the deleter, technically the key
+					// could be deleted after a time and the cache would still work. This should
+					// not be allowed to happen however as it is always possible another key may
+					// be allocated to the same address.
+
+					std::unordered_map<Key*, Record> map;
+
+					void release(Key* key) {
+						auto it = map.find(key);
+						if (it != map.end()) {
+							it->second.referenceCount--;
+							if (it->second.referenceCount == 0) {
+								map.erase(it);
+							}
+						}
+					}
 				};
 			}
 		}

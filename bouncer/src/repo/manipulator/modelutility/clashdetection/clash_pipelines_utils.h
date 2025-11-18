@@ -1,4 +1,4 @@
-	/**
+/**
 *  Copyright (C) 2025 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
@@ -15,6 +15,33 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "clash_node_cache.h"
+#pragma once
 
-using namespace repo::manipulator::modelutility::clash;
+#include "clash_pipelines.h"
+
+namespace repo {
+	namespace manipulator {
+		namespace modelutility {
+			namespace clash {
+
+				/*
+				* Contains a set of helper functions that operate with the types used to
+				* construct the	clash detection pipelines.
+				*/
+
+				struct PipelineUtils 
+				{
+					/*
+					* Gets the geometry for the node in project coordinates
+					*/
+					static void loadGeometry(
+						DatabasePtr handler, 
+						Graph::Node& node,
+						std::vector<repo::lib::RepoVector3D64>& vertices,
+						std::vector<repo::lib::repo_face_t>& faces
+					);
+				};
+			}
+		}
+	}
+}

@@ -20,39 +20,97 @@
 #include "bvh_operators.h"
 #include "repo_polydepth.h"
 #include "clash_scheduler.h"
-#include "repo_polydepth.h"
+#include "clash_node_cache.h"
+#include "clash_pipelines_utils.h"
 
-#include <stack>
 #include <set>
+#include <queue>
 
+using namespace repo::manipulator::modelutility;
 using namespace repo::manipulator::modelutility::clash;
 
-/*
-* The Hard broadphase returns all bounds that have an overlap, as this is a
-* necessary condition for them to begin in an intersecting state. The overlap
-* must also exceed the tolerance, otherwise the leaf geometry cannot intersect
-* by more than that.
-*/
-struct HardBroadphase : public bvh::IntersectQuery
-{
-	HardBroadphase()
-		:results(nullptr)
+namespace {
+	/*
+	* The Hard broadphase returns all bounds that have an overlap, as this is a
+	* necessary condition for them to begin in an intersecting state. The overlap
+	* must also exceed the tolerance, otherwise the leaf geometry cannot intersect
+	* by more than that.
+	*/
+	struct HardBroadphase : public bvh::IntersectQuery
 	{
-	}
+		HardBroadphase()
+			:results(nullptr)
+		{
+		}
 
-	BroadphaseResults* results;
+		BroadphaseResults* results;
 
-	void intersect(size_t primA, size_t primB) override
+		void intersect(size_t primA, size_t primB) override
+		{
+			results->push_back({ primA, primB });
+		}
+
+		void operator()(const Bvh& a, const Bvh& b, BroadphaseResults& results)
+		{
+			this->results = &results;
+			bvh::IntersectQuery::operator()(a, b);
+		}
+	};
+
+#pragma optimize("", off)
+
+	static struct CacheEntry
 	{
-		results->push_back({ primA, primB });
-	}
+		std::vector<Graph::Node*> nodes;
+		std::vector<repo::lib::RepoTriangle> triangles;
+		repo::lib::RepoUUID id;
 
-	void operator()(const Bvh& a, const Bvh& b, BroadphaseResults& results)
+		void initialise(DatabasePtr handler) {
+			std::vector<repo::lib::RepoVector3D64> vertices;
+			std::vector<repo::lib::repo_face_t> faces;
+			for (auto& node : nodes) {
+				vertices.clear();
+				faces.clear();
+				PipelineUtils::loadGeometry(handler, *node, vertices, faces);
+				std::transform(faces.begin(), faces.end(), std::back_inserter(triangles),
+					[&](auto& face) {
+						return repo::lib::RepoTriangle(
+							vertices[face[0]],
+							vertices[face[1]],
+							vertices[face[2]]
+						);
+					}
+				);
+			}
+			nodes.clear();
+		}
+
+		const std::vector<repo::lib::RepoTriangle>& getTriangles() const {
+			return triangles;
+		}
+
+		const repo::lib::RepoUUID& getId() const {
+			return id;
+		}
+	};
+
+	static struct Cache : public ResourceCache<const CompositeObject, CacheEntry>
 	{
-		this->results = &results;
-		bvh::IntersectQuery::operator()(a, b);
-	}
-};
+		Cache(const Graph& graph)
+			: graph(graph)
+		{
+		}
+
+		const Graph& graph;
+
+		void initialise(const CompositeObject& key, CacheEntry& entry) const override {
+			for(auto& meshRef : key.meshes) {
+				entry.nodes.push_back(&graph.getNode(meshRef.uniqueId));
+			}
+			entry.id = key.id;
+		}
+	};
+}
 
 void Hard::run(const Graph& graphA, const Graph& graphB)
 {
@@ -80,23 +138,32 @@ void Hard::run(const Graph& graphA, const Graph& graphB)
 	);
 
 	ClashScheduler::schedule(orderedCompositePairs);
-	
-	std::vector<std::pair<
-		std::shared_ptr<CompositeObjectCache>,
-		std::shared_ptr<CompositeObjectCache>
+
+	Cache cacheA(graphA);
+	Cache cacheB(graphB);
+
+	std::queue<std::pair<
+		Cache::Entry,
+		Cache::Entry
 		>> narrowphaseTests;
 
 	for (auto [a, b] : orderedCompositePairs) {
-		narrowphaseTests.push_back({
-			getCompositeObjectCache(config.setA, a),
-			getCompositeObjectCache(config.setB, b),
+		narrowphaseTests.push({
+			cacheA.get(config.setA[a]),
+			cacheB.get(config.setB[b])
 		});
 	}
 
-	for (auto& n : narrowphaseTests) {
+	while(!narrowphaseTests.empty()) {
+		auto [a, b] = std::move(narrowphaseTests.front());
+		narrowphaseTests.pop();
+
+		a->initialise(handler);
+		b->initialise(handler);
+
 		geometry::RepoPolyDepth pd(
-			n.first->getTriangles(),
-			n.second->getTriangles()
+			a->getTriangles(),
+			b->getTriangles()
 		);
 
 		pd.iterate(20);
@@ -105,8 +172,8 @@ void Hard::run(const Graph& graphA, const Graph& graphB)
 
 		if (v.norm() > FLT_EPSILON) {
 			auto clash = createClash<HardClash>(
-				n.first->id(),
-				n.second->id()
+				a->getId(),
+				b->getId()
 			);
 			clash->penetration = pd.getPenetrationVector();
 		}

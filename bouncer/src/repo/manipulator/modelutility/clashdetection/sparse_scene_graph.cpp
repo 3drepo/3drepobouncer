@@ -153,17 +153,3 @@ void SceneGraph::populate(
 		node.matrix = rootTransform * node.matrix;
 	}
 }
-
-void SceneGraph::getNodes(std::vector<Node>& nodes) const
-{
-	for(auto& [id, node] : this->nodes)
-	{
-		sparse::Node n;
-		n.container = node.container;
-		n.uniqueId = node.uniqueId;
-		n.matrix = node.matrix;
-		n.mesh = node.mesh;
-
-		nodes.push_back(node);
-	}
-}

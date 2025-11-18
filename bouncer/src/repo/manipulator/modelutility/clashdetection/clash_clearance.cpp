@@ -16,46 +16,116 @@
 */
 
 #include <stack>
+#include <queue>
 
 #include "clash_clearance.h"
 #include "geometry_tests.h"
 #include "bvh_operators.h"
 #include "clash_scheduler.h"
+#include "clash_node_cache.h"
+#include "clash_pipelines_utils.h"
+
+#include "repo/lib/datastructure/repo_matrix.h"
+#include "repo/lib/datastructure/repo_triangle.h"
+#include "repo/manipulator/modeloptimizer/bvh/bvh.hpp"
+#include "repo/manipulator/modeloptimizer/bvh/sweep_sah_builder.hpp"
 
 using namespace repo::manipulator::modelutility::clash;
 
-/*
-* The Clearance broadphase returns all bounds that have a minimum distance
-* smaller than the tolerance.
-* Even if two bounds are intersecting, it does not necessarily mean that the
-* primitives within them have a distance of zero. The best we can say is that
-* the closest two primitives will definitely have a distance smaller than the
-* running smallest distance between the maximum distance between any two bounds.
-* Therefore this test is conservative and returns all potential pairs. If a user
-* is only ever interested in the closest pair, then early termination based on
-* tracking the smallest maxmimum distance could be applied.
-*/
-struct ClearanceBroadphase : protected bvh::DistanceQuery
-{
-	ClearanceBroadphase(double clearance)
-		:results(nullptr)
+namespace {
+	/*
+	* The Clearance broadphase returns all bounds that have a minimum distance
+	* smaller than the tolerance.
+	* Even if two bounds are intersecting, it does not necessarily mean that the
+	* primitives within them have a distance of zero. The best we can say is that
+	* the closest two primitives will definitely have a distance smaller than the
+	* running smallest distance between the maximum distance between any two bounds.
+	* Therefore this test is conservative and returns all potential pairs. If a user
+	* is only ever interested in the closest pair, then early termination based on
+	* tracking the smallest maxmimum distance could be applied.
+	*/
+	struct ClearanceBroadphase : protected bvh::DistanceQuery
 	{
-		this->d = clearance;
-	}
+		ClearanceBroadphase(double clearance)
+			:results(nullptr)
+		{
+			this->d = clearance;
+		}
 
-	BroadphaseResults* results;
+		BroadphaseResults* results;
 
-	void operator()(const Bvh& a, const Bvh& b, BroadphaseResults& results)
+		void operator()(const Bvh& a, const Bvh& b, BroadphaseResults& results)
+		{
+			this->results = &results;
+			bvh::DistanceQuery::operator()(a, b);
+		}
+
+		void intersect(size_t primA, size_t primB) override
+		{
+			results->push_back({ primA, primB });
+		}
+	};
+
+	struct Cached
 	{
-		this->results = &results;
-		bvh::DistanceQuery::operator()(a, b);
-	}
+		Graph::Node* node;
+		Bvh bvh;
+		std::vector<repo::lib::RepoVector3D64> vertices;
+		std::vector<repo::lib::repo_face_t> faces;
 
-	void intersect(size_t primA, size_t primB) override
+		void initialise(std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler) {
+
+			PipelineUtils::loadGeometry(handler, *node, vertices, faces);
+
+			auto boundingBoxes = std::vector<bvh::BoundingBox<double>>();
+			auto centers = std::vector<bvh::Vector3<double>>();
+
+			for (const auto& face : faces)
+			{
+				auto bbox = bvh::BoundingBox<double>::empty();
+				for (size_t i = 0; i < face.sides; i++) {
+					auto v = vertices[face[i]];
+					bbox.extend(bvh::Vector3<double>(v.x, v.y, v.z));
+				}
+				boundingBoxes.push_back(bbox);
+				centers.push_back(boundingBoxes.back().center());
+			}
+
+			auto globalBounds = bvh::compute_bounding_boxes_union(boundingBoxes.data(), boundingBoxes.size());
+
+			bvh::SweepSahBuilder<bvh::Bvh<double>> builder(bvh);
+			builder.max_leaf_size = 1;
+			builder.build(globalBounds, boundingBoxes.data(), centers.data(), boundingBoxes.size());
+		}
+
+		const Bvh& getBvh() const {
+			return bvh;
+		}
+
+		repo::lib::RepoTriangle getTriangle(size_t primitive) const {
+			auto& face = faces[primitive];
+			if (face.sides < 3) {
+				throw std::runtime_error("Clash detection engine only supports Triangles.");
+			}
+			return repo::lib::RepoTriangle(
+				vertices[face[0]],
+				vertices[face[1]],
+				vertices[face[2]]
+			);
+		}
+
+		const size_t getCompositeObjectIndex() const {
+			return node->compositeObjectIndex;
+		}
+	};
+
+	struct Cache : public ResourceCache<const Graph::Node, Cached>
 	{
-		results->push_back({ primA, primB});
-	}
-};
+		void initialise(const Graph::Node& key, Cached& entry) const override {
+			entry.node = const_cast<Graph::Node*>(&key); // We need to cast away const here in order to load the binary buffers into the contained bson
+		}
+	};
+}
 
 void Clearance::run(const Graph& graphA, const Graph& graphB)
 {
@@ -66,22 +136,28 @@ void Clearance::run(const Graph& graphA, const Graph& graphB)
 
 	ClashScheduler::schedule(broadphaseResults);
 
-	std::vector<std::pair<
-		std::shared_ptr<NodeCache::Node>,
-		std::shared_ptr<NodeCache::Node>
-		>> narrowphaseTests;
+	using Narrowphase = std::pair<
+		Cache::Entry,
+		Cache::Entry
+	>;
+
+	std::queue<Narrowphase> narrowphaseTests;
+
+	Cache cache;
 
 	for (auto r : broadphaseResults) {
-		narrowphaseTests.push_back({
-			cache.getNode(graphA.getNode(r.first)),
-			cache.getNode(graphB.getNode(r.second))
-			});
+		narrowphaseTests.push({
+			cache.get(graphA.getNode(r.first)),
+			cache.get(graphB.getNode(r.second))
+		});
 	}
 
-	for (const auto& [a, b] : narrowphaseTests)
-	{
-		a->initialise();
-		b->initialise();
+	while(!narrowphaseTests.empty()) {
+		auto [a, b] = std::move(narrowphaseTests.front());
+		narrowphaseTests.pop();
+
+		a->initialise(handler);
+		b->initialise(handler);
 
 		BroadphaseResults results;
 		broadphase.operator()(a->getBvh(), b->getBvh(), results);
@@ -91,8 +167,8 @@ void Clearance::run(const Graph& graphA, const Graph& graphB)
 			auto line = geometry::closestPointTriangleTriangle(a->getTriangle(aIndex), b->getTriangle(bIndex));
 			if (line.magnitude() < tolerance) {
 				auto clash = createClash<ClearanceClash>(
-					uniqueToCompositeId[a->getUniqueId()], 
-					uniqueToCompositeId[b->getUniqueId()]
+					config.setA[a->getCompositeObjectIndex()].id,
+					config.setB[b->getCompositeObjectIndex()].id
 				);
 				clash->append(line);
 			}

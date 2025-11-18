@@ -184,8 +184,6 @@ repo::lib::RepoVector3D64 RepoPolyDepth::getPenetrationVector() const {
 
 void RepoPolyDepth::findInitialFreeConfiguration()
 {
-    //todo: check if already collision free and leave penetration vector as zero if so...
-
     // Finds a translation for a which is collision free. Currently this is
     // done simply by finding the minimum translation vector that can separate
     // the bounds.
@@ -216,9 +214,6 @@ void RepoPolyDepth::iterate(size_t n)
 
     for (auto i = 0; i < n; i++) {
         // Perform out-projection to get an updated estimate of qi
-
-        // todo: need a termination criteria which looks at the changes in position between
-        // successive frames.
 
         auto q = ccd(qs, qt);
 

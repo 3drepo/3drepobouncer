@@ -48,4 +48,11 @@ std::shared_ptr<ClashDetectionException> OverlappingSetsException::clone() const
 	return std::make_shared<OverlappingSetsException>(*this);
 }
 
+DuplicateMeshIdsException::DuplicateMeshIdsException(const repo::lib::RepoUUID& uniqueId)
+	: uniqueId(uniqueId)
+{
+}
 
+std::shared_ptr<ClashDetectionException> DuplicateMeshIdsException::clone() const {
+	return std::make_shared<DuplicateMeshIdsException>(*this);
+}

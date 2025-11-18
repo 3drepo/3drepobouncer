@@ -22,8 +22,8 @@
 #include <repo/manipulator/modelutility/repo_clash_detection_config.h>
 #include <repo/manipulator/modeloptimizer/bvh/bvh.hpp>
 #include <repo/lib/datastructure/repo_triangle.h>
-#include "clash_node_cache.h"
 #include "sparse_scene_graph.h"
+#include "ordered_pair.h"
 
 namespace repo {
 	namespace manipulator {
@@ -34,6 +34,7 @@ namespace repo {
 				// types to share data between stages and the output.
 
 				using Bvh = bvh::Bvh<double>;
+				using DatabasePtr = std::shared_ptr<repo::core::handler::AbstractDatabaseHandler>;
 
 				using BroadphaseResults = std::vector<std::pair<size_t, size_t>>;
 
@@ -44,83 +45,43 @@ namespace repo {
 				{
 				};
 
-				// The clash engine will return composite object a on the left, and b on the
-				// right, always. Though it is good practice when matching the result
-				// downstream to ignore the order, in case the user swaps the sets between
-				// runs.
-
-				struct OrderedPair
-				{
-					repo::lib::RepoUUID a;
-					repo::lib::RepoUUID b;
-
-					OrderedPair(const repo::lib::RepoUUID& a, const repo::lib::RepoUUID& b)
-						:a(a), b(b)
-					{
-					}
-
-					size_t getHash() const
-					{
-						return a.getHash() ^ b.getHash();
-					}
-
-					bool operator == (const OrderedPair& other) const
-					{
-						return (a == other.a && b == other.b);
-					}
-				};
-
-				struct OrderedPairHasher
-				{
-					std::size_t operator()(const OrderedPair& p) const
-					{
-						return p.getHash();
-					}
-				};
+				// This graph object is what the pipeline implementations operate on, and
+				// provides various methods to help them query the graph of meshes and
+				// composite objects.
 
 				struct Graph
 				{
-					using CompositeMap = std::unordered_map<repo::lib::RepoUUID, size_t, repo::lib::RepoUUIDHasher>;
+					struct Node : public sparse::Node
+					{
+						// Index into the set (A or B) of the composite object to which this mesh belongs.
+						size_t compositeObjectIndex;
+					};
 
 					// Once this is initialised, it should not be changed, as the bvh will use
 					// indices into this vector to refer to the nodes.
-					const std::vector<sparse::Node> meshes;
+					const std::vector<Node> meshes;
 
 					// The bvh for the graph stores bounds in Project Coordinates.
 					Bvh bvh;
 
-					// Maps from unique mesh ids to indices into setA/B of the config
-					CompositeMap compositeMap;
+					// From mesh node unique id to an index into the meshes array, same as the
+					// one the bvh uses.
+					std::unordered_map<repo::lib::RepoUUID, size_t, repo::lib::RepoUUIDHasher> uuidToIndexMap;
 
-					Graph(std::vector<sparse::Node> nodes, CompositeMap& compositeMap);
+					Graph(std::vector<Node> nodes);
 
-					sparse::Node& getNode(size_t primitive) const;
+					Node& getNode(size_t primitive) const;
+
+					Node& getNode(const repo::lib::RepoUUID& uniqueId) const;
 
 					// Returns the index into the set of Composite Objects used to build this
 					// graph, for the given primitive (mesh) index.
 					size_t getCompositeIndex(size_t primitive) const;
 				};
 
-				struct CompositeObjectCache
-				{
-					std::vector<std::shared_ptr<NodeCache::Node>> meshNodes;
-
-					void initialise();
-
-					/*
-					* Loads the triangle soup of the meshNodes into memory and returns a
-					* reference to it. Initialises the triangles array on-demand if
-					* required.
-					*/
-					const std::vector<repo::lib::RepoTriangle>& getTriangles() const;
-
-					const repo::lib::RepoUUID& id() const;
-				};
-
 				class Pipeline
 				{
 				public:
-					using DatabasePtr = std::shared_ptr<repo::core::handler::AbstractDatabaseHandler>;
 					using RepoUUIDMap = std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>;
 
 					Pipeline(DatabasePtr, const repo::manipulator::modelutility::ClashDetectionConfig&);
@@ -139,14 +100,7 @@ namespace repo {
 					std::unique_ptr<Graph> graphA;
 					std::unique_ptr<Graph> graphB;
 
-					RepoUUIDMap uniqueToCompositeId;
 					std::unordered_map<OrderedPair, CompositeClash*, OrderedPairHasher> clashes;
-					NodeCache cache;
-
-					std::shared_ptr<CompositeObjectCache> getCompositeObjectCache(
-						const std::vector<CompositeObject>& set,
-						size_t index
-					);
 
 					template<class T>
 					T* createClash(const repo::lib::RepoUUID& a, const repo::lib::RepoUUID& b) {

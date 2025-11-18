@@ -32,6 +32,12 @@ namespace repo {
 
 				struct ClashDetectionException
 				{
+					// For simplicitly, we'd like to pass the actual exception object which
+					// already has all the information to the report, however the thrown
+					// object may go out of scope before we're done with it, so this virtual
+					// method allows each exception to copy itself, preserving its data when
+					// handled by logic only written to deal with the base class.
+
 					virtual std::shared_ptr<ClashDetectionException> clone() const = 0;
 					~ClashDetectionException() = default;
 				};
@@ -65,6 +71,14 @@ namespace repo {
 					OverlappingSetsException(std::set<repo::lib::RepoUUID> overlappingCompositeIds);
 					
 					std::set<repo::lib::RepoUUID> compositeIds;
+
+					virtual std::shared_ptr<ClashDetectionException> clone() const override;
+				};
+
+				struct DuplicateMeshIdsException : public ValidationException {
+					DuplicateMeshIdsException(const repo::lib::RepoUUID& uniqueId);
+
+					repo::lib::RepoUUID uniqueId;
 
 					virtual std::shared_ptr<ClashDetectionException> clone() const override;
 				};

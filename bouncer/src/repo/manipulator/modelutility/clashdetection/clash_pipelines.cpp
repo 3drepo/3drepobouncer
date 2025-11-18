@@ -42,9 +42,8 @@ using namespace repo::manipulator::modelutility::clash;
 
 using ContainerGroups = std::unordered_map<repo::lib::Container*, std::vector<repo::lib::RepoUUID>>;
 
-Graph::Graph(std::vector<sparse::Node> nodes, CompositeMap& compositeMap)
-	: meshes(std::move(nodes)),
-	compositeMap(std::move(compositeMap))
+Graph::Graph(std::vector<Node> nodes)
+	: meshes(std::move(nodes))
 {
 	// create the bvh for the scene
 	auto boundingBoxes = std::vector<bvh::BoundingBox<double>>();
@@ -62,9 +61,16 @@ Graph::Graph(std::vector<sparse::Node> nodes, CompositeMap& compositeMap)
 	bvh::SweepSahBuilder<Bvh> builder(bvh);
 	builder.max_leaf_size = 1;
 	builder.build(globalBounds, boundingBoxes.data(), centers.data(), boundingBoxes.size());
+
+	for(size_t i = 0; i < meshes.size(); i++)
+	{
+		uuidToIndexMap[meshes[i].uniqueId] = i;
+	}
 }
 
-sparse::Node& Graph::getNode(size_t primitive) const
+#pragma optimize("", off)
+
+Graph::Node& Graph::getNode(size_t primitive) const
 {
 	// The const_cast removes the const qualifier from the node itself. It is
 	// important the vector doesn't change once initialised, as we don't want
@@ -72,21 +78,25 @@ sparse::Node& Graph::getNode(size_t primitive) const
 	// held. It is acceptable for the non-const members of the nodes themselves
 	// to change however.
 
-	return const_cast<sparse::Node&>(meshes[primitive]);
+	return const_cast<Node&>(meshes[primitive]);
+}
+
+Graph::Node& Graph::getNode(const repo::lib::RepoUUID& uniqueId) const
+{
+	return getNode(uuidToIndexMap.at(uniqueId));
 }
 
 size_t Graph::getCompositeIndex(size_t primitive) const
 {
-	return compositeMap.at(getNode(primitive).uniqueId);
+	return getNode(primitive).compositeObjectIndex;
 }
 
 static std::unique_ptr<Graph> createSceneGraph(
-	Pipeline::DatabasePtr handler, 
-	const std::vector<CompositeObject>& set, 
-	Pipeline::RepoUUIDMap& uniqueToCompositeId)
+	DatabasePtr handler, 
+	const std::vector<CompositeObject>& set)
 {
 	ContainerGroups containers;
-	Graph::CompositeMap map;
+	std::unordered_map<repo::lib::RepoUUID, size_t, repo::lib::RepoUUIDHasher> idToIndexMap;
 
 	for (size_t i = 0; i < set.size(); i++){
 	
@@ -94,8 +104,10 @@ static std::unique_ptr<Graph> createSceneGraph(
 		for (auto& mesh : composite.meshes)
 		{
 			containers[mesh.container].push_back(mesh.uniqueId);
-			uniqueToCompositeId[mesh.uniqueId] = composite.id;
-			map[mesh.uniqueId] = i;
+			auto [it, inserted] = idToIndexMap.insert({ mesh.uniqueId, i });
+			if (!inserted) {
+				throw DuplicateMeshIdsException(mesh.uniqueId);
+			}
 		}
 	}
 
@@ -105,10 +117,14 @@ static std::unique_ptr<Graph> createSceneGraph(
 		scene.populate(handler, container, uniqueIds);
 	}
 
-	std::vector<sparse::Node> nodes;
+	std::vector<Graph::Node> nodes;
 	scene.getNodes(nodes);
 
-	return std::make_unique<Graph>(std::move(nodes), map);
+	for (auto& node : nodes) {
+		node.compositeObjectIndex = idToIndexMap[node.uniqueId];
+	}
+
+	return std::make_unique<Graph>(std::move(nodes));
 }
 
 static bool isWithinLimits(const repo::lib::RepoVector3D64& v, double limit)
@@ -224,8 +240,7 @@ static void validateSets(const repo::manipulator::modelutility::ClashDetectionCo
 Pipeline::Pipeline(
 	DatabasePtr handler, const repo::manipulator::modelutility::ClashDetectionConfig& config)
 	: handler(handler),
-	config(config),
-	cache(handler)
+	config(config)
 {
 }
 
@@ -233,8 +248,8 @@ ClashDetectionReport Pipeline::runPipeline()
 {
 	validateSets(config);
 
-	graphA = createSceneGraph(handler, config.setA, uniqueToCompositeId);
-	graphB = createSceneGraph(handler, config.setB, uniqueToCompositeId);
+	graphA = createSceneGraph(handler, config.setA);
+	graphB = createSceneGraph(handler, config.setB);
 
 	validateSceneGraph(*graphA);
 	validateSceneGraph(*graphB);
@@ -252,19 +267,4 @@ ClashDetectionReport Pipeline::runPipeline()
 	}
 
 	return report;
-}
-
-std::shared_ptr<CompositeObjectCache> repo::manipulator::modelutility::clash::Pipeline::getCompositeObjectCache(const std::vector<CompositeObject>& set, size_t index)
-{
-	throw "Not implemented exception";
-}
-
-const std::vector<repo::lib::RepoTriangle>& CompositeObjectCache::getTriangles() const
-{
-	throw "Not implemented exception";
-}
-
-const repo::lib::RepoUUID& CompositeObjectCache::id() const
-{
-	throw "Not implemented exception";
 }

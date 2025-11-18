@@ -855,6 +855,46 @@ TEST(Clash, SupportedRanges)
 	}
 }
 
+TEST(Clash, MeshIdsAllowedOnlyOnce)
+{
+	// A given mesh id should only be a part of one Composite Object per set.
+
+	auto db = std::make_shared<MockDatabase>();
+
+	ClashGenerator clashGenerator;
+	clashGenerator.distance = 1;
+
+	auto clash = clashGenerator.createTrianglesTransformed({});
+
+	ClashDetectionConfigHelper config;
+	config.type = ClashDetectionType::Clearance;
+	MockClashScene scene(config.getRevision());
+
+	scene.add(clash, config);
+
+	db->setDocuments(scene.bsons);
+
+	CompositeObject objA1;
+	objA1.id = repo::lib::RepoUUID::createUUID();
+	objA1.meshes.push_back(config.setA[0].meshes[0]);
+
+	config.setA.push_back(objA1); // Duplicate mesh in set A
+
+	clash::Clearance pipeline(db, config);
+	try {
+		auto results = pipeline.runPipeline();
+		FAIL() << "Expected DuplicateMeshIdsException.";
+	}
+	catch (const clash::ClashDetectionException& ex) {
+		auto exception = dynamic_cast<const clash::DuplicateMeshIdsException*>(&ex);
+		EXPECT_THAT(exception != nullptr, IsTrue());
+		EXPECT_THAT(exception && exception->uniqueId, Eq(config.setA[0].meshes[0].uniqueId));
+	}
+	catch (std::exception& e) {
+		FAIL() << "Expected DuplicateMeshIdsException: " << e.what();
+	}
+}
+
 struct PipelineRunner {
 	ClashDetectionConfigHelper& config;
 	std::shared_ptr<MockDatabase> db;
@@ -1000,11 +1040,6 @@ TEST(Clash, SelfClearance)
 	}
 }
 
-TEST(Clash, CompositeClearance)
-{
-	// Tests that the distance query applied to the bvh
-}
-
 TEST(Clash, RepoPolyDepth1)
 {
 	// Tests the penetration depth estimation (PolyDepth) of the geometry utils
@@ -1047,8 +1082,6 @@ TEST(Clash, RepoPolyDepth1)
 	}
 }
 
-#pragma optimize("", off)
-
 TEST(Clash, RepoPolyDepth2)
 {
 	// Tests the penetration depth estimation (PolyDepth) of the geometry utils
@@ -1087,14 +1120,30 @@ TEST(Clash, RepoPolyDepth2)
 	EXPECT_THAT(intersects(copy, b), IsFalse());
 }
 
-TEST(Clash, PolyDepth3)
+TEST(Clash, PolyDepthBeginCollisionFree)
 {
 	// If geometry is provided to PolyDepth in a collision-free configuration,
 	// then the initial penetration vector should be zero, and calling iterate
 	// should not do anything.
 
+	ClashGenerator clashGenerator;
+	
+	clashGenerator.distance = 1;
+	auto clash = clashGenerator.createHard1({});
+	auto a = ClashGenerator::triangles(clash.a);
+	auto b = ClashGenerator::triangles(clash.b);
 
+	geometry::RepoPolyDepth pd(a, b);
 
+	auto v0 = pd.getPenetrationVector();
+
+	EXPECT_THAT(v0.norm(), Eq(0));
+
+	pd.iterate(10);
+
+	auto v1 = pd.getPenetrationVector();
+
+	EXPECT_THAT(v1.norm(), Eq(0));
 }
 
 TEST(Clash, Hard1)
@@ -1148,4 +1197,9 @@ TEST(Clash, NodeCache)
 	// need to make sure cache only returns one object even if called multiple times
 
 	// need to make sure cache doesn't go away until all references have gone.
+}
+
+TEST(Clash, CompositeClearance)
+{
+	// Tests that the distance query applied to the bvh
 }
