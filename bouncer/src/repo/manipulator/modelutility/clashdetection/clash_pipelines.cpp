@@ -68,8 +68,6 @@ Graph::Graph(std::vector<Node> nodes)
 	}
 }
 
-#pragma optimize("", off)
-
 Graph::Node& Graph::getNode(size_t primitive) const
 {
 	// The const_cast removes the const qualifier from the node itself. It is

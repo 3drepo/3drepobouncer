@@ -23,6 +23,8 @@
 
 #include <numbers>
 
+#include <repo/manipulator/modelutility/clashdetection/geometry_tests.h>
+
 using namespace testing;
 using namespace repo::core::model;
 using namespace repo::manipulator::modelutility;
@@ -201,13 +203,7 @@ void ClashGenerator::moveB(TransformTriangles& problem, const repo::lib::RepoRan
 	auto& b = problem.b.e;
 	auto& m = problem.b.m;
 
-	//m = random.transform(true, range, {});
-
-	auto tmp = b;
-
 	auto bounds = repo::lib::RepoBounds({ m * b.a, m * b.b, m * b.c });
-
-	// todo fix this...
 
 	repo::lib::RepoVector3D64 offset;
 	if (bounds.min().x < -range.max()) {
@@ -698,6 +694,21 @@ TransformTriangles testing::ClashGenerator::createTrianglesFF(const repo::lib::R
 
 	shiftTriangles(b);
 
+	// These next snippets ensure the problem is within the bounds, as the
+	// construction above does not guarantee this.
+
+	auto bb = repo::lib::RepoBounds({ a.a, a.b, a.c, b.a, b.b, b.c });
+	a = repo::lib::RepoMatrix::translate(-bb.center()) * a;
+	b = repo::lib::RepoMatrix::translate(-bb.center()) * b;
+
+	bb = repo::lib::RepoBounds({ a.a, a.b, a.c, b.a, b.b, b.c });
+	auto s = (bb.size() / bounds.size()) * 1.0001;
+	auto m = std::max({ 1.0, std::abs(s.x), std::abs(s.y), std::abs(s.z) });
+	auto scale = repo::lib::RepoMatrix::scale(1 / m);
+
+	a = scale * a;
+	b = scale * b;
+
 	TransformTriangles problem({ a, RepoMatrix() }, { b, RepoMatrix() });
 
 	moveB(problem, size2);
@@ -758,6 +769,9 @@ TransformMeshes testing::ClashGenerator::createHardSoup(
 	}
 
 	downcastVertices = tmp;
+
+	// (Converting to a meshNode will implicitly downcast vertices in this method
+	// before returning.)
 
 	return { { repo::test::utils::mesh::fromVertices(a), m.inverse() }, { repo::test::utils::mesh::fromVertices(b), m.inverse() }};
 }

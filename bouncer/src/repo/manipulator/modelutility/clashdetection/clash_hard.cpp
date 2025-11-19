@@ -57,8 +57,6 @@ namespace {
 		}
 	};
 
-#pragma optimize("", off)
-
 	static struct CacheEntry
 	{
 		std::vector<Graph::Node*> nodes;

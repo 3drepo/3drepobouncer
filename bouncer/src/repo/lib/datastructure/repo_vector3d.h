@@ -173,6 +173,11 @@ namespace repo{
 				return _RepoVector3D<T>(x / scalar, y / scalar, z / scalar);
 			}
 
+			inline _RepoVector3D<T> operator/(const _RepoVector3D<T>& other) const
+			{
+				return _RepoVector3D<T>(x / other.x, y / other.y, z / other.z);
+			}
+
 			inline _RepoVector3D<T> operator-() const
 			{
 				return _RepoVector3D<T>(-x, -y, -z);

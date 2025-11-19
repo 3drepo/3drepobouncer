@@ -21,8 +21,6 @@
 
 #include <cmath>
 
-#pragma optimize("", off)
-
 using namespace geometry;
 
 using Vector3 = repo::lib::RepoVector3D64;

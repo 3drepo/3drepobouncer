@@ -386,7 +386,7 @@ TEST(Clash, Scheduler)
 * transformations stored in Mongo.
 */
 
-TEST(Clash, TriangleDistanceE2E) 
+TEST(Clash, ClearanceE2E) 
 {
 	// Test the accuracy of the end-to-end pipeline in Clearance mode, for
 	// multiple problem configurations.
@@ -1098,38 +1098,40 @@ TEST(Clash, RepoPolyDepth2)
 
 	auto pairs = {
 		std::make_pair("set1_a", "set1_b1"),
-		std::make_pair("set2_a", "set2_b"),
+		// std::make_pair("set2_a", "set2_b"), // Overlaps is not currently supported
 		std::make_pair("set3_a", "set3_b"),
 		std::make_pair("set4_a", "set4_b"),
 		std::make_pair("set5_a", "set5_b"),
-		std::make_pair("set6_a", "set6_b")
+		// std::make_pair("set6_a", "set6_b") // Overlaps is not currently supported
 	};
 
 	for (auto& pair : pairs) {
+
+		std::string s = std::string("for: ") + pair.first + " vs " + pair.second + "\n";
 
 		// Take care that the meshes returned here will not have any transformations applied.
 
 		auto a = ClashGenerator::triangles(helper.getChildMeshNodes(c.get(), pair.first));
 		auto b = ClashGenerator::triangles(helper.getChildMeshNodes(c.get(), pair.second));
 
-		EXPECT_THAT(intersects(a, b), IsTrue());
+		EXPECT_THAT(intersects(a, b), IsTrue()) << s;
 
 		geometry::RepoPolyDepth pd(a, b);
 		auto v0 = pd.getPenetrationVector();
 
 		auto copy = a;
 		ClashGenerator::applyTransforms(copy, repo::lib::RepoMatrix::translate(v0));
-		EXPECT_THAT(intersects(copy, b), IsFalse());
+		EXPECT_THAT(intersects(copy, b), IsFalse()) << s;
 
 		pd.iterate(10);
 
 		auto v1 = pd.getPenetrationVector();
 
-		EXPECT_THAT(v1.norm(), Lt(v0.norm()));
+		EXPECT_THAT(v1.norm(), Lt(v0.norm())) << s;
 
 		copy = a;
 		ClashGenerator::applyTransforms(copy, repo::lib::RepoMatrix::translate(v0));
-		EXPECT_THAT(intersects(copy, b), IsFalse());
+		EXPECT_THAT(intersects(copy, b), IsFalse()) << s;
 	}
 }
 
@@ -1163,34 +1165,39 @@ TEST(Clash, PolyDepthBeginCollisionFree)
 	EXPECT_THAT(v1.norm(), Eq(0));
 }
 
-TEST(Clash, Hard1)
+TEST(Clash, HardE2E)
 {
-	// A simple test case of two interpenetrating polyhedra close to the origin.
+	ClashGenerator clashGenerator;
 
 	auto db = std::make_shared<MockDatabase>();
 
-	ClashDetectionConfigHelper config;
-	config.type = ClashDetectionType::Hard;
-	config.tolerance = 0;
+	// For this test, the distance defines the spacing amongst the non-intersecting
+	// pairs.
+	clashGenerator.distance = { 0.1, 4 };
 
-	CellDistribution space(1, 1);
-	ClashGenerator clashGenerator;
+	const int clashesPerSample = 20;
+	CellDistribution space;
 
-	clashGenerator.size1 = 1;
-	clashGenerator.size2 = 1;
-	clashGenerator.distance = -0.1; // ensure interpenetration
+	for (int itr = 0; itr < 1000; ++itr)
+	{
+		ClashDetectionConfigHelper config;
+		config.type = ClashDetectionType::Hard;
+		MockClashScene scene(config.getRevision());
 
-	auto clash = clashGenerator.createHard1(space.sample());
+		for (int j = 0; j < clashesPerSample; j++) {
+			auto clash = clashGenerator.createHardSoup(space.sample());
+			scene.add(clash, config);
+		}
 
-	MockClashScene scene(config.getRevision());
-	scene.add(clash, config);
+		db->setDocuments(scene.bsons);
 
-	db->setDocuments(scene.bsons);
-
-	auto pipeline = new clash::Hard(db, config);
-	auto results = pipeline->runPipeline();
-
-	EXPECT_THAT(results.clashes.size(), Eq(1));
+		{
+			config.tolerance = 0.0;
+			clash::Hard pipeline(db, config);
+			auto results = pipeline.runPipeline();
+			EXPECT_THAT(results.clashes.size(), Eq(clashesPerSample));
+		}
+	}
 }
 
 TEST(Clash, ResultsSerialisation)
