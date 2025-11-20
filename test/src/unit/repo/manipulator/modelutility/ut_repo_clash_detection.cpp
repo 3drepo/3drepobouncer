@@ -1200,6 +1200,58 @@ TEST(Clash, HardE2E)
 	}
 }
 
+TEST(Clash, HardTolerance) 
+{
+	// Tolerance in hard mode means to accept clashes that can be resolved by
+	// a translation less than the tolerance...
+
+	auto cube = repo::test::utils::mesh::makeUnitCube();
+	auto cone = repo::test::utils::mesh::makeUnitCone();
+
+	// This line moves the cone so that it overlaps the box by 0.1 units.
+
+	auto t = repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(0, 0, 0.9));
+
+	// Validate the test data...
+	{
+		auto a = ClashGenerator::triangles(cube);
+		auto b = ClashGenerator::triangles(cone);
+		ClashGenerator::applyTransforms(b, t);
+
+		EXPECT_THAT(intersects(a, b), IsTrue());
+
+		geometry::RepoPolyDepth pd(a, b);
+		pd.iterate(10);
+		auto v0 = pd.getPenetrationVector();
+
+		EXPECT_THAT(v0.norm(), Lt(0.2));
+	}
+
+	ClashDetectionConfigHelper config;
+	config.type = ClashDetectionType::Hard;
+	MockClashScene scene(config.getRevision());
+
+	TransformMeshes problem = { { cube, {} }, { cone, t } };
+	scene.add(problem, config);
+
+	auto db = std::make_shared<MockDatabase>();
+	db->setDocuments(scene.bsons);
+
+	{
+		config.tolerance = 0.0;
+		clash::Hard pipeline(db, config);
+		auto results = pipeline.runPipeline();
+		EXPECT_THAT(results.clashes.size(), Eq(1));
+	}
+
+	{
+		config.tolerance = 0.2;
+		clash::Hard pipeline(db, config);
+		auto results = pipeline.runPipeline();
+		EXPECT_THAT(results.clashes.size(), Eq(0));
+	}
+}
+
 TEST(Clash, ResultsSerialisation)
 {
 

@@ -168,7 +168,7 @@ void Hard::run(const Graph& graphA, const Graph& graphB)
 
 		auto v = pd.getPenetrationVector();
 
-		if (v.norm() > FLT_EPSILON) {
+		if (v.norm() > tolerance) {
 			auto clash = createClash<HardClash>(
 				a->getId(),
 				b->getId()
