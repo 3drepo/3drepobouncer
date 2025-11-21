@@ -63,6 +63,10 @@ namespace bvh {
 		void operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double>& b);
 	};
 
+	/*
+	* Performs a top-down traversal of two BVH's, calling intersects with the
+	* primitive indices of each overlapping leaf node.
+	*/
 	template<typename PrimitiveIntersectsFunction>
 	void intersect(
 		const bvh::Bvh<double>& a,
