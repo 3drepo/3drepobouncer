@@ -20,6 +20,7 @@
 #include <vector>
 #include "repo/lib/datastructure/repo_triangle.h"
 #include "repo/lib/datastructure/repo_matrix.h"
+#include "repo/lib/datastructure/repo_vector3d.h"
 #include "repo/manipulator/modeloptimizer/bvh/bvh.hpp"
 
 namespace geometry {
@@ -76,6 +77,12 @@ namespace geometry {
 		*/
 		void iterate(size_t n);
 
+		enum class Collision {
+			Collision,
+			Contact,
+			Free
+		};
+
 	private:
 		const std::vector<repo::lib::RepoTriangle>& a;
 		const std::vector<repo::lib::RepoTriangle>& b;
@@ -103,5 +110,20 @@ namespace geometry {
 		* If the meshes are intersecting, the returned distance will be 0.
 		*/
 		double distance(const repo::lib::RepoMatrix& q);
+
+		/*
+		* Tests for intersection between a transformed by m, and b. This will modify the BVHs.
+		* The contact patches will be stored in contacts.
+		*/
+		Collision intersect(
+			const repo::lib::RepoMatrix& m
+		);
+
+		struct Contact {
+			repo::lib::RepoVector3D64 normal;
+			double constant;
+		};
+
+		std::vector<Contact> contacts;
 	};
 }

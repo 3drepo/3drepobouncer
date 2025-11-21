@@ -127,50 +127,6 @@ namespace {
             return d;
         }
     };
-
-    enum class Collision {
-        Collision,
-        Contact,
-        Free
-    };
-
-    struct IntersectionQuery : public bvh::IntersectQuery
-    {
-        IntersectionQuery(const std::vector<repo::lib::RepoTriangle>& A, const std::vector<repo::lib::RepoTriangle>& B)
-            : A(A), B(B)
-        {
-        }
-
-        const std::vector<repo::lib::RepoTriangle>& A;
-        const std::vector<repo::lib::RepoTriangle>& B;
-        repo::lib::RepoMatrix m;
-
-        Collision r = Collision::Free;
-
-        void intersect(size_t a, size_t b) override {
-            auto triA = m * A[a];
-            auto d = geometry::intersects(triA, B[b]);
-
-            if (d > geometry::coplanarityThreshold(triA, B[b])) {
-                r = Collision::Collision;
-            }
-            else if (d > 0) {
-                if (r == Collision::Free) {
-                    r = Collision::Contact;
-                }
-            }
-        }
-
-        Collision operator()(Bvh& bvhA, const Bvh& bvhB, const repo::lib::RepoMatrix& m) {
-            this->m = m;
-
-            BvhRefitter refitter(bvhA, A);
-            refitter.refit(m);
-
-            bvh::IntersectQuery::operator()(bvhA, bvhB);
-            return r;
-        }
-    };
 }
 
 RepoPolyDepth::RepoPolyDepth(const std::vector<repo::lib::RepoTriangle>& a, const std::vector<repo::lib::RepoTriangle>& b)
@@ -185,8 +141,7 @@ repo::lib::RepoVector3D64 RepoPolyDepth::getPenetrationVector() const {
 
 void RepoPolyDepth::findInitialFreeConfiguration()
 {
-    IntersectionQuery iqd(a, b);
-    if (iqd(bvhA, bvhB, {}) != Collision::Collision) {
+    if (intersect({}) != Collision::Collision) {
         return;
 	}
 
@@ -225,8 +180,7 @@ void RepoPolyDepth::iterate(size_t n)
 
         // Check qi is collision free
 
-        IntersectionQuery iqd(a, b);
-        auto r = iqd(bvhA, bvhB, q);
+		auto r = intersect(q);
 
         switch (r) {
         case Collision::Collision:
@@ -248,6 +202,44 @@ double RepoPolyDepth::distance(const repo::lib::RepoMatrix& q)
 {
     DistanceQuery qd(a, b);
     return qd(bvhA, bvhB, q);
+}
+
+RepoPolyDepth::Collision RepoPolyDepth::intersect(const repo::lib::RepoMatrix& m)
+{
+    BvhRefitter refitter(bvhA, a);
+    refitter.refit(m);
+
+    auto r = Collision::Free;
+    contacts.clear();
+    bvh::intersect(bvhA, bvhB, [&](size_t _a, size_t _b) 
+        {
+            auto triA = m * a[_a];
+            auto d = geometry::intersects(triA, b[_b]);
+
+            if (d > geometry::coplanarityThreshold(triA, b[_b])) {
+                r = Collision::Collision;
+            }
+            else if (d > 0) {
+                if (r == Collision::Free) {
+                    r = Collision::Contact;
+                }
+            }
+
+            if (r != Collision::Free) {
+                // If we detect a contact, append the contact information as a
+                // plane, where the point on the plane is the offset (translation
+                // of q).
+
+                auto j = b[_b].normal();
+                auto q = m.translation();
+                auto c = -j.dotProduct(q);
+
+                contacts.push_back({ j, c });
+            }
+        }
+    );
+
+    return r;
 }
 
 repo::lib::RepoMatrix RepoPolyDepth::ccd(const repo::lib::RepoMatrix& q0, const repo::lib::RepoMatrix& q1)

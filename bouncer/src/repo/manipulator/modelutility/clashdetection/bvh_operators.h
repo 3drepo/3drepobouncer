@@ -62,4 +62,26 @@ namespace bvh {
 
 		void operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double>& b);
 	};
+
+	template<typename PrimitiveIntersectsFunction>
+	void intersect(
+		const bvh::Bvh<double>& a,
+		const bvh::Bvh<double>& b,
+		PrimitiveIntersectsFunction intersects)
+	{
+		struct Query : public IntersectQuery {
+			PrimitiveIntersectsFunction& f;
+			Query(PrimitiveIntersectsFunction& f)
+				: f(f)
+			{
+			}
+			void intersect(size_t primA, size_t primB) override
+			{
+				f(primA, primB);
+			}
+		};
+
+		Query q(intersects);
+		q(a, b);
+	}
 }
