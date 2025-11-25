@@ -31,7 +31,7 @@
 #include <vector>
 #include <set>
 #include <variant>
-
+#include <fstream>
 #include "repo_test_random_generator.h"
 
 namespace testing {
@@ -63,7 +63,7 @@ namespace testing {
 		ClashDetectionConfigHelper();
 
 		void addCompositeObjects(
-			const repo::lib::RepoUUID& uniqueIdA, 
+			const repo::lib::RepoUUID& uniqueIdA,
 			const repo::lib::RepoUUID& uniqueIdB
 		);
 
@@ -230,6 +230,26 @@ namespace testing {
 			const repo::lib::RepoBounds& bounds
 		);
 
+		// Moves and permutes the triangle such that all vertices lie on the positive
+		// side of the hyperplane with normal n, and that vertex is the one that
+		// touches the plane. This may change the winding order of the triangles.
+
+		void moveToPlane(repo::lib::RepoTriangle& triangle,
+			const repo::lib::RepoVector3D64& n
+		);
+
+		// Performs an affine transformation of all triangles such that they all fit
+		// within the specified bounds volume. Use this to constrain a construction 
+		// where it is not trivial to ensure the triangles fit within the tolerances
+		// implicitly. If the bounds are not centered on the origin, this method will
+		// *not* move them - use moveToBounds as an additional step for that, if
+		// required.
+
+		void scaleToBounds(
+			std::pair<repo::lib::RepoTriangle&, repo::lib::RepoTriangle&> triangles,
+			const repo::lib::RepoBounds& bounds
+		);
+
 		void moveToBounds(TransformLines& problem, const repo::lib::RepoBounds& bounds);
 
 		void moveToBounds(TransformTriangles& problem, const repo::lib::RepoBounds& bounds);
@@ -241,7 +261,10 @@ namespace testing {
 		// Circular shift the vertices by a random amount, so that if a procedural triangle
 		// is created such that vertex a is always, for example, the closest feature, then
 		// other vertices may be that feature.
+
 		void shiftTriangles(repo::lib::RepoTriangle& problem);
+
+
 
 		template<typename T>
 		void downcast(TransformedPair<T>& pair) {
@@ -261,7 +284,7 @@ namespace testing {
 		static TrianglePair applyTransforms(TransformTriangles& problem);
 
 		static void applyTransforms(
-			std::vector<repo::lib::RepoTriangle>& triangles, 
+			std::vector<repo::lib::RepoTriangle>& triangles,
 			const repo::lib::RepoMatrix& m
 		);
 
@@ -298,5 +321,23 @@ namespace testing {
 		UUIDPair add(TransformTriangles triangles, ClashDetectionConfigHelper& config);
 
 		UUIDPair add(TransformMeshes meshes, ClashDetectionConfigHelper& config);
+	};
+
+	/*
+	* Writes a basic OBJ file from a set of clash generation primitives. This is
+	* used for debugging the unit tests and is not part of the unit test suite.
+	* Create an instance in a limited scope and append primitives as needed.
+	* When the object goes out of scope the file will be closed.
+	*/
+	struct SimpleObjWriter
+	{
+		SimpleObjWriter(std::string filename);
+		void write(const repo::lib::RepoTriangle& triangle);
+		void write(const repo::lib::RepoLine& line);
+		~SimpleObjWriter();
+
+	private:
+		std::ofstream file;
+		int vertexCounter = 1;
 	};
 }

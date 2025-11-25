@@ -28,13 +28,88 @@ namespace bvh {
 	* Implementations of various common operators on BVHs.
 	*/
 
+	namespace predicates {
+		/*
+		* If the bounds of two nodes overlap or not.
+		*/
+		bool intersects(
+			const bvh::Bvh<double>::Node& a,
+			const bvh::Bvh<double>::Node& b);
+
+	}
+
+	/*
+	* Base class for queries between two BVH's.
+	*/
+	struct Traversal {
+		/*
+		* Should return true if two branch nodes intersect, otherwise false (to
+		* terminate the traversal for that branch). This will only ever be called
+		* for branch/inner nodes.
+		*/
+		virtual bool intersect(
+			const bvh::Bvh<double>::Node& a,
+			const bvh::Bvh<double>::Node& b) = 0;
+
+		/*
+		* Called for all combinations of primitives for a pair of overlapping leaf
+		* nodes.
+		*/
+		virtual void intersect(size_t primA, size_t primB) = 0;
+
+		void operator()(
+			const bvh::Bvh<double>& a,
+			const bvh::Bvh<double>& b);
+	};
+
+	/*
+	* Convenience template to perform a traversal of two BHV's with any callable
+	* types.
+	*/
+	template<typename PrimitiveIntersectionCallable, typename NodesIntersectionCallable>
+	void traverse(
+		const bvh::Bvh<double>& a,
+		const bvh::Bvh<double>& b,
+		NodesIntersectionCallable intersectNodes,
+		PrimitiveIntersectionCallable intersectPrimitives)
+	{
+		// It would be preferable to use std::function here, but currently there is no
+		// Concept that would ensure a given lambda fits within the limit for SOO, so
+		// we do the type erasure manually. (A reference version of std function is
+		// coming in C++26).
+
+		struct Query : public Traversal {
+			NodesIntersectionCallable& nodes;
+			PrimitiveIntersectionCallable& primitives;
+			Query(NodesIntersectionCallable& nodes, PrimitiveIntersectionCallable& primitives)
+				: nodes(nodes), primitives(primitives)
+			{
+			}
+
+			void intersect(size_t primA, size_t primB) override
+			{
+				primitives(primA, primB);
+			}
+
+			bool intersect(
+				const bvh::Bvh<double>::Node& a,
+				const bvh::Bvh<double>::Node& b) override
+			{
+				return nodes(a, b);
+			}
+		};
+
+		Query q(intersectNodes, intersectPrimitives);
+		q(a, b);
+	}
+
 	/*
 	* Performs a top-down traversal of two BVH's looking for pairs for which the
 	* minimum distance is below a threshold. The intersects implementation may
 	* update d for a more efficient traversal, depending on the goals of the
 	* query.
 	*/
-	struct DistanceQuery
+	struct DistanceQuery : public Traversal
 	{
 		/*
 		* The upper bound on the distance between two primitiives. If two inner nodes
@@ -49,18 +124,24 @@ namespace bvh {
 		*/
 		virtual void intersect(size_t primA, size_t primB) = 0;
 
-		void operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double>& b);
+	private:
+		bool intersect(
+			const bvh::Bvh<double>::Node& a,
+			const bvh::Bvh<double>::Node& b) override;
 	};
 
 	/*
 	* Performs a top-down traversal of two BVH's looking for pairs of leaf nodes
 	* that overlap. If the overlap is less than tolerance, ignores the intersection.
 	*/
-	struct IntersectQuery
+	struct IntersectQuery : public Traversal
 	{
 		virtual void intersect(size_t primA, size_t primB) = 0;
 
-		void operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double>& b);
+	private:
+		bool intersect(
+			const bvh::Bvh<double>::Node& a,
+			const bvh::Bvh<double>::Node& b) override;
 	};
 
 	/*
@@ -73,19 +154,11 @@ namespace bvh {
 		const bvh::Bvh<double>& b,
 		PrimitiveIntersectsFunction intersects)
 	{
-		struct Query : public IntersectQuery {
-			PrimitiveIntersectsFunction& f;
-			Query(PrimitiveIntersectsFunction& f)
-				: f(f)
-			{
-			}
-			void intersect(size_t primA, size_t primB) override
-			{
-				f(primA, primB);
-			}
-		};
-
-		Query q(intersects);
-		q(a, b);
+		traverse(
+			a,
+			b,
+			predicates::intersects,
+			intersects
+		);
 	}
 }

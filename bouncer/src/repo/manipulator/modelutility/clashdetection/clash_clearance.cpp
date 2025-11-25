@@ -164,7 +164,7 @@ void Clearance::run(const Graph& graphA, const Graph& graphB)
 
 		for (const auto& [aIndex, bIndex] : results)
 		{
-			auto line = geometry::closestPointTriangleTriangle(a->getTriangle(aIndex), b->getTriangle(bIndex));
+			auto line = geometry::closestPoints(a->getTriangle(aIndex), b->getTriangle(bIndex));
 			if (line.magnitude() < tolerance) {
 				auto clash = createClash<ClearanceClash>(
 					config.setA[a->getCompositeObjectIndex()].id,

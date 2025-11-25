@@ -266,6 +266,63 @@ void ClashGenerator::moveToBounds(TransformLines& problem, const repo::lib::Repo
 	mb = repo::lib::RepoMatrix::translate(offset) * mb;
 }
 
+void ClashGenerator::scaleToBounds(std::pair<repo::lib::RepoTriangle&, repo::lib::RepoTriangle&> triangles, const repo::lib::RepoBounds& bounds)
+{
+	// These next snippets ensure the problem is within the bounds, as the
+	// construction above does not guarantee this.
+
+	repo::lib::RepoBounds bb = {
+		triangles.first.a,
+		triangles.first.b,
+		triangles.first.c,
+		triangles.second.a,
+		triangles.second.b,
+		triangles.second.c
+	};
+
+	triangles.first = repo::lib::RepoMatrix::translate(-bb.center()) * triangles.first;
+	triangles.second = repo::lib::RepoMatrix::translate(-bb.center()) * triangles.second;
+
+	bb = {
+		triangles.first.a,
+		triangles.first.b,
+		triangles.first.c,
+		triangles.second.a,
+		triangles.second.b,
+		triangles.second.c
+	};
+
+	auto s = (bb.size() / bounds.size()) * 1.0001;
+	auto m = std::max({ 1.0, std::abs(s.x), std::abs(s.y), std::abs(s.z) });
+	auto scale = repo::lib::RepoMatrix::scale(1 / m);
+
+	triangles.first = scale * triangles.first;
+	triangles.second = scale * triangles.second;
+}
+
+void testing::ClashGenerator::moveToPlane(repo::lib::RepoTriangle& triangle,
+	const repo::lib::RepoVector3D64& n
+) {
+	auto d = std::min({
+		n.dotProduct(triangle.a),
+		n.dotProduct(triangle.b),
+		n.dotProduct(triangle.c)
+		}
+	);
+
+	triangle.a += n * -d;
+	triangle.b += n * -d;
+	triangle.c += n * -d;
+
+	if (n.dotProduct(triangle.b) < n.dotProduct(triangle.a)) {
+		std::swap(triangle.a, triangle.b);
+	}
+
+	if (n.dotProduct(triangle.c) < n.dotProduct(triangle.a)) {
+		std::swap(triangle.a, triangle.c);
+	}
+}
+
 TrianglePair ClashGenerator::applyTransforms(TransformTriangles& problem)
 {
 	return {
@@ -394,33 +451,50 @@ TransformTriangles testing::ClashGenerator::createTrianglesTransformed(
 
 TransformTriangles testing::ClashGenerator::createTrianglesVV(const repo::lib::RepoBounds& bounds)
 {
-	// Create two triangles which meet at the origin at vertex zero.
-
-	auto d = random.number(distance);
-	auto margin = d + d * std::min(size1.min(), size2.min());
+	// Create two random triangles
 
 	repo::lib::RepoTriangle a(
-		repo::lib::RepoVector3D64(0, 0, 0),
-		random.vector({ -margin, -size1.max() }, { -size1.max(), size1.max() }, { -size1.max(), size1.max() }),
-		random.vector({ -margin, -size1.max() }, { -size1.max(), size1.max() }, { -size1.max(), size1.max() })
+		random.vector(size1),
+		random.vector(size1),
+		random.vector(size1)
 	);
-
-	// Create b slightly smaller as it will be moved by d
 
 	repo::lib::RepoTriangle b(
-		repo::lib::RepoVector3D64(0, 0, 0),
-		random.vector({ margin, size2.max() - margin }, { -size2.max(), size2.max() - margin }, { -size2.max(), size2.max() - margin }),
-		random.vector({ margin, size2.max() - margin }, { -size2.max(), size2.max() - margin }, { -size2.max(), size2.max() - margin })
+		random.vector(size2),
+		random.vector(size2),
+		random.vector(size2)
 	);
 
-	// Separate the triangles by d
+	// Pick a random hyperplane and force the triangles to exist on either side of it
 
-	b += repo::lib::RepoVector3D64(d, 0, 0);
+	auto n = random.direction();
+
+	moveToPlane(a, n);
+	moveToPlane(b, -n);
+
+	// Make two vertices coincident
+
+	auto da = b.a - a.a;
+
+	a.a += da;
+	a.b += da;
+	a.c += da;
+
+	// Separate the triangles
+	// (Shift a, because that is on the positive side of the plane)
+
+	auto d = random.number(distance);
+
+	a.a += n * d;
+	a.b += n * d;
+	a.c += n * d;
+
+	scaleToBounds({ a, b }, bounds);
+
+	TransformTriangles problem({ a, RepoMatrix() }, { b, RepoMatrix() });
 
 	shiftTriangles(a);
 	shiftTriangles(b);
-
-	TransformTriangles problem({ a, RepoMatrix() }, { b, RepoMatrix() });
 
 	moveB(problem, size2);
 	moveProblem(problem, size2);
@@ -694,20 +768,7 @@ TransformTriangles testing::ClashGenerator::createTrianglesFF(const repo::lib::R
 
 	shiftTriangles(b);
 
-	// These next snippets ensure the problem is within the bounds, as the
-	// construction above does not guarantee this.
-
-	auto bb = repo::lib::RepoBounds({ a.a, a.b, a.c, b.a, b.b, b.c });
-	a = repo::lib::RepoMatrix::translate(-bb.center()) * a;
-	b = repo::lib::RepoMatrix::translate(-bb.center()) * b;
-
-	bb = repo::lib::RepoBounds({ a.a, a.b, a.c, b.a, b.b, b.c });
-	auto s = (bb.size() / bounds.size()) * 1.0001;
-	auto m = std::max({ 1.0, std::abs(s.x), std::abs(s.y), std::abs(s.z) });
-	auto scale = repo::lib::RepoMatrix::scale(1 / m);
-
-	a = scale * a;
-	b = scale * b;
+	scaleToBounds({ a, b }, bounds);
 
 	TransformTriangles problem({ a, RepoMatrix() }, { b, RepoMatrix() });
 
@@ -870,4 +931,32 @@ repo::lib::RepoBounds CellDistribution::sample()
 			return getBounds(cell);
 		}
 	}
+}
+
+SimpleObjWriter::SimpleObjWriter(std::string filename) : file(filename) {
+	file << std::setprecision(std::numeric_limits<double>::max_digits10);
+}
+
+void SimpleObjWriter::write(const repo::lib::RepoTriangle& triangle) {
+	file << "o Triangle\n";
+	file << "v " << triangle.a.x << " " << triangle.a.y << " " << triangle.a.z << "\n";
+	file << "v " << triangle.b.x << " " << triangle.b.y << " " << triangle.b.z << "\n";
+	file << "v " << triangle.c.x << " " << triangle.c.y << " " << triangle.c.z << "\n";
+	file << "f ";
+	file << vertexCounter++ << " ";
+	file << vertexCounter++ << " ";
+	file << vertexCounter++ << "\n";
+}
+
+void SimpleObjWriter::write(const repo::lib::RepoLine& line) {
+	file << "o Line\n";
+	file << "v " << line.start.x << " " << line.start.y << " " << line.start.z << "\n";
+	file << "v " << line.end.x << " " << line.end.y << " " << line.end.z << "\n";
+	file << "l ";
+	file << vertexCounter++ << " ";
+	file << vertexCounter++ << "\n";
+}
+
+SimpleObjWriter::~SimpleObjWriter() {
+	file.close();
 }

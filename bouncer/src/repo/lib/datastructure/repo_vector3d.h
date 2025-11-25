@@ -108,6 +108,13 @@ namespace repo{
 				}
 			}
 
+			_RepoVector3D<T> normalized() const
+			{
+				auto r = *this;
+				r.normalize();
+				return r;
+			}
+
 			T norm() const
 			{
 				return std::sqrt(norm2());

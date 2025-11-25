@@ -31,7 +31,7 @@ static const repo::lib::RepoVector3D64 axes[] = {
     repo::lib::RepoVector3D64(0.0, 0.0, 1.0),
 };
 
-Vector3 geometry::closestPointTriangle(const Vector3& p, const repo::lib::RepoTriangle& T)
+Vector3 geometry::closestPoint(const Vector3& p, const repo::lib::RepoTriangle& T)
 {
     // Ericson, C. (2004). Real-Time Collision Detection.CRC Press.
 
@@ -89,12 +89,12 @@ Vector3 geometry::closestPointTriangle(const Vector3& p, const repo::lib::RepoTr
     return T.a + ab * v + ac * w;
 }
 
-repo::lib::RepoLine geometry::closestPointPointTriangle(const Vector3& p, const repo::lib::RepoTriangle& T)
+repo::lib::RepoLine geometry::closestPoints(const Vector3& p, const repo::lib::RepoTriangle& T)
 {
-    return { p, closestPointTriangle(p, T) };
+    return { p, closestPoint(p, T) };
 }
 
-repo::lib::RepoLine geometry::closestPointLineLine(const repo::lib::RepoLine& A, const repo::lib::RepoLine& B)
+repo::lib::RepoLine geometry::closestPoints(const repo::lib::RepoLine& A, const repo::lib::RepoLine& B)
 {
     // Ericson, C. (2004). Real-Time Collision Detection. CRC Press.
 
@@ -205,7 +205,7 @@ repo::lib::RepoLine lineFaceIntersection(const repo::lib::RepoLine& B, const rep
     }
 }
 
-repo::lib::RepoLine geometry::closestPointTriangleTriangle(const repo::lib::RepoTriangle& A, const repo::lib::RepoTriangle& B)
+repo::lib::RepoLine geometry::closestPoints(const repo::lib::RepoTriangle& A, const repo::lib::RepoTriangle& B)
 {
     // Ericson, C. (2004). Real-Time Collision Detection. CRC Press.
 
@@ -218,23 +218,23 @@ repo::lib::RepoLine geometry::closestPointTriangleTriangle(const repo::lib::Repo
 
     repo::lib::RepoLine results[15];
 
-    results[0] = closestPointLineLine(Ea1, Eb1);
-    results[1] = closestPointLineLine(Ea1, Eb2);
-    results[2] = closestPointLineLine(Ea1, Eb3);
-    results[3] = closestPointLineLine(Ea2, Eb1);
-    results[4] = closestPointLineLine(Ea2, Eb2);
-    results[5] = closestPointLineLine(Ea2, Eb3);
-    results[6] = closestPointLineLine(Ea3, Eb1);
-    results[7] = closestPointLineLine(Ea3, Eb2);
-    results[8] = closestPointLineLine(Ea3, Eb3);
+    results[0] = closestPoints(Ea1, Eb1);
+    results[1] = closestPoints(Ea1, Eb2);
+    results[2] = closestPoints(Ea1, Eb3);
+    results[3] = closestPoints(Ea2, Eb1);
+    results[4] = closestPoints(Ea2, Eb2);
+    results[5] = closestPoints(Ea2, Eb3);
+    results[6] = closestPoints(Ea3, Eb1);
+    results[7] = closestPoints(Ea3, Eb2);
+    results[8] = closestPoints(Ea3, Eb3);
 
-    results[9] = closestPointPointTriangle(A.a, B);
-    results[10] = closestPointPointTriangle(A.b, B);
-    results[11] = closestPointPointTriangle(A.c, B);
+    results[9] =  closestPoints(A.a, B);
+    results[10] = closestPoints(A.b, B);
+    results[11] = closestPoints(A.c, B);
 
-    results[12] = closestPointPointTriangle(B.a, A);
-    results[13] = closestPointPointTriangle(B.b, A);
-    results[14] = closestPointPointTriangle(B.c, A);
+    results[12] = closestPoints(B.a, A);
+    results[13] = closestPoints(B.b, A);
+    results[14] = closestPoints(B.c, A);
 
     repo::lib::RepoVector3D64 p;
 	auto i = intersects(A, B, &p);
@@ -254,6 +254,8 @@ repo::lib::RepoLine geometry::closestPointTriangleTriangle(const repo::lib::Repo
         {
             min = results[i];
 
+            // This ensures the method always returns the point on A in start,
+            // and on B in end
             if (i > 11) {
 				std::swap(min.start, min.end);
             }
@@ -423,7 +425,8 @@ double checkMinMax(
 	}
 
     if (ip) {
-		*ip = i + L * std::max((kk + jj) * 0.5, (ii + ll) * 0.5);
+        auto t = std::max(ii, kk) + ((std::min(jj, ll) - std::max(ii, kk)) * 0.5);
+		*ip = i + L * t;
 	}
 
     // This next snippet works out the minimum distance to move normal to the
@@ -568,4 +571,53 @@ double geometry::intersects(const repo::lib::RepoTriangle& A, const repo::lib::R
 
 #undef PERMUTE2
 #undef INTERSECT
+}
+
+repo::lib::RepoLine geometry::closestPoints(
+    const repo::lib::RepoBounds& a, 
+    const repo::lib::RepoBounds& b)
+{
+    repo::lib::RepoVector3D64 _a;
+	repo::lib::RepoVector3D64 _b;
+
+    if (a.min().x >= b.max().x) {
+		_a.x = a.min().x;
+        _b.x = b.max().x;
+    }
+    else if (b.min().x >= a.max().x) {
+        _a.x = a.max().x;
+		_b.x = b.min().x;
+    }
+    else {
+		_a.x = (std::max(a.min().x, b.min().x) + std::min(a.max().x, b.max().x)) * 0.5;
+        _b.x = _a.x;
+    }
+
+    if (a.min().y >= b.max().y) {
+        _a.y = a.min().y;
+        _b.y = b.max().y;
+    }
+    else if (b.min().y >= a.max().y) {
+        _a.y = a.max().y;
+        _b.y = b.min().y;
+    }
+    else {
+        _a.y = (std::max(a.min().y, b.min().y) + std::min(a.max().y, b.max().y)) * 0.5;
+        _b.y = _a.y;
+    }
+
+    if (a.min().z >= b.max().z) {
+        _a.z = a.min().z;
+        _b.z = b.max().z;
+    }
+    else if (b.min().z >= a.max().z) {
+        _a.z = a.max().z;
+        _b.z = b.min().z;
+    }
+    else {
+        _a.z = (std::max(a.min().z, b.min().z) + std::min(a.max().z, b.max().z)) * 0.5;
+        _b.z = _a.z;
+    }
+
+	return { _a, _b };
 }

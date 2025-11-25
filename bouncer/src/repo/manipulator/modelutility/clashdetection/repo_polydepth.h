@@ -92,8 +92,8 @@ namespace geometry {
 		Bvh bvhA;
 		Bvh bvhB;
 
-		repo::lib::RepoMatrix qt;
-		repo::lib::RepoMatrix qs;
+		repo::lib::RepoVector3D64 qt;
+		repo::lib::RepoVector3D64 qs;
 
 		void findInitialFreeConfiguration();
 
@@ -103,20 +103,28 @@ namespace geometry {
 		* contact between a and b. The returned transformation will be a linear
 		* interpolation between q0 and q1.
 		*/
-		repo::lib::RepoMatrix ccd(const repo::lib::RepoMatrix& q0, const repo::lib::RepoMatrix& q1);
+		repo::lib::RepoVector3D64 ccd(const repo::lib::RepoVector3D64& q0, const repo::lib::RepoVector3D64& q1);
 
 		/*
 		* Returns the minimum distance between a and b, where a is transformed by q.
 		* If the meshes are intersecting, the returned distance will be 0.
 		*/
-		double distance(const repo::lib::RepoMatrix& q);
+		double distance(const repo::lib::RepoVector3D64& q);
 
 		/*
 		* Tests for intersection between a transformed by m, and b. This will modify the BVHs.
 		* The contact patches will be stored in contacts.
 		*/
 		Collision intersect(
-			const repo::lib::RepoMatrix& m
+			const repo::lib::RepoVector3D64& m
+		);
+
+		/*
+		* Projects m onto the local contact space defined by the planes in the
+		* contacts vector.
+		*/
+		repo::lib::RepoVector3D64 project(
+			const repo::lib::RepoVector3D64& m
 		);
 
 		struct Contact {

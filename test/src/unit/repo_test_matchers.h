@@ -372,3 +372,28 @@ namespace repo {
 bool operator== (tm a, tm b);
 
 void operator<< (std::basic_ostream<char, std::char_traits<char>>& out, tm a);
+
+
+// This define is used in place of EXPECT_THAT to conditionally execute the subsequent
+// statement on a failure. This is useful for debugging the unit tests.
+// For example, the statement:
+//
+// EXPECT_THAT(1.0, Eq(2.0));
+//
+// Could become
+//
+// REPO_EXPECT_THAT(1.0, Eq(2.0)) std::cout << "Test failed";
+//
+// Or:
+//
+//	REPO_EXPECT_THAT(1.0, Eq(2.0)) {
+//		std::cout << "Test failed";
+//		FAIL();
+//	}
+//
+// Be mindful to remove the trailing semicolon of the original statement when
+// using this macro, as this will otherwise terminate the if statement and the
+// conditional block will always run.
+
+#define REPO_EXPECT_THAT(value, matcher) \
+	if(!::testing::internal::MakePredicateFormatterFromMatcher(matcher)(#value, value))

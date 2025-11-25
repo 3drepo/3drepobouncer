@@ -68,7 +68,7 @@ TEST(Geometry, LineLineDistanceUnit)
 				p.b.m * p.b.e.end
 			);
 
-			auto line = geometry::closestPointLineLine(a, b);
+			auto line = geometry::closestPoints(a, b);
 			auto m = line.magnitude();
 			auto e = abs(m - d);
 
@@ -99,7 +99,7 @@ TEST(Geometry, TrianglesUnitVV)
 
 			auto [a, b] = ClashGenerator::applyTransforms(p);
 
-			auto line = geometry::closestPointTriangleTriangle(a, b);
+			auto line = geometry::closestPoints(a, b);
 			auto m = line.magnitude();
 			auto e = abs(m - d);
 
@@ -125,13 +125,13 @@ TEST(Geometry, TrianglesUnitVE)
 	for (auto d : distances) {
 		clashGenerator.distance = d;
 
-		for (int i = 0; i < 100000; ++i) {
+		for (int i = 0; i < 1000000; ++i) {
 
 			auto p = clashGenerator.createTrianglesVE(space.sample());
 
 			auto [a, b] = ClashGenerator::applyTransforms(p);
 
-			auto line = geometry::closestPointTriangleTriangle(a, b);
+			auto line = geometry::closestPoints(a, b);
 			auto m = line.magnitude();
 			auto e = abs(m - d);
 
@@ -166,7 +166,7 @@ TEST(Geometry, TrianglesUnitEE)
 
 			auto [a, b] = ClashGenerator::applyTransforms(p);
 
-			auto line = geometry::closestPointTriangleTriangle(a, b);
+			auto line = geometry::closestPoints(a, b);
 			auto m = line.magnitude();
 			auto e = abs(m - d);
 
@@ -193,7 +193,7 @@ TEST(Geometry, TrianglesUnitVF)
 
 			auto [a, b] = ClashGenerator::applyTransforms(p);
 
-			auto line = geometry::closestPointTriangleTriangle(a, b);
+			auto line = geometry::closestPoints(a, b);
 			auto m = line.magnitude();
 			auto e = abs(m - d);
 
@@ -219,7 +219,7 @@ TEST(Geometry, TrianglesUnitFE)
 
 		auto [a, b] = ClashGenerator::applyTransforms(p);
 
-		auto line = geometry::closestPointTriangleTriangle(a, b);
+		auto line = geometry::closestPoints(a, b);
 		auto m = line.magnitude();
 
 		EXPECT_THAT(m, Lt(1.0));
@@ -370,24 +370,6 @@ TEST(Geometry, Orient3D)
 	}
 }
 
-void printTriangle(const repo::lib::RepoTriangle& t)
-{
-	std::cout << std::fixed << std::setprecision(std::numeric_limits<double>::max_digits10);
-	std::cout << "Polygon({("
-		<< t.a.x << ", " << t.a.y << ", " << t.a.z << "), ("
-		<< t.b.x << ", " << t.b.y << ", " << t.b.z << "), ("
-		<< t.c.x << ", " << t.c.y << ", " << t.c.z << ")})" << std::endl;
-}
-
-
-void shift(repo::lib::RepoTriangle& b)
-{
-	auto t = b.a;
-	b.a = b.b;
-	b.b = b.c;
-	b.c = t;
-}
-
 TEST(Geometry, TriangleTriangleIntersects1)
 {
 	CellDistribution space;
@@ -422,6 +404,13 @@ TEST(Geometry, TriangleTriangleIntersects1)
 	}
 
 	clashGenerator.distance = { -1, -1 };
+
+	auto shift = [](repo::lib::RepoTriangle& b) {
+		auto t = b.a;
+		b.a = b.b;
+		b.b = b.c;
+		b.c = t;
+	};
 
 	// intersects method should be invariant to all permutations of the
 	// triangle vertices, including winding order, as well as the order
@@ -585,7 +574,6 @@ TEST(Geometry, TriangleTriangleIntersects2)
 
 			EXPECT_THAT(d, DoubleNear(expected, ClashGenerator::suggestTolerance({ a, b })));
 		}
-		
 	}
 }
 
@@ -613,7 +601,7 @@ TEST(Geometry, CoplanarityThreshold)
 		// of algorithms, so we test it in that context: triangles are positioned
 		// into what should be the closest we can get to an in-contact state.
 
-		auto line = geometry::closestPointTriangleTriangle(a, b);
+		auto line = geometry::closestPoints(a, b);
 		a = repo::lib::RepoMatrix::translate(line.end - line.start) * a;
 
 		auto i = geometry::intersects(a, b);
@@ -632,5 +620,114 @@ TEST(Geometry, CoplanarityThreshold)
 		// accuracy guarantees.
 
 		EXPECT_THAT(th, Lt(1.0));
+	}
+}
+
+TEST(Geometry, ClosestPointBoundsBounds)
+{
+	const repo::lib::RepoBounds _a(
+		repo::lib::RepoVector3D64(-1, -1, -1),
+		repo::lib::RepoVector3D64(1, 1, 1)
+	);
+
+	{
+		// Identical bounds
+
+		auto a = _a;
+		auto b = a;
+
+		auto line = geometry::closestPoints(a, b);
+		EXPECT_THAT(line.magnitude(), DoubleEq(0));
+		EXPECT_THAT(a.contains(line.start), IsTrue());
+	}
+
+	{
+		// Overlapping
+
+		auto a = _a;
+		auto b = repo::lib::RepoMatrix::scale(2.0f) * a;
+
+		auto line = geometry::closestPoints(a, b);
+		EXPECT_THAT(line.magnitude(), DoubleEq(0));
+		EXPECT_THAT(a.contains(line.start), IsTrue());
+
+		std::swap(a, b);
+
+		line = geometry::closestPoints(a, b);
+		EXPECT_THAT(line.magnitude(), DoubleEq(0));
+		EXPECT_THAT(a.contains(line.start), IsTrue());
+	}
+
+	{
+		// Partial overlap
+
+		auto a = _a;
+		auto b = repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(1, 1, 1)) * a;
+
+		auto line = geometry::closestPoints(a, b);
+		EXPECT_THAT(line.magnitude(), DoubleEq(0));
+		EXPECT_THAT(a.contains(line.start), IsTrue());
+
+		std::swap(a, b);
+
+		line = geometry::closestPoints(a, b);
+		EXPECT_THAT(line.magnitude(), DoubleEq(0));
+		EXPECT_THAT(a.contains(line.start), IsTrue());
+	}
+
+	{
+		// Separated (all axes)
+		auto a = _a;
+		auto b = repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(3, 3, 3)) * a;
+
+		auto line = geometry::closestPoints(a, b);
+		EXPECT_THAT(line.magnitude(), DoubleEq(std::sqrt(3.0)));
+		EXPECT_THAT(a.contains(line.start), IsTrue());
+		EXPECT_THAT(b.contains(line.end), IsTrue());
+
+		std::swap(a, b);
+
+		line = geometry::closestPoints(a, b);
+		EXPECT_THAT(line.magnitude(), DoubleEq(std::sqrt(3.0)));
+		EXPECT_THAT(a.contains(line.start), IsTrue());
+		EXPECT_THAT(b.contains(line.end), IsTrue());
+	}
+
+	{
+		// Separated (one axis)
+
+		auto a = _a;
+		auto b = repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(5, 0, 0)) * a;
+
+		auto line = geometry::closestPoints(a, b);
+		EXPECT_THAT(line.magnitude(), DoubleEq(3.0));
+		EXPECT_THAT(a.contains(line.start), IsTrue());
+		EXPECT_THAT(b.contains(line.end), IsTrue());
+
+		std::swap(a, b);
+
+		line = geometry::closestPoints(a, b);
+		EXPECT_THAT(line.magnitude(), DoubleEq(3.0));
+		EXPECT_THAT(a.contains(line.start), IsTrue());
+		EXPECT_THAT(b.contains(line.end), IsTrue());
+	}
+
+	{
+		// Separated (one axis)
+
+		auto a = _a;
+		auto b = repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(0, 5, 0)) * a;
+
+		auto line = geometry::closestPoints(a, b);
+		EXPECT_THAT(line.magnitude(), DoubleEq(3.0));
+		EXPECT_THAT(a.contains(line.start), IsTrue());
+		EXPECT_THAT(b.contains(line.end), IsTrue());
+
+		std::swap(a, b);
+
+		line = geometry::closestPoints(a, b);
+		EXPECT_THAT(line.magnitude(), DoubleEq(3.0));
+		EXPECT_THAT(a.contains(line.start), IsTrue());
+		EXPECT_THAT(b.contains(line.end), IsTrue());
 	}
 }

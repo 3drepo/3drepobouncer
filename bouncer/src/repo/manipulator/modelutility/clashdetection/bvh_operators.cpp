@@ -19,92 +19,7 @@
 
 using namespace bvh;
 
-static bvh::BoundingBox<double> overlap(const bvh::BoundingBox<double>& a, const bvh::BoundingBox<double>& b)
-{
-	bvh::BoundingBox<double> result;
-	result.min = {
-		std::max(a.min[0], b.min[0]),
-		std::max(a.min[1], b.min[1]),
-		std::max(a.min[2], b.min[2])
-	};
-	result.max = {
-		std::min(a.max[0], b.max[0]),
-		std::min(a.max[1], b.max[1]),
-		std::min(a.max[2], b.max[2])
-	};
-	return result;
-}
-
-static double distance2(const bvh::BoundingBox<double>& a, const bvh::BoundingBox<double>& b)
-{
-	auto ib = overlap(a, b);
-	double sq = 0.0;
-	for (auto i = 0; i < 3; ++i) {
-		if (ib.min[i] > ib.max[i]) {
-			sq += std::pow(ib.min[i] - ib.max[i], 2);
-		}
-	}
-	return sq;
-}
-
-static bool intersects(const bvh::BoundingBox<double>& a, const bvh::BoundingBox<double>& b)
-{
-	return 
-		a.min[0] <= b.max[0] && a.max[0] >= b.min[0] &&
-		a.min[1] <= b.max[1] && a.max[1] >= b.min[1] &&
-		a.min[2] <= b.max[2] && a.max[2] >= b.min[2];
-}
-
-void DistanceQuery::operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double>& b)
-{
-	std::stack<std::pair<size_t, size_t>> pairs;
-	pairs.push({ 0, 0 });
-	while (!pairs.empty())
-	{
-		auto [idxLeft, idxRight] = pairs.top();
-		pairs.pop();
-
-		auto& left = a.nodes[idxLeft];
-		auto& right = b.nodes[idxRight];
-
-		auto mds = distance2(left.bounding_box_proxy(), right.bounding_box_proxy());
-		if (mds > (d * d))
-		{
-			continue; // No two primitives in left and right can modify the current distance.
-		}
-
-		if (left.is_leaf() && right.is_leaf())
-		{
-			for (size_t l = 0; l < left.primitive_count; l++) {
-				for (size_t r = 0; r < right.primitive_count; r++) {
-					intersect(
-						a.primitive_indices[left.first_child_or_primitive + l],
-						b.primitive_indices[right.first_child_or_primitive + r]
-					);
-				}
-			}
-		}
-		else if (left.is_leaf() && !right.is_leaf())
-		{
-			pairs.push({ idxLeft, right.first_child_or_primitive + 0 });
-			pairs.push({ idxLeft, right.first_child_or_primitive + 1 });
-		}
-		else if (!left.is_leaf() && right.is_leaf())
-		{
-			pairs.push({ left.first_child_or_primitive + 0, idxRight });
-			pairs.push({ left.first_child_or_primitive + 1, idxRight });
-		}
-		else
-		{
-			pairs.push({ left.first_child_or_primitive + 0, right.first_child_or_primitive + 0 });
-			pairs.push({ left.first_child_or_primitive + 0, right.first_child_or_primitive + 1 });
-			pairs.push({ left.first_child_or_primitive + 1, right.first_child_or_primitive + 0 });
-			pairs.push({ left.first_child_or_primitive + 1, right.first_child_or_primitive + 1 });
-		}
-	}
-}
-
-void IntersectQuery::operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double>& b)
+void Traversal::operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double>& b)
 {
 	std::stack<std::pair<size_t, size_t>> pairs;
 	pairs.push({ 0, 0 });
@@ -121,7 +36,7 @@ void IntersectQuery::operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double
 		// intersect by a non-trivial amount that can be found during resolution
 		// stage.
 
-		if (!intersects(left.bounding_box_proxy(), right.bounding_box_proxy())) {
+		if (!intersect(left, right)) {
 			continue;
 		}
 
@@ -154,4 +69,57 @@ void IntersectQuery::operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double
 			pairs.push({ left.first_child_or_primitive + 1, right.first_child_or_primitive + 1 });
 		}
 	}
+}
+
+static bvh::BoundingBox<double> overlap(const bvh::BoundingBox<double>& a, const bvh::BoundingBox<double>& b)
+{
+	bvh::BoundingBox<double> result;
+	result.min = {
+		std::max(a.min[0], b.min[0]),
+		std::max(a.min[1], b.min[1]),
+		std::max(a.min[2], b.min[2])
+	};
+	result.max = {
+		std::min(a.max[0], b.max[0]),
+		std::min(a.max[1], b.max[1]),
+		std::min(a.max[2], b.max[2])
+	};
+	return result;
+}
+
+static double distance2(const bvh::BoundingBox<double>& a, const bvh::BoundingBox<double>& b)
+{
+	auto ib = overlap(a, b);
+	double sq = 0.0;
+	for (auto i = 0; i < 3; ++i) {
+		if (ib.min[i] > ib.max[i]) {
+			sq += std::pow(ib.min[i] - ib.max[i], 2);
+		}
+	}
+	return sq;
+}
+
+bool bvh::predicates::intersects(
+	const bvh::Bvh<double>::Node& a,
+	const bvh::Bvh<double>::Node& b)
+{
+	return
+		a.bounds[0] <= b.bounds[1] && a.bounds[1] >= b.bounds[0] &&
+		a.bounds[2] <= b.bounds[3] && a.bounds[3] >= b.bounds[2] &&
+		a.bounds[4] <= b.bounds[5] && a.bounds[5] >= b.bounds[4];
+}
+
+bool DistanceQuery::intersect(
+	const bvh::Bvh<double>::Node& a,
+	const bvh::Bvh<double>::Node& b)
+{
+	auto mds = distance2(a.bounding_box_proxy(), b.bounding_box_proxy());
+	return mds <= (d * d); // True if two primitives in a and b have the potential to modify the current distance.
+}
+
+bool IntersectQuery::intersect(
+	const bvh::Bvh<double>::Node& a,
+	const bvh::Bvh<double>::Node& b)
+{
+	return predicates::intersects(a, b);
 }

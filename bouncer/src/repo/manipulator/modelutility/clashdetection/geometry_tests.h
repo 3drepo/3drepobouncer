@@ -23,11 +23,11 @@
 
 namespace geometry {
 
-    repo::lib::RepoVector3D64 closestPointTriangle(const repo::lib::RepoVector3D64& p, const repo::lib::RepoTriangle& T);
+    repo::lib::RepoVector3D64 closestPoint(const repo::lib::RepoVector3D64& p, const repo::lib::RepoTriangle& T);
     
-    repo::lib::RepoLine closestPointPointTriangle(const repo::lib::RepoVector3D64& p, const repo::lib::RepoTriangle& T);
+    repo::lib::RepoLine closestPoints(const repo::lib::RepoVector3D64& p, const repo::lib::RepoTriangle& T);
 
-    repo::lib::RepoLine closestPointLineLine(const repo::lib::RepoLine& A, const repo::lib::RepoLine& B);
+    repo::lib::RepoLine closestPoints(const repo::lib::RepoLine& A, const repo::lib::RepoLine& B);
 
     /*
     * Given two Triangles, A & B, return a Line that connects the A and B at
@@ -35,7 +35,15 @@ namespace geometry {
     * moving A by that line will bring the two triangles into contact. If the
     * triangles are co-planar, will return a zero-length line.
     */
-    repo::lib::RepoLine closestPointTriangleTriangle(const repo::lib::RepoTriangle& A, const repo::lib::RepoTriangle& B);
+    repo::lib::RepoLine closestPoints(const repo::lib::RepoTriangle& A, const repo::lib::RepoTriangle& B);
+
+    /*
+	* Given two AABBs, return a Line that connects them at their closest points.
+	* The line starts on A and ends on B; moving A by that line will bring the
+    * two AABBs into contact. If the bounds overlap, the line will be zero-length
+    * and begin and end at an arbitrary point within the overlapping volume.
+    */
+	repo::lib::RepoLine closestPoints(const repo::lib::RepoBounds& a, const repo::lib::RepoBounds& b);
 
     /*
     * Orient predicate in 3D - this returns whether point d is above, below or
