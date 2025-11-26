@@ -378,11 +378,11 @@ void operator<< (std::basic_ostream<char, std::char_traits<char>>& out, tm a);
 // statement on a failure. This is useful for debugging the unit tests.
 // For example, the statement:
 //
-// EXPECT_THAT(1.0, Eq(2.0));
+//  EXPECT_THAT(1.0, Eq(2.0));
 //
 // Could become
 //
-// REPO_EXPECT_THAT(1.0, Eq(2.0)) std::cout << "Test failed";
+//  REPO_EXPECT_THAT(1.0, Eq(2.0)) std::cout << "Test failed";
 //
 // Or:
 //
@@ -392,7 +392,7 @@ void operator<< (std::basic_ostream<char, std::char_traits<char>>& out, tm a);
 //	}
 //
 // Be mindful to remove the trailing semicolon of the original statement when
-// using this macro, as this will otherwise terminate the if statement and the
+// using this macro, as this will otherwise terminate the if-statement and the
 // conditional block will always run.
 
 #define REPO_EXPECT_THAT(value, matcher) \
