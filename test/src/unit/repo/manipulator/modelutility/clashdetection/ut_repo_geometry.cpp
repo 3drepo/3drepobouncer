@@ -601,17 +601,22 @@ TEST(Geometry, CoplanarityThreshold)
 		// of algorithms, so we test it in that context: triangles are positioned
 		// into what should be the closest we can get to an in-contact state.
 
-		auto line = geometry::closestPoints(a, b);
-		a = repo::lib::RepoMatrix::translate(line.end - line.start) * a;
-
-		auto i = geometry::intersects(a, b);
 		auto th = geometry::coplanarityThreshold(a, b);
+
+		auto line = geometry::closestPoints(a, b);
+		a = a + (line.end - line.start);
 
 		// The threshold is used to turn the intersects measure into a binary decision
 		// between in-contact and in-collision. As algorithm logic relies on this being
 		// robust, it should never fail.
 
+		auto i = geometry::intersects(a, b);
 		EXPECT_THAT(i, Le(th));
+
+		// Transforming a by d should produce intersecting triangles within the range.
+
+		auto d = geometry::closestPoints(a, b).magnitude();
+		EXPECT_THAT(d, Le(th));
 
 		// The threshold should be suitably small to avoid false positives, though
 		// what is positive is rather subjective.
@@ -730,4 +735,188 @@ TEST(Geometry, ClosestPointBoundsBounds)
 		EXPECT_THAT(a.contains(line.start), IsTrue());
 		EXPECT_THAT(b.contains(line.end), IsTrue());
 	}
+}
+
+TEST(Geometry, TimeOfContactBounds)
+{
+	const repo::lib::RepoBounds a(
+		repo::lib::RepoVector3D64(-0.5, -0.5, -0.5),
+		repo::lib::RepoVector3D64(0.5, 0.5, 0.5)
+	);
+
+	auto b = a;
+
+	{
+		// Bounds are already in-contact
+		auto tau = geometry::timeOfContact(
+			a,
+			b,
+			repo::lib::RepoVector3D64(1,0,0)
+		);
+		EXPECT_THAT(tau, DoubleEq(0.0));
+	}
+
+	{
+		// Bounds will come into contact at the end of d
+		auto tau = geometry::timeOfContact(
+			repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(-5, 0, 0)) * a,
+			b,
+			repo::lib::RepoVector3D64(1, 0, 0)
+		);
+		EXPECT_THAT(tau, DoubleEq(4.0));
+	}
+
+	{
+		// Increasing the velocity will proportionally decrease the time
+		auto tau = geometry::timeOfContact(
+			repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(-5, 0, 0)) * a,
+			b,
+			repo::lib::RepoVector3D64(2, 0, 0)
+		);
+		EXPECT_THAT(tau, DoubleEq(2.0));
+	}
+
+	{
+		// Bounds will not come into contact because they will be missed
+		auto tau = geometry::timeOfContact(
+			repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(-5, 2, 0)) * a,
+			b,
+			repo::lib::RepoVector3D64(5, 0, 0)
+		);
+		EXPECT_THAT(tau, DoubleEq(std::numeric_limits<double>::infinity()));
+	}
+
+	{
+		// Bounds will not come into contact because b starts behind a
+		auto tau = geometry::timeOfContact(
+			repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(5, 2, 0)) * a,
+			b,
+			repo::lib::RepoVector3D64(1, 0, 0)
+		);
+		EXPECT_THAT(tau, DoubleEq(std::numeric_limits<double>::infinity()));
+	}
+}
+
+#pragma optimize("", off)
+
+TEST(Geometry, TimeOfContactTriangles)
+{
+	ClashGenerator clashGenerator;
+
+	auto a = repo::lib::RepoTriangle(
+		clashGenerator.random.vector(clashGenerator.size1),
+		clashGenerator.random.vector(clashGenerator.size1),
+		clashGenerator.random.vector(clashGenerator.size1)
+	);
+
+	auto b = a;
+
+	{
+		// Triangles are already in-contact
+		auto tau = geometry::timeOfContact(
+			a,
+			b,
+			repo::lib::RepoVector3D64(1, 0, 0)
+		);
+		EXPECT_THAT(tau, DoubleEq(0.0));
+	}
+
+	{
+		// Triangles will come into contact at the end of d (face to face)
+		auto n = a.normal();
+		auto tau = geometry::timeOfContact(
+			repo::lib::RepoMatrix::translate(-n * 5) * a,
+			b,
+			n
+		);
+		EXPECT_THAT(tau, DoubleEq(5.0));
+	}
+	
+	{
+		// Increasing the velocity will proportionally decrease the time
+		auto n = a.normal();
+		auto tau = geometry::timeOfContact(
+			repo::lib::RepoMatrix::translate(-n * 5) * a,
+			b,
+			n * 2.5
+		);
+		EXPECT_THAT(tau, DoubleEq(2));
+	}
+
+	{
+		// Triangles will not come into contact because b starts behind a
+		auto n = a.normal();
+		auto tau = geometry::timeOfContact(
+			repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(5, 2, 0)) * a,
+			b,
+			n
+		);
+		EXPECT_THAT(tau, DoubleEq(std::numeric_limits<double>::infinity()));
+	}
+
+	for (int itr = 0; itr < 1000; itr++) {
+
+		// Triangles should come into contact at the closest feature, because we
+		// are moving by d.
+
+		clashGenerator.distance = 1.0;
+		auto p = clashGenerator.createTrianglesVV({});
+		auto [a, b] = ClashGenerator::applyTransforms(p);
+
+		a = repo::lib::RepoTriangle(
+			repo::lib::RepoVector3D64(-1275705.2419341393, -579121.95273408014, -1244448.7577389595),
+			repo::lib::RepoVector3D64(-2147447.002513051, 256287.21762438962, 1250742.5103231405),
+			repo::lib::RepoVector3D64(5270364.2330112923, 4228398.2644133903, 3448767.006123655)
+		);
+
+		b = repo::lib::RepoTriangle(
+			repo::lib::RepoVector3D64(-1275705.1795087939, -579122.93060559558, -1244448.5221643948),
+			repo::lib::RepoVector3D64(-2244509.8062919891, -702225.20483033534, -1296296.331694806),
+			repo::lib::RepoVector3D64(-5270364.2330112923, -4228398.2644133903, -3448767.0061236559)
+		);
+
+		auto L = geometry::closestPoints(a, b);
+		auto l = L.end - L.start;
+
+		auto tol = geometry::coplanarityThreshold(a, b);
+
+		auto len = l.norm();
+
+		// Bounds will not come into contact because they will be missed
+		auto tau = geometry::timeOfContact(
+			a,
+			b,
+			l.normalized(),
+			tol
+		);
+		
+		REPO_EXPECT_THAT(tau, DoubleNear(1, tol))
+		{
+			SimpleObjWriter writer("C:\\3drepo\\tmp\\TriangleVV_Failure.obj");
+			writer.write(a);
+			writer.write(b);
+			writer.write(L);
+		}
+	}
+
+	/*
+	for (int itr = 0; itr < 1000; itr++) {
+
+		clashGenerator.distance = 1.0;
+		auto p = clashGenerator.createTrianglesTransformed({});
+		auto [a, b] = ClashGenerator::applyTransforms(p);
+
+		auto L = geometry::closestPoints(a, b);
+		auto n = b.normal().dotProduct((L.end - L.start).normalized());
+
+		// Bounds will not come into contact because they will be missed
+		auto tau = geometry::timeOfContact(
+			a,
+			b,
+			n
+		);
+		EXPECT_THAT(tau, DoubleEq(std::numeric_limits<double>::infinity()));
+	}
+	*/
+
 }

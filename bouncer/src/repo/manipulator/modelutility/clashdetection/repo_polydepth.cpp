@@ -27,17 +27,6 @@ using namespace geometry;
 using Bvh = bvh::Bvh<double>;
 
 namespace {
-
-    repo::lib::RepoTriangle operator+(
-        const repo::lib::RepoTriangle& triangle,
-        const repo::lib::RepoVector3D64& v)
-    {
-        return repo::lib::RepoTriangle(
-            triangle.a + v,
-            triangle.b + v,
-            triangle.c + v);
-	}
-
     repo::lib::RepoBounds repoBounds(const bvh::Bvh<double>::Node& a) {
         return repo::lib::RepoBounds(
             repo::lib::RepoVector3D64(a.bounds[0], a.bounds[2], a.bounds[4]),
@@ -296,16 +285,28 @@ repo::lib::RepoVector3D64 RepoPolyDepth::ccd(const repo::lib::RepoVector3D64& q0
     // Both traversal operations find the minimum directional distance, which is
 	// how far along v the features can move before potentially colliding.
 
-
     bvh::traverse(bvhA, bvhB,
         [&](const bvh::Bvh<double>::Node& a, const bvh::Bvh<double>::Node& b) {
-            auto line = geometry::closestPoints(repoBounds(a), repoBounds(b));
-            auto n = line.end - line.start;
-            auto tau = v.dotProduct(n);
-            return tau <= translation.norm(); // If two BVs are separated by more than the desired translation along v, there is no way their primitives can end up in contact.
+            auto tau = geometry::timeOfContact(
+                repoBounds(a),
+                repoBounds(b),
+                v
+			);
+            return tau < translation.norm();
         },
         [&](size_t a, size_t b) {
 			auto line = geometry::closestPoints(this->a[a] + q0, this->b[b]);
+			auto n = line.end - line.start;
+			auto mu = v.dotProduct(n);
+
+            // If time-of-contact is smaller than the current contact patches,
+            // then this contact will displace them.
+
+
+
+
+
+
 
         }
     );

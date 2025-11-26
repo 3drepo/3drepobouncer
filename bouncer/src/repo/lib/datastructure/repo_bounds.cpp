@@ -142,3 +142,8 @@ REPO_API_EXPORT repo::lib::RepoBounds repo::lib::operator*(const _RepoVector3D<d
 {
 	return { bounds.min() * scalars, bounds.max() * scalars };
 }
+
+REPO_API_EXPORT repo::lib::RepoBounds repo::lib::operator+(const repo::lib::RepoBounds& bounds, const RepoVector3D64& offset)
+{
+	return { bounds.min() + offset, bounds.max() + offset };
+}
