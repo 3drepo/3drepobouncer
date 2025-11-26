@@ -102,12 +102,22 @@ namespace geometry {
 
     /*
     * Given two triangles, return a value representing the uncertainty of queries
-    * run on them due to rounding error. This value is primarily for use with the
-    * intersects method to disambiguate the in-contact and in-collision states.
+    * run on them due to rounding error. This value can be used to distinguish 
+    * between in-contact, in-collision, and coplanar states.
+    * 
+    * The value is based on the magnitude of the operands involved - the exact
+    * way in which the operands combine, and the scalar, are implementation
+    * details found empirically.
     */
-    double coplanarityThreshold(
+
+    double contactThreshold(
         const repo::lib::RepoTriangle& a, 
         const repo::lib::RepoTriangle& b
+    );
+
+    double contactThreshold(
+        const repo::lib::RepoBounds& a,
+        const repo::lib::RepoBounds& b
     );
 
     /*
@@ -120,30 +130,30 @@ namespace geometry {
     // so that after v t=1 always...
 
     /*
-    * Returns the time-of-contact as a scalar to describe the point at which a
-    * and b first touch, assuming a is moving under translation with velocity v.
+    * Returns the time-of-contact as a scalar between 0 and 1 to describe the 
+    * point along v at which the two primitives first touch, assuming that a is
+    * moving under translation v.
     * 
-    * That is, if v is normalized, timeOfContact returns the distance along v in
-    * world units. If v is an impulse/motion, then the return value will be the
-    * proportional distance along v - note that in both cases, t may be greater 
-    * than 1.
+    * If they are already in contact, returns zero. If they do not make contact
+    * during v, will return some value greater than 1. The primitives are
+    * considered to be in-contact when their closest distance is smaller than
+    * contact.
     * 
-    * If they are already in contact, returns zero. If they will never contact,
-    * returns infinity. The primitives are considered to be in-contact when
-    * their closest distance is smaller than contact.
+    * If contact is negative, the geometry::contactThreshold estimate will
+    * be used.
     */
 
 	double timeOfContact(
         const repo::lib::RepoBounds& a, 
         const repo::lib::RepoBounds& b, 
         const repo::lib::RepoVector3D64& v,
-        double contact = FLT_EPSILON
+        double contact = -1
     );
 
     double timeOfContact(
         const repo::lib::RepoTriangle& a,
         const repo::lib::RepoTriangle& b,
         const repo::lib::RepoVector3D64& v,
-        double contact = FLT_EPSILON
+        double contact = -1
     );
 }

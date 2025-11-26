@@ -224,7 +224,7 @@ RepoPolyDepth::Collision RepoPolyDepth::intersect(const repo::lib::RepoVector3D6
             auto triA = a[_a] + m;
             auto d = geometry::intersects(triA, b[_b]);
 
-            if (d > geometry::coplanarityThreshold(triA, b[_b])) {
+            if (d > geometry::contactThreshold(triA, b[_b])) {
                 r = Collision::Collision;
             }
             else if (d > 0) {

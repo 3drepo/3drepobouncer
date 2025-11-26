@@ -271,9 +271,19 @@ double geometry::ulp(double x)
         return x - std::nexttoward(x, -std::numeric_limits<double>::infinity());
 }
 
-double geometry::coplanarityThreshold(const repo::lib::RepoTriangle& a, const repo::lib::RepoTriangle& b)
+static double cpt(
+    std::initializer_list<repo::lib::RepoVector3D64> deltas) 
 {
-    repo::lib::RepoVector3D64 deltas[] = {
+    auto th = 0.0;
+    for (const auto& d : deltas) {
+        th = std::max({ th, std::abs(d.x), std::abs(d.y), std::abs(d.z) });
+    }
+	return th * 1e-9;
+}
+
+double geometry::contactThreshold(const repo::lib::RepoTriangle& a, const repo::lib::RepoTriangle& b)
+{
+    return cpt({ 
         a.a - b.a,
         a.a - b.b,
         a.a - b.c,
@@ -288,17 +298,23 @@ double geometry::coplanarityThreshold(const repo::lib::RepoTriangle& a, const re
         a.b - a.c,
         b.a - b.b,
         b.a - b.c,
-        b.b - b.c
-    };
-    auto dd = reinterpret_cast<double*>(&deltas);
-    auto d = abs(dd[0]);
-    for (int i = 1; i < 15; ++i) {
-        auto ddd = std::abs(dd[i]);
-        if (ddd > d) {
-            d = ddd;
-        }
-    }
-    return d * 1e-9;
+        b.b - b.c 
+     });
+}
+
+double geometry::contactThreshold(
+	const repo::lib::RepoBounds& a,
+	const repo::lib::RepoBounds& b
+)
+{
+    return cpt({
+        a.min() - b.min(),
+        a.min() - b.max(),
+		a.max() - b.min(),
+		a.max() - b.max(),
+        a.size(),
+		b.size()
+    });
 }
 
 double geometry::orient(const repo::lib::RepoVector3D64& p, const repo::lib::RepoVector3D64& q, const repo::lib::RepoVector3D64& r, const repo::lib::RepoVector3D64& s)
@@ -624,8 +640,8 @@ repo::lib::RepoLine geometry::closestPoints(
 
 // Local template to implement time-of-contact for different primitives, since
 // the algorithm is substantially the same regardless, so long as the primitive
-// supports the closestPoints() operation, and the translation operation via
-// the addition operator.
+// supports the closestPoints() operation, the translation operation via
+// the addition operator, and the contactThreshold() function.
 
 template<typename Primitive>
 static double timeOfContactT(
@@ -635,6 +651,10 @@ static double timeOfContactT(
     double contact
 )
 {
+    if (contact < 0) {
+		contact = geometry::contactThreshold(a, b);
+    }
+
     // Uses conservative advancement to compute the time-of-contact.
     // This involves using the closest points along the direction vector to move
     // the bounds closer step-wise until they intersect.
@@ -652,7 +672,7 @@ static double timeOfContactT(
             return t;
         }
 
-        auto mu = v.dotProduct(n);
+        auto mu = v.dotProduct(n.normalized());
 
         // If there is no contact, but also moving along v will not bring
         // the bounds any closer, then they will never come into contact.
@@ -661,6 +681,10 @@ static double timeOfContactT(
         }
 
         t += d / mu;
+
+        if (t >= 1.0) {
+            return t;
+        }
 
         at = a + (v * t);
     }
