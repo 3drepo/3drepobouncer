@@ -807,8 +807,6 @@ TEST(Geometry, TimeOfContactBounds)
 	}
 }
 
-#pragma optimize("", off)
-
 TEST(Geometry, TimeOfContactTriangles)
 {
 	ClashGenerator clashGenerator;
