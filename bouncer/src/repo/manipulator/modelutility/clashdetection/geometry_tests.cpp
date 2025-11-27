@@ -636,12 +636,21 @@ repo::lib::RepoLine geometry::closestPoints(
 	return { _a, _b };
 }
 
-#pragma optimize("", off)
-
 // Local template to implement time-of-contact for different primitives, since
 // the algorithm is substantially the same regardless, so long as the primitive
 // supports the closestPoints() operation, the translation operation via
 // the addition operator, and the contactThreshold() function.
+
+// See:
+// Interactive Continuous Collision Detection for Non-Convex Polyhedra. Xinyu
+// Zhang, Minkyoung Lee, Young J. Kim. The Visual Computer: International
+// Journal of Computer Graphics, Volume 22, Issue 9. 
+// https://graphics.ewha.ac.kr/FAST/FAST.pdf
+// and
+// PolyDepth: Real-time Penetration Depth Computation using Iterative Contact-
+// Space Projection. Changsoo Je, Min Tang, Youngeun Lee, Minkyoung Lee, Young
+// J.Kim.ACM Transactions on Graphics(ToG 2012), Volume 31, Issue 1, Article
+// 5, pp. 1 - 14, January 1, 2012. https://arxiv.org/abs/1508.06181
 
 template<typename Primitive>
 static double timeOfContactT(

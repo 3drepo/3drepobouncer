@@ -31,11 +31,6 @@ void Traversal::operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double>& b)
 		auto& left = a.nodes[idxLeft];
 		auto& right = b.nodes[idxRight];
 
-		// In hard mode, we can't apply the tolerance to the bounds intersection,
-		// because flat surfaces may have a zero volume overlap, but still
-		// intersect by a non-trivial amount that can be found during resolution
-		// stage.
-
 		if (!intersect(left, right)) {
 			continue;
 		}

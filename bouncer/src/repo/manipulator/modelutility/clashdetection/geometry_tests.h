@@ -126,9 +126,6 @@ namespace geometry {
     */
 	const static double COPLANAR = 1e-15;
 
-    // todo: rewrite this to assume v is the impulse/total motion over time
-    // so that after v t=1 always...
-
     /*
     * Returns the time-of-contact as a scalar between 0 and 1 to describe the 
     * point along v at which the two primitives first touch, assuming that a is
@@ -156,4 +153,6 @@ namespace geometry {
         const repo::lib::RepoVector3D64& v,
         double contact = -1
     );
+
+
 }
