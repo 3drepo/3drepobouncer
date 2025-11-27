@@ -83,7 +83,7 @@ namespace geometry {
 			Free
 		};
 
-	private:
+	protected:
 		const std::vector<repo::lib::RepoTriangle>& a;
 		const std::vector<repo::lib::RepoTriangle>& b;
 
@@ -103,7 +103,8 @@ namespace geometry {
 		* contact between a and b. The returned transformation will be a linear
 		* interpolation between q0 and q1.
 		*/
-		repo::lib::RepoVector3D64 ccd(const repo::lib::RepoVector3D64& q0, const repo::lib::RepoVector3D64& q1);
+		repo::lib::RepoVector3D64 ccd(
+			const repo::lib::RepoVector3D64& q0, const repo::lib::RepoVector3D64& q1);
 
 		/*
 		* Returns the minimum distance between a and b, where a is transformed by q.
@@ -123,15 +124,38 @@ namespace geometry {
 		* Projects m onto the local contact space defined by the planes in the
 		* contacts vector.
 		*/
-		repo::lib::RepoVector3D64 project(
-			const repo::lib::RepoVector3D64& m
-		);
+		repo::lib::RepoVector3D64 project();
 
 		struct Contact {
 			repo::lib::RepoVector3D64 normal;
 			double constant;
+			double tau;
 		};
 
 		std::vector<Contact> contacts;
+
+		/*
+		* Helper function to emplace contacts. If the contact has a time of contact
+		* smaller than an existing contact, it will displace it. Duplicate contacts
+		* are ignored.
+		* Depending on the order different time of contacts are added, there may still
+		* be duplicates with different times, so the filter should still be run.
+		*/
+		void addContact(
+			const repo::lib::RepoVector3D64& normal,
+			const repo::lib::RepoVector3D64& point,
+			double tau
+		);
+
+		/*
+		* Removes all contacts with a contact time greater than tau.
+		*/
+		void filterContacts(double tau);
+
+		/*
+		* Maximum number of Gauss Seidel iterations to perform when performing
+		* in-projection.
+		*/
+		size_t maxProjectionIterations = 25;
 	};
 }

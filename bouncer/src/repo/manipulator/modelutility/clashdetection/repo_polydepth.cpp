@@ -22,6 +22,11 @@
 #include "repo/manipulator/modeloptimizer/bvh/hierarchy_refitter.hpp"
 #include "bvh_operators.h"
 
+#include <Eigen/Eigen>
+#include <Eigen/LU>
+
+#include <iostream>
+
 using namespace geometry;
 
 using Bvh = bvh::Bvh<double>;
@@ -80,6 +85,10 @@ namespace {
         void refit(const repo::lib::RepoVector3D64& m)
         {
             this->m = m;
+            if (bvh.node_count <= 1) { // Special case if the BVH is just a leaf (not currently handled by BottomUpAlgorithm)
+                updateLeaf(bvh.nodes[0], m);
+				return;
+            }
             bvh::HierarchyRefitter<bvh::Bvh<double>> refitter(bvh);
             refitter.refit(*this);
         }
@@ -184,7 +193,7 @@ void RepoPolyDepth::iterate(size_t n)
 
 		// Perform in-projection to get a better estimate of qi
 
-       //q = project({});
+        q = project();
 
         // Check qi is collision free
 
@@ -232,58 +241,155 @@ RepoPolyDepth::Collision RepoPolyDepth::intersect(const repo::lib::RepoVector3D6
                     r = Collision::Contact;
                 }
             }
-
-            if (r != Collision::Free) {
-                // If we detect a contact, append the contact information as a
-                // plane, where the point on the plane is the offset (translation
-                // of q).
-
-                auto j = b[_b].normal();
-                auto q = m;
-                auto c = -j.dotProduct(q);
-
-                contacts.push_back({ j, c });
-            }
         }
     );
 
     return r;
 }
 
-repo::lib::RepoVector3D64 project(
-    const repo::lib::RepoVector3D64& m
-)
+repo::lib::RepoVector3D64 RepoPolyDepth::project()
 {
-    return {};
+    // As q may only translate A, once a primitive of A comes into contact with
+    // a triangle of B, A may thereafter only move along that surface, but never
+    // further into it.
+    // As such, q can be considered a point on a plane, where the plane is the
+    // surface of the Minkowski sum of B and A. These planes define the local
+    // contact space.
+
+    // Since q is the offset from the original (in-collision) state of A, finding
+    // the smallest q possible will find the minimum translation to resolve the
+    // collision.
+
+    // If we say that the planes of the LCS always face outwards from the origin,
+    // then finding this q' is equivalent to projecting the origin onto the planes,
+    // or, finding the point closest to the origin that is on the positive side of
+    // all the planes.
+
+    // In the PolyDepth implementation, this is done by expressing the constraints
+    // as a Linear Complementarity Problem (LCP).
+
+    // Maps an Eigen matrix over the contacts vector. Note the compile time
+    // constant of 3 columns, which with a stride over the whole Contact selects
+    // just the plane coefficients for J.
+
+	constexpr size_t ContactStride = sizeof(Contact) / sizeof(double); // Eigen expects the stride to be in elements (as opposed to bytes).
+
+    Eigen::Map<
+        Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>,
+        0,
+        Eigen::Stride<ContactStride , 1>
+    > J(
+        (double*)contacts.data(),
+        contacts.size(),
+        3
+    );
+
+    // Eigen vectors (matrices with one column) can also be mapped, but must be
+    // Column Major. That is OK because the can set the inner stride to skip by
+    // the size of a Contact and start at the first constant term.
+
+    Eigen::Map<
+        Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor>,
+        0,
+        Eigen::InnerStride<ContactStride>
+    > c(
+        (double*)contacts.data() + 3,
+        contacts.size(),
+        1
+    );
+
+    // Once we've reached the projection stage, the values of tau are no longer
+    // relevant, so we can reuse that memory for lambda and avoid any allocations
+    // during the solve.
+
+    Eigen::Map<
+        Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor>,
+        0,
+        Eigen::InnerStride<ContactStride>
+    > x(
+        (double*)contacts.data() + 4,
+        contacts.size(),
+		1
+    );
+
+    // Operands of the linear problem expressed as Ax = b (where JJ is A).
+
+	auto Jt = J.transpose();
+	auto JJ = J * Jt;
+    auto b = 4.0 * c;
+
+	// For the projected Gauss-Seidel solve, we use Golub & Van Loan's forward
+    // substitution approach, which avoids a matrix inversion.
+
+	// This implementation is straightforward enough that we could remove Eigen
+    // as a dependency and access our native structures directly if necessary,
+    // however its already required by IFCOS so there is no benefit to doing so
+    // currently.
+
+    // An alternative is a Jacobi iteration, which requires more memory but is
+	// simpler and may be faster. The additional memory cost would be insignificant
+    // for us as the problems here will always be quite small.
+
+   x.setZero();
+   for(size_t k = 0; k < maxProjectionIterations; k++) {
+        size_t n = JJ.rows();
+        auto delta = 0.0;
+
+        for (auto i = 0; i < n; i++) {
+            auto sum = 0.0;
+
+            for (auto j = 0; j < i; j++) {
+                sum += JJ(i, j) * x[j];
+            }
+            for (auto j = i + 1; j < n; j++) {
+                sum += JJ(i, j) * x[j];
+            }
+
+            auto existing = x[i];
+
+            auto d = JJ(i, i);
+			auto bs = b[i] - sum;
+            x[i] = bs / d;
+
+            if (x[i] < 0) {
+                x[i] = 0;
+            }
+
+            delta += std::abs(x[i] - existing);
+        }
+
+        if (std::abs(delta) < 1e-6) {
+            break; // Converged
+        }
+    }
+
+	auto q = 0.25 * Jt * x;
+
+	return repo::lib::RepoVector3D64(q[0], q[1], q[2]);
 }
 
 repo::lib::RepoVector3D64 RepoPolyDepth::ccd(const repo::lib::RepoVector3D64& q0, const repo::lib::RepoVector3D64& q1)
 {
-    // The CCD algorithm used is based on Conservative Advancement, as this is
-    // amenable to polygon soups.
-
-    // See:
-    // Interactive Continuous Collision Detection for Non-Convex Polyhedra. Xinyu
-    // Zhang, Minkyoung Lee, Young J. Kim. The Visual Computer: International
-    // Journal of Computer Graphics, Volume 22, Issue 9. 
-    // https://graphics.ewha.ac.kr/FAST/FAST.pdf
-
-    // This algorithm works by advancing between q0 and q1 in bounded steps that
-	// are guaranteed to be collision free. This is done by computing the
-    // shortest vector between any two features along the motion path, and moving
-	// along this by no more than the distance between them.
-
+	// This algorithm works by finding the time of contact along the vector
+	// from q0 to q1.
+ 
     // Finding all features that are seperated by the same minimum distance will
     // also give us the contact manifold at the end of the motion.
 
     BvhRefitter refitter(bvhA, a);
     refitter.refit(q0);
 
-	auto translation = q1 - q0;
-    auto v = translation.normalized();
-
     // Both traversal operations find the minimum directional distance, which is
 	// how far along v the features can move before potentially colliding.
+
+	// As we only are only interested in the contact patches for the closest
+    // contact(s), we can update the traversal termination condition as we
+    // find closer and closer ones.
+
+    auto v = q1 - q0;
+	auto tauMin = 1.0;
+
+    contacts.clear();
 
     bvh::traverse(bvhA, bvhB,
         [&](const bvh::Bvh<double>::Node& a, const bvh::Bvh<double>::Node& b) {
@@ -292,31 +398,75 @@ repo::lib::RepoVector3D64 RepoPolyDepth::ccd(const repo::lib::RepoVector3D64& q0
                 repoBounds(b),
                 v
 			);
-            return tau < translation.norm();
+            return tau <= tauMin;
         },
         [&](size_t a, size_t b) {
-			auto line = geometry::closestPoints(this->a[a] + q0, this->b[b]);
-			auto n = line.end - line.start;
-			auto mu = v.dotProduct(n);
-
-            // If time-of-contact is smaller than the current contact patches,
-            // then this contact will displace them.
-
-
-
-
-
-
-
+            auto tau = geometry::timeOfContact(
+                this->a[a] + q0,
+                this->b[b],
+                v
+			);
+            if(tau <= tauMin) {
+				tauMin = tau;
+                addContact(
+                    this->b[b].normal(),
+                    q0 + v * tauMin,
+                    tau
+                );
+            }
         }
     );
 
-	auto d = this->distance(q0);
+	filterContacts(tauMin + 0.001); // Keep contacts that are very close to the minimum time as well
 
-    // Step q0 towards q1 by the maximum safe translation, which is d
-    
-    auto n = translation;
-    n.normalize();
-    auto dt = n * std::min(translation.norm(), d);
-	return q0 + dt;
+	return q0 + v * tauMin;
+}
+
+void RepoPolyDepth::addContact(
+    const repo::lib::RepoVector3D64& normal,
+    const repo::lib::RepoVector3D64& point,
+    double tau
+)
+{
+    auto c = normal.dotProduct(point);
+    auto n = normal;
+
+    // Describe the plane such that point always lies on the positive side. This
+    // makes the LCS robust to different winding orders.
+
+    if (c < 0) {
+        n = -n;
+        c = -c;
+    }
+
+	Contact contact = { n, c, tau };
+
+    for(size_t i = 0; i < contacts.size(); i++) {
+        auto& existing = contacts[i];
+
+        if (tau < existing.tau) {  // If this is a closer contact, it can be trivially replaced
+            contacts[i] = contact;
+            return;
+        }
+        else if (contact.normal.dotProduct(existing.normal) > 0.9999 &&  // Duplicate contact, ignore
+            (contact.constant - existing.constant) < FLT_EPSILON) {
+            return;
+        }
+	}
+
+    contacts.push_back(contact);
+}
+
+void RepoPolyDepth::filterContacts(double tau)
+{
+    contacts.erase(
+        std::remove_if(
+            contacts.begin(),
+            contacts.end(),
+            [tau](const Contact& c) {
+                return c.tau > tau;
+            }
+        ),
+        contacts.end()
+	);
 }
