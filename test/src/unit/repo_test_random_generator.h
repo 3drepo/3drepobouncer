@@ -74,6 +74,8 @@ namespace testing {
 			const repo::lib::RepoRange& angle
 		);
 
+		repo::lib::RepoMatrix rotation();
+
 		bool boolean();
 
 		repo::lib::RepoVector3D64 barycentric();
