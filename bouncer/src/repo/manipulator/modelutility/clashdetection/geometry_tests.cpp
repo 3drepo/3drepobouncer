@@ -23,6 +23,8 @@
 
 using namespace geometry;
 
+#pragma optimize("", off)
+
 static const repo::lib::RepoVector3D64 axes[] = {
     repo::lib::RepoVector3D64(1.0, 0.0, 0.0),
     repo::lib::RepoVector3D64(0.0, 1.0, 0.0),
@@ -203,7 +205,7 @@ repo::lib::RepoLine lineFaceIntersection(const repo::lib::RepoLine& B, const rep
     }
 }
 
-repo::lib::RepoLine geometry::closestPoints(const repo::lib::RepoTriangle& A, const repo::lib::RepoTriangle& B)
+FaceFaceResult geometry::closestPoints(const repo::lib::RepoTriangle& A, const repo::lib::RepoTriangle& B)
 {
     // Ericson, C. (2004). Real-Time Collision Detection. CRC Press.
 
@@ -215,7 +217,7 @@ repo::lib::RepoLine geometry::closestPoints(const repo::lib::RepoTriangle& A, co
     // infinitesimal.
 
     if (i > COPLANAR) {
-        return repo::lib::RepoLine{ p, p };
+        return FaceFaceResult{ repo::lib::RepoLine{ p, p }, true };
     }
 
     repo::lib::RepoLine Ea1(A.a, A.b);
@@ -260,7 +262,7 @@ repo::lib::RepoLine geometry::closestPoints(const repo::lib::RepoTriangle& A, co
         }
     }
 
-    return min;
+    return { min, false };
 }
 
 double geometry::ulp(double x)
@@ -660,7 +662,7 @@ static double timeOfContactT(
     double contact
 )
 {
-    if (contact < 0) {
+    if (!contact) {
 		contact = geometry::contactThreshold(a, b);
     }
 
@@ -689,7 +691,15 @@ static double timeOfContactT(
             return std::numeric_limits<double>::infinity();
         }
 
-        t += d / mu;
+        // Limit the timestep to ensure that when contact is non-zero, the
+        // translation always ends up between the contact region and the true
+        // surface, and does not overshot into an actual collision.
+        // A scalar that is too large can result in overshoot. A small scalar
+        // will slow convergence, but not affect the correctness of the result,
+        // so if there is any uncertainty, err towards a smaller value. The value
+        // is empirically validated by the TimeOfContactTriangles unit test.
+
+        t += (d / mu) * 0.95;
 
         if (t >= 1.0) {
             return t;

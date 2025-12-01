@@ -425,7 +425,7 @@ TransformTriangles testing::ClashGenerator::createTrianglesTransformed(
 )
 {
 	// If the nominal distance can never be zero, then don't generate FE,
-	// configurations, as these always have a distance of zero.
+	// or FF configurations, as these always have a distance of zero.
 
 	auto u = distance.min() >= 0 ? 3 : 4;
 
@@ -440,6 +440,8 @@ TransformTriangles testing::ClashGenerator::createTrianglesTransformed(
 		return createTrianglesVF(bounds);
 	case 4:
 		return createTrianglesFE(bounds);
+	case 5:
+		return createTrianglesFF(bounds);
 	};
 }
 
@@ -794,9 +796,16 @@ TransformMeshes testing::ClashGenerator::createHardSoup(
 
 	auto m = repo::lib::RepoMatrix::translate(-bounds.center());
 
+	auto intersecting = random.number(soupSize);
+	auto nonIntersecting = random.number(soupSize);
+
+	if (intersecting == 1) { // Special case to only generate one FF pair
+		nonIntersecting = 0;
+	}
+
 	// Creates a set of intersecting pairs
 
-	for (int i = 0; i < random.number({ 10, 20 }); i++) {
+	for (int i = 0; i < intersecting; i++) {
 		auto p = createTrianglesFF(bounds);
 		p.a.m = m * p.a.m;
 		p.b.m = m * p.b.m;
@@ -814,7 +823,7 @@ TransformMeshes testing::ClashGenerator::createHardSoup(
 
 	// Creates a set of non-intersecting pairs
 
-	for (int i = 0; i < random.number({ 10, 20 }); i++) {
+	for (int i = 0; i < nonIntersecting; i++) {
 		auto p = createTrianglesTransformed(bounds);
 		p.a.m = m * p.a.m;
 		p.b.m = m * p.b.m;

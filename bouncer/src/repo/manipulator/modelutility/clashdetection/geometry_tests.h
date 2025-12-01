@@ -38,13 +38,22 @@ namespace geometry {
         const repo::lib::RepoLine& B
     );
 
+    struct FaceFaceResult : public repo::lib::RepoLine
+    {
+        /*
+        * Used to disambiguate when the line is zero-length, whether because
+        * the triangles are in-contact or have a hard intersection.
+        */
+        bool intersects;
+	};
+
     /*
     * Given two Triangles, A & B, return a Line that connects the A and B at
     * their closest points to eachother. The line starts on A and ends on B;
     * moving A by that line will bring the two triangles into contact. If the
     * triangles are co-planar, will return a zero-length line.
     */
-    repo::lib::RepoLine closestPoints(
+    FaceFaceResult closestPoints(
         const repo::lib::RepoTriangle& A, 
         const repo::lib::RepoTriangle& B
     );
@@ -136,23 +145,21 @@ namespace geometry {
     * considered to be in-contact when their closest distance is smaller than
     * contact.
     * 
-    * If contact is negative, the geometry::contactThreshold estimate will
-    * be used.
+    * If contact is zero, the geometry::contactThreshold estimate will be used.
     */
 
 	double timeOfContact(
         const repo::lib::RepoBounds& a, 
         const repo::lib::RepoBounds& b, 
         const repo::lib::RepoVector3D64& v,
-        double contact = -1
+        double contact = 0
     );
 
     double timeOfContact(
         const repo::lib::RepoTriangle& a,
         const repo::lib::RepoTriangle& b,
         const repo::lib::RepoVector3D64& v,
-        double contact = -1
+        double contact = 0
     );
-
 
 }

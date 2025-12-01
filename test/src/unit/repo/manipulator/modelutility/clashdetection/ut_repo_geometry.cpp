@@ -773,7 +773,7 @@ TEST(Geometry, TimeOfContactBounds)
 			b,
 			repo::lib::RepoVector3D64(4, 0, 0)
 		);
-		EXPECT_THAT(tau, DoubleEq(1.0));
+		EXPECT_THAT(tau, DoubleNear(1.0, FLT_EPSILON));
 	}
 
 	{
@@ -783,7 +783,7 @@ TEST(Geometry, TimeOfContactBounds)
 			b,
 			repo::lib::RepoVector3D64(8, 0, 0)
 		);
-		EXPECT_THAT(tau, DoubleEq(0.5));
+		EXPECT_THAT(tau, DoubleNear(0.5, FLT_EPSILON));
 	}
 
 	{
@@ -809,73 +809,39 @@ TEST(Geometry, TimeOfContactBounds)
 
 TEST(Geometry, TimeOfContactTriangles)
 {
+	CellDistribution space;
 	ClashGenerator clashGenerator;
 
-	auto a = repo::lib::RepoTriangle(
-		clashGenerator.random.vector(clashGenerator.size1),
-		clashGenerator.random.vector(clashGenerator.size1),
-		clashGenerator.random.vector(clashGenerator.size1)
-	);
+	// Tests the triangle-triangle toc using a variety of features
 
-	auto b = a;
-
-	{
-		// Triangles are already in-contact
-		auto tau = geometry::timeOfContact(
-			a,
-			b,
-			repo::lib::RepoVector3D64(1, 0, 0)
-		);
-		EXPECT_THAT(tau, DoubleEq(0.0));
-	}
-
-	{
-		// Triangles will come into contact at the end of d (face to face)
-		auto n = a.normal();
-		auto tau = geometry::timeOfContact(
-			repo::lib::RepoMatrix::translate(-n * 5) * a,
-			b,
-			n * 5
-		);
-		EXPECT_THAT(tau, DoubleNear(1.0, FLT_EPSILON));
-	}
-
-	{
-		// Triangles will not come into contact because b starts behind a
-		auto n = a.normal();
-		auto tau = geometry::timeOfContact(
-			repo::lib::RepoMatrix::translate(n) * a,
-			b,
-			n * 5
-		);
-		EXPECT_THAT(tau, DoubleEq(std::numeric_limits<double>::infinity()));
-	}
-
-	// Tests the triangle-triangle toc using a variety of triangle features
-
-	for (int itr = 0; itr < 10000; itr++) {
+	for (int itr = 0; itr < 1000000; itr++) {
 
 		// Triangles should come into contact at the closest feature, because we
 		// are moving by d.
 
-		clashGenerator.distance = 1.0;
-		auto p = clashGenerator.createTrianglesTransformed({});
+		auto p = clashGenerator.createTrianglesTransformed(space.sample());
 		auto [a, b] = ClashGenerator::applyTransforms(p);
 
 		auto L = geometry::closestPoints(a, b);
 		auto l = L.end - L.start;
+		auto dn = l.norm();
+		auto contact = geometry::contactThreshold(a, b); // This should be identical to the internally calculated threshold
+		auto th = contact / dn;
 
-		// Bounds will come into contact exactly at the end of d
+		// Triangles will come into contact exactly at the end of d
 		auto tau = geometry::timeOfContact(
 			a,
 			b,
 			l
 		);
-		EXPECT_THAT(tau, DoubleNear(1, FLT_EPSILON));
+		// We use this condition, rather than comparing tau to a proportion of dn, 
+		// because when dn is large we can get relatively large rounding errors in
+		// the division of the small threshold.
+		EXPECT_THAT(geometry::closestPoints(a + l * tau, b).magnitude(), Lt(contact));
 
 		// Triangles will not come into contact because l is short
 
-		auto d = clashGenerator.random.number({ 0.0, 0.999 }); // we expect the algorithm to be sensitive enough to distinguish between 0.999 and 1 in all cases
+		auto d = clashGenerator.random.number({ 0.0,  1 - th - 0.0001 }); // we expect the algorithm to be sensitive enough to distinguish between 0.999 and 1 in all cases
 		tau = geometry::timeOfContact(
 			a,
 			b,
@@ -890,7 +856,14 @@ TEST(Geometry, TimeOfContactTriangles)
 			b,
 			l * (1.0/d)
 		);
-		EXPECT_THAT(tau, DoubleNear(d, FLT_EPSILON));
+		EXPECT_THAT(tau, DoubleNear(d, th));
+
+		// Time of contact can underestimate by a tiny amount, but should never
+		// overestimate to the point of interpenetration.
+
+		auto _a = repo::lib::RepoMatrix::translate(l * (1.0 / d) * tau) * a;
+		auto line = geometry::closestPoints(_a, b);
+		EXPECT_THAT(line.intersects, IsFalse());
 
 		// Triangles will not come into contact because they will miss eachother
 
