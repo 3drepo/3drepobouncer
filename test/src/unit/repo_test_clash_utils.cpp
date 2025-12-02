@@ -199,6 +199,11 @@ void ClashDetectionDatabaseHelper::createCompositeObjectsByMetadataValue(
 		}
 	}
 
+	// Abort if there are no shared IDs found
+	if (parentSharedIds.size() == 0) {
+		return;
+	}
+
 	// By convention, all metadata nodes should wire to both the parent transform,
 	// but also any mesh descendents.
 
