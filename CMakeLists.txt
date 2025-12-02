@@ -125,7 +125,13 @@ if (SYNCHRO_SUPPORT)
 	find_package(SYNCHROREADER REQUIRED)
 endif()
 
-
+#========================= EIGEN ============================
+# Eigen is required for the clash detection feature of bouncer, and also for
+# IFC Open Shell (and is usually delivered with the latter).
+find_package(EIGEN REQUIRED)
+if(NOT ${EIGEN_FOUND})
+	message(FATAL_ERROR "Cannot find Eigen")
+endif()
 
 #===================== CRYPTOLENS ============================
 

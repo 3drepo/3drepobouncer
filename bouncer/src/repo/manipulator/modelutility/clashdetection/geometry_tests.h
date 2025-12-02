@@ -23,11 +23,29 @@
 
 namespace geometry {
 
-    repo::lib::RepoVector3D64 closestPoint(const repo::lib::RepoVector3D64& p, const repo::lib::RepoTriangle& T);
+    repo::lib::RepoVector3D64 closestPoint(
+        const repo::lib::RepoVector3D64& p,
+        const repo::lib::RepoTriangle& T
+    );
     
-    repo::lib::RepoLine closestPoints(const repo::lib::RepoVector3D64& p, const repo::lib::RepoTriangle& T);
+    repo::lib::RepoLine closestPoints(
+        const repo::lib::RepoVector3D64& p, 
+        const repo::lib::RepoTriangle& T
+    );
 
-    repo::lib::RepoLine closestPoints(const repo::lib::RepoLine& A, const repo::lib::RepoLine& B);
+    repo::lib::RepoLine closestPoints(
+        const repo::lib::RepoLine& A, 
+        const repo::lib::RepoLine& B
+    );
+
+    struct FaceFaceResult : public repo::lib::RepoLine
+    {
+        /*
+        * Used to disambiguate when the line is zero-length, whether because
+        * the triangles are in-contact or have a hard intersection.
+        */
+        bool intersects;
+	};
 
     /*
     * Given two Triangles, A & B, return a Line that connects the A and B at
@@ -35,7 +53,10 @@ namespace geometry {
     * moving A by that line will bring the two triangles into contact. If the
     * triangles are co-planar, will return a zero-length line.
     */
-    repo::lib::RepoLine closestPoints(const repo::lib::RepoTriangle& A, const repo::lib::RepoTriangle& B);
+    FaceFaceResult closestPoints(
+        const repo::lib::RepoTriangle& A, 
+        const repo::lib::RepoTriangle& B
+    );
 
     /*
 	* Given two AABBs, return a Line that connects them at their closest points.
@@ -43,14 +64,21 @@ namespace geometry {
     * two AABBs into contact. If the bounds overlap, the line will be zero-length
     * and begin and end at an arbitrary point within the overlapping volume.
     */
-	repo::lib::RepoLine closestPoints(const repo::lib::RepoBounds& a, const repo::lib::RepoBounds& b);
+	repo::lib::RepoLine closestPoints(
+        const repo::lib::RepoBounds& a, 
+        const repo::lib::RepoBounds& b
+    );
 
     /*
     * Orient predicate in 3D - this returns whether point d is above, below or
     * on the plane defined by a, b and c. The sign is negative if above, and 
     * positive if below (the opposite to the cross-product).
     */
-    double orient(const repo::lib::RepoVector3D64& a, const repo::lib::RepoVector3D64& b, const repo::lib::RepoVector3D64& c, const repo::lib::RepoVector3D64& d);
+    double orient(const repo::lib::RepoVector3D64& a, 
+        const repo::lib::RepoVector3D64& b, 
+        const repo::lib::RepoVector3D64& c, 
+        const repo::lib::RepoVector3D64& d
+    );
 
     /*
     * Determines if two triangles intersect, and if so returns an upper bound on
@@ -60,7 +88,10 @@ namespace geometry {
     * If ip is provided, it will be set to a point on the line of intersection,
     * if any.
     */
-	double intersects(const repo::lib::RepoTriangle& a, const repo::lib::RepoTriangle& b, repo::lib::RepoVector3D64* ip = nullptr);
+	double intersects(const repo::lib::RepoTriangle& a, 
+        const repo::lib::RepoTriangle& b,
+        repo::lib::RepoVector3D64* ip = nullptr
+    );
 
     /*
     * Given two bounds, return the minimum separating axis between them, in the
@@ -68,7 +99,10 @@ namespace geometry {
     * will touch on that axis. If the bounds do not intersect, the vector will
     * be empty.
     */
-    repo::lib::RepoVector3D64 minimumSeparatingAxis(const repo::lib::RepoBounds& a, repo::lib::RepoBounds& b);
+    repo::lib::RepoVector3D64 minimumSeparatingAxis(
+        const repo::lib::RepoBounds& a, 
+        repo::lib::RepoBounds& b
+    );
 
     /*
     * Returns a value approximating the unit of least precision.
@@ -77,14 +111,55 @@ namespace geometry {
 
     /*
     * Given two triangles, return a value representing the uncertainty of queries
-    * run on them due to rounding error. This value is primarily for use with the
-    * intersects method to disambiguate the in-contact and in-collision states.
+    * run on them due to rounding error. This value can be used to distinguish 
+    * between in-contact, in-collision, and coplanar states.
+    * 
+    * The value is based on the magnitude of the operands involved - the exact
+    * way in which the operands combine, and the scalar, are implementation
+    * details found empirically.
     */
-    double coplanarityThreshold(const repo::lib::RepoTriangle& a, const repo::lib::RepoTriangle& b);
+
+    double contactThreshold(
+        const repo::lib::RepoTriangle& a, 
+        const repo::lib::RepoTriangle& b
+    );
+
+    double contactThreshold(
+        const repo::lib::RepoBounds& a,
+        const repo::lib::RepoBounds& b
+    );
 
     /*
     * The distance threshold to use for coplanarity tests. This is primarily for
 	* the intersects method, but may be useful elsewhere.
     */
 	const static double COPLANAR = 1e-15;
+
+    /*
+    * Returns the time-of-contact as a scalar between 0 and 1 to describe the 
+    * point along v at which the two primitives first touch, assuming that a is
+    * moving under translation v.
+    * 
+    * If they are already in contact, returns zero. If they do not make contact
+    * during v, will return some value greater than 1. The primitives are
+    * considered to be in-contact when their closest distance is smaller than
+    * contact.
+    * 
+    * If contact is zero, the geometry::contactThreshold estimate will be used.
+    */
+
+	double timeOfContact(
+        const repo::lib::RepoBounds& a, 
+        const repo::lib::RepoBounds& b, 
+        const repo::lib::RepoVector3D64& v,
+        double contact = 0
+    );
+
+    double timeOfContact(
+        const repo::lib::RepoTriangle& a,
+        const repo::lib::RepoTriangle& b,
+        const repo::lib::RepoVector3D64& v,
+        double contact = 0
+    );
+
 }

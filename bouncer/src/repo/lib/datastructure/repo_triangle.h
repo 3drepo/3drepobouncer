@@ -44,6 +44,15 @@ namespace repo {
                 return *this;
             }
 
+            _RepoTriangle operator+(const _RepoVector3D<T>& v) const
+            {
+                return _RepoTriangle(
+                    a + v,
+                    b + v,
+                    c + v
+                );
+			}
+
             repo::lib::_RepoVector3D<T> normal() const
             {
                 auto ab = b - a;

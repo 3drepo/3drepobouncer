@@ -67,5 +67,9 @@ namespace repo {
 		*/
 		REPO_API_EXPORT repo::lib::RepoBounds operator*(const _RepoVector3D<double>& scalars, const repo::lib::RepoBounds& bounds);
 
+		/**
+		* Offsets the bounds by the components of the vector.
+		*/
+		REPO_API_EXPORT repo::lib::RepoBounds operator+(const repo::lib::RepoBounds& bounds, const RepoVector3D64& offset);
 	}
 }

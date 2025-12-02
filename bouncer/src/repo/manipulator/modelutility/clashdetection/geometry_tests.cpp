@@ -23,7 +23,7 @@
 
 using namespace geometry;
 
-using Vector3 = repo::lib::RepoVector3D64;
+#pragma optimize("", off)
 
 static const repo::lib::RepoVector3D64 axes[] = {
     repo::lib::RepoVector3D64(1.0, 0.0, 0.0),
@@ -31,7 +31,7 @@ static const repo::lib::RepoVector3D64 axes[] = {
     repo::lib::RepoVector3D64(0.0, 0.0, 1.0),
 };
 
-Vector3 geometry::closestPoint(const Vector3& p, const repo::lib::RepoTriangle& T)
+repo::lib::RepoVector3D64 geometry::closestPoint(const repo::lib::RepoVector3D64& p, const repo::lib::RepoTriangle& T)
 {
     // Ericson, C. (2004). Real-Time Collision Detection.CRC Press.
 
@@ -89,7 +89,7 @@ Vector3 geometry::closestPoint(const Vector3& p, const repo::lib::RepoTriangle& 
     return T.a + ab * v + ac * w;
 }
 
-repo::lib::RepoLine geometry::closestPoints(const Vector3& p, const repo::lib::RepoTriangle& T)
+repo::lib::RepoLine geometry::closestPoints(const repo::lib::RepoVector3D64& p, const repo::lib::RepoTriangle& T)
 {
     return { p, closestPoint(p, T) };
 }
@@ -205,9 +205,20 @@ repo::lib::RepoLine lineFaceIntersection(const repo::lib::RepoLine& B, const rep
     }
 }
 
-repo::lib::RepoLine geometry::closestPoints(const repo::lib::RepoTriangle& A, const repo::lib::RepoTriangle& B)
+FaceFaceResult geometry::closestPoints(const repo::lib::RepoTriangle& A, const repo::lib::RepoTriangle& B)
 {
     // Ericson, C. (2004). Real-Time Collision Detection. CRC Press.
+
+    repo::lib::RepoVector3D64 p;
+    auto i = intersects(A, B, &p);
+
+    // For the distance test, we do not care to disambiguate the contact from
+    // the coplanar case, as both mean the distance between the triangles is
+    // infinitesimal.
+
+    if (i > COPLANAR) {
+        return FaceFaceResult{ repo::lib::RepoLine{ p, p }, true };
+    }
 
     repo::lib::RepoLine Ea1(A.a, A.b);
     repo::lib::RepoLine Ea2(A.b, A.c);
@@ -236,17 +247,6 @@ repo::lib::RepoLine geometry::closestPoints(const repo::lib::RepoTriangle& A, co
     results[13] = closestPoints(B.b, A);
     results[14] = closestPoints(B.c, A);
 
-    repo::lib::RepoVector3D64 p;
-	auto i = intersects(A, B, &p);
-
-    // For the distance test, we do not care to disambiguate the contact from
-    // the coplanar case, as both mean the distance between the triangles is
-    // infinitesimal.
-
-    if (i > COPLANAR) {
-		return repo::lib::RepoLine { p, p };
-    }
-
     repo::lib::RepoLine min = results[0];
     for (int i = 1; i < 15; i++)
     {
@@ -262,7 +262,7 @@ repo::lib::RepoLine geometry::closestPoints(const repo::lib::RepoTriangle& A, co
         }
     }
 
-    return min;
+    return { min, false };
 }
 
 double geometry::ulp(double x)
@@ -273,9 +273,19 @@ double geometry::ulp(double x)
         return x - std::nexttoward(x, -std::numeric_limits<double>::infinity());
 }
 
-double geometry::coplanarityThreshold(const repo::lib::RepoTriangle& a, const repo::lib::RepoTriangle& b)
+static double cpt(
+    std::initializer_list<repo::lib::RepoVector3D64> deltas) 
 {
-    repo::lib::RepoVector3D64 deltas[] = {
+    auto th = 0.0;
+    for (const auto& d : deltas) {
+        th = std::max({ th, std::abs(d.x), std::abs(d.y), std::abs(d.z) });
+    }
+	return th * 1e-9;
+}
+
+double geometry::contactThreshold(const repo::lib::RepoTriangle& a, const repo::lib::RepoTriangle& b)
+{
+    return cpt({ 
         a.a - b.a,
         a.a - b.b,
         a.a - b.c,
@@ -290,17 +300,23 @@ double geometry::coplanarityThreshold(const repo::lib::RepoTriangle& a, const re
         a.b - a.c,
         b.a - b.b,
         b.a - b.c,
-        b.b - b.c
-    };
-    auto dd = reinterpret_cast<double*>(&deltas);
-    auto d = abs(dd[0]);
-    for (int i = 1; i < 15; ++i) {
-        auto ddd = std::abs(dd[i]);
-        if (ddd > d) {
-            d = ddd;
-        }
-    }
-    return d * 1e-9;
+        b.b - b.c 
+     });
+}
+
+double geometry::contactThreshold(
+	const repo::lib::RepoBounds& a,
+	const repo::lib::RepoBounds& b
+)
+{
+    return cpt({
+        a.min() - b.min(),
+        a.min() - b.max(),
+		a.max() - b.min(),
+		a.max() - b.max(),
+        a.size(),
+		b.size()
+    });
 }
 
 double geometry::orient(const repo::lib::RepoVector3D64& p, const repo::lib::RepoVector3D64& q, const repo::lib::RepoVector3D64& r, const repo::lib::RepoVector3D64& s)
@@ -620,4 +636,95 @@ repo::lib::RepoLine geometry::closestPoints(
     }
 
 	return { _a, _b };
+}
+
+// Local template to implement time-of-contact for different primitives, since
+// the algorithm is substantially the same regardless, so long as the primitive
+// supports the closestPoints() operation, the translation operation via
+// the addition operator, and the contactThreshold() function.
+
+// See:
+// Interactive Continuous Collision Detection for Non-Convex Polyhedra. Xinyu
+// Zhang, Minkyoung Lee, Young J. Kim. The Visual Computer: International
+// Journal of Computer Graphics, Volume 22, Issue 9. 
+// https://graphics.ewha.ac.kr/FAST/FAST.pdf
+// and
+// PolyDepth: Real-time Penetration Depth Computation using Iterative Contact-
+// Space Projection. Changsoo Je, Min Tang, Youngeun Lee, Minkyoung Lee, Young
+// J.Kim.ACM Transactions on Graphics(ToG 2012), Volume 31, Issue 1, Article
+// 5, pp. 1 - 14, January 1, 2012. https://arxiv.org/abs/1508.06181
+
+template<typename Primitive>
+static double timeOfContactT(
+    const Primitive& a,
+    const Primitive& b,
+    const repo::lib::RepoVector3D64& v,
+    double contact
+)
+{
+    if (!contact) {
+		contact = geometry::contactThreshold(a, b);
+    }
+
+    // Uses conservative advancement to compute the time-of-contact.
+    // This involves using the closest points along the direction vector to move
+    // the bounds closer step-wise until they intersect.
+
+    auto at = a;
+    auto t = 0.0;
+
+    while (true) {
+
+        auto N = closestPoints(at, b);
+        auto n = N.end - N.start;
+        auto d = n.norm();
+
+        if (d <= contact) {
+            return t;
+        }
+
+        auto mu = v.dotProduct(n.normalized());
+
+        // If there is no contact, but also moving along v will not bring
+        // the bounds any closer, then they will never come into contact.
+        if (mu <= 0.0) {
+            return std::numeric_limits<double>::infinity();
+        }
+
+        // Limit the timestep to ensure that when contact is non-zero, the
+        // translation always ends up between the contact region and the true
+        // surface, and does not overshot into an actual collision.
+        // A scalar that is too large can result in overshoot. A small scalar
+        // will slow convergence, but not affect the correctness of the result,
+        // so if there is any uncertainty, err towards a smaller value. The value
+        // is empirically validated by the TimeOfContactTriangles unit test.
+
+        t += (d / mu) * 0.95;
+
+        if (t >= 1.0) {
+            return t;
+        }
+
+        at = a + (v * t);
+    }
+}
+
+double geometry::timeOfContact(
+    const repo::lib::RepoBounds& a,
+    const repo::lib::RepoBounds& b,
+    const repo::lib::RepoVector3D64& v,
+    double contact
+) 
+{
+	return timeOfContactT(a, b, v, contact);
+}
+
+double geometry::timeOfContact(
+    const repo::lib::RepoTriangle& a,
+    const repo::lib::RepoTriangle& b,
+    const repo::lib::RepoVector3D64& v,
+    double contact
+)
+{
+	return timeOfContactT(a, b, v, contact);
 }

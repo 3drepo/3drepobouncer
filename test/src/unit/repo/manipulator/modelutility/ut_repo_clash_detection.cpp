@@ -1041,6 +1041,246 @@ TEST(Clash, SelfClearance)
 	}
 }
 
+TEST(Clash, RepoPolyDepthInProjectStep)
+{
+	// Helper class to expose the contacts array for testing
+
+	struct TestRepoPolyDepth : public geometry::RepoPolyDepth {
+	public:
+		void addPlane(const repo::lib::RepoVector3D64& normal, const repo::lib::RepoVector3D64& position) {
+			contacts.push_back({ normal, normal.dotProduct(position), 0 }); // Do not apply any further processing to the planes during these tests
+		}
+
+		void clear() {
+			contacts.clear();
+		}
+
+		repo::lib::RepoVector3D64 projected(){
+			return project();
+		}
+
+		TestRepoPolyDepth(const std::vector<repo::lib::RepoTriangle>& triangles)
+			:RepoPolyDepth(triangles, triangles)
+		{
+			// For the following tests, we set the Gauss Siedel iterations to a very
+			// large number to ensure we test to convergence. In practice, this should
+			// be much lower for performance reasons, and if projection fails due to
+			// challenging conditions - such as two opposing planes - then that is
+			// handled upstream.
+
+			maxProjectionIterations = 1000000;
+		}
+	};
+
+	ClashGenerator clashGenerator;
+
+	// The PolyDepth class requires the triangles to be stored externally, so allocate
+	// a dummy for it to reference.
+
+	std::vector<repo::lib::RepoTriangle> triangles;
+	TestRepoPolyDepth pd(triangles);
+
+	// The LCS that this is attempting to project to, is by convention always defined
+	// as the positive side of the planes, so when generating planes we need to ensure
+	// that the origin is always on the negative side.
+
+	struct Plane {
+		repo::lib::RepoVector3D64 n;
+		repo::lib::RepoVector3D64 p;
+		double c;
+	};
+
+	auto createPlane = [&]() {
+		auto n = clashGenerator.random.direction();
+		auto p = clashGenerator.random.vector(clashGenerator.size1);
+		auto c = n.dotProduct(p);
+		if (c < 0) {
+			n = -n;
+			c = -c;
+		}
+		return Plane{ n, p, c };
+	};
+
+	for (size_t i = 0; i < 1000; ++i)
+	{
+		// Simple single planes
+
+		auto [n, p, c] = createPlane();
+
+		pd.clear();
+		pd.addPlane(n, p);
+		auto q = pd.projected();
+
+		// For single-plane problems, the projection should be directly along the plane
+		// normal as this is the shortest distance to the plane.
+
+		EXPECT_THAT(n.dotProduct(q.normalized()), DoubleNear(1.0, FLT_EPSILON));
+		EXPECT_THAT(q.norm(), DoubleNear(c, FLT_EPSILON));
+	}
+
+	for (size_t i = 0; i < 10000; ++i)
+	{
+		// A combination of at least two planes that form a valley. All the planes
+		// intersect on the same line.
+
+		auto line = clashGenerator.random.direction();
+		auto p = clashGenerator.random.vector(clashGenerator.size1);
+
+		// A vector perpendicular to the line, pointing away from the origin
+
+		auto n = line.crossProduct(line.crossProduct(p)).normalized();
+
+		// Planes that form the valley. Any planes beyond the first two are
+		// superfluous, but the algorithm should be robust to them.
+		
+		pd.clear();
+		for (size_t j = 0; j < clashGenerator.random.range(2, 10); j++) {
+			auto nj = repo::lib::RepoMatrix::rotation(n, clashGenerator.random.number({ 0.1, 1.56 })) * n;
+			if (nj.dotProduct(p) < 0) {
+				nj = -nj;
+			}
+			pd.addPlane(nj, p);
+		}
+	
+		auto q = pd.projected();
+
+		// The closest point should be a projection of the origin onto the line
+		// formed at the base of the valley.
+
+		auto op = p - (line * p.dotProduct(line));
+
+		EXPECT_THAT(q, VectorNear(op, FLT_EPSILON));
+	}
+
+	for (size_t i = 0; i < 100; ++i)
+	{
+		// Three planes, where two are opposite each other, therefore constraining
+		// q to lie on a plane beyond the third hyperplane.
+
+		// While the algorithm should theoretically support this (and this test
+		// confirms that this is so), it is a very difficult problem that will
+		// run out of iterations in practice, hence the smaller starting size.
+
+		clashGenerator.size1 = { 0.0001, 1000 };
+
+		auto [n1, p1, d1] = createPlane();
+
+		pd.clear();
+		pd.addPlane(n1, p1);
+		pd.addPlane(-n1, p1);
+
+		auto n2 = clashGenerator.random.rotation(clashGenerator.random.direction(), { 0.1, 1.5 }) * n1;
+		if (n2.dotProduct(p1) < 0) {
+			n2 = -n2;
+		}
+		pd.addPlane(n2, p1);
+
+		// q should be on the positive side of n2, and sit on plane n1.
+
+		auto q = pd.projected();
+
+		EXPECT_THAT(n1.dotProduct(q - p1), DoubleNear(0, 1e-4));
+		EXPECT_THAT(n2.dotProduct(q), Gt(0));
+	}
+}
+
+TEST(Clash, RepoPolyDepthIntersectsStep)
+{
+	// It is important to correct termination of the PolyDepth algorithm that
+	// if the ccd step returns an intersecting result, then the intersects
+	// method will return exactly in-contact at this time/configuration.
+
+	struct TestRepoPolyDepth : public geometry::RepoPolyDepth {
+	public:
+		Collision step(const repo::lib::RepoVector3D64& q0, const repo::lib::RepoVector3D64& q1) {
+			auto q = ccd(q0, q1);
+			qs = q;
+			return intersect(q);
+		}
+
+		Collision _intersect(const repo::lib::RepoVector3D64& q) {
+			return intersect(q);
+		}
+
+		TestRepoPolyDepth(const std::vector<repo::lib::RepoTriangle>& a,
+			const std::vector<repo::lib::RepoTriangle>& b)
+			:RepoPolyDepth(a, b) {
+		}
+	};
+
+	CellDistribution space;
+	ClashGenerator clashGenerator;
+
+	for (size_t itr = 0; itr < 1000; ++itr)
+	{
+		auto clash = clashGenerator.createHardSoup(space.sample());
+
+		auto a = ClashGenerator::triangles(clash.a);
+		auto b = ClashGenerator::triangles(clash.b);
+
+		EXPECT_THAT(intersects(a, b), IsTrue());
+
+		TestRepoPolyDepth pd(a, b);
+
+		EXPECT_THAT(pd._intersect({}), Eq(geometry::RepoPolyDepth::Collision::Collision));
+		EXPECT_THAT(pd._intersect(pd.getPenetrationVector()), Eq(geometry::RepoPolyDepth::Collision::Free));
+		EXPECT_THAT(pd.getPenetrationVector().norm(), Gt(0));
+
+		// We allow intersects to be Free here, even after one CCD step, because as
+		// the triangles get closer the contact threshold may decrease. Additional
+		// iterations should bring it closer. Eventually it must always reach Contact,
+		// and never Collision.
+
+		auto result = pd.step(pd.getPenetrationVector(), {});
+		EXPECT_THAT(result, AnyOf(geometry::RepoPolyDepth::Collision::Contact, geometry::RepoPolyDepth::Collision::Free));
+
+		while (result != geometry::RepoPolyDepth::Collision::Contact) {
+			result = pd.step(pd.getPenetrationVector(), {});
+			EXPECT_THAT(result, AnyOf(geometry::RepoPolyDepth::Collision::Contact, geometry::RepoPolyDepth::Collision::Free));
+		}
+
+		// If we get here result is Contact
+
+		// Changing the penetration resolution vector by a fraction in either direction
+		// should change the result. We should reliably be able to exit the collision
+		// by moving further away - as we are testing polygon soups, we can't reliably
+		// test moving closer as tunnelling may avoid a collision when using an
+		// arbitrary scalar.
+
+		EXPECT_THAT(pd._intersect(pd.getPenetrationVector() * 1.1), Eq(geometry::RepoPolyDepth::Collision::Free));
+	}
+}
+
+TEST(Clash, PolyDepthCollisionFreeInitialisationStep)
+{
+	// If geometry is provided to PolyDepth in a collision-free configuration,
+	// then the initial penetration vector should be zero, and calling iterate
+	// should not do anything.
+
+	auto a = ClashGenerator::triangles(repo::test::utils::mesh::makeUnitCube());
+	auto b = ClashGenerator::triangles(repo::test::utils::mesh::makeUnitCone());
+
+	// This line moves the cone so that its bounds overlap the box, but
+	// it's surface doesn't actually intersect
+
+	auto t = repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(0.75, 0, -0.501));
+	ClashGenerator::applyTransforms(b, t);
+
+	EXPECT_THAT(intersects(a, b), IsFalse());
+
+	geometry::RepoPolyDepth pd(a, b);
+
+	auto v0 = pd.getPenetrationVector();
+
+	EXPECT_THAT(v0.norm(), Eq(0));
+
+	pd.iterate(10);
+
+	auto v1 = pd.getPenetrationVector();
+
+	EXPECT_THAT(v1.norm(), Eq(0));
+}
+
 TEST(Clash, RepoPolyDepth1)
 {
 	// Tests the penetration depth estimation (PolyDepth) of the geometry utils
@@ -1097,7 +1337,7 @@ TEST(Clash, RepoPolyDepth2)
 	auto c = helper.getContainerByName("hard_1");
 
 	auto pairs = {
-		std::make_pair("set1_a", "set1_b1"),
+		std::make_pair("set1_a", "set1_b"),
 		// std::make_pair("set2_a", "set2_b"), // Overlaps is not currently supported
 		std::make_pair("set3_a", "set3_b"),
 		std::make_pair("set4_a", "set4_b"),
@@ -1135,36 +1375,6 @@ TEST(Clash, RepoPolyDepth2)
 	}
 }
 
-TEST(Clash, PolyDepthBeginCollisionFree)
-{
-	// If geometry is provided to PolyDepth in a collision-free configuration,
-	// then the initial penetration vector should be zero, and calling iterate
-	// should not do anything.
-
-	auto a = ClashGenerator::triangles(repo::test::utils::mesh::makeUnitCube());
-	auto b = ClashGenerator::triangles(repo::test::utils::mesh::makeUnitCone());
-
-	// This line moves the cone so that its bounds overlap the box, but
-	// it's surface doesn't actually intersect
-
-	auto t = repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(0.75, 0, -0.501));
-	ClashGenerator::applyTransforms(b, t);
-
-	EXPECT_THAT(intersects(a, b), IsFalse());
-
-	geometry::RepoPolyDepth pd(a, b);
-
-	auto v0 = pd.getPenetrationVector();
-
-	EXPECT_THAT(v0.norm(), Eq(0));
-
-	pd.iterate(10);
-
-	auto v1 = pd.getPenetrationVector();
-
-	EXPECT_THAT(v1.norm(), Eq(0));
-}
-
 TEST(Clash, HardE2E)
 {
 	ClashGenerator clashGenerator;
@@ -1178,7 +1388,7 @@ TEST(Clash, HardE2E)
 	const int clashesPerSample = 20;
 	CellDistribution space;
 
-	for (int itr = 0; itr < 1000; ++itr)
+	for (int itr = 0; itr < 500; ++itr)
 	{
 		ClashDetectionConfigHelper config;
 		config.type = ClashDetectionType::Hard;

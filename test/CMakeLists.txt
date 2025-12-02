@@ -21,6 +21,7 @@ include_directories(
 	${AWSSDK_INCLUDE_DIR}
 	${SYNCHRO_READER_INCLUDE_DIR}
 	${CRYPTOLENS_INCLUDE_DIR}
+	${EIGEN_INCLUDE_DIR}
 )
 
 add_executable(3drepobouncerTest ${TEST_SOURCES} ${SOURCES})

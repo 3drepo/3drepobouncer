@@ -149,6 +149,11 @@ repo::lib::RepoMatrix RepoRandomGenerator::rotation(
 	return repo::lib::RepoMatrix::rotation(axis, this->angle(angle));
 }
 
+repo::lib::RepoMatrix RepoRandomGenerator::rotation()
+{
+	return repo::lib::RepoMatrix::rotation(direction(), angle());
+}
+
 BoundedContext::BoundedContext(RepoRandomGenerator& random, double limit)
 	:random(random), limit(limit)
 {
