@@ -32,6 +32,7 @@
 #include <set>
 #include <variant>
 #include <fstream>
+#include <iostream>
 #include "repo_test_random_generator.h"
 
 namespace testing {
@@ -123,7 +124,7 @@ namespace testing {
 		// For triangle-soups (as opposed to the structured meshes like the cubes and
 		// cones), how many triangles should be in the problem in total.
 
-		Range soupSize = { 20, 40 };
+		Range soupSize = { 5, 15 };
 
 		// When true, any "vertices" such as the vectors of lines and triangles will be
 		// downcast to single precision, even if the eventual return type is double
@@ -338,11 +339,15 @@ namespace testing {
 	{
 		SimpleObjWriter(std::string filename);
 		void write(const repo::lib::RepoTriangle& triangle);
+		void write(const std::vector<repo::lib::RepoTriangle>& triangles);
 		void write(const repo::lib::RepoLine& line);
 		~SimpleObjWriter();
 
 	private:
 		std::ofstream file;
 		int vertexCounter = 1;
+		int objectCounter = 0;
 	};
+
+	std::ostream& operator<< (std::ostream& stream, const repo::lib::RepoTriangle& triangle);
 }

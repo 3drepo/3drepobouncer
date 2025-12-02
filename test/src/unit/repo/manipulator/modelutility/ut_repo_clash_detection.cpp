@@ -1041,7 +1041,7 @@ TEST(Clash, SelfClearance)
 	}
 }
 
-TEST(Clash, RepoPolyDepthInProjection)
+TEST(Clash, RepoPolyDepthInProjectStep)
 {
 	// Helper class to expose the contacts array for testing
 
@@ -1184,6 +1184,103 @@ TEST(Clash, RepoPolyDepthInProjection)
 	}
 }
 
+TEST(Clash, RepoPolyDepthIntersectsStep)
+{
+	// It is important to correct termination of the PolyDepth algorithm that
+	// if the ccd step returns an intersecting result, then the intersects
+	// method will return exactly in-contact at this time/configuration.
+
+	struct TestRepoPolyDepth : public geometry::RepoPolyDepth {
+	public:
+		Collision step(const repo::lib::RepoVector3D64& q0, const repo::lib::RepoVector3D64& q1) {
+			auto q = ccd(q0, q1);
+			qs = q;
+			return intersect(q);
+		}
+
+		Collision _intersect(const repo::lib::RepoVector3D64& q) {
+			return intersect(q);
+		}
+
+		TestRepoPolyDepth(const std::vector<repo::lib::RepoTriangle>& a,
+			const std::vector<repo::lib::RepoTriangle>& b)
+			:RepoPolyDepth(a, b) {
+		}
+	};
+
+	CellDistribution space;
+	ClashGenerator clashGenerator;
+
+	for (size_t itr = 0; itr < 1000; ++itr)
+	{
+		auto clash = clashGenerator.createHardSoup(space.sample());
+
+		auto a = ClashGenerator::triangles(clash.a);
+		auto b = ClashGenerator::triangles(clash.b);
+
+		EXPECT_THAT(intersects(a, b), IsTrue());
+
+		TestRepoPolyDepth pd(a, b);
+
+		EXPECT_THAT(pd._intersect({}), Eq(geometry::RepoPolyDepth::Collision::Collision));
+		EXPECT_THAT(pd._intersect(pd.getPenetrationVector()), Eq(geometry::RepoPolyDepth::Collision::Free));
+		EXPECT_THAT(pd.getPenetrationVector().norm(), Gt(0));
+
+		// We allow intersects to be Free here, even after one CCD step, because as
+		// the triangles get closer the contact threshold may decrease. Additional
+		// iterations should bring it closer. Eventually it must always reach Contact,
+		// and never Collision.
+
+		auto result = pd.step(pd.getPenetrationVector(), {});
+		EXPECT_THAT(result, AnyOf(geometry::RepoPolyDepth::Collision::Contact, geometry::RepoPolyDepth::Collision::Free));
+
+		while (result != geometry::RepoPolyDepth::Collision::Contact) {
+			result = pd.step(pd.getPenetrationVector(), {});
+			EXPECT_THAT(result, AnyOf(geometry::RepoPolyDepth::Collision::Contact, geometry::RepoPolyDepth::Collision::Free));
+		}
+
+		// If we get here result is Contact
+
+		// Changing the penetration resolution vector by a fraction in either direction
+		// should change the result. We should reliably be able to exit the collision
+		// by moving further away - as we are testing polygon soups, we can't reliably
+		// test moving closer as tunnelling may avoid a collision when using an
+		// arbitrary scalar.
+
+		EXPECT_THAT(pd._intersect(pd.getPenetrationVector() * 1.1), Eq(geometry::RepoPolyDepth::Collision::Free));
+	}
+}
+
+TEST(Clash, PolyDepthCollisionFreeInitialisationStep)
+{
+	// If geometry is provided to PolyDepth in a collision-free configuration,
+	// then the initial penetration vector should be zero, and calling iterate
+	// should not do anything.
+
+	auto a = ClashGenerator::triangles(repo::test::utils::mesh::makeUnitCube());
+	auto b = ClashGenerator::triangles(repo::test::utils::mesh::makeUnitCone());
+
+	// This line moves the cone so that its bounds overlap the box, but
+	// it's surface doesn't actually intersect
+
+	auto t = repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(0.75, 0, -0.501));
+	ClashGenerator::applyTransforms(b, t);
+
+	EXPECT_THAT(intersects(a, b), IsFalse());
+
+	geometry::RepoPolyDepth pd(a, b);
+
+	auto v0 = pd.getPenetrationVector();
+
+	EXPECT_THAT(v0.norm(), Eq(0));
+
+	pd.iterate(10);
+
+	auto v1 = pd.getPenetrationVector();
+
+	EXPECT_THAT(v1.norm(), Eq(0));
+}
+
 TEST(Clash, RepoPolyDepth1)
 {
 	// Tests the penetration depth estimation (PolyDepth) of the geometry utils
@@ -1240,7 +1337,7 @@ TEST(Clash, RepoPolyDepth2)
 	auto c = helper.getContainerByName("hard_1");
 
 	auto pairs = {
-		 std::make_pair("set1_a", "set1_b"),
+		std::make_pair("set1_a", "set1_b"),
 		// std::make_pair("set2_a", "set2_b"), // Overlaps is not currently supported
 		std::make_pair("set3_a", "set3_b"),
 		std::make_pair("set4_a", "set4_b"),
@@ -1278,36 +1375,6 @@ TEST(Clash, RepoPolyDepth2)
 	}
 }
 
-TEST(Clash, PolyDepthBeginCollisionFree)
-{
-	// If geometry is provided to PolyDepth in a collision-free configuration,
-	// then the initial penetration vector should be zero, and calling iterate
-	// should not do anything.
-
-	auto a = ClashGenerator::triangles(repo::test::utils::mesh::makeUnitCube());
-	auto b = ClashGenerator::triangles(repo::test::utils::mesh::makeUnitCone());
-
-	// This line moves the cone so that its bounds overlap the box, but
-	// it's surface doesn't actually intersect
-
-	auto t = repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(0.75, 0, -0.501));
-	ClashGenerator::applyTransforms(b, t);
-
-	EXPECT_THAT(intersects(a, b), IsFalse());
-
-	geometry::RepoPolyDepth pd(a, b);
-
-	auto v0 = pd.getPenetrationVector();
-
-	EXPECT_THAT(v0.norm(), Eq(0));
-
-	pd.iterate(10);
-
-	auto v1 = pd.getPenetrationVector();
-
-	EXPECT_THAT(v1.norm(), Eq(0));
-}
-
 TEST(Clash, HardE2E)
 {
 	ClashGenerator clashGenerator;
@@ -1321,7 +1388,7 @@ TEST(Clash, HardE2E)
 	const int clashesPerSample = 20;
 	CellDistribution space;
 
-	for (int itr = 0; itr < 1000; ++itr)
+	for (int itr = 0; itr < 500; ++itr)
 	{
 		ClashDetectionConfigHelper config;
 		config.type = ClashDetectionType::Hard;

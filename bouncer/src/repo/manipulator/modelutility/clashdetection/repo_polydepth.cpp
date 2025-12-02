@@ -25,8 +25,6 @@
 #include <Eigen/Eigen>
 #include <Eigen/LU>
 
-#include <iostream>
-
 using namespace geometry;
 
 using Bvh = bvh::Bvh<double>;
@@ -156,6 +154,10 @@ repo::lib::RepoVector3D64 RepoPolyDepth::getPenetrationVector() const {
 
 void RepoPolyDepth::findInitialFreeConfiguration()
 {
+    if (a.empty() || b.empty()) {
+        return;
+    }
+
     if (intersect({}) != Collision::Collision) {
         return;
 	}
@@ -186,14 +188,17 @@ void RepoPolyDepth::iterate(size_t n)
         return;
 	}
 
+    auto _qnorm = DBL_MAX;
+
     for (auto i = 0; i < n; i++) {
         // Perform out-projection to get an updated estimate of qi
-
-        auto q = ccd(qs, qt);
+        
+        auto _qs = qs;
+        qs = ccd(_qs, qt);
 
 		// Perform in-projection to get a better estimate of qi
 
-        q = project();
+        auto q = project();
 
         // Check qi is collision free
 
@@ -201,7 +206,10 @@ void RepoPolyDepth::iterate(size_t n)
 
         switch (r) {
         case Collision::Collision:
-            // qs remains unchanged..
+            // Choose a collision free-configuration to start the out-projection
+            // from. Finds a configuration close to q0 but not in-contact by
+            // slightly reverting configuration found by the previous ccd step.
+            qs = _qs + (qs - _qs) * (1.0 - backStepSize);
             qt = q;
             break;
         case Collision::Contact:
@@ -212,6 +220,16 @@ void RepoPolyDepth::iterate(size_t n)
             qt = {};
             break;
         }
+
+        // In-projection, unlike out-projection, is not guaranteed to provide
+        // a collision-free response, so detect if it gets stuck in local minima
+        // in order to terminate early.
+
+		auto qnorm = qs.norm();
+        if (std::abs(_qnorm - qnorm) < convergenceEpsilon) {
+            return;
+        }
+		_qnorm = qnorm;
     }
 }
 
@@ -227,20 +245,26 @@ RepoPolyDepth::Collision RepoPolyDepth::intersect(const repo::lib::RepoVector3D6
     refitter.refit(m);
 
     auto r = Collision::Free;
-    contacts.clear();
-    bvh::intersect(bvhA, bvhB, [&](size_t _a, size_t _b) 
+    bvh::traverse(bvhA, bvhB,
+        [&](const Bvh::Node& a, const Bvh::Node& b) 
+        {
+            // Note we don't need to apply m to the bounds here because they've already been refitted above
+            return closestPoints(repoBounds(a), repoBounds(b))
+                .magnitude() < geometry::contactThreshold(repoBounds(a), repoBounds(b));
+		},
+        [&](size_t _a, size_t _b) 
         {
             auto triA = a[_a] + m;
-            auto d = geometry::intersects(triA, b[_b]);
+            auto d = geometry::closestPoints(triA, b[_b]);
 
-            if (d > geometry::contactThreshold(triA, b[_b])) {
+            if (d.intersects) {
                 r = Collision::Collision;
             }
-            else if (d > 0) {
+			else if (d.magnitude() < geometry::contactThreshold(triA, b[_b])) {
                 if (r == Collision::Free) {
-                    r = Collision::Contact;
+                    r = Collision::Contact; // Don't override a hard collision with an in-contact one!
                 }
-            }
+			}
         }
     );
 
@@ -408,16 +432,15 @@ repo::lib::RepoVector3D64 RepoPolyDepth::ccd(const repo::lib::RepoVector3D64& q0
 			);
             if(tau <= tauMin) {
 				tauMin = tau;
-                addContact(
-                    this->b[b].normal(),
-                    q0 + v * tauMin,
-                    tau
-                );
+                auto p = q0 + v * tauMin;
+                auto th = geometry::contactThreshold(this->a[a], this->b[b]);
+                addContact(this->b[b].normal(), p, tau);
+                addContact(this->a[a].normal(), p, tau);
             }
         }
     );
 
-	filterContacts(tauMin + 0.001); // Keep contacts that are very close to the minimum time as well
+	filterContacts(tauMin + contactTimeEpsilon); // Keep contacts that are very close to the minimum time as well
 
 	return q0 + v * tauMin;
 }
@@ -431,8 +454,8 @@ void RepoPolyDepth::addContact(
     auto c = normal.dotProduct(point);
     auto n = normal;
 
-    // Describe the plane such that point always lies on the positive side. This
-    // makes the LCS robust to different winding orders.
+    // Describe the plane such that point (which will be qi) always lies on the
+    // positive side of it.
 
     if (c < 0) {
         n = -n;
@@ -444,7 +467,7 @@ void RepoPolyDepth::addContact(
     for(size_t i = 0; i < contacts.size(); i++) {
         auto& existing = contacts[i];
 
-        if (tau < existing.tau) {  // If this is a closer contact, it can be trivially replaced
+        if (tau < (existing.tau - contactTimeEpsilon)) {  // If this is a closer contact, it can be trivially replaced
             contacts[i] = contact;
             return;
         }

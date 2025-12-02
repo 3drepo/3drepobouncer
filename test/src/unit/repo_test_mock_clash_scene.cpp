@@ -797,7 +797,7 @@ TransformMeshes testing::ClashGenerator::createHardSoup(
 	auto m = repo::lib::RepoMatrix::translate(-bounds.center());
 
 	auto intersecting = random.number(soupSize);
-	auto nonIntersecting = random.number(soupSize);
+	auto nonIntersecting = random.number({1, soupSize.max() - intersecting});
 
 	if (intersecting == 1) { // Special case to only generate one FF pair
 		nonIntersecting = 0;
@@ -957,6 +957,19 @@ void SimpleObjWriter::write(const repo::lib::RepoTriangle& triangle) {
 	file << vertexCounter++ << "\n";
 }
 
+void SimpleObjWriter::write(const std::vector<repo::lib::RepoTriangle>& triangles) {
+	file << "o Triangles" << objectCounter++ << "\n";
+	for (auto& triangle : triangles) {
+		file << "v " << triangle.a.x << " " << triangle.a.y << " " << triangle.a.z << "\n";
+		file << "v " << triangle.b.x << " " << triangle.b.y << " " << triangle.b.z << "\n";
+		file << "v " << triangle.c.x << " " << triangle.c.y << " " << triangle.c.z << "\n";
+		file << "f ";
+		file << vertexCounter++ << " ";
+		file << vertexCounter++ << " ";
+		file << vertexCounter++ << "\n";
+	}
+}
+
 void SimpleObjWriter::write(const repo::lib::RepoLine& line) {
 	file << "o Line\n";
 	file << "v " << line.start.x << " " << line.start.y << " " << line.start.z << "\n";
@@ -968,4 +981,15 @@ void SimpleObjWriter::write(const repo::lib::RepoLine& line) {
 
 SimpleObjWriter::~SimpleObjWriter() {
 	file.close();
+}
+
+std::ostream& testing::operator<< (std::ostream& stream, const repo::lib::RepoTriangle& triangle)
+{
+	stream << std::setprecision(std::numeric_limits<double>::max_digits10);
+	stream << "repo::lib::RepoTriangle(";
+	stream << "repo::lib::RepoVector3D64(" << triangle.a.x << ", " << triangle.a.y << ", " << triangle.a.z << "), ";
+	stream << "repo::lib::RepoVector3D64(" << triangle.b.x << ", " << triangle.b.y << ", " << triangle.b.z << "), ";
+	stream << "repo::lib::RepoVector3D64(" << triangle.c.x << ", " << triangle.c.y << ", " << triangle.c.z << ")";
+	stream << ");";
+	return stream;
 }
