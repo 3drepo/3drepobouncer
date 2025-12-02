@@ -17,13 +17,11 @@
 
 #include "repo_polydepth.h"
 #include "geometry_tests.h"
+#include "repo_linear_algebra.h"
 
 #include "repo/manipulator/modeloptimizer/bvh/sweep_sah_builder.hpp"
 #include "repo/manipulator/modeloptimizer/bvh/hierarchy_refitter.hpp"
 #include "bvh_operators.h"
-
-#include <Eigen/Eigen>
-#include <Eigen/LU>
 
 using namespace geometry;
 
@@ -292,55 +290,36 @@ repo::lib::RepoVector3D64 RepoPolyDepth::project()
     // In the PolyDepth implementation, this is done by expressing the constraints
     // as a Linear Complementarity Problem (LCP).
 
-    // Maps an Eigen matrix over the contacts vector. Note the compile time
-    // constant of 3 columns, which with a stride over the whole Contact selects
-    // just the plane coefficients for J.
-
 	constexpr size_t ContactStride = sizeof(Contact) / sizeof(double); // Eigen expects the stride to be in elements (as opposed to bytes).
 
-    Eigen::Map<
-        Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>,
-        0,
-        Eigen::Stride<ContactStride , 1>
-    > J(
+    repo::linearalgebra::matrix::View J(
         (double*)contacts.data(),
         contacts.size(),
-        3
-    );
+        3,
+        ContactStride
+	);
 
-    // Eigen vectors (matrices with one column) can also be mapped, but must be
-    // Column Major. That is OK because the can set the inner stride to skip by
-    // the size of a Contact and start at the first constant term.
-
-    Eigen::Map<
-        Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor>,
-        0,
-        Eigen::InnerStride<ContactStride>
-    > c(
+    repo::linearalgebra::matrix::View c(
         (double*)contacts.data() + 3,
         contacts.size(),
-        1
-    );
+        1,
+        ContactStride
+	);
 
     // Once we've reached the projection stage, the values of tau are no longer
     // relevant, so we can reuse that memory for lambda and avoid any allocations
     // during the solve.
 
-    Eigen::Map<
-        Eigen::Matrix<double, Eigen::Dynamic, 1, Eigen::ColMajor>,
-        0,
-        Eigen::InnerStride<ContactStride>
-    > x(
+    repo::linearalgebra::matrix::View x(
         (double*)contacts.data() + 4,
         contacts.size(),
-		1
-    );
+        1,
+        ContactStride);
 
     // Operands of the linear problem expressed as Ax = b (where JJ is A).
 
-	auto Jt = J.transpose();
+    auto Jt = J.transpose();
 	auto JJ = J * Jt;
-    auto b = 4.0 * c;
 
 	// For the projected Gauss-Seidel solve, we use Golub & Van Loan's forward
     // substitution approach, which avoids a matrix inversion.
@@ -350,9 +329,8 @@ repo::lib::RepoVector3D64 RepoPolyDepth::project()
     // however its already required by IFCOS so there is no benefit to doing so
     // currently.
 
-    // An alternative is a Jacobi iteration, which requires more memory but is
-	// simpler and may be faster. The additional memory cost would be insignificant
-    // for us as the problems here will always be quite small.
+    // An alternative is a Jacobi iteration, which is simpler, but requires more
+	// memory and is slower to converge.
 
    x.setZero();
    for(size_t k = 0; k < maxProjectionIterations; k++) {
@@ -363,23 +341,23 @@ repo::lib::RepoVector3D64 RepoPolyDepth::project()
             auto sum = 0.0;
 
             for (auto j = 0; j < i; j++) {
-                sum += JJ(i, j) * x[j];
+                sum += JJ(i, j) * x(j);
             }
             for (auto j = i + 1; j < n; j++) {
-                sum += JJ(i, j) * x[j];
+                sum += JJ(i, j) * x(j);
             }
 
-            auto existing = x[i];
+            auto existing = x(i);
 
             auto d = JJ(i, i);
-			auto bs = b[i] - sum;
-            x[i] = bs / d;
+			auto bs = (4.0 * c(i)) - sum;
+            x(i) = bs / d;
 
-            if (x[i] < 0) {
-                x[i] = 0;
+            if (x(i) < 0) {
+                x(i) = 0;
             }
 
-            delta += std::abs(x[i] - existing);
+            delta += std::abs(x(i) - existing);
         }
 
         if (std::abs(delta) < 1e-6) {
@@ -387,9 +365,9 @@ repo::lib::RepoVector3D64 RepoPolyDepth::project()
         }
     }
 
-	auto q = 0.25 * Jt * x;
+	auto q = Jt * x;
 
-	return repo::lib::RepoVector3D64(q[0], q[1], q[2]);
+	return repo::lib::RepoVector3D64(q(0), q(1), q(2)) * 0.25;
 }
 
 repo::lib::RepoVector3D64 RepoPolyDepth::ccd(const repo::lib::RepoVector3D64& q0, const repo::lib::RepoVector3D64& q1)
@@ -433,7 +411,6 @@ repo::lib::RepoVector3D64 RepoPolyDepth::ccd(const repo::lib::RepoVector3D64& q0
             if(tau <= tauMin) {
 				tauMin = tau;
                 auto p = q0 + v * tauMin;
-                auto th = geometry::contactThreshold(this->a[a], this->b[b]);
                 addContact(this->b[b].normal(), p, tau);
                 addContact(this->a[a].normal(), p, tau);
             }

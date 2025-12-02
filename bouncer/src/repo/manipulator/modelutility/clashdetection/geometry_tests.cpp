@@ -23,8 +23,6 @@
 
 using namespace geometry;
 
-#pragma optimize("", off)
-
 static const repo::lib::RepoVector3D64 axes[] = {
     repo::lib::RepoVector3D64(1.0, 0.0, 0.0),
     repo::lib::RepoVector3D64(0.0, 1.0, 0.0),

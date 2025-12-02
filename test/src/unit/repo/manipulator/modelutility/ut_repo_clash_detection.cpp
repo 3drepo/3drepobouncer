@@ -1101,7 +1101,7 @@ TEST(Clash, RepoPolyDepthInProjectStep)
 		return Plane{ n, p, c };
 	};
 
-	for (size_t i = 0; i < 1000; ++i)
+	for (size_t i = 0; i < 10000; ++i)
 	{
 		// Simple single planes
 
