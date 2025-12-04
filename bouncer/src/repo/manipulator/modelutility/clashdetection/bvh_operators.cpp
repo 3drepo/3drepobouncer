@@ -66,6 +66,92 @@ void Traversal::operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double>& b)
 	}
 }
 
+void Traversal::operator()(const bvh::Bvh<double>& a)
+{
+	// The goal of an internal traversal is to find all pairs in a single tree
+	// that overlap eachother. The traversal operates on pairs of siblings.
+
+	std::stack<std::pair<size_t, size_t>> pairs;
+	auto& root = a.nodes[0];
+	pairs.push({ root.first_child_or_primitive + 0, root.first_child_or_primitive + 1 });
+
+	while (!pairs.empty()) 
+	{
+		auto [idxLeft, idxRight] = pairs.top();
+		pairs.pop();
+
+		auto& left = a.nodes[idxLeft];
+		auto& right = a.nodes[idxRight];
+
+		// Regardless of whether these siblings intersect, we need to check all their
+		// children for self-intersections (both primitives and branch nodes).
+
+		if (left.is_leaf()) {
+			for (size_t l = 0; l < left.primitive_count; l++) {
+				for (size_t r = l; r < left.primitive_count; r++) {
+					intersect(
+						a.primitive_indices[left.first_child_or_primitive + l],
+						a.primitive_indices[left.first_child_or_primitive + r]
+					);
+				}
+			}
+		}
+		else {
+			pairs.push({ left.first_child_or_primitive + 0, left.first_child_or_primitive + 1 });
+		}
+
+		if (right.is_leaf()) {
+			for (size_t l = 0; l < right.primitive_count; l++) {
+				for (size_t r = l; r < right.primitive_count; r++) {
+					intersect(
+						a.primitive_indices[right.first_child_or_primitive + l],
+						a.primitive_indices[right.first_child_or_primitive + r]
+					);
+				}
+			}
+		}
+		else {
+			pairs.push({ right.first_child_or_primitive + 0, right.first_child_or_primitive + 1 });
+		}
+
+		// Then if the siblings intersect, we also check the cross combinations of
+		// their children.
+
+		if (!intersect(left, right)) {
+			continue;
+		}
+
+		if (left.is_leaf() && right.is_leaf())
+		{
+			for (size_t l = 0; l < left.primitive_count; l++) {
+				for (size_t r = 0; r < right.primitive_count; r++) {
+					intersect(
+						a.primitive_indices[left.first_child_or_primitive + l],
+						a.primitive_indices[right.first_child_or_primitive + r]
+					);
+				}
+			}
+		}
+		else if (left.is_leaf() && !right.is_leaf())
+		{
+			pairs.push({ idxLeft, right.first_child_or_primitive + 0 });
+			pairs.push({ idxLeft, right.first_child_or_primitive + 1 });
+		}
+		else if (!left.is_leaf() && right.is_leaf())
+		{
+			pairs.push({ left.first_child_or_primitive + 0, idxRight });
+			pairs.push({ left.first_child_or_primitive + 1, idxRight });
+		}
+		else
+		{
+			pairs.push({ left.first_child_or_primitive + 0, right.first_child_or_primitive + 0 });
+			pairs.push({ left.first_child_or_primitive + 0, right.first_child_or_primitive + 1 });
+			pairs.push({ left.first_child_or_primitive + 1, right.first_child_or_primitive + 0 });
+			pairs.push({ left.first_child_or_primitive + 1, right.first_child_or_primitive + 1 });
+		}
+	}
+}
+
 static bvh::BoundingBox<double> overlap(const bvh::BoundingBox<double>& a, const bvh::BoundingBox<double>& b)
 {
 	bvh::BoundingBox<double> result;

@@ -89,14 +89,22 @@ namespace repo {
 
 				/*
 				* Each clash test will compare all objects in set A against all objects in
-				* set B. All Objects will be compared in Project Coordinates. It is
-				* allowed for Set A and Set B to be identical - this can be used to check
-				* that all objects in a single set have a given clearance to eachother. For
-				* this case the Composite Ids must be the same - the engine will ignore pairs
-				* with the same Composite Id.
+				* set B. All Objects will be compared in Project Coordinates. The sets must
+				* be distinct - if purely self-intersection is required, use the self-
+				* intersects flags and leave one set empty.
 				*/
 				std::vector<CompositeObject> setA;
 				std::vector<CompositeObject> setB;
+
+				/*
+				* When self-intersects is true, the same tests that are run between setA and
+				* setB will also be run within members of that set. Composite Objects will
+				* not be compared with themselves, however they will be compared to all
+				* others in their set.
+				*/
+
+				bool selfIntersectsA = false;
+				bool selfIntersectsB = false;
 
 				/*
 				* Where to write the results of clash detection. This should be a fully

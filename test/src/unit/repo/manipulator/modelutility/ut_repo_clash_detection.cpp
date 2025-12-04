@@ -50,6 +50,7 @@
 #include <repo/manipulator/modelutility/clashdetection/clash_scheduler.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_exceptions.h>
 #include <repo/manipulator/modelutility/clashdetection/repo_polydepth.h>
+#include <repo/manipulator/modelutility/clashdetection/clash_node_cache.h>
 
 #include <repo/manipulator/modelutility/clashdetection/predicates.h>
 
@@ -275,6 +276,11 @@ TEST(Clash, Config)
 	EXPECT_THAT(config.tolerance, Eq(0.0001));
 	EXPECT_THAT(config.resultsFile, StrEq("results/clash_results.json"));
 	
+	// If self-intersection options have not been specified, they default to false.
+
+	EXPECT_THAT(config.selfIntersectsA, IsFalse());
+	EXPECT_THAT(config.selfIntersectsB, IsFalse());
+
 	EXPECT_THAT(config.setA.size(), Eq(2));
 
 	EXPECT_THAT(config.setA[0].id, Eq(repo::lib::RepoUUID("898f194c-3852-43ac-9be5-85d315838768")));
@@ -337,11 +343,15 @@ TEST(Clash, Scheduler)
 {
 	// Tests if the ClashScheduler returns a sensible narrowphase set order.
 
-	// The scheduling problem is NP-Hard, so this test doesn't check if the
-	// order is optimal, just that all the original broadphase tests still
-	// exist, with no duplicates.
+	// The scheduling problem is NP-Hard, so this test doesn't check if the order
+	// is optimal, just that all the original broadphase tests still exist, with
+	// no duplicates.
 
-	clash::BroadphaseResults broadphaseResults;
+	// The scheduler should work with anything that fits in a void* - here we use
+	// indices to test its correctness, and also that it doesn't dereference (it
+	// shouldn't), because attempting to will result in an access violation.
+
+	std::vector<std::pair<size_t, size_t>> broadphaseResults;
 
 	RepoRandomGenerator random;
 
@@ -359,6 +369,22 @@ TEST(Clash, Scheduler)
 			}
 		}
 	}
+
+	// Make sure regardless of what the RNG does, that we include some difficult
+	// conditions: edges from both directions, duplicates and zero-length edges.
+
+	broadphaseResults.push_back({ 3, 0 });
+	broadphaseResults.push_back({ 0, 3 });
+	broadphaseResults.push_back({ 3, 0 });
+	broadphaseResults.push_back({ 0, 3 });
+	
+	// The clash detection should never actually compare an entry with itself,
+	// but the scheduler should be as robust as possible.
+
+	broadphaseResults.push_back({ 0, 0 });
+	broadphaseResults.push_back({ 0, 0 });
+	broadphaseResults.push_back({ 0, 0 });
+
 
 	auto copy = broadphaseResults;
 
@@ -1002,11 +1028,7 @@ TEST(Clash, Units)
 
 TEST(Clash, SelfClearance)
 {
-	// Self-Clearance is not currently supported - sets must be disjoint and
-	// an exception will be thrown if they are not. This is a future feature.
-
 	auto handler = getHandler();
-	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
 	auto c = helper.getContainerByName("cubes_self");
@@ -1021,23 +1043,44 @@ TEST(Clash, SelfClearance)
 		helper.createCompositeObject(c.get(), "Cube7")
 	};
 	
-	config.setA.insert(config.setA.end(), set.begin(), set.end());
-	config.setB.insert(config.setB.end(), set.begin(), set.end());
+	{
+		// Composite Objects may only appear in one set. If the goal is self-clash,
+		// then the appropriate flag should be used instead.
 
-	config.tolerance = 1;
-	config.type = ClashDetectionType::Clearance;
+		ClashDetectionConfig config;
+		config.setA.insert(config.setA.end(), set.begin(), set.end());
+		config.setB.insert(config.setB.end(), set.begin(), set.end());
+		config.tolerance = 1;
+		config.type = ClashDetectionType::Clearance;
 
-	auto pipeline = new clash::Clearance(handler, config);
-	try {
+		auto pipeline = new clash::Clearance(handler, config);
+		try {
+			auto results = pipeline->runPipeline();
+			FAIL() << "Expected OverlappingSetsException due to due to self-tests.";
+		}
+		catch (const clash::ClashDetectionException& ex) {
+			auto exception = dynamic_cast<const clash::OverlappingSetsException*>(&ex);
+			EXPECT_THAT(exception != nullptr, IsTrue());
+		}
+		catch (std::exception& e) {
+			FAIL() << "Expected OverlappingSetsException due to self-tests: " << e.what();
+		}
+	}
+
+	{
+		// Should support self-clash tests when the flag is set. If the flag is present
+		// for one set, the other set may be empty.
+
+		ClashDetectionConfig config;
+		config.setA.insert(config.setA.end(), set.begin(), set.end());
+		config.selfIntersectsA = true;
+		config.tolerance = 1;
+		config.type = ClashDetectionType::Clearance;
+		
+		auto pipeline = new clash::Clearance(handler, config);
 		auto results = pipeline->runPipeline();
-		FAIL() << "Expected OverlappingSetsException due to due to self-tests.";
-	}
-	catch (const clash::ClashDetectionException& ex) {
-		auto exception = dynamic_cast<const clash::OverlappingSetsException*>(&ex);
-		EXPECT_THAT(exception != nullptr, IsTrue());
-	}
-	catch (std::exception& e) {
-		FAIL() << "Expected OverlappingSetsException due to self-tests: " << e.what();
+
+		EXPECT_THAT(results.clashes.size(), Eq(3));
 	}
 }
 
@@ -1462,6 +1505,149 @@ TEST(Clash, HardTolerance)
 	}
 }
 
+TEST(Clash, NodeCache)
+{
+	static size_t numConstructions = 0;
+	static size_t numDestructions = 0;
+
+	struct Node {
+
+		Node() {
+			numConstructions++;
+		}
+
+		~Node() {
+			numDestructions++;
+		}
+	};
+
+	// Cache expects to be keyed by objects (specifically, their addresses)
+
+	struct K {
+
+	};
+
+	std::vector<K> keys;
+
+	for (size_t i = 0; i < 10; i++) {
+		keys.push_back(K{});
+	}
+
+	struct Cache : public repo::manipulator::modelutility::clash::ResourceCache<K, Node>
+	{
+		void initialise(const K& key, Node& node) const override {
+		}
+	};
+
+	EXPECT_THROW({
+		{
+			Cache cache;
+			std::vector<Cache::Record*> records;
+			for(auto& key : keys) {
+				records.push_back(cache.get(key));
+			}
+
+			EXPECT_THAT(numConstructions, Eq(keys.size()));
+		} // The expected exception will be thrown on exiting this inner scope, when cache is destroyed
+	}, std::runtime_error);
+
+	{
+		// Cache is cleaned up without using auto collection
+
+		Cache cache;
+		std::vector<Cache::Record*> records;
+		for (auto& key : keys) {
+			records.push_back(cache.get(key));
+		}
+
+		EXPECT_THAT(numConstructions, Eq(keys.size()));
+
+		for (auto& key : keys) {
+			cache.release(key);
+		}
+
+		EXPECT_THAT(numDestructions, Eq(numConstructions));
+	}
+
+	{
+		// Getting a record a second time returns the same pointer
+
+		Cache cache;
+		std::vector<Cache::Record*> records;
+		for (auto& key : keys) {
+			records.push_back(cache.get(key));
+		}
+
+		for (size_t itr = 0; itr < 3; itr++) {
+			for (size_t i = 0; i < keys.size(); i++) {
+				auto record = cache.get(keys[i]);
+				EXPECT_THAT(record, Eq(records[i]));
+			}
+		}
+
+		// Similarly, we only have to delete them once...
+		for (auto& key : keys) {
+			cache.release(key);
+		}
+	}
+
+	{
+		// Getting a reference from a record will clean that record up when it goes
+		// out of scope
+
+		Cache cache;
+		std::vector<Cache::Record*> records;
+		for (int i = 0; i < 3; i++) {
+			records.push_back(cache.get(keys[i]));
+		}
+
+		EXPECT_THAT(numConstructions, Eq(3));
+
+		records[0]->getReference();
+		EXPECT_THAT(numDestructions, Eq(1));
+
+		records[1]->getReference();
+		EXPECT_THAT(numDestructions, Eq(2));
+
+		records[2]->getReference();
+		EXPECT_THAT(numDestructions, Eq(3));
+
+	}
+
+	{
+		// Holding a reference will keep the record alive
+
+		Cache cache;
+		std::vector<Cache::Record*> records;
+		for (int i = 0; i < 3; i++) {
+			records.push_back(cache.get(keys[i]));
+		}
+
+		EXPECT_THAT(numConstructions, Eq(3));
+
+		auto ref0 = records[0]->getReference();
+		EXPECT_THAT(numDestructions, Eq(0));
+
+		auto ref1 = records[1]->getReference();
+		EXPECT_THAT(numDestructions, Eq(0));
+
+		records[2]->getReference();
+		EXPECT_THAT(numDestructions, Eq(1));
+
+		ref0 = nullptr;
+		EXPECT_THAT(numDestructions, Eq(2));
+
+		ref1 = nullptr;
+		EXPECT_THAT(numDestructions, Eq(3));
+	}
+
+}
+
+TEST(Clash, CompositeClearance)
+{
+	// Tests that the distance query applied to the bvh
+}
+
 TEST(Clash, ResultsSerialisation)
 {
 
@@ -1476,16 +1662,4 @@ TEST(Clash, Overlapping)
 	// the clash along any of the axes other than the pipe axis will not work (unless
 	// completely moving outside the AABBs).
 	// 
-}
-
-TEST(Clash, NodeCache)
-{
-	// need to make sure cache only returns one object even if called multiple times
-
-	// need to make sure cache doesn't go away until all references have gone.
-}
-
-TEST(Clash, CompositeClearance)
-{
-	// Tests that the distance query applied to the bvh
 }

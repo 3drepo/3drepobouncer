@@ -53,19 +53,26 @@ namespace repo {
 				{
 					struct Node : public sparse::Node
 					{
-						// Index into the set (A or B) of the composite object to which this mesh belongs.
-						size_t compositeObjectIndex;
+						// Reference to the Composite Object (in the config set) that this mesh
+						// belongs to. This will always be set when the graph is populated.
+						// However it must be a pointer in order for the node to be used in the
+						// cache, which requires Node to be default-constructible.
+
+						const CompositeObject* compositeObject;
 					};
 
 					// Once this is initialised, it should not be changed, as the bvh will use
 					// indices into this vector to refer to the nodes.
+
 					const std::vector<Node> meshes;
 
 					// The bvh for the graph stores bounds in Project Coordinates.
+
 					Bvh bvh;
 
-					// From mesh node unique id to an index into the meshes array, same as the
+					// From mesh node unique id to an index into the meshes array - same as the
 					// one the bvh uses.
+
 					std::unordered_map<repo::lib::RepoUUID, size_t, repo::lib::RepoUUIDHasher> uuidToIndexMap;
 
 					Graph(std::vector<Node> nodes);
@@ -74,9 +81,10 @@ namespace repo {
 
 					Node& getNode(const repo::lib::RepoUUID& uniqueId) const;
 
-					// Returns the index into the set of Composite Objects used to build this
-					// graph, for the given primitive (mesh) index.
-					size_t getCompositeIndex(size_t primitive) const;
+					// Returns a reference to the Composite Object that the mesh, given by
+					// the index into the meshes array, belongs to.
+
+					const CompositeObject& getCompositeObject(size_t primitive) const;
 				};
 
 				class Pipeline
@@ -97,6 +105,7 @@ namespace repo {
 					const repo::manipulator::modelutility::ClashDetectionConfig& config;
 
 					// These are initialised at the beginning of runPipeline.
+
 					std::unique_ptr<Graph> graphA;
 					std::unique_ptr<Graph> graphB;
 

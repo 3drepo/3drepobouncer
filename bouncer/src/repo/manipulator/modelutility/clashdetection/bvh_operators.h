@@ -60,6 +60,13 @@ namespace bvh {
 		void operator()(
 			const bvh::Bvh<double>& a,
 			const bvh::Bvh<double>& b);
+
+		/*
+		* Performs an inter-bvh traversal returning all primitives that intersect
+		* eachother.
+		*/
+		void operator()(
+			const bvh::Bvh<double>& a);
 	};
 
 	/*
