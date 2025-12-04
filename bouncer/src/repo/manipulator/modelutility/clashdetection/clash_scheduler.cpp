@@ -23,110 +23,147 @@
 
 using namespace::repo::manipulator::modelutility::clash;
 
-ClashScheduler::ClashScheduler(std::vector<std::pair<size_t, size_t>> broadphaseResults)
+class ClashSchedulerImpl
 {
-	createGraph(broadphaseResults);
+	struct Node;
 
-	sortByEdges(allNodes);
+	using Edge = std::pair<Node*, Node*>;
 
-	std::queue<Node*> next;
-	while (allNodes.size()) {
-		next.push(allNodes.front());
+	struct Node
+	{
+		void* id;
+		std::vector<Edge> edges;
 
-		while (!next.empty()) {
-			auto node = next.front();
-			next.pop();
+		Node(void* id) :
+			id(id) {
+		}
 
-			if (!node->edges.size()) {
-				continue;
-			}
+		bool remove(Edge e) {
+			edges.erase(std::remove(edges.begin(), edges.end(), e), edges.end());
+			return edges.size();
+		}
+	};
 
-			bool nodeIsSetA = node == node->edges[0].first;
+	// This manages the memory for the nodes, and its contents does not change
+	// after initialisation, though their edge count does. The pointer arrays
+	// below are used to track which nodes are live; they can be re-ordered,
+	// and have elements removed when the edge counts go to zero.
 
-			std::vector<Node*> others;
+	std::vector<Node> nodes;
 
-			for (auto& edge : node->edges) {
-				others.push_back(nodeIsSetA ? edge.second : edge.first);
-			}
+	std::vector<Node*> allNodes;
 
-			sortByEdges(others);
+public:
+	std::vector<std::pair<void*, void*>> results;
 
-			for (const auto other : others) {
-				Edge edge(node, other);
-				if (!nodeIsSetA) {
-					std::swap(edge.first, edge.second);
+	ClashSchedulerImpl(std::vector<std::pair<void*, void*>> broadphaseResults)
+	{
+		createGraph(broadphaseResults);
+
+		sortByEdges(allNodes);
+
+		std::queue<Node*> next;
+		while (allNodes.size()) {
+			next.push(allNodes.front());
+
+			while (!next.empty()) {
+				auto node = next.front();
+				next.pop();
+
+				if (!node->edges.size()) {
+					continue;
 				}
-				results.push_back({ edge.first->index, edge.second->index });
-				remove(edge);
-				next.push(other);
+
+				struct Other {
+					Node* node;
+					bool direction;
+				};
+
+				std::vector<Other> others;
+
+				for (auto& edge : node->edges) {
+					Other other;
+					other.direction = (node == edge.first);
+					other.node = other.direction ? edge.second : edge.first;
+					others.push_back(other);
+				}
+
+				// Sort by edges as above, but with an indirection to node
+
+				std::ranges::sort(others, [](const Other& a, const Other& b) {
+					return a.node->edges.size() < b.node->edges.size();
+				});
+
+				for (const auto& other : others) {
+					Edge edge = other.direction ? Edge(node, other.node) : Edge(other.node, node);
+					results.push_back({ edge.first->id, edge.second->id });
+					remove(edge);
+					next.push(other.node);
+				}
 			}
 		}
 	}
-}
 
-void ClashScheduler::sortByEdges(std::vector<Node*>& set)
-{
-	std::ranges::sort(set, [](const Node* a, const Node* b) {
-		return a->edges.size() < b->edges.size();
-	});
-}
-
-void ClashScheduler::addNode(size_t index, std::unordered_map<size_t, size_t>& map)
-{
-	auto it = map.find(index);
-	if (it == map.end()) {
-		map[index] = nodes.size();
-		nodes.push_back(Node(index));
-	}
-}
-
-void ClashScheduler::createGraph(std::vector<std::pair<size_t, size_t>> edges)
-{
-	std::unordered_map<size_t, size_t> nodesA;
-	std::unordered_map<size_t, size_t> nodesB;
-
-	for (const auto& e : edges) {
-		addNode(e.first, nodesA);
-		addNode(e.second, nodesB);
+	void sortByEdges(std::vector<Node*>&set)
+	{
+		std::ranges::sort(set, [](const Node* a, const Node* b) {
+			return a->edges.size() < b->edges.size();
+		});
 	}
 
-	// From now, the nodes vector shall not change so we can take pointers to its
-	// contents.
-
-	for (const auto& e : edges) {
-		std::pair<Node*, Node*> edge(&nodes[nodesA[e.first]], &nodes[nodesB[e.second]]);
-		edge.first->edges.push_back(edge);
-		edge.second->edges.push_back(edge);
+	void addNode(void* id, std::unordered_map<void*, size_t>&map)
+	{
+		auto it = map.find(id);
+		if (it == map.end()) {
+			map[id] = nodes.size();
+			nodes.push_back(Node(id));
+		}
 	}
 
-	for (auto& n : nodes) {
-		allNodes.push_back(&n);
+	void createGraph(std::vector<std::pair<void*, void*>> edges)
+	{
+		std::unordered_map<void*, size_t> map; // Pointer to node index
+
+		for (const auto& e : edges) {
+			addNode(e.first, map);
+			addNode(e.second, map);
+		}
+
+		// From now, the nodes vector shall not change so we can take pointers to its
+		// contents.
+
+		for (const auto& e : edges) {
+			std::pair<Node*, Node*> edge(&nodes[map[e.first]], &nodes[map[e.second]]);
+			edge.first->edges.push_back(edge);
+			if(edge.first == edge.second) {
+				continue;
+			}
+			edge.second->edges.push_back(edge);
+		}
+
+		for (auto& n : nodes) {
+			allNodes.push_back(&n);
+		}
 	}
-}
 
-void ClashScheduler::remove(Edge edge)
-{
-	if (!edge.first->remove(edge)) {
-		remove(edge.first);
+	void remove(Edge edge)
+	{
+		if (!edge.first->remove(edge)) {
+			remove(edge.first);
+		}
+		if (!edge.second->remove(edge)) {
+			remove(edge.second);
+		}
 	}
-	if (!edge.second->remove(edge)) {
-		remove(edge.second);
+
+	void remove(Node * node)
+	{
+		allNodes.erase(std::remove(allNodes.begin(), allNodes.end(), node), allNodes.end());
 	}
-}
+};
 
-void ClashScheduler::remove(Node* node)
+void ClashScheduler::_schedule(std::vector<std::pair<void*, void*>>& broadphaseResults)
 {
-	allNodes.erase(std::remove(allNodes.begin(), allNodes.end(), node), allNodes.end());
-}
-
-bool ClashScheduler::Node::remove(Edge e)
-{
-	edges.erase(std::remove(edges.begin(), edges.end(), e), edges.end());
-	return edges.size();
-}
-
-void ClashScheduler::schedule(std::vector<std::pair<size_t, size_t>>& broadphaseResults)
-{
-	ClashScheduler scheduler(broadphaseResults);
+	ClashSchedulerImpl scheduler(broadphaseResults);
 	broadphaseResults.swap(scheduler.results);
 }
