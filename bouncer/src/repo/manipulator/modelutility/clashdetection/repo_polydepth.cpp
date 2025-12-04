@@ -323,12 +323,6 @@ repo::lib::RepoVector3D64 RepoPolyDepth::project()
 
 	// For the projected Gauss-Seidel solve, we use Golub & Van Loan's forward
     // substitution approach, which avoids a matrix inversion.
-
-	// This implementation is straightforward enough that we could remove Eigen
-    // as a dependency and access our native structures directly if necessary,
-    // however its already required by IFCOS so there is no benefit to doing so
-    // currently.
-
     // An alternative is a Jacobi iteration, which is simpler, but requires more
 	// memory and is slower to converge.
 
