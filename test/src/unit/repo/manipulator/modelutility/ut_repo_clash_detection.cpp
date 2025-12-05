@@ -502,7 +502,13 @@ TEST(Clash, AccuracyReport)
 	// Test the accuracy of the end-to-end pipeline in Clearance mode, for multiple
 	// problem configurations.
 
-	GTEST_SKIP(); // Disable this test unless we need to gather more data.
+	// To output a report, provide a path and run this test.
+
+	std::string path = {};
+
+	if (!path.size()) {
+		GTEST_SKIP(); // Disable this test unless we need to gather data.
+	}
 
 	ClashGenerator clashGenerator;
 
@@ -511,7 +517,7 @@ TEST(Clash, AccuracyReport)
 	const int samplesPerDistance = 10000;
 	std::vector<double> distances = { 0, 1, 2, 3 };
 
-	ClearanceAccuracyReport report("C://3drepo//3drepobouncer_ISSUE797//clearanceAccuracyReport.errors.bin");
+	ClearanceAccuracyReport report(path);
 	CellDistribution space;
 	
 	// Due to the BVH construction and traversal, it is more efficient to perform
