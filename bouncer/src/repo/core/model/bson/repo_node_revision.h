@@ -22,6 +22,7 @@
 #pragma once
 #include "repo_node.h"
 #include "repo/core/model/repo_model_global.h"
+#include <ctime>
 
 //------------------------------------------------------------------------------
 //

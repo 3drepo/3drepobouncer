@@ -18,12 +18,12 @@
 #include "repo_test_mock_clash_scene.h"
 
 #include "repo/lib/datastructure/repo_vector.h"
+#include <repo/manipulator/modelutility/clashdetection/geometry_tests.h>
 
 #include "repo_test_mesh_utils.h"
 
 #include <numbers>
-
-#include <repo/manipulator/modelutility/clashdetection/geometry_tests.h>
+#include <cfloat>
 
 using namespace testing;
 using namespace repo::core::model;
