@@ -41,18 +41,30 @@ void ClashDetectionConfigHelper::addCompositeObjects(
 	const repo::lib::RepoUUID& uniqueIdA, 
 	const repo::lib::RepoUUID& uniqueIdB
 ) {
-	this->setA.push_back(
-		repo::manipulator::modelutility::CompositeObject(
-			uniqueIdA,
-			{ repo::manipulator::modelutility::MeshReference(containers[0].get(), uniqueIdA) }
-		)
-	);
-	this->setB.push_back(
-		repo::manipulator::modelutility::CompositeObject(
-			uniqueIdB,
-			{ repo::manipulator::modelutility::MeshReference(containers[0].get(), uniqueIdB) }
-		)
-	);
+	addCompositeObjects({ uniqueIdA }, { uniqueIdB });
+}
+
+void ClashDetectionConfigHelper::addCompositeObjects(
+	std::initializer_list<repo::lib::RepoUUID> uniqueIdsA,
+	std::initializer_list<repo::lib::RepoUUID> uniqueIdsB
+)
+{
+	for(const auto& uniqueIdA : uniqueIdsA) {
+		this->setA.push_back(
+			repo::manipulator::modelutility::CompositeObject(
+				uniqueIdA,
+				{ repo::manipulator::modelutility::MeshReference(containers[0].get(), uniqueIdA) }
+			)
+		);
+	}
+	for(const auto& uniqueIdB : uniqueIdsB) {
+		this->setB.push_back(
+			repo::manipulator::modelutility::CompositeObject(
+				uniqueIdB,
+				{ repo::manipulator::modelutility::MeshReference(containers[0].get(), uniqueIdB) }
+			)
+		);
+	}
 }
 
 const repo::lib::RepoUUID& testing::ClashDetectionConfigHelper::getRevision()
@@ -139,13 +151,18 @@ UUIDPair MockClashScene::add(TransformLines lines, ClashDetectionConfigHelper& c
 
 UUIDPair MockClashScene::add(TransformTriangles triangles, ClashDetectionConfigHelper& config)
 {
+	auto [a, b] = add(triangles);
+	config.addCompositeObjects(a, b);
+	return { a, b };
+}
+
+UUIDPair MockClashScene::add(TransformTriangles triangles)
+{
 	auto t1 = add(triangles.a.m);
 	auto m1 = add(triangles.a.e, t1.getSharedID());
 
 	auto t2 = add(triangles.b.m);
 	auto m2 = add(triangles.b.e, t2.getSharedID());
-
-	config.addCompositeObjects(m1.getUniqueID(), m2.getUniqueID());
 
 	return { m1.getUniqueID(), m2.getUniqueID() };
 }

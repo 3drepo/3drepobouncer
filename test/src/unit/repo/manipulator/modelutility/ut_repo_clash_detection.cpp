@@ -52,6 +52,10 @@
 #include <repo/manipulator/modelutility/clashdetection/repo_polydepth.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_node_cache.h>
 
+#include <repo/manipulator/modeloptimizer/bvh/bvh.hpp>
+#include <repo/manipulator/modeloptimizer/bvh/sweep_sah_builder.hpp>
+#include <repo/manipulator/modelutility/clashdetection/bvh_operators.h>
+
 #include <repo/manipulator/modelutility/clashdetection/predicates.h>
 
 #include "../../../repo_test_utils.h"
@@ -421,8 +425,10 @@ TEST(Clash, ClearanceE2E)
 
 	auto db = std::make_shared<MockDatabase>();
 
-	const int numIterations = 1;
-	const int samplesPerDistance = 10000;
+	const int numIterations = 10;
+	const int samplesPerDistance = 1000;
+	const int selfSamplesA = 100;
+	const int selfSamplesB = 100;
 	std::vector<double> distances = { -0.001, 2, 5 };
 
 	// With an expected accuracy of ±1.0, the expected measured distance ranges
@@ -443,29 +449,50 @@ TEST(Clash, ClearanceE2E)
 				auto p = clashGenerator.createTrianglesTransformed(space.sample());
 				scene.add(p, config);
 			}
+			for (int i = 0; i < selfSamplesA; ++i) {
+				auto p = clashGenerator.createTrianglesTransformed(space.sample());
+				auto [a, b] = scene.add(p);
+				config.addCompositeObjects({ a, b }, {});
+			}
+			for (int i = 0; i < selfSamplesB; ++i) {
+				auto p = clashGenerator.createTrianglesTransformed(space.sample());
+				auto [a, b] = scene.add(p);
+				config.addCompositeObjects({}, { a, b });
+			}
 		}
 
 		db->setDocuments(scene.bsons);
+
+		auto expected = samplesPerDistance;
 
 		{
 			config.tolerance = 1.0;
 			clash::Clearance pipeline(db, config);
 			auto results = pipeline.runPipeline();
-			EXPECT_THAT(results.clashes.size(), Eq(samplesPerDistance));
+			EXPECT_THAT(results.clashes.size(), Eq(expected));
+		}
+
+		{
+			config.selfIntersectsA = true;
+			expected += selfSamplesA;
+
+			clash::Clearance pipeline(db, config);
+			auto results = pipeline.runPipeline();
+			EXPECT_THAT(results.clashes.size(), Eq(expected));
 		}
 
 		{
 			config.tolerance = 3.0;
 			clash::Clearance pipeline(db, config);
 			auto results = pipeline.runPipeline();
-			EXPECT_THAT(results.clashes.size(), Eq(samplesPerDistance * 2));
+			EXPECT_THAT(results.clashes.size(), Eq(expected * 2));
 		}
 
 		{
 			config.tolerance = 6.0;
 			clash::Clearance pipeline(db, config);
 			auto results = pipeline.runPipeline();
-			EXPECT_THAT(results.clashes.size(), Eq(samplesPerDistance * 3));
+			EXPECT_THAT(results.clashes.size(), Eq(expected * 3));
 		}
 	}
 }
@@ -1084,6 +1111,89 @@ TEST(Clash, SelfClearance)
 	}
 }
 
+TEST(Clash, BvhTraversal)
+{
+	// Tests the intra-bvh traversal operator
+
+	// Creates a set of bvh clusters that should be identified to intersect with
+	// eachother. The BVH traversal doesn't operate directly on the coordinates
+	// so its OK here to just spread these out on the x-axis. The underlying bounds
+	// operations unit tests will cover those in more detail.
+
+	auto unit = repo::lib::RepoBounds(
+		repo::lib::RepoVector3D64(-0.5, -0.5, -0.5),
+		repo::lib::RepoVector3D64(0.5, 0.5, 0.5)
+	);
+
+	auto boundingBoxes = std::vector<repo::lib::RepoBounds>();
+
+	// Three boxes overlapping perfectly
+
+	boundingBoxes.push_back(repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(0, 0, 0)) * unit);
+	boundingBoxes.push_back(repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(0, 0, 0)) * unit);
+	boundingBoxes.push_back(repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(0, 0, 0)) * unit);
+
+	// Three touching eachother
+
+	boundingBoxes.push_back(repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(2, 0, 0)) * unit);
+	boundingBoxes.push_back(repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(3, 0, 0)) * unit);
+	boundingBoxes.push_back(repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(4, 0, 0)) * unit);
+
+	// Three with a distance of 0.5
+
+	boundingBoxes.push_back(repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(10, 0, 0)) * unit);
+	boundingBoxes.push_back(repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(11.5, 0, 0)) * unit);
+	boundingBoxes.push_back(repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(13, 0, 0)) * unit);
+
+	// Three with a distance of 1
+
+	boundingBoxes.push_back(repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(20, 0, 0)) * unit);
+	boundingBoxes.push_back(repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(22, 0, 0)) * unit);
+	boundingBoxes.push_back(repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(24, 0, 0)) * unit);
+
+	// Convert to bvh::bounds
+
+	bvh::Bvh<double> bvh;
+
+	{
+		auto bounds = std::vector<bvh::BoundingBox<double>>();
+		auto centers = std::vector<bvh::Vector3<double>>();
+
+		for(auto& b : boundingBoxes) {
+			bounds.push_back(bvh::BoundingBox<double>(
+				bvh::Vector3<double>(b.min().x, b.min().y, b.min().z),
+				bvh::Vector3<double>(b.max().x, b.max().y, b.max().z)
+			));
+		}
+		centers.push_back(bounds.back().center());
+
+		auto globalBounds = bvh::compute_bounding_boxes_union(bounds.data(), bounds.size());
+
+		bvh::SweepSahBuilder<bvh::Bvh<double>> builder(bvh);
+		builder.max_leaf_size = 1;
+		builder.build(globalBounds, bounds.data(), centers.data(), bounds.size());
+	}
+
+	struct DistanceQuery : public bvh::DistanceQuery {
+
+		std::vector<std::pair<size_t, size_t>> intersections;
+
+		void intersect(size_t a, size_t b) override {
+			intersections.push_back({ a, b  });
+		}
+	};
+
+	DistanceQuery q;
+	q.d = 0;
+
+	// With no distance, only the first two groups should intersect
+	q(bvh);
+
+	EXPECT_THAT(q.intersections.size(), Eq(4));
+
+
+}
+
 TEST(Clash, RepoPolyDepthInProjectStep)
 {
 	// Helper class to expose the contacts array for testing
@@ -1524,7 +1634,6 @@ TEST(Clash, NodeCache)
 	// Cache expects to be keyed by objects (specifically, their addresses)
 
 	struct K {
-
 	};
 
 	std::vector<K> keys;
