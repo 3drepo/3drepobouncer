@@ -167,7 +167,7 @@ UUIDPair MockClashScene::add(TransformTriangles triangles)
 	return { m1.getUniqueID(), m2.getUniqueID() };
 }
 
-UUIDPair MockClashScene::add(TransformMeshes meshes, ClashDetectionConfigHelper& config)
+UUIDPair MockClashScene::add(TransformMeshes meshes)
 {
 	auto t1 = add(meshes.a.m);
 	auto& m1 = meshes.a.e;
@@ -180,9 +180,14 @@ UUIDPair MockClashScene::add(TransformMeshes meshes, ClashDetectionConfigHelper&
 	bsons.push_back(m1.getBSON());
 	bsons.push_back(m2.getBSON());
 
-	config.addCompositeObjects(m1.getUniqueID(), m2.getUniqueID());
-
 	return { m1.getUniqueID(), m2.getUniqueID() };
+}
+
+UUIDPair MockClashScene::add(TransformMeshes meshes, ClashDetectionConfigHelper& config)
+{
+	auto [a, b] = add(meshes);
+	config.addCompositeObjects(a, b);
+	return { a, b };
 }
 
 void ClashGenerator::downcast(repo::lib::RepoLine& line) 

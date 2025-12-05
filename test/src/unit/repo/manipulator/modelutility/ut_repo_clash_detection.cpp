@@ -1179,19 +1179,69 @@ TEST(Clash, BvhTraversal)
 		std::vector<std::pair<size_t, size_t>> intersections;
 
 		void intersect(size_t a, size_t b) override {
-			intersections.push_back({ a, b  });
+			// This re-ordering makes it easier to define the expected results. It is not
+			// necessary for the actual collision detection - and in fact is better not
+			// not to have it because it breaks ordering when testing between two BVHs.
+			if (b < a) {
+				std::swap(a, b); 
+			}
+			intersections.push_back({ a, b });
 		}
 	};
 
+	// With no distance, only the first two groups should intersect, where the first
+	// group has three overlapping boxes and the second only two.
 	DistanceQuery q;
 	q.d = 0;
+	q(bvh);
+	
+	EXPECT_THAT(q.intersections, UnorderedElementsAre(
+		std::make_pair(0, 1),
+		std::make_pair(0, 2),
+		std::make_pair(1, 2),
+		std::make_pair(3, 4),
+		std::make_pair(4, 5)
+	));
 
-	// With no distance, only the first two groups should intersect
+	q.intersections.clear();
+
+	// Setting the tolerance to 0.6 will include an additional two intersections
+	q.d = 0.6;
+	q.intersections.clear();
 	q(bvh);
 
-	EXPECT_THAT(q.intersections.size(), Eq(4));
+	EXPECT_THAT(q.intersections, UnorderedElementsAre(
+		std::make_pair(0, 1),
+		std::make_pair(0, 2),
+		std::make_pair(1, 2),
+		std::make_pair(3, 4),
+		std::make_pair(4, 5),
+		std::make_pair(6, 7),
+		std::make_pair(7, 8)
+	));
 
+	// And setting it to 1.1 will include another two intersections from the last group,
+	// as well as bringing some boxes in the first two groups close enough that they will also
+	// match
+	q.d = 1.1;
+	q.intersections.clear();
+	q(bvh);
 
+	EXPECT_THAT(q.intersections, UnorderedElementsAre(
+		std::make_pair(0, 1),
+		std::make_pair(0, 2),
+		std::make_pair(1, 2),
+		std::make_pair(3, 4),
+		std::make_pair(4, 5),
+		std::make_pair(6, 7),
+		std::make_pair(7, 8),
+		std::make_pair(9, 10),
+		std::make_pair(10, 11),
+		std::make_pair(0, 3),
+		std::make_pair(1, 3),
+		std::make_pair(2, 3),
+		std::make_pair(3, 5)
+	));
 }
 
 TEST(Clash, RepoPolyDepthInProjectStep)
@@ -1539,12 +1589,15 @@ TEST(Clash, HardE2E)
 	clashGenerator.distance = { 0.1, 4 };
 
 	const int clashesPerSample = 20;
+	const int selfSamplesA = 5;
+	const int selfSamplesB = 5;
 	CellDistribution space;
 
 	for (int itr = 0; itr < 500; ++itr)
 	{
 		ClashDetectionConfigHelper config;
 		config.type = ClashDetectionType::Hard;
+		config.tolerance = 0.0;
 		MockClashScene scene(config.getRevision());
 
 		for (int j = 0; j < clashesPerSample; j++) {
@@ -1552,13 +1605,46 @@ TEST(Clash, HardE2E)
 			scene.add(clash, config);
 		}
 
+		for(int j = 0; j < selfSamplesA; j++) {
+			auto clash = clashGenerator.createHardSoup(space.sample());
+			auto [a, b] = scene.add(clash);
+			config.addCompositeObjects({ a, b }, {});
+		}
+
+		for (int j = 0; j < selfSamplesB; j++) {
+			auto clash = clashGenerator.createHardSoup(space.sample());
+			auto [a, b] = scene.add(clash);
+			config.addCompositeObjects({}, { a, b });
+		}
+
 		db->setDocuments(scene.bsons);
 
 		{
-			config.tolerance = 0.0;
 			clash::Hard pipeline(db, config);
 			auto results = pipeline.runPipeline();
 			EXPECT_THAT(results.clashes.size(), Eq(clashesPerSample));
+		}
+
+		{
+			config.selfIntersectsA = true;
+			clash::Hard pipeline(db, config);
+			auto results = pipeline.runPipeline();
+			EXPECT_THAT(results.clashes.size(), Eq(clashesPerSample + selfSamplesA));
+		}
+
+		{
+			config.selfIntersectsB = true;
+			config.selfIntersectsA = false;
+			clash::Hard pipeline(db, config);
+			auto results = pipeline.runPipeline();
+			EXPECT_THAT(results.clashes.size(), Eq(clashesPerSample + selfSamplesB));
+		}
+
+		{
+			config.selfIntersectsA = true;
+			clash::Hard pipeline(db, config);
+			auto results = pipeline.runPipeline();
+			EXPECT_THAT(results.clashes.size(), Eq(clashesPerSample + selfSamplesA + selfSamplesB));
 		}
 	}
 }
@@ -1617,17 +1703,16 @@ TEST(Clash, HardTolerance)
 
 TEST(Clash, NodeCache)
 {
-	static size_t numConstructions = 0;
-	static size_t numDestructions = 0;
+	static size_t nodeCount = 0;
 
 	struct Node {
 
 		Node() {
-			numConstructions++;
+			nodeCount++;
 		}
 
 		~Node() {
-			numDestructions++;
+			nodeCount--;
 		}
 	};
 
@@ -1656,12 +1741,14 @@ TEST(Clash, NodeCache)
 				records.push_back(cache.get(key));
 			}
 
-			EXPECT_THAT(numConstructions, Eq(keys.size()));
+			EXPECT_THAT(nodeCount, Eq(keys.size()));
 		} // The expected exception will be thrown on exiting this inner scope, when cache is destroyed
 	}, std::runtime_error);
 
+	nodeCount = 0;
+
 	{
-		// Cache is cleaned up without using auto collection
+		// Cache is cleaned up properly, but without using auto collection
 
 		Cache cache;
 		std::vector<Cache::Record*> records;
@@ -1669,13 +1756,13 @@ TEST(Clash, NodeCache)
 			records.push_back(cache.get(key));
 		}
 
-		EXPECT_THAT(numConstructions, Eq(keys.size()));
+		EXPECT_THAT(nodeCount, Eq(keys.size()));
 
 		for (auto& key : keys) {
 			cache.release(key);
 		}
 
-		EXPECT_THAT(numDestructions, Eq(numConstructions));
+		EXPECT_THAT(nodeCount, Eq(0));
 	}
 
 	{
@@ -1710,17 +1797,16 @@ TEST(Clash, NodeCache)
 			records.push_back(cache.get(keys[i]));
 		}
 
-		EXPECT_THAT(numConstructions, Eq(3));
+		EXPECT_THAT(nodeCount, Eq(3));
 
 		records[0]->getReference();
-		EXPECT_THAT(numDestructions, Eq(1));
+		EXPECT_THAT(nodeCount, Eq(2));
 
 		records[1]->getReference();
-		EXPECT_THAT(numDestructions, Eq(2));
+		EXPECT_THAT(nodeCount, Eq(1));
 
 		records[2]->getReference();
-		EXPECT_THAT(numDestructions, Eq(3));
-
+		EXPECT_THAT(nodeCount, Eq(0));
 	}
 
 	{
@@ -1732,29 +1818,23 @@ TEST(Clash, NodeCache)
 			records.push_back(cache.get(keys[i]));
 		}
 
-		EXPECT_THAT(numConstructions, Eq(3));
+		EXPECT_THAT(nodeCount, Eq(3));
 
 		auto ref0 = records[0]->getReference();
-		EXPECT_THAT(numDestructions, Eq(0));
+		EXPECT_THAT(nodeCount, Eq(3));
 
 		auto ref1 = records[1]->getReference();
-		EXPECT_THAT(numDestructions, Eq(0));
+		EXPECT_THAT(nodeCount, Eq(3));
 
 		records[2]->getReference();
-		EXPECT_THAT(numDestructions, Eq(1));
+		EXPECT_THAT(nodeCount, Eq(2));
 
 		ref0 = nullptr;
-		EXPECT_THAT(numDestructions, Eq(2));
+		EXPECT_THAT(nodeCount, Eq(1));
 
 		ref1 = nullptr;
-		EXPECT_THAT(numDestructions, Eq(3));
+		EXPECT_THAT(nodeCount, Eq(0));
 	}
-
-}
-
-TEST(Clash, CompositeClearance)
-{
-	// Tests that the distance query applied to the bvh
 }
 
 TEST(Clash, ResultsSerialisation)

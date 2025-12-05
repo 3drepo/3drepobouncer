@@ -334,6 +334,9 @@ namespace testing {
 		UUIDPair add(TransformTriangles triangles);
 
 		UUIDPair add(TransformMeshes meshes, ClashDetectionConfigHelper& config);
+
+		UUIDPair add(TransformMeshes meshes);
+
 	};
 
 	/*

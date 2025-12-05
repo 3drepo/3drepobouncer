@@ -130,7 +130,7 @@ namespace repo {
 
 					std::unordered_map<const Key*, Record> map;
 
-					~ResourceCache() {
+					~ResourceCache() noexcept(false) {
 						if(map.size()) {
 							throw std::runtime_error("ResourceCache destroyed while still holding records");
 						}

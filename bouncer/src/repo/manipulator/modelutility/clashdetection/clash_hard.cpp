@@ -131,9 +131,9 @@ void Hard::run(const Graph& graphA, const Graph& graphB)
 
 	auto selfIntersectionBroadphase = [&](const Graph& graph, Cache& cache) {
 		broadphase.operator()(graph.bvh);
-		for (auto [a, b] : broadphase.results) {
-			auto compA = graph.getCompositeObject(a);
-			auto compB = graph.getCompositeObject(b);
+		for (auto& [a, b] : broadphase.results) {
+			auto& compA = graph.getCompositeObject(a);
+			auto& compB = graph.getCompositeObject(b);
 
 			if(compA.id == compB.id) {
 				continue;
