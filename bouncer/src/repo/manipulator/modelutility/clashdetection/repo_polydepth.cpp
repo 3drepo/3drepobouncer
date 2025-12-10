@@ -242,6 +242,8 @@ RepoPolyDepth::Collision RepoPolyDepth::intersect(const repo::lib::RepoVector3D6
     BvhRefitter refitter(bvhA, a);
     refitter.refit(m);
 
+    contacts.clear();
+
     auto r = Collision::Free;
     bvh::traverse(bvhA, bvhB,
         [&](const Bvh::Node& a, const Bvh::Node& b) 
@@ -262,9 +264,49 @@ RepoPolyDepth::Collision RepoPolyDepth::intersect(const repo::lib::RepoVector3D6
                 if (r == Collision::Free) {
                     r = Collision::Contact; // Don't override a hard collision with an in-contact one!
                 }
+
+                // If two triangles are touching, they may form part of a closure
+                // that means the two meshes are overlapping, which is considered
+                // a collision, and so store these contacts to check for this
+                // later.
+
+                if (triA.normal().dotProduct(b[_b].normal()) > coplanarEpsilon) {
+                    addContact(
+                        triA.normal(),
+                        triA.normal(), // We don't care about the point for overlaps detection - just ensure the plane constant is always positive
+                        0.0
+					);
+                }
 			}
         }
     );
+
+    if (r == Collision::Contact) {
+        // We consider an overlap to occur if a mesh cannot trivially move away.
+        // A mesh can move trivially if it can translate along at least one
+        // contact normal; if all normals oppose eachother then the mesh is
+        // captured, being only able to move tangentially (if even then).
+
+		for (int i = 0; i < contacts.size(); i++) {
+            for (int j = i + 1; j < contacts.size(); j++) {
+                if(contacts[i].normal.dotProduct(contacts[j].normal) < 0) {
+					contacts[i].tau = 1.0; // Mark as opposed
+					contacts[j].tau = 1.0; // Mark as opposed
+                }
+            }
+		}
+        bool free = !contacts.size();
+        for (auto& c : contacts) {
+            if (c.tau < 1.0) {
+                free = true;
+                break;
+            }
+        }
+
+        if (!free) {
+			r = Collision::Collision;
+        }
+    }
 
     return r;
 }
@@ -442,7 +484,7 @@ void RepoPolyDepth::addContact(
             contacts[i] = contact;
             return;
         }
-        else if (contact.normal.dotProduct(existing.normal) > 0.9999 &&  // Duplicate contact, ignore
+        else if (contact.normal.dotProduct(existing.normal) > coplanarEpsilon &&  // Duplicate contact, ignore
             (contact.constant - existing.constant) < FLT_EPSILON) {
             return;
         }

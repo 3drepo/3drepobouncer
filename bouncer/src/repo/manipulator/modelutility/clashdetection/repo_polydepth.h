@@ -139,9 +139,9 @@ namespace geometry {
 		/*
 		* Helper function to emplace contacts. If the contact has a time of contact
 		* smaller than an existing contact, it will displace it. Duplicate contacts
-		* are ignored.
-		* Depending on the order different time of contacts are added, there may still
-		* be duplicates with different times, so the filter should still be run.
+		* are ignored. Depending on the order different time of contacts are added, 
+		* there may still be duplicates with different times, so the filter should
+		* still be run.
 		*/
 		void addContact(
 			const repo::lib::RepoVector3D64& normal,
@@ -192,5 +192,11 @@ namespace geometry {
 		* distances will change only very slightly, so this can be set quite small.
 		*/
 		double convergenceEpsilon = 1e-3;
+
+		/*
+		* Threshold for the result of a dot product of two normal vectors to decide
+		* whether those surfaces are coplanar.
+		*/
+		double coplanarEpsilon = 0.9999;
 	};
 }

@@ -1490,7 +1490,37 @@ TEST(Clash, PolyDepthCollisionFreeInitialisationStep)
 	EXPECT_THAT(v1.norm(), Eq(0));
 }
 
-TEST(Clash, RepoPolyDepth1)
+TEST(Clash, RepoPolyDepthOverlapsProcedural)
+{
+	auto a = ClashGenerator::triangles(repo::test::utils::mesh::makeUnitCube());
+	auto b = ClashGenerator::triangles(repo::test::utils::mesh::makeUnitCube());
+
+	// Cube overlaps on the x-axis by 0.5 units
+
+	auto t = repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(0.5, 0, 0));
+	ClashGenerator::applyTransforms(b, t);
+
+	{
+		SimpleObjWriter writer("C:\\3drepo\\3drepobouncer_ISSUE797\\clash_pd_procedural_a.obj");
+		writer.write(a);
+		writer.write(b);
+	}
+
+	// Even though the cubes overlap, they do not intersect because the triangles
+	// are at best coplanar
+
+	EXPECT_THAT(intersects(a, b), IsFalse());
+
+	geometry::RepoPolyDepth pd(a, b);
+	auto v = pd.getPenetrationVector();
+	
+	// PolyDepth however should detect the overlaps case reliably and so initialise
+	// to a collision free configuration.
+
+	EXPECT_THAT(v.norm(), Ge(0.5));
+}
+
+TEST(Clash, RepoPolyDepthProcedural)
 {
 	// Tests the penetration depth estimation (PolyDepth) of the geometry utils
 	// with procedural geometry. Penetration depth is approximate, with a
@@ -1532,7 +1562,7 @@ TEST(Clash, RepoPolyDepth1)
 	}
 }
 
-TEST(Clash, RepoPolyDepth2)
+TEST(Clash, RepoPolyDepthDb)
 {
 	// Tests the penetration depth estimation (PolyDepth) of the geometry utils
 	// on some difficult problems that we have an expected result for.
@@ -1547,11 +1577,9 @@ TEST(Clash, RepoPolyDepth2)
 
 	auto pairs = {
 		std::make_pair("set1_a", "set1_b"),
-		// std::make_pair("set2_a", "set2_b"), // Overlaps is not currently supported
+		std::make_pair("set2_a", "set2_b"),
 		std::make_pair("set3_a", "set3_b"),
 		std::make_pair("set4_a", "set4_b"),
-		std::make_pair("set5_a", "set5_b"),
-		// std::make_pair("set6_a", "set6_b") // Overlaps is not currently supported
 	};
 
 	for (auto& pair : pairs) {
@@ -1579,7 +1607,51 @@ TEST(Clash, RepoPolyDepth2)
 		EXPECT_THAT(v1.norm(), Lt(v0.norm())) << s;
 
 		copy = a;
+		ClashGenerator::applyTransforms(copy, repo::lib::RepoMatrix::translate(v1));
+		EXPECT_THAT(intersects(copy, b), IsFalse()) << s;
+	}
+}
+
+TEST(Clash, RepoPolyDepthOverlapsDb)
+{
+	auto handler = getHandler();
+	ClashDetectionConfig config;
+	ClashDetectionDatabaseHelper helper(handler);
+
+	auto c = helper.getContainerByName("overlaps_1");
+
+	auto pairs = {
+		std::make_pair("set1_a", "set1_b"),
+		std::make_pair("set2_a", "set2_b"),
+		std::make_pair("set3_a", "set3_b"),
+		std::make_pair("set4_a", "set4_b"),
+		std::make_pair("set5_a", "set5_b"),
+	};
+
+	for (auto& pair : pairs) {
+
+		std::string s = std::string("for: ") + pair.first + " vs " + pair.second + "\n";
+
+		// Take care that the meshes returned here will not have any transformations applied.
+
+		auto a = ClashGenerator::triangles(helper.getChildMeshNodes(c.get(), pair.first));
+		auto b = ClashGenerator::triangles(helper.getChildMeshNodes(c.get(), pair.second));
+
+		geometry::RepoPolyDepth pd(a, b);
+		auto v0 = pd.getPenetrationVector();
+
+		auto copy = a;
 		ClashGenerator::applyTransforms(copy, repo::lib::RepoMatrix::translate(v0));
+		EXPECT_THAT(intersects(copy, b), IsFalse()) << s;
+
+		pd.iterate(10);
+
+		auto v1 = pd.getPenetrationVector();
+
+		EXPECT_THAT(v1.norm(), Gt(0)) << s;
+
+		copy = a;
+		ClashGenerator::applyTransforms(copy, repo::lib::RepoMatrix::translate(v1));
 		EXPECT_THAT(intersects(copy, b), IsFalse()) << s;
 	}
 }
