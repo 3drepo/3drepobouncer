@@ -295,6 +295,18 @@ namespace repo {
 					}
 				};
 
+				struct BoolParser : public Parser
+				{
+					bool& v;
+					BoolParser(bool& v)
+						:v(v)
+					{
+					}
+					virtual void Bool(bool b) override {
+						v = b;
+					}
+				};
+
 				/*
 				* Calls the parser at the top of the stack for any value. When arrays or objects
 				* are encountered, the Parser has the opportunity to push a new parser to the

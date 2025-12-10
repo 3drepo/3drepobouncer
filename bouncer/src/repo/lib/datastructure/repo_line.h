@@ -19,6 +19,7 @@
 
 #include "repo_vector2d.h"
 #include "repo_vector3d.h"
+#include <cfloat>
 
 namespace repo{
 	namespace lib{

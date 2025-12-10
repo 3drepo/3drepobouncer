@@ -50,6 +50,11 @@
 #include <repo/manipulator/modelutility/clashdetection/clash_scheduler.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_exceptions.h>
 #include <repo/manipulator/modelutility/clashdetection/repo_polydepth.h>
+#include <repo/manipulator/modelutility/clashdetection/clash_node_cache.h>
+
+#include <repo/manipulator/modeloptimizer/bvh/bvh.hpp>
+#include <repo/manipulator/modeloptimizer/bvh/sweep_sah_builder.hpp>
+#include <repo/manipulator/modelutility/clashdetection/bvh_operators.h>
 
 #include <repo/manipulator/modelutility/clashdetection/predicates.h>
 
@@ -275,6 +280,11 @@ TEST(Clash, Config)
 	EXPECT_THAT(config.tolerance, Eq(0.0001));
 	EXPECT_THAT(config.resultsFile, StrEq("results/clash_results.json"));
 	
+	// If self-intersection options have not been specified, they default to false.
+
+	EXPECT_THAT(config.selfIntersectsA, IsFalse());
+	EXPECT_THAT(config.selfIntersectsB, IsFalse());
+
 	EXPECT_THAT(config.setA.size(), Eq(2));
 
 	EXPECT_THAT(config.setA[0].id, Eq(repo::lib::RepoUUID("898f194c-3852-43ac-9be5-85d315838768")));
@@ -337,11 +347,15 @@ TEST(Clash, Scheduler)
 {
 	// Tests if the ClashScheduler returns a sensible narrowphase set order.
 
-	// The scheduling problem is NP-Hard, so this test doesn't check if the
-	// order is optimal, just that all the original broadphase tests still
-	// exist, with no duplicates.
+	// The scheduling problem is NP-Hard, so this test doesn't check if the order
+	// is optimal, just that all the original broadphase tests still exist, with
+	// no duplicates.
 
-	clash::BroadphaseResults broadphaseResults;
+	// The scheduler should work with anything that fits in a void* - here we use
+	// indices to test its correctness, and also that it doesn't dereference (it
+	// shouldn't), because attempting to will result in an access violation.
+
+	std::vector<std::pair<size_t, size_t>> broadphaseResults;
 
 	RepoRandomGenerator random;
 
@@ -359,6 +373,22 @@ TEST(Clash, Scheduler)
 			}
 		}
 	}
+
+	// Make sure regardless of what the RNG does, that we include some difficult
+	// conditions: edges from both directions, duplicates and zero-length edges.
+
+	broadphaseResults.push_back({ 3, 0 });
+	broadphaseResults.push_back({ 0, 3 });
+	broadphaseResults.push_back({ 3, 0 });
+	broadphaseResults.push_back({ 0, 3 });
+	
+	// The clash detection should never actually compare an entry with itself,
+	// but the scheduler should be as robust as possible.
+
+	broadphaseResults.push_back({ 0, 0 });
+	broadphaseResults.push_back({ 0, 0 });
+	broadphaseResults.push_back({ 0, 0 });
+
 
 	auto copy = broadphaseResults;
 
@@ -395,8 +425,10 @@ TEST(Clash, ClearanceE2E)
 
 	auto db = std::make_shared<MockDatabase>();
 
-	const int numIterations = 1;
-	const int samplesPerDistance = 10000;
+	const int numIterations = 10;
+	const int samplesPerDistance = 1000;
+	const int selfSamplesA = 100;
+	const int selfSamplesB = 100;
 	std::vector<double> distances = { -0.001, 2, 5 };
 
 	// With an expected accuracy of ±1.0, the expected measured distance ranges
@@ -417,29 +449,50 @@ TEST(Clash, ClearanceE2E)
 				auto p = clashGenerator.createTrianglesTransformed(space.sample());
 				scene.add(p, config);
 			}
+			for (int i = 0; i < selfSamplesA; ++i) {
+				auto p = clashGenerator.createTrianglesTransformed(space.sample());
+				auto [a, b] = scene.add(p);
+				config.addCompositeObjects({ a, b }, {});
+			}
+			for (int i = 0; i < selfSamplesB; ++i) {
+				auto p = clashGenerator.createTrianglesTransformed(space.sample());
+				auto [a, b] = scene.add(p);
+				config.addCompositeObjects({}, { a, b });
+			}
 		}
 
 		db->setDocuments(scene.bsons);
+
+		auto expected = samplesPerDistance;
 
 		{
 			config.tolerance = 1.0;
 			clash::Clearance pipeline(db, config);
 			auto results = pipeline.runPipeline();
-			EXPECT_THAT(results.clashes.size(), Eq(samplesPerDistance));
+			EXPECT_THAT(results.clashes.size(), Eq(expected));
+		}
+
+		{
+			config.selfIntersectsA = true;
+			expected += selfSamplesA;
+
+			clash::Clearance pipeline(db, config);
+			auto results = pipeline.runPipeline();
+			EXPECT_THAT(results.clashes.size(), Eq(expected));
 		}
 
 		{
 			config.tolerance = 3.0;
 			clash::Clearance pipeline(db, config);
 			auto results = pipeline.runPipeline();
-			EXPECT_THAT(results.clashes.size(), Eq(samplesPerDistance * 2));
+			EXPECT_THAT(results.clashes.size(), Eq(expected * 2));
 		}
 
 		{
 			config.tolerance = 6.0;
 			clash::Clearance pipeline(db, config);
 			auto results = pipeline.runPipeline();
-			EXPECT_THAT(results.clashes.size(), Eq(samplesPerDistance * 3));
+			EXPECT_THAT(results.clashes.size(), Eq(expected * 3));
 		}
 	}
 }
@@ -449,7 +502,13 @@ TEST(Clash, AccuracyReport)
 	// Test the accuracy of the end-to-end pipeline in Clearance mode, for multiple
 	// problem configurations.
 
-	GTEST_SKIP(); // Disable this test unless we need to gather more data.
+	// To output a report, provide a path and run this test.
+
+	std::string path = {};
+
+	if (!path.size()) {
+		GTEST_SKIP(); // Disable this test unless we need to gather data.
+	}
 
 	ClashGenerator clashGenerator;
 
@@ -458,7 +517,7 @@ TEST(Clash, AccuracyReport)
 	const int samplesPerDistance = 10000;
 	std::vector<double> distances = { 0, 1, 2, 3 };
 
-	ClearanceAccuracyReport report("C://3drepo//3drepobouncer_ISSUE797//clearanceAccuracyReport.errors.bin");
+	ClearanceAccuracyReport report(path);
 	CellDistribution space;
 	
 	// Due to the BVH construction and traversal, it is more efficient to perform
@@ -1252,11 +1311,7 @@ TEST(Clash, Units)
 
 TEST(Clash, SelfClearance)
 {
-	// Self-Clearance is not currently supported - sets must be disjoint and
-	// an exception will be thrown if they are not. This is a future feature.
-
 	auto handler = getHandler();
-	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
 	auto c = helper.getContainerByName("cubes_self");
@@ -1271,24 +1326,178 @@ TEST(Clash, SelfClearance)
 		helper.createCompositeObject(c.get(), "Cube7")
 	};
 	
-	config.setA.insert(config.setA.end(), set.begin(), set.end());
-	config.setB.insert(config.setB.end(), set.begin(), set.end());
+	{
+		// Composite Objects may only appear in one set. If the goal is self-clash,
+		// then the appropriate flag should be used instead.
 
-	config.tolerance = 1;
-	config.type = ClashDetectionType::Clearance;
+		ClashDetectionConfig config;
+		config.setA.insert(config.setA.end(), set.begin(), set.end());
+		config.setB.insert(config.setB.end(), set.begin(), set.end());
+		config.tolerance = 1;
+		config.type = ClashDetectionType::Clearance;
 
-	auto pipeline = new clash::Clearance(handler, config);
-	try {
+		auto pipeline = new clash::Clearance(handler, config);
+		try {
+			auto results = pipeline->runPipeline();
+			FAIL() << "Expected OverlappingSetsException due to due to self-tests.";
+		}
+		catch (const clash::ClashDetectionException& ex) {
+			auto exception = dynamic_cast<const clash::OverlappingSetsException*>(&ex);
+			EXPECT_THAT(exception != nullptr, IsTrue());
+		}
+		catch (std::exception& e) {
+			FAIL() << "Expected OverlappingSetsException due to self-tests: " << e.what();
+		}
+	}
+
+	{
+		// Should support self-clash tests when the flag is set. If the flag is present
+		// for one set, the other set may be empty.
+
+		ClashDetectionConfig config;
+		config.setA.insert(config.setA.end(), set.begin(), set.end());
+		config.selfIntersectsA = true;
+		config.tolerance = 1;
+		config.type = ClashDetectionType::Clearance;
+		
+		auto pipeline = new clash::Clearance(handler, config);
 		auto results = pipeline->runPipeline();
-		FAIL() << "Expected OverlappingSetsException due to due to self-tests.";
+
+		EXPECT_THAT(results.clashes.size(), Eq(3));
 	}
-	catch (const clash::ClashDetectionException& ex) {
-		auto exception = dynamic_cast<const clash::OverlappingSetsException*>(&ex);
-		EXPECT_THAT(exception != nullptr, IsTrue());
+}
+
+TEST(Clash, BvhTraversal)
+{
+	// Tests the intra-bvh traversal operator
+
+	// Creates a set of bvh clusters that should be identified to intersect with
+	// eachother. The BVH traversal doesn't operate directly on the coordinates
+	// so its OK here to just spread these out on the x-axis. The underlying bounds
+	// operations unit tests will cover those in more detail.
+
+	auto unit = repo::lib::RepoBounds(
+		repo::lib::RepoVector3D64(-0.5, -0.5, -0.5),
+		repo::lib::RepoVector3D64(0.5, 0.5, 0.5)
+	);
+
+	auto boundingBoxes = std::vector<repo::lib::RepoBounds>();
+
+	// Three boxes overlapping perfectly
+
+	boundingBoxes.push_back(repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(0, 0, 0)) * unit);
+	boundingBoxes.push_back(repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(0, 0, 0)) * unit);
+	boundingBoxes.push_back(repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(0, 0, 0)) * unit);
+
+	// Three touching eachother
+
+	boundingBoxes.push_back(repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(2, 0, 0)) * unit);
+	boundingBoxes.push_back(repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(3, 0, 0)) * unit);
+	boundingBoxes.push_back(repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(4, 0, 0)) * unit);
+
+	// Three with a distance of 0.5
+
+	boundingBoxes.push_back(repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(10, 0, 0)) * unit);
+	boundingBoxes.push_back(repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(11.5, 0, 0)) * unit);
+	boundingBoxes.push_back(repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(13, 0, 0)) * unit);
+
+	// Three with a distance of 1
+
+	boundingBoxes.push_back(repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(20, 0, 0)) * unit);
+	boundingBoxes.push_back(repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(22, 0, 0)) * unit);
+	boundingBoxes.push_back(repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(24, 0, 0)) * unit);
+
+	// Convert to bvh::bounds
+
+	bvh::Bvh<double> bvh;
+
+	{
+		auto bounds = std::vector<bvh::BoundingBox<double>>();
+		auto centers = std::vector<bvh::Vector3<double>>();
+
+		for(auto& b : boundingBoxes) {
+			bounds.push_back(bvh::BoundingBox<double>(
+				bvh::Vector3<double>(b.min().x, b.min().y, b.min().z),
+				bvh::Vector3<double>(b.max().x, b.max().y, b.max().z)
+			));
+		}
+		centers.push_back(bounds.back().center());
+
+		auto globalBounds = bvh::compute_bounding_boxes_union(bounds.data(), bounds.size());
+
+		bvh::SweepSahBuilder<bvh::Bvh<double>> builder(bvh);
+		builder.max_leaf_size = 1;
+		builder.build(globalBounds, bounds.data(), centers.data(), bounds.size());
 	}
-	catch (std::exception& e) {
-		FAIL() << "Expected OverlappingSetsException due to self-tests: " << e.what();
-	}
+
+	struct DistanceQuery : public bvh::DistanceQuery {
+
+		std::vector<std::pair<size_t, size_t>> intersections;
+
+		void intersect(size_t a, size_t b) override {
+			// This re-ordering makes it easier to define the expected results. It is not
+			// necessary for the actual collision detection - and in fact is better not
+			// not to have it because it breaks ordering when testing between two BVHs.
+			if (b < a) {
+				std::swap(a, b); 
+			}
+			intersections.push_back({ a, b });
+		}
+	};
+
+	// With no distance, only the first two groups should intersect, where the first
+	// group has three overlapping boxes and the second only two.
+	DistanceQuery q;
+	q.d = 0;
+	q(bvh);
+	
+	EXPECT_THAT(q.intersections, UnorderedElementsAre(
+		std::make_pair(0, 1),
+		std::make_pair(0, 2),
+		std::make_pair(1, 2),
+		std::make_pair(3, 4),
+		std::make_pair(4, 5)
+	));
+
+	q.intersections.clear();
+
+	// Setting the tolerance to 0.6 will include an additional two intersections
+	q.d = 0.6;
+	q.intersections.clear();
+	q(bvh);
+
+	EXPECT_THAT(q.intersections, UnorderedElementsAre(
+		std::make_pair(0, 1),
+		std::make_pair(0, 2),
+		std::make_pair(1, 2),
+		std::make_pair(3, 4),
+		std::make_pair(4, 5),
+		std::make_pair(6, 7),
+		std::make_pair(7, 8)
+	));
+
+	// And setting it to 1.1 will include another two intersections from the last group,
+	// as well as bringing some boxes in the first two groups close enough that they will also
+	// match
+	q.d = 1.1;
+	q.intersections.clear();
+	q(bvh);
+
+	EXPECT_THAT(q.intersections, UnorderedElementsAre(
+		std::make_pair(0, 1),
+		std::make_pair(0, 2),
+		std::make_pair(1, 2),
+		std::make_pair(3, 4),
+		std::make_pair(4, 5),
+		std::make_pair(6, 7),
+		std::make_pair(7, 8),
+		std::make_pair(9, 10),
+		std::make_pair(10, 11),
+		std::make_pair(0, 3),
+		std::make_pair(1, 3),
+		std::make_pair(2, 3),
+		std::make_pair(3, 5)
+	));
 }
 
 TEST(Clash, RepoPolyDepthInProjectStep)
@@ -1351,7 +1560,7 @@ TEST(Clash, RepoPolyDepthInProjectStep)
 		return Plane{ n, p, c };
 	};
 
-	for (size_t i = 0; i < 1000; ++i)
+	for (size_t i = 0; i < 10000; ++i)
 	{
 		// Simple single planes
 
@@ -1531,7 +1740,37 @@ TEST(Clash, PolyDepthCollisionFreeInitialisationStep)
 	EXPECT_THAT(v1.norm(), Eq(0));
 }
 
-TEST(Clash, RepoPolyDepth1)
+TEST(Clash, RepoPolyDepthOverlapsProcedural)
+{
+	auto a = ClashGenerator::triangles(repo::test::utils::mesh::makeUnitCube());
+	auto b = ClashGenerator::triangles(repo::test::utils::mesh::makeUnitCube());
+
+	// Cube overlaps on the x-axis by 0.5 units
+
+	auto t = repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(0.5, 0, 0));
+	ClashGenerator::applyTransforms(b, t);
+
+	{
+		SimpleObjWriter writer("C:\\3drepo\\3drepobouncer_ISSUE797\\clash_pd_procedural_a.obj");
+		writer.write(a);
+		writer.write(b);
+	}
+
+	// Even though the cubes overlap, they do not intersect because the triangles
+	// are at best coplanar
+
+	EXPECT_THAT(intersects(a, b), IsFalse());
+
+	geometry::RepoPolyDepth pd(a, b);
+	auto v = pd.getPenetrationVector();
+	
+	// PolyDepth however should detect the overlaps case reliably and so initialise
+	// to a collision free configuration.
+
+	EXPECT_THAT(v.norm(), Ge(0.5));
+}
+
+TEST(Clash, RepoPolyDepthProcedural)
 {
 	// Tests the penetration depth estimation (PolyDepth) of the geometry utils
 	// with procedural geometry. Penetration depth is approximate, with a
@@ -1573,7 +1812,7 @@ TEST(Clash, RepoPolyDepth1)
 	}
 }
 
-TEST(Clash, RepoPolyDepth2)
+TEST(Clash, RepoPolyDepthDb)
 {
 	// Tests the penetration depth estimation (PolyDepth) of the geometry utils
 	// on some difficult problems that we have an expected result for.
@@ -1588,11 +1827,9 @@ TEST(Clash, RepoPolyDepth2)
 
 	auto pairs = {
 		std::make_pair("set1_a", "set1_b"),
-		// std::make_pair("set2_a", "set2_b"), // Overlaps is not currently supported
+		std::make_pair("set2_a", "set2_b"),
 		std::make_pair("set3_a", "set3_b"),
 		std::make_pair("set4_a", "set4_b"),
-		std::make_pair("set5_a", "set5_b"),
-		// std::make_pair("set6_a", "set6_b") // Overlaps is not currently supported
 	};
 
 	for (auto& pair : pairs) {
@@ -1620,7 +1857,51 @@ TEST(Clash, RepoPolyDepth2)
 		EXPECT_THAT(v1.norm(), Lt(v0.norm())) << s;
 
 		copy = a;
+		ClashGenerator::applyTransforms(copy, repo::lib::RepoMatrix::translate(v1));
+		EXPECT_THAT(intersects(copy, b), IsFalse()) << s;
+	}
+}
+
+TEST(Clash, RepoPolyDepthOverlapsDb)
+{
+	auto handler = getHandler();
+	ClashDetectionConfig config;
+	ClashDetectionDatabaseHelper helper(handler);
+
+	auto c = helper.getContainerByName("overlaps_1");
+
+	auto pairs = {
+		std::make_pair("set1_a", "set1_b"),
+		std::make_pair("set2_a", "set2_b"),
+		std::make_pair("set3_a", "set3_b"),
+		std::make_pair("set4_a", "set4_b"),
+		std::make_pair("set5_a", "set5_b"),
+	};
+
+	for (auto& pair : pairs) {
+
+		std::string s = std::string("for: ") + pair.first + " vs " + pair.second + "\n";
+
+		// Take care that the meshes returned here will not have any transformations applied.
+
+		auto a = ClashGenerator::triangles(helper.getChildMeshNodes(c.get(), pair.first));
+		auto b = ClashGenerator::triangles(helper.getChildMeshNodes(c.get(), pair.second));
+
+		geometry::RepoPolyDepth pd(a, b);
+		auto v0 = pd.getPenetrationVector();
+
+		auto copy = a;
 		ClashGenerator::applyTransforms(copy, repo::lib::RepoMatrix::translate(v0));
+		EXPECT_THAT(intersects(copy, b), IsFalse()) << s;
+
+		pd.iterate(10);
+
+		auto v1 = pd.getPenetrationVector();
+
+		EXPECT_THAT(v1.norm(), Gt(0)) << s;
+
+		copy = a;
+		ClashGenerator::applyTransforms(copy, repo::lib::RepoMatrix::translate(v1));
 		EXPECT_THAT(intersects(copy, b), IsFalse()) << s;
 	}
 }
@@ -1636,12 +1917,15 @@ TEST(Clash, HardE2E)
 	clashGenerator.distance = { 0.1, 4 };
 
 	const int clashesPerSample = 20;
+	const int selfSamplesA = 5;
+	const int selfSamplesB = 5;
 	CellDistribution space;
 
 	for (int itr = 0; itr < 500; ++itr)
 	{
 		ClashDetectionConfigHelper config;
 		config.type = ClashDetectionType::Hard;
+		config.tolerance = 0.0;
 		MockClashScene scene(config.getRevision());
 
 		for (int j = 0; j < clashesPerSample; j++) {
@@ -1649,13 +1933,46 @@ TEST(Clash, HardE2E)
 			scene.add(clash, config);
 		}
 
+		for(int j = 0; j < selfSamplesA; j++) {
+			auto clash = clashGenerator.createHardSoup(space.sample());
+			auto [a, b] = scene.add(clash);
+			config.addCompositeObjects({ a, b }, {});
+		}
+
+		for (int j = 0; j < selfSamplesB; j++) {
+			auto clash = clashGenerator.createHardSoup(space.sample());
+			auto [a, b] = scene.add(clash);
+			config.addCompositeObjects({}, { a, b });
+		}
+
 		db->setDocuments(scene.bsons);
 
 		{
-			config.tolerance = 0.0;
 			clash::Hard pipeline(db, config);
 			auto results = pipeline.runPipeline();
 			EXPECT_THAT(results.clashes.size(), Eq(clashesPerSample));
+		}
+
+		{
+			config.selfIntersectsA = true;
+			clash::Hard pipeline(db, config);
+			auto results = pipeline.runPipeline();
+			EXPECT_THAT(results.clashes.size(), Eq(clashesPerSample + selfSamplesA));
+		}
+
+		{
+			config.selfIntersectsB = true;
+			config.selfIntersectsA = false;
+			clash::Hard pipeline(db, config);
+			auto results = pipeline.runPipeline();
+			EXPECT_THAT(results.clashes.size(), Eq(clashesPerSample + selfSamplesB));
+		}
+
+		{
+			config.selfIntersectsA = true;
+			clash::Hard pipeline(db, config);
+			auto results = pipeline.runPipeline();
+			EXPECT_THAT(results.clashes.size(), Eq(clashesPerSample + selfSamplesA + selfSamplesB));
 		}
 	}
 }
@@ -1712,6 +2029,142 @@ TEST(Clash, HardTolerance)
 	}
 }
 
+TEST(Clash, NodeCache)
+{
+	static size_t nodeCount = 0;
+
+	struct Node {
+
+		Node() {
+			nodeCount++;
+		}
+
+		~Node() {
+			nodeCount--;
+		}
+	};
+
+	// Cache expects to be keyed by objects (specifically, their addresses)
+
+	struct K {
+	};
+
+	std::vector<K> keys;
+
+	for (size_t i = 0; i < 10; i++) {
+		keys.push_back(K{});
+	}
+
+	struct Cache : public repo::manipulator::modelutility::clash::ResourceCache<K, Node>
+	{
+		void initialise(const K& key, Node& node) const override {
+		}
+	};
+
+	EXPECT_THROW({
+		{
+			Cache cache;
+			std::vector<Cache::Record*> records;
+			for(auto& key : keys) {
+				records.push_back(cache.get(key));
+			}
+
+			EXPECT_THAT(nodeCount, Eq(keys.size()));
+		} // The expected exception will be thrown on exiting this inner scope, when cache is destroyed
+	}, std::runtime_error);
+
+	nodeCount = 0;
+
+	{
+		// Cache is cleaned up properly, but without using auto collection
+
+		Cache cache;
+		std::vector<Cache::Record*> records;
+		for (auto& key : keys) {
+			records.push_back(cache.get(key));
+		}
+
+		EXPECT_THAT(nodeCount, Eq(keys.size()));
+
+		for (auto& key : keys) {
+			cache.release(key);
+		}
+
+		EXPECT_THAT(nodeCount, Eq(0));
+	}
+
+	{
+		// Getting a record a second time returns the same pointer
+
+		Cache cache;
+		std::vector<Cache::Record*> records;
+		for (auto& key : keys) {
+			records.push_back(cache.get(key));
+		}
+
+		for (size_t itr = 0; itr < 3; itr++) {
+			for (size_t i = 0; i < keys.size(); i++) {
+				auto record = cache.get(keys[i]);
+				EXPECT_THAT(record, Eq(records[i]));
+			}
+		}
+
+		// Similarly, we only have to delete them once...
+		for (auto& key : keys) {
+			cache.release(key);
+		}
+	}
+
+	{
+		// Getting a reference from a record will clean that record up when it goes
+		// out of scope
+
+		Cache cache;
+		std::vector<Cache::Record*> records;
+		for (int i = 0; i < 3; i++) {
+			records.push_back(cache.get(keys[i]));
+		}
+
+		EXPECT_THAT(nodeCount, Eq(3));
+
+		records[0]->getReference();
+		EXPECT_THAT(nodeCount, Eq(2));
+
+		records[1]->getReference();
+		EXPECT_THAT(nodeCount, Eq(1));
+
+		records[2]->getReference();
+		EXPECT_THAT(nodeCount, Eq(0));
+	}
+
+	{
+		// Holding a reference will keep the record alive
+
+		Cache cache;
+		std::vector<Cache::Record*> records;
+		for (int i = 0; i < 3; i++) {
+			records.push_back(cache.get(keys[i]));
+		}
+
+		EXPECT_THAT(nodeCount, Eq(3));
+
+		auto ref0 = records[0]->getReference();
+		EXPECT_THAT(nodeCount, Eq(3));
+
+		auto ref1 = records[1]->getReference();
+		EXPECT_THAT(nodeCount, Eq(3));
+
+		records[2]->getReference();
+		EXPECT_THAT(nodeCount, Eq(2));
+
+		ref0 = nullptr;
+		EXPECT_THAT(nodeCount, Eq(1));
+
+		ref1 = nullptr;
+		EXPECT_THAT(nodeCount, Eq(0));
+	}
+}
+
 TEST(Clash, ResultsSerialisation)
 {
 
@@ -1726,16 +2179,4 @@ TEST(Clash, Overlapping)
 	// the clash along any of the axes other than the pipe axis will not work (unless
 	// completely moving outside the AABBs).
 	// 
-}
-
-TEST(Clash, NodeCache)
-{
-	// need to make sure cache only returns one object even if called multiple times
-
-	// need to make sure cache doesn't go away until all references have gone.
-}
-
-TEST(Clash, CompositeClearance)
-{
-	// Tests that the distance query applied to the bvh
 }

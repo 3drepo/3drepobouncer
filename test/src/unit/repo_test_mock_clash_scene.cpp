@@ -18,12 +18,12 @@
 #include "repo_test_mock_clash_scene.h"
 
 #include "repo/lib/datastructure/repo_vector.h"
+#include <repo/manipulator/modelutility/clashdetection/geometry_tests.h>
 
 #include "repo_test_mesh_utils.h"
 
 #include <numbers>
-
-#include <repo/manipulator/modelutility/clashdetection/geometry_tests.h>
+#include <cfloat>
 
 using namespace testing;
 using namespace repo::core::model;
@@ -41,18 +41,30 @@ void ClashDetectionConfigHelper::addCompositeObjects(
 	const repo::lib::RepoUUID& uniqueIdA, 
 	const repo::lib::RepoUUID& uniqueIdB
 ) {
-	this->setA.push_back(
-		repo::manipulator::modelutility::CompositeObject(
-			uniqueIdA,
-			{ repo::manipulator::modelutility::MeshReference(containers[0].get(), uniqueIdA) }
-		)
-	);
-	this->setB.push_back(
-		repo::manipulator::modelutility::CompositeObject(
-			uniqueIdB,
-			{ repo::manipulator::modelutility::MeshReference(containers[0].get(), uniqueIdB) }
-		)
-	);
+	addCompositeObjects({ uniqueIdA }, { uniqueIdB });
+}
+
+void ClashDetectionConfigHelper::addCompositeObjects(
+	std::initializer_list<repo::lib::RepoUUID> uniqueIdsA,
+	std::initializer_list<repo::lib::RepoUUID> uniqueIdsB
+)
+{
+	for(const auto& uniqueIdA : uniqueIdsA) {
+		this->setA.push_back(
+			repo::manipulator::modelutility::CompositeObject(
+				uniqueIdA,
+				{ repo::manipulator::modelutility::MeshReference(containers[0].get(), uniqueIdA) }
+			)
+		);
+	}
+	for(const auto& uniqueIdB : uniqueIdsB) {
+		this->setB.push_back(
+			repo::manipulator::modelutility::CompositeObject(
+				uniqueIdB,
+				{ repo::manipulator::modelutility::MeshReference(containers[0].get(), uniqueIdB) }
+			)
+		);
+	}
 }
 
 const repo::lib::RepoUUID& testing::ClashDetectionConfigHelper::getRevision()
@@ -139,18 +151,23 @@ UUIDPair MockClashScene::add(TransformLines lines, ClashDetectionConfigHelper& c
 
 UUIDPair MockClashScene::add(TransformTriangles triangles, ClashDetectionConfigHelper& config)
 {
+	auto [a, b] = add(triangles);
+	config.addCompositeObjects(a, b);
+	return { a, b };
+}
+
+UUIDPair MockClashScene::add(TransformTriangles triangles)
+{
 	auto t1 = add(triangles.a.m);
 	auto m1 = add(triangles.a.e, t1.getSharedID());
 
 	auto t2 = add(triangles.b.m);
 	auto m2 = add(triangles.b.e, t2.getSharedID());
 
-	config.addCompositeObjects(m1.getUniqueID(), m2.getUniqueID());
-
 	return { m1.getUniqueID(), m2.getUniqueID() };
 }
 
-UUIDPair MockClashScene::add(TransformMeshes meshes, ClashDetectionConfigHelper& config)
+UUIDPair MockClashScene::add(TransformMeshes meshes)
 {
 	auto t1 = add(meshes.a.m);
 	auto& m1 = meshes.a.e;
@@ -163,9 +180,14 @@ UUIDPair MockClashScene::add(TransformMeshes meshes, ClashDetectionConfigHelper&
 	bsons.push_back(m1.getBSON());
 	bsons.push_back(m2.getBSON());
 
-	config.addCompositeObjects(m1.getUniqueID(), m2.getUniqueID());
-
 	return { m1.getUniqueID(), m2.getUniqueID() };
+}
+
+UUIDPair MockClashScene::add(TransformMeshes meshes, ClashDetectionConfigHelper& config)
+{
+	auto [a, b] = add(meshes);
+	config.addCompositeObjects(a, b);
+	return { a, b };
 }
 
 void ClashGenerator::downcast(repo::lib::RepoLine& line) 

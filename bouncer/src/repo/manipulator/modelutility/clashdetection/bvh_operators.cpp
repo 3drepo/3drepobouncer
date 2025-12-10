@@ -66,6 +66,112 @@ void Traversal::operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double>& b)
 	}
 }
 
+void Traversal::operator()(const bvh::Bvh<double>& a)
+{
+	// The goal of an internal traversal is to find all pairs in a single tree
+	// that overlap eachother. The traversal operates on pairs of siblings.
+
+	std::vector<bool> frontier(a.node_count, false);
+
+	std::stack<std::pair<size_t, size_t>> pairs;
+	auto& root = a.nodes[0];
+	pairs.push({ root.first_child_or_primitive + 0, root.first_child_or_primitive + 1 });
+	while (!pairs.empty()) 
+	{
+		auto [idxLeft, idxRight] = pairs.top();
+		pairs.pop();
+
+		auto& left = a.nodes[idxLeft];
+		auto& right = a.nodes[idxRight];
+
+		// When we first reach a branch node, we need to tell the traversal to check
+		// its children against eachother. However, we don't want this to happen
+		// multiple times, if the node is encountered again, say because it intersects
+		// with a set of leaf nodes.
+
+		// To achieve this we track the frontier of the traversal and this decides
+		// when intra-node checks are required. If the frontier has reached a node,
+		// only the inter-node checks are performed.
+
+		if (!frontier[idxLeft]) {
+			if (left.is_leaf()) {
+				for (size_t l = 0; l < left.primitive_count; l++) {
+					for (size_t r = l + 1; r < left.primitive_count; r++) {
+						intersect(
+							a.primitive_indices[left.first_child_or_primitive + l],
+							a.primitive_indices[left.first_child_or_primitive + r]
+						);
+					}
+				}
+			}
+			else {
+				pairs.push({ 
+					left.first_child_or_primitive + 0, 
+					left.first_child_or_primitive + 1 
+				});
+			}
+			
+			frontier[idxLeft] = true;
+		}
+
+		if(!frontier[idxRight]) {
+			if (right.is_leaf()) {
+				for (size_t l = 0; l < right.primitive_count; l++) {
+					for (size_t r = l + 1; r < right.primitive_count; r++) {
+						intersect(
+							a.primitive_indices[right.first_child_or_primitive + l],
+							a.primitive_indices[right.first_child_or_primitive + r]
+						);
+					}
+				}
+			}
+			else {
+				pairs.push({ 
+					right.first_child_or_primitive + 0, 
+					right.first_child_or_primitive + 1 
+				});
+			}
+			frontier[idxRight] = true;
+		}
+
+		// Then if the siblings intersect, we also check the cross combinations of
+		// their children.
+
+		if (!intersect(left, right)) {
+			continue;
+		}
+
+		if (left.is_leaf() && right.is_leaf())
+		{
+			for (size_t l = 0; l < left.primitive_count; l++) {
+				for (size_t r = 0; r < right.primitive_count; r++) {
+					intersect(
+						a.primitive_indices[left.first_child_or_primitive + l],
+						a.primitive_indices[right.first_child_or_primitive + r]
+					);
+				}
+			}
+		}
+		else if (left.is_leaf() && !right.is_leaf())
+		{
+			pairs.push({ idxLeft, right.first_child_or_primitive + 0 });
+			pairs.push({ idxLeft, right.first_child_or_primitive + 1 });
+		}
+		else if (!left.is_leaf() && right.is_leaf())
+		{
+			pairs.push({ left.first_child_or_primitive + 0, idxRight });
+			pairs.push({ left.first_child_or_primitive + 1, idxRight });
+		}
+		else
+		{
+			pairs.push({ left.first_child_or_primitive + 0, right.first_child_or_primitive + 0 });
+			pairs.push({ left.first_child_or_primitive + 0, right.first_child_or_primitive + 1 });
+			pairs.push({ left.first_child_or_primitive + 1, right.first_child_or_primitive + 0 });
+			pairs.push({ left.first_child_or_primitive + 1, right.first_child_or_primitive + 1 });
+		}
+	}
+}
+
 static bvh::BoundingBox<double> overlap(const bvh::BoundingBox<double>& a, const bvh::BoundingBox<double>& b)
 {
 	bvh::BoundingBox<double> result;

@@ -18,19 +18,24 @@
 #pragma once
 
 #include <vector>
-#include <unordered_map>
+#include <concepts>
 
 namespace repo {
 	namespace manipulator {
 		namespace modelutility {
 			namespace clash {
 				/*
-				* Goal of the scheduler is to order the narrowphase tests so that we only
+				* The ClashScheduler orders a vector of edges between nodes (represented as
+				* void*), in such a way that nodes are clustered together as closely as
+				* possible.
+				*
+				* The goal of the scheduler is to order the narrowphase tests so that we only
 				* load & pre-process each MeshNode once, but also that they are offloaded as
 				* soon as possible to avoid running out of memory.
 				* 
 				* One way to express this is MIN->RMS([SPAN]), where SPAN is the differnce
-				* between the first and last index of any MeshNode in the broadphase results.
+				* between the first and last index of any MeshNode on either side of the
+				* broadphase results.
 				*
 				* This is an NP-hard problem, so this object creates a best guess.
 				*
@@ -50,52 +55,24 @@ namespace repo {
 				* making the graph of all Meshes fully connected.
 				*/
 
+				template<typename T>
+				concept ValidNodeIdentifer = (sizeof(T) == sizeof(void*));
+
 				class ClashScheduler
 				{
 				public:
-					static void schedule(std::vector<std::pair<size_t, size_t>>& broadphaseResults);
+					// The schedular is intended to work with pointers to nodes (where nodes
+					// are not fungible). The pointers will never be dereferenced however, so
+					// any type of equivalent size will work. For example, indices could be
+					// provided instead.
+
+					template<ValidNodeIdentifer T>
+					static void schedule(std::vector<std::pair<T, T>>& broadphaseResults) {
+						_schedule(reinterpret_cast<std::vector<std::pair<void*, void*>>&>(broadphaseResults));
+					}
 
 				private:
-					ClashScheduler(std::vector<std::pair<size_t, size_t>> broadphaseResults);
-
-					struct Node;
-
-					using Edge = std::pair<Node*, Node*>;
-
-					struct Node
-					{
-						size_t index;
-						std::vector<Edge> edges;
-
-						Node(size_t index):
-							index(index)
-						{
-						}
-
-						bool remove(Edge e);
-					};
-
-					// This manages the memory for the nodes, and its contents does not change
-					// after initialisation, though their edge count does. The pointer arrays
-					// below are used to track which nodes are live; they can be re-ordered,
-					// and have elements removed when the edge counts go to zero.
-
-					std::vector<Node> nodes;
-
-					std::vector<Node*> allNodes;
-
-					std::vector<std::pair<size_t, size_t>> results;
-
-					void createGraph(std::vector<std::pair<size_t, size_t>> edges);
-
-					void addNode(size_t index, std::unordered_map<size_t, size_t>& map);
-
-					void remove(Edge e);
-
-					// Removes node from allNodes
-					void remove(Node* node);
-
-					void sortByEdges(std::vector<Node*>& set);
+					static void _schedule(std::vector<std::pair<void*, void*>>& broadphaseResults);
 				};
 			}
 		}

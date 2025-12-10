@@ -33,39 +33,6 @@
 using namespace repo::manipulator::modelutility::clash;
 
 namespace {
-	/*
-	* The Clearance broadphase returns all bounds that have a minimum distance
-	* smaller than the tolerance.
-	* Even if two bounds are intersecting, it does not necessarily mean that the
-	* primitives within them have a distance of zero. The best we can say is that
-	* the closest two primitives will definitely have a distance smaller than the
-	* running smallest distance between the maximum distance between any two bounds.
-	* Therefore this test is conservative and returns all potential pairs. If a user
-	* is only ever interested in the closest pair, then early termination based on
-	* tracking the smallest maxmimum distance could be applied.
-	*/
-	struct ClearanceBroadphase : protected bvh::DistanceQuery
-	{
-		ClearanceBroadphase(double clearance)
-			:results(nullptr)
-		{
-			this->d = clearance;
-		}
-
-		BroadphaseResults* results;
-
-		void operator()(const Bvh& a, const Bvh& b, BroadphaseResults& results)
-		{
-			this->results = &results;
-			bvh::DistanceQuery::operator()(a, b);
-		}
-
-		void intersect(size_t primA, size_t primB) override
-		{
-			results->push_back({ primA, primB });
-		}
-	};
-
 	struct Cached
 	{
 		Graph::Node* node;
@@ -74,6 +41,10 @@ namespace {
 		std::vector<repo::lib::repo_face_t> faces;
 
 		void initialise(std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler) {
+
+			if (vertices.size()) { // (Already initialised)
+				return;
+			}
 
 			PipelineUtils::loadGeometry(handler, *node, vertices, faces);
 
@@ -114,27 +85,89 @@ namespace {
 			);
 		}
 
-		const size_t getCompositeObjectIndex() const {
-			return node->compositeObjectIndex;
+		const repo::lib::RepoUUID& getCompositeObjectId() const {
+			return node->compositeObject->id;
 		}
 	};
 
-	struct Cache : public ResourceCache<const Graph::Node, Cached>
+	struct Cache : public ResourceCache<Graph::Node, Cached>
 	{
 		void initialise(const Graph::Node& key, Cached& entry) const override {
 			entry.node = const_cast<Graph::Node*>(&key); // We need to cast away const here in order to load the binary buffers into the contained bson
+		}
+	};
+
+	/*
+	* The Clearance broadphase returns all bounds that have a minimum distance
+	* smaller than the tolerance.
+	* Even if two bounds are intersecting, it does not necessarily mean that the
+	* primitives within them have a distance of zero. The best we can say is that
+	* the closest two primitives will definitely have a distance smaller than the
+	* running smallest distance between the maximum distance between any two bounds.
+	* Therefore this test is conservative and returns all potential pairs. If a user
+	* is only ever interested in the closest pair, then early termination based on
+	* tracking the smallest maxmimum distance could be applied.
+	*/
+	struct ClearanceBroadphase : protected bvh::DistanceQuery
+	{
+		ClearanceBroadphase(double clearance) {
+			this->d = clearance;
+		}
+
+		BroadphaseResults results;
+
+		void operator()(const Bvh& a, const Bvh& b) {
+			results.clear();
+			bvh::DistanceQuery::operator()(a, b);
+		}
+
+		void operator()(const Bvh& a) {
+			results.clear();
+			bvh::DistanceQuery::operator()(a);
+		}
+
+		void intersect(size_t primA, size_t primB) override {
+			results.push_back({ primA, primB });
 		}
 	};
 }
 
 void Clearance::run(const Graph& graphA, const Graph& graphB)
 {
-	BroadphaseResults broadphaseResults;
-
+	Cache cache;
 	ClearanceBroadphase broadphase(tolerance);
-	broadphase.operator()(graphA.bvh, graphB.bvh, broadphaseResults);
+	std::vector<std::pair<Cache::Record*, Cache::Record*>> broadphaseResults;
+
+	broadphase.operator()(graphA.bvh, graphB.bvh);
+	for (auto [a, b] : broadphase.results) {
+		broadphaseResults.push_back({
+			cache.get(graphA.getNode(a)),
+			cache.get(graphB.getNode(b))
+		});
+	}
+
+	auto selfIntersectionBroadphase = [&](const Graph& graph) {
+		broadphase.operator()(graph.bvh);
+		for(auto [a, b] : broadphase.results) {
+			broadphaseResults.push_back({
+				cache.get(graph.getNode(a)),
+				cache.get(graph.getNode(b))
+			});
+		}
+	};
+
+	if(config.selfIntersectsA) {
+		selfIntersectionBroadphase(graphA);
+	}
+
+	if (config.selfIntersectsB) {
+		selfIntersectionBroadphase(graphB);
+	}
 
 	ClashScheduler::schedule(broadphaseResults);
+
+	// Turn the records used to build the schedule into narrowphase tests by
+	// resolving them to counted references to the actual nodes.
 
 	using Narrowphase = std::pair<
 		Cache::Entry,
@@ -143,12 +176,10 @@ void Clearance::run(const Graph& graphA, const Graph& graphB)
 
 	std::queue<Narrowphase> narrowphaseTests;
 
-	Cache cache;
-
 	for (auto r : broadphaseResults) {
 		narrowphaseTests.push({
-			cache.get(graphA.getNode(r.first)),
-			cache.get(graphB.getNode(r.second))
+			r.first->getReference(),
+			r.second->getReference()
 		});
 	}
 
@@ -159,16 +190,15 @@ void Clearance::run(const Graph& graphA, const Graph& graphB)
 		a->initialise(handler);
 		b->initialise(handler);
 
-		BroadphaseResults results;
-		broadphase.operator()(a->getBvh(), b->getBvh(), results);
+		broadphase.operator()(a->getBvh(), b->getBvh());
 
-		for (const auto& [aIndex, bIndex] : results)
+		for (const auto& [aIndex, bIndex] : broadphase.results)
 		{
 			auto line = geometry::closestPoints(a->getTriangle(aIndex), b->getTriangle(bIndex));
 			if (line.magnitude() < tolerance) {
 				auto clash = createClash<ClearanceClash>(
-					config.setA[a->getCompositeObjectIndex()].id,
-					config.setB[b->getCompositeObjectIndex()].id
+					a->getCompositeObjectId(),
+					b->getCompositeObjectId()
 				);
 				clash->append(line);
 			}

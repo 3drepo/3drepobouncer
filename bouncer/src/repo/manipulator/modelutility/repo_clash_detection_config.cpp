@@ -160,6 +160,8 @@ struct ClashConfigParser : public ObjectParser, public IContainerSet
 		parsers["resultsFile"] = new StringParser(config.resultsFile);
 		parsers["setA"] = new ArrayParser(new CompositeObjectSetParser(this, mapA));
 		parsers["setB"] = new ArrayParser(new CompositeObjectSetParser(this, mapB));
+		parsers["selfIntersectsA"] = new BoolParser(config.selfIntersectsA); 
+		parsers["selfIntersectsB"] = new BoolParser(config.selfIntersectsB); 
 	}
 
 	virtual repo::lib::Container* getContainer(

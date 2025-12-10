@@ -84,9 +84,9 @@ Graph::Node& Graph::getNode(const repo::lib::RepoUUID& uniqueId) const
 	return getNode(uuidToIndexMap.at(uniqueId));
 }
 
-size_t Graph::getCompositeIndex(size_t primitive) const
+const CompositeObject& Graph::getCompositeObject(size_t primitive) const
 {
-	return getNode(primitive).compositeObjectIndex;
+	return *getNode(primitive).compositeObject;
 }
 
 static std::unique_ptr<Graph> createSceneGraph(
@@ -119,7 +119,7 @@ static std::unique_ptr<Graph> createSceneGraph(
 	scene.getNodes(nodes);
 
 	for (auto& node : nodes) {
-		node.compositeObjectIndex = idToIndexMap[node.uniqueId];
+		node.compositeObject = &set[idToIndexMap[node.uniqueId]];
 	}
 
 	return std::make_unique<Graph>(std::move(nodes));

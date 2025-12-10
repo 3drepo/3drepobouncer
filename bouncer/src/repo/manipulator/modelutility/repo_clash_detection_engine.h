@@ -37,6 +37,10 @@ namespace repo {
 				// Composite Objects are the lowest level of granularity reported - if
 				// it is desirable to know the details of the clashes between two
 				// MeshNodes, they should be in separate Composite Objects.
+				//
+				// idA may not necessarily be from setA, and vice versa. For example, if
+				// self-intersection is on. For this reason composite ids should always
+				// be distinct between sets.
 
 				repo::lib::RepoUUID idA;
 				repo::lib::RepoUUID idB;

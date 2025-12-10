@@ -30,33 +30,6 @@ using namespace repo::manipulator::modelutility;
 using namespace repo::manipulator::modelutility::clash;
 
 namespace {
-	/*
-	* The Hard broadphase returns all bounds that have an overlap, as this is a
-	* necessary condition for them to begin in an intersecting state. The overlap
-	* must also exceed the tolerance, otherwise the leaf geometry cannot intersect
-	* by more than that.
-	*/
-	struct HardBroadphase : public bvh::IntersectQuery
-	{
-		HardBroadphase()
-			:results(nullptr)
-		{
-		}
-
-		BroadphaseResults* results;
-
-		void intersect(size_t primA, size_t primB) override
-		{
-			results->push_back({ primA, primB });
-		}
-
-		void operator()(const Bvh& a, const Bvh& b, BroadphaseResults& results)
-		{
-			this->results = &results;
-			bvh::IntersectQuery::operator()(a, b);
-		}
-	};
-
 	static struct CacheEntry
 	{
 		std::vector<Graph::Node*> nodes;
@@ -92,11 +65,10 @@ namespace {
 		}
 	};
 
-	static struct Cache : public ResourceCache<const CompositeObject, CacheEntry>
+	static struct Cache : public ResourceCache<CompositeObject, CacheEntry>
 	{
 		Cache(const Graph& graph)
-			: graph(graph)
-		{
+			: graph(graph) {
 		}
 
 		const Graph& graph;
@@ -108,6 +80,31 @@ namespace {
 			entry.id = key.id;
 		}
 	};
+
+	/*
+	* The Hard broadphase returns all bounds that have an overlap, as this is a
+	* necessary condition for them to begin in an intersecting state. The overlap
+	* must also exceed the tolerance, otherwise the leaf geometry cannot intersect
+	* by more than that.
+	*/
+	struct HardBroadphase : public bvh::IntersectQuery
+	{
+		BroadphaseResults results;
+
+		void intersect(size_t primA, size_t primB) override {
+			results.push_back({ primA, primB });
+		}
+
+		void operator()(const Bvh& a, const Bvh& b) {
+			results.clear();
+			bvh::IntersectQuery::operator()(a, b);
+		}
+
+		void operator()(const Bvh& a) {
+			results.clear();
+			bvh::IntersectQuery::operator()(a);
+		}
+	};
 }
 
 void Hard::run(const Graph& graphA, const Graph& graphB)
@@ -117,28 +114,55 @@ void Hard::run(const Graph& graphA, const Graph& graphB)
 	// phase, which will work out penetration depth - if any - based on all the
 	// meshes in the composite object.
 
-	BroadphaseResults broadphaseResults;
+	Cache cacheA(graphA);
+	Cache cacheB(graphB);
 
-	HardBroadphase b;
-	b.operator()(graphA.bvh, graphB.bvh, broadphaseResults);
+	std::set<std::pair<Cache::Record*, Cache::Record*>> compositePairs;
 
-	std::set<std::pair<size_t, size_t>> compositePairs;
-	for (auto [a, b] : broadphaseResults) {
+	HardBroadphase broadphase;
+
+	broadphase.operator()(graphA.bvh, graphB.bvh);
+	for (auto [a, b] : broadphase.results) {
 		compositePairs.insert({
-			graphA.getCompositeIndex(a),
-			graphB.getCompositeIndex(b)
+			cacheA.get(graphA.getCompositeObject(a)),
+			cacheB.get(graphB.getCompositeObject(b))
 		});
 	}
 
-	std::vector<std::pair<size_t, size_t>> orderedCompositePairs(
+	auto selfIntersectionBroadphase = [&](const Graph& graph, Cache& cache) {
+		broadphase.operator()(graph.bvh);
+		for (auto& [a, b] : broadphase.results) {
+			auto& compA = graph.getCompositeObject(a);
+			auto& compB = graph.getCompositeObject(b);
+
+			if(compA.id == compB.id) {
+				continue;
+			}
+
+			compositePairs.insert({
+				cache.get(compA),
+				cache.get(compB)
+			});
+		}
+	};
+
+	if (config.selfIntersectsA) {
+		selfIntersectionBroadphase(graphA, cacheA);
+	}
+
+	if (config.selfIntersectsB) {
+		selfIntersectionBroadphase(graphB, cacheB);
+	}
+
+	std::vector<std::pair<Cache::Record*, Cache::Record*>> orderedCompositePairs(
 		compositePairs.begin(),
 		compositePairs.end()
 	);
 
 	ClashScheduler::schedule(orderedCompositePairs);
 
-	Cache cacheA(graphA);
-	Cache cacheB(graphB);
+	// The following snippet turns the records into actual narrowphase tests by
+	// resolving them to counted references to the actual nodes.
 
 	std::queue<std::pair<
 		Cache::Entry,
@@ -147,8 +171,8 @@ void Hard::run(const Graph& graphA, const Graph& graphB)
 
 	for (auto [a, b] : orderedCompositePairs) {
 		narrowphaseTests.push({
-			cacheA.get(config.setA[a]),
-			cacheB.get(config.setB[b])
+			a->getReference(),
+			b->getReference()
 		});
 	}
 
