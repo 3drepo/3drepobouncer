@@ -1749,32 +1749,31 @@ TEST(Clash, PolyDepthCollisionFreeInitialisationStep)
 
 TEST(Clash, RepoPolyDepthOverlapsProcedural)
 {
-	auto a = ClashGenerator::triangles(repo::test::utils::mesh::makeUnitCube());
-	auto b = ClashGenerator::triangles(repo::test::utils::mesh::makeUnitCube());
+	CellDistribution space;
+	ClashGenerator clashGenerator;
 
-	// Cube overlaps on the x-axis by 0.5 units
-
-	auto t = repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(0.5, 0, 0));
-	ClashGenerator::applyTransforms(b, t);
-
+	for (int itr = 0; itr < 50000; ++itr)
 	{
-		SimpleObjWriter writer("C:\\3drepo\\3drepobouncer_ISSUE797\\clash_pd_procedural_a.obj");
-		writer.write(a);
-		writer.write(b);
+		auto clash = clashGenerator.createOverlap(space.sample());
+
+		auto a = ClashGenerator::triangles(clash.a);
+		auto b = ClashGenerator::triangles(clash.b);
+
+		EXPECT_THAT(intersects(a, b), IsFalse());
+
+		geometry::RepoPolyDepth pd(a, b);
+		pd.iterate(10);
+		auto v = pd.getPenetrationVector();
+
+		EXPECT_THAT(v.norm(), Ge(0));
+
+		// Swap the winding order of the faces of one mesh - if the meshes are
+		// facing into eachother, this does not count as an overlap, and so there
+		// is no clash.
+
+		// ...
+
 	}
-
-	// Even though the cubes overlap, they do not intersect because the triangles
-	// are at best coplanar
-
-	EXPECT_THAT(intersects(a, b), IsFalse());
-
-	geometry::RepoPolyDepth pd(a, b);
-	auto v = pd.getPenetrationVector();
-	
-	// PolyDepth however should detect the overlaps case reliably and so initialise
-	// to a collision free configuration.
-
-	EXPECT_THAT(v.norm(), Ge(0.5));
 }
 
 TEST(Clash, RepoPolyDepthProcedural)
@@ -2175,15 +2174,4 @@ TEST(Clash, NodeCache)
 TEST(Clash, ResultsSerialisation)
 {
 
-}
-
-TEST(Clash, Overlapping)
-{
-	// Tests explicitly overlap case (g), e.g. where two open pipe-ends overlap.
-
-	// This case should be detectable because the bounds will overlap by a non-trivial
-	// amount, even though the triangles are pair-wise coplanar, and attempting to resolve
-	// the clash along any of the axes other than the pipe axis will not work (unless
-	// completely moving outside the AABBs).
-	// 
 }

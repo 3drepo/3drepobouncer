@@ -868,18 +868,11 @@ TransformMeshes testing::ClashGenerator::createHardSoup(
 	return { { repo::test::utils::mesh::fromVertices(a), m.inverse() }, { repo::test::utils::mesh::fromVertices(b), m.inverse() }};
 }
 
-TransformMeshes testing::ClashGenerator::createHard1(
+TransformMeshes createOverlap(
 	const repo::lib::RepoBounds& bounds
 )
 {
-	auto cube = repo::test::utils::mesh::makeUnitCube();
-	auto cone = repo::test::utils::mesh::makeUnitCone();
 
-	auto d = random.number(distance);
-
-	auto t = RepoMatrix::translate(repo::lib::RepoVector3D64(0, 0, 1.0 + d)) * RepoMatrix::rotationX(std::numbers::pi);
-
-	return { { cube, {} }, { cone, t } };
 }
 
 std::vector<repo::lib::RepoTriangle> testing::ClashGenerator::triangles(const TransformMesh& p)
