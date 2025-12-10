@@ -672,7 +672,7 @@ repo::core::model::MeshNode repo::test::utils::mesh::makeUnitCube()
 
 	// Define the 12 triangular faces of the cube
 	std::vector<repo::lib::repo_face_t> faces = {
-		{0, 1, 2}, {0, 2, 3}, // Bottom face
+		{2, 1, 0}, {3, 2, 0}, // Bottom face
 		{4, 5, 6}, {4, 6, 7}, // Top face
 		{0, 1, 5}, {0, 5, 4}, // Front face
 		{1, 2, 6}, {1, 6, 5}, // Right face
