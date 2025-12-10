@@ -81,6 +81,10 @@ namespace testing {
 			const std::string& valueSetA,
 			const std::string& valueSetB);
 
+		void createCompositeObjectsFromContainer(
+			std::vector<repo::manipulator::modelutility::CompositeObject>& objects,
+			repo::lib::Container* container);
+
 		void createCompositeObjectsByMetadataValue(
 			std::vector<repo::manipulator::modelutility::CompositeObject>& objects,
 			repo::lib::Container* container,
