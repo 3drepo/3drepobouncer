@@ -168,6 +168,32 @@ void ClashDetectionDatabaseHelper::setCompositeObjectsByMetadataValue(
 	createCompositeObjectsByMetadataValue(config.setB, container.get(), valueSetB);
 }
 
+void ClashDetectionDatabaseHelper::createCompositeObjectsFromContainer(
+	std::vector<repo::manipulator::modelutility::CompositeObject>& objects,
+	repo::lib::Container* container)
+{
+	repo::core::handler::database::query::RepoQueryBuilder query;	
+	query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_MESH)));
+
+	repo::core::handler::database::query::RepoProjectionBuilder projection;
+	projection.includeField(REPO_NODE_LABEL_ID);
+
+	auto cursor = handler->findCursorByCriteria(
+		container->teamspace,
+		container->container + "." + REPO_COLLECTION_SCENE,
+		query,
+		projection
+	);
+
+	for (auto& bson : *cursor) {
+		auto uuid = bson.getUUIDField(REPO_NODE_LABEL_ID);
+		CompositeObject composite;
+		composite.id = repo::lib::RepoUUID::createUUID();
+		composite.meshes.push_back(MeshReference(container, uuid));
+		objects.push_back(composite);
+	}
+}
+
 void ClashDetectionDatabaseHelper::createCompositeObjectsByMetadataValue(
 	std::vector<repo::manipulator::modelutility::CompositeObject>& objects,
 	repo::lib::Container* container,

@@ -1289,10 +1289,10 @@ TEST(Clash, Units)
 	auto mm = helper.getContainerByName("cone_mm");
 	auto ft = helper.getContainerByName("cone_ft");
 
-	helper.createCompositeObjectsByMetadataValue(config.setA, m.get(), "Cone");
+	helper.createCompositeObjectsFromContainer(config.setA, m.get());
 
-	helper.createCompositeObjectsByMetadataValue(config.setB, mm.get(), "Cone");
-	helper.createCompositeObjectsByMetadataValue(config.setB, ft.get(), "Cone");
+	helper.createCompositeObjectsFromContainer(config.setB, mm.get());
+	helper.createCompositeObjectsFromContainer(config.setB, ft.get());
 
 	config.tolerance = 10; // 10 mm
 	auto pipeline = new clash::Clearance(handler, config);
