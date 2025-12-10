@@ -991,17 +991,24 @@ TEST(Clash, Fingerprinting)
 	ClashGenerator clashGenerator;
 	clashGenerator.distance = 0;
 
-	ClashDetectionConfigHelper config;
-	config.type = ClashDetectionType::Clearance;
-	PipelineRunner pipeline(config);
-
+	for(size_t i = 0; i < 1000; i++)
 	{	
+		ClashDetectionConfigHelper config;
+		config.type = ClashDetectionType::Clearance;
+		PipelineRunner pipeline(config);
+
 		config.tolerance = 100;
 
 		auto p = clashGenerator.createTrianglesVF(repo::lib::RepoBounds({ repo::lib::RepoVector3D64(0, 0, 0) }));
 
 		auto run1 = pipeline.run({ p });
 		auto run2 = pipeline.run({ p });
+
+		EXPECT_THAT(run1.clashes.size(), Eq(1));
+
+		// Fingerprints should not be empty for real clashes
+
+		EXPECT_THAT(run1.clashes[0].fingerprint, Not(Eq(0)));
 
 		// Running the clash with the same primitives should result in the same
 		// fingerprints, even though by calling the runClearancePipeline helper

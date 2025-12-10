@@ -226,9 +226,9 @@ void Clearance::createClashReport(const OrderedPair& objects, const CompositeCla
 	size_t hash = 0;
 	std::hash<double> hasher;
 	for (auto& p : result.positions) {
-		hash ^= hasher(p.x) + 0x9e3779b9;
-		hash ^= hasher(p.y) + 0x9e3779b9;
-		hash ^= hasher(p.z) + 0x9e3779b9;
+		hash ^= hasher(p.x) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+		hash ^= hasher(p.y) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+		hash ^= hasher(p.z) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
 	}
 	result.fingerprint = hash;
 }
