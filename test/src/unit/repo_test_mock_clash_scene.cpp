@@ -883,7 +883,7 @@ TransformMeshes testing::ClashGenerator::createOverlap(
 	auto scale = random.number({ 1, MESH_LIMIT });
 	auto remaining = MESH_LIMIT - (2.0 * scale);
 
-	auto t = random.transform(true, { 0, 0 }, { scale, scale });
+	auto t = random.transform(true, { 0, remaining }, { scale, scale });
 
 	return {
 		{ a, t },
