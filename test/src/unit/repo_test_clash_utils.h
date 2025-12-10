@@ -86,6 +86,10 @@ namespace testing {
 			repo::lib::Container* container,
 			const std::string& value);
 
+		void createCompositeObjectsFromContainer(
+			std::vector<repo::manipulator::modelutility::CompositeObject>& objects,
+			repo::lib::Container* container);
+
 		std::unique_ptr<repo::lib::Container> getContainerByName(
 			std::string name);
 	};

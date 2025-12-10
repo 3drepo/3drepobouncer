@@ -822,6 +822,62 @@ repo::core::model::MeshNode repo::test::utils::mesh::makeUnitSphere()
 	);
 }
 
+repo::core::model::MeshNode repo::test::utils::mesh::makeUnitCylinder(int sides, bool cap)
+{
+	using repo::lib::RepoVector3D;
+	using repo::lib::repo_face_t;
+
+	const auto radius = 0.5;
+	const auto halfHeight = 0.5;
+
+	std::vector<RepoVector3D> vertices;
+	std::vector<repo_face_t> faces;
+
+	// Generate side vertices (bottom and top rings)
+	for (int i = 0; i < sides; ++i) {
+		auto angle = 0.25 * std::numbers::pi + 2.0 * std::numbers::pi * i / sides;
+		auto x = radius * std::cos(angle);
+		auto y = radius * std::sin(angle);
+		vertices.emplace_back(x, y, -halfHeight); // bottom ring
+		vertices.emplace_back(x, y, halfHeight);  // top ring
+	}
+
+	for (size_t i = 0; i < sides; ++i) {
+		auto next = (i + 1) % sides;
+		auto b0 = 2 * i;
+		auto t0 = 2 * i + 1;
+		auto b1 = 2 * next;
+		auto t1 = 2 * next + 1;
+
+		// Triangle 1
+		faces.push_back({ b0, b1, t1 });
+		// Triangle 2
+		faces.push_back({ b0, t1, t0 });
+	}
+
+	if (cap) {
+		// Bottom cap
+		for (size_t i = 0; i < sides - 2; ++i) {
+			faces.push_back({ 2 * (i + 2), 2 * (i + 1), 0 });
+		}
+		// Top cap
+		for (size_t i = 0; i < sides - 2; ++i) {
+			faces.push_back({ 2 * (i + 1) + 1, 2 * (i + 2) + 1, 1 });
+		}
+	}
+
+	repo::lib::RepoBounds boundingBox = getBoundingBox(vertices);
+
+	return RepoBSONFactory::makeMeshNode(
+		vertices,
+		faces,
+		{},
+		boundingBox,
+		{},
+		"UnitCylinder"
+	);
+}
+
 repo::core::model::MeshNode repo::test::utils::mesh::fromVertices(
 	const std::vector<repo::lib::RepoVector3D>& vertices, 
 	repo::core::model::MeshNode::Primitive primitive)

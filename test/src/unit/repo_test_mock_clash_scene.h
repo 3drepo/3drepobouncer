@@ -278,7 +278,6 @@ namespace testing {
 		void shiftTriangles(repo::lib::RepoTriangle& problem);
 
 
-
 		template<typename T>
 		void downcast(TransformedPair<T>& pair) {
 			downcast(pair.a);

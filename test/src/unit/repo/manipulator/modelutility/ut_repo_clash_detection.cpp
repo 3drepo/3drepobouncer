@@ -596,6 +596,8 @@ TEST(Clash, CompositeSplitTest)
 
 TEST(Clash, RvtDisjoint)
 {
+	GTEST_SKIP(); // skip until the revit files are committed to tests
+
 	// Tests that geometry of a known distance is correctly measured after
 	// going through the bouncer import pipeline.
 
@@ -622,6 +624,8 @@ TEST(Clash, RvtDisjoint)
 
 TEST(Clash, RvtIntersectClosed)
 {
+	GTEST_SKIP(); // skip until the revit files are committed to tests
+
 	// Tests that geometry of a known distance is correctly measured after
 	// going through the bouncer import pipeline.
 
@@ -652,6 +656,8 @@ TEST(Clash, RvtIntersectClosed)
 
 TEST(Clash, RvtContains)
 {
+	GTEST_SKIP(); // skip until the revit files are committed to tests
+
 	// Tests that geometry of a known distance is correctly measured after
 	// going through the bouncer import pipeline.
 
@@ -678,6 +684,8 @@ TEST(Clash, RvtContains)
 
 TEST(Clash, RvtMeet)
 {
+	GTEST_SKIP(); // skip until the revit files are committed to tests
+
 	// Tests that geometry of a known distance is correctly measured after
 	// going through the bouncer import pipeline.
 
@@ -704,6 +712,8 @@ TEST(Clash, RvtMeet)
 
 TEST(Clash, RvtOverlap)
 {
+	GTEST_SKIP(); // skip until the revit files are committed to tests
+
 	 // Tests that geometry of a known distance is correctly measured after
 	 // going through the bouncer import pipeline.
 
@@ -802,6 +812,8 @@ TEST(Clash, RvtOverlap)
 
 TEST(Clash, RvtEqual)
 {
+	GTEST_SKIP(); // skip until the revit files are committed to tests
+
 	// Tests that geometry of a known distance is correctly measured after
 	// going through the bouncer import pipeline.
 
@@ -1752,27 +1764,18 @@ TEST(Clash, RepoPolyDepthOverlapsProcedural)
 	CellDistribution space;
 	ClashGenerator clashGenerator;
 
-	for (int itr = 0; itr < 50000; ++itr)
+	for (int itr = 0; itr < 1000; itr++)
 	{
 		auto clash = clashGenerator.createOverlap(space.sample());
 
 		auto a = ClashGenerator::triangles(clash.a);
 		auto b = ClashGenerator::triangles(clash.b);
 
-		EXPECT_THAT(intersects(a, b), IsFalse());
-
 		geometry::RepoPolyDepth pd(a, b);
-		pd.iterate(10);
+		pd.iterate(2);
 		auto v = pd.getPenetrationVector();
 
-		EXPECT_THAT(v.norm(), Ge(0));
-
-		// Swap the winding order of the faces of one mesh - if the meshes are
-		// facing into eachother, this does not count as an overlap, and so there
-		// is no clash.
-
-		// ...
-
+		EXPECT_THAT(v.norm(), Ge(0.01));
 	}
 }
 
