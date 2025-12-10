@@ -576,6 +576,256 @@ TEST(Clash, Rvt)
 	EXPECT_THAT(results.clashes.size(), Eq(10000));
 }
 
+TEST(Clash, CompositeSplitTest)
+{
+	auto handler = getHandler();
+
+	std::unique_ptr<lib::Container> container = std::make_unique<lib::Container>();
+	container->teamspace = "ClashDetectionTmp";
+	container->container = "7a549d61-7c63-4e81-8c43-23844f450ca4";
+	container->revision = repo::lib::RepoUUID("b33637b0-c971-4f91-8403-805d88e39d17");
+
+	ClashDetectionConfig config;
+	ClashDetectionDatabaseHelper helper(handler);
+
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
+
+	EXPECT_THAT(config.setA.size(), Eq(0));
+	EXPECT_THAT(config.setB.size(), Eq(0));
+}
+
+TEST(Clash, RvtDisjoint)
+{
+	// Tests that geometry of a known distance is correctly measured after
+	// going through the bouncer import pipeline.
+
+	auto handler = getHandler();
+	auto container = makeTemporaryContainer();
+
+	importModel(getDataPath("/clash/revitDisjoint.rvt"), *container);
+
+	ClashDetectionConfig config;
+	ClashDetectionDatabaseHelper helper(handler);
+
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
+
+	config.tolerance = 0;
+
+	EXPECT_THAT(config.setA.size(), Eq(10000));
+	EXPECT_THAT(config.setB.size(), Eq(10000));
+
+	auto pipeline = new clash::Hard(handler, config);
+	auto results = pipeline->runPipeline();
+		
+	EXPECT_THAT(results.clashes.size(), Eq(0));
+}
+
+TEST(Clash, RvtIntersectClosed)
+{
+	// Tests that geometry of a known distance is correctly measured after
+	// going through the bouncer import pipeline.
+
+	auto handler = getHandler();
+	auto container = makeTemporaryContainer();
+
+	importModel(getDataPath("/clash/revitIntersectClosed.rvt"), *container);
+
+	ClashDetectionConfig config;
+	ClashDetectionDatabaseHelper helper(handler);
+
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
+
+	config.tolerance = 0;
+
+	EXPECT_THAT(config.setA.size(), Eq(10000));
+	EXPECT_THAT(config.setB.size(), Eq(10000));
+
+	auto pipeline = new clash::Hard(handler, config);
+	auto results = pipeline->runPipeline();
+
+	EXPECT_THAT(results.clashes.size(), Eq(10000));
+}
+
+// Intersect Open
+
+// Covers
+
+TEST(Clash, RvtContains)
+{
+	// Tests that geometry of a known distance is correctly measured after
+	// going through the bouncer import pipeline.
+
+	auto handler = getHandler();
+	auto container = makeTemporaryContainer();
+
+	importModel(getDataPath("/clash/revitContains.rvt"), *container);
+
+	ClashDetectionConfig config;
+	ClashDetectionDatabaseHelper helper(handler);
+
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
+
+	config.tolerance = 0;
+
+	EXPECT_THAT(config.setA.size(), Eq(10000));
+	EXPECT_THAT(config.setB.size(), Eq(10000));
+
+	auto pipeline = new clash::Hard(handler, config);
+	auto results = pipeline->runPipeline();
+
+	EXPECT_THAT(results.clashes.size(), Eq(10000));
+}
+
+TEST(Clash, RvtMeet)
+{
+	// Tests that geometry of a known distance is correctly measured after
+	// going through the bouncer import pipeline.
+
+	auto handler = getHandler();
+	auto container = makeTemporaryContainer();
+
+	importModel(getDataPath("/clash/revitMeet.rvt"), *container);
+
+	ClashDetectionConfig config;
+	ClashDetectionDatabaseHelper helper(handler);
+
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
+
+	config.tolerance = 0.0f;
+
+	EXPECT_THAT(config.setA.size(), Eq(10000));
+	EXPECT_THAT(config.setB.size(), Eq(10000));
+
+	auto pipeline = new clash::Hard(handler, config);
+	auto results = pipeline->runPipeline();
+
+	EXPECT_THAT(results.clashes.size(), Eq(10000));
+}
+
+TEST(Clash, RvtOverlap)
+{
+	 // Tests that geometry of a known distance is correctly measured after
+	 // going through the bouncer import pipeline.
+
+	auto handler = getHandler();
+	auto container = makeTemporaryContainer();
+
+	importModel(getDataPath("/clash/revitOverlap.rvt"), *container);
+
+	ClashDetectionConfig config;
+	ClashDetectionDatabaseHelper helper(handler);
+
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
+
+	config.tolerance = 0;
+
+	EXPECT_THAT(config.setA.size(), Eq(10000));
+	EXPECT_THAT(config.setB.size(), Eq(10000));
+
+	//auto stringA = config.setA[0].meshes[0].uniqueId.toString();
+	//auto stringB = config.setB[0].meshes[0].uniqueId.toString();
+	//FAIL() << "Debugging IDs: " << container->teamspace << " " << container->container << " " << container->revision << " " << stringA << " " << stringB;
+
+	//auto handler = getHandler();
+
+	//std::unique_ptr<lib::Container> container = std::make_unique<lib::Container>();
+	//container->teamspace = "ClashDetectionTmp";
+	//container->container = "8ad709f2-e3d4-4c52-980c-0efdf3336515";
+	//container->revision = repo::lib::RepoUUID("570e4299-f6eb-4d14-ae12-71a848e2e57c");
+
+	//ClashDetectionConfig config;
+	//ClashDetectionDatabaseHelper helper(handler);
+
+	//helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
+
+	//EXPECT_THAT(config.setA.size(), Eq(10000));
+	//EXPECT_THAT(config.setB.size(), Eq(10000));
+
+	auto pipeline = new clash::Hard(handler, config);
+	auto results = pipeline->runPipeline();
+	
+	//// Look for missing IDs in the clashes
+	//std::vector<int> missingA;
+	//std::vector<int> missingB;
+	//for (int i = 0; i < config.setA.size(); i++) {
+	//	auto compIdA = config.setA[i].id;
+	//	auto compIdB = config.setB[i].id;
+
+	//	bool foundA = false;
+	//	bool foundB = false;
+	//	for(int j = 0; j < results.clashes.size(); j++) {
+	//		auto clashCompIdA = results.clashes[j].idA;
+	//		auto clashCompIdB = results.clashes[j].idB;
+
+	//		if (clashCompIdA == compIdA) {
+	//			foundA = true;
+	//		}
+
+	//		if(clashCompIdB == compIdB) {
+	//			foundB = true;
+	//		}
+	//	}
+
+	//	if(!foundA) {
+	//		missingA.push_back(i);
+	//	}
+	//	if(!foundB) {
+	//		missingB.push_back(i);
+	//	}
+	//}
+
+	//std::string out = "";
+	//out = out + "Container ID: " + container->container + "\n";
+	//out = out + "Revision ID: " + container->revision.toString() + "\n";
+	//if(missingA.size() > 0) {
+	//	out = out + "Missing IDs in Set A:\n";
+	//	for(auto& index : missingA) {
+
+	//		out = out + "  " + config.setA[index].meshes[0].uniqueId.toString() + "\n";
+	//	}
+	//}
+	//if (missingB.size() > 0) {
+	//	out = out + "Missing IDs in Set B:\n";
+	//	for (auto& index : missingB) {
+
+	//		out = out + "  " + config.setB[index].meshes[0].uniqueId.toString() + "\n";
+	//	}
+	//}
+
+	//FAIL() << out;
+
+	//EXPECT_THAT(missingA.size(), Eq(0)) << "Missing IDs in Set A";
+	//EXPECT_THAT(missingB.size(), Eq(0)) << "Missing IDs in Set B";
+
+	EXPECT_THAT(results.clashes.size(), Eq(10000));
+}
+
+TEST(Clash, RvtEqual)
+{
+	// Tests that geometry of a known distance is correctly measured after
+	// going through the bouncer import pipeline.
+
+	auto handler = getHandler();
+	auto container = makeTemporaryContainer();
+
+	importModel(getDataPath("/clash/revitEqual.rvt"), *container);
+
+	ClashDetectionConfig config;
+	ClashDetectionDatabaseHelper helper(handler);
+
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
+
+	config.tolerance = 0.0f;
+
+	EXPECT_THAT(config.setA.size(), Eq(10000));
+	EXPECT_THAT(config.setB.size(), Eq(10000));
+
+	auto pipeline = new clash::Hard(handler, config);
+	auto results = pipeline->runPipeline();
+
+	EXPECT_THAT(results.clashes.size(), Eq(10000));
+}
+
 TEST(Clash, Nwd)
 {
 	// Tests that geometry of a known distance is correctly measured after
