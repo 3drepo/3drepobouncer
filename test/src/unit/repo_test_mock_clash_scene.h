@@ -235,9 +235,11 @@ namespace testing {
 			const repo::lib::RepoBounds& bounds
 		);
 
-		// Creates a intersection between a cone and a cube
+		// Creates a pair of meshes that overlap - that is, a ring of triangles are
+		// coplanar, but do not inersect. The meshes will be cylinders with varying
+		// numbers of segments (down to four, which are boxes).
 
-		TransformMeshes createHard1(
+		TransformMeshes createOverlap(
 			const repo::lib::RepoBounds& bounds
 		);
 
@@ -274,7 +276,6 @@ namespace testing {
 		// other vertices may be that feature.
 
 		void shiftTriangles(repo::lib::RepoTriangle& problem);
-
 
 
 		template<typename T>
