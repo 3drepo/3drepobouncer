@@ -877,3 +877,15 @@ TEST(Geometry, TimeOfContactTriangles)
 		EXPECT_THAT(tau, Gt(1));
 	}
 }
+
+TEST(Geometry, ClosedAndManifold)
+{ 
+	{
+		auto m = repo::test::utils::mesh::makeUnitCube();
+		EXPECT_THAT(geometry::isClosedAndManifold(m.getFaces()), IsTrue());
+	}
+	{
+		auto m = repo::test::utils::mesh::makeUnitCylinder(100, true);
+		EXPECT_THAT(geometry::isClosedAndManifold(m.getFaces()), IsTrue());
+	}
+}
