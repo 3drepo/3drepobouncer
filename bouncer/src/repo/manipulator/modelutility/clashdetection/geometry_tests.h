@@ -19,6 +19,7 @@
 #include "repo/lib/datastructure/repo_line.h"
 #include "repo/lib/datastructure/repo_triangle.h"
 #include "repo/lib/datastructure/repo_bounds.h"
+#include "repo/lib/datastructure/repo_structs.h"
 #include <algorithm>
 
 namespace geometry {
@@ -162,4 +163,14 @@ namespace geometry {
         double contact = 0
     );
 
+    /*
+    * Returns whether a mesh is closed and manifold. These are prerequisites for
+    * checking for point-wise containment.
+    * The faces should already be indexed - i.e. indices for coincident vertices
+    * must be identical; this method only operates on indices, to check meshes
+	* with different tolerances, then they should be re-indexed first.
+    */
+    bool isClosedAndManifold(
+        const std::vector<repo::lib::repo_face_t>& triangles
+	);
 }

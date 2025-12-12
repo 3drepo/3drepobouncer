@@ -35,6 +35,7 @@ namespace {
 		std::vector<Graph::Node*> nodes;
 		std::vector<repo::lib::RepoTriangle> triangles;
 		repo::lib::RepoUUID id;
+		repo::lib::RepoBounds bounds;
 
 		void initialise(DatabasePtr handler) {
 			std::vector<repo::lib::RepoVector3D64> vertices;
@@ -43,6 +44,13 @@ namespace {
 				vertices.clear();
 				faces.clear();
 				PipelineUtils::loadGeometry(handler, *node, vertices, faces);
+				std::for_each(
+					vertices.begin(),
+					vertices.end(),
+					[&](auto& v) {
+						bounds.encapsulate(v);
+					}
+				);
 				std::transform(faces.begin(), faces.end(), std::back_inserter(triangles),
 					[&](auto& face) {
 						return repo::lib::RepoTriangle(
@@ -182,6 +190,13 @@ void Hard::run(const Graph& graphA, const Graph& graphB)
 
 		a->initialise(handler);
 		b->initialise(handler);
+
+		// In PolyDepth, b is fixed, so consider the larger object the static one
+		// to make it easier to fit a into the free space around it.
+
+		if (a->bounds > b->bounds) {
+			std::swap(a, b);
+		}
 
 		geometry::RepoPolyDepth pd(
 			a->getTriangles(),
