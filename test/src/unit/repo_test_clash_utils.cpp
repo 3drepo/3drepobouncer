@@ -168,6 +168,19 @@ void ClashDetectionDatabaseHelper::setCompositeObjectsByMetadataValue(
 	createCompositeObjectsByMetadataValue(config.setB, container.get(), valueSetB);
 }
 
+void ClashDetectionDatabaseHelper::setCompositeObjectsByMetadataValue(
+	repo::manipulator::modelutility::ClashDetectionConfig& config,
+	const std::unique_ptr<repo::lib::Container>& container,
+	const std::string& valueSetA,
+	const std::string& valueSetB,
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher>& metadataMap)
+{
+	config.setA.clear();
+	createCompositeObjectsByMetadataValue(config.setA, container.get(), valueSetA, metadataMap);
+	config.setB.clear();
+	createCompositeObjectsByMetadataValue(config.setB, container.get(), valueSetB, metadataMap);
+}
+
 void ClashDetectionDatabaseHelper::createCompositeObjectsFromContainer(
 	std::vector<repo::manipulator::modelutility::CompositeObject>& objects,
 	repo::lib::Container* container)
@@ -260,6 +273,119 @@ void ClashDetectionDatabaseHelper::createCompositeObjectsByMetadataValue(
 			composite.meshes.push_back(MeshReference(container, uuid));
 			objects.push_back(composite);
 		}
+	}
+}
+
+void ClashDetectionDatabaseHelper::createCompositeObjectsByMetadataValue(
+	std::vector<repo::manipulator::modelutility::CompositeObject>& objects,
+	repo::lib::Container* container,
+	const std::string& value,
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher>& metadataMap)
+{
+	std::vector<repo::lib::RepoUUID> parentSharedIds;
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> localMetadataMap;
+
+	{
+		repo::core::handler::database::query::RepoQueryBuilder query;
+		query.append(repo::core::handler::database::query::Eq("metadata.value", value));
+
+		repo::core::handler::database::query::RepoProjectionBuilder projection;
+		projection.includeField(REPO_NODE_LABEL_PARENTS);
+		projection.includeField(REPO_NODE_LABEL_METADATA);
+
+		auto cursor = handler->findCursorByCriteria(
+			container->teamspace,
+			container->container + "." + REPO_COLLECTION_SCENE,
+			query,
+			projection
+		);
+
+		for (auto& bson : *cursor) {
+			auto p = bson.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
+
+			auto metadata = bson.getObjectArray(REPO_NODE_LABEL_METADATA);
+			std::unordered_map<std::string, repo::lib::RepoVariant> metadataMap;
+			for (auto& field : metadata) {
+				auto key = field.getStringField(REPO_NODE_LABEL_META_KEY);
+				metadataMap[key] = field.getField(REPO_NODE_LABEL_META_VALUE).repoVariant();
+			}
+
+			for (auto parentId : p) {
+				parentSharedIds.push_back(parentId);
+				localMetadataMap.insert({ parentId, metadataMap });
+			}
+
+		}
+	}
+
+	// Abort if there are no shared IDs found
+	if (parentSharedIds.size() == 0) {
+		return;
+	}
+
+	// By convention, all metadata nodes should wire to both the parent transform,
+	// but also any mesh descendents.
+
+	// This method assumes that the import settings are such that each element has
+	// only one mesh. This is for performance reasons, as otherwise it would
+	// require nested queries which can be very expensive. If this is the case,
+	// another method will need to be used.
+
+	{
+		repo::core::handler::database::query::RepoQueryBuilder query;
+		query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_SHARED_ID, parentSharedIds));
+		query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_MESH)));
+
+		repo::core::handler::database::query::RepoProjectionBuilder projection;
+		projection.includeField(REPO_NODE_LABEL_ID);
+		projection.includeField(REPO_NODE_LABEL_SHARED_ID);
+
+		auto cursor = handler->findCursorByCriteria(
+			container->teamspace,
+			container->container + "." + REPO_COLLECTION_SCENE,
+			query,
+			projection
+		);
+
+		for (auto& bson : *cursor) {
+			auto uuid = bson.getUUIDField(REPO_NODE_LABEL_ID);
+			CompositeObject composite;
+			composite.id = repo::lib::RepoUUID::createUUID();
+			composite.meshes.push_back(MeshReference(container, uuid));
+			objects.push_back(composite);
+
+			auto sharedId = bson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);
+			auto metadata = localMetadataMap.find(sharedId);
+			if (metadata != localMetadataMap.end()) {
+				metadataMap.insert({ uuid, metadata->second });
+			}
+		}
+	}
+}
+
+void ClashDetectionDatabaseHelper::getBoundsForContainer(
+	repo::lib::Container* container,
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoBounds, repo::lib::RepoUUIDHasher>& boundsMap)
+{
+	repo::core::handler::database::query::RepoQueryBuilder query;
+	query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_MESH));
+
+	repo::core::handler::database::query::RepoProjectionBuilder projection;
+	projection.includeField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
+	projection.includeField(REPO_NODE_LABEL_ID);
+
+	auto cursor = handler->findCursorByCriteria(
+		container->teamspace,
+		container->container + "." + REPO_COLLECTION_SCENE,
+		query,
+		projection
+	);
+
+	for (auto& bson : *cursor) {
+		repo::lib::RepoUUID id = bson.getUUIDField(REPO_NODE_LABEL_ID);
+		repo::lib::RepoBounds bounds = bson.getBoundsField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
+
+		boundsMap.insert({ id, bounds });
 	}
 }
 

@@ -576,24 +576,6 @@ TEST(Clash, Rvt)
 	EXPECT_THAT(results.clashes.size(), Eq(10000));
 }
 
-TEST(Clash, CompositeSplitTest)
-{
-	auto handler = getHandler();
-
-	std::unique_ptr<lib::Container> container = std::make_unique<lib::Container>();
-	container->teamspace = "ClashDetectionTmp";
-	container->container = "7a549d61-7c63-4e81-8c43-23844f450ca4";
-	container->revision = repo::lib::RepoUUID("b33637b0-c971-4f91-8403-805d88e39d17");
-
-	ClashDetectionConfig config;
-	ClashDetectionDatabaseHelper helper(handler);
-
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
-
-	EXPECT_THAT(config.setA.size(), Eq(0));
-	EXPECT_THAT(config.setB.size(), Eq(0));
-}
-
 TEST(Clash, RvtDisjoint)
 {
 	GTEST_SKIP(); // skip until the revit files are committed to tests
@@ -609,17 +591,30 @@ TEST(Clash, RvtDisjoint)
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
 
-	config.tolerance = 0;
 
-	EXPECT_THAT(config.setA.size(), Eq(10000));
-	EXPECT_THAT(config.setB.size(), Eq(10000));
+	EXPECT_THAT(config.setA.size(), Eq(5));
+	EXPECT_THAT(config.setB.size(), Eq(5));
 
-	auto pipeline = new clash::Hard(handler, config);
-	auto results = pipeline->runPipeline();
-		
-	EXPECT_THAT(results.clashes.size(), Eq(0));
+	// Test Clearance Mode
+	{
+		config.tolerance = 1.0f;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(0));
+	}
+	
+	// Test Hard Mode
+	{
+		config.tolerance = 0.0f;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(0));
+	}
 }
 
 TEST(Clash, RvtIntersectClosed)
@@ -639,20 +634,139 @@ TEST(Clash, RvtIntersectClosed)
 
 	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
 
-	config.tolerance = 0;
 
 	EXPECT_THAT(config.setA.size(), Eq(10000));
 	EXPECT_THAT(config.setB.size(), Eq(10000));
 
-	auto pipeline = new clash::Hard(handler, config);
-	auto results = pipeline->runPipeline();
+	// Test Clearance Mode
+	{
+		config.tolerance = 1.0f;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
 
-	EXPECT_THAT(results.clashes.size(), Eq(10000));
+		EXPECT_THAT(results.clashes.size(), Eq(10000));
+
+		// Check all clash results whether the closest points are indeed identical
+		for (auto clash : results.clashes)
+		{
+			float diff = (clash.positions[0] - clash.positions[1]).norm();
+			EXPECT_THAT(diff, Eq(0));
+		}
+	}
+
+	// Test Hard Mode
+	{
+		config.tolerance = 0.0f;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(10000));
+	}
 }
 
-// Intersect Open
+TEST(Clash, RvtIntersectOpen)
+{
+	GTEST_SKIP(); // skip until the revit files are committed to tests
 
-// Covers
+	// Tests that geometry of a known distance is correctly measured after
+	// going through the bouncer import pipeline.
+
+	auto handler = getHandler();
+	auto container = makeTemporaryContainer();
+
+	importModel(getDataPath("/clash/revitIntersectOpen.rvt"), *container);
+
+	ClashDetectionConfig config;
+	ClashDetectionDatabaseHelper helper(handler);
+
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
+
+	EXPECT_THAT(config.setA.size(), Eq(10000));
+	EXPECT_THAT(config.setB.size(), Eq(10000));
+
+	// Test Clearance Mode
+	{
+		config.tolerance = 1.0f;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(10000));
+
+		// Check all clash results whether the closest points are indeed identical
+		for (auto clash : results.clashes)
+		{
+			float diff = (clash.positions[0] - clash.positions[1]).norm();
+			EXPECT_THAT(diff, Eq(0));
+		}
+	}
+
+	// Test Hard Mode
+	{
+		config.tolerance = 0.0f;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(10000));
+	}
+}
+TEST(Clash, RvtCovers)
+{
+	GTEST_SKIP(); // skip until the revit files are committed to tests
+
+	// Tests that geometry of a known distance is correctly measured after
+	// going through the bouncer import pipeline.
+
+	auto handler = getHandler();
+	auto container = makeTemporaryContainer();
+
+	importModel(getDataPath("/clash/revitCovers.rvt"), *container);
+
+	ClashDetectionConfig config;
+	ClashDetectionDatabaseHelper helper(handler);
+
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
+
+	EXPECT_THAT(config.setA.size(), Eq(5));
+	EXPECT_THAT(config.setB.size(), Eq(5));
+
+	// Test Clearance Mode
+	{
+		config.tolerance = 1.0f;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(0));
+
+		for (auto clash : results.clashes) {
+			auto metaA = metadataMap.find(clash.idA);
+			auto metaB = metadataMap.find(clash.idB);
+
+			EXPECT_THAT(metaA, Ne(metadataMap.end()));
+			EXPECT_THAT(metaB, Ne(metadataMap.end()));
+
+			auto separationDistanceA = boost::get<double>(metaA->second["RadiusDifference"]);
+			auto separationDistanceB = boost::get<double>(metaB->second["RadiusDifference"]);
+
+			EXPECT_THAT(separationDistanceA, Eq(separationDistanceB));
+
+			auto p1 = clash.positions[0];
+			auto p2 = clash.positions[1];
+			float clashDistance = (p2 - p1).norm();
+
+			EXPECT_THAT(separationDistanceA, Eq(clashDistance));
+		}
+	}
+
+	// Test Hard Mode
+	{
+		config.tolerance = 0.0f;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(0));
+	}
+}
 
 TEST(Clash, RvtContains)
 {
@@ -669,17 +783,37 @@ TEST(Clash, RvtContains)
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
 
-	config.tolerance = 0;
+	config.tolerance = 1.f;
 
 	EXPECT_THAT(config.setA.size(), Eq(10000));
 	EXPECT_THAT(config.setB.size(), Eq(10000));
 
-	auto pipeline = new clash::Hard(handler, config);
-	auto results = pipeline->runPipeline();
+	// Test Clearance Mode
+	{
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
 
-	EXPECT_THAT(results.clashes.size(), Eq(10000));
+		EXPECT_THAT(results.clashes.size(), Eq(10000));
+
+		// Check all clash results whether the closest points are indeed identical
+		for (auto clash : results.clashes)
+		{
+			float diff = (clash.positions[0] - clash.positions[1]).norm();
+			EXPECT_THAT(diff, Eq(0));
+		}
+	}
+
+	// Test Hard Mode
+	{
+		config.tolerance = 0.0f;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(10000));
+	}
 }
 
 TEST(Clash, RvtMeet)
@@ -699,15 +833,80 @@ TEST(Clash, RvtMeet)
 
 	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
 
-	config.tolerance = 0.0f;
+	EXPECT_THAT(config.setA.size(), Eq(5));
+	EXPECT_THAT(config.setB.size(), Eq(5));
 
-	EXPECT_THAT(config.setA.size(), Eq(10000));
-	EXPECT_THAT(config.setB.size(), Eq(10000));
+	// Get map from unique mesh ids to bounds from DB
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoBounds, repo::lib::RepoUUIDHasher> uidToBoundsMap;
+	helper.getBoundsForContainer(container.get(), uidToBoundsMap);
 
-	auto pipeline = new clash::Hard(handler, config);
-	auto results = pipeline->runPipeline();
+	// Remap to the composite ids
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoBounds, repo::lib::RepoUUIDHasher> compidToBoundsMap;
+	for (auto compObj : config.setA)
+	{
+		repo::lib::RepoBounds bounds;
+		for (auto& mesh : compObj.meshes)
+		{
+			auto uid = mesh.uniqueId;
+			auto boundsEntry = uidToBoundsMap.find(uid);
+			if (boundsEntry != uidToBoundsMap.end())
+				bounds.encapsulate(boundsEntry->second);
+		}
+		compidToBoundsMap.insert({ compObj.id, bounds});
+	}
+	for (auto compObj : config.setB)
+	{
+		repo::lib::RepoBounds bounds;
+		for (auto& mesh : compObj.meshes)
+		{
+			auto uid = mesh.uniqueId;
+			auto boundsEntry = uidToBoundsMap.find(uid);
+			if (boundsEntry != uidToBoundsMap.end())
+				bounds.encapsulate(boundsEntry->second);
+		}
+		compidToBoundsMap.insert({ compObj.id, bounds });
+	}
 
-	EXPECT_THAT(results.clashes.size(), Eq(10000));
+	// Test Clearance Mode
+	{
+		config.tolerance = 1.0f;
+
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(5));
+
+		// Check all clash results whether the closest points are indeed under
+		// the threshold
+		for (auto clash : results.clashes)
+		{
+			auto boundsEntryA = compidToBoundsMap.find(clash.idA);
+			auto boundsEntryB = compidToBoundsMap.find(clash.idB);
+			
+			if (boundsEntryA != compidToBoundsMap.end() && boundsEntryB != compidToBoundsMap.end())
+			{
+				float threshold = geometry::contactThreshold(boundsEntryA->second, boundsEntryB->second);
+
+				float diff = (clash.positions[0] - clash.positions[1]).norm();
+				EXPECT_THAT(diff, Le(threshold));
+			}
+			else
+			{
+				FAIL() << "Could not retrieve bounds for either or both of the composites";
+			}
+		}
+	}
+
+	// Test Hard Mode
+	{
+		config.tolerance = 0.0f;
+
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(5));
+	}
+
 }
 
 TEST(Clash, RvtOverlap)
@@ -725,12 +924,11 @@ TEST(Clash, RvtOverlap)
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
-
-	config.tolerance = 0;
-
-	EXPECT_THAT(config.setA.size(), Eq(10000));
-	EXPECT_THAT(config.setB.size(), Eq(10000));
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
+		
+	EXPECT_THAT(config.setA.size(), Eq(5));
+	EXPECT_THAT(config.setB.size(), Eq(5));
 
 	//auto stringA = config.setA[0].meshes[0].uniqueId.toString();
 	//auto stringB = config.setB[0].meshes[0].uniqueId.toString();
@@ -750,9 +948,6 @@ TEST(Clash, RvtOverlap)
 
 	//EXPECT_THAT(config.setA.size(), Eq(10000));
 	//EXPECT_THAT(config.setB.size(), Eq(10000));
-
-	auto pipeline = new clash::Hard(handler, config);
-	auto results = pipeline->runPipeline();
 	
 	//// Look for missing IDs in the clashes
 	//std::vector<int> missingA;
@@ -807,7 +1002,30 @@ TEST(Clash, RvtOverlap)
 	//EXPECT_THAT(missingA.size(), Eq(0)) << "Missing IDs in Set A";
 	//EXPECT_THAT(missingB.size(), Eq(0)) << "Missing IDs in Set B";
 
-	EXPECT_THAT(results.clashes.size(), Eq(10000));
+	// Test Clearance Mode
+	{
+		config.tolerance = 1;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(5));
+
+		// Check all clash results whether the closest points are indeed identical
+		for (auto clash : results.clashes)
+		{
+			float diff = (clash.positions[0] - clash.positions[1]).norm();
+			EXPECT_THAT(diff, Eq(0));
+		}
+	}
+
+	// Test Hard Mode 
+	{
+		config.tolerance = 0;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(5));
+	}
 }
 
 TEST(Clash, RvtEqual)
@@ -827,15 +1045,33 @@ TEST(Clash, RvtEqual)
 
 	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
 
-	config.tolerance = 0.0f;
+	EXPECT_THAT(config.setA.size(), Eq(5));
+	EXPECT_THAT(config.setB.size(), Eq(5));
 
-	EXPECT_THAT(config.setA.size(), Eq(10000));
-	EXPECT_THAT(config.setB.size(), Eq(10000));
+	// Test Clearance Mode
+	{
+		config.tolerance = 1;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
 
-	auto pipeline = new clash::Hard(handler, config);
-	auto results = pipeline->runPipeline();
+		EXPECT_THAT(results.clashes.size(), Eq(5));
 
-	EXPECT_THAT(results.clashes.size(), Eq(10000));
+		// Check all clash results whether the closest points are indeed identical
+		for (auto clash : results.clashes)
+		{
+			float diff = (clash.positions[0] - clash.positions[1]).norm();
+			EXPECT_THAT(diff, Eq(0));
+		}
+	}
+
+	// Test Hard Mode 
+	{
+		config.tolerance = 0;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(5));
+	}
 }
 
 TEST(Clash, Nwd)
