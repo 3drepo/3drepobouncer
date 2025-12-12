@@ -43,6 +43,8 @@ namespace repo {
 
 			bool operator==(const RepoBounds& other) const;
 
+			bool operator>(const RepoBounds& other) const;
+
 			bool contains(const RepoVector3D64& p) const;
 
 			const RepoVector3D64& min() const;
@@ -53,6 +55,8 @@ namespace repo {
 			RepoVector3D64 center() const;
 
 			static repo::lib::RepoBounds empty();
+
+			double volume() const;
 
 		private:
 			RepoVector3D64 bmin;

@@ -1834,11 +1834,19 @@ TEST(Clash, RepoPolyDepthDb)
 
 	auto c = helper.getContainerByName("hard_1");
 
+	// The Hard pipeline will swap the operands so the larger object is on the 
+	// right. For the tests though, we must generate the test data such that this 
+	// is the case.
+
 	auto pairs = {
 		std::make_pair("set1_a", "set1_b"),
 		std::make_pair("set2_a", "set2_b"),
 		std::make_pair("set3_a", "set3_b"),
 		std::make_pair("set4_a", "set4_b"),
+		std::make_pair("set5_a1", "set5_b"),
+		std::make_pair("set5_a2", "set5_b"),
+		std::make_pair("set5_a3", "set5_b"),
+		std::make_pair("set5_a4", "set5_b"),
 	};
 
 	for (auto& pair : pairs) {

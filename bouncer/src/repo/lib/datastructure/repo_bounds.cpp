@@ -91,6 +91,17 @@ RepoVector3D64 RepoBounds::center() const
 	return (bmin + bmax) * 0.5;
 }
 
+double RepoBounds::volume() const
+{
+	auto s = size();
+	return s.x * s.y * s.z;
+}
+
+bool RepoBounds::operator>(const RepoBounds& other) const
+{
+	return size().norm() > other.size().norm();
+}
+
 repo::lib::RepoBounds RepoBounds::empty()
 {
 	return RepoBounds(repo::lib::RepoVector3D64(0, 0, 0), repo::lib::RepoVector3D64(0, 0, 0));

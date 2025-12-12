@@ -884,8 +884,17 @@ TEST(Geometry, ClosedAndManifold)
 		auto m = repo::test::utils::mesh::makeUnitCube();
 		EXPECT_THAT(geometry::isClosedAndManifold(m.getFaces()), IsTrue());
 	}
+
 	{
 		auto m = repo::test::utils::mesh::makeUnitCylinder(100, true);
 		EXPECT_THAT(geometry::isClosedAndManifold(m.getFaces()), IsTrue());
+	}
+
+	{
+		auto m = repo::test::utils::mesh::makeUnitCylinder(100, true);
+		auto faces = m.getFaces();
+		std::swap(faces[10][0], faces[10][2]);
+		m.setFaces(faces);
+		EXPECT_THAT(geometry::isClosedAndManifold(m.getFaces()), IsFalse());
 	}
 }

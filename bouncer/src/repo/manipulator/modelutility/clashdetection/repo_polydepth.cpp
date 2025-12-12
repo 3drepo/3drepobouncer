@@ -160,6 +160,37 @@ void RepoPolyDepth::findInitialFreeConfiguration()
         return;
 	}
 
+    auto volA = bvhA.nodes[0].bounding_box_proxy().to_bounding_box().half_area();
+    auto volB = bvhB.nodes[0].bounding_box_proxy().to_bounding_box().half_area();
+
+    if (volA <= volB * localSearchRatioThreshold) {
+
+        // Perform a local search for a collision-free configuration. Ideally most
+        // small meshes will get a good initial guess from this. If it fails we
+        // revert to a simple bounds separation.
+
+        // This loop searches along the primary axes, not combinations thereof. This
+        // is because those combinations can become very numerous, very quickly,
+        // especially with multiple steps.
+
+        auto axes = std::vector<repo::lib::RepoVector3D64>{
+            repo::lib::RepoVector3D64(1,0,0),
+            repo::lib::RepoVector3D64(0,1,0),
+            repo::lib::RepoVector3D64(0,0,1)
+		};
+
+        for (double istep = 1; istep < numLocalSearchSteps; istep++) {
+            for (auto& axis : axes) {
+                for (int dir = -1; dir <= 1; dir += 2) {
+					qs = axis * dir * (istep * localSearchStepSize) * volA;
+                    if (intersect(qs) != Collision::Collision) { // Local search has found an intersection free configuration
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
     // Finds a translation for a which is collision free. Currently this is
     // done simply by finding the minimum translation vector that can separate
     // the bounds.

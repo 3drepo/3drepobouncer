@@ -739,37 +739,62 @@ bool geometry::isClosedAndManifold(
     // If a mesh is closed & manifold, it is possible to find the shortest
     // distance to the surface by comparing points piecewise with each face.
 
+    // This algorithm is sensitive to winding order.
+
     struct edge_hash {
         std::size_t operator () (const std::pair<size_t, size_t>& p) const {
             // In the real world, the number of vertices in a single mesh will
-            // not come close to the limits of an unsigned 32 bit integer.
+            // not come close to the limits of a uint32.
             return p.first << 32 ^ p.second;
         }
     };
 
 	std::unordered_map<std::pair<size_t, size_t>, size_t, edge_hash> edge_map;
 
+    // Each directed edge must exist only once in the entire mesh.
+    // If we encounter the same edge twice, then either the mesh is
+    // not manifold, or a face is wound incorrectly.
+
     for (const auto& tri : triangles)
     {
-        // Whether a mesh is closed is simply about open holes, so we can make
-        // the algorithm robust to faces with mixed winding orders.
-        // (Beware when it comes to checking points against the mesh, it is
-        // not so easily dismissed however.)
-
         auto edges = {
-            std::make_pair(std::min(tri[0], tri[1]), std::max(tri[0], tri[1])),
-            std::make_pair(std::min(tri[1], tri[2]), std::max(tri[1], tri[2])),
-            std::make_pair(std::min(tri[2], tri[0]), std::max(tri[2], tri[0]))
+            std::make_pair(tri[0], tri[1]),
+            std::make_pair(tri[1], tri[2]),
+            std::make_pair(tri[2], tri[0])
         };
-
         for (const auto& edge : edges) {
             edge_map[edge]++;
         }
     }
+
+    for (const auto& [edge, count] : edge_map) {
+        if (count != 1) {
+            return false;
+        }
+    }
+
+    // We now add the counts for each edge in the opposite direction,
+	// so the edge_count becomes the total number of faces sharing that
+    // edge. This must be greater than two for the mesh to be closed,
+	// and no more then two for it to be manifold.
+
+    for (const auto& tri : triangles)
+    {
+        auto edges = {
+            std::make_pair(tri[1], tri[0]),
+            std::make_pair(tri[2], tri[1]),
+            std::make_pair(tri[0], tri[2])
+        };
+        for (const auto& edge : edges) {
+            edge_map[edge]++;
+        }
+    }
+
     for (const auto& [edge, count] : edge_map) {
         if (count != 2) {
             return false;
         }
     }
+
 	return true;
 }
