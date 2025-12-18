@@ -81,6 +81,13 @@ namespace testing {
 			const std::string& valueSetA,
 			const std::string& valueSetB);
 
+		void setCompositeObjectsByMetadataValue(
+			repo::manipulator::modelutility::ClashDetectionConfig& config,
+			const std::unique_ptr<repo::lib::Container>& container,
+			const std::string& valueSetA,
+			const std::string& valueSetB,
+			std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher>& metadataMap);
+
 		void createCompositeObjectsFromContainer(
 			std::vector<repo::manipulator::modelutility::CompositeObject>& objects,
 			repo::lib::Container* container);
@@ -89,6 +96,16 @@ namespace testing {
 			std::vector<repo::manipulator::modelutility::CompositeObject>& objects,
 			repo::lib::Container* container,
 			const std::string& value);
+
+		void createCompositeObjectsByMetadataValue(
+			std::vector<repo::manipulator::modelutility::CompositeObject>& objects,
+			repo::lib::Container* container,
+			const std::string& value,
+			std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher>& metadataMap);
+
+		void getBoundsForContainer(
+			repo::lib::Container* container,
+			std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoBounds, repo::lib::RepoUUIDHasher>& boundsMap);
 
 		std::unique_ptr<repo::lib::Container> getContainerByName(
 			std::string name);
