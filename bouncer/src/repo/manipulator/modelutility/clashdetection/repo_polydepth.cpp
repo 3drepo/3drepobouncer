@@ -140,8 +140,15 @@ namespace {
     };
 }
 
-RepoPolyDepth::RepoPolyDepth(const std::vector<repo::lib::RepoTriangle>& a, const std::vector<repo::lib::RepoTriangle>& b)
-    : a(a), b(b), bvhA(buildBvh(a)), bvhB(buildBvh(b))
+RepoPolyDepth::RepoPolyDepth(
+    const std::vector<repo::lib::RepoTriangle>& a, 
+    const std::vector<repo::lib::RepoTriangle>& b,
+    const ContainsFunctor*)
+    : a(a), 
+    b(b),
+    bvhA(buildBvh(a)),
+    bvhB(buildBvh(b)),
+    contains(contains)
 {
     findInitialFreeConfiguration();
 }
@@ -274,6 +281,10 @@ RepoPolyDepth::Collision RepoPolyDepth::intersect(const repo::lib::RepoVector3D6
     refitter.refit(m);
 
     contacts.clear();
+
+    if (contains && contains->operator()(m)) {
+        return Collision::Collision;
+    }
 
     auto r = Collision::Free;
     bvh::traverse(bvhA, bvhB,

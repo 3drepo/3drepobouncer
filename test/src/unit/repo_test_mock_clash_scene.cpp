@@ -213,6 +213,23 @@ void ClashGenerator::shiftTriangles(repo::lib::RepoTriangle& b)
 	}
 }
 
+void ClashGenerator::swapWindingOrder(repo::lib::RepoTriangle& triangle)
+{
+	switch (random.range(0, 2)) {
+	case 0:
+		std::swap(triangle.a, triangle.b);
+		break;
+	case 1:
+		std::swap(triangle.b, triangle.c);
+		break;
+	case 2:
+		std::swap(triangle.c, triangle.a);
+		break;
+	default:
+		break;
+	}
+}
+
 void ClashGenerator::moveB(TransformTriangles& problem, const repo::lib::RepoRange& range)
 {
 	// As this method will modify the vertices before the downcast, we may only
@@ -288,38 +305,38 @@ void ClashGenerator::moveToBounds(TransformLines& problem, const repo::lib::Repo
 	mb = repo::lib::RepoMatrix::translate(offset) * mb;
 }
 
-void ClashGenerator::scaleToBounds(std::pair<repo::lib::RepoTriangle&, repo::lib::RepoTriangle&> triangles, const repo::lib::RepoBounds& bounds)
+void ClashGenerator::scaleToBounds(std::initializer_list<repo::lib::RepoTriangle*> triangles, const repo::lib::RepoBounds& bounds)
 {
 	// These next snippets ensure the problem is within the bounds, as the
 	// construction above does not guarantee this.
 
-	repo::lib::RepoBounds bb = {
-		triangles.first.a,
-		triangles.first.b,
-		triangles.first.c,
-		triangles.second.a,
-		triangles.second.b,
-		triangles.second.c
-	};
+	repo::lib::RepoBounds bb;
 
-	triangles.first = repo::lib::RepoMatrix::translate(-bb.center()) * triangles.first;
-	triangles.second = repo::lib::RepoMatrix::translate(-bb.center()) * triangles.second;
+	for (auto& t : triangles) {
+		bb.encapsulate(t->a);
+		bb.encapsulate(t->b);
+		bb.encapsulate(t->c);
+	}
 
-	bb = {
-		triangles.first.a,
-		triangles.first.b,
-		triangles.first.c,
-		triangles.second.a,
-		triangles.second.b,
-		triangles.second.c
-	};
+	for (auto& t : triangles) {
+		*t = repo::lib::RepoMatrix::translate(-bb.center()) * *t;
+	}
+
+	bb = repo::lib::RepoBounds();
+
+	for (auto& t : triangles) {
+		bb.encapsulate(t->a);
+		bb.encapsulate(t->b);
+		bb.encapsulate(t->c);
+	}
 
 	auto s = (bb.size() / bounds.size()) * 1.0001;
 	auto m = std::max({ 1.0, std::abs(s.x), std::abs(s.y), std::abs(s.z) });
 	auto scale = repo::lib::RepoMatrix::scale(1 / m);
 
-	triangles.first = scale * triangles.first;
-	triangles.second = scale * triangles.second;
+	for (auto& t : triangles) {
+		*t = scale * *t;
+	}
 }
 
 void testing::ClashGenerator::moveToPlane(repo::lib::RepoTriangle& triangle,
@@ -513,7 +530,7 @@ TransformTriangles testing::ClashGenerator::createTrianglesVV(const repo::lib::R
 	a.b += n * d;
 	a.c += n * d;
 
-	scaleToBounds({ a, b }, bounds);
+	scaleToBounds({ &a, &b }, bounds);
 
 	TransformTriangles problem({ a, RepoMatrix() }, { b, RepoMatrix() });
 
@@ -792,7 +809,7 @@ TransformTriangles testing::ClashGenerator::createTrianglesFF(const repo::lib::R
 
 	shiftTriangles(b);
 
-	scaleToBounds({ a, b }, bounds);
+	scaleToBounds({ &a, &b }, bounds);
 
 	TransformTriangles problem({ a, RepoMatrix() }, { b, RepoMatrix() });
 

@@ -895,6 +895,355 @@ TEST(Geometry, ClosedAndManifold)
 		auto faces = m.getFaces();
 		std::swap(faces[10][0], faces[10][2]);
 		m.setFaces(faces);
+		EXPECT_THAT(geometry::isClosedAndManifold(m.getFaces()), IsTrue());
+	}
+
+	{
+		auto m = repo::test::utils::mesh::makeUnitCylinder(100, true);
+		auto faces = m.getFaces();
+		faces.erase(faces.begin() + 10);
+		m.setFaces(faces);
 		EXPECT_THAT(geometry::isClosedAndManifold(m.getFaces()), IsFalse());
+	}
+}
+
+TEST(Geometry, RayTriangleIntersects)
+{
+	// The ray-intersection algorithm is used to detect intersections from the
+	// inside of closed meshes, so this is the way it is tested.
+	// This ensures when a ray is pointed towards a shared edge, for example, that
+	// even under rounding error it hits one of the triangles. Or, for a convex
+	// corner from outside, that if it misses or hits one triangle, it misses
+	// or hits both.
+
+	ClashGenerator clashGenerator;
+	auto& random = clashGenerator.random;
+
+	for (size_t itr = 0; itr < 1000000; itr++) {
+
+		repo::lib::RepoTriangle a(
+			random.vector(clashGenerator.size1),
+			random.vector(clashGenerator.size1),
+			random.vector(clashGenerator.size1)
+		);
+
+		{
+			// A ray in front of the triangle pointing towards a random location that is
+			// definitely on the triangle, because its chosen through permuations of the
+			// barycentric coordinates
+
+			auto pointOnA = random.barycentric(a);
+
+			auto origin = random.vector(clashGenerator.size1);
+			auto direction = (pointOnA - origin).normalized();
+
+			auto t1 = geometry::intersects(origin, direction, a);
+
+			EXPECT_THAT(t1, Gt(0));
+			EXPECT_THAT(t1, Lt(INFINITY));
+
+			// We do not distinguish intersections behind the origin from non-
+			// intersections.
+
+			auto t2 = geometry::intersects(origin, -direction, a);
+
+			EXPECT_THAT(t2, Eq(INFINITY));
+
+			// Check that the results are not changed by the winding order
+
+			clashGenerator.swapWindingOrder(a);
+			auto t3 = geometry::intersects(origin, direction, a);
+
+			EXPECT_THAT(t3, DoubleNear(t1, FLT_EPSILON));
+		}
+
+		{
+			// Two triangles with a shared ege, to test hitting the edge from inside and
+			// outside
+
+			auto pointOnA = random.barycentric(a);
+
+			// Rotates pointOnA about the shared edge to form a second triangle
+			auto p3 = repo::lib::RepoMatrix::rotation((a.b - a.a).normalized(), random.angle()) * pointOnA;
+
+			repo::lib::RepoTriangle b(
+				a.a,
+				a.b,
+				p3
+			);
+
+			// The following parameters are used to construct different rays. As we permute
+			// the triangle below, any such variables that will be needed later should be
+			// initialised here before the tests begin.
+
+			auto d0 = (a.b - a.a); // The shared edge
+			auto p2 = a.a + d0 * random.scalar(); // Point on the shared edge
+			auto d1 = (p3 - a.c); // Vector between the apex's of the two triangles
+			auto p1 = a.c + d1 * random.scalar(); // Point on the vector between the apex's
+			auto p4 = a.a; // A vertex on the shared edge
+			auto p5 = a.c; // The apex of triangle a
+			auto p6 = a.b; // The other end of the shared edge
+			auto n = a.normal();
+			if ((p3 - a.c).dotProduct(a.normal()) > 0) {
+				n = -n; // n is a normal of a that points towards the outside of the corner
+			}
+
+			// Ray pointing towards the inside corner of the two triangles.
+
+			auto direction = (p2 - p1).normalized();
+			auto origin = p1 - direction * random.number(clashGenerator.size1);
+
+			int ea = 0;
+			int eb = 0;
+
+			auto ta = geometry::intersects(origin, direction, a, &ea);
+			auto tb = geometry::intersects(origin, direction, b, &eb);
+
+			// There should be two possible outcomes here - either one triangle is hit on
+			// its face, or both triangles are hit on a (shared) edge.
+
+			EXPECT_THAT(ea, Eq(eb));
+
+			auto Sum = [&](auto tx, auto ty) {
+				auto sum = 0;
+				if (tx != INFINITY) {
+					sum++;
+				}
+				if (ty != INFINITY) {
+					sum++;
+				}
+				return sum;
+			};
+
+			if (ea) {
+				EXPECT_THAT(Sum(ta, tb), Eq(2));
+			}
+			else {
+				EXPECT_THAT(Sum(ta, tb), Eq(1));
+			}
+
+			// This should work if the winding order of any triangle is swapped as well.
+			// The exact t values may change slightly, but the edge parameter must remain
+			// consistent.
+
+			int e = 0;
+
+			{
+				clashGenerator.swapWindingOrder(a);
+				auto t = geometry::intersects(origin, direction, a, &e);
+
+				EXPECT_THAT(e, Eq(ea));
+				EXPECT_THAT(t, DoubleNear(ta, FLT_EPSILON));
+			}
+			{
+				clashGenerator.swapWindingOrder(b);
+				auto t = geometry::intersects(origin, direction, b, &e);
+
+				EXPECT_THAT(e, Eq(eb));
+				EXPECT_THAT(t, DoubleNear(tb, FLT_EPSILON));
+			}
+
+
+			// Similarly, for shifting the triangles too
+
+			{
+				clashGenerator.shiftTriangles(a);
+				auto t = geometry::intersects(origin, direction, a, &e);
+
+				EXPECT_THAT(e, Eq(ea));
+				EXPECT_THAT(t, DoubleNear(ta, FLT_EPSILON));
+			}
+
+			{
+				clashGenerator.shiftTriangles(b);
+				auto t = geometry::intersects(origin, direction, b, &e);
+
+				EXPECT_THAT(e, Eq(eb));
+				EXPECT_THAT(t, DoubleNear(tb, FLT_EPSILON));
+			}
+
+			{
+				// Glancing the edge from the outside - importantly in this construction the
+				// closest point of the ray to either triangle is on the shared edge, so it
+				// cannot penetrate one triangle without penetrating the other, though it is 
+				// also acceptable, due to rounding error, for it to miss both.
+
+				origin = p2 + d1;
+				direction = (p2 - origin).normalized();
+				origin += -direction * random.number(clashGenerator.size1);
+
+				ta = geometry::intersects(origin, direction, a, &ea);
+				tb = geometry::intersects(origin, direction, b, &eb);
+
+				// Hitting the shared edge must be consistent between both triangles
+
+				EXPECT_THAT(ea, Eq(eb));
+
+				// Under rounding error, a ray from outside may hit either triangle or miss
+				// both - however it should never hit just one.
+
+				if (ea) {
+					EXPECT_THAT(Sum(ta, tb), Eq(2));
+				}
+				else if (ta < INFINITY) {
+					EXPECT_THAT(Sum(ta, tb), Eq(2));
+				}
+				else if (ta == INFINITY) {
+					EXPECT_THAT(Sum(ta, tb), Eq(0));
+				}
+			}
+
+			{
+				// A ray is perfectly parallel to a triangle, but offset from the surface.
+				// This should trivially be a miss.
+
+				origin = pointOnA;
+				direction = (p2 - origin).normalized();
+				origin += -direction * random.number(clashGenerator.size1);
+				origin += n * geometry::contactThreshold(a,a);
+
+				bool degen = false;
+
+				ta = geometry::intersects(origin, direction, a, nullptr, &degen);
+				tb = geometry::intersects(origin, direction, b);
+
+				EXPECT_THAT(ta, Eq(INFINITY));
+				EXPECT_THAT(tb, Eq(INFINITY));
+				EXPECT_THAT(degen, IsFalse());
+			}
+			
+			{
+				// A test is considered degenerate if a ray is embedded in the plane of a
+				// triangle exactly.
+				// This case should be reported explicitly and invalidates the global context.
+				// In the case of the mesh contains test, this means starting the ray-cast
+				// again with another ray.
+				// If a test is not reported as degenerate, the edge-hit behaviour must be
+				// consistent.
+
+				// This loop moves the ray through different inclinations with respect to
+				// the triangle plane. Outside the range where the determinant is below
+				// a given threshold, the behaviour should be identical to either the
+				// inside or outside corner
+
+				size_t coverageCheckDegen = 0;
+				size_t coverageCheckCorner = 0;
+
+				double step_size = geometry::contactThreshold(a, a) * 0.000000001; // Only base the threshold on the size of a, since that is what the ray willl be coplanar to
+				double step = 0;
+				bool done = false;
+				while (!done) {
+					for (double j = -1; j < 2; j += 2) {
+						origin = pointOnA + n * step * j;
+						direction = (p2 - origin).normalized();
+						origin += -direction * random.number(clashGenerator.size1);
+
+						step += step_size + (step * 2.0);
+
+						bool degen = false;
+						ta = geometry::intersects(origin, direction, a, &ea, &degen);
+						tb = geometry::intersects(origin, direction, b, &eb);
+
+						if (degen) {
+							coverageCheckDegen++;
+							continue;
+						}
+
+						// If the ray hits the shared edge, it must hit it for both triangles
+
+						EXPECT_THAT(ea, Eq(eb));
+						if (ea) {
+							EXPECT_THAT(Sum(ta, tb), Eq(2));
+						}
+
+						coverageCheckCorner++;
+
+						// Check if we are inside or outside the corner at the current inclination
+
+						auto cpa = direction.crossProduct(p5 - p4).normalized().dotProduct(d0);
+						auto cp3 = direction.crossProduct(p3 - p4).normalized().dotProduct(d0);
+
+						auto insideCorner = (cpa * cp3) < 0;
+
+						if (insideCorner) {
+							if (ta < INFINITY && !ea) {
+								EXPECT_THAT(Sum(ta, tb), Eq(1));
+							}
+							if (tb < INFINITY && !eb) {
+								EXPECT_THAT(Sum(ta, tb), Eq(1));
+							}
+							EXPECT_THAT(Sum(ta, tb), Gt(0));
+						}
+						else {
+							if (ta < INFINITY) {
+								EXPECT_THAT(Sum(ta, tb), Eq(2));
+							}
+							else if (ta == INFINITY) {
+								EXPECT_THAT(Sum(ta, tb), Eq(0));
+							}
+						}
+					}
+
+					done = coverageCheckDegen > 0 && coverageCheckCorner > 4;
+				}
+				
+				// If this fails, the step size is likely too small for the clash generator settings or there aren't enough steps
+
+				EXPECT_THAT(coverageCheckCorner, IsTrue());
+
+				// If this fails, the step size is likely too large for the clash generator settings
+
+				EXPECT_THAT(coverageCheckDegen, IsTrue());
+			}
+
+			{
+				// If a ray hits a vertex, we expect two edges
+
+				repo::lib::RepoTriangle c(
+					p3,
+					p4,
+					p5
+				);
+
+				repo::lib::RepoTriangle o( // This triangle describes the open side of the tetrahedron
+					p3,
+					p5,
+					p6
+				);
+
+				origin = random.barycentric(o);
+				direction = (p4 - origin).normalized();
+				
+				bool degen = false;
+				int ec = 0;
+
+				ta = geometry::intersects(origin, direction, a, &ea, &degen);
+				tb = geometry::intersects(origin, direction, b, &eb, &degen);
+				auto tc = geometry::intersects(origin, direction, c, &ec, &degen);
+
+				if (degen) {
+					continue;
+				}
+
+				auto sumEdges = ea + eb + ec;
+
+				auto sumIntersections = 0;
+				if (ta < INFINITY) sumIntersections++;
+				if (tb < INFINITY) sumIntersections++;
+				if (tc < INFINITY) sumIntersections++;
+
+				if (sumIntersections > 0) {
+					if (sumIntersections == 1) {
+						EXPECT_THAT(sumEdges, Eq(0));
+					}
+					if (sumIntersections == 2) {
+						EXPECT_THAT(sumEdges, Eq(2));
+					}
+					if (sumIntersections > 2) {
+						EXPECT_THAT(sumEdges, Eq(6));
+					}
+				}
+			}
+		}
 	}
 }

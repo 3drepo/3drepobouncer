@@ -56,9 +56,20 @@ namespace geometry {
 	
 	struct RepoPolyDepth
 	{
+		/*
+		* Optional functor that when set on a PolyDepth instance may be used to test
+		* configurations of operand a (m). Should return true if under transform m, a
+		* is entirely contained by b, otherwise false. If null, the test is ignored
+		* PolyDepth proceeds without it.
+		*/
+		struct ContainsFunctor {
+			virtual bool operator()(const repo::lib::RepoVector3D64& m) = 0;
+		};
+
 		RepoPolyDepth(
 			const std::vector<repo::lib::RepoTriangle>& a, 
-			const std::vector<repo::lib::RepoTriangle>& b
+			const std::vector<repo::lib::RepoTriangle>& b,
+			const ContainsFunctor* = nullptr
 		);
 
 		/*
@@ -81,7 +92,7 @@ namespace geometry {
 			Collision,
 			Contact,
 			Free
-		};
+		};		
 
 	protected:
 		const std::vector<repo::lib::RepoTriangle>& a;
@@ -94,6 +105,8 @@ namespace geometry {
 
 		repo::lib::RepoVector3D64 qt;
 		repo::lib::RepoVector3D64 qs;
+
+		ContainsFunctor* contains = nullptr;
 
 		void findInitialFreeConfiguration();
 

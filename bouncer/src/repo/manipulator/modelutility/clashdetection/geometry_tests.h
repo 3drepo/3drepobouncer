@@ -95,6 +95,26 @@ namespace geometry {
     );
 
     /*
+    * Determines if the ray defined by origin and direction intersects the
+    * triangle. If so, returns the distance along the ray as a scalar of
+	* direction. Will intersect a triangle regardless of winding order.
+    * If no intersection occurs (or the intersection is behind the origin),
+	* returns infinity.
+    * If edges is provided, it will be set to the number of edges that were
+    * hit by the ray (at most two). If there is no intersection, edges will
+    * be set to zero.
+    * If degenerate is provided, it will be set to true if the test was
+    * internally detected as degenerate - if the test was not degenerate
+    * then the value is unchanged, allowing for daisy-chaining.
+    */
+    double intersects(const repo::lib::RepoVector3D64& origin,
+        const repo::lib::RepoVector3D64& direction,
+        const repo::lib::RepoTriangle& triangle,
+        int* edges = nullptr,
+        bool* degenerate = nullptr
+    );
+
+    /*
     * Given two bounds, return the minimum separating axis between them, in the
     * form of a vector, such that if a is moved by that vector, the two bounds
     * will touch on that axis. If the bounds do not intersect, the vector will
@@ -173,4 +193,6 @@ namespace geometry {
     bool isClosedAndManifold(
         const std::vector<repo::lib::repo_face_t>& triangles
 	);
+
+
 }

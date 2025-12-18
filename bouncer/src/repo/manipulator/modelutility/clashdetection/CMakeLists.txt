@@ -14,6 +14,7 @@ set(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_pipelines.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_pipelines_utils.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_scheduler.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/closed_mesh_view.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/geometry_tests.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/predicates.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_polydepth.cpp
@@ -31,9 +32,11 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_pipelines.h
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_pipelines_utils.h
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_scheduler.h
+	${CMAKE_CURRENT_SOURCE_DIR}/closed_mesh_view.h
 	${CMAKE_CURRENT_SOURCE_DIR}/geometry_tests.h
 	${CMAKE_CURRENT_SOURCE_DIR}/ordered_pair.h
 	${CMAKE_CURRENT_SOURCE_DIR}/predicates.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_linear_algebra.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_polydepth.h
 	${CMAKE_CURRENT_SOURCE_DIR}/sparse_scene_graph.h
 	CACHE STRING "HEADERS" FORCE)
