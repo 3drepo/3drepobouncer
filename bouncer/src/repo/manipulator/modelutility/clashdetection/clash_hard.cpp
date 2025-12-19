@@ -17,12 +17,12 @@
 
 #include "clash_hard.h"
 #include "geometry_tests.h"
+#include "geometry_tests_closed.h"
 #include "bvh_operators.h"
 #include "repo_polydepth.h"
 #include "clash_scheduler.h"
 #include "clash_node_cache.h"
 #include "clash_pipelines_utils.h"
-#include "closed_mesh_view.h"
 
 #include <set>
 #include <queue>

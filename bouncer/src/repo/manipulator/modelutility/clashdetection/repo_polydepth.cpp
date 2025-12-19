@@ -35,31 +35,9 @@ namespace {
         );
     }
 
-    Bvh buildBvh(const std::vector<repo::lib::RepoTriangle>& triangles)
-    {
-        auto bounds = std::vector<bvh::BoundingBox<double>>();
-        auto centers = std::vector<bvh::Vector3<double>>();
-
-        bounds.reserve(triangles.size());
-        centers.reserve(triangles.size());
-
-        for (const auto& triangle : triangles)
-        {
-            auto aabb = bvh::BoundingBox<double>::empty();
-            aabb.extend(reinterpret_cast<const bvh::Vector3<double>&>(triangle.a));
-            aabb.extend(reinterpret_cast<const bvh::Vector3<double>&>(triangle.b));
-            aabb.extend(reinterpret_cast<const bvh::Vector3<double>&>(triangle.c));
-            centers.push_back(aabb.center());
-            bounds.push_back(aabb);
-        }
-
-        auto globalBounds = bvh::compute_bounding_boxes_union(bounds.data(), bounds.size());
-
+    Bvh buildBvh(const std::vector<repo::lib::RepoTriangle>& triangles) {
         Bvh bvh;
-        bvh::SweepSahBuilder<Bvh> builder(bvh);
-        builder.max_leaf_size = 1;
-        builder.build(globalBounds, bounds.data(), centers.data(), bounds.size());
-
+        bvh::builders::build(bvh, triangles);
         return bvh;
     }
 

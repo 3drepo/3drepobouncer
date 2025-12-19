@@ -19,9 +19,16 @@
 
 #include "repo/manipulator/modeloptimizer/bvh/bvh.hpp"
 #include "repo/lib/datastructure/repo_vector.h"
+#include "repo/lib/datastructure/repo_triangle-fwd.h"
 
 #include <stack>
 #include <utility>
+
+namespace repo {
+	namespace lib {
+		struct repo_face_t;
+	}
+}
 
 namespace bvh {
 
@@ -37,6 +44,17 @@ namespace bvh {
 			const bvh::Bvh<double>::Node& a,
 			const bvh::Bvh<double>::Node& b);
 
+	}
+
+	namespace builders {
+		void build(bvh::Bvh<double>& bvh, 
+			const std::vector<repo::lib::RepoVector3D64>& vertices, 
+			const std::vector<repo::lib::repo_face_t>& faces
+		);
+
+		void build(bvh::Bvh<double>& bvh,
+			const std::vector<repo::lib::_RepoTriangle<double>>& triangles
+		);
 	}
 
 	/*

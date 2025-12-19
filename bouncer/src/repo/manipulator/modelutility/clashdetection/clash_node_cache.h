@@ -33,7 +33,8 @@ namespace repo {
 				* 
 				* Callers first create a Record for a given Key, and use this object to
 				* request references to the Node stored in it. These references are counted,
-				* and once they all go out of scope, the Record is removed from the cache.
+				* and once they all go out of scope, the Record itself is removed from the
+				* cache.
 				* 
 				* Records are keyed by the objects that are themselves used to initialise
 				* the intermediate structures (which should be done by the Cache itself
@@ -48,6 +49,24 @@ namespace repo {
 				class ResourceCache
 				{
 				public:
+					struct Record;
+
+					// Make sure the Deleter is a separate object so that its contents can be
+					// std::swapped'. If we use a reference, the contents will be swapped along
+					// with the unique_ptr, which is a problem because the Record holds the
+					// thing the pointer is pointing to.
+
+					struct Deleter {
+						Record* record = nullptr;
+
+						void operator()(Node* ptr) {
+							record->referenceCount--;
+							if (!record->referenceCount) {
+								record->cache->release(*record->key);
+							}
+						}
+					};
+
 					struct Record
 					{
 						// Node must be default-constructible
@@ -62,24 +81,13 @@ namespace repo {
 						* scope, the Record will be destroyed. If no reference is ever taken,
 						* the record will only be destroyed with the cache itself.
 						*/
-						std::unique_ptr<Node, Record&> getReference() {
+						std::unique_ptr<Node, Deleter> getReference() {
 							referenceCount++;
-							return { &node, *this };
-						}
-
-						/*
-						* Record is its own deleter for the purposes of the unique_ptrs. We can pass
-						* a reference to the pointers, which is very lightweight.
-						*/
-						void operator()(Node* ptr) {
-							referenceCount--;
-							if (!referenceCount) {
-								cache->release(*key);
-							}
+							return std::unique_ptr<Node, Deleter>(&node, Deleter{this});
 						}
 					};
 
-					using Entry = std::unique_ptr<Node, Record&>;
+					using Entry = std::unique_ptr<Node, Deleter>;
 
 					/*
 					* Gets (or creates) a record associated with the given key. Once a record

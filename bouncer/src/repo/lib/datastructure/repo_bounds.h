@@ -36,6 +36,7 @@ namespace repo {
 			RepoBounds(const RepoVector3D64& min, const RepoVector3D64& max);
 			RepoBounds(const RepoVector3D& min, const RepoVector3D& max);
 			RepoBounds(std::initializer_list<RepoVector3D64> points);
+			RepoBounds(const RepoVector3D64* points, size_t size);
 
 			// Expands the bounds to include the point
 			void encapsulate(const RepoVector3D64& p);

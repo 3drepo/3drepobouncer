@@ -56,3 +56,12 @@ DuplicateMeshIdsException::DuplicateMeshIdsException(const repo::lib::RepoUUID& 
 std::shared_ptr<ClashDetectionException> DuplicateMeshIdsException::clone() const {
 	return std::make_shared<DuplicateMeshIdsException>(*this);
 }
+
+DegenerateMeshException::DegenerateMeshException(const repo::lib::RepoUUID& uniqueId)
+	: uniqueId(uniqueId)
+{
+}
+
+std::shared_ptr<ClashDetectionException> DegenerateMeshException::clone() const {
+	return std::make_shared<DegenerateMeshException>(*this);
+}

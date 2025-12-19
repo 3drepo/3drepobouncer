@@ -17,6 +17,11 @@
 
 #include "bvh_operators.h"
 
+#include "repo/lib/datastructure/repo_structs.h"
+#include "repo/lib/datastructure/repo_triangle.h"
+
+#include "repo/manipulator/modeloptimizer/bvh/sweep_sah_builder.hpp"
+
 using namespace bvh;
 
 void Traversal::operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double>& b)
@@ -223,4 +228,55 @@ bool IntersectQuery::intersect(
 	const bvh::Bvh<double>::Node& b)
 {
 	return predicates::intersects(a, b);
+}
+
+void bvh::builders::build(bvh::Bvh<double>& bvh,
+	const std::vector<repo::lib::RepoVector3D64>& vertices,
+	const std::vector<repo::lib::repo_face_t>& faces)
+{
+	auto boundingBoxes = std::vector<bvh::BoundingBox<double>>();
+	auto centers = std::vector<bvh::Vector3<double>>();
+
+	for (const auto& face : faces)
+	{
+		auto bbox = bvh::BoundingBox<double>::empty();
+		for (size_t i = 0; i < face.sides; i++) {
+			auto v = vertices[face[i]];
+			bbox.extend(bvh::Vector3<double>(v.x, v.y, v.z));
+		}
+		boundingBoxes.push_back(bbox);
+		centers.push_back(boundingBoxes.back().center());
+	}
+
+	auto globalBounds = bvh::compute_bounding_boxes_union(boundingBoxes.data(), boundingBoxes.size());
+
+	bvh::SweepSahBuilder<bvh::Bvh<double>> builder(bvh);
+	builder.max_leaf_size = 1;
+	builder.build(globalBounds, boundingBoxes.data(), centers.data(), boundingBoxes.size());
+}
+
+void bvh::builders::build(bvh::Bvh<double>& bvh,
+	const std::vector<repo::lib::RepoTriangle>& triangles)
+{
+	auto bounds = std::vector<bvh::BoundingBox<double>>();
+	auto centers = std::vector<bvh::Vector3<double>>();
+
+	bounds.reserve(triangles.size());
+	centers.reserve(triangles.size());
+
+	for (const auto& triangle : triangles)
+	{
+		auto aabb = bvh::BoundingBox<double>::empty();
+		aabb.extend(reinterpret_cast<const bvh::Vector3<double>&>(triangle.a));
+		aabb.extend(reinterpret_cast<const bvh::Vector3<double>&>(triangle.b));
+		aabb.extend(reinterpret_cast<const bvh::Vector3<double>&>(triangle.c));
+		centers.push_back(aabb.center());
+		bounds.push_back(aabb);
+	}
+
+	auto globalBounds = bvh::compute_bounding_boxes_union(bounds.data(), bounds.size());
+
+	bvh::SweepSahBuilder<bvh::Bvh<double>> builder(bvh);
+	builder.max_leaf_size = 1;
+	builder.build(globalBounds, bounds.data(), centers.data(), bounds.size());
 }

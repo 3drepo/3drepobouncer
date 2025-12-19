@@ -82,6 +82,14 @@ namespace repo {
 
 					virtual std::shared_ptr<ClashDetectionException> clone() const override;
 				};
+
+				struct DegenerateMeshException : public ClashDetectionException {
+					DegenerateMeshException(const repo::lib::RepoUUID& uniqueId);
+
+					repo::lib::RepoUUID uniqueId;
+
+					virtual std::shared_ptr<ClashDetectionException> clone() const override;
+				};
 			}
 		}
 	}

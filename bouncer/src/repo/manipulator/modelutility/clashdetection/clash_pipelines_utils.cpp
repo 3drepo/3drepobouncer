@@ -17,6 +17,8 @@
 
 #include "clash_pipelines_utils.h"
 
+#include "hopscotch-map/bhopscotch_map.h"
+
 using namespace repo::manipulator::modelutility::clash;
 
 void PipelineUtils::loadGeometry(
@@ -32,19 +34,70 @@ void PipelineUtils::loadGeometry(
 		node.mesh
 	);
 
-	// Put the meshes in project coordinates. We create new arrays below
-	// as we want to keep the vertices in double precision from now on.
-
 	auto mesh = repo::core::model::MeshNode(node.mesh);
 
 	vertices.reserve(mesh.getNumVertices());
-	for (const auto& v : mesh.getVertices())
+
+	struct Hasher
 	{
-		auto vt = node.matrix * repo::lib::RepoVector3D64(v);
-		vertices.push_back(vt);
+		std::size_t operator()(const repo::lib::RepoVector3D& v) const {
+			std::size_t h1 = std::hash<float>{}(v.x);
+			std::size_t h2 = std::hash<float>{}(v.y);
+			std::size_t h3 = std::hash<float>{}(v.z);
+			return h1 ^ (h2 << 1) ^ (h3 << 2);
+		}
+	};
+
+	struct Less
+	{
+		bool operator()(const repo::lib::RepoVector3D& a, const repo::lib::RepoVector3D& b) const {
+			if (a.x != b.x) return a.x < b.x;
+			if (a.y != b.y) return a.y < b.y;
+			return a.z < b.z;
+		}
+	};
+
+	tsl::bhopscotch_map<
+		repo::lib::RepoVector3D,
+		uint32_t,
+		Hasher,
+		std::equal_to<repo::lib::RepoVector3D>,
+		Less,
+		std::allocator<std::pair<const repo::lib::RepoVector3D, uint32_t>>,
+		10,
+		true>
+	map;
+
+	std::vector<uint32_t> newIndex;
+	newIndex.reserve(mesh.getNumVertices());
+
+	auto& originalVertices = mesh.getVertices();
+	for(size_t i = 0; i < mesh.getNumVertices(); i++)
+	{
+		auto v = originalVertices[i];
+		auto it = map.find(v);
+		if (it == map.end()) {
+			size_t newIdx = vertices.size();
+			map[v] = newIdx;
+			
+			// Put the meshes in project coordinates. We create new arrays below
+			// as we want to keep the vertices in double precision from now on.
+
+			vertices.push_back(node.matrix * repo::lib::RepoVector3D64(v));
+
+			newIndex.push_back(newIdx);
+		}
+		else {
+			newIndex.push_back(it->second);
+		}
 	}
 
 	faces = mesh.getFaces();
+	for (auto& face : faces) {
+		for(size_t i = 0; i < face.size(); i++) {
+			face[i] = newIndex[face[i]];
+		}
+	}
 
 	node.mesh.unloadBinaryBuffers();
 }

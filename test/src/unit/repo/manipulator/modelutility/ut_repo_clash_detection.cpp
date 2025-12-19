@@ -1622,6 +1622,38 @@ TEST(Clash, SelfClearance)
 	}
 }
 
+TEST(Clash, ContainsClearance)
+{
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
+	auto c = helper.getContainerByName("contains_2");
+
+	{
+		// The two hulls form separate composite objects
+
+		ClashDetectionConfig config;
+
+		//config.setA.push_back(helper.createCompositeObject(c.get(), "Hull1"));
+		config.setA.push_back(helper.createCompositeObject(c.get(), "Hull2"));
+
+		//config.setB.push_back(helper.createCompositeObject(c.get(), "Contained1"));
+		//config.setB.push_back(helper.createCompositeObject(c.get(), "Contained2"));
+		//config.setB.push_back(helper.createCompositeObject(c.get(), "Contained3"));
+		//config.setB.push_back(helper.createCompositeObject(c.get(), "Contained4"));
+		config.setB.push_back(helper.createCompositeObject(c.get(), "Contained5"));
+		//config.setB.push_back(helper.createCompositeObject(c.get(), "Contained6"));
+
+		config.tolerance = 0.1;
+		config.type = ClashDetectionType::Clearance;
+
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(1));
+	}
+}
+
 TEST(Clash, BvhTraversal)
 {
 	// Tests the intra-bvh traversal operator
@@ -2288,6 +2320,8 @@ TEST(Clash, NodeCache)
 
 	struct Node {
 
+		size_t i;
+
 		Node() {
 			nodeCount++;
 		}
@@ -2300,17 +2334,19 @@ TEST(Clash, NodeCache)
 	// Cache expects to be keyed by objects (specifically, their addresses)
 
 	struct K {
+		size_t i;
 	};
 
 	std::vector<K> keys;
 
 	for (size_t i = 0; i < 10; i++) {
-		keys.push_back(K{});
+		keys.push_back(K{i});
 	}
 
 	struct Cache : public repo::manipulator::modelutility::clash::ResourceCache<K, Node>
 	{
 		void initialise(const K& key, Node& node) const override {
+			node.i = key.i;
 		}
 	};
 
@@ -2415,6 +2451,26 @@ TEST(Clash, NodeCache)
 
 		ref1 = nullptr;
 		EXPECT_THAT(nodeCount, Eq(0));
+	}
+
+	{
+		// Cache entries should work with std::swap
+
+		Cache cache;
+		std::vector<Cache::Record*> records;
+
+		auto r0 = cache.get(keys[0])->getReference();
+		auto r1 = cache.get(keys[1])->getReference();
+		auto r2 = cache.get(keys[1])->getReference();
+
+		EXPECT_THAT(r0->i, Eq(keys[0].i));
+		EXPECT_THAT(r1->i, Eq(keys[1].i));
+		EXPECT_THAT(r2->i, Eq(keys[1].i));
+
+		std::swap(r0, r1);
+
+		EXPECT_THAT(r0->i, Eq(keys[1].i));
+		EXPECT_THAT(r1->i, Eq(keys[0].i));
 	}
 }
 

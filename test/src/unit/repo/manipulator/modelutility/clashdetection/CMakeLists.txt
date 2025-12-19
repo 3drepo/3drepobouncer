@@ -7,5 +7,6 @@
 set(TEST_SOURCES
 	${TEST_SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_geometry.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_geometry_closed.cpp
 	CACHE STRING "TEST_SOURCES" FORCE)
 

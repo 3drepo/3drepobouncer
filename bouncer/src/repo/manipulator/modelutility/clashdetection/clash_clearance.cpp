@@ -20,16 +20,16 @@
 
 #include "clash_clearance.h"
 #include "geometry_tests.h"
+#include "geometry_tests_closed.h"
 #include "bvh_operators.h"
 #include "clash_scheduler.h"
 #include "clash_node_cache.h"
 #include "clash_pipelines_utils.h"
-#include "closed_mesh_view.h"
 
 #include "repo/lib/datastructure/repo_matrix.h"
 #include "repo/lib/datastructure/repo_triangle.h"
 #include "repo/manipulator/modeloptimizer/bvh/bvh.hpp"
-#include "repo/manipulator/modeloptimizer/bvh/sweep_sah_builder.hpp"
+
 
 using namespace repo::manipulator::modelutility::clash;
 
@@ -61,25 +61,7 @@ namespace {
 
 			isClosed = geometry::isClosedAndManifold(faces);
 
-			auto boundingBoxes = std::vector<bvh::BoundingBox<double>>();
-			auto centers = std::vector<bvh::Vector3<double>>();
-
-			for (const auto& face : faces)
-			{
-				auto bbox = bvh::BoundingBox<double>::empty();
-				for (size_t i = 0; i < face.sides; i++) {
-					auto v = vertices[face[i]];
-					bbox.extend(bvh::Vector3<double>(v.x, v.y, v.z));
-				}
-				boundingBoxes.push_back(bbox);
-				centers.push_back(boundingBoxes.back().center());
-			}
-
-			auto globalBounds = bvh::compute_bounding_boxes_union(boundingBoxes.data(), boundingBoxes.size());
-
-			bvh::SweepSahBuilder<bvh::Bvh<double>> builder(bvh);
-			builder.max_leaf_size = 1;
-			builder.build(globalBounds, boundingBoxes.data(), centers.data(), boundingBoxes.size());
+			bvh::builders::build(bvh, vertices, faces);
 		}
 
 		const Bvh& getBvh() const override {
@@ -216,11 +198,19 @@ void Clearance::run(const Graph& graphA, const Graph& graphB)
 		}
 		
 		if (b->isClosed) {
-			geometry::contains(a->getOrderedVertices(), a->bounds, *b);
+			if (geometry::contains(a->getOrderedVertices(), a->bounds, *b)) {
+				// If a is completely inside b, the closest distance is zero so we can 
+				// terminate immediately.
+
+				createClash<ClearanceClash>(
+					a->getCompositeObjectId(),
+					b->getCompositeObjectId()
+				)->append({a->bounds.center(), a->bounds.center()});
+				continue;
+			}
 		}
 
 		broadphase.operator()(a->getBvh(), b->getBvh());
-
 		for (const auto& [aIndex, bIndex] : broadphase.results)
 		{
 			auto line = geometry::closestPoints(a->getTriangle(aIndex), b->getTriangle(bIndex));

@@ -874,3 +874,4 @@ bool geometry::isClosedAndManifold(
 
 	return true;
 }
+

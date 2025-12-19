@@ -47,6 +47,14 @@ repo::lib::RepoBounds::RepoBounds(std::initializer_list<RepoVector3D64> points)
 	}
 }
 
+repo::lib::RepoBounds::RepoBounds(const RepoVector3D64* points, size_t size)
+	:RepoBounds()
+{
+	for (size_t i = 0; i < size; ++i) {
+		encapsulate(points[i]);
+	}
+}
+
 void RepoBounds::encapsulate(const RepoVector3D64& p)
 {
 	bmin = repo::lib::RepoVector3D64::min(bmin, p);

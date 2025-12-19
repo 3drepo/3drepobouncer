@@ -17,33 +17,9 @@
 
 #pragma once
 
-#include "clash_pipelines.h"
-
 namespace repo {
-	namespace manipulator {
-		namespace modelutility {
-			namespace clash {
-
-				/*
-				* Contains a set of helper functions that operate with the types used to
-				* construct the	clash detection pipelines.
-				*/
-
-				struct PipelineUtils 
-				{
-					/*
-					* Gets the geometry for the node in project coordinates. This method will
-					* reindex the faces to combine duplicate vertices to enable detection of
-					* closed meshes, even where normals and uvs differ at the seams.
-					*/
-					static void loadGeometry(
-						DatabasePtr handler, 
-						Graph::Node& node,
-						std::vector<repo::lib::RepoVector3D64>& vertices,
-						std::vector<repo::lib::repo_face_t>& faces
-					);
-				};
-			}
-		}
+	namespace lib {
+		template<typename T>
+		struct _RepoTriangle;
 	}
 }
