@@ -64,7 +64,7 @@ namespace repo{
 				return crc32.checksum();
 			}
 
-			_RepoVector3D<T> crossProduct(const _RepoVector3D<T> &vec)
+			_RepoVector3D<T> crossProduct(const _RepoVector3D<T> &vec) const
 			{
 				_RepoVector3D<T> product;
 				product.x = (y * vec.z) - (z * vec.y);

@@ -24,6 +24,7 @@
 #include "clash_scheduler.h"
 #include "clash_node_cache.h"
 #include "clash_pipelines_utils.h"
+#include "closed_mesh_view.h"
 
 #include "repo/lib/datastructure/repo_matrix.h"
 #include "repo/lib/datastructure/repo_triangle.h"
@@ -33,12 +34,14 @@
 using namespace repo::manipulator::modelutility::clash;
 
 namespace {
-	struct Cached
+	struct Cached : public geometry::MeshView
 	{
 		Graph::Node* node;
 		Bvh bvh;
 		std::vector<repo::lib::RepoVector3D64> vertices;
 		std::vector<repo::lib::repo_face_t> faces;
+		repo::lib::RepoBounds bounds;
+		bool isClosed = false;
 
 		void initialise(std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler) {
 
@@ -47,6 +50,16 @@ namespace {
 			}
 
 			PipelineUtils::loadGeometry(handler, *node, vertices, faces);
+
+			std::for_each(
+				vertices.begin(),
+				vertices.end(),
+				[&](auto& v) {
+					bounds.encapsulate(v);
+				}
+			);
+
+			isClosed = geometry::isClosedAndManifold(faces);
 
 			auto boundingBoxes = std::vector<bvh::BoundingBox<double>>();
 			auto centers = std::vector<bvh::Vector3<double>>();
@@ -69,11 +82,11 @@ namespace {
 			builder.build(globalBounds, boundingBoxes.data(), centers.data(), boundingBoxes.size());
 		}
 
-		const Bvh& getBvh() const {
+		const Bvh& getBvh() const override {
 			return bvh;
 		}
 
-		repo::lib::RepoTriangle getTriangle(size_t primitive) const {
+		repo::lib::RepoTriangle getTriangle(size_t primitive) const override {
 			auto& face = faces[primitive];
 			if (face.sides < 3) {
 				throw std::runtime_error("Clash detection engine only supports Triangles.");
@@ -88,6 +101,14 @@ namespace {
 		const repo::lib::RepoUUID& getCompositeObjectId() const {
 			return node->compositeObject->id;
 		}
+
+		const std::vector<repo::lib::RepoVector3D64>& getOrderedVertices() const {
+			return vertices;
+			// todo: implement ordered vertices
+		}		
+
+	private:
+		std::vector<repo::lib::RepoVector3D64> orderedVertices; // Same vertices, but ordered to make contains tests most efficient
 	};
 
 	struct Cache : public ResourceCache<Graph::Node, Cached>
@@ -190,17 +211,24 @@ void Clearance::run(const Graph& graphA, const Graph& graphB)
 		a->initialise(handler);
 		b->initialise(handler);
 
+		if (a->bounds > b->bounds) {
+			std::swap(a, b);
+		}
+		
+		if (b->isClosed) {
+			geometry::contains(a->getOrderedVertices(), a->bounds, *b);
+		}
+
 		broadphase.operator()(a->getBvh(), b->getBvh());
 
 		for (const auto& [aIndex, bIndex] : broadphase.results)
 		{
 			auto line = geometry::closestPoints(a->getTriangle(aIndex), b->getTriangle(bIndex));
 			if (line.magnitude() < tolerance) {
-				auto clash = createClash<ClearanceClash>(
+				createClash<ClearanceClash>(
 					a->getCompositeObjectId(),
 					b->getCompositeObjectId()
-				);
-				clash->append(line);
+				)->append(line);
 			}
 		}
 	}

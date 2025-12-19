@@ -105,6 +105,12 @@ repo::lib::RepoVector3D64 RepoRandomGenerator::barycentric()
 	return b;
 }
 
+repo::lib::RepoVector3D64 RepoRandomGenerator::barycentric(const repo::lib::RepoTriangle& a)
+{
+	auto bc = barycentric();
+	return a.a * bc.x + a.b * bc.y + a.c * bc.z;
+}
+
 repo::lib::RepoMatrix RepoRandomGenerator::transform(bool rotation,
 	const repo::lib::RepoRange& translate,
 	const repo::lib::RepoRange& scale)

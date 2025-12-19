@@ -259,7 +259,7 @@ namespace testing {
 		// required.
 
 		void scaleToBounds(
-			std::pair<repo::lib::RepoTriangle&, repo::lib::RepoTriangle&> triangles,
+			std::initializer_list<repo::lib::RepoTriangle*> triangles, // (We must use pointers here because the compiler wont allow references in an initializer list)
 			const repo::lib::RepoBounds& bounds
 		);
 
@@ -277,6 +277,7 @@ namespace testing {
 
 		void shiftTriangles(repo::lib::RepoTriangle& problem);
 
+		void swapWindingOrder(repo::lib::RepoTriangle& triangle);
 
 		template<typename T>
 		void downcast(TransformedPair<T>& pair) {
@@ -360,5 +361,10 @@ namespace testing {
 		int objectCounter = 0;
 	};
 
+	/*
+	* Convenience operator for use with, for example, REPO_EXPECT_THAT, that prints
+	* a triangle to the stream in a way in which the text can be copied back into
+	* a source file to recreate that exact triangle.
+	*/
 	std::ostream& operator<< (std::ostream& stream, const repo::lib::RepoTriangle& triangle);
 }

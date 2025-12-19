@@ -21,6 +21,7 @@
 #include <repo/lib/datastructure/repo_matrix.h>
 #include <repo/lib/datastructure/repo_range.h>
 #include <repo/lib/datastructure/repo_bounds.h>
+#include <repo/lib/datastructure/repo_triangle.h>
 #include <random>
 
 namespace testing {
@@ -79,6 +80,9 @@ namespace testing {
 		bool boolean();
 
 		repo::lib::RepoVector3D64 barycentric();
+
+		repo::lib::RepoVector3D64 barycentric(const repo::lib::RepoTriangle& a);
+
 	};
 
 	/*

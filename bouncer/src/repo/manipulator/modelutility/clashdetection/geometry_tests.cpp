@@ -588,6 +588,106 @@ double geometry::intersects(const repo::lib::RepoTriangle& A, const repo::lib::R
 #undef INTERSECT
 }
 
+double geometry::intersects(const repo::lib::RepoVector3D64& origin,
+    const repo::lib::RepoVector3D64& direction,
+    const repo::lib::RepoTriangle& triangle,
+    int* edges,
+    bool* degenerate)
+{
+	// This implementation is based on Woop & Walds Watertight Ray/Triangle
+    // intersection, with adjustments to report edge and coplanarity
+    // checks.
+
+    if (edges) {
+        *edges = 0;
+    }
+
+    // Sven Woop, Carsten Benthin, and Ingo Wald. Watertight Ray/Triangle
+    // Intersection. Journal of Computer Graphics Techniques (JCGT), Vol. 2,
+    // No. 1, 65-82, 2013. http://jcgt.org/published/0002/01/05/
+
+    // 1. Move triangle into ray space
+    // Find the dominant axis of the ray direction
+    int kz = 0;
+    double absDir[3] = { std::abs(direction.x), std::abs(direction.y), std::abs(direction.z) };
+    if (absDir[1] > absDir[0]) kz = 1;
+    if (absDir[2] > absDir[kz]) kz = 2;
+    int kx = (kz + 1) % 3;
+    int ky = (kz + 2) % 3;
+
+    // Swap kx and ky to preserve winding if direction[kz] < 0
+    double dirArray[3] = { direction.x, direction.y, direction.z };
+    if (dirArray[kz] < 0.0) std::swap(kx, ky);
+
+    // Ray origin and direction
+    double Sx = dirArray[kx] / dirArray[kz];
+    double Sy = dirArray[ky] / dirArray[kz];
+    double Sz = 1.0 / dirArray[kz];
+
+    // Triangle vertices relative to ray origin
+    double v0[3] = { triangle.a.x - origin.x, triangle.a.y - origin.y, triangle.a.z - origin.z };
+    double v1[3] = { triangle.b.x - origin.x, triangle.b.y - origin.y, triangle.b.z - origin.z };
+    double v2[3] = { triangle.c.x - origin.x, triangle.c.y - origin.y, triangle.c.z - origin.z };
+
+    // Permute vertices into ray space
+    double Ax = v0[kx] - Sx * v0[kz];
+    double Ay = v0[ky] - Sy * v0[kz];
+    double Bx = v1[kx] - Sx * v1[kz];
+    double By = v1[ky] - Sy * v1[kz];
+    double Cx = v2[kx] - Sx * v2[kz];
+    double Cy = v2[ky] - Sy * v2[kz];
+
+    // Compute edge functions
+    double U = Cx * By - Cy * Bx;
+    double V = Ax * Cy - Ay * Cx;
+    double W = Bx * Ay - By * Ax;
+
+	// Determine if the triangle test itself is degenerate
+    double th = std::max({
+		std::abs(Ax), std::abs(Ay), std::abs(Bx), std::abs(By), std::abs(Cx), std::abs(Cy)
+	}) * 1e-6;
+
+    if (std::abs(U) < th && std::abs(V) < th && std::abs(W) < th) {
+        if(degenerate) {
+            *degenerate = true;
+		}
+        return std::numeric_limits<double>::infinity();
+    }
+    double det = U + V + W;
+
+    if ((U < 0.0 || V < 0.0 || W < 0.0) && (U > 0.0 || V > 0.0 || W > 0.0))
+        return std::numeric_limits<double>::infinity();
+
+    // Compute scaled hit distance to triangle
+    double Az = Sz * v0[kz];
+    double Bz = Sz * v1[kz];
+    double Cz = Sz * v2[kz];
+    double T = U * Az + V * Bz + W * Cz;
+
+    double t = T / det;
+    if (t < 0.0)
+        return std::numeric_limits<double>::infinity();
+
+    // It is important to identify the case where the intersection lies exactly on
+    // an edge, because in this case we will get the same result for another triangle
+    // sharing the edge (as we should), and so the upstream algorithm may want to
+    // consider this.
+
+    if (edges) {
+        if (U == 0.0) {
+            (*edges)++;
+        }
+        if (V == 0.0) {
+            (*edges)++;
+        }
+        if (W == 0.0) {
+            (*edges)++;
+        }
+    }
+
+    return t;
+}
+
 repo::lib::RepoLine geometry::closestPoints(
     const repo::lib::RepoBounds& a, 
     const repo::lib::RepoBounds& b)
@@ -736,10 +836,12 @@ bool geometry::isClosedAndManifold(
     // there is exactly one sibling (that is, there are no T-junctions or 
     // interior triangles).
 
-    // If a mesh is closed & manifold, it is possible to find the shortest
-    // distance to the surface by comparing points piecewise with each face.
+    // If a mesh is closed & manifold, it is possible to determine precisely
+    // whether a point is on the inside or outside of a mesh, for example using
+    // the ray-casting method.
 
-    // This algorithm is sensitive to winding order.
+    // This test is insensitive to winding order, as the ray-cast test is
+    // insensitive too.
 
     struct edge_hash {
         std::size_t operator () (const std::pair<size_t, size_t>& p) const {
@@ -751,40 +853,14 @@ bool geometry::isClosedAndManifold(
 
 	std::unordered_map<std::pair<size_t, size_t>, size_t, edge_hash> edge_map;
 
-    // Each directed edge must exist only once in the entire mesh.
-    // If we encounter the same edge twice, then either the mesh is
-    // not manifold, or a face is wound incorrectly.
-
     for (const auto& tri : triangles)
     {
         auto edges = {
-            std::make_pair(tri[0], tri[1]),
-            std::make_pair(tri[1], tri[2]),
-            std::make_pair(tri[2], tri[0])
+            std::make_pair(std::min(tri[0], tri[1]), std::max(tri[0], tri[1])),
+            std::make_pair(std::min(tri[1], tri[2]), std::max(tri[1], tri[2])),
+            std::make_pair(std::min(tri[2], tri[0]), std::max(tri[2], tri[0]))
         };
-        for (const auto& edge : edges) {
-            edge_map[edge]++;
-        }
-    }
 
-    for (const auto& [edge, count] : edge_map) {
-        if (count != 1) {
-            return false;
-        }
-    }
-
-    // We now add the counts for each edge in the opposite direction,
-	// so the edge_count becomes the total number of faces sharing that
-    // edge. This must be greater than two for the mesh to be closed,
-	// and no more then two for it to be manifold.
-
-    for (const auto& tri : triangles)
-    {
-        auto edges = {
-            std::make_pair(tri[1], tri[0]),
-            std::make_pair(tri[2], tri[1]),
-            std::make_pair(tri[0], tri[2])
-        };
         for (const auto& edge : edges) {
             edge_map[edge]++;
         }

@@ -18,6 +18,7 @@
 #pragma once
 
 #include "repo/manipulator/modeloptimizer/bvh/bvh.hpp"
+#include "repo/lib/datastructure/repo_vector.h"
 
 #include <stack>
 #include <utility>

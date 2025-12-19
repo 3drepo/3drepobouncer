@@ -22,6 +22,7 @@
 #include "clash_scheduler.h"
 #include "clash_node_cache.h"
 #include "clash_pipelines_utils.h"
+#include "closed_mesh_view.h"
 
 #include <set>
 #include <queue>
@@ -30,12 +31,48 @@ using namespace repo::manipulator::modelutility;
 using namespace repo::manipulator::modelutility::clash;
 
 namespace {
-	static struct CacheEntry
+	struct MeshView : public geometry::MeshView {
+		const std::vector<repo::lib::RepoTriangle>& triangles;
+		size_t start;
+		size_t length;
+		Bvh bvh;
+
+		MeshView(const std::vector<repo::lib::RepoTriangle>& triangles, size_t start, size_t length)
+			: triangles(triangles), start(start), length(length)
+		{
+		}
+
+		const Bvh& getBvh() const override {
+			return bvh;
+		}
+
+		repo::lib::RepoTriangle getTriangle(size_t primitive) const override {
+			return triangles[start + primitive];
+		}
+	};
+
+	struct CacheEntry
 	{
 		std::vector<Graph::Node*> nodes;
 		std::vector<repo::lib::RepoTriangle> triangles;
+		std::vector<repo::lib::RepoVector3D64> orderedVertices;
 		repo::lib::RepoUUID id;
 		repo::lib::RepoBounds bounds;
+
+		// Tracks the ranges of each MeshNode within the triangles array in case
+		// we need to perform testing against a subset of triangles. Each view
+		// holds a distinct BVH, but they are only initialised on-demand.
+
+		std::vector<MeshView> meshViews;
+
+		// The primary view that encompasses the whole Composite Object
+
+		MeshView* view;
+
+		// Views into the Composite Object of MeshNodes that are closed. If there is
+		// only one node (and it is closed), this will be the same as [view].
+
+		std::vector<MeshView*> closed;
 
 		void initialise(DatabasePtr handler) {
 			std::vector<repo::lib::RepoVector3D64> vertices;
@@ -43,7 +80,9 @@ namespace {
 			for (auto& node : nodes) {
 				vertices.clear();
 				faces.clear();
+				
 				PipelineUtils::loadGeometry(handler, *node, vertices, faces);
+				
 				std::for_each(
 					vertices.begin(),
 					vertices.end(),
@@ -51,6 +90,18 @@ namespace {
 						bounds.encapsulate(v);
 					}
 				);
+
+				// We take a copy of the vertices so they can be re-ordered to make pointwise
+				// tests more efficient (the re-ordering however will be done on-demand).
+
+				orderedVertices.insert(vertices.end(), vertices.begin(), vertices.end());
+
+				meshViews.push_back(MeshView(triangles, triangles.size(), faces.size()));
+
+				if (geometry::isClosedAndManifold(faces)) {
+					closed.push_back(&meshViews.back());
+				}
+
 				std::transform(faces.begin(), faces.end(), std::back_inserter(triangles),
 					[&](auto& face) {
 						return repo::lib::RepoTriangle(
@@ -61,6 +112,13 @@ namespace {
 					}
 				);
 			}
+
+			if (nodes.size() > 1) {
+				meshViews.push_back(MeshView(triangles, 0, triangles.size()));
+			}
+
+			view = &meshViews.back();
+
 			nodes.clear();
 		}
 
@@ -71,9 +129,17 @@ namespace {
 		const repo::lib::RepoUUID& getId() const {
 			return id;
 		}
+
+		const std::vector<repo::lib::RepoVector3D64>& getOrderedVertices() const {
+			return orderedVertices; // todo: implement ordering
+		}
+
+		const std::vector<MeshView*> getClosedMeshes() {
+			return closed; // todo: build bvh's on demand
+		}
 	};
 
-	static struct Cache : public ResourceCache<CompositeObject, CacheEntry>
+	struct Cache : public ResourceCache<CompositeObject, CacheEntry>
 	{
 		Cache(const Graph& graph)
 			: graph(graph) {
@@ -111,6 +177,29 @@ namespace {
 		void operator()(const Bvh& a) {
 			results.clear();
 			bvh::IntersectQuery::operator()(a);
+		}
+	};
+
+	struct ContainsFunctor : public geometry::RepoPolyDepth::ContainsFunctor
+	{
+		const std::vector<repo::lib::RepoVector3D64>& vertices;
+		const repo::lib::RepoBounds& bounds;
+		const std::vector<MeshView*>& closed;
+
+		ContainsFunctor(CacheEntry& a, CacheEntry& b):
+			vertices(a.getOrderedVertices()),
+			bounds(a.bounds),
+			closed(b.getClosedMeshes())
+		{
+		}
+
+		bool operator()(const repo::lib::RepoVector3D64& m) override {
+			for (auto c : closed) {
+				if (geometry::contains(vertices, bounds, *c)) {
+					return true;
+				}
+			}
+			return false;
 		}
 	};
 }
@@ -198,12 +287,18 @@ void Hard::run(const Graph& graphA, const Graph& graphB)
 			std::swap(a, b);
 		}
 
+		// Always create the contains functor - if b has no closed meshes, the
+		// operator will simply be a no-op.
+
+		ContainsFunctor contains(*a, *b);
+
 		geometry::RepoPolyDepth pd(
 			a->getTriangles(),
-			b->getTriangles()
+			b->getTriangles(),
+			&contains
 		);
 
-		pd.iterate(20);
+		pd.iterate(10);
 
 		auto v = pd.getPenetrationVector();
 
