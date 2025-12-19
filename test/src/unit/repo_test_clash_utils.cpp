@@ -292,6 +292,7 @@ void ClashDetectionDatabaseHelper::createCompositeObjectsByMetadataValue(
 		repo::core::handler::database::query::RepoProjectionBuilder projection;
 		projection.includeField(REPO_NODE_LABEL_PARENTS);
 		projection.includeField(REPO_NODE_LABEL_METADATA);
+		projection.includeField(REPO_NODE_LABEL_NAME);
 
 		auto cursor = handler->findCursorByCriteria(
 			container->teamspace,
@@ -309,6 +310,7 @@ void ClashDetectionDatabaseHelper::createCompositeObjectsByMetadataValue(
 				auto key = field.getStringField(REPO_NODE_LABEL_META_KEY);
 				metadataMap[key] = field.getField(REPO_NODE_LABEL_META_VALUE).repoVariant();
 			}
+			metadataMap[REPO_NODE_LABEL_NAME] = bson.getField(REPO_NODE_LABEL_NAME).repoVariant();
 
 			for (auto parentId : p) {
 				parentSharedIds.push_back(parentId);
@@ -357,7 +359,7 @@ void ClashDetectionDatabaseHelper::createCompositeObjectsByMetadataValue(
 			auto sharedId = bson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);
 			auto metadata = localMetadataMap.find(sharedId);
 			if (metadata != localMetadataMap.end()) {
-				metadataMap.insert({ uuid, metadata->second });
+				metadataMap.insert({ composite.id, metadata->second });
 			}
 		}
 	}
