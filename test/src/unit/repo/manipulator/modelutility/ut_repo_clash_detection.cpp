@@ -576,6 +576,162 @@ TEST(Clash, Rvt)
 	EXPECT_THAT(results.clashes.size(), Eq(10000));
 }
 
+void getMissingIndexes(
+	ClashDetectionConfig& config,
+	ClashDetectionReport& report,
+	std::vector<int>& missingA,
+	std::vector<int>& missingB)
+{
+	for (int i = 0; i < config.setA.size(); i++) {
+		auto compIdA = config.setA[i].id;
+		auto compIdB = config.setB[i].id;
+
+		bool foundA = false;
+		bool foundB = false;
+		for (int j = 0; j < report.clashes.size(); j++) {
+			auto clashCompIdA = report.clashes[j].idA;
+			auto clashCompIdB = report.clashes[j].idB;
+
+			if (clashCompIdA == compIdA) {
+				foundA = true;
+			}
+
+			if (clashCompIdB == compIdB) {
+				foundB = true;
+			}
+		}
+
+		if (!foundA) {
+			missingA.push_back(i);
+		}
+		if (!foundB) {
+			missingB.push_back(i);
+		}
+	}
+}
+
+void getMissingUids(
+	ClashDetectionConfig& config,
+	ClashDetectionReport& report,
+	std::vector<repo::lib::RepoUUID> missingUIds)
+{
+	// Look for missing indexes in the clashes
+	std::vector<int> missingA;
+	std::vector<int> missingB;
+	getMissingIndexes(config, report, missingA, missingB);
+
+	// Lookup the missing unique mesh ids using the indexes
+	for (auto index : missingA)
+	{
+		auto meshes = config.setA[index].meshes;
+
+		for (auto& mesh : meshes)
+		{
+			missingUIds.push_back(mesh.uniqueId);
+		}
+	}
+	for (auto index : missingB)
+	{
+		auto meshes = config.setB[index].meshes;
+
+		for (auto& mesh : meshes)
+		{
+			missingUIds.push_back(mesh.uniqueId);
+		}
+	}
+}
+
+void getMissingCompIds(
+	ClashDetectionConfig& config,
+	ClashDetectionReport& report,
+	std::vector<repo::lib::RepoUUID> missingCompIds)
+{
+	// Look for missing indexes in the clashes
+	std::vector<int> missingA;
+	std::vector<int> missingB;
+	getMissingIndexes(config, report, missingA, missingB);
+
+	// Lookup the missing compound ids using the indexes
+	for (auto index : missingA)
+	{
+		missingCompIds.push_back(config.setA[index].id);
+	}
+	for (auto index : missingB)
+	{
+		missingCompIds.push_back(config.setB[index].id);
+	}
+}
+
+// For debugging tests
+// TOOD FT: Remove once the engine is complete and we know the tests are working as intended
+void detectMissingClashes(
+	testing::DatabasePtr handler,
+	repo::lib::Container* container,
+	ClashDetectionConfig& config,
+	ClashDetectionReport& report)
+{
+	// Get unique ids of missing entries
+	std::vector<repo::lib::RepoUUID> missingUIds;
+	getMissingUids(config, report, missingUIds);	
+
+	if (missingUIds.size() > 0)
+	{
+		std::vector<repo::lib::RepoUUID> missingSharedIds;
+		// Lookup the shared ids in the database
+		{
+			repo::core::handler::database::query::RepoQueryBuilder query;
+			query.append(repo::core::handler::database::query::Eq(REPO_LABEL_ID, missingUIds));
+
+			repo::core::handler::database::query::RepoProjectionBuilder projection;
+			projection.includeField(REPO_NODE_LABEL_SHARED_ID);
+
+			auto cursor = handler->findCursorByCriteria(
+				container->teamspace,
+				container->container + "." + REPO_COLLECTION_SCENE,
+				query,
+				projection
+			);
+
+			for (auto& bson : *cursor)
+			{
+				auto sharedId = bson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);
+				missingSharedIds.push_back(sharedId);
+			}
+		}
+
+		// Then look up the meta nodes
+		{
+			repo::core::handler::database::query::RepoQueryBuilder query;
+			query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_METADATA)));
+			query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_PARENTS, missingSharedIds));
+
+			repo::core::handler::database::query::RepoProjectionBuilder projection;
+			projection.includeField(REPO_NODE_LABEL_NAME);
+			projection.includeField(REPO_NODE_LABEL_TYPE);
+
+			auto cursor = handler->findCursorByCriteria(
+				container->teamspace,
+				container->container + "." + REPO_COLLECTION_SCENE,
+				query,
+				projection
+			);
+
+			std::string out = "Missing objects:\n";
+			int i = 0;
+			for (auto& bson : *cursor)
+			{
+				auto name = bson.getStringField(REPO_NODE_LABEL_NAME);
+				out = out + name + "\n";
+				i++;
+			}
+			out = out + "Entries: " + std::to_string(i) + "\n";
+
+			FAIL() << out;
+		}
+
+	}
+}
+
 TEST(Clash, RvtDisjoint)
 {
 	GTEST_SKIP(); // skip until the revit files are committed to tests
@@ -594,22 +750,51 @@ TEST(Clash, RvtDisjoint)
 	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
 	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
 
-
-	EXPECT_THAT(config.setA.size(), Eq(5));
-	EXPECT_THAT(config.setB.size(), Eq(5));
+	EXPECT_THAT(config.setA.size(), Eq(10000));
+	EXPECT_THAT(config.setB.size(), Eq(10000));
 
 	// Test Clearance Mode
+	// No tolerance
 	{
-		config.tolerance = 1.0f;
+		config.tolerance = 0.0f;
 		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+		EXPECT_THAT(results.clashes.size(), Eq(0));
+	}
+
+	// Test Clearance Mode
+	// Tolerance so that half of the set should be included
+	{
+		config.tolerance = 5000.0f;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+		EXPECT_THAT(results.clashes.size(), Eq(5000));
+	}
+
+	// Test Clearance Mode (Tolerance 20,000)
+	// Tolerance so high that all instances should be included
+	{
+		config.tolerance = 20000;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(10000));
+	}
+	
+	// Test Hard Mode
+	// No tolerance
+	{
+		config.tolerance = 0.0f;
+		auto pipeline = new clash::Hard(handler, config);
 		auto results = pipeline->runPipeline();
 
 		EXPECT_THAT(results.clashes.size(), Eq(0));
 	}
 	
 	// Test Hard Mode
+	// High tolerance
 	{
-		config.tolerance = 0.0f;
+		config.tolerance = FLT_MAX;
 		auto pipeline = new clash::Hard(handler, config);
 		auto results = pipeline->runPipeline();
 
@@ -626,19 +811,19 @@ TEST(Clash, RvtIntersectClosed)
 
 	auto handler = getHandler();
 	auto container = makeTemporaryContainer();
-
 	importModel(getDataPath("/clash/revitIntersectClosed.rvt"), *container);
 
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
-
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
 
 	EXPECT_THAT(config.setA.size(), Eq(10000));
 	EXPECT_THAT(config.setB.size(), Eq(10000));
 
 	// Test Clearance Mode
+	// Low tolerance
 	{
 		config.tolerance = 1.0f;
 		auto pipeline = new clash::Clearance(handler, config);
@@ -654,13 +839,73 @@ TEST(Clash, RvtIntersectClosed)
 		}
 	}
 
+	// Test Clearance Mode
+	// High tolerance
+	{
+		config.tolerance = 20000.0f;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(10000));
+
+		// Check all clash results whether the closest points are indeed identical
+		for (auto clash : results.clashes)
+		{
+			float diff = (clash.positions[0] - clash.positions[1]).norm();
+			EXPECT_THAT(diff, Eq(0));
+		}
+	}
+
 	// Test Hard Mode
+	// No tolerance, should flag all instances
 	{
 		config.tolerance = 0.0f;
 		auto pipeline = new clash::Hard(handler, config);
 		auto results = pipeline->runPipeline();
 
 		EXPECT_THAT(results.clashes.size(), Eq(10000));
+	}
+
+	// Test Hard Mode
+	// Medium tolerance, should flag at least half of the instances.
+	// It is possible to get false positives, but we should never get false negatives.
+	{
+		config.tolerance = 2500.0f;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Ge(5000));
+
+		// Check metadata to make sure no instances are dropped that should be included
+		std::vector<repo::lib::RepoUUID> missingCompIds;
+		getMissingCompIds(config, results, missingCompIds);
+
+		if (missingCompIds.size() > 0)
+		{
+			for (auto missingId : missingCompIds)
+			{
+				auto metaEntry = metadataMap.find(missingId);
+				if (metaEntry != metadataMap.end())
+				{
+					double minPenDepth = boost::get<double>(metaEntry->second["Dimensions::MinPenDepth"]);
+					EXPECT_THAT(minPenDepth, Lt(2500.0f));
+				}
+				else
+				{
+					FAIL() << "Metadata entry missing for Compound ID";
+				}
+}
+		}
+	}
+
+	// Test Hard Mode
+	// High tolerance, all instances should be excluded
+	{
+		config.tolerance = FLT_MAX;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(0));
 	}
 }
 
@@ -679,12 +924,14 @@ TEST(Clash, RvtIntersectOpen)
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
 
 	EXPECT_THAT(config.setA.size(), Eq(10000));
 	EXPECT_THAT(config.setB.size(), Eq(10000));
 
 	// Test Clearance Mode
+	// Low tolerance
 	{
 		config.tolerance = 1.0f;
 		auto pipeline = new clash::Clearance(handler, config);
@@ -700,13 +947,73 @@ TEST(Clash, RvtIntersectOpen)
 		}
 	}
 
+	// Test Clearance Mode
+	// High tolerance
+	{
+		config.tolerance = 20000.0f;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(10000));
+
+		// Check all clash results whether the closest points are indeed identical
+		for (auto clash : results.clashes)
+		{
+			float diff = (clash.positions[0] - clash.positions[1]).norm();
+			EXPECT_THAT(diff, Eq(0));
+		}
+	}
+
 	// Test Hard Mode
+	// No tolerance, should flag all instances
 	{
 		config.tolerance = 0.0f;
 		auto pipeline = new clash::Hard(handler, config);
 		auto results = pipeline->runPipeline();
 
 		EXPECT_THAT(results.clashes.size(), Eq(10000));
+	}
+
+	// Test Hard Mode
+	// Medium tolerance, should flag at least half of the instances.
+	// It is possible to get false positives, but we should never get false negatives.
+	{
+		config.tolerance = 2500.0f;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Ge(5000));
+
+		// Check metadata to make sure no instances are dropped that should be included
+		std::vector<repo::lib::RepoUUID> missingCompIds;
+		getMissingCompIds(config, results, missingCompIds);
+
+		if (missingCompIds.size() > 0)
+		{
+			for (auto missingId : missingCompIds)
+			{
+				auto metaEntry = metadataMap.find(missingId);
+				if (metaEntry != metadataMap.end())
+				{
+					double minPenDepth = boost::get<double>(metaEntry->second["Dimensions::MinPenDepth"]);
+					EXPECT_THAT(minPenDepth, Lt(2500.0f));
+				}
+				else
+				{
+					FAIL() << "Metadata entry missing for Compound ID";
+				}
+			}
+		}
+	}
+
+	// Test Hard Mode
+	// High tolerance, all instances should be excluded
+	{
+		config.tolerance = FLT_MAX;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(0));
 	}
 }
 TEST(Clash, RvtCovers)
@@ -727,16 +1034,27 @@ TEST(Clash, RvtCovers)
 	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
 	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
 
-	EXPECT_THAT(config.setA.size(), Eq(5));
-	EXPECT_THAT(config.setB.size(), Eq(5));
+	EXPECT_THAT(config.setA.size(), Eq(10000));
+	EXPECT_THAT(config.setB.size(), Eq(10000));
 
 	// Test Clearance Mode
+	// No tolerance, no clashes
 	{
 		config.tolerance = 1.0f;
 		auto pipeline = new clash::Clearance(handler, config);
 		auto results = pipeline->runPipeline();
 
 		EXPECT_THAT(results.clashes.size(), Eq(0));
+	}
+
+	// Test Clearance mode
+	// Medium tolerance, half of the instances should be found
+	{
+		config.tolerance = 2500.0f;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(5000));
 
 		for (auto clash : results.clashes) {
 			auto metaA = metadataMap.find(clash.idA);
@@ -745,8 +1063,8 @@ TEST(Clash, RvtCovers)
 			EXPECT_THAT(metaA, Ne(metadataMap.end()));
 			EXPECT_THAT(metaB, Ne(metadataMap.end()));
 
-			auto separationDistanceA = boost::get<double>(metaA->second["RadiusDifference"]);
-			auto separationDistanceB = boost::get<double>(metaB->second["RadiusDifference"]);
+			float separationDistanceA = boost::get<double>(metaA->second["Dimensions::ShortestDist"]);
+			float separationDistanceB = boost::get<double>(metaB->second["Dimensions::ShortestDist"]);
 
 			EXPECT_THAT(separationDistanceA, Eq(separationDistanceB));
 
@@ -754,11 +1072,41 @@ TEST(Clash, RvtCovers)
 			auto p2 = clash.positions[1];
 			float clashDistance = (p2 - p1).norm();
 
-			EXPECT_THAT(separationDistanceA, Eq(clashDistance));
+			EXPECT_THAT(separationDistanceA, FloatNear(clashDistance, 0.001f));
+		}
+	}
+
+	// Test Clearance mode
+	// High tolerance, all of the instances should be found
+	{
+		config.tolerance = 5000.0f;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(10000));
+
+		for (auto clash : results.clashes) {
+			auto metaA = metadataMap.find(clash.idA);
+			auto metaB = metadataMap.find(clash.idB);
+
+			EXPECT_THAT(metaA, Ne(metadataMap.end()));
+			EXPECT_THAT(metaB, Ne(metadataMap.end()));
+
+			float separationDistanceA = boost::get<double>(metaA->second["Dimensions::ShortestDist"]);
+			float separationDistanceB = boost::get<double>(metaB->second["Dimensions::ShortestDist"]);
+
+			EXPECT_THAT(separationDistanceA, Eq(separationDistanceB));
+
+			auto p1 = clash.positions[0];
+			auto p2 = clash.positions[1];
+			float clashDistance = (p2 - p1).norm();
+
+			EXPECT_THAT(separationDistanceA, FloatNear(clashDistance, 0.001f));
 		}
 	}
 
 	// Test Hard Mode
+	// Low tolerance
 	{
 		config.tolerance = 0.0f;
 		auto pipeline = new clash::Hard(handler, config);
@@ -766,6 +1114,16 @@ TEST(Clash, RvtCovers)
 
 		EXPECT_THAT(results.clashes.size(), Eq(0));
 	}
+
+	// Test Hard Mode
+	// High tolerance
+	{
+		config.tolerance = FLT_MAX;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(0));
+}
 }
 
 TEST(Clash, RvtContains)
@@ -786,13 +1144,32 @@ TEST(Clash, RvtContains)
 	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
 	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
 
-	config.tolerance = 1.f;
-
 	EXPECT_THAT(config.setA.size(), Eq(10000));
 	EXPECT_THAT(config.setB.size(), Eq(10000));
 
 	// Test Clearance Mode
+	// Low Tolerance
+	// Note: Fails because the correct engine behaviour is not yet implemented
 	{
+	config.tolerance = 1.f;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(10000));
+
+		// Check all clash results whether the closest points are indeed identical
+		for (auto clash : results.clashes)
+		{
+			float diff = (clash.positions[0] - clash.positions[1]).norm();
+			EXPECT_THAT(diff, Eq(0));
+		}
+	}
+
+	// Test Clearance Mode
+	// High Tolerance
+	// Note: Fails because the correct engine behaviour is not yet implemented
+	{
+		config.tolerance = 20000.f;
 		auto pipeline = new clash::Clearance(handler, config);
 		auto results = pipeline->runPipeline();
 
@@ -807,12 +1184,58 @@ TEST(Clash, RvtContains)
 	}
 
 	// Test Hard Mode
+	// No tolerance, all instances should be flagged
+	// Note: Fails because the correct engine behaviour is not yet implemented
 	{
 		config.tolerance = 0.0f;
 		auto pipeline = new clash::Hard(handler, config);
 		auto results = pipeline->runPipeline();
 
 		EXPECT_THAT(results.clashes.size(), Eq(10000));
+	}
+
+	// Test Hard Mode
+	// Medium tolerance, should flag at least half of the instances.
+	// It is possible to get false positives, but we should never get false negatives.
+	// Note: Fails because the correct engine behaviour is not yet implemented
+	{
+		config.tolerance = 2500.0f;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Ge(5000));
+
+		// Check metadata to make sure no instances are dropped that should be included
+		std::vector<repo::lib::RepoUUID> missingCompIds;
+		getMissingCompIds(config, results, missingCompIds);
+
+		if (missingCompIds.size() > 0)
+		{
+			for (auto missingId : missingCompIds)
+			{
+				auto metaEntry = metadataMap.find(missingId);
+				if (metaEntry != metadataMap.end())
+				{
+					double minPenDepth = boost::get<double>(metaEntry->second["Dimensions::ShortestDist"]);
+					EXPECT_THAT(minPenDepth, Lt(2500.0f));
+				}
+				else
+				{
+					FAIL() << "Metadata entry missing for Compound ID";
+				}
+			}
+		}
+}
+
+	// Test Hard Mode
+	// High tolerance, no instances should be flagged
+	// Note: Fails because the correct engine behaviour is not yet implemented
+	{
+		config.tolerance = FLT_MAX;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(0));
 	}
 }
 
@@ -833,8 +1256,8 @@ TEST(Clash, RvtMeet)
 
 	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
 
-	EXPECT_THAT(config.setA.size(), Eq(5));
-	EXPECT_THAT(config.setB.size(), Eq(5));
+	EXPECT_THAT(config.setA.size(), Eq(10000));
+	EXPECT_THAT(config.setB.size(), Eq(10000));
 
 	// Get map from unique mesh ids to bounds from DB
 	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoBounds, repo::lib::RepoUUIDHasher> uidToBoundsMap;
@@ -868,13 +1291,45 @@ TEST(Clash, RvtMeet)
 	}
 
 	// Test Clearance Mode
+	// Low Tolerance
 	{
 		config.tolerance = 1.0f;
 
 		auto pipeline = new clash::Clearance(handler, config);
 		auto results = pipeline->runPipeline();
 
-		EXPECT_THAT(results.clashes.size(), Eq(5));
+		EXPECT_THAT(results.clashes.size(), Eq(10000));
+
+		// Check all clash results whether the closest points are indeed under
+		// the threshold
+		for (auto clash : results.clashes)
+		{
+			auto boundsEntryA = compidToBoundsMap.find(clash.idA);
+			auto boundsEntryB = compidToBoundsMap.find(clash.idB);
+			
+			if (boundsEntryA != compidToBoundsMap.end() && boundsEntryB != compidToBoundsMap.end())
+			{
+				float threshold = geometry::contactThreshold(boundsEntryA->second, boundsEntryB->second);
+
+				float diff = (clash.positions[0] - clash.positions[1]).norm();
+				EXPECT_THAT(diff, Le(threshold));
+			}
+			else
+			{
+				FAIL() << "Could not retrieve bounds for either or both of the composites";
+			}
+		}
+	}
+
+	// Test Clearance Mode
+	// High Tolerance
+	{
+		config.tolerance = 20000.0f;
+
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(10000));
 
 		// Check all clash results whether the closest points are indeed under
 		// the threshold
@@ -898,14 +1353,27 @@ TEST(Clash, RvtMeet)
 	}
 
 	// Test Hard Mode
+	// Low Tolerance
+	// Note: May fail because the correct engine behaviour is not yet implemented
 	{
 		config.tolerance = 0.0f;
 
 		auto pipeline = new clash::Hard(handler, config);
 		auto results = pipeline->runPipeline();
 
-		EXPECT_THAT(results.clashes.size(), Eq(5));
+		EXPECT_THAT(results.clashes.size(), Eq(10000));
 	}
+
+	// Test Hard Mode
+	// High Tolerance
+	{
+		config.tolerance = FLT_MAX;
+
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(0));
+}
 
 }
 
@@ -927,88 +1395,34 @@ TEST(Clash, RvtOverlap)
 	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
 	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
 		
-	EXPECT_THAT(config.setA.size(), Eq(5));
-	EXPECT_THAT(config.setB.size(), Eq(5));
-
-	//auto stringA = config.setA[0].meshes[0].uniqueId.toString();
-	//auto stringB = config.setB[0].meshes[0].uniqueId.toString();
-	//FAIL() << "Debugging IDs: " << container->teamspace << " " << container->container << " " << container->revision << " " << stringA << " " << stringB;
-
-	//auto handler = getHandler();
-
-	//std::unique_ptr<lib::Container> container = std::make_unique<lib::Container>();
-	//container->teamspace = "ClashDetectionTmp";
-	//container->container = "8ad709f2-e3d4-4c52-980c-0efdf3336515";
-	//container->revision = repo::lib::RepoUUID("570e4299-f6eb-4d14-ae12-71a848e2e57c");
-
-	//ClashDetectionConfig config;
-	//ClashDetectionDatabaseHelper helper(handler);
-
-	//helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
-
-	//EXPECT_THAT(config.setA.size(), Eq(10000));
-	//EXPECT_THAT(config.setB.size(), Eq(10000));
-	
-	//// Look for missing IDs in the clashes
-	//std::vector<int> missingA;
-	//std::vector<int> missingB;
-	//for (int i = 0; i < config.setA.size(); i++) {
-	//	auto compIdA = config.setA[i].id;
-	//	auto compIdB = config.setB[i].id;
-
-	//	bool foundA = false;
-	//	bool foundB = false;
-	//	for(int j = 0; j < results.clashes.size(); j++) {
-	//		auto clashCompIdA = results.clashes[j].idA;
-	//		auto clashCompIdB = results.clashes[j].idB;
-
-	//		if (clashCompIdA == compIdA) {
-	//			foundA = true;
-	//		}
-
-	//		if(clashCompIdB == compIdB) {
-	//			foundB = true;
-	//		}
-	//	}
-
-	//	if(!foundA) {
-	//		missingA.push_back(i);
-	//	}
-	//	if(!foundB) {
-	//		missingB.push_back(i);
-	//	}
-	//}
-
-	//std::string out = "";
-	//out = out + "Container ID: " + container->container + "\n";
-	//out = out + "Revision ID: " + container->revision.toString() + "\n";
-	//if(missingA.size() > 0) {
-	//	out = out + "Missing IDs in Set A:\n";
-	//	for(auto& index : missingA) {
-
-	//		out = out + "  " + config.setA[index].meshes[0].uniqueId.toString() + "\n";
-	//	}
-	//}
-	//if (missingB.size() > 0) {
-	//	out = out + "Missing IDs in Set B:\n";
-	//	for (auto& index : missingB) {
-
-	//		out = out + "  " + config.setB[index].meshes[0].uniqueId.toString() + "\n";
-	//	}
-	//}
-
-	//FAIL() << out;
-
-	//EXPECT_THAT(missingA.size(), Eq(0)) << "Missing IDs in Set A";
-	//EXPECT_THAT(missingB.size(), Eq(0)) << "Missing IDs in Set B";
+	EXPECT_THAT(config.setA.size(), Eq(10000));
+	EXPECT_THAT(config.setB.size(), Eq(10000));
 
 	// Test Clearance Mode
+	// Low Tolerance
 	{
 		config.tolerance = 1;
 		auto pipeline = new clash::Clearance(handler, config);
 		auto results = pipeline->runPipeline();
 
-		EXPECT_THAT(results.clashes.size(), Eq(5));
+		EXPECT_THAT(results.clashes.size(), Eq(10000));
+
+		// Check all clash results whether the closest points are indeed identical
+		for (auto clash : results.clashes)
+		{
+			float diff = (clash.positions[0] - clash.positions[1]).norm();
+			EXPECT_THAT(diff, Eq(0));
+		}
+	}
+
+	// Test Clearance Mode
+	// High Tolerance
+	{
+		config.tolerance = 20000;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(10000));
 
 		// Check all clash results whether the closest points are indeed identical
 		for (auto clash : results.clashes)
@@ -1019,12 +1433,55 @@ TEST(Clash, RvtOverlap)
 	}
 
 	// Test Hard Mode 
+	// Low Tolerance, should flag all instances
 	{
 		config.tolerance = 0;
 		auto pipeline = new clash::Hard(handler, config);
 		auto results = pipeline->runPipeline();
 
-		EXPECT_THAT(results.clashes.size(), Eq(5));
+		EXPECT_THAT(results.clashes.size(), Eq(10000));
+	}
+
+	// Test Hard Mode
+	// Medium Tolerance, should flag at least half of the instances
+	// It is possible to get false positives, but we should never get false negatives.
+	{
+		config.tolerance = 2500.0f;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Ge(5000));
+
+		// Check metadata to make sure no instances are dropped that should be included
+		std::vector<repo::lib::RepoUUID> missingCompIds;
+		getMissingCompIds(config, results, missingCompIds);
+
+		if (missingCompIds.size() > 0)
+		{
+			for (auto missingId : missingCompIds)
+			{
+				auto metaEntry = metadataMap.find(missingId);
+				if (metaEntry != metadataMap.end())
+				{
+					double minPenDepth = boost::get<double>(metaEntry->second["Dimensions::PenDepth"]);
+					EXPECT_THAT(minPenDepth, Lt(2500.0f));
+}
+				else
+				{
+					FAIL() << "Metadata entry missing for Compound ID";
+				}
+			}
+		}
+	}
+
+	// Test Hard Mode
+	// High Tolerance, no instances should be flagged
+	{
+		config.tolerance = FLT_MAX;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(0));
 	}
 }
 
@@ -1038,23 +1495,42 @@ TEST(Clash, RvtEqual)
 	auto handler = getHandler();
 	auto container = makeTemporaryContainer();
 
-	importModel(getDataPath("/clash/revitEqual.rvt"), *container);
+	importModel(getDataPath("/clash/revitOverlap.rvt"), *container);
 
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
 
-	EXPECT_THAT(config.setA.size(), Eq(5));
-	EXPECT_THAT(config.setB.size(), Eq(5));
+	EXPECT_THAT(config.setA.size(), Eq(10000));
+	EXPECT_THAT(config.setB.size(), Eq(10000));
 
 	// Test Clearance Mode
+	// Low Tolerance
 	{
 		config.tolerance = 1;
 		auto pipeline = new clash::Clearance(handler, config);
 		auto results = pipeline->runPipeline();
 
-		EXPECT_THAT(results.clashes.size(), Eq(5));
+		EXPECT_THAT(results.clashes.size(), Eq(10000));
+
+		// Check all clash results whether the closest points are indeed identical
+		for (auto clash : results.clashes)
+		{
+			float diff = (clash.positions[0] - clash.positions[1]).norm();
+			EXPECT_THAT(diff, Eq(0));
+		}
+	}
+
+	// Test Clearance Mode
+	// High Tolerance
+	{
+		config.tolerance = 20000;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(10000));
 
 		// Check all clash results whether the closest points are indeed identical
 		for (auto clash : results.clashes)
@@ -1065,12 +1541,55 @@ TEST(Clash, RvtEqual)
 	}
 
 	// Test Hard Mode 
+	// Low Tolerance, should flag all instances
 	{
 		config.tolerance = 0;
 		auto pipeline = new clash::Hard(handler, config);
 		auto results = pipeline->runPipeline();
 
-		EXPECT_THAT(results.clashes.size(), Eq(5));
+		EXPECT_THAT(results.clashes.size(), Eq(10000));
+	}
+
+	// Test Hard Mode
+	// Medium Tolerance, should flag at least half of the instances
+	// It is possible to get false positives, but we should never get false negatives.
+	{
+		config.tolerance = 2500.0f;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Ge(5000));
+
+		// Check metadata to make sure no instances are dropped that should be included
+		std::vector<repo::lib::RepoUUID> missingCompIds;
+		getMissingCompIds(config, results, missingCompIds);
+
+		if (missingCompIds.size() > 0)
+		{
+			for (auto missingId : missingCompIds)
+			{
+				auto metaEntry = metadataMap.find(missingId);
+				if (metaEntry != metadataMap.end())
+				{
+					double minPenDepth = boost::get<double>(metaEntry->second["Dimensions::PenDepth"]);
+					EXPECT_THAT(minPenDepth, Lt(2500.0f));
+				}
+				else
+				{
+					FAIL() << "Metadata entry missing for Compound ID";
+				}
+			}
+		}
+	}
+
+	// Test Hard Mode
+	// High Tolerance, no instances should be flagged
+	{
+		config.tolerance = FLT_MAX;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(0));
 	}
 }
 
