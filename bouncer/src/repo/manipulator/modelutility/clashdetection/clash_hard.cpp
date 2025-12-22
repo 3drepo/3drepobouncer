@@ -163,7 +163,7 @@ namespace {
 			return orderedVertices; // todo: implement ordering
 		}
 
-		const std::vector<MeshView*> getClosedMeshes() {
+		const std::vector<MeshView*>& getClosedMeshes() {
 			for(auto c : closed) {
 				c->buildBvh();
 			}
