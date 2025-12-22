@@ -391,6 +391,22 @@ void ClashDetectionDatabaseHelper::getBoundsForContainer(
 	}
 }
 
+CompositeObject testing::combineCompositeObjects(
+	std::initializer_list<CompositeObject> objects
+)
+{
+	CompositeObject combined;
+	combined.id = repo::lib::RepoUUID::createUUID();
+	for (const auto& obj : objects) {
+		combined.meshes.insert(
+			combined.meshes.end(),
+			obj.meshes.begin(),
+			obj.meshes.end()
+		);
+	}
+	return combined;
+}
+
 std::unique_ptr<repo::lib::Container> testing::makeTemporaryContainer()
 {
 	auto container = std::make_unique<repo::lib::Container>();

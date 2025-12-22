@@ -38,6 +38,10 @@ void PipelineUtils::loadGeometry(
 
 	vertices.reserve(mesh.getNumVertices());
 
+	// This method will re-index vertices as they are loaded. The current
+	// implementation will only consider exact matches. If we want to weld
+	// nearby vertices in the future a spatial hash should be used instead.
+
 	struct Hasher
 	{
 		std::size_t operator()(const repo::lib::RepoVector3D& v) const {
@@ -56,6 +60,10 @@ void PipelineUtils::loadGeometry(
 			return a.z < b.z;
 		}
 	};
+
+	// This hopscotch map is much more efficient than std::unordered_map, since it
+	// doesn't guarantee iterator stability, a property which is not important for
+	// re-indexing like we do here.
 
 	tsl::bhopscotch_map<
 		repo::lib::RepoVector3D,

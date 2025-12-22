@@ -323,7 +323,7 @@ double geometry::orient(const repo::lib::RepoVector3D64& p, const repo::lib::Rep
 	return predicates::orient3d((double*)&p, (double*)&q, (double*)&r, (double*)&s);
 }
 
-repo::lib::RepoVector3D64 geometry::minimumSeparatingAxis(const repo::lib::RepoBounds& a, repo::lib::RepoBounds& b)
+repo::lib::RepoVector3D64 geometry::minimumSeparatingAxis(const repo::lib::RepoBounds& a, const repo::lib::RepoBounds& b)
 {
     repo::lib::RepoVector3D64 m;
 

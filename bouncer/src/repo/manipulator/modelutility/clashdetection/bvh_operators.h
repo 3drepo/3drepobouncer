@@ -23,6 +23,7 @@
 
 #include <stack>
 #include <utility>
+#include <ranges>
 
 namespace repo {
 	namespace lib {
@@ -54,6 +55,11 @@ namespace bvh {
 
 		void build(bvh::Bvh<double>& bvh,
 			const std::vector<repo::lib::_RepoTriangle<double>>& triangles
+		);
+
+		void build(bvh::Bvh<double>& bvh,
+			const repo::lib::_RepoTriangle<double>* triangles,
+			size_t numTriangles
 		);
 	}
 

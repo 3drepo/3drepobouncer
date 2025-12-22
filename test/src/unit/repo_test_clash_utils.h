@@ -111,6 +111,10 @@ namespace testing {
 			std::string name);
 	};
 
+	repo::manipulator::modelutility::CompositeObject combineCompositeObjects(
+		std::initializer_list<repo::manipulator::modelutility::CompositeObject> objects
+	);
+
 	/*
 	* This class is used to collect the outputs from the clash detection engine and
 	* from them collect the measured distances, writing the errors when compared

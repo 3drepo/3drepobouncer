@@ -36,9 +36,12 @@ namespace {
 		size_t start;
 		size_t length;
 		Bvh bvh;
+		bool closed;
 
-		MeshView(const std::vector<repo::lib::RepoTriangle>& triangles, size_t start, size_t length)
-			: triangles(triangles), start(start), length(length)
+		MeshView(const std::vector<repo::lib::RepoTriangle>& triangles, 
+			size_t start, size_t length, bool closed)
+			: triangles(triangles), start(start), length(length), 
+			closed(closed)
 		{
 		}
 
@@ -48,6 +51,12 @@ namespace {
 
 		repo::lib::RepoTriangle getTriangle(size_t primitive) const override {
 			return triangles[start + primitive];
+		}
+
+		void buildBvh() {
+			if (bvh.node_count == 0) {
+				bvh::builders::build(bvh, &triangles[start], length);
+			}
 		}
 	};
 
@@ -75,6 +84,11 @@ namespace {
 		std::vector<MeshView*> closed;
 
 		void initialise(DatabasePtr handler) {
+
+			if (!nodes.size()) { // (Already initialised)
+				return;
+			}
+
 			std::vector<repo::lib::RepoVector3D64> vertices;
 			std::vector<repo::lib::repo_face_t> faces;
 			for (auto& node : nodes) {
@@ -94,13 +108,14 @@ namespace {
 				// We take a copy of the vertices so they can be re-ordered to make pointwise
 				// tests more efficient (the re-ordering however will be done on-demand).
 
-				orderedVertices.insert(vertices.end(), vertices.begin(), vertices.end());
+				orderedVertices.insert(orderedVertices.end(), vertices.begin(), vertices.end());
 
-				meshViews.push_back(MeshView(triangles, triangles.size(), faces.size()));
-
-				if (geometry::isClosedAndManifold(faces)) {
-					closed.push_back(&meshViews.back());
-				}
+				meshViews.push_back(MeshView(
+					triangles, 
+					triangles.size(), 
+					faces.size(), 
+					geometry::isClosedAndManifold(faces))
+				);
 
 				std::transform(faces.begin(), faces.end(), std::back_inserter(triangles),
 					[&](auto& face) {
@@ -113,8 +128,22 @@ namespace {
 				);
 			}
 
+			// A view that encompasses the whole composite object - this will be the one
+			// that holds the primary BVH. This composite view will never be used for
+			// containment tests - only individual components may be used for that.
+
 			if (nodes.size() > 1) {
-				meshViews.push_back(MeshView(triangles, 0, triangles.size()));
+				meshViews.push_back(MeshView(triangles, 0, triangles.size(), false));
+			}
+
+			// Create a quick reference of all the closed meshes - do this after the
+			// meshViews vector has been fully populated so we can take references to its
+			// elements.
+
+			for (auto& mv : meshViews) {
+				if (mv.closed) {
+					closed.push_back(&mv);
+				}
 			}
 
 			view = &meshViews.back();
@@ -135,7 +164,10 @@ namespace {
 		}
 
 		const std::vector<MeshView*> getClosedMeshes() {
-			return closed; // todo: build bvh's on demand
+			for(auto c : closed) {
+				c->buildBvh();
+			}
+			return closed;
 		}
 	};
 
@@ -180,6 +212,11 @@ namespace {
 		}
 	};
 
+	/*
+	* The contains functor is a predicate which tells PolyDepth whether mesh (a)
+	* is inside mesh (b) under transform/offset (m). If (b) does not have any
+	* closed meshes, it returns false.
+	*/
 	struct ContainsFunctor : public geometry::RepoPolyDepth::ContainsFunctor
 	{
 		const std::vector<repo::lib::RepoVector3D64>& vertices;
@@ -193,7 +230,7 @@ namespace {
 		{
 		}
 
-		bool operator()(const repo::lib::RepoVector3D64& m) override {
+		bool operator()(const repo::lib::RepoVector3D64& m) const override {
 			for (auto c : closed) {
 				if (geometry::contains(vertices, bounds, *c)) {
 					return true;
@@ -282,7 +319,6 @@ void Hard::run(const Graph& graphA, const Graph& graphB)
 
 		// In PolyDepth, b is fixed, so consider the larger object the static one
 		// to make it easier to fit a into the free space around it.
-
 		if (a->bounds > b->bounds) {
 			std::swap(a, b);
 		}

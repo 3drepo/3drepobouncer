@@ -63,13 +63,13 @@ namespace geometry {
 		* PolyDepth proceeds without it.
 		*/
 		struct ContainsFunctor {
-			virtual bool operator()(const repo::lib::RepoVector3D64& m) = 0;
+			virtual bool operator()(const repo::lib::RepoVector3D64& m) const = 0;
 		};
 
 		RepoPolyDepth(
 			const std::vector<repo::lib::RepoTriangle>& a, 
 			const std::vector<repo::lib::RepoTriangle>& b,
-			const ContainsFunctor* = nullptr
+			const ContainsFunctor* contains = nullptr
 		);
 
 		/*
@@ -106,7 +106,7 @@ namespace geometry {
 		repo::lib::RepoVector3D64 qt;
 		repo::lib::RepoVector3D64 qs;
 
-		ContainsFunctor* contains = nullptr;
+		const ContainsFunctor* contains = nullptr;
 
 		void findInitialFreeConfiguration();
 

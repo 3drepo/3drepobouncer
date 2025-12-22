@@ -2141,35 +2141,178 @@ TEST(Clash, SelfClearance)
 	}
 }
 
-TEST(Clash, ContainsClearance)
+TEST(Clash, Contains)
 {
+	// For the absolute contains case, both clearance and hard mode should detect
+	// the clashes in the same way.
+
 	auto handler = getHandler();
 	ClashDetectionDatabaseHelper helper(handler);
 
 	auto c = helper.getContainerByName("contains_2");
+
+	auto hull1 = helper.createCompositeObject(c.get(), "Hull1");
+	auto hull2 = helper.createCompositeObject(c.get(), "Hull2");
+	auto contained1 = helper.createCompositeObject(c.get(), "Contained1");
+	auto contained2 = helper.createCompositeObject(c.get(), "Contained2");
+	auto contained3 = helper.createCompositeObject(c.get(), "Contained3");
+	auto contained4 = helper.createCompositeObject(c.get(), "Contained4");
+	auto contained5 = helper.createCompositeObject(c.get(), "Contained5");
+	auto contained6 = helper.createCompositeObject(c.get(), "Contained6");
 
 	{
 		// The two hulls form separate composite objects
 
 		ClashDetectionConfig config;
 
-		//config.setA.push_back(helper.createCompositeObject(c.get(), "Hull1"));
-		config.setA.push_back(helper.createCompositeObject(c.get(), "Hull2"));
+		config.setA.push_back(hull1);
+		config.setA.push_back(hull2);
 
-		//config.setB.push_back(helper.createCompositeObject(c.get(), "Contained1"));
-		//config.setB.push_back(helper.createCompositeObject(c.get(), "Contained2"));
-		//config.setB.push_back(helper.createCompositeObject(c.get(), "Contained3"));
-		//config.setB.push_back(helper.createCompositeObject(c.get(), "Contained4"));
-		config.setB.push_back(helper.createCompositeObject(c.get(), "Contained5"));
-		//config.setB.push_back(helper.createCompositeObject(c.get(), "Contained6"));
+		config.setB.push_back(contained1);
+		config.setB.push_back(contained2);
+		config.setB.push_back(contained3);
+		config.setB.push_back(contained4);
+		config.setB.push_back(contained5);
+		config.setB.push_back(contained6);
 
-		config.tolerance = 0.1;
-		config.type = ClashDetectionType::Clearance;
+		config.tolerance = 0.01;
 
-		auto pipeline = new clash::Clearance(handler, config);
-		auto results = pipeline->runPipeline();
+		{
+			config.type = ClashDetectionType::Clearance;
+			auto pipeline = new clash::Clearance(handler, config);
+			auto results = pipeline->runPipeline();
 
-		EXPECT_THAT(results.clashes.size(), Eq(1));
+			EXPECT_THAT(results.clashes.size(), Eq(6));
+		}
+
+		{
+			config.type = ClashDetectionType::Hard;
+			auto pipeline = new clash::Hard(handler, config);
+			auto results = pipeline->runPipeline();
+
+			EXPECT_THAT(results.clashes.size(), Eq(6));
+		}
+	}
+
+	{
+		// Hull 1 and 2 form a single composite object, but all the contained
+		// components are still separate
+
+		ClashDetectionConfig config;
+
+		config.setA.push_back(combineCompositeObjects({
+			hull1,
+			hull2
+		}));
+
+		config.setB.push_back(contained1);
+		config.setB.push_back(contained2);
+		config.setB.push_back(contained3);
+		config.setB.push_back(contained4);
+		config.setB.push_back(contained5);
+		config.setB.push_back(contained6);
+
+		config.tolerance = 0.01;
+
+		{
+			config.type = ClashDetectionType::Clearance;
+			auto pipeline = new clash::Clearance(handler, config);
+			auto results = pipeline->runPipeline();
+
+			EXPECT_THAT(results.clashes.size(), Eq(6));
+		}
+
+		{
+			config.type = ClashDetectionType::Hard;
+			auto pipeline = new clash::Hard(handler, config);
+			auto results = pipeline->runPipeline();
+
+			EXPECT_THAT(results.clashes.size(), Eq(6));
+		}
+	}
+
+	{
+		// Contained items form single composite objects where all components
+		// are inside one of the two hulls, which should detect the same clashes
+		// (though only one per composite this time).
+
+		ClashDetectionConfig config;
+
+		config.setA.push_back(hull1);
+		config.setA.push_back(hull2);
+
+		config.setB.push_back(combineCompositeObjects({
+			contained1,
+			contained2,
+			contained3,
+			contained6
+			})
+		);
+		config.setB.push_back(combineCompositeObjects({
+			contained4,
+			contained5
+			})
+		);
+
+		config.tolerance = 0.01;
+
+		{
+			config.type = ClashDetectionType::Clearance;
+			auto pipeline = new clash::Clearance(handler, config);
+			auto results = pipeline->runPipeline();
+
+			EXPECT_THAT(results.clashes.size(), Eq(2));
+		}
+
+		{
+			config.type = ClashDetectionType::Hard;
+			auto pipeline = new clash::Hard(handler, config);
+			auto results = pipeline->runPipeline();
+
+			EXPECT_THAT(results.clashes.size(), Eq(2));
+		}
+	}
+
+	{
+		// Even though all combined items are contained in the hulls, because the
+		// meshes are not continous this will not necessarily be detected as a clash
+		// in Hard Mode.
+
+		ClashDetectionConfig config;
+
+		config.setA.push_back(combineCompositeObjects({
+			hull1,
+			hull2
+			})
+		);
+
+		config.setB.push_back(combineCompositeObjects({
+			contained1,
+			contained2,
+			contained3,
+			contained6,
+			contained4,
+			contained5
+			})
+		);
+
+		config.tolerance = 0.01;
+
+		{
+			config.type = ClashDetectionType::Clearance;
+			auto pipeline = new clash::Clearance(handler, config);
+			auto results = pipeline->runPipeline();
+
+			EXPECT_THAT(results.clashes.size(), Eq(1));
+		}
+
+		{
+			config.type = ClashDetectionType::Hard;
+			auto pipeline = new clash::Hard(handler, config);
+			auto results = pipeline->runPipeline();
+
+			EXPECT_THAT(results.clashes.size(), Eq(0));
+		}
 	}
 }
 

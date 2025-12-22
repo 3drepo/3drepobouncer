@@ -122,7 +122,7 @@ namespace geometry {
     */
     repo::lib::RepoVector3D64 minimumSeparatingAxis(
         const repo::lib::RepoBounds& a, 
-        repo::lib::RepoBounds& b
+        const repo::lib::RepoBounds& b
     );
 
     /*

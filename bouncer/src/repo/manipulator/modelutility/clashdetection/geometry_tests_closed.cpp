@@ -154,9 +154,9 @@ namespace {
 			return repo::lib::RepoVector3D64(x, y, z).normalized();
 		}
 	};
-}
 
-static RandomGenerator random;
+	RandomGenerator random;
+}
 
 bool geometry::contains(const std::vector<repo::lib::RepoVector3D64>& vertices,
 	const repo::lib::RepoBounds& bounds,

@@ -121,7 +121,7 @@ namespace {
 RepoPolyDepth::RepoPolyDepth(
     const std::vector<repo::lib::RepoTriangle>& a, 
     const std::vector<repo::lib::RepoTriangle>& b,
-    const ContainsFunctor*)
+    const ContainsFunctor* contains)
     : a(a), 
     b(b),
     bvhA(buildBvh(a)),
@@ -180,20 +180,15 @@ void RepoPolyDepth::findInitialFreeConfiguration()
     // done simply by finding the minimum translation vector that can separate
     // the bounds.
 
-    auto& left = bvhA.nodes[0].bounds;
-    auto& right = bvhB.nodes[0].bounds;
+    // (Make sure to put the BVH back as it may have been changed above).
 
-    repo::lib::RepoBounds a(
-        repo::lib::RepoVector3D64(left[0], left[2], left[4]),
-        repo::lib::RepoVector3D64(left[1], left[3], left[5])
+    BvhRefitter refitter(bvhA, a);
+    refitter.refit({});
+
+    qs = geometry::minimumSeparatingAxis(
+        repoBounds(bvhA.nodes[0]), 
+        repoBounds(bvhB.nodes[0])
     );
-
-    repo::lib::RepoBounds b(
-        repo::lib::RepoVector3D64(right[0], right[2], right[4]),
-        repo::lib::RepoVector3D64(right[1], right[3], right[5])
-    );
-
-    qs = geometry::minimumSeparatingAxis(a,b);
 }
 
 void RepoPolyDepth::iterate(size_t n)

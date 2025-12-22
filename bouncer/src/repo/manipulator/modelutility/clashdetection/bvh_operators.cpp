@@ -258,14 +258,23 @@ void bvh::builders::build(bvh::Bvh<double>& bvh,
 void bvh::builders::build(bvh::Bvh<double>& bvh,
 	const std::vector<repo::lib::RepoTriangle>& triangles)
 {
+	build(bvh, triangles.data(), triangles.size());
+}
+
+void bvh::builders::build(bvh::Bvh<double>& bvh,
+	const repo::lib::_RepoTriangle<double>* triangles,
+	size_t numTriangles
+)
+{
 	auto bounds = std::vector<bvh::BoundingBox<double>>();
 	auto centers = std::vector<bvh::Vector3<double>>();
 
-	bounds.reserve(triangles.size());
-	centers.reserve(triangles.size());
+	bounds.reserve(numTriangles);
+	centers.reserve(numTriangles);
 
-	for (const auto& triangle : triangles)
+	for (size_t i = 0; i < numTriangles; ++i)
 	{
+		const auto& triangle = triangles[i];
 		auto aabb = bvh::BoundingBox<double>::empty();
 		aabb.extend(reinterpret_cast<const bvh::Vector3<double>&>(triangle.a));
 		aabb.extend(reinterpret_cast<const bvh::Vector3<double>&>(triangle.b));
