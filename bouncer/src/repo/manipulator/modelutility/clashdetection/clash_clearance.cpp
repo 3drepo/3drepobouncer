@@ -39,6 +39,7 @@ namespace {
 		Graph::Node* node;
 		Bvh bvh;
 		std::vector<repo::lib::RepoVector3D64> vertices;
+		std::vector<repo::lib::RepoVector3D64> verticesForContainsTests;
 		std::vector<repo::lib::repo_face_t> faces;
 		repo::lib::RepoBounds bounds;
 		bool isClosed = false;
@@ -84,9 +85,12 @@ namespace {
 			return node->compositeObject->id;
 		}
 
-		const std::vector<repo::lib::RepoVector3D64>& getOrderedVertices() const {
-			return vertices;
-			// todo: implement ordered vertices
+		const std::vector<repo::lib::RepoVector3D64>& getOrderedVertices() {
+			if(!verticesForContainsTests.size()) {
+				verticesForContainsTests = vertices;
+				geometry::reorderVertices(verticesForContainsTests);
+			}
+			return verticesForContainsTests;
 		}		
 
 	private:

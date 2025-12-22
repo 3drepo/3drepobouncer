@@ -148,6 +148,8 @@ namespace {
 
 			view = &meshViews.back();
 
+			geometry::reorderVertices(orderedVertices);
+
 			nodes.clear();
 		}
 
