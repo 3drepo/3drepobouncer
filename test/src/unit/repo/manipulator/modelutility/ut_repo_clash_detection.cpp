@@ -1647,11 +1647,13 @@ TEST(Clash, Clearance1)
 		auto results = pipeline->runPipeline();
 
 		EXPECT_THAT(results.clashes.size(), Eq(1));
-		EXPECT_THAT(results.clashes[0].idA, Eq(config.setA[0].id));
-		EXPECT_THAT(results.clashes[0].idB, Eq(config.setB[0].id));
+		EXPECT_THAT(
+			std::vector<repo::lib::RepoUUID>({results.clashes[0].idA, results.clashes[0].idB}),
+			UnorderedElementsAre(config.setA[0].id, config.setB[0].id)
+		);
 	}
 
-	// Check objects that are touching via conincident edges
+	// Check objects that are touching via coincident edges
 
 	{
 		helper.setCompositeObjectSetsByName(config, container, { "TouchingEdgeA" }, { "TouchingEdgeB" });
@@ -1660,8 +1662,10 @@ TEST(Clash, Clearance1)
 		auto results = pipeline->runPipeline();
 
 		EXPECT_THAT(results.clashes.size(), Eq(1));
-		EXPECT_THAT(results.clashes[0].idA, Eq(config.setA[0].id));
-		EXPECT_THAT(results.clashes[0].idB, Eq(config.setB[0].id));
+		EXPECT_THAT(
+			std::vector<repo::lib::RepoUUID>({ results.clashes[0].idA, results.clashes[0].idB }),
+			UnorderedElementsAre(config.setA[0].id, config.setB[0].id)
+		);
 	}
 
 
@@ -1674,8 +1678,10 @@ TEST(Clash, Clearance1)
 		auto results = pipeline->runPipeline();
 
 		EXPECT_THAT(results.clashes.size(), Eq(1));
-		EXPECT_THAT(results.clashes[0].idA, Eq(config.setA[0].id));
-		EXPECT_THAT(results.clashes[0].idB, Eq(config.setB[0].id));
+		EXPECT_THAT(
+			std::vector<repo::lib::RepoUUID>({ results.clashes[0].idA, results.clashes[0].idB }),
+			UnorderedElementsAre(config.setA[0].id, config.setB[0].id)
+		);
 	}
 
 
@@ -1698,8 +1704,10 @@ TEST(Clash, Clearance1)
 		auto results = pipeline->runPipeline();
 
 		EXPECT_THAT(results.clashes.size(), Eq(1));
-		EXPECT_THAT(results.clashes[0].idA, Eq(config.setA[0].id));
-		EXPECT_THAT(results.clashes[0].idB, Eq(config.setB[0].id));
+		EXPECT_THAT(
+			std::vector<repo::lib::RepoUUID>({ results.clashes[0].idA, results.clashes[0].idB }),
+			UnorderedElementsAre(config.setA[0].id, config.setB[0].id)
+		);
 
 		// The positions reported for a clearance clash are the two points closest
 		// to each other out of all pairs that violate the tolerance.
@@ -1734,8 +1742,10 @@ TEST(Clash, Clearance1)
 		auto results = pipeline->runPipeline();
 
 		EXPECT_THAT(results.clashes.size(), Eq(1));
-		EXPECT_THAT(results.clashes[0].idA, Eq(config.setA[0].id));
-		EXPECT_THAT(results.clashes[0].idB, Eq(config.setB[0].id));
+		EXPECT_THAT(
+			std::vector<repo::lib::RepoUUID>({ results.clashes[0].idA, results.clashes[0].idB }),
+			UnorderedElementsAre(config.setA[0].id, config.setB[0].id)
+		);
 
 		// The positions reported for a clearance clash are the two points closest
 		// to each other out of all pairs that violate the tolerance.
@@ -1770,8 +1780,10 @@ TEST(Clash, Clearance1)
 		auto results = pipeline->runPipeline();
 
 		EXPECT_THAT(results.clashes.size(), Eq(1));
-		EXPECT_THAT(results.clashes[0].idA, Eq(config.setA[0].id));
-		EXPECT_THAT(results.clashes[0].idB, Eq(config.setB[0].id));
+		EXPECT_THAT(
+			std::vector<repo::lib::RepoUUID>({ results.clashes[0].idA, results.clashes[0].idB }),
+			UnorderedElementsAre(config.setA[0].id, config.setB[0].id)
+		);
 
 		// The positions reported for a clearance clash are the two points closest
 		// to each other out of all pairs that violate the tolerance.
@@ -1806,8 +1818,10 @@ TEST(Clash, Clearance1)
 		auto results = pipeline->runPipeline();
 
 		EXPECT_THAT(results.clashes.size(), Eq(1));
-		EXPECT_THAT(results.clashes[0].idA, Eq(config.setA[0].id));
-		EXPECT_THAT(results.clashes[0].idB, Eq(config.setB[0].id));
+		EXPECT_THAT(
+			std::vector<repo::lib::RepoUUID>({ results.clashes[0].idA, results.clashes[0].idB }),
+			UnorderedElementsAre(config.setA[0].id, config.setB[0].id)
+		);
 
 		// The positions reported for a clearance clash are the two points closest
 		// to each other out of all pairs that violate the tolerance.
