@@ -19,10 +19,11 @@
 #include "clash_exceptions.h"
 
 #include <random>
+#include <cmath> 
+#include <algorithm>
 
 #include "repo/manipulator/modeloptimizer/bvh/single_ray_traverser.hpp"
 #include "repo/manipulator/modelutility/clashdetection/geometry_tests.h"
-#include <iostream>
 
 using namespace geometry;
 using namespace bvh;
@@ -226,9 +227,81 @@ bool geometry::contains(const std::vector<repo::lib::RepoVector3D64>& vertices,
 
 	return true;
 }
+#pragma optimize("", off)
+
+namespace {
+	double score(const repo::lib::RepoVector3D64& v) {
+		return std::max({std::abs(v.x), std::abs(v.y), std::abs(v.z)});
+	}
+
+	size_t group(const repo::lib::RepoVector3D64& v) {
+		auto ax = std::abs(v.x);
+		auto ay = std::abs(v.y);
+		auto az = std::abs(v.z);
+
+		if (ax >= ay && ax >= az) {
+			return (v.x >= 0.0) ? 0 : 1;
+		}
+		if (ay >= ax && ay >= az) {
+			return (v.y >= 0.0) ? 2 : 3;
+		}
+		return (v.z >= 0.0) ? 4 : 5;
+	}		
+}
+
 
 void geometry::reorderVertices(
-	const std::vector<repo::lib::RepoVector3D64>& vertices)
+	std::vector<repo::lib::RepoVector3D64>& vertices)
 {
-	//todo: implement vertex reordering for better performance
+	// This method implements a sorting algorithm that orders the vertices by
+	// greatest extent in one of six directions. The directions are interleaved,
+	// meaning the most extreme vertices in all directions are tested first.
+
+	// This component-wise algorithm is very quick, though requires O(n) temporary
+	// allocations.
+
+	// Six groups / directions: // +X, -X, +Y, -Y, +Z, -Z
+
+	size_t count[6] = { 0, 0, 0, 0, 0, 0 };
+	for (const auto& v : vertices) {
+		count[group(v)]++;
+	}
+
+	// (The grouping can actually be performed in-place with swap, however a
+	// temporary buffer is required to interleave the results, so we may as well
+	// make the implementation simpler by using different allocations per-group
+	// from the start.)
+
+	std::vector<repo::lib::RepoVector3D64> groups[6];
+
+	for (size_t g = 0; g < 6; g++) {
+		groups[g].reserve(count[g]);
+	}
+
+	for (auto& v : vertices) {
+		groups[group(v)].push_back(v);
+	}
+
+	for (size_t g = 0; g < 6; g++) {
+		std::sort(groups[g].begin(), groups[g].end(),
+			[&](const repo::lib::RepoVector3D64& a, const repo::lib::RepoVector3D64& b) {
+				return score(a) > score(b);
+			}
+		);
+	}
+
+	size_t idx[6] = { 0, 0, 0, 0, 0, 0 };
+	size_t i = 0;
+	while (true) {
+		bool hasElementsRemaining = false;
+		for (size_t g = 0; g < 6; g++) {
+			if (idx[g] < groups[g].size()) {
+				vertices[i++] = groups[g][idx[g]++];
+				hasElementsRemaining = true;
+			}
+		}
+		if (!hasElementsRemaining) {
+			break;
+		}
+	}
 }

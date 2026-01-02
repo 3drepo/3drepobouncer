@@ -44,6 +44,9 @@ namespace {
 		repo::lib::RepoBounds bounds;
 		bool isClosed = false;
 
+		// Initialises everything the narrowphase (or this objects own methods) needs
+		// to run. Initialise must be idempotent.
+
 		void initialise(std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler) {
 
 			if (vertices.size()) { // (Already initialised)
@@ -91,13 +94,10 @@ namespace {
 				geometry::reorderVertices(verticesForContainsTests);
 			}
 			return verticesForContainsTests;
-		}		
-
-	private:
-		std::vector<repo::lib::RepoVector3D64> orderedVertices; // Same vertices, but ordered to make contains tests most efficient
+		}
 	};
 
-	struct Cache : public ResourceCache<Graph::Node, Cached>
+	struct Cache : public ResourceCache<Graph::Node, Cached> 
 	{
 		void initialise(const Graph::Node& key, Cached& entry) const override {
 			entry.node = const_cast<Graph::Node*>(&key); // We need to cast away const here in order to load the binary buffers into the contained bson
@@ -145,6 +145,10 @@ void Clearance::run(const Graph& graphA, const Graph& graphB)
 	ClearanceBroadphase broadphase(tolerance);
 	std::vector<std::pair<Cache::Record*, Cache::Record*>> broadphaseResults;
 
+	// The broadphase is run three times: between A and B, within A, and  within B.
+	// A single node may appear in both intra and inter set tests, so we collect
+	// and schedule all of these as one.
+
 	broadphase.operator()(graphA.bvh, graphB.bvh);
 	for (auto [a, b] : broadphase.results) {
 		broadphaseResults.push_back({
@@ -173,8 +177,9 @@ void Clearance::run(const Graph& graphA, const Graph& graphB)
 
 	ClashScheduler::schedule(broadphaseResults);
 
-	// Turn the records used to build the schedule into narrowphase tests by
-	// resolving them to counted references to the actual nodes.
+	// Create reference counted equivalents of the records output by the broadphase.
+	// Now, as the narrowphase tests are performed, the records will be fully
+	// initialised and cleaned up automatically.
 
 	using Narrowphase = std::pair<
 		Cache::Entry,
@@ -201,17 +206,15 @@ void Clearance::run(const Graph& graphA, const Graph& graphB)
 			std::swap(a, b);
 		}
 		
-		if (b->isClosed) {
-			if (geometry::contains(a->getOrderedVertices(), a->bounds, *b)) {
-				// If a is completely inside b, the closest distance is zero so we can 
-				// terminate immediately.
+		if (b->isClosed && geometry::contains(a->getOrderedVertices(), a->bounds, *b)) {
+			// If a is completely inside b, the closest distance is zero so we can 
+			// terminate immediately.
 
-				createClash<ClearanceClash>(
-					a->getCompositeObjectId(),
-					b->getCompositeObjectId()
-				)->append({a->bounds.center(), a->bounds.center()});
-				continue;
-			}
+			createClash<ClearanceClash>(
+				a->getCompositeObjectId(),
+				b->getCompositeObjectId()
+			)->append({a->bounds.center(), a->bounds.center()});
+			continue;
 		}
 
 		broadphase.operator()(a->getBvh(), b->getBvh());

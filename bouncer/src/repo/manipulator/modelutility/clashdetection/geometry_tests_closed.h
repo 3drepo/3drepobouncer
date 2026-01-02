@@ -55,5 +55,5 @@ namespace geometry {
 	* sequentially.
 	*/
 	void reorderVertices(
-		const std::vector<repo::lib::RepoVector3D64>& vertices);
+		std::vector<repo::lib::RepoVector3D64>& vertices);
 }

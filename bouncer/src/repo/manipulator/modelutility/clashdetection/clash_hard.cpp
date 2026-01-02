@@ -64,7 +64,6 @@ namespace {
 	{
 		std::vector<Graph::Node*> nodes;
 		std::vector<repo::lib::RepoTriangle> triangles;
-		std::vector<repo::lib::RepoVector3D64> orderedVertices;
 		repo::lib::RepoUUID id;
 		repo::lib::RepoBounds bounds;
 
@@ -82,6 +81,11 @@ namespace {
 		// only one node (and it is closed), this will be the same as [view].
 
 		std::vector<MeshView*> closed;
+
+		// All the vertices from all the nodes, ordered with the most extreme ones
+		// first for more efficient point-wise testing.
+
+		std::vector<repo::lib::RepoVector3D64> orderedVertices;
 
 		void initialise(DatabasePtr handler) {
 
@@ -106,7 +110,7 @@ namespace {
 				);
 
 				// We take a copy of the vertices so they can be re-ordered to make pointwise
-				// tests more efficient (the re-ordering however will be done on-demand).
+				// tests more efficient.
 
 				orderedVertices.insert(orderedVertices.end(), vertices.begin(), vertices.end());
 
@@ -162,7 +166,7 @@ namespace {
 		}
 
 		const std::vector<repo::lib::RepoVector3D64>& getOrderedVertices() const {
-			return orderedVertices; // todo: implement ordering
+			return orderedVertices;
 		}
 
 		const std::vector<MeshView*>& getClosedMeshes() {
@@ -321,6 +325,7 @@ void Hard::run(const Graph& graphA, const Graph& graphB)
 
 		// In PolyDepth, b is fixed, so consider the larger object the static one
 		// to make it easier to fit a into the free space around it.
+
 		if (a->bounds > b->bounds) {
 			std::swap(a, b);
 		}
@@ -357,13 +362,10 @@ void Hard::createClashReport(const OrderedPair& objects, const CompositeClash& c
 
 	auto p = static_cast<const HardClash&>(clash).penetration;
 
-	result.positions = {
-	};
-
 	size_t hash = 0;
 	std::hash<double> hasher;
-	hash ^= hasher(p.x) + 0x9e3779b9;
-	hash ^= hasher(p.y) + 0x9e3779b9;
-	hash ^= hasher(p.z) + 0x9e3779b9;
+	hash ^= hasher(p.x) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+	hash ^= hasher(p.y) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+	hash ^= hasher(p.z) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
 	result.fingerprint = hash;
 }

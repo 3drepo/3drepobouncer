@@ -203,3 +203,21 @@ TEST(Geometry, ClosedMeshContains)
 		EXPECT_THAT(geometry::contains(p.outside, inside, mesh), IsFalse());
 	}
 }
+
+TEST(Geometry, ReorderVertices)
+{
+	ClashGenerator clashGenerator;
+	std::vector<repo::lib::RepoVector3D64> vertices;
+	for (size_t i = 0; i < 100; i++) {
+		vertices.push_back(clashGenerator.random.vector({ 1, 10 }));
+	}
+
+	auto copy = vertices;
+	geometry::reorderVertices(vertices);
+
+	// Reorder vertices permutes the input set to prioritise extreme values, what
+	// exactly this means is up to the implementation, but in all cases the output
+	// must perfectly intersect the input set.
+
+	EXPECT_THAT(vertices, UnorderedElementsAreArray(copy));
+}
