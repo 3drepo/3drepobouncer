@@ -851,7 +851,7 @@ bool geometry::isClosedAndManifold(
         }
     };
 
-	std::unordered_map<std::pair<size_t, size_t>, size_t, edge_hash> edge_map;
+    std::unordered_map<std::pair<size_t, size_t>, size_t, edge_hash> edge_map;
 
     for (const auto& tri : triangles)
     {
@@ -872,6 +872,5 @@ bool geometry::isClosedAndManifold(
         }
     }
 
-	return true;
+    return true;
 }
-

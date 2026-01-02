@@ -21,6 +21,7 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_matrix.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_range.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_structs.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_triangle-fwd.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_triangle.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_uuid.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_variant.h
