@@ -645,7 +645,7 @@ double geometry::intersects(const repo::lib::RepoVector3D64& origin,
 	// Determine if the triangle test itself is degenerate
     double th = std::max({
 		std::abs(Ax), std::abs(Ay), std::abs(Bx), std::abs(By), std::abs(Cx), std::abs(Cy)
-	}) * 1e-6;
+	}) * 1.2e-6;
 
     if (std::abs(U) < th && std::abs(V) < th && std::abs(W) < th) {
         if(degenerate) {

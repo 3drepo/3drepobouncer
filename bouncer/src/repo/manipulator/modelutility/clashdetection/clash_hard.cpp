@@ -341,7 +341,7 @@ void Hard::run(const Graph& graphA, const Graph& graphB)
 			&contains
 		);
 
-		pd.iterate(10);
+		pd.iterate(maxPolyDepthIterations);
 
 		auto v = pd.getPenetrationVector();
 
@@ -355,7 +355,8 @@ void Hard::run(const Graph& graphA, const Graph& graphB)
 	}
 }
 
-void Hard::createClashReport(const OrderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const
+void Hard::createClashReport(const OrderedPair& objects,
+	const CompositeClash& clash, ClashDetectionResult& result) const
 {
 	result.idA = objects.a;
 	result.idB = objects.b;

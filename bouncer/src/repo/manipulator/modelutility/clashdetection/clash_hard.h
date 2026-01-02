@@ -39,10 +39,15 @@ namespace repo {
 
 					void run(const Graph& graphA, const Graph& graphB) override;
 
-					void createClashReport(const OrderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const override;
+					void createClashReport(
+						const OrderedPair& objects, 
+						const CompositeClash& clash, 
+						ClashDetectionResult& result
+					) const override;
 
 				protected:
 					double tolerance;
+					const size_t maxPolyDepthIterations = 10;
 				};
 			}
 		}

@@ -919,7 +919,7 @@ TEST(Geometry, RayTriangleIntersects)
 	ClashGenerator clashGenerator;
 	auto& random = clashGenerator.random;
 
-	for (size_t itr = 0; itr < 1000000; itr++) {
+	for (size_t itr = 0; itr < 3000000; itr++) {
 
 		repo::lib::RepoTriangle a(
 			random.vector(clashGenerator.size1),
@@ -1129,7 +1129,7 @@ TEST(Geometry, RayTriangleIntersects)
 				size_t coverageCheckDegen = 0;
 				size_t coverageCheckCorner = 0;
 
-				double step_size = geometry::contactThreshold(a, a) * 0.000000001; // Only base the threshold on the size of a, since that is what the ray willl be coplanar to
+				double step_size = geometry::contactThreshold(a, a) * 0.000000001; // Only base the threshold on the size of a, since that is what the ray will be coplanar to
 				double step = 0;
 				bool done = false;
 				while (!done) {
