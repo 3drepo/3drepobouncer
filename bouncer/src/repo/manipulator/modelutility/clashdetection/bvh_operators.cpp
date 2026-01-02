@@ -24,12 +24,10 @@
 
 using namespace bvh;
 
-void Traversal::operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double>& b)
-{
+void Traversal::operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double>& b) {
 	std::stack<std::pair<size_t, size_t>> pairs;
 	pairs.push({ 0, 0 });
-	while (!pairs.empty())
-	{
+	while (!pairs.empty()) {
 		auto [idxLeft, idxRight] = pairs.top();
 		pairs.pop();
 
@@ -40,8 +38,7 @@ void Traversal::operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double>& b)
 			continue;
 		}
 
-		if (left.is_leaf() && right.is_leaf())
-		{
+		if (left.is_leaf() && right.is_leaf()) {
 			for (size_t l = 0; l < left.primitive_count; l++) {
 				for (size_t r = 0; r < right.primitive_count; r++) {
 					intersect(
@@ -51,18 +48,15 @@ void Traversal::operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double>& b)
 				}
 			}
 		}
-		else if (left.is_leaf() && !right.is_leaf())
-		{
+		else if (left.is_leaf() && !right.is_leaf()) {
 			pairs.push({ idxLeft, right.first_child_or_primitive + 0 });
 			pairs.push({ idxLeft, right.first_child_or_primitive + 1 });
 		}
-		else if (!left.is_leaf() && right.is_leaf())
-		{
+		else if (!left.is_leaf() && right.is_leaf()) {
 			pairs.push({ left.first_child_or_primitive + 0, idxRight });
 			pairs.push({ left.first_child_or_primitive + 1, idxRight });
 		}
-		else
-		{
+		else {
 			pairs.push({ left.first_child_or_primitive + 0, right.first_child_or_primitive + 0 });
 			pairs.push({ left.first_child_or_primitive + 0, right.first_child_or_primitive + 1 });
 			pairs.push({ left.first_child_or_primitive + 1, right.first_child_or_primitive + 0 });
@@ -71,8 +65,7 @@ void Traversal::operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double>& b)
 	}
 }
 
-void Traversal::operator()(const bvh::Bvh<double>& a)
-{
+void Traversal::operator()(const bvh::Bvh<double>& a) {
 	// The goal of an internal traversal is to find all pairs in a single tree
 	// that overlap eachother. The traversal operates on pairs of siblings.
 
@@ -177,7 +170,8 @@ void Traversal::operator()(const bvh::Bvh<double>& a)
 	}
 }
 
-static bvh::BoundingBox<double> overlap(const bvh::BoundingBox<double>& a, const bvh::BoundingBox<double>& b)
+static bvh::BoundingBox<double> overlap(const bvh::BoundingBox<double>& a, 
+	const bvh::BoundingBox<double>& b)
 {
 	bvh::BoundingBox<double> result;
 	result.min = {

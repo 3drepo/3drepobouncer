@@ -21,7 +21,6 @@
 #include "repo/lib/datastructure/repo_uuid.h"
 #include "repo/lib/datastructure/repo_line.h"
 
-
 namespace repo {
 	namespace manipulator {
 		namespace modelutility {

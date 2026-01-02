@@ -29,7 +29,7 @@ namespace repo {
 	namespace lib {
 		struct repo_face_t;
 	}
-}
+} // namespace repo
 
 namespace bvh {
 
@@ -42,10 +42,9 @@ namespace bvh {
 		* If the bounds of two nodes overlap or not.
 		*/
 		bool intersects(
-			const bvh::Bvh<double>::Node& a,
-			const bvh::Bvh<double>::Node& b);
+			const bvh::Bvh<double>::Node& a, const bvh::Bvh<double>::Node& b);
 
-	}
+	} // namespace predicates
 
 	namespace builders {
 		void build(bvh::Bvh<double>& bvh, 
@@ -61,7 +60,8 @@ namespace bvh {
 			const repo::lib::_RepoTriangle<double>* triangles,
 			size_t numTriangles
 		);
-	}
+
+	} // namespace builders
 
 	/*
 	* Base class for queries between two BVH's.
@@ -193,4 +193,4 @@ namespace bvh {
 			intersects
 		);
 	}
-}
+} // namespace bvh

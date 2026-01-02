@@ -30,7 +30,6 @@
 #include "repo/lib/datastructure/repo_triangle.h"
 #include "repo/manipulator/modeloptimizer/bvh/bvh.hpp"
 
-
 using namespace repo::manipulator::modelutility::clash;
 
 namespace {
