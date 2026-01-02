@@ -17,6 +17,8 @@
 
 #include "repo_test_random_generator.h"
 
+#include <cfloat>
+
 using namespace testing;
 
 #define PI 3.14159265358979323846

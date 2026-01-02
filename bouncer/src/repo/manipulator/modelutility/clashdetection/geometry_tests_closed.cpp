@@ -35,7 +35,6 @@ using Traverser_t = SingleRayTraverser<bvh::Bvh<double>, 64, bvh::RobustNodeInte
 #define DEGEN_RETRY_LIMIT 10
 
 namespace {
-
 	struct PrimitiveIntersector
 	{
 		const MeshView& mesh;
@@ -155,14 +154,14 @@ namespace {
 			return repo::lib::RepoVector3D64(x, y, z).normalized();
 		}
 	};
-
-	RandomGenerator random;
 }
 
 bool geometry::contains(const std::vector<repo::lib::RepoVector3D64>& vertices,
 	const repo::lib::RepoBounds& bounds,
 	const MeshView& mesh)
 {
+	static RandomGenerator random;
+
 	// This method uses the SingleRayTraverser of the bvh library to peform the
 	// ray-cast based point-in-mesh test:
 	// 
@@ -227,7 +226,6 @@ bool geometry::contains(const std::vector<repo::lib::RepoVector3D64>& vertices,
 
 	return true;
 }
-#pragma optimize("", off)
 
 namespace {
 	double score(const repo::lib::RepoVector3D64& v) {
@@ -248,7 +246,6 @@ namespace {
 		return (v.z >= 0.0) ? 4 : 5;
 	}		
 }
-
 
 void geometry::reorderVertices(
 	std::vector<repo::lib::RepoVector3D64>& vertices)

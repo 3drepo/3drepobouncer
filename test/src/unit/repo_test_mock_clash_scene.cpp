@@ -24,6 +24,7 @@
 
 #include <numbers>
 #include <cfloat>
+#include <iomanip>
 
 using namespace testing;
 using namespace repo::core::model;

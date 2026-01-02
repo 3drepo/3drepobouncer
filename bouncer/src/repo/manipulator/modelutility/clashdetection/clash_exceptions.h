@@ -46,6 +46,10 @@ namespace repo {
 
 				};
 
+				/*
+				* Thrown when a mesh is encountered that contains geometry with a local
+				* position greater than MESH_LIMIT in any direction.
+				*/
 				struct MeshBoundsException : public ValidationException
 				{
 					MeshBoundsException(const repo::lib::Container& container, const repo::lib::RepoUUID& uniqueId);
@@ -56,6 +60,11 @@ namespace repo {
 					virtual std::shared_ptr<ClashDetectionException> clone() const override;
 				};
 
+				/*
+				* Thrown when a transformation is encountered that when applied to a mesh
+				* would place any vertex of that mesh beyond MESH_LIMIT locally, or
+				* TRANSLATION_LIMIT globally.
+				*/
 				struct TransformBoundsException : public ValidationException
 				{
 					TransformBoundsException(const repo::lib::Container& container, const repo::lib::RepoUUID& uniqueId);
@@ -66,6 +75,9 @@ namespace repo {
 					virtual std::shared_ptr<ClashDetectionException> clone() const override;
 				};
 
+				/*
+				* Thrown when a Composite Object in set A has the same Id as one in set B.
+				*/
 				struct OverlappingSetsException : public ValidationException
 				{
 					OverlappingSetsException(std::set<repo::lib::RepoUUID> overlappingCompositeIds);
@@ -75,6 +87,9 @@ namespace repo {
 					virtual std::shared_ptr<ClashDetectionException> clone() const override;
 				};
 
+				/*
+				* Thrown when a MeshNode appears in more than one Composite Object.
+				*/
 				struct DuplicateMeshIdsException : public ValidationException {
 					DuplicateMeshIdsException(const repo::lib::RepoUUID& uniqueId);
 
@@ -83,6 +98,10 @@ namespace repo {
 					virtual std::shared_ptr<ClashDetectionException> clone() const override;
 				};
 
+				/*
+				* Thrown when a test has failed because it is degenerate. Contains the unique
+				* Id of the MeshNode that the failed test was attempting to run on.
+				*/
 				struct DegenerateMeshException : public ClashDetectionException {
 					DegenerateMeshException(const repo::lib::RepoUUID& uniqueId);
 

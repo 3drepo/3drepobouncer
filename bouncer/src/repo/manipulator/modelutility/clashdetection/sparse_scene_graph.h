@@ -80,8 +80,6 @@ namespace repo {
 				protected:
 					std::unordered_map<repo::lib::RepoUUID, Node, repo::lib::RepoUUIDHasher> nodes; // by Unique Id
 				};
-
-
 			}
 		}
 	}
