@@ -3152,5 +3152,74 @@ TEST(Clash, NodeCache)
 
 TEST(Clash, ResultsSerialisation)
 {
+	RepoRandomGenerator random;
 
+	ClashDetectionConfig config;
+	config.resultsFile = getDataPath("clash/tmp_results_1.json");
+
+	ClashDetectionReport report;
+	
+	for(int i = 0; i < 3; i++) {
+		ClashDetectionResult result;
+		result.idA = repo::lib::RepoUUID::createUUID();
+		result.idB = repo::lib::RepoUUID::createUUID();
+		result.fingerprint = 1245678;
+		result.positions = {
+			random.vector({100,1000}),
+			random.vector({0.1, 0.99})
+		};
+		report.clashes.push_back(result);
+	}
+
+	ClashDetectionEngineUtils::writeJson(report, config);
+
+	repo::lib::Container container;
+	container.container = "TestContainer";
+	container.revision = repo::lib::RepoUUID::createUUID();
+	container.teamspace = "TestTeamspace";
+
+	using namespace repo::manipulator::modelutility::clash;
+
+	report.errors.push_back(
+		std::make_shared<MeshBoundsException>(
+			container,
+			repo::lib::RepoUUID::createUUID()
+		)
+	);
+
+	report.errors.push_back(
+		std::make_shared<TransformBoundsException>(
+			container,
+			repo::lib::RepoUUID::createUUID()
+		)
+	);
+
+	std::set<repo::lib::RepoUUID> overlappingSetIds = {
+		repo::lib::RepoUUID::createUUID(),
+		repo::lib::RepoUUID::createUUID(),
+		repo::lib::RepoUUID::createUUID()
+	};
+
+	report.errors.push_back(
+		std::make_shared<OverlappingSetsException>(
+			overlappingSetIds
+		)
+	);
+
+	report.errors.push_back(
+		std::make_shared<DuplicateMeshIdsException>(
+			repo::lib::RepoUUID::createUUID()
+		)
+	);
+
+	report.errors.push_back(
+		std::make_shared<DegenerateTestException>(
+			repo::lib::RepoUUID::createUUID(),
+			repo::lib::RepoUUID::createUUID(),
+			"Degenerate Test Reason"
+		)
+	);
+
+	config.resultsFile = getDataPath("clash/tmp_results_2.json");
+	ClashDetectionEngineUtils::writeJson(report, config);
 }

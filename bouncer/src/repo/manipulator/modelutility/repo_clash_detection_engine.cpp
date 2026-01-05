@@ -111,7 +111,8 @@ void ClashDetectionEngineUtils::writeJson(const ClashDetectionReport& report,
 		writer.Key("errors");
 		writer.StartArray();
 		for (auto& error : report.errors) {
-			writer.String(error->toJson());
+			auto json = error->toJson();
+			writer.RawValue(json.c_str(), json.size(), rapidjson::kObjectType);
 		}
 		writer.EndArray();
 	}
