@@ -19,6 +19,8 @@
 
 #include <repo/manipulator/modelutility/repo_clash_detection_config.h>
 
+#include <sstream>
+
 #define RAPIDJSON_HAS_STDSTRING 1
 #include "repo/manipulator/modelutility/rapidjson/rapidjson.h"
 #include "repo/manipulator/modelutility/rapidjson/document.h"
