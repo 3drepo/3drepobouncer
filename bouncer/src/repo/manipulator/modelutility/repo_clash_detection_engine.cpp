@@ -64,16 +64,15 @@ ClashDetectionReport ClashDetectionEngine::runClashDetection
 	return results;
 }
 
-ClashDetectionEngine::ClashDetectionEngine(std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler)
+ClashDetectionEngine::ClashDetectionEngine(
+	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler)
 	:handler(handler)
 {
 }
 
-void ClashDetectionEngineUtils::writeJson(const ClashDetectionReport& report, std::basic_ostream<char, std::char_traits<char>>& stream)
+void ClashDetectionEngineUtils::writeJson(const ClashDetectionReport& report,
+	std::basic_ostream<char, std::char_traits<char>>& stream)
 {
-	// Currently we only support one output format, which is Json to a location
-	// defined by the config.
-
 	rapidjson::OStreamWrapper osw(stream);
 	rapidjson::Writer<rapidjson::OStreamWrapper> writer(osw);
 
@@ -82,52 +81,46 @@ void ClashDetectionEngineUtils::writeJson(const ClashDetectionReport& report, st
 	writer.Key("clashes");
 
 	writer.StartArray();
-
-	for (const auto& clash : report.clashes)
-	{
-		writer.StartObject();
-		writer.Key("a");
-		writer.String(clash.idA.toString());
-		writer.Key("b");
-		writer.String(clash.idB.toString());
-		writer.EndObject();
+	if (!report.errors.size()) { // Don't bother to write loads of clash data if there were errors
+		for (const auto& clash : report.clashes)
+		{
+			writer.StartObject();
+			writer.Key("a");
+			writer.String(clash.idA.toString());
+			writer.Key("b");
+			writer.String(clash.idB.toString());
+			writer.Key("positions");
+			writer.StartArray();
+			for (const auto& position : clash.positions)
+			{
+				writer.StartArray();
+				writer.Double(position.x);
+				writer.Double(position.y);
+				writer.Double(position.z);
+				writer.EndArray();
+			}
+			writer.EndArray();
+			writer.Key("fingerprint");
+			writer.String(std::to_string(clash.fingerprint));
+			writer.EndObject();
+		}
 	}
-
 	writer.EndArray();
 
 	if (report.errors.size()) {
 		writer.Key("errors");
 		writer.StartArray();
-
-		for (auto& error : report.errors)
-		{
-			writer.StartObject();
-
-			if (dynamic_cast<clash::MeshBoundsException*>(error.get()) != nullptr)
-			{
-				writer.Key("type");
-				writer.String("meshBounds");
-			}
-			else if (dynamic_cast<clash::TransformBoundsException*>(error.get()) != nullptr)
-			{
-				writer.Key("type");
-				writer.String("transformBounds");
-			}
-			else {
-				writer.Key("type");
-				writer.String("unknownError");
-			}
-
-			writer.EndObject();
+		for (auto& error : report.errors) {
+			writer.String(error->toJson());
 		}
-
 		writer.EndArray();
 	}
 
 	writer.EndObject();
 }
 
-void ClashDetectionEngineUtils::writeJson(const ClashDetectionReport& report, const ClashDetectionConfig& config)
+void ClashDetectionEngineUtils::writeJson(const ClashDetectionReport& report,
+	const ClashDetectionConfig& config)
 {
 	std::ofstream outFile(config.resultsFile, std::ios::out | std::ios::trunc);
 	if (!outFile.is_open())

@@ -16,7 +16,7 @@
 */
 
 #include "geometry_tests_closed.h"
-#include "clash_exceptions.h"
+#include "geometry_exceptions.h"
 
 #include <random>
 #include <cmath> 
@@ -115,7 +115,7 @@ namespace {
 					numVertices++;
 				}
 				else {
-					throw std::runtime_error("Ray-triangle intersection reported invalid number of edges hit.");
+					throw GeometryTestException("Ray-triangle intersection reported invalid number of edges hit.");
 				}
 			}
 
@@ -158,7 +158,8 @@ namespace {
 
 bool geometry::contains(const std::vector<repo::lib::RepoVector3D64>& vertices,
 	const repo::lib::RepoBounds& bounds,
-	const MeshView& mesh)
+	const MeshView& mesh,
+	const repo::lib::RepoVector3D64 offset)
 {
 	static RandomGenerator random;
 
@@ -181,7 +182,7 @@ bool geometry::contains(const std::vector<repo::lib::RepoVector3D64>& vertices,
 
 	const auto& bvh = mesh.getBvh();
 
-	if (!encapsulates(bvh.nodes[0], bounds)) {
+	if (!encapsulates(bvh.nodes[0], bounds + offset)) {
 		return false;
 	}
 
@@ -194,6 +195,7 @@ bool geometry::contains(const std::vector<repo::lib::RepoVector3D64>& vertices,
 		size_t retryCounter = 0;
 		while(true) {
 			Ray_t ray(reinterpret_cast<const Vector_t&>(p), reinterpret_cast<const Vector_t&>(d));
+			ray.origin += reinterpret_cast<const Vector_t&>(offset);
 			intersector.reset();
 			traverser.traverse(ray, intersector);
 
@@ -215,7 +217,7 @@ bool geometry::contains(const std::vector<repo::lib::RepoVector3D64>& vertices,
 				// This exception should be caught upstream and the mesh info appended for
 				// reporting back to the user.
 
-				throw std::runtime_error("Degenerate ray-triangle retry limit exceeded");
+				throw GeometryTestException("Degenerate ray-triangle retry limit exceeded");
 			}
 		}
 

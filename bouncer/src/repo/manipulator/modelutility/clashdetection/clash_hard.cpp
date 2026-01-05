@@ -18,6 +18,7 @@
 #include "clash_hard.h"
 #include "geometry_tests.h"
 #include "geometry_tests_closed.h"
+#include "geometry_exceptions.h"
 #include "bvh_operators.h"
 #include "repo_polydepth.h"
 #include "clash_scheduler.h"
@@ -238,7 +239,7 @@ namespace {
 
 		bool operator()(const repo::lib::RepoVector3D64& m) const override {
 			for (auto c : closed) {
-				if (geometry::contains(vertices, bounds, *c)) {
+				if (geometry::contains(vertices, bounds, *c, m)) {
 					return true;
 				}
 			}
@@ -330,27 +331,34 @@ void Hard::run(const Graph& graphA, const Graph& graphB)
 			std::swap(a, b);
 		}
 
-		// Always create the contains functor - if b has no closed meshes, the
-		// operator will simply be a no-op.
+		try
+		{
+			// Always create the contains functor - if b has no closed meshes, the
+			// operator will simply be a no-op.
 
-		ContainsFunctor contains(*a, *b);
+			ContainsFunctor contains(*a, *b);
 
-		geometry::RepoPolyDepth pd(
-			a->getTriangles(),
-			b->getTriangles(),
-			&contains
-		);
-
-		pd.iterate(maxPolyDepthIterations);
-
-		auto v = pd.getPenetrationVector();
-
-		if (v.norm() > tolerance) {
-			auto clash = createClash<HardClash>(
-				a->getId(),
-				b->getId()
+			geometry::RepoPolyDepth pd(
+				a->getTriangles(),
+				b->getTriangles(),
+				&contains
 			);
-			clash->penetration = pd.getPenetrationVector();
+
+			pd.iterate(maxPolyDepthIterations);
+
+			auto v = pd.getPenetrationVector();
+
+			if (v.norm() > tolerance) {
+				auto clash = createClash<HardClash>(
+					a->getId(),
+					b->getId()
+				);
+				clash->a = a->bounds.center();
+				clash->b = b->bounds.center() + pd.getPenetrationVector();
+			}
+		}
+		catch (const geometry::GeometryTestException& e) {
+			throw DegenerateTestException(a->getId(), b->getId(), e.what());
 		}
 	}
 }
@@ -361,12 +369,18 @@ void Hard::createClashReport(const OrderedPair& objects,
 	result.idA = objects.a;
 	result.idB = objects.b;
 
-	auto p = static_cast<const HardClash&>(clash).penetration;
+	auto h = static_cast<const HardClash&>(clash);
+	result.positions = {
+		h.a,
+		h.b
+	};
 
 	size_t hash = 0;
 	std::hash<double> hasher;
-	hash ^= hasher(p.x) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-	hash ^= hasher(p.y) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-	hash ^= hasher(p.z) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+	for (auto& p : result.positions) {
+		hash ^= hasher(p.x) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+		hash ^= hasher(p.y) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+		hash ^= hasher(p.z) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+	}
 	result.fingerprint = hash;
 }

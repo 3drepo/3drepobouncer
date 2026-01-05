@@ -21,6 +21,7 @@
 #include "clash_clearance.h"
 #include "geometry_tests.h"
 #include "geometry_tests_closed.h"
+#include "geometry_exceptions.h"
 #include "bvh_operators.h"
 #include "clash_scheduler.h"
 #include "clash_node_cache.h"
@@ -204,28 +205,34 @@ void Clearance::run(const Graph& graphA, const Graph& graphB)
 		if (a->bounds > b->bounds) {
 			std::swap(a, b);
 		}
-		
-		if (b->isClosed && geometry::contains(a->getOrderedVertices(), a->bounds, *b)) {
-			// If a is completely inside b, the closest distance is zero so we can 
-			// terminate immediately.
 
-			createClash<ClearanceClash>(
-				a->getCompositeObjectId(),
-				b->getCompositeObjectId()
-			)->append({a->bounds.center(), a->bounds.center()});
-			continue;
-		}
-
-		broadphase.operator()(a->getBvh(), b->getBvh());
-		for (const auto& [aIndex, bIndex] : broadphase.results)
+		try
 		{
-			auto line = geometry::closestPoints(a->getTriangle(aIndex), b->getTriangle(bIndex));
-			if (line.magnitude() < tolerance) {
+			if (b->isClosed && geometry::contains(a->getOrderedVertices(), a->bounds, *b)) {
+				// If a is completely inside b, the closest distance is zero so we can 
+				// terminate immediately.
+
 				createClash<ClearanceClash>(
 					a->getCompositeObjectId(),
 					b->getCompositeObjectId()
-				)->append(line);
+				)->append({ a->bounds.center(), a->bounds.center() });
+				continue;
 			}
+
+			broadphase.operator()(a->getBvh(), b->getBvh());
+			for (const auto& [aIndex, bIndex] : broadphase.results)
+			{
+				auto line = geometry::closestPoints(a->getTriangle(aIndex), b->getTriangle(bIndex));
+				if (line.magnitude() < tolerance) {
+					createClash<ClearanceClash>(
+						a->getCompositeObjectId(),
+						b->getCompositeObjectId()
+					)->append(line);
+				}
+			}
+		}
+		catch (const geometry::GeometryTestException& e) {
+			throw DegenerateTestException(a->getCompositeObjectId(), b->getCompositeObjectId(), e.what());
 		}
 	}
 }

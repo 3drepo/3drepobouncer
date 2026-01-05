@@ -19,7 +19,23 @@
 
 #include <repo/manipulator/modelutility/repo_clash_detection_config.h>
 
+#define RAPIDJSON_HAS_STDSTRING 1
+#include "repo/manipulator/modelutility/rapidjson/rapidjson.h"
+#include "repo/manipulator/modelutility/rapidjson/document.h"
+#include "repo/manipulator/modelutility/rapidjson/writer.h"
+#include "repo/manipulator/modelutility/rapidjson/ostreamwrapper.h"
+
 using namespace repo::manipulator::modelutility::clash;
+
+void writeContainerParams(const repo::lib::Container& container, rapidjson::Writer<rapidjson::OStreamWrapper>& writer)
+{
+	writer.Key("teamspace");
+	writer.String(container.teamspace.c_str());
+	writer.Key("container");
+	writer.String(container.container.c_str());
+	writer.Key("revision");
+	writer.String(container.revision.toString().c_str());
+}
 
 MeshBoundsException::MeshBoundsException(const repo::lib::Container& container, const repo::lib::RepoUUID& uniqueId)
 	: container(container), uniqueId(uniqueId)
@@ -30,9 +46,43 @@ std::shared_ptr<ClashDetectionException> MeshBoundsException::clone() const {
 	return std::make_shared<MeshBoundsException>(*this);
 }
 
+std::string MeshBoundsException::toJson() const {
+	
+	std::basic_ostringstream<char> os;
+	rapidjson::OStreamWrapper osw(os);
+	rapidjson::Writer<rapidjson::OStreamWrapper> writer(osw);
+
+	writer.StartObject();
+	writer.Key("type");
+	writer.String("MeshBoundsException");
+	writeContainerParams(container, writer);
+	writer.Key("uniqueId");
+	writer.String(uniqueId.toString());
+	writer.EndObject();
+
+	return os.str();
+}
+
 TransformBoundsException::TransformBoundsException(const repo::lib::Container& container, const repo::lib::RepoUUID& uniqueId)
 	: container(container), uniqueId(uniqueId)
 {
+}
+
+std::string TransformBoundsException::toJson() const {
+
+	std::basic_ostringstream<char> os;
+	rapidjson::OStreamWrapper osw(os);
+	rapidjson::Writer<rapidjson::OStreamWrapper> writer(osw);
+
+	writer.StartObject();
+	writer.Key("type");
+	writer.String("TransformBoundsException");
+	writeContainerParams(container, writer);
+	writer.Key("uniqueId");
+	writer.String(uniqueId.toString());
+	writer.EndObject();
+
+	return os.str();
 }
 
 std::shared_ptr<ClashDetectionException> TransformBoundsException::clone() const {
@@ -44,6 +94,26 @@ OverlappingSetsException::OverlappingSetsException(std::set<repo::lib::RepoUUID>
 {
 }
 
+std::string OverlappingSetsException::toJson() const {
+
+	std::basic_ostringstream<char> os;
+	rapidjson::OStreamWrapper osw(os);
+	rapidjson::Writer<rapidjson::OStreamWrapper> writer(osw);
+
+	writer.StartObject();
+	writer.Key("type");
+	writer.String("OverlappingSetsException");
+	writer.Key("compositeIds");
+	writer.StartArray();
+	for (const auto& id : compositeIds) {
+		writer.String(id.toString());
+	}
+	writer.EndArray();
+	writer.EndObject();
+
+	return os.str();
+}
+
 std::shared_ptr<ClashDetectionException> OverlappingSetsException::clone() const {
 	return std::make_shared<OverlappingSetsException>(*this);
 }
@@ -53,15 +123,55 @@ DuplicateMeshIdsException::DuplicateMeshIdsException(const repo::lib::RepoUUID& 
 {
 }
 
+std::string DuplicateMeshIdsException::toJson() const {
+
+	std::basic_ostringstream<char> os;
+	rapidjson::OStreamWrapper osw(os);
+	rapidjson::Writer<rapidjson::OStreamWrapper> writer(osw);
+
+	writer.StartObject();
+	writer.Key("type");
+	writer.String("DuplicateMeshIdsException");
+	writer.Key("uniqueId");
+	writer.String(uniqueId.toString());
+	writer.EndObject();
+
+	return os.str();
+}
+
 std::shared_ptr<ClashDetectionException> DuplicateMeshIdsException::clone() const {
 	return std::make_shared<DuplicateMeshIdsException>(*this);
 }
 
-DegenerateMeshException::DegenerateMeshException(const repo::lib::RepoUUID& uniqueId)
-	: uniqueId(uniqueId)
+DegenerateTestException::DegenerateTestException(const repo::lib::RepoUUID& compositeIdA,
+	const repo::lib::RepoUUID& compositeIdB,
+	const char* what)
+	: compositeIdA(compositeIdA),
+	compositeIdB(compositeIdB),
+	message(what)
 {
 }
 
-std::shared_ptr<ClashDetectionException> DegenerateMeshException::clone() const {
-	return std::make_shared<DegenerateMeshException>(*this);
+std::shared_ptr<ClashDetectionException> DegenerateTestException::clone() const {
+	return std::make_shared<DegenerateTestException>(*this);
+}
+
+std::string DegenerateTestException::toJson() const {
+
+	std::basic_ostringstream<char> os;
+	rapidjson::OStreamWrapper osw(os);
+	rapidjson::Writer<rapidjson::OStreamWrapper> writer(osw);
+
+	writer.StartObject();
+	writer.Key("type");
+	writer.String("DegenerateTestException");
+	writer.Key("compositeIdA");
+	writer.String(compositeIdA.toString());
+	writer.Key("compositeIdB");
+	writer.String(compositeIdB.toString());
+	writer.Key("details");
+	writer.String(message);
+	writer.EndObject();
+
+	return os.str();
 }

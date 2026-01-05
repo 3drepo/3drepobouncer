@@ -40,6 +40,8 @@ namespace repo {
 
 					virtual std::shared_ptr<ClashDetectionException> clone() const = 0;
 					~ClashDetectionException() = default;
+
+					virtual std::string toJson() const = 0;
 				};
 
 				struct ValidationException : public ClashDetectionException {
@@ -52,12 +54,14 @@ namespace repo {
 				*/
 				struct MeshBoundsException : public ValidationException
 				{
-					MeshBoundsException(const repo::lib::Container& container, const repo::lib::RepoUUID& uniqueId);
+					MeshBoundsException(const repo::lib::Container& container, 
+						const repo::lib::RepoUUID& uniqueId);
 
 					repo::lib::Container container;
 					repo::lib::RepoUUID uniqueId;
 
 					virtual std::shared_ptr<ClashDetectionException> clone() const override;
+					virtual std::string toJson() const override;
 				};
 
 				/*
@@ -67,12 +71,15 @@ namespace repo {
 				*/
 				struct TransformBoundsException : public ValidationException
 				{
-					TransformBoundsException(const repo::lib::Container& container, const repo::lib::RepoUUID& uniqueId);
+					TransformBoundsException(const repo::lib::Container& container, 
+						const repo::lib::RepoUUID& uniqueId);
 
 					repo::lib::Container container;
 					repo::lib::RepoUUID uniqueId;
 
 					virtual std::shared_ptr<ClashDetectionException> clone() const override;
+					virtual std::string toJson() const override;
+
 				};
 
 				/*
@@ -85,6 +92,8 @@ namespace repo {
 					std::set<repo::lib::RepoUUID> compositeIds;
 
 					virtual std::shared_ptr<ClashDetectionException> clone() const override;
+					virtual std::string toJson() const override;
+
 				};
 
 				/*
@@ -96,18 +105,25 @@ namespace repo {
 					repo::lib::RepoUUID uniqueId;
 
 					virtual std::shared_ptr<ClashDetectionException> clone() const override;
+					virtual std::string toJson() const override;
+
 				};
 
 				/*
 				* Thrown when a test has failed because it is degenerate. Contains the unique
 				* Id of the MeshNode that the failed test was attempting to run on.
 				*/
-				struct DegenerateMeshException : public ClashDetectionException {
-					DegenerateMeshException(const repo::lib::RepoUUID& uniqueId);
+				struct DegenerateTestException : public ClashDetectionException {
+					DegenerateTestException(const repo::lib::RepoUUID& compositeIdA,
+						const repo::lib::RepoUUID& compositeIdB,
+						const char* what);
 
-					repo::lib::RepoUUID uniqueId;
+					repo::lib::RepoUUID compositeIdA;
+					repo::lib::RepoUUID compositeIdB;
+					std::string message;
 
 					virtual std::shared_ptr<ClashDetectionException> clone() const override;
+					virtual std::string toJson() const override;
 				};
 			}
 		}

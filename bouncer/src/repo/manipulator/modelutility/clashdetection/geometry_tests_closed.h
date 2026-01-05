@@ -18,6 +18,7 @@
 #pragma once
 
 #include <vector>
+#include <exception>
 #include "repo/lib/datastructure/repo_triangle.h"
 #include "repo/lib/datastructure/repo_vector3d.h"
 #include "repo/lib/datastructure/repo_bounds.h"
@@ -37,16 +38,18 @@ namespace geometry {
 	/*
 	* Checks if a set of vertices is entirely contained in the mesh exposed by the
 	* MeshView. A bounds should be provided for the vertices to allow for early
-	* rejections. The vertices may represent any topology. Beware that a positive
+	* rejections. The vertices may represent any topology. Beware that either
 	* result does not mean that there is no intersection between the meshes, as an
 	* edge for the source mesh may intersect the MeshView, even if all the source
 	* vertices are contained. It is a necessary precondition for the whole mesh
-	* being containde however.
+	* being contained however. An optional offset may be provided, which will be
+	* applied to the vertices before testing.
 	*/
 	bool contains(
 		const std::vector<repo::lib::RepoVector3D64>& vertices,
 		const repo::lib::RepoBounds& bounds,
-		const MeshView& mesh);
+		const MeshView& mesh,
+		const repo::lib::RepoVector3D64 offset = repo::lib::RepoVector3D64(0,0,0));
 
 	/*
 	* For a set of vertices of an open or closed mesh, reorder them so that the
