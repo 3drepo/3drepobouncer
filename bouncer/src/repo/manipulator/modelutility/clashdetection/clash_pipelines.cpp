@@ -147,7 +147,7 @@ static bool isWithinLimits(const Bvh::Node& node, double limit)
 	return true;
 }
 
-static bool validateSceneGraph(const Graph& graph)
+static void validateSceneGraph(const Graph& graph)
 {
 	// This method traverses the scene graph looking for any nodes where (a) the
 	// matrix has a translation of more than TRANSLATION_LIMIT (1e11), or the
