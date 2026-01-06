@@ -535,7 +535,7 @@ repo::test::utils::mesh::mesh_data::mesh_data(
 
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	std::uniform_int_distribution<> dist(25, 63);
+	std::uniform_int_distribution<> dist(-8e6, 8e6);
 
 	for (int i = 0; i < numVertices; i++)
 	{
