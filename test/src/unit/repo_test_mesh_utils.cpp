@@ -25,6 +25,7 @@
 #include "repo/core/model/bson/repo_bson_builder.h"
 
 #include <numbers>
+#include <random>
 
 using namespace repo::core::model;
 using namespace testing;
@@ -532,9 +533,13 @@ repo::test::utils::mesh::mesh_data::mesh_data(
 	repo::lib::RepoVector3D min = repo::lib::RepoVector3D(FLT_MAX, FLT_MAX, FLT_MAX);
 	repo::lib::RepoVector3D max = repo::lib::RepoVector3D(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<> dist(25, 63);
+
 	for (int i = 0; i < numVertices; i++)
 	{
-		vertices.push_back(repo::lib::RepoVector3D(rand() - rand(), rand() - rand(), rand() - rand()));
+		vertices.push_back(repo::lib::RepoVector3D(dist(gen), dist(gen), dist(gen)));
 		min = repo::lib::RepoVector3D::min(min, vertices[vertices.size() - 1]);
 		max = repo::lib::RepoVector3D::max(max, vertices[vertices.size() - 1]);
 	}
