@@ -287,6 +287,22 @@ TEST(Clash, Config)
 
 	EXPECT_THAT(config.setA.size(), Eq(2));
 
+	// ParseJsonFile does not guarantee to maintain the same order as in the file
+	// as it uses an unordered map internally. Here we sort for the purposes of
+	// checking the results only - in practice the order doesn't matter so no
+	// sorting is applied.
+
+	std::sort(config.setA.begin(), config.setA.end(),
+		[](const CompositeObject& a, const CompositeObject& b) {
+			return a.id < b.id;
+		}
+	);
+	std::sort(config.setB.begin(), config.setB.end(),
+		[](const CompositeObject& a, const CompositeObject& b) {
+			return a.id < b.id;
+		}
+	);
+
 	EXPECT_THAT(config.setA[0].id, Eq(repo::lib::RepoUUID("898f194c-3852-43ac-9be5-85d315838768")));
 	EXPECT_THAT(config.setA[0].meshes[0].uniqueId, Eq(repo::lib::RepoUUID("266f6406-105f-4c43-b958-5a758eb15982")));
 	EXPECT_THAT(config.setA[0].meshes[0].container->teamspace, StrEq("clash"));
