@@ -261,7 +261,7 @@ ClashDetectionReport Pipeline::runPipeline()
 		ClashDetectionResult r;
 		createClashReport(key, *clash, r); // todo: the references can be dropped once the penetration estimation is resolved for the Composite object here...
 		delete clash;
-		report.clashes.push_back(std::move(r));
+		report.clashes.push_back(r);
 	}
 
 	return report;

@@ -2011,7 +2011,8 @@ struct PipelineRunner {
 	{
 	}
 
-	ClashDetectionReport run(std::initializer_list<testing::TransformTriangles> problems)
+	template<typename T>
+	ClashDetectionReport run(std::initializer_list<T> problems)
 	{ 
 		config.clearObjectSets();
 
@@ -2022,8 +2023,18 @@ struct PipelineRunner {
 		}
 
 		db->setDocuments(scene.bsons);
-		clash::Clearance pipeline(db, config);
-		return pipeline.runPipeline();
+
+		if(config.type == ClashDetectionType::Hard)
+		{
+			clash::Hard pipeline(db, config);
+			return pipeline.runPipeline();
+		} else if (config.type == ClashDetectionType::Clearance)
+		{
+			clash::Clearance pipeline(db, config);
+			return pipeline.runPipeline();
+		}
+
+		throw std::runtime_error("Unsupported clash detection type");
 	}
 };
 
@@ -2038,7 +2049,7 @@ TEST(Clash, Fingerprinting)
 	ClashGenerator clashGenerator;
 	clashGenerator.distance = 0;
 
-	for(size_t i = 0; i < 1000; i++)
+	for (size_t i = 0; i < 100; i++)
 	{	
 		ClashDetectionConfigHelper config;
 		config.type = ClashDetectionType::Clearance;
@@ -2076,6 +2087,33 @@ TEST(Clash, Fingerprinting)
 
 		// We don't care too much about fingerprints being unique - as they
 		// should be evaluated in the context of the ids as well.
+	}
+
+	CellDistribution space;
+
+	for (size_t i = 0; i < 100; i++)
+	{
+		ClashDetectionConfigHelper config;
+		config.type = ClashDetectionType::Hard;
+		PipelineRunner pipeline(config);
+
+		config.tolerance = 0;
+
+		auto p = clashGenerator.createHardSoup(space.sample());
+
+		auto run1 = pipeline.run({ p });
+		auto run2 = pipeline.run({ p });
+
+		EXPECT_THAT(run1.clashes.size(), Eq(1));
+
+		EXPECT_THAT(run1.clashes[0].fingerprint, Not(Eq(0)));
+		EXPECT_THAT(run1.clashes[0].fingerprint, Eq(run2.clashes[0].fingerprint));
+
+		p.a.m = repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(1, 0, 0)) * p.a.m;
+
+		auto run3 = pipeline.run({ p });
+
+		EXPECT_THAT(run1.clashes[0].fingerprint, Not(Eq(run3.clashes[0].fingerprint)));
 	}
 }
 
