@@ -171,7 +171,7 @@ std::string DegenerateTestException::toJson() const {
 	writer.String(compositeIdA.toString());
 	writer.Key("compositeIdB");
 	writer.String(compositeIdB.toString());
-	writer.Key("details");
+	writer.Key("reason");
 	writer.String(message);
 	writer.EndObject();
 

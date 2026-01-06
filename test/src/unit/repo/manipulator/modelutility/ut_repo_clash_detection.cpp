@@ -3179,7 +3179,7 @@ TEST(Clash, ResultsSerialisation)
 		ClashDetectionResult result;
 		result.idA = repo::lib::RepoUUID::createUUID();
 		result.idB = repo::lib::RepoUUID::createUUID();
-		result.fingerprint = 1245678;
+		result.fingerprint = 12345678;
 		result.positions = {
 			random.vector({100,1000}),
 			random.vector({0.1, 0.99})
@@ -3238,4 +3238,101 @@ TEST(Clash, ResultsSerialisation)
 
 	config.resultsFile = getDataPath("clash/tmp_results_2.json");
 	ClashDetectionEngineUtils::writeJson(report, config);
+
+	auto readFile = [](const std::string& path) -> std::string {
+		std::ifstream file(path);
+		std::stringstream buffer;
+		buffer << file.rdbuf();
+		return buffer.str();
+		};
+
+	{
+		rapidjson::Document doc;
+		std::string json = readFile(getDataPath("clash/tmp_results_1.json"));
+		doc.Parse(json.c_str());
+
+		EXPECT_TRUE(doc.HasMember("clashes"));
+		EXPECT_TRUE(doc["clashes"].IsArray());
+		EXPECT_EQ(doc["clashes"].Size(), report.clashes.size());
+
+		for (size_t i = 0; i < report.clashes.size(); ++i) {
+			const auto& clash = report.clashes[i];
+			const auto& jsonClash = doc["clashes"][i];
+
+			EXPECT_EQ(jsonClash["a"].GetString(), clash.idA.toString());
+			EXPECT_EQ(jsonClash["b"].GetString(), clash.idB.toString());
+
+			EXPECT_EQ(jsonClash["fingerprint"].GetString(), std::to_string(clash.fingerprint));
+
+			EXPECT_TRUE(jsonClash["positions"].IsArray());
+			EXPECT_EQ(jsonClash["positions"].Size(), clash.positions.size());
+			for (size_t j = 0; j < clash.positions.size(); ++j) {
+				const auto& pos = clash.positions[j];
+				const auto& jsonPos = jsonClash["positions"][j];
+
+				EXPECT_TRUE(jsonPos.IsArray());
+				EXPECT_THAT(jsonPos[0].GetDouble(), DoubleNear(pos.x, FLT_EPSILON));
+				EXPECT_THAT(jsonPos[1].GetDouble(), DoubleNear(pos.y, FLT_EPSILON));
+				EXPECT_THAT(jsonPos[2].GetDouble(), DoubleNear(pos.z, FLT_EPSILON));
+			}
+		}
+	}
+	{
+		rapidjson::Document doc;
+		std::string json = readFile(getDataPath("clash/tmp_results_2.json"));
+		doc.Parse(json.c_str());
+
+		EXPECT_TRUE(doc.HasMember("errors"));
+		EXPECT_TRUE(doc["errors"].IsArray());
+		EXPECT_EQ(doc["errors"].Size(), report.errors.size());
+
+		{
+			const auto& error = std::dynamic_pointer_cast<MeshBoundsException>(report.errors[0]);
+			const auto& jsonError = doc["errors"][0];
+			EXPECT_EQ(jsonError["type"].GetString(), std::string("MeshBoundsException"));
+			EXPECT_EQ(jsonError["teamspace"].GetString(), error->container.teamspace);
+			EXPECT_EQ(jsonError["container"].GetString(), error->container.container);
+			EXPECT_EQ(jsonError["revision"].GetString(), error->container.revision.toString());
+			EXPECT_EQ(jsonError["uniqueId"].GetString(), error->uniqueId.toString());
+		}
+
+		{
+			const auto& error = std::dynamic_pointer_cast<TransformBoundsException>(report.errors[1]);
+			const auto& jsonError = doc["errors"][1];
+			EXPECT_EQ(jsonError["type"].GetString(), std::string("TransformBoundsException"));
+			EXPECT_EQ(jsonError["teamspace"].GetString(), error->container.teamspace);
+			EXPECT_EQ(jsonError["container"].GetString(), error->container.container);
+			EXPECT_EQ(jsonError["revision"].GetString(), error->container.revision.toString());
+			EXPECT_EQ(jsonError["uniqueId"].GetString(), error->uniqueId.toString());
+		}
+
+		{
+			const auto& error = std::dynamic_pointer_cast<OverlappingSetsException>(report.errors[2]);
+			const auto& jsonError = doc["errors"][2];
+			EXPECT_EQ(jsonError["type"].GetString(), std::string("OverlappingSetsException"));
+
+			const auto& ids = jsonError["compositeIds"].GetArray();
+			std::vector<repo::lib::RepoUUID> jsonIds;
+			for (auto& id : ids) {
+				jsonIds.push_back(repo::lib::RepoUUID(id.GetString()));
+			}
+			EXPECT_THAT(jsonIds, UnorderedElementsAreArray(overlappingSetIds));
+		}
+
+		{
+			const auto& error = std::dynamic_pointer_cast<DuplicateMeshIdsException>(report.errors[3]);
+			const auto& jsonError = doc["errors"][3];
+			EXPECT_EQ(jsonError["type"].GetString(), std::string("DuplicateMeshIdsException"));
+			EXPECT_EQ(jsonError["uniqueId"].GetString(), error->uniqueId.toString());
+		}
+
+		{
+			const auto& error = std::dynamic_pointer_cast<DegenerateTestException>(report.errors[4]);
+			const auto& jsonError = doc["errors"][4];
+			EXPECT_EQ(jsonError["type"].GetString(), std::string("DegenerateTestException"));
+			EXPECT_EQ(jsonError["compositeIdA"].GetString(), error->compositeIdA.toString());
+			EXPECT_EQ(jsonError["compositeIdB"].GetString(), error->compositeIdB.toString());
+			EXPECT_EQ(jsonError["reason"].GetString(), std::string("Degenerate Test Reason"));
+		}
+	}
 }
