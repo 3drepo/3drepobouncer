@@ -347,7 +347,7 @@ repo::lib::RepoVector3D64 RepoPolyDepth::project()
     // In the PolyDepth implementation, this is done by expressing the constraints
     // as a Linear Complementarity Problem (LCP).
 
-	constexpr size_t ContactStride = sizeof(Contact) / sizeof(double); // Eigen expects the stride to be in elements (as opposed to bytes).
+	constexpr size_t ContactStride = sizeof(Contact) / sizeof(double); // (In *elements*, not bytes, because the array pointers are typed)
 
     repo::linearalgebra::matrix::View J(
         (double*)contacts.data(),
