@@ -341,6 +341,18 @@ TEST(Clash, Config)
 	EXPECT_THAT(config.setB[2].meshes[0].container->teamspace, StrEq("clash"));
 	EXPECT_THAT(config.setB[2].meshes[0].container->container, StrEq("d6741305-7014-4d4c-af41-a1b743a35412"));
 	EXPECT_THAT(config.setB[2].meshes[0].container->revision == repo::lib::RepoUUID("f7caff9d-d2c2-440e-8b32-7cee46c23f32"), IsTrue());
+
+	config = {};
+	ClashDetectionConfig::ParseJsonFile(getDataPath("/clash/config2.json"), config);
+
+	EXPECT_THAT(config.selfIntersectsA, IsTrue());
+	EXPECT_THAT(config.selfIntersectsB, IsFalse());
+
+	config = {};
+	ClashDetectionConfig::ParseJsonFile(getDataPath("/clash/config3.json"), config);
+
+	EXPECT_THAT(config.selfIntersectsA, IsFalse());
+	EXPECT_THAT(config.selfIntersectsB, IsTrue());
 }
 
 TEST(Clash, EmptySets) 
