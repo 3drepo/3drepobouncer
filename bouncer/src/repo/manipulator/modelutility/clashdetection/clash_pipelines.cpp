@@ -259,7 +259,7 @@ ClashDetectionReport Pipeline::runPipeline()
 	for (auto& [key, clash] : clashes)
 	{
 		ClashDetectionResult r;
-		createClashReport(key, *clash, r); // todo: the references can be dropped once the penetration estimation is resolved for the Composite object here...
+		createClashReport(key, *clash, r);
 		delete clash;
 		report.clashes.push_back(r);
 	}
