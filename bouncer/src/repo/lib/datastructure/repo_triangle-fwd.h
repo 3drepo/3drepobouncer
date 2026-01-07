@@ -21,5 +21,7 @@ namespace repo {
 	namespace lib {
 		template<typename T>
 		struct _RepoTriangle;
+
+		using RepoTriangle = _RepoTriangle<double>;
 	}
 }

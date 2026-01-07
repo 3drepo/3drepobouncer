@@ -533,13 +533,9 @@ repo::test::utils::mesh::mesh_data::mesh_data(
 	repo::lib::RepoVector3D min = repo::lib::RepoVector3D(FLT_MAX, FLT_MAX, FLT_MAX);
 	repo::lib::RepoVector3D max = repo::lib::RepoVector3D(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	std::uniform_int_distribution<> dist(-8e6, 8e6);
-
 	for (int i = 0; i < numVertices; i++)
 	{
-		vertices.push_back(repo::lib::RepoVector3D(dist(gen), dist(gen), dist(gen)));
+		vertices.push_back(makeRepoVector());
 		min = repo::lib::RepoVector3D::min(min, vertices[vertices.size() - 1]);
 		max = repo::lib::RepoVector3D::max(max, vertices[vertices.size() - 1]);
 	}
