@@ -1384,7 +1384,7 @@ TEST(Clash, RvtEqual)
 	auto handler = getHandler();
 	auto container = makeTemporaryContainer();
 
-	importModel(getDataPath("/clash/revitOverlap.rvt"), *container);
+	importModel(getDataPath("/clash/revitEqual.rvt"), *container);
 
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
