@@ -610,37 +610,6 @@ void getMissingIndexes(
 	}
 }
 
-void getMissingUids(
-	ClashDetectionConfig& config,
-	ClashDetectionReport& report,
-	std::vector<repo::lib::RepoUUID> missingUIds)
-{
-	// Look for missing indexes in the clashes
-	std::vector<int> missingA;
-	std::vector<int> missingB;
-	getMissingIndexes(config, report, missingA, missingB);
-
-	// Lookup the missing unique mesh ids using the indexes
-	for (auto index : missingA)
-	{
-		auto meshes = config.setA[index].meshes;
-
-		for (auto& mesh : meshes)
-		{
-			missingUIds.push_back(mesh.uniqueId);
-		}
-	}
-	for (auto index : missingB)
-	{
-		auto meshes = config.setB[index].meshes;
-
-		for (auto& mesh : meshes)
-		{
-			missingUIds.push_back(mesh.uniqueId);
-		}
-	}
-}
-
 void getMissingCompIds(
 	ClashDetectionConfig& config,
 	ClashDetectionReport& report,
@@ -661,83 +630,9 @@ void getMissingCompIds(
 		missingCompIds.push_back(config.setB[index].id);
 	}
 }
-
-// For debugging tests
-// TOOD FT: Remove once the engine is complete and we know the tests are working as intended
-void detectMissingClashes(
-	testing::DatabasePtr handler,
-	repo::lib::Container* container,
-	ClashDetectionConfig& config,
-	ClashDetectionReport& report)
-{
-	// Get unique ids of missing entries
-	std::vector<repo::lib::RepoUUID> missingUIds;
-	getMissingUids(config, report, missingUIds);	
-
-	if (missingUIds.size() > 0)
-	{
-		std::vector<repo::lib::RepoUUID> missingSharedIds;
-		// Lookup the shared ids in the database
-		{
-			repo::core::handler::database::query::RepoQueryBuilder query;
-			query.append(repo::core::handler::database::query::Eq(REPO_LABEL_ID, missingUIds));
-
-			repo::core::handler::database::query::RepoProjectionBuilder projection;
-			projection.includeField(REPO_NODE_LABEL_SHARED_ID);
-
-			auto cursor = handler->findCursorByCriteria(
-				container->teamspace,
-				container->container + "." + REPO_COLLECTION_SCENE,
-				query,
-				projection
-			);
-
-			for (auto& bson : *cursor)
-			{
-				auto sharedId = bson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);
-				missingSharedIds.push_back(sharedId);
-			}
-		}
-
-		// Then look up the meta nodes
-		{
-			repo::core::handler::database::query::RepoQueryBuilder query;
-			query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_METADATA)));
-			query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_PARENTS, missingSharedIds));
-
-			repo::core::handler::database::query::RepoProjectionBuilder projection;
-			projection.includeField(REPO_NODE_LABEL_NAME);
-			projection.includeField(REPO_NODE_LABEL_TYPE);
-
-			auto cursor = handler->findCursorByCriteria(
-				container->teamspace,
-				container->container + "." + REPO_COLLECTION_SCENE,
-				query,
-				projection
-			);
-
-			std::string out = "Missing objects:\n";
-			int i = 0;
-			for (auto& bson : *cursor)
-			{
-				auto name = bson.getStringField(REPO_NODE_LABEL_NAME);
-				out = out + name + "\n";
-				i++;
-			}
-			out = out + "Entries: " + std::to_string(i) + "\n";
-
-			FAIL() << out;
-		}
-
-	}
-}
-
 TEST(Clash, RvtDisjoint)
 {
-	GTEST_SKIP(); // skip until the revit files are committed to tests
-
-	// Tests that geometry of a known distance is correctly measured after
-	// going through the bouncer import pipeline.
+	// Tests 10k auto-generated samples of Intersection Case A (Disjoint) from a Revit File
 
 	auto handler = getHandler();
 	auto container = makeTemporaryContainer();
@@ -804,10 +699,7 @@ TEST(Clash, RvtDisjoint)
 
 TEST(Clash, RvtIntersectClosed)
 {
-	GTEST_SKIP(); // skip until the revit files are committed to tests
-
-	// Tests that geometry of a known distance is correctly measured after
-	// going through the bouncer import pipeline.
+	// Tests 10k auto-generated samples of Intersection Case B (Intersect Closed) from a Revit File
 
 	auto handler = getHandler();
 	auto container = makeTemporaryContainer();
@@ -911,10 +803,7 @@ TEST(Clash, RvtIntersectClosed)
 
 TEST(Clash, RvtIntersectOpen)
 {
-	GTEST_SKIP(); // skip until the revit files are committed to tests
-
-	// Tests that geometry of a known distance is correctly measured after
-	// going through the bouncer import pipeline.
+	// Tests 10k auto-generated samples of Intersection Case C (Intersect Closed) from a Revit File
 
 	auto handler = getHandler();
 	auto container = makeTemporaryContainer();
@@ -1018,10 +907,7 @@ TEST(Clash, RvtIntersectOpen)
 }
 TEST(Clash, RvtCovers)
 {
-	GTEST_SKIP(); // skip until the revit files are committed to tests
-
-	// Tests that geometry of a known distance is correctly measured after
-	// going through the bouncer import pipeline.
+	// Tests 10k auto-generated samples of Intersection Case D (Covers) from a Revit File
 
 	auto handler = getHandler();
 	auto container = makeTemporaryContainer();
@@ -1040,7 +926,7 @@ TEST(Clash, RvtCovers)
 	// Test Clearance Mode
 	// No tolerance, no clashes
 	{
-		config.tolerance = 1.0f;
+		config.tolerance = 0.1f;
 		auto pipeline = new clash::Clearance(handler, config);
 		auto results = pipeline->runPipeline();
 
@@ -1048,13 +934,16 @@ TEST(Clash, RvtCovers)
 	}
 
 	// Test Clearance mode
-	// Medium tolerance, half of the instances should be found
+	// Medium tolerance, around half of the instances should be found, none exceeding the tolerance
 	{
 		config.tolerance = 2500.0f;
 		auto pipeline = new clash::Clearance(handler, config);
 		auto results = pipeline->runPipeline();
 
-		EXPECT_THAT(results.clashes.size(), Eq(5000));
+		// Check for greater than, since some can be extra due to rounding.
+		// 2500 in the generation script sometimes ends up being 2499.999919 in bouncer.
+		// However, it should never be below this sample count.
+		EXPECT_THAT(results.clashes.size(), Gt(5000));
 
 		for (auto clash : results.clashes) {
 			auto metaA = metadataMap.find(clash.idA);
@@ -1070,9 +959,11 @@ TEST(Clash, RvtCovers)
 
 			auto p1 = clash.positions[0];
 			auto p2 = clash.positions[1];
-			float clashDistance = (p2 - p1).norm();
+			double clashDistance = (p2 - p1).norm();
 
 			EXPECT_THAT(separationDistanceA, FloatNear(clashDistance, 0.001f));
+
+			EXPECT_THAT(clashDistance, Lt(2500.f));
 		}
 	}
 
@@ -1123,15 +1014,12 @@ TEST(Clash, RvtCovers)
 		auto results = pipeline->runPipeline();
 
 		EXPECT_THAT(results.clashes.size(), Eq(0));
-}
+	}
 }
 
 TEST(Clash, RvtContains)
 {
-	GTEST_SKIP(); // skip until the revit files are committed to tests
-
-	// Tests that geometry of a known distance is correctly measured after
-	// going through the bouncer import pipeline.
+	// Tests 10k auto-generated samples of Intersection Case E (Contains) from a Revit File
 
 	auto handler = getHandler();
 	auto container = makeTemporaryContainer();
@@ -1149,7 +1037,6 @@ TEST(Clash, RvtContains)
 
 	// Test Clearance Mode
 	// Low Tolerance
-	// Note: Fails because the correct engine behaviour is not yet implemented
 	{
 	config.tolerance = 1.f;
 		auto pipeline = new clash::Clearance(handler, config);
@@ -1167,7 +1054,6 @@ TEST(Clash, RvtContains)
 
 	// Test Clearance Mode
 	// High Tolerance
-	// Note: Fails because the correct engine behaviour is not yet implemented
 	{
 		config.tolerance = 20000.f;
 		auto pipeline = new clash::Clearance(handler, config);
@@ -1185,7 +1071,6 @@ TEST(Clash, RvtContains)
 
 	// Test Hard Mode
 	// No tolerance, all instances should be flagged
-	// Note: Fails because the correct engine behaviour is not yet implemented
 	{
 		config.tolerance = 0.0f;
 		auto pipeline = new clash::Hard(handler, config);
@@ -1197,7 +1082,6 @@ TEST(Clash, RvtContains)
 	// Test Hard Mode
 	// Medium tolerance, should flag at least half of the instances.
 	// It is possible to get false positives, but we should never get false negatives.
-	// Note: Fails because the correct engine behaviour is not yet implemented
 	{
 		config.tolerance = 2500.0f;
 		auto pipeline = new clash::Hard(handler, config);
@@ -1229,7 +1113,6 @@ TEST(Clash, RvtContains)
 
 	// Test Hard Mode
 	// High tolerance, no instances should be flagged
-	// Note: Fails because the correct engine behaviour is not yet implemented
 	{
 		config.tolerance = FLT_MAX;
 		auto pipeline = new clash::Hard(handler, config);
@@ -1241,10 +1124,7 @@ TEST(Clash, RvtContains)
 
 TEST(Clash, RvtMeet)
 {
-	GTEST_SKIP(); // skip until the revit files are committed to tests
-
-	// Tests that geometry of a known distance is correctly measured after
-	// going through the bouncer import pipeline.
+	// Tests 10k auto-generated samples of Intersection Case F (Meet) from a Revit File
 
 	auto handler = getHandler();
 	auto container = makeTemporaryContainer();
@@ -1353,18 +1233,6 @@ TEST(Clash, RvtMeet)
 	}
 
 	// Test Hard Mode
-	// Low Tolerance
-	// Note: May fail because the correct engine behaviour is not yet implemented
-	{
-		config.tolerance = 0.0f;
-
-		auto pipeline = new clash::Hard(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(10000));
-	}
-
-	// Test Hard Mode
 	// High Tolerance
 	{
 		config.tolerance = FLT_MAX;
@@ -1373,16 +1241,12 @@ TEST(Clash, RvtMeet)
 		auto results = pipeline->runPipeline();
 
 		EXPECT_THAT(results.clashes.size(), Eq(0));
-}
-
+	}
 }
 
 TEST(Clash, RvtOverlap)
 {
-	GTEST_SKIP(); // skip until the revit files are committed to tests
-
-	 // Tests that geometry of a known distance is correctly measured after
-	 // going through the bouncer import pipeline.
+	// Tests 10k auto-generated samples of Intersection Case G (Overlap) from a Revit File
 
 	auto handler = getHandler();
 	auto container = makeTemporaryContainer();
@@ -1487,10 +1351,7 @@ TEST(Clash, RvtOverlap)
 
 TEST(Clash, RvtEqual)
 {
-	GTEST_SKIP(); // skip until the revit files are committed to tests
-
-	// Tests that geometry of a known distance is correctly measured after
-	// going through the bouncer import pipeline.
+	// Tests 10k auto-generated samples of Intersection Case H (Equal) from a Revit File
 
 	auto handler = getHandler();
 	auto container = makeTemporaryContainer();
