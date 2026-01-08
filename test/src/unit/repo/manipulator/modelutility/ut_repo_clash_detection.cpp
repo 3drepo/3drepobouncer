@@ -667,11 +667,15 @@ TEST(Clash, RvtDisjoint)
 
 	importModel(getDataPath("/clash/revitDisjoint.rvt"), *container);
 
+	repoInfo << "Model Loaded"; // Additional output to keep Travis from timing out.
+
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
 	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
 	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
+
+	repoInfo << "Composit Created"; // Additional output to keep Travis from timing out.
 
 	EXPECT_THAT(config.setA.size(), Eq(10000));
 	EXPECT_THAT(config.setB.size(), Eq(10000));
@@ -685,6 +689,8 @@ TEST(Clash, RvtDisjoint)
 		EXPECT_THAT(results.clashes.size(), Eq(0));
 	}
 
+	repoInfo << "Completed: Clearence, No Tolerance"; // Additional output to keep Travis from timing out.
+
 	// Test Clearance Mode
 	// Tolerance so that half of the set should be included
 	{
@@ -693,6 +699,8 @@ TEST(Clash, RvtDisjoint)
 		auto results = pipeline->runPipeline();
 		EXPECT_THAT(results.clashes.size(), Eq(5000));
 	}
+
+	repoInfo << "Completed: Clearance, Medium Tolerance"; // Additional output to keep Travis from timing out.
 
 	// Test Clearance Mode (Tolerance 20,000)
 	// Tolerance so high that all instances should be included
@@ -704,6 +712,8 @@ TEST(Clash, RvtDisjoint)
 		EXPECT_THAT(results.clashes.size(), Eq(10000));
 	}
 	
+	repoInfo << "Completed: Clearance, High Tolerance"; // Additional output to keep Travis from timing out.
+	
 	// Test Hard Mode
 	// No tolerance
 	{
@@ -714,6 +724,8 @@ TEST(Clash, RvtDisjoint)
 		EXPECT_THAT(results.clashes.size(), Eq(0));
 	}
 	
+	repoInfo << "Completed: Hard, No Tolerance"; // Additional output to keep Travis from timing out.
+	
 	// Test Hard Mode
 	// High tolerance
 	{
@@ -723,6 +735,8 @@ TEST(Clash, RvtDisjoint)
 
 		EXPECT_THAT(results.clashes.size(), Eq(0));
 	}
+
+	repoInfo << "Completed: Hard, High Tolerance"; // Additional output to keep Travis from timing out.
 }
 
 TEST(Clash, RvtIntersectClosed)
@@ -733,11 +747,15 @@ TEST(Clash, RvtIntersectClosed)
 	auto container = makeTemporaryContainer();
 	importModel(getDataPath("/clash/revitIntersectClosed.rvt"), *container);
 
+	repoInfo << "Model Loaded"; // Additional output to keep Travis from timing out.
+
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
 	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
 	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
+
+	repoInfo << "Composit Created"; // Additional output to keep Travis from timing out.
 
 	EXPECT_THAT(config.setA.size(), Eq(10000));
 	EXPECT_THAT(config.setB.size(), Eq(10000));
@@ -759,6 +777,8 @@ TEST(Clash, RvtIntersectClosed)
 		}
 	}
 
+	repoInfo << "Completed: Clearence, Low Tolerance"; // Additional output to keep Travis from timing out.
+
 	// Test Clearance Mode
 	// High tolerance
 	{
@@ -776,6 +796,8 @@ TEST(Clash, RvtIntersectClosed)
 		}
 	}
 
+	repoInfo << "Completed: Clearence, High Tolerance"; // Additional output to keep Travis from timing out.
+
 	// Test Hard Mode
 	// No tolerance, should flag all instances
 	{
@@ -785,6 +807,8 @@ TEST(Clash, RvtIntersectClosed)
 
 		EXPECT_THAT(results.clashes.size(), Eq(10000));
 	}
+
+	repoInfo << "Completed: Hard, No Tolerance"; // Additional output to keep Travis from timing out.
 
 	// Test Hard Mode
 	// Medium tolerance, should flag at least half of the instances.
@@ -818,6 +842,8 @@ TEST(Clash, RvtIntersectClosed)
 		}
 	}
 
+	repoInfo << "Completed: Hard, Medium Tolerance"; // Additional output to keep Travis from timing out.
+
 	// Test Hard Mode
 	// High tolerance, all instances should be excluded
 	{
@@ -827,6 +853,9 @@ TEST(Clash, RvtIntersectClosed)
 
 		EXPECT_THAT(results.clashes.size(), Eq(0));
 	}
+
+	repoInfo << "Completed: Hard, High Tolerance"; // Additional output to keep Travis from timing out.
+
 }
 
 TEST(Clash, RvtIntersectOpen)
@@ -838,11 +867,15 @@ TEST(Clash, RvtIntersectOpen)
 
 	importModel(getDataPath("/clash/revitIntersectOpen.rvt"), *container);
 
+	repoInfo << "Model Loaded"; // Additional output to keep Travis from timing out.
+
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
 	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
 	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
+
+	repoInfo << "Composit Created"; // Additional output to keep Travis from timing out.
 
 	EXPECT_THAT(config.setA.size(), Eq(10000));
 	EXPECT_THAT(config.setB.size(), Eq(10000));
@@ -864,6 +897,8 @@ TEST(Clash, RvtIntersectOpen)
 		}
 	}
 
+	repoInfo << "Completed: Clearence, Low Tolerance"; // Additional output to keep Travis from timing out.
+
 	// Test Clearance Mode
 	// High tolerance
 	{
@@ -881,6 +916,8 @@ TEST(Clash, RvtIntersectOpen)
 		}
 	}
 
+	repoInfo << "Completed: Clearence, High Tolerance"; // Additional output to keep Travis from timing out.
+
 	// Test Hard Mode
 	// No tolerance, should flag all instances
 	{
@@ -890,6 +927,8 @@ TEST(Clash, RvtIntersectOpen)
 
 		EXPECT_THAT(results.clashes.size(), Eq(10000));
 	}
+
+	repoInfo << "Completed: Hard, No Tolerance"; // Additional output to keep Travis from timing out.
 
 	// Test Hard Mode
 	// Medium tolerance, should flag at least half of the instances.
@@ -923,6 +962,8 @@ TEST(Clash, RvtIntersectOpen)
 		}
 	}
 
+	repoInfo << "Completed: Hard, Medium Tolerance"; // Additional output to keep Travis from timing out.
+
 	// Test Hard Mode
 	// High tolerance, all instances should be excluded
 	{
@@ -932,7 +973,11 @@ TEST(Clash, RvtIntersectOpen)
 
 		EXPECT_THAT(results.clashes.size(), Eq(0));
 	}
+
+	repoInfo << "Completed: Hard, High Tolerance"; // Additional output to keep Travis from timing out.
+
 }
+
 TEST(Clash, RvtCovers)
 {
 	// Tests 10k auto-generated samples of Intersection Case D (Covers) from a Revit File
@@ -942,11 +987,15 @@ TEST(Clash, RvtCovers)
 
 	importModel(getDataPath("/clash/revitCovers.rvt"), *container);
 
+	repoInfo << "Model Loaded"; // Additional output to keep Travis from timing out.
+
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
 	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
 	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
+
+	repoInfo << "Composit Created"; // Additional output to keep Travis from timing out.
 
 	EXPECT_THAT(config.setA.size(), Eq(10000));
 	EXPECT_THAT(config.setB.size(), Eq(10000));
@@ -960,6 +1009,8 @@ TEST(Clash, RvtCovers)
 
 		EXPECT_THAT(results.clashes.size(), Eq(0));
 	}
+
+	repoInfo << "Completed: Clearence, No Tolerance"; // Additional output to keep Travis from timing out.
 
 	// Test Clearance mode
 	// Medium tolerance, around half of the instances should be found, none exceeding the tolerance
@@ -995,6 +1046,8 @@ TEST(Clash, RvtCovers)
 		}
 	}
 
+	repoInfo << "Completed: Clearance, Medium Tolerance"; // Additional output to keep Travis from timing out.
+
 	// Test Clearance mode
 	// High tolerance, all of the instances should be found
 	{
@@ -1024,6 +1077,8 @@ TEST(Clash, RvtCovers)
 		}
 	}
 
+	repoInfo << "Completed: Clearance, High Tolerance"; // Additional output to keep Travis from timing out.
+
 	// Test Hard Mode
 	// Low tolerance
 	{
@@ -1034,6 +1089,8 @@ TEST(Clash, RvtCovers)
 		EXPECT_THAT(results.clashes.size(), Eq(0));
 	}
 
+	repoInfo << "Completed: Hard, No Tolerance"; // Additional output to keep Travis from timing out.
+
 	// Test Hard Mode
 	// High tolerance
 	{
@@ -1043,6 +1100,8 @@ TEST(Clash, RvtCovers)
 
 		EXPECT_THAT(results.clashes.size(), Eq(0));
 	}
+
+	repoInfo << "Completed: Hard, High Tolerance"; // Additional output to keep Travis from timing out.
 }
 
 TEST(Clash, RvtContains)
@@ -1054,11 +1113,15 @@ TEST(Clash, RvtContains)
 
 	importModel(getDataPath("/clash/revitContains.rvt"), *container);
 
+	repoInfo << "Model Loaded"; // Additional output to keep Travis from timing out.
+
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
 	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
 	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
+
+	repoInfo << "Composit Created"; // Additional output to keep Travis from timing out.
 
 	EXPECT_THAT(config.setA.size(), Eq(10000));
 	EXPECT_THAT(config.setB.size(), Eq(10000));
@@ -1080,6 +1143,8 @@ TEST(Clash, RvtContains)
 		}
 	}
 
+	repoInfo << "Completed: Clearence, Low Tolerance"; // Additional output to keep Travis from timing out.
+
 	// Test Clearance Mode
 	// High Tolerance
 	{
@@ -1097,6 +1162,8 @@ TEST(Clash, RvtContains)
 		}
 	}
 
+	repoInfo << "Completed: Clearence, High Tolerance"; // Additional output to keep Travis from timing out.
+
 	// Test Hard Mode
 	// No tolerance, all instances should be flagged
 	{
@@ -1106,6 +1173,8 @@ TEST(Clash, RvtContains)
 
 		EXPECT_THAT(results.clashes.size(), Eq(10000));
 	}
+
+	repoInfo << "Completed: Hard, No Tolerance"; // Additional output to keep Travis from timing out.
 
 	// Test Hard Mode
 	// Medium tolerance, should flag at least half of the instances.
@@ -1139,6 +1208,8 @@ TEST(Clash, RvtContains)
 		}
 }
 
+	repoInfo << "Completed: Hard, Medium Tolerance"; // Additional output to keep Travis from timing out.
+
 	// Test Hard Mode
 	// High tolerance, no instances should be flagged
 	{
@@ -1148,6 +1219,8 @@ TEST(Clash, RvtContains)
 
 		EXPECT_THAT(results.clashes.size(), Eq(0));
 	}
+
+	repoInfo << "Completed: Hard, High Tolerance"; // Additional output to keep Travis from timing out.
 }
 
 TEST(Clash, RvtMeet)
@@ -1159,10 +1232,14 @@ TEST(Clash, RvtMeet)
 
 	importModel(getDataPath("/clash/revitMeet.rvt"), *container);
 
+	repoInfo << "Model Loaded"; // Additional output to keep Travis from timing out.
+
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
 	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
+
+	repoInfo << "Composit Created"; // Additional output to keep Travis from timing out.
 
 	EXPECT_THAT(config.setA.size(), Eq(10000));
 	EXPECT_THAT(config.setB.size(), Eq(10000));
@@ -1198,6 +1275,8 @@ TEST(Clash, RvtMeet)
 		compidToBoundsMap.insert({ compObj.id, bounds });
 	}
 
+	repoInfo << "Completed: Get Bounds"; // Additional output to keep Travis from timing out.
+
 	// Test Clearance Mode
 	// Low Tolerance
 	{
@@ -1228,6 +1307,8 @@ TEST(Clash, RvtMeet)
 			}
 		}
 	}
+
+	repoInfo << "Completed: Clearence, Low Tolerance"; // Additional output to keep Travis from timing out.
 
 	// Test Clearance Mode
 	// High Tolerance
@@ -1260,6 +1341,8 @@ TEST(Clash, RvtMeet)
 		}
 	}
 
+	repoInfo << "Completed: Clearence, High Tolerance"; // Additional output to keep Travis from timing out.
+
 	// Test Hard Mode
 	// High Tolerance
 	{
@@ -1270,6 +1353,8 @@ TEST(Clash, RvtMeet)
 
 		EXPECT_THAT(results.clashes.size(), Eq(0));
 	}
+
+	repoInfo << "Completed: Hard, High Tolerance"; // Additional output to keep Travis from timing out.
 }
 
 TEST(Clash, RvtOverlap)
@@ -1281,12 +1366,16 @@ TEST(Clash, RvtOverlap)
 
 	importModel(getDataPath("/clash/revitOverlap.rvt"), *container);
 
+	repoInfo << "Model Loaded"; // Additional output to keep Travis from timing out.
+
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
 	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
 	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
 		
+	repoInfo << "Composit Created"; // Additional output to keep Travis from timing out.
+
 	EXPECT_THAT(config.setA.size(), Eq(10000));
 	EXPECT_THAT(config.setB.size(), Eq(10000));
 
@@ -1307,6 +1396,8 @@ TEST(Clash, RvtOverlap)
 		}
 	}
 
+	repoInfo << "Completed: Clearence, No Tolerance"; // Additional output to keep Travis from timing out.
+
 	// Test Clearance Mode
 	// High Tolerance
 	{
@@ -1324,6 +1415,8 @@ TEST(Clash, RvtOverlap)
 		}
 	}
 
+	repoInfo << "Completed: Clearance, High Tolerance"; // Additional output to keep Travis from timing out.
+
 	// Test Hard Mode 
 	// Low Tolerance, should flag all instances
 	{
@@ -1333,6 +1426,8 @@ TEST(Clash, RvtOverlap)
 
 		EXPECT_THAT(results.clashes.size(), Eq(10000));
 	}
+
+	repoInfo << "Completed: Hard, No Tolerance"; // Additional output to keep Travis from timing out.
 
 	// Test Hard Mode
 	// Medium Tolerance, should flag at least half of the instances
@@ -1366,6 +1461,8 @@ TEST(Clash, RvtOverlap)
 		}
 	}
 
+	repoInfo << "Completed: Hard, Medium Tolerance"; // Additional output to keep Travis from timing out.
+
 	// Test Hard Mode
 	// High Tolerance, no instances should be flagged
 	{
@@ -1375,6 +1472,9 @@ TEST(Clash, RvtOverlap)
 
 		EXPECT_THAT(results.clashes.size(), Eq(0));
 	}
+
+
+	repoInfo << "Completed: Hard, High Tolerance"; // Additional output to keep Travis from timing out.
 }
 
 TEST(Clash, RvtEqual)
@@ -1386,11 +1486,15 @@ TEST(Clash, RvtEqual)
 
 	importModel(getDataPath("/clash/revitEqual.rvt"), *container);
 
+	repoInfo << "Model Loaded"; // Additional output to keep Travis from timing out.
+
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
 	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
 	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
+
+	repoInfo << "Composit Created"; // Additional output to keep Travis from timing out.
 
 	EXPECT_THAT(config.setA.size(), Eq(10000));
 	EXPECT_THAT(config.setB.size(), Eq(10000));
@@ -1412,6 +1516,8 @@ TEST(Clash, RvtEqual)
 		}
 	}
 
+	repoInfo << "Completed: Clearence, No Tolerance"; // Additional output to keep Travis from timing out.
+
 	// Test Clearance Mode
 	// High Tolerance
 	{
@@ -1429,6 +1535,8 @@ TEST(Clash, RvtEqual)
 		}
 	}
 
+	repoInfo << "Completed: Clearance, High Tolerance"; // Additional output to keep Travis from timing out.
+
 	// Test Hard Mode 
 	// Low Tolerance, should flag all instances
 	{
@@ -1438,6 +1546,8 @@ TEST(Clash, RvtEqual)
 
 		EXPECT_THAT(results.clashes.size(), Eq(10000));
 	}
+
+	repoInfo << "Completed: Hard, Low Tolerance"; // Additional output to keep Travis from timing out.
 
 	// Test Hard Mode
 	// Medium Tolerance, should flag at least half of the instances
@@ -1471,6 +1581,8 @@ TEST(Clash, RvtEqual)
 		}
 	}
 
+	repoInfo << "Completed: Hard, Medium Tolerance"; // Additional output to keep Travis from timing out.
+
 	// Test Hard Mode
 	// High Tolerance, no instances should be flagged
 	{
@@ -1480,6 +1592,8 @@ TEST(Clash, RvtEqual)
 
 		EXPECT_THAT(results.clashes.size(), Eq(0));
 	}
+
+	repoInfo << "Completed: Hard, High Tolerance"; // Additional output to keep Travis from timing out.
 }
 
 TEST(Clash, Nwd)
