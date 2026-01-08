@@ -17,6 +17,7 @@
 
 #include "repo_bounds.h"
 #include "repo_matrix.h"
+#include <cmath>
 #include <cfloat>
 #include <cfenv>
 
@@ -150,11 +151,22 @@ REPO_API_EXPORT repo::lib::RepoBounds repo::lib::operator*(const _RepoMatrix<dou
 	auto extents = (bounds.max() - bounds.min()) * 0.5;
 	auto transformedExtents = mAbs.transformDirection(extents);
 
-	auto transformed = repo::lib::RepoBounds(transformedCenter - transformedExtents, transformedCenter + transformedExtents);
-
 	std::fesetround(currentRoundingMode);
 
-	return transformed;
+	auto min = transformedCenter - transformedExtents;
+	auto max = transformedCenter + transformedExtents;
+
+	// Extent the bounds by the ulp in each direction, to compensate for rounding
+	// error in the calculations above.
+
+	min.x = std::nexttoward(min.x, -std::numeric_limits<double>::infinity());
+	min.y = std::nexttoward(min.y, -std::numeric_limits<double>::infinity());
+	min.z = std::nexttoward(min.z, -std::numeric_limits<double>::infinity());
+	max.x = std::nexttoward(max.x, std::numeric_limits<double>::infinity());
+	max.y = std::nexttoward(max.y, std::numeric_limits<double>::infinity());
+	max.z = std::nexttoward(max.z, std::numeric_limits<double>::infinity());
+
+	return repo::lib::RepoBounds(min,max);
 }
 
 REPO_API_EXPORT repo::lib::RepoBounds repo::lib::operator*(const _RepoVector3D<double>& scalars, const repo::lib::RepoBounds& bounds)

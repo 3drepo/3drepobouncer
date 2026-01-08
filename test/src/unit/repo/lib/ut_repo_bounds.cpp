@@ -144,8 +144,6 @@ TEST(RepoBoundsTest, TransformBounds)
 {
 	using namespace repo::lib;
 
-	//Todo: update these to use the random generator to get many more transforms involved.
-
 	restartRand(0);
 	auto m = DoubleMesh(*repo::test::utils::mesh::createRandomMesh(1000, false, 3, {}, {}));
 

@@ -176,8 +176,8 @@ bool geometry::contains(const std::vector<repo::lib::RepoVector3D64>& vertices,
 	// reordering the points so the most extreme values are tested first.
 
 	// Before performing any tests, trivially check if this mesh can contain the
-	// point set at all. If the bounds of the points do fit within the bounds of
-	// the closed mesh, there is no way that all their vertices can be within
+	// point set at all. If the bounds of the points do not fit within the bounds
+	// of the closed mesh, there is no way that all their vertices can be within
 	// the surface as well.
 
 	const auto& bvh = mesh.getBvh();
@@ -256,8 +256,8 @@ void geometry::reorderVertices(
 	// greatest extent in one of six directions. The directions are interleaved,
 	// meaning the most extreme vertices in all directions are tested first.
 
-	// This component-wise algorithm is very quick, though requires O(n) temporary
-	// allocations.
+	// This component-wise algorithm is very quick, though requires O(n) additional
+	// (temporary) memory.
 
 	// Six groups / directions: // +X, -X, +Y, -Y, +Z, -Z
 

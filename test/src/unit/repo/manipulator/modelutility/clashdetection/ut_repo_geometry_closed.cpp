@@ -197,10 +197,21 @@ TEST(Geometry, ClosedMeshContains)
 
 		EXPECT_THAT(geometry::contains(p.inside, inside, mesh), IsTrue());
 
-		// Note passing inside as the bounds here is deliberate, as it forces
-		// the actual pointwise tests to be performed.
+		// Note passing inside as the bounds here is deliberate, as it forces the
+		// actual pointwise tests to be performed.
 
 		EXPECT_THAT(geometry::contains(p.outside, inside, mesh), IsFalse());
+
+		// Applying a large offset to the points will move them outside the mesh.
+
+		EXPECT_THAT(geometry::contains(p.inside, inside, mesh, repo::lib::RepoVector3D64(100, 0, 0)), IsFalse());
+
+		// And a point that was previously outside, can be bought inside.
+
+		std::vector<repo::lib::RepoVector3D64> points;
+		points.push_back(p.outside[0]);
+		auto offset = p.inside[0] - points[0];
+		EXPECT_THAT(geometry::contains(points, repo::lib::RepoBounds(points[0], points[0]), mesh, offset), IsTrue());
 	}
 }
 

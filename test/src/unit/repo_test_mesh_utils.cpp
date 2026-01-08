@@ -25,6 +25,7 @@
 #include "repo/core/model/bson/repo_bson_builder.h"
 
 #include <numbers>
+#include <random>
 
 using namespace repo::core::model;
 using namespace testing;
@@ -534,7 +535,7 @@ repo::test::utils::mesh::mesh_data::mesh_data(
 
 	for (int i = 0; i < numVertices; i++)
 	{
-		vertices.push_back(repo::lib::RepoVector3D(rand() - rand(), rand() - rand(), rand() - rand()));
+		vertices.push_back(makeRepoVector());
 		min = repo::lib::RepoVector3D::min(min, vertices[vertices.size() - 1]);
 		max = repo::lib::RepoVector3D::max(max, vertices[vertices.size() - 1]);
 	}

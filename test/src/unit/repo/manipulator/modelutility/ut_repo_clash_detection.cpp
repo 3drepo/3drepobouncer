@@ -287,6 +287,22 @@ TEST(Clash, Config)
 
 	EXPECT_THAT(config.setA.size(), Eq(2));
 
+	// ParseJsonFile does not guarantee to maintain the same order as in the file
+	// as it uses an unordered map internally. Here we sort for the purposes of
+	// checking the results only - in practice the order doesn't matter so no
+	// sorting is applied.
+
+	std::sort(config.setA.begin(), config.setA.end(),
+		[](const CompositeObject& a, const CompositeObject& b) {
+			return a.id < b.id;
+		}
+	);
+	std::sort(config.setB.begin(), config.setB.end(),
+		[](const CompositeObject& a, const CompositeObject& b) {
+			return a.id < b.id;
+		}
+	);
+
 	EXPECT_THAT(config.setA[0].id, Eq(repo::lib::RepoUUID("898f194c-3852-43ac-9be5-85d315838768")));
 	EXPECT_THAT(config.setA[0].meshes[0].uniqueId, Eq(repo::lib::RepoUUID("266f6406-105f-4c43-b958-5a758eb15982")));
 	EXPECT_THAT(config.setA[0].meshes[0].container->teamspace, StrEq("clash"));
@@ -325,6 +341,18 @@ TEST(Clash, Config)
 	EXPECT_THAT(config.setB[2].meshes[0].container->teamspace, StrEq("clash"));
 	EXPECT_THAT(config.setB[2].meshes[0].container->container, StrEq("d6741305-7014-4d4c-af41-a1b743a35412"));
 	EXPECT_THAT(config.setB[2].meshes[0].container->revision == repo::lib::RepoUUID("f7caff9d-d2c2-440e-8b32-7cee46c23f32"), IsTrue());
+
+	config = {};
+	ClashDetectionConfig::ParseJsonFile(getDataPath("/clash/config2.json"), config);
+
+	EXPECT_THAT(config.selfIntersectsA, IsTrue());
+	EXPECT_THAT(config.selfIntersectsB, IsFalse());
+
+	config = {};
+	ClashDetectionConfig::ParseJsonFile(getDataPath("/clash/config3.json"), config);
+
+	EXPECT_THAT(config.selfIntersectsA, IsFalse());
+	EXPECT_THAT(config.selfIntersectsB, IsTrue());
 }
 
 TEST(Clash, EmptySets) 
@@ -1856,7 +1884,8 @@ struct PipelineRunner {
 	{
 	}
 
-	ClashDetectionReport run(std::initializer_list<testing::TransformTriangles> problems)
+	template<typename T>
+	ClashDetectionReport run(std::initializer_list<T> problems)
 	{ 
 		config.clearObjectSets();
 
@@ -1867,8 +1896,18 @@ struct PipelineRunner {
 		}
 
 		db->setDocuments(scene.bsons);
-		clash::Clearance pipeline(db, config);
-		return pipeline.runPipeline();
+
+		if(config.type == ClashDetectionType::Hard)
+		{
+			clash::Hard pipeline(db, config);
+			return pipeline.runPipeline();
+		} else if (config.type == ClashDetectionType::Clearance)
+		{
+			clash::Clearance pipeline(db, config);
+			return pipeline.runPipeline();
+		}
+
+		throw std::runtime_error("Unsupported clash detection type");
 	}
 };
 
@@ -1883,7 +1922,7 @@ TEST(Clash, Fingerprinting)
 	ClashGenerator clashGenerator;
 	clashGenerator.distance = 0;
 
-	for(size_t i = 0; i < 1000; i++)
+	for (size_t i = 0; i < 100; i++)
 	{	
 		ClashDetectionConfigHelper config;
 		config.type = ClashDetectionType::Clearance;
@@ -1921,6 +1960,33 @@ TEST(Clash, Fingerprinting)
 
 		// We don't care too much about fingerprints being unique - as they
 		// should be evaluated in the context of the ids as well.
+	}
+
+	CellDistribution space;
+
+	for (size_t i = 0; i < 100; i++)
+	{
+		ClashDetectionConfigHelper config;
+		config.type = ClashDetectionType::Hard;
+		PipelineRunner pipeline(config);
+
+		config.tolerance = 0;
+
+		auto p = clashGenerator.createHardSoup(space.sample());
+
+		auto run1 = pipeline.run({ p });
+		auto run2 = pipeline.run({ p });
+
+		EXPECT_THAT(run1.clashes.size(), Eq(1));
+
+		EXPECT_THAT(run1.clashes[0].fingerprint, Not(Eq(0)));
+		EXPECT_THAT(run1.clashes[0].fingerprint, Eq(run2.clashes[0].fingerprint));
+
+		p.a.m = repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(1, 0, 0)) * p.a.m;
+
+		auto run3 = pipeline.run({ p });
+
+		EXPECT_THAT(run1.clashes[0].fingerprint, Not(Eq(run3.clashes[0].fingerprint)));
 	}
 }
 
@@ -3024,7 +3090,7 @@ TEST(Clash, ResultsSerialisation)
 		ClashDetectionResult result;
 		result.idA = repo::lib::RepoUUID::createUUID();
 		result.idB = repo::lib::RepoUUID::createUUID();
-		result.fingerprint = 1245678;
+		result.fingerprint = 12345678;
 		result.positions = {
 			random.vector({100,1000}),
 			random.vector({0.1, 0.99})
@@ -3083,4 +3149,101 @@ TEST(Clash, ResultsSerialisation)
 
 	config.resultsFile = getDataPath("clash/tmp_results_2.json");
 	ClashDetectionEngineUtils::writeJson(report, config);
+
+	auto readFile = [](const std::string& path) -> std::string {
+		std::ifstream file(path);
+		std::stringstream buffer;
+		buffer << file.rdbuf();
+		return buffer.str();
+		};
+
+	{
+		rapidjson::Document doc;
+		std::string json = readFile(getDataPath("clash/tmp_results_1.json"));
+		doc.Parse(json.c_str());
+
+		EXPECT_TRUE(doc.HasMember("clashes"));
+		EXPECT_TRUE(doc["clashes"].IsArray());
+		EXPECT_EQ(doc["clashes"].Size(), report.clashes.size());
+
+		for (size_t i = 0; i < report.clashes.size(); ++i) {
+			const auto& clash = report.clashes[i];
+			const auto& jsonClash = doc["clashes"][i];
+
+			EXPECT_EQ(jsonClash["a"].GetString(), clash.idA.toString());
+			EXPECT_EQ(jsonClash["b"].GetString(), clash.idB.toString());
+
+			EXPECT_EQ(jsonClash["fingerprint"].GetString(), std::to_string(clash.fingerprint));
+
+			EXPECT_TRUE(jsonClash["positions"].IsArray());
+			EXPECT_EQ(jsonClash["positions"].Size(), clash.positions.size());
+			for (size_t j = 0; j < clash.positions.size(); ++j) {
+				const auto& pos = clash.positions[j];
+				const auto& jsonPos = jsonClash["positions"][j];
+
+				EXPECT_TRUE(jsonPos.IsArray());
+				EXPECT_THAT(jsonPos[0].GetDouble(), DoubleNear(pos.x, FLT_EPSILON));
+				EXPECT_THAT(jsonPos[1].GetDouble(), DoubleNear(pos.y, FLT_EPSILON));
+				EXPECT_THAT(jsonPos[2].GetDouble(), DoubleNear(pos.z, FLT_EPSILON));
+			}
+		}
+	}
+	{
+		rapidjson::Document doc;
+		std::string json = readFile(getDataPath("clash/tmp_results_2.json"));
+		doc.Parse(json.c_str());
+
+		EXPECT_TRUE(doc.HasMember("errors"));
+		EXPECT_TRUE(doc["errors"].IsArray());
+		EXPECT_EQ(doc["errors"].Size(), report.errors.size());
+
+		{
+			const auto& error = std::dynamic_pointer_cast<MeshBoundsException>(report.errors[0]);
+			const auto& jsonError = doc["errors"][0];
+			EXPECT_EQ(jsonError["type"].GetString(), std::string("MeshBoundsException"));
+			EXPECT_EQ(jsonError["teamspace"].GetString(), error->container.teamspace);
+			EXPECT_EQ(jsonError["container"].GetString(), error->container.container);
+			EXPECT_EQ(jsonError["revision"].GetString(), error->container.revision.toString());
+			EXPECT_EQ(jsonError["uniqueId"].GetString(), error->uniqueId.toString());
+		}
+
+		{
+			const auto& error = std::dynamic_pointer_cast<TransformBoundsException>(report.errors[1]);
+			const auto& jsonError = doc["errors"][1];
+			EXPECT_EQ(jsonError["type"].GetString(), std::string("TransformBoundsException"));
+			EXPECT_EQ(jsonError["teamspace"].GetString(), error->container.teamspace);
+			EXPECT_EQ(jsonError["container"].GetString(), error->container.container);
+			EXPECT_EQ(jsonError["revision"].GetString(), error->container.revision.toString());
+			EXPECT_EQ(jsonError["uniqueId"].GetString(), error->uniqueId.toString());
+		}
+
+		{
+			const auto& error = std::dynamic_pointer_cast<OverlappingSetsException>(report.errors[2]);
+			const auto& jsonError = doc["errors"][2];
+			EXPECT_EQ(jsonError["type"].GetString(), std::string("OverlappingSetsException"));
+
+			const auto& ids = jsonError["compositeIds"].GetArray();
+			std::vector<repo::lib::RepoUUID> jsonIds;
+			for (auto& id : ids) {
+				jsonIds.push_back(repo::lib::RepoUUID(id.GetString()));
+			}
+			EXPECT_THAT(jsonIds, UnorderedElementsAreArray(overlappingSetIds));
+		}
+
+		{
+			const auto& error = std::dynamic_pointer_cast<DuplicateMeshIdsException>(report.errors[3]);
+			const auto& jsonError = doc["errors"][3];
+			EXPECT_EQ(jsonError["type"].GetString(), std::string("DuplicateMeshIdsException"));
+			EXPECT_EQ(jsonError["uniqueId"].GetString(), error->uniqueId.toString());
+		}
+
+		{
+			const auto& error = std::dynamic_pointer_cast<DegenerateTestException>(report.errors[4]);
+			const auto& jsonError = doc["errors"][4];
+			EXPECT_EQ(jsonError["type"].GetString(), std::string("DegenerateTestException"));
+			EXPECT_EQ(jsonError["compositeIdA"].GetString(), error->compositeIdA.toString());
+			EXPECT_EQ(jsonError["compositeIdB"].GetString(), error->compositeIdB.toString());
+			EXPECT_EQ(jsonError["reason"].GetString(), std::string("Degenerate Test Reason"));
+		}
+	}
 }

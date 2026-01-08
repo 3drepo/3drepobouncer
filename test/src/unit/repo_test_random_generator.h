@@ -82,7 +82,6 @@ namespace testing {
 		repo::lib::RepoVector3D64 barycentric();
 
 		repo::lib::RepoVector3D64 barycentric(const repo::lib::RepoTriangle& a);
-
 	};
 
 	/*

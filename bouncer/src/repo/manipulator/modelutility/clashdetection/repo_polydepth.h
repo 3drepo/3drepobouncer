@@ -51,7 +51,7 @@ namespace geometry {
 	* RepoPolyDepth can be used to determine if two meshes are intersecting by
 	* checking the penetration vector after initialisation. If it is zero, they
 	* are already in a collision-free configuration. In this case, iterate has
-	* undefined behaviour and should not be called.
+	* will return without doing anything.
 	*/
 	
 	struct RepoPolyDepth

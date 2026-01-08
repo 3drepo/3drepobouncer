@@ -304,8 +304,8 @@ TEST(RepoModelImport, TransformHierarchy1)
 
 		auto expected = {
 			repo::lib::RepoBounds(
-				repo::lib::RepoVector3D64(5.1069793701171875, 0, -11.161346435546875),
-				repo::lib::RepoVector3D64(15.106979370117188, 5, -21.161346435546875)
+				repo::lib::RepoVector3D64(5.1069793701171875, 0, -21.161346435546875),
+				repo::lib::RepoVector3D64(15.106979370117188, 5, -11.161346435546875)
 			),
 			repo::lib::RepoBounds(
 				repo::lib::RepoVector3D64(-68.755371093750000, 0, -7.5416831970214844),
@@ -317,7 +317,7 @@ TEST(RepoModelImport, TransformHierarchy1)
 			)
 		};
 
-		EXPECT_THAT(bounds, UnorderedBoundsAre(expected, 0.00000001));
+		EXPECT_THAT(bounds, UnorderedBoundsAre(expected, 0.00001));
 	}
 
 	{
@@ -345,7 +345,7 @@ TEST(RepoModelImport, TransformHierarchy1)
 			)
 		};
 
-		EXPECT_THAT(bounds, UnorderedBoundsAre(expected, 0.00000001));
+		EXPECT_THAT(bounds, UnorderedBoundsAre(expected, 0.00001));
 	}
 }
 

@@ -147,7 +147,7 @@ static bool isWithinLimits(const Bvh::Node& node, double limit)
 	return true;
 }
 
-static bool validateSceneGraph(const Graph& graph)
+static void validateSceneGraph(const Graph& graph)
 {
 	// This method traverses the scene graph looking for any nodes where (a) the
 	// matrix has a translation of more than TRANSLATION_LIMIT (1e11), or the
@@ -259,9 +259,9 @@ ClashDetectionReport Pipeline::runPipeline()
 	for (auto& [key, clash] : clashes)
 	{
 		ClashDetectionResult r;
-		createClashReport(key, *clash, r); // todo: the references can be dropped once the penetration estimation is resolved for the Composite object here...
+		createClashReport(key, *clash, r);
 		delete clash;
-		report.clashes.push_back(std::move(r));
+		report.clashes.push_back(r);
 	}
 
 	return report;

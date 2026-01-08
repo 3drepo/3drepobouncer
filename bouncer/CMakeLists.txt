@@ -15,7 +15,6 @@ include_directories(
 	${SYNCHRO_READER_INCLUDE_DIR}
 	${AWSSDK_INCLUDE_DIR}
 	${CRYPTOLENS_INCLUDE_DIR}
-	${EIGEN_INCLUDE_DIR}
 	src
 	../
 	../log

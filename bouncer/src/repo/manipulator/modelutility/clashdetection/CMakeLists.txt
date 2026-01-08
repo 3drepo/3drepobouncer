@@ -33,6 +33,7 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_pipelines.h
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_pipelines_utils.h
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_scheduler.h
+	${CMAKE_CURRENT_SOURCE_DIR}/geometry_exceptions.h
 	${CMAKE_CURRENT_SOURCE_DIR}/geometry_tests.h
 	${CMAKE_CURRENT_SOURCE_DIR}/geometry_tests_closed.h
 	${CMAKE_CURRENT_SOURCE_DIR}/ordered_pair.h

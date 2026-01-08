@@ -191,8 +191,7 @@ namespace testing {
 			const std::string& database,
 			const std::string& collection,
 			repo::core::model::RepoBSON& bson) {
-			// The mock database never unloads the binaries of its internal bsons.
-			// Todo: see if we want to implement this to exercise the loading/unloading paths...
+			// (The mock database never unloads the binaries of its internal bsons so this is a no-op)
 		}
 	};
 }
