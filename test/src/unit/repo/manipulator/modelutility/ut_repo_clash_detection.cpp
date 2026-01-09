@@ -2933,6 +2933,49 @@ TEST(Clash, RepoPolyDepthOverlapsDb)
 	}
 }
 
+TEST(Clash, RepoPolyDepthDegenerateGeometry)
+{
+	// RepoPolyDepth should be robust to degenerate triangles (i.e. those that
+	// collapse to a line or a point). Ideally such primitives would not exist,
+	// but they do occur in real models, so PolyDepth should not only not crash,
+	// but should not give the wrong result either.
+
+	// To test this we create a two boxes that are intersecting, and along the
+	// diagonal of one box we insert degenerate triangles.
+
+	auto box1 = repo::test::utils::mesh::makeUnitCube();
+	auto box2 = repo::test::utils::mesh::makeUnitCube();
+
+	box2.applyTransformation(
+		repo::lib::RepoMatrix::scale(repo::lib::RepoVector3D64(4, 4, 4))
+	);
+
+	box1.applyTransformation(
+		repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(-2, 0, 0))
+	);
+
+	auto a = ClashGenerator::triangles(box1);
+	auto b = ClashGenerator::triangles(box2);
+
+	// Add a degenerate triangle to box2 - box1 will hit this.
+
+	// Note that no collision will be detected if the only geometry of box2 is
+	// degenerate. This is equivalent to clashing with a line or point, which is
+	// explicitly not supported in the current version of the engine.
+
+	b.push_back(repo::lib::RepoTriangle(
+		repo::lib::RepoVector3D64(-2,  2,  2),
+		repo::lib::RepoVector3D64(-2, -2, -2),
+		repo::lib::RepoVector3D64(-2, -2, -2)
+	));
+
+	geometry::RepoPolyDepth pd(a, b);
+	pd.iterate(10);
+
+	EXPECT_THAT(pd.getPenetrationVector(), VectorNear(repo::lib::RepoVector3D64(-0.5, 0, 0), FLT_EPSILON));
+
+}
+
 TEST(Clash, HardE2E)
 {
 	ClashGenerator clashGenerator;

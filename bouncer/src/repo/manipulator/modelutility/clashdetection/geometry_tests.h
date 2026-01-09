@@ -20,6 +20,7 @@
 #include "repo/lib/datastructure/repo_triangle.h"
 #include "repo/lib/datastructure/repo_bounds.h"
 #include "repo/lib/datastructure/repo_structs.h"
+#include "geometry_exceptions.h"
 #include <algorithm>
 
 namespace geometry {
