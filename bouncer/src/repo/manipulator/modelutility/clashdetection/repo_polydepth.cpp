@@ -418,7 +418,7 @@ repo::lib::RepoVector3D64 RepoPolyDepth::project()
 
 	auto q = Jt * x;
 
-    if (isnan(q(0)) || isnan(q(1)) || isnan(q(2))) {
+    if (std::isnan(q(0)) || std::isnan(q(1)) || std::isnan(q(2))) {
 		throw geometry::GeometryTestException("RepoPolyDepth::project: Projection resulted in NaN value(s).");
     }
 
