@@ -3479,15 +3479,15 @@ TEST(Clash, ResultsSerialisation)
 		}
 
 		{
-			const auto& error = std::dynamic_pointer_cast<DuplicateMeshIdsException>(report.errors[3]);
-			const auto& jsonError = doc["errors"][3];
+			const auto& error = std::dynamic_pointer_cast<DuplicateMeshIdsException>(report.errors[2]);
+			const auto& jsonError = doc["errors"][2];
 			EXPECT_EQ(jsonError["type"].GetString(), std::string("DuplicateMeshIdsException"));
 			EXPECT_EQ(jsonError["uniqueId"].GetString(), error->uniqueId.toString());
 		}
 
 		{
-			const auto& error = std::dynamic_pointer_cast<DegenerateTestException>(report.errors[4]);
-			const auto& jsonError = doc["errors"][4];
+			const auto& error = std::dynamic_pointer_cast<DegenerateTestException>(report.errors[3]);
+			const auto& jsonError = doc["errors"][3];
 			EXPECT_EQ(jsonError["type"].GetString(), std::string("DegenerateTestException"));
 			EXPECT_EQ(jsonError["compositeIdA"].GetString(), error->compositeIdA.toString());
 			EXPECT_EQ(jsonError["compositeIdB"].GetString(), error->compositeIdB.toString());
