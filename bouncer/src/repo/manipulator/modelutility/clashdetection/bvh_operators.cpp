@@ -69,8 +69,11 @@ void Traversal::operator()(const bvh::Bvh<double>& a) {
 	// The goal of an internal traversal is to find all pairs in a single tree
 	// that overlap eachother. The traversal operates on pairs of siblings.
 
-	std::vector<bool> frontier(a.node_count, false);
+	if (a.node_count < 2) { // A single-node tree cannot have internal overlaps.
+		return;
+	}
 
+	std::vector<bool> frontier(a.node_count, false);
 	std::stack<std::pair<size_t, size_t>> pairs;
 	auto& root = a.nodes[0];
 	pairs.push({ root.first_child_or_primitive + 0, root.first_child_or_primitive + 1 });
