@@ -418,6 +418,10 @@ repo::lib::RepoVector3D64 RepoPolyDepth::project()
 
 	auto q = Jt * x;
 
+    if (std::isnan(q(0)) || std::isnan(q(1)) || std::isnan(q(2))) {
+		throw geometry::GeometryTestException("RepoPolyDepth::project: Projection resulted in NaN value(s).");
+    }
+
 	return repo::lib::RepoVector3D64(q(0), q(1), q(2)) * 0.25;
 }
 
@@ -481,6 +485,10 @@ void RepoPolyDepth::addContact(
 {
     auto c = normal.dotProduct(point);
     auto n = normal;
+
+    if (n.norm() < FLT_EPSILON) {
+        return; // Degenerate primitives do not take part in contact resolution.
+    }
 
     // Describe the plane such that point (which will be qi) always lies on the
     // positive side of it.
