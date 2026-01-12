@@ -73,6 +73,11 @@ namespace testing {
 			std::initializer_list<repo::lib::RepoUUID> uniqueIdsB
 		);
 
+		void setCompositeObjects(
+			std::initializer_list<repo::lib::RepoUUID> uniqueIdsA,
+			std::initializer_list<repo::lib::RepoUUID> uniqueIdsB
+		);
+
 		/*
 		* Gets the revision for Container 0, which is the container created by the
 		* constructor, and to which composite objects are added by the helper methods.
@@ -339,6 +344,7 @@ namespace testing {
 
 		UUIDPair add(TransformMeshes meshes);
 
+		repo::lib::RepoUUID add(TransformMesh mesh);
 	};
 
 	/*

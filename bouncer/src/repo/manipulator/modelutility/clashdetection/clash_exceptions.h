@@ -45,7 +45,6 @@ namespace repo {
 				};
 
 				struct ValidationException : public ClashDetectionException {
-
 				};
 
 				/*
@@ -79,21 +78,6 @@ namespace repo {
 
 					virtual std::shared_ptr<ClashDetectionException> clone() const override;
 					virtual std::string toJson() const override;
-
-				};
-
-				/*
-				* Thrown when a Composite Object in set A has the same Id as one in set B.
-				*/
-				struct OverlappingSetsException : public ValidationException
-				{
-					OverlappingSetsException(std::set<repo::lib::RepoUUID> overlappingCompositeIds);
-					
-					std::set<repo::lib::RepoUUID> compositeIds;
-
-					virtual std::shared_ptr<ClashDetectionException> clone() const override;
-					virtual std::string toJson() const override;
-
 				};
 
 				/*
@@ -106,7 +90,6 @@ namespace repo {
 
 					virtual std::shared_ptr<ClashDetectionException> clone() const override;
 					virtual std::string toJson() const override;
-
 				};
 
 				/*

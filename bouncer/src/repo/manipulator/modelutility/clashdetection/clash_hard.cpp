@@ -248,7 +248,7 @@ namespace {
 	};
 }
 
-void Hard::run(const Graph& graphA, const Graph& graphB)
+void Hard::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 {
 	// Broadphase results are individual mesh nodes that potentially intersect.
 	// From these we need to build the full composite objects for the narrow-
@@ -257,20 +257,25 @@ void Hard::run(const Graph& graphA, const Graph& graphB)
 
 	Cache cacheA(graphA);
 	Cache cacheB(graphB);
+	Cache cacheC(graphC);
 
 	std::set<std::pair<Cache::Record*, Cache::Record*>> compositePairs;
 
 	HardBroadphase broadphase;
 
-	broadphase.operator()(graphA.bvh, graphB.bvh);
-	for (auto [a, b] : broadphase.results) {
-		compositePairs.insert({
-			cacheA.get(graphA.getCompositeObject(a)),
-			cacheB.get(graphB.getCompositeObject(b))
-		});
-	}
+	auto interBroadphase = [&](const Graph& gA, const Graph& gB,
+		Cache& cA, Cache& cB)
+	{
+		broadphase.operator()(gA.bvh, gB.bvh);
+		for (auto& [a, b] : broadphase.results) {
+			compositePairs.insert({
+				cA.get(gA.getCompositeObject(a)),
+				cB.get(gB.getCompositeObject(b))
+			});
+		}
+	};
 
-	auto selfIntersectionBroadphase = [&](const Graph& graph, Cache& cache) {
+	auto intraBroadphase = [&](const Graph& graph, Cache& cache) {
 		broadphase.operator()(graph.bvh);
 		for (auto& [a, b] : broadphase.results) {
 			auto& compA = graph.getCompositeObject(a);
@@ -287,13 +292,19 @@ void Hard::run(const Graph& graphA, const Graph& graphB)
 		}
 	};
 
+	interBroadphase(graphA, graphB, cacheA, cacheB);
+	interBroadphase(graphA, graphC, cacheA, cacheC);
+	interBroadphase(graphB, graphC, cacheB, cacheC);
+
 	if (config.selfIntersectsA) {
-		selfIntersectionBroadphase(graphA, cacheA);
+		intraBroadphase(graphA, cacheA);
 	}
 
 	if (config.selfIntersectsB) {
-		selfIntersectionBroadphase(graphB, cacheB);
+		intraBroadphase(graphB, cacheB);
 	}
+
+	intraBroadphase(graphC, cacheC);
 
 	std::vector<std::pair<Cache::Record*, Cache::Record*>> orderedCompositePairs(
 		compositePairs.begin(),

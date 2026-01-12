@@ -38,7 +38,7 @@ namespace repo {
 						repo::lib::RepoVector3D64 b;
 					};
 
-					void run(const Graph& graphA, const Graph& graphB) override;
+					void run(const Graph& graphA, const Graph& graphB, const Graph& graphC) override;
 
 					void createClashReport(
 						const OrderedPair& objects, 

@@ -2210,44 +2210,99 @@ TEST(Clash, SelfClearance)
 		helper.createCompositeObject(c.get(), "Cube7")
 	};
 	
+	// Should support self-clash tests when the flag is set. If the flag is present
+	// for one set, the other set may be empty.
+
+	ClashDetectionConfig config;
+	config.setA.insert(config.setA.end(), set.begin(), set.end());
+	config.selfIntersectsA = true;
+	config.tolerance = 1;
+	config.type = ClashDetectionType::Clearance;
+
+	auto pipeline = new clash::Clearance(handler, config);
+	auto results = pipeline->runPipeline();
+
+	EXPECT_THAT(results.clashes.size(), Eq(3));
+}
+
+TEST(Clash, OverlappingSets)
+{
+	// If a CompositeId is present in both sets, then those Ids should be tested
+	// against both sets, and within themselves as well.
+
+	// Creates four boxes all within the tolerance of eachother.
+
+	auto db = std::make_shared<MockDatabase>();
+	ClashDetectionConfigHelper config;
+
+	auto box = test::utils::mesh::makeUnitCube();
+
 	{
-		// Composite Objects may only appear in one set. If the goal is self-clash,
-		// then the appropriate flag should be used instead.
+		config.tolerance = 0.05;
+		auto d = 0.4;
 
-		ClashDetectionConfig config;
-		config.setA.insert(config.setA.end(), set.begin(), set.end());
-		config.setB.insert(config.setB.end(), set.begin(), set.end());
-		config.tolerance = 1;
-		config.type = ClashDetectionType::Clearance;
+		MockClashScene scene(config.getRevision());
 
-		auto pipeline = new clash::Clearance(handler, config);
-		try {
-			auto results = pipeline->runPipeline();
-			FAIL() << "Expected OverlappingSetsException due to due to self-tests.";
+		auto b1 = scene.add(TransformedEntity{ box, repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(-d,  d, 0)) });
+		auto b2 = scene.add(TransformedEntity{ box, repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(d,  d, 0)) });
+		auto b3 = scene.add(TransformedEntity{ box, repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(-d, -d, 0)) });
+		auto b4 = scene.add(TransformedEntity{ box, repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(d, -d, 0)) });
+
+		db->setDocuments(scene.bsons);
+
+		{
+			// If we split the boxes down the middle, we should get four clashes - 
+			// the outer product between the two sets.
+
+			config.setCompositeObjects({ b1, b2 }, { b3, b4 });
+
+			{
+				clash::Clearance pipeline(db, config);
+				auto results = pipeline.runPipeline();
+				EXPECT_THAT(results.clashes.size(), Eq(4));
+			}
+			{
+				clash::Hard pipeline(db, config);
+				auto results = pipeline.runPipeline();
+				EXPECT_THAT(results.clashes.size(), Eq(4));
+			}
 		}
-		catch (const clash::ClashDetectionException& ex) {
-			auto exception = dynamic_cast<const clash::OverlappingSetsException*>(&ex);
-			EXPECT_THAT(exception != nullptr, IsTrue());
+
+		{
+			// One box now sits in both sets, so we expect five clashes, because the
+			// shared box will clash with the box on its side of the split as well.
+
+			config.setCompositeObjects({ b1, b2, b3 }, { b3, b4 });
+			{
+				clash::Clearance pipeline(db, config);
+				auto results = pipeline.runPipeline();
+				EXPECT_THAT(results.clashes.size(), Eq(5));
+			}
+			{
+				clash::Hard pipeline(db, config);
+				auto results = pipeline.runPipeline();
+				EXPECT_THAT(results.clashes.size(), Eq(5));
+			}
 		}
-		catch (std::exception& e) {
-			FAIL() << "Expected OverlappingSetsException due to self-tests: " << e.what();
+
+		{
+			// With an entire side of the split shared between both sets, we expect
+			// six clashes - each box on one side clashing with both boxes on the
+			// other, the self-clash between the shared ones, and the clash beween
+			// the two unique ones on the sides of the first split.
+
+			config.setCompositeObjects({ b1, b3, b4 }, { b2, b3, b4 });
+			{
+				clash::Clearance pipeline(db, config);
+				auto results = pipeline.runPipeline();
+				EXPECT_THAT(results.clashes.size(), Eq(6));
+			}
+			{
+				clash::Hard pipeline(db, config);
+				auto results = pipeline.runPipeline();
+				EXPECT_THAT(results.clashes.size(), Eq(6));
+			}
 		}
-	}
-
-	{
-		// Should support self-clash tests when the flag is set. If the flag is present
-		// for one set, the other set may be empty.
-
-		ClashDetectionConfig config;
-		config.setA.insert(config.setA.end(), set.begin(), set.end());
-		config.selfIntersectsA = true;
-		config.tolerance = 1;
-		config.type = ClashDetectionType::Clearance;
-		
-		auto pipeline = new clash::Clearance(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(3));
 	}
 }
 
@@ -3340,12 +3395,6 @@ TEST(Clash, ResultsSerialisation)
 	};
 
 	report.errors.push_back(
-		std::make_shared<OverlappingSetsException>(
-			overlappingSetIds
-		)
-	);
-
-	report.errors.push_back(
 		std::make_shared<DuplicateMeshIdsException>(
 			repo::lib::RepoUUID::createUUID()
 		)
@@ -3427,19 +3476,6 @@ TEST(Clash, ResultsSerialisation)
 			EXPECT_EQ(jsonError["container"].GetString(), error->container.container);
 			EXPECT_EQ(jsonError["revision"].GetString(), error->container.revision.toString());
 			EXPECT_EQ(jsonError["uniqueId"].GetString(), error->uniqueId.toString());
-		}
-
-		{
-			const auto& error = std::dynamic_pointer_cast<OverlappingSetsException>(report.errors[2]);
-			const auto& jsonError = doc["errors"][2];
-			EXPECT_EQ(jsonError["type"].GetString(), std::string("OverlappingSetsException"));
-
-			const auto& ids = jsonError["compositeIds"].GetArray();
-			std::vector<repo::lib::RepoUUID> jsonIds;
-			for (auto& id : ids) {
-				jsonIds.push_back(repo::lib::RepoUUID(id.GetString()));
-			}
-			EXPECT_THAT(jsonIds, UnorderedElementsAreArray(overlappingSetIds));
 		}
 
 		{

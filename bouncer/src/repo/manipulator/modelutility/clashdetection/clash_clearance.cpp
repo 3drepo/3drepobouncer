@@ -139,7 +139,7 @@ namespace {
 	};
 }
 
-void Clearance::run(const Graph& graphA, const Graph& graphB)
+void Clearance::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 {
 	Cache cache;
 	ClearanceBroadphase broadphase(tolerance);
@@ -149,15 +149,21 @@ void Clearance::run(const Graph& graphA, const Graph& graphB)
 	// A single node may appear in both intra and inter set tests, so we collect
 	// and schedule all of these as one.
 
-	broadphase.operator()(graphA.bvh, graphB.bvh);
-	for (auto [a, b] : broadphase.results) {
-		broadphaseResults.push_back({
-			cache.get(graphA.getNode(a)),
-			cache.get(graphB.getNode(b))
-		});
-	}
+	auto interBroadphase = [&](const Graph& gA, const Graph& gB) {
+		broadphase.operator()(gA.bvh, gB.bvh);
+		for (auto [a, b] : broadphase.results) {
+			broadphaseResults.push_back({
+				cache.get(gA.getNode(a)),
+				cache.get(gB.getNode(b))
+			});
+		}
+	};
 
-	auto selfIntersectionBroadphase = [&](const Graph& graph) {
+	interBroadphase(graphA, graphB);
+	interBroadphase(graphA, graphC);
+	interBroadphase(graphB, graphC);
+
+	auto intraBroadphase = [&](const Graph& graph) {
 		broadphase.operator()(graph.bvh);
 		for(auto [a, b] : broadphase.results) {
 			broadphaseResults.push_back({
@@ -168,12 +174,14 @@ void Clearance::run(const Graph& graphA, const Graph& graphB)
 	};
 
 	if(config.selfIntersectsA) {
-		selfIntersectionBroadphase(graphA);
+		intraBroadphase(graphA);
 	}
 
 	if (config.selfIntersectsB) {
-		selfIntersectionBroadphase(graphB);
+		intraBroadphase(graphB);
 	}
+
+	intraBroadphase(graphC);
 
 	ClashScheduler::schedule(broadphaseResults);
 

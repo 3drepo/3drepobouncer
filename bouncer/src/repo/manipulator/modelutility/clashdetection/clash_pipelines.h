@@ -97,17 +97,16 @@ namespace repo {
 					ClashDetectionReport runPipeline();
 
 				protected:
-					virtual void run(const Graph& graphA, const Graph& graphB) = 0;
+					/*
+					* Perform the clash detection between the three graphs - all graphs will be
+					* disjoint. graphC must always perform a self-intersection.
+					*/
+					virtual void run(const Graph& graphA, const Graph& graphB, const Graph& graphC) = 0;
 					virtual void createClashReport(const OrderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const = 0;
 
 					DatabasePtr handler;
 
 					const repo::manipulator::modelutility::ClashDetectionConfig& config;
-
-					// These are initialised at the beginning of runPipeline.
-
-					std::unique_ptr<Graph> graphA;
-					std::unique_ptr<Graph> graphB;
 
 					std::unordered_map<OrderedPair, CompositeClash*, OrderedPairHasher> clashes;
 

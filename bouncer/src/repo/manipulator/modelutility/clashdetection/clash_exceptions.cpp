@@ -91,35 +91,6 @@ std::shared_ptr<ClashDetectionException> TransformBoundsException::clone() const
 	return std::make_shared<TransformBoundsException>(*this);
 }
 
-OverlappingSetsException::OverlappingSetsException(std::set<repo::lib::RepoUUID> overlappingCompositeIds)
-	:compositeIds(overlappingCompositeIds)
-{
-}
-
-std::string OverlappingSetsException::toJson() const {
-
-	std::basic_ostringstream<char> os;
-	rapidjson::OStreamWrapper osw(os);
-	rapidjson::Writer<rapidjson::OStreamWrapper> writer(osw);
-
-	writer.StartObject();
-	writer.Key("type");
-	writer.String("OverlappingSetsException");
-	writer.Key("compositeIds");
-	writer.StartArray();
-	for (const auto& id : compositeIds) {
-		writer.String(id.toString());
-	}
-	writer.EndArray();
-	writer.EndObject();
-
-	return os.str();
-}
-
-std::shared_ptr<ClashDetectionException> OverlappingSetsException::clone() const {
-	return std::make_shared<OverlappingSetsException>(*this);
-}
-
 DuplicateMeshIdsException::DuplicateMeshIdsException(const repo::lib::RepoUUID& uniqueId)
 	: uniqueId(uniqueId)
 {

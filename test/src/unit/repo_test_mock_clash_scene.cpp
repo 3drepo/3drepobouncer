@@ -68,6 +68,15 @@ void ClashDetectionConfigHelper::addCompositeObjects(
 	}
 }
 
+void ClashDetectionConfigHelper::setCompositeObjects(
+	std::initializer_list<repo::lib::RepoUUID> uniqueIdsA,
+	std::initializer_list<repo::lib::RepoUUID> uniqueIdsB
+)
+{
+	clearObjectSets();
+	addCompositeObjects(uniqueIdsA, uniqueIdsB);
+}
+
 const repo::lib::RepoUUID& testing::ClashDetectionConfigHelper::getRevision()
 {
 	return this->containers[0]->revision;
@@ -182,6 +191,17 @@ UUIDPair MockClashScene::add(TransformMeshes meshes)
 	bsons.push_back(m2.getBSON());
 
 	return { m1.getUniqueID(), m2.getUniqueID() };
+}
+
+repo::lib::RepoUUID MockClashScene::add(TransformMesh meshes)
+{
+	auto t1 = add(meshes.m);
+	auto m1 = meshes.e;
+	m1.setUniqueID(repo::lib::RepoUUID::createUUID());
+	m1.setSharedID(repo::lib::RepoUUID::createUUID());
+	m1.addParent(t1.getSharedID());
+	bsons.push_back(m1.getBSON());
+	return m1.getUniqueID();
 }
 
 UUIDPair MockClashScene::add(TransformMeshes meshes, ClashDetectionConfigHelper& config)
