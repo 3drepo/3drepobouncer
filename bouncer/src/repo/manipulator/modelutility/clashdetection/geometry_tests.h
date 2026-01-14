@@ -47,6 +47,12 @@ namespace geometry {
         * the triangles are in-contact or have a hard intersection.
         */
         bool intersects;
+
+		/*
+		* If intersects is true, contains the amount by which the triangles
+		* would have to move to resolve the penetration.
+		*/
+		double depth;
 	};
 
     /*
@@ -57,7 +63,8 @@ namespace geometry {
     */
     FaceFaceResult closestPoints(
         const repo::lib::RepoTriangle& A, 
-        const repo::lib::RepoTriangle& B
+        const repo::lib::RepoTriangle& B,
+		double threshold = 0.0
     );
 
     /*

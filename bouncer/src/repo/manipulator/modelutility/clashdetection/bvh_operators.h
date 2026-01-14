@@ -53,6 +53,12 @@ namespace bvh {
 		);
 
 		void build(bvh::Bvh<double>& bvh,
+			const std::vector<repo::lib::RepoVector3D64>& vertices,
+			const repo::lib::repo_face_t* faces,
+			size_t numFaces
+		);
+
+		void build(bvh::Bvh<double>& bvh,
 			const std::vector<repo::lib::_RepoTriangle<double>>& triangles
 		);
 

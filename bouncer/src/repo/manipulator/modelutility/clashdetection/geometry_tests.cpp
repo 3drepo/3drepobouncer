@@ -204,7 +204,10 @@ repo::lib::RepoLine lineFaceIntersection(const repo::lib::RepoLine& B, const rep
     }
 }
 
-FaceFaceResult geometry::closestPoints(const repo::lib::RepoTriangle& A, const repo::lib::RepoTriangle& B)
+FaceFaceResult geometry::closestPoints(
+	const repo::lib::RepoTriangle& A, 
+	const repo::lib::RepoTriangle& B,
+	double threshold)
 {
     // Ericson, C. (2004). Real-Time Collision Detection. CRC Press.
 
