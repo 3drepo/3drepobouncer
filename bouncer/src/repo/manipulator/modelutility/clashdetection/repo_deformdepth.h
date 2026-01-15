@@ -131,17 +131,16 @@ namespace geometry {
 		*/
 		void refitBvh(const repo::lib::RepoVector3D64& m);
 
-		struct Displacement {
-			size_t count;
-			repo::lib::RepoVector3D64 displacement;
-		};
-
-		struct Contact {
-			size_t vertexIndex;
+		struct Plane {
+			repo::lib::RepoVector3D64 point;
 			repo::lib::RepoVector3D64 normal;
 		};
 
-		std::vector<Displacement> displacements;
+		struct Contacts {
+			std::vector<Plane> constraints;
+		};
+
+		std::vector<Contacts> contacts;
 
 		void resetDisplacements();
 
@@ -159,8 +158,6 @@ namespace geometry {
 		* be careful not to make this too large.
 		*/
 		size_t numLocalSearchSteps = 5;
-
-
 	};
 
 

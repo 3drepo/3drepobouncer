@@ -24,13 +24,14 @@
 #include "bvh_operators.h"
 
 #include <fstream>
+#include <iomanip>
 
 using namespace geometry;
 using namespace repo::lib;
 
 using Bvh = bvh::Bvh<double>;
 
-//#pragma optimize("", off)
+#pragma optimize("", off)
 
 namespace {
 	repo::lib::RepoBounds repoBounds(const bvh::Bvh<double>::Node& a) {
@@ -109,7 +110,7 @@ RepoDeformDepth::RepoDeformDepth(
 	bvhA(buildBvh(a)),
 	bvhB(buildBvh(b))
 {
-	displacements.resize(a.vertices.size());
+	contacts.resize(a.vertices.size());
 
 	// If there is no intersection, there is nothing to do, which we signal by
 	// already setting the configuration distance to zero.
@@ -185,7 +186,9 @@ double RepoDeformDepth::getPenetrationDepth() const
 
 void RepoDeformDepth::resetDisplacements()
 {
-	memset(displacements.data(), 0, sizeof(Displacement) * displacements.size());
+	for (auto& c : contacts) {
+		c.constraints.clear();
+	}
 }
 
 bool RepoDeformDepth::intersect()
@@ -247,8 +250,8 @@ bool RepoDeformDepth::intersect(const repo::lib::RepoVector3D64& m)
 
 				const auto& face = a.faces[_a];
 				for (const auto& index : face) {
-					displacements[index].count++;
-					displacements[index].displacement += triA.normal() * -tolerance * 0.25;
+					auto& c = contacts[index];
+					c.constraints.push_back({ vertices[index] - triA.normal() * -tolerance * 0.25, triA.normal()});
 				}
 
 				intersecting = true;
@@ -273,10 +276,28 @@ bool RepoDeformDepth::updateConfiguration()
 {
 	bool updated = false;
 	for (size_t vi = 0; vi < a.vertices.size(); vi++) {
-		const auto& d = displacements[vi];
-		if (d.count > 0) {
-			auto dv = d.displacement / (double)d.count;
-			vertices[vi] += dv;
+		const auto& c = contacts[vi];
+		if (c.constraints.size() > 0) {
+
+			for (int i = 0; i < 100; i++) { // Limit to 100 iterations per vertex
+				bool solved = true;
+
+				// Attempts to solve the vertex position by projecting it onto the
+				// positive size of each plane in turn.
+				for (auto& p : c.constraints) {
+					auto toPoint = vertices[vi] - p.point;
+					auto dist = toPoint.dotProduct(p.normal);
+					if (dist < 0) {
+						vertices[vi] += p.normal * -dist;
+						solved = false;
+					}
+				}
+
+				if (solved) {
+					break;
+				}
+			}
+
 			updated = true;
 		}
 	}
