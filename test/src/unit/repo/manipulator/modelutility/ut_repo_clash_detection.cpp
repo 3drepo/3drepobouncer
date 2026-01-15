@@ -620,11 +620,11 @@ void getMissingIndexes(
 			auto clashCompIdA = report.clashes[j].idA;
 			auto clashCompIdB = report.clashes[j].idB;
 
-			if (clashCompIdA == compIdA) {
+			if (compIdA == clashCompIdA || compIdA == clashCompIdB) {
 				foundA = true;
 			}
 
-			if (clashCompIdB == compIdB) {
+			if (compIdB == clashCompIdA || compIdB == clashCompIdB) {
 				foundB = true;
 			}
 		}
@@ -830,9 +830,7 @@ void RunRvtIntersectClosedTest(
 				if (metaEntry != metadataMap.end())
 				{
 					double minPenDepth = boost::get<double>(metaEntry->second["Dimensions::MinPenDepth"]);
-					// TODO: Currently there is an issue with the generation.
-					// Will be reinstated once the files have been regenerated.
-					// EXPECT_THAT(minPenDepth, Lt(2500.0f));
+					EXPECT_THAT(minPenDepth, Lt(2500.0f));
 }
 				else
 				{
@@ -1046,9 +1044,7 @@ void RunRvtCoversTest(
 				if (metaEntry != metadataMap.end())
 				{
 					double separationDistance = boost::get<double>(metaEntry->second["Dimensions::ShortestDist"]);
-					// TODO: Currently there is an issue with the generation.
-					// Will be reinstated once the files have been regenerated.
-					// EXPECT_THAT(separationDistance, Lt(2500.0f));
+					EXPECT_THAT(separationDistance, Gt(2500.0f));
 				}
 				else
 				{
@@ -1212,9 +1208,7 @@ void RunRvtContainsTest(
 				if (metaEntry != metadataMap.end())
 				{
 					double minPenDepth = boost::get<double>(metaEntry->second["Dimensions::ShortestDist"]);
-					// TODO: Currently there is an issue with the generation.
-					// Will be reinstated once the files have been regenerated.
-					// EXPECT_THAT(minPenDepth, Lt(2500.0f));
+					EXPECT_THAT(minPenDepth, Lt(2500.0f));
 				}
 				else
 				{
@@ -1480,9 +1474,7 @@ void RunRvtOverlapTest(
 				if (metaEntry != metadataMap.end())
 				{
 					double minPenDepth = boost::get<double>(metaEntry->second["Dimensions::PenDepth"]);
-					// TODO: Currently there is an issue with the generation.
-					// Will be reinstated once the files have been regenerated.
-					// EXPECT_THAT(minPenDepth, Lt(2500.0f));
+					EXPECT_THAT(minPenDepth, Lt(2500.0f));
 				}
 				else
 				{
@@ -1521,8 +1513,6 @@ TEST(Clash, RvtOverlap)
 
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
-
-		repoError << fileName;
 
 		RunRvtOverlapTest(container, samplesPerSegment);
 	}
@@ -1607,9 +1597,7 @@ void RunRvtEqualTest(
 				if (metaEntry != metadataMap.end())
 				{
 					double minPenDepth = boost::get<double>(metaEntry->second["Dimensions::PenDepth"]);
-					// TODO: Currently there is an issue with the generation.
-					// Will be reinstated once the files have been regenerated.
-					// EXPECT_THAT(minPenDepth, Lt(2500.0f));
+					EXPECT_THAT(minPenDepth, Lt(2500.0f));
 				}
 				else
 				{
