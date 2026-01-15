@@ -20,8 +20,10 @@
 #include <repo/lib/datastructure/repo_vector.h>
 #include <repo/lib/datastructure/repo_container.h>
 #include <repo/lib/datastructure/repo_triangle.h>
+#include <repo/lib/datastructure/repo_structs.h>
 #include <repo/manipulator/modelutility/repo_clash_detection_engine.h>
 #include <repo/manipulator/modelutility/repo_clash_detection_config.h>
+#include <repo/manipulator/modelutility/clashdetection/geometry_utils.h>
 #include <repo/core/handler/repo_database_handler_mongo.h>
 #include <repo/core/model/bson/repo_node_mesh.h>
 
@@ -48,7 +50,7 @@ namespace testing {
 			const repo::core::model::RepoBSON& bson, 
 			std::set<repo::lib::RepoUUID>& uuids);
 
-		std::vector<repo::core::model::RepoBSON> getChildMeshNodes(
+		geometry::RepoIndexedMesh getChildMeshNodes(
 			repo::lib::Container* container,
 			const std::string name);
 

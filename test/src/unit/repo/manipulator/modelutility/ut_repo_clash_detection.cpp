@@ -47,15 +47,17 @@
 #include <repo/manipulator/modelutility/clashdetection/clash_hard.h>
 #include <repo/manipulator/modelutility/clashdetection/sparse_scene_graph.h>
 #include <repo/manipulator/modelutility/clashdetection/geometry_tests.h>
+#include <repo/manipulator/modelutility/clashdetection/geometry_tests_closed.h>
+#include <repo/manipulator/modelutility/clashdetection/geometry_utils.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_scheduler.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_exceptions.h>
 #include <repo/manipulator/modelutility/clashdetection/repo_polydepth.h>
+#include <repo/manipulator/modelutility/clashdetection/repo_deformdepth.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_node_cache.h>
 
 #include <repo/manipulator/modeloptimizer/bvh/bvh.hpp>
 #include <repo/manipulator/modeloptimizer/bvh/sweep_sah_builder.hpp>
 #include <repo/manipulator/modelutility/clashdetection/bvh_operators.h>
-
 #include <repo/manipulator/modelutility/clashdetection/predicates.h>
 
 #include "../../../repo_test_utils.h"
@@ -2602,415 +2604,142 @@ TEST(Clash, BvhTraversal)
 	));
 }
 
-TEST(Clash, RepoPolyDepthInProjectStep)
+TEST(Clash, RepoDeformDepthDb)
 {
-	// Helper class to expose the contacts array for testing
+	// Tests the penetration depth estimation (DeformDepth) of the geometry utils
+	// on some common problems that we have expected results for.
 
-	struct TestRepoPolyDepth : public geometry::RepoPolyDepth {
-	public:
-		void addPlane(const repo::lib::RepoVector3D64& normal, const repo::lib::RepoVector3D64& position) {
-			contacts.push_back({ normal, normal.dotProduct(position), 0 }); // Do not apply any further processing to the planes during these tests
-		}
-
-		void clear() {
-			contacts.clear();
-		}
-
-		repo::lib::RepoVector3D64 projected(){
-			return project();
-		}
-
-		TestRepoPolyDepth(const std::vector<repo::lib::RepoTriangle>& triangles)
-			:RepoPolyDepth(triangles, triangles)
-		{
-			// For the following tests, we set the Gauss Siedel iterations to a very
-			// large number to ensure we test to convergence. In practice, this should
-			// be much lower for performance reasons, and if projection fails due to
-			// challenging conditions - such as two opposing planes - then that is
-			// handled upstream.
-
-			maxProjectionIterations = 1000000;
-		}
-	};
-
-	ClashGenerator clashGenerator;
-
-	// The PolyDepth class requires the triangles to be stored externally, so allocate
-	// a dummy for it to reference.
-
-	std::vector<repo::lib::RepoTriangle> triangles;
-	TestRepoPolyDepth pd(triangles);
-
-	// The LCS that this is attempting to project to, is by convention always defined
-	// as the positive side of the planes, so when generating planes we need to ensure
-	// that the origin is always on the negative side.
-
-	struct Plane {
-		repo::lib::RepoVector3D64 n;
-		repo::lib::RepoVector3D64 p;
-		double c;
-	};
-
-	auto createPlane = [&]() {
-		auto n = clashGenerator.random.direction();
-		auto p = clashGenerator.random.vector(clashGenerator.size1);
-		auto c = n.dotProduct(p);
-		if (c < 0) {
-			n = -n;
-			c = -c;
-		}
-		return Plane{ n, p, c };
-	};
-
-	for (size_t i = 0; i < 10000; ++i)
-	{
-		// Simple single planes
-
-		auto [n, p, c] = createPlane();
-
-		pd.clear();
-		pd.addPlane(n, p);
-		auto q = pd.projected();
-
-		// For single-plane problems, the projection should be directly along the plane
-		// normal as this is the shortest distance to the plane.
-
-		EXPECT_THAT(n.dotProduct(q.normalized()), DoubleNear(1.0, FLT_EPSILON));
-		EXPECT_THAT(q.norm(), DoubleNear(c, FLT_EPSILON));
-	}
-
-	for (size_t i = 0; i < 10000; ++i)
-	{
-		// A combination of at least two planes that form a valley. All the planes
-		// intersect on the same line.
-
-		auto line = clashGenerator.random.direction();
-		auto p = clashGenerator.random.vector(clashGenerator.size1);
-
-		// A vector perpendicular to the line, pointing away from the origin
-
-		auto n = line.crossProduct(line.crossProduct(p)).normalized();
-
-		// Planes that form the valley. Any planes beyond the first two are
-		// superfluous, but the algorithm should be robust to them.
-		
-		pd.clear();
-		for (size_t j = 0; j < clashGenerator.random.range(2, 10); j++) {
-			auto nj = repo::lib::RepoMatrix::rotation(n, clashGenerator.random.number({ 0.1, 1.56 })) * n;
-			if (nj.dotProduct(p) < 0) {
-				nj = -nj;
-			}
-			pd.addPlane(nj, p);
-		}
-	
-		auto q = pd.projected();
-
-		// The closest point should be a projection of the origin onto the line
-		// formed at the base of the valley.
-
-		auto op = p - (line * p.dotProduct(line));
-
-		EXPECT_THAT(q, VectorNear(op, FLT_EPSILON));
-	}
-
-	for (size_t i = 0; i < 100; ++i)
-	{
-		// Three planes, where two are opposite each other, therefore constraining
-		// q to lie on a plane beyond the third hyperplane.
-
-		// While the algorithm should theoretically support this (and this test
-		// confirms that this is so), it is a very difficult problem that will
-		// run out of iterations in practice, hence the smaller starting size.
-
-		clashGenerator.size1 = { 0.0001, 1000 };
-
-		auto [n1, p1, d1] = createPlane();
-
-		pd.clear();
-		pd.addPlane(n1, p1);
-		pd.addPlane(-n1, p1);
-
-		auto n2 = clashGenerator.random.rotation(clashGenerator.random.direction(), { 0.1, 1.5 }) * n1;
-		if (n2.dotProduct(p1) < 0) {
-			n2 = -n2;
-		}
-		pd.addPlane(n2, p1);
-
-		// q should be on the positive side of n2, and sit on plane n1.
-
-		auto q = pd.projected();
-
-		EXPECT_THAT(n1.dotProduct(q - p1), DoubleNear(0, 1e-4));
-		EXPECT_THAT(n2.dotProduct(q), Gt(0));
-	}
-}
-
-TEST(Clash, RepoPolyDepthIntersectsStep)
-{
-	// It is important to correct termination of the PolyDepth algorithm that
-	// if the ccd step returns an intersecting result, then the intersects
-	// method will return exactly in-contact at this time/configuration.
-
-	struct TestRepoPolyDepth : public geometry::RepoPolyDepth {
-	public:
-		Collision step(const repo::lib::RepoVector3D64& q0, const repo::lib::RepoVector3D64& q1) {
-			auto q = ccd(q0, q1);
-			qs = q;
-			return intersect(q);
-		}
-
-		Collision _intersect(const repo::lib::RepoVector3D64& q) {
-			return intersect(q);
-		}
-
-		TestRepoPolyDepth(const std::vector<repo::lib::RepoTriangle>& a,
-			const std::vector<repo::lib::RepoTriangle>& b)
-			:RepoPolyDepth(a, b) {
-		}
-	};
-
-	CellDistribution space;
-	ClashGenerator clashGenerator;
-
-	for (size_t itr = 0; itr < 1000; ++itr)
-	{
-		auto clash = clashGenerator.createHardSoup(space.sample());
-
-		auto a = ClashGenerator::triangles(clash.a);
-		auto b = ClashGenerator::triangles(clash.b);
-
-		EXPECT_THAT(intersects(a, b), IsTrue());
-
-		TestRepoPolyDepth pd(a, b);
-
-		EXPECT_THAT(pd._intersect({}), Eq(geometry::RepoPolyDepth::Collision::Collision));
-		EXPECT_THAT(pd._intersect(pd.getPenetrationVector()), Eq(geometry::RepoPolyDepth::Collision::Free));
-		EXPECT_THAT(pd.getPenetrationVector().norm(), Gt(0));
-
-		// We allow intersects to be Free here, even after one CCD step, because as
-		// the triangles get closer the contact threshold may decrease. Additional
-		// iterations should bring it closer. Eventually it must always reach Contact,
-		// and never Collision.
-
-		auto result = pd.step(pd.getPenetrationVector(), {});
-		EXPECT_THAT(result, AnyOf(geometry::RepoPolyDepth::Collision::Contact, geometry::RepoPolyDepth::Collision::Free));
-
-		while (result != geometry::RepoPolyDepth::Collision::Contact) {
-			result = pd.step(pd.getPenetrationVector(), {});
-			EXPECT_THAT(result, AnyOf(geometry::RepoPolyDepth::Collision::Contact, geometry::RepoPolyDepth::Collision::Free));
-		}
-
-		// If we get here result is Contact
-
-		// Changing the penetration resolution vector by a fraction in either direction
-		// should change the result. We should reliably be able to exit the collision
-		// by moving further away - as we are testing polygon soups, we can't reliably
-		// test moving closer as tunnelling may avoid a collision when using an
-		// arbitrary scalar.
-
-		EXPECT_THAT(pd._intersect(pd.getPenetrationVector() * 1.1), Eq(geometry::RepoPolyDepth::Collision::Free));
-	}
-}
-
-TEST(Clash, PolyDepthCollisionFreeInitialisationStep)
-{
-	// If geometry is provided to PolyDepth in a collision-free configuration,
-	// then the initial penetration vector should be zero, and calling iterate
-	// should not do anything.
-
-	auto a = ClashGenerator::triangles(repo::test::utils::mesh::makeUnitCube());
-	auto b = ClashGenerator::triangles(repo::test::utils::mesh::makeUnitCone());
-
-	// This line moves the cone so that its bounds overlap the box, but
-	// it's surface doesn't actually intersect
-
-	auto t = repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(0.75, 0, -0.501));
-	ClashGenerator::applyTransforms(b, t);
-
-	EXPECT_THAT(intersects(a, b), IsFalse());
-
-	geometry::RepoPolyDepth pd(a, b);
-
-	auto v0 = pd.getPenetrationVector();
-
-	EXPECT_THAT(v0.norm(), Eq(0));
-
-	pd.iterate(10);
-
-	auto v1 = pd.getPenetrationVector();
-
-	EXPECT_THAT(v1.norm(), Eq(0));
-}
-
-TEST(Clash, RepoPolyDepthOverlapsProcedural)
-{
-	CellDistribution space;
-	ClashGenerator clashGenerator;
-
-	for (int itr = 0; itr < 1000; itr++)
-	{
-		auto clash = clashGenerator.createOverlap(space.sample());
-
-		auto a = ClashGenerator::triangles(clash.a);
-		auto b = ClashGenerator::triangles(clash.b);
-
-		geometry::RepoPolyDepth pd(a, b);
-		pd.iterate(2);
-		auto v = pd.getPenetrationVector();
-
-		EXPECT_THAT(v.norm(), Ge(0.01));
-	}
-}
-
-TEST(Clash, RepoPolyDepthProcedural)
-{
-	// Tests the penetration depth estimation (PolyDepth) of the geometry utils
-	// with procedural geometry. Penetration depth is approximate, with a
-	// guaranteed upper bound only, so the acceptance criteria is that the
-	// estimated depth is greater than or equal to the generated depth, and that
-	// applying the correction always resolves the collision. 
-
-	CellDistribution space;
-	ClashGenerator clashGenerator;
-	
-	// For this test, the distance defines the spacing amongst the non-intersecting
-	// pairs.
-	clashGenerator.distance = {0.1, 4};
-
-	for (int itr = 0; itr < 50000; ++itr)
-	{
-		auto clash = clashGenerator.createHardSoup(space.sample());
-
-		auto a = ClashGenerator::triangles(clash.a);
-		auto b = ClashGenerator::triangles(clash.b);
-
-		EXPECT_THAT(intersects(a, b), IsTrue());
-
-		geometry::RepoPolyDepth pd(a, b);
-
-		// Before any iterations, PolyDepth should return a valid upper bounds.
-
-		auto v = pd.getPenetrationVector();
-
-		// The penetration vector should be non-zero, and non-infinity, and it
-		// should work to resolve the collision when applied to set a.
-
-		EXPECT_THAT(v.norm(), Gt(0));
-		EXPECT_THAT(std::isfinite(v.norm()), IsTrue());
-
-		ClashGenerator::applyTransforms(a, repo::lib::RepoMatrix::translate(v));
-
-		EXPECT_THAT(intersects(a, b), IsFalse());
-	}
-}
-
-TEST(Clash, RepoPolyDepthDb)
-{
-	// Tests the penetration depth estimation (PolyDepth) of the geometry utils
-	// on some difficult problems that we have an expected result for.
-	// Contractually PolyDepth only guarantees an upper bound, so if the
-	// implementation changes, the acceptance criteria may need to change as well.
-
-	auto handler = getHandler();
-	ClashDetectionConfig config;
-	ClashDetectionDatabaseHelper helper(handler);
+	ClashDetectionDatabaseHelper helper(getHandler());
 
 	auto c = helper.getContainerByName("hard_1");
 
-	// The Hard pipeline will swap the operands so the larger object is on the 
-	// right. For the tests though, we must generate the test data such that this 
+	// The Hard pipeline will swap the operands so the larger object is on the
+	// right. For the tests though, we must generate the test data such that this
 	// is the case.
 
-	auto pairs = {
-		std::make_pair("set1_a", "set1_b"),
-		std::make_pair("set2_a", "set2_b"),
-		std::make_pair("set3_a", "set3_b"),
-		std::make_pair("set4_a", "set4_b"),
-		std::make_pair("set5_a1", "set5_b"),
-		std::make_pair("set5_a2", "set5_b"),
-		std::make_pair("set5_a3", "set5_b"),
-		std::make_pair("set5_a4", "set5_b"),
+	struct ContainsFunctor : geometry::RepoDeformDepth::ContainsFunctor, geometry::MeshView {
+		ContainsFunctor(geometry::RepoIndexedMesh& mesh)
+			:mesh(mesh)
+		{
+			bvh::builders::build(bvhB, mesh.vertices, mesh.faces);
+		}
+
+		const bvh::Bvh<double>& getBvh() const {
+			return bvhB;
+		}
+
+		repo::lib::RepoTriangle getTriangle(size_t primitive) const {
+			return mesh.getTriangle(primitive);
+		}
+
+		const geometry::RepoIndexedMesh& mesh;
+		bvh::Bvh<double> bvhB;
+		
+		bool operator()(const std::vector<repo::lib::RepoVector3D64>& points,
+			const repo::lib::RepoVector3D64& m) const override {
+			return geometry::contains(
+				points,
+				repo::lib::RepoBounds(points.data(), points.size()),
+				*this,
+				m
+			);
+		}
 	};
 
-	for (auto& pair : pairs) {
+	auto run = [&](
+		const std::string& nameA, 
+		const std::string& nameB,
+		double tolerance) {
+			auto a = helper.getChildMeshNodes(c.get(), nameA);
+			auto b = helper.getChildMeshNodes(c.get(), nameB);
 
-		std::string s = std::string("for: ") + pair.first + " vs " + pair.second + "\n";
+			auto contains = std::unique_ptr<ContainsFunctor>(nullptr);
+			if (geometry::isClosedAndManifold(b.faces)) {
+				contains = std::make_unique<ContainsFunctor>(b);
+			}
 
-		// Take care that the meshes returned here will not have any transformations applied.
+			geometry::RepoDeformDepth pd(a, b, contains.get(), tolerance);
+			pd.iterate(10);
 
-		auto a = ClashGenerator::triangles(helper.getChildMeshNodes(c.get(), pair.first));
-		auto b = ClashGenerator::triangles(helper.getChildMeshNodes(c.get(), pair.second));
-
-		EXPECT_THAT(intersects(a, b), IsTrue()) << s;
-
-		geometry::RepoPolyDepth pd(a, b);
-		auto v0 = pd.getPenetrationVector();
-
-		auto copy = a;
-		ClashGenerator::applyTransforms(copy, repo::lib::RepoMatrix::translate(v0));
-		EXPECT_THAT(intersects(copy, b), IsFalse()) << s;
-
-		pd.iterate(10);
-
-		auto v1 = pd.getPenetrationVector();
-
-		EXPECT_THAT(v1.norm(), Lt(v0.norm())) << s;
-
-		copy = a;
-		ClashGenerator::applyTransforms(copy, repo::lib::RepoMatrix::translate(v1));
-		EXPECT_THAT(intersects(copy, b), IsFalse()) << s;
-	}
-}
-
-TEST(Clash, RepoPolyDepthOverlapsDb)
-{
-	auto handler = getHandler();
-	ClashDetectionConfig config;
-	ClashDetectionDatabaseHelper helper(handler);
-
-	auto c = helper.getContainerByName("overlaps_1");
-
-	auto pairs = {
-		std::make_pair("set1_a", "set1_b"),
-		std::make_pair("set2_a", "set2_b"),
-		std::make_pair("set3_a", "set3_b"),
-		std::make_pair("set4_a", "set4_b"),
-		std::make_pair("set5_a", "set5_b"),
+			return pd.getPenetrationDepth() > tolerance;
 	};
 
-	for (auto& pair : pairs) {
+	EXPECT_THAT(run("set8_a1", "set8_b", 1), IsFalse());
 
-		std::string s = std::string("for: ") + pair.first + " vs " + pair.second + "\n";
 
-		// Take care that the meshes returned here will not have any transformations applied.
 
-		auto a = ClashGenerator::triangles(helper.getChildMeshNodes(c.get(), pair.first));
-		auto b = ClashGenerator::triangles(helper.getChildMeshNodes(c.get(), pair.second));
+	EXPECT_THAT(run("set1_a", "set1_b", 1), IsTrue());
+	EXPECT_THAT(run("set1_a", "set1_b", 600), IsFalse());
 
-		geometry::RepoPolyDepth pd(a, b);
-		auto v0 = pd.getPenetrationVector();
+	EXPECT_THAT(run("set2_a", "set2_b", 1), IsTrue());
 
-		auto copy = a;
-		ClashGenerator::applyTransforms(copy, repo::lib::RepoMatrix::translate(v0));
-		EXPECT_THAT(intersects(copy, b), IsFalse()) << s;
+	EXPECT_THAT(run("set3_a", "set3_b", 1), IsTrue());
+	EXPECT_THAT(run("set3_a", "set3_b", 60), IsTrue());
 
-		pd.iterate(10);
+	EXPECT_THAT(run("set4_a", "set4_b", 1), IsTrue());
+	EXPECT_THAT(run("set4_a", "set4_b", 500), IsFalse());
 
-		auto v1 = pd.getPenetrationVector();
+	EXPECT_THAT(run("set5_a1", "set5_b", 1), IsTrue());
+	EXPECT_THAT(run("set5_a2", "set5_b", 1), IsTrue());
+	EXPECT_THAT(run("set5_a3", "set5_b", 1), IsTrue());
+	EXPECT_THAT(run("set5_a4", "set5_b", 1), IsTrue());
+	EXPECT_THAT(run("set5_a1", "set5_b", 250), IsFalse());
+	EXPECT_THAT(run("set5_a2", "set5_b", 250), IsFalse());
+	EXPECT_THAT(run("set5_a3", "set5_b", 300), IsFalse());
+	EXPECT_THAT(run("set5_a4", "set5_b", 1100), IsFalse());
 
-		EXPECT_THAT(v1.norm(), Gt(0)) << s;
+	EXPECT_THAT(run("set6_a", "set6_b", 1), IsTrue());
+	EXPECT_THAT(run("set6_a", "set6_b", 10), IsFalse());
 
-		copy = a;
-		ClashGenerator::applyTransforms(copy, repo::lib::RepoMatrix::translate(v1));
-		EXPECT_THAT(intersects(copy, b), IsFalse()) << s;
-	}
+	// These sets correspond to in-contact configurations that are restrained on
+	// one or more sides and so will not be resolved via a local search.
+
+	EXPECT_THAT(run("set7_a", "set7_b", 0), IsTrue());
+	EXPECT_THAT(run("set7_a", "set7_b", 1), IsFalse());
+
+	EXPECT_THAT(run("set8_a1", "set8_b", 0), IsTrue());
+	EXPECT_THAT(run("set8_a2", "set8_b", 0), IsTrue());
+	EXPECT_THAT(run("set8_a3", "set8_b", 0), IsTrue());
+	EXPECT_THAT(run("set8_a1", "set8_b", 1), IsFalse());
+	EXPECT_THAT(run("set8_a2", "set8_b", 1), IsFalse());
+	EXPECT_THAT(run("set8_a3", "set8_b", 1), IsFalse());
+
+	EXPECT_THAT(run("set9_a", "set9_b", 0), IsTrue());
+	EXPECT_THAT(run("set9_a", "set9_b", 1), IsFalse());
+
+	// This set is a box contained in another with co-incident faces. None of
+	// the faces will actually intersect properly, but due to the contains
+	// test, this should be detected as a clash.
+
+	EXPECT_THAT(run("set10_a", "set10_b", 100), IsTrue());
+
+	// These following tests correspond to overlaps. Overlaps are only detected
+	// when the tolerance is zero if the ends are open. If the ends are closed,
+	// they should be detected with non-trivial tolerances.
+
+	EXPECT_THAT(run("set11_a", "set11_b", 0), IsTrue());
+	EXPECT_THAT(run("set12_a", "set12_b", 0), IsTrue());
+	EXPECT_THAT(run("set13_a", "set13_b", 0), IsTrue());
+
+	EXPECT_THAT(run("set14_a", "set14_b", 100), IsTrue());
 }
 
-TEST(Clash, RepoPolyDepthDegenerateGeometry)
+TEST(Clash, RepoDeformDepthDegenerateGeometry)
 {
-	// RepoPolyDepth should be robust to degenerate triangles (i.e. those that
+	auto buildIndexedMesh = [](const repo::core::model::MeshNode& m) {
+		geometry::RepoIndexedMesh mesh;
+		std::vector<repo::lib::RepoVector3D64> vertices;
+		for (const auto& v : m.getVertices()) {
+			vertices.push_back(v);
+		}
+		mesh.vertices = std::move(vertices);
+		mesh.faces = m.getFaces();
+		return mesh;
+	};
+
+	// RepoDeformDepth should be robust to degenerate triangles (i.e. those that
 	// collapse to a line or a point). Ideally such primitives would not exist,
-	// but they do occur in real models, so PolyDepth should not only not crash,
+	// but they do occur in real models, so DeformDepth should not only not crash,
 	// but should not give the wrong result either.
 
 	// To test this we create a two boxes that are intersecting, and along the
@@ -3027,26 +2756,32 @@ TEST(Clash, RepoPolyDepthDegenerateGeometry)
 		repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(-2, 0, 0))
 	);
 
-	auto a = ClashGenerator::triangles(box1);
-	auto b = ClashGenerator::triangles(box2);
+	geometry::RepoIndexedMesh a = buildIndexedMesh(box1);
+	geometry::RepoIndexedMesh b = buildIndexedMesh(box2);
 
 	// Add a degenerate triangle to box2 - box1 will hit this.
 
-	// Note that no collision will be detected if the only geometry of box2 is
-	// degenerate. This is equivalent to clashing with a line or point, which is
-	// explicitly not supported in the current version of the engine.
+	auto vi = b.vertices.size();
+	b.vertices.push_back(repo::lib::RepoVector3D64(-2,  2,  2));
+	b.vertices.push_back(repo::lib::RepoVector3D64(-2, -2, -2));
 
-	b.push_back(repo::lib::RepoTriangle(
-		repo::lib::RepoVector3D64(-2,  2,  2),
-		repo::lib::RepoVector3D64(-2, -2, -2),
-		repo::lib::RepoVector3D64(-2, -2, -2)
-	));
+	b.faces.push_back(repo::lib::repo_face_t({
+		vi,
+		vi + 1,
+		vi + 1
+	}));
 
-	geometry::RepoPolyDepth pd(a, b);
-	pd.iterate(10);
+	{
+		geometry::RepoDeformDepth pd(a, b, nullptr, 0);
+		pd.iterate(10);
+		EXPECT_THAT(pd.getPenetrationDepth(), Gt(0));
+	}
 
-	EXPECT_THAT(pd.getPenetrationVector(), VectorNear(repo::lib::RepoVector3D64(-0.5, 0, 0), FLT_EPSILON));
-
+	{
+		geometry::RepoDeformDepth pd(a, b, nullptr, 0.55);
+		pd.iterate(10);
+		EXPECT_THAT(pd.getPenetrationDepth(), Lt(0.55));
+	}
 }
 
 TEST(Clash, HardE2E)
@@ -3467,15 +3202,15 @@ TEST(Clash, ResultsSerialisation)
 		}
 
 		{
-			const auto& error = std::dynamic_pointer_cast<DuplicateMeshIdsException>(report.errors[3]);
-			const auto& jsonError = doc["errors"][3];
+			const auto& error = std::dynamic_pointer_cast<DuplicateMeshIdsException>(report.errors[2]);
+			const auto& jsonError = doc["errors"][2];
 			EXPECT_EQ(jsonError["type"].GetString(), std::string("DuplicateMeshIdsException"));
 			EXPECT_EQ(jsonError["uniqueId"].GetString(), error->uniqueId.toString());
 		}
 
 		{
-			const auto& error = std::dynamic_pointer_cast<DegenerateTestException>(report.errors[4]);
-			const auto& jsonError = doc["errors"][4];
+			const auto& error = std::dynamic_pointer_cast<DegenerateTestException>(report.errors[3]);
+			const auto& jsonError = doc["errors"][3];
 			EXPECT_EQ(jsonError["type"].GetString(), std::string("DegenerateTestException"));
 			EXPECT_EQ(jsonError["compositeIdA"].GetString(), error->compositeIdA.toString());
 			EXPECT_EQ(jsonError["compositeIdB"].GetString(), error->compositeIdB.toString());

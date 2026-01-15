@@ -69,7 +69,8 @@ namespace geometry {
 		RepoPolyDepth(
 			const std::vector<repo::lib::RepoTriangle>& a, 
 			const std::vector<repo::lib::RepoTriangle>& b,
-			const ContainsFunctor* contains = nullptr
+			const ContainsFunctor* contains = nullptr,
+			double tolerance = FLT_EPSILON
 		);
 
 		/*
@@ -233,5 +234,15 @@ namespace geometry {
 		* be careful not to make this too large.
 		*/
 		size_t numLocalSearchSteps = 10;
+
+		/*
+		* If the distance (qs) drops below this, then the algorithm will terminate.
+		* Most likely, this will be because there is a tolerance upstream, and so if
+		* the penetration depth is less than this value, it is already considered non-
+		* clashing and so there is no point in trying to optimise further. The default
+		* value is FLT_EPSILON, which in real-world is too small to be meaningful, so
+		* it is always recommended to set this explicitly.
+		*/
+		double tolerance = FLT_EPSILON;
 	};
 }

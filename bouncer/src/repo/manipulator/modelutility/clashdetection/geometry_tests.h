@@ -47,6 +47,12 @@ namespace geometry {
         * the triangles are in-contact or have a hard intersection.
         */
         bool intersects;
+
+		/*
+		* If intersects is true, contains the amount by which the triangles
+		* would have to move to resolve the penetration.
+		*/
+		double depth;
 	};
 
     /*
@@ -195,5 +201,8 @@ namespace geometry {
         const std::vector<repo::lib::repo_face_t>& triangles
 	);
 
-
+    bool isClosedAndManifold(
+        const repo::lib::repo_face_t* triangles,
+        size_t numTriangles
+    );
 }

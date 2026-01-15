@@ -24,8 +24,7 @@ using namespace repo::manipulator::modelutility::clash;
 void PipelineUtils::loadGeometry(
 	DatabasePtr handler,
 	Graph::Node& node,
-	std::vector<repo::lib::RepoVector3D64>& vertices,
-	std::vector<repo::lib::repo_face_t>& faces
+	geometry::RepoIndexedMeshBuilder& builder
 )
 {
 	handler->loadBinaryBuffers(
@@ -35,76 +34,16 @@ void PipelineUtils::loadGeometry(
 	);
 
 	auto mesh = repo::core::model::MeshNode(node.mesh);
+	const auto& faces = mesh.getFaces();
+	const auto& vertices = mesh.getVertices();
 
-	vertices.reserve(mesh.getNumVertices());
-
-	// This method will re-index vertices as they are loaded. The current
-	// implementation will only consider exact matches. If we want to weld
-	// nearby vertices in the future a spatial hash should be used instead.
-
-	struct Hasher
-	{
-		std::size_t operator()(const repo::lib::RepoVector3D& v) const {
-			std::size_t h1 = std::hash<float>{}(v.x);
-			std::size_t h2 = std::hash<float>{}(v.y);
-			std::size_t h3 = std::hash<float>{}(v.z);
-			return h1 ^ (h2 << 1) ^ (h3 << 2);
-		}
-	};
-
-	struct Less
-	{
-		bool operator()(const repo::lib::RepoVector3D& a, const repo::lib::RepoVector3D& b) const {
-			if (a.x != b.x) return a.x < b.x;
-			if (a.y != b.y) return a.y < b.y;
-			return a.z < b.z;
-		}
-	};
-
-	// This hopscotch map is much more efficient than std::unordered_map, since it
-	// doesn't guarantee iterator stability, a property which is not important for
-	// re-indexing like we do here.
-
-	tsl::bhopscotch_map<
-		repo::lib::RepoVector3D,
-		uint32_t,
-		Hasher,
-		std::equal_to<repo::lib::RepoVector3D>,
-		Less,
-		std::allocator<std::pair<const repo::lib::RepoVector3D, uint32_t>>,
-		10,
-		true>
-	map;
-
-	std::vector<uint32_t> newIndex;
-	newIndex.reserve(mesh.getNumVertices());
-
-	auto& originalVertices = mesh.getVertices();
-	for(size_t i = 0; i < mesh.getNumVertices(); i++)
-	{
-		auto v = originalVertices[i];
-		auto it = map.find(v);
-		if (it == map.end()) {
-			size_t newIdx = vertices.size();
-			map[v] = newIdx;
-			
-			// Put the meshes in project coordinates. We create new arrays below
-			// as we want to keep the vertices in double precision from now on.
-
-			vertices.push_back(node.matrix * repo::lib::RepoVector3D64(v));
-
-			newIndex.push_back(newIdx);
-		}
-		else {
-			newIndex.push_back(it->second);
-		}
-	}
-
-	faces = mesh.getFaces();
-	for (auto& face : faces) {
-		for(size_t i = 0; i < face.size(); i++) {
-			face[i] = newIndex[face[i]];
-		}
+	for(const auto& face : faces) {
+		repo::lib::RepoTriangle tri(
+			node.matrix * repo::lib::RepoVector3D64(vertices[face[0]]),
+			node.matrix * repo::lib::RepoVector3D64(vertices[face[1]]),
+			node.matrix * repo::lib::RepoVector3D64(vertices[face[2]])
+		);
+		builder.append(tri);
 	}
 
 	node.mesh.unloadBinaryBuffers();

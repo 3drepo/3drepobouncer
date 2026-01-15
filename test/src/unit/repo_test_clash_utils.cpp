@@ -24,6 +24,8 @@
 #include <repo/core/handler/database/repo_query.h>
 #include <repo/manipulator/modelconvertor/import/repo_model_import_manager.h>
 #include <repo/manipulator/modelutility/clashdetection/geometry_tests.h>
+#include <repo/manipulator/modelutility/clashdetection/sparse_scene_graph.h>
+#include <repo/manipulator/modelutility/clashdetection/clash_pipelines_utils.h>
 
 using namespace testing;
 using namespace repo::manipulator::modelutility;
@@ -58,15 +60,23 @@ void ClashDetectionDatabaseHelper::getChildMeshNodes(repo::lib::Container* conta
 	}
 }
 
-
-std::vector<repo::core::model::RepoBSON> ClashDetectionDatabaseHelper::getChildMeshNodes(repo::lib::Container* container, std::string name)
+geometry::RepoIndexedMesh ClashDetectionDatabaseHelper::getChildMeshNodes(repo::lib::Container* container, std::string name)
 {
 	auto uuids = getUniqueIdsByName(container, name);
-	return handler->findAllByCriteria(container->teamspace,
-		container->container + "." + REPO_COLLECTION_SCENE,
-		repo::core::handler::database::query::Eq(REPO_NODE_LABEL_ID, uuids),
-		true
-	);
+
+	sparse::SceneGraph scene;
+	scene.populate(handler, container, std::vector<repo::lib::RepoUUID>(uuids.begin(), uuids.end()));
+
+	std::vector<clash::Graph::Node> nodes;
+	scene.getNodes(nodes);
+
+	geometry::RepoIndexedMesh combined;
+	geometry::RepoIndexedMeshBuilder builder(combined);
+	for (auto& node : nodes) {
+		clash::PipelineUtils::loadGeometry(handler, node, builder);
+	}
+
+	return combined;
 }
 
 // Searches for mesh nodes only

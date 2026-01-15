@@ -231,14 +231,24 @@ void bvh::builders::build(bvh::Bvh<double>& bvh,
 	const std::vector<repo::lib::RepoVector3D64>& vertices,
 	const std::vector<repo::lib::repo_face_t>& faces)
 {
+	build(bvh, vertices, faces.data(), faces.size());
+}
+
+void bvh::builders::build(bvh::Bvh<double>& bvh,
+	const std::vector<repo::lib::RepoVector3D64>& vertices,
+	const repo::lib::repo_face_t* faces,
+	size_t numFaces
+)
+{
 	auto boundingBoxes = std::vector<bvh::BoundingBox<double>>();
 	auto centers = std::vector<bvh::Vector3<double>>();
 
-	for (const auto& face : faces)
+	for (size_t i = 0; i < numFaces; ++i)
 	{
+		auto& face = faces[i];
 		auto bbox = bvh::BoundingBox<double>::empty();
 		for (size_t i = 0; i < face.sides; i++) {
-			auto v = vertices[face[i]];
+			const auto& v = vertices[face[i]];
 			bbox.extend(bvh::Vector3<double>(v.x, v.y, v.z));
 		}
 		boundingBoxes.push_back(bbox);

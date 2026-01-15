@@ -19,8 +19,9 @@
 #include "geometry_tests.h"
 #include "geometry_tests_closed.h"
 #include "geometry_exceptions.h"
+#include "geometry_utils.h"
 #include "bvh_operators.h"
-#include "repo_polydepth.h"
+#include "repo_deformdepth.h"
 #include "clash_scheduler.h"
 #include "clash_node_cache.h"
 #include "clash_pipelines_utils.h"
@@ -33,15 +34,14 @@ using namespace repo::manipulator::modelutility::clash;
 
 namespace {
 	struct MeshView : public geometry::MeshView {
-		const std::vector<repo::lib::RepoTriangle>& triangles;
+		const geometry::RepoIndexedMesh& mesh;
 		size_t start;
 		size_t length;
 		Bvh bvh;
 		bool closed;
 
-		MeshView(const std::vector<repo::lib::RepoTriangle>& triangles, 
-			size_t start, size_t length, bool closed)
-			: triangles(triangles), start(start), length(length), 
+		MeshView(const geometry::RepoIndexedMesh& mesh, size_t start, size_t length, bool closed)
+			: mesh(mesh), start(start), length(length),
 			closed(closed)
 		{
 		}
@@ -51,12 +51,12 @@ namespace {
 		}
 
 		repo::lib::RepoTriangle getTriangle(size_t primitive) const override {
-			return triangles[start + primitive];
+			return mesh.getTriangle(start + primitive);
 		}
 
 		void buildBvh() {
 			if (bvh.node_count == 0) {
-				bvh::builders::build(bvh, &triangles[start], length);
+				bvh::builders::build(bvh, mesh.vertices, mesh.faces.data() + start, length);
 			}
 		}
 	};
@@ -64,9 +64,13 @@ namespace {
 	struct CacheEntry
 	{
 		std::vector<Graph::Node*> nodes;
-		std::vector<repo::lib::RepoTriangle> triangles;
 		repo::lib::RepoUUID id;
 		repo::lib::RepoBounds bounds;
+
+		// Holds all the geometry for all nodes in one mesh. MeshViews can be
+		// used to address the individual MeshNodes' geometry by range.
+
+		geometry::RepoIndexedMesh mesh;
 
 		// Tracks the ranges of each MeshNode within the triangles array in case
 		// we need to perform testing against a subset of triangles. Each view
@@ -94,51 +98,31 @@ namespace {
 				return;
 			}
 
-			std::vector<repo::lib::RepoVector3D64> vertices;
-			std::vector<repo::lib::repo_face_t> faces;
+			geometry::RepoIndexedMeshBuilder builder(mesh);
+
 			for (auto& node : nodes) {
-				vertices.clear();
-				faces.clear();
-				
-				PipelineUtils::loadGeometry(handler, *node, vertices, faces);
-				
-				std::for_each(
-					vertices.begin(),
-					vertices.end(),
-					[&](auto& v) {
-						bounds.encapsulate(v);
-					}
-				);
+				auto start = mesh.faces.size();
+				PipelineUtils::loadGeometry(handler, *node, builder);
 
-				// We take a copy of the vertices so they can be re-ordered to make pointwise
-				// tests more efficient.
+				// Keep a record of where this node's faces are in the combined mesh
 
-				orderedVertices.insert(orderedVertices.end(), vertices.begin(), vertices.end());
-
+				auto length = mesh.faces.size() - start;
 				meshViews.push_back(MeshView(
-					triangles, 
-					triangles.size(), 
-					faces.size(), 
-					geometry::isClosedAndManifold(faces))
-				);
-
-				std::transform(faces.begin(), faces.end(), std::back_inserter(triangles),
-					[&](auto& face) {
-						return repo::lib::RepoTriangle(
-							vertices[face[0]],
-							vertices[face[1]],
-							vertices[face[2]]
-						);
-					}
-				);
+					mesh,
+					start,
+					length,
+					geometry::isClosedAndManifold(mesh.faces.data() + start, length)
+				));
 			}
+
+			bounds = repo::lib::RepoBounds(mesh.vertices.data(), mesh.vertices.size());
 
 			// A view that encompasses the whole composite object - this will be the one
 			// that holds the primary BVH. This composite view will never be used for
 			// containment tests - only individual components may be used for that.
 
 			if (nodes.size() > 1) {
-				meshViews.push_back(MeshView(triangles, 0, triangles.size(), false));
+				meshViews.push_back(MeshView(mesh, 0, mesh.faces.size(), false));
 			}
 
 			// Create a quick reference of all the closed meshes - do this after the
@@ -153,13 +137,11 @@ namespace {
 
 			view = &meshViews.back();
 
+			// Take a copy of the vertices so they can be re-ordered for optimal contains tests
+			orderedVertices = mesh.vertices;
 			geometry::reorderVertices(orderedVertices);
 
 			nodes.clear();
-		}
-
-		const std::vector<repo::lib::RepoTriangle>& getTriangles() const {
-			return triangles;
 		}
 
 		const repo::lib::RepoUUID& getId() const {
@@ -224,7 +206,7 @@ namespace {
 	* is inside mesh (b) under transform/offset (m). If (b) does not have any
 	* closed meshes, it returns false.
 	*/
-	struct ContainsFunctor : public geometry::RepoPolyDepth::ContainsFunctor
+	struct ContainsFunctor : public geometry::RepoDeformDepth::ContainsFunctor
 	{
 		const std::vector<repo::lib::RepoVector3D64>& vertices;
 		const repo::lib::RepoBounds& bounds;
@@ -237,9 +219,11 @@ namespace {
 		{
 		}
 
-		bool operator()(const repo::lib::RepoVector3D64& m) const override {
+		bool operator()(
+			const std::vector<repo::lib::RepoVector3D64>& points,
+			const repo::lib::RepoVector3D64& m) const override {
 			for (auto c : closed) {
-				if (geometry::contains(vertices, bounds, *c, m)) {
+				if (geometry::contains(points, bounds, *c, m)) {
 					return true;
 				}
 			}
@@ -349,23 +333,23 @@ void Hard::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 
 			ContainsFunctor contains(*a, *b);
 
-			geometry::RepoPolyDepth pd(
-				a->getTriangles(),
-				b->getTriangles(),
-				&contains
+			geometry::RepoDeformDepth pd(
+				a->mesh,
+				b->mesh,
+				&contains,
+				tolerance
 			);
 
 			pd.iterate(maxPolyDepthIterations);
 
-			auto v = pd.getPenetrationVector();
+			auto v = pd.getPenetrationDepth();
 
-			if (v.norm() > tolerance) {
+			if (pd.getPenetrationDepth() > tolerance) {
 				auto clash = createClash<HardClash>(
 					a->getId(),
 					b->getId()
 				);
-				clash->a = a->bounds.center();
-				clash->b = b->bounds.center() + pd.getPenetrationVector();
+				clash->contacts = pd.getContactManifold();
 			}
 		}
 		catch (const geometry::GeometryTestException& e) {
@@ -381,10 +365,7 @@ void Hard::createClashReport(const OrderedPair& objects,
 	result.idB = objects.b;
 
 	auto h = static_cast<const HardClash&>(clash);
-	result.positions = {
-		h.a,
-		h.b
-	};
+	result.positions = std::move(h.contacts);
 
 	size_t hash = 0;
 	std::hash<double> hasher;

@@ -121,12 +121,14 @@ namespace {
 RepoPolyDepth::RepoPolyDepth(
     const std::vector<repo::lib::RepoTriangle>& a, 
     const std::vector<repo::lib::RepoTriangle>& b,
-    const ContainsFunctor* contains)
+    const ContainsFunctor* contains,
+    double tolerance)
     : a(a), 
     b(b),
     bvhA(buildBvh(a)),
     bvhB(buildBvh(b)),
-    contains(contains)
+    contains(contains),
+    tolerance(tolerance)
 {
     findInitialFreeConfiguration();
 }
@@ -137,6 +139,14 @@ repo::lib::RepoVector3D64 RepoPolyDepth::getPenetrationVector() const {
 
 void RepoPolyDepth::findInitialFreeConfiguration()
 {
+	// Attempts to find the initial collision-free configuration to begin the search
+    // from. As the search proceeds in a straigh line, the quality of this initial
+    // guess is critical to the quality of the estimation - in fact it is probably
+    // more important than the time-of-contact, or projection steps.
+
+    // The strategy is to attempt to find a number of possible configurations, and
+    // to keep the one with the smallest distance.
+
     if (a.empty() || b.empty()) {
         return;
     }
@@ -145,14 +155,25 @@ void RepoPolyDepth::findInitialFreeConfiguration()
         return;
 	}
 
+    // Minimum separating axis is guaranteed to provide a separating vector, so it
+    // is an ideal starting point. Depending on the nature of the clash, it might
+    // be quite far from optimal however.
+
+    qs = geometry::minimumSeparatingAxis(
+        repoBounds(bvhA.nodes[0]),
+        repoBounds(bvhB.nodes[0])
+    );
+
+    if (qs.norm() < tolerance) {
+		return;
+    }
+
+    // For cases where a small mesh is contained in a concavity, a local search
+	// around the small mesh could reveal a good starting configuration.
+
     auto volA = bvhA.nodes[0].bounding_box_proxy().to_bounding_box().half_area();
     auto volB = bvhB.nodes[0].bounding_box_proxy().to_bounding_box().half_area();
-
     if (volA <= volB * localSearchRatioThreshold) {
-
-        // Perform a local search for a collision-free configuration. Ideally most
-        // small meshes will get a good initial guess from this. If it fails we
-        // revert to a simple bounds separation.
 
         // This loop searches along the primary axes, not combinations thereof. This
         // is because those combinations can become very numerous, very quickly,
@@ -164,36 +185,33 @@ void RepoPolyDepth::findInitialFreeConfiguration()
             repo::lib::RepoVector3D64(0,0,1)
 		};
 
-        for (double istep = 1; istep < numLocalSearchSteps; istep++) {
-            for (auto& axis : axes) {
-                for (int dir = -1; dir <= 1; dir += 2) {
-					qs = axis * dir * (istep * localSearchStepSize) * volA;
-                    if (intersect(qs) != Collision::Collision) { // Local search has found an intersection free configuration
-                        return;
+        auto performLocalSearch = [&]() {
+            for (double istep = 1; istep < numLocalSearchSteps; istep++) {
+                for (auto& axis : axes) {
+                    for (int dir = -1; dir <= 1; dir += 2) {
+                        auto pqs = axis * dir * (istep * localSearchStepSize) * volA;
+                        if (intersect(pqs) != Collision::Collision) { // Local search has found an intersection free configuration
+                            return pqs;
+                        }
                     }
                 }
             }
+    	};
+
+        auto pqs = performLocalSearch();
+        if (pqs.norm() < qs.norm()) {
+            qs = pqs;
+		}
+
+        if (qs.norm() < tolerance) {
+            return;
         }
     }
-
-    // Finds a translation for a which is collision free. Currently this is
-    // done simply by finding the minimum translation vector that can separate
-    // the bounds.
-
-    // (Make sure to put the BVH back as it may have been changed above).
-
-    BvhRefitter refitter(bvhA, a);
-    refitter.refit({});
-
-    qs = geometry::minimumSeparatingAxis(
-        repoBounds(bvhA.nodes[0]), 
-        repoBounds(bvhB.nodes[0])
-    );
 }
 
 void RepoPolyDepth::iterate(size_t n)
 {
-    if (qs.norm() < FLT_EPSILON) {  // If we have begun in a collision-free state, there is nothing to do..
+    if (qs.norm() <= tolerance) {  // If we have begun in a collision-free state, there is nothing to do..
         return;
 	}
 
@@ -239,6 +257,10 @@ void RepoPolyDepth::iterate(size_t n)
             return;
         }
 		_qnorm = qnorm;
+
+        if(qs.norm() <= tolerance) {
+            return;
+		}
     }
 }
 
@@ -270,12 +292,15 @@ RepoPolyDepth::Collision RepoPolyDepth::intersect(const repo::lib::RepoVector3D6
         [&](size_t _a, size_t _b) 
         {
             auto triA = a[_a] + m;
+
+			auto ct = geometry::contactThreshold(triA, b[_b]);
+
             auto d = geometry::closestPoints(triA, b[_b]);
 
             if (d.intersects) {
                 r = Collision::Collision;
             }
-			else if (d.magnitude() < geometry::contactThreshold(triA, b[_b])) {
+			else if (d.magnitude() < ct) {
                 if (r == Collision::Free) {
                     r = Collision::Contact; // Don't override a hard collision with an in-contact one!
                 }

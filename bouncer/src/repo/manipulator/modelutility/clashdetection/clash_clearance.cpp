@@ -21,6 +21,7 @@
 #include "clash_clearance.h"
 #include "geometry_tests.h"
 #include "geometry_tests_closed.h"
+#include "geometry_utils.h"
 #include "geometry_exceptions.h"
 #include "bvh_operators.h"
 #include "clash_scheduler.h"
@@ -38,10 +39,9 @@ namespace {
 	{
 		Graph::Node* node;
 		Bvh bvh;
-		std::vector<repo::lib::RepoVector3D64> vertices;
-		std::vector<repo::lib::RepoVector3D64> verticesForContainsTests;
-		std::vector<repo::lib::repo_face_t> faces;
+		geometry::RepoIndexedMesh mesh;
 		repo::lib::RepoBounds bounds;
+		std::vector<repo::lib::RepoVector3D64> verticesForContainsTests;
 		bool isClosed = false;
 
 		// Initialises everything the narrowphase (or this objects own methods) needs
@@ -49,23 +49,17 @@ namespace {
 
 		void initialise(std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler) {
 
-			if (vertices.size()) { // (Already initialised)
+			if (mesh.vertices.size()) { // (Already initialised)
 				return;
 			}
 
-			PipelineUtils::loadGeometry(handler, *node, vertices, faces);
+			geometry::RepoIndexedMeshBuilder builder(mesh);
+			PipelineUtils::loadGeometry(handler, *node, builder);
 
-			std::for_each(
-				vertices.begin(),
-				vertices.end(),
-				[&](auto& v) {
-					bounds.encapsulate(v);
-				}
-			);
+			bounds = repo::lib::RepoBounds(mesh.vertices.data(), mesh.vertices.size());
+			isClosed = geometry::isClosedAndManifold(mesh.faces);
 
-			isClosed = geometry::isClosedAndManifold(faces);
-
-			bvh::builders::build(bvh, vertices, faces);
+			bvh::builders::build(bvh, mesh.vertices, mesh.faces);
 		}
 
 		const Bvh& getBvh() const override {
@@ -73,15 +67,7 @@ namespace {
 		}
 
 		repo::lib::RepoTriangle getTriangle(size_t primitive) const override {
-			auto& face = faces[primitive];
-			if (face.sides < 3) {
-				throw std::runtime_error("Clash detection engine only supports Triangles.");
-			}
-			return repo::lib::RepoTriangle(
-				vertices[face[0]],
-				vertices[face[1]],
-				vertices[face[2]]
-			);
+			return mesh.getTriangle(primitive);
 		}
 
 		const repo::lib::RepoUUID& getCompositeObjectId() const {
@@ -90,7 +76,7 @@ namespace {
 
 		const std::vector<repo::lib::RepoVector3D64>& getOrderedVertices() {
 			if(!verticesForContainsTests.size()) {
-				verticesForContainsTests = vertices;
+				verticesForContainsTests = mesh.vertices;
 				geometry::reorderVertices(verticesForContainsTests);
 			}
 			return verticesForContainsTests;
