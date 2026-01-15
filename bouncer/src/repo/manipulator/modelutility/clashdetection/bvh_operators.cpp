@@ -248,7 +248,7 @@ void bvh::builders::build(bvh::Bvh<double>& bvh,
 		auto& face = faces[i];
 		auto bbox = bvh::BoundingBox<double>::empty();
 		for (size_t i = 0; i < face.sides; i++) {
-			auto v = vertices[face[i]];
+			const auto& v = vertices[face[i]];
 			bbox.extend(bvh::Vector3<double>(v.x, v.y, v.z));
 		}
 		boundingBoxes.push_back(bbox);

@@ -18,6 +18,7 @@
 #pragma once
 
 #include "clash_pipelines.h"
+#include "geometry_utils.h"
 
 namespace repo {
 	namespace manipulator {
@@ -32,15 +33,15 @@ namespace repo {
 				struct PipelineUtils 
 				{
 					/*
-					* Gets the geometry for the node in project coordinates. This method will
-					* reindex the faces to combine duplicate vertices to enable detection of
-					* closed meshes, even where normals and uvs differ at the seams.
+					* Gets the geometry for the node in project coordinates, adding new geometry
+					* to the IndexedMeshBuilder. All geometry read into the pipeline should be
+					* via an IndexedMeshBuilder, because this is necessary for closed mesh
+					* detection, which is a key part of both pipelines.
 					*/
 					static void loadGeometry(
 						DatabasePtr handler, 
 						Graph::Node& node,
-						std::vector<repo::lib::RepoVector3D64>& vertices,
-						std::vector<repo::lib::repo_face_t>& faces
+						geometry::RepoIndexedMeshBuilder& builder
 					);
 				};
 			}

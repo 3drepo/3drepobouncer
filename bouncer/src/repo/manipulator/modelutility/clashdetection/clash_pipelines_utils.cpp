@@ -24,8 +24,7 @@ using namespace repo::manipulator::modelutility::clash;
 void PipelineUtils::loadGeometry(
 	DatabasePtr handler,
 	Graph::Node& node,
-	std::vector<repo::lib::RepoVector3D64>& vertices,
-	std::vector<repo::lib::repo_face_t>& faces
+	geometry::RepoIndexedMeshBuilder& builder
 )
 {
 	handler->loadBinaryBuffers(
@@ -35,14 +34,16 @@ void PipelineUtils::loadGeometry(
 	);
 
 	auto mesh = repo::core::model::MeshNode(node.mesh);
+	const auto& faces = mesh.getFaces();
+	const auto& vertices = mesh.getVertices();
 
-	faces = mesh.getFaces();
-
-	vertices.reserve(mesh.getNumVertices());
-	for(auto& v : mesh.getVertices()) {
-		// Put the meshes in project coordinates. We create new arrays below
-		// as we want to keep the vertices in double precision from now on.
-		vertices.push_back(node.matrix * repo::lib::RepoVector3D64(v));
+	for(const auto& face : faces) {
+		repo::lib::RepoTriangle tri(
+			node.matrix * repo::lib::RepoVector3D64(vertices[face[0]]),
+			node.matrix * repo::lib::RepoVector3D64(vertices[face[1]]),
+			node.matrix * repo::lib::RepoVector3D64(vertices[face[2]])
+		);
+		builder.append(tri);
 	}
 
 	node.mesh.unloadBinaryBuffers();

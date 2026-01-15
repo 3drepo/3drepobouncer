@@ -63,8 +63,7 @@ namespace geometry {
     */
     FaceFaceResult closestPoints(
         const repo::lib::RepoTriangle& A, 
-        const repo::lib::RepoTriangle& B,
-		double threshold = 0.0
+        const repo::lib::RepoTriangle& B
     );
 
     /*
@@ -202,5 +201,8 @@ namespace geometry {
         const std::vector<repo::lib::repo_face_t>& triangles
 	);
 
-
+    bool isClosedAndManifold(
+        const repo::lib::repo_face_t* triangles,
+        size_t numTriangles
+    );
 }

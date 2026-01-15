@@ -72,12 +72,8 @@ geometry::RepoIndexedMesh ClashDetectionDatabaseHelper::getChildMeshNodes(repo::
 
 	geometry::RepoIndexedMesh combined;
 	geometry::RepoIndexedMeshBuilder builder(combined);
-
 	for (auto& node : nodes) {
-		std::vector<repo::lib::RepoVector3D64> vertices;
-		std::vector<repo::lib::repo_face_t> faces;
-		clash::PipelineUtils::loadGeometry(handler, node, vertices, faces);
-		builder.append(vertices, faces);
+		clash::PipelineUtils::loadGeometry(handler, node, builder);
 	}
 
 	return combined;

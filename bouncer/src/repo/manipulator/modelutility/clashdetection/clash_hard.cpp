@@ -100,24 +100,19 @@ namespace {
 
 			geometry::RepoIndexedMeshBuilder builder(mesh);
 
-			std::vector<repo::lib::RepoVector3D64> vertices;
-			std::vector<repo::lib::repo_face_t> faces;
-
 			for (auto& node : nodes) {
-				vertices.clear();
-				faces.clear();
-				PipelineUtils::loadGeometry(handler, *node, vertices, faces);
+				auto start = mesh.faces.size();
+				PipelineUtils::loadGeometry(handler, *node, builder);
 
 				// Keep a record of where this node's faces are in the combined mesh
 
+				auto length = mesh.faces.size() - start;
 				meshViews.push_back(MeshView(
-					mesh, 
-					mesh.faces.size(),
-					faces.size(),
-					geometry::isClosedAndManifold(faces))
-				);
-
-				builder.append(vertices, faces);
+					mesh,
+					start,
+					length,
+					geometry::isClosedAndManifold(mesh.faces.data() + start, length)
+				));
 			}
 
 			bounds = repo::lib::RepoBounds(mesh.vertices.data(), mesh.vertices.size());

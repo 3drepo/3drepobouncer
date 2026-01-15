@@ -206,8 +206,7 @@ repo::lib::RepoLine lineFaceIntersection(const repo::lib::RepoLine& B, const rep
 
 FaceFaceResult geometry::closestPoints(
 	const repo::lib::RepoTriangle& A, 
-	const repo::lib::RepoTriangle& B,
-	double threshold)
+	const repo::lib::RepoTriangle& B)
 {
     // Ericson, C. (2004). Real-Time Collision Detection. CRC Press.
 
@@ -835,6 +834,14 @@ bool geometry::isClosedAndManifold(
     const std::vector<repo::lib::repo_face_t>& triangles
 )
 {
+	return isClosedAndManifold(triangles.data(), triangles.size());
+}
+
+bool geometry::isClosedAndManifold(
+    const repo::lib::repo_face_t* triangles,
+    size_t numTriangles
+)
+{
     // A mesh is closed if every edge has at least one sibling, and manifold if
     // there is exactly one sibling (that is, there are no T-junctions or 
     // interior triangles).
@@ -856,8 +863,10 @@ bool geometry::isClosedAndManifold(
 
     std::unordered_map<std::pair<size_t, size_t>, size_t, edge_hash> edge_map;
 
-    for (const auto& tri : triangles)
+    for (size_t i = 0; i < numTriangles; i++)
     {
+		const auto& tri = triangles[i];
+  
         auto edges = {
             std::make_pair(std::min(tri[0], tri[1]), std::max(tri[0], tri[1])),
             std::make_pair(std::min(tri[1], tri[2]), std::max(tri[1], tri[2])),

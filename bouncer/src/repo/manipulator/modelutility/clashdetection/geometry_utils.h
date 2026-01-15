@@ -49,10 +49,13 @@ namespace geometry {
 		RepoIndexedMeshBuilder(RepoIndexedMesh& mesh);
 		~RepoIndexedMeshBuilder();
 
-
 		void append(
 			const std::vector<repo::lib::RepoVector3D64>& vertices,
 			const std::vector<repo::lib::repo_face_t>& faces);
+
+		void append(
+			const repo::lib::RepoTriangle& triangle
+		);
 
 	protected:
 		RepoIndexedMesh& mesh;

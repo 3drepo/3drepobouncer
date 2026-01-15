@@ -39,17 +39,17 @@ class RepoIndexedMeshBuilder::Context
 
 	struct Hasher
 	{
-		std::size_t operator()(const repo::lib::RepoVector3D& v) const {
-			std::size_t h1 = std::hash<float>{}(v.x);
-			std::size_t h2 = std::hash<float>{}(v.y);
-			std::size_t h3 = std::hash<float>{}(v.z);
+		std::size_t operator()(const repo::lib::RepoVector3D64& v) const {
+			std::size_t h1 = std::hash<double>{}(v.x);
+			std::size_t h2 = std::hash<double>{}(v.y);
+			std::size_t h3 = std::hash<double>{}(v.z);
 			return h1 ^ (h2 << 1) ^ (h3 << 2);
 		}
 	};
 
 	struct Less
 	{
-		bool operator()(const repo::lib::RepoVector3D& a, const repo::lib::RepoVector3D& b) const {
+		bool operator()(const repo::lib::RepoVector3D64& a, const repo::lib::RepoVector3D64& b) const {
 			if (a.x != b.x) return a.x < b.x;
 			if (a.y != b.y) return a.y < b.y;
 			return a.z < b.z;
@@ -61,12 +61,12 @@ class RepoIndexedMeshBuilder::Context
 	// re-indexing like we do here.
 
 	tsl::bhopscotch_map<
-		repo::lib::RepoVector3D,
-		uint32_t,
+		repo::lib::RepoVector3D64,
+		size_t,
 		Hasher,
-		std::equal_to<repo::lib::RepoVector3D>,
+		std::equal_to<repo::lib::RepoVector3D64>,
 		Less,
-		std::allocator<std::pair<const repo::lib::RepoVector3D, uint32_t>>,
+		std::allocator<std::pair<const repo::lib::RepoVector3D64, size_t>>,
 		10,
 		true>
 		map;
@@ -115,4 +115,14 @@ void RepoIndexedMeshBuilder::append(
 		}
 		mesh.faces.push_back(newFace);
 	}
+}
+
+void RepoIndexedMeshBuilder::append(
+	const repo::lib::RepoTriangle& triangle)
+{
+	repo::lib::repo_face_t newFace;
+	newFace.push_back(ctx->find(triangle.a));
+	newFace.push_back(ctx->find(triangle.b));
+	newFace.push_back(ctx->find(triangle.c));
+	mesh.faces.push_back(newFace);
 }
