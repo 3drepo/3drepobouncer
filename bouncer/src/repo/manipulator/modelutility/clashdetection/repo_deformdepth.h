@@ -64,6 +64,13 @@ namespace geometry {
 
 		double getPenetrationDepth() const;
 
+		/*
+		* Returns the points in contact between (a) and (b) when the algorithm
+		* terminates. This can be returned to the user as a characterisation of the
+		* clash. This set may be empty if no contacts were found.
+		*/
+		std::vector<repo::lib::RepoVector3D64> getContactManifold() const;
+
 	protected:
 		double tolerance;
 
@@ -129,6 +136,11 @@ namespace geometry {
 			repo::lib::RepoVector3D64 displacement;
 		};
 
+		struct Contact {
+			size_t vertexIndex;
+			repo::lib::RepoVector3D64 normal;
+		};
+
 		std::vector<Displacement> displacements;
 
 		void resetDisplacements();
@@ -147,6 +159,8 @@ namespace geometry {
 		* be careful not to make this too large.
 		*/
 		size_t numLocalSearchSteps = 5;
+
+
 	};
 
 

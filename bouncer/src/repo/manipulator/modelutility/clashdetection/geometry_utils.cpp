@@ -17,6 +17,10 @@
 
 #include "geometry_utils.h"
 
+#include "repo/lib/datastructure/repo_vector.h"
+
+#include <vector>
+
 #include "hopscotch-map/bhopscotch_map.h"
 
 using namespace geometry;

@@ -30,6 +30,8 @@ using namespace repo::lib;
 
 using Bvh = bvh::Bvh<double>;
 
+//#pragma optimize("", off)
+
 namespace {
 	repo::lib::RepoBounds repoBounds(const bvh::Bvh<double>::Node& a) {
 		return repo::lib::RepoBounds(
@@ -191,6 +193,24 @@ bool RepoDeformDepth::intersect()
 	return intersect(repo::lib::RepoVector3D64(0, 0, 0));
 }
 
+std::vector<repo::lib::RepoVector3D64> RepoDeformDepth::getContactManifold() const {
+	return {};
+}
+
+struct SimpleObjWriter
+{
+	SimpleObjWriter(std::string filename);
+	void write(const repo::lib::RepoTriangle& triangle);
+	void write(const std::vector<repo::lib::RepoTriangle>& triangles);
+	void write(const repo::lib::RepoLine& line);
+	~SimpleObjWriter();
+
+private:
+	std::ofstream file;
+	int vertexCounter = 1;
+	int objectCounter = 0;
+};
+
 bool RepoDeformDepth::intersect(const repo::lib::RepoVector3D64& m)
 {
 	refitBvh(m);
@@ -279,11 +299,37 @@ void RepoDeformDepth::iterate(size_t maxIterations)
 		return;
 	}
 
+	/*
+	{
+		SimpleObjWriter writer("C:/3drepo/3drepobouncer_ISSUE797/initial.obj");
+		for(auto& f : a.faces) {
+			writer.write(RepoTriangle(
+				vertices[f[0]] - repo::lib::RepoVector3D64(bvhB.nodes[0].bounds[0], bvhB.nodes[0].bounds[2], bvhB.nodes[0].bounds[4]),
+				vertices[f[1]] - repo::lib::RepoVector3D64(bvhB.nodes[0].bounds[0], bvhB.nodes[0].bounds[2], bvhB.nodes[0].bounds[4]),
+				vertices[f[2]] - repo::lib::RepoVector3D64(bvhB.nodes[0].bounds[0], bvhB.nodes[0].bounds[2], bvhB.nodes[0].bounds[4])
+			));
+		}
+	}
+	*/
+
 	for(int i = 0; i < maxIterations; i++) {
 		if (intersect()) {
 			if (!updateConfiguration()) {
 				break; // Likely a local minima has been reached.
 			}
+
+			/*
+			{
+				SimpleObjWriter writer("C:/3drepo/3drepobouncer_ISSUE797/defom_itr.obj");
+				for (auto& f : a.faces) {
+					writer.write(RepoTriangle(
+						vertices[f[0]] - repo::lib::RepoVector3D64(bvhB.nodes[0].bounds[0], bvhB.nodes[0].bounds[2], bvhB.nodes[0].bounds[4]),
+						vertices[f[1]] - repo::lib::RepoVector3D64(bvhB.nodes[0].bounds[0], bvhB.nodes[0].bounds[2], bvhB.nodes[0].bounds[4]),
+						vertices[f[2]] - repo::lib::RepoVector3D64(bvhB.nodes[0].bounds[0], bvhB.nodes[0].bounds[2], bvhB.nodes[0].bounds[4])
+					));
+				}
+			}
+			*/
 
 			// If we've had to deform the mesh beyond the tolerance, there is no
 			// point in continuing further.
@@ -296,4 +342,51 @@ void RepoDeformDepth::iterate(size_t maxIterations)
 			break;
 		}
 	}
+}
+
+
+
+
+
+
+
+SimpleObjWriter::SimpleObjWriter(std::string filename) : file(filename) {
+	file << std::setprecision(std::numeric_limits<double>::max_digits10);
+}
+
+void SimpleObjWriter::write(const repo::lib::RepoTriangle& triangle) {
+	file << "o Triangle\n";
+	file << "v " << triangle.a.x << " " << triangle.a.y << " " << triangle.a.z << "\n";
+	file << "v " << triangle.b.x << " " << triangle.b.y << " " << triangle.b.z << "\n";
+	file << "v " << triangle.c.x << " " << triangle.c.y << " " << triangle.c.z << "\n";
+	file << "f ";
+	file << vertexCounter++ << " ";
+	file << vertexCounter++ << " ";
+	file << vertexCounter++ << "\n";
+}
+
+void SimpleObjWriter::write(const std::vector<repo::lib::RepoTriangle>& triangles) {
+	file << "o Triangles" << objectCounter++ << "\n";
+	for (auto& triangle : triangles) {
+		file << "v " << triangle.a.x << " " << triangle.a.y << " " << triangle.a.z << "\n";
+		file << "v " << triangle.b.x << " " << triangle.b.y << " " << triangle.b.z << "\n";
+		file << "v " << triangle.c.x << " " << triangle.c.y << " " << triangle.c.z << "\n";
+		file << "f ";
+		file << vertexCounter++ << " ";
+		file << vertexCounter++ << " ";
+		file << vertexCounter++ << "\n";
+	}
+}
+
+void SimpleObjWriter::write(const repo::lib::RepoLine& line) {
+	file << "o Line\n";
+	file << "v " << line.start.x << " " << line.start.y << " " << line.start.z << "\n";
+	file << "v " << line.end.x << " " << line.end.y << " " << line.end.z << "\n";
+	file << "l ";
+	file << vertexCounter++ << " ";
+	file << vertexCounter++ << "\n";
+}
+
+SimpleObjWriter::~SimpleObjWriter() {
+	file.close();
 }

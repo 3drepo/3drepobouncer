@@ -349,8 +349,7 @@ void Hard::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 					a->getId(),
 					b->getId()
 				);
-				clash->a = a->bounds.center();
-				clash->b = b->bounds.center();
+				clash->contacts = pd.getContactManifold();
 			}
 		}
 		catch (const geometry::GeometryTestException& e) {
@@ -366,10 +365,7 @@ void Hard::createClashReport(const OrderedPair& objects,
 	result.idB = objects.b;
 
 	auto h = static_cast<const HardClash&>(clash);
-	result.positions = {
-		h.a,
-		h.b
-	};
+	result.positions = std::move(h.contacts);
 
 	size_t hash = 0;
 	std::hash<double> hasher;
