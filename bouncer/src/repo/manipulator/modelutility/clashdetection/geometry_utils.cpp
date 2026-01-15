@@ -78,7 +78,7 @@ class RepoIndexedMeshBuilder::Context
 	std::vector<repo::lib::RepoVector3D64>& vertices;
 
 public:
-	RepoIndexedMeshBuilder::Context(std::vector<repo::lib::RepoVector3D64>&	vertices)
+	Context(std::vector<repo::lib::RepoVector3D64>&	vertices)
 		:vertices(vertices)
 	{
 	}
