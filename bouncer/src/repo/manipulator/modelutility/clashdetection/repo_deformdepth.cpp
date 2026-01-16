@@ -110,7 +110,7 @@ RepoDeformDepth::RepoDeformDepth(
 	bvhA(buildBvh(a)),
 	bvhB(buildBvh(b))
 {
-	contacts.resize(a.vertices.size());
+	distances.resize(a.vertices.size());
 
 	// If there is no intersection, there is nothing to do, which we signal by
 	// already setting the configuration distance to zero.
@@ -177,6 +177,9 @@ RepoDeformDepth::RepoDeformDepth(
 
 	// Do early rejection tests: 
 	//  * Or, a separating hyperplane (up to the tolerance) exists between the two vertex sets
+
+	// We only need these if we get to the deflate stage.
+	computePseudoNormals(); 
 }
 
 double RepoDeformDepth::getPenetrationDepth() const
@@ -186,9 +189,7 @@ double RepoDeformDepth::getPenetrationDepth() const
 
 void RepoDeformDepth::resetDisplacements()
 {
-	for (auto& c : contacts) {
-		c.constraints.clear();
-	}
+	memset(distances.data(), 0, distances.size() * sizeof(double));
 }
 
 bool RepoDeformDepth::intersect()
@@ -197,7 +198,14 @@ bool RepoDeformDepth::intersect()
 }
 
 std::vector<repo::lib::RepoVector3D64> RepoDeformDepth::getContactManifold() const {
-	return {};
+	std::vector<repo::lib::RepoVector3D64> points;
+	for(int i = 0; i < distances.size(); i++) {
+		if (distances[i] > 0) {
+			auto p = a.vertices[i];
+			points.push_back(p);
+		}
+	}
+	return points;
 }
 
 struct SimpleObjWriter
@@ -236,22 +244,20 @@ bool RepoDeformDepth::intersect(const repo::lib::RepoVector3D64& m)
 				vertices[face[1]] + m,
 				vertices[face[2]] + m
 			);
-				
-			auto d = geometry::closestPoints(triA, b.getTriangle(_b));
 
-			if (d.intersects || d.magnitude() < geometry::contactThreshold(triA, b.getTriangle(_b))) {
+			auto triB = b.getTriangle(_b);
 
-				// Attempt to resolve the collision by shrinking the local surface of A
-				// away from B.
-				// Shrinking is always performed in the normal direction of the triangle A.
-				// This is because we only have local information about the surface of B,
-				// and so trying to move along the locally optimal direction may lead to
-				// making the collision worse.
+			auto d = geometry::closestPoints(triA, triB);
+			auto ct = geometry::contactThreshold(triA, triB);
+			if (d.intersects || d.magnitude() < ct) {
+
+				// Note that true depth will always be less than the tolerance, because an
+				// intersection distance greater than the tolerance is a termination
+				// condition.
 
 				const auto& face = a.faces[_a];
 				for (const auto& index : face) {
-					auto& c = contacts[index];
-					c.constraints.push_back({ vertices[index] - triA.normal() * -tolerance * 0.25, triA.normal()});
+					distances[index] = tolerance * 0.05;
 				}
 
 				intersecting = true;
@@ -272,39 +278,6 @@ void RepoDeformDepth::refitBvh(const repo::lib::RepoVector3D64& m)
 	refitter.refit();
 }
 
-bool RepoDeformDepth::updateConfiguration()
-{
-	bool updated = false;
-	for (size_t vi = 0; vi < a.vertices.size(); vi++) {
-		const auto& c = contacts[vi];
-		if (c.constraints.size() > 0) {
-
-			for (int i = 0; i < 100; i++) { // Limit to 100 iterations per vertex
-				bool solved = true;
-
-				// Attempts to solve the vertex position by projecting it onto the
-				// positive size of each plane in turn.
-				for (auto& p : c.constraints) {
-					auto toPoint = vertices[vi] - p.point;
-					auto dist = toPoint.dotProduct(p.normal);
-					if (dist < 0) {
-						vertices[vi] += p.normal * -dist;
-						solved = false;
-					}
-				}
-
-				if (solved) {
-					break;
-				}
-			}
-
-			updated = true;
-		}
-	}
-
-	return updated;
-}
-
 double RepoDeformDepth::getConfigurationDistance()
 {
 	double maxDistance = 0.0;
@@ -314,8 +287,27 @@ double RepoDeformDepth::getConfigurationDistance()
 	return maxDistance;
 }
 
+bool RepoDeformDepth::deflateMesh()
+{
+	bool hasDeflated = false;
+	for (auto vi = 0; vi < vertices.size(); vi++) {
+		auto& v = vertices[vi];
+		auto& n = pseudoNormals[vi];
+		double amount = distances[vi];
+		if (amount > 0) {
+			v = v - n * amount;
+			hasDeflated = true;
+		}
+	}
+	return hasDeflated;
+}
+
 void RepoDeformDepth::iterate(size_t maxIterations)
 {
+	if (maxIterations < 0) {
+		maxIterations =  (size_t)(1.0 / deflateStepSize);
+	}
+
 	if (distance < tolerance) {
 		return;
 	}
@@ -331,11 +323,23 @@ void RepoDeformDepth::iterate(size_t maxIterations)
 			));
 		}
 	}
+
+	{
+		SimpleObjWriter writer("C:/3drepo/3drepobouncer_ISSUE797/b.obj");
+		for (auto& f : b.faces) {
+			writer.write(RepoTriangle(
+				b.vertices[f[0]] - repo::lib::RepoVector3D64(bvhB.nodes[0].bounds[0], bvhB.nodes[0].bounds[2], bvhB.nodes[0].bounds[4]),
+				b.vertices[f[1]] - repo::lib::RepoVector3D64(bvhB.nodes[0].bounds[0], bvhB.nodes[0].bounds[2], bvhB.nodes[0].bounds[4]),
+				b.vertices[f[2]] - repo::lib::RepoVector3D64(bvhB.nodes[0].bounds[0], bvhB.nodes[0].bounds[2], bvhB.nodes[0].bounds[4])
+			));
+		}
+	}
 	*/
+	
 
 	for(int i = 0; i < maxIterations; i++) {
 		if (intersect()) {
-			if (!updateConfiguration()) {
+			if (!deflateMesh()) {
 				break; // Likely a local minima has been reached.
 			}
 
@@ -351,10 +355,12 @@ void RepoDeformDepth::iterate(size_t maxIterations)
 				}
 			}
 			*/
+			
 
 			// If we've had to deform the mesh beyond the tolerance, there is no
 			// point in continuing further.
-			if(getConfigurationDistance() > tolerance) {
+			auto configDistance = getConfigurationDistance();
+			if(configDistance > tolerance) {
 				break;
 			}
 		}
@@ -363,13 +369,35 @@ void RepoDeformDepth::iterate(size_t maxIterations)
 			break;
 		}
 	}
+
+	
+	return;
 }
 
+void RepoDeformDepth::computePseudoNormals()
+{
+	pseudoNormals.resize(a.vertices.size());
 
+	for (const auto& f : a.faces) {
+		auto v0 = vertices[f[0]];
+		auto v1 = vertices[f[1]];
+		auto v2 = vertices[f[2]];
 
+		auto a0 = std::acos(((v1 - v0).normalized()).dotProduct((v2 - v0).normalized()));
+		auto a1 = std::acos(((v0 - v1).normalized()).dotProduct((v2 - v1).normalized()));
+		auto a2 = std::acos(((v0 - v2).normalized()).dotProduct((v1 - v2).normalized()));
 
+		auto normal = (v1 - v0).crossProduct(v2 - v0).normalized();
 
+		pseudoNormals[f[0]] += normal * a0;
+		pseudoNormals[f[1]] += normal * a1;
+		pseudoNormals[f[2]] += normal * a2;
+	}
 
+	for (auto& n : pseudoNormals) {
+		n = n.normalized();
+	}
+}
 
 SimpleObjWriter::SimpleObjWriter(std::string filename) : file(filename) {
 	file << std::setprecision(std::numeric_limits<double>::max_digits10);

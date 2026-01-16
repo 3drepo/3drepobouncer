@@ -47,7 +47,6 @@ namespace repo {
 
 				protected:
 					double tolerance;
-					const size_t maxPolyDepthIterations = 10;
 				};
 			}
 		}

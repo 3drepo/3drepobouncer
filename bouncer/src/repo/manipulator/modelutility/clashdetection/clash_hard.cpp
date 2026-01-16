@@ -340,7 +340,7 @@ void Hard::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 				tolerance
 			);
 
-			pd.iterate(maxPolyDepthIterations);
+			pd.iterate();
 
 			auto v = pd.getPenetrationDepth();
 

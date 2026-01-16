@@ -2664,6 +2664,9 @@ TEST(Clash, RepoDeformDepthDb)
 			return pd.getPenetrationDepth() > tolerance;
 	};
 
+	EXPECT_THAT(run("set15_a", "set15_b", 0), IsTrue());
+	EXPECT_THAT(run("set15_a", "set15_b", 2), IsFalse());
+
 	EXPECT_THAT(run("set1_a", "set1_b", 1), IsTrue());
 	EXPECT_THAT(run("set1_a", "set1_b", 600), IsFalse());
 

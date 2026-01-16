@@ -60,12 +60,12 @@ namespace geometry {
 			ContainsFunctor* containsFunctor = nullptr,
 			double tolerance = 0.0);
 
-		void iterate(size_t maxIterations);
+		void iterate(size_t maxIterations = -1);
 
 		double getPenetrationDepth() const;
 
 		/*
-		* Returns the points in contact between (a) and (b) when the algorithm
+		* Returns the points on A that are in contact with B when the algorithm
 		* terminates. This can be returned to the user as a characterisation of the
 		* clash. This set may be empty if no contacts were found.
 		*/
@@ -84,6 +84,11 @@ namespace geometry {
 		* The current configuration of a's mesh.
 		*/
 		std::vector<repo::lib::RepoVector3D64> vertices;
+
+		/*
+		* Normals per vertex of A that are the best estimate of its outer surface.
+		*/
+		std::vector<repo::lib::RepoVector3D64> pseudoNormals;
 
 		const geometry::RepoIndexedMesh& a;
 		const geometry::RepoIndexedMesh& b;
@@ -110,14 +115,10 @@ namespace geometry {
 		bool intersect();
 
 		/*
-		* Attempts to find a better configuration of (a) based on the current contact
-		* information in displacements. Returns true if the configuration was 
-		* sucessfully updated, or false if for some reason the update could not be made
-		* or the changes were otherwise trivial; this may occur if the algorithm has
-		* reached a local minima, in which case its likely that the iterate method
-		* should terminate as no further improvements will be found.
+		* Reduces mesh A along its outer surface by the amounts specified in the per-
+		* vertex displacements.
 		*/
-		bool updateConfiguration();
+		bool deflateMesh();
 
 		/*
 		* Gets the distance of the current configuration from the starting
@@ -131,18 +132,12 @@ namespace geometry {
 		*/
 		void refitBvh(const repo::lib::RepoVector3D64& m);
 
-		struct Plane {
-			repo::lib::RepoVector3D64 point;
-			repo::lib::RepoVector3D64 normal;
-		};
-
-		struct Contacts {
-			std::vector<Plane> constraints;
-		};
-
-		std::vector<Contacts> contacts;
+		std::vector<double> distances;
 
 		void resetDisplacements();
+
+		void computePseudoNormals();
+
 
 		/*
 		* Threshold used to decide how small mesh (a) must be compared to mesh (b)
@@ -158,6 +153,12 @@ namespace geometry {
 		* be careful not to make this too large.
 		*/
 		size_t numLocalSearchSteps = 5;
+
+		/*
+		* How much to deflate the mesh in each search step, as a fraction of the
+		* tolerance.
+		*/
+		double deflateStepSize = 0.05;
 	};
 
 

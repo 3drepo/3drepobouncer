@@ -218,7 +218,7 @@ FaceFaceResult geometry::closestPoints(
     // infinitesimal.
 
     if (i > COPLANAR) {
-        return FaceFaceResult{ repo::lib::RepoLine{ p, p }, true };
+        return FaceFaceResult{ repo::lib::RepoLine{ p, p }, true, i };
     }
 
     repo::lib::RepoLine Ea1(A.a, A.b);
@@ -263,7 +263,7 @@ FaceFaceResult geometry::closestPoints(
         }
     }
 
-    return { min, false };
+    return { min, false, COPLANAR };
 }
 
 double geometry::ulp(double x)
