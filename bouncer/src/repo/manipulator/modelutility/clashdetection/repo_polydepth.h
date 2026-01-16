@@ -70,7 +70,7 @@ namespace geometry {
 			const std::vector<repo::lib::RepoTriangle>& a, 
 			const std::vector<repo::lib::RepoTriangle>& b,
 			const ContainsFunctor* contains = nullptr,
-			double tolerance = FLT_EPSILON
+			double tolerance = 1e-6
 		);
 
 		/*
@@ -243,6 +243,6 @@ namespace geometry {
 		* value is FLT_EPSILON, which in real-world is too small to be meaningful, so
 		* it is always recommended to set this explicitly.
 		*/
-		double tolerance = FLT_EPSILON;
+		double tolerance = 1e-6;
 	};
 }

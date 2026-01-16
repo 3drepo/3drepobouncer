@@ -24,6 +24,7 @@
 #include "bvh_operators.h"
 
 #include <fstream>
+#include <iomanip>
 
 using namespace geometry;
 using namespace repo::lib;
