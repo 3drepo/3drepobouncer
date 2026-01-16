@@ -661,7 +661,7 @@ void getMissingCompIds(
 	}
 }
 
-void RunRvtDisjointTest(
+void RunDisjointTest(
 	const std::unique_ptr<repo::lib::Container>& container,
 	int noSamples,
 	int& halfToleranceClashes)
@@ -747,15 +747,16 @@ TEST(Clash, RvtDisjoint)
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
 
-		RunRvtDisjointTest(container, samplesPerSegment, halfToleranceClashes);
+		RunDisjointTest(container, samplesPerSegment, halfToleranceClashes);
 	}
 
 	EXPECT_THAT(halfToleranceClashes, Eq(totalSamples / 2));
 }
 
-void RunRvtIntersectClosedTest(
+void RunIntersectClosedTest(
 	const std::unique_ptr<repo::lib::Container>& container,
-	int noSamples)
+	int noSamples,
+	std::string metadataDescriptor)
 {	
 	auto handler = getHandler();
 
@@ -831,7 +832,7 @@ void RunRvtIntersectClosedTest(
 				auto metaEntry = metadataMap.find(missingId);
 				if (metaEntry != metadataMap.end())
 				{
-					double minPenDepth = boost::get<double>(metaEntry->second["Dimensions::MinPenDepth"]);
+					double minPenDepth = boost::get<double>(metaEntry->second[metadataDescriptor]);
 					EXPECT_THAT(minPenDepth, Lt(2500.0f));
 }
 				else
@@ -872,13 +873,14 @@ TEST(Clash, RvtIntersectClosed)
 	auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
 
-		RunRvtIntersectClosedTest(container, samplesPerSegment);
+		RunIntersectClosedTest(container, samplesPerSegment, "Dimensions::MinPenDepth");
 	}
 }
 
-void RunRvtIntersectOpenTest(
+void RunIntersectOpenTest(
 	const std::unique_ptr<repo::lib::Container>& container,
-	int noSamples)
+	int noSamples,
+	std::string metadataDescriptor)
 {
 	auto handler = getHandler();
 
@@ -954,10 +956,8 @@ void RunRvtIntersectOpenTest(
 				auto metaEntry = metadataMap.find(missingId);
 				if (metaEntry != metadataMap.end())
 				{
-					double minPenDepth = boost::get<double>(metaEntry->second["Dimensions::MinPenDepth"]);
-					// TODO: Currently there is an issue with the generation.
-					// Will be reinstated once the files have been regenerated.
-					// EXPECT_THAT(minPenDepth, Lt(2500.0f));
+					double minPenDepth = boost::get<double>(metaEntry->second[metadataDescriptor]);
+					EXPECT_THAT(minPenDepth, Lt(2500.0f));
 				}
 				else
 				{
@@ -997,13 +997,14 @@ TEST(Clash, RvtIntersectOpen)
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
 
-		RunRvtIntersectOpenTest(container, samplesPerSegment);
+		RunIntersectOpenTest(container, samplesPerSegment, "Dimensions::MinPenDepth");
 	}
 }
 
-void RunRvtCoversTest(
+void RunCoversTest(
 	const std::unique_ptr<repo::lib::Container>& container,
-	int noSamples)
+	int noSamples,
+	std::string metadataDescriptor)
 {
 	auto handler = getHandler();
 
@@ -1045,7 +1046,7 @@ void RunRvtCoversTest(
 				auto metaEntry = metadataMap.find(missingId);
 				if (metaEntry != metadataMap.end())
 				{
-					double separationDistance = boost::get<double>(metaEntry->second["Dimensions::ShortestDist"]);
+					double separationDistance = boost::get<double>(metaEntry->second[metadataDescriptor]);
 					EXPECT_THAT(separationDistance, Gt(2500.0f));
 				}
 				else
@@ -1072,8 +1073,8 @@ void RunRvtCoversTest(
 			EXPECT_THAT(metaA, Ne(metadataMap.end()));
 			EXPECT_THAT(metaB, Ne(metadataMap.end()));
 
-			float separationDistanceA = boost::get<double>(metaA->second["Dimensions::ShortestDist"]);
-			float separationDistanceB = boost::get<double>(metaB->second["Dimensions::ShortestDist"]);
+			float separationDistanceA = boost::get<double>(metaA->second[metadataDescriptor]);
+			float separationDistanceB = boost::get<double>(metaB->second[metadataDescriptor]);
 
 			EXPECT_THAT(separationDistanceA, Eq(separationDistanceB));
 
@@ -1125,13 +1126,14 @@ TEST(Clash, RvtCovers)
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
 
-		RunRvtCoversTest(container, samplesPerSegment);
+		RunCoversTest(container, samplesPerSegment, "Dimensions::ShortestDist");
 	}
 }
 
-void RunRvtContainsTest(
+void RunContainsTest(
 	const std::unique_ptr<repo::lib::Container>& container,
-	int noSamples)
+	int noSamples,
+	std::string metadataDescriptor)
 {
 	auto handler = getHandler();
 	
@@ -1209,7 +1211,7 @@ void RunRvtContainsTest(
 				auto metaEntry = metadataMap.find(missingId);
 				if (metaEntry != metadataMap.end())
 				{
-					double minPenDepth = boost::get<double>(metaEntry->second["Dimensions::ShortestDist"]);
+					double minPenDepth = boost::get<double>(metaEntry->second[metadataDescriptor]);
 					EXPECT_THAT(minPenDepth, Lt(2500.0f));
 				}
 				else
@@ -1250,11 +1252,11 @@ TEST(Clash, RvtContains)
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
 
-		RunRvtContainsTest(container, samplesPerSegment);
+		RunContainsTest(container, samplesPerSegment, "Dimensions::ShortestDist");
 	}
 }
 
-void RunRvtMeetTest(
+void RunMeetTest(
 	const std::unique_ptr<repo::lib::Container>& container,
 	int noSamples)
 {
@@ -1392,13 +1394,14 @@ TEST(Clash, RvtMeet)
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
 
-		RunRvtMeetTest(container, samplesPerSegment);
+		RunMeetTest(container, samplesPerSegment);
 }
 }
 
-void RunRvtOverlapTest(
+void RunOverlapTest(
 	const std::unique_ptr<repo::lib::Container>& container,
-	int noSamples)
+	int noSamples,
+	std::string metadataDescriptor)
 {
 	
 	auto handler = getHandler();
@@ -1475,7 +1478,7 @@ void RunRvtOverlapTest(
 				auto metaEntry = metadataMap.find(missingId);
 				if (metaEntry != metadataMap.end())
 				{
-					double minPenDepth = boost::get<double>(metaEntry->second["Dimensions::PenDepth"]);
+					double minPenDepth = boost::get<double>(metaEntry->second[metadataDescriptor]);
 					EXPECT_THAT(minPenDepth, Lt(2500.0f));
 				}
 				else
@@ -1516,13 +1519,14 @@ TEST(Clash, RvtOverlap)
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
 
-		RunRvtOverlapTest(container, samplesPerSegment);
+		RunOverlapTest(container, samplesPerSegment, "Dimensions::PenDepth");
 	}
 }
 
-void RunRvtEqualTest(
+void RunEqualTest(
 	const std::unique_ptr<repo::lib::Container>& container,
-	int noSamples)
+	int noSamples,
+	std::string metadataDescriptor)
 {
 	auto handler = getHandler();
 
@@ -1598,7 +1602,7 @@ void RunRvtEqualTest(
 				auto metaEntry = metadataMap.find(missingId);
 				if (metaEntry != metadataMap.end())
 				{
-					double minPenDepth = boost::get<double>(metaEntry->second["Dimensions::PenDepth"]);
+					double minPenDepth = boost::get<double>(metaEntry->second[metadataDescriptor]);
 					EXPECT_THAT(minPenDepth, Lt(2500.0f));
 				}
 				else
@@ -1637,7 +1641,7 @@ TEST(Clash, RvtEqual)
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
 
-		RunRvtEqualTest(container, samplesPerSegment);
+		RunEqualTest(container, samplesPerSegment, "Dimensions::PenDepth");
 	}
 }
 
@@ -1662,6 +1666,193 @@ TEST(Clash, Nwd)
 	auto results = pipeline->runPipeline();
 
 	EXPECT_THAT(results.clashes.size(), Eq(10000));
+}
+
+TEST(Clash, NwdDisjoint)
+{
+	GTEST_SKIP(); // Skip until Files are checked in
+
+	// Tests auto-generated samples of Intersection Case A (Disjoint) from a Navis File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "navisDisjoint_Part";
+	std::string postFix = ".nwd";
+
+	int halfToleranceClashes = 0;
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/NWD/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		RunDisjointTest(container, samplesPerSegment, halfToleranceClashes);
+	}
+
+	EXPECT_THAT(halfToleranceClashes, Eq(totalSamples / 2));
+}
+
+TEST(Clash, NwdIntersectClosed)
+{
+	GTEST_SKIP(); // Skip until Files are checked in
+
+	// Tests 10k auto-generated samples of Intersection Case B (Intersect Closed) from a Navis File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "navisIntersectClosed_Part";
+	std::string postFix = ".nwd";
+		
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/NWD/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		RunIntersectClosedTest(container, samplesPerSegment, "Custom::MinPenDepth");
+	}
+}
+
+TEST(Clash, NwdIntersectOpen)
+{
+	GTEST_SKIP(); // Skip until the files are checked in
+
+	// Tests 10k auto-generated samples of Intersection Case C (Intersect Closed) from a Navis File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "navisIntersectOpen_Part";
+	std::string postFix = ".nwd";
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/NWD/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		RunIntersectOpenTest(container, samplesPerSegment, "Custom::MinPenDepth");
+	}
+}
+
+TEST(Clash, NwdCovers)
+{
+	GTEST_SKIP(); // Skip until the files are checked in
+
+	// Tests 10k auto-generated samples of Intersection Case D (Covers) from a Navis File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "navisCovers_Part";
+	std::string postFix = ".nwd";
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/NWD/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		RunCoversTest(container, samplesPerSegment, "Custom::ShortestDist");
+	}
+}
+
+TEST(Clash, NwdContains)
+{
+	GTEST_SKIP(); // Skip until files are checked in
+
+	// Tests 10k auto-generated samples of Intersection Case E (Contains) from a Navis File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "navisContains_Part";
+	std::string postFix = ".nwd";
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/NWD/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		RunContainsTest(container, samplesPerSegment, "Custom::ShortestDist");
+	}
+}
+
+TEST(Clash, NwdMeet)
+{
+	GTEST_SKIP(); // Skip until files are checked in
+
+	// Tests 10k auto-generated samples of Intersection Case F (Meet) from a Navis File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "navisMeet_Part";
+	std::string postFix = ".nwd";
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/NWD/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		RunMeetTest(container, samplesPerSegment);
+	}
+}
+
+TEST(Clash, NwdOverlap)
+{
+	GTEST_SKIP(); // Skip until files are checked in
+
+	// Tests 10k auto-generated samples of Intersection Case G (Overlap) from a Navis File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "navisOverlap_Part";
+	std::string postFix = ".nwd";
+
+	 for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;	
+		std::string path = "/clash/NWD/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		RunOverlapTest(container, samplesPerSegment, "Custom::PenDepth");
+	}
+}
+
+TEST(Clash, NwdEqual)
+{
+	GTEST_SKIP(); // Skip until files are checked in
+
+	// Tests 10k auto-generated samples of Intersection Case H (Equal) from a Navis File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "navisEqual_Part";
+	std::string postFix = ".nwd";
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/NWD/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		RunEqualTest(container, samplesPerSegment, "Custom::PenDepth");
+	}
 }
 
 TEST(Clash, Clearance1)
