@@ -20,6 +20,7 @@
 #include <vector>
 #include "geometry_utils.h"
 #include "repo/lib/datastructure/repo_triangle.h"
+#include "repo/lib/datastructure/repo_bounds.h"
 #include "repo/manipulator/modeloptimizer/bvh/bvh.hpp"
 
 namespace geometry {
@@ -51,6 +52,7 @@ namespace geometry {
 		struct ContainsFunctor {
 			virtual bool operator()(
 				const std::vector<repo::lib::RepoVector3D64>& points,
+				const repo::lib::RepoBounds& bounds,
 				const repo::lib::RepoVector3D64& m) const = 0;
 		};
 
@@ -60,14 +62,15 @@ namespace geometry {
 			ContainsFunctor* containsFunctor = nullptr,
 			double tolerance = 0.0);
 
-		void iterate(size_t maxIterations = -1);
+		void iterate(int maxIterations = -1);
 
 		double getPenetrationDepth() const;
 
 		/*
 		* Returns the points on A that are in contact with B when the algorithm
 		* terminates. This can be returned to the user as a characterisation of the
-		* clash. This set may be empty if no contacts were found.
+		* clash. This set may be empty if no contacts were found. Points are returned
+		* relative to A's bounding box.
 		*/
 		std::vector<repo::lib::RepoVector3D64> getContactManifold() const;
 
@@ -89,6 +92,13 @@ namespace geometry {
 		* Normals per vertex of A that are the best estimate of its outer surface.
 		*/
 		std::vector<repo::lib::RepoVector3D64> pseudoNormals;
+
+		/*
+		* The current bounds of the vertices in their deformed configuration. These
+		* are used to detect if the mesh is growing instead of shrinking, which can
+		* indicate broken normals. They are also necessary for the contains test.
+		*/
+		repo::lib::RepoBounds verticesBounds;
 
 		const geometry::RepoIndexedMesh& a;
 		const geometry::RepoIndexedMesh& b;

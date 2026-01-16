@@ -1656,10 +1656,11 @@ TEST(Clash, RepoDeformDepthDb)
 		bvh::Bvh<double> bvhB;
 		
 		bool operator()(const std::vector<repo::lib::RepoVector3D64>& points,
+			const repo::lib::RepoBounds& bounds,
 			const repo::lib::RepoVector3D64& m) const override {
 			return geometry::contains(
 				points,
-				repo::lib::RepoBounds(points.data(), points.size()),
+				bounds,
 				*this,
 				m
 			);
@@ -1683,9 +1684,6 @@ TEST(Clash, RepoDeformDepthDb)
 
 			return pd.getPenetrationDepth() > tolerance;
 	};
-
-	EXPECT_THAT(run("set15_a", "set15_b", 0), IsTrue());
-	EXPECT_THAT(run("set15_a", "set15_b", 2), IsFalse());
 
 	EXPECT_THAT(run("set1_a", "set1_b", 1), IsTrue());
 	EXPECT_THAT(run("set1_a", "set1_b", 600), IsFalse());
@@ -1741,6 +1739,9 @@ TEST(Clash, RepoDeformDepthDb)
 	EXPECT_THAT(run("set13_a", "set13_b", 0), IsTrue());
 
 	EXPECT_THAT(run("set14_a", "set14_b", 100), IsTrue());
+
+	EXPECT_THAT(run("set15_a", "set15_b", 0), IsTrue());
+	EXPECT_THAT(run("set15_a", "set15_b", 2), IsFalse());
 }
 
 TEST(Clash, RepoDeformDepthDegenerateGeometry)
