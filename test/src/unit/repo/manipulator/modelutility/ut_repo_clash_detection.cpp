@@ -661,990 +661,6 @@ void getMissingCompIds(
 	}
 }
 
-void RunDisjointTest(
-	const std::unique_ptr<repo::lib::Container>& container,
-	int noSamples,
-	int& halfToleranceClashes)
-{
-	auto handler = getHandler();
-
-	ClashDetectionConfig config;
-	ClashDetectionDatabaseHelper helper(handler);
-
-	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
-
-	EXPECT_THAT(config.setA.size(), Eq(noSamples));
-	EXPECT_THAT(config.setB.size(), Eq(noSamples));
-
-	// Test Clearance Mode
-	// No tolerance
-	{
-		config.tolerance = 0.0f;
-		auto pipeline = new clash::Clearance(handler, config);
-		auto results = pipeline->runPipeline();
-		EXPECT_THAT(results.clashes.size(), Eq(0));
-	}
-
-	// Test Clearance Mode
-	// Tolerance so that half of the set should be included
-	{
-		config.tolerance = 5000.0f;
-		auto pipeline = new clash::Clearance(handler, config);
-		auto results = pipeline->runPipeline();
-		halfToleranceClashes += results.clashes.size();
-		//EXPECT_THAT(results.clashes.size(), Eq(noSamples / 2));
-	}
-
-	// Test Clearance Mode (Tolerance 20,000)
-	// Tolerance so high that all instances should be included
-	{
-		config.tolerance = 20000;
-		auto pipeline = new clash::Clearance(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
-	}
-	
-	// Test Hard Mode
-	// No tolerance
-	{
-		config.tolerance = 0.0f;
-		auto pipeline = new clash::Hard(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(0));
-	}
-	
-	// Test Hard Mode
-	// High tolerance
-	{
-		config.tolerance = FLT_MAX;
-		auto pipeline = new clash::Hard(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(0));
-	}
-}
-
-TEST(Clash, RvtDisjoint)
-{
-	// GTEST_SKIP(); // Skip until I figured out how to make Travis pass this
-
-	// Tests auto-generated samples of Intersection Case A (Disjoint) from a Revit File
-
-	int noParts = 5;
-	int totalSamples = 10000;
-	int samplesPerSegment = totalSamples / noParts;
-	std::string baseName = "revitDisjoint_Part";
-	std::string postFix = ".rvt";
-
-	int halfToleranceClashes = 0;
-	for (int i = 0; i < noParts; i++) {
-		std::string fileName = baseName + std::to_string(i) + postFix;
-		std::string path = "/clash/RVT/" + fileName;
-
-		auto container = makeTemporaryContainer();
-		importModel(getDataPath(path), *container);
-
-		RunDisjointTest(container, samplesPerSegment, halfToleranceClashes);
-	}
-
-	EXPECT_THAT(halfToleranceClashes, Eq(totalSamples / 2));
-}
-
-void RunIntersectClosedTest(
-	const std::unique_ptr<repo::lib::Container>& container,
-	int noSamples,
-	std::string metadataDescriptor)
-{	
-	auto handler = getHandler();
-
-	ClashDetectionConfig config;
-	ClashDetectionDatabaseHelper helper(handler);
-
-	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
-
-	EXPECT_THAT(config.setA.size(), Eq(noSamples));
-	EXPECT_THAT(config.setB.size(), Eq(noSamples));
-
-	// Test Clearance Mode
-	// Low tolerance
-	{
-		config.tolerance = 1.0f;
-		auto pipeline = new clash::Clearance(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
-
-		// Check all clash results whether the closest points are indeed identical
-		for (auto clash : results.clashes)
-		{
-			float diff = (clash.positions[0] - clash.positions[1]).norm();
-			EXPECT_THAT(diff, Eq(0));
-		}
-	}
-
-	// Test Clearance Mode
-	// High tolerance
-	{
-		config.tolerance = 20000.0f;
-		auto pipeline = new clash::Clearance(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
-
-		// Check all clash results whether the closest points are indeed identical
-		for (auto clash : results.clashes)
-		{
-			float diff = (clash.positions[0] - clash.positions[1]).norm();
-			EXPECT_THAT(diff, Eq(0));
-		}
-	}
-
-	// Test Hard Mode
-	// No tolerance, should flag all instances
-	{
-		config.tolerance = 0.0f;
-		auto pipeline = new clash::Hard(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
-	}
-
-	// Test Hard Mode
-	// Medium tolerance, should flag at least half of the instances (across all files).
-	// It is possible to get false positives, but we should never get false negatives.
-	{
-		config.tolerance = 2500.0f;
-		auto pipeline = new clash::Hard(handler, config);
-		auto results = pipeline->runPipeline();
-
-		// Check metadata to make sure no instances are dropped that should be included
-		std::vector<repo::lib::RepoUUID> missingCompIds;
-		getMissingCompIds(config, results, missingCompIds);
-
-		if (missingCompIds.size() > 0)
-		{
-			for (auto missingId : missingCompIds)
-			{
-				auto metaEntry = metadataMap.find(missingId);
-				if (metaEntry != metadataMap.end())
-				{
-					double minPenDepth = boost::get<double>(metaEntry->second[metadataDescriptor]);
-					EXPECT_THAT(minPenDepth, Lt(2500.0f));
-}
-				else
-				{
-					FAIL() << "Metadata entry missing for Compound ID";
-				}
-			}
-		}
-	}
-
-	// Test Hard Mode
-	// High tolerance, all instances should be excluded
-	{
-		config.tolerance = FLT_MAX;
-		auto pipeline = new clash::Hard(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(0));
-	}
-}
-
-TEST(Clash, RvtIntersectClosed)
-{
-	// GTEST_SKIP(); // Skip until I figured out how to make Travis pass this
-
-	// Tests 10k auto-generated samples of Intersection Case B (Intersect Closed) from a Revit File
-
-	int noParts = 5;
-	int totalSamples = 10000;
-	int samplesPerSegment = totalSamples / noParts;
-	std::string baseName = "revitIntersectClosed_Part";
-	std::string postFix = ".rvt";
-
-	for (int i = 0; i < noParts; i++) {
-		std::string fileName = baseName + std::to_string(i) + postFix;
-		std::string path = "/clash/RVT/" + fileName;
-
-	auto container = makeTemporaryContainer();
-		importModel(getDataPath(path), *container);
-
-		RunIntersectClosedTest(container, samplesPerSegment, "Dimensions::MinPenDepth");
-	}
-}
-
-void RunIntersectOpenTest(
-	const std::unique_ptr<repo::lib::Container>& container,
-	int noSamples,
-	std::string metadataDescriptor)
-{
-	auto handler = getHandler();
-
-	ClashDetectionConfig config;
-	ClashDetectionDatabaseHelper helper(handler);
-
-	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
-
-	EXPECT_THAT(config.setA.size(), Eq(noSamples));
-	EXPECT_THAT(config.setB.size(), Eq(noSamples));
-
-	// Test Clearance Mode
-	// Low tolerance
-	{
-		config.tolerance = 1.0f;
-		auto pipeline = new clash::Clearance(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
-
-		// Check all clash results whether the closest points are indeed identical
-		for (auto clash : results.clashes)
-		{
-			float diff = (clash.positions[0] - clash.positions[1]).norm();
-			EXPECT_THAT(diff, Eq(0));
-		}
-	}
-
-	// Test Clearance Mode
-	// High tolerance
-	{
-		config.tolerance = 20000.0f;
-		auto pipeline = new clash::Clearance(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
-
-		// Check all clash results whether the closest points are indeed identical
-		for (auto clash : results.clashes)
-		{
-			float diff = (clash.positions[0] - clash.positions[1]).norm();
-			EXPECT_THAT(diff, Eq(0));
-		}
-	}
-
-	// Test Hard Mode
-	// No tolerance, should flag all instances
-	{
-		config.tolerance = 0.0f;
-		auto pipeline = new clash::Hard(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
-	}
-
-	// Test Hard Mode
-	// Medium tolerance, should flag at least half of the instances.
-	// It is possible to get false positives, but we should never get false negatives.
-	{
-		config.tolerance = 2500.0f;
-		auto pipeline = new clash::Hard(handler, config);
-		auto results = pipeline->runPipeline();
-
-		// Check metadata to make sure no instances are dropped that should be included
-		std::vector<repo::lib::RepoUUID> missingCompIds;
-		getMissingCompIds(config, results, missingCompIds);
-
-		if (missingCompIds.size() > 0)
-		{
-			for (auto missingId : missingCompIds)
-			{
-				auto metaEntry = metadataMap.find(missingId);
-				if (metaEntry != metadataMap.end())
-				{
-					double minPenDepth = boost::get<double>(metaEntry->second[metadataDescriptor]);
-					EXPECT_THAT(minPenDepth, Lt(2500.0f));
-				}
-				else
-				{
-					FAIL() << "Metadata entry missing for Compound ID";
-				}
-}
-		}
-	}
-
-	// Test Hard Mode
-	// High tolerance, all instances should be excluded
-	{
-		config.tolerance = FLT_MAX;
-		auto pipeline = new clash::Hard(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(0));
-	}
-}
-
-TEST(Clash, RvtIntersectOpen)
-{
-	// GTEST_SKIP(); // Skip until I figured out how to make Travis pass this
-
-	// Tests 10k auto-generated samples of Intersection Case C (Intersect Closed) from a Revit File
-
-	int noParts = 5;
-	int totalSamples = 10000;
-	int samplesPerSegment = totalSamples / noParts;
-	std::string baseName = "revitIntersectOpen_Part";
-	std::string postFix = ".rvt";
-
-	for (int i = 0; i < noParts; i++) {
-		std::string fileName = baseName + std::to_string(i) + postFix;
-		std::string path = "/clash/RVT/" + fileName;
-
-		auto container = makeTemporaryContainer();
-		importModel(getDataPath(path), *container);
-
-		RunIntersectOpenTest(container, samplesPerSegment, "Dimensions::MinPenDepth");
-	}
-}
-
-void RunCoversTest(
-	const std::unique_ptr<repo::lib::Container>& container,
-	int noSamples,
-	std::string metadataDescriptor)
-{
-	auto handler = getHandler();
-
-	ClashDetectionConfig config;
-	ClashDetectionDatabaseHelper helper(handler);
-
-	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
-
-	EXPECT_THAT(config.setA.size(), Eq(noSamples));
-	EXPECT_THAT(config.setB.size(), Eq(noSamples));
-
-	// Test Clearance Mode
-	// No tolerance, no clashes
-	{
-		config.tolerance = 0.1f;
-		auto pipeline = new clash::Clearance(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(0));
-	}
-
-	// Test Clearance mode
-	// Medium tolerance, around half of the instances should be found (across all files)
-	// with none exceeding the tolerance
-	{
-		config.tolerance = 2500.0f;
-		auto pipeline = new clash::Clearance(handler, config);
-		auto results = pipeline->runPipeline();
-
-		// Check metadata to make sure no instances are dropped that should be included
-		std::vector<repo::lib::RepoUUID> missingCompIds;
-		getMissingCompIds(config, results, missingCompIds);
-
-		if (missingCompIds.size() > 0)
-		{
-			for (auto missingId : missingCompIds)
-			{
-				auto metaEntry = metadataMap.find(missingId);
-				if (metaEntry != metadataMap.end())
-				{
-					double separationDistance = boost::get<double>(metaEntry->second[metadataDescriptor]);
-					EXPECT_THAT(separationDistance, Gt(2500.0f));
-				}
-				else
-				{
-					FAIL() << "Metadata entry missing for Compound ID";
-				}
-			}
-		}
-	}
-
-	// Test Clearance mode
-	// High tolerance, all of the instances should be found
-	{
-		config.tolerance = 5000.0f;
-		auto pipeline = new clash::Clearance(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
-
-		for (auto clash : results.clashes) {
-			auto metaA = metadataMap.find(clash.idA);
-			auto metaB = metadataMap.find(clash.idB);
-
-			EXPECT_THAT(metaA, Ne(metadataMap.end()));
-			EXPECT_THAT(metaB, Ne(metadataMap.end()));
-
-			float separationDistanceA = boost::get<double>(metaA->second[metadataDescriptor]);
-			float separationDistanceB = boost::get<double>(metaB->second[metadataDescriptor]);
-
-			EXPECT_THAT(separationDistanceA, Eq(separationDistanceB));
-
-			auto p1 = clash.positions[0];
-			auto p2 = clash.positions[1];
-			float clashDistance = (p2 - p1).norm();
-
-			EXPECT_THAT(separationDistanceA, FloatNear(clashDistance, 0.001f));
-		}
-	}
-
-	// Test Hard Mode
-	// Low tolerance
-	{
-		config.tolerance = 0.0f;
-		auto pipeline = new clash::Hard(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(0));
-	}
-
-	// Test Hard Mode
-	// High tolerance
-	{
-		config.tolerance = FLT_MAX;
-		auto pipeline = new clash::Hard(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(0));
-	}
-}
-
-TEST(Clash, RvtCovers)
-{
-	// GTEST_SKIP(); // Skip until I figured out how to make Travis pass this
-
-	// Tests 10k auto-generated samples of Intersection Case D (Covers) from a Revit File
-
-	int noParts = 5;
-	int totalSamples = 10000;
-	int samplesPerSegment = totalSamples / noParts;
-	std::string baseName = "revitCovers_Part";
-	std::string postFix = ".rvt";
-
-	for (int i = 0; i < noParts; i++) {
-		std::string fileName = baseName + std::to_string(i) + postFix;
-		std::string path = "/clash/RVT/" + fileName;
-
-		auto container = makeTemporaryContainer();
-		importModel(getDataPath(path), *container);
-
-		RunCoversTest(container, samplesPerSegment, "Dimensions::ShortestDist");
-	}
-}
-
-void RunContainsTest(
-	const std::unique_ptr<repo::lib::Container>& container,
-	int noSamples,
-	std::string metadataDescriptor)
-{
-	auto handler = getHandler();
-	
-	ClashDetectionConfig config;
-	ClashDetectionDatabaseHelper helper(handler);
-
-	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
-
-	EXPECT_THAT(config.setA.size(), Eq(noSamples));
-	EXPECT_THAT(config.setB.size(), Eq(noSamples));
-
-	// Test Clearance Mode
-	// Low Tolerance
-	{
-	config.tolerance = 1.f;
-		auto pipeline = new clash::Clearance(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
-
-		// Check all clash results whether the closest points are indeed identical
-		for (auto clash : results.clashes)
-		{
-			float diff = (clash.positions[0] - clash.positions[1]).norm();
-			EXPECT_THAT(diff, Eq(0));
-		}
-	}
-
-	// Test Clearance Mode
-	// High Tolerance
-	{
-		config.tolerance = 20000.f;
-		auto pipeline = new clash::Clearance(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
-
-		// Check all clash results whether the closest points are indeed identical
-		for (auto clash : results.clashes)
-		{
-			float diff = (clash.positions[0] - clash.positions[1]).norm();
-			EXPECT_THAT(diff, Eq(0));
-		}
-	}
-
-	// Test Hard Mode
-	// No tolerance, all instances should be flagged
-	{
-		config.tolerance = 0.0f;
-		auto pipeline = new clash::Hard(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
-	}
-
-	// Test Hard Mode
-	// Medium tolerance, should flag at least half of the instances.
-	// It is possible to get false positives, but we should never get false negatives.
-	{
-		config.tolerance = 2500.0f;
-		auto pipeline = new clash::Hard(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Ge(noSamples / 2));
-
-		// Check metadata to make sure no instances are dropped that should be included
-		std::vector<repo::lib::RepoUUID> missingCompIds;
-		getMissingCompIds(config, results, missingCompIds);
-
-		if (missingCompIds.size() > 0)
-		{
-			for (auto missingId : missingCompIds)
-			{
-				auto metaEntry = metadataMap.find(missingId);
-				if (metaEntry != metadataMap.end())
-				{
-					double minPenDepth = boost::get<double>(metaEntry->second[metadataDescriptor]);
-					EXPECT_THAT(minPenDepth, Lt(2500.0f));
-				}
-				else
-				{
-					FAIL() << "Metadata entry missing for Compound ID";
-				}
-			}
-		}
-	}
-
-	// Test Hard Mode
-	// High tolerance, no instances should be flagged
-	{
-		config.tolerance = FLT_MAX;
-		auto pipeline = new clash::Hard(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(0));
-	}
-}
-
-TEST(Clash, RvtContains)
-{
-	// GTEST_SKIP(); // Skip until I figured out how to make Travis pass this
-
-	// Tests 10k auto-generated samples of Intersection Case E (Contains) from a Revit File
-
-	int noParts = 5;
-	int totalSamples = 10000;
-	int samplesPerSegment = totalSamples / noParts;
-	std::string baseName = "revitContains_Part";
-	std::string postFix = ".rvt";
-
-	for (int i = 0; i < noParts; i++) {
-		std::string fileName = baseName + std::to_string(i) + postFix;
-		std::string path = "/clash/RVT/" + fileName;
-
-		auto container = makeTemporaryContainer();
-		importModel(getDataPath(path), *container);
-
-		RunContainsTest(container, samplesPerSegment, "Dimensions::ShortestDist");
-	}
-}
-
-void RunMeetTest(
-	const std::unique_ptr<repo::lib::Container>& container,
-	int noSamples)
-{
-	auto handler = getHandler();
-	
-	ClashDetectionConfig config;
-	ClashDetectionDatabaseHelper helper(handler);
-
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
-
-	EXPECT_THAT(config.setA.size(), Eq(noSamples));
-	EXPECT_THAT(config.setB.size(), Eq(noSamples));
-
-	// Get map from unique mesh ids to bounds from DB
-	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoBounds, repo::lib::RepoUUIDHasher> uidToBoundsMap;
-	helper.getBoundsForContainer(container.get(), uidToBoundsMap);
-
-	// Remap to the composite ids
-	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoBounds, repo::lib::RepoUUIDHasher> compidToBoundsMap;
-	for (auto compObj : config.setA)
-	{
-		repo::lib::RepoBounds bounds;
-		for (auto& mesh : compObj.meshes)
-		{
-			auto uid = mesh.uniqueId;
-			auto boundsEntry = uidToBoundsMap.find(uid);
-			if (boundsEntry != uidToBoundsMap.end())
-				bounds.encapsulate(boundsEntry->second);
-		}
-		compidToBoundsMap.insert({ compObj.id, bounds});
-	}
-	for (auto compObj : config.setB)
-	{
-		repo::lib::RepoBounds bounds;
-		for (auto& mesh : compObj.meshes)
-		{
-			auto uid = mesh.uniqueId;
-			auto boundsEntry = uidToBoundsMap.find(uid);
-			if (boundsEntry != uidToBoundsMap.end())
-				bounds.encapsulate(boundsEntry->second);
-		}
-		compidToBoundsMap.insert({ compObj.id, bounds });
-	}
-
-	// Test Clearance Mode
-	// Low Tolerance
-	{
-		config.tolerance = 1.0f;
-
-		auto pipeline = new clash::Clearance(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
-
-		// Check all clash results whether the closest points are indeed under
-		// the threshold
-		for (auto clash : results.clashes)
-		{
-			auto boundsEntryA = compidToBoundsMap.find(clash.idA);
-			auto boundsEntryB = compidToBoundsMap.find(clash.idB);
-			
-			if (boundsEntryA != compidToBoundsMap.end() && boundsEntryB != compidToBoundsMap.end())
-			{
-				float threshold = geometry::contactThreshold(boundsEntryA->second, boundsEntryB->second);
-
-				float diff = (clash.positions[0] - clash.positions[1]).norm();
-				EXPECT_THAT(diff, Le(threshold));
-			}
-			else
-			{
-				FAIL() << "Could not retrieve bounds for either or both of the composites";
-			}
-		}
-	}
-
-	// Test Clearance Mode
-	// High Tolerance
-	{
-		config.tolerance = 20000.0f;
-
-		auto pipeline = new clash::Clearance(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
-
-		// Check all clash results whether the closest points are indeed under
-		// the threshold
-		for (auto clash : results.clashes)
-		{
-			auto boundsEntryA = compidToBoundsMap.find(clash.idA);
-			auto boundsEntryB = compidToBoundsMap.find(clash.idB);
-			
-			if (boundsEntryA != compidToBoundsMap.end() && boundsEntryB != compidToBoundsMap.end())
-			{
-				float threshold = geometry::contactThreshold(boundsEntryA->second, boundsEntryB->second);
-
-				float diff = (clash.positions[0] - clash.positions[1]).norm();
-				EXPECT_THAT(diff, Le(threshold));
-			}
-			else
-			{
-				FAIL() << "Could not retrieve bounds for either or both of the composites";
-			}
-		}
-	}
-
-	// Test Hard Mode
-	// High Tolerance
-	{
-		config.tolerance = FLT_MAX;
-
-		auto pipeline = new clash::Hard(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(0));
-	}
-}
-
-TEST(Clash, RvtMeet)
-{
-	// GTEST_SKIP(); // Skip until I figured out how to make Travis pass this
-
-	// Tests 10k auto-generated samples of Intersection Case F (Meet) from a Revit File
-
-	int noParts = 5;
-	int totalSamples = 10000;
-	int samplesPerSegment = totalSamples / noParts;
-	std::string baseName = "revitMeet_Part";
-	std::string postFix = ".rvt";
-
-	for (int i = 0; i < noParts; i++) {
-		std::string fileName = baseName + std::to_string(i) + postFix;
-		std::string path = "/clash/RVT/" + fileName;
-
-		auto container = makeTemporaryContainer();
-		importModel(getDataPath(path), *container);
-
-		RunMeetTest(container, samplesPerSegment);
-}
-}
-
-void RunOverlapTest(
-	const std::unique_ptr<repo::lib::Container>& container,
-	int noSamples,
-	std::string metadataDescriptor)
-{
-	
-	auto handler = getHandler();
-
-	ClashDetectionConfig config;
-	ClashDetectionDatabaseHelper helper(handler);
-
-	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
-
-	EXPECT_THAT(config.setA.size(), Eq(noSamples));
-	EXPECT_THAT(config.setB.size(), Eq(noSamples));
-
-	// Test Clearance Mode
-	// Low Tolerance
-	{
-		config.tolerance = 1;
-		auto pipeline = new clash::Clearance(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
-
-		// Check all clash results whether the closest points are indeed identical
-		for (auto clash : results.clashes)
-		{
-			float diff = (clash.positions[0] - clash.positions[1]).norm();
-			EXPECT_THAT(diff, Eq(0));
-		}
-	}
-
-	// Test Clearance Mode
-	// High Tolerance
-	{
-		config.tolerance = 20000;
-		auto pipeline = new clash::Clearance(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
-
-		// Check all clash results whether the closest points are indeed identical
-		for (auto clash : results.clashes)
-		{
-			float diff = (clash.positions[0] - clash.positions[1]).norm();
-			EXPECT_THAT(diff, Eq(0));
-		}
-	}
-
-	// Test Hard Mode 
-	// Low Tolerance, should flag all instances
-	{
-		config.tolerance = 0;
-		auto pipeline = new clash::Hard(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
-	}
-
-	// Test Hard Mode
-	// Medium Tolerance, should flag at least half of the instances across all files
-	// It is possible to get false positives, but we should never get false negatives.
-	{
-		config.tolerance = 2500.0f;
-		auto pipeline = new clash::Hard(handler, config);
-		auto results = pipeline->runPipeline();
-
-		// Check metadata to make sure no instances are dropped that should be included
-		std::vector<repo::lib::RepoUUID> missingCompIds;
-		getMissingCompIds(config, results, missingCompIds);
-
-		if (missingCompIds.size() > 0)
-		{
-			for (auto missingId : missingCompIds)
-			{
-				auto metaEntry = metadataMap.find(missingId);
-				if (metaEntry != metadataMap.end())
-				{
-					double minPenDepth = boost::get<double>(metaEntry->second[metadataDescriptor]);
-					EXPECT_THAT(minPenDepth, Lt(2500.0f));
-				}
-				else
-				{
-					FAIL() << "Metadata entry missing for Compound ID";
-				}
-			}
-		}
-	}
-
-	// Test Hard Mode
-	// High Tolerance, no instances should be flagged
-	{
-		config.tolerance = FLT_MAX;
-		auto pipeline = new clash::Hard(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(0));
-	}
-}
-
-TEST(Clash, RvtOverlap)
-{
-	// GTEST_SKIP(); // Skip until I figured out how to make Travis pass this
-
-	// Tests 10k auto-generated samples of Intersection Case G (Overlap) from a Revit File
-
-	int noParts = 5;
-	int totalSamples = 10000;
-	int samplesPerSegment = totalSamples / noParts;
-	std::string baseName = "revitOverlap_Part";
-	std::string postFix = ".rvt";
-
-	for (int i = 0; i < noParts; i++) {
-		std::string fileName = baseName + std::to_string(i) + postFix;
-		std::string path = "/clash/RVT/" + fileName;
-
-		auto container = makeTemporaryContainer();
-		importModel(getDataPath(path), *container);
-
-		RunOverlapTest(container, samplesPerSegment, "Dimensions::PenDepth");
-	}
-}
-
-void RunEqualTest(
-	const std::unique_ptr<repo::lib::Container>& container,
-	int noSamples,
-	std::string metadataDescriptor)
-{
-	auto handler = getHandler();
-
-	ClashDetectionConfig config;
-	ClashDetectionDatabaseHelper helper(handler);
-
-	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
-
-	EXPECT_THAT(config.setA.size(), Eq(noSamples));
-	EXPECT_THAT(config.setB.size(), Eq(noSamples));
-
-	// Test Clearance Mode
-	// Low Tolerance
-	{
-		config.tolerance = 1;
-		auto pipeline = new clash::Clearance(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
-
-		// Check all clash results whether the closest points are indeed identical
-		for (auto clash : results.clashes)
-		{
-			float diff = (clash.positions[0] - clash.positions[1]).norm();
-			EXPECT_THAT(diff, Eq(0));
-		}
-	}
-
-	// Test Clearance Mode
-	// High Tolerance
-	{
-		config.tolerance = 20000;
-		auto pipeline = new clash::Clearance(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
-
-		// Check all clash results whether the closest points are indeed identical
-		for (auto clash : results.clashes)
-		{
-			float diff = (clash.positions[0] - clash.positions[1]).norm();
-			EXPECT_THAT(diff, Eq(0));
-		}
-	}
-
-	// Test Hard Mode 
-	// Low Tolerance, should flag all instances
-	{
-		config.tolerance = 0;
-		auto pipeline = new clash::Hard(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
-	}
-
-	// Test Hard Mode
-	// Medium Tolerance, should flag at least half of the instances
-	// It is possible to get false positives, but we should never get false negatives.
-	{
-		config.tolerance = 2500.0f;
-		auto pipeline = new clash::Hard(handler, config);
-		auto results = pipeline->runPipeline();
-
-		// Check metadata to make sure no instances are dropped that should be included
-		std::vector<repo::lib::RepoUUID> missingCompIds;
-		getMissingCompIds(config, results, missingCompIds);
-
-		if (missingCompIds.size() > 0)
-		{
-			for (auto missingId : missingCompIds)
-			{
-				auto metaEntry = metadataMap.find(missingId);
-				if (metaEntry != metadataMap.end())
-				{
-					double minPenDepth = boost::get<double>(metaEntry->second[metadataDescriptor]);
-					EXPECT_THAT(minPenDepth, Lt(2500.0f));
-				}
-				else
-				{
-					FAIL() << "Metadata entry missing for Compound ID";
-				}
-			}
-		}
-	}
-
-	// Test Hard Mode
-	// High Tolerance, no instances should be flagged
-{
-		config.tolerance = FLT_MAX;
-		auto pipeline = new clash::Hard(handler, config);
-		auto results = pipeline->runPipeline();
-
-		EXPECT_THAT(results.clashes.size(), Eq(0));
-	}
-}
-
-TEST(Clash, RvtEqual)
-{
-	// Tests 10k auto-generated samples of Intersection Case H (Equal) from a Revit File
-
-	int noParts = 5;
-	int totalSamples = 10000;
-	int samplesPerSegment = totalSamples / noParts;
-	std::string baseName = "revitEqual_Part";
-	std::string postFix = ".rvt";
-
-	for (int i = 0; i < noParts; i++) {
-		std::string fileName = baseName + std::to_string(i) + postFix;
-		std::string path = "/clash/RVT/" + fileName;
-
-		auto container = makeTemporaryContainer();
-		importModel(getDataPath(path), *container);
-
-		RunEqualTest(container, samplesPerSegment, "Dimensions::PenDepth");
-	}
-}
-
 TEST(Clash, Nwd)
 {
 	// Tests that geometry of a known distance is correctly measured after
@@ -1666,193 +682,6 @@ TEST(Clash, Nwd)
 	auto results = pipeline->runPipeline();
 
 	EXPECT_THAT(results.clashes.size(), Eq(10000));
-}
-
-TEST(Clash, NwdDisjoint)
-{
-	GTEST_SKIP(); // Skip until Files are checked in
-
-	// Tests auto-generated samples of Intersection Case A (Disjoint) from a Navis File
-
-	int noParts = 5;
-	int totalSamples = 10000;
-	int samplesPerSegment = totalSamples / noParts;
-	std::string baseName = "navisDisjoint_Part";
-	std::string postFix = ".nwd";
-
-	int halfToleranceClashes = 0;
-	for (int i = 0; i < noParts; i++) {
-		std::string fileName = baseName + std::to_string(i) + postFix;
-		std::string path = "/clash/NWD/" + fileName;
-
-		auto container = makeTemporaryContainer();
-		importModel(getDataPath(path), *container);
-
-		RunDisjointTest(container, samplesPerSegment, halfToleranceClashes);
-	}
-
-	EXPECT_THAT(halfToleranceClashes, Eq(totalSamples / 2));
-}
-
-TEST(Clash, NwdIntersectClosed)
-{
-	GTEST_SKIP(); // Skip until Files are checked in
-
-	// Tests 10k auto-generated samples of Intersection Case B (Intersect Closed) from a Navis File
-
-	int noParts = 5;
-	int totalSamples = 10000;
-	int samplesPerSegment = totalSamples / noParts;
-	std::string baseName = "navisIntersectClosed_Part";
-	std::string postFix = ".nwd";
-		
-	for (int i = 0; i < noParts; i++) {
-		std::string fileName = baseName + std::to_string(i) + postFix;
-		std::string path = "/clash/NWD/" + fileName;
-
-		auto container = makeTemporaryContainer();
-		importModel(getDataPath(path), *container);
-
-		RunIntersectClosedTest(container, samplesPerSegment, "Custom::MinPenDepth");
-	}
-}
-
-TEST(Clash, NwdIntersectOpen)
-{
-	GTEST_SKIP(); // Skip until the files are checked in
-
-	// Tests 10k auto-generated samples of Intersection Case C (Intersect Closed) from a Navis File
-
-	int noParts = 5;
-	int totalSamples = 10000;
-	int samplesPerSegment = totalSamples / noParts;
-	std::string baseName = "navisIntersectOpen_Part";
-	std::string postFix = ".nwd";
-
-	for (int i = 0; i < noParts; i++) {
-		std::string fileName = baseName + std::to_string(i) + postFix;
-		std::string path = "/clash/NWD/" + fileName;
-
-		auto container = makeTemporaryContainer();
-		importModel(getDataPath(path), *container);
-
-		RunIntersectOpenTest(container, samplesPerSegment, "Custom::MinPenDepth");
-	}
-}
-
-TEST(Clash, NwdCovers)
-{
-	GTEST_SKIP(); // Skip until the files are checked in
-
-	// Tests 10k auto-generated samples of Intersection Case D (Covers) from a Navis File
-
-	int noParts = 5;
-	int totalSamples = 10000;
-	int samplesPerSegment = totalSamples / noParts;
-	std::string baseName = "navisCovers_Part";
-	std::string postFix = ".nwd";
-
-	for (int i = 0; i < noParts; i++) {
-		std::string fileName = baseName + std::to_string(i) + postFix;
-		std::string path = "/clash/NWD/" + fileName;
-
-		auto container = makeTemporaryContainer();
-		importModel(getDataPath(path), *container);
-
-		RunCoversTest(container, samplesPerSegment, "Custom::ShortestDist");
-	}
-}
-
-TEST(Clash, NwdContains)
-{
-	GTEST_SKIP(); // Skip until files are checked in
-
-	// Tests 10k auto-generated samples of Intersection Case E (Contains) from a Navis File
-
-	int noParts = 5;
-	int totalSamples = 10000;
-	int samplesPerSegment = totalSamples / noParts;
-	std::string baseName = "navisContains_Part";
-	std::string postFix = ".nwd";
-
-	for (int i = 0; i < noParts; i++) {
-		std::string fileName = baseName + std::to_string(i) + postFix;
-		std::string path = "/clash/NWD/" + fileName;
-
-		auto container = makeTemporaryContainer();
-		importModel(getDataPath(path), *container);
-
-		RunContainsTest(container, samplesPerSegment, "Custom::ShortestDist");
-	}
-}
-
-TEST(Clash, NwdMeet)
-{
-	GTEST_SKIP(); // Skip until files are checked in
-
-	// Tests 10k auto-generated samples of Intersection Case F (Meet) from a Navis File
-
-	int noParts = 5;
-	int totalSamples = 10000;
-	int samplesPerSegment = totalSamples / noParts;
-	std::string baseName = "navisMeet_Part";
-	std::string postFix = ".nwd";
-
-	for (int i = 0; i < noParts; i++) {
-		std::string fileName = baseName + std::to_string(i) + postFix;
-		std::string path = "/clash/NWD/" + fileName;
-
-		auto container = makeTemporaryContainer();
-		importModel(getDataPath(path), *container);
-
-		RunMeetTest(container, samplesPerSegment);
-	}
-}
-
-TEST(Clash, NwdOverlap)
-{
-	GTEST_SKIP(); // Skip until files are checked in
-
-	// Tests 10k auto-generated samples of Intersection Case G (Overlap) from a Navis File
-
-	int noParts = 5;
-	int totalSamples = 10000;
-	int samplesPerSegment = totalSamples / noParts;
-	std::string baseName = "navisOverlap_Part";
-	std::string postFix = ".nwd";
-
-	 for (int i = 0; i < noParts; i++) {
-		std::string fileName = baseName + std::to_string(i) + postFix;	
-		std::string path = "/clash/NWD/" + fileName;
-
-		auto container = makeTemporaryContainer();
-		importModel(getDataPath(path), *container);
-
-		RunOverlapTest(container, samplesPerSegment, "Custom::PenDepth");
-	}
-}
-
-TEST(Clash, NwdEqual)
-{
-	GTEST_SKIP(); // Skip until files are checked in
-
-	// Tests 10k auto-generated samples of Intersection Case H (Equal) from a Navis File
-
-	int noParts = 5;
-	int totalSamples = 10000;
-	int samplesPerSegment = totalSamples / noParts;
-	std::string baseName = "navisEqual_Part";
-	std::string postFix = ".nwd";
-
-	for (int i = 0; i < noParts; i++) {
-		std::string fileName = baseName + std::to_string(i) + postFix;
-		std::string path = "/clash/NWD/" + fileName;
-
-		auto container = makeTemporaryContainer();
-		importModel(getDataPath(path), *container);
-
-		RunEqualTest(container, samplesPerSegment, "Custom::PenDepth");
-	}
 }
 
 TEST(Clash, Clearance1)
@@ -3406,5 +2235,1179 @@ TEST(Clash, ResultsSerialisation)
 			EXPECT_EQ(jsonError["compositeIdB"].GetString(), error->compositeIdB.toString());
 			EXPECT_EQ(jsonError["reason"].GetString(), std::string("Degenerate Test Reason"));
 		}
+	}
+}
+
+// Shared functions used by the file type tests
+void RunDisjointTest(
+	const std::unique_ptr<repo::lib::Container>& container,
+	int noSamples,
+	int& halfToleranceClashes)
+{
+	auto handler = getHandler();
+
+	ClashDetectionConfig config;
+	ClashDetectionDatabaseHelper helper(handler);
+
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
+
+	EXPECT_THAT(config.setA.size(), Eq(noSamples));
+	EXPECT_THAT(config.setB.size(), Eq(noSamples));
+
+	// Test Clearance Mode
+	// No tolerance
+	{
+		config.tolerance = 0.0f;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+		EXPECT_THAT(results.clashes.size(), Eq(0));
+	}
+
+	// Test Clearance Mode
+	// Tolerance so that half of the set should be included
+	{
+		config.tolerance = 5000.0f;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+		halfToleranceClashes += results.clashes.size();
+		//EXPECT_THAT(results.clashes.size(), Eq(noSamples / 2));
+	}
+
+	// Test Clearance Mode (Tolerance 20,000)
+	// Tolerance so high that all instances should be included
+	{
+		config.tolerance = 20000;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
+	}
+
+	// Test Hard Mode
+	// No tolerance
+	{
+		config.tolerance = 0.0f;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(0));
+	}
+
+	// Test Hard Mode
+	// High tolerance
+	{
+		config.tolerance = FLT_MAX;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(0));
+	}
+}
+
+void RunIntersectClosedTest(
+	const std::unique_ptr<repo::lib::Container>& container,
+	int noSamples,
+	std::string metadataDescriptor)
+{
+	auto handler = getHandler();
+
+	ClashDetectionConfig config;
+	ClashDetectionDatabaseHelper helper(handler);
+
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
+
+	EXPECT_THAT(config.setA.size(), Eq(noSamples));
+	EXPECT_THAT(config.setB.size(), Eq(noSamples));
+
+	// Test Clearance Mode
+	// Low tolerance
+	{
+		config.tolerance = 1.0f;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
+
+		// Check all clash results whether the closest points are indeed identical
+		for (auto clash : results.clashes)
+		{
+			float diff = (clash.positions[0] - clash.positions[1]).norm();
+			EXPECT_THAT(diff, Eq(0));
+		}
+	}
+
+	// Test Clearance Mode
+	// High tolerance
+	{
+		config.tolerance = 20000.0f;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
+
+		// Check all clash results whether the closest points are indeed identical
+		for (auto clash : results.clashes)
+		{
+			float diff = (clash.positions[0] - clash.positions[1]).norm();
+			EXPECT_THAT(diff, Eq(0));
+		}
+	}
+
+	// Test Hard Mode
+	// No tolerance, should flag all instances
+	{
+		config.tolerance = 0.0f;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
+	}
+
+	// Test Hard Mode
+	// Medium tolerance, should flag at least half of the instances (across all files).
+	// It is possible to get false positives, but we should never get false negatives.
+	{
+		config.tolerance = 2500.0f;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		// Check metadata to make sure no instances are dropped that should be included
+		std::vector<repo::lib::RepoUUID> missingCompIds;
+		getMissingCompIds(config, results, missingCompIds);
+
+		if (missingCompIds.size() > 0)
+		{
+			for (auto missingId : missingCompIds)
+			{
+				auto metaEntry = metadataMap.find(missingId);
+				if (metaEntry != metadataMap.end())
+				{
+					double minPenDepth = boost::get<double>(metaEntry->second[metadataDescriptor]);
+					EXPECT_THAT(minPenDepth, Lt(2500.0f));
+				}
+				else
+				{
+					FAIL() << "Metadata entry missing for Compound ID";
+				}
+			}
+		}
+	}
+
+	// Test Hard Mode
+	// High tolerance, all instances should be excluded
+	{
+		config.tolerance = FLT_MAX;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(0));
+	}
+}
+
+void RunIntersectOpenTest(
+	const std::unique_ptr<repo::lib::Container>& container,
+	int noSamples,
+	std::string metadataDescriptor)
+{
+	auto handler = getHandler();
+
+	ClashDetectionConfig config;
+	ClashDetectionDatabaseHelper helper(handler);
+
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
+
+	EXPECT_THAT(config.setA.size(), Eq(noSamples));
+	EXPECT_THAT(config.setB.size(), Eq(noSamples));
+
+	// Test Clearance Mode
+	// Low tolerance
+	{
+		config.tolerance = 1.0f;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
+
+		// Check all clash results whether the closest points are indeed identical
+		for (auto clash : results.clashes)
+		{
+			float diff = (clash.positions[0] - clash.positions[1]).norm();
+			EXPECT_THAT(diff, Eq(0));
+		}
+	}
+
+	// Test Clearance Mode
+	// High tolerance
+	{
+		config.tolerance = 20000.0f;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
+
+		// Check all clash results whether the closest points are indeed identical
+		for (auto clash : results.clashes)
+		{
+			float diff = (clash.positions[0] - clash.positions[1]).norm();
+			EXPECT_THAT(diff, Eq(0));
+		}
+	}
+
+	// Test Hard Mode
+	// No tolerance, should flag all instances
+	{
+		config.tolerance = 0.0f;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
+	}
+
+	// Test Hard Mode
+	// Medium tolerance, should flag at least half of the instances.
+	// It is possible to get false positives, but we should never get false negatives.
+	{
+		config.tolerance = 2500.0f;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		// Check metadata to make sure no instances are dropped that should be included
+		std::vector<repo::lib::RepoUUID> missingCompIds;
+		getMissingCompIds(config, results, missingCompIds);
+
+		if (missingCompIds.size() > 0)
+		{
+			for (auto missingId : missingCompIds)
+			{
+				auto metaEntry = metadataMap.find(missingId);
+				if (metaEntry != metadataMap.end())
+				{
+					double minPenDepth = boost::get<double>(metaEntry->second[metadataDescriptor]);
+					EXPECT_THAT(minPenDepth, Lt(2500.0f));
+				}
+				else
+				{
+					FAIL() << "Metadata entry missing for Compound ID";
+				}
+			}
+		}
+	}
+
+	// Test Hard Mode
+	// High tolerance, all instances should be excluded
+	{
+		config.tolerance = FLT_MAX;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(0));
+	}
+}
+
+void RunCoversTest(
+	const std::unique_ptr<repo::lib::Container>& container,
+	int noSamples,
+	std::string metadataDescriptor)
+{
+	auto handler = getHandler();
+
+	ClashDetectionConfig config;
+	ClashDetectionDatabaseHelper helper(handler);
+
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
+
+	EXPECT_THAT(config.setA.size(), Eq(noSamples));
+	EXPECT_THAT(config.setB.size(), Eq(noSamples));
+
+	// Test Clearance Mode
+	// No tolerance, no clashes
+	{
+		config.tolerance = 0.1f;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(0));
+	}
+
+	// Test Clearance mode
+	// Medium tolerance, around half of the instances should be found (across all files)
+	// with none exceeding the tolerance
+	{
+		config.tolerance = 2500.0f;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		// Check metadata to make sure no instances are dropped that should be included
+		std::vector<repo::lib::RepoUUID> missingCompIds;
+		getMissingCompIds(config, results, missingCompIds);
+
+		if (missingCompIds.size() > 0)
+		{
+			for (auto missingId : missingCompIds)
+			{
+				auto metaEntry = metadataMap.find(missingId);
+				if (metaEntry != metadataMap.end())
+				{
+					double separationDistance = boost::get<double>(metaEntry->second[metadataDescriptor]);
+					EXPECT_THAT(separationDistance, Gt(2500.0f));
+				}
+				else
+				{
+					FAIL() << "Metadata entry missing for Compound ID";
+				}
+			}
+		}
+	}
+
+	// Test Clearance mode
+	// High tolerance, all of the instances should be found
+	{
+		config.tolerance = 5000.0f;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
+
+		for (auto clash : results.clashes) {
+			auto metaA = metadataMap.find(clash.idA);
+			auto metaB = metadataMap.find(clash.idB);
+
+			EXPECT_THAT(metaA, Ne(metadataMap.end()));
+			EXPECT_THAT(metaB, Ne(metadataMap.end()));
+
+			float separationDistanceA = boost::get<double>(metaA->second[metadataDescriptor]);
+			float separationDistanceB = boost::get<double>(metaB->second[metadataDescriptor]);
+
+			EXPECT_THAT(separationDistanceA, Eq(separationDistanceB));
+
+			auto p1 = clash.positions[0];
+			auto p2 = clash.positions[1];
+			float clashDistance = (p2 - p1).norm();
+
+			EXPECT_THAT(separationDistanceA, FloatNear(clashDistance, 0.001f));
+		}
+	}
+
+	// Test Hard Mode
+	// Low tolerance
+	{
+		config.tolerance = 0.0f;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(0));
+	}
+
+	// Test Hard Mode
+	// High tolerance
+	{
+		config.tolerance = FLT_MAX;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(0));
+	}
+}
+
+void RunContainsTest(
+	const std::unique_ptr<repo::lib::Container>& container,
+	int noSamples,
+	std::string metadataDescriptor)
+{
+	auto handler = getHandler();
+
+	ClashDetectionConfig config;
+	ClashDetectionDatabaseHelper helper(handler);
+
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
+
+	EXPECT_THAT(config.setA.size(), Eq(noSamples));
+	EXPECT_THAT(config.setB.size(), Eq(noSamples));
+
+	// Test Clearance Mode
+	// Low Tolerance
+	{
+		config.tolerance = 1.f;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
+
+		// Check all clash results whether the closest points are indeed identical
+		for (auto clash : results.clashes)
+		{
+			float diff = (clash.positions[0] - clash.positions[1]).norm();
+			EXPECT_THAT(diff, Eq(0));
+		}
+	}
+
+	// Test Clearance Mode
+	// High Tolerance
+	{
+		config.tolerance = 20000.f;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
+
+		// Check all clash results whether the closest points are indeed identical
+		for (auto clash : results.clashes)
+		{
+			float diff = (clash.positions[0] - clash.positions[1]).norm();
+			EXPECT_THAT(diff, Eq(0));
+		}
+	}
+
+	// Test Hard Mode
+	// No tolerance, all instances should be flagged
+	{
+		config.tolerance = 0.0f;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
+	}
+
+	// Test Hard Mode
+	// Medium tolerance, should flag at least half of the instances.
+	// It is possible to get false positives, but we should never get false negatives.
+	{
+		config.tolerance = 2500.0f;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Ge(noSamples / 2));
+
+		// Check metadata to make sure no instances are dropped that should be included
+		std::vector<repo::lib::RepoUUID> missingCompIds;
+		getMissingCompIds(config, results, missingCompIds);
+
+		if (missingCompIds.size() > 0)
+		{
+			for (auto missingId : missingCompIds)
+			{
+				auto metaEntry = metadataMap.find(missingId);
+				if (metaEntry != metadataMap.end())
+				{
+					double minPenDepth = boost::get<double>(metaEntry->second[metadataDescriptor]);
+					EXPECT_THAT(minPenDepth, Lt(2500.0f));
+				}
+				else
+				{
+					FAIL() << "Metadata entry missing for Compound ID";
+				}
+			}
+		}
+	}
+
+	// Test Hard Mode
+	// High tolerance, no instances should be flagged
+	{
+		config.tolerance = FLT_MAX;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(0));
+	}
+}
+
+void RunMeetTest(
+	const std::unique_ptr<repo::lib::Container>& container,
+	int noSamples)
+{
+	auto handler = getHandler();
+
+	ClashDetectionConfig config;
+	ClashDetectionDatabaseHelper helper(handler);
+
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
+
+	EXPECT_THAT(config.setA.size(), Eq(noSamples));
+	EXPECT_THAT(config.setB.size(), Eq(noSamples));
+
+	// Get map from unique mesh ids to bounds from DB
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoBounds, repo::lib::RepoUUIDHasher> uidToBoundsMap;
+	helper.getBoundsForContainer(container.get(), uidToBoundsMap);
+
+	// Remap to the composite ids
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoBounds, repo::lib::RepoUUIDHasher> compidToBoundsMap;
+	for (auto compObj : config.setA)
+	{
+		repo::lib::RepoBounds bounds;
+		for (auto& mesh : compObj.meshes)
+		{
+			auto uid = mesh.uniqueId;
+			auto boundsEntry = uidToBoundsMap.find(uid);
+			if (boundsEntry != uidToBoundsMap.end())
+				bounds.encapsulate(boundsEntry->second);
+		}
+		compidToBoundsMap.insert({ compObj.id, bounds });
+	}
+	for (auto compObj : config.setB)
+	{
+		repo::lib::RepoBounds bounds;
+		for (auto& mesh : compObj.meshes)
+		{
+			auto uid = mesh.uniqueId;
+			auto boundsEntry = uidToBoundsMap.find(uid);
+			if (boundsEntry != uidToBoundsMap.end())
+				bounds.encapsulate(boundsEntry->second);
+		}
+		compidToBoundsMap.insert({ compObj.id, bounds });
+	}
+
+	// Test Clearance Mode
+	// Low Tolerance
+	{
+		config.tolerance = 1.0f;
+
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
+
+		// Check all clash results whether the closest points are indeed under
+		// the threshold
+		for (auto clash : results.clashes)
+		{
+			auto boundsEntryA = compidToBoundsMap.find(clash.idA);
+			auto boundsEntryB = compidToBoundsMap.find(clash.idB);
+
+			if (boundsEntryA != compidToBoundsMap.end() && boundsEntryB != compidToBoundsMap.end())
+			{
+				float threshold = geometry::contactThreshold(boundsEntryA->second, boundsEntryB->second);
+
+				float diff = (clash.positions[0] - clash.positions[1]).norm();
+				EXPECT_THAT(diff, Le(threshold));
+			}
+			else
+			{
+				FAIL() << "Could not retrieve bounds for either or both of the composites";
+			}
+		}
+	}
+
+	// Test Clearance Mode
+	// High Tolerance
+	{
+		config.tolerance = 20000.0f;
+
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
+
+		// Check all clash results whether the closest points are indeed under
+		// the threshold
+		for (auto clash : results.clashes)
+		{
+			auto boundsEntryA = compidToBoundsMap.find(clash.idA);
+			auto boundsEntryB = compidToBoundsMap.find(clash.idB);
+
+			if (boundsEntryA != compidToBoundsMap.end() && boundsEntryB != compidToBoundsMap.end())
+			{
+				float threshold = geometry::contactThreshold(boundsEntryA->second, boundsEntryB->second);
+
+				float diff = (clash.positions[0] - clash.positions[1]).norm();
+				EXPECT_THAT(diff, Le(threshold));
+			}
+			else
+			{
+				FAIL() << "Could not retrieve bounds for either or both of the composites";
+			}
+		}
+	}
+
+	// Test Hard Mode
+	// High Tolerance
+	{
+		config.tolerance = FLT_MAX;
+
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(0));
+	}
+}
+
+void RunOverlapTest(
+	const std::unique_ptr<repo::lib::Container>& container,
+	int noSamples,
+	std::string metadataDescriptor)
+{
+
+	auto handler = getHandler();
+
+	ClashDetectionConfig config;
+	ClashDetectionDatabaseHelper helper(handler);
+
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
+
+	EXPECT_THAT(config.setA.size(), Eq(noSamples));
+	EXPECT_THAT(config.setB.size(), Eq(noSamples));
+
+	// Test Clearance Mode
+	// Low Tolerance
+	{
+		config.tolerance = 1;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
+
+		// Check all clash results whether the closest points are indeed identical
+		for (auto clash : results.clashes)
+		{
+			float diff = (clash.positions[0] - clash.positions[1]).norm();
+			EXPECT_THAT(diff, Eq(0));
+		}
+	}
+
+	// Test Clearance Mode
+	// High Tolerance
+	{
+		config.tolerance = 20000;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
+
+		// Check all clash results whether the closest points are indeed identical
+		for (auto clash : results.clashes)
+		{
+			float diff = (clash.positions[0] - clash.positions[1]).norm();
+			EXPECT_THAT(diff, Eq(0));
+		}
+	}
+
+	// Test Hard Mode 
+	// Low Tolerance, should flag all instances
+	{
+		config.tolerance = 0;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
+	}
+
+	// Test Hard Mode
+	// Medium Tolerance, should flag at least half of the instances across all files
+	// It is possible to get false positives, but we should never get false negatives.
+	{
+		config.tolerance = 2500.0f;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		// Check metadata to make sure no instances are dropped that should be included
+		std::vector<repo::lib::RepoUUID> missingCompIds;
+		getMissingCompIds(config, results, missingCompIds);
+
+		if (missingCompIds.size() > 0)
+		{
+			for (auto missingId : missingCompIds)
+			{
+				auto metaEntry = metadataMap.find(missingId);
+				if (metaEntry != metadataMap.end())
+				{
+					double minPenDepth = boost::get<double>(metaEntry->second[metadataDescriptor]);
+					EXPECT_THAT(minPenDepth, Lt(2500.0f));
+				}
+				else
+				{
+					FAIL() << "Metadata entry missing for Compound ID";
+				}
+			}
+		}
+	}
+
+	// Test Hard Mode
+	// High Tolerance, no instances should be flagged
+	{
+		config.tolerance = FLT_MAX;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(0));
+	}
+}
+
+void RunEqualTest(
+	const std::unique_ptr<repo::lib::Container>& container,
+	int noSamples,
+	std::string metadataDescriptor)
+{
+	auto handler = getHandler();
+
+	ClashDetectionConfig config;
+	ClashDetectionDatabaseHelper helper(handler);
+
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
+
+	EXPECT_THAT(config.setA.size(), Eq(noSamples));
+	EXPECT_THAT(config.setB.size(), Eq(noSamples));
+
+	// Test Clearance Mode
+	// Low Tolerance
+	{
+		config.tolerance = 1;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
+
+		// Check all clash results whether the closest points are indeed identical
+		for (auto clash : results.clashes)
+		{
+			float diff = (clash.positions[0] - clash.positions[1]).norm();
+			EXPECT_THAT(diff, Eq(0));
+		}
+	}
+
+	// Test Clearance Mode
+	// High Tolerance
+	{
+		config.tolerance = 20000;
+		auto pipeline = new clash::Clearance(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
+
+		// Check all clash results whether the closest points are indeed identical
+		for (auto clash : results.clashes)
+		{
+			float diff = (clash.positions[0] - clash.positions[1]).norm();
+			EXPECT_THAT(diff, Eq(0));
+		}
+	}
+
+	// Test Hard Mode 
+	// Low Tolerance, should flag all instances
+	{
+		config.tolerance = 0;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
+	}
+
+	// Test Hard Mode
+	// Medium Tolerance, should flag at least half of the instances
+	// It is possible to get false positives, but we should never get false negatives.
+	{
+		config.tolerance = 2500.0f;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		// Check metadata to make sure no instances are dropped that should be included
+		std::vector<repo::lib::RepoUUID> missingCompIds;
+		getMissingCompIds(config, results, missingCompIds);
+
+		if (missingCompIds.size() > 0)
+		{
+			for (auto missingId : missingCompIds)
+			{
+				auto metaEntry = metadataMap.find(missingId);
+				if (metaEntry != metadataMap.end())
+				{
+					double minPenDepth = boost::get<double>(metaEntry->second[metadataDescriptor]);
+					EXPECT_THAT(minPenDepth, Lt(2500.0f));
+				}
+				else
+				{
+					FAIL() << "Metadata entry missing for Compound ID";
+				}
+			}
+		}
+	}
+
+	// Test Hard Mode
+	// High Tolerance, no instances should be flagged
+	{
+		config.tolerance = FLT_MAX;
+		auto pipeline = new clash::Hard(handler, config);
+		auto results = pipeline->runPipeline();
+
+		EXPECT_THAT(results.clashes.size(), Eq(0));
+	}
+}
+
+// Clash tests for auto-generated intersections by file type: RVT
+TEST(ClashRvt, RvtDisjoint)
+{
+	// GTEST_SKIP(); // Skip until I figured out how to make Travis pass this
+
+	// Tests auto-generated samples of Intersection Case A (Disjoint) from a Revit File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "revitDisjoint_Part";
+	std::string postFix = ".rvt";
+
+	int halfToleranceClashes = 0;
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/RVT/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		RunDisjointTest(container, samplesPerSegment, halfToleranceClashes);
+	}
+
+	EXPECT_THAT(halfToleranceClashes, Eq(totalSamples / 2));
+}
+
+TEST(ClashRvt, RvtIntersectClosed)
+{
+	// GTEST_SKIP(); // Skip until I figured out how to make Travis pass this
+
+	// Tests 10k auto-generated samples of Intersection Case B (Intersect Closed) from a Revit File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "revitIntersectClosed_Part";
+	std::string postFix = ".rvt";
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/RVT/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		RunIntersectClosedTest(container, samplesPerSegment, "Dimensions::MinPenDepth");
+	}
+}
+
+TEST(ClashRvt, RvtIntersectOpen)
+{
+	// GTEST_SKIP(); // Skip until I figured out how to make Travis pass this
+
+	// Tests 10k auto-generated samples of Intersection Case C (Intersect Closed) from a Revit File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "revitIntersectOpen_Part";
+	std::string postFix = ".rvt";
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/RVT/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		RunIntersectOpenTest(container, samplesPerSegment, "Dimensions::MinPenDepth");
+	}
+}
+
+TEST(ClashRvt, RvtCovers)
+{
+	// GTEST_SKIP(); // Skip until I figured out how to make Travis pass this
+
+	// Tests 10k auto-generated samples of Intersection Case D (Covers) from a Revit File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "revitCovers_Part";
+	std::string postFix = ".rvt";
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/RVT/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		RunCoversTest(container, samplesPerSegment, "Dimensions::ShortestDist");
+	}
+}
+
+TEST(ClashRvt, RvtContains)
+{
+	// GTEST_SKIP(); // Skip until I figured out how to make Travis pass this
+
+	// Tests 10k auto-generated samples of Intersection Case E (Contains) from a Revit File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "revitContains_Part";
+	std::string postFix = ".rvt";
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/RVT/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		RunContainsTest(container, samplesPerSegment, "Dimensions::ShortestDist");
+	}
+}
+
+TEST(ClashRvt, RvtMeet)
+{
+	// GTEST_SKIP(); // Skip until I figured out how to make Travis pass this
+
+	// Tests 10k auto-generated samples of Intersection Case F (Meet) from a Revit File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "revitMeet_Part";
+	std::string postFix = ".rvt";
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/RVT/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		RunMeetTest(container, samplesPerSegment);
+	}
+}
+
+TEST(ClashRvt, RvtOverlap)
+{
+	// GTEST_SKIP(); // Skip until I figured out how to make Travis pass this
+
+	// Tests 10k auto-generated samples of Intersection Case G (Overlap) from a Revit File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "revitOverlap_Part";
+	std::string postFix = ".rvt";
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/RVT/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		RunOverlapTest(container, samplesPerSegment, "Dimensions::PenDepth");
+	}
+}
+
+TEST(ClashRvt, RvtEqual)
+{
+	// Tests 10k auto-generated samples of Intersection Case H (Equal) from a Revit File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "revitEqual_Part";
+	std::string postFix = ".rvt";
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/RVT/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		RunEqualTest(container, samplesPerSegment, "Dimensions::PenDepth");
+	}
+}
+
+// Clash tests for auto-generated intersections by file type: NWD
+TEST(ClashNwd, NwdDisjoint)
+{
+	GTEST_SKIP(); // Skip until Files are checked in
+
+	// Tests auto-generated samples of Intersection Case A (Disjoint) from a Navis File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "navisDisjoint_Part";
+	std::string postFix = ".nwd";
+
+	int halfToleranceClashes = 0;
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/NWD/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		RunDisjointTest(container, samplesPerSegment, halfToleranceClashes);
+	}
+
+	EXPECT_THAT(halfToleranceClashes, Eq(totalSamples / 2));
+}
+
+TEST(ClashNwd, NwdIntersectClosed)
+{
+	GTEST_SKIP(); // Skip until Files are checked in
+
+	// Tests 10k auto-generated samples of Intersection Case B (Intersect Closed) from a Navis File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "navisIntersectClosed_Part";
+	std::string postFix = ".nwd";
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/NWD/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		RunIntersectClosedTest(container, samplesPerSegment, "Custom::MinPenDepth");
+	}
+}
+
+TEST(ClashNwd, NwdIntersectOpen)
+{
+	GTEST_SKIP(); // Skip until the files are checked in
+
+	// Tests 10k auto-generated samples of Intersection Case C (Intersect Closed) from a Navis File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "navisIntersectOpen_Part";
+	std::string postFix = ".nwd";
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/NWD/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		RunIntersectOpenTest(container, samplesPerSegment, "Custom::MinPenDepth");
+	}
+}
+
+TEST(ClashNwd, NwdCovers)
+{
+	GTEST_SKIP(); // Skip until the files are checked in
+
+	// Tests 10k auto-generated samples of Intersection Case D (Covers) from a Navis File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "navisCovers_Part";
+	std::string postFix = ".nwd";
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/NWD/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		RunCoversTest(container, samplesPerSegment, "Custom::ShortestDist");
+	}
+}
+
+TEST(ClashNwd, NwdContains)
+{
+	GTEST_SKIP(); // Skip until files are checked in
+
+	// Tests 10k auto-generated samples of Intersection Case E (Contains) from a Navis File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "navisContains_Part";
+	std::string postFix = ".nwd";
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/NWD/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		RunContainsTest(container, samplesPerSegment, "Custom::ShortestDist");
+	}
+}
+
+TEST(ClashNwd, NwdMeet)
+{
+	GTEST_SKIP(); // Skip until files are checked in
+
+	// Tests 10k auto-generated samples of Intersection Case F (Meet) from a Navis File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "navisMeet_Part";
+	std::string postFix = ".nwd";
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/NWD/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		RunMeetTest(container, samplesPerSegment);
+	}
+}
+
+TEST(ClashNwd, NwdOverlap)
+{
+	GTEST_SKIP(); // Skip until files are checked in
+
+	// Tests 10k auto-generated samples of Intersection Case G (Overlap) from a Navis File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "navisOverlap_Part";
+	std::string postFix = ".nwd";
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/NWD/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		RunOverlapTest(container, samplesPerSegment, "Custom::PenDepth");
+	}
+}
+
+TEST(ClashNwd, NwdEqual)
+{
+	GTEST_SKIP(); // Skip until files are checked in
+
+	// Tests 10k auto-generated samples of Intersection Case H (Equal) from a Navis File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "navisEqual_Part";
+	std::string postFix = ".nwd";
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/NWD/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		RunEqualTest(container, samplesPerSegment, "Custom::PenDepth");
 	}
 }
