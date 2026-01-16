@@ -3227,7 +3227,27 @@ TEST(ClashRvt, RvtEqual)
 }
 
 // Clash tests for auto-generated intersections by file type: NWD
-TEST(ClashNwd, NwdDisjoint)
+
+/*
+* Some ODA functionality uses global states and so must only be initialised/
+* deinitialised once per-process. This test suite manages those resources
+* for the NwdFileProcessor, for which there is a known issue on Linux.
+* See this page for how the Test class works:
+* https://google.github.io/googletest/advanced.html#sharing-resources-between-tests-in-the-same-test-suite
+*/
+class ClashNwd : public testing::Test
+{
+protected:
+	static void SetUpTestSuite() {
+		::odaHelper::FileProcessorNwd::createSharedSystemServices();
+	}
+
+	static void TearDownTestSuite() {
+		::odaHelper::FileProcessorNwd::destorySharedSystemServices();
+	}
+};
+
+TEST_F(ClashNwd, NwdDisjoint)
 {
 	GTEST_SKIP(); // Skip until Files are checked in
 
