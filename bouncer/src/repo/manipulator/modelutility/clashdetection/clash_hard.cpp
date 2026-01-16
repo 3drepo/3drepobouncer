@@ -208,19 +208,16 @@ namespace {
 	*/
 	struct ContainsFunctor : public geometry::RepoDeformDepth::ContainsFunctor
 	{
-		const std::vector<repo::lib::RepoVector3D64>& vertices;
-		const repo::lib::RepoBounds& bounds;
 		const std::vector<MeshView*>& closed;
 
-		ContainsFunctor(CacheEntry& a, CacheEntry& b):
-			vertices(a.getOrderedVertices()),
-			bounds(a.bounds),
+		ContainsFunctor(CacheEntry& b):
 			closed(b.getClosedMeshes())
 		{
 		}
 
 		bool operator()(
 			const std::vector<repo::lib::RepoVector3D64>& points,
+			const repo::lib::RepoBounds& bounds,
 			const repo::lib::RepoVector3D64& m) const override {
 			for (auto c : closed) {
 				if (geometry::contains(points, bounds, *c, m)) {
@@ -331,7 +328,7 @@ void Hard::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 			// Always create the contains functor - if b has no closed meshes, the
 			// operator will simply be a no-op.
 
-			ContainsFunctor contains(*a, *b);
+			ContainsFunctor contains(*b);
 
 			geometry::RepoDeformDepth pd(
 				a->mesh,
@@ -365,7 +362,7 @@ void Hard::createClashReport(const OrderedPair& objects,
 	result.idB = objects.b;
 
 	auto h = static_cast<const HardClash&>(clash);
-	result.positions = std::move(h.contacts);
+	result.positions = h.contacts;
 
 	size_t hash = 0;
 	std::hash<double> hasher;

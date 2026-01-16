@@ -23,15 +23,10 @@
 #include "repo/manipulator/modeloptimizer/bvh/hierarchy_refitter.hpp"
 #include "bvh_operators.h"
 
-#include <fstream>
-#include <iomanip>
-
 using namespace geometry;
 using namespace repo::lib;
 
 using Bvh = bvh::Bvh<double>;
-
-#pragma optimize("", off)
 
 namespace {
 	repo::lib::RepoBounds repoBounds(const bvh::Bvh<double>::Node& a) {
@@ -199,28 +194,10 @@ bool RepoDeformDepth::intersect()
 
 std::vector<repo::lib::RepoVector3D64> RepoDeformDepth::getContactManifold() const {
 	std::vector<repo::lib::RepoVector3D64> points;
-	for(int i = 0; i < distances.size(); i++) {
-		if (distances[i] > 0) {
-			auto p = a.vertices[i];
-			points.push_back(p);
-		}
-	}
+	points.push_back(repoBounds(bvhA.nodes[0]).center());
+	points.push_back(repoBounds(bvhB.nodes[0]).center());
 	return points;
 }
-
-struct SimpleObjWriter
-{
-	SimpleObjWriter(std::string filename);
-	void write(const repo::lib::RepoTriangle& triangle);
-	void write(const std::vector<repo::lib::RepoTriangle>& triangles);
-	void write(const repo::lib::RepoLine& line);
-	~SimpleObjWriter();
-
-private:
-	std::ofstream file;
-	int vertexCounter = 1;
-	int objectCounter = 0;
-};
 
 bool RepoDeformDepth::intersect(const repo::lib::RepoVector3D64& m)
 {
@@ -257,7 +234,7 @@ bool RepoDeformDepth::intersect(const repo::lib::RepoVector3D64& m)
 
 				const auto& face = a.faces[_a];
 				for (const auto& index : face) {
-					distances[index] = tolerance * 0.05;
+					distances[index] = std::max(tolerance * 0.05, 1e-6);
 				}
 
 				intersecting = true;
@@ -266,7 +243,7 @@ bool RepoDeformDepth::intersect(const repo::lib::RepoVector3D64& m)
 	);
 
 	if (!intersecting && contains) {
-		intersecting = (*contains)(vertices, m);
+		intersecting = (*contains)(vertices, verticesBounds, m);
 	}
 
 	return intersecting;
@@ -289,73 +266,45 @@ double RepoDeformDepth::getConfigurationDistance()
 
 bool RepoDeformDepth::deflateMesh()
 {
-	bool hasDeflated = false;
+	repo::lib::RepoBounds newBounds;
 	for (auto vi = 0; vi < vertices.size(); vi++) {
 		auto& v = vertices[vi];
 		auto& n = pseudoNormals[vi];
 		double amount = distances[vi];
 		if (amount > 0) {
 			v = v - n * amount;
-			hasDeflated = true;
 		}
+		newBounds.encapsulate(v);
 	}
-	return hasDeflated;
+
+	// Check if the mesh has started, or began by, getting larger. If this is the
+	// case, its likely the mesh has broken normals and there is not much more we
+	// can do here.
+
+	if (newBounds.size().norm() > verticesBounds.size().norm()) {
+		return false;
+	}
+
+	verticesBounds = newBounds;
+
+	return true;
 }
 
-void RepoDeformDepth::iterate(size_t maxIterations)
+void RepoDeformDepth::iterate(int maxIterations)
 {
-	if (maxIterations < 0) {
-		maxIterations =  (size_t)(1.0 / deflateStepSize);
-	}
-
 	if (distance < tolerance) {
 		return;
 	}
 
-	/*
-	{
-		SimpleObjWriter writer("C:/3drepo/3drepobouncer_ISSUE797/initial.obj");
-		for(auto& f : a.faces) {
-			writer.write(RepoTriangle(
-				vertices[f[0]] - repo::lib::RepoVector3D64(bvhB.nodes[0].bounds[0], bvhB.nodes[0].bounds[2], bvhB.nodes[0].bounds[4]),
-				vertices[f[1]] - repo::lib::RepoVector3D64(bvhB.nodes[0].bounds[0], bvhB.nodes[0].bounds[2], bvhB.nodes[0].bounds[4]),
-				vertices[f[2]] - repo::lib::RepoVector3D64(bvhB.nodes[0].bounds[0], bvhB.nodes[0].bounds[2], bvhB.nodes[0].bounds[4])
-			));
-		}
+	if (maxIterations < 0) {
+		maxIterations = (1.0 / deflateStepSize);
 	}
-
-	{
-		SimpleObjWriter writer("C:/3drepo/3drepobouncer_ISSUE797/b.obj");
-		for (auto& f : b.faces) {
-			writer.write(RepoTriangle(
-				b.vertices[f[0]] - repo::lib::RepoVector3D64(bvhB.nodes[0].bounds[0], bvhB.nodes[0].bounds[2], bvhB.nodes[0].bounds[4]),
-				b.vertices[f[1]] - repo::lib::RepoVector3D64(bvhB.nodes[0].bounds[0], bvhB.nodes[0].bounds[2], bvhB.nodes[0].bounds[4]),
-				b.vertices[f[2]] - repo::lib::RepoVector3D64(bvhB.nodes[0].bounds[0], bvhB.nodes[0].bounds[2], bvhB.nodes[0].bounds[4])
-			));
-		}
-	}
-	*/
-	
 
 	for(int i = 0; i < maxIterations; i++) {
 		if (intersect()) {
 			if (!deflateMesh()) {
 				break; // Likely a local minima has been reached.
-			}
-
-			/*
-			{
-				SimpleObjWriter writer("C:/3drepo/3drepobouncer_ISSUE797/defom_itr.obj");
-				for (auto& f : a.faces) {
-					writer.write(RepoTriangle(
-						vertices[f[0]] - repo::lib::RepoVector3D64(bvhB.nodes[0].bounds[0], bvhB.nodes[0].bounds[2], bvhB.nodes[0].bounds[4]),
-						vertices[f[1]] - repo::lib::RepoVector3D64(bvhB.nodes[0].bounds[0], bvhB.nodes[0].bounds[2], bvhB.nodes[0].bounds[4]),
-						vertices[f[2]] - repo::lib::RepoVector3D64(bvhB.nodes[0].bounds[0], bvhB.nodes[0].bounds[2], bvhB.nodes[0].bounds[4])
-					));
-				}
-			}
-			*/
-			
+			}	
 
 			// If we've had to deform the mesh beyond the tolerance, there is no
 			// point in continuing further.
@@ -397,45 +346,4 @@ void RepoDeformDepth::computePseudoNormals()
 	for (auto& n : pseudoNormals) {
 		n = n.normalized();
 	}
-}
-
-SimpleObjWriter::SimpleObjWriter(std::string filename) : file(filename) {
-	file << std::setprecision(std::numeric_limits<double>::max_digits10);
-}
-
-void SimpleObjWriter::write(const repo::lib::RepoTriangle& triangle) {
-	file << "o Triangle\n";
-	file << "v " << triangle.a.x << " " << triangle.a.y << " " << triangle.a.z << "\n";
-	file << "v " << triangle.b.x << " " << triangle.b.y << " " << triangle.b.z << "\n";
-	file << "v " << triangle.c.x << " " << triangle.c.y << " " << triangle.c.z << "\n";
-	file << "f ";
-	file << vertexCounter++ << " ";
-	file << vertexCounter++ << " ";
-	file << vertexCounter++ << "\n";
-}
-
-void SimpleObjWriter::write(const std::vector<repo::lib::RepoTriangle>& triangles) {
-	file << "o Triangles" << objectCounter++ << "\n";
-	for (auto& triangle : triangles) {
-		file << "v " << triangle.a.x << " " << triangle.a.y << " " << triangle.a.z << "\n";
-		file << "v " << triangle.b.x << " " << triangle.b.y << " " << triangle.b.z << "\n";
-		file << "v " << triangle.c.x << " " << triangle.c.y << " " << triangle.c.z << "\n";
-		file << "f ";
-		file << vertexCounter++ << " ";
-		file << vertexCounter++ << " ";
-		file << vertexCounter++ << "\n";
-	}
-}
-
-void SimpleObjWriter::write(const repo::lib::RepoLine& line) {
-	file << "o Line\n";
-	file << "v " << line.start.x << " " << line.start.y << " " << line.start.z << "\n";
-	file << "v " << line.end.x << " " << line.end.y << " " << line.end.z << "\n";
-	file << "l ";
-	file << vertexCounter++ << " ";
-	file << vertexCounter++ << "\n";
-}
-
-SimpleObjWriter::~SimpleObjWriter() {
-	file.close();
 }
