@@ -106,6 +106,7 @@ RepoDeformDepth::RepoDeformDepth(
 	bvhB(buildBvh(b))
 {
 	distances.resize(a.vertices.size());
+	verticesBounds = repoBounds(bvhA.nodes[0]);
 
 	// If there is no intersection, there is nothing to do, which we signal by
 	// already setting the configuration distance to zero.
@@ -318,9 +319,6 @@ void RepoDeformDepth::iterate(int maxIterations)
 			break;
 		}
 	}
-
-	
-	return;
 }
 
 void RepoDeformDepth::computePseudoNormals()
