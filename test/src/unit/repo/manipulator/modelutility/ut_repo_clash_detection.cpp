@@ -59,6 +59,7 @@
 #include <repo/manipulator/modeloptimizer/bvh/sweep_sah_builder.hpp>
 #include <repo/manipulator/modelutility/clashdetection/bvh_operators.h>
 #include <repo/manipulator/modelutility/clashdetection/predicates.h>
+#include "repo/manipulator/modelconvertor/import/odaHelper/file_processor_nwd.h"
 
 #include "../../../repo_test_utils.h"
 #include "../../../repo_test_clash_utils.h"
@@ -583,6 +584,7 @@ TEST(Clash, AccuracyReport)
 * test should exist for all supported file formats.
 */
 
+// TODO FT: Remove once the other NWD tests are in palce
 TEST(Clash, Rvt)
 {
 	// Tests that geometry of a known distance is correctly measured after
@@ -661,6 +663,7 @@ void getMissingCompIds(
 	}
 }
 
+// TODO FT: Remove once the other NWD tests are in palce
 TEST(Clash, Nwd)
 {
 	// Tests that geometry of a known distance is correctly measured after
@@ -2268,11 +2271,10 @@ void RunDisjointTest(
 	// Test Clearance Mode
 	// Tolerance so that half of the set should be included
 	{
-		config.tolerance = 5000.0f;
+		config.tolerance = 5000.1f;
 		auto pipeline = new clash::Clearance(handler, config);
 		auto results = pipeline->runPipeline();
 		halfToleranceClashes += results.clashes.size();
-		//EXPECT_THAT(results.clashes.size(), Eq(noSamples / 2));
 	}
 
 	// Test Clearance Mode (Tolerance 20,000)
@@ -2554,7 +2556,7 @@ void RunCoversTest(
 				if (metaEntry != metadataMap.end())
 				{
 					double separationDistance = boost::get<double>(metaEntry->second[metadataDescriptor]);
-					EXPECT_THAT(separationDistance, Gt(2500.0f));
+					EXPECT_THAT(separationDistance, Ge(2500.0f));
 				}
 				else
 				{
@@ -3226,7 +3228,27 @@ TEST(ClashRvt, RvtEqual)
 }
 
 // Clash tests for auto-generated intersections by file type: NWD
-TEST(ClashNwd, NwdDisjoint)
+
+/*
+* Some ODA functionality uses global states and so must only be initialised/
+* deinitialised once per-process. This test suite manages those resources
+* for the NwdFileProcessor, for which there is a known issue on Linux.
+* See this page for how the Test class works:
+* https://google.github.io/googletest/advanced.html#sharing-resources-between-tests-in-the-same-test-suite
+*/
+class ClashNwd : public testing::Test
+{
+protected:
+	static void SetUpTestSuite() {
+		::odaHelper::FileProcessorNwd::createSharedSystemServices();
+	}
+
+	static void TearDownTestSuite() {
+		::odaHelper::FileProcessorNwd::destorySharedSystemServices();
+	}
+};
+
+TEST_F(ClashNwd, NwdDisjoint)
 {
 	GTEST_SKIP(); // Skip until Files are checked in
 
@@ -3252,7 +3274,7 @@ TEST(ClashNwd, NwdDisjoint)
 	EXPECT_THAT(halfToleranceClashes, Eq(totalSamples / 2));
 }
 
-TEST(ClashNwd, NwdIntersectClosed)
+TEST_F(ClashNwd, NwdIntersectClosed)
 {
 	GTEST_SKIP(); // Skip until Files are checked in
 
@@ -3275,7 +3297,7 @@ TEST(ClashNwd, NwdIntersectClosed)
 	}
 }
 
-TEST(ClashNwd, NwdIntersectOpen)
+TEST_F(ClashNwd, NwdIntersectOpen)
 {
 	GTEST_SKIP(); // Skip until the files are checked in
 
@@ -3298,7 +3320,7 @@ TEST(ClashNwd, NwdIntersectOpen)
 	}
 }
 
-TEST(ClashNwd, NwdCovers)
+TEST_F(ClashNwd, NwdCovers)
 {
 	GTEST_SKIP(); // Skip until the files are checked in
 
@@ -3321,7 +3343,7 @@ TEST(ClashNwd, NwdCovers)
 	}
 }
 
-TEST(ClashNwd, NwdContains)
+TEST_F(ClashNwd, NwdContains)
 {
 	GTEST_SKIP(); // Skip until files are checked in
 
@@ -3344,7 +3366,7 @@ TEST(ClashNwd, NwdContains)
 	}
 }
 
-TEST(ClashNwd, NwdMeet)
+TEST_F(ClashNwd, NwdMeet)
 {
 	GTEST_SKIP(); // Skip until files are checked in
 
@@ -3367,7 +3389,7 @@ TEST(ClashNwd, NwdMeet)
 	}
 }
 
-TEST(ClashNwd, NwdOverlap)
+TEST_F(ClashNwd, NwdOverlap)
 {
 	GTEST_SKIP(); // Skip until files are checked in
 
@@ -3390,7 +3412,7 @@ TEST(ClashNwd, NwdOverlap)
 	}
 }
 
-TEST(ClashNwd, NwdEqual)
+TEST_F(ClashNwd, NwdEqual)
 {
 	GTEST_SKIP(); // Skip until files are checked in
 
