@@ -130,45 +130,37 @@ RepoDeformDepth::RepoDeformDepth(
 		return;
 	}
 
-	// For cases where a small mesh is contained in a concavity, a local search
-	// around the area can reveal a collision-free configuration.
+	// Perform a local search around the origin of (a). This is primarily to resolve
+	// collisions where (a) is a small object in a concavity, but it can also help
+	// in situations with very loose bounds.
 
-	auto volA = bvhA.nodes[0].bounding_box_proxy().to_bounding_box().half_area();
-	auto volB = bvhB.nodes[0].bounding_box_proxy().to_bounding_box().half_area();
-	if (volA <= volB * localSearchRatioThreshold) {
+	auto axes = std::vector<repo::lib::RepoVector3D64>{
+		repo::lib::RepoVector3D64(1,0,0),
+		repo::lib::RepoVector3D64(0,1,0),
+		repo::lib::RepoVector3D64(0,0,1)
+	};
 
-		// This loop searches along the primary axes, not combinations thereof. This
-		// is because those combinations can become very numerous, very quickly,
-		// especially with multiple steps.
+	auto localSearchStepSize = tolerance / static_cast<double>(numLocalSearchSteps);
 
-		auto axes = std::vector<repo::lib::RepoVector3D64>{
-			repo::lib::RepoVector3D64(1,0,0),
-			repo::lib::RepoVector3D64(0,1,0),
-			repo::lib::RepoVector3D64(0,0,1)
-		};
-
-		auto localSearchStepSize = tolerance / static_cast<double>(numLocalSearchSteps);
-
-		auto performLocalSearch = [&]() {
-			for (double istep = 1; istep < numLocalSearchSteps; istep++) {
-				for (auto& axis : axes) {
-					for (int dir = -1; dir <= 1; dir += 2) {
-						auto pqs = axis * dir * (istep * localSearchStepSize);
-						if (!intersect(pqs)) { // Local search has found an intersection free configuration
-							return pqs;
-						}
+	auto performLocalSearch = [&]() {
+		for (double istep = 1; istep < numLocalSearchSteps; istep++) {
+			for (auto& axis : axes) {
+				for (int dir = -1; dir <= 1; dir += 2) {
+					auto pqs = axis * dir * (istep * localSearchStepSize);
+					if (!intersect(pqs)) { // Local search has found an intersection free configuration
+						return pqs;
 					}
 				}
 			}
-			return repo::lib::RepoVector3D64(FLT_MAX, FLT_MAX, FLT_MAX);
-		};
-
-		auto q = performLocalSearch();
-		distance = std::min(distance, q.norm());
-
-		if (distance < tolerance) {
-			return;
 		}
+		return repo::lib::RepoVector3D64(FLT_MAX, FLT_MAX, FLT_MAX);
+	};
+
+	q = performLocalSearch();
+	distance = std::min(distance, q.norm());
+
+	if (distance < tolerance) {
+		return;
 	}
 
 	// Do early rejection tests: 

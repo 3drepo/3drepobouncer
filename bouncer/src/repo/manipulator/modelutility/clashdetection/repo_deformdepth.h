@@ -148,15 +148,6 @@ namespace geometry {
 
 		void computePseudoNormals();
 
-
-		/*
-		* Threshold used to decide how small mesh (a) must be compared to mesh (b)
-		* in order to justify a local search around (a). The volume of (a)'s bounds
-		* divided by (b)'s bounds must be less than this value for the local search
-		* to take place.
-		*/
-		double localSearchRatioThreshold = 0.3;
-
 		/*
 		* How many steps to take along each axis when performing the local search.
 		* The total number of steps completed will be 6 * numLocalSearchSteps, so
