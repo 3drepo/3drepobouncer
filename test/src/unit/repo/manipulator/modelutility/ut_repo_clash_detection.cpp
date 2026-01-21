@@ -584,30 +584,6 @@ TEST(Clash, AccuracyReport)
 * test should exist for all supported file formats.
 */
 
-// TODO FT: Remove once the other NWD tests are in palce
-TEST(Clash, Rvt)
-{
-	// Tests that geometry of a known distance is correctly measured after
-	// going through the bouncer import pipeline.
-
-	auto handler = getHandler();
-	auto container = makeTemporaryContainer();
-
-	importModel(getDataPath("/clash/clearance.rvt"), *container);
-
-	ClashDetectionConfig config;
-	ClashDetectionDatabaseHelper helper(handler);
-
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
-
-	config.tolerance = 2;
-
-	auto pipeline = new clash::Clearance(handler, config);
-	auto results = pipeline->runPipeline();
-
-	EXPECT_THAT(results.clashes.size(), Eq(10000));
-}
-
 void getMissingIndexes(
 	ClashDetectionConfig& config,
 	ClashDetectionReport& report,
@@ -661,30 +637,6 @@ void getMissingCompIds(
 	{
 		missingCompIds.push_back(config.setB[index].id);
 	}
-}
-
-// TODO FT: Remove once the other NWD tests are in palce
-TEST(Clash, Nwd)
-{
-	// Tests that geometry of a known distance is correctly measured after
-	// going through the bouncer import pipeline.
-
-	auto handler = getHandler();
-	auto container = makeTemporaryContainer();
-
-	importModel(getDataPath("/clash/clearance.nwd"), *container);
-
-	ClashDetectionConfig config;
-	ClashDetectionDatabaseHelper helper(handler);
-
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
-
-	config.tolerance = 2;
-
-	auto pipeline = new clash::Clearance(handler, config);
-	auto results = pipeline->runPipeline();
-
-	EXPECT_THAT(results.clashes.size(), Eq(10000));
 }
 
 TEST(Clash, Clearance1)
@@ -3044,8 +2996,6 @@ void RunEqualTest(
 // Clash tests for auto-generated intersections by file type: RVT
 TEST(ClashRvt, RvtDisjoint)
 {
-	// GTEST_SKIP(); // Skip until I figured out how to make Travis pass this
-
 	// Tests auto-generated samples of Intersection Case A (Disjoint) from a Revit File
 
 	int noParts = 5;
@@ -3070,8 +3020,6 @@ TEST(ClashRvt, RvtDisjoint)
 
 TEST(ClashRvt, RvtIntersectClosed)
 {
-	// GTEST_SKIP(); // Skip until I figured out how to make Travis pass this
-
 	// Tests 10k auto-generated samples of Intersection Case B (Intersect Closed) from a Revit File
 
 	int noParts = 5;
@@ -3093,8 +3041,6 @@ TEST(ClashRvt, RvtIntersectClosed)
 
 TEST(ClashRvt, RvtIntersectOpen)
 {
-	// GTEST_SKIP(); // Skip until I figured out how to make Travis pass this
-
 	// Tests 10k auto-generated samples of Intersection Case C (Intersect Closed) from a Revit File
 
 	int noParts = 5;
@@ -3104,7 +3050,7 @@ TEST(ClashRvt, RvtIntersectOpen)
 	std::string postFix = ".rvt";
 
 	for (int i = 0; i < noParts; i++) {
-		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string fileName = baseName + std::to_string(i) + postFix;	
 		std::string path = "/clash/RVT/" + fileName;
 
 		auto container = makeTemporaryContainer();
@@ -3116,8 +3062,6 @@ TEST(ClashRvt, RvtIntersectOpen)
 
 TEST(ClashRvt, RvtCovers)
 {
-	// GTEST_SKIP(); // Skip until I figured out how to make Travis pass this
-
 	// Tests 10k auto-generated samples of Intersection Case D (Covers) from a Revit File
 
 	int noParts = 5;
@@ -3139,8 +3083,6 @@ TEST(ClashRvt, RvtCovers)
 
 TEST(ClashRvt, RvtContains)
 {
-	// GTEST_SKIP(); // Skip until I figured out how to make Travis pass this
-
 	// Tests 10k auto-generated samples of Intersection Case E (Contains) from a Revit File
 
 	int noParts = 5;
@@ -3162,8 +3104,6 @@ TEST(ClashRvt, RvtContains)
 
 TEST(ClashRvt, RvtMeet)
 {
-	// GTEST_SKIP(); // Skip until I figured out how to make Travis pass this
-
 	// Tests 10k auto-generated samples of Intersection Case F (Meet) from a Revit File
 
 	int noParts = 5;
@@ -3185,8 +3125,6 @@ TEST(ClashRvt, RvtMeet)
 
 TEST(ClashRvt, RvtOverlap)
 {
-	// GTEST_SKIP(); // Skip until I figured out how to make Travis pass this
-
 	// Tests 10k auto-generated samples of Intersection Case G (Overlap) from a Revit File
 
 	int noParts = 5;
@@ -3250,8 +3188,6 @@ protected:
 
 TEST_F(ClashNwd, NwdDisjoint)
 {
-	GTEST_SKIP(); // Skip until Files are checked in
-
 	// Tests auto-generated samples of Intersection Case A (Disjoint) from a Navis File
 
 	int noParts = 5;
@@ -3276,8 +3212,6 @@ TEST_F(ClashNwd, NwdDisjoint)
 
 TEST_F(ClashNwd, NwdIntersectClosed)
 {
-	GTEST_SKIP(); // Skip until Files are checked in
-
 	// Tests 10k auto-generated samples of Intersection Case B (Intersect Closed) from a Navis File
 
 	int noParts = 5;
@@ -3299,8 +3233,6 @@ TEST_F(ClashNwd, NwdIntersectClosed)
 
 TEST_F(ClashNwd, NwdIntersectOpen)
 {
-	GTEST_SKIP(); // Skip until the files are checked in
-
 	// Tests 10k auto-generated samples of Intersection Case C (Intersect Closed) from a Navis File
 
 	int noParts = 5;
@@ -3322,8 +3254,6 @@ TEST_F(ClashNwd, NwdIntersectOpen)
 
 TEST_F(ClashNwd, NwdCovers)
 {
-	GTEST_SKIP(); // Skip until the files are checked in
-
 	// Tests 10k auto-generated samples of Intersection Case D (Covers) from a Navis File
 
 	int noParts = 5;
@@ -3345,8 +3275,6 @@ TEST_F(ClashNwd, NwdCovers)
 
 TEST_F(ClashNwd, NwdContains)
 {
-	GTEST_SKIP(); // Skip until files are checked in
-
 	// Tests 10k auto-generated samples of Intersection Case E (Contains) from a Navis File
 
 	int noParts = 5;
@@ -3368,8 +3296,6 @@ TEST_F(ClashNwd, NwdContains)
 
 TEST_F(ClashNwd, NwdMeet)
 {
-	GTEST_SKIP(); // Skip until files are checked in
-
 	// Tests 10k auto-generated samples of Intersection Case F (Meet) from a Navis File
 
 	int noParts = 5;
@@ -3391,8 +3317,6 @@ TEST_F(ClashNwd, NwdMeet)
 
 TEST_F(ClashNwd, NwdOverlap)
 {
-	GTEST_SKIP(); // Skip until files are checked in
-
 	// Tests 10k auto-generated samples of Intersection Case G (Overlap) from a Navis File
 
 	int noParts = 5;
@@ -3414,8 +3338,6 @@ TEST_F(ClashNwd, NwdOverlap)
 
 TEST_F(ClashNwd, NwdEqual)
 {
-	GTEST_SKIP(); // Skip until files are checked in
-
 	// Tests 10k auto-generated samples of Intersection Case H (Equal) from a Navis File
 
 	int noParts = 5;
