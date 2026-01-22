@@ -51,7 +51,7 @@ std::string helpInfo()
 	ss << cmdImportFile << "\t\tImport file to database. (args: {file database project [dxrotate] [owner] [configfile]} or {-f parameterFile} )\n";
 	ss << cmdProcessDrawing << "\t\tProcess drawing revision node into an image. (args: parameterFile)\n";
 	ss << cmdCreateFed << "\t\tGenerate a federation. (args: fedDetails [owner])\n";
-	ss << cmdClash << "\t\tPerform a clash detection operation. (args: [configfile])\n";
+	ss << cmdClash << "\t\tPerform a clash detection operation. (args: configFile [resultsFile])\n";
 	ss << cmdTestConn << "\t\tTest the client and database connection is working. (args: none)\n";
 	ss << cmdVersion << "[-v]\tPrints the version of Repo Bouncer Client/Library\n";
 
@@ -141,8 +141,7 @@ int32_t performOperation(
 	else if (command.command == cmdClash)
 	{
 		try {
-			performClashDetection(controller, token, command);
-			errCode = REPOERR_OK;
+			errCode = performClashDetection(controller, token, command);
 		}
 		catch (const repo::lib::RepoException& e) {
 			throw; // RepoExceptions have additional context as well as an embedded return code, so let these bubble up
@@ -348,14 +347,22 @@ int32_t generateStash(
 	return success ? REPOERR_OK : REPOERR_STASH_GEN_FAIL;
 }
 
-void performClashDetection(
+int32_t performClashDetection(
 	std::shared_ptr<repo::RepoController> controller,
 	const repo::RepoController::RepoToken* token,
 	const repo_op_t& command)
 {
 	repo::manipulator::modelutility::ClashDetectionConfig clashConfig;
 	repo::manipulator::modelutility::ClashDetectionConfig::ParseJsonFile(command.args[0], clashConfig);
+	if (command.nArgcs > 1) {
+		clashConfig.resultsFile = command.args[1];
+	}
+	if (clashConfig.resultsFile.empty()) {
+		repoError << "Clash detection requires the resultsFile to be set in the config or passed as a command line argument - neither has been found.";
+		return REPOERR_INVALID_ARG;
+	}
 	controller->performClashDetection(token, clashConfig);
+	return REPOERR_OK;
 }
 
 int32_t importFileAndCommit(

@@ -123,7 +123,7 @@ static int32_t processDrawing(
 	const repo_op_t& command
 );
 
-static void performClashDetection(
+static int32_t performClashDetection(
 	std::shared_ptr<repo::RepoController> controller,
 	const repo::RepoController::RepoToken* token,
 	const repo_op_t& command
