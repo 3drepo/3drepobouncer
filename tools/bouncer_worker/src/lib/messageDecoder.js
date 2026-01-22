@@ -88,6 +88,13 @@ const messageDecoder = (cmd) => {
 					};
 				}
 				break;
+			case 'processClash':
+				res = {
+					cmdParams: [configPath, args[1]],
+					configFile: args[1],
+					...res,
+				};
+				break;
 			case 'genStash':
 				res = {
 					cmdParams: [configPath, ...args],

@@ -31,6 +31,7 @@ const rabbitmq = object({
 	callback_queue: string().default('callbackq'),
 	model_queue: string().default('modelq'),
 	drawing_queue: string().default('drawingq'),
+	clash_queue: string().default('clashq'),
 	task_prefetch: number().default(4),
 	model_prefetch: number().default(1),
 	drawing_prefetch: number().default(1),

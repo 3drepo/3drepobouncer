@@ -22,6 +22,7 @@ const { exitApplication, sleep } = require('./utils');
 const JobQHandler = require('../queues/jobQueueHandler');
 const ModelQHandler = require('../queues/modelQueueHandler');
 const DrawingQHandler = require('../queues/drawingQueueHandler');
+const ClashQHandler = require('../queues/clashQueueHandler');
 
 let connClosed = false;
 let retry = 0;
@@ -34,6 +35,7 @@ const queueLabel = {
 	JOB: 'job',
 	MODEL: 'model',
 	DRAWING: 'drawing',
+	CLASH: 'clash',
 };
 
 const queueHandlers = {};
@@ -45,6 +47,9 @@ if (rabbitmq.model_queue) {
 }
 if (rabbitmq.drawing_queue) {
 	queueHandlers[rabbitmq.drawing_queue] = DrawingQHandler;
+}
+if (rabbitmq.clash_queue) {
+	queueHandlers[rabbitmq.clash_queue] = ClashQHandler;
 }
 
 // Disable consistent-return because the non-return paths exit the process.
@@ -66,8 +71,13 @@ const getQueueName = (label) => {
 				return rabbitmq.drawing_queue;
 			}
 			break;
+		case queueLabel.CLASH:
+			if (rabbitmq.clash_queue) {
+				return rabbitmq.clash_queue;
+			}
+			break;
 		default:
-			logger.error(`Unrecognised queue type: ${label}. Expected [job|model|drawing]`, logLabel);
+			logger.error(`Unrecognised queue type: ${label}. Expected [job|model|drawing|clash]`, logLabel);
 			exitApplication();
 	}
 	logger.error(`Failed to find rabbitmq entry for queue type: ${label} in config`, logLabel);
