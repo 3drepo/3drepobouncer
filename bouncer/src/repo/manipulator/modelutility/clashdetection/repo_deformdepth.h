@@ -128,7 +128,7 @@ namespace geometry {
 		* Reduces mesh A along its outer surface by the amounts specified in the per-
 		* vertex displacements.
 		*/
-		bool deflateMesh();
+		void deflateMesh();
 
 		/*
 		* Gets the distance of the current configuration from the starting

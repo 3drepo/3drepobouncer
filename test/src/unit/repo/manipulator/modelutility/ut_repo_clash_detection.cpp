@@ -1745,6 +1745,17 @@ TEST(Clash, RepoDeformDepthDb)
 
 	EXPECT_THAT(run("set15_a", "set15_b", 0), IsTrue());
 	EXPECT_THAT(run("set15_a", "set15_b", 2), IsFalse());
+
+	EXPECT_THAT(run("set15_a", "set15_b", 0), IsTrue());
+	EXPECT_THAT(run("set15_a", "set15_b", 2), IsFalse());
+
+	EXPECT_THAT(run("set16_a", "set16_b", 0), IsTrue());
+	EXPECT_THAT(run("set16_a", "set16_b", 25), IsFalse());
+
+	EXPECT_THAT(run("set17_a1", "set17_b", 0), IsTrue());
+	EXPECT_THAT(run("set17_a1", "set17_b", 50), IsFalse());
+	EXPECT_THAT(run("set17_a2", "set17_b", 0), IsTrue());
+	EXPECT_THAT(run("set17_a2", "set17_b", 50), IsFalse());
 }
 
 TEST(Clash, RepoDeformDepthDegenerateGeometry)

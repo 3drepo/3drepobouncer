@@ -23,6 +23,8 @@
 #include "repo/manipulator/modeloptimizer/bvh/hierarchy_refitter.hpp"
 #include "bvh_operators.h"
 
+#include <set>
+
 using namespace geometry;
 using namespace repo::lib;
 
@@ -257,9 +259,9 @@ double RepoDeformDepth::getConfigurationDistance()
 	return maxDistance;
 }
 
-bool RepoDeformDepth::deflateMesh()
+void RepoDeformDepth::deflateMesh()
 {
-	repo::lib::RepoBounds newBounds;
+	verticesBounds = {};
 	for (auto vi = 0; vi < vertices.size(); vi++) {
 		auto& v = vertices[vi];
 		auto& n = pseudoNormals[vi];
@@ -267,20 +269,8 @@ bool RepoDeformDepth::deflateMesh()
 		if (amount > 0) {
 			v = v - n * amount;
 		}
-		newBounds.encapsulate(v);
+		verticesBounds.encapsulate(v);
 	}
-
-	// Check if the mesh has started, or began by, getting larger. If this is the
-	// case, its likely the mesh has broken normals and there is not much more we
-	// can do here.
-
-	if (newBounds.size().norm() > verticesBounds.size().norm()) {
-		return false;
-	}
-
-	verticesBounds = newBounds;
-
-	return true;
 }
 
 void RepoDeformDepth::iterate(int maxIterations)
@@ -295,9 +285,7 @@ void RepoDeformDepth::iterate(int maxIterations)
 
 	for(int i = 0; i < maxIterations; i++) {
 		if (intersect()) {
-			if (!deflateMesh()) {
-				break; // Likely a local minima has been reached.
-			}	
+			deflateMesh();
 
 			// If we've had to deform the mesh beyond the tolerance, there is no
 			// point in continuing further.
@@ -317,6 +305,17 @@ void RepoDeformDepth::computePseudoNormals()
 {
 	pseudoNormals.resize(a.vertices.size());
 
+	// The following algorithm computes boundary-adapted pseudo-normals for each
+	// vertex. These are angle-weighted normals from the faces, averaged with
+	// the 3d normals any boundary edges. 3d normals are orthogonal to both
+	// the face and the edge, that is, pointing 'outwards' from the boundary
+	// approximating the surface that might close the opening.
+
+	std::vector<repo::lib::RepoVector3D64> edgeNormals;
+	edgeNormals.resize(a.vertices.size());
+
+	std::set<std::pair<size_t, size_t>> edges;
+
 	for (const auto& f : a.faces) {
 		auto v0 = vertices[f[0]];
 		auto v1 = vertices[f[1]];
@@ -331,9 +330,49 @@ void RepoDeformDepth::computePseudoNormals()
 		pseudoNormals[f[0]] += normal * a0;
 		pseudoNormals[f[1]] += normal * a1;
 		pseudoNormals[f[2]] += normal * a2;
+
+		edges.insert({f[0], f[1]});
+		edges.insert({f[1], f[2]});
+		edges.insert({f[2], f[0]});
 	}
 
 	for (auto& n : pseudoNormals) {
 		n = n.normalized();
+	}
+
+	for (const auto& f : a.faces) {
+
+		auto v01 = vertices[f[1]] - vertices[f[0]];
+		auto v12 = vertices[f[2]] - vertices[f[1]];
+		auto v20 = vertices[f[0]] - vertices[f[2]];
+		auto v02 = vertices[f[2]] - vertices[f[0]];
+
+		auto n = v01.crossProduct(v02).normalized();
+
+		auto n01 = v01.crossProduct(n).normalized();
+		auto n12 = v12.crossProduct(n).normalized();
+		auto n20 = v20.crossProduct(n).normalized();
+
+		// If edges are shared/non-boundary, then they don't have normals of their own
+
+		if (!edges.contains({f[1], f[0]})) {
+			edgeNormals[f[0]] += n01;
+			edgeNormals[f[1]] += n01;
+		}
+
+		if (!edges.contains({f[2], f[1]})) {
+			edgeNormals[f[1]] += n12;
+			edgeNormals[f[2]] += n12;
+		}
+
+		if (!edges.contains({f[0], f[2]})) {
+			edgeNormals[f[2]] += n20;
+			edgeNormals[f[0]] += n20;
+		}
+	}
+
+	for (size_t vi = 0; vi < pseudoNormals.size(); vi++) {
+		pseudoNormals[vi] += edgeNormals[vi];
+		pseudoNormals[vi].normalize();
 	}
 }
