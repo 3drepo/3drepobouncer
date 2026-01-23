@@ -56,9 +56,80 @@ namespace geometry {
 				const repo::lib::RepoVector3D64& m) const = 0;
 		};
 
+		/*
+		* Optional structure to represent a RepoIndexedMesh with additional metadata.
+		* RepoDeformDepth uses these internally, but they can be cached and re-used
+		* to improve performance if multiple calls to RepoDeformDepth are expected for
+		* the same mesh.
+		*/
+		struct Mesh : public geometry::RepoIndexedMesh {
+
+			/*
+			* Creates an empty RepoDeformDepthMesh. This can be populated by functions
+			* that operate on RepoIndexedMeshes, but in this case initialise() must be
+			* called explicitly.
+			* It is suggested to use the copy-constructor where possible, which can take
+			* the resources of a RepoIndexedMesh with no overhead.
+			*/
+			Mesh() = default;
+
+			void initialise();
+
+			/*
+			* Converts a RepoIndexedMesh into a deformable mesh structure. Builds the Bvh
+			* and other lookups automatically.
+			*/
+			Mesh(geometry::RepoIndexedMesh&& mesh);
+
+			bvh::Bvh<double> bvh;
+
+			/*
+			* The current configuration of the deformable mesh.
+			*/
+			std::vector<repo::lib::RepoVector3D64> _vertices;
+
+			/*
+			* Normals per vertex of the deformable mesh that are the best estimate of
+			* its outer surface.
+			*/
+			std::vector<repo::lib::RepoVector3D64> pseudoNormals;
+
+			/*
+			* The current bounds of the vertices in their deformed configuration.
+			*/
+			repo::lib::RepoBounds bounds() const;
+
+			/*
+			* Moves the vertices back to their starting positions and refits the BVH.
+			*/
+			void resetConfiguration();
+
+			/*
+			* Reduces mesh A along its outer surface by the amounts specified in the per-
+			* vertex displacements.
+			*/
+			void deflate(const std::vector<double>& displacements);
+
+			/*
+			* Gets the distance of the current configuration from the starting
+			* configuration. If this is greater than the tolerance, the algorithm should
+			* terminate.
+			*/
+			double getConfigurationDistance() const;
+
+			repo::lib::RepoTriangle getTriangle(size_t index) const override;
+
+		protected:
+			void buildBvh();
+
+			void computePseudoNormals();
+
+			bool deformed = false;
+		};
+
 		RepoDeformDepth(
-			const geometry::RepoIndexedMesh& a,
-			const geometry::RepoIndexedMesh& b,
+			RepoDeformDepth::Mesh& a,
+			const RepoDeformDepth::Mesh& b,
 			ContainsFunctor* containsFunctor = nullptr,
 			double tolerance = 0.0);
 
@@ -67,10 +138,9 @@ namespace geometry {
 		double getPenetrationDepth() const;
 
 		/*
-		* Returns the points on A that are in contact with B when the algorithm
-		* terminates. This can be returned to the user as a characterisation of the
-		* clash. This set may be empty if no contacts were found. Points are returned
-		* relative to A's bounding box.
+		* Returns points that characterise the clash, if the meshes are still clashing
+		* when RepoDeformDepth terminates. These are an implementation detail and are
+		* not strictly given any definition.
 		*/
 		std::vector<repo::lib::RepoVector3D64> getContactManifold() const;
 
@@ -83,30 +153,8 @@ namespace geometry {
 		*/
 		double distance;
 
-		/*
-		* The current configuration of a's mesh.
-		*/
-		std::vector<repo::lib::RepoVector3D64> vertices;
-
-		/*
-		* Normals per vertex of A that are the best estimate of its outer surface.
-		*/
-		std::vector<repo::lib::RepoVector3D64> pseudoNormals;
-
-		/*
-		* The current bounds of the vertices in their deformed configuration. These
-		* are used to detect if the mesh is growing instead of shrinking, which can
-		* indicate broken normals. They are also necessary for the contains test.
-		*/
-		repo::lib::RepoBounds verticesBounds;
-
-		const geometry::RepoIndexedMesh& a;
-		const geometry::RepoIndexedMesh& b;
-
-		using Bvh = bvh::Bvh<double>;
-
-		Bvh bvhA;
-		Bvh bvhB;
+		RepoDeformDepth::Mesh& a;
+		const RepoDeformDepth::Mesh& b;
 
 		/*
 		* If not null, will be used by the intersect method to determine if mesh (a)
@@ -124,29 +172,9 @@ namespace geometry {
 		bool intersect(const repo::lib::RepoVector3D64& m);
 		bool intersect();
 
-		/*
-		* Reduces mesh A along its outer surface by the amounts specified in the per-
-		* vertex displacements.
-		*/
-		void deflateMesh();
-
-		/*
-		* Gets the distance of the current configuration from the starting
-		* configuration. If this is greater than the tolerance, the algorithm should
-		* terminate.
-		*/
-		double getConfigurationDistance();
-
-		/*
-		* Re-fit the BVH of mesh a to match the current configuration.
-		*/
-		void refitBvh(const repo::lib::RepoVector3D64& m);
-
 		std::vector<double> distances;
 
 		void resetDisplacements();
-
-		void computePseudoNormals();
 
 		/*
 		* How many steps to take along each axis when performing the local search.
@@ -161,6 +189,4 @@ namespace geometry {
 		*/
 		double deflateStepSize = 0.05;
 	};
-
-
 }

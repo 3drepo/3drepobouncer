@@ -1626,8 +1626,8 @@ TEST(Clash, RepoDeformDepthDb)
 		const std::string& nameA, 
 		const std::string& nameB,
 		double tolerance) {
-			auto a = helper.getChildMeshNodes(c.get(), nameA);
-			auto b = helper.getChildMeshNodes(c.get(), nameB);
+			auto a = (geometry::RepoDeformDepth::Mesh)helper.getChildMeshNodes(c.get(), nameA);
+			auto b = (geometry::RepoDeformDepth::Mesh)helper.getChildMeshNodes(c.get(), nameB);
 
 			auto contains = std::unique_ptr<ContainsFunctor>(nullptr);
 			if (geometry::isClosedAndManifold(b.faces)) {
@@ -1720,7 +1720,7 @@ TEST(Clash, RepoDeformDepthDegenerateGeometry)
 		}
 		mesh.vertices = std::move(vertices);
 		mesh.faces = m.getFaces();
-		return mesh;
+		return geometry::RepoDeformDepth::Mesh(std::move(mesh));
 	};
 
 	// RepoDeformDepth should be robust to degenerate triangles (i.e. those that
@@ -1742,8 +1742,8 @@ TEST(Clash, RepoDeformDepthDegenerateGeometry)
 		repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(-2, 0, 0))
 	);
 
-	geometry::RepoIndexedMesh a = buildIndexedMesh(box1);
-	geometry::RepoIndexedMesh b = buildIndexedMesh(box2);
+	auto a = buildIndexedMesh(box1);
+	auto b = buildIndexedMesh(box2);
 
 	// Add a degenerate triangle to box2 - box1 will hit this.
 

@@ -65,12 +65,11 @@ namespace {
 	{
 		std::vector<Graph::Node*> nodes;
 		repo::lib::RepoUUID id;
-		repo::lib::RepoBounds bounds;
 
 		// Holds all the geometry for all nodes in one mesh. MeshViews can be
 		// used to address the individual MeshNodes' geometry by range.
 
-		geometry::RepoIndexedMesh mesh;
+		geometry::RepoDeformDepth::Mesh mesh;
 
 		// Tracks the ranges of each MeshNode within the triangles array in case
 		// we need to perform testing against a subset of triangles. Each view
@@ -115,7 +114,7 @@ namespace {
 				));
 			}
 
-			bounds = repo::lib::RepoBounds(mesh.vertices.data(), mesh.vertices.size());
+			mesh.initialise();
 
 			// A view that encompasses the whole composite object - this will be the one
 			// that holds the primary BVH. This composite view will never be used for
@@ -157,6 +156,10 @@ namespace {
 				c->buildBvh();
 			}
 			return closed;
+		}
+
+		repo::lib::RepoBounds getBounds() const {
+			return mesh.bounds();
 		}
 	};
 
@@ -319,7 +322,7 @@ void Hard::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 		// In PolyDepth, b is fixed, so consider the larger object the static one
 		// to make it easier to fit a into the free space around it.
 
-		if (a->bounds > b->bounds) {
+		if (a->getBounds() > b->getBounds()) {
 			std::swap(a, b);
 		}
 

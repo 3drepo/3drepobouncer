@@ -38,7 +38,7 @@ namespace geometry {
 		std::vector<repo::lib::RepoVector3D64> vertices;
 		std::vector<repo::lib::repo_face_t> faces;
 
-		repo::lib::RepoTriangle getTriangle(size_t index) const;
+		virtual repo::lib::RepoTriangle getTriangle(size_t index) const;
 	};
 
 	/*
