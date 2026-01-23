@@ -32,7 +32,7 @@ const logLabel = { label: 'CLASHQ' };
 
 Handler.onMessageReceived = async (cmd, rid, callback) => {
 	const logDir = `${config.logging.taskLogDir}/${rid.toString()}/`;
-	const { errorCode, configFile, cmdParams } = messageDecoder(cmd);
+	const { errorCode, project, teamspace, configFile, cmdParams } = messageDecoder(cmd);
 
 	if (errorCode) {
 		callback(JSON.stringify({ value: errorCode }));
@@ -46,6 +46,8 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	const returnMessage = {
 		value: ERRCODE_OK,
 		results: resultsFile,
+		project,
+		teamspace,
 	};
 
 	try {

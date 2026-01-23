@@ -23,6 +23,13 @@ test('Test Clash Q', { concurrency: true }, async () => {
 
 	const correlationId = crypto.randomUUID().toString();
 
+	// In practice, these are used to determine where to look for the clash run
+	// in the database. They are completely independent of which geometries
+	// are clashed, so can be anything here.
+
+	const project = 'testProject';
+	const teamspace = 'testTeamspace';
+
 	const clashConfigDirectory = path.join(config.rabbitmq.sharedDir, correlationId);
 
 	// This config in the tests repo is a valid config that performs a clash
@@ -41,7 +48,7 @@ test('Test Clash Q', { concurrency: true }, async () => {
 		const channel = await connection.createChannel();
 
 		await channel.assertQueue(clashq);
-		const message = `processClash $SHARED_SPACE/${correlationId}/clashConfig.json`;
+		const message = `processClash ${project} ${teamspace} $SHARED_SPACE/${correlationId}/clashConfig.json`;
 		channel.sendToQueue(clashq, Buffer.from(message), {
 			correlationId,
 		});
@@ -65,6 +72,8 @@ test('Test Clash Q', { concurrency: true }, async () => {
 				assert.equal(content.value, 0);
 				assert.equal(content.results, path.join(clashConfigDirectory, 'results.json'));
 				assert.equal(fs.existsSync(content.results), true);
+				assert.equal(content.project, project);
+				assert.equal(content.teamspace, teamspace);
 
 				channel.ack(message);
 				resolve();
