@@ -90,7 +90,7 @@ const messageDecoder = (cmd) => {
 				break;
 			case 'processClash':
 				res = {
-					cmdParams: [configPath, args[1]],
+					cmdParams: [configPath],
 					configFile: args[1],
 					...res,
 				};

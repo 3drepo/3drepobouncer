@@ -43,15 +43,13 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	// should have its own folder, so we don't need to generate a unique name.
 	const resultsFile = path.join(path.dirname(configFile), 'results.json');
 
-	cmdParams.push(resultsFile);
-
 	const returnMessage = {
 		value: ERRCODE_OK,
 		results: resultsFile,
 	};
 
 	try {
-		returnMessage.value = await runBouncerCommand(logDir, cmdParams);
+		returnMessage.value = await runBouncerCommand(logDir, [...cmdParams, 'clash', configFile, resultsFile]);
 	} catch (err) {
 		logger.error(`Error running clash detection: ${err.message || err}`, logLabel);
 		returnMessage.value = err;
