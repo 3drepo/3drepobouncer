@@ -1597,6 +1597,7 @@ TEST(Clash, RepoDeformDepthDb)
 			:mesh(mesh)
 		{
 			bvh::builders::build(bvhB, mesh.vertices, mesh.faces);
+			geometry::reorderVertices(mesh.vertices, indices);
 		}
 
 		const bvh::Bvh<double>& getBvh() const {
@@ -1609,12 +1610,14 @@ TEST(Clash, RepoDeformDepthDb)
 
 		const geometry::RepoIndexedMesh& mesh;
 		bvh::Bvh<double> bvhB;
+		std::vector<size_t> indices;
 		
 		bool operator()(const std::vector<repo::lib::RepoVector3D64>& points,
 			const repo::lib::RepoBounds& bounds,
 			const repo::lib::RepoVector3D64& m) const override {
 			return geometry::contains(
 				points,
+				indices,
 				bounds,
 				*this,
 				m

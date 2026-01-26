@@ -89,7 +89,7 @@ namespace {
 		// All the vertices from all the nodes, ordered with the most extreme ones
 		// first for more efficient point-wise testing.
 
-		std::vector<repo::lib::RepoVector3D64> orderedVertices;
+		std::vector<size_t> orderedVertices;
 
 		void initialise(DatabasePtr handler) {
 
@@ -136,9 +136,9 @@ namespace {
 
 			view = &meshViews.back();
 
-			// Take a copy of the vertices so they can be re-ordered for optimal contains tests
-			orderedVertices = mesh.vertices;
-			geometry::reorderVertices(orderedVertices);
+			// Get a set of ordered indices for the contains tests.
+
+			geometry::reorderVertices(mesh.vertices, orderedVertices);
 
 			nodes.clear();
 		}
@@ -147,7 +147,7 @@ namespace {
 			return id;
 		}
 
-		const std::vector<repo::lib::RepoVector3D64>& getOrderedVertices() const {
+		const std::vector<size_t>& getOrderedVertices() const {
 			return orderedVertices;
 		}
 
@@ -212,9 +212,11 @@ namespace {
 	struct ContainsFunctor : public geometry::RepoDeformDepth::ContainsFunctor
 	{
 		const std::vector<MeshView*>& closed;
+		const std::vector<size_t>& pointIndices;
 
-		ContainsFunctor(CacheEntry& b):
-			closed(b.getClosedMeshes())
+		ContainsFunctor(const CacheEntry& a, CacheEntry& b):
+			closed(b.getClosedMeshes()),
+			pointIndices(a.getOrderedVertices())
 		{
 		}
 
@@ -223,7 +225,7 @@ namespace {
 			const repo::lib::RepoBounds& bounds,
 			const repo::lib::RepoVector3D64& m) const override {
 			for (auto c : closed) {
-				if (geometry::contains(points, bounds, *c, m)) {
+				if (geometry::contains(points, pointIndices, bounds, *c, m)) {
 					return true;
 				}
 			}
@@ -331,7 +333,7 @@ void Hard::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 			// Always create the contains functor - if b has no closed meshes, the
 			// operator will simply be a no-op.
 
-			ContainsFunctor contains(*b);
+			ContainsFunctor contains(*a, *b);
 
 			geometry::RepoDeformDepth pd(
 				a->mesh,

@@ -170,8 +170,8 @@ TEST(Geometry, ClosedMeshContains)
 
 	for(auto& [name, p] : problems)
 	{
-		repo::lib::RepoBounds inside(p.inside.data(), p.inside.size());
-		repo::lib::RepoBounds outside(p.outside.data(), p.outside.size());
+		repo::lib::RepoBounds binside(p.inside.data(), p.inside.size());
+		repo::lib::RepoBounds boutside(p.outside.data(), p.outside.size());
 
 		struct _MeshView : public geometry::MeshView
 		{
@@ -195,23 +195,29 @@ TEST(Geometry, ClosedMeshContains)
 
 		_MeshView  mesh(p.mesh);
 
-		EXPECT_THAT(geometry::contains(p.inside, inside, mesh), IsTrue());
+		std::vector<size_t> iinside;
+		geometry::reorderVertices(p.inside, iinside);
+
+		std::vector<size_t> ioutside;
+		geometry::reorderVertices(p.outside, ioutside);
+
+		EXPECT_THAT(geometry::contains(p.inside, iinside, binside, mesh), IsTrue());
 
 		// Note passing inside as the bounds here is deliberate, as it forces the
 		// actual pointwise tests to be performed.
 
-		EXPECT_THAT(geometry::contains(p.outside, inside, mesh), IsFalse());
+		EXPECT_THAT(geometry::contains(p.outside, ioutside, binside, mesh), IsFalse());
 
 		// Applying a large offset to the points will move them outside the mesh.
 
-		EXPECT_THAT(geometry::contains(p.inside, inside, mesh, repo::lib::RepoVector3D64(100, 0, 0)), IsFalse());
+		EXPECT_THAT(geometry::contains(p.inside, iinside, binside, mesh, repo::lib::RepoVector3D64(100, 0, 0)), IsFalse());
 
 		// And a point that was previously outside, can be bought inside.
 
 		std::vector<repo::lib::RepoVector3D64> points;
 		points.push_back(p.outside[0]);
 		auto offset = p.inside[0] - points[0];
-		EXPECT_THAT(geometry::contains(points, repo::lib::RepoBounds(points[0], points[0]), mesh, offset), IsTrue());
+		EXPECT_THAT(geometry::contains(points, { 0 }, repo::lib::RepoBounds(points[0], points[0]), mesh, offset), IsTrue());
 	}
 }
 
@@ -223,12 +229,17 @@ TEST(Geometry, ReorderVertices)
 		vertices.push_back(clashGenerator.random.vector({ 1, 10 }));
 	}
 
-	auto copy = vertices;
-	geometry::reorderVertices(vertices);
+	std::vector<size_t> indices;
+	geometry::reorderVertices(vertices, indices);
 
 	// Reorder vertices permutes the input set to prioritise extreme values, what
 	// exactly this means is up to the implementation, but in all cases the output
 	// must perfectly intersect the input set.
 
-	EXPECT_THAT(vertices, UnorderedElementsAreArray(copy));
+	EXPECT_THAT(indices.size(), Eq(vertices.size()));
+	std::vector<repo::lib::RepoVector3D64> reordered;
+	for (auto i : indices) {
+		reordered.push_back(vertices[i]);
+	}
+	EXPECT_THAT(reordered, UnorderedElementsAreArray(vertices));
 }

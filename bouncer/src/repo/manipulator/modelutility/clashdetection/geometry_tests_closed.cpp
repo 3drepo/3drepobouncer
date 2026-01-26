@@ -156,7 +156,9 @@ namespace {
 	};
 }
 
-bool geometry::contains(const std::vector<repo::lib::RepoVector3D64>& vertices,
+bool geometry::contains(
+	const std::vector<repo::lib::RepoVector3D64>& vertices,
+	const std::vector<size_t>& indices,
 	const repo::lib::RepoBounds& bounds,
 	const MeshView& mesh,
 	const repo::lib::RepoVector3D64 offset)
@@ -191,7 +193,8 @@ bool geometry::contains(const std::vector<repo::lib::RepoVector3D64>& vertices,
 
 	auto d = random.direction();
 
-	for (const auto& p : vertices) {	
+	for (const auto& i : indices) {
+		const auto& p = vertices[i];
 		size_t retryCounter = 0;
 		while(true) {
 			Ray_t ray(reinterpret_cast<const Vector_t&>(p), reinterpret_cast<const Vector_t&>(d));
@@ -246,56 +249,53 @@ namespace {
 			return (v.y >= 0.0) ? 2 : 3;
 		}
 		return (v.z >= 0.0) ? 4 : 5;
-	}		
+	}
 }
 
 void geometry::reorderVertices(
-	std::vector<repo::lib::RepoVector3D64>& vertices)
+	const std::vector<repo::lib::RepoVector3D64>& vertices, std::vector<size_t>& indices)
 {
 	// This method implements a sorting algorithm that orders the vertices by
 	// greatest extent in one of six directions. The directions are interleaved,
 	// meaning the most extreme vertices in all directions are tested first.
 
 	// This component-wise algorithm is very quick, though requires O(n) additional
-	// (temporary) memory.
+	// memory.
 
 	// Six groups / directions: // +X, -X, +Y, -Y, +Z, -Z
 
-	size_t count[6] = { 0, 0, 0, 0, 0, 0 };
+	std::vector<size_t> groups[6];
+
+	size_t count[6] = {0, 0, 0, 0, 0, 0};
 	for (const auto& v : vertices) {
 		count[group(v)]++;
 	}
 
-	// (The grouping can actually be performed in-place with swap, however a
-	// temporary buffer is required to interleave the results, so we may as well
-	// make the implementation simpler by using different allocations per-group
-	// from the start.)
-
-	std::vector<repo::lib::RepoVector3D64> groups[6];
-
-	for (size_t g = 0; g < 6; g++) {
-		groups[g].reserve(count[g]);
+	for (size_t i = 0; i < 6; i++) {
+		groups[i].reserve(count[i]);
 	}
 
-	for (auto& v : vertices) {
-		groups[group(v)].push_back(v);
+	for (size_t i = 0; i < vertices.size(); i++) {
+		groups[group(vertices[i])].push_back(i);
 	}
 
 	for (size_t g = 0; g < 6; g++) {
 		std::sort(groups[g].begin(), groups[g].end(),
-			[&](const repo::lib::RepoVector3D64& a, const repo::lib::RepoVector3D64& b) {
-				return score(a) > score(b);
+			[&](size_t a, size_t b) {
+				return score(vertices[a]) > score(vertices[b]);
 			}
 		);
 	}
 
-	size_t idx[6] = { 0, 0, 0, 0, 0, 0 };
+	indices.resize(vertices.size());
+
+	size_t idx[6] = {0, 0, 0, 0, 0, 0};
 	size_t i = 0;
 	while (true) {
 		bool hasElementsRemaining = false;
 		for (size_t g = 0; g < 6; g++) {
 			if (idx[g] < groups[g].size()) {
-				vertices[i++] = groups[g][idx[g]++];
+				indices[i++] = groups[g][idx[g]++];
 				hasElementsRemaining = true;
 			}
 		}

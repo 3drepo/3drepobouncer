@@ -41,7 +41,7 @@ namespace {
 		Bvh bvh;
 		geometry::RepoIndexedMesh mesh;
 		repo::lib::RepoBounds bounds;
-		std::vector<repo::lib::RepoVector3D64> verticesForContainsTests;
+		std::vector<size_t> indicesForContainsTests;
 		bool isClosed = false;
 
 		// Initialises everything the narrowphase (or this objects own methods) needs
@@ -74,12 +74,11 @@ namespace {
 			return node->compositeObject->id;
 		}
 
-		const std::vector<repo::lib::RepoVector3D64>& getOrderedVertices() {
-			if(!verticesForContainsTests.size()) {
-				verticesForContainsTests = mesh.vertices;
-				geometry::reorderVertices(verticesForContainsTests);
+		const std::vector<size_t>& getOrderedVertices() {
+			if (!indicesForContainsTests.size()) {
+				geometry::reorderVertices(mesh.vertices, indicesForContainsTests);
 			}
-			return verticesForContainsTests;
+			return indicesForContainsTests;
 		}
 	};
 
@@ -202,7 +201,7 @@ void Clearance::run(const Graph& graphA, const Graph& graphB, const Graph& graph
 
 		try
 		{
-			if (b->isClosed && geometry::contains(a->getOrderedVertices(), a->bounds, *b)) {
+			if (b->isClosed && geometry::contains(a->mesh.vertices, a->getOrderedVertices(), a->bounds, *b)) {
 				// If a is completely inside b, the closest distance is zero so we can 
 				// terminate immediately.
 

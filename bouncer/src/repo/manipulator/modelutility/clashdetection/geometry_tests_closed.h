@@ -38,25 +38,32 @@ namespace geometry {
 	/*
 	* Checks if a set of vertices is entirely contained in the mesh exposed by the
 	* MeshView. A bounds should be provided for the vertices to allow for early
-	* rejections. The vertices may represent any topology. Beware that either
-	* result does not mean that there is no intersection between the meshes, as an
-	* edge for the source mesh may intersect the MeshView, even if all the source
-	* vertices are contained. It is a necessary precondition for the whole mesh
-	* being contained however. An optional offset may be provided, which will be
-	* applied to the vertices before testing.
+	* rejections.
+	* 
+	* The vertices may represent any topology: the indices control the order in
+	* which they are tested, allowing for optimisations such as testing the most
+	* extreme points first.
+	* 
+	* Beware that either result does not mean that there is no intersection between
+	* the meshes, as an edge for the source mesh may intersect the MeshView, even
+	* if all the source vertices are contained. It is a necessary precondition for
+	* the whole mesh being contained however. An optional offset may be provided,
+	* which will be applied to the vertices before testing.
 	*/
 	bool contains(
 		const std::vector<repo::lib::RepoVector3D64>& vertices,
+		const std::vector<size_t>& indices,
 		const repo::lib::RepoBounds& bounds,
 		const MeshView& mesh,
 		const repo::lib::RepoVector3D64 offset = repo::lib::RepoVector3D64(0,0,0));
 
 	/*
-	* For a set of vertices of an open or closed mesh, reorder them so that the
-	* most extreme vertices are close to the beginning of the list. This increases
-	* the likelihood of early terminations when working through the list
-	* sequentially.
+	* For a set of vertices of an open or closed mesh, create a set of indices
+	* so that the most extreme vertices are close to the beginning of the list. 
+	* This increases the likelihood of early terminations when working through the
+	* list sequentially.
 	*/
+
 	void reorderVertices(
-		std::vector<repo::lib::RepoVector3D64>& vertices);
+		const std::vector<repo::lib::RepoVector3D64>& vertices, std::vector<size_t>& indices);
 }
