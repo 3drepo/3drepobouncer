@@ -63,7 +63,6 @@ namespace geometry {
 	* This increases the likelihood of early terminations when working through the
 	* list sequentially.
 	*/
-
-	void reorderVertices(
+	void orderVertices(
 		const std::vector<repo::lib::RepoVector3D64>& vertices, std::vector<size_t>& indices);
 }

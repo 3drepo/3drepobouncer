@@ -189,7 +189,6 @@ bool RepoDeformDepth::intersect(const repo::lib::RepoVector3D64& m)
 	bvh::traverse(a.bvh, b.bvh,
 		[&](const Bvh::Node& a, const Bvh::Node& b)
 		{
-			// Note we don't need to apply m to the bounds here because they've already been refitted above
 			return closestPoints(repoBounds(a) + m, repoBounds(b))
 				.magnitude() < geometry::contactThreshold(repoBounds(a) + m, repoBounds(b));
 		},
