@@ -3829,9 +3829,9 @@ TEST(ClashDwg, DwgIntersectClosed)
 	ClashDetectionDatabaseHelper helper(handler);
 
 	int halfToleranceClashes = 0;
-	//for (int i = 0; i < noParts; i++) {
-		std::string bimPath = path + baseName + std::to_string(0) + bimPostFix;
-		std::string linkPath = path + baseName + std::to_string(0) + linkPostFix;
+	for (int i = 0; i < noParts; i++) {
+		std::string bimPath = path + baseName + std::to_string(i) + bimPostFix;
+		std::string linkPath = path + baseName + std::to_string(i) + linkPostFix;
 
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(bimPath), *container);
@@ -3854,7 +3854,7 @@ TEST(ClashDwg, DwgIntersectClosed)
 		);
 
 		RunIntersectClosedTest(container, samplesPerSegment, setA, setB, parameterMap);
-	//}
+	}
 }
 
 TEST(ClashDwg, DwgIntersectOpen)
