@@ -142,6 +142,12 @@ namespace testing {
 
 		bool downcastVertices = true;
 
+		// The plane used to move primitives to either side of a hyperplane. This is
+		// currently used by the createTrianglesVV method, though it may be used by
+		// others in the future. If the vector is zero the plane is generated randomly.
+
+		repo::lib::RepoVector3D64 hyperplane;
+
 		// Creates a pair of lines that are separated by the given distance exactly 
 		// when transformed by their respective matrices. The problem will be centered
 		// within the given bounds (it may not be constrained by the bounds, if size1 

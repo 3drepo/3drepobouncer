@@ -173,33 +173,35 @@ void Traversal::operator()(const bvh::Bvh<double>& a) {
 	}
 }
 
-static bvh::BoundingBox<double> overlap(const bvh::BoundingBox<double>& a, 
-	const bvh::BoundingBox<double>& b)
-{
-	bvh::BoundingBox<double> result;
-	result.min = {
-		std::max(a.min[0], b.min[0]),
-		std::max(a.min[1], b.min[1]),
-		std::max(a.min[2], b.min[2])
-	};
-	result.max = {
-		std::min(a.max[0], b.max[0]),
-		std::min(a.max[1], b.max[1]),
-		std::min(a.max[2], b.max[2])
-	};
-	return result;
-}
-
-static double distance2(const bvh::BoundingBox<double>& a, const bvh::BoundingBox<double>& b)
-{
-	auto ib = overlap(a, b);
-	double sq = 0.0;
-	for (auto i = 0; i < 3; ++i) {
-		if (ib.min[i] > ib.max[i]) {
-			sq += std::pow(ib.min[i] - ib.max[i], 2);
-		}
+namespace {
+	bvh::BoundingBox<double> overlap(const bvh::BoundingBox<double>& a,
+		const bvh::BoundingBox<double>& b)
+	{
+		bvh::BoundingBox<double> result;
+		result.min = {
+			std::max(a.min[0], b.min[0]),
+			std::max(a.min[1], b.min[1]),
+			std::max(a.min[2], b.min[2])
+		};
+		result.max = {
+			std::min(a.max[0], b.max[0]),
+			std::min(a.max[1], b.max[1]),
+			std::min(a.max[2], b.max[2])
+		};
+		return result;
 	}
-	return sq;
+
+	double distance2(const bvh::BoundingBox<double>& a, const bvh::BoundingBox<double>& b)
+	{
+		auto ib = overlap(a, b);
+		double sq = 0.0;
+		for (auto i = 0; i < 3; ++i) {
+			if (ib.min[i] > ib.max[i]) {
+				sq += std::pow(ib.min[i] - ib.max[i], 2);
+			}
+		}
+		return sq;
+	}
 }
 
 bool bvh::predicates::intersects(
@@ -210,6 +212,49 @@ bool bvh::predicates::intersects(
 		a.bounds[0] <= b.bounds[1] && a.bounds[1] >= b.bounds[0] &&
 		a.bounds[2] <= b.bounds[3] && a.bounds[3] >= b.bounds[2] &&
 		a.bounds[4] <= b.bounds[5] && a.bounds[5] >= b.bounds[4];
+}
+
+bool bvh::predicates::contacts(
+	const bvh::Bvh<double>::Node& a, const bvh::Bvh<double>::Node& b)
+{
+	// The magic scalar is calibrated by the Bvh.Contacts test such that when the
+	// contained primitives are within the contact-threshold, the contacts method
+	// always returns true, but without letting too many false postives through.
+
+	const double magicEpsilon = 1e-9;
+
+	// This method is an application of the separating axis theorm. It looks for
+	// a separation between the limits along each axis in turn, comparing it to 
+	// the adaptive contact threshold. The threshold is defined as a function of
+	// the problem size - this can be quickly determined per-axis once the 
+	// arrangement of the two ranges is known (and if the ranges overlap there is
+	// no need to compute the threshold for that axis).
+
+	double th = 0;
+	for (int i = 0; i < 6; i += 2) {
+		auto min = i;
+		auto max = i + 1;
+		th = std::max(std::max(a.bounds[max], b.bounds[max]) - std::min(a.bounds[min], b.bounds[min]), th);
+	}
+	th *= magicEpsilon;
+
+	for (int i = 0; i < 6; i += 2) {
+		auto min = i;
+		auto max = i + 1;
+
+		auto x0 = b.bounds[min] - a.bounds[max];
+		auto x1 = a.bounds[min] - b.bounds[max];
+
+		if (x0 > th) { // A is to the left of B
+			return false;
+		}
+		else if (x1 > th) { // A is to the right of B
+			return false;
+		}
+		// Else there is an overlap...
+	}
+
+	return true;
 }
 
 bool DistanceQuery::intersect(

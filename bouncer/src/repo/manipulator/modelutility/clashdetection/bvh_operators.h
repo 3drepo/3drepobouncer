@@ -44,6 +44,14 @@ namespace bvh {
 		bool intersects(
 			const bvh::Bvh<double>::Node& a, const bvh::Bvh<double>::Node& b);
 
+		/*
+		* If the bounds of two nodes are within an adaptive contact threshold of
+		* eachother. More completely, if the primitives bounded by a & b are within
+		* geometry::contactThreshold of eachother, this is guaranteed to return true.
+		*/
+		bool contacts(
+			const bvh::Bvh<double>::Node& a, const bvh::Bvh<double>::Node& b);
+
 	} // namespace predicates
 
 	namespace builders {

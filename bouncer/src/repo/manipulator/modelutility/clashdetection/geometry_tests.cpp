@@ -274,35 +274,19 @@ double geometry::ulp(double x)
         return x - std::nexttoward(x, -std::numeric_limits<double>::infinity());
 }
 
-static double cpt(
-    std::initializer_list<repo::lib::RepoVector3D64> deltas) 
-{
-    auto th = 0.0;
-    for (const auto& d : deltas) {
-        th = std::max({ th, std::abs(d.x), std::abs(d.y), std::abs(d.z) });
+namespace {
+    double cpt(const repo::lib::RepoBounds& scope) {
+        auto s = scope.size();
+        auto th = std::max({
+			s.x, s.y, s.z
+        });
+        return th * 1e-9;
     }
-	return th * 1e-9;
 }
 
 double geometry::contactThreshold(const repo::lib::RepoTriangle& a, const repo::lib::RepoTriangle& b)
 {
-    return cpt({ 
-        a.a - b.a,
-        a.a - b.b,
-        a.a - b.c,
-        a.b - b.a,
-        a.b - b.b,
-        a.b - b.c,
-        a.c - b.a,
-        a.c - b.b,
-        a.c - b.c,
-        a.a - a.b,
-        a.a - a.c,
-        a.b - a.c,
-        b.a - b.b,
-        b.a - b.c,
-        b.b - b.c 
-     });
+    return cpt(repo::lib::RepoBounds({a.a, a.b, a.c, b.a, b.b, b.c}));
 }
 
 double geometry::contactThreshold(
@@ -310,14 +294,7 @@ double geometry::contactThreshold(
 	const repo::lib::RepoBounds& b
 )
 {
-    return cpt({
-        a.min() - b.min(),
-        a.min() - b.max(),
-		a.max() - b.min(),
-		a.max() - b.max(),
-        a.size(),
-		b.size()
-    });
+    return cpt(repo::lib::RepoBounds({a.min(), a.max(), b.min(), b.max()}));
 }
 
 double geometry::orient(const repo::lib::RepoVector3D64& p, const repo::lib::RepoVector3D64& q, const repo::lib::RepoVector3D64& r, const repo::lib::RepoVector3D64& s)
