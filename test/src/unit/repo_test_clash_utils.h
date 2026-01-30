@@ -34,6 +34,11 @@ namespace testing {
 
 	using DatabasePtr = std::shared_ptr<repo::core::handler::MongoDatabaseHandler>;
 
+	struct LinkFileEntry {
+		std::string clashSetName;
+		double parameterValue;
+	};
+
 	// Helper class to build clash detection configurations using the user-fiendly
 	// identifiers of Nodes in the Clash Detection database, such as their names.
 
@@ -59,6 +64,69 @@ namespace testing {
 		std::set<repo::lib::RepoUUID> getUniqueIdsByName(
 			repo::lib::Container* container,
 			std::string name);
+
+		void GetMetadataMap(
+			repo::lib::Container* container,
+			std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher>& metadataMap);
+
+		void SplitIntoCompositSetsByLinkfileData(
+			std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher>& metadataMap,
+			std::unordered_map<std::string, LinkFileEntry>& linkFileEntries,
+			std::set<repo::lib::RepoUUID>& sharedIdsA,
+			std::set<repo::lib::RepoUUID>& sharedIdsB
+		);
+
+		void SplitIntoCompositSetsByLinkfileData(
+			std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher>& metadataMap,
+			std::unordered_map<std::string, LinkFileEntry>& linkFileEntries,
+			std::set<repo::lib::RepoUUID>& sharedIdsA,
+			std::set<repo::lib::RepoUUID>& sharedIdsB,
+			std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher>& parameterMap
+		);
+
+		void SplitIntoCompositSetsByMetadata(
+			std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher>& metadataMap,
+			std::set<repo::lib::RepoUUID>& sharedIdsA,
+			std::set<repo::lib::RepoUUID>& sharedIdsB,
+			std::string nameKey,
+			std::string nameA,
+			std::string nameB
+		);
+
+		void SplitIntoCompositSetsByMetadata(
+			std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher>& metadataMap,
+			std::set<repo::lib::RepoUUID>& sharedIdsA,
+			std::set<repo::lib::RepoUUID>& sharedIdsB,
+			std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher>& parameterMap,
+			std::string nameKey,
+			std::string nameA,
+			std::string nameB,
+			std::string parameterKey
+		);
+
+		void setCompositeObjectsBySharedIds(
+			repo::manipulator::modelutility::ClashDetectionConfig& config,
+			const std::unique_ptr<repo::lib::Container>& container,
+			const std::set<repo::lib::RepoUUID>& sharedIdsA,
+			const std::set<repo::lib::RepoUUID>& sharedIdsB);
+
+		void setCompositeObjectsBySharedIds(
+			repo::manipulator::modelutility::ClashDetectionConfig& config,
+			const std::unique_ptr<repo::lib::Container>& container,
+			const std::set<repo::lib::RepoUUID>& sharedIdsA,
+			const std::set<repo::lib::RepoUUID>& sharedIdsB,
+			std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>& compToSharedId);
+
+		void createCompositeObjectsBySharedIds(
+			std::vector<repo::manipulator::modelutility::CompositeObject>& objects,
+			const std::unique_ptr<repo::lib::Container>& container,
+			const std::set<repo::lib::RepoUUID>& sharedIds);
+
+		void createCompositeObjectsBySharedIds(
+			std::vector<repo::manipulator::modelutility::CompositeObject>& objects,
+			const std::unique_ptr<repo::lib::Container>& container,
+			const std::set<repo::lib::RepoUUID>& sharedIds,
+			std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>& compToSharedId);
 
 		repo::manipulator::modelutility::CompositeObject createCompositeObject(
 			repo::lib::Container* container,

@@ -61,6 +61,8 @@
 #include <repo/manipulator/modelutility/clashdetection/predicates.h>
 #include "repo/manipulator/modelconvertor/import/odaHelper/file_processor_nwd.h"
 
+#include "repo/lib/repo_utils.h"
+
 #include "../../../repo_test_utils.h"
 #include "../../../repo_test_clash_utils.h"
 #include "../../../repo_test_mesh_utils.h"
@@ -2212,6 +2214,8 @@ TEST(Clash, ResultsSerialisation)
 void RunDisjointTest(
 	const std::unique_ptr<repo::lib::Container>& container,
 	int noSamples,
+	std::set<repo::lib::RepoUUID>& sharedIdsA,
+	std::set<repo::lib::RepoUUID>& sharedIdsB,
 	int& halfToleranceClashes)
 {
 	auto handler = getHandler();
@@ -2219,8 +2223,7 @@ void RunDisjointTest(
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
-	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
+	helper.setCompositeObjectsBySharedIds(config, container, sharedIdsA, sharedIdsB);
 
 	EXPECT_THAT(config.setA.size(), Eq(noSamples));
 	EXPECT_THAT(config.setB.size(), Eq(noSamples));
@@ -2231,6 +2234,7 @@ void RunDisjointTest(
 		config.tolerance = 0.0f;
 		auto pipeline = new clash::Clearance(handler, config);
 		auto results = pipeline->runPipeline();
+
 		EXPECT_THAT(results.clashes.size(), Eq(0));
 	}
 
@@ -2277,15 +2281,17 @@ void RunDisjointTest(
 void RunIntersectClosedTest(
 	const std::unique_ptr<repo::lib::Container>& container,
 	int noSamples,
-	std::string metadataDescriptor)
+	std::set<repo::lib::RepoUUID>& sharedIdsA,
+	std::set<repo::lib::RepoUUID>& sharedIdsB,
+	std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher>& parameterMap)
 {
 	auto handler = getHandler();
 
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
-	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher> compToSharedMap;
+	helper.setCompositeObjectsBySharedIds(config, container, sharedIdsA, sharedIdsB, compToSharedMap);
 
 	EXPECT_THAT(config.setA.size(), Eq(noSamples));
 	EXPECT_THAT(config.setB.size(), Eq(noSamples));
@@ -2350,15 +2356,25 @@ void RunIntersectClosedTest(
 		{
 			for (auto missingId : missingCompIds)
 			{
-				auto metaEntry = metadataMap.find(missingId);
-				if (metaEntry != metadataMap.end())
+				// Translate comp id to shared id
+				auto translEntry = compToSharedMap.find(missingId);
+
+				if (translEntry != compToSharedMap.end())
 				{
-					double minPenDepth = boost::get<double>(metaEntry->second[metadataDescriptor]);
-					EXPECT_THAT(minPenDepth, Lt(2500.0f));
+					auto paramEntry = parameterMap.find(translEntry->second);
+					if (paramEntry != parameterMap.end())
+					{
+						double minPenDepth = paramEntry->second;
+						EXPECT_THAT(minPenDepth, Lt(2500.0f));
+					}
+					else
+					{
+						FAIL() << "Metadata entry missing for Compound ID";
+					}
 				}
 				else
 				{
-					FAIL() << "Metadata entry missing for Compound ID";
+					FAIL() << "No shared ID associated with this Compound ID";
 				}
 			}
 		}
@@ -2378,15 +2394,17 @@ void RunIntersectClosedTest(
 void RunIntersectOpenTest(
 	const std::unique_ptr<repo::lib::Container>& container,
 	int noSamples,
-	std::string metadataDescriptor)
+	std::set<repo::lib::RepoUUID>& sharedIdsA,
+	std::set<repo::lib::RepoUUID>& sharedIdsB,
+	std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher>& parameterMap)
 {
 	auto handler = getHandler();
 
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
-	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher> compToSharedMap;
+	helper.setCompositeObjectsBySharedIds(config, container, sharedIdsA, sharedIdsB, compToSharedMap);
 
 	EXPECT_THAT(config.setA.size(), Eq(noSamples));
 	EXPECT_THAT(config.setB.size(), Eq(noSamples));
@@ -2451,15 +2469,25 @@ void RunIntersectOpenTest(
 		{
 			for (auto missingId : missingCompIds)
 			{
-				auto metaEntry = metadataMap.find(missingId);
-				if (metaEntry != metadataMap.end())
+				// Translate comp id to shared id
+				auto translEntry = compToSharedMap.find(missingId);
+
+				if (translEntry != compToSharedMap.end())
 				{
-					double minPenDepth = boost::get<double>(metaEntry->second[metadataDescriptor]);
-					EXPECT_THAT(minPenDepth, Lt(2500.0f));
+					auto paramEntry = parameterMap.find(translEntry->second);
+					if (paramEntry != parameterMap.end())
+					{
+						double minPenDepth = paramEntry->second;
+						EXPECT_THAT(minPenDepth, Lt(2500.0f));
+					}
+					else
+					{
+						FAIL() << "Metadata entry missing for Compound ID";
+					}
 				}
 				else
 				{
-					FAIL() << "Metadata entry missing for Compound ID";
+					FAIL() << "No shared ID associated with this Compound ID";
 				}
 			}
 		}
@@ -2479,15 +2507,17 @@ void RunIntersectOpenTest(
 void RunCoversTest(
 	const std::unique_ptr<repo::lib::Container>& container,
 	int noSamples,
-	std::string metadataDescriptor)
+	std::set<repo::lib::RepoUUID>& sharedIdsA,
+	std::set<repo::lib::RepoUUID>& sharedIdsB,
+	std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher>& parameterMap)
 {
 	auto handler = getHandler();
 
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
-	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher> compToSharedMap;
+	helper.setCompositeObjectsBySharedIds(config, container, sharedIdsA, sharedIdsB, compToSharedMap);
 
 	EXPECT_THAT(config.setA.size(), Eq(noSamples));
 	EXPECT_THAT(config.setB.size(), Eq(noSamples));
@@ -2518,15 +2548,25 @@ void RunCoversTest(
 		{
 			for (auto missingId : missingCompIds)
 			{
-				auto metaEntry = metadataMap.find(missingId);
-				if (metaEntry != metadataMap.end())
+				// Translate comp id to shared id
+				auto translEntry = compToSharedMap.find(missingId);
+
+				if (translEntry != compToSharedMap.end())
 				{
-					double separationDistance = boost::get<double>(metaEntry->second[metadataDescriptor]);
-					EXPECT_THAT(separationDistance, Ge(2500.0f));
+					auto paramEntry = parameterMap.find(translEntry->second);
+					if (paramEntry != parameterMap.end())
+					{
+						double separationDistance = paramEntry->second;
+						EXPECT_THAT(separationDistance, Ge(2500.0f));
+					}
+					else
+					{
+						FAIL() << "Metadata entry missing for Compound ID";
+					}
 				}
 				else
 				{
-					FAIL() << "Metadata entry missing for Compound ID";
+					FAIL() << "No shared ID associated with this Compound ID";
 				}
 			}
 		}
@@ -2542,22 +2582,37 @@ void RunCoversTest(
 		EXPECT_THAT(results.clashes.size(), Eq(noSamples));
 
 		for (auto clash : results.clashes) {
-			auto metaA = metadataMap.find(clash.idA);
-			auto metaB = metadataMap.find(clash.idB);
 
-			EXPECT_THAT(metaA, Ne(metadataMap.end()));
-			EXPECT_THAT(metaB, Ne(metadataMap.end()));
+			auto translEntryA = compToSharedMap.find(clash.idA);
+			auto translEntryB = compToSharedMap.find(clash.idB);
 
-			float separationDistanceA = boost::get<double>(metaA->second[metadataDescriptor]);
-			float separationDistanceB = boost::get<double>(metaB->second[metadataDescriptor]);
+			if (translEntryA != compToSharedMap.end() && translEntryB != compToSharedMap.end())
+			{
+				auto paramEntryA = parameterMap.find(translEntryA->second);
+				auto paramEntryB = parameterMap.find(translEntryB->second);
 
-			EXPECT_THAT(separationDistanceA, Eq(separationDistanceB));
+				if (paramEntryA != parameterMap.end() && paramEntryB != parameterMap.end())
+				{
+					float separationDistanceA = paramEntryA->second;
+					float separationDistanceB = paramEntryB->second;
 
-			auto p1 = clash.positions[0];
-			auto p2 = clash.positions[1];
-			float clashDistance = (p2 - p1).norm();
+					EXPECT_THAT(separationDistanceA, Eq(separationDistanceB));
 
-			EXPECT_THAT(separationDistanceA, FloatNear(clashDistance, 0.001f));
+					auto p1 = clash.positions[0];
+					auto p2 = clash.positions[1];
+					float clashDistance = (p2 - p1).norm();
+
+					EXPECT_THAT(separationDistanceA, FloatNear(clashDistance, 0.001f));
+				}
+				else
+				{
+					FAIL() << "Metadata entry missing for Compound ID";
+				}
+			}
+			else
+			{
+				FAIL() << "No shared ID associated with this Compound ID";
+			}
 		}
 	}
 
@@ -2585,15 +2640,17 @@ void RunCoversTest(
 void RunContainsTest(
 	const std::unique_ptr<repo::lib::Container>& container,
 	int noSamples,
-	std::string metadataDescriptor)
+	std::set<repo::lib::RepoUUID>& sharedIdsA,
+	std::set<repo::lib::RepoUUID>& sharedIdsB,
+	std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher>& parameterMap)
 {
 	auto handler = getHandler();
 
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
-	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher> compToSharedMap;
+	helper.setCompositeObjectsBySharedIds(config, container, sharedIdsA, sharedIdsB, compToSharedMap);
 
 	EXPECT_THAT(config.setA.size(), Eq(noSamples));
 	EXPECT_THAT(config.setB.size(), Eq(noSamples));
@@ -2660,15 +2717,25 @@ void RunContainsTest(
 		{
 			for (auto missingId : missingCompIds)
 			{
-				auto metaEntry = metadataMap.find(missingId);
-				if (metaEntry != metadataMap.end())
+				// Translate comp id to shared id
+				auto translEntry = compToSharedMap.find(missingId);
+
+				if (translEntry != compToSharedMap.end())
 				{
-					double minPenDepth = boost::get<double>(metaEntry->second[metadataDescriptor]);
-					EXPECT_THAT(minPenDepth, Lt(2500.0f));
+					auto paramEntry = parameterMap.find(translEntry->second);
+					if (paramEntry != parameterMap.end())
+					{
+						double minPenDepth = paramEntry->second;
+						EXPECT_THAT(minPenDepth, Lt(2500.0f));
+					}
+					else
+					{
+						FAIL() << "Metadata entry missing for Compound ID";
+					}
 				}
 				else
 				{
-					FAIL() << "Metadata entry missing for Compound ID";
+					FAIL() << "No shared ID associated with this Compound ID";
 				}
 			}
 		}
@@ -2687,14 +2754,16 @@ void RunContainsTest(
 
 void RunMeetTest(
 	const std::unique_ptr<repo::lib::Container>& container,
-	int noSamples)
+	int noSamples,
+	std::set<repo::lib::RepoUUID>& sharedIdsA,
+	std::set<repo::lib::RepoUUID>& sharedIdsB)
 {
 	auto handler = getHandler();
 
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB");
+	helper.setCompositeObjectsBySharedIds(config, container, sharedIdsA, sharedIdsB);
 
 	EXPECT_THAT(config.setA.size(), Eq(noSamples));
 	EXPECT_THAT(config.setB.size(), Eq(noSamples));
@@ -2807,7 +2876,9 @@ void RunMeetTest(
 void RunOverlapTest(
 	const std::unique_ptr<repo::lib::Container>& container,
 	int noSamples,
-	std::string metadataDescriptor)
+	std::set<repo::lib::RepoUUID>& sharedIdsA,
+	std::set<repo::lib::RepoUUID>& sharedIdsB,
+	std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher>& parameterMap)
 {
 
 	auto handler = getHandler();
@@ -2815,8 +2886,8 @@ void RunOverlapTest(
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
-	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher> compToSharedMap;
+	helper.setCompositeObjectsBySharedIds(config, container, sharedIdsA, sharedIdsB, compToSharedMap);
 
 	EXPECT_THAT(config.setA.size(), Eq(noSamples));
 	EXPECT_THAT(config.setB.size(), Eq(noSamples));
@@ -2881,15 +2952,25 @@ void RunOverlapTest(
 		{
 			for (auto missingId : missingCompIds)
 			{
-				auto metaEntry = metadataMap.find(missingId);
-				if (metaEntry != metadataMap.end())
+				// Translate comp id to shared id
+				auto translEntry = compToSharedMap.find(missingId);
+
+				if (translEntry != compToSharedMap.end())
 				{
-					double minPenDepth = boost::get<double>(metaEntry->second[metadataDescriptor]);
-					EXPECT_THAT(minPenDepth, Lt(2500.0f));
+					auto paramEntry = parameterMap.find(translEntry->second);
+					if (paramEntry != parameterMap.end())
+					{
+						double minPenDepth = paramEntry->second;
+						EXPECT_THAT(minPenDepth, Lt(2500.0f));
+					}
+					else
+					{
+						FAIL() << "Metadata entry missing for Compound ID";
+					}
 				}
 				else
 				{
-					FAIL() << "Metadata entry missing for Compound ID";
+					FAIL() << "No shared ID associated with this Compound ID";
 				}
 			}
 		}
@@ -2909,15 +2990,15 @@ void RunOverlapTest(
 void RunEqualTest(
 	const std::unique_ptr<repo::lib::Container>& container,
 	int noSamples,
-	std::string metadataDescriptor)
+	std::set<repo::lib::RepoUUID>& sharedIdsA,
+	std::set<repo::lib::RepoUUID>& sharedIdsB)
 {
 	auto handler = getHandler();
 
 	ClashDetectionConfig config;
 	ClashDetectionDatabaseHelper helper(handler);
 
-	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
-	helper.setCompositeObjectsByMetadataValue(config, container, "ClashSetA", "ClashSetB", metadataMap);
+	helper.setCompositeObjectsBySharedIds(config, container, sharedIdsA, sharedIdsB);
 
 	EXPECT_THAT(config.setA.size(), Eq(noSamples));
 	EXPECT_THAT(config.setB.size(), Eq(noSamples));
@@ -2967,36 +3048,6 @@ void RunEqualTest(
 	}
 
 	// Test Hard Mode
-	// Medium Tolerance, should flag at least half of the instances
-	// It is possible to get false positives, but we should never get false negatives.
-	{
-		config.tolerance = 2500.0f;
-		auto pipeline = new clash::Hard(handler, config);
-		auto results = pipeline->runPipeline();
-
-		// Check metadata to make sure no instances are dropped that should be included
-		std::vector<repo::lib::RepoUUID> missingCompIds;
-		getMissingCompIds(config, results, missingCompIds);
-
-		if (missingCompIds.size() > 0)
-		{
-			for (auto missingId : missingCompIds)
-			{
-				auto metaEntry = metadataMap.find(missingId);
-				if (metaEntry != metadataMap.end())
-				{
-					double minPenDepth = boost::get<double>(metaEntry->second[metadataDescriptor]);
-					EXPECT_THAT(minPenDepth, Lt(2500.0f));
-				}
-				else
-				{
-					FAIL() << "Metadata entry missing for Compound ID";
-				}
-			}
-		}
-	}
-
-	// Test Hard Mode
 	// High Tolerance, no instances should be flagged
 	{
 		config.tolerance = FLT_MAX;
@@ -3018,6 +3069,9 @@ TEST(ClashRvt, RvtDisjoint)
 	std::string baseName = "revitDisjoint_Part";
 	std::string postFix = ".rvt";
 
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
 	int halfToleranceClashes = 0;
 	for (int i = 0; i < noParts; i++) {
 		std::string fileName = baseName + std::to_string(i) + postFix;
@@ -3026,7 +3080,21 @@ TEST(ClashRvt, RvtDisjoint)
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
 
-		RunDisjointTest(container, samplesPerSegment, halfToleranceClashes);
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+		
+		helper.SplitIntoCompositSetsByMetadata(
+			metadataMap,
+			setA,
+			setB,
+			"Identity Data::Comments",
+			"ClashSetA",
+			"ClashSetB"
+		);
+
+		RunDisjointTest(container, samplesPerSegment, setA, setB, halfToleranceClashes);
 	}
 
 	EXPECT_THAT(halfToleranceClashes, Eq(totalSamples / 2));
@@ -3042,6 +3110,9 @@ TEST(ClashRvt, RvtIntersectClosed)
 	std::string baseName = "revitIntersectClosed_Part";
 	std::string postFix = ".rvt";
 
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
 	for (int i = 0; i < noParts; i++) {
 		std::string fileName = baseName + std::to_string(i) + postFix;
 		std::string path = "/clash/RVT/" + fileName;
@@ -3049,19 +3120,39 @@ TEST(ClashRvt, RvtIntersectClosed)
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
 
-		RunIntersectClosedTest(container, samplesPerSegment, "Dimensions::MinPenDepth");
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+		std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher> parameterMap;
+		
+		helper.SplitIntoCompositSetsByMetadata(
+			metadataMap,
+			setA,
+			setB,
+			parameterMap,
+			"Identity Data::Comments",
+			"ClashSetA",
+			"ClashSetB",
+			"Dimensions::MinPenDepth"
+		);
+
+		RunIntersectClosedTest(container, samplesPerSegment, setA, setB, parameterMap);
 	}
 }
 
 TEST(ClashRvt, RvtIntersectOpen)
 {
-	// Tests 10k auto-generated samples of Intersection Case C (Intersect Closed) from a Revit File
+	// Tests 10k auto-generated samples of Intersection Case C (Intersect Open) from a Revit File
 
 	int noParts = 5;
 	int totalSamples = 10000;
 	int samplesPerSegment = totalSamples / noParts;
 	std::string baseName = "revitIntersectOpen_Part";
 	std::string postFix = ".rvt";
+
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
 
 	for (int i = 0; i < noParts; i++) {
 		std::string fileName = baseName + std::to_string(i) + postFix;	
@@ -3070,7 +3161,24 @@ TEST(ClashRvt, RvtIntersectOpen)
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
 
-		RunIntersectOpenTest(container, samplesPerSegment, "Dimensions::MinPenDepth");
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+		std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher> parameterMap;
+
+		helper.SplitIntoCompositSetsByMetadata(
+			metadataMap,
+			setA,
+			setB,
+			parameterMap,
+			"Identity Data::Comments",
+			"ClashSetA",
+			"ClashSetB",
+			"Dimensions::MinPenDepth"
+		);
+
+		RunIntersectOpenTest(container, samplesPerSegment, setA, setB, parameterMap);
 	}
 }
 
@@ -3084,6 +3192,9 @@ TEST(ClashRvt, RvtCovers)
 	std::string baseName = "revitCovers_Part";
 	std::string postFix = ".rvt";
 
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
 	for (int i = 0; i < noParts; i++) {
 		std::string fileName = baseName + std::to_string(i) + postFix;
 		std::string path = "/clash/RVT/" + fileName;
@@ -3091,7 +3202,24 @@ TEST(ClashRvt, RvtCovers)
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
 
-		RunCoversTest(container, samplesPerSegment, "Dimensions::ShortestDist");
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+		std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher> parameterMap;
+
+		helper.SplitIntoCompositSetsByMetadata(
+			metadataMap,
+			setA,
+			setB,
+			parameterMap,
+			"Identity Data::Comments",
+			"ClashSetA",
+			"ClashSetB",
+			"Dimensions::ShortestDist"
+		);
+
+		RunCoversTest(container, samplesPerSegment, setA, setB, parameterMap);
 	}
 }
 
@@ -3105,6 +3233,9 @@ TEST(ClashRvt, RvtContains)
 	std::string baseName = "revitContains_Part";
 	std::string postFix = ".rvt";
 
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
 	for (int i = 0; i < noParts; i++) {
 		std::string fileName = baseName + std::to_string(i) + postFix;
 		std::string path = "/clash/RVT/" + fileName;
@@ -3112,7 +3243,24 @@ TEST(ClashRvt, RvtContains)
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
 
-		RunContainsTest(container, samplesPerSegment, "Dimensions::ShortestDist");
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+		std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher> parameterMap;
+
+		helper.SplitIntoCompositSetsByMetadata(
+			metadataMap,
+			setA,
+			setB,
+			parameterMap,
+			"Identity Data::Comments",
+			"ClashSetA",
+			"ClashSetB",
+			"Dimensions::ShortestDist"
+		);
+
+		RunContainsTest(container, samplesPerSegment, setA, setB, parameterMap);
 	}
 }
 
@@ -3126,6 +3274,9 @@ TEST(ClashRvt, RvtMeet)
 	std::string baseName = "revitMeet_Part";
 	std::string postFix = ".rvt";
 
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
 	for (int i = 0; i < noParts; i++) {
 		std::string fileName = baseName + std::to_string(i) + postFix;
 		std::string path = "/clash/RVT/" + fileName;
@@ -3133,7 +3284,21 @@ TEST(ClashRvt, RvtMeet)
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
 
-		RunMeetTest(container, samplesPerSegment);
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+
+		helper.SplitIntoCompositSetsByMetadata(
+			metadataMap,
+			setA,
+			setB,
+			"Identity Data::Comments",
+			"ClashSetA",
+			"ClashSetB"
+		);
+
+		RunMeetTest(container, samplesPerSegment, setA, setB);
 	}
 }
 
@@ -3146,6 +3311,9 @@ TEST(ClashRvt, RvtOverlap)
 	int samplesPerSegment = totalSamples / noParts;
 	std::string baseName = "revitOverlap_Part";
 	std::string postFix = ".rvt";
+	
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
 
 	for (int i = 0; i < noParts; i++) {
 		std::string fileName = baseName + std::to_string(i) + postFix;
@@ -3154,7 +3322,24 @@ TEST(ClashRvt, RvtOverlap)
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
 
-		RunOverlapTest(container, samplesPerSegment, "Dimensions::PenDepth");
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+		std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher> parameterMap;
+
+		helper.SplitIntoCompositSetsByMetadata(
+			metadataMap,
+			setA,
+			setB,
+			parameterMap,
+			"Identity Data::Comments",
+			"ClashSetA",
+			"ClashSetB",
+			"Dimensions::PenDepth"
+		);
+
+		RunOverlapTest(container, samplesPerSegment, setA, setB, parameterMap);
 	}
 }
 
@@ -3168,6 +3353,9 @@ TEST(ClashRvt, RvtEqual)
 	std::string baseName = "revitEqual_Part";
 	std::string postFix = ".rvt";
 
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
 	for (int i = 0; i < noParts; i++) {
 		std::string fileName = baseName + std::to_string(i) + postFix;
 		std::string path = "/clash/RVT/" + fileName;
@@ -3175,7 +3363,22 @@ TEST(ClashRvt, RvtEqual)
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
 
-		RunEqualTest(container, samplesPerSegment, "Dimensions::PenDepth");
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+		std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher> parameterMap;
+
+		helper.SplitIntoCompositSetsByMetadata(
+			metadataMap,
+			setA,
+			setB,
+			"Identity Data::Comments",
+			"ClashSetA",
+			"ClashSetB"
+		);
+
+		RunEqualTest(container, samplesPerSegment, setA, setB);
 	}
 }
 
@@ -3210,6 +3413,9 @@ TEST_F(ClashNwd, NwdDisjoint)
 	std::string baseName = "navisDisjoint_Part";
 	std::string postFix = ".nwd";
 
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
 	int halfToleranceClashes = 0;
 	for (int i = 0; i < noParts; i++) {
 		std::string fileName = baseName + std::to_string(i) + postFix;
@@ -3218,7 +3424,21 @@ TEST_F(ClashNwd, NwdDisjoint)
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
 
-		RunDisjointTest(container, samplesPerSegment, halfToleranceClashes);
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+
+		helper.SplitIntoCompositSetsByMetadata(
+			metadataMap,
+			setA,
+			setB,
+			"Element::Comments",
+			"ClashSetA",
+			"ClashSetB"
+		);
+
+		RunDisjointTest(container, samplesPerSegment, setA, setB, halfToleranceClashes);
 	}
 
 	EXPECT_THAT(halfToleranceClashes, Eq(totalSamples / 2));
@@ -3234,6 +3454,9 @@ TEST_F(ClashNwd, NwdIntersectClosed)
 	std::string baseName = "navisIntersectClosed_Part";
 	std::string postFix = ".nwd";
 
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
 	for (int i = 0; i < noParts; i++) {
 		std::string fileName = baseName + std::to_string(i) + postFix;
 		std::string path = "/clash/NWD/" + fileName;
@@ -3241,13 +3464,30 @@ TEST_F(ClashNwd, NwdIntersectClosed)
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
 
-		RunIntersectClosedTest(container, samplesPerSegment, "Custom::MinPenDepth");
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+		std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher> parameterMap;
+
+		helper.SplitIntoCompositSetsByMetadata(
+			metadataMap,
+			setA,
+			setB,
+			parameterMap,
+			"Element::Comments",
+			"ClashSetA",
+			"ClashSetB",
+			"Custom::MinPenDepth"
+		);
+
+		RunIntersectClosedTest(container, samplesPerSegment, setA, setB, parameterMap);
 	}
 }
 
 TEST_F(ClashNwd, NwdIntersectOpen)
 {
-	// Tests 10k auto-generated samples of Intersection Case C (Intersect Closed) from a Navis File
+	// Tests 10k auto-generated samples of Intersection Case C (Intersect Open) from a Navis File
 
 	int noParts = 5;
 	int totalSamples = 10000;
@@ -3255,6 +3495,9 @@ TEST_F(ClashNwd, NwdIntersectOpen)
 	std::string baseName = "navisIntersectOpen_Part";
 	std::string postFix = ".nwd";
 
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
 	for (int i = 0; i < noParts; i++) {
 		std::string fileName = baseName + std::to_string(i) + postFix;
 		std::string path = "/clash/NWD/" + fileName;
@@ -3262,7 +3505,24 @@ TEST_F(ClashNwd, NwdIntersectOpen)
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
 
-		RunIntersectOpenTest(container, samplesPerSegment, "Custom::MinPenDepth");
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+		std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher> parameterMap;
+
+		helper.SplitIntoCompositSetsByMetadata(
+			metadataMap,
+			setA,
+			setB,
+			parameterMap,
+			"Element::Comments",
+			"ClashSetA",
+			"ClashSetB",
+			"Custom::MinPenDepth"
+		);
+
+		RunIntersectOpenTest(container, samplesPerSegment, setA, setB, parameterMap);
 	}
 }
 
@@ -3276,6 +3536,9 @@ TEST_F(ClashNwd, NwdCovers)
 	std::string baseName = "navisCovers_Part";
 	std::string postFix = ".nwd";
 
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
 	for (int i = 0; i < noParts; i++) {
 		std::string fileName = baseName + std::to_string(i) + postFix;
 		std::string path = "/clash/NWD/" + fileName;
@@ -3283,7 +3546,24 @@ TEST_F(ClashNwd, NwdCovers)
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
 
-		RunCoversTest(container, samplesPerSegment, "Custom::ShortestDist");
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+		std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher> parameterMap;
+
+		helper.SplitIntoCompositSetsByMetadata(
+			metadataMap,
+			setA,
+			setB,
+			parameterMap,
+			"Element::Comments",
+			"ClashSetA",
+			"ClashSetB",
+			"Custom::ShortestDist"
+		);
+
+		RunCoversTest(container, samplesPerSegment, setA, setB, parameterMap);
 	}
 }
 
@@ -3297,6 +3577,9 @@ TEST_F(ClashNwd, NwdContains)
 	std::string baseName = "navisContains_Part";
 	std::string postFix = ".nwd";
 
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
 	for (int i = 0; i < noParts; i++) {
 		std::string fileName = baseName + std::to_string(i) + postFix;
 		std::string path = "/clash/NWD/" + fileName;
@@ -3304,7 +3587,24 @@ TEST_F(ClashNwd, NwdContains)
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
 
-		RunContainsTest(container, samplesPerSegment, "Custom::ShortestDist");
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+		std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher> parameterMap;
+
+		helper.SplitIntoCompositSetsByMetadata(
+			metadataMap,
+			setA,
+			setB,
+			parameterMap,
+			"Element::Comments",
+			"ClashSetA",
+			"ClashSetB",
+			"Custom::ShortestDist"
+		);
+
+		RunContainsTest(container, samplesPerSegment, setA, setB, parameterMap);
 	}
 }
 
@@ -3318,6 +3618,9 @@ TEST_F(ClashNwd, NwdMeet)
 	std::string baseName = "navisMeet_Part";
 	std::string postFix = ".nwd";
 
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
 	for (int i = 0; i < noParts; i++) {
 		std::string fileName = baseName + std::to_string(i) + postFix;
 		std::string path = "/clash/NWD/" + fileName;
@@ -3325,7 +3628,21 @@ TEST_F(ClashNwd, NwdMeet)
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
 
-		RunMeetTest(container, samplesPerSegment);
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+
+		helper.SplitIntoCompositSetsByMetadata(
+			metadataMap,
+			setA,
+			setB,
+			"Element::Comments",
+			"ClashSetA",
+			"ClashSetB"
+		);
+
+		RunMeetTest(container, samplesPerSegment, setA, setB);
 	}
 }
 
@@ -3339,6 +3656,9 @@ TEST_F(ClashNwd, NwdOverlap)
 	std::string baseName = "navisOverlap_Part";
 	std::string postFix = ".nwd";
 
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
 	for (int i = 0; i < noParts; i++) {
 		std::string fileName = baseName + std::to_string(i) + postFix;
 		std::string path = "/clash/NWD/" + fileName;
@@ -3346,7 +3666,24 @@ TEST_F(ClashNwd, NwdOverlap)
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
 
-		RunOverlapTest(container, samplesPerSegment, "Custom::PenDepth");
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+		std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher> parameterMap;
+
+		helper.SplitIntoCompositSetsByMetadata(
+			metadataMap,
+			setA,
+			setB,
+			parameterMap,
+			"Element::Comments",
+			"ClashSetA",
+			"ClashSetB",
+			"Custom::PenDepth"
+		);
+
+		RunOverlapTest(container, samplesPerSegment, setA, setB, parameterMap);
 	}
 }
 
@@ -3360,6 +3697,9 @@ TEST_F(ClashNwd, NwdEqual)
 	std::string baseName = "navisEqual_Part";
 	std::string postFix = ".nwd";
 
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
 	for (int i = 0; i < noParts; i++) {
 		std::string fileName = baseName + std::to_string(i) + postFix;
 		std::string path = "/clash/NWD/" + fileName;
@@ -3367,6 +3707,424 @@ TEST_F(ClashNwd, NwdEqual)
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(path), *container);
 
-		RunEqualTest(container, samplesPerSegment, "Custom::PenDepth");
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+
+		helper.SplitIntoCompositSetsByMetadata(
+			metadataMap,
+			setA,
+			setB,
+			"Element::Comments",
+			"ClashSetA",
+			"ClashSetB"
+		);
+
+		RunEqualTest(container, samplesPerSegment, setA, setB);
+	}
+}
+
+void importLinkFile(
+	std::string path,
+	std::unordered_map<std::string, LinkFileEntry>& linkFileEntries)
+{
+	if (!repo::lib::doesFileExist(std::filesystem::u8path(path))) {
+		FAIL() << "Link file " << path << " could not be found.\n";
+	}
+
+	std::ifstream fileStream;
+	fileStream.open(path);
+
+	std::string line;
+	while (std::getline(fileStream, line))
+	{
+		// Split string into three parts
+		int pos;
+		std::string del = ",";
+
+		// Handle
+		pos = line.find(del);
+		auto handle = "[" + line.substr(0, pos) + "]";
+		line.erase(0, pos + 1);
+
+		// ClashSet Name
+		pos = line.find(del);
+		auto clashSetName = line.substr(0, pos);
+		line.erase(0, pos + 1);
+
+		// Parameter value
+		double paramValue = std::stod(line);
+
+		LinkFileEntry entry;
+		entry.clashSetName = clashSetName;
+		entry.parameterValue = paramValue;
+
+		linkFileEntries.insert({ handle, entry });
+	}
+}
+
+// Clash tests for auto-generated intersections by file type: DWG
+TEST(ClashDwg, DwgDisjoint)
+{
+	GTEST_SKIP(); // Skip until the files are checked in
+
+	// Tests auto-generated samples of Intersection Case A (Disjoint) from a DWG File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "dwgDisjoint_Part";
+	std::string bimPostFix = ".dwg";
+	std::string linkPostFix = ".linkfile";
+	std::string path = "/clash/DWG/";
+
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
+	int halfToleranceClashes = 0;
+	 for (int i = 0; i < noParts; i++) {
+		std::string bimPath = path + baseName + std::to_string(i) + bimPostFix;
+		std::string linkPath = path + baseName + std::to_string(i) + linkPostFix;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(bimPath), *container);
+
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+
+		std::unordered_map<std::string, LinkFileEntry> linkFileEntries;
+		importLinkFile(getDataPath(linkPath), linkFileEntries);
+
+		helper.SplitIntoCompositSetsByLinkfileData(
+			metadataMap,
+			linkFileEntries,
+			setA,
+			setB
+		);
+
+		RunDisjointTest(container, samplesPerSegment, setA, setB, halfToleranceClashes);
+	}
+
+	EXPECT_THAT(halfToleranceClashes, Eq(totalSamples / 2));
+}
+
+TEST(ClashDwg, DwgIntersectClosed)
+{
+	GTEST_SKIP(); // Skip until the files are checked in
+
+	// Tests auto-generated samples of Intersection Case B (Intersect Closed) from a DWG File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "dwgIntersectClosed_Part";
+	std::string bimPostFix = ".dwg";
+	std::string linkPostFix = ".linkfile";
+	std::string path = "/clash/DWG/";
+
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
+	int halfToleranceClashes = 0;
+	//for (int i = 0; i < noParts; i++) {
+		std::string bimPath = path + baseName + std::to_string(0) + bimPostFix;
+		std::string linkPath = path + baseName + std::to_string(0) + linkPostFix;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(bimPath), *container);
+
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+
+		std::unordered_map<std::string, LinkFileEntry> linkFileEntries;
+		importLinkFile(getDataPath(linkPath), linkFileEntries);
+
+		 std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher> parameterMap;
+		helper.SplitIntoCompositSetsByLinkfileData(
+			metadataMap,
+			linkFileEntries,
+			setA,
+			setB,
+			parameterMap
+		);
+
+		RunIntersectClosedTest(container, samplesPerSegment, setA, setB, parameterMap);
+	//}
+}
+
+TEST(ClashDwg, DwgIntersectOpen)
+{
+	GTEST_SKIP(); // Skip until the files are checked in
+
+	// Tests auto-generated samples of Intersection Case C (Intersect Open) from a DWG File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "dwgIntersectOpen_Part";
+	std::string bimPostFix = ".dwg";
+	std::string linkPostFix = ".linkfile";
+	std::string path = "/clash/DWG/";
+
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
+	int halfToleranceClashes = 0;
+	for (int i = 0; i < noParts; i++) {
+		std::string bimPath = path + baseName + std::to_string(i) + bimPostFix;
+		std::string linkPath = path + baseName + std::to_string(i) + linkPostFix;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(bimPath), *container);
+
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+
+		std::unordered_map<std::string, LinkFileEntry> linkFileEntries;
+		importLinkFile(getDataPath(linkPath), linkFileEntries);
+
+		std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher> parameterMap;
+		helper.SplitIntoCompositSetsByLinkfileData(
+			metadataMap,
+			linkFileEntries,
+			setA,
+			setB,
+			parameterMap
+		);
+
+		RunIntersectOpenTest(container, samplesPerSegment, setA, setB, parameterMap);
+	}
+}
+
+TEST(ClashDwg, DwgCovers)
+{
+	GTEST_SKIP(); // Skip until the files are checked in
+
+	// Tests auto-generated samples of Intersection Case D (Covers) from a DWG File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "dwgCovers_Part";
+	std::string bimPostFix = ".dwg";
+	std::string linkPostFix = ".linkfile";
+	std::string path = "/clash/DWG/";
+
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
+	int halfToleranceClashes = 0;
+	for (int i = 0; i < noParts; i++) {
+		std::string bimPath = path + baseName + std::to_string(i) + bimPostFix;
+		std::string linkPath = path + baseName + std::to_string(i) + linkPostFix;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(bimPath), *container);
+
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+
+		std::unordered_map<std::string, LinkFileEntry> linkFileEntries;
+		importLinkFile(getDataPath(linkPath), linkFileEntries);
+
+		std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher> parameterMap;
+		helper.SplitIntoCompositSetsByLinkfileData(
+			metadataMap,
+			linkFileEntries,
+			setA,
+			setB,
+			parameterMap
+		);
+
+		RunCoversTest(container, samplesPerSegment, setA, setB, parameterMap);
+	}
+}
+
+TEST(ClashDwg, DwgContains)
+{
+	GTEST_SKIP(); // Skip until the files are checked in
+
+	// Tests auto-generated samples of Intersection Case E (Contains) from a DWG File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "dwgContains_Part";
+	std::string bimPostFix = ".dwg";
+	std::string linkPostFix = ".linkfile";
+	std::string path = "/clash/DWG/";
+
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
+	int halfToleranceClashes = 0;
+	for (int i = 0; i < noParts; i++) {
+		std::string bimPath = path + baseName + std::to_string(i) + bimPostFix;
+		std::string linkPath = path + baseName + std::to_string(i) + linkPostFix;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(bimPath), *container);
+
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+
+		std::unordered_map<std::string, LinkFileEntry> linkFileEntries;
+		importLinkFile(getDataPath(linkPath), linkFileEntries);
+
+		std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher> parameterMap;
+		helper.SplitIntoCompositSetsByLinkfileData(
+			metadataMap,
+			linkFileEntries,
+			setA,
+			setB,
+			parameterMap
+		);
+
+		RunContainsTest(container, samplesPerSegment, setA, setB, parameterMap);
+	}
+}
+
+TEST(ClashDwg, DwgMeet)
+{
+	GTEST_SKIP(); // Skip until the files are checked in
+
+	// Tests auto-generated samples of Intersection Case F (Meet) from a DWG File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "dwgMeet_Part";
+	std::string bimPostFix = ".dwg";
+	std::string linkPostFix = ".linkfile";
+	std::string path = "/clash/DWG/";
+
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
+	int halfToleranceClashes = 0;
+	for (int i = 0; i < noParts; i++) {
+		std::string bimPath = path + baseName + std::to_string(i) + bimPostFix;
+		std::string linkPath = path + baseName + std::to_string(i) + linkPostFix;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(bimPath), *container);
+
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+
+		std::unordered_map<std::string, LinkFileEntry> linkFileEntries;
+		importLinkFile(getDataPath(linkPath), linkFileEntries);
+
+		helper.SplitIntoCompositSetsByLinkfileData(
+			metadataMap,
+			linkFileEntries,
+			setA,
+			setB
+		);
+
+		RunMeetTest(container, samplesPerSegment, setA, setB);
+	}
+}
+
+TEST(ClashDwg, DwgOverlap)
+{
+	GTEST_SKIP(); // Skip until the files are checked in
+
+	// Tests auto-generated samples of Intersection Case G (Overlap) from a DWG File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "dwgOverlap_Part";
+	std::string bimPostFix = ".dwg";
+	std::string linkPostFix = ".linkfile";
+	std::string path = "/clash/DWG/";
+
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
+	int halfToleranceClashes = 0;
+	for (int i = 0; i < noParts; i++) {
+		std::string bimPath = path + baseName + std::to_string(i) + bimPostFix;
+		std::string linkPath = path + baseName + std::to_string(i) + linkPostFix;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(bimPath), *container);
+
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+
+		std::unordered_map<std::string, LinkFileEntry> linkFileEntries;
+		importLinkFile(getDataPath(linkPath), linkFileEntries);
+
+		std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher> parameterMap;
+		helper.SplitIntoCompositSetsByLinkfileData(
+			metadataMap,
+			linkFileEntries,
+			setA,
+			setB,
+			parameterMap
+		);
+
+		RunOverlapTest(container, samplesPerSegment, setA, setB, parameterMap);
+	}
+}
+
+TEST(ClashDwg, DwgEqual)
+{
+	GTEST_SKIP(); // Skip until the files are checked in
+
+	// Tests auto-generated samples of Intersection Case F (Meet) from a DWG File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "dwgEqual_Part";
+	std::string bimPostFix = ".dwg";
+	std::string linkPostFix = ".linkfile";
+	std::string path = "/clash/DWG/";
+
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
+	int halfToleranceClashes = 0;
+	for (int i = 0; i < noParts; i++) {
+		std::string bimPath = path + baseName + std::to_string(i) + bimPostFix;
+		std::string linkPath = path + baseName + std::to_string(i) + linkPostFix;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(bimPath), *container);
+
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+
+		std::unordered_map<std::string, LinkFileEntry> linkFileEntries;
+		importLinkFile(getDataPath(linkPath), linkFileEntries);
+
+		helper.SplitIntoCompositSetsByLinkfileData(
+			metadataMap,
+			linkFileEntries,
+			setA,
+			setB
+		);
+
+		RunEqualTest(container, samplesPerSegment, setA, setB);
 	}
 }
