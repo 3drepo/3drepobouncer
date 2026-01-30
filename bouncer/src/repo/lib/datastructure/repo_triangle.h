@@ -20,55 +20,60 @@
 #include "repo_vector.h"
 
 namespace repo {
-    namespace lib {
-        template<typename T>
-        struct REPO_API_EXPORT _RepoTriangle
-        {
-            repo::lib::_RepoVector3D<T> a;
-            repo::lib::_RepoVector3D<T> b;
-            repo::lib::_RepoVector3D<T> c;
+	namespace lib {
+		template<typename T>
+		struct REPO_API_EXPORT _RepoTriangle
+		{
+			repo::lib::_RepoVector3D<T> a;
+			repo::lib::_RepoVector3D<T> b;
+			repo::lib::_RepoVector3D<T> c;
 
-            _RepoTriangle(
-                repo::lib::_RepoVector3D<T> a,
-                repo::lib::_RepoVector3D<T> b,
-                repo::lib::_RepoVector3D<T> c)
-                :a(a), b(b), c(c)
-            {
-            }
-
-            _RepoTriangle& operator+=(const _RepoVector3D<T>& v)
-            {
-                a += v;
-                b += v;
-                c += v;
-                return *this;
-            }
-
-            _RepoTriangle operator+(const _RepoVector3D<T>& v) const
-            {
-                return _RepoTriangle(
-                    a + v,
-                    b + v,
-                    c + v
-                );
+			_RepoTriangle(
+				repo::lib::_RepoVector3D<T> a,
+				repo::lib::_RepoVector3D<T> b,
+				repo::lib::_RepoVector3D<T> c)
+				:a(a), b(b), c(c)
+			{
 			}
 
-            repo::lib::_RepoVector3D<T> normal() const
-            {
-                auto ab = b - a;
-                auto ac = c - a;
-                auto n = ab.crossProduct(ac);
-                n.normalize();
-                return n;
+			_RepoTriangle& operator+=(const _RepoVector3D<T>& v)
+			{
+				a += v;
+				b += v;
+				c += v;
+				return *this;
 			}
-        };
 
-        using RepoTriangle = _RepoTriangle<double>;
+			_RepoTriangle operator+(const _RepoVector3D<T>& v) const
+			{
+				return _RepoTriangle(
+					a + v,
+					b + v,
+					c + v
+				);
+			}
+
+			repo::lib::_RepoVector3D<T> normal() const
+			{
+				auto ab = b - a;
+				auto ac = c - a;
+				auto n = ab.crossProduct(ac);
+				n.normalize();
+				return n;
+			}
+
+			const repo::lib::_RepoVector3D<T>& operator[](size_t i) const
+			{
+				return reinterpret_cast<const repo::lib::_RepoVector3D<T>*>(this)[i];
+			}
+		};
+
+		using RepoTriangle = _RepoTriangle<double>;
 
 		template<typename N>
-        class _RepoMatrix;
+		class _RepoMatrix;
 
 		template<typename T, typename N>
-        inline _RepoTriangle<T> operator*(const _RepoMatrix<N>& m, const _RepoTriangle<T>& t);
-    }
+		inline _RepoTriangle<T> operator*(const _RepoMatrix<N>& m, const _RepoTriangle<T>& t);
+	}
 }
