@@ -93,72 +93,141 @@ repo::lib::RepoLine geometry::closestPoints(const repo::lib::RepoVector3D64& p, 
 	return { p, closestPoint(p, T) };
 }
 
-repo::lib::RepoLine geometry::closestPoints(const repo::lib::RepoLine& A, const repo::lib::RepoLine& B)
-{
-	// Ericson, C. (2004). Real-Time Collision Detection. CRC Press.
+namespace {
 
-	auto d1 = A.d();
-	auto d2 = B.d();
-	auto r = A.start - B.start;
-	auto a = d1.dotProduct(d1);
-	auto e = d2.dotProduct(d2);
-	auto f = d2.dotProduct(r);
+	/*
+	* A convenience type that stores commonly used properties of a segment along
+	* with its start and end points.
+	* This is for use internally inside geometry tests where it is known that
+	* the properties are likely to be accessed multiple times - however there is
+	* a trade-off - because the properties are cached the line cannot be easily
+	* modified once it is declared. For this reason this type is not currently
+	* exposed, though it could be in future if needed.
+	*/
 
-	double s = 0;
-	double t = 0;
-
-	// check for degenerations
-	if (a <= DBL_EPSILON && e <= DBL_EPSILON) {
-		s = 0;
-		t = 0;
-	}
-	else
+	struct RepoLineEx 
 	{
-		if (a <= DBL_EPSILON) {
-			s = 0.0;
-			t = std::clamp(f / e, 0.0, 1.0);
+	private:
+		repo::lib::RepoVector3D64 a;
+		repo::lib::RepoVector3D64 b;
+		repo::lib::RepoVector3D64 d;
+		double dd;
+
+	public:
+		RepoLineEx()
+			: a(), b(), d(), dd(0)
+		{
+		}
+
+		RepoLineEx(const repo::lib::RepoLine& line)
+			: a(line.start), b(line.end), d(b - a), dd(d.norm2())
+		{
+		}
+
+		RepoLineEx(const repo::lib::RepoVector3D64& start, const repo::lib::RepoVector3D64& end)
+			: a(start), b(end), d(end - start), dd(d.norm2())
+		{
+		}
+
+		operator repo::lib::RepoLine() const {
+			return repo::lib::RepoLine{a, b};
+		}
+
+		const repo::lib::RepoVector3D64& start() const {
+			return a;
+		}
+
+		const repo::lib::RepoVector3D64& end() const {
+			return b;
+		}
+
+		const repo::lib::RepoVector3D64& direction() const {
+			return d;
+		}
+
+		const double& magnitude2() const {
+			return dd;
+		}
+
+		void flip() {
+			std::swap(a, b);
+			d = b - a;
+		}
+	};
+
+	RepoLineEx closestPoints(const RepoLineEx& A, const RepoLineEx& B)
+	{
+		// Ericson, C. (2004). Real-Time Collision Detection. CRC Press.
+
+		auto& d1 = A.direction();
+		auto& d2 = B.direction();
+		auto r = A.start() - B.start();
+		auto a = A.magnitude2();
+		auto e = B.magnitude2();
+		auto f = d2.dotProduct(r);
+
+		double s = 0;
+		double t = 0;
+
+		// check for degenerations
+		if (a <= DBL_EPSILON && e <= DBL_EPSILON) {
+			s = 0;
+			t = 0;
 		}
 		else
 		{
-			auto c = d1.dotProduct(r);
-			if (e <= DBL_EPSILON) {
-				t = 0;
-				s = std::clamp(-c / a, 0.0, 1.0);
+			if (a <= DBL_EPSILON) {
+				s = 0.0;
+				t = std::clamp(f / e, 0.0, 1.0);
 			}
 			else
 			{
-				auto b = d1.dotProduct(d2);
-				auto denom = a * e - b * b;
-
-				if (denom != 0) {
-					s = std::clamp((b * f - c * e) / denom, 0.0, 1.0);
-				}
-				else {
-					s = 0.0;
-				}
-
-				t = (b * s + f) / e;
-
-				if (t < 0) {
+				auto c = d1.dotProduct(r);
+				if (e <= DBL_EPSILON) {
 					t = 0;
 					s = std::clamp(-c / a, 0.0, 1.0);
 				}
-				else {
-					if (t > 1)
-					{
-						t = 1;
-						s = std::clamp((b - c) / a, 0.0, 1.0);
+				else
+				{
+					auto b = d1.dotProduct(d2);
+					auto denom = a * e - b * b;
+
+					if (denom != 0) {
+						s = std::clamp((b * f - c * e) / denom, 0.0, 1.0);
+					}
+					else {
+						s = 0.0;
+					}
+
+					t = (b * s + f) / e;
+
+					if (t < 0) {
+						t = 0;
+						s = std::clamp(-c / a, 0.0, 1.0);
+					}
+					else {
+						if (t > 1)
+						{
+							t = 1;
+							s = std::clamp((b - c) / a, 0.0, 1.0);
+						}
 					}
 				}
 			}
 		}
-	}
 
-	repo::lib::RepoLine result;
-	result.start = A.start + d1 * s;
-	result.end = B.start + d2 * t;
-	return result;
+		return {
+			A.start() + d1 * s,
+			B.start() + d2 * t
+		};
+	}
 }
+
+repo::lib::RepoLine geometry::closestPoints(const repo::lib::RepoLine& A, const repo::lib::RepoLine& B)
+{
+	return closestPoints(RepoLineEx(A), RepoLineEx(B));
+}
+
 
 // Returns a line of zero length if B intersects the face of A, otherwise returns
 // a line of infinite length.
@@ -212,33 +281,29 @@ FaceFaceResult geometry::closestPoints(
 
 	// Predefine the edges of each triangle for efficiency
 
-	repo::lib::RepoLine edgesA[3] = {
-		repo::lib::RepoLine(A.a, A.b),
-		repo::lib::RepoLine(A.b, A.c),
-		repo::lib::RepoLine(A.c, A.a)
+	RepoLineEx edgesA[3] = {
+		RepoLineEx(A.a, A.b),
+		RepoLineEx(A.b, A.c),
+		RepoLineEx(A.c, A.a)
 	};
 
-	repo::lib::RepoLine edgesB[3] = {
-		repo::lib::RepoLine(B.a, B.b),
-		repo::lib::RepoLine(B.b, B.c),
-		repo::lib::RepoLine(B.c, B.a)
+	RepoLineEx edgesB[3] = {
+		RepoLineEx(B.a, B.b),
+		RepoLineEx(B.b, B.c),
+		RepoLineEx(B.c, B.a)
 	};
 
-	double mind = DBL_MAX;
-	repo::lib::RepoLine minLine;
+	RepoLineEx min(A.a, B.a);
 
 	for (int ea = 0; ea < 3; ea++)
 	{
 		for (int eb = 0; eb < 3; eb++)
 		{
 			auto cv = closestPoints(edgesA[ea], edgesB[eb]);
-			auto cvd = cv.magnitude2();
-			if (cvd < mind)
+			if (cv.magnitude2() < min.magnitude2())
 			{
-				mind = cvd;
-				minLine = cv;
-
-				auto n = cv.d();
+				min = cv;
+				auto n = cv.direction();
 
 				// An optimisation identified by Larsen, E., Gottschalk, S., Lin, M. C., and
 				// Manocha, D. in PQP. If the off-edge vertices of each triangle are beyond
@@ -253,8 +318,8 @@ FaceFaceResult geometry::closestPoints(
 
 				// (n points from A to B, so the sign check is the other way round for B.)
 
-				auto dpa = n.dotProduct(A[(ea + 2) % 3] - cv.start);
-				auto dpb = n.dotProduct(B[(eb + 2) % 3] - cv.end);
+				auto dpa = n.dotProduct(A[(ea + 2) % 3] - cv.start());
+				auto dpb = n.dotProduct(B[(eb + 2) % 3] - cv.end());
 
 				if (dpa <= 0 && dpb >= 0)
 				{
@@ -288,29 +353,25 @@ FaceFaceResult geometry::closestPoints(
 
 	for (int i = 0; i < 3; i++)
 	{
-		auto cv = closestPoints(A[i], B);
-		auto cvd = cv.magnitude2();
-		if (cvd < mind) {
-			mind = cvd;
-			minLine = cv;
+		auto cv = (RepoLineEx)closestPoints(A[i], B);
+		if (cv.magnitude2() < min.magnitude2()) {
+			min = cv;
 		}
 	}
 
 	for (int i = 0; i < 3; i++)
 	{
-		auto cv = closestPoints(B[i], A);
-		auto cvd = cv.magnitude2();
-		if (cvd < mind) {
-			mind = cvd;
-			minLine = cv;
+		auto cv = (RepoLineEx)closestPoints(B[i], A);
+		if (cv.magnitude2() < min.magnitude2()) {
+			min = cv;
 			
 			// This ensures the method always returns the point on A in start,
 			// and on B in end
-			std::swap(minLine.start, minLine.end);
+			min.flip();
 		}
 	}
 
-	return { minLine, false, COPLANAR };
+	return { min, false, COPLANAR };
 }
 
 double geometry::ulp(double x)
