@@ -286,6 +286,292 @@ void ClashDetectionDatabaseHelper::createCompositeObjectsByMetadataValue(
 	}
 }
 
+void ClashDetectionDatabaseHelper::GetMetadataMap(
+	repo::lib::Container* container,
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher>& metadataMap)
+{
+	repo::core::handler::database::query::RepoQueryBuilder query;
+	query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_METADATA)));
+
+	repo::core::handler::database::query::RepoProjectionBuilder projection;
+	projection.includeField(REPO_NODE_LABEL_PARENTS);
+	projection.includeField(REPO_NODE_LABEL_METADATA);
+	projection.includeField(REPO_NODE_LABEL_NAME);
+
+	auto cursor = handler->findCursorByCriteria(
+		container->teamspace,
+		container->container + "." + REPO_COLLECTION_SCENE,
+		query,
+		projection
+	);
+		
+	for (auto& bson : *cursor) {		
+		auto p = bson.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
+
+		auto metadata = bson.getObjectArray(REPO_NODE_LABEL_METADATA);
+		std::unordered_map<std::string, repo::lib::RepoVariant> metaMap;
+		for (auto& field : metadata) {
+			auto key = field.getStringField(REPO_NODE_LABEL_META_KEY);
+			metaMap[key] = field.getField(REPO_NODE_LABEL_META_VALUE).repoVariant();
+		}
+		metaMap[REPO_NODE_LABEL_NAME] = bson.getField(REPO_NODE_LABEL_NAME).repoVariant();
+
+		for (auto parentId : p) {
+			metadataMap.insert({ parentId, metaMap });
+		}
+	}
+}
+
+void testing::ClashDetectionDatabaseHelper::SplitIntoCompositSetsByLinkfileData(
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher>& metadataMap,
+	std::unordered_map<std::string, LinkFileEntry>& linkFileEntries,
+	std::set<repo::lib::RepoUUID>& sharedIdsA,
+	std::set<repo::lib::RepoUUID>& sharedIdsB)
+{
+	for (auto mapEntry : metadataMap)
+	{
+		auto sharedId = mapEntry.first;
+		auto metaMap = mapEntry.second;
+		for (auto metaEntry : metaMap)
+		{
+			auto metaKey = metaEntry.first;
+			auto metaValue = metaEntry.second;
+			if (metaKey == "Entity Handle::Value")
+			{
+				std::string handle = boost::get<std::string>(metaValue);
+
+				auto linkEntry = linkFileEntries.find(handle);
+
+				if (linkEntry != linkFileEntries.end())
+				{
+					auto link = linkEntry->second;
+					if (link.clashSetName == "ClashSetA")
+					{
+						sharedIdsA.insert(sharedId);
+					}
+					else if (link.clashSetName == "ClashSetB")
+					{
+						sharedIdsB.insert(sharedId);
+					}
+				}
+			}
+		}
+	}
+}
+
+void testing::ClashDetectionDatabaseHelper::SplitIntoCompositSetsByLinkfileData(
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher>& metadataMap,
+	std::unordered_map<std::string, LinkFileEntry>& linkFileEntries,
+	std::set<repo::lib::RepoUUID>& sharedIdsA,
+	std::set<repo::lib::RepoUUID>& sharedIdsB,
+	std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher>& parameterMap)
+{
+	for (auto mapEntry : metadataMap)
+	{
+		auto sharedId = mapEntry.first;
+		auto metaMap = mapEntry.second;
+		for (auto metaEntry : metaMap)
+		{
+			auto metaKey = metaEntry.first;
+			auto metaValue = metaEntry.second;
+			if (metaKey == "Entity Handle::Value")
+			{
+				std::string handle = boost::get<std::string>(metaValue);
+
+				auto linkEntry = linkFileEntries.find(handle);
+
+				if (linkEntry != linkFileEntries.end())
+				{
+					auto link = linkEntry->second;
+					if (link.clashSetName == "ClashSetA")
+					{
+						sharedIdsA.insert(sharedId);
+					}
+					else if (link.clashSetName == "ClashSetB")
+					{
+						sharedIdsB.insert(sharedId);
+					}
+
+					parameterMap.insert({ sharedId, link.parameterValue });
+				}
+			}
+		}
+	}
+}
+
+void ClashDetectionDatabaseHelper::SplitIntoCompositSetsByMetadata(
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher>& metadataMap,
+	std::set<repo::lib::RepoUUID>& sharedIdsA,
+	std::set<repo::lib::RepoUUID>& sharedIdsB,
+	std::string nameKey,
+	std::string nameA,
+	std::string nameB)
+{
+	for (auto mapEntry : metadataMap)
+	{
+		auto sharedId = mapEntry.first;
+		auto metaMap = mapEntry.second;
+		for (auto metaEntry : metaMap)
+		{
+			auto metaKey = metaEntry.first;
+			auto metaValue = metaEntry.second;
+			if (metaKey == nameKey)
+			{
+				std::string value = boost::get<std::string>(metaValue);
+				if (value == "ClashSetA")
+				{
+					sharedIdsA.insert(sharedId);
+				}
+				else if (value == "ClashSetB")
+				{
+					sharedIdsB.insert(sharedId);
+				}
+			}
+		}
+	}
+}
+
+void ClashDetectionDatabaseHelper::SplitIntoCompositSetsByMetadata(
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher>& metadataMap,
+	std::set<repo::lib::RepoUUID>& sharedIdsA,
+	std::set<repo::lib::RepoUUID>& sharedIdsB,
+	std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher>& parameterMap,
+	std::string nameKey,
+	std::string nameA,
+	std::string nameB,
+	std::string parameterKey)
+{
+	for (auto mapEntry : metadataMap)
+	{
+		auto sharedId = mapEntry.first;
+		auto metaMap = mapEntry.second;
+		for (auto metaEntry : metaMap)
+		{
+			auto metaKey = metaEntry.first;
+			auto metaValue = metaEntry.second;
+			if (metaKey == nameKey)
+			{
+				std::string value = boost::get<std::string>(metaValue);
+				if (value == "ClashSetA")
+				{
+					sharedIdsA.insert(sharedId);
+				}
+				else if (value == "ClashSetB")
+				{
+					sharedIdsB.insert(sharedId);
+				}
+			}
+			else if (metaKey == parameterKey)
+			{
+				double value = boost::get<double>(metaValue);
+				parameterMap.insert({ sharedId, value });
+			}
+		}
+	}
+}
+
+void ClashDetectionDatabaseHelper::setCompositeObjectsBySharedIds(
+	repo::manipulator::modelutility::ClashDetectionConfig& config,
+	const std::unique_ptr<repo::lib::Container>& container,
+	const std::set<repo::lib::RepoUUID>& sharedIdsA,
+	const std::set<repo::lib::RepoUUID>& sharedIdsB)
+{
+	config.setA.clear();
+	createCompositeObjectsBySharedIds(config.setA, container, sharedIdsA);
+	config.setB.clear();
+	createCompositeObjectsBySharedIds(config.setB, container, sharedIdsB);
+}
+
+void ClashDetectionDatabaseHelper::setCompositeObjectsBySharedIds(
+	repo::manipulator::modelutility::ClashDetectionConfig& config,
+	const std::unique_ptr<repo::lib::Container>& container,
+	const std::set<repo::lib::RepoUUID>& sharedIdsA,
+	const std::set<repo::lib::RepoUUID>& sharedIdsB,
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>& compToSharedId)
+{
+	config.setA.clear();
+	createCompositeObjectsBySharedIds(config.setA, container, sharedIdsA, compToSharedId);
+	config.setB.clear();
+	createCompositeObjectsBySharedIds(config.setB, container, sharedIdsB, compToSharedId);
+}
+
+void ClashDetectionDatabaseHelper::createCompositeObjectsBySharedIds(
+	std::vector<repo::manipulator::modelutility::CompositeObject>& objects,
+	const std::unique_ptr<repo::lib::Container>& container,
+	const std::set<repo::lib::RepoUUID>& sharedIds)
+{
+	// By convention, all metadata nodes should wire to both the parent transform,
+	// but also any mesh descendents.
+
+	// This method assumes that the import settings are such that each element has
+	// only one mesh. This is for performance reasons, as otherwise it would
+	// require nested queries which can be very expensive. If this is the case,
+	// another method will need to be used.
+
+	repo::core::handler::database::query::RepoQueryBuilder query;
+	query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_SHARED_ID, sharedIds));
+	query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_MESH)));
+
+	repo::core::handler::database::query::RepoProjectionBuilder projection;
+	projection.includeField(REPO_NODE_LABEL_ID);
+
+	auto cursor = handler->findCursorByCriteria(
+		container->teamspace,
+		container->container + "." + REPO_COLLECTION_SCENE,
+		query,
+		projection
+	);
+
+	for (auto& bson : *cursor) {
+		auto uuid = bson.getUUIDField(REPO_NODE_LABEL_ID);
+		CompositeObject composite;
+		composite.id = repo::lib::RepoUUID::createUUID();
+		composite.meshes.push_back(MeshReference(container.get(), uuid));
+		objects.push_back(composite);
+	}
+}
+
+void ClashDetectionDatabaseHelper::createCompositeObjectsBySharedIds(
+	std::vector<repo::manipulator::modelutility::CompositeObject>& objects,
+	const std::unique_ptr<repo::lib::Container>& container,
+	const std::set<repo::lib::RepoUUID>& sharedIds,
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>& compToSharedId)
+{
+	// By convention, all metadata nodes should wire to both the parent transform,
+	// but also any mesh descendents.
+
+	// This method assumes that the import settings are such that each element has
+	// only one mesh. This is for performance reasons, as otherwise it would
+	// require nested queries which can be very expensive. If this is the case,
+	// another method will need to be used.
+
+	repo::core::handler::database::query::RepoQueryBuilder query;
+	query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_SHARED_ID, sharedIds));
+	query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_MESH)));
+
+	repo::core::handler::database::query::RepoProjectionBuilder projection;
+	projection.includeField(REPO_NODE_LABEL_ID);
+	projection.includeField(REPO_NODE_LABEL_SHARED_ID);
+
+	auto cursor = handler->findCursorByCriteria(
+		container->teamspace,
+		container->container + "." + REPO_COLLECTION_SCENE,
+		query,
+		projection
+	);
+
+	for (auto& bson : *cursor) {
+		auto uuid = bson.getUUIDField(REPO_NODE_LABEL_ID);
+		CompositeObject composite;
+		composite.id = repo::lib::RepoUUID::createUUID();
+		composite.meshes.push_back(MeshReference(container.get(), uuid));
+		objects.push_back(composite);
+
+		auto sharedId = bson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);
+		compToSharedId.insert({ composite.id, sharedId });
+	}
+}
+
 void ClashDetectionDatabaseHelper::createCompositeObjectsByMetadataValue(
 	std::vector<repo::manipulator::modelutility::CompositeObject>& objects,
 	repo::lib::Container* container,
