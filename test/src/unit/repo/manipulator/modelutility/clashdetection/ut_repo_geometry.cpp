@@ -597,11 +597,19 @@ TEST(Geometry, ContactThreshold)
 		auto p = clashGenerator.createTrianglesTransformed({});
 		auto [a, b] = ClashGenerator::applyTransforms(p);
 
+		auto th = geometry::contactThreshold(a, b);
+
+		// If we take the bounds of the triangles, the contact threshold of the bounds
+		// must always be equal to or larger than that of the triangles themselves.
+
+		auto ab = repo::lib::RepoBounds({a.a, a.b, a.c});
+		auto bb = repo::lib::RepoBounds({b.a, b.b, b.c});
+
+		EXPECT_THAT(geometry::contactThreshold(ab, bb), Ge(th));
+
 		// The purpose of the threshold is to participate in the control flow
 		// of algorithms, so we test it in that context: triangles are positioned
 		// into what should be the closest we can get to an in-contact state.
-
-		auto th = geometry::contactThreshold(a, b);
 
 		auto line = geometry::closestPoints(a, b);
 		a = a + (line.end - line.start);

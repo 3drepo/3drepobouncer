@@ -196,10 +196,10 @@ TEST(Geometry, ClosedMeshContains)
 		_MeshView  mesh(p.mesh);
 
 		std::vector<size_t> iinside;
-		geometry::reorderVertices(p.inside, iinside);
+		geometry::orderVertices(p.inside, iinside);
 
 		std::vector<size_t> ioutside;
-		geometry::reorderVertices(p.outside, ioutside);
+		geometry::orderVertices(p.outside, ioutside);
 
 		EXPECT_THAT(geometry::contains(p.inside, iinside, binside, mesh), IsTrue());
 
@@ -221,7 +221,7 @@ TEST(Geometry, ClosedMeshContains)
 	}
 }
 
-TEST(Geometry, ReorderVertices)
+TEST(Geometry, OrderVertices)
 {
 	ClashGenerator clashGenerator;
 	std::vector<repo::lib::RepoVector3D64> vertices;
@@ -230,7 +230,7 @@ TEST(Geometry, ReorderVertices)
 	}
 
 	std::vector<size_t> indices;
-	geometry::reorderVertices(vertices, indices);
+	geometry::orderVertices(vertices, indices);
 
 	// Reorder vertices permutes the input set to prioritise extreme values, what
 	// exactly this means is up to the implementation, but in all cases the output

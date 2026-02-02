@@ -1599,7 +1599,7 @@ TEST(Clash, RepoDeformDepthDb)
 			:mesh(mesh)
 		{
 			bvh::builders::build(bvhB, mesh.vertices, mesh.faces);
-			geometry::reorderVertices(mesh.vertices, indices);
+			geometry::orderVertices(mesh.vertices, indices);
 		}
 
 		const bvh::Bvh<double>& getBvh() const {

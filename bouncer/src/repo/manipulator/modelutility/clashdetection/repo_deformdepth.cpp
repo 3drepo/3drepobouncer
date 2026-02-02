@@ -180,6 +180,19 @@ std::vector<repo::lib::RepoVector3D64> RepoDeformDepth::getContactManifold() con
 	return points;
 }
 
+namespace {
+	Bvh::Node operator+(const Bvh::Node& bounds, const RepoVector3D64& offset) {
+		Bvh::Node result = bounds;
+		result.bounds[0] += offset.x;
+		result.bounds[1] += offset.x;
+		result.bounds[2] += offset.y;
+		result.bounds[3] += offset.y;
+		result.bounds[4] += offset.z;
+		result.bounds[5] += offset.z;
+		return result;
+	}
+}
+
 bool RepoDeformDepth::intersect(const repo::lib::RepoVector3D64& m)
 {
 	resetDisplacements();
@@ -189,9 +202,8 @@ bool RepoDeformDepth::intersect(const repo::lib::RepoVector3D64& m)
 	bvh::traverse(a.bvh, b.bvh,
 		[&](const Bvh::Node& a, const Bvh::Node& b)
 		{
-			// Note we don't need to apply m to the bounds here because they've already been refitted above
-			return closestPoints(repoBounds(a) + m, repoBounds(b))
-				.magnitude() < geometry::contactThreshold(repoBounds(a) + m, repoBounds(b));
+			auto _a = a + m;
+			return bvh::predicates::contacts(_a, b);
 		},
 		[&](size_t _a, size_t _b)
 		{

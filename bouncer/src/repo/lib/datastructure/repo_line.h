@@ -23,42 +23,46 @@
 
 namespace repo{
 	namespace lib{
-        template<typename T>
-        struct REPO_API_EXPORT _RepoLine
-        {
-            repo::lib::_RepoVector3D<T> start;
-            repo::lib::_RepoVector3D<T> end;
-            
-            _RepoLine() = default;
+		template<typename T>
+		struct REPO_API_EXPORT _RepoLine
+		{
+			repo::lib::_RepoVector3D<T> start;
+			repo::lib::_RepoVector3D<T> end;
+			
+			_RepoLine() = default;
 
-            _RepoLine(
-                const repo::lib::_RepoVector3D<T>& start, 
-                const repo::lib::_RepoVector3D<T>& end)
-                : start(start), end(end)
-            {
-            }
+			_RepoLine(
+				const repo::lib::_RepoVector3D<T>& start, 
+				const repo::lib::_RepoVector3D<T>& end)
+				: start(start), end(end)
+			{
+			}
 
-            repo::lib::_RepoVector3D<T> d() const {
-                return end - start;
-            }
+			repo::lib::_RepoVector3D<T> d() const {
+				return end - start;
+			}
 
-            T magnitude() const {
-                return (end - start).norm();
-            }
+			T magnitude() const {
+				return (end - start).norm();
+			}
 
-            repo::lib::_RepoVector3D<T> center() {
-                return (end + start) * 0.5;
-            }
+			T magnitude2() const {
+				return (end - start).norm2();
+			}
 
-            void swap() {
-                std::swap(start, end);
-            }
+			repo::lib::_RepoVector3D<T> center() {
+				return (end + start) * 0.5;
+			}
 
-            static _RepoLine Max()
-            {
+			void swap() {
+				std::swap(start, end);
+			}
+
+			static _RepoLine Max()
+			{
 				return _RepoLine<T>(repo::lib::_RepoVector3D<T>(-DBL_MAX, -DBL_MAX, -DBL_MAX), repo::lib::_RepoVector3D<T>(DBL_MAX, DBL_MAX, DBL_MAX));
-            }
-        };
+			}
+		};
 
 		using RepoLine = _RepoLine<double>;
 	}

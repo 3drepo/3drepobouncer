@@ -138,7 +138,7 @@ namespace {
 
 			// Get a set of ordered indices for the contains tests.
 
-			geometry::reorderVertices(mesh.vertices, orderedVertices);
+			geometry::orderVertices(mesh.vertices, orderedVertices);
 
 			nodes.clear();
 		}

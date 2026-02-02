@@ -252,7 +252,7 @@ namespace {
 	}
 }
 
-void geometry::reorderVertices(
+void geometry::orderVertices(
 	const std::vector<repo::lib::RepoVector3D64>& vertices, std::vector<size_t>& indices)
 {
 	// This method implements a sorting algorithm that orders the vertices by

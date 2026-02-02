@@ -527,9 +527,11 @@ TransformTriangles testing::ClashGenerator::createTrianglesVV(const repo::lib::R
 		random.vector(size2)
 	);
 
-	// Pick a random hyperplane and force the triangles to exist on either side of it
+	// Pick a hyperplane and force the triangles to exist on either side of it.
+	// moveToPlane will also order the vertices so that 'a' is the closest to the
+	// plane.
 
-	auto n = random.direction();
+	auto n = hyperplane.norm() > 0 ? hyperplane : random.direction();
 
 	moveToPlane(a, n);
 	moveToPlane(b, -n);
@@ -559,7 +561,9 @@ TransformTriangles testing::ClashGenerator::createTrianglesVV(const repo::lib::R
 	shiftTriangles(b);
 
 	moveB(problem, size2);
-	moveProblem(problem, size2);
+	if (!hyperplane.norm()) {
+		moveProblem(problem, size2);
+	}
 	moveToBounds(problem, bounds);
 	if (downcastVertices) {
 		downcast(problem);

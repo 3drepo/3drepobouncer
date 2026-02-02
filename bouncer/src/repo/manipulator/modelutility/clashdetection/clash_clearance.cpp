@@ -76,7 +76,7 @@ namespace {
 
 		const std::vector<size_t>& getOrderedVertices() {
 			if (!indicesForContainsTests.size()) {
-				geometry::reorderVertices(mesh.vertices, indicesForContainsTests);
+				geometry::orderVertices(mesh.vertices, indicesForContainsTests);
 			}
 			return indicesForContainsTests;
 		}
