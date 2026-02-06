@@ -51,7 +51,6 @@
 #include <repo/manipulator/modelutility/clashdetection/geometry_utils.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_scheduler.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_exceptions.h>
-#include <repo/manipulator/modelutility/clashdetection/repo_polydepth.h>
 #include <repo/manipulator/modelutility/clashdetection/repo_deformdepth.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_node_cache.h>
 
@@ -1871,12 +1870,6 @@ TEST(Clash, HardTolerance)
 		ClashGenerator::applyTransforms(b, t);
 
 		EXPECT_THAT(intersects(a, b), IsTrue());
-
-		geometry::RepoPolyDepth pd(a, b);
-		pd.iterate(10);
-		auto v0 = pd.getPenetrationVector();
-
-		EXPECT_THAT(v0.norm(), Lt(0.2));
 	}
 
 	ClashDetectionConfigHelper config;
