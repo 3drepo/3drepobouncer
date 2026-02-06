@@ -3750,11 +3750,22 @@ void importLinkFile(
 
 		// ClashSet Name
 		pos = line.find(del);
-		auto clashSetName = line.substr(0, pos);
-		line.erase(0, pos + 1);
 
-		// Parameter value
-		double paramValue = std::stod(line);
+		// Check if we have more than one entry left
+		std::string clashSetName = "";
+		double paramValue = 0;
+		if (pos != std::string::npos)
+		{
+			// If we do, get ClashSet name and the Parameter value
+			clashSetName = line.substr(0, pos);
+		line.erase(0, pos + 1);
+			paramValue = std::stod(line);
+		}
+		else 
+		{
+			// If not, get only ClashSet name
+			clashSetName = line;
+		}
 
 		LinkFileEntry entry;
 		entry.clashSetName = clashSetName;
@@ -3767,8 +3778,6 @@ void importLinkFile(
 // Clash tests for auto-generated intersections by file type: DWG
 TEST(ClashDwg, DwgDisjoint)
 {
-	GTEST_SKIP(); // Skip until the files are checked in
-
 	// Tests auto-generated samples of Intersection Case A (Disjoint) from a DWG File
 
 	int noParts = 5;
@@ -3813,8 +3822,6 @@ TEST(ClashDwg, DwgDisjoint)
 
 TEST(ClashDwg, DwgIntersectClosed)
 {
-	GTEST_SKIP(); // Skip until the files are checked in
-
 	// Tests auto-generated samples of Intersection Case B (Intersect Closed) from a DWG File
 
 	int noParts = 5;
@@ -3828,10 +3835,10 @@ TEST(ClashDwg, DwgIntersectClosed)
 	auto handler = getHandler();
 	ClashDetectionDatabaseHelper helper(handler);
 
-	int halfToleranceClashes = 0;
-	//for (int i = 0; i < noParts; i++) {
-		std::string bimPath = path + baseName + std::to_string(0) + bimPostFix;
-		std::string linkPath = path + baseName + std::to_string(0) + linkPostFix;
+	for (int i = 0; i < noParts; i++) 
+	{
+		std::string bimPath = path + baseName + std::to_string(i) + bimPostFix;
+		std::string linkPath = path + baseName + std::to_string(i) + linkPostFix;
 
 		auto container = makeTemporaryContainer();
 		importModel(getDataPath(bimPath), *container);
@@ -3854,13 +3861,11 @@ TEST(ClashDwg, DwgIntersectClosed)
 		);
 
 		RunIntersectClosedTest(container, samplesPerSegment, setA, setB, parameterMap);
-	//}
+	}
 }
 
 TEST(ClashDwg, DwgIntersectOpen)
 {
-	GTEST_SKIP(); // Skip until the files are checked in
-
 	// Tests auto-generated samples of Intersection Case C (Intersect Open) from a DWG File
 
 	int noParts = 5;
@@ -3874,7 +3879,6 @@ TEST(ClashDwg, DwgIntersectOpen)
 	auto handler = getHandler();
 	ClashDetectionDatabaseHelper helper(handler);
 
-	int halfToleranceClashes = 0;
 	for (int i = 0; i < noParts; i++) {
 		std::string bimPath = path + baseName + std::to_string(i) + bimPostFix;
 		std::string linkPath = path + baseName + std::to_string(i) + linkPostFix;
@@ -3905,8 +3909,6 @@ TEST(ClashDwg, DwgIntersectOpen)
 
 TEST(ClashDwg, DwgCovers)
 {
-	GTEST_SKIP(); // Skip until the files are checked in
-
 	// Tests auto-generated samples of Intersection Case D (Covers) from a DWG File
 
 	int noParts = 5;
@@ -3920,7 +3922,6 @@ TEST(ClashDwg, DwgCovers)
 	auto handler = getHandler();
 	ClashDetectionDatabaseHelper helper(handler);
 
-	int halfToleranceClashes = 0;
 	for (int i = 0; i < noParts; i++) {
 		std::string bimPath = path + baseName + std::to_string(i) + bimPostFix;
 		std::string linkPath = path + baseName + std::to_string(i) + linkPostFix;
@@ -3951,8 +3952,6 @@ TEST(ClashDwg, DwgCovers)
 
 TEST(ClashDwg, DwgContains)
 {
-	GTEST_SKIP(); // Skip until the files are checked in
-
 	// Tests auto-generated samples of Intersection Case E (Contains) from a DWG File
 
 	int noParts = 5;
@@ -3966,7 +3965,6 @@ TEST(ClashDwg, DwgContains)
 	auto handler = getHandler();
 	ClashDetectionDatabaseHelper helper(handler);
 
-	int halfToleranceClashes = 0;
 	for (int i = 0; i < noParts; i++) {
 		std::string bimPath = path + baseName + std::to_string(i) + bimPostFix;
 		std::string linkPath = path + baseName + std::to_string(i) + linkPostFix;
@@ -3997,8 +3995,6 @@ TEST(ClashDwg, DwgContains)
 
 TEST(ClashDwg, DwgMeet)
 {
-	GTEST_SKIP(); // Skip until the files are checked in
-
 	// Tests auto-generated samples of Intersection Case F (Meet) from a DWG File
 
 	int noParts = 5;
@@ -4012,7 +4008,6 @@ TEST(ClashDwg, DwgMeet)
 	auto handler = getHandler();
 	ClashDetectionDatabaseHelper helper(handler);
 
-	int halfToleranceClashes = 0;
 	for (int i = 0; i < noParts; i++) {
 		std::string bimPath = path + baseName + std::to_string(i) + bimPostFix;
 		std::string linkPath = path + baseName + std::to_string(i) + linkPostFix;
@@ -4041,8 +4036,6 @@ TEST(ClashDwg, DwgMeet)
 
 TEST(ClashDwg, DwgOverlap)
 {
-	GTEST_SKIP(); // Skip until the files are checked in
-
 	// Tests auto-generated samples of Intersection Case G (Overlap) from a DWG File
 
 	int noParts = 5;
@@ -4056,7 +4049,6 @@ TEST(ClashDwg, DwgOverlap)
 	auto handler = getHandler();
 	ClashDetectionDatabaseHelper helper(handler);
 
-	int halfToleranceClashes = 0;
 	for (int i = 0; i < noParts; i++) {
 		std::string bimPath = path + baseName + std::to_string(i) + bimPostFix;
 		std::string linkPath = path + baseName + std::to_string(i) + linkPostFix;
@@ -4087,9 +4079,7 @@ TEST(ClashDwg, DwgOverlap)
 
 TEST(ClashDwg, DwgEqual)
 {
-	GTEST_SKIP(); // Skip until the files are checked in
-
-	// Tests auto-generated samples of Intersection Case F (Meet) from a DWG File
+	// Tests auto-generated samples of Intersection Case H (Equal) from a DWG File
 
 	int noParts = 5;
 	int totalSamples = 10000;
@@ -4102,7 +4092,6 @@ TEST(ClashDwg, DwgEqual)
 	auto handler = getHandler();
 	ClashDetectionDatabaseHelper helper(handler);
 
-	int halfToleranceClashes = 0;
 	for (int i = 0; i < noParts; i++) {
 		std::string bimPath = path + baseName + std::to_string(i) + bimPostFix;
 		std::string linkPath = path + baseName + std::to_string(i) + linkPostFix;
