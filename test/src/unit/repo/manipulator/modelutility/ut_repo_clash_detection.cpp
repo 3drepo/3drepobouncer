@@ -1868,7 +1868,6 @@ TEST(Clash, HardTolerance)
 		auto a = ClashGenerator::triangles(cube);
 		auto b = ClashGenerator::triangles(cone);
 		ClashGenerator::applyTransforms(b, t);
-
 		EXPECT_THAT(intersects(a, b), IsTrue());
 	}
 
