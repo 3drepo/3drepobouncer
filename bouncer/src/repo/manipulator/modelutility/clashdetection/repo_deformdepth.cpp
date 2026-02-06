@@ -340,10 +340,13 @@ void RepoDeformDepth::Mesh::computePseudoNormals() {
 
 	// The following algorithm computes boundary-adapted pseudo-normals for each
 	// vertex. These are angle-weighted normals from the faces, averaged with
-	// the 3d normals any boundary edges. 3d normals are orthogonal to both
-	// the face and the edge, that is, pointing 'outwards' from the boundary
-	// approximating the surface that might close the opening.
+	// the 3D normals any boundary edges.
+	// 3D normals are orthogonal to both the face and the edge, that is, pointing
+	// 'outwards' from the boundary approximating the surface that might close the
+	// opening.
 
+	// (Note that these are not normals for the edges, but the per-vertex normals
+	// that result from the orientation of the edges.)
 	std::vector<repo::lib::RepoVector3D64> edgeNormals;
 	edgeNormals.resize(vertices.size());
 
@@ -407,5 +410,23 @@ void RepoDeformDepth::Mesh::computePseudoNormals() {
 	for (size_t vi = 0; vi < pseudoNormals.size(); vi++) {
 		pseudoNormals[vi] += edgeNormals[vi];
 		pseudoNormals[vi].normalize();
+	}
+
+	// Detect whether the normals point inwards or outwards. This is done trivially
+	// by attempting to deflate the mesh by the newly calculated normals.
+	// This is robust to either winding order, but not inconsistent winding orders. For
+	// this, normal correction methods will need to be applied.
+
+	repo::lib::RepoBounds defaltedBounds;
+	auto originalBounds = bounds();
+	auto d = originalBounds.size().norm() * 0.01;
+	for (size_t vi = 0; vi < vertices.size(); vi++) {
+		defaltedBounds.encapsulate(vertices[vi] - pseudoNormals[vi] * d);
+	}
+
+	if (defaltedBounds.size().norm() > originalBounds.size().norm()) {
+		for (auto& n : pseudoNormals) {
+			n = n * -1;
+		}
 	}
 }

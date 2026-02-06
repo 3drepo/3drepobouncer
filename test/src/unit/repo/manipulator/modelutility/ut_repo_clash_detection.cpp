@@ -1713,6 +1713,12 @@ TEST(Clash, RepoDeformDepthDb)
 	EXPECT_THAT(run("set17_a1", "set17_b", 50), IsFalse());
 	EXPECT_THAT(run("set17_a2", "set17_b", 0), IsTrue());
 	EXPECT_THAT(run("set17_a2", "set17_b", 50), IsFalse());
+
+	// These tests check that the algorithm is robust to opposite winding orders.
+	// Note that the winding orders can be different (even between Composite
+	// Objects), but they must be consistent within meshes.
+
+	EXPECT_THAT(run("set18_a", "set18_b", 100), IsTrue());
 }
 
 TEST(Clash, RepoDeformDepthDegenerateGeometry)
