@@ -134,7 +134,7 @@ RepoDeformDepth::RepoDeformDepth(
 	auto localSearchStepSize = tolerance / static_cast<double>(numLocalSearchSteps);
 
 	auto performLocalSearch = [&]() {
-		for (double istep = 1; istep < numLocalSearchSteps; istep++) {
+		for (double istep = numLocalSearchSteps - 1; istep > 0; istep--) {
 			for (auto& axis : axes) {
 				for (int dir = -1; dir <= 1; dir += 2) {
 					auto pqs = axis * dir * (istep * localSearchStepSize);

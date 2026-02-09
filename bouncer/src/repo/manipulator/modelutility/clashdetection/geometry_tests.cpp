@@ -161,8 +161,8 @@ namespace {
 		auto& d1 = A.direction();
 		auto& d2 = B.direction();
 		auto r = A.start() - B.start();
-		auto a = A.magnitude2();
-		auto e = B.magnitude2();
+		auto& a = A.magnitude2();
+		auto& e = B.magnitude2();
 		auto f = d2.dotProduct(r);
 
 		double s = 0;
@@ -205,8 +205,7 @@ namespace {
 						s = std::clamp(-c / a, 0.0, 1.0);
 					}
 					else {
-						if (t > 1)
-						{
+						if (t > 1) {
 							t = 1;
 							s = std::clamp((b - c) / a, 0.0, 1.0);
 						}
