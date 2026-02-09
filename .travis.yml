@@ -102,7 +102,10 @@ matrix:
           - node package_release.js
           - export SYNCHRO_PLUGIN_LOCATION=$PWD/3drepobouncer/plugins
           - ln -s $REPO_MODEL_PATH/fileShare fileShare
-          - LD_LIBRARY_PATH=$PWD/3drepobouncer PATH=$PWD/3drepobouncer:$PATH ./3drepobouncer/3drepobouncerTest --gtest_filter=-Geometry.*
+          - export LD_LIBRARY_PATH=$PWD/3drepobouncer
+          - export PATH=$PWD/3drepobouncer:$PATH
+          - git clone git@github.com:google/gtest-parallel.git .
+          - ./gtest-parallel ./3drepobouncer/3drepobouncerTest --gtest_filter=-Geometry.*
 
 
     - language: cpp
