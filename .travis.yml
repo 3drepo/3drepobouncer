@@ -99,12 +99,12 @@ matrix:
           - for f in $REPO_MODEL_PATH/*.json; do sed -i.bak -e 's|$REPO_MODEL_PATH|'$REPO_MODEL_PATH'|g' $f; done
           - export REPOBOUNCER_ROOT=$HOME/bouncer_install
           - cd ../tools/release
-          - git clone git@github.com:google/gtest-parallel.git .
           - node package_release.js
           - export SYNCHRO_PLUGIN_LOCATION=$PWD/3drepobouncer/plugins
           - ln -s $REPO_MODEL_PATH/fileShare fileShare
           - export LD_LIBRARY_PATH=$PWD/3drepobouncer
           - export PATH=$PWD/3drepobouncer:$PATH
+          - git clone git@github.com:google/gtest-parallel.git gtp && mv ./gtp/* .
           - ./gtest-parallel ./3drepobouncer/3drepobouncerTest --gtest_filter=-Geometry.*
 
 
