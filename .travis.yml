@@ -104,7 +104,7 @@ matrix:
           - ln -s $REPO_MODEL_PATH/fileShare fileShare
           - export LD_LIBRARY_PATH=$PWD/3drepobouncer
           - export PATH=$PWD/3drepobouncer:$PATH
-          - git clone git@github.com:google/gtest-parallel.git gtp && mv ./gtp/* .
+          - git clone https://github.com/google/gtest-parallel.git gtp && mv ./gtp/* .
           - ./gtest-parallel ./3drepobouncer/3drepobouncerTest --gtest_filter=-Geometry.*
 
 
