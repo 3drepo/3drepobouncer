@@ -20,9 +20,6 @@ matrix:
       compiler:
         - gcc
 
-      vm:
-        size: small
-
       addons:
           apt:
               sources:
