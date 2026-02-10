@@ -20,7 +20,7 @@
 
 include(CMakeDependentOption)
 
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.22)
 
 project("3drepobouncer")
 
@@ -71,12 +71,6 @@ if (WIN32 AND ODA_SUPPORT)
 endif()
 
 #================BOOST SETTINGS=======================
-set(Boost_NO_BOOST_CMAKE ON)
-# focal currently uses cmake 3.16, which is too old to use newer Boost's CONFIGs.
-# For now we can ignore the warnings as FindBoost still works, but we need to decide
-# for subsequent versions whether to continue to use Boost (and fix this properly)
-# or not and drop this entirely.
-set(Boost_NO_WARN_NEW_VERSIONS ON)
 add_definitions(-DBOOST_ALL_DYN_LINK)
 add_definitions(-DBOOST_LOG_DYN_LINK)
 add_definitions(-DBOOST_PROGRAM_OPTIONS_DYN_LINK)
@@ -85,13 +79,7 @@ set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 
-unset(Boost_INCLUDE_DIR CACHE)
-unset(Boost_LIBRARY_DIRS CACHE)
-if(WIN32)
-	find_package(Boost REQUIRED COMPONENTS system thread chrono log log_setup filesystem program_options regex zlib bzip2 iostreams date_time locale)
-else()
-	find_package(Boost REQUIRED COMPONENTS system thread chrono log log_setup filesystem program_options regex iostreams date_time)
-endif()
+find_package(Boost CONFIG REQUIRED COMPONENTS system thread chrono log log_setup filesystem program_options regex iostreams zlib bzip2 date_time locale)
 add_definitions(${Boost_LIB_DIAGNOSTIC_DEFINITIONS})
 add_definitions(-DBOOST_OPTIONAL_USE_OLD_DEFINITION_OF_NONE)
 
@@ -131,7 +119,6 @@ function (ensureNotEmpty varName data)
 	if(data STREQUAL "")
 		message(FATAL_ERROR "${varName} cannot be empty when LICENSE_CHECK is set.")
 	endif()
-
 endfunction()
 
 if (LICENSE_CHECK )

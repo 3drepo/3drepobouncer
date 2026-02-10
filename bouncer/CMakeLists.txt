@@ -8,7 +8,7 @@ set(VERSION_MINOR 20_0)
 include_directories(
 	${MONGO_CXX_DRIVER_MONGO_INCLUDE_DIR}
 	${MONGO_CXX_DRIVER_BSON_INCLUDE_DIR}
-	${Boost_INCLUDE_DIR}
+	${Boost_INCLUDE_DIRS}
 	${ASSIMP_INCLUDE_DIR}
 	${IFCUTILS_INCLUDE_DIR}
 	${ODA_INCLUDE_DIR}
@@ -27,7 +27,9 @@ set_target_properties(3drepobouncer PROPERTIES RELEASE_POSTFIX "_${VERSION_MAJOR
 set_target_properties(3drepobouncer PROPERTIES DEBUG_POSTFIX "_${VERSION_MAJOR}_${VERSION_MINOR}_d")
 
 target_link_libraries(3drepobouncer
-	${Boost_LIBRARIES}
+	Boost::iostreams
+	Boost::locale
+	Boost::program_options
 	${MONGO_CXX_DRIVER_LIBRARIES}
 	${ASSIMP_LIBRARIES}
 	${IFCUTILS_LIBRARIES}

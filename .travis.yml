@@ -18,7 +18,10 @@ matrix:
       node_js:
         - "22.14.0"
       compiler:
-           - gcc
+        - gcc
+
+      vm:
+          size: large
 
       addons:
           apt:
