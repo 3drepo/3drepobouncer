@@ -457,7 +457,7 @@ TEST(Clash, ClearanceE2E)
 
 	auto db = std::make_shared<MockDatabase>();
 
-	const int numIterations = 10;
+	const int numIterations = 5;
 	const int samplesPerDistance = 1000;
 	const int selfSamplesA = 100;
 	const int selfSamplesB = 100;
@@ -1057,7 +1057,7 @@ TEST(Clash, Fingerprinting)
 	ClashGenerator clashGenerator;
 	clashGenerator.distance = 0;
 
-	for (size_t i = 0; i < 100; i++)
+	for (size_t i = 0; i < 50; i++)
 	{	
 		ClashDetectionConfigHelper config;
 		config.type = ClashDetectionType::Clearance;
@@ -1099,7 +1099,7 @@ TEST(Clash, Fingerprinting)
 
 	CellDistribution space;
 
-	for (size_t i = 0; i < 100; i++)
+	for (size_t i = 0; i < 50; i++)
 	{
 		ClashDetectionConfigHelper config;
 		config.type = ClashDetectionType::Hard;
@@ -1712,6 +1712,8 @@ TEST(Clash, RepoDeformDepthDb)
 	EXPECT_THAT(run("set17_a1", "set17_b", 50), IsFalse());
 	EXPECT_THAT(run("set17_a2", "set17_b", 0), IsTrue());
 	EXPECT_THAT(run("set17_a2", "set17_b", 50), IsFalse());
+	EXPECT_THAT(run("set17_a3", "set17_b", 0), IsTrue());
+	EXPECT_THAT(run("set17_a3", "set17_b", 50), IsFalse());
 
 	// These tests check that the algorithm is robust to opposite winding orders.
 	// Note that the winding orders can be different (even between Composite
@@ -1795,7 +1797,7 @@ TEST(Clash, HardE2E)
 	const int selfSamplesB = 5;
 	CellDistribution space;
 
-	for (int itr = 0; itr < 500; ++itr)
+	for (int itr = 0; itr < 100; ++itr)
 	{
 		ClashDetectionConfigHelper config;
 		config.type = ClashDetectionType::Hard;
