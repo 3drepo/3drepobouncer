@@ -21,7 +21,7 @@ matrix:
         - gcc
 
       vm:
-        size: large
+        size: medium
 
       addons:
           apt:
