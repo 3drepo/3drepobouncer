@@ -20,6 +20,8 @@
 SET(GMP_LIB_NAMES
 	gmp
 	gmpxx
+	mpir
+	mpirxx
 )
 
 set(PATHS_TO_SEARCH 
