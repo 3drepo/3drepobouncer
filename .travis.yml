@@ -10,7 +10,7 @@ matrix:
         - cd tools/bouncer_worker && yarn install && yarn lint
 
       git:
-          submodules: false
+        submodules: false
 
     - language: cpp
       dist: noble
@@ -21,7 +21,7 @@ matrix:
         - gcc
 
       vm:
-          size: large
+        size: large
 
       addons:
           apt:
@@ -71,6 +71,8 @@ matrix:
           - echo ============ ASSIMP INSTALL =============
           - tar -zxf testData/bouncer/ext_libs/noble/assimp-5.4.3.tgz
           - export ASSIMP_ROOT=$PWD/assimp
+          - echo ================ CGAL ===================
+          - sudo apt-get install libcgal-dev
           - echo ============ IFCOPENSHELL INSTALL =============
           - tar -zxf testData/bouncer/ext_libs/noble/IfcOpenShell-0.8.0.tgz
           - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev libboost-all-dev libcgal-dev libocct-data-exchange-dev libocct-draw-dev libocct-foundation-dev libocct-modeling-algorithms-dev libocct-modeling-data-dev libocct-ocaf-dev libocct-visualization-dev libgmp-dev libmpfr-dev libxml2-dev libeigen3-dev
