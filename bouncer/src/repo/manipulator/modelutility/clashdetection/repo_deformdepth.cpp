@@ -31,13 +31,6 @@ using namespace repo::lib;
 using Bvh = bvh::Bvh<double>;
 
 namespace {
-	repo::lib::RepoBounds repoBounds(const bvh::Bvh<double>::Node& a) {
-		return repo::lib::RepoBounds(
-			repo::lib::RepoVector3D64(a.bounds[0], a.bounds[2], a.bounds[4]),
-			repo::lib::RepoVector3D64(a.bounds[1], a.bounds[3], a.bounds[5])
-		);
-	}
-
 	// Updates the Bvh bottom-up, refitting the bounds to the triangles under a given
 	// transformation. The Bvh is updated in-place, but the original triangles are
     // not modified.
@@ -46,14 +39,14 @@ namespace {
 	{
 		BvhRefitter(Bvh& bvh,
 			const std::vector<repo::lib::RepoVector3D64>& vertices,
-			const std::vector<repo::lib::repo_face_t>& faces)
+			const repo::lib::repo_face_t* faces)
 			: bvh(bvh), vertices(vertices), faces(faces)
 		{
 		}
 
 		Bvh& bvh;
 		const std::vector<repo::lib::RepoVector3D64>& vertices;
-		const std::vector<repo::lib::repo_face_t>& faces;
+		const repo::lib::repo_face_t* faces;
 
 		void refit()
 		{
@@ -87,13 +80,11 @@ namespace {
 RepoDeformDepth::RepoDeformDepth(
 	RepoDeformDepth::Mesh& a,
 	const RepoDeformDepth::Mesh& b,
-	ContainsFunctor* containsFunctor,
 	double tolerance) :
 	a(a),
 	b(b),
 	tolerance(tolerance),
-	distance(FLT_MAX),
-	contains(containsFunctor)
+	distance(FLT_MAX)
 {
 	a.resetConfiguration();
 
@@ -199,7 +190,7 @@ bool RepoDeformDepth::intersect(const repo::lib::RepoVector3D64& m)
 
 	bool intersecting = false;
 
-	bvh::traverse(a.bvh, b.bvh,
+	bvh::traverse(a.getBvh(), b.getBvh(),
 		[&](const Bvh::Node& a, const Bvh::Node& b)
 		{
 			auto _a = a + m;
@@ -228,11 +219,30 @@ bool RepoDeformDepth::intersect(const repo::lib::RepoVector3D64& m)
 		}
 	);
 
-	if (!intersecting && contains) {
-		intersecting = (*contains)(a._vertices, a.bounds(), m);
+	if (!intersecting) {
+		intersecting = contained(m);
 	}
 
 	return intersecting;
+}
+
+bool RepoDeformDepth::contained(const repo::lib::RepoVector3D64& m)
+{
+	for (auto& ga : a.sets) {
+		for (auto& gb : b.sets) {
+			if (ga.closed) {
+				if (geometry::contains(b._vertices, gb.getIndices(), gb.getBounds(), ga, {})) {
+					return true;
+				}
+			}
+			if (gb.closed) {
+				if (geometry::contains(a._vertices, ga.getIndices(), ga.getBounds(), gb, m)) {
+					return true;
+				}
+			}
+		}
+	}
+	return false;
 }
 
 void RepoDeformDepth::iterate(int maxIterations)
@@ -267,9 +277,44 @@ RepoDeformDepth::Mesh::Mesh(geometry::RepoIndexedMesh&& mesh)
 {
 	vertices = std::move(mesh.vertices);
 	faces = std::move(mesh.faces);
-	_vertices = vertices;
-	buildBvh();
-	computePseudoNormals();
+	sets.push_back(Faces(*this, 0, faces.size()));
+	initialise();
+}
+
+void RepoDeformDepth::Mesh::addFaceRange(size_t start, size_t end) {
+	sets.push_back(Faces(*this, start, end - start));
+}
+
+RepoDeformDepth::Mesh::Faces::Faces(
+	const geometry::RepoIndexedMesh& mesh, 
+	size_t start, 
+	size_t length)
+	:mesh(mesh),
+	start(start),
+	length(length),
+	closed(geometry::isClosedAndManifold(mesh.faces.data() + start, length))
+{
+	std::set<size_t> indices;
+	for(int i = 0; i < length; i++) {
+		auto& face = mesh.faces[start + i];
+		indices.insert(face[0]);
+		indices.insert(face[1]);
+		indices.insert(face[2]);
+	}
+	orderedIndices = std::vector<size_t>(indices.begin(), indices.end());
+	geometry::orderVertices(mesh.vertices, orderedIndices);
+}
+
+repo::lib::RepoBounds RepoDeformDepth::Mesh::Faces::getBounds() const {
+	const auto& a = bvh.nodes[0];
+	return repo::lib::RepoBounds(
+		repo::lib::RepoVector3D64(a.bounds[0], a.bounds[2], a.bounds[4]),
+		repo::lib::RepoVector3D64(a.bounds[1], a.bounds[3], a.bounds[5])
+	);
+}
+
+std::vector<size_t> RepoDeformDepth::Mesh::Faces::getIndices() const {
+	return orderedIndices;
 }
 
 void RepoDeformDepth::Mesh::deflate(const std::vector<double>& displacements)
@@ -282,8 +327,12 @@ void RepoDeformDepth::Mesh::deflate(const std::vector<double>& displacements)
 			v = v - n * amount;
 		}
 	}
-	BvhRefitter refitter(this->bvh, _vertices, faces);
-	refitter.refit();
+
+	for (auto& s : sets) {
+		BvhRefitter refitter(s.bvh, _vertices, faces.data() + s.start);
+		refitter.refit();
+	}
+
 	deformed = true;
 }
 
@@ -293,8 +342,12 @@ void RepoDeformDepth::Mesh::resetConfiguration()
 		return;
 	}
 	_vertices = vertices;
-	BvhRefitter refitter(this->bvh, _vertices, faces);
-	refitter.refit();
+	
+	for (auto& s : sets) {
+		BvhRefitter refitter(s.bvh, _vertices, faces.data() + s.start);
+		refitter.refit();
+	}
+
 	deformed = false;
 }
 
@@ -308,9 +361,13 @@ repo::lib::RepoTriangle RepoDeformDepth::Mesh::getTriangle(size_t index) const
 	);
 }
 
+const bvh::Bvh<double>& RepoDeformDepth::Mesh::getBvh() const {
+	return sets[sets.size() - 1].bvh;
+}
+
 repo::lib::RepoBounds RepoDeformDepth::Mesh::bounds() const
 {
-	return repoBounds(bvh.nodes[0]);
+	return sets[sets.size() - 1].getBounds();
 }
 
 double RepoDeformDepth::Mesh::getConfigurationDistance() const
@@ -332,7 +389,9 @@ void RepoDeformDepth::Mesh::initialise()
 
 void RepoDeformDepth::Mesh::buildBvh()
 {
-	bvh::builders::build(bvh, vertices, faces);
+	for (auto& s : sets) {
+		bvh::builders::build(s.bvh, _vertices, faces.data() + s.start, s.length);
+	}
 }
 
 void RepoDeformDepth::Mesh::computePseudoNormals() {
@@ -410,23 +469,5 @@ void RepoDeformDepth::Mesh::computePseudoNormals() {
 	for (size_t vi = 0; vi < pseudoNormals.size(); vi++) {
 		pseudoNormals[vi] += edgeNormals[vi];
 		pseudoNormals[vi].normalize();
-	}
-
-	// Detect whether the normals point inwards or outwards. This is done trivially
-	// by attempting to deflate the mesh by the newly calculated normals.
-	// This is robust to either winding order, but not inconsistent winding orders. For
-	// this, normal correction methods will need to be applied.
-
-	repo::lib::RepoBounds defaltedBounds;
-	auto originalBounds = bounds();
-	auto d = originalBounds.size().norm() * 0.01;
-	for (size_t vi = 0; vi < vertices.size(); vi++) {
-		defaltedBounds.encapsulate(vertices[vi] - pseudoNormals[vi] * d);
-	}
-
-	if (defaltedBounds.size().norm() > originalBounds.size().norm()) {
-		for (auto& n : pseudoNormals) {
-			n = n * -1;
-		}
 	}
 }

@@ -62,6 +62,8 @@ namespace geometry {
 	* so that the most extreme vertices are close to the beginning of the list. 
 	* This increases the likelihood of early terminations when working through the
 	* list sequentially.
+	* If indices is not empty, the indices inside it will be re-ordered. If it is
+	* empty, it is populated with the indices of all the vertices.
 	*/
 	void orderVertices(
 		const std::vector<repo::lib::RepoVector3D64>& vertices, std::vector<size_t>& indices);

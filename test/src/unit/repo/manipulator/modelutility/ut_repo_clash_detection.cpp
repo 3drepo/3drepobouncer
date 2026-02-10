@@ -1593,39 +1593,6 @@ TEST(Clash, RepoDeformDepthDb)
 	// right. For the tests though, we must generate the test data such that this
 	// is the case.
 
-	struct ContainsFunctor : geometry::RepoDeformDepth::ContainsFunctor, geometry::MeshView {
-		ContainsFunctor(geometry::RepoIndexedMesh& mesh)
-			:mesh(mesh)
-		{
-			bvh::builders::build(bvhB, mesh.vertices, mesh.faces);
-			geometry::orderVertices(mesh.vertices, indices);
-		}
-
-		const bvh::Bvh<double>& getBvh() const {
-			return bvhB;
-		}
-
-		repo::lib::RepoTriangle getTriangle(size_t primitive) const {
-			return mesh.getTriangle(primitive);
-		}
-
-		const geometry::RepoIndexedMesh& mesh;
-		bvh::Bvh<double> bvhB;
-		std::vector<size_t> indices;
-		
-		bool operator()(const std::vector<repo::lib::RepoVector3D64>& points,
-			const repo::lib::RepoBounds& bounds,
-			const repo::lib::RepoVector3D64& m) const override {
-			return geometry::contains(
-				points,
-				indices,
-				bounds,
-				*this,
-				m
-			);
-		}
-	};
-
 	auto run = [&](
 		const std::string& nameA, 
 		const std::string& nameB,
@@ -1633,12 +1600,7 @@ TEST(Clash, RepoDeformDepthDb)
 			auto a = (geometry::RepoDeformDepth::Mesh)helper.getChildMeshNodes(c.get(), nameA);
 			auto b = (geometry::RepoDeformDepth::Mesh)helper.getChildMeshNodes(c.get(), nameB);
 
-			auto contains = std::unique_ptr<ContainsFunctor>(nullptr);
-			if (geometry::isClosedAndManifold(b.faces)) {
-				contains = std::make_unique<ContainsFunctor>(b);
-			}
-
-			geometry::RepoDeformDepth pd(a, b, contains.get(), tolerance);
+			geometry::RepoDeformDepth pd(a, b, tolerance);
 			pd.iterate(10);
 
 			return pd.getPenetrationDepth() > tolerance;
@@ -1719,7 +1681,7 @@ TEST(Clash, RepoDeformDepthDb)
 	// Note that the winding orders can be different (even between Composite
 	// Objects), but they must be consistent within meshes.
 
-	EXPECT_THAT(run("set18_a", "set18_b", 100), IsTrue());
+	EXPECT_THAT(run("set18_a", "set18_b", 500), IsTrue());
 }
 
 TEST(Clash, RepoDeformDepthDegenerateGeometry)
@@ -1770,13 +1732,13 @@ TEST(Clash, RepoDeformDepthDegenerateGeometry)
 	}));
 
 	{
-		geometry::RepoDeformDepth pd(a, b, nullptr, 0);
+		geometry::RepoDeformDepth pd(a, b, 0);
 		pd.iterate(10);
 		EXPECT_THAT(pd.getPenetrationDepth(), Gt(0));
 	}
 
 	{
-		geometry::RepoDeformDepth pd(a, b, nullptr, 0.55);
+		geometry::RepoDeformDepth pd(a, b, 0.55);
 		pd.iterate(10);
 		EXPECT_THAT(pd.getPenetrationDepth(), Lt(0.55));
 	}

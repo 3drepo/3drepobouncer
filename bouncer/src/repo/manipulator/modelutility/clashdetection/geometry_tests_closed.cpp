@@ -262,20 +262,27 @@ void geometry::orderVertices(
 	// This component-wise algorithm is very quick, though requires O(n) additional
 	// memory.
 
+	if (!indices.size()) {
+		indices.resize(vertices.size());
+		for(auto i = 0; i < vertices.size(); i++) {
+			indices.push_back(i);
+		}
+	}
+
 	// Six groups / directions: // +X, -X, +Y, -Y, +Z, -Z
 
 	std::vector<size_t> groups[6];
 
 	size_t count[6] = {0, 0, 0, 0, 0, 0};
-	for (const auto& v : vertices) {
-		count[group(v)]++;
+	for (const auto& i : indices) {
+		count[group(vertices[i])]++;
 	}
 
 	for (size_t i = 0; i < 6; i++) {
 		groups[i].reserve(count[i]);
 	}
 
-	for (size_t i = 0; i < vertices.size(); i++) {
+	for (const auto& i : indices) {
 		groups[group(vertices[i])].push_back(i);
 	}
 
@@ -286,8 +293,6 @@ void geometry::orderVertices(
 			}
 		);
 	}
-
-	indices.resize(vertices.size());
 
 	size_t idx[6] = {0, 0, 0, 0, 0, 0};
 	size_t i = 0;

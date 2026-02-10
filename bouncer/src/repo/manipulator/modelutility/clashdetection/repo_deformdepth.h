@@ -21,6 +21,7 @@
 #include "geometry_utils.h"
 #include "repo/lib/datastructure/repo_triangle.h"
 #include "repo/lib/datastructure/repo_bounds.h"
+#include "geometry_tests_closed.h"
 #include "repo/manipulator/modeloptimizer/bvh/bvh.hpp"
 
 namespace geometry {
@@ -42,20 +43,6 @@ namespace geometry {
 	* robust to the case where a junction is coplanar with a collider.
 	*/
 	struct RepoDeformDepth {
-
-		/*
-		* Optional functor that when set on a PolyDepth instance may be used to test
-		* configurations of operand a (m). Should return true if under transform m, a
-		* is entirely contained by b, otherwise false. If null, the test is ignored
-		* PolyDepth proceeds without it.
-		*/
-		struct ContainsFunctor {
-			virtual bool operator()(
-				const std::vector<repo::lib::RepoVector3D64>& points,
-				const repo::lib::RepoBounds& bounds,
-				const repo::lib::RepoVector3D64& m) const = 0;
-		};
-
 		/*
 		* Optional structure to represent a RepoIndexedMesh with additional metadata.
 		* RepoDeformDepth uses these internally, but they can be cached and re-used
@@ -81,7 +68,46 @@ namespace geometry {
 			*/
 			Mesh(geometry::RepoIndexedMesh&& mesh);
 
-			bvh::Bvh<double> bvh;
+			/*
+			* Defines a subset of faces of the mesh with its own BVH for use with methods
+			* that take a MeshView.
+			*/
+			struct Faces : public geometry::MeshView {
+				size_t start;
+				size_t length;
+				bvh::Bvh<double> bvh;
+				const geometry::RepoIndexedMesh& mesh;
+				bool closed;
+				std::vector<size_t> orderedIndices;
+
+				Faces(const geometry::RepoIndexedMesh& mesh, 
+					size_t start, 
+					size_t length);
+
+				const bvh::Bvh<double>& getBvh() const override {
+					return bvh;
+				}
+
+				repo::lib::RepoTriangle getTriangle(size_t primitive) const override {
+					return mesh.getTriangle(start + primitive);
+				}
+
+				std::vector<size_t> getIndices() const;
+
+				repo::lib::RepoBounds getBounds() const;
+			};
+
+			/*
+			* All the groups of faces in the mesh. As vertices are updated, all the face
+			* groups update together. The mesh must have at least one group. Typically,
+			* the last group will encompass the whole mesh (this is one that the getBvh()
+			* method returns).
+			*/
+			std::vector<Faces> sets;
+
+			void addFaceRange(size_t start, size_t end);
+
+			const bvh::Bvh<double>& getBvh() const;
 
 			/*
 			* The current configuration of the deformable mesh.
@@ -121,7 +147,6 @@ namespace geometry {
 
 		protected:
 			void buildBvh();
-
 			void computePseudoNormals();
 
 			bool deformed = false;
@@ -130,7 +155,6 @@ namespace geometry {
 		RepoDeformDepth(
 			RepoDeformDepth::Mesh& a,
 			const RepoDeformDepth::Mesh& b,
-			ContainsFunctor* containsFunctor = nullptr,
 			double tolerance = 0.0);
 
 		void iterate(int maxIterations = -1);
@@ -157,15 +181,6 @@ namespace geometry {
 		const RepoDeformDepth::Mesh& b;
 
 		/*
-		* If not null, will be used by the intersect method to determine if mesh (a)
-		* is entirely enclosed by mesh (b) under the current configuration. Note that
-		* if mesh (b) becomes enclosed during the deformation stage, the algorithm 
-		* will terminate immediately, under the assumption that tolerances are always
-		* trivial compared to the size of the operands.
-		*/
-		ContainsFunctor* contains;
-
-		/*
 		* Intersects (a) with (b) in the current configuration. Returns true if the
 		* meshes are touching (in-contact or in-collision), otherwise false.
 		*/
@@ -175,6 +190,14 @@ namespace geometry {
 		std::vector<double> distances;
 
 		void resetDisplacements();
+
+		/*
+		* Returns true if under the current configuration, mesh (a) is entirely
+		* contained by mesh (b), or mesh (b) is entirely contained by mesh (a).
+		* The configuration encompasses both the deformation of (a) and (b) and
+		* an optional transform (m) applied to (a).
+		*/
+		bool contained(const repo::lib::RepoVector3D64& m);
 
 		/*
 		* How many steps to take along each axis when performing the local search.
