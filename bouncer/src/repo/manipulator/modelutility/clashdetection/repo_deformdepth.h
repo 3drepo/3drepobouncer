@@ -70,7 +70,9 @@ namespace geometry {
 
 			/*
 			* Defines a subset of faces of the mesh with its own BVH for use with methods
-			* that take a MeshView.
+			* that take a MeshView. Typically, each disjoint set of faces should form its
+			* own group, though there must also be one super-group that encompasses the
+			* whole mesh.
 			*/
 			struct Faces : public geometry::MeshView {
 				size_t start;
@@ -105,6 +107,12 @@ namespace geometry {
 			*/
 			std::vector<Faces> faceGroups;
 
+			/*
+			* Delineate a specific range of faces as a discrete group. The faces should
+			* already have been added to the underlying mesh.
+			* If not constructing from a RepoIndexedMesh, this should be called at least
+			* once with the entire range of faces.
+			*/
 			void addFaceRange(size_t start, size_t end);
 
 			const bvh::Bvh<double>& getBvh() const;

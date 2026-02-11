@@ -196,6 +196,9 @@ bool RepoDeformDepth::intersect(const repo::lib::RepoVector3D64& m)
 			auto ct = geometry::contactThreshold(triA, triB);
 			if (d.intersects || d.magnitude() < ct) {
 				intersecting = true;
+
+				// In hard mode, the configuration is either valid or it is not, so we can
+				// terminate the traversal the first time any intersection is found.
 				return true;
 			}
 
