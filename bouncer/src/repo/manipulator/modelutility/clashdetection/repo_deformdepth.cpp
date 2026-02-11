@@ -390,68 +390,67 @@ void RepoDeformDepth::Mesh::computePseudoNormals() {
 
 	// (Note that these are not normals for the edges, but the per-vertex normals
 	// that result from the orientation of the edges.)
+
 	std::vector<repo::lib::RepoVector3D64> edgeNormals;
 	edgeNormals.resize(vertices.size());
 
+	// Find all the edges in advance so when we iterate the faces again, we will
+	// now whether a given edge is a boundary edge or not.
+
 	std::set<std::pair<size_t, size_t>> edges;
+	for (const auto& f : faces) {
+		edges.insert({f[0], f[1]});
+		edges.insert({f[1], f[2]});
+		edges.insert({f[2], f[0]});
+	}
 
 	for (const auto& f : faces) {
 		auto v0 = vertices[f[0]];
 		auto v1 = vertices[f[1]];
 		auto v2 = vertices[f[2]];
 
-		auto a0 = std::acos(((v1 - v0).normalized()).dotProduct((v2 - v0).normalized()));
-		auto a1 = std::acos(((v0 - v1).normalized()).dotProduct((v2 - v1).normalized()));
-		auto a2 = std::acos(((v0 - v2).normalized()).dotProduct((v1 - v2).normalized()));
+		auto v01 = (v1 - v0).normalized();
+		auto v10 = -v01;
+		auto v12 = (v2 - v1).normalized();
+		auto v21 = -v12;
+		auto v20 = (v0 - v2).normalized();
+		auto v02 = -v20;
 
-		auto normal = (v1 - v0).crossProduct(v2 - v0).normalized();
-
-		pseudoNormals[f[0]] += normal * a0;
-		pseudoNormals[f[1]] += normal * a1;
-		pseudoNormals[f[2]] += normal * a2;
-
-		edges.insert({f[0], f[1]});
-		edges.insert({f[1], f[2]});
-		edges.insert({f[2], f[0]});
-	}
-
-	for (auto& n : pseudoNormals) {
-		n = n.normalized();
-	}
-
-	for (const auto& f : faces) {
-
-		auto v01 = vertices[f[1]] - vertices[f[0]];
-		auto v12 = vertices[f[2]] - vertices[f[1]];
-		auto v20 = vertices[f[0]] - vertices[f[2]];
-		auto v02 = vertices[f[2]] - vertices[f[0]];
+		auto a0 = std::acos(v01.dotProduct(v02));
+		auto a1 = std::acos(v10.dotProduct(v12));
+		auto a2 = std::acos(v20.dotProduct(v21));
 
 		auto n = v01.crossProduct(v02).normalized();
 
-		auto n01 = v01.crossProduct(n).normalized();
-		auto n12 = v12.crossProduct(n).normalized();
-		auto n20 = v20.crossProduct(n).normalized();
+		pseudoNormals[f[0]] += n * a0;
+		pseudoNormals[f[1]] += n * a1;
+		pseudoNormals[f[2]] += n * a2;
 
 		// If edges are shared/non-boundary, then they don't have normals of their own
 
 		if (!edges.contains({f[1], f[0]})) {
+			auto n01 = v01.crossProduct(n).normalized();
 			edgeNormals[f[0]] += n01;
 			edgeNormals[f[1]] += n01;
 		}
 
 		if (!edges.contains({f[2], f[1]})) {
+			auto n12 = v12.crossProduct(n).normalized();
 			edgeNormals[f[1]] += n12;
 			edgeNormals[f[2]] += n12;
 		}
 
 		if (!edges.contains({f[0], f[2]})) {
+			auto n20 = v20.crossProduct(n).normalized();
 			edgeNormals[f[2]] += n20;
 			edgeNormals[f[0]] += n20;
 		}
 	}
 
 	for (size_t vi = 0; vi < pseudoNormals.size(); vi++) {
-		pseudoNormals[vi] += edgeNormals[vi];
-		pseudoNormals[vi].normalize();
+		auto& pn = pseudoNormals[vi];
+		pn.normalize();
+		pn += edgeNormals[vi];
+		pn.normalize();
 	}
 }
