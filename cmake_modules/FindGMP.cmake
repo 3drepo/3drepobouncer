@@ -20,9 +20,19 @@
 SET(GMP_LIB_NAMES
 	gmp
 	gmpxx
-	mpir
-	mpirxx
 )
+
+# The original GMP does not compile on Windows, so on Windows GMP is actually
+# always a fork, MPIR. Here, on Windows we include both the gmp and mpir libs
+# as that is how the distribution currently working with bouncer is set up.
+
+if(${WIN32})
+	SET(GMP_LIB_NAMES
+		${GMP_LIB_NAMES}
+		mpir
+		mpirxx
+	)
+endif()
 
 set(PATHS_TO_SEARCH 
 	/usr/lib/
