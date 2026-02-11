@@ -78,8 +78,11 @@ add_definitions(-DBOOST_UUID_NO_SIMD)
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-
-find_package(Boost CONFIG REQUIRED COMPONENTS system thread chrono log log_setup filesystem program_options regex iostreams zlib bzip2 date_time locale)
+if(WIN32)
+	find_package(Boost CONFIG REQUIRED COMPONENTS system thread chrono log log_setup filesystem program_options regex zlib bzip2 iostreams date_time locale)
+else()
+	find_package(Boost CONFIG REQUIRED COMPONENTS system thread chrono log log_setup filesystem program_options regex iostreams date_time)
+endif()
 add_definitions(${Boost_LIB_DIAGNOSTIC_DEFINITIONS})
 add_definitions(-DBOOST_OPTIONAL_USE_OLD_DEFINITION_OF_NONE)
 
