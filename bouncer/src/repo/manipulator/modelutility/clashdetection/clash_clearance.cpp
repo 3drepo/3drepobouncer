@@ -118,8 +118,9 @@ namespace {
 			bvh::DistanceQuery::operator()(a);
 		}
 
-		void intersect(size_t primA, size_t primB) override {
+		bool intersect(size_t primA, size_t primB) override {
 			results.push_back({ primA, primB });
+			return false; // Don't terminate traversal, we want to find all pairs within the tolerance
 		}
 	};
 }

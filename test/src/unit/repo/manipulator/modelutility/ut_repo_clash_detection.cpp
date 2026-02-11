@@ -1405,10 +1405,6 @@ TEST(Clash, Contains)
 	}
 
 	{
-		// Even though all combined items are contained in the hulls, because the
-		// meshes are not continous this will not necessarily be detected as a clash
-		// in Hard Mode.
-
 		ClashDetectionConfig config;
 
 		config.setA.push_back(combineCompositeObjects({
@@ -1442,7 +1438,7 @@ TEST(Clash, Contains)
 			auto pipeline = new clash::Hard(handler, config);
 			auto results = pipeline->runPipeline();
 
-			EXPECT_THAT(results.clashes.size(), Eq(0));
+			EXPECT_THAT(results.clashes.size(), Eq(1));
 		}
 	}
 }
@@ -1514,7 +1510,7 @@ TEST(Clash, BvhTraversal)
 
 		std::vector<std::pair<size_t, size_t>> intersections;
 
-		void intersect(size_t a, size_t b) override {
+		bool intersect(size_t a, size_t b) override {
 			// This re-ordering makes it easier to define the expected results. It is not
 			// necessary for the actual collision detection - and in fact is better not
 			// not to have it because it breaks ordering when testing between two BVHs.
@@ -1522,6 +1518,7 @@ TEST(Clash, BvhTraversal)
 				std::swap(a, b); 
 			}
 			intersections.push_back({ a, b });
+			return false;
 		}
 	};
 

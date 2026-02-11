@@ -103,7 +103,7 @@ namespace geometry {
 			* the last group will encompass the whole mesh (this is one that the getBvh()
 			* method returns).
 			*/
-			std::vector<Faces> sets;
+			std::vector<Faces> faceGroups;
 
 			void addFaceRange(size_t start, size_t end);
 
@@ -134,7 +134,7 @@ namespace geometry {
 			* Reduces mesh A along its outer surface by the amounts specified in the per-
 			* vertex displacements.
 			*/
-			void deflate(const std::vector<double>& displacements);
+			void deflate(double amount);
 
 			/*
 			* Gets the distance of the current configuration from the starting
@@ -186,10 +186,6 @@ namespace geometry {
 		*/
 		bool intersect(const repo::lib::RepoVector3D64& m);
 		bool intersect();
-
-		std::vector<double> distances;
-
-		void resetDisplacements();
 
 		/*
 		* Returns true if under the current configuration, mesh (a) is entirely

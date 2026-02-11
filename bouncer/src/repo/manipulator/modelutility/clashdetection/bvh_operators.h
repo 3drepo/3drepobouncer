@@ -92,9 +92,9 @@ namespace bvh {
 
 		/*
 		* Called for all combinations of primitives for a pair of overlapping leaf
-		* nodes.
+		* nodes. If the method returns true, the traversal will terminate.
 		*/
-		virtual void intersect(size_t primA, size_t primB) = 0;
+		virtual bool intersect(size_t primA, size_t primB) = 0;
 
 		void operator()(
 			const bvh::Bvh<double>& a,
@@ -119,10 +119,14 @@ namespace bvh {
 		NodesIntersectionCallable intersectNodes,
 		PrimitiveIntersectionCallable intersectPrimitives)
 	{
+		// The purpose of the following subclass is to perform type-erasure so we can
+		// use our callables with the Traversal implementation in the bvh_operators
+		// module.
+
 		// It would be preferable to use std::function here, but currently there is no
-		// Concept that would ensure a given lambda fits within the limit for SOO, so
-		// we do the type erasure manually. (A reference version of std function is
-		// coming in C++26).
+		// Concept that would ensure a given lambda fits within the limit for Small
+		// Object Optimisation, so we do the type erasure manually. (A reference version
+		// of std function is coming in C++26).
 
 		struct Query : public Traversal {
 			NodesIntersectionCallable& nodes;
@@ -132,9 +136,9 @@ namespace bvh {
 			{
 			}
 
-			void intersect(size_t primA, size_t primB) override
+			bool intersect(size_t primA, size_t primB) override
 			{
-				primitives(primA, primB);
+				return primitives(primA, primB);
 			}
 
 			bool intersect(
@@ -168,7 +172,7 @@ namespace bvh {
 		* Get the true distance between two primitives. If it is lower than the current
 		* upper bound d, then it will be used to update d.
 		*/
-		virtual void intersect(size_t primA, size_t primB) = 0;
+		virtual bool intersect(size_t primA, size_t primB) = 0;
 
 	private:
 		bool intersect(
@@ -182,7 +186,7 @@ namespace bvh {
 	*/
 	struct IntersectQuery : public Traversal
 	{
-		virtual void intersect(size_t primA, size_t primB) = 0;
+		virtual bool intersect(size_t primA, size_t primB) = 0;
 
 	private:
 		bool intersect(

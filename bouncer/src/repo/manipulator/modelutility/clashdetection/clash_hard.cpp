@@ -57,7 +57,7 @@ namespace {
 
 				// Keep a record of where this node's faces are in the combined mesh
 
-				mesh.addFaceRange(start, mesh.faces.size() - start);
+				mesh.addFaceRange(start, mesh.faces.size());
 			}
 
 			// If we actually have multiple face-groups, create a primary group that
@@ -109,8 +109,9 @@ namespace {
 	{
 		BroadphaseResults results;
 
-		void intersect(size_t primA, size_t primB) override {
+		bool intersect(size_t primA, size_t primB) override {
 			results.push_back({ primA, primB });
+			return false; // Don't terminate traversal, we want to find all overlaps
 		}
 
 		void operator()(const Bvh& a, const Bvh& b) {

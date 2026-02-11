@@ -88,8 +88,6 @@ RepoDeformDepth::RepoDeformDepth(
 {
 	a.resetConfiguration();
 
-	distances.resize(a.vertices.size());
-
 	// If there is no intersection, there is nothing to do, which we signal by
 	// already setting the configuration distance to zero.
 
@@ -145,18 +143,13 @@ RepoDeformDepth::RepoDeformDepth(
 		return;
 	}
 
-	// Do early rejection tests: 
-	//  * Or, a separating hyperplane (up to the tolerance) exists between the two vertex sets
+	// Add additional early rejection tests here,
+	//	For example, a separating hyperplane (up to the tolerance) exists between the two vertex sets
 }
 
 double RepoDeformDepth::getPenetrationDepth() const
 {
 	return distance;
-}
-
-void RepoDeformDepth::resetDisplacements()
-{
-	memset(distances.data(), 0, distances.size() * sizeof(double));
 }
 
 bool RepoDeformDepth::intersect()
@@ -186,8 +179,6 @@ namespace {
 
 bool RepoDeformDepth::intersect(const repo::lib::RepoVector3D64& m)
 {
-	resetDisplacements();
-
 	bool intersecting = false;
 
 	bvh::traverse(a.getBvh(), b.getBvh(),
@@ -204,18 +195,11 @@ bool RepoDeformDepth::intersect(const repo::lib::RepoVector3D64& m)
 			auto d = geometry::closestPoints(triA, triB);
 			auto ct = geometry::contactThreshold(triA, triB);
 			if (d.intersects || d.magnitude() < ct) {
-
-				// Note that true depth will always be less than the tolerance, because an
-				// intersection distance greater than the tolerance is a termination
-				// condition.
-
-				const auto& face = a.faces[_a];
-				for (const auto& index : face) {
-					distances[index] = std::max(tolerance * 0.05, 1e-6);
-				}
-
 				intersecting = true;
+				return true;
 			}
+
+			return false;
 		}
 	);
 
@@ -228,8 +212,8 @@ bool RepoDeformDepth::intersect(const repo::lib::RepoVector3D64& m)
 
 bool RepoDeformDepth::contained(const repo::lib::RepoVector3D64& m)
 {
-	for (auto& ga : a.sets) {
-		for (auto& gb : b.sets) {
+	for (auto& ga : a.faceGroups) {
+		for (auto& gb : b.faceGroups) {
 			if (ga.closed) {
 				if (geometry::contains(b._vertices, gb.getIndices(), gb.getBounds(), ga, {})) {
 					return true;
@@ -257,7 +241,7 @@ void RepoDeformDepth::iterate(int maxIterations)
 
 	for(int i = 0; i < maxIterations; i++) {
 		if (intersect()) {
-			a.deflate(distances);
+			a.deflate(tolerance * deflateStepSize);
 
 			// If we've had to deform the mesh beyond the tolerance, there is no
 			// point in continuing further.
@@ -277,12 +261,12 @@ RepoDeformDepth::Mesh::Mesh(geometry::RepoIndexedMesh&& mesh)
 {
 	vertices = std::move(mesh.vertices);
 	faces = std::move(mesh.faces);
-	sets.push_back(Faces(*this, 0, faces.size()));
+	faceGroups.push_back(Faces(*this, 0, faces.size()));
 	initialise();
 }
 
 void RepoDeformDepth::Mesh::addFaceRange(size_t start, size_t end) {
-	sets.push_back(Faces(*this, start, end - start));
+	faceGroups.push_back(Faces(*this, start, end - start));
 }
 
 RepoDeformDepth::Mesh::Faces::Faces(
@@ -317,18 +301,15 @@ std::vector<size_t> RepoDeformDepth::Mesh::Faces::getIndices() const {
 	return orderedIndices;
 }
 
-void RepoDeformDepth::Mesh::deflate(const std::vector<double>& displacements)
+void RepoDeformDepth::Mesh::deflate(double amount)
 {
 	for (auto vi = 0; vi < _vertices.size(); vi++) {
 		auto& v = _vertices[vi];
 		auto& n = pseudoNormals[vi];
-		double amount = displacements[vi];
-		if (amount > 0) {
-			v = v - n * amount;
-		}
+		v = v - n * amount;
 	}
 
-	for (auto& s : sets) {
+	for (auto& s : faceGroups) {
 		BvhRefitter refitter(s.bvh, _vertices, faces.data() + s.start);
 		refitter.refit();
 	}
@@ -342,8 +323,8 @@ void RepoDeformDepth::Mesh::resetConfiguration()
 		return;
 	}
 	_vertices = vertices;
-	
-	for (auto& s : sets) {
+
+	for (auto& s : faceGroups) {
 		BvhRefitter refitter(s.bvh, _vertices, faces.data() + s.start);
 		refitter.refit();
 	}
@@ -362,12 +343,12 @@ repo::lib::RepoTriangle RepoDeformDepth::Mesh::getTriangle(size_t index) const
 }
 
 const bvh::Bvh<double>& RepoDeformDepth::Mesh::getBvh() const {
-	return sets[sets.size() - 1].bvh;
+	return faceGroups[faceGroups.size() - 1].bvh;
 }
 
 repo::lib::RepoBounds RepoDeformDepth::Mesh::bounds() const
 {
-	return sets[sets.size() - 1].getBounds();
+	return faceGroups[faceGroups.size() - 1].getBounds();
 }
 
 double RepoDeformDepth::Mesh::getConfigurationDistance() const
@@ -389,7 +370,7 @@ void RepoDeformDepth::Mesh::initialise()
 
 void RepoDeformDepth::Mesh::buildBvh()
 {
-	for (auto& s : sets) {
+	for (auto& s : faceGroups) {
 		bvh::builders::build(s.bvh, _vertices, faces.data() + s.start, s.length);
 	}
 }
