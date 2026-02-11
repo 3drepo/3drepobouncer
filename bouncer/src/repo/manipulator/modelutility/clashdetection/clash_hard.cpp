@@ -91,11 +91,11 @@ namespace {
 
 		const Graph& graph;
 
-		void initialise(const CompositeObject& key, CacheEntry& entry) const override {
-			for(auto& meshRef : key.meshes) {
+		void initialise(const CompositeObject& composite, CacheEntry& entry) const override {
+			for(auto& meshRef : composite.meshes) {
 				entry.nodes.push_back(&graph.getNode(meshRef.uniqueId));
 			}
-			entry.id = key.id;
+			entry.id = composite.id;
 		}
 	};
 
@@ -191,13 +191,16 @@ void Hard::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 
 	ClashScheduler::schedule(orderedCompositePairs);
 
-	// The following snippet turns the records into actual narrowphase tests by
-	// resolving them to counted references to the actual nodes.
-
-	std::queue<std::pair<
+	using Narrowphase = std::pair<
 		Cache::Entry,
 		Cache::Entry
-		>> narrowphaseTests;
+	>;
+
+	std::queue<Narrowphase> narrowphaseTests;
+
+	// When we take references to the records, we begin reference counting. From
+	// this point on, when all the Cache::Entry objects for a given record are
+	// destroyed, that record will be cleaned up.
 
 	for (auto [a, b] : orderedCompositePairs) {
 		narrowphaseTests.push({
