@@ -18,7 +18,6 @@
 #include "repo_deformdepth.h"
 #include "repo/lib/datastructure/repo_structs.h"
 #include "geometry_tests.h"
-#include "repo_linear_algebra.h"
 #include "repo/manipulator/modeloptimizer/bvh/sweep_sah_builder.hpp"
 #include "repo/manipulator/modeloptimizer/bvh/hierarchy_refitter.hpp"
 #include "bvh_operators.h"
