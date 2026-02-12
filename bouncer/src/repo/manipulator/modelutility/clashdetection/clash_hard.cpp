@@ -204,8 +204,8 @@ void Hard::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 		a->initialise(handler);
 		b->initialise(handler);
 
-		// In PolyDepth, b is fixed, so consider the larger object the static one
-		// to make it easier to fit a into the free space around it.
+		// In DeformDepth, (b) is fixed, so consider the larger object the static one
+		// to make it easier to fit (a) into the free space around it.
 
 		if (a->getBounds() > b->getBounds()) {
 			std::swap(a, b);
@@ -218,9 +218,7 @@ void Hard::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 				b->mesh,
 				tolerance
 			);
-
 			pd.iterate();
-
 			auto v = pd.getPenetrationDepth();
 
 			if (pd.getPenetrationDepth() > tolerance) {

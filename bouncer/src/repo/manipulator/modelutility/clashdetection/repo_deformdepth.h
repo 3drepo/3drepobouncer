@@ -27,20 +27,25 @@
 namespace geometry {
 	
 	/*
-	* RepoDeformDepth is the successor to RepoPolyDepth that estimates the
-	* penetration depth between polygon soups under a specific tolerance.
+	* RepoDeformDepth is a component of Clash Detection. It searches for a valid
+	* configuration of mesh (a), such that (a) does not intersect anywhere with
+	* (b).
 	* 
-	* This algorithm uses local deformations, up to a limit, to attempt to find a
-	* configuration where the meshes are not intersecting. If the algorithm is
-	* unable to find such a configuration, the clash is considered irreconcilable.
+	* The configuration spaces searched include local offsets around the origin
+	* of (a), and local deformations of (a) (shrinking). Configurations are valid
+	* if the (a) is not moved wholly or in-part by more than the tolerance.
 	* 
-	* Configurations are only valid where the point-wise distance between the start
-	* and ending configurations is below the tolerance. The algorithm only attempts
-	* to deform mesh (a), which should be the smaller of the two.
+	* If no configuration can be found where (a) and (b) do not intersect, then
+	* they are considered to be clashing.
 	* 
-	* This approach is designed to handle cases were meshes have many contact
-	* patches, but are not actually overlapping in a meaningful way, and to be
-	* robust to the case where a junction is coplanar with a collider.
+	* This approach to hard-clash detection is underpinned by very simple & robust
+	* primitive intersection tests, making it fail-safe. If the clash can be
+	* resolved in theory, but not in the configuration spaces searched, then this
+	* approach will return a false-positive. It will never return false negatives
+	* however. It is also tolerant of imperfect geometry and its robustness does
+	* not rely on meshes being manifold or closed - though the local deformation
+	* search does assume that meshes have good normals. If meshes do not have good
+	* normals, they will be liable to false positives.
 	*/
 	struct RepoDeformDepth {
 		/*
@@ -69,10 +74,9 @@ namespace geometry {
 			Mesh(geometry::RepoIndexedMesh&& mesh);
 
 			/*
-			* Defines a subset of faces of the mesh with its own BVH for use with methods
-			* that take a MeshView. Typically, each disjoint set of faces should form its
-			* own group, though there must also be one super-group that encompasses the
-			* whole mesh.
+			* Defines a subset of faces of the mesh with their own BVH for use with
+			* methods that take a MeshView. Typically, each disjoint set of faces forms
+			* its own group.
 			*/
 			struct Faces : public geometry::MeshView {
 				size_t start;
@@ -101,17 +105,15 @@ namespace geometry {
 
 			/*
 			* All the groups of faces in the mesh. As vertices are updated, all the face
-			* groups update together. The mesh must have at least one group. Typically,
-			* the last group will encompass the whole mesh (this is one that the getBvh()
-			* method returns).
+			* groups update together. The mesh must have at least one group.
 			*/
 			std::vector<Faces> faceGroups;
 
 			/*
 			* Delineate a specific range of faces as a discrete group. The faces should
 			* already have been added to the underlying mesh.
-			* If not constructing from a RepoIndexedMesh, this should be called at least
-			* once with the entire range of faces.
+			* If not constructing from a RepoIndexedMesh, this must be called at least
+			* once.
 			*/
 			void addFaceRange(size_t start, size_t end);
 
@@ -137,20 +139,19 @@ namespace geometry {
 			void resetConfiguration();
 
 			/*
-			* Reduces mesh A along its outer surface by the amounts specified in the per-
-			* vertex displacements.
+			* Reduces mesh A along its outer surface by the absolute distance specified.
 			*/
 			void deflate(double amount);
 
 			/*
 			* Gets the distance of the current configuration from the starting
-			* configuration. If this is greater than the tolerance, the algorithm should
+			* configuration. If this is greater than the tolerance, the search should
 			* terminate.
 			*/
 			double getConfigurationDistance() const;
 
 			/*
-			* Returns the triangle with the current, deformed, configuration
+			* Returns the triangle in its current/deformed state
 			*/
 			repo::lib::RepoTriangle getTriangle(size_t index) const override;
 
@@ -182,7 +183,7 @@ namespace geometry {
 
 		/*
 		* An upper bound on the penetration depth found so far. If this drops below
-		* tolerance, we can terminate.
+		* tolerance, the clash is resolved & we can terminate.
 		*/
 		double distance;
 
