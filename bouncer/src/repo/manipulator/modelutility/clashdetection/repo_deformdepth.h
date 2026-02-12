@@ -115,8 +115,6 @@ namespace geometry {
 			*/
 			void addFaceRange(size_t start, size_t end);
 
-			const bvh::Bvh<double>& getBvh() const;
-
 			/*
 			* The current configuration of the deformable mesh.
 			*/
@@ -151,6 +149,9 @@ namespace geometry {
 			*/
 			double getConfigurationDistance() const;
 
+			/*
+			* Returns the triangle with the current, deformed, configuration
+			*/
 			repo::lib::RepoTriangle getTriangle(size_t index) const override;
 
 		protected:

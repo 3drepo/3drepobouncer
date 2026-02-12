@@ -180,30 +180,43 @@ bool RepoDeformDepth::intersect(const repo::lib::RepoVector3D64& m)
 {
 	bool intersecting = false;
 
-	bvh::traverse(a.getBvh(), b.getBvh(),
-		[&](const Bvh::Node& a, const Bvh::Node& b)
-		{
-			auto _a = a + m;
-			return bvh::predicates::contacts(_a, b);
-		},
-		[&](size_t _a, size_t _b)
-		{
-			auto triA = a.getTriangle(_a) + m;
-			auto triB = b.getTriangle(_b);
+	for (auto& ga : a.faceGroups) {
+		for (auto& gb : b.faceGroups) {
 
-			auto d = geometry::closestPoints(triA, triB);
-			auto ct = geometry::contactThreshold(triA, triB);
-			if (d.intersects || d.magnitude() < ct) {
-				intersecting = true;
+			bvh::traverse(ga.getBvh(), gb.getBvh(),
+				[&](const Bvh::Node& a, const Bvh::Node& b)
+				{
+					auto _a = a + m;
+					return bvh::predicates::contacts(_a, b);
+				},
+				[&](size_t _a, size_t _b)
+				{
+					auto triA = ga.getTriangle(_a) + m;
+					auto triB = gb.getTriangle(_b);
 
-				// In hard mode, the configuration is either valid or it is not, so we can
-				// terminate the traversal the first time any intersection is found.
-				return true;
+					auto d = geometry::closestPoints(triA, triB);
+					auto ct = geometry::contactThreshold(triA, triB);
+					if (d.intersects || d.magnitude() < ct) {
+						intersecting = true;
+
+						// In hard mode, the configuration is either valid or it is not, so we can
+						// terminate the traversal the first time any intersection is found.
+						return true;
+					}
+
+					return false;
+				}
+			);
+
+			if (intersecting) { 
+				break; 
 			}
-
-			return false;
 		}
-	);
+
+		if (intersecting) { 
+			break; 
+		}
+	}
 
 	if (!intersecting) {
 		intersecting = contained(m);
@@ -344,13 +357,13 @@ repo::lib::RepoTriangle RepoDeformDepth::Mesh::getTriangle(size_t index) const
 	);
 }
 
-const bvh::Bvh<double>& RepoDeformDepth::Mesh::getBvh() const {
-	return faceGroups[faceGroups.size() - 1].bvh;
-}
-
 repo::lib::RepoBounds RepoDeformDepth::Mesh::bounds() const
 {
-	return faceGroups[faceGroups.size() - 1].getBounds();
+	repo::lib::RepoBounds b;
+	for (auto& g : faceGroups) {
+		b.encapsulate(g.getBounds());
+	} 
+	return b;
 }
 
 double RepoDeformDepth::Mesh::getConfigurationDistance() const

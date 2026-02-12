@@ -54,19 +54,7 @@ namespace {
 			for (auto& node : nodes) {
 				auto start = mesh.faces.size();
 				PipelineUtils::loadGeometry(handler, *node, builder);
-
-				// Keep a record of where this node's faces are in the combined mesh
-
-				mesh.addFaceRange(start, mesh.faces.size());
-			}
-
-			// If we actually have multiple face-groups, create a primary group that
-			// will be used for whole-mesh tests. By convention, this is the last
-			// group added. (If we only have one, then don't do anything because then
-			// we will just end up with two copies!)
-
-			if (nodes.size() > 1) {
-				mesh.addFaceRange(0, mesh.faces.size());
+				mesh.addFaceRange(start, mesh.faces.size()); // Keep a record of where this node's faces are in the combined mesh
 			}
 
 			mesh.initialise();
