@@ -19,7 +19,7 @@
 
 #include "repo/manipulator/modeloptimizer/bvh/bvh.hpp"
 #include "repo/lib/datastructure/repo_vector.h"
-#include "repo/lib/datastructure/repo_triangle-fwd.h"
+#include "repo/lib/datastructure/repo_triangle_fwd.h"
 
 #include <stack>
 #include <utility>

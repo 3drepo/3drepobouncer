@@ -41,7 +41,6 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/ordered_pair.h
 	${CMAKE_CURRENT_SOURCE_DIR}/predicates.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_deformdepth.h
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_linear_algebra.h
 	${CMAKE_CURRENT_SOURCE_DIR}/sparse_scene_graph.h
 	CACHE STRING "HEADERS" FORCE)
 
