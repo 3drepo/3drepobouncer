@@ -42,7 +42,7 @@ if(NOT ${IFCOPENSHELL_FOUND})
 endif()
 
 include_directories(
-	${Boost_INCLUDE_DIR}
+	${Boost_INCLUDE_DIRS}
 	${OCCT_INCLUDE_DIR}
 	${EIGEN_INCLUDE_DIR}
 	${IFCOPENSHELL_INCLUDE_DIR}

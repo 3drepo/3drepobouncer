@@ -93,115 +93,137 @@ repo::lib::RepoLine geometry::closestPoints(const repo::lib::RepoVector3D64& p, 
 	return { p, closestPoint(p, T) };
 }
 
-repo::lib::RepoLine geometry::closestPoints(const repo::lib::RepoLine& A, const repo::lib::RepoLine& B)
-{
-	// Ericson, C. (2004). Real-Time Collision Detection. CRC Press.
+namespace {
+	/*
+	* A convenience type that stores commonly used properties of a segment along
+	* with its start and end points.
+	* This is for use internally inside geometry tests where it is known that
+	* the properties are likely to be accessed multiple times - however there is
+	* a trade-off - because the properties are cached the line cannot be easily
+	* modified once it is declared. For this reason this type is not currently
+	* exposed, though it could be in future if needed.
+	*/
 
-	auto d1 = A.d();
-	auto d2 = B.d();
-	auto r = A.start - B.start;
-	auto a = d1.dotProduct(d1);
-	auto e = d2.dotProduct(d2);
-	auto f = d2.dotProduct(r);
-
-	double s = 0;
-	double t = 0;
-
-	// check for degenerations
-	if (a <= DBL_EPSILON && e <= DBL_EPSILON) {
-		s = 0;
-		t = 0;
-	}
-	else
+	struct RepoLineEx 
 	{
-		if (a <= DBL_EPSILON) {
-			s = 0.0;
-			t = std::clamp(f / e, 0.0, 1.0);
+	private:
+		repo::lib::RepoVector3D64 a;
+		repo::lib::RepoVector3D64 b;
+		repo::lib::RepoVector3D64 d;
+		double dd;
+
+	public:
+		RepoLineEx()
+			: a(), b(), d(), dd(0)
+		{
+		}
+
+		RepoLineEx(const repo::lib::RepoLine& line)
+			: a(line.start), b(line.end), d(b - a), dd(d.norm2())
+		{
+		}
+
+		RepoLineEx(const repo::lib::RepoVector3D64& start, const repo::lib::RepoVector3D64& end)
+			: a(start), b(end), d(end - start), dd(d.norm2())
+		{
+		}
+
+		operator repo::lib::RepoLine() const {
+			return repo::lib::RepoLine{a, b};
+		}
+
+		const repo::lib::RepoVector3D64& start() const {
+			return a;
+		}
+
+		const repo::lib::RepoVector3D64& end() const {
+			return b;
+		}
+
+		const repo::lib::RepoVector3D64& direction() const {
+			return d;
+		}
+
+		const double& magnitude2() const {
+			return dd;
+		}
+
+		void flip() {
+			std::swap(a, b);
+			d = b - a;
+		}
+	};
+
+	RepoLineEx closestPoints(const RepoLineEx& A, const RepoLineEx& B)
+	{
+		// Ericson, C. (2004). Real-Time Collision Detection. CRC Press.
+
+		auto& d1 = A.direction();
+		auto& d2 = B.direction();
+		auto r = A.start() - B.start();
+		auto& a = A.magnitude2();
+		auto& e = B.magnitude2();
+		auto f = d2.dotProduct(r);
+
+		double s = 0;
+		double t = 0;
+
+		// check for degenerations
+		if (a <= DBL_EPSILON && e <= DBL_EPSILON) {
+			s = 0;
+			t = 0;
 		}
 		else
 		{
-			auto c = d1.dotProduct(r);
-			if (e <= DBL_EPSILON) {
-				t = 0;
-				s = std::clamp(-c / a, 0.0, 1.0);
+			if (a <= DBL_EPSILON) {
+				s = 0.0;
+				t = std::clamp(f / e, 0.0, 1.0);
 			}
 			else
 			{
-				auto b = d1.dotProduct(d2);
-				auto denom = a * e - b * b;
-
-				if (denom != 0) {
-					s = std::clamp((b * f - c * e) / denom, 0.0, 1.0);
-				}
-				else {
-					s = 0.0;
-				}
-
-				t = (b * s + f) / e;
-
-				if (t < 0) {
+				auto c = d1.dotProduct(r);
+				if (e <= DBL_EPSILON) {
 					t = 0;
 					s = std::clamp(-c / a, 0.0, 1.0);
 				}
-				else {
-					if (t > 1)
-					{
-						t = 1;
-						s = std::clamp((b - c) / a, 0.0, 1.0);
+				else
+				{
+					auto b = d1.dotProduct(d2);
+					auto denom = a * e - b * b;
+
+					if (denom != 0) {
+						s = std::clamp((b * f - c * e) / denom, 0.0, 1.0);
+					}
+					else {
+						s = 0.0;
+					}
+
+					t = (b * s + f) / e;
+
+					if (t < 0) {
+						t = 0;
+						s = std::clamp(-c / a, 0.0, 1.0);
+					}
+					else {
+						if (t > 1) {
+							t = 1;
+							s = std::clamp((b - c) / a, 0.0, 1.0);
+						}
 					}
 				}
 			}
 		}
-	}
 
-	repo::lib::RepoLine result;
-	result.start = A.start + d1 * s;
-	result.end = B.start + d2 * t;
-	return result;
+		return {
+			A.start() + d1 * s,
+			B.start() + d2 * t
+		};
+	}
 }
 
-// Returns a line of zero length if B intersects the face of A, otherwise returns
-// a line of infinite length.
-
-repo::lib::RepoLine lineFaceIntersection(const repo::lib::RepoLine& B, const repo::lib::RepoTriangle& A)
+repo::lib::RepoLine geometry::closestPoints(const repo::lib::RepoLine& A, const repo::lib::RepoLine& B)
 {
-	// Möller, T., & Trumbore, B. (1997). Fast, minimum storage ray-triangle intersection.
-
-	auto dir = B.d();
-	auto o = B.start;
-
-	auto e1 = A.b - A.a;
-	auto e2 = A.c - A.a;
-	auto c2 = dir.crossProduct(e2);
-	float det = e1.dotProduct(c2);
-
-	if (det > -DBL_EPSILON && det < DBL_EPSILON) {
-		return repo::lib::RepoLine::Max();
-	}
-
-	float inv_det = 1.0 / det;
-	auto s = o - A.a;
-	float u = inv_det * s.dotProduct(c2);
-
-	if ((u < 0 && abs(u) > DBL_EPSILON) || (u > 1 && abs(u - 1) > DBL_EPSILON))
-		return repo::lib::RepoLine::Max();
-
-	auto c1 = s.crossProduct(e1);
-	float v = inv_det * dir.dotProduct(c1);
-
-	if ((v < 0 && abs(v) > DBL_EPSILON) || (u + v > 1 && abs(u + v - 1) > DBL_EPSILON))
-		return repo::lib::RepoLine::Max();
-
-	float t = inv_det * e2.dotProduct(c1);
-
-	if (t > DBL_EPSILON && t < 1.0)
-	{
-		return { o + dir * t, o + dir * t };
-	}
-	else
-	{
-		return repo::lib::RepoLine::Max();
-	}
+	return closestPoints(RepoLineEx(A), RepoLineEx(B));
 }
 
 FaceFaceResult geometry::closestPoints(
@@ -212,33 +234,29 @@ FaceFaceResult geometry::closestPoints(
 
 	// Predefine the edges of each triangle for efficiency
 
-	repo::lib::RepoLine edgesA[3] = {
-		repo::lib::RepoLine(A.a, A.b),
-		repo::lib::RepoLine(A.b, A.c),
-		repo::lib::RepoLine(A.c, A.a)
+	RepoLineEx edgesA[3] = {
+		RepoLineEx(A.a, A.b),
+		RepoLineEx(A.b, A.c),
+		RepoLineEx(A.c, A.a)
 	};
 
-	repo::lib::RepoLine edgesB[3] = {
-		repo::lib::RepoLine(B.a, B.b),
-		repo::lib::RepoLine(B.b, B.c),
-		repo::lib::RepoLine(B.c, B.a)
+	RepoLineEx edgesB[3] = {
+		RepoLineEx(B.a, B.b),
+		RepoLineEx(B.b, B.c),
+		RepoLineEx(B.c, B.a)
 	};
 
-	double mind = DBL_MAX;
-	repo::lib::RepoLine minLine;
+	RepoLineEx min(A.a, B.a);
 
 	for (int ea = 0; ea < 3; ea++)
 	{
 		for (int eb = 0; eb < 3; eb++)
 		{
 			auto cv = closestPoints(edgesA[ea], edgesB[eb]);
-			auto cvd = cv.magnitude2();
-			if (cvd < mind)
+			if (cv.magnitude2() < min.magnitude2())
 			{
-				mind = cvd;
-				minLine = cv;
-
-				auto n = cv.d();
+				min = cv;
+				auto n = cv.direction();
 
 				// An optimisation identified by Larsen, E., Gottschalk, S., Lin, M. C., and
 				// Manocha, D. in PQP. If the off-edge vertices of each triangle are beyond
@@ -253,8 +271,8 @@ FaceFaceResult geometry::closestPoints(
 
 				// (n points from A to B, so the sign check is the other way round for B.)
 
-				auto dpa = n.dotProduct(A[(ea + 2) % 3] - cv.start);
-				auto dpb = n.dotProduct(B[(eb + 2) % 3] - cv.end);
+				auto dpa = n.dotProduct(A[(ea + 2) % 3] - cv.start());
+				auto dpb = n.dotProduct(B[(eb + 2) % 3] - cv.end());
 
 				if (dpa <= 0 && dpb >= 0)
 				{
@@ -288,29 +306,25 @@ FaceFaceResult geometry::closestPoints(
 
 	for (int i = 0; i < 3; i++)
 	{
-		auto cv = closestPoints(A[i], B);
-		auto cvd = cv.magnitude2();
-		if (cvd < mind) {
-			mind = cvd;
-			minLine = cv;
+		auto cv = (RepoLineEx)closestPoints(A[i], B);
+		if (cv.magnitude2() < min.magnitude2()) {
+			min = cv;
 		}
 	}
 
 	for (int i = 0; i < 3; i++)
 	{
-		auto cv = closestPoints(B[i], A);
-		auto cvd = cv.magnitude2();
-		if (cvd < mind) {
-			mind = cvd;
-			minLine = cv;
+		auto cv = (RepoLineEx)closestPoints(B[i], A);
+		if (cv.magnitude2() < min.magnitude2()) {
+			min = cv;
 			
 			// This ensures the method always returns the point on A in start,
 			// and on B in end
-			std::swap(minLine.start, minLine.end);
+			min.flip();
 		}
 	}
 
-	return { minLine, false, COPLANAR };
+	return { min, false, COPLANAR };
 }
 
 double geometry::ulp(double x)
@@ -382,118 +396,120 @@ repo::lib::RepoVector3D64 geometry::minimumSeparatingAxis(const repo::lib::RepoB
 	return m;
 }
 
-static inline repo::lib::RepoVector3D64 edgePlaneIntersection(
-	const repo::lib::RepoVector3D64& ep,
-	const repo::lib::RepoVector3D64& ed,
-	const repo::lib::RepoVector3D64& n,
-	const repo::lib::RepoVector3D64& p
-)
-{
-	return ep + ed * ((p - ep).dotProduct(n) / ed.dotProduct(n));
-}
-
-double checkMinMax(
-	const repo::lib::RepoVector3D64& p1,
-	const repo::lib::RepoVector3D64& q1,
-	const repo::lib::RepoVector3D64& r1,
-	const repo::lib::RepoVector3D64& p2,
-	const repo::lib::RepoVector3D64& q2,
-	const repo::lib::RepoVector3D64& r2,
-	repo::lib::RepoVector3D64* ip)
-{
-	// This snippet performs an early rejection if the triangles are disjoint
-	// on L. It works by finding whether the leftmost edge of one triangle is
-	// oriented to the left or right of the rightmost edge of the other, and
-	// vice versa.
-
-	auto N1 = (p2 - p1).crossProduct(p1 - q1);
-	if (N1.dotProduct(q2 - q1) > 0.0) {
-		return 0.0;
-	}
-	N1 = (p2 - p1).crossProduct(r1 - p1);
-	if (N1.dotProduct(r2 - p1) > 0.0) {
-		return 0.0;
-	}
-	
-	// If there is an overlap, estimate the minimum translation distance.
-	// Triangles can either be shifted along L by k-j or l-i, or moved
-	// normal so that they are separated by one or the other's planes.
-
-	auto pr1 = r1 - p1;
-	auto pq1 = q1 - p1;
-	pr1.normalize();
-	pq1.normalize();
-	auto n1 = pq1.crossProduct(pr1);
-	n1.normalize();
-
-	auto pr2 = r2 - p2;
-	auto pq2 = q2 - p2;
-	pr2.normalize();
-	pq2.normalize();
-	auto n2 = pq2.crossProduct(pr2);
-	n2.normalize();
-  
-	// i,j,k,l are the intersections of the edges with their counterpart's
-	// plane.
-
-	auto i = edgePlaneIntersection(p1, pr1, n2, p2);
-	auto j = edgePlaneIntersection(p1, pq1, n2, p2);
-	auto k = edgePlaneIntersection(p2, pq2, n1, p1);
-	auto l = edgePlaneIntersection(p2, pr2, n1, p1);
-
-	// This next snippet projects the points onto L, to get (possibly negative)
-	// scalars representing their relative locations to i.
-
-	auto L = n1.crossProduct(n2);
-	L.normalize();
-	
-	auto ii = 0.0;
-	auto jj = (j - i).dotProduct(L);
-	auto kk = (k - i).dotProduct(L);
-	auto ll = (l - i).dotProduct(L);
-
-	if (kk > jj) {
-		return 0;
-	}
-	if (ll < ii) {
-		return 0;
+namespace {
+	inline repo::lib::RepoVector3D64 edgePlaneIntersection(
+		const repo::lib::RepoVector3D64& ep,
+		const repo::lib::RepoVector3D64& ed,
+		const repo::lib::RepoVector3D64& n,
+		const repo::lib::RepoVector3D64& p
+	)
+	{
+		return ep + ed * ((p - ep).dotProduct(n) / ed.dotProduct(n));
 	}
 
-	auto d = jj - kk;
-	auto d2 = ll - ii;
-	if(d2 < d) {
-		d = d2;
+	double checkMinMax(
+		const repo::lib::RepoVector3D64& p1,
+		const repo::lib::RepoVector3D64& q1,
+		const repo::lib::RepoVector3D64& r1,
+		const repo::lib::RepoVector3D64& p2,
+		const repo::lib::RepoVector3D64& q2,
+		const repo::lib::RepoVector3D64& r2,
+		repo::lib::RepoVector3D64* ip)
+	{
+		// This snippet performs an early rejection if the triangles are disjoint
+		// on L. It works by finding whether the leftmost edge of one triangle is
+		// oriented to the left or right of the rightmost edge of the other, and
+		// vice versa.
+
+		auto N1 = (p2 - p1).crossProduct(p1 - q1);
+		if (N1.dotProduct(q2 - q1) > 0.0) {
+			return 0.0;
+		}
+		N1 = (p2 - p1).crossProduct(r1 - p1);
+		if (N1.dotProduct(r2 - p1) > 0.0) {
+			return 0.0;
+		}
+
+		// If there is an overlap, estimate the minimum translation distance.
+		// Triangles can either be shifted along L by k-j or l-i, or moved
+		// normal so that they are separated by one or the other's planes.
+
+		auto pr1 = r1 - p1;
+		auto pq1 = q1 - p1;
+		pr1.normalize();
+		pq1.normalize();
+		auto n1 = pq1.crossProduct(pr1);
+		n1.normalize();
+
+		auto pr2 = r2 - p2;
+		auto pq2 = q2 - p2;
+		pr2.normalize();
+		pq2.normalize();
+		auto n2 = pq2.crossProduct(pr2);
+		n2.normalize();
+
+		// i,j,k,l are the intersections of the edges with their counterpart's
+		// plane.
+
+		auto i = edgePlaneIntersection(p1, pr1, n2, p2);
+		auto j = edgePlaneIntersection(p1, pq1, n2, p2);
+		auto k = edgePlaneIntersection(p2, pq2, n1, p1);
+		auto l = edgePlaneIntersection(p2, pr2, n1, p1);
+
+		// This next snippet projects the points onto L, to get (possibly negative)
+		// scalars representing their relative locations to i.
+
+		auto L = n1.crossProduct(n2);
+		L.normalize();
+
+		auto ii = 0.0;
+		auto jj = (j - i).dotProduct(L);
+		auto kk = (k - i).dotProduct(L);
+		auto ll = (l - i).dotProduct(L);
+
+		if (kk > jj) {
+			return 0;
+		}
+		if (ll < ii) {
+			return 0;
+		}
+
+		auto d = jj - kk;
+		auto d2 = ll - ii;
+		if (d2 < d) {
+			d = d2;
+		}
+
+		if (ip) {
+			auto t = std::max(ii, kk) + ((std::min(jj, ll) - std::max(ii, kk)) * 0.5);
+			*ip = i + L * t;
+		}
+
+		// This next snippet works out the minimum distance to move normal to the
+		// planes, in case they are smaller than the shift along L.
+
+		d2 = (p2 - p1).dotProduct(n1);
+		if (d2 < d) {
+			d = d2; // p2 is on the positive half-space so this will always be positive (and vice-versa for q & r below)
+		}
+
+		d2 = -std::min((q2 - p1).dotProduct(n1), (r2 - p1).dotProduct(n1));
+		if (d2 < d) {
+			d = d2;
+		}
+
+		d2 = (p1 - p2).dotProduct(n2);
+		if (d2 < d) {
+			d = d2;
+		}
+
+		d2 = -std::min((q1 - p2).dotProduct(n2), (r1 - p2).dotProduct(n2));
+		if (d2 < d) {
+			d = d2;
+		}
+
+		return d;
 	}
-
-	if (ip) {
-		auto t = std::max(ii, kk) + ((std::min(jj, ll) - std::max(ii, kk)) * 0.5);
-		*ip = i + L * t;
-	}
-
-	// This next snippet works out the minimum distance to move normal to the
-	// planes, in case they are smaller than the shift along L.
-
-	d2 = (p2 - p1).dotProduct(n1);
-	if(d2 < d) {
-		d = d2; // p2 is on the positive half-space so this will always be positive (and vice-versa for q & r below)
-	}
-
-	d2 = -std::min((q2 - p1).dotProduct(n1), (r2 - p1).dotProduct(n1));
-	if (d2 < d) {
-		d = d2;
-	}
-
-	d2 = (p1 - p2).dotProduct(n2);
-	if (d2 < d) {
-		d = d2;
-	}
-
-	d2 = -std::min((q1 - p2).dotProduct(n2), (r1 - p2).dotProduct(n2));
-	if (d2 < d) {
-		d = d2;
-	}
-
-	return d;
 }
 
 double geometry::intersects(const repo::lib::RepoTriangle& A, const repo::lib::RepoTriangle& B, repo::lib::RepoVector3D64* ip)
@@ -761,97 +777,6 @@ repo::lib::RepoLine geometry::closestPoints(
 	}
 
 	return { _a, _b };
-}
-
-// Local template to implement time-of-contact for different primitives, since
-// the algorithm is substantially the same regardless, so long as the primitive
-// supports the closestPoints() operation, the translation operation via
-// the addition operator, and the contactThreshold() function.
-
-// See:
-// Interactive Continuous Collision Detection for Non-Convex Polyhedra. Xinyu
-// Zhang, Minkyoung Lee, Young J. Kim. The Visual Computer: International
-// Journal of Computer Graphics, Volume 22, Issue 9. 
-// https://graphics.ewha.ac.kr/FAST/FAST.pdf
-// and
-// PolyDepth: Real-time Penetration Depth Computation using Iterative Contact-
-// Space Projection. Changsoo Je, Min Tang, Youngeun Lee, Minkyoung Lee, Young
-// J.Kim.ACM Transactions on Graphics(ToG 2012), Volume 31, Issue 1, Article
-// 5, pp. 1 - 14, January 1, 2012. https://arxiv.org/abs/1508.06181
-
-template<typename Primitive>
-static double timeOfContactT(
-	const Primitive& a,
-	const Primitive& b,
-	const repo::lib::RepoVector3D64& v,
-	double contact
-)
-{
-	if (!contact) {
-		contact = geometry::contactThreshold(a, b);
-	}
-
-	// Uses conservative advancement to compute the time-of-contact.
-	// This involves using the closest points along the direction vector to move
-	// the bounds closer step-wise until they intersect.
-
-	auto at = a;
-	auto t = 0.0;
-
-	while (true) {
-
-		auto N = closestPoints(at, b);
-		auto n = N.end - N.start;
-		auto d = n.norm();
-
-		if (d <= contact) {
-			return t;
-		}
-
-		auto mu = v.dotProduct(n.normalized());
-
-		// If there is no contact, but also moving along v will not bring
-		// the bounds any closer, then they will never come into contact.
-		if (mu <= 0.0) {
-			return std::numeric_limits<double>::infinity();
-		}
-
-		// Limit the timestep to ensure that when contact is non-zero, the
-		// translation always ends up between the contact region and the true
-		// surface, and does not overshot into an actual collision.
-		// A scalar that is too large can result in overshoot. A small scalar
-		// will slow convergence, but not affect the correctness of the result,
-		// so if there is any uncertainty, err towards a smaller value. The value
-		// is empirically validated by the TimeOfContactTriangles unit test.
-
-		t += (d / mu) * 0.95;
-
-		if (t >= 1.0) {
-			return t;
-		}
-
-		at = a + (v * t);
-	}
-}
-
-double geometry::timeOfContact(
-	const repo::lib::RepoBounds& a,
-	const repo::lib::RepoBounds& b,
-	const repo::lib::RepoVector3D64& v,
-	double contact
-) 
-{
-	return timeOfContactT(a, b, v, contact);
-}
-
-double geometry::timeOfContact(
-	const repo::lib::RepoTriangle& a,
-	const repo::lib::RepoTriangle& b,
-	const repo::lib::RepoVector3D64& v,
-	double contact
-)
-{
-	return timeOfContactT(a, b, v, contact);
 }
 
 bool geometry::isClosedAndManifold(

@@ -22,11 +22,13 @@ SET(GMP_LIB_NAMES
 	gmpxx
 )
 
-# For now, for whatever reason, the GMP libraries are called something
-# different on Windows!
+# The original GMP does not compile on Windows, so on Windows GMP is actually
+# always a fork, MPIR. Here, on Windows we include both the gmp and mpir libs
+# as that is how the distribution currently working with bouncer is set up.
 
 if(${WIN32})
 	SET(GMP_LIB_NAMES
+		${GMP_LIB_NAMES}
 		mpir
 		mpirxx
 	)
@@ -45,14 +47,14 @@ if(DEFINED ENV{GMP_ROOT})
 	set(PATHS_TO_SEARCH ${GMP_ROOT} ${PATHS_TO_SEARCH})
 endif()
 
-# GMP is an IFCOS dependency and may be distributed with it
 
-if(DEFINED ENV{IFCOPENSHELL_ROOT})
-	set(PATHS_TO_SEARCH ${PATHS_TO_SEARCH}
-		$ENV{IFCOPENSHELL_ROOT}
-		$ENV{IFCOPENSHELL_ROOT}/lib
-	)
-endif()
+find_path(GMP_C_INCLUDES
+  NAMES gmp.h
+)
+
+find_path(GMP_CXX_INCLUDES
+  NAMES gmpxx.h
+)
 
 set(GMP_FOUND TRUE)
 
@@ -67,8 +69,10 @@ foreach(libName ${GMP_LIB_NAMES})
 	set(GMP_LIBRARIES ${GMP_LIBRARIES} ${libPath${libName}})
 endforeach()
 
+set(GMP_INCLUDE_DIRS "${GMP_C_INCLUDES}" "${GMP_CXX_INCLUDES}")
+
 if(GMP_FOUND)
-	message(STATUS "GMP installation found.")
+	message(STATUS "GMP installation found: ${GMP_LIBRARIES}")
 else()
 	message(STATUS "GMP not found. Please set GMP_ROOT to your installation directory or install via a suitable package manager. Paths searched: ${PATHS_TO_SEARCH}")
 endif()

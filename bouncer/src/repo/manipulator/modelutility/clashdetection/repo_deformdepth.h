@@ -21,41 +21,33 @@
 #include "geometry_utils.h"
 #include "repo/lib/datastructure/repo_triangle.h"
 #include "repo/lib/datastructure/repo_bounds.h"
+#include "geometry_tests_closed.h"
 #include "repo/manipulator/modeloptimizer/bvh/bvh.hpp"
 
 namespace geometry {
 	
 	/*
-	* RepoDeformDepth is the successor to RepoPolyDepth that estimates the
-	* penetration depth between polygon soups under a specific tolerance.
+	* RepoDeformDepth is a component of Clash Detection. It searches for a valid
+	* configuration of mesh (a), such that (a) does not intersect anywhere with
+	* (b).
 	* 
-	* This algorithm uses local deformations, up to a limit, to attempt to find a
-	* configuration where the meshes are not intersecting. If the algorithm is
-	* unable to find such a configuration, the clash is considered irreconcilable.
+	* The configuration spaces searched include local offsets around the origin
+	* of (a), and local deformations of (a) (shrinking). Configurations are valid
+	* if the (a) is not moved wholly or in-part by more than the tolerance.
 	* 
-	* Configurations are only valid where the point-wise distance between the start
-	* and ending configurations is below the tolerance. The algorithm only attempts
-	* to deform mesh (a), which should be the smaller of the two.
+	* If no configuration can be found where (a) and (b) do not intersect, then
+	* they are considered to be clashing.
 	* 
-	* This approach is designed to handle cases were meshes have many contact
-	* patches, but are not actually overlapping in a meaningful way, and to be
-	* robust to the case where a junction is coplanar with a collider.
+	* This approach to hard-clash detection is underpinned by very simple & robust
+	* primitive intersection tests, making it fail-safe. If the clash can be
+	* resolved in theory, but not in the configuration spaces searched, then this
+	* approach will return a false-positive. It will never return false negatives
+	* however. It is also tolerant of imperfect geometry and its robustness does
+	* not rely on meshes being manifold or closed - though the local deformation
+	* search does assume that meshes have good normals. If meshes do not have good
+	* normals, they will be liable to false positives.
 	*/
 	struct RepoDeformDepth {
-
-		/*
-		* Optional functor that when set on a PolyDepth instance may be used to test
-		* configurations of operand a (m). Should return true if under transform m, a
-		* is entirely contained by b, otherwise false. If null, the test is ignored
-		* PolyDepth proceeds without it.
-		*/
-		struct ContainsFunctor {
-			virtual bool operator()(
-				const std::vector<repo::lib::RepoVector3D64>& points,
-				const repo::lib::RepoBounds& bounds,
-				const repo::lib::RepoVector3D64& m) const = 0;
-		};
-
 		/*
 		* Optional structure to represent a RepoIndexedMesh with additional metadata.
 		* RepoDeformDepth uses these internally, but they can be cached and re-used
@@ -81,7 +73,49 @@ namespace geometry {
 			*/
 			Mesh(geometry::RepoIndexedMesh&& mesh);
 
-			bvh::Bvh<double> bvh;
+			/*
+			* Defines a subset of faces of the mesh with their own BVH for use with
+			* methods that take a MeshView. Typically, each disjoint set of faces forms
+			* its own group.
+			*/
+			struct Faces : public geometry::MeshView {
+				size_t start;
+				size_t length;
+				bvh::Bvh<double> bvh;
+				const geometry::RepoIndexedMesh& mesh;
+				bool closed;
+				std::vector<size_t> orderedIndices;
+
+				Faces(const geometry::RepoIndexedMesh& mesh, 
+					size_t start, 
+					size_t length);
+
+				const bvh::Bvh<double>& getBvh() const override {
+					return bvh;
+				}
+
+				repo::lib::RepoTriangle getTriangle(size_t primitive) const override {
+					return mesh.getTriangle(start + primitive);
+				}
+
+				std::vector<size_t> getIndices() const;
+
+				repo::lib::RepoBounds getBounds() const;
+			};
+
+			/*
+			* All the groups of faces in the mesh. As vertices are updated, all the face
+			* groups update together. The mesh must have at least one group.
+			*/
+			std::vector<Faces> faceGroups;
+
+			/*
+			* Delineate a specific range of faces as a discrete group. The faces should
+			* already have been added to the underlying mesh.
+			* If not constructing from a RepoIndexedMesh, this must be called at least
+			* once.
+			*/
+			void addFaceRange(size_t start, size_t end);
 
 			/*
 			* The current configuration of the deformable mesh.
@@ -105,23 +139,24 @@ namespace geometry {
 			void resetConfiguration();
 
 			/*
-			* Reduces mesh A along its outer surface by the amounts specified in the per-
-			* vertex displacements.
+			* Reduces mesh A along its outer surface by the absolute distance specified.
 			*/
-			void deflate(const std::vector<double>& displacements);
+			void deflate(double amount);
 
 			/*
 			* Gets the distance of the current configuration from the starting
-			* configuration. If this is greater than the tolerance, the algorithm should
+			* configuration. If this is greater than the tolerance, the search should
 			* terminate.
 			*/
 			double getConfigurationDistance() const;
 
+			/*
+			* Returns the triangle in its current/deformed state
+			*/
 			repo::lib::RepoTriangle getTriangle(size_t index) const override;
 
 		protected:
 			void buildBvh();
-
 			void computePseudoNormals();
 
 			bool deformed = false;
@@ -130,7 +165,6 @@ namespace geometry {
 		RepoDeformDepth(
 			RepoDeformDepth::Mesh& a,
 			const RepoDeformDepth::Mesh& b,
-			ContainsFunctor* containsFunctor = nullptr,
 			double tolerance = 0.0);
 
 		void iterate(int maxIterations = -1);
@@ -149,21 +183,12 @@ namespace geometry {
 
 		/*
 		* An upper bound on the penetration depth found so far. If this drops below
-		* tolerance, we can terminate.
+		* tolerance, the clash is resolved & we can terminate.
 		*/
 		double distance;
 
 		RepoDeformDepth::Mesh& a;
 		const RepoDeformDepth::Mesh& b;
-
-		/*
-		* If not null, will be used by the intersect method to determine if mesh (a)
-		* is entirely enclosed by mesh (b) under the current configuration. Note that
-		* if mesh (b) becomes enclosed during the deformation stage, the algorithm 
-		* will terminate immediately, under the assumption that tolerances are always
-		* trivial compared to the size of the operands.
-		*/
-		ContainsFunctor* contains;
 
 		/*
 		* Intersects (a) with (b) in the current configuration. Returns true if the
@@ -172,9 +197,13 @@ namespace geometry {
 		bool intersect(const repo::lib::RepoVector3D64& m);
 		bool intersect();
 
-		std::vector<double> distances;
-
-		void resetDisplacements();
+		/*
+		* Returns true if under the current configuration, mesh (a) is entirely
+		* contained by mesh (b), or mesh (b) is entirely contained by mesh (a).
+		* The configuration encompasses both the deformation of (a) and (b) and
+		* an optional transform (m) applied to (a).
+		*/
+		bool contained(const repo::lib::RepoVector3D64& m);
 
 		/*
 		* How many steps to take along each axis when performing the local search.

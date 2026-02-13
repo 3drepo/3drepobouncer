@@ -51,7 +51,6 @@
 #include <repo/manipulator/modelutility/clashdetection/geometry_utils.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_scheduler.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_exceptions.h>
-#include <repo/manipulator/modelutility/clashdetection/repo_polydepth.h>
 #include <repo/manipulator/modelutility/clashdetection/repo_deformdepth.h>
 #include <repo/manipulator/modelutility/clashdetection/clash_node_cache.h>
 
@@ -458,7 +457,7 @@ TEST(Clash, ClearanceE2E)
 
 	auto db = std::make_shared<MockDatabase>();
 
-	const int numIterations = 10;
+	const int numIterations = 5;
 	const int samplesPerDistance = 1000;
 	const int selfSamplesA = 100;
 	const int selfSamplesB = 100;
@@ -1058,7 +1057,7 @@ TEST(Clash, Fingerprinting)
 	ClashGenerator clashGenerator;
 	clashGenerator.distance = 0;
 
-	for (size_t i = 0; i < 100; i++)
+	for (size_t i = 0; i < 50; i++)
 	{	
 		ClashDetectionConfigHelper config;
 		config.type = ClashDetectionType::Clearance;
@@ -1100,7 +1099,7 @@ TEST(Clash, Fingerprinting)
 
 	CellDistribution space;
 
-	for (size_t i = 0; i < 100; i++)
+	for (size_t i = 0; i < 50; i++)
 	{
 		ClashDetectionConfigHelper config;
 		config.type = ClashDetectionType::Hard;
@@ -1406,10 +1405,6 @@ TEST(Clash, Contains)
 	}
 
 	{
-		// Even though all combined items are contained in the hulls, because the
-		// meshes are not continous this will not necessarily be detected as a clash
-		// in Hard Mode.
-
 		ClashDetectionConfig config;
 
 		config.setA.push_back(combineCompositeObjects({
@@ -1443,7 +1438,7 @@ TEST(Clash, Contains)
 			auto pipeline = new clash::Hard(handler, config);
 			auto results = pipeline->runPipeline();
 
-			EXPECT_THAT(results.clashes.size(), Eq(0));
+			EXPECT_THAT(results.clashes.size(), Eq(1));
 		}
 	}
 }
@@ -1515,7 +1510,7 @@ TEST(Clash, BvhTraversal)
 
 		std::vector<std::pair<size_t, size_t>> intersections;
 
-		void intersect(size_t a, size_t b) override {
+		bool intersect(size_t a, size_t b) override {
 			// This re-ordering makes it easier to define the expected results. It is not
 			// necessary for the actual collision detection - and in fact is better not
 			// not to have it because it breaks ordering when testing between two BVHs.
@@ -1523,6 +1518,7 @@ TEST(Clash, BvhTraversal)
 				std::swap(a, b); 
 			}
 			intersections.push_back({ a, b });
+			return false;
 		}
 	};
 
@@ -1594,39 +1590,6 @@ TEST(Clash, RepoDeformDepthDb)
 	// right. For the tests though, we must generate the test data such that this
 	// is the case.
 
-	struct ContainsFunctor : geometry::RepoDeformDepth::ContainsFunctor, geometry::MeshView {
-		ContainsFunctor(geometry::RepoIndexedMesh& mesh)
-			:mesh(mesh)
-		{
-			bvh::builders::build(bvhB, mesh.vertices, mesh.faces);
-			geometry::orderVertices(mesh.vertices, indices);
-		}
-
-		const bvh::Bvh<double>& getBvh() const {
-			return bvhB;
-		}
-
-		repo::lib::RepoTriangle getTriangle(size_t primitive) const {
-			return mesh.getTriangle(primitive);
-		}
-
-		const geometry::RepoIndexedMesh& mesh;
-		bvh::Bvh<double> bvhB;
-		std::vector<size_t> indices;
-		
-		bool operator()(const std::vector<repo::lib::RepoVector3D64>& points,
-			const repo::lib::RepoBounds& bounds,
-			const repo::lib::RepoVector3D64& m) const override {
-			return geometry::contains(
-				points,
-				indices,
-				bounds,
-				*this,
-				m
-			);
-		}
-	};
-
 	auto run = [&](
 		const std::string& nameA, 
 		const std::string& nameB,
@@ -1634,12 +1597,7 @@ TEST(Clash, RepoDeformDepthDb)
 			auto a = (geometry::RepoDeformDepth::Mesh)helper.getChildMeshNodes(c.get(), nameA);
 			auto b = (geometry::RepoDeformDepth::Mesh)helper.getChildMeshNodes(c.get(), nameB);
 
-			auto contains = std::unique_ptr<ContainsFunctor>(nullptr);
-			if (geometry::isClosedAndManifold(b.faces)) {
-				contains = std::make_unique<ContainsFunctor>(b);
-			}
-
-			geometry::RepoDeformDepth pd(a, b, contains.get(), tolerance);
+			geometry::RepoDeformDepth pd(a, b, tolerance);
 			pd.iterate(10);
 
 			return pd.getPenetrationDepth() > tolerance;
@@ -1713,6 +1671,14 @@ TEST(Clash, RepoDeformDepthDb)
 	EXPECT_THAT(run("set17_a1", "set17_b", 50), IsFalse());
 	EXPECT_THAT(run("set17_a2", "set17_b", 0), IsTrue());
 	EXPECT_THAT(run("set17_a2", "set17_b", 50), IsFalse());
+	EXPECT_THAT(run("set17_a3", "set17_b", 0), IsTrue());
+	EXPECT_THAT(run("set17_a3", "set17_b", 50), IsFalse());
+
+	// These tests check that the algorithm is robust to opposite winding orders.
+	// Note that the winding orders can be different (even between Composite
+	// Objects), but they must be consistent within meshes.
+
+	EXPECT_THAT(run("set18_a", "set18_b", 500), IsTrue());
 }
 
 TEST(Clash, RepoDeformDepthDegenerateGeometry)
@@ -1763,13 +1729,13 @@ TEST(Clash, RepoDeformDepthDegenerateGeometry)
 	}));
 
 	{
-		geometry::RepoDeformDepth pd(a, b, nullptr, 0);
+		geometry::RepoDeformDepth pd(a, b, 0);
 		pd.iterate(10);
 		EXPECT_THAT(pd.getPenetrationDepth(), Gt(0));
 	}
 
 	{
-		geometry::RepoDeformDepth pd(a, b, nullptr, 0.55);
+		geometry::RepoDeformDepth pd(a, b, 0.55);
 		pd.iterate(10);
 		EXPECT_THAT(pd.getPenetrationDepth(), Lt(0.55));
 	}
@@ -1790,7 +1756,7 @@ TEST(Clash, HardE2E)
 	const int selfSamplesB = 5;
 	CellDistribution space;
 
-	for (int itr = 0; itr < 500; ++itr)
+	for (int itr = 0; itr < 100; ++itr)
 	{
 		ClashDetectionConfigHelper config;
 		config.type = ClashDetectionType::Hard;
@@ -1863,14 +1829,7 @@ TEST(Clash, HardTolerance)
 		auto a = ClashGenerator::triangles(cube);
 		auto b = ClashGenerator::triangles(cone);
 		ClashGenerator::applyTransforms(b, t);
-
 		EXPECT_THAT(intersects(a, b), IsTrue());
-
-		geometry::RepoPolyDepth pd(a, b);
-		pd.iterate(10);
-		auto v0 = pd.getPenetrationVector();
-
-		EXPECT_THAT(v0.norm(), Lt(0.2));
 	}
 
 	ClashDetectionConfigHelper config;

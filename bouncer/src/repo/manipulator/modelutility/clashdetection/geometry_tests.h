@@ -164,33 +164,6 @@ namespace geometry {
 	const static double COPLANAR = 1e-15;
 
     /*
-    * Returns the time-of-contact as a scalar between 0 and 1 to describe the 
-    * point along v at which the two primitives first touch, assuming that a is
-    * moving under translation v.
-    * 
-    * If they are already in contact, returns zero. If they do not make contact
-    * during v, will return some value greater than 1. The primitives are
-    * considered to be in-contact when their closest distance is smaller than
-    * contact.
-    * 
-    * If contact is zero, the geometry::contactThreshold estimate will be used.
-    */
-
-	double timeOfContact(
-        const repo::lib::RepoBounds& a, 
-        const repo::lib::RepoBounds& b, 
-        const repo::lib::RepoVector3D64& v,
-        double contact = 0
-    );
-
-    double timeOfContact(
-        const repo::lib::RepoTriangle& a,
-        const repo::lib::RepoTriangle& b,
-        const repo::lib::RepoVector3D64& v,
-        double contact = 0
-    );
-
-    /*
     * Returns whether a mesh is closed and manifold. These are prerequisites for
     * checking for point-wise containment.
     * The faces should already be indexed - i.e. indices for coincident vertices

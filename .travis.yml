@@ -10,7 +10,7 @@ matrix:
         - cd tools/bouncer_worker && yarn install && yarn lint
 
       git:
-          submodules: false
+        submodules: false
 
     - language: cpp
       dist: noble
@@ -18,7 +18,7 @@ matrix:
       node_js:
         - "22.14.0"
       compiler:
-           - gcc
+        - gcc
 
       addons:
           apt:
@@ -102,7 +102,10 @@ matrix:
           - node package_release.js
           - export SYNCHRO_PLUGIN_LOCATION=$PWD/3drepobouncer/plugins
           - ln -s $REPO_MODEL_PATH/fileShare fileShare
-          - LD_LIBRARY_PATH=$PWD/3drepobouncer PATH=$PWD/3drepobouncer:$PATH ./3drepobouncer/3drepobouncerTest --gtest_filter=-Geometry.*
+          - export LD_LIBRARY_PATH=$PWD/3drepobouncer
+          - export PATH=$PWD/3drepobouncer:$PATH
+          - git clone https://github.com/google/gtest-parallel.git gtp && mv ./gtp/* .
+          - ./gtest-parallel ./3drepobouncer/3drepobouncerTest --gtest_filter=-Geometry.*
 
 
     - language: cpp
@@ -174,7 +177,7 @@ matrix:
           - mkdir build && cd build
       script:
             # check compilation with license enabled
-          - cd $BOUNCER_DIR/build && cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Debug -DLICENSE_CHECK=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
+          - cd $BOUNCER_DIR/build && cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DCMAKE_BUILD_TYPE=Release -DLICENSE_CHECK=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
           - sudo make install -j8
 
 notifications:

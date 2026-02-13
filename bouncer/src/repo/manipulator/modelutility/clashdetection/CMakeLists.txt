@@ -20,7 +20,6 @@ set(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/geometry_utils.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/predicates.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_deformdepth.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_polydepth.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/sparse_scene_graph.cpp
 	CACHE STRING "SOURCES" FORCE)
 
@@ -42,8 +41,6 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/ordered_pair.h
 	${CMAKE_CURRENT_SOURCE_DIR}/predicates.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_deformdepth.h
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_linear_algebra.h
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_polydepth.h
 	${CMAKE_CURRENT_SOURCE_DIR}/sparse_scene_graph.h
 	CACHE STRING "HEADERS" FORCE)
 

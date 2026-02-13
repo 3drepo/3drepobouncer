@@ -352,31 +352,4 @@ namespace testing {
 
 		repo::lib::RepoUUID add(TransformMesh mesh);
 	};
-
-	/*
-	* Writes a basic OBJ file from a set of clash generation primitives. This is
-	* used for debugging the unit tests and is not part of the unit test suite.
-	* Create an instance in a limited scope and append primitives as needed.
-	* When the object goes out of scope the file will be closed.
-	*/
-	struct SimpleObjWriter
-	{
-		SimpleObjWriter(std::string filename);
-		void write(const repo::lib::RepoTriangle& triangle);
-		void write(const std::vector<repo::lib::RepoTriangle>& triangles);
-		void write(const repo::lib::RepoLine& line);
-		~SimpleObjWriter();
-
-	private:
-		std::ofstream file;
-		int vertexCounter = 1;
-		int objectCounter = 0;
-	};
-
-	/*
-	* Convenience operator for use with, for example, REPO_EXPECT_THAT, that prints
-	* a triangle to the stream in a way in which the text can be copied back into
-	* a source file to recreate that exact triangle.
-	*/
-	std::ostream& operator<< (std::ostream& stream, const repo::lib::RepoTriangle& triangle);
 }

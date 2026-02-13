@@ -33,34 +33,6 @@ using namespace repo::manipulator::modelutility;
 using namespace repo::manipulator::modelutility::clash;
 
 namespace {
-	struct MeshView : public geometry::MeshView {
-		const geometry::RepoIndexedMesh& mesh;
-		size_t start;
-		size_t length;
-		Bvh bvh;
-		bool closed;
-
-		MeshView(const geometry::RepoIndexedMesh& mesh, size_t start, size_t length, bool closed)
-			: mesh(mesh), start(start), length(length),
-			closed(closed)
-		{
-		}
-
-		const Bvh& getBvh() const override {
-			return bvh;
-		}
-
-		repo::lib::RepoTriangle getTriangle(size_t primitive) const override {
-			return mesh.getTriangle(start + primitive);
-		}
-
-		void buildBvh() {
-			if (bvh.node_count == 0) {
-				bvh::builders::build(bvh, mesh.vertices, mesh.faces.data() + start, length);
-			}
-		}
-	};
-
 	struct CacheEntry
 	{
 		std::vector<Graph::Node*> nodes;
@@ -70,26 +42,6 @@ namespace {
 		// used to address the individual MeshNodes' geometry by range.
 
 		geometry::RepoDeformDepth::Mesh mesh;
-
-		// Tracks the ranges of each MeshNode within the triangles array in case
-		// we need to perform testing against a subset of triangles. Each view
-		// holds a distinct BVH, but they are only initialised on-demand.
-
-		std::vector<MeshView> meshViews;
-
-		// The primary view that encompasses the whole Composite Object
-
-		MeshView* view;
-
-		// Views into the Composite Object of MeshNodes that are closed. If there is
-		// only one node (and it is closed), this will be the same as [view].
-
-		std::vector<MeshView*> closed;
-
-		// All the vertices from all the nodes, ordered with the most extreme ones
-		// first for more efficient point-wise testing.
-
-		std::vector<size_t> orderedVertices;
 
 		void initialise(DatabasePtr handler) {
 
@@ -102,60 +54,16 @@ namespace {
 			for (auto& node : nodes) {
 				auto start = mesh.faces.size();
 				PipelineUtils::loadGeometry(handler, *node, builder);
-
-				// Keep a record of where this node's faces are in the combined mesh
-
-				auto length = mesh.faces.size() - start;
-				meshViews.push_back(MeshView(
-					mesh,
-					start,
-					length,
-					geometry::isClosedAndManifold(mesh.faces.data() + start, length)
-				));
+				mesh.addFaceRange(start, mesh.faces.size()); // Keep a record of where this node's faces are in the combined mesh
 			}
 
 			mesh.initialise();
-
-			// A view that encompasses the whole composite object - this will be the one
-			// that holds the primary BVH. This composite view will never be used for
-			// containment tests - only individual components may be used for that.
-
-			if (nodes.size() > 1) {
-				meshViews.push_back(MeshView(mesh, 0, mesh.faces.size(), false));
-			}
-
-			// Create a quick reference of all the closed meshes - do this after the
-			// meshViews vector has been fully populated so we can take references to its
-			// elements.
-
-			for (auto& mv : meshViews) {
-				if (mv.closed) {
-					closed.push_back(&mv);
-				}
-			}
-
-			view = &meshViews.back();
-
-			// Get a set of ordered indices for the contains tests.
-
-			geometry::orderVertices(mesh.vertices, orderedVertices);
 
 			nodes.clear();
 		}
 
 		const repo::lib::RepoUUID& getId() const {
 			return id;
-		}
-
-		const std::vector<size_t>& getOrderedVertices() const {
-			return orderedVertices;
-		}
-
-		const std::vector<MeshView*>& getClosedMeshes() {
-			for(auto c : closed) {
-				c->buildBvh();
-			}
-			return closed;
 		}
 
 		repo::lib::RepoBounds getBounds() const {
@@ -171,11 +79,11 @@ namespace {
 
 		const Graph& graph;
 
-		void initialise(const CompositeObject& key, CacheEntry& entry) const override {
-			for(auto& meshRef : key.meshes) {
+		void initialise(const CompositeObject& composite, CacheEntry& entry) const override {
+			for(auto& meshRef : composite.meshes) {
 				entry.nodes.push_back(&graph.getNode(meshRef.uniqueId));
 			}
-			entry.id = key.id;
+			entry.id = composite.id;
 		}
 	};
 
@@ -189,8 +97,9 @@ namespace {
 	{
 		BroadphaseResults results;
 
-		void intersect(size_t primA, size_t primB) override {
+		bool intersect(size_t primA, size_t primB) override {
 			results.push_back({ primA, primB });
+			return false; // Don't terminate traversal, we want to find all overlaps
 		}
 
 		void operator()(const Bvh& a, const Bvh& b) {
@@ -201,35 +110,6 @@ namespace {
 		void operator()(const Bvh& a) {
 			results.clear();
 			bvh::IntersectQuery::operator()(a);
-		}
-	};
-
-	/*
-	* The contains functor is a predicate which tells PolyDepth whether mesh (a)
-	* is inside mesh (b) under transform/offset (m). If (b) does not have any
-	* closed meshes, it returns false.
-	*/
-	struct ContainsFunctor : public geometry::RepoDeformDepth::ContainsFunctor
-	{
-		const std::vector<MeshView*>& closed;
-		const std::vector<size_t>& pointIndices;
-
-		ContainsFunctor(const CacheEntry& a, CacheEntry& b):
-			closed(b.getClosedMeshes()),
-			pointIndices(a.getOrderedVertices())
-		{
-		}
-
-		bool operator()(
-			const std::vector<repo::lib::RepoVector3D64>& points,
-			const repo::lib::RepoBounds& bounds,
-			const repo::lib::RepoVector3D64& m) const override {
-			for (auto c : closed) {
-				if (geometry::contains(points, pointIndices, bounds, *c, m)) {
-					return true;
-				}
-			}
-			return false;
 		}
 	};
 }
@@ -299,13 +179,16 @@ void Hard::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 
 	ClashScheduler::schedule(orderedCompositePairs);
 
-	// The following snippet turns the records into actual narrowphase tests by
-	// resolving them to counted references to the actual nodes.
-
-	std::queue<std::pair<
+	using Narrowphase = std::pair<
 		Cache::Entry,
 		Cache::Entry
-		>> narrowphaseTests;
+	>;
+
+	std::queue<Narrowphase> narrowphaseTests;
+
+	// When we take references to the records, we begin reference counting. From
+	// this point on, when all the Cache::Entry objects for a given record are
+	// destroyed, that record will be cleaned up.
 
 	for (auto [a, b] : orderedCompositePairs) {
 		narrowphaseTests.push({
@@ -321,8 +204,8 @@ void Hard::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 		a->initialise(handler);
 		b->initialise(handler);
 
-		// In PolyDepth, b is fixed, so consider the larger object the static one
-		// to make it easier to fit a into the free space around it.
+		// In DeformDepth, (b) is fixed, so consider the larger object the static one
+		// to make it easier to fit (a) into the free space around it.
 
 		if (a->getBounds() > b->getBounds()) {
 			std::swap(a, b);
@@ -330,20 +213,12 @@ void Hard::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 
 		try
 		{
-			// Always create the contains functor - if b has no closed meshes, the
-			// operator will simply be a no-op.
-
-			ContainsFunctor contains(*a, *b);
-
 			geometry::RepoDeformDepth pd(
 				a->mesh,
 				b->mesh,
-				&contains,
 				tolerance
 			);
-
 			pd.iterate();
-
 			auto v = pd.getPenetrationDepth();
 
 			if (pd.getPenetrationDepth() > tolerance) {

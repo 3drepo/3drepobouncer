@@ -41,10 +41,12 @@ void Traversal::operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double>& b)
 		if (left.is_leaf() && right.is_leaf()) {
 			for (size_t l = 0; l < left.primitive_count; l++) {
 				for (size_t r = 0; r < right.primitive_count; r++) {
-					intersect(
+					if (intersect(
 						a.primitive_indices[left.first_child_or_primitive + l],
 						b.primitive_indices[right.first_child_or_primitive + r]
-					);
+					)) {
+						return;
+					}
 				}
 			}
 		}
@@ -98,10 +100,12 @@ void Traversal::operator()(const bvh::Bvh<double>& a) {
 			if (left.is_leaf()) {
 				for (size_t l = 0; l < left.primitive_count; l++) {
 					for (size_t r = l + 1; r < left.primitive_count; r++) {
-						intersect(
+						if(intersect(
 							a.primitive_indices[left.first_child_or_primitive + l],
 							a.primitive_indices[left.first_child_or_primitive + r]
-						);
+						)){
+							return;
+						}
 					}
 				}
 			}
@@ -119,10 +123,12 @@ void Traversal::operator()(const bvh::Bvh<double>& a) {
 			if (right.is_leaf()) {
 				for (size_t l = 0; l < right.primitive_count; l++) {
 					for (size_t r = l + 1; r < right.primitive_count; r++) {
-						intersect(
+						if (intersect(
 							a.primitive_indices[right.first_child_or_primitive + l],
 							a.primitive_indices[right.first_child_or_primitive + r]
-						);
+						)) {
+							return;
+						}
 					}
 				}
 			}
@@ -146,10 +152,12 @@ void Traversal::operator()(const bvh::Bvh<double>& a) {
 		{
 			for (size_t l = 0; l < left.primitive_count; l++) {
 				for (size_t r = 0; r < right.primitive_count; r++) {
-					intersect(
+					if (intersect(
 						a.primitive_indices[left.first_child_or_primitive + l],
 						a.primitive_indices[right.first_child_or_primitive + r]
-					);
+					)) {
+						return;
+					}
 				}
 			}
 		}
