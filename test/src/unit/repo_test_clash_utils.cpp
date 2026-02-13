@@ -314,7 +314,9 @@ void ClashDetectionDatabaseHelper::GetMetadataMap(
 			auto key = field.getStringField(REPO_NODE_LABEL_META_KEY);
 			metaMap[key] = field.getField(REPO_NODE_LABEL_META_VALUE).repoVariant();
 		}
-		metaMap[REPO_NODE_LABEL_NAME] = bson.getField(REPO_NODE_LABEL_NAME).repoVariant();
+
+		if(bson.hasField(REPO_NODE_LABEL_NAME))
+			metaMap[REPO_NODE_LABEL_NAME] = bson.getField(REPO_NODE_LABEL_NAME).repoVariant();
 
 		for (auto parentId : p) {
 			metadataMap.insert({ parentId, metaMap });
