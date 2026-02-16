@@ -84,6 +84,7 @@ namespace ifcUtils
 		repo::manipulator::modelutility::RepoSceneBuilder* builder;
 		repo::lib::RepoUUID rootNodeId;
 		std::unordered_map<std::string, repo::lib::repo_material_t> materials;
+		std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> transforms;
 
 		/*
 		* Cache entry representing the possible transformation nodes that result from
@@ -297,7 +298,8 @@ namespace ifcUtils
 		*/
 		repo::lib::RepoUUID getTransformationNode(
 			const IfcSchema::IfcObjectDefinition* object,
-			bool leafNode);
+			bool leafNode,
+			const repo::lib::RepoMatrix transformMat);
 
 		/*
 		* Creates a transformation node under the parent object to group together
@@ -305,11 +307,13 @@ namespace ifcUtils
 		*/
 		repo::lib::RepoUUID getTransformationNode(
 			const IfcSchema::IfcObjectDefinition* parent,
-			const IfcParse::entity& type);
+			const IfcParse::entity& type,
+			const repo::lib::RepoMatrix transformMat);
 
 		std::shared_ptr<repo::core::model::TransformationNode> createTransformationNode(
 			const IfcSchema::IfcObjectDefinition* object,
-			const repo::lib::RepoUUID& parentId);
+			const repo::lib::RepoUUID& parentId,
+			const repo::lib::RepoMatrix transformMat);
 
 		std::unique_ptr<repo::core::model::MetadataNode> createMetadataNode(
 			const IfcSchema::IfcObjectDefinition* object);
@@ -321,7 +325,8 @@ namespace ifcUtils
 		*/
 		repo::lib::RepoUUID getParentId(
 			const IfcGeom::Element* element,
-			bool createTransform);
+			bool createTransform,
+			const repo::lib::RepoMatrix transformMat);
 
 		/*
 		* Given a value (value) from a type (type), extract the value into a
