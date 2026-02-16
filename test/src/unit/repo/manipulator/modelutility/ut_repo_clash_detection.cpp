@@ -1598,8 +1598,6 @@ TEST(Clash, RepoDeformDepthDb)
 			auto b = (geometry::RepoDeformDepth::Mesh)helper.getChildMeshNodes(c.get(), nameB);
 
 			geometry::RepoDeformDepth pd(a, b, tolerance);
-			pd.iterate(10);
-
 			return pd.getPenetrationDepth() > tolerance;
 	};
 
@@ -1730,13 +1728,11 @@ TEST(Clash, RepoDeformDepthDegenerateGeometry)
 
 	{
 		geometry::RepoDeformDepth pd(a, b, 0);
-		pd.iterate(10);
 		EXPECT_THAT(pd.getPenetrationDepth(), Gt(0));
 	}
 
 	{
 		geometry::RepoDeformDepth pd(a, b, 0.55);
-		pd.iterate(10);
 		EXPECT_THAT(pd.getPenetrationDepth(), Lt(0.55));
 	}
 }

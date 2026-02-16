@@ -162,12 +162,16 @@ namespace geometry {
 			bool deformed = false;
 		};
 
+		/*
+		* Performs a the search for two meshes. Mesh (a) is the one that will be 
+		* deformed, and mesh (b) is static. Mesh (a) may be deflated, but will be
+		* reset before the constructor returns. The results of the search are found
+		* by calling getPenetrationDepth() and getContactManifold().
+		*/
 		RepoDeformDepth(
 			RepoDeformDepth::Mesh& a,
 			const RepoDeformDepth::Mesh& b,
 			double tolerance = 0.0);
-
-		void iterate(int maxIterations = -1);
 
 		double getPenetrationDepth() const;
 
@@ -189,6 +193,8 @@ namespace geometry {
 
 		RepoDeformDepth::Mesh& a;
 		const RepoDeformDepth::Mesh& b;
+
+		void iterate(int maxIterations = -1);
 
 		/*
 		* Intersects (a) with (b) in the current configuration. Returns true if the
