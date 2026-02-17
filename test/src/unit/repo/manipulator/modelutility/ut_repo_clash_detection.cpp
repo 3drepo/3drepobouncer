@@ -4109,11 +4109,9 @@ TEST(ClashDwg, DwgEqual)
 	}
 }
 
-// Clash tests for auto-generated intersections by file type: IFC (Native)
+// Clash tests for auto-generated intersections by file type: IFC
 TEST(ClashIfc, IfcDisjoint)
 {
-	GTEST_SKIP(); // Skip until files are checked in
-
 	// Tests auto-generated samples of Intersection Case A (Disjoint) from a Ifc File
 
 	int noParts = 5;
@@ -4155,8 +4153,6 @@ TEST(ClashIfc, IfcDisjoint)
 
 TEST(ClashIfc, IfcIntersectClosed)
 {
-	GTEST_SKIP(); // Skip until files are checked in
-
 	// Tests 10k auto-generated samples of Intersection Case B (Intersect Closed) from a Ifc File
 
 	int noParts = 5;
@@ -4198,8 +4194,6 @@ TEST(ClashIfc, IfcIntersectClosed)
 
 TEST(ClashIfc, IfcIntersectOpen)
 {
-	GTEST_SKIP(); // Skip until files are checked in
-
 	// Tests 10k auto-generated samples of Intersection Case C (Intersect Open) from a Ifc File
 
 	int noParts = 5;
@@ -4241,8 +4235,6 @@ TEST(ClashIfc, IfcIntersectOpen)
 
 TEST(ClashIfc, IfcCovers)
 {
-	GTEST_SKIP(); // Skip until files are checked in
-
 	// Tests 10k auto-generated samples of Intersection Case D (Covers) from a Ifc File
 
 	int noParts = 5;
@@ -4284,8 +4276,6 @@ TEST(ClashIfc, IfcCovers)
 
 TEST(ClashIfc, IfcContains)
 {
-	GTEST_SKIP(); // Skip until files are checked in
-
 	// Tests 10k auto-generated samples of Intersection Case E (Contains) from a Ifc File
 
 	int noParts = 5;
@@ -4327,8 +4317,6 @@ TEST(ClashIfc, IfcContains)
 
 TEST(ClashIfc, IfcMeet)
 {
-	GTEST_SKIP(); // Skip until files are checked in
-
 	// Tests 10k auto-generated samples of Intersection Case F (Meet) from a Ifc File
 
 	int noParts = 5;
@@ -4367,8 +4355,6 @@ TEST(ClashIfc, IfcMeet)
 
 TEST(ClashIfc, IfcOverlap)
 {
-	GTEST_SKIP(); // Skip until files are checked in
-
 	// Tests 10k auto-generated samples of Intersection Case G (Overlap) from a Ifc File
 
 	int noParts = 5;
@@ -4410,8 +4396,6 @@ TEST(ClashIfc, IfcOverlap)
 
 TEST(ClashIfc, IfcEqual)
 {
-	GTEST_SKIP(); // Skip until files are checked in
-
 	// Tests 10k auto-generated samples of Intersection Case H (Equal) from a Ifc File
 
 	int noParts = 5;
