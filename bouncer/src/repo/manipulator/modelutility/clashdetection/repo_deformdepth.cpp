@@ -85,8 +85,6 @@ RepoDeformDepth::RepoDeformDepth(
 	tolerance(tolerance),
 	distance(FLT_MAX)
 {
-	a.resetConfiguration();
-
 	// If there is no intersection, there is nothing to do, which we signal by
 	// already setting the configuration distance to zero.
 
@@ -143,7 +141,19 @@ RepoDeformDepth::RepoDeformDepth(
 	}
 
 	// Add additional early rejection tests here,
-	//	For example, a separating hyperplane (up to the tolerance) exists between the two vertex sets
+	//	For example, a separating hyperplane (up to the tolerance) exists between
+	// the two vertex sets
+
+	// If we can't find a separating configuration without changing the mesh, then
+	// perform the deflation based search.
+
+	iterate();
+
+	// If we get to the deflation stage, then mesh (a) has changed - make sure to
+	// put it back in-case it is used again, as we if deflations stack we may end
+	// up with false positives.
+
+	a.resetConfiguration();
 }
 
 double RepoDeformDepth::getPenetrationDepth() const

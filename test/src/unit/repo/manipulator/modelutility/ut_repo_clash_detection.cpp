@@ -1598,8 +1598,6 @@ TEST(Clash, RepoDeformDepthDb)
 			auto b = (geometry::RepoDeformDepth::Mesh)helper.getChildMeshNodes(c.get(), nameB);
 
 			geometry::RepoDeformDepth pd(a, b, tolerance);
-			pd.iterate(10);
-
 			return pd.getPenetrationDepth() > tolerance;
 	};
 
@@ -1730,15 +1728,50 @@ TEST(Clash, RepoDeformDepthDegenerateGeometry)
 
 	{
 		geometry::RepoDeformDepth pd(a, b, 0);
-		pd.iterate(10);
 		EXPECT_THAT(pd.getPenetrationDepth(), Gt(0));
 	}
 
 	{
 		geometry::RepoDeformDepth pd(a, b, 0.55);
-		pd.iterate(10);
 		EXPECT_THAT(pd.getPenetrationDepth(), Lt(0.55));
 	}
+}
+
+TEST(Clash, DeformDepthIsIdempotent)
+{
+	// Test that clashing the same meshes multiple times does not change the result.
+
+	using repo::lib::RepoMatrix;
+	using repo::lib::RepoVector3D64;
+
+	auto cube = repo::test::utils::mesh::makeUnitCube();
+
+	ClashDetectionConfigHelper config;
+	config.tolerance = 0.14;
+	config.type = ClashDetectionType::Hard;
+
+	MockClashScene scene(config.getRevision());
+
+	// This arrangement of cubes creates a situation where the middle cube will be
+	// mesh (a) the first time it is encountered, and mesh (b) the second time.
+	// If the cube is not properly reset after the first test, the deformation from
+	// the first will bring it within the tolerance, and the second will be missed.
+
+	config.addCompositeObjects({
+		scene.add(TransformedEntity{cube, RepoMatrix::translate(RepoVector3D64(0.5, 0, 0)) * RepoMatrix::scale(1.1)}),
+		scene.add(TransformedEntity{cube, RepoMatrix::translate(RepoVector3D64(0, 0, 0)) * RepoMatrix::scale(1.0)}),
+		scene.add(TransformedEntity{cube, RepoMatrix::translate(RepoVector3D64(-0.6, 0, 0)) * RepoMatrix::scale(0.5)})
+	},
+	{}
+	);
+	config.selfIntersectsA = true;
+
+	auto db = std::make_shared<MockDatabase>();
+	db->setDocuments(scene.bsons);
+
+	clash::Hard pipeline(db, config);
+	auto results = pipeline.runPipeline();
+	EXPECT_THAT(results.clashes.size(), Eq(2));
 }
 
 TEST(Clash, HardE2E)

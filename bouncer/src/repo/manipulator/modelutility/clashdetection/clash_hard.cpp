@@ -218,8 +218,6 @@ void Hard::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 				b->mesh,
 				tolerance
 			);
-			pd.iterate();
-			auto v = pd.getPenetrationDepth();
 
 			if (pd.getPenetrationDepth() > tolerance) {
 				auto clash = createClash<HardClash>(
