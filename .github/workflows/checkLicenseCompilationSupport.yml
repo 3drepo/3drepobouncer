@@ -40,7 +40,6 @@ jobs:
             cplusplus/bouncer/ext_libs/noble
             cplusplus/bouncer/ext_libs/focal
           lfs: true
-          sparse-checkout-cone-mode: false
 
       - name: Unpack the dependencies in the tests repo
         run: |
