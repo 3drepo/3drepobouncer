@@ -40,7 +40,7 @@ jobs:
 
       - name: Try to restore tests repo
         id: restore-tests
-        uses: actions/cache@v5
+        uses: actions/cache/restore@v5
         with:
           path: tests
           key: MyTestKey # replace this with the master sha
@@ -54,6 +54,16 @@ jobs:
           path: tests
           sparse-checkout: cplusplus/bouncer
           lfs: true
+
+      # We manually push the cache here, because otherwise additional files get
+      # written to the fileShare folder during the unit tests
+
+      - name: Cache tests repo
+        if: steps.restore-tests.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: tests
+          key: ${{ steps.restore-tests.outputs.cache-primary-key }}
 
       - name: Replace REPO_MODEL_PATH in test configs
         run: for f in $REPO_MODEL_PATH/*.json; do sed -i.bak -e 's|$REPO_MODEL_PATH|'$REPO_MODEL_PATH'|g' $f; done
@@ -108,10 +118,19 @@ jobs:
       - name: Create fileShare symbolic link
         run: ln -s $REPO_MODEL_PATH/fileShare fileShare
 
+      - name: Clone GTest Parallel Runner
+        uses: actions/checkout@v6
+        with:
+          repository: google/gtest-parallel
+          path: gtp
+
+      - name: Copy GTest Parallel Runner to workspace
+        run: mv ./gtp/* .
+
       - name: Run Tests
         env:
           LD_LIBRARY_PATH: ${{github.WORKSPACE}}/3drepobouncer
-        run: ./3drepobouncer/3drepobouncerTest --gtest_filter=-Geometry.*
+        run: ./gtest-parallel ./3drepobouncer/3drepobouncerTest --gtest_filter=-Geometry.*
 
 
 

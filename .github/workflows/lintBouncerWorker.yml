@@ -1,0 +1,18 @@
+name: "Lint Bouncer Worker"
+
+on: [push]
+
+jobs:
+  lint-bouncer-worker:
+    runs-on: ubuntu-24.04    
+
+    steps:
+      - name: Checkout bouncer
+        uses: actions/checkout@v6
+        with:
+          submodules: true
+          token: ${{secrets.REPO_INSTALLER_TOKEN}} #The installer token is required to get the Asset_generator and other private submodules
+
+      - name: Lint
+        working-directory: ./tools/bouncer_worker
+        run: yarn install && yarn lint
