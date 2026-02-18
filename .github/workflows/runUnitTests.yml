@@ -29,7 +29,7 @@ jobs:
           token: ${{secrets.REPO_INSTALLER_TOKEN}} #The installer token is required to get the Asset_generator and other private submodules
   
       - name: Install packages
-        run: apt-get update && sudo apt-get install gnupg curl libboost-all-dev tk-dev tcl-dev libxmu-dev libxi-dev libcgal-dev libocct-data-exchange-dev libocct-draw-dev libocct-foundation-dev libocct-modeling-algorithms-dev libocct-modeling-data-dev libocct-ocaf-dev libocct-visualization-dev libgmp-dev libmpfr-dev libxml2-dev libeigen3-dev zlib1g-dev libssl-dev libxft-dev
+        run: sudo apt-get update && sudo apt-get install gnupg curl libboost-all-dev tk-dev tcl-dev libxmu-dev libxi-dev libcgal-dev libocct-data-exchange-dev libocct-draw-dev libocct-foundation-dev libocct-modeling-algorithms-dev libocct-modeling-data-dev libocct-ocaf-dev libocct-visualization-dev libgmp-dev libmpfr-dev libxml2-dev libeigen3-dev zlib1g-dev libssl-dev libxft-dev
 
       - name: Start MongoDB
         uses: supercharge/mongodb-github-action@1.12.1
@@ -44,7 +44,7 @@ jobs:
       - name: Install MongoDB Tools
         run: |
           curl -O https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2404-x86_64-100.14.1.deb
-          sudp apt install ./mongodb-database-tools-ubuntu2404-x86_64-100.14.1.deb
+          sudo apt install ./mongodb-database-tools-ubuntu2404-x86_64-100.14.1.deb
 
       - name: Install Microsoft Fonts
         run: |
