@@ -39,13 +39,14 @@ jobs:
           sudo fc-cache -f -v
 
       # For performance reasons, we cache the checkout of the tests repo, since it is faster
-      # to load it from the cache than to clone it via git, and it rarely changes.
+      # to load it from cache than to clone it via git, and it rarely changes within a
+      # branch.
 
       - name: Try to restore tests repo
         id: restore-tests
         uses: actions/cache/restore@v5
         with:
-          path: ./tests
+          path: tests/cplusplus/bouncer
           key: MyTestKey # replace this with the master sha
 
       - name: Checkout tests repo
@@ -57,6 +58,7 @@ jobs:
           path: tests
           sparse-checkout: cplusplus/bouncer
           lfs: true
+          sparse-checkout-cone-mode: false
 
       # We manually push the cache here, because otherwise additional files get
       # written to the fileShare folder during the unit tests
@@ -65,7 +67,7 @@ jobs:
         if: steps.restore-tests.outputs.cache-hit != 'true'
         uses: actions/cache/save@v5
         with:
-          path: ./tests
+          path: tests/cplusplus/bouncer
           key: ${{ steps.restore-tests.outputs.cache-primary-key }}
 
       - name: Replace REPO_MODEL_PATH in test configs

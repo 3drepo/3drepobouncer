@@ -36,9 +36,11 @@ jobs:
           repository: 3drepo/tests
           token: ${{secrets.REPO_INSTALLER_TOKEN}}
           path: tests
-          sparse-checkout:
+          sparse-checkout: |
             cplusplus/bouncer/ext_libs/noble
+            cplusplus/bouncer/ext_libs/focal
           lfs: true
+          sparse-checkout-cone-mode: false
 
       - name: Unpack the dependencies in the tests repo
         run: |
