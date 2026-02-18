@@ -38,11 +38,14 @@ jobs:
           sudo apt-get install -y ttf-mscorefonts-installer fontconfig
           sudo fc-cache -f -v
 
+      # For performance reasons, we cache the checkout of the tests repo, since it is faster
+      # to load it from the cache than to clone it via git, and it rarely changes.
+
       - name: Try to restore tests repo
         id: restore-tests
         uses: actions/cache/restore@v5
         with:
-          path: tests
+          path: ./tests
           key: MyTestKey # replace this with the master sha
 
       - name: Checkout tests repo
@@ -62,7 +65,7 @@ jobs:
         if: steps.restore-tests.outputs.cache-hit != 'true'
         uses: actions/cache/save@v5
         with:
-          path: tests
+          path: ./tests
           key: ${{ steps.restore-tests.outputs.cache-primary-key }}
 
       - name: Replace REPO_MODEL_PATH in test configs
