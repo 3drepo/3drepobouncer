@@ -8,7 +8,7 @@ jobs:
 
     env:
       TEST_DATA: ${{github.WORKSPACE}}/tests/cplusplus
-      REPO_MODEL_PATH: ${{github.WORKSPACE}}/testData/cplusplus/bouncer/data/models
+      REPO_MODEL_PATH: ${{github.WORKSPACE}}/tests/cplusplus/bouncer/data/models
       MONGO_ROOT: ${{github.WORKSPACE}}/mongo-cxx-driver
       ASSIMP_ROOT: ${{github.WORKSPACE}}/assimp
       IFCOPENSHELL_ROOT: ${{github.WORKSPACE}}/IfcOpenShell
@@ -28,7 +28,7 @@ jobs:
           submodules: true
           token: ${{secrets.REPO_INSTALLER_TOKEN}} #The installer token is required to get the Asset_generator and other private submodules
 
-      - name: Restore tests repo
+      - name: Try to restore cached tests repo
         id: restore-tests
         uses: actions/cache@v5
         with:
