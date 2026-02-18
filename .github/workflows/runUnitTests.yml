@@ -58,7 +58,6 @@ jobs:
           path: tests
           sparse-checkout: cplusplus/bouncer
           lfs: true
-          sparse-checkout-cone-mode: false
 
       # We manually push the cache here, because otherwise additional files get
       # written to the fileShare folder during the unit tests
