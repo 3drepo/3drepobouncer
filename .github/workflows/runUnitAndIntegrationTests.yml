@@ -1,4 +1,4 @@
-name: "Run Unit Tests"
+name: "Run Unit and Integration Tests"
 
 on: [push]
 
@@ -38,19 +38,7 @@ jobs:
           sudo apt-get install -y ttf-mscorefonts-installer fontconfig
           sudo fc-cache -f -v
 
-      # For performance reasons, we cache the checkout of the tests repo, since it is faster
-      # to load it from cache than to clone it via git, and it rarely changes within a
-      # branch.
-
-      - name: Try to restore tests repo
-        id: restore-tests
-        uses: actions/cache/restore@v5
-        with:
-          path: tests/cplusplus/bouncer
-          key: MyTestKey # replace this with the master sha
-
       - name: Checkout tests repo
-        if: steps.restore-tests.outputs.cache-hit != 'true'
         uses: actions/checkout@v6
         with:
           repository: 3drepo/tests
@@ -58,16 +46,6 @@ jobs:
           path: tests
           sparse-checkout: cplusplus/bouncer
           lfs: true
-
-      # We manually push the cache here, because otherwise additional files get
-      # written to the fileShare folder during the unit tests
-
-      - name: Cache tests repo
-        if: steps.restore-tests.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v5
-        with:
-          path: tests/cplusplus/bouncer
-          key: ${{ steps.restore-tests.outputs.cache-primary-key }}
 
       - name: Replace REPO_MODEL_PATH in test configs
         run: for f in $REPO_MODEL_PATH/*.json; do sed -i.bak -e 's|$REPO_MODEL_PATH|'$REPO_MODEL_PATH'|g' $f; done
@@ -136,9 +114,82 @@ jobs:
           LD_LIBRARY_PATH: ${{github.WORKSPACE}}/3drepobouncer
         run: ./gtest-parallel ./3drepobouncer/3drepobouncerTest --gtest_filter=-Geometry.*
 
+  check-license-support:
+    runs-on: ubuntu-24.04    
 
+    env:
+      TEST_DATA: ${{github.WORKSPACE}}/tests/cplusplus
+      MONGO_ROOT: ${{github.WORKSPACE}}/mongo-cxx-driver
+      ASSIMP_ROOT: ${{github.WORKSPACE}}/assimp
+      IFCOPENSHELL_ROOT: ${{github.WORKSPACE}}/IfcOpenShell
+      THRIFT_ROOT: ${{github.WORKSPACE}}/thrift-0.12.0
+      DATE_ROOT: ${{github.WORKSPACE}}/date
+      REPOBOUNCER_ROOT: ${{github.WORKSPACE}}/install
+      CRYPTOLENS_ROOT: ${{github.WORKSPACE}}/cryptoLens
+      LICENSE_RSA_PUB_KEY_MOD: 1bc
+      LICENSE_RSA_PUB_KEY_EXP: 1bc
+      LICENSE_AUTH_TOKEN: 1bc
+      LICENSE_PRODUCT_ID: 123
 
-        
+    steps:
+      - name: Checkout bouncer
+        uses: actions/checkout@v6
+        with:
+          submodules: true
+          token: ${{secrets.REPO_INSTALLER_TOKEN}} #The installer token is required to get the Asset_generator and other private submodules
+
+      - name: Install packages
+        run: sudo apt-get update && sudo apt-get install gnupg curl libcurl4-openssl-dev libboost-all-dev tk-dev tcl-dev libxmu-dev libxi-dev libcgal-dev libocct-data-exchange-dev libocct-draw-dev libocct-foundation-dev libocct-modeling-algorithms-dev libocct-modeling-data-dev libocct-ocaf-dev libocct-visualization-dev libgmp-dev libmpfr-dev libxml2-dev libeigen3-dev zlib1g-dev libssl-dev libxft-dev
+
+      - name: Checkout tests repo
+        uses: actions/checkout@v6
+        with:
+          repository: 3drepo/tests
+          token: ${{secrets.REPO_INSTALLER_TOKEN}}
+          path: tests
+          sparse-checkout: |
+            cplusplus/bouncer/ext_libs/noble
+            cplusplus/bouncer/ext_libs/focal
+          lfs: true
+
+      - name: Unpack the dependencies in the tests repo
+        run: |
+          tar -zxf $TEST_DATA/bouncer/ext_libs/noble/mongo-cxx-driver.tgz
+          tar -zxf $TEST_DATA/bouncer/ext_libs/noble/assimp-5.4.3.tgz
+          tar -zxf $TEST_DATA/bouncer/ext_libs/noble/IfcOpenShell-0.8.0.tgz
+          tar -zxf $TEST_DATA/bouncer/ext_libs/noble/thrift-0.12.0.tgz
+          tar -zxf $TEST_DATA/bouncer/ext_libs/noble/cryptoLens.tgz
+          tar -zxf $TEST_DATA/bouncer/ext_libs/focal/date.tgz
+
+      - name: Create build directory
+        run: mkdir build && cd build
+
+      - name: Run cmake
+        working-directory: ./build
+        run: cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DLICENSE_CHECK=ON -DREPO_BUILD_TESTS=OFF -DREPO_BUILD_COVERAGE=OFF -DODA_SUPPORT=OFF -DSYNCHRO_SUPPORT=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$REPOBOUNCER_ROOT ../
+
+      - name: Build
+        working-directory: ./build
+        run: sudo make -j 8 install
+
+  lint-bouncer-worker:
+    runs-on: ubuntu-24.04    
+
+    steps:
+      - name: Checkout bouncer
+        uses: actions/checkout@v6
+        with:
+          submodules: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Run Linter
+        working-directory: ./tools/bouncer_worker
+        run: yarn install && yarn lint
+
 
 
 
