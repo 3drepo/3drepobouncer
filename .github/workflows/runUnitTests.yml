@@ -19,7 +19,7 @@ jobs:
       SYNCHRO_READER_ROOT: ${{github.WORKSPACE}}/3drepoSynchroReader
       BOUNCER_INSTALL: ${{github.WORKSPACE}}/install
       BOUNCER: ${{github.WORKSPACE}}/3drepobouncer
-      SYNCHRO_PLUGIN_LOCATION: ${{github.WORKSPACE}}/3drepobouncer/plugins
+      SYNCHRO_PLUGIN_LOCATION: ${{github.WORKSPACE}}/3drepobouncer/plugins # The plugins subfolder is created by package_release
 
     steps:
       - name: Checkout bouncer
@@ -28,7 +28,7 @@ jobs:
           submodules: true
           token: ${{secrets.REPO_INSTALLER_TOKEN}} #The installer token is required to get the Asset_generator and other private submodules
 
-      - name: Try to restore cached tests repo
+      - name: Try to restore tests repo
         id: restore-tests
         uses: actions/cache@v5
         with:
@@ -98,8 +98,8 @@ jobs:
         run: for f in $REPO_MODEL_PATH/*.json; do sed -i.bak -e 's|$REPO_MODEL_PATH|'$REPO_MODEL_PATH'|g' $f; done
 
       - name: Package bouncer
-        working-directory: ./tools/release $BOUNCER
-        run: node package_release.js
+        working-directory: ./tools/release
+        run: node package_release.js $BOUNCER
 
       - name: Create fileShare symbolic link
         run: ln -s $REPO_MODEL_PATH/fileShare fileShare
