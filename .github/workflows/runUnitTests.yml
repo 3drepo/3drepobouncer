@@ -7,26 +7,43 @@ jobs:
     runs-on: ubuntu-24.04    
 
     env:
-      TEST_DATA: $GITHUB_WORKSPACE/tests/cplusplus
-      REPO_MODEL_PATH: $GITHUB_WORKSPACE/testData/cplusplus/bouncer/data/models
-      MONGO_ROOT: $GITHUB_WORKSPACE/mongo-cxx-driver
-      ASSIMP_ROOT: $GITHUB_WORKSPACE/assimp
-      IFCOPENSHELL_ROOT: $GITHUB_WORKSPACE/IfcOpenShell
-      ODA_ROOT: $GITHUB_WORKSPACE/teighaLinuxGCC8.3
-      ODA_LIB_DIR: $GITHUB_WORKSPACE/teighaLinuxGCC8.3/lib/lnxX64_8.3dll/
-      THRIFT_ROOT: $GITHUB_WORKSPACE/thrift-0.12.0
-      DATE_ROOT: $GITHUB_WORKSPACE/date
-      SYNCHRO_READER_ROOT: $GITHUB_WORKSPACE/3drepoSynchroReader
-      BOUNCER_INSTALL: $GITHUB_WORKSPACE/install
-      BOUNCER: $GITHUB_WORKSPACE/3drepobouncer
-      SYNCHRO_PLUGIN_LOCATION: $GITHUB_WORKSPACE/3drepobouncer/plugins
+      TEST_DATA: ${{github.WORKSPACE}}/tests/cplusplus
+      REPO_MODEL_PATH: ${{github.WORKSPACE}}/testData/cplusplus/bouncer/data/models
+      MONGO_ROOT: ${{github.WORKSPACE}}/mongo-cxx-driver
+      ASSIMP_ROOT: ${{github.WORKSPACE}}/assimp
+      IFCOPENSHELL_ROOT: ${{github.WORKSPACE}}/IfcOpenShell
+      ODA_ROOT: ${{github.WORKSPACE}}/teighaLinuxGCC8.3
+      ODA_LIB_DIR: ${{github.WORKSPACE}}/teighaLinuxGCC8.3/lib/lnxX64_8.3dll/
+      THRIFT_ROOT: ${{github.WORKSPACE}}/thrift-0.12.0
+      DATE_ROOT: ${{github.WORKSPACE}}/date
+      SYNCHRO_READER_ROOT: ${{github.WORKSPACE}}/3drepoSynchroReader
+      BOUNCER_INSTALL: ${{github.WORKSPACE}}/install
+      BOUNCER: ${{github.WORKSPACE}}/3drepobouncer
+      SYNCHRO_PLUGIN_LOCATION: ${{github.WORKSPACE}}/3drepobouncer/plugins
 
     steps:
-      - name: "Checkout bouncer"
+      - name: Checkout bouncer
         uses: actions/checkout@v6
         with:
           submodules: true
           token: ${{secrets.REPO_INSTALLER_TOKEN}} #The installer token is required to get the Asset_generator and other private submodules
+
+      - name: Restore tests repo
+        id: restore-tests
+        uses: actions/cache@v5
+        with:
+          path: tests
+          key: MyTestKey # replace this with the master sha
+
+      - name: Checkout tests repo
+        if: steps.restore-tests.outputs.cache-hit != 'true'
+        uses: actions/checkout@v6
+        with:
+          repository: 3drepo/tests
+          token: ${{secrets.REPO_INSTALLER_TOKEN}}
+          path: tests
+          sparse-checkout: cplusplus/bouncer
+          lfs: true
   
       - name: Install packages
         run: sudo apt-get update && sudo apt-get install gnupg curl libboost-all-dev tk-dev tcl-dev libxmu-dev libxi-dev libcgal-dev libocct-data-exchange-dev libocct-draw-dev libocct-foundation-dev libocct-modeling-algorithms-dev libocct-modeling-data-dev libocct-ocaf-dev libocct-visualization-dev libgmp-dev libmpfr-dev libxml2-dev libeigen3-dev zlib1g-dev libssl-dev libxft-dev
@@ -52,15 +69,6 @@ jobs:
           echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | sudo debconf-set-selections
           sudo apt-get install -y ttf-mscorefonts-installer fontconfig
           sudo fc-cache -f -v
-
-      - name: Checkout Tests Repo into tests
-        uses: actions/checkout@v6
-        with:
-          repository: 3drepo/tests
-          token: ${{secrets.REPO_INSTALLER_TOKEN}}
-          path: tests
-          sparse-checkout: cplusplus/bouncer
-          lfs: true
 
       - name: Restore Test Database
         run: cd $TEST_DATA/bouncer/data/database && mongorestore -u "testUser" -p "3drepotest" --authenticationDatabase admin --quiet
@@ -89,11 +97,11 @@ jobs:
       - name: Replace REPO_MODEL_PATH in Tests Configs
         run: for f in $REPO_MODEL_PATH/*.json; do sed -i.bak -e 's|$REPO_MODEL_PATH|'$REPO_MODEL_PATH'|g' $f; done
 
-      - name: Package
+      - name: Package bouncer
         working-directory: ./tools/release $BOUNCER
         run: node package_release.js
 
-      - name: Create fileshare symbolic link
+      - name: Create fileShare symbolic link
         run: ln -s $REPO_MODEL_PATH/fileShare fileShare
 
       - name: Run Tests
