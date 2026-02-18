@@ -26,8 +26,11 @@ jobs:
         uses: actions/checkout@v6
         with:
           submodules: true
-          token: ${{secrets.REPO_INSTALLER_TOKEN}}
+          token: ${{secrets.REPO_INSTALLER_TOKEN}} #The installer token is required to get the Asset_generator and other private submodules
   
+      - name: Install packages
+        run: sudo apt-get install gnupg curl libboost-all-dev tk-dev tcl-dev libxmu-dev libxi-dev libcgal-dev libocct-data-exchange-dev libocct-draw-dev libocct-foundation-dev libocct-modeling-algorithms-dev libocct-modeling-data-dev libocct-ocaf-dev libocct-visualization-dev libgmp-dev libmpfr-dev libxml2-dev libeigen3-dev zlib1g-dev libssl-dev libxft-dev
+
       - name: Start MongoDB
         uses: supercharge/mongodb-github-action@1.12.1
         with:
@@ -35,8 +38,13 @@ jobs:
           mongodb-username: testUser
           mongodb-password: 3drepotest
 
-      - name: Install packages
-        run: sudo apt-get install gnupg curl mongodb-org-tools libboost-all-dev tk-dev tcl-dev libxmu-dev libxi-dev libcgal-dev libocct-data-exchange-dev libocct-draw-dev libocct-foundation-dev libocct-modeling-algorithms-dev libocct-modeling-data-dev libocct-ocaf-dev libocct-visualization-dev libgmp-dev libmpfr-dev libxml2-dev libeigen3-dev zlib1g-dev libssl-dev libxft-dev
+      # Mongo does not maintain a package so we must install the tools to restore the database
+      # following these instructions:
+      # https://www.mongodb.com/docs/database-tools/installation/?operating-system=linux&package-type=deb
+      - name: Install MongoDB Tools
+        run: |
+          curl -O https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2404-x86_64-100.14.1.deb
+          sudp apt install ./mongodb-database-tools-ubuntu2404-x86_64-100.14.1.deb
 
       - name: Install Microsoft Fonts
         run: |
