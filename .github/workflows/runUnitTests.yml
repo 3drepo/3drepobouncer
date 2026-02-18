@@ -17,7 +17,7 @@ jobs:
       THRIFT_ROOT: ${{github.WORKSPACE}}/thrift-0.12.0
       DATE_ROOT: ${{github.WORKSPACE}}/date
       SYNCHRO_READER_ROOT: ${{github.WORKSPACE}}/3drepoSynchroReader
-      BOUNCER_INSTALL: ${{github.WORKSPACE}}/install
+      REPOBOUNCER_ROOT: ${{github.WORKSPACE}}/install
       BOUNCER: ${{github.WORKSPACE}}/3drepobouncer
       SYNCHRO_PLUGIN_LOCATION: ${{github.WORKSPACE}}/3drepobouncer/plugins # The plugins subfolder is created by package_release
 
@@ -91,7 +91,7 @@ jobs:
 
       - name: Run cmake
         working-directory: ./build
-        run: cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_BUILD_TYPE=Release -DSYNCHRO_SUPPORT=ON -DCMAKE_INSTALL_PREFIX=$BOUNCER_INSTALL ../
+        run: cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_BUILD_TYPE=Release -DSYNCHRO_SUPPORT=ON -DCMAKE_INSTALL_PREFIX=$REPOBOUNCER_ROOT ../
 
       - name: Build
         working-directory: ./build
