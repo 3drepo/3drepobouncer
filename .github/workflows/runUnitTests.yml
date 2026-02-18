@@ -101,16 +101,17 @@ jobs:
         working-directory: ./tools/release
         run: node package_release.js $BOUNCER
 
+      - name: Add Bouncer to PATH
+        shell: bash
+        run: echo $BOUNCER >> $GITHUB_PATH
+
       - name: Create fileShare symbolic link
         run: ln -s $REPO_MODEL_PATH/fileShare fileShare
 
       - name: Run Tests
         env:
-          LD_LIBRARY_PATH: $BOUNCER
-          PATH: $BOUNCER:$PATH
+          LD_LIBRARY_PATH: ${{github.WORKSPACE}}/3drepobouncer
         run: ./3drepobouncer/3drepobouncerTest --gtest_filter=-Geometry.*
-
-
 
 
 
