@@ -13,6 +13,11 @@ jobs:
           submodules: true
           token: ${{secrets.REPO_INSTALLER_TOKEN}} #The installer token is required to get the Asset_generator and other private submodules
 
-      - name: Lint
+      - name: Setup Node
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22.x
+
+      - name: Run Linter
         working-directory: ./tools/bouncer_worker
         run: yarn install && yarn lint
