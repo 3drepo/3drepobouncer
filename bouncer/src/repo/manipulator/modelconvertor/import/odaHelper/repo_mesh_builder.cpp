@@ -275,22 +275,11 @@ void RepoMeshBuilder::extractMeshes(std::vector<MeshNode>& nodes, const repo::li
 			}
 
 			normals32.reserve(meshData->vertexMap.normals.size());
-
-			// todo: this is the second place this exists - can we put it elsewhere to make it neater?
-	
-			auto matInverse = m.inverse();
-			auto worldMat = matInverse.transpose();
-
-			auto data = worldMat.getData();
-			data[3] = data[7] = data[11] = 0;
-			data[12] = data[13] = data[14] = 0;
-
-			repo::lib::RepoMatrix nmat(data);
-
-			for (int i = 0; i < meshData->vertexMap.vertices.size(); ++i) {
-				auto n = nmat * meshData->vertexMap.normals[i];
+			for (auto& n : meshData->vertexMap.normals) {
 				normals32.push_back({ (float)(n.x), (float)(n.y), (float)(n.z) });
 			}
+
+			repo::core::model::MeshNode::transformNormals(normals32, m);
 		}
 
 		std::vector<repo::lib::RepoVector3D> vertices32;
