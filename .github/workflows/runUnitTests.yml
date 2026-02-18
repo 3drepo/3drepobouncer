@@ -7,8 +7,8 @@ jobs:
     runs-on: ubuntu-24.04    
 
     env:
-      TEST_DATA: $GITHUB_WORKSPACE/testData
-      REPO_MODEL_PATH: $GITHUB_WORKSPACE/testData/bouncer/data/models
+      TEST_DATA: $GITHUB_WORKSPACE/tests/cplusplus
+      REPO_MODEL_PATH: $GITHUB_WORKSPACE/testData/cplusplus/bouncer/data/models
       MONGO_ROOT: $GITHUB_WORKSPACE/mongo-cxx-driver
       ASSIMP_ROOT: $GITHUB_WORKSPACE/assimp
       IFCOPENSHELL_ROOT: $GITHUB_WORKSPACE/IfcOpenShell
@@ -53,19 +53,19 @@ jobs:
           sudo apt-get install -y ttf-mscorefonts-installer fontconfig
           sudo fc-cache -f -v
 
-      - name: Checkout Tests Repo into testData
+      - name: Checkout Tests Repo into tests
         uses: actions/checkout@v6
         with:
           repository: 3drepo/tests
           token: ${{secrets.REPO_INSTALLER_TOKEN}}
-          path: testData
+          path: tests
           sparse-checkout: cplusplus/bouncer
           lfs: true
 
       - name: Restore Test Database
         run: cd $TEST_DATA/bouncer/data/database && mongorestore -u "testUser" -p "3drepotest" --authenticationDatabase admin --quiet
 
-      - name: Unpack the dependencies in the Test Repo
+      - name: Unpack the dependencies in the Tests Repo
         run: |
           tar -zxf $TEST_DATA/bouncer/ext_libs/noble/mongo-cxx-driver.tgz
           tar -zxf $TEST_DATA/bouncer/ext_libs/noble/assimp-5.4.3.tgz
