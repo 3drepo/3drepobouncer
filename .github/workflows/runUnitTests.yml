@@ -23,9 +23,10 @@ jobs:
 
     steps:
       - name: "Checkout bouncer"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: true
+          token: ${{secrets.REPO_INSTALLER_TOKEN}}
   
       - name: Start MongoDB
         uses: supercharge/mongodb-github-action@1.12.1
