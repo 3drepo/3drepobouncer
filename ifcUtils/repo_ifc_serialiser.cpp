@@ -841,8 +841,9 @@ std::shared_ptr<repo::core::model::TransformationNode> IfcSerialiser::createTran
 	// Create transformation node with the new transform
 	auto transform = repo::core::model::RepoBSONFactory::makeTransformationNode(transformMat, name, { parentId });
 
-	// Insert transform for lookup
-	transforms[transform.getSharedID()] = transformMat;
+	// Insert corrective transform for lookup
+	auto parentCorr = corrTransforms[parentId];
+	corrTransforms[transform.getSharedID()] = transformMat.inverse() * parentCorr;
 
 	auto it = metadataUniqueIds.find(object->id());
 	if (it != metadataUniqueIds.end())
@@ -876,8 +877,9 @@ repo::lib::RepoUUID IfcSerialiser::getTransformationNode(
 	auto transform = repo::core::model::RepoBSONFactory::makeTransformationNode(transformMat, typeGroup.name(), { parentId });
 	builder->addNode(transform);
 	
-	// Insert transform for lookup
-	transforms[transform.getSharedID()] = transformMat;
+	// Insert corrective transform for lookup
+	auto parentCorr = corrTransforms[parentId];
+	corrTransforms[transform.getSharedID()] = transformMat.inverse() * parentCorr;
 
 	nodes.branchSharedId = transform.getSharedID();
 
@@ -1050,16 +1052,18 @@ void IfcSerialiser::import(const IfcGeom::TriangulationElement* triangulation)
 	if (isIfcSpace) {
 		name = triangulation->name() + " (IFC Space)";
 	}
-		
+
 	auto parentId = getParentId(triangulation, !isIfcSpace, matrix);
 	
 	std::vector<repo::lib::RepoVector3D> vertices;
-	std::vector<repo::lib::RepoVector3D> normals;
-	repo::lib::RepoMatrix parentMat = transforms[parentId];
-	if (parentMat != matrix)
+	std::vector<repo::lib::RepoVector3D> normals;	
+	auto corrMat = corrTransforms[parentId];
+
+	// We only need to apply the corrective if it is not identity
+	auto correctiveVert = corrMat * matrix;
+	if (!correctiveVert.isIdentity())
 	{
-		// Calculate corrective matrix
-		auto correctiveVert = parentMat.inverse() * matrix;
+		// Calculate corrective matrix for normals
 		auto matInverse = correctiveVert.inverse();
 		auto worldMat = matInverse.transpose();
 		auto data = worldMat.getData();
