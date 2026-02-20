@@ -1016,13 +1016,13 @@ void IfcSerialiser::import(const IfcGeom::TriangulationElement* triangulation)
 		bounds.encapsulate(vOrg);
 	}
 
-	std::vector<repo::lib::RepoVector3D64> normals64;
-	normals64.reserve(mesh.normals().size() / 3);
+	std::vector<repo::lib::RepoVector3D> normals;
+	normals.reserve(mesh.normals().size() / 3);
 	for (auto it = mesh.normals().begin(); it != mesh.normals().end();) {
-		const double x = *(it++);
-		const double y = *(it++);
-		const double z = *(it++);
-		normals64.push_back({ x, y, z });
+		const float x = *(it++);
+		const float y = *(it++);
+		const float z = *(it++);
+		normals.push_back({ x, y, z });
 	}
 
 	std::vector<repo::lib::RepoVector2D> uvs;
@@ -1065,36 +1065,23 @@ void IfcSerialiser::import(const IfcGeom::TriangulationElement* triangulation)
 	auto parentId = getParentId(triangulation, !isIfcSpace, newSpaceMat);
 	
 	std::vector<repo::lib::RepoVector3D> vertices;
-	std::vector<repo::lib::RepoVector3D> normals;
 	auto corrMat = corrTransforms[parentId];
 
 	// Calculate full corrective matrix that includes both the
 	// transfer to the new model space and the correction that
 	// accounts for potential parent transforms.
-	auto correctiveVert = corrMat * orgMat;
+	auto fullCorrMat = corrMat * orgMat;
 
-	// Calculate corrective matrix for normals
-	auto matInverse = correctiveVert.inverse();
-	auto worldMat = matInverse.transpose();
-	auto data = worldMat.getData();
-	data[3] = data[7] = data[11] = 0;
-	data[12] = data[13] = data[14] = 0;
-	repo::lib::RepoMatrix correctiveNorm(data);
-
-	// Apply correctives
+	// Apply corrective to vertices
 	for (int i = 0; i < vertices64.size(); i++)
 	{
-		// Apply to vertices
 		auto v = vertices64[i];
-		v = correctiveVert * v;
+		v = fullCorrMat * v;
 		vertices.push_back(v);
-
-		// Apply to normals
-		auto n = normals64[i];
-		n = correctiveNorm * n;
-		n.normalize();
-		normals.push_back(n);
 	}
+
+	// Apply corrective to normals
+	repo::core::model::MeshNode::transformNormals(normals, fullCorrMat);
 
 	std::unique_ptr<repo::core::model::MetadataNode> metaNode;
 	if (isIfcSpace) {
