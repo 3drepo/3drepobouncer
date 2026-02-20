@@ -999,15 +999,21 @@ void IfcSerialiser::import(const IfcGeom::TriangulationElement* triangulation)
 {
 	auto& mesh = triangulation->geometry();
 
-	auto matrix = repoMatrix(*triangulation->transformation().data());
+	auto orgMat = repoMatrix(*triangulation->transformation().data());
 
 	std::vector<repo::lib::RepoVector3D64> vertices64;
+	
+	repo::lib::RepoBounds bounds;
 	vertices64.reserve(mesh.verts().size() / 3);
 	for (auto it = mesh.verts().begin(); it != mesh.verts().end();) {
 		const double x = *(it++);
 		const double y = *(it++);
 		const double z = *(it++);
-		vertices64.push_back({ x, y, z });
+		repo::lib::RepoVector3D64 v = { x, y, z };
+		vertices64.push_back(v);
+
+		auto vOrg = orgMat * v;
+		bounds.encapsulate(vOrg);
 	}
 
 	std::vector<repo::lib::RepoVector3D64> normals64;
@@ -1053,47 +1059,41 @@ void IfcSerialiser::import(const IfcGeom::TriangulationElement* triangulation)
 		name = triangulation->name() + " (IFC Space)";
 	}
 
-	auto parentId = getParentId(triangulation, !isIfcSpace, matrix);
+	// Calculate new model space from the bounds
+	auto newSpaceMat = repo::lib::RepoMatrix::translate(bounds.center());
+
+	auto parentId = getParentId(triangulation, !isIfcSpace, newSpaceMat);
 	
 	std::vector<repo::lib::RepoVector3D> vertices;
-	std::vector<repo::lib::RepoVector3D> normals;	
+	std::vector<repo::lib::RepoVector3D> normals;
 	auto corrMat = corrTransforms[parentId];
 
-	// We only need to apply the corrective if it is not identity
-	auto correctiveVert = corrMat * matrix;
-	if (!correctiveVert.isIdentity())
-	{
-		// Calculate corrective matrix for normals
-		auto matInverse = correctiveVert.inverse();
-		auto worldMat = matInverse.transpose();
-		auto data = worldMat.getData();
-		data[3] = data[7] = data[11] = 0;
-		data[12] = data[13] = data[14] = 0;
-		repo::lib::RepoMatrix correctiveNorm(data);
+	// Calculate full corrective matrix that includes both the
+	// transfer to the new model space and the correction that
+	// accounts for potential parent transforms.
+	auto correctiveVert = corrMat * orgMat;
 
-		// Apply correctives
-		for (int i = 0; i < vertices64.size(); i++)
-		{
-			// Apply to vertices
-			auto v = vertices64[i];
-			v = correctiveVert * v;
-			vertices.push_back(v);
+	// Calculate corrective matrix for normals
+	auto matInverse = correctiveVert.inverse();
+	auto worldMat = matInverse.transpose();
+	auto data = worldMat.getData();
+	data[3] = data[7] = data[11] = 0;
+	data[12] = data[13] = data[14] = 0;
+	repo::lib::RepoMatrix correctiveNorm(data);
 
-			// Apply to normals
-			auto n = normals64[i];
-			n = correctiveNorm * n;
-			n.normalize();
-			normals.push_back(n);
-		}
-	}
-	else 
+	// Apply correctives
+	for (int i = 0; i < vertices64.size(); i++)
 	{
-		// Straightforward conversion if no corrective is needed
-		for (int i = 0; i < vertices64.size(); i++)
-		{
-			vertices.push_back(vertices64[i]);
-			normals.push_back(normals64[i]);
-		}
+		// Apply to vertices
+		auto v = vertices64[i];
+		v = correctiveVert * v;
+		vertices.push_back(v);
+
+		// Apply to normals
+		auto n = normals64[i];
+		n = correctiveNorm * n;
+		n.normalize();
+		normals.push_back(n);
 	}
 
 	std::unique_ptr<repo::core::model::MetadataNode> metaNode;
