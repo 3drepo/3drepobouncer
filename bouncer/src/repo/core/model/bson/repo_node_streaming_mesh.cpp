@@ -31,19 +31,7 @@ void repo::core::model::StreamingMeshNode::SupermeshingData::bakeMeshes(const re
 	}
 
 	// Normals
-	auto matInverse = transform.inverse();
-	auto worldMat = matInverse.transpose();
-
-	auto data = worldMat.getData();
-	data[3] = data[7] = data[11] = 0;
-	data[12] = data[13] = data[14] = 0;
-
-	repo::lib::RepoMatrix multMat(data);
-
-	for (int i = 0; i < normals.size(); i++) {
-		normals[i] = multMat * normals[i];
-		normals[i].normalize();
-	}
+	repo::core::model::MeshNode::transformNormals(normals, transform);
 }
 
 void repo::core::model::StreamingMeshNode::SupermeshingData::deserialise(const repo::core::model::RepoBSON& bson, const std::vector<uint8_t>& buffer, const bool ignoreUVs)

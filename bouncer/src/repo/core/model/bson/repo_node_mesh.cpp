@@ -325,23 +325,7 @@ void MeshNode::applyTransformation(
 			boundingBox.encapsulate(v);
 		}
 
-		if (normals.size())
-		{
-			auto matInverse = matrix.inverse();
-			auto worldMat = matInverse.transpose();
-
-			auto data = worldMat.getData();
-			data[3] = data[7] = data[11] = 0;
-			data[12] = data[13] = data[14] = 0;
-
-			repo::lib::RepoMatrix multMat(data);
-
-			for (auto& n : normals)
-			{
-				n = multMat * n;
-				n.normalize();
-			}
-		}
+		transformNormals(normals, matrix);
 	}
 }
 
@@ -371,6 +355,22 @@ void MeshNode::transformBoundingBox(
 	for (auto& c : corners)
 	{
 		bounds.encapsulate(c);
+	}
+}
+
+void MeshNode::transformNormals(
+	std::vector<repo::lib::RepoVector3D>& normals,
+	repo::lib::RepoMatrix matrix)
+{
+	auto worldMat = matrix.inverse().transpose();
+	auto data = worldMat.getData();
+	data[3] = data[7] = data[11] = 0;
+	data[12] = data[13] = data[14] = 0;
+
+	for (auto& n : normals)
+	{
+		n = worldMat * n;
+		n.normalize();
 	}
 }
 
