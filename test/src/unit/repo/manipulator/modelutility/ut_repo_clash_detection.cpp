@@ -4109,7 +4109,7 @@ TEST(ClashDwg, DwgEqual)
 	}
 }
 
-// Clash tests for auto-generated intersections by file type: IFC
+// Clash tests for auto-generated intersections by file type: IFC (Native)
 TEST(ClashIfc, IfcDisjoint)
 {
 	// Tests auto-generated samples of Intersection Case A (Disjoint) from a Ifc File
@@ -4425,6 +4425,330 @@ TEST(ClashIfc, IfcEqual)
 			setA,
 			setB,
 			"ClashMetadata::ClashSet",
+			"ClashSetA",
+			"ClashSetB"
+		);
+
+		RunEqualTest(container, samplesPerSegment, setA, setB);
+	}
+}
+
+// Clash tests for auto-generated intersections by file type: IFC (Exported from Revit)
+TEST(ClashIfcExp, IfcExpDisjoint)
+{
+	// Tests auto-generated samples of Intersection Case A (Disjoint) from a Ifc File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "ifcExpDisjoint_Part";
+	std::string postFix = ".ifc";
+
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
+	int halfToleranceClashes = 0;
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/IFCExp/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+
+		helper.SplitIntoCompositSetsByMetadata(
+			metadataMap,
+			setA,
+			setB,
+			"Identity Data::Comments",
+			"ClashSetA",
+			"ClashSetB"
+		);
+
+		RunDisjointTest(container, samplesPerSegment, setA, setB, halfToleranceClashes);
+	}
+
+	EXPECT_THAT(halfToleranceClashes, Eq(totalSamples / 2));
+}
+
+TEST(ClashIfcExp, IfcExpIntersectClosed)
+{
+	// Tests 10k auto-generated samples of Intersection Case B (Intersect Closed) from a Ifc File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "ifcExpIntersectClosed_Part";
+	std::string postFix = ".ifc";
+
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/IFCExp/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+		std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher> parameterMap;
+
+		helper.SplitIntoCompositSetsByMetadata(
+			metadataMap,
+			setA,
+			setB,
+			parameterMap,
+			"Identity Data::Comments",
+			"ClashSetA",
+			"ClashSetB",
+			"Dimensions::MinPenDepth (mm)"
+		);
+
+		RunIntersectClosedTest(container, samplesPerSegment, setA, setB, parameterMap);
+	}
+}
+
+TEST(ClashIfcExp, IfcExpIntersectOpen)
+{
+	// Tests 10k auto-generated samples of Intersection Case C (Intersect Open) from a Ifc File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "ifcExpIntersectOpen_Part";
+	std::string postFix = ".ifc";
+
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/IFCExp/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+		std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher> parameterMap;
+
+		helper.SplitIntoCompositSetsByMetadata(
+			metadataMap,
+			setA,
+			setB,
+			parameterMap,
+			"Identity Data::Comments",
+			"ClashSetA",
+			"ClashSetB",
+			"Dimensions::MinPenDepth (mm)"
+		);
+
+		RunIntersectOpenTest(container, samplesPerSegment, setA, setB, parameterMap);
+	}
+}
+
+TEST(ClashIfcExp, IfcExpCovers)
+{
+	// Tests 10k auto-generated samples of Intersection Case D (Covers) from a Ifc File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "ifcExpCovers_Part";
+	std::string postFix = ".ifc";
+
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/IFCExp/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+		std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher> parameterMap;
+
+		helper.SplitIntoCompositSetsByMetadata(
+			metadataMap,
+			setA,
+			setB,
+			parameterMap,
+			"Identity Data::Comments",
+			"ClashSetA",
+			"ClashSetB",
+			"Dimensions::ShortestDist (mm)"
+		);
+
+		RunCoversTest(container, samplesPerSegment, setA, setB, parameterMap);
+	}
+}
+
+TEST(ClashIfcExp, IfcExpContains)
+{
+	// Tests 10k auto-generated samples of Intersection Case E (Contains) from a Ifc File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "ifcExpContains_Part";
+	std::string postFix = ".ifc";
+
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/IFCExp/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+		std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher> parameterMap;
+
+		helper.SplitIntoCompositSetsByMetadata(
+			metadataMap,
+			setA,
+			setB,
+			parameterMap,
+			"Identity Data::Comments",
+			"ClashSetA",
+			"ClashSetB",
+			"Dimensions::ShortestDist (mm)"
+		);
+
+		RunContainsTest(container, samplesPerSegment, setA, setB, parameterMap);
+	}
+}
+
+TEST(ClashIfcExp, IfcExpMeet)
+{
+	// Tests 10k auto-generated samples of Intersection Case F (Meet) from a Ifc File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "ifcExpMeet_Part";
+	std::string postFix = ".ifc";
+
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/IFCExp/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+
+		helper.SplitIntoCompositSetsByMetadata(
+			metadataMap,
+			setA,
+			setB,
+			"Identity Data::Comments",
+			"ClashSetA",
+			"ClashSetB"
+		);
+
+		RunMeetTest(container, samplesPerSegment, setA, setB);
+	}
+}
+
+TEST(ClashIfcExp, IfcExpOverlap)
+{
+	// Tests 10k auto-generated samples of Intersection Case G (Overlap) from a Ifc File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "ifcExpOverlap_Part";
+	std::string postFix = ".ifc";
+
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/IFCExp/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+		std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher> parameterMap;
+
+		helper.SplitIntoCompositSetsByMetadata(
+			metadataMap,
+			setA,
+			setB,
+			parameterMap,
+			"Identity Data::Comments",
+			"ClashSetA",
+			"ClashSetB",
+			"Dimensions::PenDepth (mm)"
+		);
+
+		RunOverlapTest(container, samplesPerSegment, setA, setB, parameterMap);
+	}
+}
+
+TEST(ClashIfcExp, IfcExpEqual)
+{
+	// Tests 10k auto-generated samples of Intersection Case H (Equal) from a Ifc File
+
+	int noParts = 5;
+	int totalSamples = 10000;
+	int samplesPerSegment = totalSamples / noParts;
+	std::string baseName = "ifcExpEqual_Part";
+	std::string postFix = ".ifc";
+
+	auto handler = getHandler();
+	ClashDetectionDatabaseHelper helper(handler);
+
+	for (int i = 0; i < noParts; i++) {
+		std::string fileName = baseName + std::to_string(i) + postFix;
+		std::string path = "/clash/IFCExp/" + fileName;
+
+		auto container = makeTemporaryContainer();
+		importModel(getDataPath(path), *container);
+
+		std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> metadataMap;
+		helper.GetMetadataMap(container.get(), metadataMap);
+		std::set<repo::lib::RepoUUID> setA;
+		std::set<repo::lib::RepoUUID> setB;
+		std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher> parameterMap;
+
+		helper.SplitIntoCompositSetsByMetadata(
+			metadataMap,
+			setA,
+			setB,
+			"Identity Data::Comments",
 			"ClashSetA",
 			"ClashSetB"
 		);
