@@ -17,6 +17,9 @@
 
 #include <stack>
 #include <queue>
+#include <thread>
+#include <mutex>
+#include <shared_mutex>
 
 #include "clash_clearance.h"
 #include "geometry_tests.h"
@@ -43,6 +46,7 @@ namespace {
 		repo::lib::RepoBounds bounds;
 		std::vector<size_t> indicesForContainsTests;
 		bool isClosed = false;
+		std::shared_mutex mutex;
 
 		// Initialises everything the narrowphase (or this objects own methods) needs
 		// to run. Initialise must be idempotent.
@@ -62,6 +66,11 @@ namespace {
 			bvh::builders::build(bvh, mesh.vertices, mesh.faces);
 		}
 
+		bool isInitialised()
+		{
+			return mesh.vertices.size();
+		}
+
 		const Bvh& getBvh() const override {
 			return bvh;
 		}
@@ -74,10 +83,17 @@ namespace {
 			return node->compositeObject->id;
 		}
 
-		const std::vector<size_t>& getOrderedVertices() {
+		bool hasOrderedVertices() {
+			return indicesForContainsTests.size();
+		}
+
+		void orderVerticesForContainsTests() {
 			if (!indicesForContainsTests.size()) {
 				geometry::orderVertices(mesh.vertices, indicesForContainsTests);
 			}
+		}
+
+		const std::vector<size_t>& getOrderedVertices() {
 			return indicesForContainsTests;
 		}
 	};
@@ -189,46 +205,149 @@ void Clearance::run(const Graph& graphA, const Graph& graphB, const Graph& graph
 		});
 	}
 
-	while(!narrowphaseTests.empty()) {
-		auto [a, b] = std::move(narrowphaseTests.front());
-		narrowphaseTests.pop();
+	// Mutexes
+	std::mutex queueMutex{};
+	std::mutex clashesMutex{};
+	std::mutex cacheMutex{};
 
-		a->initialise(handler);
-		b->initialise(handler);
-
-		if (a->bounds > b->bounds) {
-			std::swap(a, b);
-		}
-
-		try
+	// Define the thread behaviour
+	auto narrowPhaseThread = [&]
 		{
-			if (b->isClosed && geometry::contains(a->mesh.vertices, a->getOrderedVertices(), a->bounds, *b)) {
-				// If a is completely inside b, the closest distance is zero so we can 
-				// terminate immediately.
+			// Broadphase object exlusive for this thread
+			ClearanceBroadphase threadBroadphase(tolerance);
 
-				createClash<ClearanceClash>(
-					a->getCompositeObjectId(),
-					b->getCompositeObjectId()
-				)->append({ a->bounds.center(), a->bounds.center() });
-				continue;
-			}
+			while (true) {
 
-			broadphase.operator()(a->getBvh(), b->getBvh());
-			for (const auto& [aIndex, bIndex] : broadphase.results)
-			{
-				auto line = geometry::closestPoints(a->getTriangle(aIndex), b->getTriangle(bIndex));
-				if (line.magnitude() < tolerance) {
-					createClash<ClearanceClash>(
-						a->getCompositeObjectId(),
-						b->getCompositeObjectId()
-					)->append(line);
+				// Lock queue, check for samples, and retrieve it one is available
+				Cache::Entry a;
+				Cache::Entry b;
+				{
+					std::scoped_lock queueLock{ queueMutex };
+
+					// If we are out of samples, we unlock and terminate
+					if (narrowphaseTests.empty())
+					{
+						break;
+					}
+
+					// Else, get the sample
+					std::tie(a, b) = std::move(narrowphaseTests.front());
+					narrowphaseTests.pop();
+				}
+
+				// Check initialisation status of the cache entries
+				bool aInitialised = false;
+				{
+					// Shared lock on the object so we can check the status
+					std::shared_lock lock{ a->mutex };
+					aInitialised = a->isInitialised();
+				}
+
+				bool bInitialised = false;
+				{
+					// Shared lock on the object so we can check the status
+					std::shared_lock lock{ b->mutex };
+					bInitialised = b->isInitialised();
+				}
+
+				// If one or both them are not initialised, we are initialising them
+				// Needs a lock on both of them to prevent a deadlock situation with
+				// an edge in the opposite direction in another thread
+				if (!aInitialised || !bInitialised)
+				{
+					// Lock both exclusively
+					std::scoped_lock entryLock{ a->mutex, b->mutex };
+
+					// Now initialise the nodes
+					a->initialise(handler);
+					b->initialise(handler);
+				}
+
+				if (a->bounds > b->bounds) {
+					std::swap(a, b);
+				}
+
+				bool aHasOrderedVertices = false;
+				{
+					std::shared_lock lock{ a->mutex };
+					aHasOrderedVertices = a->hasOrderedVertices();
+				}
+
+				if (!aHasOrderedVertices)
+				{
+					std::scoped_lock lock{ a->mutex };
+					a->orderVerticesForContainsTests();
+				}
+
+				{
+					// Acquire shared locks for both cache entries for the duration of the test.
+					// Can lock them sequentially, since there is no deadlock risk here.
+					// Other shared locks will not impede getting this shared lock.
+					// Neither node can be exclusively locked, since that can only happen on
+					// initialisation, which has passed at this point.
+					std::shared_lock lockA{ a->mutex };
+					std::shared_lock lockB{ b->mutex };
+				
+					try
+					{
+						if (b->isClosed && geometry::contains(a->mesh.vertices, a->getOrderedVertices(), a->bounds, *b)) {
+							// If a is completely inside b, the closest distance is zero so we can 
+							// terminate immediately.
+							
+							// Lock the clashes map, then write the new clash
+							std::scoped_lock lockClashes{ clashesMutex };
+							createClash<ClearanceClash>(
+								a->getCompositeObjectId(),
+								b->getCompositeObjectId()
+							)->append({ a->bounds.center(), a->bounds.center() });
+							
+							// Explicitly delete the cache entries in a thread-safe environment
+							{
+								std::scoped_lock lockCache{ cacheMutex };
+								a.reset();
+								b.reset();
+							}
+
+							continue;
+						}
+
+						threadBroadphase.operator()(a->getBvh(), b->getBvh());
+						for (const auto& [aIndex, bIndex] : threadBroadphase.results)
+						{
+							auto line = geometry::closestPoints(a->getTriangle(aIndex), b->getTriangle(bIndex));
+							if (line.magnitude() < tolerance) {
+								// Lock the clashes map, then write the new clash
+								std::scoped_lock lockClashes{ clashesMutex };
+								createClash<ClearanceClash>(
+									a->getCompositeObjectId(),
+									b->getCompositeObjectId()
+								)->append(line);
+							}
+						}
+					}
+					catch (const geometry::GeometryTestException& e) {
+						throw DegenerateTestException(a->getCompositeObjectId(), b->getCompositeObjectId(), e.what());
+					}
+				}
+
+				// Explicitly delete the cache entries in a thread-safe environment
+				{
+					std::scoped_lock lockCache{ cacheMutex };
+					a.reset();
+					b.reset();
 				}
 			}
-		}
-		catch (const geometry::GeometryTestException& e) {
-			throw DegenerateTestException(a->getCompositeObjectId(), b->getCompositeObjectId(), e.what());
-		}
-	}
+		};
+
+	// Create and launch the threads
+	int numThreads = config.numThreads ? config.numThreads : std::thread::hardware_concurrency();
+	std::vector<std::jthread> threads;
+	for (int i = 0; i < numThreads; i++)
+		threads.emplace_back(std::jthread(narrowPhaseThread));
+
+	// Wait for all threads to complete
+	for (auto& t : threads)
+		t.join();
 }
 
 void Clearance::ClearanceClash::append(const repo::lib::RepoLine& otherLine)

@@ -87,6 +87,8 @@ namespace repo {
 
 				double tolerance = 0.0;
 
+				int numThreads = 0;
+
 				/*
 				* Each clash test will compare all objects in set A against all objects in
 				* set B. All Objects will be compared in Project Coordinates. The sets must

@@ -157,6 +157,7 @@ struct ClashConfigParser : public ObjectParser, public IContainerSet
 	{
 		parsers["type"] = new ClashTypeParser(config.type);
 		parsers["tolerance"] = new NumberParser<double>(config.tolerance);
+		parsers["numThreads"] = new NumberParser<int>(config.numThreads);
 		parsers["resultsFile"] = new StringParser(config.resultsFile);
 		parsers["setA"] = new ArrayParser(new CompositeObjectSetParser(this, mapA));
 		parsers["setB"] = new ArrayParser(new CompositeObjectSetParser(this, mapB));

@@ -28,6 +28,9 @@
 
 #include <set>
 #include <queue>
+#include <thread>
+#include <mutex>
+#include <shared_mutex>
 
 using namespace repo::manipulator::modelutility;
 using namespace repo::manipulator::modelutility::clash;
@@ -37,6 +40,7 @@ namespace {
 	{
 		std::vector<Graph::Node*> nodes;
 		repo::lib::RepoUUID id;
+		std::shared_mutex mutex;
 
 		// Holds all the geometry for all nodes in one mesh. MeshViews can be
 		// used to address the individual MeshNodes' geometry by range.
@@ -60,6 +64,11 @@ namespace {
 			mesh.initialise();
 
 			nodes.clear();
+		}
+
+		bool isInitialised()
+		{
+			return !nodes.size();
 		}
 
 		const repo::lib::RepoUUID& getId() const {
@@ -184,53 +193,122 @@ void Hard::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 		Cache::Entry
 	>;
 
-	std::queue<Narrowphase> narrowphaseTests;
+	// Prepare for splitting the samples accross queues for the threads
+	const int numThreads = config.numThreads ? config.numThreads : std::thread::hardware_concurrency();
+	std::vector<std::queue<Narrowphase>> narrowphaseQueues(numThreads);
+	int parcelSize = std::ceil(orderedCompositePairs.size() / (double) numThreads);
 
 	// When we take references to the records, we begin reference counting. From
 	// this point on, when all the Cache::Entry objects for a given record are
 	// destroyed, that record will be cleaned up.
-
+	int sampleCount = 0;
 	for (auto [a, b] : orderedCompositePairs) {
-		narrowphaseTests.push({
+		int queueIndex = std::floor(sampleCount / parcelSize);
+		narrowphaseQueues[queueIndex].push({
 			a->getReference(),
 			b->getReference()
 		});
+		sampleCount++;
 	}
 
-	while(!narrowphaseTests.empty()) {
-		auto [a, b] = std::move(narrowphaseTests.front());
-		narrowphaseTests.pop();
+	// Mutexes
+	std::mutex clashesMutex{};
+	std::mutex cacheMutex{};
 
-		a->initialise(handler);
-		b->initialise(handler);
-
-		// In DeformDepth, (b) is fixed, so consider the larger object the static one
-		// to make it easier to fit (a) into the free space around it.
-
-		if (a->getBounds() > b->getBounds()) {
-			std::swap(a, b);
-		}
-
-		try
+	// Define thread behaviour
+	auto narrowPhaseThread = [&](std::queue<Narrowphase>& queue)
 		{
-			geometry::RepoDeformDepth pd(
-				a->mesh,
-				b->mesh,
-				tolerance
-			);
+			while (true) {
 
-			if (pd.getPenetrationDepth() > tolerance) {
-				auto clash = createClash<HardClash>(
-					a->getId(),
-					b->getId()
-				);
-				clash->contacts = pd.getContactManifold();
+				// If we are out of samples, we unlock and terminate
+				if (queue.empty()) {
+					break;
+				}
+
+				// Else, get sample from the queue exclusive to this thread
+				auto [a, b] = std::move(queue.front());
+				queue.pop();
+
+				// Check initialisation status of the cache entries
+				bool aInitialised = false;
+				{
+					// Shared lock on the object so we can check the status
+					std::shared_lock lock{ a->mutex };
+					aInitialised = a->isInitialised();
+				}
+
+				bool bInitialised = false;
+				{
+					// Shared lock on the object so we can check the status
+					std::shared_lock lock{ b->mutex };
+					bInitialised = b->isInitialised();
+				}
+
+				// If one or both them are not initialised, we are initialising them
+				// Needs a lock on both of them to prevent a deadlock situation with
+				// an edge in the opposite direction in another thread
+				if (!aInitialised || !bInitialised)
+				{
+					// Lock both exclusively
+					std::scoped_lock entryLock{ a->mutex, b->mutex };
+
+					// Now initialise the nodes
+					a->initialise(handler);
+					b->initialise(handler);
+				}
+
+				// In DeformDepth, (b) is fixed, so consider the larger object the static one
+				// to make it easier to fit (a) into the free space around it.
+				if (a->getBounds() > b->getBounds()) {
+					std::swap(a, b);
+				}
+
+				{
+					// Acquire locks for both cache entries for the duration of the test.
+					// This needs to be an exclusive lock since RepoDeformDepth alters the mesh
+					std::scoped_lock lockEntries{ a->mutex, b->mutex };
+
+					try
+					{
+						geometry::RepoDeformDepth pd(
+							a->mesh,
+							b->mesh,
+							tolerance
+						);
+
+						double penDepth = pd.getPenetrationDepth();
+						if (penDepth > tolerance) {
+							// Lock the clashes map, then write the new clash
+							std::scoped_lock lockClashes{ clashesMutex };
+							auto clash = createClash<HardClash>(
+								a->getId(),
+								b->getId()
+							);
+							clash->contacts = pd.getContactManifold();
+						}
+					}
+					catch (const geometry::GeometryTestException& e) {
+						throw DegenerateTestException(a->getId(), b->getId(), e.what());
+					}
+				}
+
+				// Explicitly delete the cache entries in a thread-safe environment
+				{
+					std::scoped_lock lockCache{ cacheMutex };
+					a.reset();
+					b.reset();
+				}
 			}
-		}
-		catch (const geometry::GeometryTestException& e) {
-			throw DegenerateTestException(a->getId(), b->getId(), e.what());
-		}
-	}
+		};
+
+	// Create and launch the threads
+	std::vector<std::jthread> threads;
+	for (int i = 0; i < numThreads; i++)
+		threads.emplace_back(std::jthread{ narrowPhaseThread, std::ref(narrowphaseQueues[i]) });
+
+	// Wait for all threads to complete
+	for (auto& t : threads)
+		t.join();
 }
 
 void Hard::createClashReport(const OrderedPair& objects,
