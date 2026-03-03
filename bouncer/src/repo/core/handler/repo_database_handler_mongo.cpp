@@ -503,7 +503,6 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 			// Find document
 			auto findResult = col.find_one(criteria.view(), options);
 			if (findResult.has_value()) {
-				fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
 				return repo::core::model::RepoBSON(findResult.value());
 			}
 		}
