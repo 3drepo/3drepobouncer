@@ -45,6 +45,7 @@ namespace repo {
 				class FileManager;
 			}
 
+			// This class is considered thread-safe.
 			class MongoDatabaseHandler : public AbstractDatabaseHandler {
 				enum class OPERATION { DROP, INSERT, UPDATE };
 
@@ -363,8 +364,6 @@ namespace repo {
 				std::unique_ptr<database::BulkWriteContext> getBulkWriteContext(
 					const std::string& database,
 					const std::string& collection);
-
-				void setFileManager(std::shared_ptr<repo::core::handler::fileservice::FileManager> manager);
 
 				std::shared_ptr<repo::core::handler::fileservice::FileManager> getFileManager();
 

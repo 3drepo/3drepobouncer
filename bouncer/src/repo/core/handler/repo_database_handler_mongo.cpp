@@ -319,11 +319,6 @@ void MongoDatabaseHandler::testConnection()
 	}
 }
 
-void MongoDatabaseHandler::setFileManager(std::shared_ptr<FileManager> manager)
-{
-	this->fileManager = manager;
-}
-
 std::shared_ptr<FileManager> MongoDatabaseHandler::getFileManager()
 {
 	return this->fileManager;

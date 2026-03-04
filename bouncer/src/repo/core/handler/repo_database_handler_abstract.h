@@ -107,6 +107,7 @@ namespace repo {
 				};
 			}
 
+			// This class is considered thread-safe.
 			class AbstractDatabaseHandler {
 			public:
 				/**
@@ -362,7 +363,15 @@ namespace repo {
 					const std::string& database,
 					const std::string& collection) = 0;
 
-				virtual void setFileManager(std::shared_ptr<repo::core::handler::fileservice::FileManager> manager) = 0;
+				void setFileManager(std::shared_ptr<repo::core::handler::fileservice::FileManager> manager)
+				{
+					// The file manager can only be set once to maintain thread-safety
+					if (!fileManagerSet)
+					{
+						this->fileManager = manager;
+						fileManagerSet = true;
+					}
+				}
 
 				virtual std::shared_ptr<repo::core::handler::fileservice::FileManager> getFileManager() = 0;
 
@@ -384,6 +393,10 @@ namespace repo {
 				// as large vectors of binary data. It must be set using setFileManager
 				// before documents containing such members are uploaded.
 				std::shared_ptr<repo::core::handler::fileservice::FileManager> fileManager;
+
+				// Flag to ensure that the fileManager can only be set once.
+				// After this is set to true, the class can be considered thread-safe.
+				bool fileManagerSet = false;
 			};
 		}
 	}
