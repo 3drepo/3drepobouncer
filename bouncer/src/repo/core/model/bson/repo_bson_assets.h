@@ -36,6 +36,8 @@ namespace repo {
 				size_t numVertices;
 				size_t numFaces;
 				size_t numUVChannels;
+				size_t numSubmeshes;
+				size_t numComponents;
 				size_t primitive;
 				repo::lib::RepoVector3D min;
 				repo::lib::RepoVector3D max;

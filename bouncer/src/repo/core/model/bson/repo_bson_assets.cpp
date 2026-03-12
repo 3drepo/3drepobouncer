@@ -80,6 +80,8 @@ RepoAssets::operator RepoBSON() const
 		metadataBuilder.append(REPO_ASSETS_LABEL_PRIMITIVE, (int32_t)meta.primitive);
 		metadataBuilder.appendVector3DObject(REPO_ASSETS_LABEL_MIN, meta.min);
 		metadataBuilder.appendVector3DObject(REPO_ASSETS_LABEL_MAX, meta.max);
+		metadataBuilder.append(REPO_ASSETS_LABEL_NUMSUBMESHES, (int32_t)meta.numSubmeshes);
+		metadataBuilder.append(REPO_ASSETS_LABEL_NUMCOMPONENTS, (int32_t)meta.numComponents);
 		metadataNodes.push_back(metadataBuilder.obj());
 	}
 
