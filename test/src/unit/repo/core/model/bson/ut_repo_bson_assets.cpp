@@ -61,6 +61,8 @@ TEST(RepoAssetsTest, Serialise)
 		md.numUVChannels = rand() % 2;
 		md.numVertices = rand();
 		md.primitive = 2 + rand() % 2;
+		md.numSubmeshes = rand();
+		md.numComponents = rand();
 		metadata.push_back(md);
 	}
 
@@ -92,6 +94,8 @@ TEST(RepoAssetsTest, Serialise)
 		m.numUVChannels = o.getIntField(REPO_ASSETS_LABEL_NUMUVCHANNELS);
 		m.numFaces = o.getIntField(REPO_ASSETS_LABEL_NUMFACES);
 		m.numVertices = o.getIntField(REPO_ASSETS_LABEL_NUMVERTICES);
+		m.numSubmeshes = o.getIntField(REPO_ASSETS_LABEL_NUMSUBMESHES);
+		m.numComponents = o.getIntField(REPO_ASSETS_LABEL_NUMCOMPONENTS);
 		actual.push_back(m);
 	}
 	EXPECT_THAT(actual, Eq(metadata));
