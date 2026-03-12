@@ -130,10 +130,10 @@ jobs:
       # ---------------------------------------------------------------
       # STEP 6: Build and Push Docker Image
       # ---------------------------------------------------------------
-      - name: Build and push Docker image
-        run: |
-          env:
+      - name: Build and push Docker image      
+        env:
           DOCKER_BUILDKIT: 1
+        run: |
           VERSION="${{ steps.vars.outputs.version }}"
           APP_BUILD_NOW="${{ steps.vars.outputs.app_build_now }}"
 
