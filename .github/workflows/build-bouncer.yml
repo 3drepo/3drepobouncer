@@ -127,6 +127,9 @@ jobs:
       - name: Log in to Azure Container Registry
         run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login "${{ secrets.REGISTRY_LOGIN_SERVER }}" -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
 
+      - name: debug
+        run: echo "I am running the right version..."
+
       # ---------------------------------------------------------------
       # STEP 6: Build and Push Docker Image
       # ---------------------------------------------------------------
