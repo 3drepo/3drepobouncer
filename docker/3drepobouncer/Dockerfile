@@ -100,17 +100,6 @@ ENV LD_LIBRARY_PATH=$SYNCHRO_READER_ROOT/lib:$THRIFT_ROOT/lib/:$IFCOPENSHELL_ROO
 ENV SYNCHRO_PLUGIN_LOCATION=/home/bouncer/3drepobouncer/bin/plugins
 ENV CRYPTOLENS_ROOT=/home/bouncer/cryptoLens
 
-ARG LICENSE_PRODUCT_ID
-ENV LICENSE_PRODUCT_ID=${LICENSE_PRODUCT_ID}
-
-ARG LICENSE_AUTH_TOKEN
-ENV LICENSE_AUTH_TOKEN=${LICENSE_AUTH_TOKEN}
-
-ARG LICENSE_RSA_PUB_KEY_MOD  
-ENV LICENSE_RSA_PUB_KEY_MOD ${LICENSE_RSA_PUB_KEY_MOD}
-
-ARG LICENSE_RSA_PUB_KEY_EXP=AQAB
-ENV LICENSE_RSA_PUB_KEY_EXP ${LICENSE_RSA_PUB_KEY_EXP}
 
 ENV DATE_ROOT=/home/bouncer/date
 
@@ -141,8 +130,6 @@ CMD ["/bin/bash"]
 FROM core AS build
 
 ARG REBUILD_DATE=unknown
-ARG LICENSE_CHECK
-ENV LICENSE_CHECK=${LICENSE_CHECK}
 ARG app_3drepobouncer_version
 ARG DSYNCHRO_SUPPORT=on
 ENV DSYNCHRO_SUPPORT ${DSYNCHRO_SUPPORT:-on}
@@ -154,12 +141,10 @@ RUN echo -e "machine github.com\n login $GITHUB_USER\n password $GITHUB_TOKEN" >
         chown bouncer:bouncer /home/bouncer/3drepobouncer && \
         mkdir -p /home/bouncer/3drepobouncer/build && \
         cd /home/bouncer/3drepobouncer/build && \
-        if [ "$LICENSE_CHECK" -gt 0 ]; then FLAG=ON; else FLAG=OFF; fi && \
         cmake \
               -DCMAKE_CXX_COMPILER=$CXX \
               -DCMAKE_CXX_FLAGS=-Wno-deprecated-declarations -Wno-dev \
               -DODA_SUPPORT=ON \
-              -DLICENSE_CHECK=${FLAG} \
               -DSYNCHRO_SUPPORT=${DSYNCHRO_SUPPORT} \
               -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_INSTALL_PREFIX=/home/bouncer/bouncer_install ../ && \
@@ -180,8 +165,6 @@ COPY --from=build /home/bouncer/bouncer_package /home/bouncer/3drepobouncer/bin/
 COPY --from=build /home/bouncer/3drepobouncer/tools/bouncer_worker /home/bouncer/3drepobouncer/tools/bouncer_worker
 
 FROM deploy-base-core AS deploy
-ARG LICENSE_CHECK=0
-ENV LICENSE_CHECK ${LICENSE_CHECK}
 ENV LD_LIBRARY_PATH=/home/bouncer/3drepobouncer/bin/
 ENV ODA_CSV_LOCATION=/home/bouncer/3drepobouncer/bin/
 ENV SYNCHRO_PLUGIN_LOCATION=/home/bouncer/3drepobouncer/bin/plugins
