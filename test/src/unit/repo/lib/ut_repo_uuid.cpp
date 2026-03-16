@@ -284,5 +284,29 @@ TEST(RepoUUIDTest, gteOperatorTest)
 	{
 		EXPECT_TRUE(fromGenB >= fromGenA);
 	}
+}
+
+TEST(RepoUUIDTest, multithreadingCollisionTest)
+{
+	int numThreads = 20;
+	int numSamplesPerThread = 100000;
+
+	std::mutex setMutex;
+	std::unordered_set<RepoUUID, RepoUUIDHasher> set;
+	
+	bool collision = false;
+
+	auto threadBehaviour = [&]
+		{
+			for (int i = 0; i < numSamplesPerThread; i++)
+			{
+				// All threads abort once the first collision is found
+				if (collision)
+					return;
+
+				auto newId = RepoUUID::createUUID();
+
+				{
+					std::scoped_lock lock{ setMutex };
 
 }
