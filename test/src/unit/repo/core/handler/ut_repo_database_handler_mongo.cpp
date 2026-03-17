@@ -33,6 +33,8 @@
 #include <mongocxx/exception/exception.hpp>
 #include <mongocxx/exception/operation_exception.hpp>
 
+#include <thread>
+
 using namespace repo::core::handler;
 using namespace testing;
 
@@ -235,7 +237,7 @@ void populateBinaryData(
 		auto ref = bson.getBinaryReference();
 		auto buffer = blobHandler.readToBuffer(fileservice::DataRef::deserialise(ref));
 		bson.initBinaryBuffer(buffer);
-	}	
+	}
 }
 
 TEST(MongoDatabaseHandlerTest, GetAllFromCollectionTailable)
@@ -986,4 +988,1038 @@ TEST(MongoDatabaseHandlerTest, InsertManyDocumentsMetadata)
 	EXPECT_THAT(refNode.getUUIDField("x-uuid"), Eq(boost::get<repo::lib::RepoUUID>(metadata["x-uuid"])));
 	EXPECT_THAT(refNode.getIntField("x-int"), Eq(boost::get<int>(metadata["x-int"])));
 	EXPECT_THAT(refNode.getStringField("x-string"), Eq(boost::get<std::string>(metadata["x-string"])));
+}
+
+std::vector<uint8_t> makeRandomBinaryFromUUID(repo::lib::RepoUUID id, size_t count)
+{
+	std::vector<uint8_t> bin;
+	for (int i = 0; i < count; i++)
+	{
+		auto data = id.data();
+		for (auto byte : data)
+		{
+			bin.push_back(byte);
+		}
+	}
+	return bin;
+}
+
+bool checkBinaryAgainstUUID(repo::lib::RepoUUID id, std::vector<uint8_t>& bin, size_t count)
+{
+	// First, check length. Should be count * 16
+	if (bin.size() != 16 * count)
+		return false;
+
+	// Then we go over it and check for corruption
+	// by comparing incoming with the truth
+	auto truth = id.data();
+	for (int i = 0; i < count; i++)
+	{
+		for (int j = 0; j < 16; j++)
+		{
+			if (bin[(i * 16) + j] != truth[j])
+				return false;
+		}
+	}
+
+	return true;
+}
+
+void checkDocument(
+	MongoDatabaseHandler* handler,
+	std::string database,
+	std::string collection,
+	int binarySampleCount,
+	repo::core::model::RepoBSON& doc)
+{
+	EXPECT_TRUE(doc.hasField("_id"));
+	EXPECT_TRUE(doc.hasField("shared_id"));
+
+	bool hasNonBinaryPayload = doc.hasField("non_bin");
+	EXPECT_TRUE(hasNonBinaryPayload);
+	if (hasNonBinaryPayload)
+	{
+		auto nonBinPayload = doc.getStringField("non_bin");
+		EXPECT_THAT(nonBinPayload, Eq("this is a test"));
+	}
+
+	// Extra check if there is a binary payload
+	if (doc.hasField("binary_id"))
+	{
+		auto binId = doc.getUUIDField("binary_id");
+
+		// Populate binary data
+		// There is a known multi-threading danger here.
+		// With insertMany, it is possible that the database entry
+		// is inserted before the last active file is committed.
+		// Bouncer can detect that the file ref is missing and
+		// throws an exception.
+		// Wait and retry two times before failing the test.
+		try
+		{
+			populateBinaryData(handler, database, collection, doc);
+		}
+		catch (repo::lib::RepoRefMissingException ex)
+		{
+			// Wait and try again
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+			try
+			{
+				populateBinaryData(handler, database, collection, doc);
+			}
+			catch (repo::lib::RepoRefMissingException ex)
+			{
+				// Wait and try again
+				std::this_thread::sleep_for(std::chrono::seconds(1));
+				try
+				{
+					populateBinaryData(handler, database, collection, doc);
+				}
+				catch (repo::lib::RepoRefMissingException ex)
+				{
+					// Failed three times. Something is wrong. Fail the test.
+					FAIL() << "Failed to retrieve file reference three times." << std::endl;
+				}
+			}
+		}
+
+		auto buffer = doc.getBinary("bin");
+		bool binaryCheck = checkBinaryAgainstUUID(binId, buffer, binarySampleCount);
+		doc.unloadBinaryBuffers();
+		EXPECT_TRUE(binaryCheck);
+	}
+}
+
+repo::core::model::RepoBSON generateSample(bool addBinary, int binarySampleCount = 1000)
+{
+	repo::core::model::RepoBSONBuilder builder;
+
+	auto uniqueId = repo::lib::RepoUUID::createUUID();
+	builder.append("_id", uniqueId);
+
+	auto sharedId = repo::lib::RepoUUID::createUUID();
+	builder.append("shared_id", sharedId);
+
+	// Some none-binary payload
+	builder.append("non_bin", "this is a test");
+
+	if (addBinary)
+	{
+		auto binId = repo::lib::RepoUUID::createUUID();
+		builder.appendLargeArray("bin", makeRandomBinaryFromUUID(binId, binarySampleCount));
+		builder.append("binary_id", binId);
+	}
+
+	return builder.obj();
+}
+
+void checkThreadGetAllFromCollectionTailable(
+	MongoDatabaseHandler* handler,
+	std::string database,
+	std::string collection,
+	int binarySampleCount,
+	int noCasesToCheck)
+{
+	int checked = 0;
+	while (checked < noCasesToCheck)
+	{
+
+		auto results = handler->getAllFromCollectionTailable(database, collection);
+
+		// Go over results, check for presence of the test fields
+		for (auto& doc : results)
+		{
+			checkDocument(handler, database, collection, binarySampleCount, doc);
+			checked++;
+
+			// Sanity break in case the collection holds more than noCasesToCheck
+			if (checked > noCasesToCheck)
+				break;
+		}
+	}
+}
+
+void checkThreadFindAllByCriteria(
+	MongoDatabaseHandler* handler,
+	std::string database,
+	std::string collection,
+	int binarySampleCount,
+	int noCasesToCheck)
+{
+	int checked = 0;
+	while (checked < noCasesToCheck)
+	{
+		// Get some unique ids fist
+		std::vector<repo::lib::RepoUUID> ids;
+		{
+			int count = handler->count(database, collection, database::query::RepoQueryBuilder{});
+			if (count == 0)
+				continue;
+			int randSkip = std::rand() % count;
+			int randLimit = std::max(std::rand() % 150, 10);
+			auto results = handler->getAllFromCollectionTailable(database, collection, randSkip, randLimit, { "_id" });
+
+			for (auto& doc : results)
+			{
+				auto id = doc.getUUIDField("_id");
+				ids.push_back(id);
+			}
+		}
+
+		// Now find the entries matching that criteria
+		auto criteria = database::query::Eq("_id", ids);
+		auto results = handler->findAllByCriteria(database, collection, criteria);
+
+		// Go over results, check for presence of the test fields
+		for (auto& doc : results)
+		{
+			checkDocument(handler, database, collection, binarySampleCount, doc);
+			checked++;
+		}
+	}
+}
+
+void checkThreadFindAllByCriteriaWithProjection(
+	MongoDatabaseHandler* handler,
+	std::string database,
+	std::string collection,
+	int binarySampleCount,
+	int noCasesToCheck)
+{
+	int checked = 0;
+	while (checked < noCasesToCheck)
+	{
+		// Get some unique ids fist
+		std::vector<repo::lib::RepoUUID> ids;
+		{
+			int count = handler->count(database, collection, database::query::RepoQueryBuilder{});
+			if (count == 0)
+				continue;
+			int randSkip = std::rand() % count;
+			int randLimit = std::max(std::rand() % 150, 10);
+			auto results = handler->getAllFromCollectionTailable(database, collection, randSkip, randLimit, { "_id" });
+
+			for (auto& doc : results)
+			{
+				auto id = doc.getUUIDField("_id");
+				ids.push_back(id);
+			}
+		}
+
+		// Build projection that will exclude the shared_id field
+		auto projection = database::query::RepoProjectionBuilder();
+		projection.excludeField("shared_id");
+
+		// Now find the entries matching that criteria
+		auto criteria = database::query::Eq("_id", ids);
+		auto results = handler->findAllByCriteria(database, collection, criteria, projection);
+
+		// Go over results, check for presence of the test fields
+		for (auto& doc : results)
+		{
+			checkDocument(handler, database, collection, binarySampleCount, doc);
+			checked++;
+		}
+	}
+}
+
+void checkThreadFindCursorByCriteria(
+	MongoDatabaseHandler* handler,
+	std::string database,
+	std::string collection,
+	int binarySampleCount,
+	int noCasesToCheck)
+{
+	int checked = 0;
+	while (checked < noCasesToCheck)
+	{
+		// Get some unique ids fist
+		std::vector<repo::lib::RepoUUID> ids;
+		{
+			int count = handler->count(database, collection, database::query::RepoQueryBuilder{});
+			if (count == 0)
+				continue;
+			int randSkip = std::rand() % count;
+			int randLimit = std::max(std::rand() % 150, 10);
+			auto results = handler->getAllFromCollectionTailable(database, collection, randSkip, randLimit, { "_id" });
+
+			for (auto& doc : results)
+			{
+				auto id = doc.getUUIDField("_id");
+				ids.push_back(id);
+			}
+		}
+
+		// Now find the entries matching that criteria
+		auto criteria = database::query::Eq("_id", ids);
+		auto cursor = handler->findCursorByCriteria(database, collection, criteria);
+
+		// Go over results, check for presence of the test fields
+		for (auto doc : *cursor)
+		{
+			checkDocument(handler, database, collection, binarySampleCount, doc);
+			checked++;
+		}
+	}
+}
+
+void checkThreadFindCursorByCriteriaWithProjection(
+	MongoDatabaseHandler* handler,
+	std::string database,
+	std::string collection,
+	int binarySampleCount,
+	int noCasesToCheck)
+{
+	int checked = 0;
+	while (checked < noCasesToCheck)
+	{
+		// Get some unique ids fist
+		std::vector<repo::lib::RepoUUID> ids;
+		{
+			int count = handler->count(database, collection, database::query::RepoQueryBuilder{});
+			if (count == 0)
+				continue;
+			int randSkip = std::rand() % count;
+			int randLimit = std::max(std::rand() % 150, 10);			
+			auto results = handler->getAllFromCollectionTailable(database, collection, randSkip, randLimit, { "_id" });
+
+			for (auto& doc : results)
+			{
+				auto id = doc.getUUIDField("_id");
+				ids.push_back(id);
+			}
+		}
+
+		// If no ids could be recovered, continue.
+		// This can happen if the collection was dropped by another thread
+		// after count was already done.
+		if (ids.size() == 0)
+			continue;
+
+		// Build projection that will exclude the shared_id field
+		auto projection = database::query::RepoProjectionBuilder();
+		projection.excludeField("shared_id");
+
+		// Now find the entries matching that criteria
+		auto criteria = database::query::Eq("_id", ids);
+		auto cursor = handler->findCursorByCriteria(database, collection, criteria, projection);
+
+		// Go over results, check for presence of the test fields
+		for (auto doc : *cursor)
+		{
+			checkDocument(handler, database, collection, binarySampleCount, doc);
+			checked++;
+		}
+	}
+}
+
+void checkThreadFindOneByCriteria(
+	MongoDatabaseHandler* handler,
+	std::string database,
+	std::string collection,
+	int binarySampleCount,
+	int noCasesToCheck)
+{
+	int checked = 0;
+	while (checked < noCasesToCheck)
+	{
+		// Get some random unique id
+		repo::lib::RepoUUID id;
+		{
+			int count = handler->count(database, collection, database::query::RepoQueryBuilder{});
+			if (count == 0)
+				continue;
+			int randSkip = std::rand() % count;
+			auto results = handler->getAllFromCollectionTailable(database, collection, randSkip, 1, { "_id" });
+
+			if (results.size() == 0)
+				continue;
+			id = results[0].getUUIDField("_id");
+		}
+
+		// Now find the entry matching that criteria
+		auto criteria = database::query::Eq("_id", id);
+		auto result = handler->findOneByCriteria(database, collection, criteria);
+
+		// It is possible that the entry got dropped in the meantime.
+		// That is not undesired behaviour, so we just continue and
+		// hope for better luck next time.
+		if (result.isEmpty())
+			continue;
+
+		// Check result
+		checkDocument(handler, database, collection, binarySampleCount, result);
+		checked++;
+	}
+}
+
+void checkThreadFindOneBySharedId(
+	MongoDatabaseHandler* handler,
+	std::string database,
+	std::string collection,
+	int binarySampleCount,
+	int noCasesToCheck)
+{
+	int checked = 0;
+	while (checked < noCasesToCheck)
+	{
+		// Get some random unique id
+		repo::lib::RepoUUID id;
+		{
+			int count = handler->count(database, collection, database::query::RepoQueryBuilder{});
+			if (count == 0)
+				continue;
+
+			int randSkip = std::rand() % count;
+			auto results = handler->getAllFromCollectionTailable(database, collection, randSkip, 1, { "shared_id" });
+
+			if (results.size() == 0)
+				continue;
+
+			id = results[0].getUUIDField("shared_id");
+		}
+
+		// Now find the entry matching that criteria
+		auto result = handler->findOneBySharedID(database, collection, id, "_id");
+
+		// It is possible that the entry got dropped in the meantime.
+		// That is not undesired behaviour, so we just continue and
+		// hope for better luck next time.
+		if (result.isEmpty())
+			continue;
+
+		// Check result
+		checkDocument(handler, database, collection, binarySampleCount, result);
+		checked++;
+	}
+}
+
+void checkThreadFindOneByUniqueId(
+	MongoDatabaseHandler* handler,
+	std::string database,
+	std::string collection,
+	int binarySampleCount,
+	int noCasesToCheck)
+{
+	int checked = 0;
+	while (checked < noCasesToCheck)
+	{
+		// Get some random unique id
+		repo::lib::RepoUUID id;
+		{
+			int count = handler->count(database, collection, database::query::RepoQueryBuilder{});
+			if (count == 0)
+				continue;
+			int randSkip = std::rand() % count;
+			auto results = handler->getAllFromCollectionTailable(database, collection, randSkip, 1, { "_id" });
+
+			if (results.size() == 0)
+				continue;
+			id = results[0].getUUIDField("_id");
+		}
+
+		// Now find the entry matching that criteria
+		auto result = handler->findOneByUniqueID(database, collection, id);
+
+		// It is possible that the entry got dropped in the meantime.
+		// That is not undesired behaviour, so we just continue and
+		// hope for better luck next time.
+		if (result.isEmpty())
+			continue;
+
+		// Check result
+		checkDocument(handler, database, collection, binarySampleCount, result);
+		checked++;
+	}
+}
+
+void checkThreadFindOneByUniqueIdString(
+	MongoDatabaseHandler* handler,
+	std::string database,
+	std::string collection,
+	int binarySampleCount,
+	int noCasesToCheck)
+{
+	int checked = 0;
+	while (checked < noCasesToCheck)
+	{
+		// Get some random unique id
+		repo::lib::RepoUUID id;
+		{
+			int count = handler->count(database, collection, database::query::RepoQueryBuilder{});
+			if (count == 0)
+				continue;
+			int randSkip = std::rand() % count;
+			auto results = handler->getAllFromCollectionTailable(database, collection, randSkip, 1, { "_id" });
+
+			if (results.size() == 0)
+				continue;
+			id = results[0].getUUIDField("_id");
+		}
+
+		// Now find the entry matching that criteria
+		auto result = handler->findOneByUniqueID(database, collection, id.toString());
+
+		// Check result
+		// The write threads all produce LUUID fields for _id, so getting no result is the expected result
+		EXPECT_TRUE(result.isEmpty());		
+		checked++;
+	}
+}
+
+void checkThreadGetCollection(
+	MongoDatabaseHandler* handler,
+	std::string database,
+	std::string collection,
+	int binarySampleCount,
+	int noCasesToCheck)
+{
+	int checked = 0;
+	while (checked < noCasesToCheck)
+	{
+		auto collections = handler->getCollections(database);
+
+		if (collections.size() == 0)
+			continue;
+
+		bool foundTarget = false;
+		for (auto col : collections)
+		{
+			if (col == collection)
+				foundTarget = true;
+		}
+
+		// No hard check. We cannot guarantee that there are any collections
+		// or that the current one is existing right now (might not at the beginning
+		// of the test). So as long as it does not throw a exception, we are happy if
+		// it occasionially does not show up.
+		if(foundTarget)
+			checked++;
+	}
+}
+
+void writeThreadInsertDocument(
+	MongoDatabaseHandler* handler,
+	std::string database,
+	std::string collection,
+	int binarySampleCount,
+	int noCasesToGenerate)
+{
+	int generated = 0;
+	while (generated < noCasesToGenerate)
+	{
+		auto sample = generateSample(false);
+		handler->insertDocument(database, collection, sample);
+		generated++;
+	}
+}
+
+void writeThreadInsertManyDocuments(
+	MongoDatabaseHandler* handler,
+	std::string database,
+	std::string collection,
+	int binarySampleCount,
+	int noCasesToGenerate)
+{
+	const int batchSize = 100;
+	int generated = 0;
+
+	while (generated < noCasesToGenerate) 
+	{
+		// Generate a batch of samples
+		std::vector<repo::core::model::RepoBSON> samples;
+		samples.reserve(batchSize);
+		for (int i = 0; i < batchSize; i++)
+		{
+			auto sample = generateSample(true, binarySampleCount);
+			samples.push_back(sample);
+		}
+
+		// Insert the batch
+		handler->insertManyDocuments(database, collection, samples);
+
+		generated += batchSize;
+	}
+}
+
+void writeThreadUpsertDocument(
+	MongoDatabaseHandler* handler,
+	std::string database,
+	std::string collection,
+	int binarySampleCount,
+	int noCasesToGenerate)
+{
+	int generated = 0;
+	while (generated < noCasesToGenerate)
+	{
+		// basically flip a coin whether to insert a new one or upsert an existing document
+		bool generateNew = std::rand() % 2;
+		if (generateNew)
+		{
+			auto sample = generateSample(false);
+			handler->upsertDocument(database, collection, sample, true);
+			generated++;
+		}
+		else
+		{
+			int count = handler->count(database, collection, database::query::RepoQueryBuilder{});
+			if (count == 0)
+				continue;
+
+			int randSkip = std::rand() % count;
+			auto results = handler->getAllFromCollectionTailable(database, collection, randSkip, 1, {});
+
+			if (results.size() == 0)
+				continue;
+
+			auto doc = results[0];
+
+			// Make sure the doc is valid before using it
+			checkDocument(handler, database, collection, binarySampleCount, doc);
+			
+			// Copy values
+			auto sample = repo::core::model::RepoBSONBuilder();
+			sample.append("_id", doc.getUUIDField("_id"));
+			sample.append("shared_id", doc.getUUIDField("shared_id"));
+			sample.append("non_bin", doc.getStringField("non_bin"));
+			if (doc.hasField("binary_id"))
+			{
+				sample.append("binary_id", doc.getUUIDField("binary_id"));
+				sample.append("_blobRef", doc.getObjectField("_blobRef"));
+			}
+
+			// Add new field just so there is something new
+			sample.append("upserted", true);
+
+			// Upsert the document
+			handler->upsertDocument(database, collection, sample.obj(), true);
+
+			generated++;
+		}
+	}
+}
+
+void writeThreadBulkWriteContext(
+	MongoDatabaseHandler* handler,
+	std::string database,
+	std::string collection,
+	int binarySampleCount,
+	int noCasesToGenerate)
+{
+	int generated = 0;
+
+	auto ctx = handler->getBulkWriteContext(database, collection);
+	std::vector<repo::lib::RepoUUID> uids;
+
+	while (generated < noCasesToGenerate)
+	{
+		// basically flip a coin whether to insert a new one or upsert an existing document
+		bool generateNew = std::rand() % 2;
+		if (generateNew)
+		{
+			auto sample = generateSample(false);
+			ctx->insertDocument(sample);
+			generated++;
+		}
+		else
+		{
+			int count = handler->count(database, collection, database::query::RepoQueryBuilder{});
+			if (count == 0)
+				continue;
+
+			int randSkip = std::rand() % count;
+			auto results = handler->getAllFromCollectionTailable(database, collection, randSkip, 1, {});
+
+			if (results.size() == 0)
+				continue;
+
+			auto doc = results[0];
+
+			// Make sure the doc is valid before using it
+			checkDocument(handler, database, collection, binarySampleCount, doc);
+
+			// Update the document with a ficticious parent id
+			auto uid = doc.getUUIDField("_id");
+			auto parentId = repo::lib::RepoUUID::createUUID();
+			auto query = database::query::RepoUpdate(database::query::AddParent(uid, parentId));
+			ctx->updateDocument(query);
+
+			generated++;
+		}
+	}
+	ctx->flush();
+}
+
+void writeThreadCreateIndex(
+	MongoDatabaseHandler* handler,
+	std::string database,
+	std::string collection,
+	int binarySampleCount,
+	int noCasesToGenerate)
+{
+	int generated = 0;
+	while (generated < noCasesToGenerate)
+	{
+		handler->createIndex(database, collection, database::index::Ascending({ "_id", "shared_id" }), false, true);
+		generated++;
+	}
+}
+
+void dropThreadDropDocument(
+	MongoDatabaseHandler* handler,
+	std::string database,
+	std::string collection,
+	int binarySampleCount,
+	int noCasesToDrop)
+{
+	int dropped = 0;
+	while (dropped < noCasesToDrop)
+	{
+		int count = handler->count(database, collection, database::query::RepoQueryBuilder{});
+		if (count == 0)
+			continue;
+
+		int randSkip = std::rand() % count;
+		auto results = handler->getAllFromCollectionTailable(database, collection, randSkip, 1, {});
+
+		if (results.size() == 0)
+			continue;
+
+		auto doc = results[0];
+
+		// Make sure the doc is valid before using it
+		checkDocument(handler, database, collection, binarySampleCount, doc);
+
+		handler->dropDocument(doc, database, collection);
+
+		dropped++;
+	}
+}
+
+TEST(MongoDatabaseHandlerTest, SoakTestWriteVsWrite)
+{
+	std::string database = REPO_GTEST_DBNAME3;
+	std::string collection = "mtTestCollection";
+	std::string refCollection = "mtTestCollection.ref";
+	int binarySampleCount = 10; // 1,600 byte per document
+	int noCases = 2500; // per thread. Scaled to keep runtime in the minutes
+
+	// Typedef for the function pointers
+	typedef void (*fp)(MongoDatabaseHandler*, std::string, std::string, int, int);
+
+	// Create array of function pointers
+	std::pair<std::string, fp> writeFunctions[] =
+	{
+		{"InsertDocument", writeThreadInsertDocument},
+		{"InsertManyDocuments", writeThreadInsertManyDocuments},
+		{"UpsertDocument", writeThreadUpsertDocument},
+		{"BulkWriteContext", writeThreadBulkWriteContext},
+		{"CreateIndex", writeThreadCreateIndex}
+	};
+	
+	// Create handler
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+
+	// Initialise srand
+	std::srand(std::time(nullptr));
+	
+	for (auto funcA : writeFunctions)
+	{
+		for (auto funcB : writeFunctions)
+		{
+			if (funcA == funcB)
+				continue;
+
+			std::cout << funcA.first << " vs. " << funcB.first << std::endl;
+			std::vector<std::jthread> threads;
+
+			// Prepare collections
+			handler->dropCollection(database, collection);
+			handler->dropCollection(database, refCollection);
+
+			// Launch the threads from the first set
+			for (int i = 0; i < 10; i++)
+				threads.emplace_back(std::jthread{ funcA.second, handler.get(), database, collection, binarySampleCount, noCases});
+
+			// Launch the threads from the second set
+			for (int i = 0; i < 10; i++)
+				threads.emplace_back(std::jthread{ funcB.second, handler.get(), database, collection, binarySampleCount, noCases });
+
+			// Wait for all threads to complete
+			for (auto& t : threads)
+				t.join();
+		}
+	}
+}
+
+TEST(MongoDatabaseHandlerTest, SoakTestReadVsRead)
+{
+	std::string database = REPO_GTEST_DBNAME3;
+	std::string collection = "mtTestCollection";
+	std::string refCollection = "mtTestCollection.ref";
+	int binarySampleCount = 10; // 1,600 byte per document
+	int noCases = 300; // per thread. Scaled to keep the runtime in minutes.
+
+	// Typedef for the function pointers
+	typedef void (*fp)(MongoDatabaseHandler*, std::string, std::string, int, int);
+
+	// Create array of function pointers
+	std::pair<std::string, fp> checkFunctions[] =
+	{
+		{"GetAllFromCollectionTailable", checkThreadGetAllFromCollectionTailable},
+		{"FindAllByCriteria", checkThreadFindAllByCriteria},
+		{"FindAllByCriteriaWithProjection", checkThreadFindAllByCriteriaWithProjection},
+		{"FindCursorByCriteria", checkThreadFindCursorByCriteria},
+		{"FindCursorByCriteriaWithProjection", checkThreadFindCursorByCriteriaWithProjection},
+		{"FindOneByCriteria", checkThreadFindOneByCriteria},
+		{"FindOneBySharedId", checkThreadFindOneBySharedId},
+		{"FindOneByUniqueId", checkThreadFindOneByUniqueId},
+		{"FindOneByUniqueIdString", checkThreadFindOneByUniqueIdString},
+		{"GetCollections", checkThreadGetCollection}
+	};
+
+	// Create handler
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+
+	// Initialise srand
+	std::srand(std::time(nullptr));
+
+	// Create a collection with 10k test entries.
+	// Half of them with binary payload and half without
+	handler->dropCollection(database, collection);
+	handler->dropCollection(database, refCollection);
+	auto ctx = handler->getBulkWriteContext(database, collection);
+	for (int i = 0; i < 10000; i++)
+	{
+		ctx->insertDocument(generateSample(i < 5000, binarySampleCount));
+	}
+	ctx->flush();
+
+	// Add index to speed up look ups using the shared_id
+	handler->createIndex(database, collection, repo::core::handler::database::index::Ascending({ "shared_id" }), false, true);
+
+	for (auto funcA : checkFunctions)
+	{
+		for (auto funcB : checkFunctions)
+		{
+			if (funcA == funcB)
+				continue;
+
+			std::cout << funcA.first << " vs. " << funcB.first << std::endl;
+			std::vector<std::jthread> threads;
+
+			// Launch the threads from the first set
+			for (int i = 0; i < 10; i++)
+				threads.emplace_back(std::jthread{ funcA.second, handler.get(), database, collection, binarySampleCount, noCases });
+
+			// Launch the threads from the second set
+			for (int i = 0; i < 10; i++)
+				threads.emplace_back(std::jthread{ funcB.second, handler.get(), database, collection, binarySampleCount, noCases });
+
+			// Wait for all threads to complete
+			for (auto& t : threads)
+				t.join();
+		}
+	}
+}
+
+TEST(MongoDatabaseHandlerTest, SoakTestReadVsWrite)
+{
+	std::string database = REPO_GTEST_DBNAME3;
+	std::string collection = "mtTestCollection";
+	std::string refCollection = "mtTestCollection.ref";
+	int binarySampleCount = 10; // 1,600 byte per document
+	int noCasesWrite = 2500; // per thread
+	int noCasesCheck = 300; // per thread
+
+	// Typedef for the function pointers
+	typedef void (*fp)(MongoDatabaseHandler*, std::string, std::string, int, int);
+
+	// Create array of function pointers
+	std::pair<std::string, fp> writeFunctions[] =
+	{
+		{"InsertDocument", writeThreadInsertDocument},
+		{"InsertManyDocuments", writeThreadInsertManyDocuments},
+		{"UpsertDocument", writeThreadUpsertDocument},
+		{"BulkWriteContext", writeThreadBulkWriteContext}
+	};
+
+	// Create array of function pointers
+	std::pair<std::string, fp> checkFunctions[] =
+	{
+		{"GetAllFromCollectionTailable", checkThreadGetAllFromCollectionTailable},
+		{"FindAllByCriteria", checkThreadFindAllByCriteria},
+		{"FindAllByCriteriaWithProjection", checkThreadFindAllByCriteriaWithProjection},
+		{"FindCursorByCriteria", checkThreadFindCursorByCriteria},
+		{"FindCursorByCriteriaWithProjection", checkThreadFindCursorByCriteriaWithProjection},
+		{"FindOneByCriteria", checkThreadFindOneByCriteria},
+		{"FindOneBySharedId", checkThreadFindOneBySharedId},
+		{"FindOneByUniqueId", checkThreadFindOneByUniqueId},
+		{"FindOneByUniqueIdString", checkThreadFindOneByUniqueIdString},
+		{"GetCollections", checkThreadGetCollection}
+	};
+
+	// Create handler
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+
+	// Initialise srand
+	std::srand(std::time(nullptr));
+
+	// Add index to speed up look ups using the shared_id
+	handler->createIndex(database, collection, repo::core::handler::database::index::Ascending({ "shared_id" }), false, true);
+
+	for (auto funcA : writeFunctions)
+	{
+		for (auto funcB : checkFunctions)
+		{
+			std::cout << funcA.first << " vs. " << funcB.first << std::endl;
+			std::vector<std::jthread> threads;
+
+			// Prepare collections
+			handler->dropCollection(database, collection);
+			handler->dropCollection(database, refCollection);
+
+			// Launch the threads from the first set (write)
+			for (int i = 0; i < 10; i++)
+				threads.emplace_back(std::jthread{ funcA.second, handler.get(), database, collection, binarySampleCount, noCasesWrite });
+
+			// Launch the threads from the second set (check)
+			for (int i = 0; i < 10; i++)
+				threads.emplace_back(std::jthread{ funcB.second, handler.get(), database, collection, binarySampleCount, noCasesCheck });
+
+			// Wait for all threads to complete
+			for (auto& t : threads)
+				t.join();
+		}
+	}
+}
+
+TEST(MongoDatabaseHandlerTest, SoakTestDropVsRead)
+{
+	std::string database = REPO_GTEST_DBNAME3;
+	std::string collection = "mtTestCollection";
+	std::string refCollection = "mtTestCollection.ref";
+	int binarySampleCount = 10; // 1,600 byte per document
+	int noCasesDrop = 750; // per thread. Scaled to keep the runtime in minutes.
+	int noCasesCheck = 500; // per thread. Scaled to keep the runtime in minutes.
+
+	// Typedef for the function pointers
+	typedef void (*fp)(MongoDatabaseHandler*, std::string, std::string, int, int);
+
+	// Create array of function pointers
+	std::pair<std::string, fp> checkFunctions[] =
+	{
+		{"GetAllFromCollectionTailable", checkThreadGetAllFromCollectionTailable},
+		{"FindAllByCriteria", checkThreadFindAllByCriteria},
+		{"FindAllByCriteriaWithProjection", checkThreadFindAllByCriteriaWithProjection},
+		{"FindCursorByCriteria", checkThreadFindCursorByCriteria},
+		{"FindCursorByCriteriaWithProjection", checkThreadFindCursorByCriteriaWithProjection},
+		{"FindOneByCriteria", checkThreadFindOneByCriteria},
+		{"FindOneBySharedId", checkThreadFindOneBySharedId},
+		{"FindOneByUniqueId", checkThreadFindOneByUniqueId},
+		{"FindOneByUniqueIdString", checkThreadFindOneByUniqueIdString},
+		{"GetCollections", checkThreadGetCollection}
+	};
+
+	// Create handler
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+
+	// Initialise srand
+	std::srand(std::time(nullptr));
+
+	for (auto funcA : checkFunctions)
+	{
+		std::cout << funcA.first << " vs. DropDocuments" << std::endl;
+		std::vector<std::jthread> threads;
+
+		// Create a collection with 10k test entries.
+		// Half of them with binary payload and half without
+		handler->dropCollection(database, collection);
+		handler->dropCollection(database, refCollection);
+		auto ctx = handler->getBulkWriteContext(database, collection);
+		for (int i = 0; i < 10000; i++)
+		{
+			ctx->insertDocument(generateSample(i < 5000, binarySampleCount));
+		}
+		ctx->flush();
+
+		// Add index to speed up look ups using the shared_id
+		handler->createIndex(database, collection, repo::core::handler::database::index::Ascending({ "shared_id" }), false, true);
+
+		// Launch the drop threads 
+		for (int i = 0; i < 10; i++)
+			threads.emplace_back(std::jthread{ dropThreadDropDocument, handler.get(), database, collection, binarySampleCount, noCasesDrop });
+
+		// Launch the threads from the check set
+		for (int i = 0; i < 10; i++)
+			threads.emplace_back(std::jthread{ funcA.second, handler.get(), database, collection, binarySampleCount, noCasesCheck });
+
+		// Wait for all threads to complete
+		for (auto& t : threads)
+			t.join();
+	}
+}
+
+TEST(MongoDatabaseHandlerTest, SoakTestReadVsWriteVsDrop)
+{
+	std::string database = REPO_GTEST_DBNAME3;
+	std::string collection = "mtTestCollection";
+	std::string refCollection = "mtTestCollection.ref";
+	int binarySampleCount = 10; // 1,600 byte per document
+	int noCasesWrite = 30000; // per thread. Scaled to keep the runtime in minutes.
+	int noCasesCheck = 3000; // per thread. Scaled to keep the runtime in minutes.
+	int noCasesDrop = 7500; // per thread. Scaled to keep the runtime in minutes.
+
+	// Typedef for the function pointers
+	typedef void (*fp)(MongoDatabaseHandler*, std::string, std::string, int, int);
+
+	// Create array of function pointers
+	std::pair<int, fp> functions[] =
+	{
+		{noCasesWrite, writeThreadInsertDocument},
+		{noCasesWrite, writeThreadInsertManyDocuments},
+		{noCasesWrite, writeThreadUpsertDocument},
+		{noCasesWrite, writeThreadBulkWriteContext},
+		{noCasesWrite, writeThreadCreateIndex},
+		{noCasesCheck, checkThreadGetAllFromCollectionTailable},
+		{noCasesCheck, checkThreadFindAllByCriteria},
+		{noCasesCheck, checkThreadFindAllByCriteriaWithProjection},
+		{noCasesCheck, checkThreadFindCursorByCriteria},
+		{noCasesCheck, checkThreadFindCursorByCriteriaWithProjection},
+		{noCasesCheck, checkThreadFindOneByCriteria},
+		{noCasesCheck, checkThreadFindOneBySharedId},
+		{noCasesCheck, checkThreadFindOneByUniqueId},
+		{noCasesCheck, checkThreadFindOneByUniqueIdString},
+		{noCasesCheck, checkThreadGetCollection},
+		{noCasesDrop, dropThreadDropDocument}
+	};
+
+	// Create handler
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+
+	// Initialise srand
+	std::srand(std::time(nullptr));
+
+	// Prepare collections
+	handler->dropCollection(database, collection);
+	handler->dropCollection(database, refCollection);
+
+	// Add index to speed up look ups using the shared_id
+	handler->createIndex(database, collection, repo::core::handler::database::index::Ascending({ "shared_id" }), false, true);
+
+	std::vector<std::jthread> threads;
+	for (auto func : functions)
+	{
+		// Launch the threads
+		threads.emplace_back(std::jthread{ func.second, handler.get(), database, collection, binarySampleCount, func.first });
+	}
+
+	// Wait for all threads to complete
+	for (auto& t : threads)
+		t.join();
 }
