@@ -3052,8 +3052,6 @@ void RunEqualTest(
 // Clash tests for auto-generated intersections by file type: RVT
 TEST(ClashRvt, RvtDisjoint)
 {
-	GTEST_SKIP();
-
 	// Tests auto-generated samples of Intersection Case A (Disjoint) from a Revit File
 
 	int noParts = 5;
@@ -3095,8 +3093,6 @@ TEST(ClashRvt, RvtDisjoint)
 
 TEST(ClashRvt, RvtIntersectClosed)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case B (Intersect Closed) from a Revit File
 
 	int noParts = 5;
@@ -3138,8 +3134,6 @@ TEST(ClashRvt, RvtIntersectClosed)
 
 TEST(ClashRvt, RvtIntersectOpen)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case C (Intersect Open) from a Revit File
 
 	int noParts = 5;
@@ -3181,8 +3175,6 @@ TEST(ClashRvt, RvtIntersectOpen)
 
 TEST(ClashRvt, RvtCovers)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case D (Covers) from a Revit File
 
 	int noParts = 5;
@@ -3224,8 +3216,6 @@ TEST(ClashRvt, RvtCovers)
 
 TEST(ClashRvt, RvtContains)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case E (Contains) from a Revit File
 
 	int noParts = 5;
@@ -3267,8 +3257,6 @@ TEST(ClashRvt, RvtContains)
 
 TEST(ClashRvt, RvtMeet)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case F (Meet) from a Revit File
 
 	int noParts = 5;
@@ -3307,8 +3295,6 @@ TEST(ClashRvt, RvtMeet)
 
 TEST(ClashRvt, RvtOverlap)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case G (Overlap) from a Revit File
 
 	int noParts = 5;
@@ -3350,8 +3336,6 @@ TEST(ClashRvt, RvtOverlap)
 
 TEST(ClashRvt, RvtEqual)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case H (Equal) from a Revit File
 
 	int noParts = 5;
@@ -3412,8 +3396,6 @@ protected:
 
 TEST_F(ClashNwd, NwdDisjoint)
 {
-	GTEST_SKIP();
-
 	// Tests auto-generated samples of Intersection Case A (Disjoint) from a Navis File
 
 	int noParts = 5;
@@ -3455,8 +3437,6 @@ TEST_F(ClashNwd, NwdDisjoint)
 
 TEST_F(ClashNwd, NwdIntersectClosed)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case B (Intersect Closed) from a Navis File
 
 	int noParts = 5;
@@ -3498,8 +3478,6 @@ TEST_F(ClashNwd, NwdIntersectClosed)
 
 TEST_F(ClashNwd, NwdIntersectOpen)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case C (Intersect Open) from a Navis File
 
 	int noParts = 5;
@@ -3541,8 +3519,6 @@ TEST_F(ClashNwd, NwdIntersectOpen)
 
 TEST_F(ClashNwd, NwdCovers)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case D (Covers) from a Navis File
 
 	int noParts = 5;
@@ -3584,8 +3560,6 @@ TEST_F(ClashNwd, NwdCovers)
 
 TEST_F(ClashNwd, NwdContains)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case E (Contains) from a Navis File
 
 	int noParts = 5;
@@ -3627,8 +3601,6 @@ TEST_F(ClashNwd, NwdContains)
 
 TEST_F(ClashNwd, NwdMeet)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case F (Meet) from a Navis File
 
 	int noParts = 5;
@@ -3667,8 +3639,6 @@ TEST_F(ClashNwd, NwdMeet)
 
 TEST_F(ClashNwd, NwdOverlap)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case G (Overlap) from a Navis File
 
 	int noParts = 5;
@@ -3710,8 +3680,6 @@ TEST_F(ClashNwd, NwdOverlap)
 
 TEST_F(ClashNwd, NwdEqual)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case H (Equal) from a Navis File
 
 	int noParts = 5;
@@ -3801,8 +3769,6 @@ void importLinkFile(
 // Clash tests for auto-generated intersections by file type: DWG
 TEST(ClashDwg, DwgDisjoint)
 {
-	GTEST_SKIP();
-
 	// Tests auto-generated samples of Intersection Case A (Disjoint) from a DWG File
 
 	int noParts = 5;
@@ -3847,8 +3813,6 @@ TEST(ClashDwg, DwgDisjoint)
 
 TEST(ClashDwg, DwgIntersectClosed)
 {
-	GTEST_SKIP();
-
 	// Tests auto-generated samples of Intersection Case B (Intersect Closed) from a DWG File
 
 	int noParts = 5;
@@ -3893,8 +3857,6 @@ TEST(ClashDwg, DwgIntersectClosed)
 
 TEST(ClashDwg, DwgIntersectOpen)
 {
-	GTEST_SKIP();
-
 	// Tests auto-generated samples of Intersection Case C (Intersect Open) from a DWG File
 
 	int noParts = 5;
@@ -3938,8 +3900,6 @@ TEST(ClashDwg, DwgIntersectOpen)
 
 TEST(ClashDwg, DwgCovers)
 {
-	GTEST_SKIP();
-
 	// Tests auto-generated samples of Intersection Case D (Covers) from a DWG File
 
 	int noParts = 5;
@@ -3983,8 +3943,6 @@ TEST(ClashDwg, DwgCovers)
 
 TEST(ClashDwg, DwgContains)
 {
-	GTEST_SKIP();
-
 	// Tests auto-generated samples of Intersection Case E (Contains) from a DWG File
 
 	int noParts = 5;
@@ -4028,8 +3986,6 @@ TEST(ClashDwg, DwgContains)
 
 TEST(ClashDwg, DwgMeet)
 {
-	GTEST_SKIP();
-
 	// Tests auto-generated samples of Intersection Case F (Meet) from a DWG File
 
 	int noParts = 5;
@@ -4071,8 +4027,6 @@ TEST(ClashDwg, DwgMeet)
 
 TEST(ClashDwg, DwgOverlap)
 {
-	GTEST_SKIP();
-
 	// Tests auto-generated samples of Intersection Case G (Overlap) from a DWG File
 
 	int noParts = 5;
@@ -4116,8 +4070,6 @@ TEST(ClashDwg, DwgOverlap)
 
 TEST(ClashDwg, DwgEqual)
 {
-	GTEST_SKIP();
-
 	// Tests auto-generated samples of Intersection Case H (Equal) from a DWG File
 
 	int noParts = 5;
@@ -4160,8 +4112,6 @@ TEST(ClashDwg, DwgEqual)
 // Clash tests for auto-generated intersections by file type: IFC (Native)
 TEST(ClashIfc, IfcDisjoint)
 {
-	GTEST_SKIP();
-
 	// Tests auto-generated samples of Intersection Case A (Disjoint) from a Ifc File
 
 	int noParts = 5;
@@ -4203,8 +4153,6 @@ TEST(ClashIfc, IfcDisjoint)
 
 TEST(ClashIfc, IfcIntersectClosed)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case B (Intersect Closed) from a Ifc File
 
 	int noParts = 5;
@@ -4246,8 +4194,6 @@ TEST(ClashIfc, IfcIntersectClosed)
 
 TEST(ClashIfc, IfcIntersectOpen)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case C (Intersect Open) from a Ifc File
 
 	int noParts = 5;
@@ -4289,8 +4235,6 @@ TEST(ClashIfc, IfcIntersectOpen)
 
 TEST(ClashIfc, IfcCovers)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case D (Covers) from a Ifc File
 
 	int noParts = 5;
@@ -4332,8 +4276,6 @@ TEST(ClashIfc, IfcCovers)
 
 TEST(ClashIfc, IfcContains)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case E (Contains) from a Ifc File
 
 	int noParts = 5;
@@ -4375,8 +4317,6 @@ TEST(ClashIfc, IfcContains)
 
 TEST(ClashIfc, IfcMeet)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case F (Meet) from a Ifc File
 
 	int noParts = 5;
@@ -4415,8 +4355,6 @@ TEST(ClashIfc, IfcMeet)
 
 TEST(ClashIfc, IfcOverlap)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case G (Overlap) from a Ifc File
 
 	int noParts = 5;
@@ -4458,8 +4396,6 @@ TEST(ClashIfc, IfcOverlap)
 
 TEST(ClashIfc, IfcEqual)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case H (Equal) from a Ifc File
 
 	int noParts = 5;
@@ -4500,8 +4436,6 @@ TEST(ClashIfc, IfcEqual)
 // Clash tests for auto-generated intersections by file type: IFC (Exported from Revit)
 TEST(ClashIfcExp, IfcExpDisjoint)
 {
-	GTEST_SKIP();
-
 	// Tests auto-generated samples of Intersection Case A (Disjoint) from a Ifc File
 
 	int noParts = 5;
@@ -4543,8 +4477,6 @@ TEST(ClashIfcExp, IfcExpDisjoint)
 
 TEST(ClashIfcExp, IfcExpIntersectClosed)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case B (Intersect Closed) from a Ifc File
 
 	int noParts = 5;
@@ -4586,8 +4518,6 @@ TEST(ClashIfcExp, IfcExpIntersectClosed)
 
 TEST(ClashIfcExp, IfcExpIntersectOpen)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case C (Intersect Open) from a Ifc File
 
 	int noParts = 5;
@@ -4629,8 +4559,6 @@ TEST(ClashIfcExp, IfcExpIntersectOpen)
 
 TEST(ClashIfcExp, IfcExpCovers)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case D (Covers) from a Ifc File
 
 	int noParts = 5;
@@ -4672,8 +4600,6 @@ TEST(ClashIfcExp, IfcExpCovers)
 
 TEST(ClashIfcExp, IfcExpContains)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case E (Contains) from a Ifc File
 
 	int noParts = 5;
@@ -4715,8 +4641,6 @@ TEST(ClashIfcExp, IfcExpContains)
 
 TEST(ClashIfcExp, IfcExpMeet)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case F (Meet) from a Ifc File
 
 	int noParts = 5;
@@ -4755,8 +4679,6 @@ TEST(ClashIfcExp, IfcExpMeet)
 
 TEST(ClashIfcExp, IfcExpOverlap)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case G (Overlap) from a Ifc File
 
 	int noParts = 5;
@@ -4798,8 +4720,6 @@ TEST(ClashIfcExp, IfcExpOverlap)
 
 TEST(ClashIfcExp, IfcExpEqual)
 {
-	GTEST_SKIP();
-
 	// Tests 10k auto-generated samples of Intersection Case H (Equal) from a Ifc File
 
 	int noParts = 5;
