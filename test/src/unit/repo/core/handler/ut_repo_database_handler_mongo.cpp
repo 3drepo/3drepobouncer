@@ -1054,31 +1054,30 @@ void checkDocument(
 		// is inserted before the last active file is committed.
 		// Bouncer can detect that the file ref is missing and
 		// throws an exception.
-		// Wait and retry two times before failing the test.
+		// Wait and retry a set amount of times before failing the test.
+		int tried = 0;
+		int tries = 30;
+		bool success = false;
+		while (!success) 
+		{
 		try
 		{
 			populateBinaryData(handler, database, collection, doc);
+				success = true;
 		}
 		catch (repo::lib::RepoRefMissingException ex)
 		{
-			// Wait and try again
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-			try
+				// Check whether we still have tries left
+				if (tried < tries)
 			{
-				populateBinaryData(handler, database, collection, doc);
-			}
-			catch (repo::lib::RepoRefMissingException ex)
-			{
-				// Wait and try again
+					// We do. Increment number of tries, sleep for a second, then go again.
+					tried++;
 				std::this_thread::sleep_for(std::chrono::seconds(1));
-				try
-				{
-					populateBinaryData(handler, database, collection, doc);
 				}
-				catch (repo::lib::RepoRefMissingException ex)
+				else
 				{
-					// Failed three times. Something is wrong. Fail the test.
-					FAIL() << "Failed to retrieve file reference three times." << std::endl;
+					// We are out of tries. Fail the test.
+					FAIL() << "Unable to retrieve ref after " << tries << " attempts. Aborting." << std::endl;
 				}
 			}
 		}
