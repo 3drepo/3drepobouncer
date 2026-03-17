@@ -846,8 +846,9 @@ public:
 		MongoDatabaseHandler::MongoCursor* cursor;
 	};
 
-	MongoCursor(mongocxx::v_noabi::cursor&& c, MongoDatabaseHandler* handler)
+	MongoCursor(mongocxx::v_noabi::cursor&& c, mongocxx::v_noabi::pool::entry&& cl, MongoDatabaseHandler* handler)
 		:cursor(std::move(c)),
+		client(std::move(cl)),
 		handler(handler),
 		_begin(MongoIteratorImpl(cursor.begin(), this)),
 		_end(MongoIteratorImpl(cursor.end(), this))
@@ -855,6 +856,7 @@ public:
 	}
 
 	mongocxx::v_noabi::cursor cursor;
+	mongocxx::v_noabi::pool::entry client;
 	MongoIteratorImpl _begin;
 	MongoIteratorImpl _end;
 
@@ -904,7 +906,7 @@ std::unique_ptr<Cursor> repo::core::handler::MongoDatabaseHandler::findCursorByC
 			// Find all documents and return cursor
 			// Some pointer magic, because we have to cast the mongo cursor to its base before returning it.
 			// Ownership will be the caller's after the two raw pointers go out of scope
-			MongoDatabaseHandler::MongoCursor* mongoCursor = new MongoDatabaseHandler::MongoCursor(std::move(col.find(criteria.view())), this);			
+			MongoDatabaseHandler::MongoCursor* mongoCursor = new MongoDatabaseHandler::MongoCursor(std::move(col.find(criteria.view())), std::move(client), this);
 			database::Cursor *baseCursor = mongoCursor;
 			return std::unique_ptr<database::Cursor>(baseCursor);			
 		}
