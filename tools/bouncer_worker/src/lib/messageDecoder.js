@@ -91,8 +91,8 @@ const messageDecoder = (cmd) => {
 			case 'processClash':
 				res = {
 					cmdParams: [configPath],
-					project: args[1],
-					teamspace: args[2],
+					teamspace: args[1],
+					project: args[2],
 					configFile: args[3],
 					...res,
 				};

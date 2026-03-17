@@ -6,10 +6,14 @@ const fs = require('fs');
 const path = require('path');
 
 /*
-* This test is currently only run manually with a checkout as travis is not yet
-* configured to run unit tests for bouncer worker.
+* This test is currently only run manually with a checkout as CI pipeline is not
+* yet configured to run unit tests for bouncer worker.
 * This test should be activated when support for bouncer_worker tests in the CI
 * is added as part of https://github.com/3drepo/3drepobouncer/issues/768
+*/
+
+/*
+* Bouncer worker must be running for these tests.
 */
 
 // Use the same config as bouncer_worker proper
@@ -48,7 +52,7 @@ test('Test Clash Q', { concurrency: true }, async () => {
 		const channel = await connection.createChannel();
 
 		await channel.assertQueue(clashq);
-		const message = `processClash ${project} ${teamspace} $SHARED_SPACE/${correlationId}/clashConfig.json`;
+		const message = `processClash ${teamspace} ${project} $SHARED_SPACE/${correlationId}/clashConfig.json`;
 		channel.sendToQueue(clashq, Buffer.from(message), {
 			correlationId,
 		});
