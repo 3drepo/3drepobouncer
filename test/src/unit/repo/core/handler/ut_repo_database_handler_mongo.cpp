@@ -1060,19 +1060,19 @@ void checkDocument(
 		bool success = false;
 		while (!success) 
 		{
-		try
-		{
-			populateBinaryData(handler, database, collection, doc);
+			try
+			{
+				populateBinaryData(handler, database, collection, doc);
 				success = true;
-		}
-		catch (repo::lib::RepoRefMissingException ex)
-		{
+			}
+			catch (repo::lib::RepoRefMissingException ex)
+			{
 				// Check whether we still have tries left
 				if (tried < tries)
-			{
+				{
 					// We do. Increment number of tries, sleep for a second, then go again.
 					tried++;
-				std::this_thread::sleep_for(std::chrono::seconds(1));
+					std::this_thread::sleep_for(std::chrono::seconds(1));
 				}
 				else
 				{
@@ -1698,8 +1698,8 @@ void dropThreadDropDocument(
 TEST(MongoDatabaseHandlerTest, SoakTestWriteVsWrite)
 {
 	std::string database = REPO_GTEST_DBNAME3;
-	std::string collection = "mtTestCollection";
-	std::string refCollection = "mtTestCollection.ref";
+	std::string collection = "mtTestCollectionWvsW";
+	std::string refCollection = "mtTestCollectionWvsW.ref";
 	int binarySampleCount = 10; // 1,600 byte per document
 	int noCases = 2500; // per thread. Scaled to keep runtime in the minutes
 
@@ -1755,8 +1755,8 @@ TEST(MongoDatabaseHandlerTest, SoakTestWriteVsWrite)
 TEST(MongoDatabaseHandlerTest, SoakTestReadVsRead)
 {
 	std::string database = REPO_GTEST_DBNAME3;
-	std::string collection = "mtTestCollection";
-	std::string refCollection = "mtTestCollection.ref";
+	std::string collection = "mtTestCollectionRvsR";
+	std::string refCollection = "mtTestCollectionRvsR.ref";
 	int binarySampleCount = 10; // 1,600 byte per document
 	int noCases = 300; // per thread. Scaled to keep the runtime in minutes.
 
@@ -1827,8 +1827,8 @@ TEST(MongoDatabaseHandlerTest, SoakTestReadVsRead)
 TEST(MongoDatabaseHandlerTest, SoakTestReadVsWrite)
 {
 	std::string database = REPO_GTEST_DBNAME3;
-	std::string collection = "mtTestCollection";
-	std::string refCollection = "mtTestCollection.ref";
+	std::string collection = "mtTestCollectionRvsW";
+	std::string refCollection = "mtTestCollectionRvsW.ref";
 	int binarySampleCount = 10; // 1,600 byte per document
 	int noCasesWrite = 2500; // per thread
 	int noCasesCheck = 300; // per thread
@@ -1899,8 +1899,8 @@ TEST(MongoDatabaseHandlerTest, SoakTestReadVsWrite)
 TEST(MongoDatabaseHandlerTest, SoakTestDropVsRead)
 {
 	std::string database = REPO_GTEST_DBNAME3;
-	std::string collection = "mtTestCollection";
-	std::string refCollection = "mtTestCollection.ref";
+	std::string collection = "mtTestCollectionDvsR";
+	std::string refCollection = "mtTestCollectionDvsR.ref";
 	int binarySampleCount = 10; // 1,600 byte per document
 	int noCasesDrop = 750; // per thread. Scaled to keep the runtime in minutes.
 	int noCasesCheck = 500; // per thread. Scaled to keep the runtime in minutes.
@@ -1966,8 +1966,8 @@ TEST(MongoDatabaseHandlerTest, SoakTestDropVsRead)
 TEST(MongoDatabaseHandlerTest, SoakTestReadVsWriteVsDrop)
 {
 	std::string database = REPO_GTEST_DBNAME3;
-	std::string collection = "mtTestCollection";
-	std::string refCollection = "mtTestCollection.ref";
+	std::string collection = "mtTestCollectionRvsWvsD";
+	std::string refCollection = "mtTestCollectionRvsWvsD.ref";
 	int binarySampleCount = 10; // 1,600 byte per document
 	int noCasesWrite = 30000; // per thread. Scaled to keep the runtime in minutes.
 	int noCasesCheck = 3000; // per thread. Scaled to keep the runtime in minutes.
