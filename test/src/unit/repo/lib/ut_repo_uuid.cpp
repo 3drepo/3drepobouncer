@@ -20,6 +20,8 @@
 #include <repo/lib/datastructure/repo_uuid.h>
 #include <gtest/gtest.h>
 #include <unordered_set>
+#include <thread>
+#include <mutex>
 
 #include <repo/core/model/bson/repo_bson_builder.h>
 #include <boost/uuid/uuid_generators.hpp>
