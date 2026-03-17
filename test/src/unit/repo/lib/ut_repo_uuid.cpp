@@ -19,6 +19,7 @@
 #include <sstream>
 #include <repo/lib/datastructure/repo_uuid.h>
 #include <gtest/gtest.h>
+#include <unordered_set>
 
 #include <repo/core/model/bson/repo_bson_builder.h>
 #include <boost/uuid/uuid_generators.hpp>
@@ -308,5 +309,29 @@ TEST(RepoUUIDTest, multithreadingCollisionTest)
 
 				{
 					std::scoped_lock lock{ setMutex };
+					
+					if (set.contains(newId))
+					{
+						collision = true;
+						return;
+					}
+					else
+					{
+						set.insert(newId);
+					}
+				}
+			}
+		};
 
+	std::vector<std::jthread> threads;
+	for (int i = 0; i < numThreads; i++)
+	{
+		threads.emplace_back(std::jthread(threadBehaviour));
+	}
+
+	for (auto& t : threads)
+		t.join();
+
+	if (collision)
+		FAIL() << "There was a collision after generating " << set.size() << " samples.\n";
 }
