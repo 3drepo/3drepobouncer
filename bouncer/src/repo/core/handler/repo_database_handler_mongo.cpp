@@ -531,9 +531,6 @@ repo::core::model::RepoBSON  MongoDatabaseHandler::findOneByUniqueID(
 	const std::string& collection,
 	const std::string& id)
 {
-	repo::core::model::RepoBSONBuilder builder;
-	builder.append(ID, id);
-	auto queryDoc = builder.obj();
 	return findOneByCriteria(database, collection, database::query::Eq(ID, id));
 }
 
