@@ -173,13 +173,21 @@ repo::core::model::RepoRefT<std::string> FileManager::getFileRef(
 	const std::string                            &databaseName,
 	const std::string                            &collectionNamePrefix,
 	const std::string                            &fileName) {
-	return repo::core::model::RepoRefT<std::string>(
-		getDbHandler()->findOneByUniqueID(
-			databaseName,
-			collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
-			fileName
-		)
+
+	auto doc = getDbHandler()->findOneByUniqueID(
+		databaseName,
+		collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
+		fileName
 	);
+
+	// During multi-threaded operations with insertMany, it is possible that a db entry is created
+	// before the file is committed and a ref is added to the ref table.
+	if (doc.isEmpty())
+		throw repo::lib::RepoRefMissingException("Ref entry for file " + fileName + " unavailable");
+
+	auto ref = repo::core::model::RepoRefT<std::string>(doc);
+
+	return ref;
 }
 
 repo::core::model::RepoRefT<repo::lib::RepoUUID> FileManager::getFileRef(
