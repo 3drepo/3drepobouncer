@@ -944,9 +944,9 @@ public:
 		MongoDatabaseHandler* handler,
 		const std::string& database,
 		const std::string& collection):
-		blobHandler(handler->fileManager, database, collection, fileMetadata)
+		blobHandler(handler->fileManager, database, collection, fileMetadata),
+		client(handler->clientPool->acquire())
 	{
-		auto client = handler->clientPool->acquire();
 		auto db = client->database(database);
 		this->collection = db.collection(collection);
 		bulk = std::make_unique<mongocxx::v_noabi::bulk_write>(this->collection.create_bulk_write());
@@ -1005,6 +1005,7 @@ public:
 	}
 
 private:
+	mongocxx::v_noabi::pool::entry client;
 
 	void checkBulkWrite()
 	{
