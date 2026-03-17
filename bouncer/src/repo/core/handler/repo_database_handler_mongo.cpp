@@ -329,7 +329,7 @@ void MongoDatabaseHandler::createIndex(const std::string& database, const std::s
 	createIndex(database, collection, index, false);
 }
 
-void MongoDatabaseHandler::createIndex(const std::string& database, const std::string& collection, const database::index::RepoIndex& index, bool sparse)
+void MongoDatabaseHandler::createIndex(const std::string& database, const std::string& collection, const database::index::RepoIndex& index, bool sparse, bool suppressInfo /*= false*/)
 {
 	try
 	{
@@ -340,7 +340,8 @@ void MongoDatabaseHandler::createIndex(const std::string& database, const std::s
 			auto col = db.collection(collection);
 			auto obj = (repo::core::model::RepoBSON)index;
 
-			repoInfo << "Creating index for :" << database << "." << collection << " : index: " << obj.toString() << " sparse: " << sparse;
+			if(!suppressInfo)
+				repoInfo << "Creating index for :" << database << "." << collection << " : index: " << obj.toString() << " sparse: " << sparse;
 
 			mongocxx::v_noabi::options::index options;			
 			if (sparse) {
@@ -504,7 +505,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 		return {};
 	}
 	catch (...)
-	{
+	{		
 		std::throw_with_nested(MongoDatabaseHandlerException(*this, "findOneByCriteria", database, collection));
 	}
 }
@@ -908,7 +909,7 @@ std::unique_ptr<Cursor> repo::core::handler::MongoDatabaseHandler::findCursorByC
 			// Ownership will be the caller's after the two raw pointers go out of scope
 			MongoDatabaseHandler::MongoCursor* mongoCursor = new MongoDatabaseHandler::MongoCursor(std::move(col.find(criteria.view())), std::move(client), this);
 			database::Cursor *baseCursor = mongoCursor;
-			return std::unique_ptr<database::Cursor>(baseCursor);			
+			return std::unique_ptr<database::Cursor>(baseCursor);
 		}
 		else
 		{

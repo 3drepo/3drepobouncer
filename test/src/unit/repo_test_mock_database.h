@@ -76,7 +76,8 @@ namespace testing {
 			const std::string& database,
 			const std::string& collection,
 			const repo::core::handler::database::index::RepoIndex& index,
-			bool sparse) {
+			bool sparse,
+			bool suppressInfo = false) {
 			throw MockDatabaseMethodNotImplemented();
 		}
 
