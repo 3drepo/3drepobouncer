@@ -28,6 +28,7 @@ const { messageDecoder } = require('../lib/messageDecoder');
 const logger = require('../lib/logger');
 const processMonitor = require('../lib/processMonitor');
 const Utils = require('../lib/utils');
+const { MSGTYPE_IMPORT } = require('../constants/messageTypes');
 
 const Handler = {};
 const logLabel = { label: 'MODELQ' };
@@ -52,9 +53,10 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 
 	const returnMessage = {
 		value: ERRCODE_OK,
-		database,
-		project: model,
+		teamspace: database,
+		container: model,
 		user,
+		type: MSGTYPE_IMPORT,
 	};
 
 	const ridString = rid.toString();

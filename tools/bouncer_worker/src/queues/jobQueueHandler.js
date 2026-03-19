@@ -32,8 +32,8 @@ const logLabel = { label: 'JOBQ' };
 const createFed = async ({ database, model, cmdParams }, logDir) => {
 	const returnMessage = {
 		value: ERRCODE_OK,
-		database,
-		project: model,
+		teamspace: database,
+		container: model,
 	};
 	try {
 		returnMessage.value = await runBouncerCommand(logDir, cmdParams);
