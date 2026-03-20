@@ -29,6 +29,7 @@
 //------------------------------------------------------------------------------
 #define REPO_NODE_REVISION_LABEL_MESSAGE					"desc" //!< Message
 #define REPO_NODE_REVISION_LABEL_TAG						"tag" //!< Tag
+#define REPO_NODE_REVISION_LABEL_VOID						"void" //!< 
 #define REPO_NODE_REVISION_LABEL_BRANCH_MASTER			"master" //!< Master branch
 #define REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT      "coordOffset"
 //------------------------------------------------------------------------------
@@ -99,6 +100,7 @@ namespace repo {
 				std::string tag;
 				std::vector<std::string> files;
 				UploadStatus status;
+				bool voided;
 
 			protected:
 				void deserialise(RepoBSON&);

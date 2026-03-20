@@ -30,6 +30,9 @@ const parseParameters = () => {
 		describe: 'specify which queue to run on [job|model|drawing]',
 		choice: ['job', 'model', 'drawing'],
 		string: true,
+	}).option('migrateUnityBundles', {
+		describe: 'Start worker in a utility mode that migrates any revision that only have Unity Bundles to Repo Bundles',
+		boolean: true,
 	}).help().argv;
 };
 

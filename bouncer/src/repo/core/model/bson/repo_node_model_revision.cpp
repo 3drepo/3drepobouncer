@@ -65,6 +65,10 @@ void ModelRevisionNode::deserialise(RepoBSON& bson)
 	{
 		tag = bson.getStringField(REPO_NODE_REVISION_LABEL_TAG);
 	}
+	if (bson.hasField(REPO_NODE_REVISION_LABEL_VOID))
+	{
+		voided = bson.getBoolField(REPO_NODE_REVISION_LABEL_VOID);
+	}
 }
 
 void ModelRevisionNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
@@ -86,6 +90,10 @@ void ModelRevisionNode::serialise(repo::core::model::RepoBSONBuilder& builder) c
 	if (status != UploadStatus::COMPLETE)
 	{
 		builder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, (int32_t)status);
+	}
+	if (voided)
+	{
+		builder.append(REPO_NODE_REVISION_LABEL_VOID, voided);
 	}
 	builder.append(REPO_NODE_LABEL_SHARED_ID, sharedId); // By convention the ModelRevisionNode always has a SharedId member, even if zero
 }
