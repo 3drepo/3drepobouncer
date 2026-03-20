@@ -17,7 +17,7 @@ const path = require('path');
 */
 
 // Use the same config as bouncer_worker proper
-const { config } = require('../src/lib/config');
+const { config, replaceSharedDirTag } = require('../src/lib/config');
 
 test('Test Clash Q', { concurrency: true }, async () => {
 	const clashq = config.rabbitmq.clash_queue;
@@ -74,8 +74,8 @@ test('Test Clash Q', { concurrency: true }, async () => {
 
 				assert.equal(message.properties.correlationId, correlationId);
 				assert.equal(content.value, 0);
-				assert.equal(content.results, path.join(clashConfigDirectory, 'results.json'));
-				assert.equal(fs.existsSync(content.results), true);
+				assert.equal(content.results, path.join(`$SHARED_SPACE/${correlationId}`, 'results.json'));
+				assert.equal(fs.existsSync(replaceSharedDirTag(content.results)), true);
 				assert.equal(content.project, project);
 				assert.equal(content.teamspace, teamspace);
 

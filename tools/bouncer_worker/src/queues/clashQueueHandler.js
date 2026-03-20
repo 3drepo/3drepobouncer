@@ -21,7 +21,7 @@ const {
 	logDirExists,
 	sharedDirExists } = require('./common');
 const { ERRCODE_OK } = require('../constants/errorCodes');
-const { config } = require('../lib/config');
+const { config, replaceSharedDirTag } = require('../lib/config');
 const { runBouncerCommand } = require('../tasks/bouncerClient');
 const { messageDecoder } = require('../lib/messageDecoder');
 const logger = require('../lib/logger');
@@ -42,6 +42,12 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 
 	// Use the CLI to specify where the results file should go. Each clash run
 	// should have its own folder, so we don't need to generate a unique name.
+
+	// The shared directory may be mapped to different locations on different
+	// machines, so we should preserve the tag when reporting back the location
+	// of the file. It is safe to use dirname with the tag. The tag must be
+	// replaced on all paths for bouncer however.
+
 	const resultsFile = path.join(path.dirname(configFile), 'results.json');
 
 	const returnMessage = {
@@ -53,7 +59,7 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	};
 
 	try {
-		returnMessage.value = await runBouncerCommand(logDir, [...cmdParams, 'clash', configFile, resultsFile]);
+		returnMessage.value = await runBouncerCommand(logDir, [...cmdParams, 'clash', replaceSharedDirTag(configFile), replaceSharedDirTag(resultsFile)]);
 	} catch (err) {
 		logger.error(`Error running clash detection: ${err.message || err}`, logLabel);
 		returnMessage.value = err;
