@@ -33,7 +33,8 @@ const parseParameters = () => {
 	}).option('migrateUnityBundles', {
 		describe: 'Start worker in a utility mode that migrates any revision that only have Unity Bundles to Repo Bundles',
 		boolean: true,
-	}).help().argv;
+	})
+		.help().argv;
 };
 
 module.exports = parseParameters();
