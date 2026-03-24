@@ -641,38 +641,170 @@ std::unordered_map<std::string, repo::lib::RepoVariant> DataProcessorRvt::fillMe
 	return metadata;
 }
 
+OdCmEntityColor fixByACI(const ODCOLORREF* ids, const OdCmEntityColor& color)
+{
+	if (color.isByACI() || color.isByDgnIndex())
+	{
+		return OdCmEntityColor(ODGETRED(ids[color.colorIndex()]), ODGETGREEN(ids[color.colorIndex()]), ODGETBLUE(ids[color.colorIndex()]));
+	}
+	else if (!color.isByColor())
+	{
+		return OdCmEntityColor(0, 0, 0);
+	}
+	return color;
+}
+
 std::vector<float> toRepoColour(const OdGiMaterialColor& c)
 {
 	return { c.color().red() / 255.0f, c.color().green() / 255.0f, c.color().blue() / 255.0f, 1.0f };
 }
 
+std::vector<float> toRepoColour(const ODCOLORREF& c)
+{
+	return { ODGETRED(c) / 255.0f, ODGETGREEN(c) / 255.0f, ODGETBLUE(c) / 255.0f, 1.0f };
+}
+
 void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiMaterialTraitsData& materialData, repo::lib::repo_material_t& material)
 {
-	OdGiMaterialColor colour;
+	// This method is based on the Collada Exporter (ColladaExportView.cpp)
 
-	materialData.shadingDiffuse(colour);
-	material.diffuse = toRepoColour(colour);
-
-	materialData.shadingSpecular(colour);
-	material.specular = toRepoColour(colour);
-
-	materialData.shadingAmbient(colour);
-	material.ambient = toRepoColour(colour);
-
-	OdGiMaterialMap map;
-	materialData.emission(colour, map);
-	material.emissive = toRepoColour(colour);
-
-	double opacity;
-	materialData.shadingOpacity(opacity);
-	material.opacity = opacity;
-
+	OdGiMaterialColor diffuseColor; OdGiMaterialMap diffuseMap;
+	OdGiMaterialColor ambientColor;
 	OdGiMaterialColor specularColor; OdGiMaterialMap specularMap; double glossFactor;
+	OdGiMaterialColor emissionColor; OdGiMaterialMap emissionMap;
+	double opacityPercentage; OdGiMaterialMap opacityMap;
+
+	materialData.diffuse(diffuseColor, diffuseMap);
+	materialData.ambient(ambientColor);
 	materialData.specular(specularColor, specularMap, glossFactor);
+	materialData.emission(emissionColor, emissionMap);
+	materialData.opacity(opacityPercentage, opacityMap);
+
+	ODCOLORREF colorDiffuse(0), colorAmbient(0), colorSpecular(0);
+	if (diffuseColor.color().colorMethod() == OdCmEntityColor::kByColor)
+	{
+		colorDiffuse = ODTOCOLORREF(diffuseColor.color());
+	}
+	else if (diffuseColor.color().colorMethod() == OdCmEntityColor::kByACI)
+	{
+		colorDiffuse = OdCmEntityColor::lookUpRGB((OdUInt8)diffuseColor.color().colorIndex());
+	}
+
+	if (ambientColor.color().colorMethod() == OdCmEntityColor::kByColor)
+	{
+		colorAmbient = ODTOCOLORREF(ambientColor.color());
+	}
+	else if (ambientColor.color().colorMethod() == OdCmEntityColor::kByACI)
+	{
+		colorAmbient = OdCmEntityColor::lookUpRGB((OdUInt8)ambientColor.color().colorIndex());
+	}
+
+	if (specularColor.color().colorMethod() == OdCmEntityColor::kByColor)
+	{
+		colorSpecular = ODTOCOLORREF(specularColor.color());
+	}
+	else if (specularColor.color().colorMethod() == OdCmEntityColor::kByACI)
+	{
+		colorSpecular = OdCmEntityColor::lookUpRGB((OdUInt8)specularColor.color().colorIndex());
+	}
+
+	OdCmEntityColor color = fixByACI(this->baseDevice()->getPalette(), effectiveTraits().trueColor());
+
+	if (ambientColor.method() == OdGiMaterialColor::kOverride)
+	{
+		if (gsView()->mode() == OdGsView::kGouraudShadedWithWireframe || gsView()->mode() == OdGsView::kGouraudShaded)
+		{
+			material.ambient = toRepoColour(colorAmbient);
+		}
+		else
+		{
+			OdGiMaterialColor shadingAmbientColor;
+			materialData.shadingAmbient(shadingAmbientColor);
+			if (shadingAmbientColor.method() != OdGiMaterialColor::kInherit) {
+				material.ambient = toRepoColour(shadingAmbientColor);
+			}
+			else
+			{
+				material.ambient = toRepoColour(color);
+			}
+		}
+	}
+	else {
+		material.ambient = toRepoColour(color);
+	}
+
+	if (diffuseColor.method() == OdGiMaterialColor::kOverride)
+	{
+		if (gsView()->mode() == OdGsView::kGouraudShadedWithWireframe || gsView()->mode() == OdGsView::kGouraudShaded)
+		{
+			material.diffuse = toRepoColour(colorDiffuse);
+		}
+		else
+		{
+			OdGiMaterialColor shadingDiffuseColor;
+			materialData.shadingDiffuse(shadingDiffuseColor);
+			if (shadingDiffuseColor.method() != OdGiMaterialColor::kInherit) {
+				material.diffuse = toRepoColour(shadingDiffuseColor);
+			}
+			else {
+				material.diffuse = toRepoColour(color);
+			}
+		}
+	}
+	else {
+		material.diffuse = toRepoColour(color);
+	}
+
+	if (specularColor.method() == OdGiMaterialColor::kOverride)
+	{
+		if (gsView()->mode() == OdGsView::kGouraudShadedWithWireframe || gsView()->mode() == OdGsView::kGouraudShaded)
+		{
+			material.specular = toRepoColour(colorSpecular);
+		}
+		else
+		{
+			OdGiMaterialColor shadingSpecularColor;
+			materialData.shadingSpecular(shadingSpecularColor);
+			if (shadingSpecularColor.method() != OdGiMaterialColor::kInherit) {
+				material.specular = toRepoColour(shadingSpecularColor);
+			}
+			else {
+				material.specular = toRepoColour(color);
+			}
+		}
+	}
+	else {
+		material.specular = toRepoColour(color);
+	}
+
 	material.shininessStrength = glossFactor;
 
-	if (!materialPtr.isNull())
+	if (!materialPtr.isNull()) {
 		material.shininess = (float)materialPtr->getMaterial()->getShininess() / 255.0f;
+	}
+
+	if (GETBIT(materialData.channelFlags(), OdGiMaterialTraits::kUseEmission)) {
+		if (emissionColor.method() == OdGiMaterialColor::kOverride)
+		{
+			material.emissive = toRepoColour(emissionColor);
+		}
+		else {
+			material.emissive = toRepoColour(color);
+		}
+	}
+
+	if (GETBIT(materialData.channelFlags(), OdGiMaterialTraits::kUseOpacity)) {
+		if (gsView()->mode() == OdGsView::kGouraudShadedWithWireframe || gsView()->mode() == OdGsView::kGouraudShaded)
+		{
+			material.opacity = opacityPercentage;
+		}
+		else
+		{
+			double shadingOpacity;
+			materialData.shadingOpacity(shadingOpacity);
+			material.opacity = shadingOpacity;
+		}
+	}
 }
 
 void DataProcessorRvt::fillTexture(OdBmMaterialElemPtr materialPtr, repo::lib::repo_material_t& material, bool& missingTexture)
