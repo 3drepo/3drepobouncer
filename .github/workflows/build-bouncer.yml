@@ -130,10 +130,10 @@ jobs:
       # ---------------------------------------------------------------
       # STEP 6: Build and Push Docker Image
       # ---------------------------------------------------------------
-      - name: Build and push Docker image
-        run: |
-          env:
+      - name: Build and push Docker image      
+        env:
           DOCKER_BUILDKIT: 1
+        run: |
           VERSION="${{ steps.vars.outputs.version }}"
           APP_BUILD_NOW="${{ steps.vars.outputs.app_build_now }}"
 
@@ -145,10 +145,6 @@ jobs:
             --build-arg app_3drepobouncer_version="${VERSION}" \
             --build-arg GITHUB_TOKEN="${{ secrets.PROJ_MANAGEMENT_TOKEN }}" \
             --build-arg GITHUB_USER="${{ secrets.PROJ_MANAGEMENT_USER }}" \
-            --build-arg LICENSE_CHECK=1 \
-            --build-arg LICENSE_AUTH_TOKEN="${{ secrets.CRYPTOLENS_AUTH_TOKEN }}" \
-            --build-arg LICENSE_RSA_PUB_KEY_MOD="${{ secrets.CRYPTOLENS_PUBLIC_KEY }}" \
-            --build-arg LICENSE_PRODUCT_ID="${{ secrets.CRYPTOLENS_PRODUCT_ID }}" \
             -f ./docker/3drepobouncer/Dockerfile \
             ./docker/3drepobouncer/
 

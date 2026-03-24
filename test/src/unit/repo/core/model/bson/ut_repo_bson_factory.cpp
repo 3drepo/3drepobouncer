@@ -331,12 +331,12 @@ TEST(RepoBSONFactoryTest, MakeTransformationNodeTest)
 
 TEST(RepoBSONFactoryTest, MakeRepoBundleAssets)
 {
-	// Generate an assets list document with 64500 supermeshes. This is an
+	// Generate an assets list document with 57500 supermeshes. This is an
 	// arbitrary number, greater than the amount we would expect to handle for
 	// the near future. The document size with this number should be less than
 	// the 16 Mb maximum document size of mongo.
 
-	const int NUM_ASSETS = 64500;
+	const int NUM_ASSETS = 56500;
 
 	std::vector<std::string> jsonFiles;
 	std::vector<std::string> bundleFiles;

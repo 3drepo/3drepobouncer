@@ -659,27 +659,22 @@ void addTriangleData(
 {
 	const OdGePoint3dArray& aVertices = aVertexesData->getVertices();
 	const OdGeVector3dArray& aNormals = aVertexesData->getNormals();
-	const OdGePoint2dArray& aUvs = aVertexesData->getTexCoords();
+
+	// Textures are ignored for now, but if we wish to process them in the future
+	// the Uv coordinates are accessed nominally via the getTexCoords() member of
+	// OdNwVerticesData. Take care that we have encountered models before where
+	// the texcoords and vertices arrays are different lengths, so the necessary
+	// transformation of Uvs should be investigated properly if this is ever
+	// reintroduced.
 
 	for (auto triangle = aTrianglesBegin; triangle != aTrianglesEnd; triangle++)
 	{
 		RepoMeshBuilder::face face;
-
 		face.setVertices({
 			convertPoint(aVertices[triangle->pointIndex1], transformMatrix),
 			convertPoint(aVertices[triangle->pointIndex2], transformMatrix),
 			convertPoint(aVertices[triangle->pointIndex3], transformMatrix)
 			});
-
-		if (aUvs.length())
-		{
-			face.setUvs({
-				convertPoint(aUvs[triangle->pointIndex1]),
-				convertPoint(aUvs[triangle->pointIndex2]),
-				convertPoint(aUvs[triangle->pointIndex3])
-				});
-		}
-
 		meshBuilder.addFace(face);
 	}
 }
