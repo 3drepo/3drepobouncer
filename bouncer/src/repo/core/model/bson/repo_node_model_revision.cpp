@@ -28,6 +28,7 @@ ModelRevisionNode::ModelRevisionNode(RepoBSON bson) :
 	RevisionNode(bson)
 {
 	offset = { 0, 0, 0 };
+	voided = false;
 	deserialise(bson);
 }
 
@@ -36,6 +37,7 @@ ModelRevisionNode::ModelRevisionNode() :
 {
 	status = UploadStatus::COMPLETE;
 	offset = { 0, 0, 0 };
+	voided = false;
 }
 
 ModelRevisionNode::~ModelRevisionNode()
