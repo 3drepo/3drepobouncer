@@ -45,6 +45,7 @@ ModelRevisionNode::~ModelRevisionNode()
 void ModelRevisionNode::deserialise(RepoBSON& bson)
 {
 	status = UploadStatus::COMPLETE;
+	voided = false;
 	if (bson.hasField(REPO_NODE_REVISION_LABEL_INCOMPLETE))
 	{
 		status = (UploadStatus)bson.getIntField(REPO_NODE_REVISION_LABEL_INCOMPLETE);
