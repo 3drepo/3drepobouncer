@@ -30,14 +30,20 @@ function UUIDToString(uuid) {
 	return UUIDParse.unparse(uuid.buffer);
 }
 
-async function findUnityBundleRevisions() {
+async function findUnityBundleRevisions(teamspace) {
 	const uri = `mongodb://${config.db.username}:${config.db.password}@${config.db.dbhost}:${config.db.dbport}`;
 	const client = new MongoClient(uri);
+
 	const { databases } = await client.db().admin().listDatabases({ nameOnly: 1 });
 
 	const revisions = [];
 
 	for (const { name } of databases) {
+		if (teamspace && teamspace !== '' && name !== teamspace) {
+			// eslint-disable-next-line no-continue
+			continue;
+		}
+
 		logger.info(`- Checking teamspace ${name}...`);
 
 		const db = client.db(name);
@@ -100,9 +106,9 @@ async function migrateRevision(revision) {
 	);
 }
 
-async function runUnityBundleMigration() {
+async function runUnityBundleMigration(teamspace) {
 	logger.info('Beginning Unity Bundle migration...');
-	const revisions = await findUnityBundleRevisions();
+	const revisions = await findUnityBundleRevisions(teamspace);
 
 	logger.info(`Found ${revisions.length} revisions to migrate.`);
 	const n = revisions.length;

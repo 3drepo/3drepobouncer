@@ -27,8 +27,8 @@ const startBouncerWorker = async () => {
 	try {
 		await testClient();
 
-		if (migrateUnityBundles) {
-			await runUnityBundleMigration();
+		if (migrateUnityBundles !== undefined) {
+			await runUnityBundleMigration(migrateUnityBundles);
 			return; // Migration is a one-shot job
 		}
 
