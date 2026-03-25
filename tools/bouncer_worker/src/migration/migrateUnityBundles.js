@@ -34,6 +34,8 @@ async function findUnityBundleRevisions(teamspace) {
 	let { connectionString } = config.db;
 	if (!connectionString) {
 		connectionString = `mongodb://${config.db.username}:${config.db.password}@${config.db.dbhost}:${config.db.dbport}`;
+	} else {
+		connectionString = connectionString.replace('://', `://${config.db.username}:${config.db.password}@`);
 	}
 	const client = new MongoClient(connectionString);
 

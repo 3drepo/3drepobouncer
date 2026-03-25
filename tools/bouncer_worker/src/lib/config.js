@@ -57,11 +57,19 @@ const bouncer = object({
 });
 
 const db = object({
-	dbhost: string().required(),
-	dbport: string().required(),
 	username: string().required(),
 	password: string().required(),
 	connectionString: string().optional(),
+	dbhost: string().when('connectionString', {
+		is: (connectionString) => !connectionString,
+		then: (schema) => schema.required(),
+		otherwise: (schema) => schema.optional(),
+	}),
+	dbport: string().when('connectionString', {
+		is: (connectionString) => !connectionString,
+		then: (schema) => schema.required(),
+		otherwise: (schema) => schema.optional(),
+	}),
 });
 
 const elastic = object({
