@@ -31,6 +31,16 @@ jobs:
           submodules: true
           token: ${{secrets.REPO_INSTALLER_TOKEN}} #The installer token is required to get the Asset_generator and other private submodules
 
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: false
+
       - name: Install packages
         run: sudo apt-get update && sudo apt-get install gnupg curl libboost-all-dev tk-dev tcl-dev libxmu-dev libxi-dev libcgal-dev libocct-data-exchange-dev libocct-draw-dev libocct-foundation-dev libocct-modeling-algorithms-dev libocct-modeling-data-dev libocct-ocaf-dev libocct-visualization-dev libgmp-dev libmpfr-dev libxml2-dev libeigen3-dev zlib1g-dev libssl-dev libxft-dev
 
