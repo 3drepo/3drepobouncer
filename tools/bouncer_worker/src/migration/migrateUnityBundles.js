@@ -31,8 +31,11 @@ function UUIDToString(uuid) {
 }
 
 async function findUnityBundleRevisions(teamspace) {
-	const uri = `mongodb://${config.db.username}:${config.db.password}@${config.db.dbhost}:${config.db.dbport}`;
-	const client = new MongoClient(uri);
+	let {connectionString} = config.db;
+	if (!connectionString) {
+		connectionString = `mongodb://${config.db.username}:${config.db.password}@${config.db.dbhost}:${config.db.dbport}`;
+	}
+	const client = new MongoClient(connectionString);
 
 	const { databases } = await client.db().admin().listDatabases({ nameOnly: 1 });
 

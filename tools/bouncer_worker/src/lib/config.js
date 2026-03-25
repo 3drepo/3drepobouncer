@@ -61,6 +61,7 @@ const db = object({
 	dbport: string().required(),
 	username: string().required(),
 	password: string().required(),
+	connectionString: string().optional(),
 });
 
 const elastic = object({
