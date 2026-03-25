@@ -84,7 +84,7 @@ namespace ifcUtils
 		repo::manipulator::modelutility::RepoSceneBuilder* builder;
 		repo::lib::RepoUUID rootNodeId;
 		std::unordered_map<std::string, repo::lib::repo_material_t> materials;
-		std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> corrTransforms;
+		std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> parentLocalToWorld;
 
 		/*
 		* Cache entry representing the possible transformation nodes that result from

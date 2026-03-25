@@ -841,9 +841,9 @@ std::shared_ptr<repo::core::model::TransformationNode> IfcSerialiser::createTran
 	// Create transformation node with the new transform
 	auto transform = repo::core::model::RepoBSONFactory::makeTransformationNode(transformMat, name, { parentId });
 
-	// Insert corrective transform for lookup
-	auto parentCorr = corrTransforms[parentId];
-	corrTransforms[transform.getSharedID()] = transformMat.inverse() * parentCorr;
+	// Insert accumulative parent transform for lookup
+	auto parentMat = parentLocalToWorld[parentId];
+	parentLocalToWorld[transform.getSharedID()] = transformMat * parentMat;
 
 	auto it = metadataUniqueIds.find(object->id());
 	if (it != metadataUniqueIds.end())
@@ -877,9 +877,9 @@ repo::lib::RepoUUID IfcSerialiser::getTransformationNode(
 	auto transform = repo::core::model::RepoBSONFactory::makeTransformationNode(transformMat, typeGroup.name(), { parentId });
 	builder->addNode(transform);
 	
-	// Insert corrective transform for lookup
-	auto parentCorr = corrTransforms[parentId];
-	corrTransforms[transform.getSharedID()] = transformMat.inverse() * parentCorr;
+	// Insert accumulative parent transform for lookup
+	auto parentMat = parentLocalToWorld[parentId];
+	parentLocalToWorld[transform.getSharedID()] = transformMat * parentMat;
 
 	nodes.branchSharedId = transform.getSharedID();
 
@@ -1059,18 +1059,20 @@ void IfcSerialiser::import(const IfcGeom::TriangulationElement* triangulation)
 		name = triangulation->name() + " (IFC Space)";
 	}
 
-	// Calculate new model space from the bounds
+	// Shift the model according to the centre of its bounds.
+	// This can be necessary when IFC reuses geometry (e.g. with IfcMappedItem) with
+	// a shared origin.
 	auto newSpaceMat = repo::lib::RepoMatrix::translate(bounds.center());
 
 	auto parentId = getParentId(triangulation, !isIfcSpace, newSpaceMat);
 	
 	std::vector<repo::lib::RepoVector3D> vertices;
-	auto corrMat = corrTransforms[parentId];
 
-	// Calculate full corrective matrix that includes both the
-	// transfer to the new model space and the correction that
-	// accounts for potential parent transforms.
-	auto fullCorrMat = corrMat * orgMat;
+	// Calculate matrix to transform the vertices from their original local space
+	// into a new local space that takes the transforms of their parents in the 
+	// tree into account.
+	auto parentMat = parentLocalToWorld[parentId];
+	auto fullCorrMat = parentMat.inverse() * orgMat;
 
 	// Apply corrective to vertices
 	for (int i = 0; i < vertices64.size(); i++)
