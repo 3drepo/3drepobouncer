@@ -31,7 +31,7 @@ function UUIDToString(uuid) {
 }
 
 async function findUnityBundleRevisions(teamspace) {
-	let {connectionString} = config.db;
+	let { connectionString } = config.db;
 	if (!connectionString) {
 		connectionString = `mongodb://${config.db.username}:${config.db.password}@${config.db.dbhost}:${config.db.dbport}`;
 	}
