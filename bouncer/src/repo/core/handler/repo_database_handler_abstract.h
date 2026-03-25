@@ -366,12 +366,13 @@ namespace repo {
 
 				void setFileManager(std::shared_ptr<repo::core::handler::fileservice::FileManager> manager)
 				{
-					// The file manager can only be set once to maintain thread-safety
-					if (!fileManagerSet)
-					{
-						this->fileManager = manager;
-						fileManagerSet = true;
-					}
+					// Lock the muxtex to avoid race conditions with other threads trying to set the fileManager
+					std::scoped_lock fileManagerLock{ fileManagerMutex };
+
+					// Return if the file manager is already set or set it otherwise
+					if (this->fileManager != nullptr)
+						return;
+					this->fileManager = manager;
 				}
 
 				virtual std::shared_ptr<repo::core::handler::fileservice::FileManager> getFileManager() = 0;
@@ -395,9 +396,7 @@ namespace repo {
 				// before documents containing such members are uploaded.
 				std::shared_ptr<repo::core::handler::fileservice::FileManager> fileManager;
 
-				// Flag to ensure that the fileManager can only be set once.
-				// After this is set to true, the class can be considered thread-safe.
-				bool fileManagerSet = false;
+				std::mutex fileManagerMutex;
 			};
 		}
 	}
