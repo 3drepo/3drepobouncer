@@ -843,7 +843,7 @@ std::shared_ptr<repo::core::model::TransformationNode> IfcSerialiser::createTran
 
 	// Insert accumulative parent transform for lookup
 	auto parentMat = parentLocalToWorld[parentId];
-	parentLocalToWorld[transform.getSharedID()] = transformMat * parentMat;
+	parentLocalToWorld[transform.getSharedID()] = parentMat * transformMat;
 
 	auto it = metadataUniqueIds.find(object->id());
 	if (it != metadataUniqueIds.end())
@@ -879,7 +879,7 @@ repo::lib::RepoUUID IfcSerialiser::getTransformationNode(
 	
 	// Insert accumulative parent transform for lookup
 	auto parentMat = parentLocalToWorld[parentId];
-	parentLocalToWorld[transform.getSharedID()] = transformMat * parentMat;
+	parentLocalToWorld[transform.getSharedID()] = parentMat * transformMat;
 
 	nodes.branchSharedId = transform.getSharedID();
 
