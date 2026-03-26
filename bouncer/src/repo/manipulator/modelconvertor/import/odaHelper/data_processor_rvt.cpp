@@ -668,113 +668,119 @@ void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiM
 {
 	// This method is based on the Collada Exporter (ColladaExportView.cpp)
 
-	OdGiMaterialColor diffuseColor; OdGiMaterialMap diffuseMap;
 	OdGiMaterialColor ambientColor;
 	OdGiMaterialColor specularColor; OdGiMaterialMap specularMap; double glossFactor;
 	OdGiMaterialColor emissionColor; OdGiMaterialMap emissionMap;
 	double opacityPercentage; OdGiMaterialMap opacityMap;
 
-	materialData.diffuse(diffuseColor, diffuseMap);
 	materialData.ambient(ambientColor);
 	materialData.specular(specularColor, specularMap, glossFactor);
 	materialData.emission(emissionColor, emissionMap);
 	materialData.opacity(opacityPercentage, opacityMap);
 
-	ODCOLORREF colorDiffuse(0), colorAmbient(0), colorSpecular(0);
-	if (diffuseColor.color().colorMethod() == OdCmEntityColor::kByColor)
-	{
-		colorDiffuse = ODTOCOLORREF(diffuseColor.color());
-	}
-	else if (diffuseColor.color().colorMethod() == OdCmEntityColor::kByACI)
-	{
-		colorDiffuse = OdCmEntityColor::lookUpRGB((OdUInt8)diffuseColor.color().colorIndex());
+	// For diffuse, we can use the OdBmMaterialElemPtr helper,
+
+	material.diffuse = {
+		materialPtr->getColor().red() / 255.0f,
+		materialPtr->getColor().green() / 255.0f,
+		materialPtr->getColor().blue() / 255.0f,
+	};
+
+	// Revit has a number of display modes & styles, which control where material
+	// parameters are sourced from.
+
+	// In the Flat shaded mode, which also includes Realistic, parameters should
+	// be driven by the shading properties, otherwise, they should be driven by
+	// the MaterialData properties.
+
+	// Note driven by does not necessarily mean use - these properties may specify
+	// that the active drawing traits (kInherit) should be used instead.
+
+	bool useMaterialDataColour = false;
+
+	switch (gsView()->mode()) {
+		case OdGsView::kGouraudShadedWithWireframe:
+		case OdGsView::kGouraudShaded:
+			useMaterialDataColour = true;
+			break;
 	}
 
-	if (ambientColor.color().colorMethod() == OdCmEntityColor::kByColor)
-	{
-		colorAmbient = ODTOCOLORREF(ambientColor.color());
-	}
-	else if (ambientColor.color().colorMethod() == OdCmEntityColor::kByACI)
-	{
-		colorAmbient = OdCmEntityColor::lookUpRGB((OdUInt8)ambientColor.color().colorIndex());
+	// Shad*ing* paramters are used in Realistic mode. Shad*ed* parameters are used
+	// in one of the flat shaded modes. Note that we can't do too much with Realistic
+	// parameters, as they are incompatible with our shading method.
+
+	bool useRealisticShading = false;
+
+	switch (view->getDisplayStyle()) {
+		case OdBm::ViewDisplayStyle::Realistic:
+		case OdBm::ViewDisplayStyle::RealisticWithEdges:
+			useRealisticShading = true;
+			break;
 	}
 
-	if (specularColor.color().colorMethod() == OdCmEntityColor::kByColor)
-	{
-		colorSpecular = ODTOCOLORREF(specularColor.color());
-	}
-	else if (specularColor.color().colorMethod() == OdCmEntityColor::kByACI)
-	{
-		colorSpecular = OdCmEntityColor::lookUpRGB((OdUInt8)specularColor.color().colorIndex());
-	}
+	OdCmEntityColor traitsColor = fixByACI(this->baseDevice()->getPalette(), effectiveTraits().trueColor());
 
-	OdCmEntityColor color = fixByACI(this->baseDevice()->getPalette(), effectiveTraits().trueColor());
-
-	if (ambientColor.method() == OdGiMaterialColor::kOverride)
+	if (ambientColor.method() == OdGiMaterialColor::kInherit)
 	{
-		if (gsView()->mode() == OdGsView::kGouraudShadedWithWireframe || gsView()->mode() == OdGsView::kGouraudShaded)
-		{
+		material.ambient = toRepoColour(traitsColor);
+	}
+	else
+	{
+		if (useMaterialDataColour) {
+			ODCOLORREF colorAmbient(0);
+			if (ambientColor.color().colorMethod() == OdCmEntityColor::kByColor)
+			{
+				colorAmbient = ODTOCOLORREF(ambientColor.color());
+			}
+			else if (ambientColor.color().colorMethod() == OdCmEntityColor::kByACI)
+			{
+				colorAmbient = OdCmEntityColor::lookUpRGB((OdUInt8)ambientColor.color().colorIndex());
+			}
+
 			material.ambient = toRepoColour(colorAmbient);
 		}
-		else
-		{
+		else {
 			OdGiMaterialColor shadingAmbientColor;
 			materialData.shadingAmbient(shadingAmbientColor);
-			if (shadingAmbientColor.method() != OdGiMaterialColor::kInherit) {
+			if (useRealisticShading && shadingAmbientColor.method() != OdGiMaterialColor::kInherit) {
 				material.ambient = toRepoColour(shadingAmbientColor);
 			}
-			else
-			{
-				material.ambient = toRepoColour(color);
-			}
-		}
-	}
-	else {
-		material.ambient = toRepoColour(color);
-	}
-
-	if (diffuseColor.method() == OdGiMaterialColor::kOverride)
-	{
-		if (gsView()->mode() == OdGsView::kGouraudShadedWithWireframe || gsView()->mode() == OdGsView::kGouraudShaded)
-		{
-			material.diffuse = toRepoColour(colorDiffuse);
-		}
-		else
-		{
-			OdGiMaterialColor shadingDiffuseColor;
-			materialData.shadingDiffuse(shadingDiffuseColor);
-			if (shadingDiffuseColor.method() != OdGiMaterialColor::kInherit) {
-				material.diffuse = toRepoColour(shadingDiffuseColor);
-			}
 			else {
-				material.diffuse = toRepoColour(color);
+				material.ambient = toRepoColour(traitsColor);
 			}
 		}
 	}
-	else {
-		material.diffuse = toRepoColour(color);
-	}
 
-	if (specularColor.method() == OdGiMaterialColor::kOverride)
+	if (specularColor.method() == OdGiMaterialColor::kInherit)
 	{
-		if (gsView()->mode() == OdGsView::kGouraudShadedWithWireframe || gsView()->mode() == OdGsView::kGouraudShaded)
-		{
+		material.specular = toRepoColour(traitsColor);
+	}
+	else
+	{
+		if (useMaterialDataColour) {
+			ODCOLORREF colorSpecular(0);
+			if (specularColor.color().colorMethod() == OdCmEntityColor::kByColor)
+			{
+				colorSpecular = ODTOCOLORREF(specularColor.color());
+			}
+			else if (specularColor.color().colorMethod() == OdCmEntityColor::kByACI)
+			{
+				colorSpecular = OdCmEntityColor::lookUpRGB((OdUInt8)specularColor.color().colorIndex());
+			}
+
 			material.specular = toRepoColour(colorSpecular);
 		}
 		else
 		{
 			OdGiMaterialColor shadingSpecularColor;
 			materialData.shadingSpecular(shadingSpecularColor);
-			if (shadingSpecularColor.method() != OdGiMaterialColor::kInherit) {
+			if (useRealisticShading && shadingSpecularColor.method() != OdGiMaterialColor::kInherit) {
 				material.specular = toRepoColour(shadingSpecularColor);
 			}
 			else {
-				material.specular = toRepoColour(color);
+				material.specular = toRepoColour(traitsColor);
 			}
 		}
-	}
-	else {
-		material.specular = toRepoColour(color);
 	}
 
 	material.shininessStrength = glossFactor;
@@ -789,7 +795,7 @@ void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiM
 			material.emissive = toRepoColour(emissionColor);
 		}
 		else {
-			material.emissive = toRepoColour(color);
+			material.emissive = toRepoColour(traitsColor);
 		}
 	}
 
