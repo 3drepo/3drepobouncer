@@ -706,17 +706,13 @@ void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiM
 	materialData.shadingAmbient(colour);
 	material.ambient = toRepoColour(colour, traitsColour);
 
-	if (GETBIT(materialData.channelFlags(), OdGiMaterialTraits::kUseEmission)) {
-		OdGiMaterialMap map;
-		materialData.emission(colour, map);
-		material.emissive = toRepoColour(colour, traitsColour);
-	}
+	OdGiMaterialMap map;
+	materialData.emission(colour, map);
+	material.emissive = toRepoColour(colour, traitsColour);
 
-	if (GETBIT(materialData.channelFlags(), OdGiMaterialTraits::kUseOpacity)) {
-		double opacity;
-		materialData.shadingOpacity(opacity);
-		material.opacity = opacity;
-	}
+	double opacity;
+	materialData.shadingOpacity(opacity);
+	material.opacity = opacity;
 
 	OdGiMaterialColor specularColor; OdGiMaterialMap specularMap; double glossFactor;
 	materialData.specular(specularColor, specularMap, glossFactor);
