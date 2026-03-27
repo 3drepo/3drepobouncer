@@ -17,6 +17,7 @@ const run = (
 	if (processInformation) processMonitor.startMonitor(processInformation);
 	let isTimeout = false;
 	let hasTerminated = false;
+	let timer = null;
 	cmdExec.on('close', (code, signal) => {
 		hasTerminated = true;
 		// eslint-disable-next-line max-len
@@ -27,8 +28,10 @@ const run = (
 		if (isTimeout) {
 			reject(ERRCODE_TIMEOUT);
 		} else if (code === 0 || codesAsSuccess.includes(code)) {
+			clearTimeout(timer);
 			resolve(code);
 		} else {
+			clearTimeout(timer);
 			// NOTE: for some reason we're seeing code is null in linux. using -1 when that happens
 			logger.info(`exiting with ERRCODE_UNKNOWN_ERROR: ${code} signal: ${signal}`, logLabel);
 			reject(code || ERRCODE_UNKNOWN_ERROR);
@@ -38,7 +41,7 @@ const run = (
 	cmdExec.stdout.on('data', (data) => logger.verbose(`[STDOUT]: ${data}`, logLabel));
 	cmdExec.stderr.on('data', (data) => logger.verbose(`[STDERR]: ${data}`, logLabel));
 
-	setTimeout(() => {
+	timer = setTimeout(() => {
 		isTimeout = true;
 		if (!hasTerminated) {
 			logger.info('Max processing time reached, terminating the process', logLabel);
