@@ -261,14 +261,11 @@ void RepoSceneBuilder::makeMaterialNode(const size_t key, const repo::lib::repo_
 {
 	auto node = repo::core::model::RepoBSONFactory::makeMaterialNode(m, {}, { parentId });
 	addNode(node);
-	materialToUniqueId[key] = node.getUniqueID();
+	materialToUniqueId[key] = { node.getUniqueID(), 1 };
 
 	if (m.hasTexture()) {
 		addTextureReference(m.texturePath, node.getSharedID());
 	}
-
-	// Init usage counter
-	materialUsageCount[key] = 1;
 }
 
 void RepoSceneBuilder::addMaterialReference(const repo::lib::repo_material_t& m, repo::lib::RepoUUID parentId)
@@ -281,8 +278,8 @@ void RepoSceneBuilder::addMaterialReference(const repo::lib::repo_material_t& m,
 	else
 	{
 		// Check usage
-		auto usage = materialUsageCount[key];
-		if (usage >= MAX_MATERIALNODE_USAGE)
+		auto& entry = materialToUniqueId[key];
+		if (entry.second >= MAX_MATERIALNODE_USAGE)
 		{
 			// If we hit the limit, we make a new material node
 			makeMaterialNode(key, m, parentId);
@@ -290,8 +287,8 @@ void RepoSceneBuilder::addMaterialReference(const repo::lib::repo_material_t& m,
 		else
 		{
 			// If not, just add the reference and increment the counter.
-			addParent(materialToUniqueId[key], parentId);
-			materialUsageCount[key] = usage + 1;
+			addParent(entry.first, parentId);
+			entry.second++;
 		}
 	}
 }
