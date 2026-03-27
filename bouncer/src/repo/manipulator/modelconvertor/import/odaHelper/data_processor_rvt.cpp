@@ -694,7 +694,7 @@ void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiM
 	// The effectiveTraits method returns the current 'brush' settings for the
 	// device. This is one way in which colours can be defined.
 
-	OdCmEntityColor traitsColour = fixByACI(this->baseDevice()->getPalette(), effectiveTraits().trueColor());
+	OdCmEntityColor deviceColour = fixByACI(this->baseDevice()->getPalette(), effectiveTraits().trueColor());
 
 	// The material traits object that comes with the cache should initialise most
 	// properties correctly.
@@ -702,17 +702,17 @@ void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiM
 	OdGiMaterialColor colour;
 
 	materialData.shadingDiffuse(colour);
-	material.diffuse = toRepoColour(colour, traitsColour);
+	material.diffuse = toRepoColour(colour, deviceColour);
 
 	materialData.shadingSpecular(colour);
-	material.specular = toRepoColour(colour, traitsColour);
+	material.specular = toRepoColour(colour, deviceColour);
 
 	materialData.shadingAmbient(colour);
-	material.ambient = toRepoColour(colour, traitsColour);
+	material.ambient = toRepoColour(colour, deviceColour);
 
 	OdGiMaterialMap map;
 	materialData.emission(colour, map);
-	material.emissive = toRepoColour(colour, traitsColour);
+	material.emissive = toRepoColour(colour, deviceColour);
 
 	double opacity;
 	materialData.shadingOpacity(opacity);
