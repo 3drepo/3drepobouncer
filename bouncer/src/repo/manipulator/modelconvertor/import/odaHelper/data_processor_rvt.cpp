@@ -674,6 +674,16 @@ std::vector<float> toRepoColour(const OdCmEntityColor& c)
 	return {c.red() / 255.0f, c.green() / 255.0f, c.blue() / 255.0f, 1.0f};
 }
 
+std::vector<float> toRepoColour(const OdGiMaterialColor& c, const OdCmEntityColor& fallback)
+{
+	if (c.method() != OdGiMaterialColor::kInherit) {
+		return toRepoColour(c);
+	}
+	else {
+		return toRepoColour(fallback);
+	}
+}
+
 void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiMaterialTraitsData& materialData, repo::lib::repo_material_t& material)
 {
 	// Revit pulls material properties from different places, depending on the
@@ -681,133 +691,52 @@ void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiM
 	// The Rvt importer attempts to match what the corresponding settings would
 	// do in the Revit viewport.
 	
-	OdCmEntityColor traitsColor = fixByACI(this->baseDevice()->getPalette(), effectiveTraits().trueColor());
+	// The material traits object that comes with the cache should initialise most
+	// properties correctly.
 
-	// Realistic shading corresponds to the photoreal view of the scene, which
-	// uses physically based materials and possibly replaces geometric elements
-	// such as trees with proxies as well.
-	// Our shading model doesn't fully support this, but we can pick up some
-	// of the different properties.
-	// The realistic properties are stored in the Render Appearance asset, though
-	// some are also available in the shading parameters of the Material Traits.
+	OdCmEntityColor traitsColour = fixByACI(this->baseDevice()->getPalette(), effectiveTraits().trueColor());
+	OdGiMaterialColor colour;
 
-	bool useRealisticShading = false;
+	materialData.shadingDiffuse(colour);
+	material.diffuse = toRepoColour(colour, traitsColour);
 
-	switch (view->getDisplayStyle()) {
-		case OdBm::ViewDisplayStyle::Realistic:
-		case OdBm::ViewDisplayStyle::RealisticWithEdges:
-			useRealisticShading = true;
-			break;
+	materialData.shadingSpecular(colour);
+	material.specular = toRepoColour(colour, traitsColour);
+
+	materialData.shadingAmbient(colour);
+	material.ambient = toRepoColour(colour, traitsColour);
+
+	if (GETBIT(materialData.channelFlags(), OdGiMaterialTraits::kUseEmission)) {
+		OdGiMaterialMap map;
+		materialData.emission(colour, map);
+		material.emissive = toRepoColour(colour, traitsColour);
 	}
 
-	// The use render appearance toggle tells the Revit viewport to take the colour
-	// from the Render Appearance instead of the using Shading colour.
-
-	if (materialPtr->getUseRenderAppearance()) {
-		useRealisticShading = true;
-	}
-
-	if (useRealisticShading) {
-		OdGiMaterialColor shadingDiffuseColor;
-		materialData.shadingDiffuse(shadingDiffuseColor);
-		if (shadingDiffuseColor.method() != OdGiMaterialColor::kInherit) {
-			material.diffuse = toRepoColour(shadingDiffuseColor);
-		}
-		else {
-			material.diffuse = toRepoColour(traitsColor);
-		}
-	}
-	else
-	{
-		// This colour is that in the Material's Graphics -> Shading tab, which
-		// corresponds to the colour used in flat shaded mode.
-
-		material.diffuse = toRepoColour(materialPtr->getMaterial()->getColor());
-	}
-
-	// Only the diffuse colour is specified explicitly. The specular and ambient
-	// we get as intuited values from the material traits that come with the
-	// cache entry.
-
-	if (useRealisticShading) {
-		OdGiMaterialColor shadingAmbientColor;
-		materialData.shadingAmbient(shadingAmbientColor);
-		if (useRealisticShading && shadingAmbientColor.method() != OdGiMaterialColor::kInherit) {
-			material.ambient = toRepoColour(shadingAmbientColor);
-		}
-		else {
-			material.ambient = toRepoColour(traitsColor);
-		}
-	}
-	else
-	{
-		OdGiMaterialColor ambientColor;
-		materialData.ambient(ambientColor);
-		ODCOLORREF colorAmbient(0);
-		if (ambientColor.color().colorMethod() == OdCmEntityColor::kByColor)
-		{
-			colorAmbient = ODTOCOLORREF(ambientColor.color());
-		}
-		else if (ambientColor.color().colorMethod() == OdCmEntityColor::kByACI)
-		{
-			colorAmbient = OdCmEntityColor::lookUpRGB((OdUInt8)ambientColor.color().colorIndex());
-		}
-
-		material.ambient = toRepoColour(colorAmbient);
+	if (GETBIT(materialData.channelFlags(), OdGiMaterialTraits::kUseOpacity)) {
+		double opacity;
+		materialData.shadingOpacity(opacity);
+		material.opacity = opacity;
 	}
 
 	OdGiMaterialColor specularColor; OdGiMaterialMap specularMap; double glossFactor;
 	materialData.specular(specularColor, specularMap, glossFactor);
-
-	if (useRealisticShading) {
-		OdGiMaterialColor shadingSpecularColor;
-		materialData.shadingSpecular(shadingSpecularColor);
-		if (useRealisticShading && shadingSpecularColor.method() != OdGiMaterialColor::kInherit) {
-			material.specular = toRepoColour(shadingSpecularColor);
-		}
-		else {
-			material.specular = toRepoColour(traitsColor);
-		}
-	}
-	else {
-		ODCOLORREF colorSpecular(0);
-		if (specularColor.color().colorMethod() == OdCmEntityColor::kByColor)
-		{
-			colorSpecular = ODTOCOLORREF(specularColor.color());
-		}
-		else if (specularColor.color().colorMethod() == OdCmEntityColor::kByACI)
-		{
-			colorSpecular = OdCmEntityColor::lookUpRGB((OdUInt8)specularColor.color().colorIndex());
-		}
-
-		material.specular = toRepoColour(colorSpecular);
-	}
-
 	material.shininessStrength = glossFactor;
-	material.shininess = (float)materialPtr->getMaterial()->getShininess() / 255.0f;
 
-	if (GETBIT(materialData.channelFlags(), OdGiMaterialTraits::kUseEmission)) {
-		OdGiMaterialColor emissionColor; OdGiMaterialMap emissionMap;
-		materialData.emission(emissionColor, emissionMap);
+	// Some material properties however live directly on the material, so pull
+	// these where available.
 
-		if (emissionColor.method() == OdGiMaterialColor::kOverride)
-		{
-			material.emissive = toRepoColour(emissionColor);
+	if (!materialPtr.isNull())
+	{
+		material.shininess = (float)materialPtr->getMaterial()->getShininess() / 255.0f;
+
+		// This colour is that in the Material's Graphics -> Shading tab, which
+		// corresponds to the colour used in flat shaded mode.
+		// It is masked by Use Render Appearance, which is the toggle next to it
+		// which specifies that the photo-real colour should be used instead.		
+
+		if (!materialPtr->getUseRenderAppearance()) {
+			material.diffuse = toRepoColour(materialPtr->getMaterial()->getColor());
 		}
-		else {
-			material.emissive = toRepoColour(traitsColor);
-		}
-	}
-
-	if (GETBIT(materialData.channelFlags(), OdGiMaterialTraits::kUseOpacity)) {
-		double opacityPercentage; OdGiMaterialMap opacityMap;
-		materialData.opacity(opacityPercentage, opacityMap);
-
-		if (useRealisticShading) {
-			materialData.shadingOpacity(opacityPercentage);
-		}
-
-		material.opacity = opacityPercentage;
 	}
 }
 
