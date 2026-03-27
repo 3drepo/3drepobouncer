@@ -121,7 +121,7 @@ RUN git clone --filter=blob:none --sparse https://${GITHUB_USER}:${GITHUB_TOKEN}
         chown -R bouncer:bouncer /home/bouncer && \
         mkdir -p /home/bouncer/oda && \
         chown -R bouncer:bouncer /home/bouncer/oda && \
-        cat focal/teigha/2026.9/teighaLinuxGCC8.3.tgz* | tar -C /home/bouncer/oda -xzvf - && \
+        cat focal/teigha/2026.9/teighaLinuxGCC{gcc_version}.tgz* | tar -C /home/bouncer/oda -xzvf - && \
         rm -rf tests && rm -rf focal && rm -rf noble
 
 USER root
