@@ -691,10 +691,14 @@ void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiM
 	// The Rvt importer attempts to match what the corresponding settings would
 	// do in the Revit viewport.
 	
+	// The effectiveTraits method returns the current 'brush' settings for the
+	// device. This is one way in which colours can be defined.
+
+	OdCmEntityColor traitsColour = fixByACI(this->baseDevice()->getPalette(), effectiveTraits().trueColor());
+
 	// The material traits object that comes with the cache should initialise most
 	// properties correctly.
 
-	OdCmEntityColor traitsColour = fixByACI(this->baseDevice()->getPalette(), effectiveTraits().trueColor());
 	OdGiMaterialColor colour;
 
 	materialData.shadingDiffuse(colour);
@@ -718,8 +722,9 @@ void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiM
 	materialData.specular(specularColor, specularMap, glossFactor);
 	material.shininessStrength = glossFactor;
 
-	// Some material properties however live directly on the material, so pull
-	// these where available.
+	// Some material properties however live directly on the material, and are
+	// not picked up by the Visualize SDK, so pull these directly to better
+	// approximate Revit.
 
 	if (!materialPtr.isNull())
 	{
