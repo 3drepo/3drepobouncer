@@ -85,7 +85,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 ENV CC=/usr/bin/gcc
 ENV CXX=/usr/bin/g++
-ENV gcc_version=8.3
+ENV gcc_version=13
 ENV MONGO_ROOT=/home/bouncer/mongo-cxx-driver
 ENV ASSIMP_ROOT=/home/bouncer/assimp
 ENV IFCOPENSHELL_ROOT=/home/bouncer/IfcOpenShell
