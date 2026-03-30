@@ -98,6 +98,11 @@ namespace repo {
 				repo::lib::RepoVector3D64 getWorldOffset();
 				void setWorldOffset(const repo::lib::RepoVector3D64& offset);
 
+				void makeMaterialNode(
+					const size_t key,
+					const repo::lib::repo_material_t& m,
+					repo::lib::RepoUUID parentId);
+
 				/*
 				* Adds the repo_material_t to the scene with the specified parent, or adds
 				* the parent Id to the material's existing node.
@@ -154,7 +159,7 @@ namespace repo {
 				// These lookups are for use by the addMaterialReference method, which will
 				// update the parents of existing nodes.
 
-				std::unordered_map<size_t, repo::lib::RepoUUID> materialToUniqueId;
+				std::unordered_map<size_t, std::pair<repo::lib::RepoUUID, uint32_t>> materialToUniqueId;
 				std::unordered_map<std::string, repo::lib::RepoUUID> textureToUniqueId;
 
 				// We have to use raw pointers here because the std containers' interaction
