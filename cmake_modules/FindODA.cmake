@@ -183,7 +183,7 @@ if(MSVC)
 		set(ODA_VERSION $ENV{ODA_VERSION})
 		message(STATUS "ODA_VERSION: ${ODA_VERSION}")
 	else()
-		message(FATAL_ERROR "When building for Windows, the Environment Variable ODA_VERSION must be defined with the SDK and compiler version, e.g. ""24.8_14"". Look at the suffixes in the exe folder to see what this should be. This is not necessary on Linux.")
+		message(FATAL_ERROR "When building for Windows, the Environment Variable ODA_VERSION must be defined with the SDK and compiler version e.g. ""24.8_14"". Look at the suffixes in the exe folder to see what this should be. This is not necessary on Linux.")
 	endif()
 endif()
 

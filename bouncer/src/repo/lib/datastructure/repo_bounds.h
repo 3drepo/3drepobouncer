@@ -23,6 +23,9 @@
 namespace repo {
 	namespace lib {
 
+		template <typename T>
+		class _RepoMatrix;
+
 		/*
 		* Represents a bounding box in 3D
 		*/
@@ -32,6 +35,8 @@ namespace repo {
 			RepoBounds();
 			RepoBounds(const RepoVector3D64& min, const RepoVector3D64& max);
 			RepoBounds(const RepoVector3D& min, const RepoVector3D& max);
+			RepoBounds(std::initializer_list<RepoVector3D64> points);
+			RepoBounds(const RepoVector3D64* points, size_t size);
 
 			// Expands the bounds to include the point
 			void encapsulate(const RepoVector3D64& p);
@@ -39,14 +44,37 @@ namespace repo {
 
 			bool operator==(const RepoBounds& other) const;
 
+			bool operator>(const RepoBounds& other) const;
+
+			bool contains(const RepoVector3D64& p) const;
+
 			const RepoVector3D64& min() const;
 			const RepoVector3D64& max() const;
 
 			RepoVector3D64 size() const;
 
+			RepoVector3D64 center() const;
+
+			static repo::lib::RepoBounds empty();
+
+			double volume() const;
+
 		private:
 			RepoVector3D64 bmin;
 			RepoVector3D64 bmax;
 		};
+
+		REPO_API_EXPORT repo::lib::RepoBounds operator*(const _RepoMatrix<double>& matrix, const repo::lib::RepoBounds& bounds);
+
+		/**
+		* Multiplies (scales) the min and max of the bounds by the components of the
+		* vector.
+		*/
+		REPO_API_EXPORT repo::lib::RepoBounds operator*(const _RepoVector3D<double>& scalars, const repo::lib::RepoBounds& bounds);
+
+		/**
+		* Offsets the bounds by the components of the vector.
+		*/
+		REPO_API_EXPORT repo::lib::RepoBounds operator+(const repo::lib::RepoBounds& bounds, const RepoVector3D64& offset);
 	}
 }

@@ -1,0 +1,181 @@
+/**
+*  Copyright (C) 2025 3D Repo Ltd
+*
+*  This program is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU Affero General Public License as
+*  published by the Free Software Foundation, either version 3 of the
+*  License, or (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU Affero General Public License for more details.
+*
+*  You should have received a copy of the GNU Affero General Public License
+*  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#include "repo/lib/datastructure/repo_vector.h"
+#include "repo/lib/datastructure/repo_line.h"
+#include "repo/lib/datastructure/repo_triangle.h"
+#include "repo/lib/datastructure/repo_bounds.h"
+#include "repo/lib/datastructure/repo_structs.h"
+#include "geometry_exceptions.h"
+#include <algorithm>
+
+namespace geometry {
+
+    repo::lib::RepoVector3D64 closestPoint(
+        const repo::lib::RepoVector3D64& p,
+        const repo::lib::RepoTriangle& T
+    );
+    
+    repo::lib::RepoLine closestPoints(
+        const repo::lib::RepoVector3D64& p, 
+        const repo::lib::RepoTriangle& T
+    );
+
+    repo::lib::RepoLine closestPoints(
+        const repo::lib::RepoLine& A, 
+        const repo::lib::RepoLine& B
+    );
+
+    struct FaceFaceResult : public repo::lib::RepoLine
+    {
+        /*
+        * Used to disambiguate when the line is zero-length, whether because
+        * the triangles are in-contact or have a hard intersection.
+        */
+        bool intersects;
+
+		/*
+		* If intersects is true, contains the amount by which the triangles
+		* would have to move to resolve the penetration.
+		*/
+		double depth;
+	};
+
+    /*
+    * Given two Triangles, A & B, return a Line that connects the A and B at
+    * their closest points to eachother. The line starts on A and ends on B;
+    * moving A by that line will bring the two triangles into contact. If the
+    * triangles are co-planar, will return a zero-length line.
+    */
+    FaceFaceResult closestPoints(
+        const repo::lib::RepoTriangle& A, 
+        const repo::lib::RepoTriangle& B
+    );
+
+    /*
+	* Given two AABBs, return a Line that connects them at their closest points.
+	* The line starts on A and ends on B; moving A by that line will bring the
+    * two AABBs into contact. If the bounds overlap, the line will be zero-length
+    * and begin and end at an arbitrary point within the overlapping volume.
+    */
+	repo::lib::RepoLine closestPoints(
+        const repo::lib::RepoBounds& a, 
+        const repo::lib::RepoBounds& b
+    );
+
+    /*
+    * Orient predicate in 3D - this returns whether point d is above, below or
+    * on the plane defined by a, b and c. The sign is negative if above, and 
+    * positive if below (the opposite to the cross-product).
+    */
+    double orient(const repo::lib::RepoVector3D64& a, 
+        const repo::lib::RepoVector3D64& b, 
+        const repo::lib::RepoVector3D64& c, 
+        const repo::lib::RepoVector3D64& d
+    );
+
+    /*
+    * Determines if two triangles intersect, and if so returns an upper bound on
+    * the distance one triangle must move to completely resolve the intersection.
+	* Unambiguously disjoint triangles will return exactly zero. Triangles that
+    * are in-contact or coplanar will return a small value, or zero.
+    * If ip is provided, it will be set to a point on the line of intersection,
+    * if any.
+    */
+	double intersects(const repo::lib::RepoTriangle& a, 
+        const repo::lib::RepoTriangle& b,
+        repo::lib::RepoVector3D64* ip = nullptr
+    );
+
+    /*
+    * Determines if the ray defined by origin and direction intersects the
+    * triangle. If so, returns the distance along the ray as a scalar of
+	* direction. Will intersect a triangle regardless of winding order.
+    * If no intersection occurs (or the intersection is behind the origin),
+	* returns infinity.
+    * If edges is provided, it will be set to the number of edges that were
+    * hit by the ray (at most two). If there is no intersection, edges will
+    * be set to zero.
+    * If degenerate is provided, it will be set to true if the test was
+    * internally detected as degenerate - if the test was not degenerate
+    * then the value is unchanged, allowing for daisy-chaining.
+    */
+    double intersects(const repo::lib::RepoVector3D64& origin,
+        const repo::lib::RepoVector3D64& direction,
+        const repo::lib::RepoTriangle& triangle,
+        int* edges = nullptr,
+        bool* degenerate = nullptr
+    );
+
+    /*
+    * Given two bounds, return the minimum separating axis between them, in the
+    * form of a vector, such that if a is moved by that vector, the two bounds
+    * will touch on that axis. If the bounds do not intersect, the vector will
+    * be empty.
+    */
+    repo::lib::RepoVector3D64 minimumSeparatingAxis(
+        const repo::lib::RepoBounds& a, 
+        const repo::lib::RepoBounds& b
+    );
+
+    /*
+    * Returns a value approximating the unit of least precision.
+    */
+    double ulp(double x);
+
+    /*
+    * Given two triangles, return a value representing the uncertainty of queries
+    * run on them due to rounding error. This value can be used to distinguish 
+    * between in-contact, in-collision, and coplanar states.
+    * 
+    * The value is based on the magnitude of the operands involved - the exact
+    * way in which the operands combine, and the scalar, are implementation
+    * details found empirically.
+    */
+
+    double contactThreshold(
+        const repo::lib::RepoTriangle& a, 
+        const repo::lib::RepoTriangle& b
+    );
+
+    double contactThreshold(
+        const repo::lib::RepoBounds& a,
+        const repo::lib::RepoBounds& b
+    );
+
+    /*
+    * The distance threshold to use for coplanarity tests. This is primarily for
+	* the intersects method, but may be useful elsewhere.
+    */
+	const static double COPLANAR = 1e-15;
+
+    /*
+    * Returns whether a mesh is closed and manifold. These are prerequisites for
+    * checking for point-wise containment.
+    * The faces should already be indexed - i.e. indices for coincident vertices
+    * must be identical; this method only operates on indices, to check meshes
+	* with different tolerances, then they should be re-indexed first.
+    */
+    bool isClosedAndManifold(
+        const std::vector<repo::lib::repo_face_t>& triangles
+	);
+
+    bool isClosedAndManifold(
+        const repo::lib::repo_face_t* triangles,
+        size_t numTriangles
+    );
+}

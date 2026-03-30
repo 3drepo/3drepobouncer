@@ -18,6 +18,7 @@
 #include "repo_ifc_serialiser.h"
 #include "repo_ifc_constants.h"
 
+#include <repo_log.h>
 #include <repo/repo_bouncer_global.h>
 #include <repo/lib/repo_utils.h>
 #include <repo/lib/datastructure/repo_vector.h>
@@ -828,7 +829,8 @@ bool IfcSerialiser::shouldGroupByType(const IfcSchema::IfcObjectDefinition* obje
 
 std::shared_ptr<repo::core::model::TransformationNode> IfcSerialiser::createTransformationNode(
 	const IfcSchema::IfcObjectDefinition* object,
-	const repo::lib::RepoUUID& parentId)
+	const repo::lib::RepoUUID& parentId,
+	const repo::lib::RepoMatrix transformMat)
 {
 	auto name = object->Name().get_value_or({});
 	if (name.empty())
@@ -836,7 +838,12 @@ std::shared_ptr<repo::core::model::TransformationNode> IfcSerialiser::createTran
 		name = object->declaration().name();
 	}
 
-	auto transform = repo::core::model::RepoBSONFactory::makeTransformationNode({}, name, { parentId });
+	// Create transformation node with the new transform
+	auto transform = repo::core::model::RepoBSONFactory::makeTransformationNode(transformMat, name, { parentId });
+
+	// Insert accumulative parent transform for lookup
+	auto parentMat = parentLocalToWorld[parentId];
+	parentLocalToWorld[transform.getSharedID()] = parentMat * transformMat;
 
 	auto it = metadataUniqueIds.find(object->id());
 	if (it != metadataUniqueIds.end())
@@ -854,9 +861,12 @@ std::shared_ptr<repo::core::model::TransformationNode> IfcSerialiser::createTran
 	return builder->addNode(transform);
 }
 
-repo::lib::RepoUUID IfcSerialiser::getTransformationNode(const IfcSchema::IfcObjectDefinition* parent, const IfcParse::entity& typeGroup)
+repo::lib::RepoUUID IfcSerialiser::getTransformationNode(
+	const IfcSchema::IfcObjectDefinition* parent,
+	const IfcParse::entity& typeGroup,
+	const repo::lib::RepoMatrix transformMat)
 {
-	auto parentId = getTransformationNode(parent, false);
+	auto parentId = getTransformationNode(parent, false, {});
 	auto groupId = parent->file_->getMaxId() + parent->id() + typeGroup.type() + 1;
 	auto& nodes = sharedIds[groupId];
 
@@ -864,15 +874,22 @@ repo::lib::RepoUUID IfcSerialiser::getTransformationNode(const IfcSchema::IfcObj
 		return nodes.branchSharedId;
 	}
 
-	auto transform = repo::core::model::RepoBSONFactory::makeTransformationNode({}, typeGroup.name(), { parentId });
+	auto transform = repo::core::model::RepoBSONFactory::makeTransformationNode(transformMat, typeGroup.name(), { parentId });
 	builder->addNode(transform);
+	
+	// Insert accumulative parent transform for lookup
+	auto parentMat = parentLocalToWorld[parentId];
+	parentLocalToWorld[transform.getSharedID()] = parentMat * transformMat;
 
 	nodes.branchSharedId = transform.getSharedID();
 
 	return transform.getSharedID();
 }
 
-repo::lib::RepoUUID IfcSerialiser::getTransformationNode(const IfcSchema::IfcObjectDefinition* object, bool leafNode)
+repo::lib::RepoUUID IfcSerialiser::getTransformationNode(
+	const IfcSchema::IfcObjectDefinition* object,
+	bool leafNode,
+	repo::lib::RepoMatrix transformMat)
 {
 	if (!object)
 	{
@@ -890,25 +907,37 @@ repo::lib::RepoUUID IfcSerialiser::getTransformationNode(const IfcSchema::IfcObj
 	// created first this can be a simple addition, but in the most complex involves
 	// re-parenting existing leaf nodes to insert a new common parent.
 
-	if (leafNode && nodes.leafNode)
+	// Looking for a leaf node and the object already has one associated with it
+	if (leafNode && nodes.leafNode) 
 	{
+		// Return the shared id of the leaf node
 		return nodes.leafNode->getSharedID();
 	}
-	else if (!leafNode && nodes.branchSharedId)
+	// Looking for a branch node and the object has one already
+	else if (!leafNode && nodes.branchSharedId) 
 	{
+		// Return the shared id of the branch node
 		return nodes.branchSharedId;
 	}
+	// Looking for a leaf node and the object already has a branch node
 	else if (leafNode && nodes.branchSharedId)
 	{
-		nodes.leafNode = createTransformationNode(object, nodes.branchSharedId);
+		// Create a new transformation node with the branch node as parent
+		// Then return the shared ID of that new transform as the leaf
+		nodes.leafNode = createTransformationNode(object, nodes.branchSharedId, transformMat);
 		return nodes.leafNode->getSharedID();
 	}
+	// Looking for branch node and the object already has a leaf node
 	else if (!leafNode && nodes.leafNode)
 	{
-		nodes.branchSharedId = createTransformationNode(object, nodes.leafNode->getParentIDs()[0])->getSharedID();
+		// Create a new transformation node as the branch node
+		// Then re-home the leaf Node
+		// New transform matrix can be identity, since the leaf node will still be downstream of its original parent
+		nodes.branchSharedId = createTransformationNode(object, nodes.leafNode->getParentIDs()[0], {})->getSharedID();
 		nodes.leafNode->setParents({ nodes.branchSharedId });
 		return nodes.branchSharedId;
 	}
+	// The object has no nodes associated with it yet.
 	else
 	{
 		auto parent = getParent(object);
@@ -919,14 +948,15 @@ repo::lib::RepoUUID IfcSerialiser::getTransformationNode(const IfcSchema::IfcObj
 		repo::lib::RepoUUID parentId;
 		if (shouldGroupByType(object, parent))
 		{
-			parentId = getTransformationNode(parent, object->declaration());
+			parentId = getTransformationNode(parent, object->declaration(), {});
 		}
 		else
 		{
-			parentId = getTransformationNode(parent, false);
+			parentId = getTransformationNode(parent, false, {});
 		}
 
-		auto node = createTransformationNode(object, parentId);
+		// Create new transformation node
+		auto node = createTransformationNode(object, parentId, transformMat);
 
 		if (leafNode)
 		{
@@ -941,23 +971,26 @@ repo::lib::RepoUUID IfcSerialiser::getTransformationNode(const IfcSchema::IfcObj
 	}
 }
 
-repo::lib::RepoUUID IfcSerialiser::getParentId(const IfcGeom::Element* element, bool createTransform)
+repo::lib::RepoUUID IfcSerialiser::getParentId(
+	const IfcGeom::Element* element,
+	bool createTransform,
+	const repo::lib::RepoMatrix transformMat)
 {
 	auto object = element->product()->as<IfcSchema::IfcObjectDefinition>();
 	if (createTransform)
 	{
-		return getTransformationNode(object, true);
+		return getTransformationNode(object, true, transformMat);
 	}
 	else
 	{
 		auto parent = getParent(object);
 		if (shouldGroupByType(object, parent))
 		{
-			return getTransformationNode(parent, object->declaration());
+			return getTransformationNode(parent, object->declaration(), transformMat);
 		}
 		else
 		{
-			return getTransformationNode(parent, false);
+			return getTransformationNode(parent, false, transformMat);
 		}
 	}
 }
@@ -966,15 +999,21 @@ void IfcSerialiser::import(const IfcGeom::TriangulationElement* triangulation)
 {
 	auto& mesh = triangulation->geometry();
 
-	auto matrix = repoMatrix(*triangulation->transformation().data());
+	auto orgMat = repoMatrix(*triangulation->transformation().data());
 
-	std::vector<repo::lib::RepoVector3D> vertices;
-	vertices.reserve(mesh.verts().size() / 3);
+	std::vector<repo::lib::RepoVector3D64> vertices64;
+	
+	repo::lib::RepoBounds bounds;
+	vertices64.reserve(mesh.verts().size() / 3);
 	for (auto it = mesh.verts().begin(); it != mesh.verts().end();) {
-		const float x = *(it++);
-		const float y = *(it++);
-		const float z = *(it++);
-		vertices.push_back({ x, y, z });
+		const double x = *(it++);
+		const double y = *(it++);
+		const double z = *(it++);
+		repo::lib::RepoVector3D64 v = { x, y, z };
+		vertices64.push_back(v);
+
+		auto vOrg = orgMat * v;
+		bounds.encapsulate(vOrg);
 	}
 
 	std::vector<repo::lib::RepoVector3D> normals;
@@ -987,7 +1026,7 @@ void IfcSerialiser::import(const IfcGeom::TriangulationElement* triangulation)
 	}
 
 	std::vector<repo::lib::RepoVector2D> uvs;
-	normals.reserve(mesh.uvs().size() / 2);
+	uvs.reserve(mesh.uvs().size() / 2);
 	for (auto it = mesh.uvs().begin(); it != mesh.uvs().end();) {
 		const float u = *it++;
 		const float v = *it++;
@@ -1020,7 +1059,31 @@ void IfcSerialiser::import(const IfcGeom::TriangulationElement* triangulation)
 		name = triangulation->name() + " (IFC Space)";
 	}
 
-	auto parentId = getParentId(triangulation, !isIfcSpace);
+	// Shift the model according to the centre of its bounds.
+	// This can be necessary when IFC reuses geometry (e.g. with IfcMappedItem) with
+	// a shared origin.
+	auto newSpaceMat = repo::lib::RepoMatrix::translate(bounds.center());
+
+	auto parentId = getParentId(triangulation, !isIfcSpace, newSpaceMat);
+	
+	std::vector<repo::lib::RepoVector3D> vertices;
+
+	// Calculate matrix to transform the vertices from their original local space
+	// into a new local space that takes the transforms of their parents in the 
+	// tree into account.
+	auto parentMat = parentLocalToWorld[parentId];
+	auto fullCorrMat = parentMat.inverse() * orgMat;
+
+	// Apply corrective to vertices
+	for (int i = 0; i < vertices64.size(); i++)
+	{
+		auto v = vertices64[i];
+		v = fullCorrMat * v;
+		vertices.push_back(v);
+	}
+
+	// Apply corrective to normals
+	repo::core::model::MeshNode::transformNormals(normals, fullCorrMat);
 
 	std::unique_ptr<repo::core::model::MetadataNode> metaNode;
 	if (isIfcSpace) {
@@ -1041,7 +1104,6 @@ void IfcSerialiser::import(const IfcGeom::TriangulationElement* triangulation)
 			name,
 			{ parentId }
 		);
-		mesh.applyTransformation(matrix);
 		mesh.updateBoundingBox();
 		mesh.setMaterial(resolveMaterial(materials[pair.first]));
 		builder->addNode(mesh);

@@ -11,6 +11,7 @@ set(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_exception.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_license.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_property_tree.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_units.cpp
 	CACHE STRING "SOURCES" FORCE)
 
 set(HEADERS
@@ -22,6 +23,7 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_license.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_property_tree.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_stack.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_units.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_utils.h
 	CACHE STRING "HEADERS" FORCE)
 

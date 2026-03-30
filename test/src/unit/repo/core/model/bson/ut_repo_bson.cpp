@@ -103,10 +103,10 @@ bsoncxx::array::value makeMatrixObj(const repo::lib::RepoMatrix& m)
 {
 	auto d = m.getData();
 	bsoncxx::builder::basic::array builder;
-	builder.append(makeBsonArray(std::vector<float>({ d[0], d[1], d[2], d[3]})));
-	builder.append(makeBsonArray(std::vector<float>({ d[4], d[5], d[6], d[7] })));
-	builder.append(makeBsonArray(std::vector<float>({ d[8], d[9], d[10], d[11] })));
-	builder.append(makeBsonArray(std::vector<float>({ d[12], d[13], d[14], d[15] })));
+	builder.append(makeBsonArray(std::vector<double>({ d[0], d[1], d[2], d[3]})));
+	builder.append(makeBsonArray(std::vector<double>({ d[4], d[5], d[6], d[7] })));
+	builder.append(makeBsonArray(std::vector<double>({ d[8], d[9], d[10], d[11] })));
+	builder.append(makeBsonArray(std::vector<double>({ d[12], d[13], d[14], d[15] })));
 	return builder.extract();
 }
 
