@@ -225,7 +225,7 @@ void Hard::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 				auto [a, b] = std::move(queue.front());
 				queue.pop();
 
-				// Check initialisation status of the cache entries
+				// Check initialisation status of entry a
 				bool aInitialised = false;
 				{
 					// Shared lock on the object so we can check the status
@@ -233,6 +233,17 @@ void Hard::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 					aInitialised = a->isInitialised();
 				}
 
+				// If a is not initialised, do it now.
+				if (!aInitialised)
+				{
+					// Lock exclusively
+					std::scoped_lock entryLock{ a->mutex};
+
+					// Now initialise the node
+					a->initialise(handler);
+				}
+
+				// Check initialisation status of entry b
 				bool bInitialised = false;
 				{
 					// Shared lock on the object so we can check the status
@@ -240,16 +251,13 @@ void Hard::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 					bInitialised = b->isInitialised();
 				}
 
-				// If one or both them are not initialised, we are initialising them
-				// Needs a lock on both of them to prevent a deadlock situation with
-				// an edge in the opposite direction in another thread
-				if (!aInitialised || !bInitialised)
+				// If b is not initialised, do it now.
+				if (!bInitialised)
 				{
-					// Lock both exclusively
-					std::scoped_lock entryLock{ a->mutex, b->mutex };
+					// Lock exclusively
+					std::scoped_lock entryLock{b->mutex };
 
-					// Now initialise the nodes
-					a->initialise(handler);
+					// Now initialise the node
 					b->initialise(handler);
 				}
 
