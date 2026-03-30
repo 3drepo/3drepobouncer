@@ -218,12 +218,8 @@ void Hard::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 	// Define thread behaviour
 	auto narrowPhaseThread = [&](std::queue<Narrowphase>& queue)
 		{
-			while (true) {
-
-				// If we are out of samples, we unlock and terminate
-				if (queue.empty()) {
-					break;
-				}
+			// Run intil we are out of samples, then terminate.
+			while (!queue.empty()) {
 
 				// Else, get sample from the queue exclusive to this thread
 				auto [a, b] = std::move(queue.front());
