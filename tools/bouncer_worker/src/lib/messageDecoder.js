@@ -27,10 +27,12 @@ const replaceSharedDirPlaceHolder = (command) => {
 	const cmdArr = cmd.split(/\s+/);
 	if (cmdArr[0] === 'import') {
 		cmd = replaceSharedDirTag(cmd);
+		cmdArr[2] = replaceSharedDirTag(cmdArr[2]);
 		const result = replaceSharedDirTag(fs.readFileSync(cmdArr[2], 'utf8'));
 		fs.writeFileSync(cmdArr[2], result, 'utf8');
 	} else if (cmdArr[0] === 'processDrawing') {
 		cmd = replaceSharedDirTag(cmd);
+		cmdArr[1] = replaceSharedDirTag(cmdArr[1]);
 		const result = replaceSharedDirTag(fs.readFileSync(cmdArr[1], 'utf8'));
 		fs.writeFileSync(cmdArr[1], result, 'utf8');
 	}
