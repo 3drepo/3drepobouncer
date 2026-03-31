@@ -68,7 +68,7 @@ jobs:
           tar -zxf $TEST_DATA/bouncer/ext_libs/noble/mongo-cxx-driver.tgz
           tar -zxf $TEST_DATA/bouncer/ext_libs/noble/assimp-5.4.3.tgz
           tar -zxf $TEST_DATA/bouncer/ext_libs/noble/IfcOpenShell-0.8.0.tgz
-          cat $TEST_DATA/bouncer/ext_libs/focal/teigha/2027.2/teighaLinuxGCC8.3.tgz* | tar -zxf -
+          cat $TEST_DATA/bouncer/ext_libs/focal/teigha/2026.9/teighaLinuxGCC8.3.tgz* | tar -zxf -
           tar -zxf $TEST_DATA/bouncer/ext_libs/noble/thrift-0.12.0.tgz
           tar -zxf $TEST_DATA/bouncer/ext_libs/noble/3drepoSynchroReader.tgz
           tar -zxf $TEST_DATA/bouncer/ext_libs/focal/date.tgz
