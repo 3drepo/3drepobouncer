@@ -15,8 +15,8 @@ jobs:
       MONGO_ROOT: ${{github.WORKSPACE}}/mongo-cxx-driver
       ASSIMP_ROOT: ${{github.WORKSPACE}}/assimp
       IFCOPENSHELL_ROOT: ${{github.WORKSPACE}}/IfcOpenShell
-      ODA_ROOT: ${{github.WORKSPACE}}/teighaLinuxGCC13
-      ODA_LIB_DIR: ${{github.WORKSPACE}}/teighaLinuxGCC13/lib/lnxX64_13dll/
+      ODA_ROOT: ${{github.WORKSPACE}}/teighaLinuxGCC8.3
+      ODA_LIB_DIR: ${{github.WORKSPACE}}/teighaLinuxGCC8.3/lib/lnxX64_8.3dll/
       THRIFT_ROOT: ${{github.WORKSPACE}}/thrift-0.12.0
       DATE_ROOT: ${{github.WORKSPACE}}/date
       SYNCHRO_READER_ROOT: ${{github.WORKSPACE}}/3drepoSynchroReader
@@ -68,7 +68,7 @@ jobs:
           tar -zxf $TEST_DATA/bouncer/ext_libs/noble/mongo-cxx-driver.tgz
           tar -zxf $TEST_DATA/bouncer/ext_libs/noble/assimp-5.4.3.tgz
           tar -zxf $TEST_DATA/bouncer/ext_libs/noble/IfcOpenShell-0.8.0.tgz
-          cat $TEST_DATA/bouncer/ext_libs/focal/teigha/2027.2/teighaLinuxGCC13.tgz* | tar -zxf -
+          cat $TEST_DATA/bouncer/ext_libs/focal/teigha/2026.9/teighaLinuxGCC8.3.tgz* | tar -zxf -
           tar -zxf $TEST_DATA/bouncer/ext_libs/noble/thrift-0.12.0.tgz
           tar -zxf $TEST_DATA/bouncer/ext_libs/noble/3drepoSynchroReader.tgz
           tar -zxf $TEST_DATA/bouncer/ext_libs/focal/date.tgz
