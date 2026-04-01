@@ -1921,8 +1921,8 @@ TEST(Clash, NodeCache)
 
 	struct Cache : public repo::manipulator::modelutility::clash::ResourceCache<K, Node>
 	{
-		void initialise(const K& key, Node& node) const override {
-			node.i = key.i;
+		void initialise(const K& key, Node* node) const override {
+			node->i = key.i;
 		}
 	};
 

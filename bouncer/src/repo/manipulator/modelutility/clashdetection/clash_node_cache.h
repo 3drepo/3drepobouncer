@@ -32,9 +32,10 @@ namespace repo {
 				* reused across tests during each stage.
 				* 
 				* Callers first create a Record for a given Key, and use this object to
-				* request references to the Node stored in it. These references are counted,
-				* and once they all go out of scope, the Record itself is removed from the
-				* cache.
+				* request references to the Node stored in it. Once all desired references
+				* are acquired, finalise() is called on the cache that will drop all records.
+				* From that moment on, all nodes are held by the references and once those all
+				* went out of scope, they will be removed too.
 				* 
 				* Records are keyed by the objects that are themselves used to initialise
 				* the intermediate structures (which should be done by the Cache itself
@@ -49,67 +50,40 @@ namespace repo {
 				class ResourceCache
 				{
 				public:
-					struct Record;
 
-					// Make sure the Deleter is a separate object so that its contents can be
-					// std::swapped'. If we use a reference, the contents will be swapped along
-					// with the unique_ptr, which is a problem because the Record holds the
-					// thing the pointer is pointing to.
-
-					struct Deleter {
-						Record* record = nullptr;
-
-						void operator()(Node* ptr) {
-							record->referenceCount--;
-							if (!record->referenceCount) {
-								record->cache->release(*record->key);
-							}
-						}
-					};
+					using Entry = std::shared_ptr<Node>;
 
 					struct Record
 					{
 						// Node must be default-constructible
-						Node node;
+						Entry node;
 
-						size_t referenceCount = 0;
-						ResourceCache* cache = nullptr;
-						const Key* key = nullptr;
+						Record()
+						{
+							node = std::make_shared<Node>();
+						}
 
-						/*
-						* Takes a counted reference to the Record. Once all references go out of
-						* scope, the Record will be destroyed. If no reference is ever taken,
-						* the record will only be destroyed with the cache itself.
-						*/
-						std::unique_ptr<Node, Deleter> getReference() {
-							referenceCount++;
-							return std::unique_ptr<Node, Deleter>(&node, Deleter{this});
+						Entry getReference()
+						{
+							return node;
 						}
 					};
 
-					using Entry = std::unique_ptr<Node, Deleter>;
-
 					/*
 					* Gets (or creates) a record associated with the given key. Once a record
-					* is no longer needed, it should be destroyed by calling destroy. If the
-					* record has references taken from it, this will be done automatically.
+					* is no longer needed, it should be destroyed by calling destroy. If
+					* finalise() is called, this happens automatically.
 					*/
 					Record* get(const Key& key) {
 
-						Record* record = nullptr;
-						auto it = map.find(&key);
-						if (it == map.end())
+						if (!map.contains(&key))
 						{
-							record = &map[&key];
-							record->key = &key;
-							record->cache = this;
-							initialise(key, record->node);
+							auto newRecord = std::make_unique<Record>();
+							initialise(key, newRecord->node.get());
+							map[&key] = std::move(newRecord);
 						}
-						else
-						{
-							record = &it->second;
-						}
-						return record;
+
+						return map[&key].get();
 					}
 
 					void release(const Key& key) {
@@ -120,11 +94,21 @@ namespace repo {
 					}
 
 					/*
+					* "Finalises" the cache by releasing all records.
+					* After this, the Nodes are only held by all references acquired through getReference().
+					* Nodes that don't have any references pointing at them will be removed now.
+					* Nodes with references will be removed once all of the references go out of scope.
+					*/
+					void finalise() {
+						map.clear();
+					}
+
+					/*
 					* Create a new cache entry node if one is requested for a key that does
 					* not yet exist. Nodes should be cheap to make (and copy), until their
 					* content is initialised downstream.
 					*/
-					virtual void initialise(const Key& key, Node& node) const = 0;
+					virtual void initialise(const Key& key, Node* node) const = 0;
 
 				protected:
 					// The map itself uses the pointers to the keying objects, as inbuilt hash
@@ -136,7 +120,7 @@ namespace repo {
 					// the associated entry is removed, even if other entries are emplaced or
 					// erased.
 
-					std::unordered_map<const Key*, Record> map;
+					std::unordered_map<const Key*, std::unique_ptr<Record>> map;
 
 					~ResourceCache() noexcept(false) {
 						if(map.size()) {

@@ -88,11 +88,11 @@ namespace {
 
 		const Graph& graph;
 
-		void initialise(const CompositeObject& composite, CacheEntry& entry) const override {
+		void initialise(const CompositeObject& composite, CacheEntry* entry) const override {
 			for(auto& meshRef : composite.meshes) {
-				entry.nodes.push_back(&graph.getNode(meshRef.uniqueId));
+				entry->nodes.push_back(&graph.getNode(meshRef.uniqueId));
 			}
-			entry.id = composite.id;
+			entry->id = composite.id;
 		}
 	};
 
@@ -198,9 +198,10 @@ void Hard::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 	std::vector<std::queue<Narrowphase>> narrowphaseQueues(numThreads);
 	int parcelSize = std::ceil(orderedCompositePairs.size() / (double) numThreads);
 
-	// When we take references to the records, we begin reference counting. From
-	// this point on, when all the Cache::Entry objects for a given record are
-	// destroyed, that record will be cleaned up.
+	// When we take references to the records, we take shared ownership for their
+	// nodes. After the caches are released (below), we are the sole owner and
+	// when all the Cache::Entry objects for a given Node are destroyed,
+	// that Node will be cleaned up.
 	int sampleCount = 0;
 	for (auto [a, b] : orderedCompositePairs) {
 		int queueIndex = std::floor(sampleCount / parcelSize);
@@ -211,9 +212,20 @@ void Hard::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 		sampleCount++;
 	}
 
+	// The finalisation will invalidate all these pointers
+	// so clear compositePairs and orderedCompositePairs.
+	compositePairs.clear();
+	orderedCompositePairs.clear();
+
+	// Finalise caches
+	// From here on, the records are solely held by the shared pointers in the
+	// queues and will be deleted as they are removed.
+	cacheA.finalise();
+	cacheB.finalise();
+	cacheC.finalise();
+
 	// Mutexes
 	std::mutex clashesMutex{};
-	std::mutex cacheMutex{};
 
 	// Define thread behaviour
 	auto narrowPhaseThread = [&](std::queue<Narrowphase>& queue)
@@ -294,13 +306,6 @@ void Hard::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 					catch (const geometry::GeometryTestException& e) {
 						throw DegenerateTestException(a->getId(), b->getId(), e.what());
 					}
-				}
-
-				// Explicitly delete the cache entries in a thread-safe environment
-				{
-					std::scoped_lock lockCache{ cacheMutex };
-					a.reset();
-					b.reset();
 				}
 			}
 		};

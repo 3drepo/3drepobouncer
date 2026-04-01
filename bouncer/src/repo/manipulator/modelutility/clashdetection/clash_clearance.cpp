@@ -100,8 +100,8 @@ namespace {
 
 	struct Cache : public ResourceCache<Graph::Node, Cached> 
 	{
-		void initialise(const Graph::Node& key, Cached& entry) const override {
-			entry.node = const_cast<Graph::Node*>(&key); // We need to cast away const here in order to load the binary buffers into the contained bson
+		void initialise(const Graph::Node& key, Cached* entry) const override {
+			entry->node = const_cast<Graph::Node*>(&key); // We need to cast away const here in order to load the binary buffers into the contained bson
 		}
 	};
 
@@ -187,9 +187,10 @@ void Clearance::run(const Graph& graphA, const Graph& graphB, const Graph& graph
 
 	ClashScheduler::schedule(broadphaseResults);
 
-	// Create reference counted equivalents of the records output by the broadphase.
-	// Now, as the narrowphase tests are performed, the records will be fully
-	// initialised and cleaned up automatically.
+	// When we take references to the records, we take shared ownership for their
+	// nodes. After the caches are released (below), we are the sole owner and
+	// when all the Cache::Entry objects for a given Node are destroyed,
+	// that Node will be cleaned up.
 
 	using Narrowphase = std::pair<
 		Cache::Entry,
@@ -198,6 +199,10 @@ void Clearance::run(const Graph& graphA, const Graph& graphB, const Graph& graph
 
 	std::queue<Narrowphase> narrowphaseTests;
 
+	// When we take references to the records, we take shared ownership for their
+	// nodes. After the caches are released (below), we are the sole owner and
+	// when all the Cache::Entry objects for a given Node are destroyed,
+	// that Node will be cleaned up.
 	for (auto r : broadphaseResults) {
 		narrowphaseTests.push({
 			r.first->getReference(),
@@ -205,10 +210,18 @@ void Clearance::run(const Graph& graphA, const Graph& graphB, const Graph& graph
 		});
 	}
 
+	// The finalisation will invalidate all these pointers
+	// so clear this vector
+	broadphaseResults.clear();
+
+	// Finalise caches
+	// From here on, the records are solely held by the shared pointers in the
+	// queue and will be deleted as they are removed.
+	cache.finalise();
+
 	// Mutexes
 	std::mutex queueMutex{};
 	std::mutex clashesMutex{};
-	std::mutex cacheMutex{};
 
 	// Define the thread behaviour
 	auto narrowPhaseThread = [&]
@@ -308,14 +321,6 @@ void Clearance::run(const Graph& graphA, const Graph& graphB, const Graph& graph
 								a->getCompositeObjectId(),
 								b->getCompositeObjectId()
 							)->append({ a->bounds.center(), a->bounds.center() });
-							
-							// Explicitly delete the cache entries in a thread-safe environment
-							{
-								std::scoped_lock lockCache{ cacheMutex };
-								a.reset();
-								b.reset();
-							}
-
 							continue;
 						}
 
@@ -336,13 +341,6 @@ void Clearance::run(const Graph& graphA, const Graph& graphB, const Graph& graph
 					catch (const geometry::GeometryTestException& e) {
 						throw DegenerateTestException(a->getCompositeObjectId(), b->getCompositeObjectId(), e.what());
 					}
-				}
-
-				// Explicitly delete the cache entries in a thread-safe environment
-				{
-					std::scoped_lock lockCache{ cacheMutex };
-					a.reset();
-					b.reset();
 				}
 			}
 		};
