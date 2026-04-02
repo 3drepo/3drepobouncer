@@ -54,65 +54,6 @@ namespace repo {
 					repo::manipulator::modelconvertor::AbstractModelExport *exporter
 				);
 
-				typedef std::unordered_map <repo::lib::RepoUUID, std::shared_ptr<repo::core::model::MaterialNode>, repo::lib::RepoUUIDHasher> MaterialPropMap;
-
-				/*
-				* Splits a MeshNode into a set of mapped_mesh_ts based on face location, so
-				* each mapped_mesh_t has a vertex count below a certain size.
-				* 
-				* To split the mesh in a memory efficient way, we use an advancing front approach together
-				* with some efficient use of pointer.
-				* 
-				* First, a BVH for the faces is build. Then the tree is flattened so that we have the leaves
-				* and all branch nodes separately. The branch nodes will be in top-down order.
-	
-				* The front is represented as two vectors of unique pointers. Both have the same length as the
-				* number of nodes in the bvh and are linked to them by their index (i.e. field i in the vector
-				* belongs to node i in the tree). The unique pointers are typed for sets for the vertex indices
-				* and for vectors for the primitiv indices (the faces).
-				* They are both initially holding only nullptrs and will only ever hold valid pointers for the
-				* nodes currently relevant to the front. This allows to only hold the data that is really needed
-				* in memory at any time.
-				* 
-				* First, the leaves are processed. For each, the unique vertex indices and the face indices are
-				* collected, the sets and vectors created, and the pointers to these attached to the front.
-				* 
-				* Then, the branch nodes are traversed in reverse order. This order ensures that for each node
-				* that the processing reaches, the two children have been processed previously.
-				* At reaching a branch node, the state of their children is checked, their unique vertex indexes
-				* merged, and their count checked against the threshold.
-				* If the threshold is passed, the children are "cut off" i.e. processed to super meshes and written
-				* out.
-				* If the threshold is not passed, the new set and vector are attached to the current node and the
-				* sets/vectors of the children are deleted and the memory associated with it released.
-				* Nodes that have only one child are handled by moving the pointers to the parent without a copy.
-				* 
-				* At reaching the end, it is possible to have vertices "left over" that come from branches that
-				* never exceeded the threshold. They are then gathered in one last super mesh. 
-				*/
-				void splitMesh(
-					repo::core::model::StreamingMeshNode& node,
-					repo::manipulator::modelconvertor::AbstractModelExport* exporter,
-					const MaterialPropMap& matPropMap,
-					const repo::lib::RepoUUID& texId
-				);
-
-				void createSupermeshFromBranch(
-					repo::core::model::StreamingMeshNode& node,
-					repo::manipulator::modelconvertor::AbstractModelExport* exporter,
-					const MaterialPropMap& matPropMap,
-					const repo::lib::RepoUUID& texId,
-					std::set<uint32_t>* globalVertexIndices,
-					std::vector<uint32_t>* primitives
-				);
-
-				MaterialPropMap getAllMaterials(
-					repo::core::handler::AbstractDatabaseHandler* handler,
-					const std::string& database,
-					const std::string& collection,
-					const repo::lib::RepoUUID& revId
-				);
-
 			private:
 
 				/**
@@ -152,7 +93,12 @@ namespace repo {
 					const std::unordered_map<repo::lib::RepoUUID, std::vector<repo::core::model::RepoBSON>, repo::lib::RepoUUIDHasher> &childNodeMap,
 					std::unordered_map<repo::lib::RepoUUID,	repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> &transforms);
 
-
+				MaterialPropMap getAllMaterials(
+					repo::core::handler::AbstractDatabaseHandler* handler,
+					const std::string& database,
+					const std::string& collection,
+					const repo::lib::RepoUUID& revId
+				);
 
 				std::set<std::string> getAllGroupings(
 					repo::core::handler::AbstractDatabaseHandler* handler,
@@ -243,6 +189,55 @@ namespace repo {
 					const mapped_mesh_t &mapped
 				);
 
+				/*
+				* Splits a MeshNode into a set of mapped_mesh_ts based on face location, so
+				* each mapped_mesh_t has a vertex count below a certain size.
+				*
+				* To split the mesh in a memory efficient way, we use an advancing front approach together
+				* with some efficient use of pointer.
+				*
+				* First, a BVH for the faces is build. Then the tree is flattened so that we have the leaves
+				* and all branch nodes separately. The branch nodes will be in top-down order.
+
+				* The front is represented as two vectors of unique pointers. Both have the same length as the
+				* number of nodes in the bvh and are linked to them by their index (i.e. field i in the vector
+				* belongs to node i in the tree). The unique pointers are typed for sets for the vertex indices
+				* and for vectors for the primitiv indices (the faces).
+				* They are both initially holding only nullptrs and will only ever hold valid pointers for the
+				* nodes currently relevant to the front. This allows to only hold the data that is really needed
+				* in memory at any time.
+				*
+				* First, the leaves are processed. For each, the unique vertex indices and the face indices are
+				* collected, the sets and vectors created, and the pointers to these attached to the front.
+				*
+				* Then, the branch nodes are traversed in reverse order. This order ensures that for each node
+				* that the processing reaches, the two children have been processed previously.
+				* At reaching a branch node, the state of their children is checked, their unique vertex indexes
+				* merged, and their count checked against the threshold.
+				* If the threshold is passed, the children are "cut off" i.e. processed to super meshes and written
+				* out.
+				* If the threshold is not passed, the new set and vector are attached to the current node and the
+				* sets/vectors of the children are deleted and the memory associated with it released.
+				* Nodes that have only one child are handled by moving the pointers to the parent without a copy.
+				*
+				* At reaching the end, it is possible to have vertices "left over" that come from branches that
+				* never exceeded the threshold. They are then gathered in one last super mesh.
+				*/
+				void splitMesh(
+					repo::core::model::StreamingMeshNode& node,
+					repo::manipulator::modelconvertor::AbstractModelExport* exporter,
+					const MaterialPropMap& matPropMap,
+					const repo::lib::RepoUUID& texId
+				);
+
+				void createSupermeshFromBranch(
+					repo::core::model::StreamingMeshNode& node,
+					repo::manipulator::modelconvertor::AbstractModelExport* exporter,
+					const MaterialPropMap& matPropMap,
+					const repo::lib::RepoUUID& texId,
+					std::set<uint32_t>* globalVertexIndices,
+					std::vector<uint32_t>* primitives
+				);
 
 				/**
 				* Groups the MeshNodes into sets based on their location and
