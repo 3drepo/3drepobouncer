@@ -54,6 +54,41 @@ namespace repo {
 					repo::manipulator::modelconvertor::AbstractModelExport *exporter
 				);
 
+				typedef std::unordered_map <repo::lib::RepoUUID, std::shared_ptr<repo::core::model::MaterialNode>, repo::lib::RepoUUIDHasher> MaterialPropMap;
+
+				/*
+* Splits a MeshNode into a set of mapped_mesh_ts based on face location, so
+* each mapped_mesh_t has a vertex count below a certain size.
+*/
+				void splitMesh(
+					repo::core::model::StreamingMeshNode& node,
+					repo::manipulator::modelconvertor::AbstractModelExport* exporter,
+					const MaterialPropMap& matPropMap,
+					const repo::lib::RepoUUID& texId
+				);
+
+				void createSuperMeshFromBranch(
+					repo::core::model::StreamingMeshNode& node,
+					repo::manipulator::modelconvertor::AbstractModelExport* exporter,
+					const MaterialPropMap& matPropMap,
+					const repo::lib::RepoUUID& texId,
+					std::set<uint32_t>* globalVertexIndices,
+					std::vector<uint32_t>* primitives
+				);
+
+				void splitMeshPoC(
+					repo::core::model::StreamingMeshNode& node,
+					repo::manipulator::modelconvertor::AbstractModelExport* exporter,
+					const MaterialPropMap& matPropMap,
+					const repo::lib::RepoUUID& texId
+				);
+
+				MaterialPropMap getAllMaterials(
+					repo::core::handler::AbstractDatabaseHandler* handler,
+					const std::string& database,
+					const std::string& collection,
+					const repo::lib::RepoUUID& revId
+				);
 
 			private:
 
@@ -94,12 +129,7 @@ namespace repo {
 					const std::unordered_map<repo::lib::RepoUUID, std::vector<repo::core::model::RepoBSON>, repo::lib::RepoUUIDHasher> &childNodeMap,
 					std::unordered_map<repo::lib::RepoUUID,	repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> &transforms);
 
-				MaterialPropMap getAllMaterials(
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					const std::string &database,
-					const std::string &collection,
-					const repo::lib::RepoUUID &revId
-				);
+
 
 				std::set<std::string> getAllGroupings(
 					repo::core::handler::AbstractDatabaseHandler* handler,
@@ -183,21 +213,23 @@ namespace repo {
 					size_t head
 				);
 
-				std::vector<std::set<uint32_t>> getUniqueVertices(
+				std::vector<size_t> getVertexCounts(
 					const Bvh& bvh,
 					const std::vector<repo::lib::repo_face_t>& primitives // The primitives in this tree are faces
 				);
 
-				/*
-				* Splits a MeshNode into a set of mapped_mesh_ts based on face location, so
-				* each mapped_mesh_t has a vertex count below a certain size.
-				*/
-				void splitMesh(
-					repo::core::model::StreamingMeshNode &node,
-					repo::manipulator::modelconvertor::AbstractModelExport *exporter,
-					const MaterialPropMap &matPropMap,
-					const repo::lib::RepoUUID &texId
+				std::vector<uint32_t> uniqueVerticesByNode(
+					const size_t head,
+					const Bvh& bvh,
+					const std::vector<repo::lib::repo_face_t>& primitives // The primitives in this tree are faces
 				);
+
+				std::vector<std::vector<uint32_t>> getUniqueVertices(
+					const Bvh& bvh,
+					const std::vector<repo::lib::repo_face_t>& primitives // The primitives in this tree are faces
+				);
+
+
 
 				/*
 				* Turns a mapped_mesh_t into a MeshNode that can be added to the database
