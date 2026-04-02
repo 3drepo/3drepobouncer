@@ -19,9 +19,11 @@
 
 #include "repo/repo_bouncer_global.h"
 #include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
 #include <iterator>
 #include <vector>
 #include <ostream>
+#include <mutex>
 
 namespace repo {
 	namespace lib {
@@ -63,6 +65,9 @@ namespace repo {
 
 		private:
 			boost::uuids::uuid id;
+
+			inline static boost::uuids::random_generator gen;
+			inline static std::mutex genMutex;
 		};
 
 		inline std::ostream& operator<<(std::ostream& stream, const RepoUUID& uuid)

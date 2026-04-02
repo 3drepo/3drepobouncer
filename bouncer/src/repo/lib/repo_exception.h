@@ -89,5 +89,10 @@ namespace repo {
 		public:
 			RepoFieldTypeException(const std::string& fieldName);
 		};
+
+		REPO_API_EXPORT class RepoRefMissingException : public RepoException {
+		public:
+			RepoRefMissingException(const std::string& msg);
+		};
 	}
 }

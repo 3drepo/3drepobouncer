@@ -31,6 +31,7 @@ const rabbitmq = object({
 	callback_queue: string().default('callbackq'),
 	model_queue: string().default('modelq'),
 	drawing_queue: string().default('drawingq'),
+	clash_queue: string().default('clashq'),
 	task_prefetch: number().default(4),
 	model_prefetch: number().default(1),
 	drawing_prefetch: number().default(1),
@@ -114,6 +115,8 @@ const init = () => {
 		if (!config.taskLogDir) {
 			config.taskLogDir = config.rabbitmq.sharedDir;
 		}
+
+		Config.replaceSharedDirTag = (data) => data.replace('$SHARED_SPACE', config.rabbitmq.sharedDir);
 
 		// Set the file creation permission mode mask (i.e. what permissions are
 		// *not* set) for any files created by this process or its descendents.

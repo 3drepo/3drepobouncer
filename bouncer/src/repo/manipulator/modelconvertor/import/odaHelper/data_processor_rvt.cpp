@@ -22,6 +22,7 @@
 #include "data_processor_rvt.h"
 #include "helper_functions.h"
 #include "repo/lib/repo_utils.h"
+#include "repo/lib/repo_units.h"
 #include "repo/core/model/bson/repo_bson_builder.h"
 #include <Database/BmTransaction.h>
 #include <Database/BmUnitUtils.h>
@@ -31,8 +32,6 @@
 #include <Base/BmSpecTypeId.h>
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
-
-using ModelUnits = repo::manipulator::modelconvertor::ModelUnits;
 
 static const char* ODA_CSV_LOCATION = "ODA_CSV_LOCATION";
 static const std::string REVIT_ELEMENT_ID = "Element ID";
@@ -212,7 +211,7 @@ void DataProcessorRvt::initialise(GeometryCollector* collector, OdBmDatabasePtr 
 	this->collector = collector;
 	this->view = view;
 	this->modelToProjectCoordinates = modelToWorld;
-	collector->setUnits(repo::manipulator::modelconvertor::ModelUnits::FEET); // For Revit, the API always uses the internal coordinate system units, which are ft.
+	collector->setUnits(repo::lib::ModelUnits::FEET); // For Revit, the API always uses the internal coordinate system units, which are ft.
 }
 
 void DataProcessorRvt::beginViewVectorization()
@@ -292,9 +291,8 @@ void DataProcessorRvt::draw(const OdGiDrawable* pDrawable)
 		// no way to know for sure an element will result in geometry on the screen
 		// until it starts outputting vertices. Therefore, we only commit transform
 		// nodes the first time we actually get meshes for them.
-
-		auto meshes = ctx->extractMeshes();
-		if (meshes.size())
+		
+		if (ctx->hasMeshes())
 		{
 			// For Revit files, drawable elements are arranged into layers, not unlike
 			// drawings. This means we can get everything from just the element.
@@ -304,8 +302,14 @@ void DataProcessorRvt::draw(const OdGiDrawable* pDrawable)
 
 			// These methods create the transformation nodes on-demand
 
-			collector->createLayer(levelName, levelName, {});
-			collector->createLayer(elementName, elementName, levelName);
+			collector->createLayer(levelName, levelName, {}, {});
+
+			// This call does not necessarily update the transform, so make sure to get
+			// the transform explicitly when processing the meshes.
+
+			collector->createLayer(elementName, elementName, levelName, repo::lib::RepoMatrix::translate(ctx->getBounds().min()));
+
+			auto meshes = ctx->extractMeshes(collector->getLayerTransform(elementName).inverse());
 			collector->addMeshes(elementName, meshes);
 
 			try

@@ -319,11 +319,6 @@ void MongoDatabaseHandler::testConnection()
 	}
 }
 
-void MongoDatabaseHandler::setFileManager(std::shared_ptr<FileManager> manager)
-{
-	this->fileManager = manager;
-}
-
 std::shared_ptr<FileManager> MongoDatabaseHandler::getFileManager()
 {
 	return this->fileManager;
@@ -334,7 +329,7 @@ void MongoDatabaseHandler::createIndex(const std::string& database, const std::s
 	createIndex(database, collection, index, false);
 }
 
-void MongoDatabaseHandler::createIndex(const std::string& database, const std::string& collection, const database::index::RepoIndex& index, bool sparse)
+void MongoDatabaseHandler::createIndex(const std::string& database, const std::string& collection, const database::index::RepoIndex& index, bool sparse, bool suppressInfo /*= false*/)
 {
 	try
 	{
@@ -345,7 +340,8 @@ void MongoDatabaseHandler::createIndex(const std::string& database, const std::s
 			auto col = db.collection(collection);
 			auto obj = (repo::core::model::RepoBSON)index;
 
-			repoInfo << "Creating index for :" << database << "." << collection << " : index: " << obj.toString() << " sparse: " << sparse;
+			if(!suppressInfo)
+				repoInfo << "Creating index for :" << database << "." << collection << " : index: " << obj.toString() << " sparse: " << sparse;
 
 			mongocxx::v_noabi::options::index options;			
 			if (sparse) {
@@ -503,14 +499,13 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 			// Find document
 			auto findResult = col.find_one(criteria.view(), options);
 			if (findResult.has_value()) {
-				fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
 				return repo::core::model::RepoBSON(findResult.value());
 			}
 		}
 		return {};
 	}
 	catch (...)
-	{
+	{		
 		std::throw_with_nested(MongoDatabaseHandlerException(*this, "findOneByCriteria", database, collection));
 	}
 }
@@ -537,9 +532,6 @@ repo::core::model::RepoBSON  MongoDatabaseHandler::findOneByUniqueID(
 	const std::string& collection,
 	const std::string& id)
 {
-	repo::core::model::RepoBSONBuilder builder;
-	builder.append(ID, id);
-	auto queryDoc = builder.obj();
 	return findOneByCriteria(database, collection, database::query::Eq(ID, id));
 }
 
@@ -855,8 +847,9 @@ public:
 		MongoDatabaseHandler::MongoCursor* cursor;
 	};
 
-	MongoCursor(mongocxx::v_noabi::cursor&& c, MongoDatabaseHandler* handler)
+	MongoCursor(mongocxx::v_noabi::cursor&& c, mongocxx::v_noabi::pool::entry&& cl, MongoDatabaseHandler* handler)
 		:cursor(std::move(c)),
+		client(std::move(cl)),
 		handler(handler),
 		_begin(MongoIteratorImpl(cursor.begin(), this)),
 		_end(MongoIteratorImpl(cursor.end(), this))
@@ -864,6 +857,7 @@ public:
 	}
 
 	mongocxx::v_noabi::cursor cursor;
+	mongocxx::v_noabi::pool::entry client;
 	MongoIteratorImpl _begin;
 	MongoIteratorImpl _end;
 
@@ -913,9 +907,9 @@ std::unique_ptr<Cursor> repo::core::handler::MongoDatabaseHandler::findCursorByC
 			// Find all documents and return cursor
 			// Some pointer magic, because we have to cast the mongo cursor to its base before returning it.
 			// Ownership will be the caller's after the two raw pointers go out of scope
-			MongoDatabaseHandler::MongoCursor* mongoCursor = new MongoDatabaseHandler::MongoCursor(std::move(col.find(criteria.view())), this);			
+			MongoDatabaseHandler::MongoCursor* mongoCursor = new MongoDatabaseHandler::MongoCursor(std::move(col.find(criteria.view())), std::move(client), this);
 			database::Cursor *baseCursor = mongoCursor;
-			return std::unique_ptr<database::Cursor>(baseCursor);			
+			return std::unique_ptr<database::Cursor>(baseCursor);
 		}
 		else
 		{
@@ -951,9 +945,9 @@ public:
 		MongoDatabaseHandler* handler,
 		const std::string& database,
 		const std::string& collection):
-		blobHandler(handler->fileManager, database, collection, fileMetadata)
+		blobHandler(handler->fileManager, database, collection, fileMetadata),
+		client(handler->clientPool->acquire())
 	{
-		auto client = handler->clientPool->acquire();
 		auto db = client->database(database);
 		this->collection = db.collection(collection);
 		bulk = std::make_unique<mongocxx::v_noabi::bulk_write>(this->collection.create_bulk_write());
@@ -1012,6 +1006,7 @@ public:
 	}
 
 private:
+	mongocxx::v_noabi::pool::entry client;
 
 	void checkBulkWrite()
 	{

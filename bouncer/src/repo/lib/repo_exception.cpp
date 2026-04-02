@@ -106,3 +106,9 @@ RepoImporterUnavailable::RepoImporterUnavailable(const std::string& msg, int cod
 {
 	errorCode = code;
 }
+
+repo::lib::RepoRefMissingException::RepoRefMissingException(const std::string& msg)
+	: RepoException(msg)
+{
+	errorCode = REPOERR_FILE_REF_MISSING;
+}

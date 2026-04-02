@@ -27,6 +27,7 @@
 #include "../core/model/bson/repo_node_transformation.h"
 #include "../core/model/bson/repo_node_mesh.h"
 #include "../core/model/collection/repo_scene.h"
+#include <repo/manipulator/modelutility/repo_clash_detection_config_fwd.h>
 #include "../lib/repo_config.h"
 #include "modelconvertor/export/repo_model_export_abstract.h"
 #include "modelconvertor/import/repo_model_import_config.h"
@@ -236,6 +237,9 @@ namespace repo {
 				const lib::RepoUUID revision,
 				uint8_t& error,
 				const std::string &imagePath);
+
+			void performClashDetection(
+				const repo::manipulator::modelutility::ClashDetectionConfig& config);
 
 			void updateRevisionStatus(
 				repo::core::model::RepoScene* scene,

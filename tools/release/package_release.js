@@ -31,7 +31,7 @@ const externalLibraries = [
 	},
 	{
 		rootEnvVar: "OCCT_ROOT",
-		subPath: ["lib", "exe/vc14_amd64dll", "bin/lnxX64_8.3dll"],
+		subPath: ["lib", "exe/vc14_amd64dll", "bin/lnxX64_13dll"],
 		extensions: [...exts, ".7"]
 	},
 	{

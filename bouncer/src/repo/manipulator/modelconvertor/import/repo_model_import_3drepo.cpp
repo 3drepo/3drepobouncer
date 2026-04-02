@@ -96,9 +96,9 @@ struct MeshAttributeView : public View
 template<typename T>
 struct TransformedAttributeView : public MeshAttributeView<T>
 {
-	repo::lib::RepoMatrix64 matrix;
+	repo::lib::RepoMatrix matrix;
 
-	TransformedAttributeView(const Range& range, std::shared_ptr<repo::core::model::MeshNode> node, repo::lib::RepoMatrix64 matrix):
+	TransformedAttributeView(const Range& range, std::shared_ptr<repo::core::model::MeshNode> node, repo::lib::RepoMatrix matrix):
 		MeshAttributeView<T>(range, node),
 		matrix(matrix)
 	{}
@@ -189,7 +189,7 @@ public:
 	};
 
 	std::unordered_map<int, repo::lib::RepoUUID> transformSharedIds;
-	std::unordered_map<int, repo::lib::RepoMatrix64> modelToWorld;
+	std::unordered_map<int, repo::lib::RepoMatrix> modelToWorld;
 	std::unordered_map<int, Ids> materialIds;
 	std::unordered_map<int, Ids> textureIds;
 	std::unordered_map<repo::lib::RepoUUID, std::vector<std::shared_ptr<repo::core::model::MeshNode>>, repo::lib::RepoUUIDHasher> matToMeshNodes;	
@@ -205,7 +205,7 @@ public:
 	*/
 	std::vector<std::pair<repo::lib::RepoUUID, repo::lib::RepoUUID>> references; // From uniqueId to sharedId
 
-	void getParent(int id, std::vector<repo::lib::RepoUUID>& parents, repo::lib::RepoMatrix64& matrix)
+	void getParent(int id, std::vector<repo::lib::RepoUUID>& parents, repo::lib::RepoMatrix& matrix)
 	{
 		auto it = transformSharedIds.find(id);
 		if (it != transformSharedIds.end())
@@ -219,7 +219,7 @@ public:
 
 	void createNode(const NodeRecord& r) override
 	{
-		repo::lib::RepoMatrix64 matrix;
+		repo::lib::RepoMatrix matrix;
 		std::vector<repo::lib::RepoUUID> parentIds;
 		getParent(r.parentId, parentIds, matrix);
 
@@ -275,7 +275,7 @@ public:
 			}
 
 			if (r.geometry.normals.size()) {
-				dataMap.push_back(new NormalsView(r.geometry.normals, node, matrix.invert().transpose().rotation()));
+				dataMap.push_back(new NormalsView(r.geometry.normals, node, matrix.inverse().transpose().rotation()));
 			}
 
 			if (r.geometry.uv.size()) {
