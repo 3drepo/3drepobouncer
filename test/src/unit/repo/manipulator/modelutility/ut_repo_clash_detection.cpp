@@ -1981,8 +1981,7 @@ TEST(Clash, NodeCache)
 	}
 
 	{
-		// Getting a reference from a record will clean that record up when it goes
-		// out of scope
+		// Holding a reference will keep the record alive after finalise
 
 		Cache cache;
 		std::vector<Cache::Record*> records;
@@ -1990,20 +1989,27 @@ TEST(Clash, NodeCache)
 			records.push_back(cache.get(keys[i]));
 		}
 
+		std::vector<Cache::Entry> entries;
+		for (int i = 0; i < 3; i++) {
+			entries.push_back(records[i]->getReference());
+		}
+
+		cache.finalise();
+
 		EXPECT_THAT(nodeCount, Eq(3));
 
-		records[0]->getReference();
+		entries[0] = nullptr;
 		EXPECT_THAT(nodeCount, Eq(2));
 
-		records[1]->getReference();
+		entries[1] = nullptr;
 		EXPECT_THAT(nodeCount, Eq(1));
 
-		records[2]->getReference();
+		entries[2] = nullptr;
 		EXPECT_THAT(nodeCount, Eq(0));
 	}
 
 	{
-		// Holding a reference will keep the record alive
+		// Nodes are discarded when all references are out of scope
 
 		Cache cache;
 		std::vector<Cache::Record*> records;
@@ -2011,22 +2017,68 @@ TEST(Clash, NodeCache)
 			records.push_back(cache.get(keys[i]));
 		}
 
-		EXPECT_THAT(nodeCount, Eq(3));
-
-		auto ref0 = records[0]->getReference();
-		EXPECT_THAT(nodeCount, Eq(3));
-
+		auto ref0_1 = records[0]->getReference();
+		auto ref0_2 = records[0]->getReference();
 		auto ref1 = records[1]->getReference();
+		auto ref2 = records[2]->getReference();		
+
+		cache.finalise();
+
 		EXPECT_THAT(nodeCount, Eq(3));
 
-		records[2]->getReference();
+		ref0_1 = nullptr;
+		EXPECT_THAT(nodeCount, Eq(3));
+
+		ref0_2 = nullptr;
 		EXPECT_THAT(nodeCount, Eq(2));
 
-		ref0 = nullptr;
+		ref1 = nullptr;
 		EXPECT_THAT(nodeCount, Eq(1));
 
-		ref1 = nullptr;
+		ref2 = nullptr;
 		EXPECT_THAT(nodeCount, Eq(0));
+	}
+
+	{
+		// Nodes that are not referenced are removed immediately when finalise is called
+		Cache cache;
+		std::vector<Cache::Record*> records;
+		for (int i = 0; i < 3; i++) {
+			records.push_back(cache.get(keys[i]));
+		}
+
+		auto ref0 = records[0]->getReference();
+
+		cache.finalise();
+
+		EXPECT_THAT(nodeCount, Eq(1));
+	}
+
+	{
+		// As long as finalise is not called, the Cache keeps Nodes alive
+		Cache cache;
+		std::vector<Cache::Record*> records;
+		for (int i = 0; i < 3; i++) {
+			records.push_back(cache.get(keys[i]));
+		}
+
+		std::vector<Cache::Entry> entries;
+		for (int i = 0; i < 3; i++) {
+			entries.push_back(records[i]->getReference());
+		}
+
+		EXPECT_THAT(nodeCount, Eq(3));
+
+		entries[0] = nullptr;
+		EXPECT_THAT(nodeCount, Eq(3));
+
+		entries[1] = nullptr;
+		EXPECT_THAT(nodeCount, Eq(3));
+
+		entries[2] = nullptr;
+		EXPECT_THAT(nodeCount, Eq(3));
+
+		cache.finalise();
 	}
 
 	{
@@ -2047,6 +2099,8 @@ TEST(Clash, NodeCache)
 
 		EXPECT_THAT(r0->i, Eq(keys[1].i));
 		EXPECT_THAT(r1->i, Eq(keys[0].i));
+
+		cache.finalise();
 	}
 }
 
