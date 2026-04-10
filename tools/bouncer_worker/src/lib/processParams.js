@@ -18,6 +18,7 @@
 const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
 
+/* eslint-disable newline-per-chained-call */
 const parseParameters = () => {
 	const args = yargs(hideBin(process.argv));
 	return args.option('config', {
@@ -29,6 +30,9 @@ const parseParameters = () => {
 	}).option('queue', {
 		describe: 'specify which queue to run on [job|model|drawing]',
 		choice: ['job', 'model', 'drawing'],
+		string: true,
+	}).option('migrateUnityBundles', {
+		describe: 'Start worker in a utility mode that migrates any revisions that only have Unity Bundles to Repo Bundles. If a teamspace is specified, will migrate only that teamspace.',
 		string: true,
 	}).help().argv;
 };
