@@ -7,6 +7,6 @@ permissions: {}
 
 jobs:
   build-docker:
-    uses: ./.github/workflows/docker-build.yml
+    uses: ./.github/workflows/dockerBuildHelper.yml
     with:
       target: init

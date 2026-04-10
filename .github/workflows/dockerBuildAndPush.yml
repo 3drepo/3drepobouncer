@@ -122,7 +122,7 @@ jobs:
 
   build-push:
     needs: pre-build
-    uses: ./.github/workflows/docker-build.yml
+    uses: ./.github/workflows/dockerBuildHelper.yml
     with:
       ref: ${{ needs.pre-build.outputs.checkout_ref }}
       version: ${{ needs.pre-build.outputs.version }}
