@@ -90,13 +90,16 @@ jobs:
           if [ -n "${{ inputs.target }}" ]; then
             EXTRA_ARGS="--target ${{ inputs.target }}"
           fi
+          # GITHUB_TOKEN and GITHUB_USER are required by the core stage to clone
+          # private repositories, so they are always passed as build args.
+          EXTRA_ARGS="$EXTRA_ARGS \
+            --build-arg GITHUB_TOKEN=${PROJ_TOKEN} \
+            --build-arg GITHUB_USER=${PROJ_USER}"
           if [ "${SHOULD_PUSH}" = "true" ]; then
             EXTRA_ARGS="$EXTRA_ARGS \
               -t ${REGISTRY}/3drepobouncer:${{ inputs.version }} \
               -t dev/3drepobouncer:${{ inputs.app_build_now }} \
-              --build-arg app_3drepobouncer_version=${{ inputs.version }} \
-              --build-arg GITHUB_TOKEN=${PROJ_TOKEN} \
-              --build-arg GITHUB_USER=${PROJ_USER}"
+              --build-arg app_3drepobouncer_version=${{ inputs.version }}"
           fi
           docker build --no-cache $EXTRA_ARGS \
             -f ./docker/3drepobouncer/Dockerfile \
