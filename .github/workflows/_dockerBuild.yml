@@ -56,27 +56,14 @@ jobs:
           ref: ${{ inputs.ref || github.sha }}
 
       # ---------------------------------------------------------------
-      # STEP 2: Free disk space
-      # ---------------------------------------------------------------
-      - name: Free Disk Space
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: false
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false
-
-      # ---------------------------------------------------------------
-      # STEP 3: Log in to container registry (push only)
+      # STEP 2: Log in to container registry (push only)
       # ---------------------------------------------------------------
       - name: Log in to Azure Container Registry
         if: inputs.push
         run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login "${{ secrets.REGISTRY_LOGIN_SERVER }}" -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
 
       # ---------------------------------------------------------------
-      # STEP 4: Build Docker image
+      # STEP 3: Build Docker image
       # ---------------------------------------------------------------
       - name: Build Docker image
         env:
@@ -106,14 +93,14 @@ jobs:
             ./docker/3drepobouncer/
 
       # ---------------------------------------------------------------
-      # STEP 5: Push Docker image (push only)
+      # STEP 4: Push Docker image (push only)
       # ---------------------------------------------------------------
       - name: Push Docker image
         if: inputs.push
         run: docker push "${{ secrets.REGISTRY_LOGIN_SERVER }}/3drepobouncer:${{ inputs.version }}"
 
       # ---------------------------------------------------------------
-      # STEP 6: Cleanup (push only)
+      # STEP 5: Cleanup (push only)
       # ---------------------------------------------------------------
       - name: Cleanup
         if: ${{ always() && inputs.push }}
