@@ -297,7 +297,7 @@ TEST(RepoUUIDTest, multithreadingCollisionTest)
 	std::mutex setMutex;
 	std::unordered_set<RepoUUID, RepoUUIDHasher> set;
 	
-	bool collision = false;
+	std::atomic_bool collision { false };
 
 	auto threadBehaviour = [&]
 		{
