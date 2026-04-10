@@ -1,4 +1,4 @@
-name: Build Docker Image (CI)
+name: Run Docker build test
 
 on:
   push:
@@ -8,6 +8,6 @@ permissions:
 
 jobs:
   build-docker:
-    uses: ./.github/workflows/dockerBuildHelper.yml
+    uses: ./.github/workflows/_dockerBuild.yml
     with:
       target: init
