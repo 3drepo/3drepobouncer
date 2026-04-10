@@ -1,0 +1,41 @@
+name: Build Docker Image (CI)
+
+on:
+  pull_request:
+    branches:
+      - master
+      - staging
+
+jobs:
+  build-docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      # ---------------------------------------------------------------
+      # STEP 1: Checkout source
+      # ---------------------------------------------------------------
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # ---------------------------------------------------------------
+      # STEP 2: Free disk space
+      # ---------------------------------------------------------------
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: false
+
+      # ---------------------------------------------------------------
+      # STEP 3: Build Docker image (init stage only – no tokens required)
+      # ---------------------------------------------------------------
+      - name: Build Docker image
+        run: |
+          chmod +x ./docker/3drepobouncer/build.sh
+          ./docker/3drepobouncer/build.sh --no-cache --target init
