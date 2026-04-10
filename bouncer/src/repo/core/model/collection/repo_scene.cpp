@@ -1366,15 +1366,15 @@ bool RepoScene::populate(
 		{
 			auto refOffset = refScene->getWorldOffset();
 			//Back to world coord of subProject
-			std::vector<std::vector<float>> backToSubWorld =
-			{ { 1., 0., 0., (float)refOffset[0] },
-			{ 0., 1., 0., (float)refOffset[1] },
-			{ 0., 0., 1., (float)refOffset[2] },
+			std::vector<std::vector<double>> backToSubWorld =
+			{ { 1., 0., 0., refOffset[0] },
+			{ 0., 1., 0., refOffset[1] },
+			{ 0., 0., 1., refOffset[2] },
 			{ 0., 0., 0., 1 } };
-			std::vector<std::vector<float>> toFedWorldTrans =
-			{ { 1., 0., 0., (float)-worldOffset[0] },
-			{ 0., 1., 0., (float)-worldOffset[1] },
-			{ 0., 0., 1., (float)-worldOffset[2] },
+			std::vector<std::vector<double>> toFedWorldTrans =
+			{ { 1., 0., 0., -worldOffset[0] },
+			{ 0., 1., 0., -worldOffset[1] },
+			{ 0., 0., 1., -worldOffset[2] },
 			{ 0., 0., 0., 1. } };
 
 			//parent - ref
@@ -1421,11 +1421,11 @@ void RepoScene::populateAndUpdate(
 	addNodeToScene(gType, unknowns, errMsg, &(instance.unknowns));
 }
 
-void RepoScene::applyScaleFactor(const float &scale) {
+void RepoScene::applyScaleFactor(const double& scale) {
 	if (graph.rootNode)
 	{
 		auto rootTrans = dynamic_cast<TransformationNode*>(graph.rootNode);
-		std::vector<float> scalingMatrix = {
+		std::vector<double> scalingMatrix = {
 			scale, 0, 0, 0,
 			0, scale, 0, 0,
 			0, 0, scale, 0,
@@ -1459,7 +1459,7 @@ void RepoScene::reorientateDirectXModel()
 		auto rootTrans = dynamic_cast<TransformationNode*>(graph.rootNode);
 
 		//change offset relatively
-		std::vector<float> rotationMatrix = { 1, 0, 0, 0,
+		std::vector<double> rotationMatrix = { 1, 0, 0, 0,
 			0, 0, 1, 0,
 			0, -1, 0, 0,
 			0, 0, 0, 1 };
@@ -1522,9 +1522,9 @@ void RepoScene::setWorldOffset(
 void RepoScene::shiftModel(
 	const std::vector<double> &offset)
 {
-	std::vector<float> transMat = { 1, 0, 0, (float)offset[0],
-		0, 1, 0, (float)offset[1],
-		0, 0, 1, (float)offset[2],
+	std::vector<double> transMat = { 1, 0, 0, offset[0],
+		0, 1, 0, offset[1],
+		0, 0, 1, offset[2],
 		0, 0, 0, 1 };
 	if (graph.rootNode)
 	{

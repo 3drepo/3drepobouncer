@@ -35,6 +35,7 @@
 #include "lib/datastructure/repo_structs.h"
 #include "lib/repo_config.h"
 #include "manipulator/modelconvertor/import/repo_model_import_config.h"
+#include <repo/manipulator/modelutility/repo_clash_detection_config_fwd.h>
 #include "repo_bouncer_global.h"
 #include <repo_log.h>
 
@@ -283,6 +284,10 @@ namespace repo {
 		repo::core::model::RepoNodeSet loadMetadataFromFile(
 			const std::string &filePath,
 			const char        &delimiter = ',');
+
+		void performClashDetection(
+			const RepoToken* token,
+			const repo::manipulator::modelutility::ClashDetectionConfig& configFilePath);
 
 		/*
 		*	------------- Optimizations --------------

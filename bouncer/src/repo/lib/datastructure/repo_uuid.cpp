@@ -25,7 +25,6 @@ using namespace repo::lib;
 #include <boost/functional/hash.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
 REPO_API_EXPORT const std::string RepoUUID::defaultValue = "00000000-0000-0000-0000-000000000000";
@@ -97,8 +96,12 @@ RepoUUID::RepoUUID(const std::string &stringRep)
 
 RepoUUID RepoUUID::createUUID()
 {
-	static boost::uuids::random_generator gen;
-	return RepoUUID(gen());
+	boost::uuids::uuid id;
+	{
+		std::scoped_lock lock{ genMutex };
+		id = gen();
+	}
+	return RepoUUID(id);
 }
 
 std::string RepoUUID::toString() const

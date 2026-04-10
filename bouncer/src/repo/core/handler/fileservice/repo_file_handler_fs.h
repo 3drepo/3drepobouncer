@@ -34,6 +34,7 @@ namespace repo {
 	namespace core {
 		namespace handler {
 			namespace fileservice {
+				// This class is considered thread-safe.
 				class FSFileHandler : public AbstractFileHandler
 				{
 				public:

@@ -415,7 +415,7 @@ OdGeMatrix3d getModelToWorldMatrix(OdBmDatabasePtr pDb)
 
 				OdBmGeoLocationPtr pActiveLocation = OdBmGeoLocation::getActiveLocationId(pThis->database()).safeOpenObject();
 				OdGeMatrix3d activeTransform = pActiveLocation->getTransform();
-				activeTransform.invert();
+				activeTransform.inverse();
 
 				return activeTransform;
 			}

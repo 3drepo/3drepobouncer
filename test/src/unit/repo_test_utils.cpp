@@ -37,9 +37,9 @@ repo::RepoController::RepoToken* testing::initController(repo::RepoController* c
 repo::lib::RepoVector3D testing::makeRepoVector()
 {
 	repo::lib::RepoVector3D v;
-	v.x = (double)(rand() - rand()) / rand();
-	v.y = (double)(rand() - rand()) / rand();
-	v.z = (double)(rand() - rand()) / rand();
+	v.x = (double)(rand() - rand()) / (double)(RAND_MAX)/(8.0e6);
+	v.y = (double)(rand() - rand()) / (double)(RAND_MAX)/(8.0e6);
+	v.z = (double)(rand() - rand()) / (double)(RAND_MAX)/(8.0e6);
 	return v;
 }
 
@@ -86,6 +86,20 @@ repo::core::model::RepoBSON testing::makeRandomRepoBSON(int seed, size_t numBinF
 	builder.append(prefix + std::to_string(counter++), rand() % 2 == 0);
 
 	return builder.obj();
+}
+
+repo::core::model::RepoBSON testing::makeProjectSettings(const std::string& id)
+{
+	repo::core::model::RepoBSONBuilder settings;
+
+	repo::core::model::RepoBSONBuilder properties;
+	properties.append(REPO_PROJECT_SETTINGS_LABEL_UNITS, repo::lib::units::toUnitsString(repo::lib::ModelUnits::MILLIMETRES));
+
+	settings.append(REPO_PROJECT_SETTINGS_LABEL_PROPERTIES, properties.obj());
+	settings.append(REPO_LABEL_ID, id);
+	settings.append(REPO_PROJECT_SETTINGS_LABEL_STATUS, "ok");
+
+	return settings.obj();
 }
 
 repo::lib::RepoUUID testing::getRandUUID()
