@@ -1,0 +1,51 @@
+name: Docker Build
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        description: 'Docker build target stage (e.g. init, core, build). Omit to build all stages.'
+        type: string
+        required: false
+        default: ''
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      # ---------------------------------------------------------------
+      # STEP 1: Checkout source
+      # ---------------------------------------------------------------
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # ---------------------------------------------------------------
+      # STEP 2: Free disk space
+      # ---------------------------------------------------------------
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: false
+
+      # ---------------------------------------------------------------
+      # STEP 3: Build Docker image
+      # ---------------------------------------------------------------
+      - name: Build Docker image
+        env:
+          DOCKER_BUILDKIT: 1
+        run: |
+          TARGET_ARG=""
+          if [ -n "${{ inputs.target }}" ]; then
+            TARGET_ARG="--target ${{ inputs.target }}"
+          fi
+          docker build --no-cache $TARGET_ARG \
+            -f ./docker/3drepobouncer/Dockerfile \
+            ./docker/3drepobouncer/
