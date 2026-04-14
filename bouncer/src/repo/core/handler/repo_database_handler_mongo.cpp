@@ -81,6 +81,12 @@ const std::list<std::string> repo::core::handler::MongoDatabaseHandler::ADMIN_ON
 class MongoDatabaseHandler::MongoDatabaseHandlerException : public repo::lib::RepoException
 {
 public:
+	MongoDatabaseHandlerException(const MongoDatabaseHandler& handler, const std::string& method, const std::string& db, const std::string collection, const std::string query, bool loadBinaries)
+		: RepoException("MongoDatabaseHandler exception: in " + method + " on: " + db + "." + collection + " with query: " + query + " load binaries: " + (loadBinaries ? "true" : "false") + " " + getUri(handler))
+	{
+		errorCode = REPOERR_AUTH_FAILED; //If no outer exception sets the return code, signal this is database operation/connection problem.
+	}
+
 	MongoDatabaseHandlerException(const MongoDatabaseHandler& handler, const std::string& method, const std::string& db, const std::string collection)
 		: RepoException("MongoDatabaseHandler exception: in " + method + " on: " + db + "." + collection + getUri(handler))
 	{
@@ -476,7 +482,8 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 	}
 	catch (...)
 	{
-		std::throw_with_nested(MongoDatabaseHandlerException(*this, "findAllByCriteria", database, collection));
+		auto qfd = makeQueryFilterDocument(filter);
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "findAllByCriteria", database, collection, qfd.toString(), loadBinaries));
 	}
 }
 
