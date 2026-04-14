@@ -80,10 +80,15 @@ async function findUnityBundleRevisions(teamspace) {
 			for (const { _id } of allRevisions) {
 				const numRevisionRepoBundles = await repoBundles.countDocuments({ _id });
 				if (numRevisionRepoBundles === 0) {
+					// Get the project for error reporting
+					const project = await db.collection('projects').findOne({
+						models: { $elemMatch: { $eq: container } },
+					});
 					// This revision does not have any repobundles, and must be
 					// upgraded.
 					revisions.push({
 						teamspace: name,
+						project: UUIDToString(project._id),
 						container,
 						revId: UUIDToString(_id),
 					});
@@ -119,7 +124,7 @@ async function runUnityBundleMigration(teamspace) {
 	const n = revisions.length;
 	let i = 0;
 	for (const revision of revisions) {
-		logger.info(`- regenerating ${revision.teamspace} ${revision.container} ${revision.revId} (${++i}/${n})`);
+		logger.info(`- regenerating ${revision.teamspace} ${revision.project} ${revision.container} ${revision.revId} (${++i}/${n})`);
 		await migrateRevision(revision);
 	}
 
