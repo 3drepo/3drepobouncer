@@ -38,9 +38,9 @@ using Bvh = bvh::Bvh<double>;
 namespace {
 	Bvh::Node createBounds(const repo::lib::RepoTriangle& t) {
 		auto bbox = bvh::BoundingBox<double>::empty();
-		bbox.extend(reinterpret_cast<const bvh::Vector3<double>&>(t.a));
-		bbox.extend(reinterpret_cast<const bvh::Vector3<double>&>(t.b));
-		bbox.extend(reinterpret_cast<const bvh::Vector3<double>&>(t.c));
+		bbox.extend(bvh::Vector3<double>(t.a.x, t.a.y, t.a.z));
+		bbox.extend(bvh::Vector3<double>(t.b.x, t.b.y, t.b.z));
+		bbox.extend(bvh::Vector3<double>(t.c.x, t.c.y, t.c.z));
 		return Bvh::Node{
 			bbox.min[0], bbox.max[0],
 			bbox.min[1], bbox.max[1],
