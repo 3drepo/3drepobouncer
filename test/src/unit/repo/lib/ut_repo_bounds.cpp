@@ -86,6 +86,16 @@ TEST(RepoBoundsTest, Encapsulate)
 	EXPECT_THAT(bounds.max(), Eq(RepoVector3D64(10, 1000, 12)));
 }
 
+TEST(RepoBoundsTest, ScaleOperator)
+{
+	// Scaling by negative values should keep min < max pointwise
+
+	RepoBounds bounds(RepoVector3D64(1, 2, 3), RepoVector3D64(4, 5, 6));
+	auto scaled = RepoMatrix::scale(RepoVector3D64(-2, 3, 10)) * bounds;
+	EXPECT_THAT(scaled.min(), VectorNear(RepoVector3D64(-8, 6, 30)));
+	EXPECT_THAT(scaled.max(), VectorNear(RepoVector3D64(-2, 15, 60)));
+}
+
 MATCHER_P(AreContainedBy, bounds, "")
 {
 	for (const auto& v : arg)
