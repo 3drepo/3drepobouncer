@@ -86,9 +86,9 @@ void ClashDetectionEngineUtils::writeJson(const ClashDetectionReport& report,
 		{
 			writer.StartObject();
 			writer.Key("a");
-			writer.String(clash.idA.toString());
+			writer.String(clash.idA);
 			writer.Key("b");
-			writer.String(clash.idB.toString());
+			writer.String(clash.idB);
 			writer.Key("positions");
 			writer.StartArray();
 			for (const auto& position : clash.positions)

@@ -111,7 +111,7 @@ namespace repo {
 					std::unordered_map<OrderedPair, CompositeClash*, OrderedPairHasher> clashes;
 
 					template<class T>
-					T* createClash(const repo::lib::RepoUUID& a, const repo::lib::RepoUUID& b) {
+					T* createClash(const std::string& a, const std::string& b) {
 						OrderedPair pair(a, b);
 						auto it = clashes.find(pair);
 						if (it == clashes.end())

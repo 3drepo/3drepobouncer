@@ -39,7 +39,7 @@ namespace {
 	struct CacheEntry
 	{
 		std::vector<Graph::Node*> nodes;
-		repo::lib::RepoUUID id;
+		const CompositeObject* compositeObject;
 		std::shared_mutex mutex;
 
 		// Holds all the geometry for all nodes in one mesh. MeshViews can be
@@ -71,8 +71,8 @@ namespace {
 			return !nodes.size();
 		}
 
-		const repo::lib::RepoUUID& getId() const {
-			return id;
+		const std::string& getId() const {
+			return compositeObject->id;
 		}
 
 		repo::lib::RepoBounds getBounds() const {
@@ -92,7 +92,7 @@ namespace {
 			for(auto& meshRef : composite.meshes) {
 				entry->nodes.push_back(&graph.getNode(meshRef.uniqueId));
 			}
-			entry->id = composite.id;
+			entry->compositeObject = &composite;
 		}
 	};
 

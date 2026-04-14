@@ -31,17 +31,17 @@ namespace repo {
 
 				struct OrderedPair
 				{
-					repo::lib::RepoUUID a;
-					repo::lib::RepoUUID b;
+					std::string a;
+					std::string b;
 
-					OrderedPair(const repo::lib::RepoUUID& a, const repo::lib::RepoUUID& b)
+					OrderedPair(const std::string& a, const std::string& b)
 						:a(a), b(b)
 					{
 					}
 
 					size_t getHash() const
 					{
-						return a.getHash() ^ b.getHash();
+						return std::hash<std::string>()(a) ^ std::hash<std::string>()(b);
 					}
 
 					bool operator == (const OrderedPair& other) const

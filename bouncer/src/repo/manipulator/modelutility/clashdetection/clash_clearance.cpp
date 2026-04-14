@@ -79,7 +79,7 @@ namespace {
 			return mesh.getTriangle(primitive);
 		}
 
-		const repo::lib::RepoUUID& getCompositeObjectId() const {
+		const std::string& getCompositeObjectId() const {
 			return node->compositeObject->id;
 		}
 

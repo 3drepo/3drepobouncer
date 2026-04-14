@@ -71,7 +71,7 @@ namespace repo {
 				/*
 				* Unique identifier of this Composite Object for correlation purposes.
 				*/
-				repo::lib::RepoUUID id;
+				std::string id;
 
 				/*
 				* Composite objects are made up of MeshNode instances. Each MeshNode

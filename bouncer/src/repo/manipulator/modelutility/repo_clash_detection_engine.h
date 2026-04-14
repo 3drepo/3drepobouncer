@@ -42,8 +42,8 @@ namespace repo {
 				// self-intersection is on. For this reason composite ids should always
 				// be distinct between sets.
 
-				repo::lib::RepoUUID idA;
-				repo::lib::RepoUUID idB;
+				std::string idA;
+				std::string idB;
 
 				// The positions in project coordinates that represent the clash in a
 				// high level way. The exact meaning of these depends on the clash test.

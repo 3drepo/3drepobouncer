@@ -24,13 +24,13 @@
 using namespace repo::manipulator::modelutility;
 using namespace repo::manipulator::modelutility::json;
 
-using CompositeObjectMap = std::unordered_map<repo::lib::RepoUUID, CompositeObject, repo::lib::RepoUUIDHasher>;
+using CompositeObjectMap = std::unordered_map<std::string, CompositeObject>;
 
 class ICompositeObjectSet
 {
 public:
 	repo::lib::Container* container;
-	virtual CompositeObject& getCompositeObject(const repo::lib::RepoUUID&) = 0;
+	virtual CompositeObject& getCompositeObject(const std::string& id) = 0;
 };
 
 class IContainerSet
@@ -61,13 +61,13 @@ struct MeshIdsParser : public Parser
 
 struct CompositeObjectParser : public ObjectParser
 {
-	repo::lib::RepoUUID id;
+	std::string id;
 	std::vector<MeshReference> meshIds;
 
 	CompositeObjectParser(ICompositeObjectSet* set)
 		:set(set)
 	{
-		parsers["id"] = new RepoUUIDParser(id);
+		parsers["id"] = new StringParser(id);
 		parsers["meshIds"] = new ArrayParser(new MeshIdsParser(meshIds, set));
 	}
 
@@ -105,7 +105,7 @@ struct CompositeObjectSetParser : public ObjectParser, public ICompositeObjectSe
 		parsers["objects"] = new ArrayParser(new CompositeObjectParser(this));
 	}
 
-	CompositeObject& getCompositeObject(const repo::lib::RepoUUID& id) override
+	CompositeObject& getCompositeObject(const std::string& id) override
 	{
 		auto& obj = set[id];
 		obj.id = id;

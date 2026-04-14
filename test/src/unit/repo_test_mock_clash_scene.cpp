@@ -53,7 +53,7 @@ void ClashDetectionConfigHelper::addCompositeObjects(
 	for(const auto& uniqueIdA : uniqueIdsA) {
 		this->setA.push_back(
 			repo::manipulator::modelutility::CompositeObject(
-				uniqueIdA,
+				uniqueIdA.toString(),
 				{ repo::manipulator::modelutility::MeshReference(containers[0].get(), uniqueIdA) }
 			)
 		);
@@ -61,7 +61,7 @@ void ClashDetectionConfigHelper::addCompositeObjects(
 	for(const auto& uniqueIdB : uniqueIdsB) {
 		this->setB.push_back(
 			repo::manipulator::modelutility::CompositeObject(
-				uniqueIdB,
+				uniqueIdB.toString(),
 				{ repo::manipulator::modelutility::MeshReference(containers[0].get(), uniqueIdB) }
 			)
 		);

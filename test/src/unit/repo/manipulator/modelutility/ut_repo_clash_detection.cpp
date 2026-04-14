@@ -421,7 +421,6 @@ TEST(Clash, Scheduler)
 	broadphaseResults.push_back({ 0, 0 });
 	broadphaseResults.push_back({ 0, 0 });
 
-
 	auto copy = broadphaseResults;
 
 	clash::ClashScheduler::schedule(broadphaseResults);
@@ -2191,8 +2190,8 @@ TEST(Clash, ResultsSerialisation)
 			const auto& clash = report.clashes[i];
 			const auto& jsonClash = doc["clashes"][i];
 
-			EXPECT_EQ(jsonClash["a"].GetString(), clash.idA.toString());
-			EXPECT_EQ(jsonClash["b"].GetString(), clash.idB.toString());
+			EXPECT_EQ(jsonClash["a"].GetString(), clash.idA);
+			EXPECT_EQ(jsonClash["b"].GetString(), clash.idB);
 
 			EXPECT_EQ(jsonClash["fingerprint"].GetString(), std::to_string(clash.fingerprint));
 
