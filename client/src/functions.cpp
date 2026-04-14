@@ -352,6 +352,10 @@ int32_t performClashDetection(
 	const repo::RepoController::RepoToken* token,
 	const repo_op_t& command)
 {
+	if (command.nArgcs < 1) {
+		repoError << "Clash detection requires a config file path";
+		return REPOERR_INVALID_ARG;
+	}
 	repo::manipulator::modelutility::ClashDetectionConfig clashConfig;
 	repo::manipulator::modelutility::ClashDetectionConfig::ParseJsonFile(command.args[0], clashConfig);
 	if (command.nArgcs > 1) {
