@@ -8,7 +8,7 @@ assignees: ''
 ---
 
 ### Description
-Product issue: <!-- Please link the url here>
+Product issue: <!-- Please link the url here, please also ensure the issue is a child issue to the product ticket>
 <!-- Describe what the development task is about  -->
 
 ### Goals
@@ -21,10 +21,7 @@ These should be user stories listed in the product issue which this dev task aim
 
 
 ### Tasks
-<!-- base on the goals, should be determined by a developer after they have analysed the task. check them off once they're done -->
-- [ ] Task 1
-- [ ] Task 2
-<!-- etc etc.. -->
+Developer assigned to the issue - please think create a bullet point of task list and provide estimates for each
 
 ### Related Resources
 <!-- any images/gifs, mockups/wireframes that would aid the development should be listed here -->
