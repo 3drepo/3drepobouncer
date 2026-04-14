@@ -111,11 +111,6 @@ bool RepoBounds::operator>(const RepoBounds& other) const
 	return size().norm() > other.size().norm();
 }
 
-repo::lib::RepoBounds RepoBounds::empty()
-{
-	return RepoBounds(repo::lib::RepoVector3D64(0, 0, 0), repo::lib::RepoVector3D64(0, 0, 0));
-}
-
 REPO_API_EXPORT repo::lib::RepoBounds repo::lib::operator*(const _RepoMatrix<double>& matrix, const repo::lib::RepoBounds& bounds)
 {
 	/**

@@ -55,8 +55,6 @@ namespace repo {
 
 			RepoVector3D64 center() const;
 
-			static repo::lib::RepoBounds empty();
-
 			double volume() const;
 
 		private:
