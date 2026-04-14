@@ -39,6 +39,7 @@ find_path(MPFR_C_INCLUDES
   NAMES
 	mpfr.h
 	mpf2mpfr.h
+  PATHS ${PATHS_TO_SEARCH}
 )
 
 set(MPFR_FOUND TRUE)

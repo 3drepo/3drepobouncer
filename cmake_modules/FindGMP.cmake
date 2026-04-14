@@ -50,10 +50,12 @@ endif()
 
 find_path(GMP_C_INCLUDES
   NAMES gmp.h
+  PATHS ${PATHS_TO_SEARCH}
 )
 
 find_path(GMP_CXX_INCLUDES
   NAMES gmpxx.h
+  PATHS ${PATHS_TO_SEARCH}
 )
 
 set(GMP_FOUND TRUE)
