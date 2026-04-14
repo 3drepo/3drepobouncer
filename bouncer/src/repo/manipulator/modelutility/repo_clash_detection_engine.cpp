@@ -35,13 +35,13 @@ using namespace repo::manipulator::modelutility::clash;
 ClashDetectionReport ClashDetectionEngine::runClashDetection
 	(const ClashDetectionConfig& config)
 {
-	clash::Pipeline* pipeline = nullptr;
+	std::unique_ptr<clash::Pipeline> pipeline;
 	switch (config.type) {
 	case ClashDetectionType::Clearance:
-		pipeline = new clash::Clearance(handler, config);
+		pipeline = std::make_unique<clash::Clearance>(handler, config);
 		break;
 	case ClashDetectionType::Hard:
-		pipeline = new clash::Hard(handler, config);
+		pipeline = std::make_unique<clash::Hard>(handler, config);
 		break;
 	default:
 		throw std::invalid_argument("Unknown clash detection type");
