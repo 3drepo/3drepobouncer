@@ -320,7 +320,7 @@ TEST(RepoBSONFactoryTest, MakeTransformationNodeTest)
 	EXPECT_EQ(name, trans2.getName());
 	auto matrix = trans2.getTransMatrix();
 
-	EXPECT_THAT(memcmp(transMatFlat.data(), matrix.getData(), 16), Eq(0));
+	EXPECT_THAT(memcmp(transMatFlat.data(), matrix.getData(), 16 * sizeof(double)), Eq(0));
 	EXPECT_THAT(trans2.getParentIDs(), UnorderedElementsAreArray(parents));
 
 	//ensure random parents aren't thrown in
