@@ -68,7 +68,20 @@ namespace repo {
 
 					template<ValidNodeIdentifer T>
 					static void schedule(std::vector<std::pair<T, T>>& broadphaseResults) {
-						_schedule(reinterpret_cast<std::vector<std::pair<void*, void*>>&>(broadphaseResults));
+						// T must be the same size as void* but we must still cast the individual
+						// elements as the pairs/vectors are not type aliases. These loops should
+						// be optimised away by the compiler.
+						std::vector<std::pair<void*, void*>> r;
+						r.resize(broadphaseResults.size());
+						for (size_t i = 0; i < broadphaseResults.size(); i++) {
+							r[i].first = (void*)broadphaseResults[i].first;
+							r[i].second = (void*)broadphaseResults[i].second;
+						}
+						_schedule(r);
+						for (size_t i = 0; i < broadphaseResults.size(); i++) {
+							broadphaseResults[i].first = (T)r[i].first;
+							broadphaseResults[i].second = (T)r[i].second;
+						}
 					}
 
 				private:
