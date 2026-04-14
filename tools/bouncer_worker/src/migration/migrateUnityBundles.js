@@ -65,6 +65,16 @@ async function findUnityBundleRevisions(teamspace) {
 		for (const collection of collections) {
 			const container = collection.name.replace('.stash.unity3d', '');
 
+			// Get the project for error reporting
+			const project = await db.collection('projects').findOne({
+				models: { $elemMatch: { $eq: container } },
+			});
+			if (!project) {
+				logger.info(`\t- Orphaned container ${name} ${container}. Ignoring...`);
+				// eslint-disable-next-line no-continue
+				continue;
+			}
+
 			const history = db.collection(`${container}.history`);
 			const allRevisions = await history.find({
 				$or: [
@@ -80,10 +90,6 @@ async function findUnityBundleRevisions(teamspace) {
 			for (const { _id } of allRevisions) {
 				const numRevisionRepoBundles = await repoBundles.countDocuments({ _id });
 				if (numRevisionRepoBundles === 0) {
-					// Get the project for error reporting
-					const project = await db.collection('projects').findOne({
-						models: { $elemMatch: { $eq: container } },
-					});
 					// This revision does not have any repobundles, and must be
 					// upgraded.
 					revisions.push({
