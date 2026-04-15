@@ -322,7 +322,6 @@ repo::core::model::RepoBSON RepoBSON::getBinaryReference() const
 		RepoBSON extRefbson = getObjectField(REPO_LABEL_BINARY_REFERENCE);
 		return extRefbson.getObjectField(REPO_LABEL_BINARY_BUFFER);
 	}
-
 	return res;
 }
 
