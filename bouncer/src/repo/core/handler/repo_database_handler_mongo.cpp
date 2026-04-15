@@ -379,8 +379,11 @@ void MongoDatabaseHandler::loadBinaryBuffers(const std::string& database,
 	fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
 
 	if (bson.hasFileReference()) {
-		auto ref = bson.getBinaryReference();
-		auto buffer = blobHandler.readToBuffer(fileservice::DataRef::deserialise(ref));
+		auto ref = fileservice::DataRef::deserialise(bson.getBinaryReference());
+		if (!ref.size) {
+			ref.size = bson.getBinaryBufferSize();
+		}
+		auto buffer = blobHandler.readToBuffer(ref);
 		bson.initBinaryBuffer(buffer);
 	}
 }

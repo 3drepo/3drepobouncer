@@ -343,6 +343,24 @@ void RepoBSON::initBinaryBuffer(const std::vector<uint8_t> &buffer)
 	}
 }
 
+size_t RepoBSON::getBinaryBufferSize() const
+{
+	size_t size = 0;
+	if (hasField(REPO_LABEL_BINARY_REFERENCE))
+	{
+		RepoBSON extRefbson = getObjectField(REPO_LABEL_BINARY_REFERENCE);
+
+		auto elemRefs = extRefbson.getObjectField(REPO_LABEL_BINARY_ELEMENTS);
+		for (const auto& elem : elemRefs.getFieldNames()) {
+			auto elemRefBson = elemRefs.getObjectField(elem);
+			size_t start = elemRefBson.getLongField(REPO_LABEL_BINARY_START);
+			size_t size = elemRefBson.getLongField(REPO_LABEL_BINARY_SIZE);
+			size = std::max(size, start + size);
+		}
+	}
+	return size;
+}
+
 bool RepoBSON::hasBinField(const std::string &label) const
 {
 	return bigFiles.find(label) != bigFiles.end();
