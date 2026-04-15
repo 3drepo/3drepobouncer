@@ -61,7 +61,7 @@ namespace repo {
 
 			const boost::uuids::uuid& getInternalID() const { return id; }
 
-			operator bool() const { return !isDefaultValue(); }
+			explicit operator bool() const { return !isDefaultValue(); }
 
 		private:
 			boost::uuids::uuid id;

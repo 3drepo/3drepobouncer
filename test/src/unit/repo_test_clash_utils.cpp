@@ -119,7 +119,7 @@ CompositeObject ClashDetectionDatabaseHelper::createCompositeObject(
 )
 {
 	CompositeObject composite;
-	composite.id = repo::lib::RepoUUID::createUUID();
+	composite.id = repo::lib::RepoUUID::createUUID().toString();
 	for (auto& uuid : getUniqueIdsByName(container, name))
 	{
 		composite.meshes.push_back(MeshReference(container, uuid));
@@ -211,7 +211,7 @@ void ClashDetectionDatabaseHelper::createCompositeObjectsFromContainer(
 	for (auto& bson : *cursor) {
 		auto uuid = bson.getUUIDField(REPO_NODE_LABEL_ID);
 		CompositeObject composite;
-		composite.id = repo::lib::RepoUUID::createUUID();
+		composite.id = repo::lib::RepoUUID::createUUID().toString();
 		composite.meshes.push_back(MeshReference(container, uuid));
 		objects.push_back(composite);
 	}
@@ -279,7 +279,7 @@ void ClashDetectionDatabaseHelper::createCompositeObjectsByMetadataValue(
 		for (auto& bson : *cursor) {
 			auto uuid = bson.getUUIDField(REPO_NODE_LABEL_ID);
 			CompositeObject composite;
-			composite.id = repo::lib::RepoUUID::createUUID();
+			composite.id = repo::lib::RepoUUID::createUUID().toString();
 			composite.meshes.push_back(MeshReference(container, uuid));
 			objects.push_back(composite);
 		}
@@ -527,7 +527,7 @@ void ClashDetectionDatabaseHelper::createCompositeObjectsBySharedIds(
 	for (auto& bson : *cursor) {
 		auto uuid = bson.getUUIDField(REPO_NODE_LABEL_ID);
 		CompositeObject composite;
-		composite.id = repo::lib::RepoUUID::createUUID();
+		composite.id = repo::lib::RepoUUID::createUUID().toString();
 		composite.meshes.push_back(MeshReference(container.get(), uuid));
 		objects.push_back(composite);
 	}
@@ -565,7 +565,7 @@ void ClashDetectionDatabaseHelper::createCompositeObjectsBySharedIds(
 	for (auto& bson : *cursor) {
 		auto uuid = bson.getUUIDField(REPO_NODE_LABEL_ID);
 		CompositeObject composite;
-		composite.id = repo::lib::RepoUUID::createUUID();
+		composite.id = repo::lib::RepoUUID::createUUID().toString();
 		composite.meshes.push_back(MeshReference(container.get(), uuid));
 		objects.push_back(composite);
 
@@ -650,7 +650,7 @@ void ClashDetectionDatabaseHelper::createCompositeObjectsByMetadataValue(
 		for (auto& bson : *cursor) {
 			auto uuid = bson.getUUIDField(REPO_NODE_LABEL_ID);
 			CompositeObject composite;
-			composite.id = repo::lib::RepoUUID::createUUID();
+			composite.id = repo::lib::RepoUUID::createUUID().toString();
 			composite.meshes.push_back(MeshReference(container, uuid));
 			objects.push_back(composite);
 
@@ -694,7 +694,7 @@ CompositeObject testing::combineCompositeObjects(
 )
 {
 	CompositeObject combined;
-	combined.id = repo::lib::RepoUUID::createUUID();
+	combined.id = repo::lib::RepoUUID::createUUID().toString();
 	for (const auto& obj : objects) {
 		combined.meshes.insert(
 			combined.meshes.end(),

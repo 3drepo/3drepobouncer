@@ -989,7 +989,7 @@ TEST(Clash, MeshIdsAllowedOnlyOnce)
 	db->setDocuments(scene.bsons);
 
 	CompositeObject objA1;
-	objA1.id = repo::lib::RepoUUID::createUUID();
+	objA1.id = repo::lib::RepoUUID::createUUID().toString();
 	objA1.meshes.push_back(config.setA[0].meshes[0]);
 
 	config.setA.push_back(objA1); // Duplicate mesh in set A
@@ -1002,7 +1002,9 @@ TEST(Clash, MeshIdsAllowedOnlyOnce)
 	catch (const clash::ClashDetectionException& ex) {
 		auto exception = dynamic_cast<const clash::DuplicateMeshIdsException*>(&ex);
 		EXPECT_THAT(exception != nullptr, IsTrue());
-		EXPECT_THAT(exception && exception->uniqueId, Eq(config.setA[0].meshes[0].uniqueId));
+		if (exception) {
+			EXPECT_THAT(exception->uniqueId, Eq(config.setA[0].meshes[0].uniqueId));
+		}
 	}
 	catch (std::exception& e) {
 		FAIL() << "Expected DuplicateMeshIdsException: " << e.what();
@@ -2114,8 +2116,8 @@ TEST(Clash, ResultsSerialisation)
 	
 	for(int i = 0; i < 3; i++) {
 		ClashDetectionResult result;
-		result.idA = repo::lib::RepoUUID::createUUID();
-		result.idB = repo::lib::RepoUUID::createUUID();
+		result.idA = repo::lib::RepoUUID::createUUID().toString();
+		result.idB = repo::lib::RepoUUID::createUUID().toString();
 		result.fingerprint = 12345678;
 		result.positions = {
 			random.vector({100,1000}),
