@@ -37,6 +37,8 @@
 
 using namespace repo::manipulator::modelutility::clash;
 
+#define HASH_GOLDEN_RATIO 0x9e3779b9
+
 namespace {
 	struct Cached : public geometry::MeshView
 	{
@@ -373,12 +375,18 @@ void Clearance::createClashReport(const OrderedPair& objects, const CompositeCla
 		static_cast<const ClearanceClash&>(clash).line.end
 	};
 
+	// This is based on the hash combine method from Boost. The fingerprint, which
+	// this hash forms, is combined with the objects involved to distingush a clash,
+	// therefore this implementation should not be too concerned with hash
+	// collisions. It should be concerned with sensitivity to very small changes
+	// however as these is what the fingerprint is intended to discriminate between.
+
 	size_t hash = 0;
 	std::hash<double> hasher;
 	for (auto& p : result.positions) {
-		hash ^= hasher(p.x) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-		hash ^= hasher(p.y) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-		hash ^= hasher(p.z) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+		hash ^= hasher(p.x) + HASH_GOLDEN_RATIO + (hash << 6) + (hash >> 2);
+		hash ^= hasher(p.y) + HASH_GOLDEN_RATIO + (hash << 6) + (hash >> 2);
+		hash ^= hasher(p.z) + HASH_GOLDEN_RATIO + (hash << 6) + (hash >> 2);
 	}
 	result.fingerprint = hash;
 }
