@@ -17,7 +17,7 @@
 
 #include "repo_clash_detection_config.h"
 
-#include <repo/manipulator/modelutility/repo_json_parser.h>
+#include <repo/lib/repo_json_parser.h>
 
 #include <fstream>
 

@@ -18,7 +18,7 @@
 #pragma once
 
 #include "repo/lib/datastructure/repo_structs.h"
-#include "repo/manipulator/modelutility/repo_json_parser.h"
+#include "repo/lib/repo_json_parser.h"
 
 namespace repo {
 	namespace manipulator {

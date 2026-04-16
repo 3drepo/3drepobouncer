@@ -22,10 +22,10 @@
 #include <sstream>
 
 #define RAPIDJSON_HAS_STDSTRING 1
-#include "repo/manipulator/modelutility/rapidjson/rapidjson.h"
-#include "repo/manipulator/modelutility/rapidjson/document.h"
-#include "repo/manipulator/modelutility/rapidjson/writer.h"
-#include "repo/manipulator/modelutility/rapidjson/ostreamwrapper.h"
+#include "repo/lib/rapidjson/rapidjson.h"
+#include "repo/lib/rapidjson/document.h"
+#include "repo/lib/rapidjson/writer.h"
+#include "repo/lib/rapidjson/ostreamwrapper.h"
 
 using namespace repo::manipulator::modelutility::clash;
 

@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "repo/manipulator/modelutility/rapidjson/reader.h"
+#include "repo/lib/rapidjson/reader.h"
 
 #include <stack>
 #include <map>

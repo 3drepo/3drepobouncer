@@ -32,8 +32,8 @@
 #define RAPIDJSON_NAMESPACE_BEGIN namespace repo { namespace rapidjson {
 #define RAPIDJSON_NAMESPACE_END } }
 
-#include <repo/manipulator/modelutility/rapidjson/rapidjson.h>
-#include <repo/manipulator/modelutility/rapidjson/document.h>
+#include <repo/lib/rapidjson/rapidjson.h>
+#include <repo/lib/rapidjson/document.h>
 
 #include <repo/manipulator/modelutility/repo_scene_builder.h>
 #include <repo/manipulator/modelutility/repo_scene_manager.h>

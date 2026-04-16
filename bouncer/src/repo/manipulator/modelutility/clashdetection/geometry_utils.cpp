@@ -21,7 +21,7 @@
 
 #include <vector>
 
-#include "hopscotch-map/bhopscotch_map.h"
+#include "repo/lib/hopscotch_map/bhopscotch_map.h"
 
 using namespace geometry;
 

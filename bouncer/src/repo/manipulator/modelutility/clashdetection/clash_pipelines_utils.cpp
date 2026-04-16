@@ -17,7 +17,7 @@
 
 #include "clash_pipelines_utils.h"
 
-#include "hopscotch-map/bhopscotch_map.h"
+#include <repo/lib/hopscotch_map/bhopscotch_map.h>
 
 using namespace repo::manipulator::modelutility::clash;
 

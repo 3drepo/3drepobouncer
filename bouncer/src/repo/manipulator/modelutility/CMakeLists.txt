@@ -5,7 +5,6 @@
 
 
 add_subdirectory(clashdetection)
-add_subdirectory(rapidjson)
 add_subdirectory(spatialpartitioning)
 add_subdirectory(spscqueue)
 set(SOURCES
@@ -27,7 +26,6 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_clash_detection_engine.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_drawing_manager.h
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_json_parser.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_maker_selection_tree.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_mesh_map_reorganiser.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_scene_builder.h

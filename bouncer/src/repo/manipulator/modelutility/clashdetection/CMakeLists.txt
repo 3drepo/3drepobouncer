@@ -4,14 +4,12 @@
 #If you really need to overwrite this file, be aware that it will be overwritten if updateSources.py is executed.
 
 
-add_subdirectory(hopscotch-map)
 set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/bvh_operators.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_clearance.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_exceptions.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_hard.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/clash_node_cache.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_pipelines.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_pipelines_utils.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clash_scheduler.cpp
