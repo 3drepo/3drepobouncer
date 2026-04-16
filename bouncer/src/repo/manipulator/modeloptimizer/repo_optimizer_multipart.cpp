@@ -545,6 +545,9 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 			{
 				auto binRef = nodeBson.getBinaryReference();
 				auto dataRef = repo::core::handler::fileservice::DataRef::deserialise(binRef);
+				if (!dataRef.size) {
+					dataRef.size = nodeBson.getBinaryBufferSize();
+				}
 				auto buffer = blobHandler.readToBuffer(dataRef);
 
 				// If there is no texture present, we ignore UV values.

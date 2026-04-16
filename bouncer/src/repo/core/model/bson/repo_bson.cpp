@@ -353,9 +353,9 @@ size_t RepoBSON::getBinaryBufferSize() const
 		auto elemRefs = extRefbson.getObjectField(REPO_LABEL_BINARY_ELEMENTS);
 		for (const auto& elem : elemRefs.getFieldNames()) {
 			auto elemRefBson = elemRefs.getObjectField(elem);
-			size_t start = elemRefBson.getLongField(REPO_LABEL_BINARY_START);
-			size_t size = elemRefBson.getLongField(REPO_LABEL_BINARY_SIZE);
-			size = std::max(size, start + size);
+			size_t elemstart = elemRefBson.getLongField(REPO_LABEL_BINARY_START);
+			size_t elemSize = elemRefBson.getLongField(REPO_LABEL_BINARY_SIZE);
+			size = std::max(size, elemstart + elemSize);
 		}
 	}
 	return size;
