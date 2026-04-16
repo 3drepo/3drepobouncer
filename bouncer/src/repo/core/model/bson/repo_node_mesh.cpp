@@ -331,7 +331,7 @@ void MeshNode::applyTransformation(
 
 void MeshNode::transformBoundingBox(
 	repo::lib::RepoBounds& bounds,
-	repo::lib::RepoMatrix matrix)
+	const repo::lib::RepoMatrix& matrix)
 {
 	// Compute the updated AABB by the method of the extrema of transformed
 	// corners.
@@ -360,7 +360,7 @@ void MeshNode::transformBoundingBox(
 
 void MeshNode::transformNormals(
 	std::vector<repo::lib::RepoVector3D>& normals,
-	repo::lib::RepoMatrix matrix)
+	const repo::lib::RepoMatrix& matrix)
 {
 	auto worldMat = matrix.inverse().transpose();
 	auto data = worldMat.getData();

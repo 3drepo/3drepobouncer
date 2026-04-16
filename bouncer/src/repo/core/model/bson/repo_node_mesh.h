@@ -322,9 +322,9 @@ namespace repo {
 				*/
 				void removeDuplicateVertices();
 
-				static void transformBoundingBox(repo::lib::RepoBounds& bounds, repo::lib::RepoMatrix matrix);
+				static void transformBoundingBox(repo::lib::RepoBounds& bounds, const repo::lib::RepoMatrix& matrix);
 
-				static void transformNormals(std::vector<repo::lib::RepoVector3D>& normals, repo::lib::RepoMatrix matrix);
+				static void transformNormals(std::vector<repo::lib::RepoVector3D>& normals, const repo::lib::RepoMatrix& matrix);
 			};
 		} //namespace model
 	} //namespace core
