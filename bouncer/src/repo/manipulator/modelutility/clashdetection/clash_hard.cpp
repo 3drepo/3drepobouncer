@@ -230,86 +230,86 @@ void Hard::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 
 	// Define thread behaviour
 	auto narrowPhaseThread = [&](std::queue<Narrowphase>& queue)
-		{
-			// Run intil we are out of samples, then terminate.
-			while (!queue.empty()) {
+	{
+		// Run intil we are out of samples, then terminate.
+		while (!queue.empty()) {
 
-				// Else, get sample from the queue exclusive to this thread
-				auto [a, b] = std::move(queue.front());
-				queue.pop();
+			// Else, get sample from the queue exclusive to this thread
+			auto [a, b] = std::move(queue.front());
+			queue.pop();
 
-				// Check initialisation status of entry a
-				bool aInitialised = false;
+			// Check initialisation status of entry a
+			bool aInitialised = false;
+			{
+				// Shared lock on the object so we can check the status
+				std::shared_lock lock{ a->mutex };
+				aInitialised = a->isInitialised();
+			}
+
+			// If a is not initialised, do it now.
+			if (!aInitialised)
+			{
+				// Lock exclusively
+				std::scoped_lock entryLock{ a->mutex};
+
+				// Now initialise the node
+				a->initialise(handler);
+			}
+
+			// Check initialisation status of entry b
+			bool bInitialised = false;
+			{
+				// Shared lock on the object so we can check the status
+				std::shared_lock lock{ b->mutex };
+				bInitialised = b->isInitialised();
+			}
+
+			// If b is not initialised, do it now.
+			if (!bInitialised)
+			{
+				// Lock exclusively
+				std::scoped_lock entryLock{b->mutex };
+
+				// Now initialise the node
+				b->initialise(handler);
+			}
+
+			// In DeformDepth, (b) is fixed, so consider the larger object the static one
+			// to make it easier to fit (a) into the free space around it.
+			if (a->getBounds() > b->getBounds()) {
+				std::swap(a, b);
+			}
+
+			{
+				// Acquire locks for both cache entries for the duration of the test.
+				// This needs to be an exclusive lock since RepoDeformDepth alters the mesh
+				std::scoped_lock lockEntries{ a->mutex, b->mutex };
+
+				try
 				{
-					// Shared lock on the object so we can check the status
-					std::shared_lock lock{ a->mutex };
-					aInitialised = a->isInitialised();
-				}
+					geometry::RepoDeformDepth pd(
+						a->mesh,
+						b->mesh,
+						tolerance
+					);
 
-				// If a is not initialised, do it now.
-				if (!aInitialised)
-				{
-					// Lock exclusively
-					std::scoped_lock entryLock{ a->mutex};
-
-					// Now initialise the node
-					a->initialise(handler);
-				}
-
-				// Check initialisation status of entry b
-				bool bInitialised = false;
-				{
-					// Shared lock on the object so we can check the status
-					std::shared_lock lock{ b->mutex };
-					bInitialised = b->isInitialised();
-				}
-
-				// If b is not initialised, do it now.
-				if (!bInitialised)
-				{
-					// Lock exclusively
-					std::scoped_lock entryLock{b->mutex };
-
-					// Now initialise the node
-					b->initialise(handler);
-				}
-
-				// In DeformDepth, (b) is fixed, so consider the larger object the static one
-				// to make it easier to fit (a) into the free space around it.
-				if (a->getBounds() > b->getBounds()) {
-					std::swap(a, b);
-				}
-
-				{
-					// Acquire locks for both cache entries for the duration of the test.
-					// This needs to be an exclusive lock since RepoDeformDepth alters the mesh
-					std::scoped_lock lockEntries{ a->mutex, b->mutex };
-
-					try
-					{
-						geometry::RepoDeformDepth pd(
-							a->mesh,
-							b->mesh,
-							tolerance
+					double penDepth = pd.getPenetrationDepth();
+					if (penDepth > tolerance) {
+						// Lock the clashes map, then write the new clash
+						std::scoped_lock lockClashes{ clashesMutex };
+						auto clash = createClash<HardClash>(
+							a->getId(),
+							b->getId()
 						);
-
-						double penDepth = pd.getPenetrationDepth();
-						if (penDepth > tolerance) {
-							// Lock the clashes map, then write the new clash
-							std::scoped_lock lockClashes{ clashesMutex };
-							auto clash = createClash<HardClash>(
-								a->getId(),
-								b->getId()
-							);
-							clash->contacts = pd.getContactManifold();
-						}
+						clash->contacts = pd.getContactManifold();
 					}
-					catch (const geometry::GeometryTestException& e) {
-						throw DegenerateTestException(a->getId(), b->getId(), e.what());
-					}
+				}
+				catch (const geometry::GeometryTestException& e) {
+					throw DegenerateTestException(a->getId(), b->getId(), e.what());
 				}
 			}
-		};
+		}
+	};
 
 	// Create and launch the threads
 	std::vector<std::jthread> threads;

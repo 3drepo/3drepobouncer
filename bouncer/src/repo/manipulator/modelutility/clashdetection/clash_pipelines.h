@@ -122,7 +122,7 @@ namespace repo {
 							it = clashes.emplace(pair, std::move(clash)).first;
 						}
 						return static_cast<T*>(it->second);
-					})
+					}
 				};
 			}
 		}
