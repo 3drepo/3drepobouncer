@@ -102,7 +102,9 @@ namespace repo {
 					* disjoint. graphC must always perform a self-intersection.
 					*/
 					virtual void run(const Graph& graphA, const Graph& graphB, const Graph& graphC) = 0;
-					virtual void createClashReport(const OrderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const = 0;
+					virtual void getClashPositions(const CompositeClash& clash, std::vector<repo::lib::RepoVector3D64>& positions) const = 0;
+
+					void createClashReport(const OrderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const;
 
 					DatabasePtr handler;
 
@@ -120,7 +122,7 @@ namespace repo {
 							it = clashes.emplace(pair, std::move(clash)).first;
 						}
 						return static_cast<T*>(it->second);
-					}
+					})
 				};
 			}
 		}

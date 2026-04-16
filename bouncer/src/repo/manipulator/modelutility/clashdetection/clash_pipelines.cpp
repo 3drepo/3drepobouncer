@@ -45,6 +45,8 @@ using namespace repo::manipulator::modelutility::clash;
 
 using ContainerGroups = std::unordered_map<repo::lib::Container*, std::vector<repo::lib::RepoUUID>>;
 
+#define HASH_GOLDEN_RATIO 0x9e3779b9
+
 Graph::Graph(std::vector<Node> nodes)
 	: meshes(std::move(nodes))
 {
@@ -288,4 +290,27 @@ ClashDetectionReport Pipeline::runPipeline()
 	}
 
 	return report;
+}
+
+void Pipeline::createClashReport(const OrderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const
+{
+	result.idA = objects.a;
+	result.idB = objects.b;
+
+	getClashPositions(clash, result.positions);
+
+	// This is based on the hash combine method from Boost. The fingerprint, which
+	// this hash forms, is combined with the objects involved to distingush a clash,
+	// therefore this implementation should not be too concerned with hash
+	// collisions. It should be concerned with sensitivity to very small changes
+	// however as these is what the fingerprint is intended to discriminate between.
+
+	size_t hash = 0;
+	std::hash<double> hasher;
+	for (auto& p : result.positions) {
+		hash ^= hasher(p.x) + HASH_GOLDEN_RATIO + (hash << 6) + (hash >> 2);
+		hash ^= hasher(p.y) + HASH_GOLDEN_RATIO + (hash << 6) + (hash >> 2);
+		hash ^= hasher(p.z) + HASH_GOLDEN_RATIO + (hash << 6) + (hash >> 2);
+	}
+	result.fingerprint = hash;
 }

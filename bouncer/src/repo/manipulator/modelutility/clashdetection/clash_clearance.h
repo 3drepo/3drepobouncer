@@ -57,7 +57,7 @@ namespace repo {
 
 					void run(const Graph& graphA, const Graph& graphB, const Graph& graphC) override;
 
-					void createClashReport(const OrderedPair& objects, const CompositeClash& clash, ClashDetectionResult& result) const;
+					void getClashPositions(const CompositeClash& clash, std::vector<repo::lib::RepoVector3D64>& positions) const override;
 
 				protected:
 					double tolerance;

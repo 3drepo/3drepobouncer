@@ -34,6 +34,7 @@
 
 using namespace repo::manipulator::modelutility;
 using namespace repo::manipulator::modelutility::clash;
+using namespace repo::lib;
 
 namespace {
 	struct CacheEntry
@@ -320,21 +321,8 @@ void Hard::run(const Graph& graphA, const Graph& graphB, const Graph& graphC)
 		t.join();
 }
 
-void Hard::createClashReport(const OrderedPair& objects,
-	const CompositeClash& clash, ClashDetectionResult& result) const
+void Hard::getClashPositions(const CompositeClash& clash, std::vector<RepoVector3D64>& positions) const
 {
-	result.idA = objects.a;
-	result.idB = objects.b;
-
 	auto h = static_cast<const HardClash&>(clash);
-	result.positions = h.contacts;
-
-	size_t hash = 0;
-	std::hash<double> hasher;
-	for (auto& p : result.positions) {
-		hash ^= hasher(p.x) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-		hash ^= hasher(p.y) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-		hash ^= hasher(p.z) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-	}
-	result.fingerprint = hash;
+	positions.insert(positions.end(), h.contacts.begin(), h.contacts.end());
 }
