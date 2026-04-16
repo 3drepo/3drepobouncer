@@ -2105,6 +2105,40 @@ TEST(Clash, NodeCache)
 	}
 }
 
+TEST(Clash, ClashExceptionsAreCaught)
+{
+	// Clash exceptions should be added to the report and the process should
+	// return success.
+	auto db = std::make_shared<MockDatabase>();
+
+	ClashGenerator clashGenerator;
+	clashGenerator.distance = 1;
+	clashGenerator.size1 = MESH_LIMIT * 2;
+	clashGenerator.size2 = MESH_LIMIT * 2;
+
+	ClashDetectionConfigHelper config;
+	config.type = ClashDetectionType::Clearance;
+	config.resultsFile = "clash_results.json";
+	config.tolerance = 1;
+	config.type = ClashDetectionType::Clearance;
+	MockClashScene scene(config.getRevision());
+	scene.add(clashGenerator.createTrianglesVF(
+		repo::lib::RepoBounds({repo::lib::RepoVector3D64(0, 0, 0)})),
+		config
+	);
+	db->setDocuments(scene.bsons);
+
+	ClashDetectionEngine engine(db);
+
+	try {
+		auto report = engine.runClashDetection(config);
+		EXPECT_THAT(report.errors.size(), Eq(1));
+		EXPECT_THAT(dynamic_cast<repo::manipulator::modelutility::clash::MeshBoundsException*>(report.errors[0].get()), NotNull());
+	}catch(...) {
+		FAIL() << "Clash detection threw an exception instead of catching it.";
+	}
+}
+
 TEST(Clash, ResultsSerialisation)
 {
 	RepoRandomGenerator random;

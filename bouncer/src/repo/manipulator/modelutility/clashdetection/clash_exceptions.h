@@ -30,7 +30,7 @@ namespace repo {
 		namespace modelutility {
 			namespace clash {
 
-				struct ClashDetectionException
+				struct ClashDetectionException : std::runtime_error
 				{
 					// For simplicitly, we'd like to pass the actual exception object which
 					// already has all the information to the report, however the thrown
@@ -42,6 +42,11 @@ namespace repo {
 					~ClashDetectionException() = default;
 
 					virtual std::string toJson() const = 0;
+
+					ClashDetectionException()
+					: std::runtime_error("ClashDetectionException")
+					{
+					}
 				};
 
 				struct ValidationException : public ClashDetectionException {
