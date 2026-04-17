@@ -272,24 +272,65 @@ MultipartOptimizer::MaterialPropMap MultipartOptimizer::getAllMaterials(
 	const std::string &collection,
 	const repo::lib::RepoUUID &revId)
 {
-	repo::core::handler::database::query::RepoQueryBuilder filter;
-	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));
-	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_MATERIAL)));
-
-	auto sceneCollection = collection + "." + REPO_COLLECTION_SCENE;
-	auto materialBsons = handler->findAllByCriteria(database, sceneCollection, filter);
-
 	MaterialPropMap matMap;
-	for (auto &materialBson : materialBsons) {
+	MaterialPropMap sharedIdToMaterialNodeMap;
 
-		// Create material node
-		auto matNode = std::make_shared<repo::core::model::MaterialNode>(materialBson);			
-				
-		// Go over the parents and add the pointer for each so that the map can be used to lookup
-		// the material for a given meshNode
-		auto parents = materialBson.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
-		for (auto parent : parents) {
-			matMap.insert({ parent, matNode });
+
+	{
+		repo::core::handler::database::query::RepoQueryBuilder filter;
+		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));
+		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_MATERIAL)));
+
+		auto sceneCollection = collection + "." + REPO_COLLECTION_SCENE;
+		auto materialBsons = handler->findAllByCriteria(database, sceneCollection, filter);
+
+
+		for (auto& materialBson : materialBsons) {
+
+			// Create material node
+			auto matNode = std::make_shared<repo::core::model::MaterialNode>(materialBson);
+
+			// Go over the parents and add the pointer for each so that the map can be used to lookup
+			// the material for a given meshNode
+			auto parents = materialBson.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
+			for (auto parent : parents) {
+				matMap.insert({parent, matNode});
+			}
+
+			sharedIdToMaterialNodeMap.insert({matNode->getSharedID(), matNode});
+		}
+	}
+
+	{
+		// Create filter for textures
+		repo::core::handler::database::query::RepoQueryBuilder filter;
+		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));
+		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_TEXTURE)));
+
+		std::vector<repo::lib::RepoUUID> texIds;
+
+		auto sceneCollection = collection + "." + REPO_COLLECTION_SCENE;
+		auto cursor = handler->findCursorByCriteria(database, sceneCollection, filter);
+
+		if (cursor) {
+			for (auto document : (*cursor)) {
+				auto bson = repo::core::model::RepoBSON(document);
+				auto parents = bson.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
+				for (auto parent : parents) {
+					auto it = sharedIdToMaterialNodeMap.find(parent);
+					if (it != sharedIdToMaterialNodeMap.end()) {
+						auto matNode = it->second;
+						matNode->texId = bson.getUUIDField(REPO_NODE_LABEL_ID); // Grouping is done by unique id
+					}
+					else
+					{
+						repoError << "getAllMaterials; found texture with id " << bson.getUUIDField(REPO_NODE_LABEL_ID).toString() << " with parent " << parent.toString() << " which does not have a material node.";
+					}
+				}
+			}
+		}
+		else {
+			repoWarning << "getAllTextureIds; getting cursor was not successful; no texture Ids in output vector";
 		}
 	}
 
@@ -386,14 +427,10 @@ MultipartOptimizer::ProcessingJob repo::manipulator::modeloptimizer::MultipartOp
 		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_GROUPING, grouping));
 	else
 		filter.append(repo::core::handler::database::query::Exists(REPO_NODE_MESH_LABEL_GROUPING, false));
-	if (isOpaque)
-		filter.append(repo::core::handler::database::query::Eq(REPO_FILTER_TAG_OPAQUE, true));
-	else
-		filter.append(repo::core::handler::database::query::Eq(REPO_FILTER_TAG_TRANSPARENT, true));
 	filter.append(repo::core::handler::database::query::Exists(REPO_FILTER_TAG_NORMALS, hasNormals));
 
 	// Create job
-	return ProcessingJob({ description, filter, {} });
+	return ProcessingJob({ description, filter, {}, isOpaque });
 }
 
 MultipartOptimizer::ProcessingJob repo::manipulator::modeloptimizer::MultipartOptimizer::createTexturedJob(
@@ -407,7 +444,6 @@ MultipartOptimizer::ProcessingJob repo::manipulator::modeloptimizer::MultipartOp
 	// Create filter
 	repo::core::handler::database::query::RepoQueryBuilder filter;
 	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));
-	filter.append(repo::core::handler::database::query::Eq(REPO_FILTER_TAG_TEXTURE_ID, texId));
 	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_PRIMITIVE, primitive));
 	if (!grouping.empty())
 		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_GROUPING, grouping));
@@ -416,7 +452,7 @@ MultipartOptimizer::ProcessingJob repo::manipulator::modeloptimizer::MultipartOp
 	filter.append(repo::core::handler::database::query::Exists(REPO_FILTER_TAG_NORMALS, hasNormals));
 
 	// Create job
-	return ProcessingJob({ description, filter, texId });
+	return ProcessingJob({ description, filter, texId, true });
 }
 
 void MultipartOptimizer::clusterAndSupermesh(
@@ -446,6 +482,28 @@ void MultipartOptimizer::clusterAndSupermesh(
 	std::vector<repo::core::model::StreamingMeshNode> nodes;
 	if (cursor) {
 		for (auto bson : (*cursor)) {
+
+			// Check materials using legacy method
+
+			auto sharedId = bson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);
+			auto materialIt = matPropMap.find(sharedId);
+			if (materialIt == matPropMap.end()) {
+				repoWarning << "clusterAndSupermesh; no material found for node " << sharedId.toString() << "; this should not happen; malformed file?";
+			}
+			else {
+				auto matNode = materialIt->second;
+
+				if (matNode->texId != job.texId) {
+					continue;
+				}
+
+				auto props = matNode->getMaterialStruct();
+				bool matIsOpaque = props.opacity >= 1.0f;
+				if (matIsOpaque != job.isOpaque) {
+					continue;
+				}
+			}
+
 			nodes.push_back(repo::core::model::StreamingMeshNode(bson));
 		}
 	}
