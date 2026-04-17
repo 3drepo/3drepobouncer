@@ -35,8 +35,7 @@ RUN cd /tmp && \
         curl -fsSLO "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" && \
         tar -xJf "node-v${NODE_VERSION}-linux-x64.tar.xz" -C /usr/local --strip-components=1 --no-same-owner && \
         rm "node-v${NODE_VERSION}-linux-x64.tar.xz" && \
-        corepack enable && \
-        corepack prepare yarn@1.22.22 --activate && \
+        npm install -g yarn@1.22.22 && \
         node --version && \
         yarn --version && \
         rm -rf /var/lib/apt/lists/*
