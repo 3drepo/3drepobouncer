@@ -63,6 +63,10 @@ namespace repo {
 				*/
 				~MaterialNode();
 
+				// This exists for 782 to allow processing mesh nodes without the
+				// materialProperties member.
+				repo::lib::RepoUUID texId;
+
 			protected:
 				void deserialise(RepoBSON&);
 				void serialise(repo::core::model::RepoBSONBuilder&) const;

@@ -74,7 +74,7 @@ BouncerHandler.runBouncerCommand = async (
 	return run(bouncerClientPath, cmdParams, { codesAsSuccess: BOUNCER_SOFT_FAILS, logLabel: { label: 'BOUNCER' } }, processInformation);
 };
 
-BouncerHandler.generateTreeStash = async (logDir, database, modelId, stashType, rev = 'all') => {
+BouncerHandler.generateStash = async (logDir, database, modelId, stashType, rev = 'all') => {
 	const cmd = [configPath, 'genStash', database, modelId, stashType, rev];
 	return BouncerHandler.runBouncerCommand(logDir, cmd);
 };
