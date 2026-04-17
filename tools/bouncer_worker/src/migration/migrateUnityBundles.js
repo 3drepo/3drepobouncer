@@ -88,10 +88,10 @@ async function findUnityBundleRevisions(teamspace) {
 
 			const repoBundles = db.collection(`${container}.stash.repobundles`);
 			for (const { _id } of allRevisions) {
-				const numRevisionRepoBundles = await repoBundles.countDocuments({ _id });
-				if (numRevisionRepoBundles === 0) {
-					// This revision does not have any repobundles, and must be
-					// upgraded.
+				const revision = await repoBundles.findOne({_id});
+				if (!revision || !revision.assets) {
+					// This revision does not have any repobundles, or it was a
+					// failed conversion, and must be upgraded.
 					revisions.push({
 						teamspace: name,
 						project: UUIDToString(project._id),
