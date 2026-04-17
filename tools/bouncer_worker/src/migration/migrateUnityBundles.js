@@ -86,12 +86,11 @@ async function findUnityBundleRevisions(teamspace) {
 				_id: 1,
 			}).toArray();
 
-			const repoBundles = db.collection(`${container}.stash.repobundles`);
+			const unityBundles = db.collection(`${container}.stash.unity3d`);
 			for (const { _id } of allRevisions) {
-				const revision = await repoBundles.findOne({ _id });
-				if (!revision || !revision.assets) {
-					// This revision does not have any repobundles, or it was a
-					// failed conversion, and must be upgraded.
+				const revision = await unityBundles.findOne({ _id });
+				if (revision) {
+					// Re-import all unity revisions
 					revisions.push({
 						teamspace: name,
 						project: UUIDToString(project._id),

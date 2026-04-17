@@ -621,6 +621,12 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 			if (transformMap.contains(parentId)) {
 				auto transform = transformMap.at(parentId);
 				sNode.bakeLoadedMeshes(transform);
+				
+				// The bounds from previous imports may be in a different space, so ensure 
+				// we use the final geometry positions for the metadata bounds (both mappings
+				// and supermeshing).
+
+				sNode.recalculateBounds();
 			}
 			else {
 				repoWarning << "createSuperMeshes; no transform found for this mesh node. Mesh will not be baked";
