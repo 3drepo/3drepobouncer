@@ -94,18 +94,15 @@ TEST(MultipartOptimizer, TestWithUV)
 	sceneBuilder.addNode(rootNode);
 	auto rootNodeId = rootNode.getSharedID();
 
-	// The new mpOpt drops geometry that has no material, so we add a texture node as well
-	auto texNode = repo::core::model::RepoBSONFactory::makeTextureNode("", 0, 0, 0, 0, { rootNodeId });
-	sceneBuilder.addNode(texNode);
-	auto texNodeId = texNode.getUniqueID();
+	repo::lib::repo_material_t textured;
+	repo::lib::repo_material_t nonTextured;
 
-	auto nMesh = 3;
-	
+	textured.texturePath = getDataPath("textures/102.png");
+
+	auto nMesh = 3;	
 	for (int i = 0; i < nMesh; ++i) {
 		auto randNode = createRandomMesh(10, i == 1, 3, "", { rootNodeId });
-		if (i == 1) {
-			randNode->setTextureId(texNodeId);
-		}
+		randNode->setMaterial(i == 1 ? textured : nonTextured);
 		sceneBuilder.addNode(std::move(randNode));
 	}
 
