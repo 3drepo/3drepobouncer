@@ -21,7 +21,7 @@ const { config, replaceSharedDirTag } = require('../lib/config');
 const { runBouncerCommand } = require('../tasks/bouncerClient');
 const { messageDecoder } = require('../lib/messageDecoder');
 const logger = require('../lib/logger');
-const { MSGTYPE_CLASH } = require('../constants/messageTypes');
+const { CLASH } = require('../constants/messageTypes');
 const Utils = require('../lib/utils');
 const ProcessMonitor = require('../lib/processMonitor');
 
@@ -53,7 +53,7 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		results: resultsFile,
 		teamspace,
 		project,
-		type: MSGTYPE_CLASH,
+		type: CLASH,
 	};
 
 	try {

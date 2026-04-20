@@ -34,7 +34,7 @@ namespace repo {
 
 					struct HardClash : public CompositeClash
 					{
-						std::vector< repo::lib::RepoVector3D64> contacts;
+						std::vector<repo::lib::RepoVector3D64> contacts;
 					};
 
 					void run(const Graph& graphA, const Graph& graphB, const Graph& graphC) override;

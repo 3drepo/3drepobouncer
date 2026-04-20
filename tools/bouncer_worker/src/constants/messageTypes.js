@@ -16,7 +16,7 @@
  */
 
 module.exports = {
-	MSGTYPE_CLASH: 'clash',
-	MSGTYPE_IMPORT: 'import',
-	MSGTYPE_DRAWING: 'drawing',
+	CLASH: 'clash',
+	IMPORT: 'import',
+	DRAWING: 'drawing',
 };

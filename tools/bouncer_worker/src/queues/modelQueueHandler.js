@@ -24,7 +24,7 @@ const { messageDecoder } = require('../lib/messageDecoder');
 const logger = require('../lib/logger');
 const processMonitor = require('../lib/processMonitor');
 const Utils = require('../lib/utils');
-const { MSGTYPE_IMPORT } = require('../constants/messageTypes');
+const { IMPORT } = require('../constants/messageTypes');
 
 const Handler = {};
 const logLabel = { label: 'MODELQ' };
@@ -52,7 +52,7 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		teamspace: database,
 		container: model,
 		user,
-		type: MSGTYPE_IMPORT,
+		type: IMPORT,
 	};
 
 	const ridString = rid.toString();
