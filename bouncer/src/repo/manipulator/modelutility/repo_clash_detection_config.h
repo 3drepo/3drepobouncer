@@ -29,6 +29,12 @@ namespace repo {
 			enum class ClashDetectionType
 			{
 				/*
+				* Default value primarily to indicate that no type was selected and there
+				* is probably a problem with the config.
+				*/
+				None = 0,
+
+				/*
 				* Finds the minimum distance between any two primitives of the composite
 				* objects in the sets. A clash is reported if the distance is less than
 				* the tolerance.
@@ -83,7 +89,7 @@ namespace repo {
 
 			REPO_API_EXPORT struct ClashDetectionConfig
 			{
-				ClashDetectionType type = ClashDetectionType::Clearance;
+				ClashDetectionType type = ClashDetectionType::None;
 
 				double tolerance = 0.0;
 
@@ -124,6 +130,15 @@ namespace repo {
 				* semantically identical containers.
 				*/
 				std::vector<std::unique_ptr<repo::lib::Container>> containers;
+
+				/*
+				* Checks the config for internal consistency, such as whether at least one
+				* clash test will be performed given the sets and settings. The clash engine
+				* should not fail if the config is invalid, however a config that fails
+				* validation may indicate a problem upstream. If the validation fails, an
+				* exception will be thrown with an error describing the problem.
+				*/
+				void validate() const;
 			};
 		}
 	}

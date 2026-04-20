@@ -19,7 +19,10 @@
 
 #include <repo/lib/repo_json_parser.h>
 
+#include <repo/lib/repo_exception.h>
+
 #include <fstream>
+#include <filesystem>
 
 using namespace repo::manipulator::modelutility;
 using namespace repo::manipulator::modelutility::json;
@@ -209,9 +212,40 @@ struct ClashConfigParser : public ObjectParser, public IContainerSet
 
 void ClashDetectionConfig::ParseJsonFile(const std::string& jsonFilePath, ClashDetectionConfig& config)
 {
+	config = {};
 	std::ifstream fileStream(jsonFilePath, std::ios::in | std::ios::binary);
 	std::ostringstream contentStream;
 	contentStream << fileStream.rdbuf();
 	auto content = contentStream.str();
-	ClashConfigParser::ParseJson(content.data(), config);
+	try{
+		ClashConfigParser::ParseJson(content.data(), config);
+	}
+	catch (const JsonParser::JsonParsingException& e) {
+		std::throw_with_nested(repo::lib::RepoInvalidConfigException("Failed to parse clash detection config"));
+	}
+}
+
+void ClashDetectionConfig::validate() const
+{
+	if (!setA.size() && !setB.size()) {
+		throw repo::lib::RepoInvalidConfigException("Set B and Set B are both empty. This config will not test for any clashes");
+	}
+
+	if (!setA.size() && setB.size() && !selfIntersectsB) {
+		throw repo::lib::RepoInvalidConfigException("Set A is empty and selfIntersectsB is false. This config will not test for any clashes");
+	}
+
+	if (setA.size() && !setB.size() && !selfIntersectsA) {
+		throw repo::lib::RepoInvalidConfigException("Set B is empty and selfIntersectsA is false. This config will not test for any clashes");
+	}
+
+	try {
+		std::filesystem::path p(resultsFile);
+		if (p.filename().empty() || p.filename() == "." || p.filename() == "..") {
+			throw repo::lib::RepoInvalidConfigException("Empty results file path");
+		}
+	}
+	catch (const std::filesystem::filesystem_error&) {
+		std::throw_with_nested(repo::lib::RepoInvalidConfigException("Invalid results file path"));
+	}
 }

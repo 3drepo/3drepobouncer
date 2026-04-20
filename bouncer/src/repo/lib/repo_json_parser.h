@@ -18,6 +18,7 @@
 #pragma once
 
 #include "repo/lib/rapidjson/reader.h"
+#include "repo/lib/rapidjson/error/en.h"
 
 #include <stack>
 #include <map>
@@ -68,19 +69,34 @@ namespace repo {
 
 				struct Parser
 				{
-					virtual void Null() {}
-					virtual void Bool(bool b) {}
-					virtual void Int(int i) {}
-					virtual void Uint(unsigned i) {}
-					virtual void Int64(int64_t i) {}
-					virtual void Uint64(uint64_t i) {}
-					virtual void Double(double d) {}
-					virtual void String(const std::string_view& string) {}
-					virtual void StartObject() {}
-					virtual Parser* Key(const std::string_view& key) { return nullptr; }
+					virtual void Null() { SetError("Null"); }
+					virtual void Bool(bool b) { SetError("Bool"); }
+					virtual void Int(int i) { SetError("Int"); }
+					virtual void Uint(unsigned i) { SetError("Unsigned Int"); }
+					virtual void Int64(int64_t i) { SetError("Int64"); }
+					virtual void Uint64(uint64_t i) { SetError("Unsigned Int64"); }
+					virtual void Double(double d) { SetError("Double"); }
+					virtual void String(const std::string_view& string) { SetError("String"); }
+					virtual void StartObject() { SetError("Object"); }
+					virtual Parser* Key(const std::string_view& key) { SetError("Key"); return nullptr; }
 					virtual void EndObject() {}
-					virtual Parser* StartArray() { return nullptr; }
+					virtual Parser* StartArray() { SetError("Array"); }
 					virtual void EndArray() {}
+
+					virtual std::string GetExpected() const {
+						return "Unknown";
+					}
+
+					virtual void SetError(std::string actual) {
+						error = "Json does not match expected schema - expected " + GetExpected() + " but found " + actual;
+					}
+
+					/*
+					* This is set to true by the default implementations, which will cause
+					* the handler to terminate in strict mode. Override all possibly expected
+					* tokens to avoid this being set.
+					*/
+					std::string error;
 				};
 
 				struct ObjectParser : public Parser
@@ -95,6 +111,13 @@ namespace repo {
 						else {
 							return nullptr;
 						}
+					}
+
+					virtual void StartObject() override {
+					}
+
+					virtual std::string GetExpected() const override {
+						return "Object";
 					}
 				};
 
@@ -111,6 +134,10 @@ namespace repo {
 
 					virtual Parser* StartArray() {
 						return elementParser;
+					}
+
+					virtual std::string GetExpected() const override {
+						return "Array";
 					}
 				};
 
@@ -142,6 +169,10 @@ namespace repo {
 					}
 
 					virtual void Number(T v) = 0;
+
+					virtual std::string GetExpected() const override {
+						return "Number";
+					}
 				};
 
 				template<typename T>
@@ -171,6 +202,10 @@ namespace repo {
 					virtual void String(const std::string_view& s) override {
 						v = s;
 					}
+
+					virtual std::string GetExpected() const override {
+						return "String";
+					}
 				};
 
 				// Reads an array as a RepoVector
@@ -196,6 +231,10 @@ namespace repo {
 							((double*)&vec)[i++] = d;
 						}
 					}
+
+					virtual std::string GetExpected() const override {
+						return "RepoVector in Array form";
+					}
 				};
 
 				struct BoundsParser : public ObjectParser
@@ -215,6 +254,10 @@ namespace repo {
 					void EndObject() override {
 						bounds = repo::lib::RepoBounds(min, max);
 					}
+
+					virtual std::string GetExpected() const override {
+						return "Bounds in Object Form";
+					}
 				};
 
 				struct RepoVariantParser : public Parser
@@ -232,6 +275,10 @@ namespace repo {
 					virtual void Uint64(uint64_t i) { *v = (int64_t)i; }
 					virtual void Double(double d) { *v = d; }
 					virtual void String(const std::string_view& string) { *v = std::string(string); }
+
+					virtual std::string GetExpected() const override {
+						return "Variant (one of Bool, Number or String)";
+					}
 				};
 
 				struct RepoUUIDParser : public Parser
@@ -245,6 +292,10 @@ namespace repo {
 
 					virtual void String(const std::string_view& string) override {
 						uuid = repo::lib::RepoUUID(std::string(string));
+					}
+
+					virtual std::string GetExpected() const override {
+						return "RepoUUID";
 					}
 				};
 
@@ -270,6 +321,10 @@ namespace repo {
 							matrix.getData()[i++] = d;
 						}
 					}
+
+					virtual std::string GetExpected() const override {
+						return "Matrix in Array Form";
+					}
 				};
 
 				struct ColourParser : public NumberParserBase<float>
@@ -293,6 +348,10 @@ namespace repo {
 							((float*)&colour)[i++] = d;
 						}
 					}
+
+					virtual std::string GetExpected() const override {
+						return "Colour in Array Form";
+					}
 				};
 
 				struct BoolParser : public Parser
@@ -302,8 +361,13 @@ namespace repo {
 						:v(v)
 					{
 					}
+
 					virtual void Bool(bool b) override {
 						v = b;
+					}
+
+					virtual std::string GetExpected() const override {
+						return "Boolean";
 					}
 				};
 
@@ -325,13 +389,13 @@ namespace repo {
 							stack.top()->StartObject();
 						}
 						stack.push(nullptr); // This one is to hold the Parsers for the objects' members. This should be updated after the call to Key before any values are read.
-						return true;
+						return checkTopParser();
 					}
 
 					bool Key(const Ch* str, rapidjson::SizeType length, bool copy) {
 						stack.pop();
 						stack.push(stack.top() ? stack.top()->Key(std::string_view(str, length)) : nullptr);
-						return true;
+						return checkTopParser();
 					}
 
 					bool EndObject(rapidjson::SizeType) {
@@ -339,12 +403,12 @@ namespace repo {
 						if (stack.top()) {
 							stack.top()->EndObject();
 						}
-						return true;
+						return checkTopParser();
 					}
 
 					bool StartArray() {
 						stack.push(stack.top() ? stack.top()->StartArray() : nullptr);
-						return true;
+						return checkTopParser();
 					}
 
 					bool EndArray(rapidjson::SizeType) {
@@ -352,59 +416,71 @@ namespace repo {
 						if (stack.top()) {
 							stack.top()->EndArray();
 						}
-						return true;
+						return checkTopParser();
 					}
 
 					bool String(const Ch* str, rapidjson::SizeType length, bool copy) {
 						if (stack.top()) {
 							stack.top()->String(std::string_view(str, length));
 						}
-						return true;
+						return checkTopParser();
 					}
 
 					bool Bool(bool b) {
 						if (stack.top()) {
 							stack.top()->Bool(b);
 						}
-						return true;
+						return checkTopParser();
 					}
 
 					bool Int(int v) {
 						if (stack.top()) {
 							stack.top()->Int(v);
 						}
-						return true;
+						return checkTopParser();
 					}
 
 					bool Uint(unsigned v) {
 						if (stack.top()) {
 							stack.top()->Uint(v);
 						}
-						return true;
+						return checkTopParser();
 					}
 
 					bool Int64(int64_t v) {
 						if (stack.top()) {
 							stack.top()->Int64(v);
 						}
-						return true;
+						return checkTopParser();
 					}
 
 					bool Uint64(uint64_t v) {
 						if (stack.top()) {
 							stack.top()->Uint64(v);
 						}
-						return true;
+						return checkTopParser();
 					}
 
 					bool Double(double v) {
 						if (stack.top()) {
 							stack.top()->Double(v);
 						}
-						return true;
+						return checkTopParser();
 					}
 
 					std::stack<Parser*> stack;
+
+					bool checkTopParser() {
+						if (stack.top() && stack.top()->error.size()) {
+							error = stack.top()->error;
+							return false; // Copy the error to return it
+						}
+						else {
+							return true;
+						}
+					}
+
+					std::string error;
 				};
 
 				struct JsonParser : public ObjectParser
@@ -415,8 +491,35 @@ namespace repo {
 						MyHandler jsonHandler;
 						jsonHandler.stack.push(parser);
 						rapidjson::Reader reader;
-						reader.Parse(ss, jsonHandler);
+						auto result = reader.Parse(ss, jsonHandler);
+						if(result != rapidjson::kParseErrorNone) {
+							throw JsonParsingException(result, jsonHandler);
+						}
 					}
+
+					/*
+					* Thrown when encountering a token that the current parser cannot handle.
+					* The way the SAX parser is designed, this covers both specification
+					* violations (e.g. invalid characters), and also schema violations (e.g.
+					* expecting a number but finding a string).
+					* 
+					* As the JsonParser is used in a number of locations, this is not a
+					* RepoException as we cannot say here if this is a config file, or a BIM
+					* file, etc - the caller should catch this and re-throw with the appropriate
+					* error code where necessary.
+					*/
+					struct REPO_API_EXPORT JsonParsingException : std::runtime_error
+					{
+						JsonParsingException(const rapidjson::ParseResult& result, const MyHandler& handlerError)
+							:std::runtime_error(
+								"JsonParser error: " +
+								(handlerError.error.size() ? handlerError.error : rapidjson::GetParseError_En(result.Code())) +
+								" at location " +
+								std::to_string(result.Offset())
+							)
+						{
+						}
+					};
 				};
 			}
 		}

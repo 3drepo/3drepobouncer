@@ -361,10 +361,7 @@ int32_t performClashDetection(
 	if (command.nArgcs > 1) {
 		clashConfig.resultsFile = command.args[1];
 	}
-	if (clashConfig.resultsFile.empty()) {
-		repoError << "Clash detection requires the resultsFile to be set in the config or passed as a command line argument - neither has been found.";
-		return REPOERR_INVALID_ARG;
-	}
+	clashConfig.validate(); // Will throw if the config is invalid.
 	controller->performClashDetection(token, clashConfig);
 	return REPOERR_OK;
 }

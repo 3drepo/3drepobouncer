@@ -359,7 +359,77 @@ TEST(Clash, Config)
 	EXPECT_THAT(config.selfIntersectsB, IsTrue());
 }
 
-TEST(Clash, EmptySets) 
+TEST(Clash, ConfigValidation)
+{
+	ClashDetectionConfig clashConfig;
+
+	// invalidConfig1 will not produce clashes because the only populated set has self-intersections off
+	ClashDetectionConfig::ParseJsonFile(getDataPath("/clash/invalidConfig1.json"), clashConfig); // Should not throw until we get to the validate step
+	try {
+		clashConfig.validate();
+		FAIL() << "Expected a RepoInvalidConfigException";
+	}
+	catch (const repo::lib::RepoInvalidConfigException& ex) {
+		EXPECT_THAT(ex.repoCode(), Eq(REPOERR_INVALID_CONFIG_FILE));
+	}
+
+	// invalidConfig2 has no results file path set
+	ClashDetectionConfig::ParseJsonFile(getDataPath("/clash/invalidConfig2.json"), clashConfig);
+	try {
+		clashConfig.validate();
+		FAIL() << "Expected a RepoInvalidConfigException";
+	}
+	catch (const repo::lib::RepoInvalidConfigException& ex) {
+		EXPECT_THAT(ex.repoCode(), Eq(REPOERR_INVALID_CONFIG_FILE));
+	}
+
+	// invalidConfig3 has both sets empty
+	ClashDetectionConfig::ParseJsonFile(getDataPath("/clash/invalidConfig3.json"), clashConfig);
+	try {
+		clashConfig.validate();
+		FAIL() << "Expected a RepoInvalidConfigException";
+	}
+	catch (const repo::lib::RepoInvalidConfigException& ex) {
+		EXPECT_THAT(ex.repoCode(), Eq(REPOERR_INVALID_CONFIG_FILE));
+	}
+}
+
+TEST(Clash, ConfigInvalidSchema)
+{
+	// The config schema should be interpreted strictly and any unexpected tokens
+	// should result in an exception. The exception should also be wrapped in a
+	// RepoException with the appropriate error code.
+
+	ClashDetectionConfig clashConfig;
+
+	// invalidSchema1 has an object where an array should be
+	try {
+		ClashDetectionConfig::ParseJsonFile(getDataPath("/clash/invalidSchema1.json"), clashConfig);
+		FAIL() << "Expected an InvalidConfigException";
+	}catch(const repo::lib::RepoException& ex) {
+		EXPECT_THAT(ex.repoCode(), Eq(REPOERR_INVALID_CONFIG_FILE));
+	}
+
+	// invalidSchema2 has a number where a string should be
+	try {
+		ClashDetectionConfig::ParseJsonFile(getDataPath("/clash/invalidSchema2.json"), clashConfig);
+		FAIL() << "Expected an InvalidConfigException";
+	}
+	catch (const repo::lib::RepoException& ex) {
+		EXPECT_THAT(ex.repoCode(), Eq(REPOERR_INVALID_CONFIG_FILE));
+	}
+
+	// invalidSchema3 set a's meshid is an object whereas it should be an array
+	try {
+		ClashDetectionConfig::ParseJsonFile(getDataPath("/clash/invalidSchema3.json"), clashConfig);
+		FAIL() << "Expected an InvalidConfigException";
+	}
+	catch (const repo::lib::RepoException& ex) {
+		EXPECT_THAT(ex.repoCode(), Eq(REPOERR_INVALID_CONFIG_FILE));
+	}
+}
+
+TEST(Clash, EmptySets)
 {
 	// If the sets are empty, the engine should do nothing, and it should not crash
 	// or leak.
@@ -1201,6 +1271,7 @@ TEST(Clash, OverlappingSets)
 
 	auto db = std::make_shared<MockDatabase>();
 	ClashDetectionConfigHelper config;
+	config.type = ClashDetectionType::Clearance;
 
 	auto box = test::utils::mesh::makeUnitCube();
 

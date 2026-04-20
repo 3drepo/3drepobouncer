@@ -47,6 +47,11 @@ namespace repo {
 			const std::string errMsg;
 		};
 
+		REPO_API_EXPORT class RepoInvalidConfigException : public RepoException {
+		public:
+			RepoInvalidConfigException(const std::string& msg);
+		};
+
 		REPO_API_EXPORT class RepoInvalidLicenseException : public RepoException {
 		public:
 			RepoInvalidLicenseException(const std::string& msg);

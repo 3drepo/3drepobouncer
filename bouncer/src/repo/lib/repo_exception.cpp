@@ -71,6 +71,12 @@ RepoBSONException::RepoBSONException(const std::string& msg)
 {
 }
 
+RepoInvalidConfigException::RepoInvalidConfigException(const std::string& msg)
+	: RepoException(msg)
+{
+	errorCode = REPOERR_INVALID_CONFIG_FILE;
+};
+
 RepoInvalidLicenseException::RepoInvalidLicenseException(const std::string& msg)
 	: RepoException(msg)
 {
