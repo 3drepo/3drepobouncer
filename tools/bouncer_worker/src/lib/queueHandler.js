@@ -23,6 +23,7 @@ const JobQHandler = require('../queues/jobQueueHandler');
 const ModelQHandler = require('../queues/modelQueueHandler');
 const DrawingQHandler = require('../queues/drawingQueueHandler');
 const ClashQHandler = require('../queues/clashQueueHandler');
+const queueLabel = require('../constants/queueLabels');
 
 let connClosed = false;
 let retry = 0;
@@ -30,13 +31,6 @@ let retry = 0;
 const logLabel = { label: 'AMQP' };
 
 const QueueHandler = {};
-
-const queueLabel = {
-	JOB: 'job',
-	MODEL: 'model',
-	DRAWING: 'drawing',
-	CLASH: 'clash',
-};
 
 const queueHandlers = {};
 if (rabbitmq.worker_queue) {
@@ -229,7 +223,5 @@ QueueHandler.runNTasks = async (queueType, nTasks) => {
 	}
 	connectToRabbitMQ(false, (conn) => executeTasks(conn, queueName, nTasks, handler.onMessageReceived));
 };
-
-QueueHandler.labels = queueLabel;
 
 module.exports = QueueHandler;

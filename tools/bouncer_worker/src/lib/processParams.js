@@ -17,9 +17,7 @@
 
 const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
-const QueueHandler = require('./queueHandler');
-
-const queueLabels = Object.values(QueueHandler.labels);
+const queueLabels = Object.values(require('../constants/queueLabels'));
 
 const parseParameters = () => {
 	const args = yargs(hideBin(process.argv));
