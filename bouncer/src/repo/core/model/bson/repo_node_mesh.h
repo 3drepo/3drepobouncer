@@ -234,7 +234,7 @@ namespace repo {
 				/**
 				* Retrieve a vector of faces from the bson object
 				*/
-				std::vector<repo::lib::repo_face_t> getFaces() const
+				const std::vector<repo::lib::repo_face_t>& getFaces() const
 				{
 					return faces;
 				}
@@ -322,7 +322,9 @@ namespace repo {
 				*/
 				void removeDuplicateVertices();
 
-				static void transformBoundingBox(repo::lib::RepoBounds& bounds, repo::lib::RepoMatrix matrix);
+				static void transformBoundingBox(repo::lib::RepoBounds& bounds, const repo::lib::RepoMatrix& matrix);
+
+				static void transformNormals(std::vector<repo::lib::RepoVector3D>& normals, const repo::lib::RepoMatrix& matrix);
 			};
 		} //namespace model
 	} //namespace core

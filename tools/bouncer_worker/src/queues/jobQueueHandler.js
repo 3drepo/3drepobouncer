@@ -15,10 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-const {
-	callbackQueueSpecified,
-	logDirExists,
-	sharedDirExists } = require('./common');
 const { ERRCODE_OK } = require('../constants/errorCodes');
 const { config } = require('../lib/config');
 const { runBouncerCommand } = require('../tasks/bouncerClient');
@@ -32,8 +28,8 @@ const logLabel = { label: 'JOBQ' };
 const createFed = async ({ database, model, cmdParams }, logDir) => {
 	const returnMessage = {
 		value: ERRCODE_OK,
-		database,
-		project: model,
+		teamspace: database,
+		container: model,
 	};
 	try {
 		returnMessage.value = await runBouncerCommand(logDir, cmdParams);
@@ -58,10 +54,6 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	const message = await createFed(cmdMsg, logDir);
 	callback(JSON.stringify(message));
 };
-
-Handler.validateConfiguration = (label) => callbackQueueSpecified(label)
-	&& logDirExists(label)
-	&& sharedDirExists(label);
 
 Handler.prefetchCount = config.rabbitmq.task_prefetch;
 

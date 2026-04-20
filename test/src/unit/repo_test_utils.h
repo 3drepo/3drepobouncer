@@ -86,6 +86,8 @@ namespace testing {
 		size_t numBinFiles,
 		size_t binFileSize = 1000);
 
+	repo::core::model::RepoBSON makeProjectSettings(const std::string& id);
+
 	// Returns a UUID that is a function of the random seed. If the seed is reset
 	// with resetRand(), the sequence will restart.
 	repo::lib::RepoUUID getRandUUID();

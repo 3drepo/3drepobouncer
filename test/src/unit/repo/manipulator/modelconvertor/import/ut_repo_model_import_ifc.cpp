@@ -28,6 +28,7 @@
 #include "../../../../repo_test_common_tests.h"
 
 using namespace repo::manipulator::modelconvertor;
+using namespace repo::lib;
 using namespace repo::core::model;
 using namespace testing;
 

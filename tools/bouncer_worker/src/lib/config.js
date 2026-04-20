@@ -31,6 +31,7 @@ const rabbitmq = object({
 	callback_queue: string().default('callbackq'),
 	model_queue: string().default('modelq'),
 	drawing_queue: string().default('drawingq'),
+	clash_queue: string().default('clashq'),
 	task_prefetch: number().default(4),
 	model_prefetch: number().default(1),
 	drawing_prefetch: number().default(1),
@@ -100,6 +101,18 @@ const schema = object({
 	elastic,
 });
 
+/* Throws if the directory doesn't exist or write access is not available */
+const checkDirectory = (directory) => {
+	if (!fs.existsSync(directory)) {
+		throw `Shared directory does not exist: ${directory}`;
+	}
+	try {
+		fs.accessSync(directory, fs.constants.R_OK);
+	} catch (err) {
+		throw `No read access to shared directory: ${directory}`;
+	}
+};
+
 // eslint-disable-next-line consistent-return
 const init = () => {
 	try {
@@ -111,8 +124,8 @@ const init = () => {
 
 		// Set the fallbacks for log file directories (all log directories are
 		// ultimately optional).
-		if (!config.taskLogDir) {
-			config.taskLogDir = config.rabbitmq.sharedDir;
+		if (!config.logging.taskLogDir) {
+			config.logging.taskLogDir = config.rabbitmq.sharedDir;
 		}
 
 		// Set the file creation permission mode mask (i.e. what permissions are
@@ -124,6 +137,11 @@ const init = () => {
 			process.umask(config.umask);
 		}
 
+		// Check that any defined paths exist and that we are running with
+		// sufficient privileges.
+		checkDirectory(config.rabbitmq.sharedDir);
+		checkDirectory(config.logging.taskLogDir);
+
 		Config.config = config;
 	} catch (err) {
 		// can't use logger -> circular dependency.
@@ -134,5 +152,7 @@ const init = () => {
 };
 
 init();
+
+Config.replaceSharedDirTag = (data) => data.replace('$SHARED_SPACE', Config.config.rabbitmq.sharedDir);
 
 module.exports = Config;

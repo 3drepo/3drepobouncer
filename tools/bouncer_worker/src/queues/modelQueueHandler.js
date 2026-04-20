@@ -16,10 +16,6 @@
  */
 
 const fs = require('fs');
-const {
-	callbackQueueSpecified,
-	logDirExists,
-	sharedDirExists } = require('./common');
 const { config } = require('../lib/config');
 const { runBouncerCommand } = require('../tasks/bouncerClient');
 const { ERRCODE_OK, ERRCODE_BOUNCER_CRASH, ERRCODE_REPO_LICENCE_INVALID } = require('../constants/errorCodes');
@@ -28,6 +24,7 @@ const { messageDecoder } = require('../lib/messageDecoder');
 const logger = require('../lib/logger');
 const processMonitor = require('../lib/processMonitor');
 const Utils = require('../lib/utils');
+const { IMPORT } = require('../constants/messageTypes');
 
 const Handler = {};
 const logLabel = { label: 'MODELQ' };
@@ -52,9 +49,10 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 
 	const returnMessage = {
 		value: ERRCODE_OK,
-		database,
-		project: model,
+		teamspace: database,
+		container: model,
 		user,
+		type: IMPORT,
 	};
 
 	const ridString = rid.toString();
@@ -93,10 +91,6 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		}
 	}
 };
-
-Handler.validateConfiguration = (label) => callbackQueueSpecified(label)
-	&& logDirExists(label)
-	&& sharedDirExists(label);
 
 Handler.prefetchCount = config.rabbitmq.model_prefetch;
 

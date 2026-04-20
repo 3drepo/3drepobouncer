@@ -604,10 +604,10 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 			repoInfo << "Constructing transformation #" << count;
 
 		//create a 4 by 4 vector
-		std::vector < std::vector<float> > transMat;
+		std::vector < std::vector<double> > transMat;
 
 		for (int i = 0; i < 4; i++) {
-			std::vector<float> rows;
+			std::vector<double> rows;
 			for (int j = 0; j < 4; j++) {
 				rows.push_back(assimpNode->mTransformation[i][j]);
 			}

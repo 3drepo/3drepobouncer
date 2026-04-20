@@ -5,12 +5,15 @@
 
 
 add_subdirectory(datastructure)
+add_subdirectory(hopscotch_map)
+add_subdirectory(rapidjson)
 set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_config.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_exception.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_license.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_property_tree.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_units.cpp
 	CACHE STRING "SOURCES" FORCE)
 
 set(HEADERS
@@ -19,9 +22,11 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/json_parser_write.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_config.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_exception.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_json_parser.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_license.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_property_tree.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_stack.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_units.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_utils.h
 	CACHE STRING "HEADERS" FORCE)
 
