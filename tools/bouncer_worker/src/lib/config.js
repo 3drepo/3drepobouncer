@@ -116,8 +116,6 @@ const init = () => {
 			config.taskLogDir = config.rabbitmq.sharedDir;
 		}
 
-		Config.replaceSharedDirTag = (data) => data.replace('$SHARED_SPACE', config.rabbitmq.sharedDir);
-
 		// Set the file creation permission mode mask (i.e. what permissions are
 		// *not* set) for any files created by this process or its descendents.
 		if (config.umask) {
@@ -137,5 +135,7 @@ const init = () => {
 };
 
 init();
+
+Config.replaceSharedDirTag = (data) => data.replace('$SHARED_SPACE', Config.config.rabbitmq.sharedDir);
 
 module.exports = Config;
