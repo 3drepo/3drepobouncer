@@ -52,7 +52,7 @@ Compilation (Windows)
 ------------
 Ensure Mongo CXX Driver, Boost and ASSIMP libraries are installed.
 
-The following instruction is for compiling a 64bit library using Visual Studio's tools. Change the pathing/cmake option appropriately if you are using another version of Visual Studio or compiling with a different compiler.
+The following instruction is for compiling a 64bit library using Visual Studio's tools. Change the pathing/cmake option appropriately if you are using a different compiler.
 
 In command line prompt:
 set the following environmental variables to the directories of your installations:
