@@ -192,15 +192,15 @@ repo::lib::RepoBounds GeometryCollector::Context::getBounds() const
 	return bounds;
 }
 
-std::vector<std::pair<repo::core::model::MeshNode, repo_material_t>> GeometryCollector::Context::extractMeshes(const repo::lib::RepoMatrix& m)
+std::vector<std::pair<repo::core::model::MeshNode, repo_material_t>> GeometryCollector::Context::extractMeshes(const repo::lib::RepoMatrix& matrix)
 {
 	std::vector<std::pair<repo::core::model::MeshNode, repo_material_t>> pairs;
 	for (auto& p : meshBuilders) {
 		std::vector<repo::core::model::MeshNode> meshes;
-		p.second->extractMeshes(meshes, m);
-		for (auto& m : meshes)
+		p.second->extractMeshes(meshes, matrix);
+		for (auto& mesh : meshes)
 		{
-			pairs.push_back({ m, p.second->getMaterial() });
+			pairs.push_back({ mesh, p.second->getMaterial() });
 		}
 	}
 	meshBuilders.clear();
