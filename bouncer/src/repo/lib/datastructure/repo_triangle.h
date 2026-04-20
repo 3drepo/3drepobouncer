@@ -64,7 +64,7 @@ namespace repo {
 
 			const repo::lib::_RepoVector3D<T>& operator[](size_t i) const
 			{
-				return reinterpret_cast<const repo::lib::_RepoVector3D<T>*>(this)[i];
+				return reinterpret_cast<const repo::lib::_RepoVector3D<T>*>(this)[i % 3];
 			}
 		};
 
