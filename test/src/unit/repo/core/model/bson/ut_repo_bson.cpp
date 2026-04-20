@@ -853,7 +853,7 @@ TEST(RepoBSONTest, GetVector3DField)
 	// RepoVectors are encoded by component names instead of indices
 
 	bsoncxx::builder::basic::document builder;
-	auto v = makeRepoVector();
+	auto v = makeRandomRepoVector();
 	builder.append(bsoncxx::builder::basic::kvp("vector", makeRepoVectorObj(v)));
 	RepoBSON bson(builder.extract());
 	EXPECT_THAT(bson.getVector3DField("vector"), Eq(v));
@@ -1351,7 +1351,7 @@ TEST(RepoBSONTest, EqualityOperator)
 	}
 
 	{
-		auto v = makeRepoVector();
+		auto v = makeRandomRepoVector();
 		RepoBSONBuilder _a;
 		_a.append("f1", v);
 		auto a = _a.obj();
@@ -1362,7 +1362,7 @@ TEST(RepoBSONTest, EqualityOperator)
 		EXPECT_THAT(a, Eq(b.obj()));
 
 		RepoBSONBuilder c;
-		c.append("f1", makeRepoVector());
+		c.append("f1", makeRandomRepoVector());
 		EXPECT_THAT(a, Not(Eq(c.obj())));
 
 		RepoBSONBuilder d;
@@ -1371,7 +1371,7 @@ TEST(RepoBSONTest, EqualityOperator)
 	}
 
 	{
-		auto v = makeRepoVectorObj(makeRepoVector()); // This tests with sub-documents
+		auto v = makeRepoVectorObj(makeRandomRepoVector()); // This tests with sub-documents
 		RepoBSONBuilder _a;
 		_a.append("f1", v);
 		auto a = _a.obj();
@@ -1382,7 +1382,7 @@ TEST(RepoBSONTest, EqualityOperator)
 		EXPECT_THAT(a, Eq(b.obj()));
 
 		RepoBSONBuilder c;
-		c.append("f1", makeRepoVectorObj(makeRepoVector()));
+		c.append("f1", makeRepoVectorObj(makeRandomRepoVector()));
 		EXPECT_THAT(a, Not(Eq(c.obj())));
 
 		RepoBSONBuilder d;
@@ -1400,7 +1400,7 @@ TEST(RepoBSONTest, EqualityOperator)
 			rand(),
 		});
 
-		auto v = makeRepoVectorObj(makeRepoVector()); // This tests with sub-documents
+		auto v = makeRepoVectorObj(makeRandomRepoVector()); // This tests with sub-documents
 		RepoBSONBuilder _a;
 		_a.appendArray("f1", arr);
 		auto a = _a.obj();

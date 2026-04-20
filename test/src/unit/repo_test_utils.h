@@ -77,7 +77,7 @@ namespace testing {
 
 	tm getRandomTm();
 
-	repo::lib::RepoVector3D makeRepoVector();
+	repo::lib::RepoVector3D makeRandomRepoVector();
 
 	std::vector<uint8_t> makeRandomBinary(size_t size = 1000);
 

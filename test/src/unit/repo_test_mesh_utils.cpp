@@ -535,7 +535,7 @@ repo::test::utils::mesh::mesh_data::mesh_data(
 
 	for (int i = 0; i < numVertices; i++)
 	{
-		vertices.push_back(makeRepoVector());
+		vertices.push_back(makeRandomRepoVector());
 		min = repo::lib::RepoVector3D::min(min, vertices[vertices.size() - 1]);
 		max = repo::lib::RepoVector3D::max(max, vertices[vertices.size() - 1]);
 	}

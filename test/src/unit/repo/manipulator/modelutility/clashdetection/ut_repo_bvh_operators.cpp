@@ -98,7 +98,7 @@ TEST(Bvh, Contacts)
 			// direction. If this is axis aligned, the bounds should approach the contact
 			// threshold as the triangles do.
 
-			clashGenerator.hyperplane = hyperplanes[clashGenerator.random.range(0, 2)];
+			clashGenerator.hyperplane = hyperplanes[clashGenerator.random.number(0, 2)];
 			
 			// Currently only the VV case uses the hyperplane paramter.
 

@@ -70,7 +70,7 @@ double RepoRandomGenerator::number(double upper)
 	return d(gen);
 }
 
-int64_t RepoRandomGenerator::range(int64_t lower, int64_t upper)
+int64_t RepoRandomGenerator::number(int64_t lower, int64_t upper)
 {
 	if (lower > upper) {
 		std::swap(lower, upper);

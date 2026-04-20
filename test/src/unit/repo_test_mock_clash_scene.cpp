@@ -226,7 +226,7 @@ void ClashGenerator::downcast(repo::lib::RepoTriangle& triangle)
 
 void ClashGenerator::shiftTriangles(repo::lib::RepoTriangle& b)
 {
-	for (int i = 0; i < random.range(0, 3); ++i) {
+	for (int i = 0; i < random.number(0, 3); ++i) {
 		auto t = b.a;
 		b.a = b.b;
 		b.b = b.c;
@@ -236,7 +236,7 @@ void ClashGenerator::shiftTriangles(repo::lib::RepoTriangle& b)
 
 void ClashGenerator::swapWindingOrder(repo::lib::RepoTriangle& triangle)
 {
-	switch (random.range(0, 2)) {
+	switch (random.number(0, 2)) {
 	case 0:
 		std::swap(triangle.a, triangle.b);
 		break;
@@ -489,7 +489,7 @@ TransformTriangles testing::ClashGenerator::createTrianglesTransformed(
 
 	auto u = distance.min() >= 0 ? 3 : 4;
 
-	switch (random.range(0, u)) {
+	switch (random.number(0, u)) {
 	case 0:
 		return createTrianglesVV(bounds);
 	case 1:
@@ -1007,7 +1007,7 @@ repo::lib::RepoBounds CellDistribution::getBounds(size_t cell) const
 repo::lib::RepoBounds CellDistribution::sample()
 {
 	while(true) {
-		auto cell = random.range(0, totalCells);
+		auto cell = random.number(0, totalCells);
 		if (used.find(cell) == used.end()) {
 			used.insert(cell);
 			return getBounds(cell);

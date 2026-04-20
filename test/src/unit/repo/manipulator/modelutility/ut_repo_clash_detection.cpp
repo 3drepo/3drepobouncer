@@ -463,15 +463,15 @@ TEST(Clash, Scheduler)
 
 	for (auto i = 0; i < 1000; i++) {
 		if (random.boolean()) {
-			int refs = random.range(1, 10);
+			int refs = random.number(1, 10);
 			for (auto r = 0; r < refs; r++) {
-				broadphaseResults.push_back({ i, random.range(0, 1000) });
+				broadphaseResults.push_back({ i, random.number(0, 1000) });
 			}
 		}
 		if (random.boolean()) {
-			int refs = random.range(1, 10);
+			int refs = random.number(1, 10);
 			for (auto r = 0; r < refs; r++) {
-				broadphaseResults.push_back({ random.range(0, 1000), i });
+				broadphaseResults.push_back({ random.number(0, 1000), i });
 			}
 		}
 	}

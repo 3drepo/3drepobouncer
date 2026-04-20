@@ -49,7 +49,7 @@ namespace testing {
 
 		double scalar();
 
-		int64_t range(int64_t lower, int64_t upper);
+		int64_t number(int64_t lower, int64_t upper);
 
 		double number(double range);
 
