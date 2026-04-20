@@ -151,7 +151,7 @@ TEST(Geometry, TrianglesUnitVE)
 TEST(Geometry, TrianglesUnitEE)
 {
 	// Tests that the triangle distance tests correctly identify triangles
-	// which are closest at an edge and a vertex.
+	// which are closest at their edges.
 
 	CellDistribution space;
 	ClashGenerator clashGenerator;
@@ -178,7 +178,7 @@ TEST(Geometry, TrianglesUnitEE)
 TEST(Geometry, TrianglesUnitVF)
 {
 	// Tests that the triangle distance tests correctly identify triangles
-	// which are closest at an edge and a vertex.
+	// which are closest at a vertex and a face.
 
 	CellDistribution space;
 	ClashGenerator clashGenerator;
@@ -204,11 +204,11 @@ TEST(Geometry, TrianglesUnitVF)
 
 TEST(Geometry, TrianglesUnitFE)
 {
-	// Tests that the triangle distance tests correctly identify triangles
-	// where the edge of one penetrates the face of another.
-	// Note that the distance in this case should always be zero - if a
-	// there is no intersection, then the closest points will be on an edge
-	// or a vertex, covered by the tests above.
+	// Tests that the triangle distance tests correctly identify triangles where the
+	// edge of one penetrates the face of another.
+	// Note that the distance in this case should always be zero - if there is no
+	// intersection, then the closest points will be on an edge or a vertex, covered
+	// by the tests above.
 
 	CellDistribution space;
 	ClashGenerator clashGenerator;
@@ -825,7 +825,7 @@ TEST(Geometry, RayTriangleIntersects)
 		}
 
 		{
-			// Two triangles with a shared ege, to test hitting the edge from inside and
+			// Two triangles with a shared edge, to test hitting the edge from inside and
 			// outside
 
 			auto pointOnA = random.barycentric(a);
