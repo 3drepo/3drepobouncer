@@ -69,7 +69,7 @@ void Traversal::operator()(const bvh::Bvh<double>& a, const bvh::Bvh<double>& b)
 
 void Traversal::operator()(const bvh::Bvh<double>& a) {
 	// The goal of an internal traversal is to find all pairs in a single tree
-	// that overlap eachother. The traversal operates on pairs of siblings.
+	// that overlap each other. The traversal operates on pairs of siblings.
 
 	if (a.node_count < 2) { // A single-node tree cannot have internal overlaps.
 		return;
@@ -88,7 +88,7 @@ void Traversal::operator()(const bvh::Bvh<double>& a) {
 		auto& right = a.nodes[idxRight];
 
 		// When we first reach a branch node, we need to tell the traversal to check
-		// its children against eachother. However, we don't want this to happen
+		// its children against each other. However, we don't want this to happen
 		// multiple times, if the node is encountered again, say because it intersects
 		// with a set of leaf nodes.
 
