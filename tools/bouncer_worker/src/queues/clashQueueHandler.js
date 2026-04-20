@@ -22,6 +22,8 @@ const { runBouncerCommand } = require('../tasks/bouncerClient');
 const { messageDecoder } = require('../lib/messageDecoder');
 const logger = require('../lib/logger');
 const { MSGTYPE_CLASH } = require('../constants/messageTypes');
+const Utils = require('../lib/utils');
+const ProcessMonitor = require('../lib/processMonitor');
 
 const Handler = {};
 
@@ -55,7 +57,22 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	};
 
 	try {
-		returnMessage.value = await runBouncerCommand(logDir, [...cmdParams, 'clash', replaceSharedDirTag(configFile), replaceSharedDirTag(resultsFile)]);
+		const processInformation = Utils.gatherProcessInformation(
+			'', // headless clashes have no owner
+			project,
+			teamspace,
+			logLabel.label, // queue
+			config.repoLicense,
+			rid.toString(),
+		);
+
+		returnMessage.value = await runBouncerCommand(
+			logDir,
+			[...cmdParams, 'clash', replaceSharedDirTag(configFile), replaceSharedDirTag(resultsFile)],
+			processInformation,
+		);
+
+		await ProcessMonitor.sendReport(rid.toString());
 	} catch (err) {
 		logger.error(`Error running clash detection: ${err.message || err}`, logLabel);
 		returnMessage.value = err;
