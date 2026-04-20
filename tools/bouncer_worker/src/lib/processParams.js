@@ -17,6 +17,9 @@
 
 const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
+const QueueHandler = require('./queueHandler');
+
+const queueLabels = Object.values(QueueHandler.labels);
 
 const parseParameters = () => {
 	const args = yargs(hideBin(process.argv));
@@ -27,8 +30,8 @@ const parseParameters = () => {
 		describe: 'exit upon finishing the defined amount of tasks. Queue must also specified.',
 		number: true,
 	}).option('queue', {
-		describe: 'specify which queue to run on [job|model|drawing|clash]',
-		choice: ['job', 'model', 'drawing', 'clash'],
+		describe: `specify which queue to run on [${queueLabels.join('|')}]`,
+		choice: queueLabels,
 		string: true,
 	}).help().argv;
 };

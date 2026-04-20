@@ -233,4 +233,6 @@ QueueHandler.runNTasks = async (queueType, nTasks) => {
 	connectToRabbitMQ(false, (conn) => executeTasks(conn, queueName, nTasks, handler.onMessageReceived));
 };
 
+QueueHandler.labels = queueLabel;
+
 module.exports = QueueHandler;
