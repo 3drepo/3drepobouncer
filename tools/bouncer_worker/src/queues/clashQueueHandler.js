@@ -16,10 +16,6 @@
  */
 
 const path = require('path');
-const {
-	callbackQueueSpecified,
-	logDirExists,
-	sharedDirExists } = require('./common');
 const { ERRCODE_OK } = require('../constants/errorCodes');
 const { config, replaceSharedDirTag } = require('../lib/config');
 const { runBouncerCommand } = require('../tasks/bouncerClient');
@@ -68,10 +64,6 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 
 	callback(JSON.stringify(returnMessage));
 };
-
-Handler.validateConfiguration = (label) => callbackQueueSpecified(label)
-	&& logDirExists(label)
-	&& sharedDirExists(label);
 
 Handler.prefetchCount = config.rabbitmq.task_prefetch;
 

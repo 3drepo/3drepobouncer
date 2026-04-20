@@ -109,9 +109,6 @@ const establishChannel = async (conn, queueNames) => {
 	channel.assertQueue(rabbitmq.callback_queue, { durable: true });
 	queueNames.forEach((queueName) => {
 		const handler = queueHandlers[queueName];
-		if (!handler.validateConfiguration(logLabel)) {
-			exitApplication();
-		}
 		listenToQueue(channel, queueName, handler.prefetchCount, handler.onMessageReceived);
 	});
 };

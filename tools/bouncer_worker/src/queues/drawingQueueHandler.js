@@ -16,10 +16,6 @@
  */
 
 const Path = require('path');
-const {
-	callbackQueueSpecified,
-	logDirExists,
-	sharedDirExists } = require('./common');
 const { config } = require('../lib/config');
 const { runBouncerCommand } = require('../tasks/bouncerClient');
 const { generateSVG } = require('../tasks/imageProcessing');
@@ -103,10 +99,6 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		}
 	}
 };
-
-Handler.validateConfiguration = (label) => callbackQueueSpecified(label)
-	&& logDirExists(label)
-	&& sharedDirExists(label);
 
 Handler.prefetchCount = config.rabbitmq.drawing_prefetch;
 
