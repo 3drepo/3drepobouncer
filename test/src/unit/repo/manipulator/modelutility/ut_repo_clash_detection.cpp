@@ -1145,7 +1145,7 @@ TEST(Clash, Fingerprinting)
 
 		// Fingerprints should not be empty for real clashes
 
-		EXPECT_THAT(run1.clashes[0].fingerprint, Not(Eq(0)));
+		EXPECT_THAT(run1.clashes[0].fingerprint, Ne(0));
 
 		// Running the clash with the same primitives should result in the same
 		// fingerprints, even though by calling the runClearancePipeline helper
@@ -1162,7 +1162,7 @@ TEST(Clash, Fingerprinting)
 
 		auto run3 = pipeline.run({ p });
 
-		EXPECT_THAT(run1.clashes[0].fingerprint, Not(Eq(run3.clashes[0].fingerprint)));
+		EXPECT_THAT(run1.clashes[0].fingerprint, Ne(run3.clashes[0].fingerprint));
 
 		// We don't care too much about fingerprints being unique - as they
 		// should be evaluated in the context of the ids as well.
@@ -1185,14 +1185,14 @@ TEST(Clash, Fingerprinting)
 
 		EXPECT_THAT(run1.clashes.size(), Eq(1));
 
-		EXPECT_THAT(run1.clashes[0].fingerprint, Not(Eq(0)));
+		EXPECT_THAT(run1.clashes[0].fingerprint, Ne(0));
 		EXPECT_THAT(run1.clashes[0].fingerprint, Eq(run2.clashes[0].fingerprint));
 
 		p.a.m = repo::lib::RepoMatrix::translate(repo::lib::RepoVector3D64(1, 0, 0)) * p.a.m;
 
 		auto run3 = pipeline.run({ p });
 
-		EXPECT_THAT(run1.clashes[0].fingerprint, Not(Eq(run3.clashes[0].fingerprint)));
+		EXPECT_THAT(run1.clashes[0].fingerprint, Ne(run3.clashes[0].fingerprint));
 	}
 }
 
