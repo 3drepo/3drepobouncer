@@ -181,7 +181,7 @@ namespace repo {
 						}
 
 						/*
-						* Turns the mesh_data entries into a set of MeshNodes, each paried with a
+						* Turns the mesh_data entries into a set of MeshNodes, each paired with a
 						* material. The matrix m is applied to each vertex before the mesh node is
 						* constructed.
 						*/
