@@ -17,8 +17,6 @@
 
 #include "clash_pipelines_utils.h"
 
-#include <repo/lib/hopscotch_map/bhopscotch_map.h>
-
 using namespace repo::manipulator::modelutility::clash;
 
 void PipelineUtils::loadGeometry(
