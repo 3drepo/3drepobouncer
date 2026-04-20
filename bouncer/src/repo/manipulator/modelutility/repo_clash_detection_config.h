@@ -138,7 +138,7 @@ namespace repo {
 				* validation may indicate a problem upstream. If the validation fails, an
 				* exception will be thrown with an error describing the problem.
 				*/
-				void validate() const;
+				REPO_API_EXPORT void validate() const;
 			};
 		}
 	}
