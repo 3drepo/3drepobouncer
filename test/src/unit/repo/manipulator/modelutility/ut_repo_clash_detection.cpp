@@ -1267,7 +1267,7 @@ TEST(Clash, OverlappingSets)
 	// If a CompositeId is present in both sets, then those Ids should be tested
 	// against both sets, and within themselves as well.
 
-	// Creates four boxes all within the tolerance of eachother.
+	// Creates four boxes all within the tolerance of each other.
 
 	auto db = std::make_shared<MockDatabase>();
 	ClashDetectionConfigHelper config;
