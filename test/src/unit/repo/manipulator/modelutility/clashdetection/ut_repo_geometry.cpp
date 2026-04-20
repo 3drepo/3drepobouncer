@@ -359,7 +359,6 @@ TEST(Geometry, Orient3D)
 
 			auto d = n + a;
 
-			//auto r = geometry::orient(a, b, c, d);
 			predicates::exactinit();
 			auto r = predicates::orient3d((double*)&a, (double*)&b, (double*)&c, (double*)&d);
 			EXPECT_THAT(r <= 0, IsTrue());
