@@ -25,14 +25,6 @@ namespace repo {
 	namespace manipulator {
 		namespace modelutility {
 			namespace clash {
-
-				struct Pair
-				{
-					// This struct will hold the results of the clash detection.
-					// It can be extended with more fields as needed.
-					std::vector<repo::lib::RepoUUID> clashes;
-				};
-
 				class Clearance : public Pipeline
 				{
 				public:
