@@ -15,6 +15,8 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#pragma once
+
 #include "repo/lib/datastructure/repo_vector.h"
 #include "repo/lib/datastructure/repo_line.h"
 #include "repo/lib/datastructure/repo_triangle.h"
