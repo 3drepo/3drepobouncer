@@ -107,6 +107,7 @@ const checkDirectory = (directory) => {
 		throw `Shared directory does not exist: ${directory}`;
 	}
 	try {
+		// eslint-disable-next-line no-bitwise
 		fs.accessSync(directory, fs.constants.R_OK | fs.constants.W_OK);
 	} catch (err) {
 		throw `No read access to shared directory: ${directory}`;
