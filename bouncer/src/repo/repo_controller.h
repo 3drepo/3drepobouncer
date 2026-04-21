@@ -285,9 +285,15 @@ namespace repo {
 			const std::string &filePath,
 			const char        &delimiter = ',');
 
+		/*
+		* Perform clash detection and write the results to the file specified in the
+		* config. If the clash fails with a runtime error, the error will be written
+		* into the results file. The only other failure mode is a process error, which
+		* will be in the form of an exception thrown by this function.
+		*/
 		void performClashDetection(
 			const RepoToken* token,
-			const repo::manipulator::modelutility::ClashDetectionConfig& configFilePath);
+			const repo::manipulator::modelutility::ClashDetectionConfig& config);
 
 		/*
 		*	------------- Optimizations --------------
