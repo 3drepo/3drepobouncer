@@ -228,7 +228,7 @@ void ClashDetectionConfig::ParseJsonFile(const std::string& jsonFilePath, ClashD
 void ClashDetectionConfig::validate() const
 {
 	if (!setA.size() && !setB.size()) {
-		throw repo::lib::RepoInvalidConfigException("Set B and Set B are both empty. This config will not test for any clashes");
+		throw repo::lib::RepoInvalidConfigException("Set A and Set B are both empty. This config will not test for any clashes");
 	}
 
 	if (!setA.size() && setB.size() && !selfIntersectsB) {
