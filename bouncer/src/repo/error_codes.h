@@ -97,3 +97,7 @@
 #define REPOERR_FILE_IFC_UNSUPPORTED_SCHEMA 39
 //The specified view was found, but it is not a 3D view
 #define REPOERR_VIEW_NOT_3D 40
+//A repo ref for a file was requested but could not be found in the .ref collection
+//This can occur during multi-threaded operations with insertMany where the document
+//is already committed before the file is written into the file store
+#define REPOERR_FILE_REF_MISSING 41

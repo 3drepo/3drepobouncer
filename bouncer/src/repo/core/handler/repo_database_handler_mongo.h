@@ -45,6 +45,7 @@ namespace repo {
 				class FileManager;
 			}
 
+			// This class is considered thread-safe.
 			class MongoDatabaseHandler : public AbstractDatabaseHandler {
 				enum class OPERATION { DROP, INSERT, UPDATE };
 
@@ -173,8 +174,9 @@ namespace repo {
 				* @param name name of the collection
 				* @param index BSONObj specifying the index
 				* @param bool whether this is a sparse index
+				* @param suppressInfo flag whether the creation of the index should be announced on the command line. Used to accelerate soak tests.
 				*/
-				virtual void createIndex(const std::string& database, const std::string& collection, const database::index::RepoIndex& index, bool sparse);
+				virtual void createIndex(const std::string& database, const std::string& collection, const database::index::RepoIndex& index, bool sparse, bool suppressInfo = false);
 
 				/**
 				* Remove a collection from the database
@@ -363,8 +365,6 @@ namespace repo {
 				std::unique_ptr<database::BulkWriteContext> getBulkWriteContext(
 					const std::string& database,
 					const std::string& collection);
-
-				void setFileManager(std::shared_ptr<repo::core::handler::fileservice::FileManager> manager);
 
 				std::shared_ptr<repo::core::handler::fileservice::FileManager> getFileManager();
 

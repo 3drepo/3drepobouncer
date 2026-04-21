@@ -46,14 +46,14 @@ namespace repo {
 					class REPO_API_EXPORT Eq
 					{
 					public:
-						Eq(std::string field, std::vector<repo::lib::RepoVariant> oneOf) :
+						Eq(std::string field, const std::vector<repo::lib::RepoVariant>& oneOf) :
 							field(field),
 							values(oneOf)
 						{
 						}
 
 						template<typename T>
-						Eq(std::string field, std::vector<T> oneOf) :
+						Eq(std::string field, const std::vector<T>& oneOf) :
 							field(field)
 						{
 							for (auto& v : oneOf) {
@@ -62,7 +62,25 @@ namespace repo {
 						}
 
 						template<typename T>
-						Eq(const char* field, std::vector<T> oneOf) :
+						Eq(std::string field, const std::set<T>& oneOf) :
+							field(field)
+						{
+							for (auto& v : oneOf) {
+								values.push_back(v);
+							}
+						}
+
+						template<typename T>
+						Eq(const char* field, const std::vector<T>& oneOf) :
+							field(field)
+						{
+							for (auto& v : oneOf) {
+								values.push_back(v);
+							}
+						}
+
+						template<typename T>
+						Eq(const char* field, const std::set<T>& oneOf) :
 							field(field)
 						{
 							for (auto& v : oneOf) {

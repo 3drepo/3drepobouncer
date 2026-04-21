@@ -1,0 +1,145 @@
+/**
+*  Copyright (C) 2025 3D Repo Ltd
+*
+*  This program is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU Affero General Public License as
+*  published by the Free Software Foundation, either version 3 of the
+*  License, or (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU Affero General Public License for more details.
+*
+*  You should have received a copy of the GNU Affero General Public License
+*  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+
+#include <repo/repo_bouncer_global.h>
+#include <repo/lib/datastructure/repo_uuid.h>
+#include <repo/lib/datastructure/repo_container.h>
+#include <vector>
+#include <memory>
+
+namespace repo {
+	namespace manipulator {
+		namespace modelutility {
+			enum class ClashDetectionType
+			{
+				/*
+				* Default value primarily to indicate that no type was selected and there
+				* is probably a problem with the config.
+				*/
+				None = 0,
+
+				/*
+				* Finds the minimum distance between any two primitives of the composite
+				* objects in the sets. A clash is reported if the distance is less than
+				* the tolerance.
+				*/
+				Clearance = 1,
+
+				/*
+				* Finds an intersection between any two primitives of the composite objects
+				* objects in the sets. A clash is reported if the penetration depth of the
+				* whole objects is greater than the tolerance.
+				*/
+				Hard = 2,
+			};
+
+			/*
+			* A selection of MeshNodes that when transformed into project space are
+			* considered as a single object for the purposes of clash detection.
+			*
+			* How MeshNodes are arranged into Composites will affect the estimated
+			* penetration depth, if any.
+			*
+			* In most cases, a CompositeObject will be the TransformationNode above
+			* one or more MeshNodes, but it can be far more complex than that.
+			*/
+
+			struct MeshReference
+			{
+				repo::lib::Container* container;
+				repo::lib::RepoUUID uniqueId;
+
+				MeshReference(repo::lib::Container* container, const repo::lib::RepoUUID& uniqueId)
+					:container(container),
+					uniqueId(uniqueId)
+				{
+				}
+			};
+
+			struct CompositeObject
+			{
+				/*
+				* Unique identifier of this Composite Object for correlation purposes.
+				*/
+				std::string id;
+
+				/*
+				* Composite objects are made up of MeshNode instances. Each MeshNode
+				* is transformed into project space before clash detection is performed.
+				* MeshNodes can be from different Containers.
+				*/
+				std::vector<MeshReference> meshes;
+			};
+
+			REPO_API_EXPORT struct ClashDetectionConfig
+			{
+				ClashDetectionType type = ClashDetectionType::None;
+
+				double tolerance = 0.0;
+
+				int numThreads = 0;
+
+				/*
+				* Each clash test will compare all objects in set A against all objects in
+				* set B. All Objects will be compared in Project Coordinates. The sets must
+				* be distinct - if purely self-intersection is required, use the self-
+				* intersects flags and leave one set empty.
+				*/
+				std::vector<CompositeObject> setA;
+				std::vector<CompositeObject> setB;
+
+				/*
+				* When self-intersects is true, the same tests that are run between setA and
+				* setB will also be run within members of that set. Composite Objects will
+				* not be compared with themselves, however they will be compared to all
+				* others in their set.
+				*/
+
+				bool selfIntersectsA = false;
+				bool selfIntersectsB = false;
+
+				/*
+				* Where to write the results of clash detection. This should be a fully
+				* qualified (.json) file name.
+				*/
+				std::string resultsFile;
+
+				REPO_API_EXPORT static void ParseJsonFile(const std::string& jsonFilePath, ClashDetectionConfig& config);
+
+				/*
+				* Containers which hold the meshes referenced by the composite objects. This
+				* vector exists to store the container info which is referenced by the meshes.
+				* This is a convenience, and implementation detail only: references may point
+				* to containers outside of this. There may also be multiple entries to
+				* semantically identical containers.
+				*/
+				std::vector<std::unique_ptr<repo::lib::Container>> containers;
+
+				/*
+				* Checks the config for internal consistency, such as whether at least one
+				* clash test will be performed given the sets and settings. The clash engine
+				* should not fail if the config is invalid, however a config that fails
+				* validation may indicate a problem upstream. If the validation fails, an
+				* exception will be thrown with an error describing the problem.
+				*/
+				REPO_API_EXPORT void validate() const;
+			};
+		}
+	}
+}

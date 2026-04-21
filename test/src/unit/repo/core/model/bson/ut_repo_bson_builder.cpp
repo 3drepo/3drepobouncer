@@ -204,7 +204,7 @@ TEST(RepoBSONBuilderTest, AppendRepoVectorObject)
 	// Tests where the builder can assemble a Vector Object (i.e. a document with
 	// x, y, z as field names instead of array indices).
 
-	repo::lib::RepoVector3D vector = makeRepoVector();
+	repo::lib::RepoVector3D vector = makeRandomRepoVector();
 	RepoBSONBuilder builder;
 	builder.appendVector3DObject("vector", vector);
 	RepoBSON bson = builder.obj();

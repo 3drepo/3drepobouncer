@@ -19,10 +19,10 @@
 
 #define RAPIDJSON_HAS_STDSTRING 1
 
-#include "repo/manipulator/modelutility/rapidjson/rapidjson.h"
-#include "repo/manipulator/modelutility/rapidjson/document.h"
-#include "repo/manipulator/modelutility/rapidjson/writer.h"
-#include "repo/manipulator/modelutility/rapidjson/stringbuffer.h"
+#include "repo/lib/rapidjson/rapidjson.h"
+#include "repo/lib/rapidjson/document.h"
+#include "repo/lib/rapidjson/writer.h"
+#include "repo/lib/rapidjson/stringbuffer.h"
 #include "repo/core/handler/database/repo_query.h"
 #include "repo/core/model/bson/repo_bson.h"
 

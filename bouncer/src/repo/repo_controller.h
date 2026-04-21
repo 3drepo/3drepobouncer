@@ -35,6 +35,7 @@
 #include "lib/datastructure/repo_structs.h"
 #include "lib/repo_config.h"
 #include "manipulator/modelconvertor/import/repo_model_import_config.h"
+#include <repo/manipulator/modelutility/repo_clash_detection_config_fwd.h>
 #include "repo_bouncer_global.h"
 #include <repo_log.h>
 
@@ -283,6 +284,16 @@ namespace repo {
 		repo::core::model::RepoNodeSet loadMetadataFromFile(
 			const std::string &filePath,
 			const char        &delimiter = ',');
+
+		/*
+		* Perform clash detection and write the results to the file specified in the
+		* config. If the clash fails with a runtime error, the error will be written
+		* into the results file. The only other failure mode is a process error, which
+		* will be in the form of an exception thrown by this function.
+		*/
+		void performClashDetection(
+			const RepoToken* token,
+			const repo::manipulator::modelutility::ClashDetectionConfig& config);
 
 		/*
 		*	------------- Optimizations --------------

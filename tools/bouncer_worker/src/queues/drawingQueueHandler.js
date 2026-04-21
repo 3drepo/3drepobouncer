@@ -16,10 +16,6 @@
  */
 
 const Path = require('path');
-const {
-	callbackQueueSpecified,
-	logDirExists,
-	sharedDirExists } = require('./common');
 const { config } = require('../lib/config');
 const { runBouncerCommand } = require('../tasks/bouncerClient');
 const { generateSVG } = require('../tasks/imageProcessing');
@@ -29,6 +25,7 @@ const { messageDecoder } = require('../lib/messageDecoder');
 const logger = require('../lib/logger');
 const processMonitor = require('../lib/processMonitor');
 const Utils = require('../lib/utils');
+const { DRAWING } = require('../constants/messageTypes');
 
 const Handler = {};
 const logLabel = { label: 'DRAWINGQ' };
@@ -68,9 +65,10 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 
 	const returnMessage = {
 		value: ERRCODE_OK,
-		database,
-		project: model,
+		teamspace: database,
+		container: model,
 		user,
+		type: DRAWING,
 	};
 
 	try {
@@ -101,10 +99,6 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		}
 	}
 };
-
-Handler.validateConfiguration = (label) => callbackQueueSpecified(label)
-	&& logDirExists(label)
-	&& sharedDirExists(label);
 
 Handler.prefetchCount = config.rabbitmq.drawing_prefetch;
 
