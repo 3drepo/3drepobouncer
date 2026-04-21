@@ -457,7 +457,7 @@ TEST(Clash, Scheduler)
 	// indices to test its correctness, and also that it doesn't dereference (it
 	// shouldn't), because attempting to will result in an access violation.
 
-	std::vector<std::pair<size_t, size_t>> broadphaseResults;
+	std::vector<std::pair<std::uintptr_t, std::uintptr_t>> broadphaseResults;
 
 	RepoRandomGenerator random;
 
