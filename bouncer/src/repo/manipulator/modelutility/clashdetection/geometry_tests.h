@@ -24,6 +24,8 @@
 #include "repo/lib/datastructure/repo_structs.h"
 #include "geometry_exceptions.h"
 #include <algorithm>
+#include <stdexcept>
+#include <string>
 
 namespace geometry {
 
