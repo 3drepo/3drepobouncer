@@ -251,13 +251,11 @@ bool SceneManager::generateWebViewBuffers(
 			return false;
 		}
 
-		repo::manipulator::modeloptimizer::MultipartOptimizer mpOpt;
-		return mpOpt.processScene(
+		repo::manipulator::modeloptimizer::MultipartOptimizer mpOpt(handler, exporter.get());
+		mpOpt.processScene(
 			scene->getDatabaseName(),
 			scene->getProjectName(),
-			scene->getRevisionID(),
-			handler,
-			exporter.get() 
+			scene->getRevisionID()
 		);
 	}
 	else

@@ -36,8 +36,6 @@ TEST(MeshMapReorganiser, VeryLargeMesh)
 {
 	// This snippet creates a Supermesh using the Multipart Optimizer
 
-	auto opt = MultipartOptimizer();
-
 	auto handler = getHandler();
 	std::string database = DBMESHMAPREORGANISERTEST;
 	std::string projectName = "VeryLargeMesh";
@@ -55,15 +53,13 @@ TEST(MeshMapReorganiser, VeryLargeMesh)
 
 	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
 
-	bool result = opt.processScene(
+	MultipartOptimizer opt(handler.get(), mockExporter.get());
+
+	opt.processScene(
 		database,
 		projectName,
-		revId,
-		handler.get(),
-		mockExporter.get()
+		revId
 	);
-
-	EXPECT_TRUE(result);
 
 	EXPECT_TRUE(mockExporter->isFinalised());
 
@@ -119,8 +115,6 @@ TEST(MeshMapReorganiser, MultipleTinyMeshes)
 {
 	// This snippet creates a Supermesh using the Multipart Optimizer
 
-	auto opt = MultipartOptimizer();
-
 	auto handler = getHandler();
 	std::string database = DBMESHMAPREORGANISERTEST;
 	std::string projectName = "InterleavedMixedSplit";
@@ -147,15 +141,13 @@ TEST(MeshMapReorganiser, MultipleTinyMeshes)
 
 	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
 
-	bool result = opt.processScene(
+	MultipartOptimizer opt(handler.get(), mockExporter.get());
+
+	opt.processScene(
 		database,
 		projectName,
-		revId,
-		handler.get(),
-		mockExporter.get()
+		revId
 	);
-
-	EXPECT_TRUE(result);
 
 	EXPECT_TRUE(mockExporter->isFinalised());
 
@@ -223,8 +215,6 @@ TEST(MeshMapReorganiser, InterleavedMixedSplit)
 	// Create a supermesh that contains a mix of small meshes, and large meshes
 	// that will need to be split.
 
-	auto opt = MultipartOptimizer();
-
 	auto handler = getHandler();
 	std::string database = DBMESHMAPREORGANISERTEST;
 	std::string projectName = "InterleavedMixedSplit";
@@ -262,15 +252,13 @@ TEST(MeshMapReorganiser, InterleavedMixedSplit)
 
 	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
 
-	bool result = opt.processScene(
+	MultipartOptimizer opt(handler.get(), mockExporter.get());
+
+	opt.processScene(
 		database,
 		projectName,
-		revId,
-		handler.get(),
-		mockExporter.get()
+		revId
 	);
-
-	EXPECT_TRUE(result);
 
 	EXPECT_TRUE(mockExporter->isFinalised());
 

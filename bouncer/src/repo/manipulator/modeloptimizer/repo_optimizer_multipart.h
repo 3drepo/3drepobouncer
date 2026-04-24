@@ -39,21 +39,25 @@ namespace repo {
 		namespace modeloptimizer {
 			class MultipartOptimizer
 			{
-				
 				typedef float Scalar;
 				typedef bvh::Bvh<Scalar> Bvh;
 				typedef bvh::Vector3<Scalar> BvhVector3;
 
+				repo::core::handler::AbstractDatabaseHandler* handler;
+				repo::manipulator::modelconvertor::AbstractModelExport* exporter;
+
 			public:
 				
-				bool processScene(
-					std::string database,
-					std::string collection,
-					repo::lib::RepoUUID revId,
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					repo::manipulator::modelconvertor::AbstractModelExport *exporter
+				MultipartOptimizer(
+					repo::core::handler::AbstractDatabaseHandler* handler,
+					repo::manipulator::modelconvertor::AbstractModelExport* exporter
 				);
 
+				void processScene(
+					std::string database,
+					std::string collection,
+					repo::lib::RepoUUID revId
+				);
 
 			private:
 
@@ -76,14 +80,27 @@ namespace repo {
 					bool isTexturedJob() const {
 						return !texId.isDefaultValue();
 					}
-				};							
-				
+				};
+
+				struct BranchGroup {
+					std::string name; // The tag that gets associated with any supermeshes
+				};
+
+				/*
+				* Contains the baked transformation information, i.e. the final conditions
+				* of the Transformation just above a MeshNode.
+				*/
+				struct TransformInfo {
+					repo::lib::RepoMatrix matrix;
+					BranchGroup* branch = nullptr;
+				};
 
 				typedef std::unordered_map <repo::lib::RepoUUID, std::shared_ptr<repo::core::model::MaterialNode>, repo::lib::RepoUUIDHasher> MaterialPropMap;
-				typedef std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> TransformMap;
+				typedef std::unordered_map<repo::lib::RepoUUID, TransformInfo, repo::lib::RepoUUIDHasher> TransformMap;
 
-				std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> getAllTransforms(
-					repo::core::handler::AbstractDatabaseHandler *handler,
+				std::vector<BranchGroup> branchGroups;
+
+				TransformMap getAllTransforms(
 					const std::string &database,
 					const std::string &collection,
 					const repo::lib::RepoUUID &revId
@@ -92,44 +109,40 @@ namespace repo {
 				void traverseTransformTree(
 					const repo::core::model::RepoBSON &root,
 					const std::unordered_map<repo::lib::RepoUUID, std::vector<repo::core::model::RepoBSON>, repo::lib::RepoUUIDHasher> &childNodeMap,
-					std::unordered_map<repo::lib::RepoUUID,	repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> &transforms);
+					TransformMap &transforms);
+
+				/*
+				* Uses metadata queries to find branching groups, and apply them to the
+				* transform map. Currently the metadata queries are static.
+				*/
+				void applyBranchGroups(
+					TransformMap& transforms, 
+					const std::string& database,
+					const std::string& collection, 
+					const repo::lib::RepoUUID &revId);
 
 				MaterialPropMap getAllMaterials(
-					repo::core::handler::AbstractDatabaseHandler *handler,
 					const std::string &database,
 					const std::string &collection,
 					const repo::lib::RepoUUID &revId
 				);
 
-				std::set<std::string> getAllGroupings(
-					repo::core::handler::AbstractDatabaseHandler* handler,
-					const std::string& database,
-					const std::string& collection,
-					const repo::lib::RepoUUID& revId
-				);
-
 				std::vector < repo::lib::RepoUUID> getAllTextureIds(
-					repo::core::handler::AbstractDatabaseHandler *handler,
 					const std::string &database,
 					const std::string &collection,
-					const repo::lib::RepoUUID &revId,
-					const std::string& grouping
+					const repo::lib::RepoUUID &revId
 				);
 
 				ProcessingJob createUntexturedJob(
-					const std::string &description,
 					const repo::lib::RepoUUID &revId,
 					const int primitive,
-					const std::string &grouping,
 					const bool isOpaque,
 					const bool hasNormals
 				);
 
 				ProcessingJob createTexturedJob(
-					const std::string &description,
 					const repo::lib::RepoUUID &revId,
 					const int primitive,
-					const std::string &grouping,
 					const bool hasNormals,
 					const repo::lib::RepoUUID &texId
 				);
@@ -137,8 +150,6 @@ namespace repo {
 				void clusterAndSupermesh(
 					const std::string &database,
 					const std::string &collection,
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					repo::manipulator::modelconvertor::AbstractModelExport *exporter,
 					const TransformMap& transformMap,
 					const MaterialPropMap& matPropMap,
 					const ProcessingJob &job
@@ -147,18 +158,17 @@ namespace repo {
 				void createSuperMeshes(
 					const std::string &database,
 					const std::string &collection,
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					repo::manipulator::modelconvertor::AbstractModelExport *exporter,
 					const TransformMap& transformMap,
 					const MaterialPropMap& matPropMap,
 					std::vector<repo::core::model::StreamingMeshNode>& meshNodes,
 					const std::vector<std::vector<int>>& clusters,
-					const repo::lib::RepoUUID &texId
+					const repo::lib::RepoUUID &texId,
+					const std::string& namedGrouping
 				);
 
 				void createSuperMesh(
-					repo::manipulator::modelconvertor::AbstractModelExport *exporter,
-					const mapped_mesh_t& mappedMesh
+					const mapped_mesh_t& mappedMesh,
+					const std::string& tag
 				);
 
 				void appendMesh(					
@@ -196,7 +206,8 @@ namespace repo {
 					repo::core::model::StreamingMeshNode &node,
 					repo::manipulator::modelconvertor::AbstractModelExport *exporter,
 					const MaterialPropMap &matPropMap,
-					const repo::lib::RepoUUID &texId
+					const repo::lib::RepoUUID &texId,
+					const std::string& namedGrouping
 				);
 
 				/*
