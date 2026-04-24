@@ -95,6 +95,12 @@ namespace repo {
 							values.push_back(value);
 						}
 
+						Eq(const char* field, const char* value)
+							: field(field)
+						{
+							values.push_back(std::string(value));
+						}
+
 						template<typename T>
 						Eq(const char* field, const T& value)
 							: field(std::string(field))
