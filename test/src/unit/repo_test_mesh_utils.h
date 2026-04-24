@@ -123,7 +123,7 @@ namespace repo {
 						return finalised;
 					};
 
-					std::vector<repo::core::model::SupermeshNode> getSupermeshes() {
+					const std::vector<repo::core::model::SupermeshNode>& getSupermeshes() {
 						return supermeshNodes;
 					};
 
