@@ -93,7 +93,7 @@ void GeometryCollector::popDrawContext(Context* ctx)
 	}
 }
 
-void GeometryCollector::createLayer(std::string id, std::string name, std::string parentId, const repo::lib::RepoMatrix& transform)
+bool GeometryCollector::createLayer(std::string id, std::string name, std::string parentId, const repo::lib::RepoMatrix& transform)
 {
 	if (!hasLayer(id)) {
 		auto parentSharedId = rootNodeId;
@@ -111,7 +111,11 @@ void GeometryCollector::createLayer(std::string id, std::string name, std::strin
 		}
 
 		sceneBuilder->addNode(node);
+
+		return true;
 	}
+
+	return false;
 }
 
 repo::lib::RepoMatrix GeometryCollector::getLayerTransform(std::string id)

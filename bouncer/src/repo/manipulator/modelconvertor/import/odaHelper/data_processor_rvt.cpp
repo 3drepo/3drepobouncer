@@ -302,7 +302,11 @@ void DataProcessorRvt::draw(const OdGiDrawable* pDrawable)
 
 			// These methods create the transformation nodes on-demand
 
-			collector->createLayer(levelName, levelName, {}, {});
+			if (collector->createLayer(levelName, levelName, {}, {})) {
+				repo::core::model::RepoRef::Metadata meta;
+				meta[REPO_METADATA_GROUPING_FLOOR] = levelName; // This is the magic tag used to indicate this branch should form a level grouping, if that feature is used
+				collector->setMetadata(levelName, meta);
+			}
 
 			// This call does not necessarily update the transform, so make sure to get
 			// the transform explicitly when processing the meshes.
