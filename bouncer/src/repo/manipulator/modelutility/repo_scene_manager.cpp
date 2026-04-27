@@ -257,6 +257,8 @@ bool SceneManager::generateWebViewBuffers(
 			scene->getProjectName(),
 			scene->getRevisionID()
 		);
+
+		return true;
 	}
 	else
 	{

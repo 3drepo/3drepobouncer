@@ -225,7 +225,7 @@
 #define REPO_ASSETS_LABEL_NUMSUBMESHES	"numSubmeshes"
 #define REPO_ASSETS_LABEL_NUMCOMPONENTS	"numComponents"
 #define REPO_ASSETS_LABEL_METADATA      "metadata"
-#define REPO_ASSETS_LABEL_GROUP			"group"
+#define REPO_ASSETS_LABEL_GROUPS		"groups"
 
 //-----------------------------------------------------------------------------
 //

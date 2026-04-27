@@ -83,7 +83,7 @@ RepoAssets::operator RepoBSON() const
 		metadataBuilder.append(REPO_ASSETS_LABEL_NUMSUBMESHES, (int32_t)meta.numSubmeshes);
 		metadataBuilder.append(REPO_ASSETS_LABEL_NUMCOMPONENTS, (int32_t)meta.numComponents);
 		if (meta.groups.size()) {
-			metadataBuilder.appendArray(REPO_ASSETS_LABEL_GROUP, meta.groups);
+			metadataBuilder.appendArray(REPO_ASSETS_LABEL_GROUPS, meta.groups);
 		}
 		metadataNodes.push_back(metadataBuilder.obj());
 	}
