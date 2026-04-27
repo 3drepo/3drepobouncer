@@ -82,6 +82,9 @@ RepoAssets::operator RepoBSON() const
 		metadataBuilder.appendVector3DObject(REPO_ASSETS_LABEL_MAX, meta.max);
 		metadataBuilder.append(REPO_ASSETS_LABEL_NUMSUBMESHES, (int32_t)meta.numSubmeshes);
 		metadataBuilder.append(REPO_ASSETS_LABEL_NUMCOMPONENTS, (int32_t)meta.numComponents);
+		if (meta.groups.size()) {
+			metadataBuilder.appendArray(REPO_ASSETS_LABEL_GROUP, meta.groups);
+		}
 		metadataNodes.push_back(metadataBuilder.obj());
 	}
 
