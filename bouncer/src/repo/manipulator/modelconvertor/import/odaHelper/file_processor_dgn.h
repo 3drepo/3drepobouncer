@@ -19,6 +19,7 @@
 
 #include "repo/core/model/bson/repo_node_mesh.h"
 #include "repo/manipulator/modelutility/repo_drawing.h"
+#include "repo/lib/repo_units.h"
 
 #include <OdaCommon.h>
 #include <DgDatabase.h>
@@ -73,8 +74,7 @@ namespace repo {
 						int numColors,
 						OdDgElementId view);
 
-
-					ModelUnits determineModelUnits(const OdDgModel::UnitMeasure &units);
+					repo::lib::ModelUnits determineModelUnits(const OdDgModel::UnitMeasure &units);
 				};
 			}
 		}

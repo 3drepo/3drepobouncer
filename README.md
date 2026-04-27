@@ -27,7 +27,7 @@ Doxygen documentation can be found [here](http://3drepo.github.io/3drepobouncer/
 Dependencies
 ------------
 3DRepoBouncer relies on the following libraries:
-* [Boost Library v1.59.0 - v1.86.0](http://www.boost.org/)
+* [Boost Library v1.71.0 - v1.86.0](http://www.boost.org/)
 See also [pre-built binaries for Windows](http://sourceforge.net/projects/boost/files/boost-binaries/)
 and [modular Boost](https://svn.boost.org/trac/boost/wiki/ModularBoost)
 on [GitHub](https://github.com/boostorg)
@@ -44,23 +44,19 @@ The following are optional dependencies depending on your configuration
 
 To compile and install the library, the following are used:
 * [Python v2.x](https://www.python.org/)
-* [CMAKE v3.x] (http://www.cmake.org/)
-* A C++ compiler (GNU GCC v4.9+, [Visual Studio 12+](https://www.visualstudio.com/en-us/downloads/download-visual-studio-vs.aspx))
+* [CMAKE v3.22+] (http://www.cmake.org/)
+* A C++ compiler (GNU GCC 12+, [Visual Studio 2022+](https://www.visualstudio.com/en-us/downloads/download-visual-studio-vs.aspx))
 
-Compilation (Qt)
-------------
-See instructions at [https://github.com/3drepo/3drepobouncer/issues/9#issuecomment-135727927](https://github.com/3drepo/3drepobouncer/issues/9#issuecomment-135727927)
 
 Compilation (Windows)
 ------------
 Ensure Mongo CXX Driver, Boost and ASSIMP libraries are installed.
 
-The following instruction is for compiling a 64bit library using Visual Studio 12's tools. Change the pathing/cmake option appropriately if you are using another version of Visual Studio or compiling with a different compiler.
+The following instruction is for compiling a 64bit library using Visual Studio's tools. Change the pathing/cmake option appropriately if you are using a different compiler.
 
 In command line prompt:
 set the following environmental variables to the directories of your installations:
-* `$env:BOOST_ROOT = path_to_boost`
-* `$env:BOOST_LIBRARYDIR = path_to_boost_libraries (i.e path_to_boost\lib64-msvc-12.0)` (NOT REQUIRED if libraries are in `$BOOST_ROOT/lib`)
+* `$env:BOOST_DIR = path_to_boost_config.cmake (e.g. C:\3drepo\bouncer\boost_1_86_0\lib64-msvc-14.2\cmake\Boost-1.86.0)`
 * `$env:MONGO_ROOT = path_to_mongo_cxx_driver`
 * `$env:ASSIMP_ROOT = path_to_assimp`
 * `$env:OCCT_ROOT = path_to_occt`

@@ -17,8 +17,10 @@
 
 #include "functions.h"
 
+#include <repo/lib/repo_units.h>
 #include <repo/core/model/bson/repo_bson.h>
 #include <repo/core/model/bson/repo_bson_factory.h>
+#include <repo/manipulator/modelutility/repo_clash_detection_config.h>
 
 #include <sstream>
 #include <fstream>
@@ -28,10 +30,13 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/filesystem.hpp>
 
+using namespace repo::lib;
+
 static const std::string FBX_EXTENSION = ".FBX";
 
 static const std::string cmdCreateFed = "genFed"; //create a federation
 static const std::string cmdGenStash = "genStash";   //test the connection
+static const std::string cmdClash = "clash";   //perform a clash detection operation
 static const std::string cmdImportFile = "import"; //file import
 static const std::string cmdProcessDrawing = "processDrawing"; //drawing import from revision node
 static const std::string cmdTestConn = "test";   //test the connection
@@ -46,6 +51,7 @@ std::string helpInfo()
 	ss << cmdImportFile << "\t\tImport file to database. (args: {file database project [dxrotate] [owner] [configfile]} or {-f parameterFile} )\n";
 	ss << cmdProcessDrawing << "\t\tProcess drawing revision node into an image. (args: parameterFile)\n";
 	ss << cmdCreateFed << "\t\tGenerate a federation. (args: fedDetails [owner])\n";
+	ss << cmdClash << "\t\tPerform a clash detection operation. (args: configFile [resultsFile])\n";
 	ss << cmdTestConn << "\t\tTest the client and database connection is working. (args: none)\n";
 	ss << cmdVersion << "[-v]\tPrints the version of Repo Bouncer Client/Library\n";
 
@@ -71,6 +77,8 @@ int32_t knownValid(const std::string& cmd)
 		return 0;
 	if (cmd == cmdVersion || cmd == cmdVersion2)
 		return 0;
+	if (cmd == cmdClash)
+		return 1;
 	return -1;
 }
 
@@ -127,6 +135,20 @@ int32_t performOperation(
 		catch (const std::exception& e)
 		{
 			repoLogError("Failed to generate federation: " + std::string(e.what()));
+			errCode = REPOERR_UNKNOWN_ERR;
+		}
+	}
+	else if (command.command == cmdClash)
+	{
+		try {
+			errCode = performClashDetection(controller, token, command);
+		}
+		catch (const repo::lib::RepoException& e) {
+			throw; // RepoExceptions have additional context as well as an embedded return code, so let these bubble up
+		}
+		catch (const std::exception& e)
+		{
+			repoLogError("Failed to perform clash detection: " + std::string(e.what()));
 			errCode = REPOERR_UNKNOWN_ERR;
 		}
 	}
@@ -325,14 +347,23 @@ int32_t generateStash(
 	return success ? REPOERR_OK : REPOERR_STASH_GEN_FAIL;
 }
 
-repo::manipulator::modelconvertor::ModelUnits determineUnits(const std::string& units) {
-	if (units == "m") return repo::manipulator::modelconvertor::ModelUnits::METRES;
-	if (units == "cm") return repo::manipulator::modelconvertor::ModelUnits::CENTIMETRES;
-	if (units == "mm") return repo::manipulator::modelconvertor::ModelUnits::MILLIMETRES;
-	if (units == "dm") return repo::manipulator::modelconvertor::ModelUnits::DECIMETRES;
-	if (units == "ft") return repo::manipulator::modelconvertor::ModelUnits::FEET;
-
-	return repo::manipulator::modelconvertor::ModelUnits::UNKNOWN;
+int32_t performClashDetection(
+	std::shared_ptr<repo::RepoController> controller,
+	const repo::RepoController::RepoToken* token,
+	const repo_op_t& command)
+{
+	if (command.nArgcs < 1) {
+		repoError << "Clash detection requires a config file path";
+		return REPOERR_INVALID_ARG;
+	}
+	repo::manipulator::modelutility::ClashDetectionConfig clashConfig;
+	repo::manipulator::modelutility::ClashDetectionConfig::ParseJsonFile(command.args[0], clashConfig);
+	if (command.nArgcs > 1) {
+		clashConfig.resultsFile = command.args[1];
+	}
+	clashConfig.validate(); // Will throw if the config is invalid.
+	controller->performClashDetection(token, clashConfig);
+	return REPOERR_OK;
 }
 
 int32_t importFileAndCommit(
@@ -376,7 +407,7 @@ int32_t importFileAndCommit(
 			config.databaseName = jsonTree.get<std::string>("database", "");
 			config.projectName = jsonTree.get<std::string>("project", "");
 			config.timeZone = jsonTree.get<std::string>("timezone", config.timeZone);
-			config.targetUnits = determineUnits(jsonTree.get<std::string>("units", ""));
+			config.targetUnits = units::fromString(jsonTree.get<std::string>("units", ""));
 			config.lod = jsonTree.get<int>("lod", config.lod);
 			config.importAnimations = jsonTree.get<bool>("importAnimations", config.importAnimations);
 			config.viewName = jsonTree.get<std::string>("view", config.viewName);

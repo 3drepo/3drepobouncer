@@ -71,6 +71,12 @@ RepoBSONException::RepoBSONException(const std::string& msg)
 {
 }
 
+RepoInvalidConfigException::RepoInvalidConfigException(const std::string& msg)
+	: RepoException(msg)
+{
+	errorCode = REPOERR_INVALID_CONFIG_FILE;
+};
+
 RepoInvalidLicenseException::RepoInvalidLicenseException(const std::string& msg)
 	: RepoException(msg)
 {
@@ -105,4 +111,10 @@ RepoImporterUnavailable::RepoImporterUnavailable(const std::string& msg, int cod
 	: RepoException(msg)
 {
 	errorCode = code;
+}
+
+repo::lib::RepoRefMissingException::RepoRefMissingException(const std::string& msg)
+	: RepoException(msg)
+{
+	errorCode = REPOERR_FILE_REF_MISSING;
 }

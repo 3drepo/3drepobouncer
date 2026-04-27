@@ -1,0 +1,790 @@
+/**
+*  Copyright (C) 2025 3D Repo Ltd
+*
+*  This program is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU Affero General Public License as
+*  published by the Free Software Foundation, either version 3 of the
+*  License, or (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU Affero General Public License for more details.
+*
+*  You should have received a copy of the GNU Affero General Public License
+*  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#include "repo_test_utils.h"
+#include "repo_test_clash_utils.h"
+#include "repo_test_database_info.h"
+
+#include <repo/core/model/bson/repo_bson.h>
+#include <repo/core/model/bson/repo_bson_factory.h>
+#include <repo/core/handler/database/repo_query.h>
+#include <repo/manipulator/modelconvertor/import/repo_model_import_manager.h>
+#include <repo/manipulator/modelutility/clashdetection/geometry_tests.h>
+#include <repo/manipulator/modelutility/clashdetection/sparse_scene_graph.h>
+#include <repo/manipulator/modelutility/clashdetection/clash_pipelines_utils.h>
+
+using namespace testing;
+using namespace repo::manipulator::modelutility;
+using namespace repo::lib;
+
+// Unit tests using use the ClashDetectionDatabaseHelper all use the ClashDetection
+// database. This is a dump from a fully functional teamspace. Once restored,
+// the team_member role can be added to a user allowing the database to be
+// inspected or maintained using the frontend.
+// If uploading a new file, remember to copy the links into the tests fileShare
+// folder as well.
+
+#define TESTDB "ClashDetection"
+#define TESTDBTMP "ClashDetectionTmp"
+
+void ClashDetectionDatabaseHelper::getChildMeshNodes(repo::lib::Container* container, const repo::core::model::RepoBSON& bson, std::set<repo::lib::RepoUUID>& uuids)
+{
+	if (bson.getStringField(REPO_NODE_LABEL_TYPE) == REPO_NODE_TYPE_MESH)
+	{
+		uuids.insert(bson.getUUIDField(REPO_NODE_LABEL_ID));
+		return;
+	}
+
+	auto children = handler->findCursorByCriteria(
+		container->teamspace,
+		container->container + "." + REPO_COLLECTION_SCENE,
+		repo::core::handler::database::query::Eq(REPO_NODE_LABEL_PARENTS, { bson.getUUIDField(REPO_NODE_LABEL_SHARED_ID) })
+	);
+
+	for (auto child : *children) {
+		getChildMeshNodes(container, child, uuids);
+	}
+}
+
+geometry::RepoIndexedMesh ClashDetectionDatabaseHelper::getChildMeshNodes(repo::lib::Container* container, std::string name)
+{
+	auto uuids = getUniqueIdsByName(container, name);
+
+	sparse::SceneGraph scene;
+	scene.populate(handler, container, std::vector<repo::lib::RepoUUID>(uuids.begin(), uuids.end()));
+
+	std::vector<clash::Graph::Node> nodes;
+	scene.getNodes(nodes);
+
+	geometry::RepoIndexedMesh combined;
+	geometry::RepoIndexedMeshBuilder builder(combined);
+	for (auto& node : nodes) {
+		clash::PipelineUtils::loadGeometry(handler, node, builder);
+	}
+
+	return combined;
+}
+
+// Searches for mesh nodes only
+std::set<repo::lib::RepoUUID> ClashDetectionDatabaseHelper::getUniqueIdsByName(
+	repo::lib::Container* container,
+	std::string name)
+{
+	std::set<repo::lib::RepoUUID> uuids;
+
+	repo::core::handler::database::query::RepoQueryBuilder query;
+
+	query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, {
+		std::string(REPO_NODE_TYPE_MESH),
+		std::string(REPO_NODE_TYPE_TRANSFORMATION)
+		}));
+	query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_NAME, name));
+
+	repo::core::handler::database::query::RepoProjectionBuilder projection;
+	projection.includeField(REPO_NODE_LABEL_ID);
+	projection.includeField(REPO_NODE_LABEL_SHARED_ID);
+
+	auto cursor = handler->findCursorByCriteria(
+		container->teamspace,
+		container->container + "." + REPO_COLLECTION_SCENE,
+		query,
+		projection
+	);
+
+	for (auto& bson : *cursor)
+	{
+		getChildMeshNodes(container, bson, uuids);
+	}
+
+	return uuids;
+}
+
+CompositeObject ClashDetectionDatabaseHelper::createCompositeObject(
+	repo::lib::Container* container,
+	std::string name
+)
+{
+	CompositeObject composite;
+	composite.id = repo::lib::RepoUUID::createUUID().toString();
+	for (auto& uuid : getUniqueIdsByName(container, name))
+	{
+		composite.meshes.push_back(MeshReference(container, uuid));
+	}
+	return composite;
+}
+
+// Will replace anything in the existing sets
+void ClashDetectionDatabaseHelper::setCompositeObjectSetsByName(
+	ClashDetectionConfig& config,
+	const std::unique_ptr<repo::lib::Container>& container,
+	std::initializer_list<std::string> a,
+	std::initializer_list<std::string> b)
+{
+	config.setA.clear();
+	for (const auto& name : a) {
+		config.setA.push_back(createCompositeObject(container.get(), name));
+	}
+	config.setB.clear();
+	for (const auto& name : b) {
+		config.setB.push_back(createCompositeObject(container.get(), name));
+	}
+}
+
+std::unique_ptr<repo::lib::Container> ClashDetectionDatabaseHelper::getContainerByName(
+	std::string name)
+{
+	auto container = std::make_unique<repo::lib::Container>();
+	container->teamspace = TESTDB;
+
+	auto settings = handler->findOneByCriteria(
+		TESTDB,
+		REPO_COLLECTION_SETTINGS,
+		repo::core::handler::database::query::Eq(REPO_NODE_LABEL_NAME, name)
+	);
+	container->container = settings.getStringField(REPO_NODE_LABEL_ID);
+
+	auto revisions = handler->getAllFromCollectionTailable(
+		TESTDB,
+		container->container + "." + REPO_COLLECTION_HISTORY
+	);
+	container->revision = revisions[0].getUUIDField(REPO_NODE_LABEL_ID);
+
+	return container;
+}
+
+void ClashDetectionDatabaseHelper::setCompositeObjectsByMetadataValue(
+	repo::manipulator::modelutility::ClashDetectionConfig& config,
+	const std::unique_ptr<repo::lib::Container>& container,
+	const std::string& valueSetA,
+	const std::string& valueSetB)
+{
+	config.setA.clear();
+	createCompositeObjectsByMetadataValue(config.setA, container.get(), valueSetA);
+	config.setB.clear();
+	createCompositeObjectsByMetadataValue(config.setB, container.get(), valueSetB);
+}
+
+void ClashDetectionDatabaseHelper::setCompositeObjectsByMetadataValue(
+	repo::manipulator::modelutility::ClashDetectionConfig& config,
+	const std::unique_ptr<repo::lib::Container>& container,
+	const std::string& valueSetA,
+	const std::string& valueSetB,
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher>& metadataMap)
+{
+	config.setA.clear();
+	createCompositeObjectsByMetadataValue(config.setA, container.get(), valueSetA, metadataMap);
+	config.setB.clear();
+	createCompositeObjectsByMetadataValue(config.setB, container.get(), valueSetB, metadataMap);
+}
+
+void ClashDetectionDatabaseHelper::createCompositeObjectsFromContainer(
+	std::vector<repo::manipulator::modelutility::CompositeObject>& objects,
+	repo::lib::Container* container)
+{
+	repo::core::handler::database::query::RepoQueryBuilder query;	
+	query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_MESH)));
+
+	repo::core::handler::database::query::RepoProjectionBuilder projection;
+	projection.includeField(REPO_NODE_LABEL_ID);
+
+	auto cursor = handler->findCursorByCriteria(
+		container->teamspace,
+		container->container + "." + REPO_COLLECTION_SCENE,
+		query,
+		projection
+	);
+
+	for (auto& bson : *cursor) {
+		auto uuid = bson.getUUIDField(REPO_NODE_LABEL_ID);
+		CompositeObject composite;
+		composite.id = repo::lib::RepoUUID::createUUID().toString();
+		composite.meshes.push_back(MeshReference(container, uuid));
+		objects.push_back(composite);
+	}
+}
+
+void ClashDetectionDatabaseHelper::createCompositeObjectsByMetadataValue(
+	std::vector<repo::manipulator::modelutility::CompositeObject>& objects,
+	repo::lib::Container* container,
+	const std::string& value)
+{
+	std::vector<repo::lib::RepoUUID> parentSharedIds;
+
+	{
+		repo::core::handler::database::query::RepoQueryBuilder query;
+		query.append(repo::core::handler::database::query::Eq("metadata.value", value));
+
+		repo::core::handler::database::query::RepoProjectionBuilder projection;
+		projection.includeField(REPO_NODE_LABEL_PARENTS);
+
+		auto cursor = handler->findCursorByCriteria(
+			container->teamspace,
+			container->container + "." + REPO_COLLECTION_SCENE,
+			query,
+			projection
+		);
+
+		for (auto& bson : *cursor) {
+			auto p = bson.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
+			parentSharedIds.insert(
+				parentSharedIds.end(),
+				p.begin(),
+				p.end()
+			);
+		}
+	}
+
+	// Abort if there are no shared IDs found
+	if (parentSharedIds.size() == 0) {
+		return;
+	}
+
+	// By convention, all metadata nodes should wire to both the parent transform,
+	// but also any mesh descendents.
+
+	// This method assumes that the import settings are such that each element has
+	// only one mesh. This is for performance reasons, as otherwise it would
+	// require nested queries which can be very expensive. If this is the case,
+	// another method will need to be used.
+
+	{
+		repo::core::handler::database::query::RepoQueryBuilder query;
+		query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_SHARED_ID, parentSharedIds));
+		query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_MESH)));
+
+		repo::core::handler::database::query::RepoProjectionBuilder projection;
+		projection.includeField(REPO_NODE_LABEL_ID);
+
+		auto cursor = handler->findCursorByCriteria(
+			container->teamspace,
+			container->container + "." + REPO_COLLECTION_SCENE,
+			query,
+			projection
+		);
+
+		for (auto& bson : *cursor) {
+			auto uuid = bson.getUUIDField(REPO_NODE_LABEL_ID);
+			CompositeObject composite;
+			composite.id = repo::lib::RepoUUID::createUUID().toString();
+			composite.meshes.push_back(MeshReference(container, uuid));
+			objects.push_back(composite);
+		}
+	}
+}
+
+void ClashDetectionDatabaseHelper::GetMetadataMap(
+	repo::lib::Container* container,
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher>& metadataMap)
+{
+	repo::core::handler::database::query::RepoQueryBuilder query;
+	query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_METADATA)));
+
+	repo::core::handler::database::query::RepoProjectionBuilder projection;
+	projection.includeField(REPO_NODE_LABEL_PARENTS);
+	projection.includeField(REPO_NODE_LABEL_METADATA);
+	projection.includeField(REPO_NODE_LABEL_NAME);
+
+	auto cursor = handler->findCursorByCriteria(
+		container->teamspace,
+		container->container + "." + REPO_COLLECTION_SCENE,
+		query,
+		projection
+	);
+		
+	for (auto& bson : *cursor) {		
+		auto p = bson.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
+
+		auto metadata = bson.getObjectArray(REPO_NODE_LABEL_METADATA);
+		std::unordered_map<std::string, repo::lib::RepoVariant> metaMap;
+		for (auto& field : metadata) {
+			auto key = field.getStringField(REPO_NODE_LABEL_META_KEY);
+			metaMap[key] = field.getField(REPO_NODE_LABEL_META_VALUE).repoVariant();
+		}
+
+		if(bson.hasField(REPO_NODE_LABEL_NAME))
+			metaMap[REPO_NODE_LABEL_NAME] = bson.getField(REPO_NODE_LABEL_NAME).repoVariant();
+
+		for (auto parentId : p) {
+			metadataMap.insert({ parentId, metaMap });
+		}
+	}
+}
+
+void testing::ClashDetectionDatabaseHelper::SplitIntoCompositSetsByLinkfileData(
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher>& metadataMap,
+	std::unordered_map<std::string, LinkFileEntry>& linkFileEntries,
+	std::set<repo::lib::RepoUUID>& sharedIdsA,
+	std::set<repo::lib::RepoUUID>& sharedIdsB)
+{
+	for (auto mapEntry : metadataMap)
+	{
+		auto sharedId = mapEntry.first;
+		auto metaMap = mapEntry.second;
+		for (auto metaEntry : metaMap)
+		{
+			auto metaKey = metaEntry.first;
+			auto metaValue = metaEntry.second;
+			if (metaKey == "Entity Handle::Value")
+			{
+				std::string handle = boost::get<std::string>(metaValue);
+
+				auto linkEntry = linkFileEntries.find(handle);
+
+				if (linkEntry != linkFileEntries.end())
+				{
+					auto link = linkEntry->second;
+					if (link.clashSetName == "ClashSetA")
+					{
+						sharedIdsA.insert(sharedId);
+					}
+					else if (link.clashSetName == "ClashSetB")
+					{
+						sharedIdsB.insert(sharedId);
+					}
+				}
+			}
+		}
+	}
+}
+
+void testing::ClashDetectionDatabaseHelper::SplitIntoCompositSetsByLinkfileData(
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher>& metadataMap,
+	std::unordered_map<std::string, LinkFileEntry>& linkFileEntries,
+	std::set<repo::lib::RepoUUID>& sharedIdsA,
+	std::set<repo::lib::RepoUUID>& sharedIdsB,
+	std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher>& parameterMap)
+{
+	for (auto mapEntry : metadataMap)
+	{
+		auto sharedId = mapEntry.first;
+		auto metaMap = mapEntry.second;
+		for (auto metaEntry : metaMap)
+		{
+			auto metaKey = metaEntry.first;
+			auto metaValue = metaEntry.second;
+			if (metaKey == "Entity Handle::Value")
+			{
+				std::string handle = boost::get<std::string>(metaValue);
+
+				auto linkEntry = linkFileEntries.find(handle);
+
+				if (linkEntry != linkFileEntries.end())
+				{
+					auto link = linkEntry->second;
+					if (link.clashSetName == "ClashSetA")
+					{
+						sharedIdsA.insert(sharedId);
+					}
+					else if (link.clashSetName == "ClashSetB")
+					{
+						sharedIdsB.insert(sharedId);
+					}
+
+					parameterMap.insert({ sharedId, link.parameterValue });
+				}
+			}
+		}
+	}
+}
+
+void ClashDetectionDatabaseHelper::SplitIntoCompositSetsByMetadata(
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher>& metadataMap,
+	std::set<repo::lib::RepoUUID>& sharedIdsA,
+	std::set<repo::lib::RepoUUID>& sharedIdsB,
+	std::string nameKey,
+	std::string nameA,
+	std::string nameB)
+{
+	for (auto mapEntry : metadataMap)
+	{
+		auto sharedId = mapEntry.first;
+		auto metaMap = mapEntry.second;
+		for (auto metaEntry : metaMap)
+		{
+			auto metaKey = metaEntry.first;
+			auto metaValue = metaEntry.second;
+			if (metaKey == nameKey)
+			{
+				std::string value = boost::get<std::string>(metaValue);
+				if (value == "ClashSetA")
+				{
+					sharedIdsA.insert(sharedId);
+				}
+				else if (value == "ClashSetB")
+				{
+					sharedIdsB.insert(sharedId);
+				}
+			}
+		}
+	}
+}
+
+void ClashDetectionDatabaseHelper::SplitIntoCompositSetsByMetadata(
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher>& metadataMap,
+	std::set<repo::lib::RepoUUID>& sharedIdsA,
+	std::set<repo::lib::RepoUUID>& sharedIdsB,
+	std::unordered_map<repo::lib::RepoUUID, double, repo::lib::RepoUUIDHasher>& parameterMap,
+	std::string nameKey,
+	std::string nameA,
+	std::string nameB,
+	std::string parameterKey)
+{
+	for (auto mapEntry : metadataMap)
+	{
+		auto sharedId = mapEntry.first;
+		auto metaMap = mapEntry.second;
+		for (auto metaEntry : metaMap)
+		{
+			auto metaKey = metaEntry.first;
+			auto metaValue = metaEntry.second;
+			if (metaKey == nameKey)
+			{
+				std::string value = boost::get<std::string>(metaValue);
+				if (value == "ClashSetA")
+				{
+					sharedIdsA.insert(sharedId);
+				}
+				else if (value == "ClashSetB")
+				{
+					sharedIdsB.insert(sharedId);
+				}
+			}
+			else if (metaKey == parameterKey)
+			{
+				double value = boost::get<double>(metaValue);
+				parameterMap.insert({ sharedId, value });
+			}
+		}
+	}
+}
+
+void ClashDetectionDatabaseHelper::setCompositeObjectsBySharedIds(
+	repo::manipulator::modelutility::ClashDetectionConfig& config,
+	const std::unique_ptr<repo::lib::Container>& container,
+	const std::set<repo::lib::RepoUUID>& sharedIdsA,
+	const std::set<repo::lib::RepoUUID>& sharedIdsB)
+{
+	config.setA.clear();
+	createCompositeObjectsBySharedIds(config.setA, container, sharedIdsA);
+	config.setB.clear();
+	createCompositeObjectsBySharedIds(config.setB, container, sharedIdsB);
+}
+
+void ClashDetectionDatabaseHelper::setCompositeObjectsBySharedIds(
+	repo::manipulator::modelutility::ClashDetectionConfig& config,
+	const std::unique_ptr<repo::lib::Container>& container,
+	const std::set<repo::lib::RepoUUID>& sharedIdsA,
+	const std::set<repo::lib::RepoUUID>& sharedIdsB,
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>& compToSharedId)
+{
+	config.setA.clear();
+	createCompositeObjectsBySharedIds(config.setA, container, sharedIdsA, compToSharedId);
+	config.setB.clear();
+	createCompositeObjectsBySharedIds(config.setB, container, sharedIdsB, compToSharedId);
+}
+
+void ClashDetectionDatabaseHelper::createCompositeObjectsBySharedIds(
+	std::vector<repo::manipulator::modelutility::CompositeObject>& objects,
+	const std::unique_ptr<repo::lib::Container>& container,
+	const std::set<repo::lib::RepoUUID>& sharedIds)
+{
+	// By convention, all metadata nodes should wire to both the parent transform,
+	// but also any mesh descendents.
+
+	// This method assumes that the import settings are such that each element has
+	// only one mesh. This is for performance reasons, as otherwise it would
+	// require nested queries which can be very expensive. If this is the case,
+	// another method will need to be used.
+
+	repo::core::handler::database::query::RepoQueryBuilder query;
+	query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_SHARED_ID, sharedIds));
+	query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_MESH)));
+
+	repo::core::handler::database::query::RepoProjectionBuilder projection;
+	projection.includeField(REPO_NODE_LABEL_ID);
+
+	auto cursor = handler->findCursorByCriteria(
+		container->teamspace,
+		container->container + "." + REPO_COLLECTION_SCENE,
+		query,
+		projection
+	);
+
+	for (auto& bson : *cursor) {
+		auto uuid = bson.getUUIDField(REPO_NODE_LABEL_ID);
+		CompositeObject composite;
+		composite.id = repo::lib::RepoUUID::createUUID().toString();
+		composite.meshes.push_back(MeshReference(container.get(), uuid));
+		objects.push_back(composite);
+	}
+}
+
+void ClashDetectionDatabaseHelper::createCompositeObjectsBySharedIds(
+	std::vector<repo::manipulator::modelutility::CompositeObject>& objects,
+	const std::unique_ptr<repo::lib::Container>& container,
+	const std::set<repo::lib::RepoUUID>& sharedIds,
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>& compToSharedId)
+{
+	// By convention, all metadata nodes should wire to both the parent transform,
+	// but also any mesh descendents.
+
+	// This method assumes that the import settings are such that each element has
+	// only one mesh. This is for performance reasons, as otherwise it would
+	// require nested queries which can be very expensive. If this is the case,
+	// another method will need to be used.
+
+	repo::core::handler::database::query::RepoQueryBuilder query;
+	query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_SHARED_ID, sharedIds));
+	query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_MESH)));
+
+	repo::core::handler::database::query::RepoProjectionBuilder projection;
+	projection.includeField(REPO_NODE_LABEL_ID);
+	projection.includeField(REPO_NODE_LABEL_SHARED_ID);
+
+	auto cursor = handler->findCursorByCriteria(
+		container->teamspace,
+		container->container + "." + REPO_COLLECTION_SCENE,
+		query,
+		projection
+	);
+
+	for (auto& bson : *cursor) {
+		auto uuid = bson.getUUIDField(REPO_NODE_LABEL_ID);
+		CompositeObject composite;
+		composite.id = repo::lib::RepoUUID::createUUID().toString();
+		composite.meshes.push_back(MeshReference(container.get(), uuid));
+		objects.push_back(composite);
+
+		auto sharedId = bson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);
+		compToSharedId.insert({ composite.id, sharedId });
+	}
+}
+
+void ClashDetectionDatabaseHelper::createCompositeObjectsByMetadataValue(
+	std::vector<repo::manipulator::modelutility::CompositeObject>& objects,
+	repo::lib::Container* container,
+	const std::string& value,
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher>& metadataMap)
+{
+	std::vector<repo::lib::RepoUUID> parentSharedIds;
+	std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher> localMetadataMap;
+
+	{
+		repo::core::handler::database::query::RepoQueryBuilder query;
+		query.append(repo::core::handler::database::query::Eq("metadata.value", value));
+
+		repo::core::handler::database::query::RepoProjectionBuilder projection;
+		projection.includeField(REPO_NODE_LABEL_PARENTS);
+		projection.includeField(REPO_NODE_LABEL_METADATA);
+		projection.includeField(REPO_NODE_LABEL_NAME);
+
+		auto cursor = handler->findCursorByCriteria(
+			container->teamspace,
+			container->container + "." + REPO_COLLECTION_SCENE,
+			query,
+			projection
+		);
+
+		for (auto& bson : *cursor) {
+			auto p = bson.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
+
+			auto metadata = bson.getObjectArray(REPO_NODE_LABEL_METADATA);
+			std::unordered_map<std::string, repo::lib::RepoVariant> metadataMap;
+			for (auto& field : metadata) {
+				auto key = field.getStringField(REPO_NODE_LABEL_META_KEY);
+				metadataMap[key] = field.getField(REPO_NODE_LABEL_META_VALUE).repoVariant();
+			}
+			metadataMap[REPO_NODE_LABEL_NAME] = bson.getField(REPO_NODE_LABEL_NAME).repoVariant();
+
+			for (auto parentId : p) {
+				parentSharedIds.push_back(parentId);
+				localMetadataMap.insert({ parentId, metadataMap });
+			}
+
+		}
+	}
+
+	// Abort if there are no shared IDs found
+	if (parentSharedIds.size() == 0) {
+		return;
+	}
+
+	// By convention, all metadata nodes should wire to both the parent transform,
+	// but also any mesh descendents.
+
+	// This method assumes that the import settings are such that each element has
+	// only one mesh. This is for performance reasons, as otherwise it would
+	// require nested queries which can be very expensive. If this is the case,
+	// another method will need to be used.
+
+	{
+		repo::core::handler::database::query::RepoQueryBuilder query;
+		query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_SHARED_ID, parentSharedIds));
+		query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, std::string(REPO_NODE_TYPE_MESH)));
+
+		repo::core::handler::database::query::RepoProjectionBuilder projection;
+		projection.includeField(REPO_NODE_LABEL_ID);
+		projection.includeField(REPO_NODE_LABEL_SHARED_ID);
+
+		auto cursor = handler->findCursorByCriteria(
+			container->teamspace,
+			container->container + "." + REPO_COLLECTION_SCENE,
+			query,
+			projection
+		);
+
+		for (auto& bson : *cursor) {
+			auto uuid = bson.getUUIDField(REPO_NODE_LABEL_ID);
+			CompositeObject composite;
+			composite.id = repo::lib::RepoUUID::createUUID().toString();
+			composite.meshes.push_back(MeshReference(container, uuid));
+			objects.push_back(composite);
+
+			auto sharedId = bson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);
+			auto metadata = localMetadataMap.find(sharedId);
+			if (metadata != localMetadataMap.end()) {
+				metadataMap.insert({ composite.id, metadata->second });
+			}
+		}
+	}
+}
+
+void ClashDetectionDatabaseHelper::getBoundsForContainer(
+	repo::lib::Container* container,
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoBounds, repo::lib::RepoUUIDHasher>& boundsMap)
+{
+	repo::core::handler::database::query::RepoQueryBuilder query;
+	query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_MESH));
+
+	repo::core::handler::database::query::RepoProjectionBuilder projection;
+	projection.includeField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
+	projection.includeField(REPO_NODE_LABEL_ID);
+
+	auto cursor = handler->findCursorByCriteria(
+		container->teamspace,
+		container->container + "." + REPO_COLLECTION_SCENE,
+		query,
+		projection
+	);
+
+	for (auto& bson : *cursor) {
+		repo::lib::RepoUUID id = bson.getUUIDField(REPO_NODE_LABEL_ID);
+		repo::lib::RepoBounds bounds = bson.getBoundsField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
+
+		boundsMap.insert({ id, bounds });
+	}
+}
+
+CompositeObject testing::combineCompositeObjects(
+	std::initializer_list<CompositeObject> objects
+)
+{
+	CompositeObject combined;
+	combined.id = repo::lib::RepoUUID::createUUID().toString();
+	for (const auto& obj : objects) {
+		combined.meshes.insert(
+			combined.meshes.end(),
+			obj.meshes.begin(),
+			obj.meshes.end()
+		);
+	}
+	return combined;
+}
+
+std::unique_ptr<repo::lib::Container> testing::makeTemporaryContainer()
+{
+	auto container = std::make_unique<repo::lib::Container>();
+	container->container = repo::lib::RepoUUID::createUUID().toString();
+	container->revision = repo::lib::RepoUUID::createUUID();
+	container->teamspace = TESTDBTMP;
+	return container;
+}
+
+void testing::importModel(std::string filename, const repo::lib::Container& container)
+{
+	using namespace repo::manipulator::modelutility;
+	using namespace repo::manipulator::modelconvertor;
+
+	ModelImportConfig config(
+		container.revision,
+		container.teamspace,
+		container.container
+	);
+	config.targetUnits = ModelUnits::MILLIMETRES;
+
+	auto handler = getHandler();
+
+	uint8_t err;
+	std::string msg;
+
+	ModelImportManager manager;
+	auto scene = manager.ImportFromFile(filename, config, handler, err);
+	scene->commit(handler.get(), handler->getFileManager().get(), msg, "testuser", "", "", config.getRevisionId());
+
+	// Clash detection expects the units to be stored in model settings
+	handler->upsertDocument(
+		container.teamspace,
+		REPO_COLLECTION_SETTINGS,
+		testing::makeProjectSettings(container.container),
+		false
+	);
+
+	delete scene;
+}
+
+repo::core::model::MeshNode testing::createPointMesh(std::initializer_list<repo::lib::RepoVector3D> points)
+{
+	std::vector<repo::lib::repo_face_t> faces;
+	for (size_t i = 0; i < points.size(); ++i)
+	{
+		faces.push_back({ i });
+	}
+	return repo::core::model::RepoBSONFactory::makeMeshNode(
+		std::vector<repo::lib::RepoVector3D>(points),
+		faces,
+		{},
+		{}
+	);
+}
+
+bool testing::intersects(const std::vector<repo::lib::RepoTriangle>& a, const std::vector<repo::lib::RepoTriangle>& b)
+{
+	for (const auto& t1 : a) {
+		for (const auto& t2 : b) {
+			if (geometry::intersects(t1, t2) > geometry::COPLANAR) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+ClearanceAccuracyReport::ClearanceAccuracyReport(std::string filename) {
+	file.open(filename, std::ios::out | std::ios::binary);
+}
+
+void ClearanceAccuracyReport::add(const ClashDetectionReport& report, double nominalDistance)
+{
+	for (auto& clash : report.clashes) {
+		auto e = abs((clash.positions[0] - clash.positions[1]).norm() - nominalDistance);
+		file.write(reinterpret_cast<const char*>(&e), sizeof(double));
+	}
+}
+
+ClearanceAccuracyReport::~ClearanceAccuracyReport() {
+	file.close();
+}

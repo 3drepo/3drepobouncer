@@ -22,6 +22,10 @@
 #include <gtest/gtest-matchers.h>
 #include "repo/lib/datastructure/repo_variant_utils.h"
 #include "repo/lib/datastructure/repo_bounds.h"
+#include "repo/lib/datastructure/repo_line.h"
+#include "repo/lib/datastructure/repo_triangle.h"
+#include "repo/lib/datastructure/repo_range.h"
+#include <optional>
 
 /* As we sometimes deal with very large coordinate systems, we expect positions
  * to have a low tolerance, approaching floating point quantisation itself.
@@ -195,6 +199,160 @@ namespace testing {
 
 		return !bounds.size(); // If every element has been matched, they should by now have all been removed.
 	}
+
+	static bool compareVectors(const repo::lib::RepoVector3D64& a, const repo::lib::RepoVector3D64& b, double tolerance, testing::MatchResultListener* listener)
+	{
+		if (abs(a.x - b.x) > tolerance) { *listener << "Vector x exceeds tolerance."; return false; }
+		if (abs(a.y - b.y) > tolerance) { *listener << "Vector y exceeds tolerance."; return false; }
+		if (abs(a.z - b.z) > tolerance) { *listener << "Vector z exceeds tolerance."; return false; }
+		return true;
+	}
+
+	MATCHER_P2(UnorderedVectorsAre, elements, tolerance, "")
+	{
+		std::vector<repo::lib::RepoVector3D64> vectors(elements);
+		for (auto& r : arg) {
+			for (auto i = 0; i < vectors.size(); i++) {
+				if (compareVectors(r, vectors[i], tolerance, result_listener)) {
+					vectors.erase(vectors.begin() + i);
+					break;
+				}
+			}
+		}
+		return !vectors.size(); // If every element has been matched, they should by now have all been removed.
+	}
+
+	namespace vectors {
+
+		// The vectors namespace contains a set of types to manage comparisons between
+		// RepoVectors, including types that are composed of RepoVectors, such as
+		// Containers, but also Lines and Triangles.
+
+		// GMOCK matchers are templated, however they do have constraints; for example,
+		// the EXPECT statement does not support initialiser lists as its first
+		// argument. The types below work together, to transform input arguments for
+		// both the macro and matcher itself, so that EXPECT can be used cleanly, and
+		// inside the common matcher to implement specialised behaviour where necessary.
+
+		// The actual matcher - this macro creates a templated class. The overloads below
+		// should return an instance of this type.
+
+		MATCHER_P3(IntsersectsGeneric, elements, range, tolerance, "")
+		{
+			// elements is always expected to be an iterable type, even if it has
+			// only one elment.
+			// arg may be one of a number of high level types, which we convert
+			// using one of the above overloads.
+
+			// n is the number of vectors from arg that should match to an element.
+			// if n is -1, then all vectors in arg must match.
+
+			size_t matched = 0;
+			size_t expected = 0;
+			for (auto& a : arg) {
+				expected++;
+
+				bool matchedElement = false;
+
+				double minDistance = std::numeric_limits<double>::max();
+
+				for(auto& b : elements) {
+					auto d = a - b;
+					minDistance = std::min(minDistance, d.norm());
+					if (minDistance < tolerance) {
+						matchedElement = true;
+						break;
+					}
+				}
+
+				if (matchedElement) {
+					matched++;
+				}
+				else {
+					*result_listener << " No match for actual " << a.toString() << ". Shortest distance: " << minDistance << ".\r\n";
+				}
+			}
+
+			if (!range.value_or(repo::lib::_RepoRange<size_t>(expected, expected)).contains(matched)) {
+				*result_listener << matched << " of " << expected << " elements matched.";
+				return false;
+			}
+
+			return true;
+		}
+
+		// The following overloads perform type-specific transforms of the arguments
+		// into a form the vector matcher can deal with. These must all return a suitable
+		// matcher.
+
+		/*
+		* All vectors in actual must be present in element at least once.
+		* Vectors may match the same element multiple times.
+		*/
+		static IntsersectsGenericMatcherP3<
+			std::initializer_list<repo::lib::RepoVector3D64>,
+			std::optional<repo::lib::_RepoRange<size_t>>,
+			double
+		> AreSubsetOf(
+			std::initializer_list<repo::lib::RepoVector3D64> elements,
+			double tolerance = POSITION_TOLERANCE)
+		{
+			return IntsersectsGeneric(elements, 
+				std::optional<repo::lib::_RepoRange<size_t>>(std::nullopt),
+				tolerance);
+		}
+
+		/*
+		* At least n vectors in actual must much one of the vectors in elements.
+		* Vectors may match the same element multiple times.
+		*/
+		static IntsersectsGenericMatcherP3<
+			std::initializer_list<repo::lib::RepoVector3D64>,
+			std::optional<repo::lib::_RepoRange<size_t>>,
+			double
+		> Intersects(
+			std::initializer_list<repo::lib::RepoVector3D64> elements,
+			repo::lib::_RepoRange<size_t> range,
+			double tolerance = POSITION_TOLERANCE)
+		{
+			return IntsersectsGeneric(elements,
+				std::optional<repo::lib::_RepoRange<size_t>>(range), 
+				tolerance);
+		}
+
+		// Helper object to present different types as iterators of vectors, where
+		// necessary. This is used to pass high level types to the EXPECT macro,
+		// which is constrained in what it can accept, as well as make it clear
+		// that we want to iterate over the vectors within the type.
+
+		template<typename T>
+		struct Iterator
+		{
+			Iterator(const repo::lib::_RepoTriangle<T>& triangle)
+			{
+				_begin = &triangle.a;
+				_end = &triangle.c + 1;
+			}
+
+			Iterator(const repo::lib::_RepoLine<T>& line)
+			{
+				_begin = &line.start;
+				_end = &line.end + 1;
+			}
+
+			const repo::lib::_RepoVector3D<T>* begin() const {
+				return _begin;
+			}
+
+			const repo::lib::_RepoVector3D<T>* end() const {
+				return _end;
+			}
+
+		private:
+			const repo::lib::_RepoVector3D<T>* _begin;
+			const repo::lib::_RepoVector3D<T>* _end;
+		};
+	}
 }
 
 namespace repo {
@@ -214,3 +372,28 @@ namespace repo {
 bool operator== (tm a, tm b);
 
 void operator<< (std::basic_ostream<char, std::char_traits<char>>& out, tm a);
+
+
+// This define is used in place of EXPECT_THAT to conditionally execute the subsequent
+// statement on a failure. This is useful for debugging the unit tests.
+// For example, the statement:
+//
+//  EXPECT_THAT(1.0, Eq(2.0));
+//
+// Could become
+//
+//  REPO_EXPECT_THAT(1.0, Eq(2.0)) std::cout << "Test failed";
+//
+// Or:
+//
+//	REPO_EXPECT_THAT(1.0, Eq(2.0)) {
+//		std::cout << "Test failed";
+//		FAIL();
+//	}
+//
+// Be mindful to remove the trailing semicolon of the original statement when
+// using this macro, as this will otherwise terminate the if-statement and the
+// conditional block will always run.
+
+#define REPO_EXPECT_THAT(value, matcher) \
+	if(!::testing::internal::MakePredicateFormatterFromMatcher(matcher)(#value, value))
