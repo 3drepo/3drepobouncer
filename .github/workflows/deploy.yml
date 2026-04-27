@@ -157,7 +157,7 @@ jobs:
         uses: azure/k8s-set-context@v4
         with:
           method: kubeconfig
-          kubeconfig: ${{ secrets.STAGING_KUBECONFIG }}
+          kubeconfig: ${{ secrets.KUBE_CONFIG_STAGING }}
 
       # ---------------------------------------------------------------
       # STEP 4: Login to ACR for Helm OCI chart pull
