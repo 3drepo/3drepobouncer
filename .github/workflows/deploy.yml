@@ -171,6 +171,8 @@ jobs:
       # STEP 5: Deploy Helm chart
       # ---------------------------------------------------------------
       - name: Deploy Helm chart
+        env:
+          IMAGE_TAG: ${{ needs.pre-deploy.outputs.image_tag }}
         run: |
           helm upgrade --install \
             --version 5.22.2 \
@@ -178,7 +180,7 @@ jobs:
             oci://${{ secrets.REGISTRY_LOGIN_SERVER }}/helm/bouncer \
             --namespace default \
             -f deployments/asite-stg/helm/bouncer/values.yaml \
-            --set image.tag=${{ needs.pre-deploy.outputs.image_tag }} \
+            --set "image.tag=$IMAGE_TAG" \
             --wait
 
       # ---------------------------------------------------------------
