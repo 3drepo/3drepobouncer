@@ -97,7 +97,12 @@ jobs:
             # Allow /deploy-bouncer <tag> to specify an explicit tag; fall back to PR branch
             EXPLICIT_TAG=$(echo "$COMMENT_BODY" | awk '{print $2}')
             if [ -n "$EXPLICIT_TAG" ] && [ "$EXPLICIT_TAG" != "null" ]; then
-              IMAGE_TAG="$EXPLICIT_TAG"
+              if [[ "$EXPLICIT_TAG" =~ ^[A-Za-z0-9._-]+$ ]]; then
+                IMAGE_TAG="$EXPLICIT_TAG"
+              else
+                echo "Invalid explicit image tag: only letters, numbers, dot, underscore, and hyphen are allowed"
+                exit 1
+              fi
             else
               ISSUE_NUMBER=$(jq -r .issue.number < "$GITHUB_EVENT_PATH")
               IMAGE_TAG=$(curl -s \
