@@ -670,7 +670,7 @@ TEST(MultipartOptimizer, TestBranchGroupings)
 			for (const auto& pair : mapping) {
 				actualIds.push_back(pair.mesh_id);
 
-				// MeshNode groups must not cross supermeshes
+				// MeshNode resource groupings must not cross supermeshes
 
 				const auto& meshNodeGrouping = group.nodeIdsToGrouping.at(pair.mesh_id);
 				if (!runningMeshNodeGrouping) {

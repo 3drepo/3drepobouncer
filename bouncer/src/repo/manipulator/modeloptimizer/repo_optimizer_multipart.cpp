@@ -396,7 +396,8 @@ void MultipartOptimizer::clusterAndSupermesh(
 	auto cursor = handler->findCursorByCriteria(database, sceneCollection, job.filter, projection);
 
 	// Currently we support two levels of grouping when supermeshing, the
-	// MeshNode branch group, and the group tag of the Mesh itself.
+	// MeshNode branch group, and the group tag of the Mesh itself (the
+	// resource groupings from importers such as Synchro).
 
 	struct group {
 		std::string mesh;
