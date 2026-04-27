@@ -1000,7 +1000,7 @@ void MultipartOptimizer::splitMesh(
 		else if (rightVerts == nullptr)
 		{
 			// If only the left is valid, we check just that against the threshold
-			if (leftVerts->size() < REPO_MP_MAX_VERTEX_COUNT)
+			if (leftVerts->size() <= REPO_MP_MAX_VERTEX_COUNT)
 			{
 				// If it is under the threshold, we can just move the pointers up
 				verts[nodeIndex] = std::move(leftVerts);
@@ -1026,7 +1026,7 @@ void MultipartOptimizer::splitMesh(
 		else if (leftVerts == nullptr)
 		{
 			// If only the right is valid, we check just that against the threshold
-			if (rightVerts->size() < REPO_MP_MAX_VERTEX_COUNT)
+			if (rightVerts->size() <= REPO_MP_MAX_VERTEX_COUNT)
 			{
 				// If it is under the threshold, we can just move the pointers up
 				verts[nodeIndex] = std::move(rightVerts);
@@ -1059,7 +1059,7 @@ void MultipartOptimizer::splitMesh(
 			std::copy(rightVerts->begin(), rightVerts->end(), std::inserter(*uniqueVertices, uniqueVertices->end()));
 
 			// Check whether the new size exceeds the threshold
-			if (uniqueVertices->size() < REPO_MP_MAX_VERTEX_COUNT)
+			if (uniqueVertices->size() <= REPO_MP_MAX_VERTEX_COUNT)
 			{
 				// If it does not, insert the new set and reset the sets of the two children to free memory
 				verts[nodeIndex] = std::move(uniqueVertices);
