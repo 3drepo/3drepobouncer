@@ -86,10 +86,12 @@ jobs:
       # ---------------------------------------------------------------
       - name: Set deploy metadata
         id: vars
+        env:
+          WORKFLOW_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
         run: |
           if [[ "${GITHUB_EVENT_NAME}" == "workflow_run" ]]; then
             # workflow_run on a tag push: head_branch holds the tag name
-            IMAGE_TAG="${{ github.event.workflow_run.head_branch }}"
+            IMAGE_TAG="$WORKFLOW_HEAD_BRANCH"
           elif [[ "${GITHUB_EVENT_NAME}" == "issue_comment" ]]; then
             COMMENT_BODY=$(jq -r .comment.body < "$GITHUB_EVENT_PATH")
             # Allow /deploy-bouncer <tag> to specify an explicit tag; fall back to PR branch
