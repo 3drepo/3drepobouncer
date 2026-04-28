@@ -56,7 +56,8 @@ MultipartOptimizer::MultipartOptimizer(
 	repo::manipulator::modelconvertor::AbstractModelExport* exporter
 ):
 	handler(handler),
-	exporter(exporter)
+	exporter(exporter),
+	splitByFloor(false)
 {
 }
 
@@ -162,7 +163,9 @@ MultipartOptimizer::TransformMap MultipartOptimizer::getAllTransforms(
 	}
 
 	// Find all branch groupings using magic metadata fields.
-	applyBranchGroups(transformMap, database, collection, revId);
+	if (splitByFloor) {
+		applyBranchGroups(transformMap, database, collection, revId);
+	}
 
 	if (rootNode.isEmpty()) {
 		throw repo::lib::RepoException("getAllTransforms; no root node found.");

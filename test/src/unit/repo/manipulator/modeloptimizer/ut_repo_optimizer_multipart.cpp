@@ -491,8 +491,6 @@ TEST(MultipartOptimizer, TestMeshGroupings)
 	);
 }
 
-#pragma optimize("", off)
-
 namespace {
 
 	// These methods are for use exclusively by TestBranchGroupings.
@@ -645,7 +643,7 @@ TEST(MultipartOptimizer, TestBranchGroupings)
 	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({0, 0, 0}));
 
 	MultipartOptimizer opt(handler.get(), mockExporter.get());
-
+	opt.splitByFloor = true;
 	opt.processScene(
 		database,
 		projectName,

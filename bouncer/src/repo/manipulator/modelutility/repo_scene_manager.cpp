@@ -31,13 +31,14 @@ using namespace repo::manipulator::modelutility;
 
 
 uint8_t SceneManager::commitScene(
-	repo::core::model::RepoScene									*scene,
-	const std::string												&owner,
-	const std::string												&tag,
-	const std::string												&desc,
-	const repo::lib::RepoUUID										&revId,
-	repo::core::handler::AbstractDatabaseHandler					*handler,
-	repo::core::handler::fileservice::FileManager					*fileManager
+	repo::core::model::RepoScene* scene,
+	const std::string& owner,
+	const std::string& tag,
+	const std::string& desc,
+	const repo::lib::RepoUUID& revId,
+	repo::core::handler::AbstractDatabaseHandler* handler,
+	repo::core::handler::fileservice::FileManager* fileManager,
+	const repo::manipulator::modelutility::WebBufferConfig& config
 ) {
 	uint8_t errCode = REPOERR_UPLOAD_FAILED;
 	std::string msg;
@@ -63,7 +64,7 @@ uint8_t SceneManager::commitScene(
 			{
 				repoInfo << "Generating Repo Bundles...";
 				scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::GEN_WEB_STASH);
-				if (success = generateWebViewBuffers(scene, repo::manipulator::modelconvertor::ExportType::REPO, handler))
+				if (success = generateWebViewBuffers(scene, repo::manipulator::modelconvertor::ExportType::REPO, handler, config))
 					repoInfo << "Repo Bundles for Stash stored into the database";
 				else
 					repoError << "failed to commit Repo Bundles";
@@ -201,9 +202,11 @@ void SceneManager::fetchScene(
 }
 
 bool SceneManager::generateWebViewBuffers(
-	repo::core::model::RepoScene									*scene,
-	const repo::manipulator::modelconvertor::ExportType				&exType,
-	repo::core::handler::AbstractDatabaseHandler					*handler)
+	repo::core::model::RepoScene *scene,
+	const repo::manipulator::modelconvertor::ExportType &exType,
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	const repo::manipulator::modelutility::WebBufferConfig& config
+)
 {
 	bool validScene =
 		scene
@@ -252,6 +255,7 @@ bool SceneManager::generateWebViewBuffers(
 		}
 
 		repo::manipulator::modeloptimizer::MultipartOptimizer mpOpt(handler, exporter.get());
+		mpOpt.splitByFloor = config.splitByFloor;
 		mpOpt.processScene(
 			scene->getDatabaseName(),
 			scene->getProjectName(),

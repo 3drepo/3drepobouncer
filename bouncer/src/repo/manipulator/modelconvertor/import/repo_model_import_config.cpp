@@ -31,7 +31,8 @@ ModelImportConfig::ModelImportConfig() :
 	targetUnits(ModelUnits::UNKNOWN),
 	revisionId(repo::lib::RepoUUID::defaultValue),
 	lod(0),
-	numThreads(0)
+	numThreads(0),
+	splitByFloor(true)
 {}
 
 ModelImportConfig::ModelImportConfig(
@@ -74,5 +75,6 @@ std::string ModelImportConfig::prettyPrint()
 		+ " revisionId: " + revisionId.toString()
 		+ " num threads: " + std::to_string(numThreads)
 		+ " view name: " + (viewName.empty() ? "NONE" : viewName)
+		+ " split by floor: " + (splitByFloor ? "true" : "false")
 	);
 }

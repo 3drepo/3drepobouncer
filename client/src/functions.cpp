@@ -21,6 +21,7 @@
 #include <repo/core/model/bson/repo_bson.h>
 #include <repo/core/model/bson/repo_bson_factory.h>
 #include <repo/manipulator/modelutility/repo_clash_detection_config.h>
+#include <repo/manipulator/modelutility/repo_web_buffer_config.h>
 
 #include <sstream>
 #include <fstream>
@@ -80,6 +81,16 @@ int32_t knownValid(const std::string& cmd)
 	if (cmd == cmdClash)
 		return 1;
 	return -1;
+}
+
+void replaceRepoModelPath(std::string& input) {
+	const char* env = std::getenv("REPO_MODEL_PATH");
+	if (env) {
+		size_t pos = input.find("$REPO_MODEL_PATH"); // Our conventions are to always use unix conventions
+		if (pos != std::string::npos) {
+			input.replace(pos, std::string("$REPO_MODEL_PATH").length(), env);
+		}
+	}
 }
 
 int32_t performOperation(
@@ -276,8 +287,10 @@ bool _generateStash(
 	if (scene) {
 		if (type == "repo")
 		{
+			repo::manipulator::modelutility::WebBufferConfig config;
+			config.splitByFloor = true;
 			controller->updateRevisionStatus(scene, repo::core::model::ModelRevisionNode::UploadStatus::GEN_WEB_STASH);
-			success = controller->generateAndCommitRepoBundlesBuffer(token, scene);
+			success = controller->generateAndCommitRepoBundlesBuffer(token, scene, config);
 		}
 		else if (type == "tree")
 		{
@@ -412,6 +425,7 @@ int32_t importFileAndCommit(
 			config.importAnimations = jsonTree.get<bool>("importAnimations", config.importAnimations);
 			config.viewName = jsonTree.get<std::string>("view", config.viewName);
 			config.viewStyle = jsonTree.get<std::string>("style", "");
+			config.splitByFloor = jsonTree.get<bool>("splitByFloor", config.splitByFloor);
 			auto revIdStr = jsonTree.get<std::string>("revId", "");
 			if (!revIdStr.empty()) {
 				config.revisionId = repo::lib::RepoUUID(revIdStr);
@@ -440,6 +454,8 @@ int32_t importFileAndCommit(
 		}
 	}
 
+	replaceRepoModelPath(fileLoc);
+
 	boost::filesystem::path filePath(fileLoc);
 	std::string fileExt = filePath.extension().string();
 	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
@@ -455,7 +471,10 @@ int32_t importFileAndCommit(
 	{
 		repoLog("Trying to commit this scene to database as " + config.getDatabaseName() + "." + config.getProjectName());
 
-		err = controller->commitScene(token, graph, owner, tag, desc, config.revisionId);
+		repo::manipulator::modelutility::WebBufferConfig webBufferConfig;
+		webBufferConfig.splitByFloor = config.splitByFloor;
+
+		err = controller->commitScene(token, graph, owner, tag, desc, config.revisionId, webBufferConfig);
 
 		if (err == REPOERR_OK)
 		{

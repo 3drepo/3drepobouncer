@@ -39,6 +39,7 @@
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
 #include "modelutility/repo_drawing_manager.h"
 #include "modelutility/repo_clash_detection_engine.h"
+#include "modelutility/repo_web_buffer_config.h"
 
 using namespace repo::manipulator;
 
@@ -133,7 +134,8 @@ uint8_t RepoManipulator::commitScene(
 	const std::string& owner,
 	const std::string& tag,
 	const std::string& desc,
-	const repo::lib::RepoUUID& revId)
+	const repo::lib::RepoUUID& revId,
+	const WebBufferConfig& config)
 {
 	repoLog("Manipulator: Committing model to database");
 
@@ -149,7 +151,7 @@ uint8_t RepoManipulator::commitScene(
 	}
 
 	modelutility::SceneManager sceneManager;
-	return sceneManager.commitScene(scene, projOwner, tag, desc, revId, dbHandler.get(), dbHandler->getFileManager().get());
+	return sceneManager.commitScene(scene, projOwner, tag, desc, revId, dbHandler.get(), dbHandler->getFileManager().get(), config);
 }
 
 repo::core::model::RepoScene* RepoManipulator::fetchScene(
@@ -175,11 +177,14 @@ void RepoManipulator::fetchScene(
 }
 
 bool RepoManipulator::generateAndCommitRepoBundlesBuffer(
-	repo::core::model::RepoScene* scene)
+	repo::core::model::RepoScene* scene,
+	const repo::manipulator::modelutility::WebBufferConfig& config
+)
 {
 	return generateAndCommitWebViewBuffer(
 		scene,
-		modelconvertor::ExportType::REPO
+		modelconvertor::ExportType::REPO,
+		config
 	);
 }
 
@@ -193,10 +198,12 @@ bool RepoManipulator::generateAndCommitSelectionTree(
 
 bool RepoManipulator::generateAndCommitWebViewBuffer(
 	repo::core::model::RepoScene* scene,
-	const modelconvertor::ExportType& exType)
+	const modelconvertor::ExportType& exType,
+	const repo::manipulator::modelutility::WebBufferConfig& config
+)
 {
 	modelutility::SceneManager SceneManager;
-	return SceneManager.generateWebViewBuffers(scene, exType, dbHandler.get());
+	return SceneManager.generateWebViewBuffers(scene, exType, dbHandler.get(), config);
 }
 
 std::vector<repo::core::model::RepoBSON>

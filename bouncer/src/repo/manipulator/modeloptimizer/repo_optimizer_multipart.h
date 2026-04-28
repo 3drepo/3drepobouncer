@@ -47,7 +47,6 @@ namespace repo {
 				repo::manipulator::modelconvertor::AbstractModelExport* exporter;
 
 			public:
-				
 				MultipartOptimizer(
 					repo::core::handler::AbstractDatabaseHandler* handler,
 					repo::manipulator::modelconvertor::AbstractModelExport* exporter
@@ -58,6 +57,8 @@ namespace repo {
 					std::string collection,
 					repo::lib::RepoUUID revId
 				);
+
+				bool splitByFloor;
 
 			private:
 
