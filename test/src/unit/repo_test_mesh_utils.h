@@ -213,7 +213,7 @@ namespace repo {
 				);
 
 				/*
-				* Check whether the generated supermeshs all adhere to the vertex limit
+				* Check whether the generated supermeshes all adhere to the vertex limit
 				*/
 				bool checkSupermeshVertCounts(
 					TestModelExport* mockExporter,

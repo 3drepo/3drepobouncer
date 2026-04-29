@@ -202,7 +202,7 @@ namespace repo {
 				* The front is represented as two vectors of unique pointers. Both have the same length as the
 				* number of nodes in the bvh and are linked to them by their index (i.e. field i in the vector
 				* belongs to node i in the tree). The unique pointers are typed for sets for the vertex indices
-				* and for vectors for the primitiv indices (the faces).
+				* and for vectors for the primitive indices (the faces).
 				* They are both initially holding only nullptrs and will only ever hold valid pointers for the
 				* nodes currently relevant to the front. This allows to only hold the data that is really needed
 				* in memory at any time.

@@ -152,7 +152,7 @@ bool repo::test::utils::mesh::checkClusteredMeshSplit(TestModelExport* mockExpor
 				}
 			}
 
-			// Increment the one that is closests
+			// Increment the one that is closest.
 			originCounts[closestIndex]++;
 		}
 
