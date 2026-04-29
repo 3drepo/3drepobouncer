@@ -50,6 +50,19 @@ namespace repo {
 						std::string grouping
 					);
 
+					mesh_data(
+						bool name,
+						bool sharedId,
+						int numParents,
+						int faceSize,
+						bool normals,
+						int numUvChannels,
+						int numVertices,
+						int clusterRadius,
+						std::vector<repo::lib::RepoVector3D> clusterOrigins,
+						std::string grouping
+					);
+					
 					std::string name;
 					repo::lib::RepoUUID uniqueId;
 					repo::lib::RepoUUID sharedId;
@@ -60,6 +73,23 @@ namespace repo {
 					std::vector<repo::lib::RepoVector3D> normals;
 					std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
 					std::string grouping;
+
+				private:
+					void initNodeData(
+						bool name,
+						bool sharedId,
+						int numParents,
+						std::string grouping
+					);
+
+					void initGeometry(
+						int faceSize,
+						bool normals,
+						int numUvChannels,
+						int numVertices,
+						repo::lib::RepoVector3D min,
+						repo::lib::RepoVector3D max
+					);
 				};
 
 				struct GenericFace
@@ -137,7 +167,7 @@ namespace repo {
 				};
 
 				/**
-				* Builds a triangle soup MeshNode with exactly nVertices, and faces
+				* Builds a triangle soup MeshNode with exactly n Vertices, and faces
 				* constructed such that each vertex is referenced at least once.
 				*/
 				std::unique_ptr<repo::core::model::MeshNode> createRandomMesh(
@@ -146,6 +176,21 @@ namespace repo {
 					const int primitiveSize,
 					const std::string grouping,
 					const std::vector<repo::lib::RepoUUID>& parent);
+
+				/**
+				* Builds a triangle soup MeshNode with exactly n Vertices, and faces
+				* constructed such that each vertex is referenced at least once.
+				* The n vertices are also split evenly across a number of clusters
+				* which are defined by the cluster origins and the radius of that cluster.
+				*/
+				std::unique_ptr<repo::core::model::MeshNode> createRandomClusteredMesh(
+					const int nVertices,
+					const bool hasUV,
+					const int primitiveSize,
+					const std::string grouping,
+					const std::vector<repo::lib::RepoUUID>& parent,
+					const int clusterRadius,
+					const std::vector<repo::lib::RepoVector3D>& clusterOrigins);
 
 				/*
 				* Compare the geometric content of two meshes to determine if their
@@ -156,6 +201,23 @@ namespace repo {
 					std::string projectName,
 					repo::lib::RepoUUID revId,
 					TestModelExport* mockExporter
+				);
+
+				/*
+				* Check whether generated supermeshes are clustered around the given
+				* origins. This is used to test the mesh splitting.
+				*/
+				bool checkClusteredMeshSplit(
+					TestModelExport* mockExporter,
+					const std::vector<repo::lib::RepoVector3D>& clusterOrigins
+				);
+
+				/*
+				* Check whether the generated supermeshs all adhere to the vertex limit
+				*/
+				bool checkSupermeshVertCounts(
+					TestModelExport* mockExporter,
+					int limit
 				);
 
 				std::vector<GenericFace> getFacesFromDatabase(

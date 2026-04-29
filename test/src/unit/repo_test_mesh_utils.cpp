@@ -21,6 +21,7 @@
 
 #include "repo_test_utils.h"
 #include "repo_test_mesh_utils.h"
+#include "repo_test_random_generator.h"
 #include "repo/core/model/bson/repo_bson_factory.h"
 #include "repo/core/model/bson/repo_bson_builder.h"
 
@@ -42,6 +43,24 @@ std::unique_ptr<MeshNode> repo::test::utils::mesh::createRandomMesh(
 
 	// The new mpOpt drops geometry that has no material, so we set the default here
 	mesh.setMaterial(repo::lib::repo_material_t::DefaultMaterial());	
+
+	return std::make_unique<MeshNode>(mesh);
+}
+
+std::unique_ptr<MeshNode> repo::test::utils::mesh::createRandomClusteredMesh(
+	const int nVertices,
+	const bool hasUV,
+	const int primitiveSize,
+	const std::string grouping,
+	const std::vector<repo::lib::RepoUUID>& parent,
+	const int clusterRadius,
+	const std::vector<repo::lib::RepoVector3D>& clusterOrigins)
+{
+	auto mesh = makeMeshNode(mesh_data(true, true, 0, primitiveSize, false, hasUV ? 1 : 0, nVertices, clusterRadius, clusterOrigins, grouping));
+	mesh.addParents(parent);
+
+	// The new mpOpt drops geometry that has no material, so we set the default here
+	mesh.setMaterial(repo::lib::repo_material_t::DefaultMaterial());
 
 	return std::make_unique<MeshNode>(mesh);
 }
@@ -103,6 +122,71 @@ bool repo::test::utils::mesh::compareMeshes(
 	return true;
 }
 
+bool repo::test::utils::mesh::checkClusteredMeshSplit(TestModelExport* mockExporter, const std::vector<repo::lib::RepoVector3D>& clusterOrigins)
+{
+	auto meshes = mockExporter->getSupermeshes();
+
+	for (auto& supermesh : meshes) {
+
+		// Initialise counters
+		std::vector<int> originCounts;
+		originCounts.reserve(clusterOrigins.size());
+		for (int i = 0; i < clusterOrigins.size(); i++)
+			originCounts.push_back(0);
+
+		// For each vertex, find the closest origin and increase
+		// the counter of that origin.
+		auto vertices = supermesh.getVertices();
+		for (auto& vertex : vertices) {
+
+			// Check distance to each of the cluster origins
+			float minDist = FLT_MAX;
+			int closestIndex = -1;
+			for (int i = 0; i < clusterOrigins.size(); i++)
+			{
+				auto dist = (vertex - clusterOrigins[i]).norm2();
+				if (dist < minDist)
+				{
+					minDist = dist;
+					closestIndex = i;
+				}
+			}
+
+			// Increment the one that is closests
+			originCounts[closestIndex]++;
+		}
+
+		// After all vertices were checked, all except one of the counts need to be 0.
+		// If a supermesh has vertices split across clusters, then the splitting did
+		// not work correctly (in the context of this test).
+		bool foundNonZero = false;
+		for (auto count : originCounts) 
+		{
+			if (count > 0)
+			{
+				if (foundNonZero)
+					return false;
+				else
+					foundNonZero = true;
+			}
+		}
+	}
+
+	// If all supermeshes pass the test, return true.
+	return true;
+}
+
+bool repo::test::utils::mesh::checkSupermeshVertCounts(TestModelExport* mockExporter, int limit)
+{
+	auto meshes = mockExporter->getSupermeshes();
+
+	for (auto& supermesh : meshes) {
+		if (supermesh.getNumVertices() > limit)
+			return false;
+	}
+
+	return true;
+}
 
 // Helper method for getting binary data from the nodes in getFacesFromDatabase(...)
 template <class T>
@@ -516,6 +600,70 @@ repo::test::utils::mesh::mesh_data::mesh_data(
 	std::string grouping
 )
 {
+	// Initialise general node data
+	initNodeData(name, sharedId, numParents, grouping);
+
+	repo::lib::RepoVector3D min = repo::lib::RepoVector3D(FLT_MAX, FLT_MAX, FLT_MAX);
+	repo::lib::RepoVector3D max = repo::lib::RepoVector3D(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+	// Generate vertices for the triangle soup using the old deterministic randomiser
+	for (int i = 0; i < numVertices; i++)
+	{
+		auto newVert = makeRandomRepoVector();
+		vertices.push_back(newVert);
+		min = repo::lib::RepoVector3D::min(min, newVert);
+		max = repo::lib::RepoVector3D::max(max, newVert);
+	}
+
+	// Initialise the rest of the geometry and bounds
+	initGeometry(faceSize, normals, numUvChannels, numVertices, min, max);
+}
+
+repo::test::utils::mesh::mesh_data::mesh_data(
+	bool name,
+	bool sharedId,
+	int numParents,
+	int faceSize,
+	bool normals,
+	int numUvChannels,
+	int numVertices,
+	int clusterRadius,
+	std::vector<repo::lib::RepoVector3D> clusterOrigins,
+	std::string grouping
+)
+{
+	// Initialise general node data
+	initNodeData(name, sharedId, numParents, grouping);
+
+	repo::lib::RepoVector3D min = repo::lib::RepoVector3D(FLT_MAX, FLT_MAX, FLT_MAX);
+	repo::lib::RepoVector3D max = repo::lib::RepoVector3D(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+	// Generate clusters of triangle soup using the new random generator.
+	// These clusters are centred around the cluster origins and will be within
+	// the cluster radius.
+	RepoRandomGenerator random;
+	int numVerticesPerCluster = numVertices / clusterOrigins.size();
+	for (auto clusterOrigin : clusterOrigins) {
+		
+		for (int i = 0; i < numVerticesPerCluster; i++)
+		{
+			// Generate a random direction with a random length between 1 and 100.
+			// Then create the random vertex by adding that to the origin.
+			auto randDir = random.vector({ 1, (double)clusterRadius });
+			auto newVert = clusterOrigin + randDir;
+
+			vertices.push_back(newVert);
+			min = repo::lib::RepoVector3D::min(min, newVert);
+			max = repo::lib::RepoVector3D::max(max, newVert);
+		}
+	}
+
+	// Initialise the rest of the geometry and bounds
+	initGeometry(faceSize, normals, numUvChannels, numVertices, min, max);
+}
+
+void repo::test::utils::mesh::mesh_data::initNodeData(bool name, bool sharedId, int numParents, std::string grouping)
+{
 	if (name) {
 		this->name = "Named Mesh";
 	}
@@ -530,16 +678,17 @@ repo::test::utils::mesh::mesh_data::mesh_data(
 
 	uniqueId = getRandUUID();
 
-	repo::lib::RepoVector3D min = repo::lib::RepoVector3D(FLT_MAX, FLT_MAX, FLT_MAX);
-	repo::lib::RepoVector3D max = repo::lib::RepoVector3D(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	this->grouping = grouping;
+}
 
-	for (int i = 0; i < numVertices; i++)
-	{
-		vertices.push_back(makeRandomRepoVector());
-		min = repo::lib::RepoVector3D::min(min, vertices[vertices.size() - 1]);
-		max = repo::lib::RepoVector3D::max(max, vertices[vertices.size() - 1]);
-	}
-
+void repo::test::utils::mesh::mesh_data::initGeometry(
+	int faceSize,
+	bool normals,
+	int numUvChannels,
+	int numVertices,
+	repo::lib::RepoVector3D min,
+	repo::lib::RepoVector3D max)
+{
 	int vertexIndex = 0;
 	do
 	{
@@ -568,8 +717,6 @@ repo::test::utils::mesh::mesh_data::mesh_data(
 	this->boundingBox.push_back({
 		max.x, max.y, max.z
 		});
-
-	this->grouping = grouping;
 }
 
 repo::lib::RepoMatrix repo::test::utils::mesh::makeTransform(bool translation, bool rotation)
