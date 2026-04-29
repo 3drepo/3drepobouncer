@@ -706,6 +706,50 @@ TEST_F(NwdTestSuite, MetadataParentsNWD)
 	}
 }
 
+TEST_F(NwdTestSuite, MagicMetadataNwdFloors)
+{
+	// In Nwd files, we should support the floor magic metadata when the Nwd hosts
+	// either Ifc or Rvt files.
+	{
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport("MagicMetadataNwdFloorsRvt", getDataPath("floors_and_levels_rvt.nwd")));
+
+		std::vector<std::string> expectedFloorValues = {
+			"<No level>",
+			"Level 0",
+			"Level 1",
+			"Level 2",
+			"Planting Level Ground"
+		};
+
+		for (auto& name : expectedFloorValues) {
+			auto nodes = scene.findNodesByMetadata(REPO_METADATA_GROUPING_FLOOR, name);
+			EXPECT_THAT(nodes.size(), Eq(1)) << name;
+			for (auto& node : nodes) {
+				EXPECT_THAT(boost::apply_visitor(repo::lib::StringConversionVisitor(), node.getMetadata()[REPO_METADATA_GROUPING_FLOOR]), Eq(name));
+				EXPECT_THAT(node.getParent().name(), Eq(std::string("floors_and_levels_rvt.nwd")));
+			}
+		}
+	}
+	{
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport("MagicMetadataNwdFloorsIfc", getDataPath("floors_and_levels_ifc.nwd")));
+
+		std::vector<std::string> expectedFloorValues = {
+			"Level 0",
+			"Level 1",
+			"Level 2",
+		};
+
+		for (auto& name : expectedFloorValues) {
+			auto nodes = scene.findNodesByMetadata(REPO_METADATA_GROUPING_FLOOR, name);
+			EXPECT_THAT(nodes.size(), Eq(1)) << name;
+			for (auto& node : nodes) {
+				EXPECT_THAT(boost::apply_visitor(repo::lib::StringConversionVisitor(), node.getMetadata()[REPO_METADATA_GROUPING_FLOOR]), Eq(name));
+				EXPECT_THAT(node.getParent().name(), Eq(std::string("IfcBuilding")));
+			}
+		}
+	}
+}
+
 TEST(ODAModelImport, MetadataParents)
 {
 	{
