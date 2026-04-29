@@ -1,6 +1,10 @@
 name: Deploy Bouncer to Staging
 
 on:
+  push:
+    branches:
+      - ISSUE_1284
+
   workflow_dispatch:
     inputs:
       image_tag:
@@ -16,6 +20,7 @@ permissions:
 jobs:
   pre-deploy:
     if: |
+      github.event_name == 'push' ||
       github.event_name == 'workflow_dispatch' ||
       (
         github.event_name == 'issue_comment' &&
@@ -78,8 +83,8 @@ jobs:
       - name: Set image tag
         id: vars
         run: |
-          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
-            IMAGE_TAG="${{ github.event.inputs.image_tag }}"
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" || "${GITHUB_EVENT_NAME}" == "push" ]]; then
+            IMAGE_TAG="${{ github.event.inputs.image_tag || 'staging' }}"
           else
             COMMENT_BODY=$(jq -r .comment.body < "$GITHUB_EVENT_PATH")
             IMAGE_TAG=$(echo "$COMMENT_BODY" | awk '{print $2}')
