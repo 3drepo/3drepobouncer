@@ -1104,6 +1104,12 @@ void MultipartOptimizer::splitMesh(
 						rightPrimitives.get());
 					meshesCreated++;
 				}
+
+				// Release vertex and primitive indices from memory
+				leftVerts.reset();
+				rightVerts.reset();
+				leftPrimitives.reset();
+				rightPrimitives.reset();
 			}
 		}
 	}
