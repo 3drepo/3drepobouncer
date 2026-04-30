@@ -641,7 +641,14 @@ repo::test::utils::mesh::mesh_data::mesh_data(
 	// Generate clusters of triangle soup using the new random generator.
 	// These clusters are centred around the cluster origins and will be within
 	// the cluster radius.
+
 	RepoRandomGenerator random;
+
+	if (clusterOrigins.size() == 0)
+		throw repo::lib::RepoException("Cannot generate mesh data for 0 clusters.");
+	if (numVertices % clusterOrigins.size() != 0)
+		throw repo::lib::RepoException("Cannot generate clusters with unequal vertex counts.");
+
 	int numVerticesPerCluster = numVertices / clusterOrigins.size();
 	for (auto clusterOrigin : clusterOrigins) {
 		
