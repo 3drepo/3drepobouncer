@@ -18,11 +18,13 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <cstdlib>
-#include <repo/manipulator/modeloptimizer/repo_optimizer_multipart.h>
 #include <limits>
-#include <test/src/unit/repo_test_mesh_utils.h>
+#include <unordered_set>
+#include <algorithm>
+#include <repo/manipulator/modeloptimizer/repo_optimizer_multipart.h>
 #include <repo/core/model/bson/repo_bson_factory.h>
 #include <repo/manipulator/modelutility/repo_scene_builder.h>
+#include <test/src/unit/repo_test_mesh_utils.h>
 #include <test/src/unit/repo_test_database_info.h>
 #include <test/src/unit/repo_test_random_generator.h>
 
@@ -323,20 +325,16 @@ TEST(MultipartOptimizer, TestSplittingLocality)
 	// should split the vertices so that the resulting supermeshes contain only vertices belonging to
 	// one of the cluster origins and not multiples.
 
-	auto opt = MultipartOptimizer();
-
 	auto handler = getHandler();
 	std::string database = DBMULTIPARTOPTIMIZERTEST;
 	std::string projectName = "TestSplitting";
 	auto revId = repo::lib::RepoUUID::createUUID();
-
 
 	auto sceneBuilder = repo::manipulator::modelutility::RepoSceneBuilder(handler, database, projectName, revId);
 
 	auto rootNode = repo::core::model::RepoBSONFactory::makeTransformationNode({}, "rootNode", {});
 	sceneBuilder.addNode(rootNode);
 	auto rootNodeId = rootNode.getSharedID();
-
 
 	// Generate random cluster positions.
 
@@ -381,15 +379,12 @@ TEST(MultipartOptimizer, TestSplittingLocality)
 
 	// Process with mock exporter
 	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
-	bool result = opt.processScene(
+	auto opt = MultipartOptimizer(handler.get(), mockExporter.get());
+	opt.processScene(
 		database,
 		projectName,
-		revId,
-		handler.get(),
-		mockExporter.get()
+		revId
 	);
-
-	EXPECT_TRUE(result);
 
 	EXPECT_TRUE(mockExporter->isFinalised());
 
@@ -624,6 +619,19 @@ namespace {
 			repo::core::model::RepoBSONFactory::makeMetaDataNode(metadata, {}, {parentId})
 		);
 	}
+
+	void removeDuplicateIds(std::vector<repo::lib::RepoUUID>& ids) {
+		std::unordered_set<repo::lib::RepoUUID, repo::lib::RepoUUIDHasher> seen;
+		ids.erase(std::remove_if(ids.begin(), ids.end(), [&seen](const repo::lib::RepoUUID& id) {
+			if (seen.find(id) != seen.end()) {
+				return true;
+			}
+			else {
+				seen.insert(id);
+				return false;
+			}
+		}), ids.end());
+	}
 }
 
 TEST(MultipartOptimizer, TestBranchGroupings)
@@ -681,6 +689,10 @@ TEST(MultipartOptimizer, TestBranchGroupings)
 	expectedGroupNull.addNode(createRandomMesh(nVertices, false, 3, "", {rootNode->getSharedID()}));
 	expectedGroupNull.addNode(createRandomMesh(nVertices, false, 3, "", {rootNode->getSharedID()}));
 
+	// The grouping logic must be robust to split meshes too
+
+	expectedGroupNull.addNode(createRandomMesh(REPO_MP_MAX_VERTEX_COUNT + nVertices, false, 3, "", {rootNode->getSharedID()}));
+
 	rootNode = nullptr; // Release rootnode or it won't be comitted.
 
 	// Meshes further down the tree, which have no grouping ancestor, should also
@@ -702,6 +714,9 @@ TEST(MultipartOptimizer, TestBranchGroupings)
 	expectedGroup1.addNode(createRandomMesh(nVertices, false, 3, "", {nodes["rootNode_1"]}));
 	expectedGroup1.addNode(createRandomMesh(nVertices, false, 3, "", {nodes["rootNode_1_1_1"]}));
 	expectedGroup1.addNode(createRandomMesh(nVertices, false, 3, "", {nodes["rootNode_1_1_2_1"]}));
+
+	expectedGroup1.addNode(createRandomMesh(REPO_MP_MAX_VERTEX_COUNT + nVertices, false, 3, "", {nodes["rootNode_1_1_2_1"]}));
+	expectedGroup1.addNode(createRandomMesh(REPO_MP_MAX_VERTEX_COUNT + nVertices, false, 3, "", {nodes["rootNode_1_1_2_2"]}));
 
 	// Branch group 3 should take precedence over branch group 2, for nodes
 	// further down.
@@ -766,7 +781,9 @@ TEST(MultipartOptimizer, TestBranchGroupings)
 			for (const auto& pair : mapping) {
 				actualIds.push_back(pair.mesh_id);
 
-				// MeshNode resource groupings must not cross supermeshes
+				// MeshNode resource groupings must not cross supermeshes. This snippet
+				// checks that the grouping of every meshNode in this supermesh is the
+				// same.
 
 				const auto& meshNodeGrouping = group.nodeIdsToGrouping.at(pair.mesh_id);
 				if (!runningMeshNodeGrouping) {
@@ -777,12 +794,19 @@ TEST(MultipartOptimizer, TestBranchGroupings)
 				}
 			}
 
-			// A single grouping may have multiple supermeshes, because there is a lot of
-			// geometry, or because there are multiple MeshNode grouping entries (even
-			// though these will not be public).
+			// A single branch grouping may have multiple supermeshes, because there is a
+			// lot of geometry, or because there are multiple MeshNode grouping entries 
+			// (even though these will not be public).
 
 			EXPECT_THAT(supermeshNode->getGrouping(), testing::Eq(group.name));
 		}
+
+		// Ultimately, between all the supermeshes, under the branch group, we should
+		// have exactly the meshNode's that should be in those groups, regardless of how
+		// they are distributed.
+
+		// Remove duplicates because split meshes will show up multiple times
+		removeDuplicateIds(actualIds);
 
 		EXPECT_THAT(actualIds, testing::UnorderedElementsAreArray(group.nodeIds));
 	};
@@ -792,4 +816,13 @@ TEST(MultipartOptimizer, TestBranchGroupings)
 	compareSupermesh(supermeshMap["branchGroup2"], expectedGroup2);
 	compareSupermesh(supermeshMap["branchGroup3"], expectedGroup3);
 	compareSupermesh(supermeshMap["branchGroup4"], expectedGroup4);
+
+	// Due to the large meshes and groupings, we expect a specific number of
+	// supermeshes
+
+	EXPECT_THAT(supermeshMap[""].size(), testing::Eq(5)); // 6 combined meshnodes, 2 combined "a", 1 "b", 1 from large split, 1 from large split
+	EXPECT_THAT(supermeshMap["branchGroup1"].size(), testing::Eq(5)); // 3 combined meshnodes, 1 from split, 1 from split, 1 from split, 1 from split
+	EXPECT_THAT(supermeshMap["branchGroup2"].size(), testing::Eq(3)); // 1 meshnode, 2x "a" and 1 "c"
+	EXPECT_THAT(supermeshMap["branchGroup3"].size(), testing::Eq(1)); // 2 combined meshnodes
+	EXPECT_THAT(supermeshMap["branchGroup4"].size(), testing::Eq(3)); // 4 combined meshnodes, 2 "a" and 1 "b"
 }
