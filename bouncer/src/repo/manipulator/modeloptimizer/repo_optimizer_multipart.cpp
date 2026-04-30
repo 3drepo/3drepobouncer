@@ -629,10 +629,10 @@ void MultipartOptimizer::appendMesh(
 	meshMap.min = (repo::lib::RepoVector3D)bbox.min();
 	meshMap.max = (repo::lib::RepoVector3D)bbox.max();
 
-	std::vector<repo::lib::RepoVector3D> submVertices = node.getLoadedVertices();
-	std::vector<repo::lib::RepoVector3D> submNormals = node.getLoadedNormals();
-	std::vector<repo_face_t> submFaces = node.getLoadedFaces();
-	std::vector<std::vector<repo::lib::RepoVector2D>> submUVs = node.getLoadedUVChannelsSeparated();
+	const auto& submVertices = node.getLoadedVertices();
+	const auto& submNormals = node.getLoadedNormals();
+	const auto& submFaces = node.getLoadedFaces();
+	const auto& submUVs = node.getLoadedUVChannelsSeparated();
 
 	if (submVertices.size() && submFaces.size())
 	{
@@ -693,8 +693,8 @@ MultipartOptimizer::Bvh MultipartOptimizer::buildFacesBvh(
 	// mesh.
 	// The BVH builder expects a set of bounding boxes and centers to work with.
 
-	auto faces = node.getLoadedFaces();
-	auto vertices = node.getLoadedVertices();
+	const auto& faces = node.getLoadedFaces();
+	const auto& vertices = node.getLoadedVertices();
 	auto boundingBoxes = std::vector<bvh::BoundingBox<Scalar>>();
 	auto centers = std::vector<BvhVector3>();
 
@@ -834,10 +834,10 @@ void MultipartOptimizer::createSupermeshFromBranch(
 	std::vector<uint32_t>* primitives
 )
 {
-	auto faces = node.getLoadedFaces();
-	auto vertices = node.getLoadedVertices();
-	auto normals = node.getLoadedNormals();
-	auto uvChannels = node.getLoadedUVChannelsSeparated();
+	const auto& faces = node.getLoadedFaces();
+	const auto& vertices = node.getLoadedVertices();
+	const auto& normals = node.getLoadedNormals();
+	const auto& uvChannels = node.getLoadedUVChannelsSeparated();
 
 
 	// Now collect the faces into a new mesh.
@@ -932,7 +932,7 @@ void MultipartOptimizer::splitMesh(
 	auto start = std::chrono::high_resolution_clock::now();
 
 	auto bvh = buildFacesBvh(node);
-	auto faces = node.getLoadedFaces();
+	const auto& faces = node.getLoadedFaces();
 
 	// Flatten the tree to process leaves and branch nodes separately
 	std::vector<size_t> leaves;
