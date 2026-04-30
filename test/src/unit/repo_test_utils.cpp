@@ -37,9 +37,9 @@ repo::RepoController::RepoToken* testing::initController(repo::RepoController* c
 repo::lib::RepoVector3D testing::makeRandomRepoVector()
 {
 	repo::lib::RepoVector3D v;
-	v.x = (double)(rand() - rand()) / (double)(RAND_MAX)/(8.0e6);
-	v.y = (double)(rand() - rand()) / (double)(RAND_MAX)/(8.0e6);
-	v.z = (double)(rand() - rand()) / (double)(RAND_MAX)/(8.0e6);
+	v.x = std::abs((double)rand() - (double)rand()) / (double)(RAND_MAX) * (8.0e6);
+	v.y = std::abs((double)rand() - (double)rand()) / (double)(RAND_MAX) * (8.0e6);
+	v.z = std::abs((double)rand() - (double)rand()) / (double)(RAND_MAX) * (8.0e6);
 	return v;
 }
 

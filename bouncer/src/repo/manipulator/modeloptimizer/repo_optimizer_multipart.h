@@ -37,6 +37,11 @@
 namespace repo {
 	namespace manipulator {
 		namespace modeloptimizer {
+
+			// The vertex count is used as a rough approximation of the total geometry size.
+			// This figure is empirically set to end up with an average bundle size of 24 Mb.
+			#define REPO_MP_MAX_VERTEX_COUNT 1200000
+
 			class MultipartOptimizer
 			{
 				typedef float Scalar;
@@ -194,23 +199,6 @@ namespace repo {
 					size_t head
 				);
 
-				std::vector<std::set<uint32_t>> getUniqueVertices(
-					const Bvh& bvh,
-					const std::vector<repo::lib::repo_face_t>& primitives // The primitives in this tree are faces
-				);
-
-				/*
-				* Splits a MeshNode into a set of mapped_mesh_ts based on face location, so
-				* each mapped_mesh_t has a vertex count below a certain size.
-				*/
-				void splitMesh(
-					repo::core::model::StreamingMeshNode &node,
-					repo::manipulator::modelconvertor::AbstractModelExport *exporter,
-					const MaterialPropMap &matPropMap,
-					const repo::lib::RepoUUID &texId,
-					const std::string& namedGrouping
-				);
-
 				/*
 				* Turns a mapped_mesh_t into a MeshNode that can be added to the database
 				*/
@@ -218,6 +206,55 @@ namespace repo {
 					const mapped_mesh_t &mapped
 				);
 
+				/*
+				* Splits a MeshNode into a set of mapped_mesh_ts based on face location, so
+				* each mapped_mesh_t has a vertex count below a certain size.
+				*
+				* To split the mesh in a memory efficient way, we use an advancing front approach together
+				* with some efficient use of pointer.
+				*
+				* First, a BVH for the faces is build. Then the tree is flattened so that we have the leaves
+				* and all branch nodes separately. The branch nodes will be in top-down order.
+
+				* The front is represented as two vectors of unique pointers. Both have the same length as the
+				* number of nodes in the bvh and are linked to them by their index (i.e. field i in the vector
+				* belongs to node i in the tree). The unique pointers are typed for sets for the vertex indices
+				* and for vectors for the primitive indices (the faces).
+				* They are both initially holding only nullptrs and will only ever hold valid pointers for the
+				* nodes currently relevant to the front. This allows to only hold the data that is really needed
+				* in memory at any time.
+				*
+				* First, the leaves are processed. For each, the unique vertex indices and the face indices are
+				* collected, the sets and vectors created, and the pointers to these attached to the front.
+				*
+				* Then, the branch nodes are traversed in reverse order. This order ensures that for each node
+				* that the processing reaches, the two children have been processed previously.
+				* At reaching a branch node, the state of their children is checked, their unique vertex indexes
+				* merged, and their count checked against the threshold.
+				* If the threshold is passed, the children are "cut off" i.e. processed to super meshes and written
+				* out.
+				* If the threshold is not passed, the new set and vector are attached to the current node and the
+				* sets/vectors of the children are deleted and the memory associated with it released.
+				* Nodes that have only one child are handled by moving the pointers to the parent without a copy.
+				*
+				* At reaching the end, it is possible to have vertices "left over" that come from branches that
+				* never exceeded the threshold. They are then gathered in one last super mesh.
+				*/
+				void splitMesh(
+					repo::core::model::StreamingMeshNode& node,
+					const MaterialPropMap& matPropMap,
+					const repo::lib::RepoUUID& texId,
+					const std::string& namedGrouping
+				);
+
+				void createSupermeshFromBranch(
+					repo::core::model::StreamingMeshNode& node,
+					const MaterialPropMap& matPropMap,
+					const repo::lib::RepoUUID& texId,
+					std::set<uint32_t>* globalVertexIndices,
+					std::vector<uint32_t>* primitives,
+					const std::string& namedGrouping
+				);
 
 				/**
 				* Groups the MeshNodes into sets based on their location and
