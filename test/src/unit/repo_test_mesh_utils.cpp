@@ -654,7 +654,7 @@ repo::test::utils::mesh::mesh_data::mesh_data(
 		
 		for (int i = 0; i < numVerticesPerCluster; i++)
 		{
-			// Generate a random direction with a random length between 1 and 100.
+			// Generate a random direction with a random length between 1 and clusterRadius.
 			// Then create the random vertex by adding that to the origin.
 			auto randDir = random.vector({ 1, (double)clusterRadius });
 			auto newVert = clusterOrigin + randDir;
