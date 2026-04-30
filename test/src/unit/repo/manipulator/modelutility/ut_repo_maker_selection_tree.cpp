@@ -31,8 +31,8 @@
 #define RAPIDJSON_NAMESPACE_BEGIN namespace repo { namespace rapidjson {
 #define RAPIDJSON_NAMESPACE_END } }
 
-#include <repo/manipulator/modelutility/rapidjson/rapidjson.h>
-#include <repo/manipulator/modelutility/rapidjson/document.h>
+#include <repo/lib/rapidjson/rapidjson.h>
+#include <repo/lib/rapidjson/document.h>
 
 #include "../../../repo_test_utils.h"
 #include "../../../repo_test_mesh_utils.h"
@@ -45,6 +45,7 @@ using namespace testing;
 using namespace repo::manipulator::modelconvertor;
 using namespace repo::manipulator::modelutility;
 using namespace repo;
+using namespace repo::lib;
 
 #define TESTDB "SelectionTreeTest"
 

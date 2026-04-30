@@ -239,6 +239,39 @@ namespace repo {
 				float shortestDistance(const repo::core::model::MeshNode& m, repo::lib::RepoVector3D p);
 				float shortestDistance(const std::vector<repo::core::model::MeshNode>& m, repo::lib::RepoVector3D p);
 				float shortestDistance(const std::vector<repo::lib::RepoVector3D>& v, repo::lib::RepoVector3D p);
+
+				/*
+				* Creates a cube centered on 0,0,0 with a side length of 1 in all dimensions.
+				*/
+				repo::core::model::MeshNode makeUnitCube();
+
+				/*
+				* Creates a cone centered on 0,0,0 with a height of 1 and a base radius of 1.
+				* The cone's axis is aligned with the Z axis.
+				*/
+				repo::core::model::MeshNode makeUnitCone();
+
+				/*
+				* Creates a sphere centered on 0,0,0 with a diameter of 1. This uses uv/lat
+				* -long grid approach, as opposed to the geodesic/icosahedron approach. This
+				* is chosen as it is arguably the more challenging mesh for testing purposes.
+				*/
+				repo::core::model::MeshNode makeUnitSphere();
+
+				/*
+				* Creates a cylinder centered on 0,0,0 with a height of 1 and a radius of 1,
+				* with a specific number of sides. The cylinder's axis is aligned with the
+				* Z axis. The 'cap' parameter determines whether the cylinder has top and
+				* bottom faces. The cap is tesselated such that all vertices sit on the
+				* boundary of the cylinder. A capped cylinder with 4 sides will be a box
+				* (but not a unit box - as the radius is 0.5).
+				*/
+				repo::core::model::MeshNode makeUnitCylinder(int sides, bool cap);
+
+				repo::core::model::MeshNode fromVertices(
+					const std::vector<repo::lib::RepoVector3D>& vertices,
+					repo::core::model::MeshNode::Primitive primitive = repo::core::model::MeshNode::Primitive::TRIANGLES
+				);
 			}
 		}
 	}

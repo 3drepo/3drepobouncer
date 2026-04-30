@@ -35,14 +35,12 @@ if(DEFINED ENV{MPFR_ROOT})
 	set(PATHS_TO_SEARCH ${MPFR_ROOT} ${PATHS_TO_SEARCH})
 endif()
 
-# MPFR is an IFCOS dependency and may be distributed with it
-
-if(DEFINED ENV{IFCOPENSHELL_ROOT})
-	set(PATHS_TO_SEARCH ${PATHS_TO_SEARCH}
-		$ENV{IFCOPENSHELL_ROOT}
-		$ENV{IFCOPENSHELL_ROOT}/lib
-	)
-endif()
+find_path(MPFR_C_INCLUDES
+  NAMES
+	mpfr.h
+	mpf2mpfr.h
+  PATHS ${PATHS_TO_SEARCH}
+)
 
 set(MPFR_FOUND TRUE)
 
@@ -56,6 +54,8 @@ foreach(libName ${MPFR_LIB_NAMES})
 
 	set(MPFR_LIBRARIES ${MPFR_LIBRARIES} ${libPath${libName}})
 endforeach()
+
+set(MPFR_INCLUDE_DIRS "${MPFR_C_INCLUDES}")
 
 if(MPFR_FOUND)
 	message(STATUS "MPFR installation found.")

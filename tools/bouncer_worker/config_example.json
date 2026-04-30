@@ -9,6 +9,7 @@
 		"callback_queue": "callbackq",
 		"model_queue": "modelq",
 		"drawing_queue": "drawingq",
+		"clash_queue": "clashq",
 		"task_prefetch": 4,
 		"model_prefetch": 1,
 		"drawing_prefetch": 1,

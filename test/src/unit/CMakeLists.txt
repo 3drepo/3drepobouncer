@@ -7,21 +7,29 @@
 add_subdirectory(repo)
 set(TEST_SOURCES
 	${TEST_SOURCES}
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_clash_utils.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_common_tests.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_database_info.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_matchers.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_mesh_utils.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_mock_clash_scene.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_mock_database.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_random_generator.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_scene_utils.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_utils.cpp
 	CACHE STRING "TEST_SOURCES" FORCE)
 
 set(TEST_HEADERS
 	${TEST_HEADERS}
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_clash_utils.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_common_tests.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_database_info.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_fileservice_info.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_matchers.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_mesh_utils.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_mock_clash_scene.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_mock_database.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_random_generator.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_scene_utils.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_utils.h
 	CACHE STRING "TEST_HEADERS" FORCE)
