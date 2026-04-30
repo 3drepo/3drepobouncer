@@ -35,10 +35,6 @@ using namespace repo::manipulator::modeloptimizer;
 
 auto defaultGraph = repo::core::model::RepoScene::GraphType::DEFAULT;
 
-// The vertex count is used as a rough approximation of the total geometry size.
-// This figure is empirically set to end up with an average bundle size of 24 Mb.
-static const size_t REPO_MP_MAX_VERTEX_COUNT = 1200000;
-
 // This limit is used to prevent metadata files becoming unwieldly, and the
 // supermesh UV resolution falling below the quantisation noise floor.
 static const size_t REPO_MP_MAX_MESHES_IN_SUPERMESH = 5000;

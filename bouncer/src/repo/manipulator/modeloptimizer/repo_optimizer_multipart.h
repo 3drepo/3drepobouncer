@@ -37,6 +37,11 @@
 namespace repo {
 	namespace manipulator {
 		namespace modeloptimizer {
+
+			// The vertex count is used as a rough approximation of the total geometry size.
+			// This figure is empirically set to end up with an average bundle size of 24 Mb.
+			#define REPO_MP_MAX_VERTEX_COUNT 1200000
+
 			class MultipartOptimizer
 			{
 				
@@ -45,7 +50,7 @@ namespace repo {
 				typedef bvh::Vector3<Scalar> BvhVector3;
 
 			public:
-				
+
 				bool processScene(
 					std::string database,
 					std::string collection,

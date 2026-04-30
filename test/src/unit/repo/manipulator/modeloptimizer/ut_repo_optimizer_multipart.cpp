@@ -247,8 +247,6 @@ TEST(MultipartOptimizer, TestSingleLargeMesh)
 
 TEST(MultipartOptimizer, TestSingleOversizedMesh)
 {
-	int vertLimit = 1200000; // 1200000 comes from the const in repo_optimizer_multipart.cpp
-
 	auto opt = MultipartOptimizer();
 
 	auto handler = getHandler();
@@ -263,7 +261,7 @@ TEST(MultipartOptimizer, TestSingleOversizedMesh)
 	auto rootNodeId = rootNode.getSharedID();
 
 		
-	sceneBuilder.addNode(createRandomMesh(vertLimit + 1, false, 3, "", { rootNodeId }));
+	sceneBuilder.addNode(createRandomMesh(REPO_MP_MAX_VERTEX_COUNT + 1, false, 3, "", { rootNodeId }));
 
 	sceneBuilder.finalise();
 
@@ -283,7 +281,7 @@ TEST(MultipartOptimizer, TestSingleOversizedMesh)
 
 	EXPECT_EQ(mockExporter->getSupermeshCount(), 2); // even with one triangle over, large meshes should be split
 
-	EXPECT_TRUE(checkSupermeshVertCounts(mockExporter.get(), vertLimit));
+	EXPECT_TRUE(checkSupermeshVertCounts(mockExporter.get(), REPO_MP_MAX_VERTEX_COUNT));
 
 	EXPECT_TRUE(compareMeshes(
 		database,
@@ -294,8 +292,6 @@ TEST(MultipartOptimizer, TestSingleOversizedMesh)
 
 TEST(MultipartOptimizer, TestMultipleOversizedMeshes)
 {
-	int vertLimit = 1200000; // 1200000 comes from the const in repo_optimizer_multipart.cpp
-
 	auto opt = MultipartOptimizer();
 
 	auto handler = getHandler();
@@ -332,7 +328,7 @@ TEST(MultipartOptimizer, TestMultipleOversizedMeshes)
 	// Mesh splitting is not determinsitic so we don't check the final mesh
 	// count in this test
 
-	EXPECT_TRUE(checkSupermeshVertCounts(mockExporter.get(), vertLimit));
+	EXPECT_TRUE(checkSupermeshVertCounts(mockExporter.get(), REPO_MP_MAX_VERTEX_COUNT));
 
 	EXPECT_TRUE(compareMeshes(
 		database,
@@ -349,8 +345,6 @@ TEST(MultipartOptimizer, TestSplittingLocality)
 	// These clusters are separated by empty space and, if working correctly, the splitting algorithm
 	// should split the vertices so that the resulting supermeshes contain only vertices belonging to
 	// one of the cluster origins and not multiples.
-
-	int vertLimit = 1200000; // 1200000 comes from the const in repo_optimizer_multipart.cpp
 
 	auto opt = MultipartOptimizer();
 
@@ -404,7 +398,7 @@ TEST(MultipartOptimizer, TestSplittingLocality)
 	}	
 	
 	// Create node and finalise scene
-	int nVertices = vertLimit * noOrigins;
+	int nVertices = REPO_MP_MAX_VERTEX_COUNT * noOrigins;
 	sceneBuilder.addNode(createRandomClusteredMesh(nVertices, false, 3, "", { rootNodeId }, clusterRadius, clusterOrigins));
 	sceneBuilder.finalise();
 
@@ -424,7 +418,7 @@ TEST(MultipartOptimizer, TestSplittingLocality)
 
 	EXPECT_TRUE(mockExporter->getSupermeshCount() >= 4); // should be split into at least four supermeshes
 
-	EXPECT_TRUE(checkSupermeshVertCounts(mockExporter.get(), vertLimit));
+	EXPECT_TRUE(checkSupermeshVertCounts(mockExporter.get(), REPO_MP_MAX_VERTEX_COUNT));
 
 	EXPECT_TRUE(compareMeshes(
 		database,
