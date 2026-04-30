@@ -1133,7 +1133,7 @@ void MultipartOptimizer::splitMesh(
 		meshesCreated++;
 	}
 
-	repoError << "Split mesh with " << node.getNumLoadedVertices() << " vertices into " << meshesCreated << " submeshes in " << CHRONO_DURATION(start) << " ms";
+	repoInfo << "Split mesh with " << node.getNumLoadedVertices() << " vertices into " << meshesCreated << " submeshes in " << CHRONO_DURATION(start) << " ms";
 }
 
 std::unique_ptr<repo::core::model::SupermeshNode> MultipartOptimizer::createSupermeshNode(
