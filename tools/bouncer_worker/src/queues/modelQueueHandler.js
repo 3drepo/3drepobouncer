@@ -31,7 +31,7 @@ const logLabel = { label: 'MODELQ' };
 
 Handler.onMessageReceived = async (cmd, rid, callback) => {
 	const logDir = `${config.logging.taskLogDir}/${rid.toString()}/`;
-	const { errorCode, database, model, user, cmdParams, file } = messageDecoder(cmd);
+	const { errorCode, teamspace, container, user, cmdParams, file } = messageDecoder(cmd);
 
 	if (errorCode) {
 		callback(JSON.stringify({ value: errorCode }));
@@ -43,14 +43,14 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	await Utils.sleep(100);
 	callback(JSON.stringify({
 		status: PROCESSING,
-		database,
-		project: model,
+		teamspace,
+		container,
 	}));
 
 	const returnMessage = {
 		value: ERRCODE_OK,
-		teamspace: database,
-		container: model,
+		teamspace,
+		container,
 		user,
 		type: IMPORT,
 	};
@@ -60,8 +60,8 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	try {
 		const processInformation = Utils.gatherProcessInformation(
 			user,
-			model,
-			database,
+			container,
+			teamspace,
 			logLabel.label, // queue
 			config.repoLicense,
 			ridString,

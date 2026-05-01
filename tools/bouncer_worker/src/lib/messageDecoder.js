@@ -51,8 +51,8 @@ const messageDecoder = (cmd) => {
 					const cmdFile = require(args[2]);
 					res = {
 						cmdParams: [configPath, ...args],
-						database: cmdFile.database,
-						model: cmdFile.project,
+						teamspace: cmdFile.teamspace,
+						container: cmdFile.container,
 						user: cmdFile.owner,
 						file: cmdFile.file,
 						...res,
@@ -65,8 +65,8 @@ const messageDecoder = (cmd) => {
 					const cmdFile = require(args[1]);
 					res = {
 						cmdParams: [configPath, ...args],
-						database: cmdFile.database,
-						model: cmdFile.project,
+						teamspace: cmdFile.teamspace,
+						drawing: cmdFile.drawing,
 						user: cmdFile.owner,
 						file: cmdFile.file,
 						format: cmdFile.format,
@@ -81,8 +81,8 @@ const messageDecoder = (cmd) => {
 					const cmdFile = require(args[1]);
 					res = {
 						cmdParams: [configPath, ...args],
-						database: cmdFile.database,
-						model: cmdFile.project,
+						teamspace: cmdFile.teamspace,
+						federation: cmdFile.federation,
 						user: cmdFile.owner,
 						...res,
 					};
@@ -100,8 +100,8 @@ const messageDecoder = (cmd) => {
 			case 'genStash':
 				res = {
 					cmdParams: [configPath, ...args],
-					database: args[1],
-					model: args[2],
+					teamspace: args[1],
+					container: args[2],
 					...res,
 				};
 				break;
