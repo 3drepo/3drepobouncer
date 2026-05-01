@@ -404,8 +404,18 @@ int32_t importFileAndCommit(
 			tag = jsonTree.get<std::string>("tag", "");
 			desc = jsonTree.get<std::string>("desc", "");
 
-			config.databaseName = jsonTree.get<std::string>("database", "");
-			config.projectName = jsonTree.get<std::string>("project", "");
+			// Client should be backwards compatible with v4 (database & project) and v5
+			// (teamspace & container) terminology. Teamspace/database are the terms that
+			// do not conflict, so we use them to distinguish which version is being used.
+
+			config.databaseName = jsonTree.get<std::string>("teamspace", "");
+			config.projectName = jsonTree.get<std::string>("container", "");
+
+			if (config.databaseName.empty()) {
+				config.databaseName = jsonTree.get<std::string>("database", "");
+				config.projectName = jsonTree.get<std::string>("project", "");
+			}
+
 			config.timeZone = jsonTree.get<std::string>("timezone", config.timeZone);
 			config.targetUnits = units::fromString(jsonTree.get<std::string>("units", ""));
 			config.lod = jsonTree.get<int>("lod", config.lod);
@@ -500,7 +510,14 @@ int32_t processDrawing(
 	try {
 		boost::property_tree::read_json(command.args[0], jsonTree);
 
-		database = jsonTree.get<std::string>("database", "");
+		// Support both v4 and v5 config terminology for backwards compatibility
+
+		database = jsonTree.get<std::string>("teamspace", {});
+
+		if (database.empty()) {
+			database = jsonTree.get<std::string>("database", "");
+		}
+
 		auto revisionStr = jsonTree.get<std::string>("revId", "");
 
 		if (database.empty() || revisionStr.empty())

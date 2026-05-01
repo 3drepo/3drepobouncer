@@ -25,11 +25,11 @@ const Handler = {};
 
 const logLabel = { label: 'JOBQ' };
 
-const createFed = async ({ database, model, cmdParams }, logDir) => {
+const createFed = async ({ teamspace, federation, cmdParams }, logDir) => {
 	const returnMessage = {
 		value: ERRCODE_OK,
-		teamspace: database,
-		container: model,
+		teamspace,
+		federation,
 	};
 	try {
 		returnMessage.value = await runBouncerCommand(logDir, cmdParams);
