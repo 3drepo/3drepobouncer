@@ -86,6 +86,8 @@ async function findUnityBundleRevisions(teamspace) {
 				_id: 1,
 			}).toArray();
 
+			logger.info(`\t- Found ${allRevisions.length} revisions for ${container}`);
+
 			const repoBundles = db.collection(`${container}.stash.repobundles`);
 			for (const { _id } of allRevisions) {
 				const revision = await repoBundles.findOne({ _id });
