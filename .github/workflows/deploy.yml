@@ -6,130 +6,13 @@ on:
     types: [completed]
     branches: [staging]
 
-  workflow_dispatch:
-    inputs:
-      image_tag:
-        description: 'Image tag to deploy'
-        required: true
-
-  issue_comment:
-    types: [created]
-
 permissions:
   contents: read
 
 jobs:
-  pre-deploy:
-    if: |
-      (
-        github.event_name == 'workflow_run' &&
-        github.event.workflow_run.conclusion == 'success'
-      ) ||
-      github.event_name == 'workflow_dispatch' ||
-      (
-        github.event_name == 'issue_comment' &&
-        startsWith(github.event.comment.body, '/deploy-bouncer') &&
-        github.event.issue.pull_request != null
-      )
-
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      issues: write
-      pull-requests: write
-
-    outputs:
-      image_tag: ${{ steps.vars.outputs.image_tag }}
-
-    steps:
-      # ---------------------------------------------------------------
-      # STEP 1: Restrict to org members (skipped for workflow_dispatch)
-      # ---------------------------------------------------------------
-      - name: Check organization membership
-        if: github.event_name == 'issue_comment'
-        run: |
-          ORG="3drepo"
-          USER="${{ github.actor }}"
-
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            https://api.github.com/orgs/$ORG/members/$USER)
-
-          if [ "$STATUS" = "204" ] || [ "$STATUS" = "302" ]; then
-            echo "User $USER is a member of $ORG."
-          else
-            echo "User $USER is not a member of $ORG (HTTP $STATUS)."
-            exit 1
-          fi
-
-      # ---------------------------------------------------------------
-      # STEP 2: Verify PR branch is staging (skipped for workflow_dispatch)
-      # ---------------------------------------------------------------
-      - name: Verify staging branch
-        if: github.event_name == 'issue_comment'
-        run: |
-          ISSUE_NUMBER=$(jq -r .issue.number < "$GITHUB_EVENT_PATH")
-          BRANCH=$(curl -s \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls/$ISSUE_NUMBER" | jq -r .head.ref)
-
-          if [ "$BRANCH" != "staging" ]; then
-            echo "PR branch is '$BRANCH', not 'staging' — deploy skipped."
-            exit 1
-          fi
-          echo "Branch confirmed: staging"
-
-      # ---------------------------------------------------------------
-      # STEP 3: Resolve image tag
-      # ---------------------------------------------------------------
-      - name: Set image tag
-        id: vars
-        run: |
-          if [[ "${GITHUB_EVENT_NAME}" == "workflow_run" ]]; then
-            IMAGE_TAG="staging"
-          elif [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
-            IMAGE_TAG="${{ github.event.inputs.image_tag }}"
-          else
-            COMMENT_BODY=$(jq -r .comment.body < "$GITHUB_EVENT_PATH")
-            IMAGE_TAG=$(echo "$COMMENT_BODY" | awk '{print $2}')
-            if [ -z "$IMAGE_TAG" ] || [ "$IMAGE_TAG" = "null" ]; then
-              echo "Usage: /deploy-bouncer <image-tag>"
-              exit 1
-            fi
-          fi
-
-          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
-          echo "Image tag: $IMAGE_TAG"
-
-      # ---------------------------------------------------------------
-      # STEP 4: React and comment on PR (skipped for workflow_dispatch)
-      # ---------------------------------------------------------------
-      - name: React and comment on PR
-        if: github.event_name == 'issue_comment'
-        run: |
-          PR_NUMBER=$(jq -r .issue.number < "$GITHUB_EVENT_PATH")
-          COMMENT_ID=$(jq -r .comment.id < "$GITHUB_EVENT_PATH")
-          REPO_FULL_NAME="${{ github.repository }}"
-
-          curl -s -X POST \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github.squirrel-girl-preview+json" \
-            https://api.github.com/repos/$REPO_FULL_NAME/issues/comments/$COMMENT_ID/reactions \
-            -d '{"content":"rocket"}'
-
-          curl -s -X POST \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/$REPO_FULL_NAME/issues/$PR_NUMBER/comments \
-            -d '{"body":"Staging deploy of `'${{ steps.vars.outputs.image_tag }}'` triggered by @'${{ github.actor }}' — workflow is running..."}'
-
   deploy:
-    needs: pre-deploy
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
 
     steps:
       # ---------------------------------------------------------------
@@ -179,7 +62,7 @@ jobs:
             oci://${{ secrets.REGISTRY_LOGIN_SERVER }}/helm/bouncer \
             --namespace default \
             -f deployments/asite-stg/helm/bouncer/values.yaml \
-            --set image.tag=${{ needs.pre-deploy.outputs.image_tag }} \
+            --set image.tag=staging \
             --wait
 
       # ---------------------------------------------------------------
