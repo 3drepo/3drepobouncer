@@ -23,6 +23,7 @@
 #include <repo/core/model/bson/repo_bson_factory.h>
 #include <repo/manipulator/modelutility/repo_scene_builder.h>
 #include <test/src/unit/repo_test_database_info.h>
+#include <test/src/unit/repo_test_random_generator.h>
 
 using namespace repo::manipulator::modeloptimizer;
 using namespace repo::test::utils::mesh;
@@ -260,7 +261,7 @@ TEST(MultipartOptimizer, TestSingleOversizedMesh)
 	auto rootNodeId = rootNode.getSharedID();
 
 		
-	sceneBuilder.addNode(createRandomMesh(1200000 + 1, false, 3, "", { rootNodeId })); // 1200000 comes from the const in repo_optimizer_multipart.cpp
+	sceneBuilder.addNode(createRandomMesh(REPO_MP_MAX_VERTEX_COUNT + 1, false, 3, "", { rootNodeId }));
 
 	sceneBuilder.finalise();
 
@@ -279,6 +280,8 @@ TEST(MultipartOptimizer, TestSingleOversizedMesh)
 	EXPECT_TRUE(mockExporter->isFinalised());
 
 	EXPECT_EQ(mockExporter->getSupermeshCount(), 2); // even with one triangle over, large meshes should be split
+
+	EXPECT_TRUE(checkSupermeshVertCounts(mockExporter.get(), REPO_MP_MAX_VERTEX_COUNT));
 
 	EXPECT_TRUE(compareMeshes(
 		database,
@@ -325,11 +328,106 @@ TEST(MultipartOptimizer, TestMultipleOversizedMeshes)
 	// Mesh splitting is not determinsitic so we don't check the final mesh
 	// count in this test
 
+	EXPECT_TRUE(checkSupermeshVertCounts(mockExporter.get(), REPO_MP_MAX_VERTEX_COUNT));
+
 	EXPECT_TRUE(compareMeshes(
 		database,
 		projectName,
 		revId,
 		mockExporter.get()));
+}
+
+TEST(MultipartOptimizer, TestSplittingLocality)
+{
+	// Our splitting algorithm should not merely break a larger mesh down into smaller ones randomly.
+	// Instead, the vertices of the resulting supermeshes should be colocated.
+	// This tests checks for that by creating a mesh that consists of multiple clusters of triangle soups.
+	// These clusters are separated by empty space and, if working correctly, the splitting algorithm
+	// should split the vertices so that the resulting supermeshes contain only vertices belonging to
+	// one of the cluster origins and not multiples.
+
+	auto opt = MultipartOptimizer();
+
+	auto handler = getHandler();
+	std::string database = DBMULTIPARTOPTIMIZERTEST;
+	std::string projectName = "TestSplitting";
+	auto revId = repo::lib::RepoUUID::createUUID();
+
+
+	auto sceneBuilder = repo::manipulator::modelutility::RepoSceneBuilder(handler, database, projectName, revId);
+
+	auto rootNode = repo::core::model::RepoBSONFactory::makeTransformationNode({}, "rootNode", {});
+	sceneBuilder.addNode(rootNode);
+	auto rootNodeId = rootNode.getSharedID();
+
+
+	// Generate random cluster positions.
+
+	testing::RepoRandomGenerator random;
+	
+	// Parameters for cluster generation
+	int noOrigins = 4;
+	int clusterRadius = 100;
+	double clusterSeparation = clusterRadius * 4;	
+	double minDistFromOrigin = 0;
+	double maxDistFromOrigin = 10000;
+
+	// Generate origins so that they don't come to close to each other.
+	std::vector<repo::lib::RepoVector3D> clusterOrigins;
+	for (int i = 0; i < noOrigins; i++) {
+		repo::lib::RepoVector3D newOrigin;
+		bool collides;
+
+		do
+		{
+			newOrigin = random.vector({ minDistFromOrigin, maxDistFromOrigin });
+
+			collides = false;
+			for (auto otherOrigin : clusterOrigins)
+			{
+				if ((newOrigin - otherOrigin).norm() <= clusterSeparation)
+				{
+					collides = true;
+					break;
+				}
+			}
+
+		} while (collides);
+
+		clusterOrigins.push_back(newOrigin);
+	}	
+	
+	// Create node and finalise scene
+	int nVertices = REPO_MP_MAX_VERTEX_COUNT * noOrigins;
+	sceneBuilder.addNode(createRandomClusteredMesh(nVertices, false, 3, "", { rootNodeId }, clusterRadius, clusterOrigins));
+	sceneBuilder.finalise();
+
+	// Process with mock exporter
+	auto mockExporter = std::make_unique<TestModelExport>(handler.get(), database, projectName, revId, std::vector<double>({ 0, 0, 0 }));
+	bool result = opt.processScene(
+		database,
+		projectName,
+		revId,
+		handler.get(),
+		mockExporter.get()
+	);
+
+	EXPECT_TRUE(result);
+
+	EXPECT_TRUE(mockExporter->isFinalised());
+
+	EXPECT_TRUE(mockExporter->getSupermeshCount() >= 4); // should be split into at least four supermeshes
+
+	EXPECT_TRUE(checkSupermeshVertCounts(mockExporter.get(), REPO_MP_MAX_VERTEX_COUNT));
+
+	EXPECT_TRUE(compareMeshes(
+		database,
+		projectName,
+		revId,
+		mockExporter.get()));
+
+	// Check the split result
+	EXPECT_TRUE(checkClusteredMeshSplit(mockExporter.get(), clusterOrigins));
 }
 
 TEST(MultipartOptimizer, TestMultiplesMeshes)
