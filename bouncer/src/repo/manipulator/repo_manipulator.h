@@ -23,12 +23,13 @@
 #include <map>
 #include <string>
 
-#include "../core/model/bson/repo_node_reference.h"
-#include "../core/model/bson/repo_node_transformation.h"
-#include "../core/model/bson/repo_node_mesh.h"
-#include "../core/model/collection/repo_scene.h"
-#include <repo/manipulator/modelutility/repo_clash_detection_config_fwd.h>
-#include "../lib/repo_config.h"
+#include "repo/core/model/bson/repo_node_reference.h"
+#include "repo/core/model/bson/repo_node_transformation.h"
+#include "repo/core/model/bson/repo_node_mesh.h"
+#include "repo/core/model/collection/repo_scene.h"
+#include "repo/manipulator/modelutility/repo_clash_detection_config_fwd.h"
+#include "repo/manipulator/modelutility/repo_web_buffer_config.h"
+#include "repo/lib/repo_config.h"
 #include "modelconvertor/export/repo_model_export_abstract.h"
 #include "modelconvertor/import/repo_model_import_config.h"
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_abstract.h"
@@ -62,7 +63,8 @@ namespace repo {
 				const std::string                     &owner = "",
 				const std::string                     &tag = "",
 				const std::string                     &desc = "",
-				const repo::lib::RepoUUID             &revId = repo::lib::RepoUUID::createUUID());
+				const repo::lib::RepoUUID             &revId = repo::lib::RepoUUID::createUUID(),
+				const modelutility::WebBufferConfig& config = {});
 
 			/**
 			* Create a federated scene with the given scene collections
@@ -122,7 +124,9 @@ namespace repo {
 			*/
 			bool generateAndCommitWebViewBuffer(
 				repo::core::model::RepoScene          *scene,
-				const modelconvertor::ExportType   &exType);
+				const modelconvertor::ExportType   &exType,
+				const repo::manipulator::modelutility::WebBufferConfig& config
+			);
 
 			/**
 			* Generate and commit RepoBundles for the given scene
@@ -131,7 +135,9 @@ namespace repo {
 			*/
 
 			bool generateAndCommitRepoBundlesBuffer(
-				repo::core::model::RepoScene* scene);
+				repo::core::model::RepoScene* scene,
+				const repo::manipulator::modelutility::WebBufferConfig& config
+			);
 
 			/**
 			* Retrieve documents from a specified collection

@@ -852,3 +852,18 @@ TEST(IFCModelImport, MetadataParents)
 		common::checkMetadataInheritence(scene);
 	}
 }
+
+TEST(IFCModelImport, IfcBuildingStoreyHasMagicMetadata)
+{
+	// Nodes created from IfcBuildingStorey entities should have the magic metadata
+	// for splitting by floor.
+
+	SceneUtils scene(IfcModelImportUtils::ModelImportManagerImport("IfcMetadataTests", getDataPath("floors_and_levels.ifc")));
+
+	for (auto n : scene.findNodesByMetadata("IFC Type", "IfcBuildingStorey")) {
+		auto md = n.getMetadata();
+		auto it = md.find(REPO_METADATA_GROUPING_FLOOR);
+		EXPECT_THAT(it, Not(Eq(md.end())));
+		EXPECT_THAT(it->second, Vs(n.name()));
+	}
+}

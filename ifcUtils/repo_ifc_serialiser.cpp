@@ -1576,7 +1576,9 @@ void IfcSerialiser::collectSpecialAttributes(const IfcSchema::IfcObjectDefinitio
 	}
 
 	if (auto storey = dynamic_cast<const IfcSchema::IfcBuildingStorey*>(object)) {
-		location(STOREY_LABEL) = storey->Name().get_value_or("(" + object->declaration().name() + ")");
+		auto storeyName = storey->Name().get_value_or("(" + object->declaration().name() + ")");
+		location(STOREY_LABEL) = storeyName;
+		metadata(REPO_METADATA_GROUPING_FLOOR) = storeyName; // For IfcBuildingStorey, add the magic metadata entry for floor splitting as well
 	}
 }
 

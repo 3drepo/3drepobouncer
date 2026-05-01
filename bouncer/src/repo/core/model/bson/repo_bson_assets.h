@@ -41,6 +41,14 @@ namespace repo {
 				size_t primitive;
 				repo::lib::RepoVector3D min;
 				repo::lib::RepoVector3D max;
+				std::vector<std::string> groups;
+
+				void addGrouping(const std::string& group)
+				{
+					if (!group.empty()) {
+						groups.push_back(group);
+					}
+				}
 			};
 
 			class REPO_API_EXPORT RepoAssets

@@ -624,6 +624,67 @@ TEST(ODAModelImport, RvtUnits)
 	}
 }
 
+TEST(ODAModelImport, MagicMetadataRvtFloors)
+{
+	// When importing a Revit file, the appropriate tree entries should have the
+	// special 3DRepo Floor metadata assigned.
+
+	ModelImportConfig config(repo::lib::RepoUUID::createUUID(), TESTDB, "RevitFloorsAndLevels");
+	config.targetUnits = ModelUnits::MILLIMETRES;
+	config.viewName = "repo"; // Override default view to get one that shows Masses for this test
+	SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport(getDataPath("rvt/floors_and_levels.rvt"), config));
+
+	// Revit has an explicit concept of levels, which are placed using elevation
+	// views. Still, the representation of levels in contstraints varies depending
+	// on the Family. The following objects are of a variety of Families and should
+	// all appear under the correct level regardless.
+
+	auto checkElementFloor = [&](std::string elementId, std::string expectedFloorValue) {
+		auto node = scene.findNodeByMetadata("Element ID", elementId);
+		auto parent = node.getParent();
+		auto metadata = parent.getMetadata();
+		EXPECT_THAT(boost::apply_visitor(repo::lib::StringConversionVisitor(), metadata[REPO_METADATA_GROUPING_FLOOR]), Eq(expectedFloorValue));
+	};
+
+	checkElementFloor("326836", "Layer Default");
+
+	checkElementFloor("323345", "Level 0");
+	checkElementFloor("323484", "Level 0");
+	checkElementFloor("323643", "Level 0");
+	checkElementFloor("321553", "Level 0");
+	checkElementFloor("322420", "Level 0");
+	checkElementFloor("322619", "Level 0");
+	checkElementFloor("319611", "Level 0");
+	checkElementFloor("320440", "Level 0");
+	checkElementFloor("322400", "Level 0");
+	checkElementFloor("315582", "Level 0");
+	checkElementFloor("315675", "Level 0");
+	checkElementFloor("315812", "Level 0");
+	checkElementFloor("319105", "Level 0");
+	checkElementFloor("321130", "Level 0");
+	checkElementFloor("317879", "Level 0");
+	checkElementFloor("318094", "Level 0");
+
+	checkElementFloor("324002", "Level 1");
+	checkElementFloor("321593", "Level 1");
+	checkElementFloor("322721", "Level 1");
+	checkElementFloor("322810", "Level 1");
+	checkElementFloor("322902", "Level 1");
+	checkElementFloor("319859", "Level 1");
+	checkElementFloor("320479", "Level 1");
+	checkElementFloor("326866", "Level 1");
+	checkElementFloor("323131", "Level 1");
+	checkElementFloor("318474", "Level 1");
+
+	checkElementFloor("321906", "Level 2");
+	checkElementFloor("322245", "Level 2");
+	checkElementFloor("319431", "Level 2");
+
+	checkElementFloor("326881", "Planting Level Ground");
+	checkElementFloor("320061", "Planting Level Ground");
+	checkElementFloor("326867", "Planting Level Ground");
+}
+
 TEST_F(NwdTestSuite, MetadataParentsNWD)
 {
 	// All metadata nodes must also have their sibling meshnodes as parents,
@@ -642,6 +703,50 @@ TEST_F(NwdTestSuite, MetadataParentsNWD)
 	{
 		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport("MetadataParentsNWD", getDataPath("orientedColumns.nwd")));
 		common::checkMetadataInheritence(scene);
+	}
+}
+
+TEST_F(NwdTestSuite, MagicMetadataNwdFloors)
+{
+	// In Nwd files, we should support the floor magic metadata when the Nwd hosts
+	// either Ifc or Rvt files.
+	{
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport("MagicMetadataNwdFloorsRvt", getDataPath("floors_and_levels_rvt.nwd")));
+
+		std::vector<std::string> expectedFloorValues = {
+			"<No level>",
+			"Level 0",
+			"Level 1",
+			"Level 2",
+			"Planting Level Ground"
+		};
+
+		for (auto& name : expectedFloorValues) {
+			auto nodes = scene.findNodesByMetadata(REPO_METADATA_GROUPING_FLOOR, name);
+			EXPECT_THAT(nodes.size(), Eq(1)) << name;
+			for (auto& node : nodes) {
+				EXPECT_THAT(boost::apply_visitor(repo::lib::StringConversionVisitor(), node.getMetadata()[REPO_METADATA_GROUPING_FLOOR]), Eq(name));
+				EXPECT_THAT(node.getParent().name(), Eq(std::string("floors_and_levels_rvt.nwd")));
+			}
+		}
+	}
+	{
+		SceneUtils scene(ODAModelImportUtils::ModelImportManagerImport("MagicMetadataNwdFloorsIfc", getDataPath("floors_and_levels_ifc.nwd")));
+
+		std::vector<std::string> expectedFloorValues = {
+			"Level 0",
+			"Level 1",
+			"Level 2",
+		};
+
+		for (auto& name : expectedFloorValues) {
+			auto nodes = scene.findNodesByMetadata(REPO_METADATA_GROUPING_FLOOR, name);
+			EXPECT_THAT(nodes.size(), Eq(1)) << name;
+			for (auto& node : nodes) {
+				EXPECT_THAT(boost::apply_visitor(repo::lib::StringConversionVisitor(), node.getMetadata()[REPO_METADATA_GROUPING_FLOOR]), Eq(name));
+				EXPECT_THAT(node.getParent().name(), Eq(std::string("IfcBuilding")));
+			}
+		}
 	}
 }
 

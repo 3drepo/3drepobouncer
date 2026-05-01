@@ -43,9 +43,11 @@ namespace repo {
 					/*
 					* Declares a new entry in the tree that can be accessed by an arbitrary
 					* Id (instead of a RepoUUID). If parentId is empty, the layer will be
-					* created under the root node.
+					* created under the root node. Returns true if the layer was newly created
+					* or false if it already existed. If the layer exists, the name, parent and
+					* transform will be unchanged/ignored.
 					*/
-					void createLayer(std::string id, std::string name, std::string parentId, const repo::lib::RepoMatrix& transform);
+					bool createLayer(std::string id, std::string name, std::string parentId, const repo::lib::RepoMatrix& transform);
 
 					/*
 					* True if the layer with the id was created with createLayer. createLayer

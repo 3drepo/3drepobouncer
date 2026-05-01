@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2025 3D Repo Ltd
+*  Copyright (C) 2026 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -17,27 +17,23 @@
 
 #pragma once
 
-#include <variant>
-
 namespace repo {
-	namespace core {
-		namespace handler {
-			namespace database{
-				namespace query {
-					class Eq;
-					class Exists;
-					class Or;
-					class ArrayContains;
-					class RepoQueryBuilder;
-					class RepoProjectionBuilder;
+	namespace manipulator {
+		namespace modelutility {
+			struct WebBufferConfig
+			{
+				/*
+				* When true, elements will be split between web assets such that each asset
+				* corresponds to at most one value from the magic floor metadata field.
+				* This is currently supported by Rvt and Ifc formats.
+				*/
+				bool splitByFloor;
 
-					class AddParent;
-
-					using RepoQuery = std::variant<Eq, Exists, Or, ArrayContains, RepoQueryBuilder, RepoProjectionBuilder>;
-
-					using RepoUpdate = std::variant<AddParent>;
+				WebBufferConfig():
+					splitByFloor(false)
+				{
 				}
-			}
+			};
 		}
 	}
 }

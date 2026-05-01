@@ -46,6 +46,7 @@ namespace repo {
 				int numThreads;
 				std::string viewName;
 				std::string viewStyle;
+				bool splitByFloor;
 
 				ModelImportConfig();
 
