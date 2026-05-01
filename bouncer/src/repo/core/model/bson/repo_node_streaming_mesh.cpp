@@ -216,6 +216,14 @@ void repo::core::model::StreamingMeshNode::bakeLoadedMeshes(const repo::lib::Rep
 	}
 }
 
+void repo::core::model::StreamingMeshNode::recalculateBounds()
+{
+	bounds = repo::lib::RepoBounds(); // reset the bounds
+	for (auto& v : supermeshingData->getVertices()) {
+		bounds.encapsulate(v);
+	}
+}
+
 const std::vector<repo::lib::RepoVector3D>& repo::core::model::StreamingMeshNode::getLoadedNormals()
 {
 	if (supermeshingDataLoaded()) {

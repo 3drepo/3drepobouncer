@@ -81,6 +81,12 @@ const std::list<std::string> repo::core::handler::MongoDatabaseHandler::ADMIN_ON
 class MongoDatabaseHandler::MongoDatabaseHandlerException : public repo::lib::RepoException
 {
 public:
+	MongoDatabaseHandlerException(const MongoDatabaseHandler& handler, const std::string& method, const std::string& db, const std::string collection, const std::string query, bool loadBinaries)
+		: RepoException("MongoDatabaseHandler exception: in " + method + " on: " + db + "." + collection + " with document: " + query + " load binaries: " + (loadBinaries ? "true" : "false") + " " + getUri(handler))
+	{
+		errorCode = REPOERR_AUTH_FAILED; //If no outer exception sets the return code, signal this is database operation/connection problem.
+	}
+
 	MongoDatabaseHandlerException(const MongoDatabaseHandler& handler, const std::string& method, const std::string& db, const std::string collection)
 		: RepoException("MongoDatabaseHandler exception: in " + method + " on: " + db + "." + collection + getUri(handler))
 	{
@@ -373,8 +379,11 @@ void MongoDatabaseHandler::loadBinaryBuffers(const std::string& database,
 	fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
 
 	if (bson.hasFileReference()) {
-		auto ref = bson.getBinaryReference();
-		auto buffer = blobHandler.readToBuffer(fileservice::DataRef::deserialise(ref));
+		auto ref = fileservice::DataRef::deserialise(bson.getBinaryReference());
+		if (!ref.size) {
+			ref.size = bson.getBinaryBufferSize();
+		}
+		auto buffer = blobHandler.readToBuffer(ref);
 		bson.initBinaryBuffer(buffer);
 	}
 }
@@ -465,18 +474,24 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 			// Find all documents
 			auto cursor = col.find(criteria.view());
 			for (auto& doc : cursor) {
-				auto bson = repo::core::model::RepoBSON(doc);
-				if (loadBinaries)
-					MongoDatabaseHandler::loadBinaryBuffers(database, collection, bson);
-					
-				data.push_back(bson);
+				try {
+					auto bson = repo::core::model::RepoBSON(doc);
+					if (loadBinaries)
+						MongoDatabaseHandler::loadBinaryBuffers(database, collection, bson);
+					data.push_back(bson);
+				}
+				catch (...)
+				{
+					std::throw_with_nested(MongoDatabaseHandlerException(*this, "findAllByCriteria (parse)", database, collection, bsoncxx::to_json(doc), loadBinaries));
+				}
 			}
 		}
 		return data;
 	}
 	catch (...)
 	{
-		std::throw_with_nested(MongoDatabaseHandlerException(*this, "findAllByCriteria", database, collection));
+		auto qfd = makeQueryFilterDocument(filter);
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "findAllByCriteria (query)", database, collection, qfd.toString(), loadBinaries));
 	}
 }
 
