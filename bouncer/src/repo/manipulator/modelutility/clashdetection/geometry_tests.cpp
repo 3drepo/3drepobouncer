@@ -358,6 +358,13 @@ double geometry::contactThreshold(
 	return cpt(repo::lib::RepoBounds({a.min(), a.max(), b.min(), b.max()}));
 }
 
+double geometry::contactThreshold(
+	const repo::lib::RepoBounds& bound
+)
+{
+	return cpt(bound);
+}
+
 double geometry::orient(const repo::lib::RepoVector3D64& p, const repo::lib::RepoVector3D64& q, const repo::lib::RepoVector3D64& r, const repo::lib::RepoVector3D64& s)
 {
 	return predicates::orient3d((double*)&p, (double*)&q, (double*)&r, (double*)&s);

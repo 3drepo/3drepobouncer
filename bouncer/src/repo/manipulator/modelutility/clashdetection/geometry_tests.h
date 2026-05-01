@@ -161,6 +161,10 @@ namespace geometry {
         const repo::lib::RepoBounds& b
     );
 
+    double contactThreshold(
+        const repo::lib::RepoBounds& bound
+    );
+
     /*
     * The distance threshold to use for coplanarity tests. This is primarily for
 	* the intersects method, but may be useful elsewhere.
