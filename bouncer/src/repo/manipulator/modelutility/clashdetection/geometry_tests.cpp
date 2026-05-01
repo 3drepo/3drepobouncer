@@ -359,10 +359,10 @@ double geometry::contactThreshold(
 }
 
 double geometry::contactThreshold(
-	const repo::lib::RepoBounds& bound
+	const repo::lib::RepoBounds& scope
 )
 {
-	return cpt(bound);
+	return cpt(scope);
 }
 
 double geometry::orient(const repo::lib::RepoVector3D64& p, const repo::lib::RepoVector3D64& q, const repo::lib::RepoVector3D64& r, const repo::lib::RepoVector3D64& s)
