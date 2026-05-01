@@ -173,10 +173,6 @@ namespace testing {
 			const std::string& value,
 			std::unordered_map<repo::lib::RepoUUID, std::unordered_map<std::string, repo::lib::RepoVariant>, repo::lib::RepoUUIDHasher>& metadataMap);
 
-		void getBoundsForContainer(
-			repo::lib::Container* container,
-			std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoBounds, repo::lib::RepoUUIDHasher>& boundsMap);
-
 		std::unique_ptr<repo::lib::Container> getContainerByName(
 			std::string name);
 	};

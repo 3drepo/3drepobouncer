@@ -606,6 +606,13 @@ TEST(Geometry, ContactThreshold)
 
 		EXPECT_THAT(geometry::contactThreshold(ab, bb), Ge(th));
 
+		// If we take the bound of all vertices of both triangles, the contact threshold
+		// of the bounds must always be equal to or larger than that of the triangles
+		// themselves.
+		auto abb = repo::lib::RepoBounds({ a.a, a.b, a.c, b.a, b.b, b.c });
+
+		EXPECT_THAT(geometry::contactThreshold(abb), Ge(th));
+
 		// The purpose of the threshold is to participate in the control flow
 		// of algorithms, so we test it in that context: triangles are positioned
 		// into what should be the closest we can get to an in-contact state.
