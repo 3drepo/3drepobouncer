@@ -17,6 +17,9 @@
 
 #pragma once
 
+#include <cstddef>
+#include <functional>
+
 /*
 * Convenience template for combining std::hash values. From boost::hash_combine.
 */
