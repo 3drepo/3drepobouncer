@@ -172,6 +172,15 @@ MultipartOptimizer::TransformMap MultipartOptimizer::getAllTransforms(
 	return transformMap;
 }
 
+MultipartOptimizer::BranchGroup* MultipartOptimizer::createBranchGroup(const std::string& name)
+{
+	auto group = std::make_unique<BranchGroup>();
+	group->name = name;
+	auto ptr = group.get();
+	branchGroups.push_back(std::move(group));
+	return ptr;
+}
+
 void MultipartOptimizer::applyBranchGroups(
 	TransformMap& transforms, 
 	const std::string& database,
@@ -205,8 +214,7 @@ void MultipartOptimizer::applyBranchGroups(
 
 		auto& groupPtr = branchGroupsByTag[value];
 		if (!groupPtr) {
-			groupPtr = new BranchGroup();
-			groupPtr->name = value;
+			groupPtr = createBranchGroup(value);
 		}
 
 		for (auto& parent : metadataNode.getParentIDs()) {

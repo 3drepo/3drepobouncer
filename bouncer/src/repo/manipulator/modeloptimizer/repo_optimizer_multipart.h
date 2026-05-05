@@ -104,7 +104,14 @@ namespace repo {
 				typedef std::unordered_map <repo::lib::RepoUUID, std::shared_ptr<repo::core::model::MaterialNode>, repo::lib::RepoUUIDHasher> MaterialPropMap;
 				typedef std::unordered_map<repo::lib::RepoUUID, TransformInfo, repo::lib::RepoUUIDHasher> TransformMap;
 
-				std::vector<BranchGroup> branchGroups;
+				std::vector<std::unique_ptr<BranchGroup>> branchGroups;
+
+				/*
+				* Creates a new branch group with the given name. This will be cleaned up
+				* automatically when the optimizer is destroyed. This will not check for
+				* duplicates.
+				*/
+				BranchGroup* createBranchGroup(const std::string& name);
 
 				TransformMap getAllTransforms(
 					const std::string &database,
