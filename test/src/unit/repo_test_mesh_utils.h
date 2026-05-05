@@ -149,15 +149,15 @@ namespace repo {
 						// Do nothing else
 					};
 
-					bool isFinalised() {
+					bool isFinalised() const {
 						return finalised;
 					};
 
-					const std::vector<repo::core::model::SupermeshNode>& getSupermeshes() {
+					const std::vector<repo::core::model::SupermeshNode>& getSupermeshes() const {
 						return supermeshNodes;
 					};
 
-					int getSupermeshCount() {
+					int getSupermeshCount() const {
 						return supermeshNodes.size();
 					};
 
