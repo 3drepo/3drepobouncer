@@ -17,8 +17,6 @@
 
 #pragma once
 
-#define HASH_GOLDEN_RATIO 0x9e3779b9
-
 /*
 * Convenience template for combining std::hash values. From boost::hash_combine.
 */
@@ -26,7 +24,10 @@
 namespace repo {
     namespace lib {
         template <typename T> inline void hash_combine(size_t& seed, T const& v) {
-            seed ^= std::hash<T>()(v) + HASH_GOLDEN_RATIO + (seed << 6) + (seed >> 2);
+            // 0x9e3779b9 is the fractional part of the Golden Ratio which is
+			// often used in hashing functions due to its good equidistribution
+			// properties, including Boost's hash_combine on which this is based.
+            seed ^= std::hash<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
         }
     }
 }
