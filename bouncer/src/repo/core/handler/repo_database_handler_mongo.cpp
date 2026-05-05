@@ -925,7 +925,7 @@ std::unique_ptr<Cursor> repo::core::handler::MongoDatabaseHandler::findCursorByC
 		}
 		else
 		{
-			return nullptr;
+			throw MongoDatabaseHandlerException(*this, "Invalid call to findCursorByCriteria; all of database, collection, and criteria must be provided.");
 		}
 
 	}
