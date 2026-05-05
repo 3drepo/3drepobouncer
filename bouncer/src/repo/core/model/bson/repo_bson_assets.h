@@ -43,6 +43,24 @@ namespace repo {
 				repo::lib::RepoVector3D max;
 				std::vector<std::string> groups;
 
+				bool operator==(const RepoSupermeshMetadata& other) const
+				{
+					return numVertices == other.numVertices &&
+						numFaces == other.numFaces &&
+						numUVChannels == other.numUVChannels &&
+						numSubmeshes == other.numSubmeshes &&
+						numComponents == other.numComponents &&
+						primitive == other.primitive &&
+						min == other.min &&
+						max == other.max &&
+						groups == other.groups;
+				}
+
+				bool operator!=(const RepoSupermeshMetadata& other) const
+				{
+					return !(*this == other);
+				}
+
 				void addGrouping(const std::string& group)
 				{
 					if (!group.empty()) {
