@@ -30,17 +30,6 @@
 using namespace repo::core::model;
 using namespace testing;
 
-namespace repo {
-	namespace core {
-		namespace model {
-			static bool operator== (const RepoSupermeshMetadata& a, const RepoSupermeshMetadata& b)
-			{
-				return memcmp(&a, &b, sizeof(a)) == 0;
-			}
-		}
-	}
-}
-
 TEST(RepoAssetsTest, Serialise)
 {
 	auto rid = repo::lib::RepoUUID::createUUID();
