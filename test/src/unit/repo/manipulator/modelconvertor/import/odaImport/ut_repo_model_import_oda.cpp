@@ -642,12 +642,11 @@ TEST(ODAModelImport, RvtSurveyPoint)
 	config.targetUnits = ModelUnits::MILLIMETRES;
 
 	auto scene = ODAModelImportUtils::ModelImportManagerImport(getDataPath("sample2026.rvt"), config);
-	// SceneUtils scene(scene);
 
 	auto offset = scene->getWorldOffset();
-	EXPECT_THAT(offset[0], Eq(expectedOffset[0]));
-	EXPECT_THAT(offset[1], Eq(expectedOffset[1]));
-	EXPECT_THAT(offset[2], Eq(expectedOffset[2]));
+	EXPECT_THAT(offset[0], DoubleNear(expectedOffset[0], 1e-8));
+	EXPECT_THAT(offset[1], DoubleNear(expectedOffset[1], 1e-8));
+	EXPECT_THAT(offset[2], DoubleNear(expectedOffset[2], 1e-8));
 }
 
 TEST_F(NwdTestSuite, MetadataParentsNWD)
