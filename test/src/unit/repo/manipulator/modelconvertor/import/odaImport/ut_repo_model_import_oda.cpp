@@ -624,6 +624,31 @@ TEST(ODAModelImport, RvtUnits)
 	}
 }
 
+TEST(ODAModelImport, RvtSurveyPoint)
+{
+	std::vector<double> expectedOffset{
+		12309582.429912938,
+		0.0,
+		-123914605.28981794
+	};
+
+	::setupTextures();
+	
+	ModelImportConfig config(
+		repo::lib::RepoUUID::createUUID(),
+		TESTDB,
+		"RvtSurveyPoint"
+	);
+	config.targetUnits = ModelUnits::MILLIMETRES;
+
+	auto scene = ODAModelImportUtils::ModelImportManagerImport(getDataPath("sample2026.rvt"), config);
+
+	auto offset = scene->getWorldOffset();
+	EXPECT_THAT(offset[0], DoubleNear(expectedOffset[0], 1e-8));
+	EXPECT_THAT(offset[1], DoubleNear(expectedOffset[1], 1e-8));
+	EXPECT_THAT(offset[2], DoubleNear(expectedOffset[2], 1e-8));
+}
+
 TEST_F(NwdTestSuite, MetadataParentsNWD)
 {
 	// All metadata nodes must also have their sibling meshnodes as parents,
