@@ -959,10 +959,38 @@ TEST(Clash, SupportedRanges)
 		ClashDetectionConfigHelper config;
 		config.type = ClashDetectionType::Clearance;
 		MockClashScene scene(config.getRevision());
-		scene.add(clashGenerator.createTrianglesVF(
-			repo::lib::RepoBounds({ repo::lib::RepoVector3D64(0, 0, 0) })),
-			config
-		);
+
+		// The RNG can come up with a problem where the vertices are actually all within the limit.
+		// This ensures that we will always have a valid problem.
+		bool foundValidProblem = false;
+		do {
+			auto triangles = clashGenerator.createTrianglesVF(
+				repo::lib::RepoBounds({ repo::lib::RepoVector3D64(0, 0, 0) }));
+
+			auto triangleA = triangles.a.e;
+			auto matA = triangles.a.m;
+
+			auto triangleB = triangles.b.e;
+			auto matB = triangles.b.m;
+
+			std::vector<repo::lib::RepoVector3D64> vertices;
+			vertices.push_back(matA * triangleA.a);
+			vertices.push_back(matA * triangleA.b);
+			vertices.push_back(matA * triangleA.c);
+			vertices.push_back(matB * triangleB.a);
+			vertices.push_back(matB * triangleB.b);
+			vertices.push_back(matB * triangleB.c);
+
+			for (auto& v : vertices)
+			{
+				if ((std::abs(v.x) > MESH_LIMIT) || (std::abs(v.y) > MESH_LIMIT) || (std::abs(v.z) > MESH_LIMIT))
+				{
+					foundValidProblem = true;
+					scene.add(triangles, config);
+					break;
+				}
+			}
+		} while (!foundValidProblem);
 
 		db->setDocuments(scene.bsons);
 
