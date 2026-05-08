@@ -18,6 +18,7 @@
 #include "repo_bson_assets.h"
 #include "repo_bson_builder.h"
 #include "repo/lib/datastructure/repo_uuid.h"
+#include <unordered_set>
 
 using namespace repo::core::model;
 
@@ -97,4 +98,18 @@ RepoAssets::operator RepoBSON() const
 bool RepoAssets::isEmpty() const
 {
 	return repoBundleFiles.empty() && repoJsonFiles.empty() && revisionId.isDefaultValue() && database.empty() && model.empty();
+}
+
+bool RepoSupermeshMetadata::operator==(const RepoSupermeshMetadata& other) const
+{
+	return numVertices == other.numVertices &&
+		numFaces == other.numFaces &&
+		numUVChannels == other.numUVChannels &&
+		numSubmeshes == other.numSubmeshes &&
+		numComponents == other.numComponents &&
+		primitive == other.primitive &&
+		min == other.min &&
+		max == other.max &&
+		std::unordered_set<std::string>(groups.begin(), groups.end()) ==
+		std::unordered_set<std::string>(other.groups.begin(), other.groups.end());
 }
