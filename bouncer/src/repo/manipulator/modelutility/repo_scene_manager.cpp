@@ -254,8 +254,7 @@ bool SceneManager::generateWebViewBuffers(
 			return false;
 		}
 
-		repo::manipulator::modeloptimizer::MultipartOptimizer mpOpt(handler, exporter.get());
-		mpOpt.splitByFloor = config.splitByFloor;
+		repo::manipulator::modeloptimizer::MultipartOptimizer mpOpt(handler, exporter.get(), config.splitByFloor);
 		mpOpt.processScene(
 			scene->getDatabaseName(),
 			scene->getProjectName(),
