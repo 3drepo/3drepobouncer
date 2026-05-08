@@ -49,11 +49,12 @@ static const size_t REPO_MODEL_LOW_CLUSTERING_RATIO = 0.2f;
 
 MultipartOptimizer::MultipartOptimizer(
 	repo::core::handler::AbstractDatabaseHandler* handler,
-	repo::manipulator::modelconvertor::AbstractModelExport* exporter
+	repo::manipulator::modelconvertor::AbstractModelExport* exporter,
+	bool splitByFloor
 ):
 	handler(handler),
 	exporter(exporter),
-	splitByFloor(false)
+	splitByFloor(splitByFloor)
 {
 }
 
@@ -74,15 +75,15 @@ void MultipartOptimizer::processScene(
 	repoInfo << "Creating Processing Jobs";
 	std::vector<ProcessingJob> jobs;
 
-	jobs.push_back(createUntexturedJob(revId, 2, false, false));
-	jobs.push_back(createUntexturedJob(revId, 2, false, true));
-	jobs.push_back(createUntexturedJob(revId, 2, true, false));
-	jobs.push_back(createUntexturedJob(revId, 2, true, true));
+	jobs.push_back(createUntexturedJob(revId, 2, false, false)); // Transparent, primitive 2, No normals
+	jobs.push_back(createUntexturedJob(revId, 2, false, true)); // Transparent, primitive 2, With normals
+	jobs.push_back(createUntexturedJob(revId, 2, true, false)); // Opaque, primitive 2, No normals
+	jobs.push_back(createUntexturedJob(revId, 2, true, true)); // Opaque, primitive 2, With normals
 	
-	jobs.push_back(createUntexturedJob(revId, 3, false, false));
-	jobs.push_back(createUntexturedJob(revId, 3, false, true));
-	jobs.push_back(createUntexturedJob(revId, 3, true, false));
-	jobs.push_back(createUntexturedJob(revId, 3, true, true));
+	jobs.push_back(createUntexturedJob(revId, 3, false, false)); // Transparent, primitive 3, No normals
+	jobs.push_back(createUntexturedJob(revId, 3, false, true)); // Transparent, primitive 3, With normals
+	jobs.push_back(createUntexturedJob(revId, 3, true, false)); // Opaque, primitive 3, No normals
+	jobs.push_back(createUntexturedJob(revId, 3, true, true)); // Opaque, primitive 3, With normals
 	
 	// Get Texture IDs
 	repoInfo << "Getting all texture Ids";
@@ -98,7 +99,7 @@ void MultipartOptimizer::processScene(
 		jobs.push_back(createTexturedJob(revId, 3, false, texId));
 		jobs.push_back(createTexturedJob(revId, 3, true, texId));
 	}
-	
+
 	// Process jobs
 	repoInfo << "Processing Jobs";
 

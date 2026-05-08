@@ -54,7 +54,8 @@ namespace repo {
 			public:
 				MultipartOptimizer(
 					repo::core::handler::AbstractDatabaseHandler* handler,
-					repo::manipulator::modelconvertor::AbstractModelExport* exporter
+					repo::manipulator::modelconvertor::AbstractModelExport* exporter,
+					bool splitByFloor = false
 				);
 
 				void processScene(
@@ -63,9 +64,8 @@ namespace repo {
 					repo::lib::RepoUUID revId
 				);
 
-				bool splitByFloor;
-
 			private:
+				bool splitByFloor;
 
 				/**
 				* Represents a batched set of geometry.
