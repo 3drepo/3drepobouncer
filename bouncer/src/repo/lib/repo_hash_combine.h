@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2025 3D Repo Ltd
+*  Copyright (C) 2026 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -17,27 +17,20 @@
 
 #pragma once
 
-#include <variant>
+#include <cstddef>
+#include <functional>
+
+/*
+* Convenience template for combining std::hash values. From boost::hash_combine.
+*/
 
 namespace repo {
-	namespace core {
-		namespace handler {
-			namespace database{
-				namespace query {
-					class Eq;
-					class Exists;
-					class Or;
-					class ArrayContains;
-					class RepoQueryBuilder;
-					class RepoProjectionBuilder;
-
-					class AddParent;
-
-					using RepoQuery = std::variant<Eq, Exists, Or, ArrayContains, RepoQueryBuilder, RepoProjectionBuilder>;
-
-					using RepoUpdate = std::variant<AddParent>;
-				}
-			}
-		}
-	}
+    namespace lib {
+        template <typename T> inline void hash_combine(size_t& seed, T const& v) {
+            // 0x9e3779b9 is the fractional part of the Golden Ratio which is
+			// often used in hashing functions due to its good equidistribution
+			// properties, including Boost's hash_combine on which this is based.
+            seed ^= std::hash<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        }
+    }
 }

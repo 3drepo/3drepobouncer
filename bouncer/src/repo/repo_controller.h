@@ -34,8 +34,9 @@
 #include "core/model/collection/repo_scene.h"
 #include "lib/datastructure/repo_structs.h"
 #include "lib/repo_config.h"
-#include "manipulator/modelconvertor/import/repo_model_import_config.h"
-#include <repo/manipulator/modelutility/repo_clash_detection_config_fwd.h>
+#include "repo/manipulator/modelconvertor/import/repo_model_import_config.h"
+#include "repo/manipulator/modelutility/repo_clash_detection_config_fwd.h"
+#include "repo/manipulator/modelutility/repo_web_buffer_config.h"
 #include "repo_bouncer_global.h"
 #include <repo_log.h>
 
@@ -192,7 +193,8 @@ namespace repo {
 			const std::string                   &owner = "",
 			const std::string                      &tag = "",
 			const std::string                      &desc = "",
-			const repo::lib::RepoUUID           &revId = repo::lib::RepoUUID::createUUID());
+			const repo::lib::RepoUUID           &revId = repo::lib::RepoUUID::createUUID(),
+			const repo::manipulator::modelutility::WebBufferConfig& config = {});
 
 		/*
 		*	------------- Logging --------------
@@ -235,7 +237,8 @@ namespace repo {
 		*/
 		bool generateAndCommitRepoBundlesBuffer(
 			const RepoToken* token,
-			repo::core::model::RepoScene* scene);
+			repo::core::model::RepoScene* scene,
+			const repo::manipulator::modelutility::WebBufferConfig& config);
 
 		/**
 		* Generate and commit a selection tree for the given scene
