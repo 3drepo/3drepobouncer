@@ -181,6 +181,18 @@ struct MongoQueryFilterVistior
 		builder->append(n.field, criteria.obj());
 	}
 
+	void operator() (const query::ArrayContains& n) const
+	{
+		// The array contains operator is a special case of the exists operator,
+		// where the field to check for existence is an element of an array. This
+		// uses the 'elemMatch' operator, which takes a document of query operators
+		// to apply to the elements of the array.
+
+		repo::core::model::RepoBSONBuilder criteria;
+		criteria.append("$elemMatch", makeQueryFilterDocument(n.query()));
+		builder->append(n.field, criteria.obj());
+	}
+
 	void operator() (const query::Or& n) const
 	{
 		// The Or operator is special in that it should exist at the top level
@@ -913,7 +925,7 @@ std::unique_ptr<Cursor> repo::core::handler::MongoDatabaseHandler::findCursorByC
 		}
 		else
 		{
-			return nullptr;
+			throw MongoDatabaseHandlerException(*this, "Invalid call to findCursorByCriteria; all of database, collection, and criteria must be provided.");
 		}
 
 	}

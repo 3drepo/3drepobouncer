@@ -57,9 +57,10 @@ uint8_t RepoController::commitScene(
 	const std::string                   &owner,
 	const std::string                      &tag,
 	const std::string                      &desc,
-	const repo::lib::RepoUUID           &revId)
+	const repo::lib::RepoUUID           &revId,
+	const repo::manipulator::modelutility::WebBufferConfig& config)
 {
-	return impl->commitScene(token, scene, owner, tag, desc, revId);
+	return impl->commitScene(token, scene, owner, tag, desc, revId, config);
 }
 
 void RepoController::destroyToken(RepoController::RepoToken* token)
@@ -130,9 +131,10 @@ repo::core::model::RepoScene* RepoController::createFederatedScene(
 
 bool RepoController::generateAndCommitRepoBundlesBuffer(
 	const RepoController::RepoToken* token,
-	repo::core::model::RepoScene* scene)
+	repo::core::model::RepoScene* scene,
+	const repo::manipulator::modelutility::WebBufferConfig& config)
 {
-	return impl->generateAndCommitRepoBundlesBuffer(token, scene);
+	return impl->generateAndCommitRepoBundlesBuffer(token, scene, config);
 }
 
 std::shared_ptr<repo::lib::repo_partitioning_tree_t>

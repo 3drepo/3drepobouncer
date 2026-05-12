@@ -95,6 +95,12 @@ namespace repo {
 							values.push_back(value);
 						}
 
+						Eq(const char* field, const char* value)
+							: field(field)
+						{
+							values.push_back(std::string(value));
+						}
+
 						template<typename T>
 						Eq(const char* field, const T& value)
 							: field(std::string(field))
@@ -142,6 +148,30 @@ namespace repo {
 						}
 
 						std::vector<RepoQuery> conditions;
+					};
+
+					class REPO_API_EXPORT ArrayContains
+					{
+					public:
+						template<typename T>
+						ArrayContains(std::string array, T query)
+							:field(array),
+							q({query})
+						{
+						}
+
+						std::string field;
+
+						const RepoQuery& query() const {
+							return q[0];
+						}
+
+					private:
+						// Variants must know the size of their types ahead of time, so we cannot
+						// have circular definitions. We use a vector as a trivial indirection as
+						// this container has all the necessary traits (copyable, assignable,
+						// trivially destructible, etc), but it will only ever store one element.
+						std::vector<RepoQuery> q;
 					};
 
 					/*

@@ -225,6 +225,7 @@
 #define REPO_ASSETS_LABEL_NUMSUBMESHES	"numSubmeshes"
 #define REPO_ASSETS_LABEL_NUMCOMPONENTS	"numComponents"
 #define REPO_ASSETS_LABEL_METADATA      "metadata"
+#define REPO_ASSETS_LABEL_GROUPS		"groups"
 
 //-----------------------------------------------------------------------------
 //
@@ -239,3 +240,7 @@
 #define REPO_FILTER_TAG_TRANSPARENT		"materialProperties.isTransparent"
 #define REPO_FILTER_TAG_TEXTURE_ID		"materialProperties.textureId"
 #define REPO_FILTER_TAG_NORMALS			"_blobRef.elements.normals"
+
+// Special grouping fields
+
+#define REPO_METADATA_GROUPING_FLOOR	"Asite 3DRepo::Floor"

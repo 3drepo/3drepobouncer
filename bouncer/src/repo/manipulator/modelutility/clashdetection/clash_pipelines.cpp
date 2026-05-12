@@ -25,6 +25,7 @@
 #include <repo/lib/datastructure/repo_matrix.h>
 #include <repo/lib/datastructure/repo_bounds.h>
 #include <repo/lib/datastructure/repo_triangle.h>
+#include <repo/lib/repo_hash_combine.h>
 #include <repo/core/handler/repo_database_handler_abstract.h>
 #include <repo/core/handler/database/repo_query.h>
 #include <repo/core/model/repo_model_global.h>
@@ -44,8 +45,6 @@ using namespace repo::manipulator::modelutility;
 using namespace repo::manipulator::modelutility::clash;
 
 using ContainerGroups = std::unordered_map<repo::lib::Container*, std::vector<repo::lib::RepoUUID>>;
-
-#define HASH_GOLDEN_RATIO 0x9e3779b9
 
 Graph::Graph(std::vector<Node> nodes)
 	: meshes(std::move(nodes))
@@ -306,11 +305,10 @@ void Pipeline::createClashReport(const OrderedPair& objects, const CompositeClas
 	// however as these is what the fingerprint is intended to discriminate between.
 
 	size_t hash = 0;
-	std::hash<double> hasher;
 	for (auto& p : result.positions) {
-		hash ^= hasher(p.x) + HASH_GOLDEN_RATIO + (hash << 6) + (hash >> 2);
-		hash ^= hasher(p.y) + HASH_GOLDEN_RATIO + (hash << 6) + (hash >> 2);
-		hash ^= hasher(p.z) + HASH_GOLDEN_RATIO + (hash << 6) + (hash >> 2);
+		hash_combine(hash, p.x);
+		hash_combine(hash, p.y);
+		hash_combine(hash, p.z);
 	}
 	result.fingerprint = hash;
 }

@@ -680,6 +680,37 @@ TEST(MongoDatabaseHandlerTest, FindOneByCriteria)
 	}
 }
 
+TEST(MongoDatabaseHandlerTest, MetadataQueries)
+{
+	// Tests that the ArrayContains query can be used for its intended purpose
+	// of working with metadata.
+
+	auto handler = getHandler();
+	auto db = REPO_GTEST_DBNAME4;
+	auto col = "rvtFloors.scene";
+
+	using namespace repo::core::handler::database;
+
+	{
+		auto results = handler->findAllByCriteria(db, col, 
+			query::ArrayContains("metadata", query::Eq("key", "Asite 3DRepo::Floor")));
+
+		std::vector<repo::lib::RepoUUID> expectedIds = {
+			repo::lib::RepoUUID("3F8465C1-2687-47A5-A1F6-6E9456222B4F"),
+			repo::lib::RepoUUID("69D49F91-4D7A-4C5C-8F83-460A743000F1"),
+			repo::lib::RepoUUID("0590E806-42A4-4AB7-A68A-0AEB4C91EE7A"),
+			repo::lib::RepoUUID("7DB87C88-6DBF-4BAD-952D-FC1C6F69943A")
+		};
+
+		std::vector<repo::lib::RepoUUID> actualIds;
+		for (auto& r : results) {
+			actualIds.push_back(r.getUUIDField(REPO_LABEL_ID));
+		}
+
+		EXPECT_THAT(actualIds, UnorderedElementsAreArray(expectedIds));
+	}
+}
+
 TEST(MongoDatabaseHandlerTest, FindOneByUniqueID)
 {
 	auto handler = getHandler();
