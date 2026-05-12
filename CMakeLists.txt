@@ -153,6 +153,9 @@ if (LICENSE_CHECK )
 
 endif()
 
+#===================== RAPIDJSON ============================
+add_definitions(-DRAPIDJSON_HAS_STDSTRING=1)
+
 #================COMPILE 3D REPO BOUNCER ==============
 option (REPO_BUILD_CLIENT "If the Command Line Client is built in addition to the library" ON)
 option (REPO_BUILD_TOOLS "If the Command Line Tool is built in addition to the library" OFF)
