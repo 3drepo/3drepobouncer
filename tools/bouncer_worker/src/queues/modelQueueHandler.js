@@ -25,6 +25,7 @@ const logger = require('../lib/logger');
 const processMonitor = require('../lib/processMonitor');
 const Utils = require('../lib/utils');
 const { IMPORT } = require('../constants/messageTypes');
+const { MODEL } = require('../constants/queueLabels');
 
 const Handler = {};
 const logLabel = { label: 'MODELQ' };
@@ -43,6 +44,7 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	await Utils.sleep(100);
 	callback(JSON.stringify({
 		status: PROCESSING,
+		type: MODEL,
 		teamspace,
 		container,
 	}));

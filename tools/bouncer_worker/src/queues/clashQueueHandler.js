@@ -44,6 +44,7 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	await Utils.sleep(100);
 	callback(JSON.stringify({
 		status: PROCESSING,
+		type: CLASH,
 		teamspace,
 		project,
 	}));
