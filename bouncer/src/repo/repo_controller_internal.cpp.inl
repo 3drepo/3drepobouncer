@@ -85,7 +85,8 @@ uint8_t RepoController::_RepoControllerImpl::commitScene(
 	const std::string                   &owner,
 	const std::string                      &tag,
 	const std::string                      &desc,
-	const repo::lib::RepoUUID           &revId)
+	const repo::lib::RepoUUID           &revId,
+	const repo::manipulator::modelutility::WebBufferConfig& config)
 {
 	uint8_t errCode = REPOERR_UNKNOWN_ERR;
 	if (scene)
@@ -101,7 +102,8 @@ uint8_t RepoController::_RepoControllerImpl::commitScene(
 					owner.empty() ? "ANONYMOUS USER" : owner,
 					tag,
 					desc,
-					revId);
+					revId,
+					config);
 				workerPool.push(worker);
 			}
 			else
@@ -268,13 +270,14 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::createFederat
 
 bool RepoController::_RepoControllerImpl::generateAndCommitRepoBundlesBuffer(
 	const RepoController::RepoToken* token,
-	repo::core::model::RepoScene* scene)
+	repo::core::model::RepoScene* scene,
+	const repo::manipulator::modelutility::WebBufferConfig& config)
 {
 	bool success;
 	if (success = token && scene)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		success = worker->generateAndCommitRepoBundlesBuffer(scene);
+		success = worker->generateAndCommitRepoBundlesBuffer(scene, config);
 		workerPool.push(worker);
 	}
 	else

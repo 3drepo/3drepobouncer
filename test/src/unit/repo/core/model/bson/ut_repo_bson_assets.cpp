@@ -30,17 +30,6 @@
 using namespace repo::core::model;
 using namespace testing;
 
-namespace repo {
-	namespace core {
-		namespace model {
-			static bool operator== (const RepoSupermeshMetadata& a, const RepoSupermeshMetadata& b)
-			{
-				return memcmp(&a, &b, sizeof(a)) == 0;
-			}
-		}
-	}
-}
-
 TEST(RepoAssetsTest, Serialise)
 {
 	auto rid = repo::lib::RepoUUID::createUUID();
@@ -63,6 +52,9 @@ TEST(RepoAssetsTest, Serialise)
 		md.primitive = 2 + rand() % 2;
 		md.numSubmeshes = rand();
 		md.numComponents = rand();
+		md.addGrouping(repo::lib::RepoUUID::createUUID().toString());
+		md.addGrouping(repo::lib::RepoUUID::createUUID().toString());
+		md.addGrouping({});
 		metadata.push_back(md);
 	}
 
@@ -96,6 +88,7 @@ TEST(RepoAssetsTest, Serialise)
 		m.numVertices = o.getIntField(REPO_ASSETS_LABEL_NUMVERTICES);
 		m.numSubmeshes = o.getIntField(REPO_ASSETS_LABEL_NUMSUBMESHES);
 		m.numComponents = o.getIntField(REPO_ASSETS_LABEL_NUMCOMPONENTS);
+		m.groups = o.getStringArray(REPO_ASSETS_LABEL_GROUPS);
 		actual.push_back(m);
 	}
 	EXPECT_THAT(actual, Eq(metadata));

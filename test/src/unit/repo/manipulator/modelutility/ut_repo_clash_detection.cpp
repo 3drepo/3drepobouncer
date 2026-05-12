@@ -959,10 +959,38 @@ TEST(Clash, SupportedRanges)
 		ClashDetectionConfigHelper config;
 		config.type = ClashDetectionType::Clearance;
 		MockClashScene scene(config.getRevision());
-		scene.add(clashGenerator.createTrianglesVF(
-			repo::lib::RepoBounds({ repo::lib::RepoVector3D64(0, 0, 0) })),
-			config
-		);
+
+		// The RNG can come up with a problem where the vertices are actually all within the limit.
+		// This ensures that we will always have a valid problem.
+		bool foundValidProblem = false;
+		do {
+			auto triangles = clashGenerator.createTrianglesVF(
+				repo::lib::RepoBounds({ repo::lib::RepoVector3D64(0, 0, 0) }));
+
+			auto triangleA = triangles.a.e;
+			auto matA = triangles.a.m;
+
+			auto triangleB = triangles.b.e;
+			auto matB = triangles.b.m;
+
+			std::vector<repo::lib::RepoVector3D64> vertices;
+			vertices.push_back(matA * triangleA.a);
+			vertices.push_back(matA * triangleA.b);
+			vertices.push_back(matA * triangleA.c);
+			vertices.push_back(matB * triangleB.a);
+			vertices.push_back(matB * triangleB.b);
+			vertices.push_back(matB * triangleB.c);
+
+			for (auto& v : vertices)
+			{
+				if ((std::abs(v.x) > MESH_LIMIT) || (std::abs(v.y) > MESH_LIMIT) || (std::abs(v.z) > MESH_LIMIT))
+				{
+					foundValidProblem = true;
+					scene.add(triangles, config);
+					break;
+				}
+			}
+		} while (!foundValidProblem);
 
 		db->setDocuments(scene.bsons);
 
@@ -2919,37 +2947,6 @@ void RunMeetTest(
 	EXPECT_THAT(config.setA.size(), Eq(noSamples));
 	EXPECT_THAT(config.setB.size(), Eq(noSamples));
 
-	// Get map from unique mesh ids to bounds from DB
-	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoBounds, repo::lib::RepoUUIDHasher> uidToBoundsMap;
-	helper.getBoundsForContainer(container.get(), uidToBoundsMap);
-
-	// Remap to the composite ids
-	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoBounds, repo::lib::RepoUUIDHasher> compidToBoundsMap;
-	for (auto compObj : config.setA)
-	{
-		repo::lib::RepoBounds bounds;
-		for (auto& mesh : compObj.meshes)
-		{
-			auto uid = mesh.uniqueId;
-			auto boundsEntry = uidToBoundsMap.find(uid);
-			if (boundsEntry != uidToBoundsMap.end())
-				bounds.encapsulate(boundsEntry->second);
-		}
-		compidToBoundsMap.insert({ compObj.id, bounds });
-	}
-	for (auto compObj : config.setB)
-	{
-		repo::lib::RepoBounds bounds;
-		for (auto& mesh : compObj.meshes)
-		{
-			auto uid = mesh.uniqueId;
-			auto boundsEntry = uidToBoundsMap.find(uid);
-			if (boundsEntry != uidToBoundsMap.end())
-				bounds.encapsulate(boundsEntry->second);
-		}
-		compidToBoundsMap.insert({ compObj.id, bounds });
-	}
-
 	// Test Clearance Mode
 	// Low Tolerance
 	{
@@ -2964,20 +2961,14 @@ void RunMeetTest(
 		// the threshold
 		for (auto clash : results.clashes)
 		{
-			auto boundsEntryA = compidToBoundsMap.find(clash.idA);
-			auto boundsEntryB = compidToBoundsMap.find(clash.idB);
+			// Create bounds from the clash positions and origin to calibrate the contact threshold
+			// without having to pull the actual vertices from the database.
+			auto bounds = repo::lib::RepoBounds(clash.positions.data(), clash.positions.size());
+			bounds.encapsulate(repo::lib::RepoVector3D64{ 0,0,0 });
+			double threshold = geometry::contactThreshold(bounds);
 
-			if (boundsEntryA != compidToBoundsMap.end() && boundsEntryB != compidToBoundsMap.end())
-			{
-				float threshold = geometry::contactThreshold(boundsEntryA->second, boundsEntryB->second);
-
-				float diff = (clash.positions[0] - clash.positions[1]).norm();
-				EXPECT_THAT(diff, Le(threshold));
-			}
-			else
-			{
-				FAIL() << "Could not retrieve bounds for either or both of the composites";
-			}
+			double diff = (clash.positions[0] - clash.positions[1]).norm();
+			EXPECT_THAT(diff, Le(threshold));
 		}
 	}
 
@@ -2995,20 +2986,14 @@ void RunMeetTest(
 		// the threshold
 		for (auto clash : results.clashes)
 		{
-			auto boundsEntryA = compidToBoundsMap.find(clash.idA);
-			auto boundsEntryB = compidToBoundsMap.find(clash.idB);
+			// Create bounds from the clash positions and origin to calibrate the contact threshold
+			// without having to pull the actual vertices from the database.
+			auto bounds = repo::lib::RepoBounds(clash.positions.data(), clash.positions.size());
+			bounds.encapsulate(repo::lib::RepoVector3D64{ 0,0,0 });
+			double threshold = geometry::contactThreshold(bounds);
 
-			if (boundsEntryA != compidToBoundsMap.end() && boundsEntryB != compidToBoundsMap.end())
-			{
-				float threshold = geometry::contactThreshold(boundsEntryA->second, boundsEntryB->second);
-
-				float diff = (clash.positions[0] - clash.positions[1]).norm();
-				EXPECT_THAT(diff, Le(threshold));
-			}
-			else
-			{
-				FAIL() << "Could not retrieve bounds for either or both of the composites";
-			}
+			double diff = (clash.positions[0] - clash.positions[1]).norm();
+			EXPECT_THAT(diff, Le(threshold));
 		}
 	}
 

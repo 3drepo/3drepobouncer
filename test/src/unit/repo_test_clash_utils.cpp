@@ -663,32 +663,6 @@ void ClashDetectionDatabaseHelper::createCompositeObjectsByMetadataValue(
 	}
 }
 
-void ClashDetectionDatabaseHelper::getBoundsForContainer(
-	repo::lib::Container* container,
-	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoBounds, repo::lib::RepoUUIDHasher>& boundsMap)
-{
-	repo::core::handler::database::query::RepoQueryBuilder query;
-	query.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_MESH));
-
-	repo::core::handler::database::query::RepoProjectionBuilder projection;
-	projection.includeField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
-	projection.includeField(REPO_NODE_LABEL_ID);
-
-	auto cursor = handler->findCursorByCriteria(
-		container->teamspace,
-		container->container + "." + REPO_COLLECTION_SCENE,
-		query,
-		projection
-	);
-
-	for (auto& bson : *cursor) {
-		repo::lib::RepoUUID id = bson.getUUIDField(REPO_NODE_LABEL_ID);
-		repo::lib::RepoBounds bounds = bson.getBoundsField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
-
-		boundsMap.insert({ id, bounds });
-	}
-}
-
 CompositeObject testing::combineCompositeObjects(
 	std::initializer_list<CompositeObject> objects
 )

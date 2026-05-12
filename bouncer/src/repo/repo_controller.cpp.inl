@@ -191,7 +191,8 @@ public:
 		const std::string                   &owner = "",
 		const std::string                      &tag = "",
 		const std::string                      &desc = "",
-		const repo::lib::RepoUUID           &revId = repo::lib::RepoUUID::createUUID());
+		const repo::lib::RepoUUID           &revId = repo::lib::RepoUUID::createUUID(),
+		const repo::manipulator::modelutility::WebBufferConfig& config = {});
 
 	/*
 	*	------------- Logging --------------
@@ -237,7 +238,8 @@ public:
 	*/
 	bool generateAndCommitRepoBundlesBuffer(
 		const RepoToken* token,
-		repo::core::model::RepoScene* scene);
+		repo::core::model::RepoScene* scene,
+		const repo::manipulator::modelutility::WebBufferConfig& config);
 
 	/**
 	* Generate and commit a selection tree for the given scene

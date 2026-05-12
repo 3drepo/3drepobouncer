@@ -27,6 +27,13 @@ using namespace repo::core::model;
 using namespace testing;
 using namespace repo::test::utils::mesh;
 
+#define EXPECT_REPO_EXCEPTION(statement) \
+	try { \
+		statement; \
+		FAIL() << "Expected an exception to be thrown"; \
+	} catch (const repo::lib::RepoException& e) { \
+	}
+
 TEST(StreamingMeshNodeTest, EmptyConstructor)
 {
 	StreamingMeshNode empty;
@@ -39,13 +46,13 @@ TEST(StreamingMeshNodeTest, EmptyConstructor)
 	EXPECT_EQ(empty.getBoundingBox(), repo::lib::RepoBounds());
 
 	// Check data that should not be accessible yet
-	EXPECT_TRUE(empty.getUniqueId().isDefaultValue());
-	EXPECT_EQ(empty.getNumLoadedFaces(), 0);	
-	EXPECT_EQ(empty.getLoadedFaces().size(), 0);
-	EXPECT_EQ(empty.getNumLoadedVertices(), 0);
-	EXPECT_EQ(empty.getLoadedVertices().size(), 0);
-	EXPECT_EQ(empty.getLoadedNormals().size(), 0);
-	EXPECT_EQ(empty.getLoadedUVChannelsSeparated().size(), 0);
+	EXPECT_REPO_EXCEPTION(empty.getUniqueId());
+	EXPECT_REPO_EXCEPTION(empty.getNumLoadedFaces());
+	EXPECT_REPO_EXCEPTION(empty.getLoadedFaces());
+	EXPECT_REPO_EXCEPTION(empty.getNumLoadedVertices());
+	EXPECT_REPO_EXCEPTION(empty.getLoadedVertices());
+	EXPECT_REPO_EXCEPTION(empty.getLoadedNormals());
+	EXPECT_REPO_EXCEPTION(empty.getLoadedUVChannelsSeparated());
 }
 
 TEST(StreamingMeshNodeTest, LoadBasicStreamingMeshNode) {
@@ -64,13 +71,13 @@ TEST(StreamingMeshNodeTest, LoadBasicStreamingMeshNode) {
 			repo::lib::RepoVector3D(meshData.boundingBox[1])));
 	
 	// Check data that should not be accessible yet
-	EXPECT_TRUE(limited.getUniqueId().isDefaultValue());
-	EXPECT_EQ(limited.getNumLoadedFaces(), 0);
-	EXPECT_EQ(limited.getLoadedFaces().size(), 0);
-	EXPECT_EQ(limited.getNumLoadedVertices(), 0);
-	EXPECT_EQ(limited.getLoadedVertices().size(), 0);
-	EXPECT_EQ(limited.getLoadedNormals().size(), 0);
-	EXPECT_EQ(limited.getLoadedUVChannelsSeparated().size(), 0);
+	EXPECT_REPO_EXCEPTION(limited.getUniqueId());
+	EXPECT_REPO_EXCEPTION(limited.getNumLoadedFaces());
+	EXPECT_REPO_EXCEPTION(limited.getLoadedFaces());
+	EXPECT_REPO_EXCEPTION(limited.getNumLoadedVertices());
+	EXPECT_REPO_EXCEPTION(limited.getLoadedVertices());
+	EXPECT_REPO_EXCEPTION(limited.getLoadedNormals());
+	EXPECT_REPO_EXCEPTION(limited.getLoadedUVChannelsSeparated());
 }
 
 void TestLoadSupermeshingData(mesh_data meshData) {
@@ -81,13 +88,13 @@ void TestLoadSupermeshingData(mesh_data meshData) {
 	StreamingMeshNode node = StreamingMeshNode(bson);
 
 	// Check data that should not be accessible yet
-	EXPECT_TRUE(node.getUniqueId().isDefaultValue());
-	EXPECT_EQ(node.getNumLoadedFaces(), 0);
-	EXPECT_EQ(node.getLoadedFaces().size(), 0);
-	EXPECT_EQ(node.getNumLoadedVertices(), 0);
-	EXPECT_EQ(node.getLoadedVertices().size(), 0);
-	EXPECT_EQ(node.getLoadedNormals().size(), 0);
-	EXPECT_EQ(node.getLoadedUVChannelsSeparated().size(), 0);
+	EXPECT_REPO_EXCEPTION(node.getUniqueId());
+	EXPECT_REPO_EXCEPTION(node.getNumLoadedFaces());
+	EXPECT_REPO_EXCEPTION(node.getLoadedFaces());
+	EXPECT_REPO_EXCEPTION(node.getNumLoadedVertices());
+	EXPECT_REPO_EXCEPTION(node.getLoadedVertices());
+	EXPECT_REPO_EXCEPTION(node.getLoadedNormals());
+	EXPECT_REPO_EXCEPTION(node.getLoadedUVChannelsSeparated());
 
 	// Inflate node
 	auto data = bson.getBinariesAsBuffer();
@@ -109,13 +116,14 @@ void TestLoadSupermeshingData(mesh_data meshData) {
 
 	// Check the deflated node's data
 	// It should be back to the previous state		
-	EXPECT_TRUE(node.getUniqueId().isDefaultValue());
-	EXPECT_EQ(node.getNumLoadedFaces(), 0);
-	EXPECT_EQ(node.getLoadedFaces().size(), 0);
-	EXPECT_EQ(node.getNumLoadedVertices(), 0);
-	EXPECT_EQ(node.getLoadedVertices().size(), 0);
-	EXPECT_EQ(node.getLoadedNormals().size(), 0);
-	EXPECT_EQ(node.getLoadedUVChannelsSeparated().size(), 0);
+	// Check data that should not be accessible yet
+	EXPECT_REPO_EXCEPTION(node.getUniqueId());
+	EXPECT_REPO_EXCEPTION(node.getNumLoadedFaces());
+	EXPECT_REPO_EXCEPTION(node.getLoadedFaces());
+	EXPECT_REPO_EXCEPTION(node.getNumLoadedVertices());
+	EXPECT_REPO_EXCEPTION(node.getLoadedVertices());
+	EXPECT_REPO_EXCEPTION(node.getLoadedNormals());
+	EXPECT_REPO_EXCEPTION(node.getLoadedUVChannelsSeparated());
 }
 
 TEST(StreamingMeshNodeTest, LoadSupermeshingData) {
