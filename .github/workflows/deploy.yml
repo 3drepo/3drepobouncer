@@ -9,6 +9,13 @@ on:
 permissions:
   contents: read
 
+# Update HELM_CHART_VERSION here when the bouncer helm chart is bumped in DevOps.
+# IMAGE_TAG is derived from the branch name of the triggering build
+
+env:
+  HELM_CHART_VERSION: '5.22.2'
+  IMAGE_TAG: ${{ github.event.workflow_run.head_branch }}
+
 jobs:
   deploy:
     if: github.event.workflow_run.conclusion == 'success'
@@ -57,12 +64,12 @@ jobs:
       - name: Deploy Helm chart
         run: |
           helm upgrade --install \
-            --version 5.22.2 \
+            --version ${{ env.HELM_CHART_VERSION }} \
             www-bouncer \
             oci://${{ secrets.REGISTRY_LOGIN_SERVER }}/helm/bouncer \
             --namespace default \
             -f deployments/asite-stg/helm/bouncer/values.yaml \
-            --set image.tag=staging \
+            --set image.tag=${{ env.IMAGE_TAG }} \
             --wait
 
       # ---------------------------------------------------------------
