@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: true
+
 # Update HELM_CHART_VERSION here when the bouncer helm chart is bumped in DevOps.
 # IMAGE_TAG is derived from the branch name of the triggering build
 
@@ -70,6 +74,7 @@ jobs:
             --namespace default \
             -f deployments/asite-stg/helm/bouncer/values.yaml \
             --set image.tag=${{ env.IMAGE_TAG }} \
+            --set podAnnotations.buildId=${{ github.run_id }} \
             --wait
 
       # ---------------------------------------------------------------
