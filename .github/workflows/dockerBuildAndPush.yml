@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: build-${{ github.ref }}
+  group: build-${{ github.event_name }}-${{ github.event_name == 'issue_comment' && github.event.issue.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
