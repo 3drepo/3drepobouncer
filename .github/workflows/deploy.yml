@@ -75,7 +75,8 @@ jobs:
             -f deployments/asite-stg/helm/bouncer/values.yaml \
             --set image.tag=${{ env.IMAGE_TAG }} \
             --set podAnnotations.buildId=${{ github.run_id }} \
-            --wait
+            --wait \
+            --atomic
 
       # ---------------------------------------------------------------
       # STEP 6: Cleanup
