@@ -74,7 +74,7 @@ jobs:
             --namespace default \
             -f deployments/asite-stg/helm/bouncer/values.yaml \
             --set image.tag=${{ env.IMAGE_TAG }} \
-            --set podAnnotations.buildId=${{ github.run_id }} \
+            --set podAnnotations.buildId=${{ github.event.workflow_run.id }} \
             --wait \
             --atomic
 
