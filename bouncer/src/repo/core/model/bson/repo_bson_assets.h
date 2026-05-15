@@ -41,6 +41,21 @@ namespace repo {
 				size_t primitive;
 				repo::lib::RepoVector3D min;
 				repo::lib::RepoVector3D max;
+				std::vector<std::string> groups;
+
+				bool operator==(const RepoSupermeshMetadata& other) const;
+
+				bool operator!=(const RepoSupermeshMetadata& other) const
+				{
+					return !(*this == other);
+				}
+
+				void addGrouping(const std::string& group)
+				{
+					if (!group.empty()) {
+						groups.push_back(group);
+					}
+				}
 			};
 
 			class REPO_API_EXPORT RepoAssets

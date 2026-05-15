@@ -24,6 +24,7 @@
 #include "repo/manipulator/modelconvertor/import/odaHelper/repo_mesh_builder.h"
 #include "repo/core/model/bson/repo_node_transformation.h"
 #include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/lib/datastructure/repo_variant_utils.h"
 
 #include <repo_log.h>
 
@@ -926,6 +927,14 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 
 			context.parentNode = context.sceneBuilder->addNode(RepoBSONFactory::makeTransformationNode({}, levelName, { context.parentNode->getSharedID() }));
 
+			// To match the plug-in, and ensure metadata ends up in the right place for
+			// the benefit of smart groups, node properties are overridden with their
+			// parent's metadata
+			std::unordered_map<std::string, repo::lib::RepoVariant> merged = metadata;
+			for (auto p : context.parentMetadata) {
+				merged[p.first] = p.second;
+			}
+
 			// GetIcon distinguishes the type of node. This corresponds to the icon seen in
 			// the Selection Tree View in Navisworks.
 			// https://docs.opendesign.com/bimnv/OdNwModelItem__getIcon@const.html
@@ -935,14 +944,27 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 			if (pNode->getIcon() == NwModelItemIcon::LAYER)
 			{
 				context.layer = pNode;
-			}
 
-			// To match the plug-in, and ensure metadata ends up in the right place for
-			// the benefit of smart groups, node properties are overridden with their
-			// parent's metadata
-			std::unordered_map<std::string, repo::lib::RepoVariant> merged = metadata;
-			for (auto p : context.parentMetadata) {
-				merged[p.first] = p.second;
+				// For layers, check if we need to add the magic floor metadata. This applies
+				// to Rvt and Ifc partitions - both of which will create Layer's for floors.
+				//
+				// This magic parameter should be applied directly to the node's - it should
+				// not be inherited like the other parameters above. Hence we check the map
+				// extracted from the node (metadata) but write to map that is written to the
+				// db (merged).
+				{
+					auto it = metadata.find("Item::Internal Type"); // For Rvt files, look for the LcRevitLayer type
+					if (it != metadata.end() && boost::apply_visitor(repo::lib::StringConversionVisitor(), it->second) == "LcRevitLayer") {
+						merged[REPO_METADATA_GROUPING_FLOOR] = levelName;
+					}
+				}
+
+				{
+					auto it = metadata.find("Element::IfcClass"); // For Ifc files, look for the IfcBuildingStorey class
+					if (it != metadata.end() && boost::apply_visitor(repo::lib::StringConversionVisitor(), it->second) == "IfcBuildingStorey") {
+						merged[REPO_METADATA_GROUPING_FLOOR] = levelName;
+					}
+				}
 			}
 
 			context.sceneBuilder->addNode(RepoBSONFactory::makeMetaDataNode(merged, context.parentNode->getName(), { context.parentNode->getSharedID() }));

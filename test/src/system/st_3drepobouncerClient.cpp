@@ -23,6 +23,7 @@
 #include <cstdlib>
 #include <stdlib.h>
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 #include <repo/error_codes.h>
 #include <repo/repo_controller.h>
 #include "../unit/repo_test_database_info.h"
@@ -519,6 +520,37 @@ TEST(RepoClientTest, UploadTestOwner)
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importNoOwner2))));
 	EXPECT_TRUE(projectExists("testDB", importNoOwnerPro2));
 	EXPECT_TRUE(projectSettingsCheck("testDB", importNoOwnerPro2, "ANONYMOUS USER", "thisTag", "MyUpload"));
+}
+
+TEST(RepoClientTest, UploadSplitByFloors)
+{
+	auto handler = getHandler();
+
+	// Tests whether the split-by-floor option works correctly.
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath("importFloorsSplit.json"))));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath("importFloorsNoSplit.json"))));
+
+	{
+		std::set<std::string> groups;
+		auto assets = handler->getAllFromCollectionTailable("testDB", "floors_split.stash.repobundles", 0, 1, {}, "timestamp");
+		EXPECT_EQ(assets.size(), 1);
+		for (auto& sm : assets[0].getObjectArray("metadata")) {
+			if (sm.hasField("groups")) {
+				for (auto& group : sm.getStringArray("groups")) {
+					groups.insert(group);	
+				}
+			}
+		}
+		EXPECT_THAT(groups, UnorderedElementsAre("Level 0", "Level 1", "Level 2"));
+	}
+
+	{
+		auto assets = handler->getAllFromCollectionTailable("testDB", "floors_no_split.stash.repobundles", 0, 1, {}, "timestamp");
+		EXPECT_EQ(assets.size(), 1);
+		for (auto& sm : assets[0].getObjectArray("metadata")) {
+			EXPECT_THAT(sm.hasField("groups"), IsFalse());
+		}
+	}
 }
 
 TEST(RepoClientTest, CreateFedTest)

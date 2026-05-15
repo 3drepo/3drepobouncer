@@ -150,15 +150,36 @@ namespace geometry {
     * way in which the operands combine, and the scalar, are implementation
     * details found empirically.
     */
-
     double contactThreshold(
         const repo::lib::RepoTriangle& a, 
         const repo::lib::RepoTriangle& b
     );
 
+    /*
+    * Given two bounding boxes, return a value representing the uncertainty of
+    * queries run on them due to rounding error. This value can be used to
+    * distinguish between in-contact, in-collision, and coplanar states.
+    *
+    * The value is based on the magnitude of the operands involved - the exact
+    * way in which the operands combine, and the scalar, are implementation
+    * details found empirically.
+    */
     double contactThreshold(
         const repo::lib::RepoBounds& a,
         const repo::lib::RepoBounds& b
+    );
+
+    /*
+    * Given a single bounding box, return a value representing the uncertainty
+    * of queries run on it due to rounding error. This value can be used to
+    * distinguish between in-contact, in-collision, and coplanar states.
+    *
+    * The value is based on the magnitude of the operands involved - the exact
+    * way in which the operands combine, and the scalar, are implementation
+    * details found empirically.
+    */
+    double contactThreshold(
+        const repo::lib::RepoBounds& scope
     );
 
     /*
