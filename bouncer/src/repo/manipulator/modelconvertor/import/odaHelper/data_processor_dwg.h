@@ -26,6 +26,12 @@
 #include <string>
 #include <fstream>
 #include <vector>
+#include <unordered_map>
+#include <DbProxyEntity.h>
+#include <DbRegAppTable.h>
+#include <DbRegAppTableRecord.h>
+#include <DbDictionary.h>
+#include <DbXrecord.h>
 
 #include "vectorise_device_dgn.h"
 #include "repo/core/model/bson/repo_node_mesh.h"
@@ -41,6 +47,23 @@ namespace repo {
 					bool doDraw(OdUInt32 i,	const OdGiDrawable* pDrawable) override;
 					void setMode(OdGsView::RenderMode mode);
 					~DataProcessorDwg();
+					// ===== ADD THESE LINES (START) =====
+					struct DiagnosticStats {
+						size_t totalEntities = 0;
+						size_t civil3dEntities = 0;
+						size_t plant3dEntities = 0;
+						size_t proxyEntities = 0;
+						size_t entitiesWithGeometry = 0;
+						size_t entitiesWithoutGeometry = 0;
+						size_t explodedSuccessfully = 0;
+						size_t explodedFailed = 0;
+						size_t boundingBoxFallbacks = 0;
+						std::unordered_map<std::string, size_t> entityTypeCount;
+					};
+
+					DiagnosticStats getStats() const { return stats; }
+					void printDiagnostics() const;
+					// ===== ADD THESE LINES (END) =====
 
 				protected:
 
@@ -52,6 +75,29 @@ namespace repo {
 						repo::lib::repo_material_t& material) override;
 
 				private:
+					// ===== ADDED: Helper methods for Civil3D/Plant3D detection =====
+					bool isCivil3DEntity(OdDbEntityPtr pEntity);
+					bool isPlant3DEntity(OdDbEntityPtr pEntity);
+					bool isProxyEntity(OdDbEntityPtr pEntity);
+					std::string getProxyOriginalClassName(OdDbEntityPtr pEntity);
+					std::vector<std::string> getProxyXDataApps(OdDbEntityPtr pEntity);
+					std::string detectApplicationType(OdDbEntityPtr pEntity);
+					void inspectProxyEntity(OdDbEntityPtr pEntity);
+					bool tryExplodeEntity(OdDbEntityPtr pEntity, std::vector<OdDbEntityPtr>& explodedEntities);
+					void extractBoundingBoxAsMesh(OdDbEntityPtr pEntity);
+					std::unordered_map<std::string, std::string> getProxyMetadata(OdDbEntityPtr pEntity);
+					// ===== END: Helper methods for Civil3D/Plant3D detection =====
+
+					std::unordered_map<std::string, repo::lib::RepoVariant> getCivil3DPlant3DMetadata(OdDbEntityPtr pEntity);
+
+					void extractCivil3DStoredProperties(OdDbDictionaryPtr pDict, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
+
+					void extractPlant3DStoredProperties(OdDbDictionaryPtr pDict, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
+
+					void extractXDataProperties(OdResBufPtr pRb, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
+
+					void extractTextPropertiesFromProxy(OdDbProxyEntityPtr proxyEntity, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
+
 					void convertTo3DRepoColor(OdCmEntityColor& color, repo::lib::repo_color3d_t& out);
 
 					class Layer
@@ -86,6 +132,7 @@ namespace repo {
 					};
 
 					Context context;
+					mutable DiagnosticStats stats;
 
 					std::string getClassDisplayName(OdDbEntityPtr entity);
 				};

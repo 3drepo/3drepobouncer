@@ -217,8 +217,31 @@ uint8_t FileProcessorDwg::readFile()
 		::odrxDynamicLinker()->loadModule(RxPropertiesModuleName, false);
 		::odrxDynamicLinker()->loadModule(DbPropertiesModuleName, false);
 		::odrxDynamicLinker()->loadModule(RxCommonDataAccessModuleName, false);
+		
+		// ===== ADDED: Enable proxy graphics rendering =====
+		// This allows ODA to render custom entities using their embedded proxy graphics
+		// even when specific modules (Civil3D, Plant3D) are not available
+		try {
+			::odrxDynamicLinker()->loadModule(L"ProxyGraphics", false);
+			repoInfo << "Loaded ProxyGraphics module - will attempt to render custom entities";
+		}
+		catch (...) {
+			repoWarning << "ProxyGraphics module not available";
+		}
 
 		OdDbDatabasePtr pDb = svcs.readFile(getFilename());
+
+		// ===== ADDED: Configure database to use proxy graphics =====
+		// PROXYGRAPHICS system variable controls how custom objects display:
+		// 0 = No proxy graphics (bounding box only)
+		// 1 = Show proxy graphics
+		try {
+			//pDb->setPROXYGRAPHICS(1); // Enable proxy graphics display
+			//repoInfo << "Enabled proxy graphics display";
+		}
+		catch (...) {
+			repoWarning << "Failed to enable proxy graphics";
+		}
 
 		if (repoSceneBuilder)
 		{
