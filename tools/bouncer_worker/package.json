@@ -24,7 +24,7 @@
     "uuid": "8.3.2",
     "winston": "3.17.0",
     "yargs": "16.2.0",
-    "yup": "1.6.1"
+    "yup": "1.7.0"
   },
   "devDependencies": {
     "eslint": "7.10.0",
