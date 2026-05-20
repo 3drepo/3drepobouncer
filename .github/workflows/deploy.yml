@@ -69,6 +69,10 @@ jobs:
       # ---------------------------------------------------------------
       # STEP 5: Deploy Helm chart
       # ---------------------------------------------------------------
+      - name: Debug values file
+        run: cat deployments/asite-stg/helm/bouncer/values.yaml || echo "FILE NOT FOUND"
+
+
       - name: Deploy Helm chart
         run: |
           helm upgrade --install \
