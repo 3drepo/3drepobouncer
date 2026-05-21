@@ -91,12 +91,10 @@ namespace repo {
 					std::unordered_map<std::string, repo::lib::RepoVariant> getCivil3DPlant3DMetadata(OdDbEntityPtr pEntity);
 
 					void extractCivil3DStoredProperties(OdDbDictionaryPtr pDict, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
-
 					void extractPlant3DStoredProperties(OdDbDictionaryPtr pDict, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
-
 					void extractXDataProperties(OdResBufPtr pRb, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
-
 					void extractTextPropertiesFromProxy(OdDbProxyEntityPtr proxyEntity, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
+					void extractEntityProperties(OdDbEntityPtr pEntity, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
 
 					void convertTo3DRepoColor(OdCmEntityColor& color, repo::lib::repo_color3d_t& out);
 

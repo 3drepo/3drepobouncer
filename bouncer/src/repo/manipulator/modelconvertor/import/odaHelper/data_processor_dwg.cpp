@@ -30,7 +30,16 @@
 #include <DbRegAppTableRecord.h>
 #include <DbDictionary.h>
 #include <DbXrecord.h>
-
+#include <RxProperty.h>
+#include <RxValue.h>
+#include <RxValueTypeUtil.h>
+#include <RxMember.h>
+#include <RxObjectImpl.h>
+#include <RxAttribute.h>
+#include <DbDatabase.h>
+#include <DbSymbolTableRecord.h>
+#include <DbMaterial.h>
+#include <CmColorBase.h>
 #include "helper_functions.h"
 #include "data_processor_dwg.h"
 #include "repo/lib/datastructure/repo_variant_utils.h"
@@ -710,14 +719,14 @@ std::unordered_map<std::string, repo::lib::RepoVariant> DataProcessorDwg::getCiv
 			stats.civil3dEntities++;
 		if (originalClass.rfind("AcPp", 0) == 0)
 			stats.plant3dEntities++;
-		metadata["OriginalClassName"] = originalClass;
+		//metadata["OriginalClassName"] = originalClass;
 
 
-		metadata["Application"] = detectApplicationType(pEntity);
+		//metadata["Application"] = detectApplicationType(pEntity);
 		
 		// 2. Check if we can render it
 		int flags = proxyEntity->proxyFlags();
-		metadata["HasGeometry"] = (bool)(flags & 1);
+		/*metadata["HasGeometry"] = (bool)(flags & 1);
 		metadata["CanExplode"] = (bool)(flags & 4);
 		
 		
@@ -761,7 +770,17 @@ std::unordered_map<std::string, repo::lib::RepoVariant> DataProcessorDwg::getCiv
 					std::to_string(max.z) + ")";
 			}
 		}
-		catch (...) {}
+		catch (...) {}*/
+
+		// =====================================================================
+		// 3. READ ALL PROPERTIES VIA ODA Common Data Access (CDA) / RxProperties
+		// This is equivalent to the AutoCAD Properties panel (General, Pattern,
+		// Geometry sections, etc.)
+		// ODA SDK Reference: https://docs.opendesign.com/tkernel/OdRxProperty.html
+		// Requires: RxPropertiesModule, DbPropertiesModule, RxCommonDataAccessModule
+		// (already loaded in file_processor_dwg.cpp readFile())
+		// =====================================================================
+		extractEntityProperties(pEntity, metadata);
 
 		// 3. Try to get stored properties from extension dictionary
 		OdDbObjectId extDictId = pEntity->extensionDictionary();
@@ -1034,6 +1053,203 @@ void DataProcessorDwg::extractTextPropertiesFromProxy(OdDbProxyEntityPtr proxyEn
 		}
 	}
 	catch (...) {}
+}
+void DataProcessorDwg::extractEntityProperties(OdDbEntityPtr pEntity, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
+{
+	if (pEntity.isNull()) return;
+
+	try {
+		// Use ODA's Common Data Access (CDA) to enumerate all properties.
+		// This reads the same properties shown in the AutoCAD Properties panel:
+		// General (Color, Layer, Linetype, Lineweight, Transparency, etc.)
+		// Pattern (for hatches: Type, Pattern name, Angle, Scale, etc.)
+		// Geometry (Elevation, Area, Cumulative Area, etc.)
+
+		OdRxMemberIteratorPtr pIter = OdRxMemberQueryEngine::theEngine()->newMemberIterator(pEntity);
+		if (pIter.isNull()) return;
+
+		for (; !pIter->done(); pIter->next())
+		{
+			OdRxMember* pMember = pIter->current();
+			if (!pMember) continue;
+
+			// Only process properties (not methods or other members)
+			OdRxProperty* pProp = OdRxProperty::cast(pMember);
+			if (!pProp) continue;
+
+			try {
+				// Get property name
+				std::string propName = convertToStdString(pProp->name());
+
+				// Skip internal/system properties
+				if (propName.empty() || propName[0] == '_') continue;
+
+				// Get the category (General, Pattern, Geometry, etc.)
+				std::string category = "";
+				OdRxAttributePtr pAttr = pProp->attributes().get(OdRxUiPlacementAttribute::desc());
+				if (!pAttr.isNull())
+				{
+					OdRxUiPlacementAttribute* pPlacement = OdRxUiPlacementAttribute::cast(pAttr);
+					if (pPlacement)
+					{
+						category = convertToStdString(pPlacement->getCategory(pProp));
+					}
+				}
+				if (category.empty()) continue; // Skip properties without a category
+
+				// Build the metadata key with category prefix
+				std::string metaKey = category.empty() ? propName : (category + "::" + propName);
+
+				// Read the property value
+				OdRxValue value;
+				OdResult res = pProp->getValue(pEntity, value);
+				if (res != eOk) continue;
+
+				// Resolve the OdRxValue to a displayable RepoVariant
+				const auto& vtype = value.type();
+
+				// --- Object ID resolution (Layer, Linetype, Material, etc.) ---
+				if (vtype == OdRxValueType::Desc<OdDbObjectId>::value())
+				{
+					OdDbObjectId objId = *rxvalue_cast<OdDbObjectId>(&value);
+					if (!objId.isNull())
+					{
+						try {
+							OdDbObjectPtr pObj = objId.safeOpenObject();
+							if (!pObj.isNull())
+							{
+								OdDbSymbolTableRecordPtr pSymRec = OdDbSymbolTableRecord::cast(pObj);
+								if (!pSymRec.isNull())
+								{
+									metadata[metaKey] = convertToStdString(pSymRec->getName());
+								}
+								else
+								{
+									OdDbMaterialPtr pMat = OdDbMaterial::cast(pObj);
+									metadata[metaKey] = !pMat.isNull()
+										? convertToStdString(pMat->name())
+										: convertToStdString(pObj->isA()->name()) + ":" + convertToStdString(toString(objId.getHandle()));
+								}
+							}
+						}
+						catch (...) {
+							metadata[metaKey] = convertToStdString(toString(objId.getHandle()));
+						}
+					}
+				}
+				// --- Transparency ---
+				else if (vtype == OdRxValueType::Desc<OdCmTransparency>::value())
+				{
+					OdCmTransparency trans = *rxvalue_cast<OdCmTransparency>(&value);
+					if (trans.isByLayer())       metadata[metaKey] = std::string("ByLayer");
+					else if (trans.isByBlock())  metadata[metaKey] = std::string("ByBlock");
+					else if (trans.isClear())    metadata[metaKey] = std::string("0");
+					else                         metadata[metaKey] = std::to_string((int)((1.0 - trans.alpha() / 255.0) * 100.0 + 0.5));
+				}
+				// --- Color ---
+				else if (vtype == OdRxValueType::Desc<OdCmColor>::value())
+				{
+					OdCmColor clr = *rxvalue_cast<OdCmColor>(&value);
+					switch (clr.colorMethod())
+					{
+					case OdCmEntityColor::kByLayer: metadata[metaKey] = std::string("ByLayer"); break;
+					case OdCmEntityColor::kByBlock: metadata[metaKey] = std::string("ByBlock"); break;
+					case OdCmEntityColor::kByColor:
+						metadata[metaKey] = "RGB(" + std::to_string(clr.red()) + ", " +
+							std::to_string(clr.green()) + ", " + std::to_string(clr.blue()) + ")";
+						break;
+					case OdCmEntityColor::kByACI:
+					{
+						int aci = clr.colorIndex();
+						metadata[metaKey] = (aci == 256) ? std::string("ByLayer")
+							: (aci == 0) ? std::string("ByBlock")
+							: std::string("Color ") + std::to_string(aci);
+						break;
+					}
+					default: metadata[metaKey] = std::string("Color ") + std::to_string(clr.colorIndex()); break;
+					}
+				}
+				// --- LineWeight ---
+				else if (vtype == OdRxValueType::Desc<OdDb::LineWeight>::value())
+				{
+					switch (OdDb::LineWeight lw = *rxvalue_cast<OdDb::LineWeight>(&value); lw)
+					{
+					case OdDb::kLnWtByLayer:    metadata[metaKey] = std::string("ByLayer"); break;
+					case OdDb::kLnWtByBlock:    metadata[metaKey] = std::string("ByBlock"); break;
+					case OdDb::kLnWtByLwDefault: metadata[metaKey] = std::string("Default"); break;
+					default: metadata[metaKey] = std::to_string((int)lw / 100.0) + " mm"; break;
+					}
+				}
+				// --- Numeric types ---
+				else if (vtype == OdRxValueType::Desc<double>::value())
+				{
+					metadata[metaKey] = *rxvalue_cast<double>(&value);
+				}
+				else if (vtype == OdRxValueType::Desc<int>::value())
+				{
+					metadata[metaKey] = (int64_t)*rxvalue_cast<int>(&value);
+				}
+				else if (vtype == OdRxValueType::Desc<OdInt16>::value())
+				{
+					metadata[metaKey] = (int64_t)*rxvalue_cast<OdInt16>(&value);
+				}
+				else if (vtype == OdRxValueType::Desc<OdInt32>::value())
+				{
+					metadata[metaKey] = (int64_t)*rxvalue_cast<OdInt32>(&value);
+				}
+				else if (vtype == OdRxValueType::Desc<OdUInt32>::value())
+				{
+					metadata[metaKey] = (int64_t)*rxvalue_cast<OdUInt32>(&value);
+				}
+				else if (vtype == OdRxValueType::Desc<bool>::value())
+				{
+					metadata[metaKey] = *rxvalue_cast<bool>(&value) ? std::string("Yes") : std::string("No");
+				}
+				// --- String ---
+				else if (vtype == OdRxValueType::Desc<OdString>::value())
+				{
+					OdString str = *rxvalue_cast<OdString>(&value);
+					if (!str.isEmpty())
+						metadata[metaKey] = convertToStdString(str);
+				}
+				// --- Geometry types ---
+				else if (vtype == OdRxValueType::Desc<OdGePoint3d>::value())
+				{
+					OdGePoint3d pt = *rxvalue_cast<OdGePoint3d>(&value);
+					metadata[metaKey] = "(" + std::to_string(pt.x) + ", " +
+						std::to_string(pt.y) + ", " + std::to_string(pt.z) + ")";
+				}
+				else if (vtype == OdRxValueType::Desc<OdGePoint2d>::value())
+				{
+					OdGePoint2d pt = *rxvalue_cast<OdGePoint2d>(&value);
+					metadata[metaKey] = "(" + std::to_string(pt.x) + ", " + std::to_string(pt.y) + ")";
+				}
+				else if (vtype == OdRxValueType::Desc<OdGeVector3d>::value())
+				{
+					OdGeVector3d v = *rxvalue_cast<OdGeVector3d>(&value);
+					metadata[metaKey] = "(" + std::to_string(v.x) + ", " +
+						std::to_string(v.y) + ", " + std::to_string(v.z) + ")";
+				}
+				// --- Fallback: toString() ---
+				else
+				{
+					OdString strVal = value.toString();
+					if (!strVal.isEmpty())
+						metadata[metaKey] = convertToStdString(strVal);
+				}
+			}
+			catch (...) {
+				// Skip properties that throw during read
+				continue;
+			}
+		}
+	}
+	catch (OdError& e) {
+		repoTrace << "CDA property extraction failed: " << convertToStdString(e.description());
+	}
+	catch (...) {
+		repoTrace << "CDA property extraction failed with unknown error";
+	}
 }
 
 bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
