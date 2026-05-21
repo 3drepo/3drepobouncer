@@ -1152,21 +1152,69 @@ void DataProcessorDwg::extractEntityProperties(OdDbEntityPtr pEntity, std::unord
 					OdCmColor clr = *rxvalue_cast<OdCmColor>(&value);
 					switch (clr.colorMethod())
 					{
-					case OdCmEntityColor::kByLayer: metadata[metaKey] = std::string("ByLayer"); break;
-					case OdCmEntityColor::kByBlock: metadata[metaKey] = std::string("ByBlock"); break;
-					case OdCmEntityColor::kByColor:
-						metadata[metaKey] = "RGB(" + std::to_string(clr.red()) + ", " +
-							std::to_string(clr.green()) + ", " + std::to_string(clr.blue()) + ")";
-						break;
-					case OdCmEntityColor::kByACI:
-					{
-						int aci = clr.colorIndex();
-						metadata[metaKey] = (aci == 256) ? std::string("ByLayer")
-							: (aci == 0) ? std::string("ByBlock")
-							: std::string("Color ") + std::to_string(aci);
-						break;
-					}
-					default: metadata[metaKey] = std::string("Color ") + std::to_string(clr.colorIndex()); break;
+						case OdCmEntityColor::kByLayer:
+							metadata[metaKey] = std::string("ByLayer");
+							break;
+						case OdCmEntityColor::kByBlock:
+							metadata[metaKey] = std::string("ByBlock");
+							break;
+						case OdCmEntityColor::kByColor:
+						{
+							// AutoCAD displays true colors as "Red,Green,Blue"
+							// If a color book name is set, it displays that instead
+							OdString bookName = clr.bookName();
+							OdString colorName = clr.colorName();
+							if (!colorName.isEmpty())
+							{
+								std::string display = convertToStdString(colorName);
+								if (!bookName.isEmpty())
+									display = convertToStdString(bookName) + "$" + display;
+								metadata[metaKey] = display;
+							}
+							else
+							{
+								metadata[metaKey] = std::to_string(clr.red()) + ","
+									+ std::to_string(clr.green()) + ","
+									+ std::to_string(clr.blue());
+							}
+							break;
+						}
+						case OdCmEntityColor::kByACI:
+						case OdCmEntityColor::kByPen:
+						case OdCmEntityColor::kByDgnIndex:
+						{
+							// AutoCAD Civil 3D displays ACI 1-7 by name, others as "Color N"
+							// SDK: Autodesk.AutoCAD.Colors.Color.ColorIndex
+							int aci = clr.colorIndex();
+							switch (aci)
+							{
+							case 0:   metadata[metaKey] = std::string("ByBlock"); break;
+							case 1:   metadata[metaKey] = std::string("Red"); break;
+							case 2:   metadata[metaKey] = std::string("Yellow"); break;
+							case 3:   metadata[metaKey] = std::string("Green"); break;
+							case 4:   metadata[metaKey] = std::string("Cyan"); break;
+							case 5:   metadata[metaKey] = std::string("Blue"); break;
+							case 6:   metadata[metaKey] = std::string("Magenta"); break;
+							case 7:   metadata[metaKey] = std::string("White"); break;
+							case 256: metadata[metaKey] = std::string("ByLayer"); break;
+							default:  metadata[metaKey] = "RGB(" + std::to_string(clr.red()) + ","
+								+ std::to_string(clr.green()) + ","
+								+ std::to_string(clr.blue())+ ")";
+								break;
+							}
+							break;
+						}
+						case OdCmEntityColor::kForeground:
+							metadata[metaKey] = std::string("White");
+							break;
+						case OdCmEntityColor::kNone:
+							metadata[metaKey] = std::string("None");
+							break;
+						default:
+							metadata[metaKey] = "RGB(" + std::to_string(clr.red()) + ","
+								+ std::to_string(clr.green()) + ","
+								+ std::to_string(clr.blue()) + ")";
+							break;
 					}
 				}
 				// --- LineWeight ---
@@ -1479,13 +1527,14 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		collector->addMeshes(entityLayer.id, meshes);
 
 		if (!handleMetaValue.empty() && !collector->hasMetadata(entityLayer.id)) {
-			std::unordered_map<std::string, repo::lib::RepoVariant> meta;
+			std::unordered_map<std::string, repo::lib::RepoVariant> meta, metadata;
 			meta["Entity Handle::Value"] = handleMetaValue;
 
 			// ===== ENHANCED METADATA FOR CUSTOM ENTITIES =====
 			if (!pEntity.isNull())
 			{
-				auto metadata = getCivil3DPlant3DMetadata(pEntity);
+				extractEntityProperties(pEntity, metadata);
+				//auto metadata = getCivil3DPlant3DMetadata(pEntity);
 				if (!metadata.empty())
 				{
 					repoInfo << "****************************Metadata****************************************";
