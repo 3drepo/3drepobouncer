@@ -65,15 +65,7 @@ namespace repo {
 				const std::string                     &desc = "",
 				const repo::lib::RepoUUID             &revId = repo::lib::RepoUUID::createUUID(),
 				const modelutility::WebBufferConfig& config = {});
-
-			/**
-			* Create a federated scene with the given scene collections
-			* @param fedMap a map of reference scene and transformation from root where the scene should lie
-			* @return returns a constructed scene graph with the reference.
-			*/
-			repo::core::model::RepoScene* createFederatedScene(
-				const std::map<repo::core::model::ReferenceNode, std::string> &fedMap);
-
+			
 			/**
 			* Retrieve a RepoScene with a specific revision loaded.
 			* @param database the database the collection resides in
