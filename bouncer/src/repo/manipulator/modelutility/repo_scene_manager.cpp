@@ -48,7 +48,6 @@ uint8_t SceneManager::commitScene(
 		if (errCode == REPOERR_OK) {
 			repoInfo << "Scene successfully committed to the database";
 			bool success = true;
-			bool isFederation = scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size();
 
 			if (success)
 			{
@@ -58,16 +57,6 @@ uint8_t SceneManager::commitScene(
 					repoInfo << "Selection Tree Stored into the database";
 				else
 					repoError << "failed to commit selection tree";
-			}
-
-			if (success && !isFederation)
-			{
-				repoInfo << "Generating Repo Bundles...";
-				scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::GEN_WEB_STASH);
-				if (success = generateWebViewBuffers(scene, repo::manipulator::modelconvertor::ExportType::REPO, handler, config))
-					repoInfo << "Repo Bundles for Stash stored into the database";
-				else
-					repoError << "failed to commit Repo Bundles";
 			}
 
 			if (success) {
@@ -103,7 +92,6 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 	const std::string                             &project,
 	const repo::lib::RepoUUID                     &uuid,
 	const bool                                    &headRevision,
-	const bool                                    &ignoreRefScenes,
 	const bool                                    &skeletonFetch,
 	const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus)
 {
@@ -117,8 +105,6 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 		{
 			if (skeletonFetch)
 				scene->skipLoadingExtFiles();
-			if (ignoreRefScenes)
-				scene->ignoreReferenceScene();
 			if (headRevision)
 				scene->setBranch(uuid);
 			else
