@@ -51,8 +51,6 @@ static std::string nodeTypeToString(repo::core::model::NodeType type)
 		return REPO_NODE_TYPE_MESH;
 	case repo::core::model::NodeType::TRANSFORMATION:
 		return REPO_NODE_TYPE_TRANSFORMATION;
-	case repo::core::model::NodeType::REFERENCE:
-		return REPO_NODE_TYPE_REFERENCE;
 	case repo::core::model::NodeType::METADATA:
 		return REPO_NODE_TYPE_METADATA;
 	case repo::core::model::NodeType::MATERIAL:
@@ -190,31 +188,6 @@ void SelectionTreeMaker::generateSelectionTrees()
 		switch (type) {
 		case repo::core::model::NodeType::MESH:
 		case repo::core::model::NodeType::TRANSFORMATION:
-		case repo::core::model::NodeType::REFERENCE:
-		{
-			SelectionTree::Node node;
-			node.type = type;
-			node.name = repo.getName();
-			node._id = repo.getUniqueID();
-			node.shared_id = repo.getSharedID();
-
-			// The Selection tree is a directed acyclic tree, so nodes may only have
-			// one parent.
-			// parentIds are always the shared_ids, as is the convention in the database.
-			if (repo.getParentIDs().size()) {
-				uniqueIdToParentSharedId[node._id] = repo.getParentIDs()[0];
-			}
-
-			if (node.type == repo::core::model::NodeType::REFERENCE) {
-
-				// For reference nodes, communicate the endpoint via the name...
-				repo::core::model::ReferenceNode refNode(bson);
-				auto refDb = refNode.getDatabaseName();
-				node.name = (scene->getDatabaseName() == refDb ? "" : (refDb + "/")) + refNode.getProjectId();
-			}
-
-			trees.fullTree.nodes.push_back(node);
-		}
 		break;
 		case repo::core::model::NodeType::METADATA:
 		{
