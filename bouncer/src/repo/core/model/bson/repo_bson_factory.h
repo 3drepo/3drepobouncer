@@ -194,24 +194,6 @@ namespace repo {
 				);
 
 				/**
-				* Create a Reference Node
-				* If revision ID is unique, it will be referencing a specific revision
-				* If it isn't unique, it will represent a branch ID and reference its head
-				* @param database name of the database to reference
-				* @param project name of the project to reference
-				* @param revisionID uuid of the revision (default: master branch)
-				* @param isUniqueID is revisionID a specific revision ID (default: false - i.e it is a branch ID)
-				* @return returns a reference node
-				*/
-				static ReferenceNode makeReferenceNode(
-					const std::string &database,
-					const std::string &project,
-					const repo::lib::RepoUUID    &revisionID = repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH),
-					const bool        &isUniqueID = false,
-					const std::string &name = std::string(),
-					const int         &apiLevel = REPO_NODE_API_LEVEL_1);
-
-				/**
 				* Create a Revision Node
 				* @param user name of the user who is commiting this project
 				* @param branch UUID of the branch
