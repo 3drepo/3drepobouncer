@@ -224,13 +224,6 @@ namespace repo {
 		*	------------- Import/ Export --------------
 		*/
 
-		/**
-		* Create a federated scene with the given scene collections
-		* @param fedMap a map of reference scene and transformation from root where the scene should lie
-		* @return returns a constructed scene graph with the reference.
-		*/
-		repo::core::model::RepoScene* createFederatedScene(
-			const std::map<repo::core::model::ReferenceNode, std::string> &fedMap);
 
 		/**
 		* Generate and commit RepoBundles for the given scene

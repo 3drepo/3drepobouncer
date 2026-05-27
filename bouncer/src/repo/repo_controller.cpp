@@ -123,12 +123,6 @@ void RepoController::logToFile(const std::string &filePath)
 	impl->logToFile(filePath);
 }
 
-repo::core::model::RepoScene* RepoController::createFederatedScene(
-	const std::map<repo::core::model::ReferenceNode, std::string> &fedMap)
-{
-	return impl->createFederatedScene(fedMap);
-}
-
 bool RepoController::generateAndCommitRepoBundlesBuffer(
 	const RepoController::RepoToken* token,
 	repo::core::model::RepoScene* scene,

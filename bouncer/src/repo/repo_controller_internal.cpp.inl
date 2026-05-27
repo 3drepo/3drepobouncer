@@ -250,23 +250,6 @@ void RepoController::_RepoControllerImpl::subscribeToLogger(
 	repo::lib::RepoLog::getInstance().subscribeListeners(listeners);
 }
 
-repo::core::model::RepoScene* RepoController::_RepoControllerImpl::createFederatedScene(
-	const std::map<repo::core::model::ReferenceNode, std::string> &fedMap)
-{
-	repo::core::model::RepoScene* scene = nullptr;
-	if (fedMap.size() > 0)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		scene = worker->createFederatedScene(fedMap);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to federate a new scene graph with no references!";
-	}
-
-	return scene;
-}
 
 bool RepoController::_RepoControllerImpl::generateAndCommitRepoBundlesBuffer(
 	const RepoController::RepoToken* token,
