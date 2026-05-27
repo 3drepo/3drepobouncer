@@ -35,7 +35,6 @@ using namespace repo::lib;
 
 static const std::string FBX_EXTENSION = ".FBX";
 
-static const std::string cmdCreateFed = "genFed"; //create a federation
 static const std::string cmdGenStash = "genStash";   //test the connection
 static const std::string cmdClash = "clash";   //perform a clash detection operation
 static const std::string cmdImportFile = "import"; //file import
@@ -51,7 +50,6 @@ std::string helpInfo()
 	ss << cmdGenStash << "\tGenerate Stash for a project. (args: database project [repo|src|tree] [all|revId])\n";
 	ss << cmdImportFile << "\t\tImport file to database. (args: {file database project [dxrotate] [owner] [configfile]} or {-f parameterFile} )\n";
 	ss << cmdProcessDrawing << "\t\tProcess drawing revision node into an image. (args: parameterFile)\n";
-	ss << cmdCreateFed << "\t\tGenerate a federation. (args: fedDetails [owner])\n";
 	ss << cmdClash << "\t\tPerform a clash detection operation. (args: configFile [resultsFile])\n";
 	ss << cmdTestConn << "\t\tTest the client and database connection is working. (args: none)\n";
 	ss << cmdVersion << "[-v]\tPrints the version of Repo Bouncer Client/Library\n";
@@ -72,8 +70,6 @@ int32_t knownValid(const std::string& cmd)
 		return 1;
 	if (cmd == cmdGenStash)
 		return 3;
-	if (cmd == cmdCreateFed)
-		return 1;
 	if (cmd == cmdTestConn)
 		return 0;
 	if (cmd == cmdVersion || cmd == cmdVersion2)
@@ -138,17 +134,6 @@ int32_t performOperation(
 			errCode = REPOERR_UNKNOWN_ERR;
 		}
 	}
-	else if (command.command == cmdCreateFed)
-	{
-		try {
-			errCode = generateFederation(controller, token, command);
-		}
-		catch (const std::exception& e)
-		{
-			repoLogError("Failed to generate federation: " + std::string(e.what()));
-			errCode = REPOERR_UNKNOWN_ERR;
-		}
-	}
 	else if (command.command == cmdClash)
 	{
 		try {
@@ -183,95 +168,6 @@ int32_t performOperation(
 /*
 * ======================== Command functions ===================
 */
-
-int32_t generateFederation(
-	std::shared_ptr<repo::RepoController> controller,
-	const repo::RepoController::RepoToken* token,
-	const repo_op_t& command
-)
-{
-	/*
-	* Check the amount of parameters matches
-	*/
-	if (command.nArgcs < 1)
-	{
-		repoLogError("Number of arguments mismatch! " + cmdCreateFed
-			+ " requires 1 argument: fedDetails");
-		return REPOERR_INVALID_ARG;
-	}
-
-	std::string fedFile = command.args[0];
-	std::string owner;
-	repo::lib::RepoUUID revId = repo::lib::RepoUUID::createUUID();
-	if (command.nArgcs > 1)
-		owner = command.args[1];
-
-	repoLog("Federation configuration file: " + fedFile);
-
-	bool  success = false;
-	uint8_t errCode = REPOERR_FED_GEN_FAIL;
-
-	boost::property_tree::ptree jsonTree;
-	try {
-		boost::property_tree::read_json(fedFile, jsonTree);
-
-		const std::string database = jsonTree.get<std::string>("database", "");
-		const std::string project = jsonTree.get<std::string>("project", "");
-		auto revIdStr = jsonTree.get<std::string>("revId", "");
-		if (!revIdStr.empty()) {
-			revId = repo::lib::RepoUUID(revIdStr);
-		}
-		std::map< repo::core::model::ReferenceNode, std::string> refMap;
-
-		if (database.empty() || project.empty())
-		{
-			repoLogError("Failed to generate federation: database name(" + database + ") or project name("
-				+ project + ") was not specified!");
-		}
-		else
-		{
-			for (const auto& subPro : jsonTree.get_child("subProjects"))
-			{
-				// ===== Get project info =====
-				const std::string spDatabase = subPro.second.get<std::string>("database", database);
-				const std::string spProject = subPro.second.get<std::string>("project", "");
-				const std::string group = subPro.second.get<std::string>("group", "");
-				const std::string uuid = subPro.second.get<std::string>("revId", REPO_HISTORY_MASTER_BRANCH);
-				const bool isRevID = subPro.second.get<bool>("isRevId", false);
-				if (spProject.empty())
-				{
-					repoLogError("Failed to generate federation: One or more sub projects does not have a project name");
-					break;
-				}
-
-				auto refNode = repo::core::model::RepoBSONFactory::makeReferenceNode(spDatabase, spProject, repo::lib::RepoUUID(uuid), isRevID);
-				refMap[refNode] = group;
-			}
-
-			//Create the reference scene
-			if (success = refMap.size())
-			{
-				auto scene = controller->createFederatedScene(refMap);
-				if (success = scene)
-				{
-					scene->setDatabaseAndProjectName(database, project);
-					errCode = controller->commitScene(token, scene, owner, "", "", revId);
-				}
-			}
-			else
-			{
-				repoLogError("Failed to generate federation: Invalid/no sub-project declared");
-			}
-		}
-	}
-	catch (std::exception& e)
-	{
-		success = false;
-		repoLogError("Failed to generate Federation: " + std::string(e.what()));
-	}
-
-	return success ? REPOERR_OK : errCode;
-}
 
 bool _generateStash(
 	std::shared_ptr<repo::RepoController> controller,
