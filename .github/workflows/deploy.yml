@@ -1,10 +1,6 @@
 name: Deploy Bouncer to Staging
 
 on:
-  push:
-    branches:
-      - ISSUE_867
-
   workflow_run:
     workflows: ["Build and Push Bouncer"]
     types: [completed]
