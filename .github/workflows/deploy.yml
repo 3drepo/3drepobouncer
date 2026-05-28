@@ -18,11 +18,11 @@ concurrency:
 
 env:
   HELM_CHART_VERSION: '5.22.2'
-  IMAGE_TAG: ${{ github.event.workflow_run.head_branch || 'staging' }}
+  IMAGE_TAG: ${{ github.event.workflow_run.head_branch }}
 
 jobs:
   deploy:
-    if: github.event_name == 'push' || github.event.workflow_run.conclusion == 'success'
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
 
     steps:
@@ -75,7 +75,8 @@ jobs:
             -f deployments/asite-stg/helm/bouncer/values.yaml \
             --set image.tag=${{ env.IMAGE_TAG }} \
             --set rollingupdate.enabled=true \
-            --wait
+            --wait \
+            --rollback-on-failure
 
       # ---------------------------------------------------------------
       # STEP 6: Cleanup
