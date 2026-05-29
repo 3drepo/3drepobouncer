@@ -129,7 +129,6 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::fetchScene(
 	const std::string    &collection,
 	const std::string    &uuid,
 	const bool           &headRevision,
-	const bool           &ignoreRefScene,
 	const bool           &skeletonFetch,
 	const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus)
 {
@@ -139,7 +138,7 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::fetchScene(
 		manipulator::RepoManipulator* worker = workerPool.pop();
 
 		scene = worker->fetchScene(
-			database, collection, repo::lib::RepoUUID(uuid), headRevision, ignoreRefScene, skeletonFetch, includeStatus);
+			database, collection, repo::lib::RepoUUID(uuid), headRevision, skeletonFetch, includeStatus);
 
 		workerPool.push(worker);
 	}

@@ -171,7 +171,6 @@ public:
 		const std::string    &project,
 		const std::string    &uuid = REPO_HISTORY_MASTER_BRANCH,
 		const bool           &headRevision = true,
-		const bool           &ignoreRefScene = false,
 		const bool           &skeletonFetch = false,
 		const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus = {});
 

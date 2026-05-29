@@ -30,7 +30,6 @@
 #include "core/model/bson/repo_bson_project_settings.h"
 #include "core/model/bson/repo_node_transformation.h"
 #include "core/model/bson/repo_node_mesh.h"
-#include "core/model/bson/repo_node_reference.h"
 #include "core/model/collection/repo_scene.h"
 #include "lib/datastructure/repo_structs.h"
 #include "lib/repo_config.h"
@@ -173,7 +172,6 @@ namespace repo {
 			const std::string    &project,
 			const std::string    &uuid = REPO_HISTORY_MASTER_BRANCH,
 			const bool           &headRevision = true,
-			const bool           &ignoreRefScene = false,
 			const bool           &skeletonFetch = false,
 			const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus = {});
 
