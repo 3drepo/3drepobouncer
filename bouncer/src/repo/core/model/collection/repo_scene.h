@@ -97,7 +97,6 @@ namespace repo {
 				* @param metadata Repo Node set of metadata
 				* @param textures Repo Node set of textures
 				* @param transformations Repo Node set of transformations
-				* @param references Repo Node set of references (optional)
 				* @param unknowns Repo Node set of unknowns (optional)
 				*/
 				RepoScene(
@@ -587,22 +586,6 @@ namespace repo {
 					const GraphType &gType,
 					const RepoNode  *node,
 					const NodeType  &type) const;
-
-				/**
-				* Get Scene from reference node
-				*/
-				RepoScene* getSceneFromReference(
-					const GraphType &gType,
-					const repo::lib::RepoUUID  &reference) const
-				{
-					const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
-					RepoScene* refScene = nullptr;
-
-					std::unordered_map<repo::lib::RepoUUID, RepoScene*, repo::lib::RepoUUIDHasher >::const_iterator it = g.referenceToScene.find(reference);
-					if (it != g.referenceToScene.end())
-						refScene = it->second;
-					return refScene;
-				}
 
 				/**
 				* Get the texture ID that is associated with the given mesh
