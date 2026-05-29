@@ -15,7 +15,6 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "repo_maker_selection_tree.h"
-#include "repo/core/model/bson/repo_node_reference.h"
 
 #define RAPIDJSON_HAS_STDSTRING 1
 
@@ -168,8 +167,6 @@ void SelectionTreeMaker::generateSelectionTrees()
 	projection.includeField(REPO_NODE_LABEL_SHARED_ID);
 	projection.includeField(REPO_NODE_LABEL_PARENTS);
 	projection.includeField(REPO_NODE_LABEL_TYPE);
-	projection.includeField(REPO_NODE_REFERENCE_LABEL_OWNER);
-	projection.includeField(REPO_NODE_REFERENCE_LABEL_PROJECT);
 
 	auto sceneCollection = scene->getProjectName() + "." + REPO_COLLECTION_SCENE;
 	auto cursor = handler->findCursorByCriteria(scene->getDatabaseName(), sceneCollection, filter, projection);
@@ -188,6 +185,23 @@ void SelectionTreeMaker::generateSelectionTrees()
 		switch (type) {
 		case repo::core::model::NodeType::MESH:
 		case repo::core::model::NodeType::TRANSFORMATION:
+		{
+			SelectionTree::Node node;
+			node.type = type;
+			node.name = repo.getName();
+			node._id = repo.getUniqueID();
+			node.shared_id = repo.getSharedID();
+
+			// The Selection tree is a directed acyclic tree, so nodes may only have
+			// one parent.
+			// parentIds are always the shared_ids, as is the convention in the database.
+			if (repo.getParentIDs().size()) {
+				uniqueIdToParentSharedId[node._id] = repo.getParentIDs()[0];
+			}
+
+			trees.fullTree.nodes.push_back(node);
+		}
+
 		break;
 		case repo::core::model::NodeType::METADATA:
 		{
