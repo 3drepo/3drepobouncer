@@ -23,7 +23,6 @@
 #include <map>
 #include <string>
 
-#include "repo/core/model/bson/repo_node_reference.h"
 #include "repo/core/model/bson/repo_node_transformation.h"
 #include "repo/core/model/bson/repo_node_mesh.h"
 #include "repo/core/model/collection/repo_scene.h"
@@ -82,7 +81,6 @@ namespace repo {
 				const std::string                             &collection,
 				const repo::lib::RepoUUID                     &uuid,
 				const bool                                    &headRevision = false,
-				const bool                                    &ignoreRefScene = false,
 				const bool                                    &skeletonFetch = false,
 				const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus = {});
 
@@ -92,7 +90,6 @@ namespace repo {
 			*/
 			void fetchScene(
 				repo::core::model::RepoScene              *scene,
-				const bool                                &ignoreRefScene = false,
 				const bool                                &skeletonFetch = false);
 
 			/**

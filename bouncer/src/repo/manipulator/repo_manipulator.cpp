@@ -120,17 +120,15 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 	const std::string& project,
 	const repo::lib::RepoUUID& uuid,
 	const bool& headRevision,
-	const bool& ignoreRefScene,
 	const bool& skeletonFetch,
 	const std::vector<repo::core::model::ModelRevisionNode::UploadStatus>& includeStatus)
 {
 	modelutility::SceneManager sceneManager;
-	return sceneManager.fetchScene(dbHandler.get(), database, project, uuid, headRevision, ignoreRefScene, skeletonFetch, includeStatus);
+	return sceneManager.fetchScene(dbHandler.get(), database, project, uuid, headRevision, skeletonFetch, includeStatus);
 }
 
 void RepoManipulator::fetchScene(
 	repo::core::model::RepoScene* scene,
-	const bool& ignoreRefScene,
 	const bool& skeletonFetch)
 {
 	modelutility::SceneManager sceneManager;
