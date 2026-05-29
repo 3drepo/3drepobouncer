@@ -75,6 +75,7 @@ jobs:
             -f deployments/asite-stg/helm/bouncer/values.yaml \
             --set image.tag=${{ env.IMAGE_TAG }} \
             --set rollingupdate.enabled=true \
+            --set-string podAnnotations.buildId=${{ github.event.workflow_run.id }} \
             --wait \
             --rollback-on-failure
 
