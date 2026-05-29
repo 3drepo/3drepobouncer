@@ -26,6 +26,7 @@
 #include <DgCmColor.h>
 #include <toString.h>
 #include <DbProxyEntity.h>
+#include <DbEntityWithGrData.h>
 #include <DbRegAppTable.h>
 #include <DbRegAppTableRecord.h>
 #include <DbDictionary.h>
@@ -79,6 +80,16 @@ bool DataProcessorDwg::isProxyEntity(OdDbEntityPtr pEntity)
 {
 	if (pEntity.isNull()) return false;
 	return convertToStdString(pEntity->isA()->name()) == "AcDbProxyEntity";
+}
+bool DataProcessorDwg::isTinSurfaceProxy(OdDbEntityPtr pEntity)
+{
+	if (!isProxyEntity(pEntity)) return false;
+
+	auto originalClass = getProxyOriginalClassName(pEntity);
+	return originalClass == "AeccDbSurfaceTin" ||
+		originalClass == "AeccDbTinSurface" ||
+		originalClass.find("SurfaceTin") != std::string::npos ||
+		originalClass.find("TinSurface") != std::string::npos;
 }
 std::string DataProcessorDwg::getProxyOriginalClassName(OdDbEntityPtr pEntity)
 {
@@ -618,6 +629,62 @@ bool DataProcessorDwg::tryExplodeEntity(OdDbEntityPtr pEntity, std::vector<OdDbE
 	}
 	catch (OdError& e) {
 		repoTrace << "Failed to explode entity: " << convertToStdString(e.description());
+	}
+
+	return false;
+}
+bool DataProcessorDwg::drawStoredProxyGraphics(OdDbEntityPtr pEntity)
+{
+	if (pEntity.isNull() || !isTinSurfaceProxy(pEntity)) return false;
+
+	OdDbProxyEntityPtr proxyEntity = OdDbProxyEntity::cast(pEntity);
+	if (proxyEntity.isNull()) return false;
+
+	if (proxyEntity->graphicsMetafileType() != OdDbProxyEntity::kFullGraphics)
+	{
+		repoTrace << "TIN surface proxy has no full graphics metafile: "
+			<< getProxyOriginalClassName(pEntity);
+		return false;
+	}
+
+	OdDbEntityWithGrDataPEPtr graphics = OdDbEntityWithGrDataPE::cast(pEntity);
+	if (graphics.isNull())
+	{
+		repoTrace << "No stored graphics protocol extension for TIN surface proxy: "
+			<< getProxyOriginalClassName(pEntity);
+		return false;
+	}
+
+	struct TinSurfaceProxyCapture
+	{
+		bool& target;
+		bool previous;
+
+		TinSurfaceProxyCapture(bool& target) : target(target), previous(target)
+		{
+			target = true;
+		}
+
+		~TinSurfaceProxyCapture()
+		{
+			target = previous;
+		}
+	} capture(capturingTinSurfaceProxy);
+
+	try
+	{
+		repoInfo << "Replaying stored TIN surface proxy graphics for "
+			<< getProxyOriginalClassName(pEntity);
+		return graphics->worldDraw(pEntity, this);
+	}
+	catch (OdError& e)
+	{
+		repoTrace << "Stored TIN surface proxy graphics replay failed: "
+			<< convertToStdString(e.description());
+	}
+	catch (...)
+	{
+		repoTrace << "Stored TIN surface proxy graphics replay failed with unknown error";
 	}
 
 	return false;
@@ -1451,8 +1518,25 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		}
 	}
 
+	bool tinSurfaceProxy = !pEntity.isNull() && isTinSurfaceProxy(pEntity);
+
 	collector->pushDrawContext(ctx.get());
-	auto ret = OdGsBaseMaterialView::doDraw(i, pDrawable);
+	bool ret = false;
+	if (tinSurfaceProxy)
+	{
+		bool previousTinSurfaceProxyCapture = capturingTinSurfaceProxy;
+		capturingTinSurfaceProxy = true;
+		ret = drawStoredProxyGraphics(pEntity);
+		if (!(ctx && ctx->hasMeshes()))
+		{
+			ret = OdGsBaseMaterialView::doDraw(i, pDrawable) || ret;
+		}
+		capturingTinSurfaceProxy = previousTinSurfaceProxyCapture;
+	}
+	else
+	{
+		ret = OdGsBaseMaterialView::doDraw(i, pDrawable);
+	}
 	collector->popDrawContext(ctx.get());
 
 	// ===== CHECK GEOMETRY EXTRACTION =====
@@ -1465,6 +1549,7 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		else
 		{
 			stats.entitiesWithoutGeometry++;
+
 
 			// ===== HANDLE MISSING GEOMETRY FROM CUSTOM ENTITIES =====
 			/*if (isProxyEntity(pEntity) || isCivil3DEntity(pEntity) || isPlant3DEntity(pEntity))
@@ -1554,6 +1639,63 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	return ret;
 }
 
+bool DataProcessorDwg::addTinSurfaceTrianglePolyline(const std::vector<repo::lib::RepoVector3D64>& points)
+{
+	if (!capturingTinSurfaceProxy || points.size() != 4) return false;
+
+	auto samePoint = [](const repo::lib::RepoVector3D64& a, const repo::lib::RepoVector3D64& b) {
+		return compare(a.x, b.x) == 0 &&
+			compare(a.y, b.y) == 0 &&
+			compare(a.z, b.z) == 0;
+	};
+
+	if (!samePoint(points.front(), points.back())) return false;
+	if (samePoint(points[0], points[1]) || samePoint(points[1], points[2]) || samePoint(points[2], points[0])) return false;
+
+	GeometryCollector::Face triangle;
+	triangle.push_back(points[0]);
+	triangle.push_back(points[1]);
+	triangle.push_back(points[2]);
+	collector->addFace(triangle);
+	return true;
+}
+
+void DataProcessorDwg::processPolylineOut(OdInt32 numPoints, const OdInt32* vertexIndexList)
+{
+	if (capturingTinSurfaceProxy && numPoints == 4)
+	{
+		std::vector<repo::lib::RepoVector3D64> points;
+		points.reserve(numPoints);
+
+		const auto pVertexDataList = vertexDataList();
+		for (OdInt32 i = 0; i < numPoints; ++i)
+		{
+			points.push_back(toRepoVector(pVertexDataList[vertexIndexList[i]]));
+		}
+
+		if (addTinSurfaceTrianglePolyline(points)) return;
+	}
+
+	DataProcessor::processPolylineOut(numPoints, vertexIndexList);
+}
+
+void DataProcessorDwg::processPolylineOut(OdInt32 numPoints, const OdGePoint3d* vertexList)
+{
+	if (capturingTinSurfaceProxy && numPoints == 4)
+	{
+		std::vector<repo::lib::RepoVector3D64> points;
+		points.reserve(numPoints);
+
+		for (OdInt32 i = 0; i < numPoints; ++i)
+		{
+			points.push_back(toRepoVector(vertexList[i]));
+		}
+
+		if (addTinSurfaceTrianglePolyline(points)) return;
+	}
+
+	DataProcessor::processPolylineOut(numPoints, vertexList);
+}
 void DataProcessorDwg::convertTo3DRepoColor(OdCmEntityColor& color, repo::lib::repo_color3d_t& out)
 {
 	switch (color.colorMethod())

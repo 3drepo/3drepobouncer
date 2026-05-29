@@ -102,7 +102,41 @@ void FileProcessorDwg::importModel(OdDbDatabasePtr pDb)
 	auto pDevice = pGsModule->createDevice();
 
 	collector.setUnits(determineModelUnits(pDb->getINSUNITS()));
-	collector.setWorldOffset(toRepoVector(pDb->getEXTMIN()));
+
+	// Compute world offset from EXTMIN, but validate it first.
+	// If EXTMIN is at the default "unset" value (1e+20), try to recompute extents.
+	OdGePoint3d extMin = pDb->getEXTMIN();
+	OdGePoint3d extMax = pDb->getEXTMAX();
+
+	if (extMin.x >= 1e+19 || extMin.y >= 1e+19 || extMin.z >= 1e+19)
+	{
+		// EXTMIN is unset - try to recompute database extents
+		try {
+			OdDbBlockTableRecordPtr pModelSpace = pDb->getModelSpaceId().safeOpenObject();
+			OdGeExtents3d computedExtents;
+			OdResult res = pModelSpace->getGeomExtents(computedExtents);
+			if (res == eOk)
+			{
+				extMin = computedExtents.minPoint();
+				extMax = computedExtents.maxPoint();
+				repoInfo << "Recomputed model extents: Min(" << extMin.x << ","
+					<< extMin.y << "," << extMin.z << ")";
+			}
+			else
+			{
+				// If that also fails, use origin as offset
+				extMin = OdGePoint3d(0, 0, 0);
+				repoWarning << "Cannot compute model extents - using origin as world offset";
+			}
+		}
+		catch (...) {
+			extMin = OdGePoint3d(0, 0, 0);
+			repoWarning << "Exception computing model extents - using origin as world offset";
+		}
+	}
+
+	collector.setWorldOffset(toRepoVector(extMin));
+	//collector.setWorldOffset(toRepoVector(pDb->getEXTMIN()));
 
 	OdGiContextForDbDatabasePtr pDbGiContext = OdGiContextForDbDatabase::createObject();
 	pDbGiContext->setDatabase(pDb);

@@ -74,16 +74,27 @@ namespace repo {
 						MaterialColours& matColors,
 						repo::lib::repo_material_t& material) override;
 
+					void processPolylineOut(
+						OdInt32 numPoints,
+						const OdInt32* vertexIndexList) override;
+
+					void processPolylineOut(
+						OdInt32 numPoints,
+						const OdGePoint3d* vertexList) override;
+
 				private:
 					// ===== ADDED: Helper methods for Civil3D/Plant3D detection =====
 					bool isCivil3DEntity(OdDbEntityPtr pEntity);
 					bool isPlant3DEntity(OdDbEntityPtr pEntity);
 					bool isProxyEntity(OdDbEntityPtr pEntity);
+					bool isTinSurfaceProxy(OdDbEntityPtr pEntity);
 					std::string getProxyOriginalClassName(OdDbEntityPtr pEntity);
 					std::vector<std::string> getProxyXDataApps(OdDbEntityPtr pEntity);
 					std::string detectApplicationType(OdDbEntityPtr pEntity);
 					void inspectProxyEntity(OdDbEntityPtr pEntity);
 					bool tryExplodeEntity(OdDbEntityPtr pEntity, std::vector<OdDbEntityPtr>& explodedEntities);
+					bool drawStoredProxyGraphics(OdDbEntityPtr pEntity);
+					bool addTinSurfaceTrianglePolyline(const std::vector<repo::lib::RepoVector3D64>& points);
 					void extractBoundingBoxAsMesh(OdDbEntityPtr pEntity);
 					std::unordered_map<std::string, std::string> getProxyMetadata(OdDbEntityPtr pEntity);
 					// ===== END: Helper methods for Civil3D/Plant3D detection =====
@@ -131,6 +142,7 @@ namespace repo {
 
 					Context context;
 					mutable DiagnosticStats stats;
+					bool capturingTinSurfaceProxy = false;
 
 					std::string getClassDisplayName(OdDbEntityPtr entity);
 				};
