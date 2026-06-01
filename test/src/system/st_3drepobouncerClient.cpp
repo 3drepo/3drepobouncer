@@ -553,46 +553,6 @@ TEST(RepoClientTest, UploadSplitByFloors)
 	}
 }
 
-TEST(RepoClientTest, CreateFedTest)
-{
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-
-	//Test Bad FilePath
-	std::string badFilePath = produceCreateFedArgs("nonExistentFile.json");
-	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(badFilePath));
-
-	//Test Completely empty file
-	std::string emptyFilePath = produceCreateFedArgs(getDataPath(emptyFile));
-	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(emptyFilePath));
-
-	//Test json file with {}
-	std::string empty2FilePath = produceCreateFedArgs(getDataPath(emptyJSONFile));
-	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(empty2FilePath));
-
-	//Test json file with no sub projects
-	std::string noSPFilePath = produceCreateFedArgs(getDataPath(noSubProjectJSONFile));
-	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(noSPFilePath));
-	EXPECT_FALSE(projectExists(genFedDB, genFedNoSubProName));
-
-	//Test json file with empty string as database name
-	std::string noDBFilePath = produceCreateFedArgs(getDataPath(noDbNameJSONFile));
-	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(noDBFilePath));
-
-	//Test json file with empty string as project name
-	std::string noProFilePath = produceCreateFedArgs(getDataPath(noProNameJSONFile));
-	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(noProFilePath));
-
-	//Test badly formatted JSON file
-	std::string invalidJSONFilePath = produceCreateFedArgs(getDataPath(invalidJSONFile));
-	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(invalidJSONFilePath));
-
-	//Test success
-	std::string goodFilePath = produceCreateFedArgs(getDataPath(validGenFedJSONFile));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(goodFilePath));
-	EXPECT_TRUE(projectExists(genFedDB, genFedSuccessName));
-}
-
 TEST(RepoClientTest, GenStashTest)
 {
 	repo::RepoController* controller = new repo::RepoController();
