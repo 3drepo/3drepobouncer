@@ -178,7 +178,7 @@ bool _generateStash(
 	const bool                   isBranch,
 	const std::string& revID) {
 	repoLog("Generating stash of type " + type + " for " + dbName + "." + project + " rev: " + revID + (isBranch ? " (branch ID)" : ""));
-	auto scene = controller->fetchScene(token, dbName, project, revID, isBranch, false, type == "tree");
+	auto scene = controller->fetchScene(token, dbName, project, revID, isBranch, type == "tree");
 	bool  success = false;
 	if (scene) {
 		if (type == "repo")
