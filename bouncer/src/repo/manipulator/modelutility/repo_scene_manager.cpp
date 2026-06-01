@@ -53,17 +53,32 @@ uint8_t SceneManager::commitScene(
 			{
 				repoInfo << "Generating Selection Tree JSON...";
 				scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::GEN_SEL_TREE);
+				
 				if (generateAndCommitSelectionTree(scene, handler))
 					repoInfo << "Selection Tree Stored into the database";
 				else
+				{
 					repoError << "failed to commit selection tree";
-			}
+					success = false;
+				}
 
-			if (success) {
+				repoInfo << "Generating Repo Bundles...";
+				scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::GEN_WEB_STASH);
+				
+				if (generateWebViewBuffers(scene, repo::manipulator::modelconvertor::ExportType::REPO, handler, config))
+					repoInfo << "Repo Bundles for Stash stored into the database";
+				else
+				{
+					repoError << "failed to commit repo bundles";
+					success = false;
+				}
+
 				errCode = REPOERR_OK;
 				scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE);
+				scene->addTimestampToProjectSettings(handler);
 			}
-			else {
+			else
+			{
 				errCode = REPOERR_UPLOAD_FAILED;
 			}
 		}
