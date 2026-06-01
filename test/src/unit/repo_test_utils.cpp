@@ -340,18 +340,6 @@ std::string testing::produceGetFileArgs(
 		+ file + "\"";
 }
 
-std::string testing::produceCreateFedArgs(
-	const std::string& file,
-	const std::string& owner
-)
-{
-	return  getClientExePath() + " "
-		+ getConnConfig()
-		+ " genFed \""
-		+ file + "\" "
-		+ owner;
-}
-
 std::string testing::produceUploadFileArgs(
 	const std::string& filePath
 ) {
