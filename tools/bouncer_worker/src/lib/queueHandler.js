@@ -19,7 +19,6 @@ const amqp = require('amqplib');
 const { rabbitmq } = require('./config').config;
 const logger = require('./logger');
 const { exitApplication, sleep } = require('./utils');
-const JobQHandler = require('../queues/jobQueueHandler');
 const ModelQHandler = require('../queues/modelQueueHandler');
 const DrawingQHandler = require('../queues/drawingQueueHandler');
 const ClashQHandler = require('../queues/clashQueueHandler');
@@ -33,9 +32,6 @@ const logLabel = { label: 'AMQP' };
 const QueueHandler = {};
 
 const queueHandlers = {};
-if (rabbitmq.worker_queue) {
-	queueHandlers[rabbitmq.worker_queue] = JobQHandler;
-}
 if (rabbitmq.model_queue) {
 	queueHandlers[rabbitmq.model_queue] = ModelQHandler;
 }
@@ -50,11 +46,6 @@ if (rabbitmq.clash_queue) {
 // eslint-disable-next-line consistent-return
 const getQueueName = (label) => {
 	switch (label) {
-		case queueLabel.JOB:
-			if (rabbitmq.worker_queue) {
-				return rabbitmq.worker_queue;
-			}
-			break;
 		case queueLabel.MODEL:
 			if (rabbitmq.model_queue) {
 				return rabbitmq.model_queue;
@@ -71,7 +62,7 @@ const getQueueName = (label) => {
 			}
 			break;
 		default:
-			logger.error(`Unrecognised queue type: ${label}. Expected [job|model|drawing|clash]`, logLabel);
+			logger.error(`Unrecognised queue type: ${label}. Expected [model|drawing|clash]`, logLabel);
 			exitApplication();
 	}
 	logger.error(`Failed to find rabbitmq entry for queue type: ${label} in config`, logLabel);
