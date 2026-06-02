@@ -101,3 +101,5 @@
 //This can occur during multi-threaded operations with insertMany where the document
 //is already committed before the file is written into the file store
 #define REPOERR_FILE_REF_MISSING 41
+//When the file commit was unsuccesfull due to insufficient read/write permissions
+#define REPOERR_INSUFFICIENT_FILESYSTEM_PERMISSION 42
