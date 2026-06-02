@@ -22,6 +22,7 @@ const { runBouncerCommand } = require('../tasks/bouncerClient');
 const { messageDecoder } = require('../lib/messageDecoder');
 const logger = require('../lib/logger');
 const { CLASH } = require('../constants/messageTypes');
+const { PROCESSING } = require('../constants/statuses');
 const Utils = require('../lib/utils');
 const ProcessMonitor = require('../lib/processMonitor');
 
@@ -37,6 +38,16 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		callback(JSON.stringify({ value: errorCode }));
 		return;
 	}
+
+	// A short pause before we update the model status as sometimes this happens so fast that
+	// it preceeds the amqp confirming to io that the item has been queued.
+	await Utils.sleep(100);
+	callback(JSON.stringify({
+		status: PROCESSING,
+		type: CLASH,
+		teamspace,
+		project,
+	}));
 
 	// Use the CLI to specify where the results file should go. Each clash run
 	// should have its own folder, so we don't need to generate a unique name.
