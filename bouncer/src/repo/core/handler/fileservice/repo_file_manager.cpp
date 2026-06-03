@@ -95,7 +95,24 @@ bool FileManager::uploadFileAndCommit(
 		break;
 	}
 
-	auto linkName = fsHandler->uploadFile(databaseName, collectionNamePrefix, fileUUID.toString(), *fileContents);
+	std::string linkName;
+	try {
+		linkName = fsHandler->uploadFile(databaseName, collectionNamePrefix, fileUUID.toString(), *fileContents);
+	}
+	catch (const std::exception& e)
+	{
+		if (fileContents != &bin)
+		{
+			delete fileContents;
+		}
+		std::string errMsg = e.what();
+		if (errMsg.find("create_directories: Access is denied") != std::string::npos) {
+			repoError << "Insufficient filesystem permissions to upload files: ";
+			return false;
+		}
+		throw;
+	}
+
 	if (success = !linkName.empty()) {
 		success = upsertFileRef(
 			databaseName,
