@@ -108,6 +108,7 @@ bool FileManager::uploadFileAndCommit(
 		std::string errMsg = e.what();
 		if (errMsg.find("create_directories: Access is denied") != std::string::npos) {
 			repoError << "Insufficient filesystem permissions to upload files: ";
+			throw repo::lib::RepoException("Unable to create directories due to insufficient filesystem permissions");
 			return false;
 		}
 		throw;
