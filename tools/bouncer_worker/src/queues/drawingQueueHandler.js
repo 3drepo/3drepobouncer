@@ -30,11 +30,11 @@ const { DRAWING } = require('../constants/messageTypes');
 const Handler = {};
 const logLabel = { label: 'DRAWINGQ' };
 
-const generateTaskProfile = (user, model, database, rid, format, size) => ({
+const generateTaskProfile = (user, drawing, teamspace, rid, format, size) => ({
 	...Utils.gatherProcessInformation(
 		user,
-		model,
-		database,
+		drawing,
+		teamspace,
 		logLabel.label, // queue
 		config.repoLicense,
 		rid,
@@ -47,7 +47,7 @@ const generateTaskProfile = (user, model, database, rid, format, size) => ({
 Handler.onMessageReceived = async (cmd, rid, callback) => {
 	const ridString = rid.toString();
 	const logDir = Path.join(config.logging.taskLogDir, ridString);
-	const { errorCode, database, model, user, cmdParams, format, size, file } = messageDecoder(cmd);
+	const { errorCode, teamspace, drawing, user, cmdParams, format, size, file } = messageDecoder(cmd);
 
 	if (errorCode) {
 		callback(JSON.stringify({ value: errorCode }));
@@ -59,20 +59,20 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	await Utils.sleep(100);
 	callback(JSON.stringify({
 		status: PROCESSING,
-		database,
-		project: model,
+		teamspace,
+		drawing,
 	}));
 
 	const returnMessage = {
 		value: ERRCODE_OK,
-		teamspace: database,
-		container: model,
+		teamspace,
+		drawing,
 		user,
 		type: DRAWING,
 	};
 
 	try {
-		const procInfo = generateTaskProfile(user, model, database, ridString, format, size);
+		const procInfo = generateTaskProfile(user, drawing, teamspace, ridString, format, size);
 
 		if (format === '.pdf') {
 			const svgPath = Path.join(logDir, `${ridString}.svg`);

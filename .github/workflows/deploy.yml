@@ -43,7 +43,7 @@ jobs:
       - name: Setup Helm
         uses: azure/setup-helm@v4
         with:
-          version: '3.10.3'
+          version: '4.0.1'
 
       # ---------------------------------------------------------------
       # STEP 3: Set Kubernetes context
@@ -74,9 +74,10 @@ jobs:
             --namespace default \
             -f deployments/asite-stg/helm/bouncer/values.yaml \
             --set image.tag=${{ env.IMAGE_TAG }} \
-            --set podAnnotations.buildId=${{ github.event.workflow_run.id }} \
+            --set rollingupdate.enabled=true \
+            --set-string podAnnotations.buildId=${{ github.event.workflow_run.id }} \
             --wait \
-            --atomic
+            --rollback-on-failure
 
       # ---------------------------------------------------------------
       # STEP 6: Cleanup
