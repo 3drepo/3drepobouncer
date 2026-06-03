@@ -27,6 +27,7 @@
 #include <fstream>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include <DbProxyEntity.h>
 #include <DbRegAppTable.h>
 #include <DbRegAppTableRecord.h>
@@ -74,6 +75,10 @@ namespace repo {
 						MaterialColours& matColors,
 						repo::lib::repo_material_t& material) override;
 
+					void processTriangleOut(
+						const OdInt32* p3Vertices,
+						const OdGeVector3d* pNormal) override;
+
 					void processPolylineOut(
 						OdInt32 numPoints,
 						const OdInt32* vertexIndexList) override;
@@ -81,6 +86,36 @@ namespace repo {
 					void processPolylineOut(
 						OdInt32 numPoints,
 						const OdGePoint3d* vertexList) override;
+
+					void polygonOut(
+						OdInt32 numPoints,
+						const OdGePoint3d* vertexList,
+						const OdGeVector3d* pNormal = 0) override;
+
+					void shellProc(
+						OdInt32 numVertices,
+						const OdGePoint3d* vertexList,
+						OdInt32 faceListSize,
+						const OdInt32* faceList,
+						const OdGiEdgeData* pEdgeData = 0,
+						const OdGiFaceData* pFaceData = 0,
+						const OdGiVertexData* pVertexData = 0) override;
+
+					void meshProc(
+						OdInt32 numRows,
+						OdInt32 numColumns,
+						const OdGePoint3d* vertexList,
+						const OdGiEdgeData* pEdgeData = 0,
+						const OdGiFaceData* pFaceData = 0,
+						const OdGiVertexData* pVertexData = 0) override;
+
+					void tristripProc(
+						OdInt32 numVertices,
+						const OdGePoint3d* vertexList,
+						OdInt32 stripListSize = 0,
+						const OdInt32* stripList = 0,
+						const OdGiEdgeData* pEdgeData = 0,
+						const OdGiVertexData* pVertexData = 0) override;
 
 				private:
 					// ===== ADDED: Helper methods for Civil3D/Plant3D detection =====
@@ -94,6 +129,13 @@ namespace repo {
 					void inspectProxyEntity(OdDbEntityPtr pEntity);
 					bool tryExplodeEntity(OdDbEntityPtr pEntity, std::vector<OdDbEntityPtr>& explodedEntities);
 					bool drawStoredProxyGraphics(OdDbEntityPtr pEntity);
+					bool addTinSurfaceTriangle(
+						const repo::lib::RepoVector3D64& p0,
+						const repo::lib::RepoVector3D64& p1,
+						const repo::lib::RepoVector3D64& p2);
+					bool addTinSurfaceEdge(
+						const repo::lib::RepoVector3D64& p0,
+						const repo::lib::RepoVector3D64& p1);
 					bool addTinSurfaceTrianglePolyline(const std::vector<repo::lib::RepoVector3D64>& points);
 					void extractBoundingBoxAsMesh(OdDbEntityPtr pEntity);
 					std::unordered_map<std::string, std::string> getProxyMetadata(OdDbEntityPtr pEntity);
@@ -130,6 +172,10 @@ namespace repo {
 						}
 					};
 
+					void addTinSurfaceFaceLayers(
+						const std::string& parentLayerId,
+						const std::string& sourceEntityId);
+
 					// Some properties to be held between invocations of doDraw()
 					class Context
 					{
@@ -143,6 +189,10 @@ namespace repo {
 					Context context;
 					mutable DiagnosticStats stats;
 					bool capturingTinSurfaceProxy = false;
+					std::unordered_set<std::string> tinSurfaceEdgeKeys;
+					std::vector<GeometryCollector::Face> tinSurfaceTriangles;
+					bool hasTinSurfaceFaceMaterial = false;
+					repo::lib::repo_material_t tinSurfaceFaceMaterial;
 
 					std::string getClassDisplayName(OdDbEntityPtr entity);
 				};

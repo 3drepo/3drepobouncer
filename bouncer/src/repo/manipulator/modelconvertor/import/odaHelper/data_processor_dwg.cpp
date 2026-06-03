@@ -790,13 +790,13 @@ std::unordered_map<std::string, repo::lib::RepoVariant> DataProcessorDwg::getCiv
 
 
 		//metadata["Application"] = detectApplicationType(pEntity);
-		
+
 		// 2. Check if we can render it
 		int flags = proxyEntity->proxyFlags();
 		/*metadata["HasGeometry"] = (bool)(flags & 1);
 		metadata["CanExplode"] = (bool)(flags & 4);
-		
-		
+
+
 		// Layer information
 		try {
 			metadata["Layer"] = convertToStdString(toString(pEntity->layer()));
@@ -888,7 +888,7 @@ std::unordered_map<std::string, repo::lib::RepoVariant> DataProcessorDwg::getCiv
 	return metadata;
 }
 void DataProcessorDwg::extractCivil3DStoredProperties(OdDbDictionaryPtr pDict, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
-{	
+{
 	// Known Civil3D dictionary entries that might contain data
 	std::vector<std::string> civil3dDicts = {
 		"ACAD_XREC_ROUNDTRIP",  // Roundtrip data often has useful info
@@ -1381,7 +1381,7 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	// don't have Ids. The current behaviour is to disable these by default
 	// through pDb->setGEOMARKERVISIBILITY. If they are re-enabled, this snippet
 	// ensures that the geometry goes into its own tree node.
-	
+
 	// dynamic_cast is a workaround for an ODA bug where OdDbGeoDataMarker has no ODA RTTI
 	// https://forum.opendesign.com/showthread.php?24537-Cast-of-OdGiDrawable-to-OdDbGeoDataMarker-succeeding-for-OdDbEntity
 	auto pGeoDataMarker = dynamic_cast<const OdDbGeoDataMarker*>(pDrawable);
@@ -1526,8 +1526,11 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	{
 		bool previousTinSurfaceProxyCapture = capturingTinSurfaceProxy;
 		capturingTinSurfaceProxy = true;
+		tinSurfaceEdgeKeys.clear();
+		tinSurfaceTriangles.clear();
+		hasTinSurfaceFaceMaterial = false;
 		ret = drawStoredProxyGraphics(pEntity);
-		if (!(ctx && ctx->hasMeshes()))
+		if (!(ctx && ctx->hasMeshes()) && tinSurfaceTriangles.empty())
 		{
 			ret = OdGsBaseMaterialView::doDraw(i, pDrawable) || ret;
 		}
@@ -1539,10 +1542,12 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	}
 	collector->popDrawContext(ctx.get());
 
+	const bool hasTinSurfaceFaces = tinSurfaceProxy && !tinSurfaceTriangles.empty();
+
 	// ===== CHECK GEOMETRY EXTRACTION =====
 	if (ctx && !pEntity.isNull())
 	{
-		if (ctx->hasMeshes())
+		if (ctx->hasMeshes() || hasTinSurfaceFaces)
 		{
 			stats.entitiesWithGeometry++;
 		}
@@ -1594,7 +1599,7 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		}
 	}
 
-	if (ctx && ctx->hasMeshes()) 
+	if (ctx && (ctx->hasMeshes() || hasTinSurfaceFaces))
 	{
 		// This stack frame should create a layer with actual geometry
 
@@ -1602,41 +1607,283 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 			collector->createLayer(parentLayer.id, parentLayer.name, {}, {});
 		}
 
-		if (!collector->hasLayer(entityLayer.id)) {
-			auto bounds = ctx->getBounds();
-			auto m = repo::lib::RepoMatrix::translate(bounds.min());
-			collector->createLayer(entityLayer.id, entityLayer.name, parentLayer.id, m);
-		}
-
-		auto meshes = ctx->extractMeshes(collector->getLayerTransform(entityLayer.id).inverse());
-		collector->addMeshes(entityLayer.id, meshes);
-
-		if (!handleMetaValue.empty() && !collector->hasMetadata(entityLayer.id)) {
-			std::unordered_map<std::string, repo::lib::RepoVariant> meta, metadata;
-			meta["Entity Handle::Value"] = handleMetaValue;
-
-			// ===== ENHANCED METADATA FOR CUSTOM ENTITIES =====
-			if (!pEntity.isNull())
+		if (tinSurfaceProxy && hasTinSurfaceFaces)
+		{
+			if (ctx->hasMeshes())
 			{
-				extractEntityProperties(pEntity, metadata);
-				//auto metadata = getCivil3DPlant3DMetadata(pEntity);
-				if (!metadata.empty())
-				{
-					repoInfo << "****************************Metadata****************************************";
-					// Display metadata
-					for (const auto& [key, value] : metadata)
-					{
-						meta[key] = value;
-						repoInfo << "  " << key << ": " << boost::apply_visitor(repo::lib::StringConversionVisitor(), value);
-					}
-				}
+				auto meshes = ctx->extractMeshes(collector->getLayerTransform(parentLayer.id).inverse());
+				collector->addMeshes(parentLayer.id, meshes);
 			}
 
-			collector->setMetadata(entityLayer.id, meta);
+			addTinSurfaceFaceLayers(parentLayer.id, entityLayer.id);
+			tinSurfaceTriangles.clear();
+		}
+		else
+		{
+			if (!collector->hasLayer(entityLayer.id)) {
+				auto bounds = ctx->getBounds();
+				auto m = repo::lib::RepoMatrix::translate(bounds.min());
+				collector->createLayer(entityLayer.id, entityLayer.name, parentLayer.id, m);
+			}
+
+			if (ctx->hasMeshes())
+			{
+				auto meshes = ctx->extractMeshes(collector->getLayerTransform(entityLayer.id).inverse());
+				collector->addMeshes(entityLayer.id, meshes);
+			}
+
+			if (!handleMetaValue.empty() && !collector->hasMetadata(entityLayer.id)) {
+				std::unordered_map<std::string, repo::lib::RepoVariant> meta, metadata;
+				meta["Entity Handle::Value"] = handleMetaValue;
+
+				// ===== ENHANCED METADATA FOR CUSTOM ENTITIES =====
+				if (!pEntity.isNull())
+				{
+					extractEntityProperties(pEntity, metadata);
+					//auto metadata = getCivil3DPlant3DMetadata(pEntity);
+					if (!metadata.empty())
+					{
+						repoInfo << "****************************Metadata****************************************";
+						// Display metadata
+						for (const auto& [key, value] : metadata)
+						{
+							meta[key] = value;
+							repoInfo << "  " << key << ": " << boost::apply_visitor(repo::lib::StringConversionVisitor(), value);
+						}
+					}
+				}
+
+				collector->setMetadata(entityLayer.id, meta);
+			}
 		}
 	}
-
 	return ret;
+}
+
+bool DataProcessorDwg::addTinSurfaceTriangle(
+	const repo::lib::RepoVector3D64& p0,
+	const repo::lib::RepoVector3D64& p1,
+	const repo::lib::RepoVector3D64& p2)
+{
+	if (!capturingTinSurfaceProxy) return false;
+
+	auto samePoint = [](const repo::lib::RepoVector3D64& a, const repo::lib::RepoVector3D64& b) {
+		return compare(a.x, b.x) == 0 &&
+			compare(a.y, b.y) == 0 &&
+			compare(a.z, b.z) == 0;
+	};
+
+	if (samePoint(p0, p1) || samePoint(p1, p2) || samePoint(p2, p0)) return false;
+
+	GeometryCollector::Face triangle;
+	triangle.push_back(p0);
+	triangle.push_back(p1);
+	triangle.push_back(p2);
+	tinSurfaceTriangles.push_back(triangle);
+	if (!hasTinSurfaceFaceMaterial)
+	{
+		tinSurfaceFaceMaterial = collector->getLastMaterial();
+		hasTinSurfaceFaceMaterial = true;
+	}
+
+	addTinSurfaceEdge(p0, p1);
+	addTinSurfaceEdge(p1, p2);
+	addTinSurfaceEdge(p2, p0);
+	return true;
+}
+
+bool DataProcessorDwg::addTinSurfaceEdge(
+	const repo::lib::RepoVector3D64& p0,
+	const repo::lib::RepoVector3D64& p1)
+{
+	if (!capturingTinSurfaceProxy) return false;
+
+	auto samePoint = [](const repo::lib::RepoVector3D64& a, const repo::lib::RepoVector3D64& b) {
+		return compare(a.x, b.x) == 0 &&
+			compare(a.y, b.y) == 0 &&
+			compare(a.z, b.z) == 0;
+	};
+
+	if (samePoint(p0, p1)) return false;
+
+	auto pointKey = [](const repo::lib::RepoVector3D64& p) {
+		const double keyScale = 1000000.0;
+		return std::to_string(static_cast<long long>(p.x * keyScale)) + "," +
+			std::to_string(static_cast<long long>(p.y * keyScale)) + "," +
+			std::to_string(static_cast<long long>(p.z * keyScale));
+	};
+
+	auto key0 = pointKey(p0);
+	auto key1 = pointKey(p1);
+	auto edgeKey = key0 < key1 ? key0 + "|" + key1 : key1 + "|" + key0;
+	if (!tinSurfaceEdgeKeys.insert(edgeKey).second) return false;
+
+	auto edgeMaterial = repo::lib::repo_material_t::DefaultMaterial();
+	edgeMaterial.diffuse = { 0.03f, 0.03f, 0.03f };
+	edgeMaterial.ambient = edgeMaterial.diffuse;
+	edgeMaterial.emissive = edgeMaterial.diffuse;
+	edgeMaterial.lineWeight = 1.0f;
+	edgeMaterial.isWireframe = true;
+	collector->setMaterial(edgeMaterial);
+	collector->addFace({ p0, p1 });
+	return true;
+}
+
+void DataProcessorDwg::processTriangleOut(const OdInt32* p3Vertices, const OdGeVector3d* pNormal)
+{
+	if (!capturingTinSurfaceProxy)
+	{
+		DataProcessor::processTriangleOut(p3Vertices, pNormal);
+		return;
+	}
+
+	const auto pVertexDataList = vertexDataList();
+	addTinSurfaceTriangle(
+		toRepoVector(pVertexDataList[p3Vertices[0]]),
+		toRepoVector(pVertexDataList[p3Vertices[1]]),
+		toRepoVector(pVertexDataList[p3Vertices[2]]));
+}
+
+void DataProcessorDwg::polygonOut(OdInt32 numPoints, const OdGePoint3d* vertexList, const OdGeVector3d* pNormal)
+{
+	if (!capturingTinSurfaceProxy)
+	{
+		OdGiGeometrySimplifier::polygonOut(numPoints, vertexList, pNormal);
+		return;
+	}
+
+	if (numPoints < 3) return;
+
+	for (OdInt32 i = 1; i + 1 < numPoints; ++i)
+	{
+		addTinSurfaceTriangle(
+			toRepoVector(vertexList[0]),
+			toRepoVector(vertexList[i]),
+			toRepoVector(vertexList[i + 1]));
+	}
+}
+
+void DataProcessorDwg::shellProc(
+	OdInt32 numVertices,
+	const OdGePoint3d* vertexList,
+	OdInt32 faceListSize,
+	const OdInt32* faceList,
+	const OdGiEdgeData* pEdgeData,
+	const OdGiFaceData* pFaceData,
+	const OdGiVertexData* pVertexData)
+{
+	if (capturingTinSurfaceProxy)
+	{
+		repoTrace << "TIN surface proxy shellProc vertices=" << numVertices
+			<< " faceListSize=" << faceListSize;
+	}
+
+	OdGiGeometrySimplifier::shellProc(
+		numVertices,
+		vertexList,
+		faceListSize,
+		faceList,
+		pEdgeData,
+		pFaceData,
+		pVertexData);
+}
+
+void DataProcessorDwg::meshProc(
+	OdInt32 numRows,
+	OdInt32 numColumns,
+	const OdGePoint3d* vertexList,
+	const OdGiEdgeData* pEdgeData,
+	const OdGiFaceData* pFaceData,
+	const OdGiVertexData* pVertexData)
+{
+	if (capturingTinSurfaceProxy)
+	{
+		repoTrace << "TIN surface proxy meshProc rows=" << numRows
+			<< " columns=" << numColumns;
+	}
+
+	OdGiGeometrySimplifier::meshProc(
+		numRows,
+		numColumns,
+		vertexList,
+		pEdgeData,
+		pFaceData,
+		pVertexData);
+}
+
+void DataProcessorDwg::tristripProc(
+	OdInt32 numVertices,
+	const OdGePoint3d* vertexList,
+	OdInt32 stripListSize,
+	const OdInt32* stripList,
+	const OdGiEdgeData* pEdgeData,
+	const OdGiVertexData* pVertexData)
+{
+	if (!capturingTinSurfaceProxy)
+	{
+		OdGiGeometrySimplifier::tristripProc(
+			numVertices,
+			vertexList,
+			stripListSize,
+			stripList,
+			pEdgeData,
+			pVertexData);
+		return;
+	}
+
+	const OdInt32 count = stripList && stripListSize > 0 ? stripListSize : numVertices;
+	if (count < 3) return;
+
+	auto pointAt = [&](OdInt32 index) -> const OdGePoint3d& {
+		return stripList && stripListSize > 0 ? vertexList[stripList[index]] : vertexList[index];
+	};
+
+	for (OdInt32 i = 0; i + 2 < count; ++i)
+	{
+		if ((i % 2) == 0)
+		{
+			addTinSurfaceTriangle(
+				toRepoVector(pointAt(i)),
+				toRepoVector(pointAt(i + 1)),
+				toRepoVector(pointAt(i + 2)));
+		}
+		else
+		{
+			addTinSurfaceTriangle(
+				toRepoVector(pointAt(i + 1)),
+				toRepoVector(pointAt(i)),
+				toRepoVector(pointAt(i + 2)));
+		}
+	}
+}
+
+void DataProcessorDwg::addTinSurfaceFaceLayers(
+	const std::string& parentLayerId,
+	const std::string& sourceEntityId)
+{
+	for (size_t i = 0; i < tinSurfaceTriangles.size(); ++i)
+	{
+		auto faceLayerId = sourceEntityId + ":TIN_FACE:" + std::to_string(i);
+
+		auto faceContext = collector->makeNewDrawContext();
+		collector->pushDrawContext(faceContext.get());
+		if (hasTinSurfaceFaceMaterial)
+		{
+			collector->setMaterial(tinSurfaceFaceMaterial);
+		}
+		collector->addFace(tinSurfaceTriangles[i]);
+		collector->popDrawContext(faceContext.get());
+
+		if (faceContext->hasMeshes())
+		{
+			auto bounds = faceContext->getBounds();
+			auto m = repo::lib::RepoMatrix::translate(bounds.min());
+			collector->createLayer(faceLayerId, "Face", parentLayerId, m);
+
+			auto meshes = faceContext->extractMeshes(m.inverse());
+			collector->addMeshes(faceLayerId, meshes);
+		}
+	}
 }
 
 bool DataProcessorDwg::addTinSurfaceTrianglePolyline(const std::vector<repo::lib::RepoVector3D64>& points)
@@ -1650,14 +1897,7 @@ bool DataProcessorDwg::addTinSurfaceTrianglePolyline(const std::vector<repo::lib
 	};
 
 	if (!samePoint(points.front(), points.back())) return false;
-	if (samePoint(points[0], points[1]) || samePoint(points[1], points[2]) || samePoint(points[2], points[0])) return false;
-
-	GeometryCollector::Face triangle;
-	triangle.push_back(points[0]);
-	triangle.push_back(points[1]);
-	triangle.push_back(points[2]);
-	collector->addFace(triangle);
-	return true;
+	return addTinSurfaceTriangle(points[0], points[1], points[2]);
 }
 
 void DataProcessorDwg::processPolylineOut(OdInt32 numPoints, const OdInt32* vertexIndexList)
@@ -1696,6 +1936,7 @@ void DataProcessorDwg::processPolylineOut(OdInt32 numPoints, const OdGePoint3d* 
 
 	DataProcessor::processPolylineOut(numPoints, vertexList);
 }
+
 void DataProcessorDwg::convertTo3DRepoColor(OdCmEntityColor& color, repo::lib::repo_color3d_t& out)
 {
 	switch (color.colorMethod())
