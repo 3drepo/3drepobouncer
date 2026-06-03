@@ -20,10 +20,8 @@
 #include <DbLayout.h>
 #include <OdDbGeoDataMarker.h>
 #include <DbBlockTableRecord.h>
-#include <DbStubPtrArray.h>
 #include <DbBlockReference.h>
 #include <OdString.h>
-#include <DgCmColor.h>
 #include <toString.h>
 #include <DbProxyEntity.h>
 #include <DbEntityWithGrData.h>
@@ -43,9 +41,10 @@
 #include <CmColorBase.h>
 #include "helper_functions.h"
 #include "data_processor_dwg.h"
-#include "repo/lib/datastructure/repo_variant_utils.h"
-#include <boost/variant/apply_visitor.hpp>
 #include <repo_log.h>
+#include <algorithm>
+#include <cmath>
+#include <cctype>
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
@@ -55,27 +54,7 @@ DataProcessorDwg::~DataProcessorDwg()
 	printDiagnostics();
 }
 
-// Add this helper method to DataProcessorDwg class
-bool DataProcessorDwg::isCivil3DEntity(OdDbEntityPtr pEntity)
-{
-	if (pEntity.isNull()) return false;
 
-	auto className = convertToStdString(pEntity->isA()->name());
-
-	// Check if class name starts with Civil3D prefixes
-	return className.rfind("Aecc", 0) == 0 ||  // Civil3D entities start with "Aecc"
-		className.rfind("AeccDb", 0) == 0;
-}
-bool DataProcessorDwg::isPlant3DEntity(OdDbEntityPtr pEntity)
-{
-	if (pEntity.isNull()) return false;
-
-	auto className = convertToStdString(pEntity->isA()->name());
-
-	// Check if class name starts with Plant3D prefixes
-	return className.rfind("AcPp", 0) == 0 ||      // Plant3D entities start with "AcPp"
-		className.rfind("AcPpDb", 0) == 0;
-}
 bool DataProcessorDwg::isProxyEntity(OdDbEntityPtr pEntity)
 {
 	if (pEntity.isNull()) return false;
@@ -90,6 +69,10 @@ bool DataProcessorDwg::isTinSurfaceProxy(OdDbEntityPtr pEntity)
 		originalClass == "AeccDbTinSurface" ||
 		originalClass.find("SurfaceTin") != std::string::npos ||
 		originalClass.find("TinSurface") != std::string::npos;
+}
+bool DataProcessorDwg::shouldReplayStoredProxyGraphics(OdDbEntityPtr pEntity)
+{
+	return isProxyEntity(pEntity);
 }
 std::string DataProcessorDwg::getProxyOriginalClassName(OdDbEntityPtr pEntity)
 {
@@ -155,11 +138,13 @@ std::unordered_map<std::string, std::string> DataProcessorDwg::getProxyMetadata(
 					metadata["Application Description"] = convertToStdString(appDesc);
 				}
 
-				// Proxy flags
+				// Proxy flags and saved graphics state
 				int flags = proxyEntity->proxyFlags();
 				metadata["ProxyFlags"] = std::to_string(flags);
-				metadata["HasProxyGraphics"] = (flags & 1) ? "true" : "false";
-				metadata["IsR13Format"] = (flags & 2) ? "true" : "false";
+				auto graphicsType = proxyEntity->graphicsMetafileType();
+				metadata["GraphicsMetafileType"] = graphicsType == OdDbProxyEntity::kFullGraphics ? "Full Graphics" :
+					graphicsType == OdDbProxyEntity::kBoundingBox ? "Bounding Box" : "No Metafile";
+				metadata["HasProxyGraphics"] = graphicsType == OdDbProxyEntity::kFullGraphics ? "true" : "false";
 			}
 		}
 
@@ -505,144 +490,17 @@ std::string DataProcessorDwg::detectApplicationType(OdDbEntityPtr pEntity)
 
 	return "";
 }
-void DataProcessorDwg::inspectProxyEntity(OdDbEntityPtr pEntity)
-{
-	if (pEntity.isNull()) return;
 
-	auto handle = convertToStdString(toString(pEntity->objectId().getHandle()));
-	repoWarning << "\n===============================================================";
-	repoWarning << "||  PROXY ENTITY INSPECTION [Handle: " << handle << "]";
-	repoWarning << "===============================================================";
-
-	auto className = convertToStdString(pEntity->isA()->name());
-	repoWarning << "  Class Name:           " << className;
-
-	std::string originalClassName = getProxyOriginalClassName(pEntity);
-	repoWarning << "  Original Class:       " << originalClassName;
-
-	if (originalClassName.find("Aecc") != std::string::npos)
-	{
-		repoWarning << " ** IDENTIFIED AS:      CIVIL3D ENTITY";
-		stats.civil3dEntities++;
-	}
-	else if (originalClassName.find("AcPp") != std::string::npos)
-	{
-		repoWarning << " ** IDENTIFIED AS:      PLANT3D ENTITY";
-		stats.plant3dEntities++;
-	}
-	// Get all metadata
-	auto metadata = getProxyMetadata(pEntity);
-
-	// Display metadata
-	for (const auto& [key, value] : metadata)
-	{
-		repoWarning << "  " << key << ": " << value;
-	}
-	auto xdataApps = getProxyXDataApps(pEntity);
-	if (!xdataApps.empty())
-	{
-		repoWarning << "  XData Applications:";
-		for (const auto& app : xdataApps)
-		{
-			repoWarning << "    - " << app;
-		}
-	}
-	else
-	{
-		repoWarning << "  XData Applications:   None";
-	}
-
-	OdDbProxyEntityPtr proxyEntity = OdDbProxyEntity::cast(pEntity);
-	if (!proxyEntity.isNull())
-	{
-		try {
-			int proxyFlags = proxyEntity->proxyFlags();
-			bool hasProxyGraphics = (proxyFlags & 1);
-			bool isR13Entity = (proxyFlags & 2);
-
-			repoWarning << "  Proxy Flags:          " << proxyFlags;
-			repoWarning << "  Has Proxy Graphics:   " << (hasProxyGraphics ? "YES" : "NO");
-			repoWarning << "  Is R13 Format:        " << (isR13Entity ? "YES" : "NO");
-
-			if (!hasProxyGraphics)
-			{
-				repoError << " PROBLEM: No proxy graphics embedded!";
-				repoError << " Entity REQUIRES native modules to render";
-			}
-		}
-		catch (OdError& e) {
-			repoWarning << "  Proxy flags error: " << convertToStdString(e.description());
-		}
-	}
-
-	try {
-		OdGeExtents3d extents;
-		if (pEntity->getGeomExtents(extents) == eOk)
-		{
-			auto min = extents.minPoint();
-			auto max = extents.maxPoint();
-			repoWarning << "  Bounding Box:         Min(" << min.x << ", " << min.y << ", " << min.z << ")";
-			repoWarning << "                        Max(" << max.x << ", " << max.y << ", " << max.z << ")";
-		}
-		else
-		{
-			repoError << " Cannot get bounding box";
-		}
-	}
-	catch (OdError& e) {
-		repoError << " Extents error: " << convertToStdString(e.description());
-	}
-
-	try {
-		auto layerName = convertToStdString(toString(pEntity->layer()));
-		repoWarning << "  Layer:                " << layerName;
-	}
-	catch (...) {}
-
-	repoWarning << "===============================================================\n";
-}
-bool DataProcessorDwg::tryExplodeEntity(OdDbEntityPtr pEntity, std::vector<OdDbEntityPtr>& explodedEntities)
-{
-	if (pEntity.isNull()) return false;
-
-	try {
-		OdRxObjectPtrArray entitySet;
-
-		// Try to explode the entity into simpler primitives
-		OdResult res = pEntity->explode(entitySet);
-
-		if (res == eOk && entitySet.size() > 0)
-		{
-			repoInfo << "Successfully exploded " << convertToStdString(pEntity->isA()->name())
-				<< " into " << entitySet.size() << " simple entities";
-
-			for (size_t i = 0; i < entitySet.size(); ++i)
-			{
-				OdDbEntityPtr exploded = OdDbEntity::cast(entitySet[i]);
-				if (!exploded.isNull())
-				{
-					explodedEntities.push_back(exploded);
-				}
-			}
-			return true;
-		}
-	}
-	catch (OdError& e) {
-		repoTrace << "Failed to explode entity: " << convertToStdString(e.description());
-	}
-
-	return false;
-}
 bool DataProcessorDwg::drawStoredProxyGraphics(OdDbEntityPtr pEntity)
 {
-	if (pEntity.isNull() || !isTinSurfaceProxy(pEntity)) return false;
+	if (pEntity.isNull() || !shouldReplayStoredProxyGraphics(pEntity)) return false;
 
 	OdDbProxyEntityPtr proxyEntity = OdDbProxyEntity::cast(pEntity);
 	if (proxyEntity.isNull()) return false;
 
 	if (proxyEntity->graphicsMetafileType() != OdDbProxyEntity::kFullGraphics)
 	{
-		repoTrace << "TIN surface proxy has no full graphics metafile: "
+		repoTrace << "Proxy has no full graphics metafile: "
 			<< getProxyOriginalClassName(pEntity);
 		return false;
 	}
@@ -650,86 +508,30 @@ bool DataProcessorDwg::drawStoredProxyGraphics(OdDbEntityPtr pEntity)
 	OdDbEntityWithGrDataPEPtr graphics = OdDbEntityWithGrDataPE::cast(pEntity);
 	if (graphics.isNull())
 	{
-		repoTrace << "No stored graphics protocol extension for TIN surface proxy: "
+		repoTrace << "No stored graphics protocol extension for proxy: "
 			<< getProxyOriginalClassName(pEntity);
 		return false;
 	}
 
-	struct TinSurfaceProxyCapture
-	{
-		bool& target;
-		bool previous;
-
-		TinSurfaceProxyCapture(bool& target) : target(target), previous(target)
-		{
-			target = true;
-		}
-
-		~TinSurfaceProxyCapture()
-		{
-			target = previous;
-		}
-	} capture(capturingTinSurfaceProxy);
-
 	try
 	{
-		repoInfo << "Replaying stored TIN surface proxy graphics for "
+		repoInfo << "Replaying stored proxy graphics for "
 			<< getProxyOriginalClassName(pEntity);
 		return graphics->worldDraw(pEntity, this);
 	}
 	catch (OdError& e)
 	{
-		repoTrace << "Stored TIN surface proxy graphics replay failed: "
+		repoTrace << "Stored proxy graphics replay failed: "
 			<< convertToStdString(e.description());
 	}
 	catch (...)
 	{
-		repoTrace << "Stored TIN surface proxy graphics replay failed with unknown error";
+		repoTrace << "Stored proxy graphics replay failed with unknown error";
 	}
 
 	return false;
 }
-void DataProcessorDwg::extractBoundingBoxAsMesh(OdDbEntityPtr pEntity)
-{
-	try {
-		OdGeExtents3d extents;
-		if (pEntity->getGeomExtents(extents) == eOk)
-		{
-			// Create a simple box mesh from the extents
-			auto min = toRepoVector(extents.minPoint());
-			auto max = toRepoVector(extents.maxPoint());
 
-			// Create 12 lines representing the bounding box edges
-			std::vector<std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>> boxEdges = {
-				// Bottom face
-				{{min.x, min.y, min.z}, {max.x, min.y, min.z}},
-				{{max.x, min.y, min.z}, {max.x, max.y, min.z}},
-				{{max.x, max.y, min.z}, {min.x, max.y, min.z}},
-				{{min.x, max.y, min.z}, {min.x, min.y, min.z}},
-				// Top face
-				{{min.x, min.y, max.z}, {max.x, min.y, max.z}},
-				{{max.x, min.y, max.z}, {max.x, max.y, max.z}},
-				{{max.x, max.y, max.z}, {min.x, max.y, max.z}},
-				{{min.x, max.y, max.z}, {min.x, min.y, max.z}},
-				// Vertical edges
-				{{min.x, min.y, min.z}, {min.x, min.y, max.z}},
-				{{max.x, min.y, min.z}, {max.x, min.y, max.z}},
-				{{max.x, max.y, min.z}, {max.x, max.y, max.z}},
-				{{min.x, max.y, min.z}, {min.x, max.y, max.z}},
-			};
-
-			for (const auto& edge : boxEdges) {
-				collector->addFace({ edge.first, edge.second });
-			}
-
-			repoInfo << "Extracted bounding box for custom entity: "
-				<< convertToStdString(pEntity->isA()->name());
-		}
-	}
-	catch (OdError& e) {
-		repoTrace << "Failed to extract bounding box: " << convertToStdString(e.description());
-	}
-}
 void DataProcessorDwg::printDiagnostics() const
 {
 	if (stats.totalEntities == 0) return;
@@ -744,10 +546,6 @@ void DataProcessorDwg::printDiagnostics() const
 	repoInfo << "  Civil3D entities:               " << stats.civil3dEntities;
 	repoInfo << "  Plant3D entities:               " << stats.plant3dEntities;
 	repoInfo << "  Proxy entities:                 " << stats.proxyEntities;
-	/*repoInfo << "===============================================================";
-	repoInfo << "  Exploded successfully:          " << stats.explodedSuccessfully;
-	repoInfo << "  Explode failed:                 " << stats.explodedFailed;
-	repoInfo << "  Bounding box fallbacks:         " << stats.boundingBoxFallbacks;*/
 
 	if (!stats.entityTypeCount.empty() && (stats.proxyEntities > 0 || stats.civil3dEntities > 0 || stats.plant3dEntities > 0))
 	{
@@ -768,124 +566,482 @@ void DataProcessorDwg::printDiagnostics() const
 	repoInfo << "===============================================================\n";
 }
 
-std::unordered_map<std::string, repo::lib::RepoVariant> DataProcessorDwg::getCivil3DPlant3DMetadata(OdDbEntityPtr pEntity)
+void DataProcessorDwg::logProxyWithoutRenderableGeometry(
+	OdDbEntityPtr pEntity,
+	bool replayedStoredProxyGraphics,
+	bool replayReturnedGeometry)
+{
+	if (!isProxyEntity(pEntity)) return;
+
+	std::string handle = "Unknown";
+	try
+	{
+		handle = convertToStdString(toString(pEntity->objectId().getHandle()));
+	}
+	catch (...) {}
+
+	if (!loggedProxyGeometryFailures.insert(handle).second) return;
+
+	std::string layer = "Unknown";
+	try
+	{
+		layer = convertToStdString(toString(pEntity->layer()));
+	}
+	catch (...) {}
+
+	std::string originalClass = getProxyOriginalClassName(pEntity);
+	std::string originalDxfName;
+	std::string appDescription;
+	std::string graphicsTypeName = "Unknown";
+	std::string reason = "No geometry was produced by the vectorizer";
+	bool hasGraphicsProtocolExtension = false;
+
+	OdDbProxyEntityPtr proxyEntity = OdDbProxyEntity::cast(pEntity);
+	if (!proxyEntity.isNull())
+	{
+		OdString dxfName = proxyEntity->originalDxfName();
+		if (!dxfName.isEmpty()) originalDxfName = convertToStdString(dxfName);
+
+		OdString description = proxyEntity->applicationDescription();
+		if (!description.isEmpty()) appDescription = convertToStdString(description);
+
+		auto graphicsType = proxyEntity->graphicsMetafileType();
+		if (graphicsType == OdDbProxyEntity::kNoMetafile)
+		{
+			graphicsTypeName = "No Metafile";
+			reason = "Proxy entity has no saved graphics metafile";
+		}
+		else if (graphicsType == OdDbProxyEntity::kBoundingBox)
+		{
+			graphicsTypeName = "Bounding Box";
+			reason = "Proxy entity only has bounding-box proxy graphics";
+		}
+		else if (graphicsType == OdDbProxyEntity::kFullGraphics)
+		{
+			graphicsTypeName = "Full Graphics";
+			if (!replayedStoredProxyGraphics)
+			{
+				reason = "Stored proxy graphics replay was not attempted";
+			}
+			else if (!replayReturnedGeometry)
+			{
+				reason = "Stored proxy graphics replay returned false";
+			}
+			else
+			{
+				reason = "Stored proxy graphics replay produced no supported mesh or line geometry";
+			}
+		}
+	}
+
+	try
+	{
+		hasGraphicsProtocolExtension = !OdDbEntityWithGrDataPE::cast(pEntity).isNull();
+	}
+	catch (...) {}
+
+	std::string xdataApps;
+	try
+	{
+		auto apps = getProxyXDataApps(pEntity);
+		for (size_t i = 0; i < apps.size(); ++i)
+		{
+			if (i > 0) xdataApps += ",";
+			xdataApps += apps[i];
+		}
+	}
+	catch (...) {}
+
+	repoWarning << "[DWG_PROXY_NO_RENDERABLE_GEOMETRY] handle=" << handle
+		<< " layer=\"" << layer << "\""
+		<< " originalClass=\"" << originalClass << "\""
+		<< " originalDxfName=\"" << originalDxfName << "\""
+		<< " graphicsMetafile=\"" << graphicsTypeName << "\""
+		<< " replayAttempted=" << (replayedStoredProxyGraphics ? "true" : "false")
+		<< " replayReturned=" << (replayReturnedGeometry ? "true" : "false")
+		<< " hasGraphicsPE=" << (hasGraphicsProtocolExtension ? "true" : "false")
+		<< " reason=\"" << reason << "\"";
+
+	if (!appDescription.empty())
+	{
+		repoWarning << "[DWG_PROXY_NO_RENDERABLE_GEOMETRY] handle=" << handle
+			<< " applicationDescription=\"" << appDescription << "\"";
+	}
+
+	if (!xdataApps.empty())
+	{
+		repoWarning << "[DWG_PROXY_NO_RENDERABLE_GEOMETRY] handle=" << handle
+			<< " xdataApps=\"" << xdataApps << "\"";
+	}
+
+	try
+	{
+		OdGeExtents3d extents;
+		if (pEntity->getGeomExtents(extents) == eOk)
+		{
+			auto min = extents.minPoint();
+			auto max = extents.maxPoint();
+			repoWarning << "[DWG_PROXY_NO_RENDERABLE_GEOMETRY] handle=" << handle
+				<< " boundsMin=(" << min.x << "," << min.y << "," << min.z << ")"
+				<< " boundsMax=(" << max.x << "," << max.y << "," << max.z << ")";
+		}
+	}
+	catch (...) {}
+}
+std::unordered_map<std::string, repo::lib::RepoVariant> DataProcessorDwg::getProxyEntityMetadata(OdDbEntityPtr pEntity)
 {
 	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
-
 	if (!isProxyEntity(pEntity)) return metadata;
 
-	stats.proxyEntities++;
-	OdDbProxyEntityPtr proxyEntity = OdDbProxyEntity::cast(pEntity);
-	if (proxyEntity.isNull()) return metadata;
+	auto setIfMissing = [&](const std::string& key, const repo::lib::RepoVariant& value) {
+		if (metadata.find(key) == metadata.end())
+		{
+			metadata[key] = value;
+		}
+	};
 
-	try {
-		// 1. Get original class name
+	auto yesNo = [](bool value) {
+		return value ? std::string("Yes") : std::string("No");
+	};
+
+	auto colorToString = [](const OdCmColor& clr) {
+		switch (clr.colorMethod())
+		{
+		case OdCmEntityColor::kByLayer:
+			return std::string("ByLayer");
+		case OdCmEntityColor::kByBlock:
+			return std::string("ByBlock");
+		case OdCmEntityColor::kByACI:
+		case OdCmEntityColor::kByPen:
+		case OdCmEntityColor::kByDgnIndex:
+		{
+			int aci = clr.colorIndex();
+			switch (aci)
+			{
+			case 0: return std::string("ByBlock");
+			case 1: return std::string("Red");
+			case 2: return std::string("Yellow");
+			case 3: return std::string("Green");
+			case 4: return std::string("Cyan");
+			case 5: return std::string("Blue");
+			case 6: return std::string("Magenta");
+			case 7: return std::string("White");
+			case 256: return std::string("ByLayer");
+			default: return std::string("Color ") + std::to_string(aci);
+			}
+		}
+		case OdCmEntityColor::kByColor:
+			return std::string("RGB(") + std::to_string(clr.red()) + "," +
+				std::to_string(clr.green()) + "," + std::to_string(clr.blue()) + ")";
+		case OdCmEntityColor::kForeground:
+			return std::string("Foreground");
+		case OdCmEntityColor::kNone:
+			return std::string("None");
+		default:
+			return std::string("RGB(") + std::to_string(clr.red()) + "," +
+				std::to_string(clr.green()) + "," + std::to_string(clr.blue()) + ")";
+		}
+	};
+
+	auto lineWeightToString = [](OdDb::LineWeight lw) {
+		switch (lw)
+		{
+		case OdDb::kLnWtByLayer:
+			return std::string("ByLayer");
+		case OdDb::kLnWtByBlock:
+			return std::string("ByBlock");
+		case OdDb::kLnWtByLwDefault:
+			return std::string("Default");
+		default:
+			return std::to_string(static_cast<int>(lw) / 100.0) + " mm";
+		}
+	};
+
+	try
+	{
+		OdDbProxyEntityPtr proxyEntity = OdDbProxyEntity::cast(pEntity);
+		if (proxyEntity.isNull()) return metadata;
+
+		// First ask ODA Common Data Access for palette-style properties. When a
+		// native object enabler is available this can include custom object data;
+		// otherwise it normally returns the proxy/general entity properties.
+		extractEntityProperties(pEntity, metadata);
+
 		std::string originalClass = convertToStdString(proxyEntity->originalClassName());
-		stats.entityTypeCount["Proxy-"+originalClass]++;
-		if (originalClass.rfind("Aecc", 0) == 0)
-			stats.civil3dEntities++;
-		if (originalClass.rfind("AcPp", 0) == 0)
-			stats.plant3dEntities++;
-		//metadata["OriginalClassName"] = originalClass;
+		if (originalClass.empty()) originalClass = getProxyOriginalClassName(pEntity);
+		if (!originalClass.empty())
+		{
+			metadata["Proxy::Original Class"] = originalClass;
+		}
 
+		OdString originalDxfName = proxyEntity->originalDxfName();
+		if (!originalDxfName.isEmpty())
+		{
+			metadata["Proxy::Original DXF Name"] = convertToStdString(originalDxfName);
+		}
 
-		//metadata["Application"] = detectApplicationType(pEntity);
+		OdString appDescription = proxyEntity->applicationDescription();
+		if (!appDescription.isEmpty())
+		{
+			metadata["Proxy::Application Description"] = convertToStdString(appDescription);
+		}
 
-		// 2. Check if we can render it
+		auto appType = detectApplicationType(pEntity);
+		if (!appType.empty())
+		{
+			metadata["Proxy::Application"] = appType;
+		}
+
+		auto graphicsType = proxyEntity->graphicsMetafileType();
+		std::string graphicsTypeName = "No Metafile";
+		if (graphicsType == OdDbProxyEntity::kBoundingBox)
+		{
+			graphicsTypeName = "Bounding Box";
+		}
+		else if (graphicsType == OdDbProxyEntity::kFullGraphics)
+		{
+			graphicsTypeName = "Full Graphics";
+		}
+		metadata["Proxy::Graphics Metafile Type"] = graphicsTypeName;
+		metadata["Proxy::Has Full Graphics"] = yesNo(graphicsType == OdDbProxyEntity::kFullGraphics);
+
 		int flags = proxyEntity->proxyFlags();
-		/*metadata["HasGeometry"] = (bool)(flags & 1);
-		metadata["CanExplode"] = (bool)(flags & 4);
+		metadata["Proxy::Flags"] = static_cast<int64_t>(flags);
+		metadata["Proxy Flags::Erase Allowed"] = yesNo(proxyEntity->eraseAllowed());
+		metadata["Proxy Flags::Transform Allowed"] = yesNo(proxyEntity->transformAllowed());
+		metadata["Proxy Flags::Color Change Allowed"] = yesNo(proxyEntity->colorChangeAllowed());
+		metadata["Proxy Flags::Layer Change Allowed"] = yesNo(proxyEntity->layerChangeAllowed());
+		metadata["Proxy Flags::Linetype Change Allowed"] = yesNo(proxyEntity->linetypeChangeAllowed());
+		metadata["Proxy Flags::Linetype Scale Change Allowed"] = yesNo(proxyEntity->linetypeScaleChangeAllowed());
+		metadata["Proxy Flags::Visibility Change Allowed"] = yesNo(proxyEntity->visibilityChangeAllowed());
+		metadata["Proxy Flags::Lineweight Change Allowed"] = yesNo(proxyEntity->lineWeightChangeAllowed());
+		metadata["Proxy Flags::Material Change Allowed"] = yesNo(proxyEntity->materialChangeAllowed());
 
+		setIfMissing("General::Layer", convertToStdString(toString(pEntity->layer())));
+		setIfMissing("General::True Color", colorToString(pEntity->color()));
+		setIfMissing("General::Linetype", convertToStdString(toString(pEntity->linetype())));
+		setIfMissing("General::Linetype scale", pEntity->linetypeScale());
+		setIfMissing("General::Lineweight", lineWeightToString(pEntity->lineWeight()));
+		setIfMissing("General::Visibility", pEntity->visibility() == OdDb::kInvisible ? std::string("Invisible") : std::string("Visible"));
 
-		// Layer information
-		try {
-			metadata["Layer"] = convertToStdString(toString(pEntity->layer()));
-		}
-		catch (...) {}
-
-		// Color information
-		try {
-			OdCmColor color = pEntity->color();
-			metadata["Color"] = std::to_string(color.colorIndex());
-		}
-		catch (...) {}
-
-		// Linetype
-		try {
-			metadata["Linetype"] = convertToStdString(toString(pEntity->linetype()));
-		}
-		catch (...) {}
-
-		// Lineweight
-		try {
-			metadata["Lineweight"] = convertToStdString(toString(pEntity->lineWeight()));
-		}
-		catch (...) {}
-
-		// Bounding box
-		try {
+		try
+		{
 			OdGeExtents3d extents;
 			if (pEntity->getGeomExtents(extents) == eOk)
 			{
 				auto min = extents.minPoint();
 				auto max = extents.maxPoint();
-				metadata["BoundsMin"] = "(" + std::to_string(min.x) + ", " +
-					std::to_string(min.y) + ", " +
-					std::to_string(min.z) + ")";
-				metadata["BoundsMax"] = "(" + std::to_string(max.x) + ", " +
-					std::to_string(max.y) + ", " +
-					std::to_string(max.z) + ")";
+				metadata["Geometry::Bounds Min"] = "(" + std::to_string(min.x) + ", " +
+					std::to_string(min.y) + ", " + std::to_string(min.z) + ")";
+				metadata["Geometry::Bounds Max"] = "(" + std::to_string(max.x) + ", " +
+					std::to_string(max.y) + ", " + std::to_string(max.z) + ")";
 			}
 		}
-		catch (...) {}*/
+		catch (...) {}
 
-		// =====================================================================
-		// 3. READ ALL PROPERTIES VIA ODA Common Data Access (CDA) / RxProperties
-		// This is equivalent to the AutoCAD Properties panel (General, Pattern,
-		// Geometry sections, etc.)
-		// ODA SDK Reference: https://docs.opendesign.com/tkernel/OdRxProperty.html
-		// Requires: RxPropertiesModule, DbPropertiesModule, RxCommonDataAccessModule
-		// (already loaded in file_processor_dwg.cpp readFile())
-		// =====================================================================
-		extractEntityProperties(pEntity, metadata);
-
-		// 3. Try to get stored properties from extension dictionary
-		OdDbObjectId extDictId = pEntity->extensionDictionary();
-		if (!extDictId.isNull())
-		{
-			OdDbDictionaryPtr pExtDict = extDictId.safeOpenObject();
-			if (!pExtDict.isNull())
-			{
-				// Civil3D-specific dictionaries
-				if (originalClass.find("Aecc") != std::string::npos)
-				{
-					extractCivil3DStoredProperties(pExtDict, metadata);
-				}
-
-				// Plant3D-specific dictionaries
-				if (originalClass.find("AcPp") != std::string::npos)
-				{
-					extractPlant3DStoredProperties(pExtDict, metadata);
-				}
-			}
-		}
-
-		// 4. Get XData properties
 		OdResBufPtr pRb = pEntity->xData();
 		if (!pRb.isNull())
 		{
 			extractXDataProperties(pRb, metadata);
 		}
 
-		// 5. Get any properties that were saved as plain text
+		OdDbObjectId extDictId = pEntity->extensionDictionary();
+		if (!extDictId.isNull())
+		{
+			OdDbDictionaryPtr pExtDict = extDictId.safeOpenObject();
+			if (!pExtDict.isNull())
+			{
+				extractCivil3DStoredProperties(pExtDict, metadata);
+				extractPlant3DStoredProperties(pExtDict, metadata);
+			}
+		}
+
 		extractTextPropertiesFromProxy(proxyEntity, metadata);
 
+		// Preserve raw proxy storage details too. These are useful for custom
+		// proxy classes where the native palette fields are not exposed by CDA.
+		auto rawMetadata = getProxyMetadata(pEntity);
+		for (const auto& item : rawMetadata)
+		{
+			if (!item.second.empty())
+			{
+				setIfMissing("Proxy Raw::" + item.first, item.second);
+			}
+		}
 	}
-	catch (OdError& e) {
-		metadata["_Error"] = convertToStdString(e.description());
+	catch (OdError& e)
+	{
+		metadata["Proxy::Metadata Error"] = convertToStdString(e.description());
+	}
+	catch (...)
+	{
+		metadata["Proxy::Metadata Error"] = std::string("Unknown error reading proxy metadata");
 	}
 
 	return metadata;
+}
+void DataProcessorDwg::addTinSurfaceComputedMetadata(
+	OdDbEntityPtr pEntity,
+	std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
+{
+	if (!isTinSurfaceProxy(pEntity) || tinSurfaceTriangles.empty()) return;
+
+	auto setIfMissing = [&](const std::string& key, const repo::lib::RepoVariant& value) {
+		if (metadata.find(key) == metadata.end())
+		{
+			metadata[key] = value;
+		}
+	};
+
+	std::unordered_set<std::string> uniquePoints;
+	double minElevation = 0.0;
+	double maxElevation = 0.0;
+	bool hasElevation = false;
+
+	auto pointKey = [](const repo::lib::RepoVector3D64& p) {
+		const double keyScale = 1000000.0;
+		return std::to_string(static_cast<long long>(p.x * keyScale)) + "," +
+			std::to_string(static_cast<long long>(p.y * keyScale)) + "," +
+			std::to_string(static_cast<long long>(p.z * keyScale));
+	};
+
+	for (const auto& triangle : tinSurfaceTriangles)
+	{
+		for (int i = 0; i < triangle.numVertices; ++i)
+		{
+			const auto& p = triangle.vertices[i];
+			if (uniquePoints.insert(pointKey(p)).second)
+			{
+				if (!hasElevation)
+				{
+					minElevation = p.z;
+					maxElevation = p.z;
+					hasElevation = true;
+				}
+				else
+				{
+					minElevation = std::min(minElevation, p.z);
+					maxElevation = std::max(maxElevation, p.z);
+				}
+			}
+		}
+	}
+
+	if (!uniquePoints.empty() && metadata.find("Data::Number of Points") == metadata.end())
+	{
+		metadata["Data::Rendered Number of Points"] = static_cast<int64_t>(uniquePoints.size());
+	}
+	if (hasElevation)
+	{
+		auto roundElevation = [](double value) {
+			return std::round(value * 1000.0) / 1000.0;
+		};
+		setIfMissing("Data::Minimum Elevation", roundElevation(minElevation));
+		setIfMissing("Data::Maximum Elevation", roundElevation(maxElevation));
+	}
+
+	try
+	{
+		auto layerName = convertToStdString(toString(pEntity->layer()));
+		auto name = layerName;
+		auto separator = layerName.find_last_of('-');
+		if (separator != std::string::npos && separator + 1 < layerName.size())
+		{
+			name = layerName.substr(separator + 1);
+		}
+		setIfMissing("Information::Name", name);
+	}
+	catch (...) {}
+
+	setIfMissing("Information::Style", std::string("Contours and Triangles"));
+	setIfMissing("Information::Material", std::string("ByLayer"));
+	setIfMissing("Information::Show Tooltips", std::string("Yes"));
+}
+
+void DataProcessorDwg::removeDuplicateGeneralMetadata(
+	std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
+{
+	auto canonicalGeneralKey = [](const std::string& key) {
+		const std::string prefix = "General::";
+		if (key.rfind(prefix, 0) != 0) return std::string();
+
+		std::string normalized;
+		for (auto ch : key.substr(prefix.size()))
+		{
+			unsigned char c = static_cast<unsigned char>(ch);
+			if (std::isalnum(c))
+			{
+				normalized.push_back(static_cast<char>(std::tolower(c)));
+			}
+		}
+
+		if (normalized == "color" || normalized == "truecolor") return std::string("General::True Color");
+		if (normalized == "layer") return std::string("General::Layer");
+		if (normalized == "linetype") return std::string("General::Linetype");
+		if (normalized == "linetypescale") return std::string("General::Linetype scale");
+		if (normalized == "plotstyle" || normalized == "plotstylename") return std::string("General::Plot style");
+		if (normalized == "lineweight") return std::string("General::Lineweight");
+		if (normalized == "hyperlink") return std::string("General::Hyperlink");
+		if (normalized == "visibility") return std::string("General::Visibility");
+		return std::string();
+	};
+
+	std::vector<std::string> eraseKeys;
+	std::unordered_set<std::string> pendingCanonicalKeys;
+	std::vector<std::pair<std::string, repo::lib::RepoVariant>> insertValues;
+
+	for (const auto& [key, value] : metadata)
+	{
+		auto canonicalKey = canonicalGeneralKey(key);
+		if (canonicalKey.empty() || canonicalKey == key) continue;
+
+		if (metadata.find(canonicalKey) == metadata.end() && pendingCanonicalKeys.insert(canonicalKey).second)
+		{
+			insertValues.push_back({ canonicalKey, value });
+		}
+		eraseKeys.push_back(key);
+	}
+
+	for (const auto& [key, value] : insertValues)
+	{
+		metadata[key] = value;
+	}
+	for (const auto& key : eraseKeys)
+	{
+		metadata.erase(key);
+	}
+}
+void DataProcessorDwg::setEntityMetadata(
+	const std::string& layerId,
+	const std::string& handleMetaValue,
+	OdDbEntityPtr pEntity)
+{
+	if (layerId.empty() || handleMetaValue.empty() || collector->hasMetadata(layerId)) return;
+
+	std::unordered_map<std::string, repo::lib::RepoVariant> meta, metadata;
+	meta["Entity Handle::Value"] = handleMetaValue;
+
+	if (!pEntity.isNull())
+	{
+		if (isProxyEntity(pEntity))
+		{
+			metadata = getProxyEntityMetadata(pEntity);
+		}
+		else
+		{
+			extractEntityProperties(pEntity, metadata);
+		}
+
+		addTinSurfaceComputedMetadata(pEntity, metadata);
+		removeDuplicateGeneralMetadata(metadata);
+
+		for (const auto& [key, value] : metadata)
+		{
+			meta[key] = value;
+		}
+	}
+
+	collector->setMetadata(layerId, meta);
 }
 void DataProcessorDwg::extractCivil3DStoredProperties(OdDbDictionaryPtr pDict, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
@@ -1398,25 +1554,20 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		stats.totalEntities++;
 		auto className = convertToStdString(pEntity->isA()->name());
 		stats.entityTypeCount[className]++;
-		/*
-		// ===== IDENTIFY AND INSPECT PROXY ENTITIES =====
 		if (isProxyEntity(pEntity))
 		{
 			stats.proxyEntities++;
-			//inspectProxyEntity(pEntity);
+			auto originalClass = getProxyOriginalClassName(pEntity);
+			stats.entityTypeCount["Proxy-" + originalClass]++;
+			if (originalClass.find("Aecc") != std::string::npos || originalClass.find("Civil") != std::string::npos)
+			{
+				stats.civil3dEntities++;
+			}
+			if (originalClass.find("AcPp") != std::string::npos || originalClass.find("Plant") != std::string::npos)
+			{
+				stats.plant3dEntities++;
+			}
 		}
-		else if (isCivil3DEntity(pEntity))
-		{
-			stats.civil3dEntities++;
-			repoWarning << "[CIVIL3D] " << className << " | Handle: "
-				<< convertToStdString(toString(pEntity->objectId().getHandle()));
-		}
-		else if (isPlant3DEntity(pEntity))
-		{
-			stats.plant3dEntities++;
-			repoWarning << "[PLANT3D] " << className << " | Handle: "
-				<< convertToStdString(toString(pEntity->objectId().getHandle()));
-		}*/
 
 		// As soon as we get an actual entity, cache the active Layout Id. This
 		// can be used to determine when we are back at the top level (out of a
@@ -1519,18 +1670,23 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	}
 
 	bool tinSurfaceProxy = !pEntity.isNull() && isTinSurfaceProxy(pEntity);
+	bool replayStoredProxyGraphics = !pEntity.isNull() && shouldReplayStoredProxyGraphics(pEntity);
 
 	collector->pushDrawContext(ctx.get());
 	bool ret = false;
-	if (tinSurfaceProxy)
+	if (replayStoredProxyGraphics)
 	{
 		bool previousTinSurfaceProxyCapture = capturingTinSurfaceProxy;
-		capturingTinSurfaceProxy = true;
-		tinSurfaceEdgeKeys.clear();
-		tinSurfaceTriangles.clear();
-		hasTinSurfaceFaceMaterial = false;
+		capturingTinSurfaceProxy = tinSurfaceProxy;
+		if (tinSurfaceProxy)
+		{
+			tinSurfaceEdgeKeys.clear();
+			tinSurfaceTriangles.clear();
+			hasTinSurfaceFaceMaterial = false;
+		}
+
 		ret = drawStoredProxyGraphics(pEntity);
-		if (!(ctx && ctx->hasMeshes()) && tinSurfaceTriangles.empty())
+		if (!(ctx && ctx->hasMeshes()) && (!tinSurfaceProxy || tinSurfaceTriangles.empty()))
 		{
 			ret = OdGsBaseMaterialView::doDraw(i, pDrawable) || ret;
 		}
@@ -1554,48 +1710,11 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		else
 		{
 			stats.entitiesWithoutGeometry++;
-
-
-			// ===== HANDLE MISSING GEOMETRY FROM CUSTOM ENTITIES =====
-			/*if (isProxyEntity(pEntity) || isCivil3DEntity(pEntity) || isPlant3DEntity(pEntity))
+			if (isProxyEntity(pEntity))
 			{
-				auto className = convertToStdString(pEntity->isA()->name());
-				auto handle = convertToStdString(toString(pEntity->objectId().getHandle()));
+				logProxyWithoutRenderableGeometry(pEntity, replayStoredProxyGraphics, ret);
+			}
 
-				repoError << "\n[NO GEOMETRY] " << className << " | Handle: " << handle;
-				repoError << "Attempting fallback strategies...";
-
-				// FALLBACK 1: Try explode
-				repoInfo << "[FALLBACK 1/2] Trying explode...";
-				std::vector<OdDbEntityPtr> explodedEntities;
-				if (tryExplodeEntity(pEntity, explodedEntities))
-				{
-					stats.explodedSuccessfully++;
-
-					for (auto& exploded : explodedEntities)
-					{
-						auto explodedCtx = collector->makeNewDrawContext();
-						collector->pushDrawContext(explodedCtx.get());
-						OdGsBaseMaterialView::doDraw(i, exploded.get());
-						collector->popDrawContext(explodedCtx.get());
-
-						if (explodedCtx && explodedCtx->hasMeshes())
-						{
-							auto meshes = explodedCtx->extractMeshes(collector->getLayerTransform(entityLayer.id).inverse());
-							collector->addMeshes(entityLayer.id, meshes);
-							stats.entitiesWithGeometry++;
-						}
-					}
-				}
-				else
-				{
-					stats.explodedFailed++;
-
-					// FALLBACK 2: Bounding box
-					repoInfo << "[FALLBACK 2/2] Using bounding box...";
-					extractBoundingBoxAsMesh(pEntity);
-				}
-			}*/
 		}
 	}
 
@@ -1616,6 +1735,7 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 			}
 
 			addTinSurfaceFaceLayers(parentLayer.id, entityLayer.id);
+			setEntityMetadata(parentLayer.id, handleMetaValue, pEntity);
 			tinSurfaceTriangles.clear();
 		}
 		else
@@ -1632,29 +1752,7 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 				collector->addMeshes(entityLayer.id, meshes);
 			}
 
-			if (!handleMetaValue.empty() && !collector->hasMetadata(entityLayer.id)) {
-				std::unordered_map<std::string, repo::lib::RepoVariant> meta, metadata;
-				meta["Entity Handle::Value"] = handleMetaValue;
-
-				// ===== ENHANCED METADATA FOR CUSTOM ENTITIES =====
-				if (!pEntity.isNull())
-				{
-					extractEntityProperties(pEntity, metadata);
-					//auto metadata = getCivil3DPlant3DMetadata(pEntity);
-					if (!metadata.empty())
-					{
-						repoInfo << "****************************Metadata****************************************";
-						// Display metadata
-						for (const auto& [key, value] : metadata)
-						{
-							meta[key] = value;
-							repoInfo << "  " << key << ": " << boost::apply_visitor(repo::lib::StringConversionVisitor(), value);
-						}
-					}
-				}
-
-				collector->setMetadata(entityLayer.id, meta);
-			}
+			setEntityMetadata(entityLayer.id, handleMetaValue, pEntity);
 		}
 	}
 	return ret;
