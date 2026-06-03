@@ -118,3 +118,9 @@ repo::lib::RepoRefMissingException::RepoRefMissingException(const std::string& m
 {
 	errorCode = REPOERR_FILE_REF_MISSING;
 }
+
+repo::lib::RepoFileUploadException::RepoFileUploadException(const std::string& msg)
+	: RepoException(msg)
+{
+	errorCode = REPOERR_UPLOAD_FAILED;
+}

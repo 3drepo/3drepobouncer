@@ -105,12 +105,7 @@ bool FileManager::uploadFileAndCommit(
 		{
 			delete fileContents;
 		}
-		std::string errMsg = e.what();
-		if (errMsg.find("create_directories: Access is denied") != std::string::npos) {
-			std::throw_with_nested(repo::lib::RepoImportException(REPOERR_UPLOAD_FAILED));
-			return false;
-		}
-		throw;
+		std::throw_with_nested(repo::lib::RepoFileUploadException("Failed to upload " + fileUUID.toString()));
 	}
 
 	if (success = !linkName.empty()) {
