@@ -74,11 +74,10 @@ repo::core::model::RepoScene* RepoController::fetchScene(
 	const std::string    &collection,
 	const std::string    &uuid,
 	const bool           &headRevision,
-	const bool           &ignoreRefScene,
 	const bool           &skeletonFetch,
 	const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus)
 {
-	return impl->fetchScene(token, database, collection, uuid, headRevision, ignoreRefScene, skeletonFetch, includeStatus);
+	return impl->fetchScene(token, database, collection, uuid, headRevision, skeletonFetch, includeStatus);
 }
 
 bool RepoController::generateAndCommitSelectionTree(
@@ -121,12 +120,6 @@ void RepoController::setLoggingLevel(const repo::lib::RepoLog::RepoLogLevel &lev
 void RepoController::logToFile(const std::string &filePath)
 {
 	impl->logToFile(filePath);
-}
-
-repo::core::model::RepoScene* RepoController::createFederatedScene(
-	const std::map<repo::core::model::ReferenceNode, std::string> &fedMap)
-{
-	return impl->createFederatedScene(fedMap);
 }
 
 bool RepoController::generateAndCommitRepoBundlesBuffer(

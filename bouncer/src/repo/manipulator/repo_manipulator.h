@@ -23,7 +23,6 @@
 #include <map>
 #include <string>
 
-#include "repo/core/model/bson/repo_node_reference.h"
 #include "repo/core/model/bson/repo_node_transformation.h"
 #include "repo/core/model/bson/repo_node_mesh.h"
 #include "repo/core/model/collection/repo_scene.h"
@@ -65,15 +64,7 @@ namespace repo {
 				const std::string                     &desc = "",
 				const repo::lib::RepoUUID             &revId = repo::lib::RepoUUID::createUUID(),
 				const modelutility::WebBufferConfig& config = {});
-
-			/**
-			* Create a federated scene with the given scene collections
-			* @param fedMap a map of reference scene and transformation from root where the scene should lie
-			* @return returns a constructed scene graph with the reference.
-			*/
-			repo::core::model::RepoScene* createFederatedScene(
-				const std::map<repo::core::model::ReferenceNode, std::string> &fedMap);
-
+			
 			/**
 			* Retrieve a RepoScene with a specific revision loaded.
 			* @param database the database the collection resides in
@@ -90,7 +81,6 @@ namespace repo {
 				const std::string                             &collection,
 				const repo::lib::RepoUUID                     &uuid,
 				const bool                                    &headRevision = false,
-				const bool                                    &ignoreRefScene = false,
 				const bool                                    &skeletonFetch = false,
 				const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus = {});
 
@@ -100,7 +90,6 @@ namespace repo {
 			*/
 			void fetchScene(
 				repo::core::model::RepoScene              *scene,
-				const bool                                &ignoreRefScene = false,
 				const bool                                &skeletonFetch = false);
 
 			/**

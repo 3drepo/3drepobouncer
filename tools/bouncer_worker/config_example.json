@@ -5,7 +5,6 @@
 	},
 	"rabbitmq":{
 		"host": "amqp://username:password@localhost:5672",
-		"worker_queue": "jobq",
 		"callback_queue": "callbackq",
 		"model_queue": "modelq",
 		"drawing_queue": "drawingq",

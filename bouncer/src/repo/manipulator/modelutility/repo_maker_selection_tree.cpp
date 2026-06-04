@@ -15,7 +15,6 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "repo_maker_selection_tree.h"
-#include "repo/core/model/bson/repo_node_reference.h"
 
 #define RAPIDJSON_HAS_STDSTRING 1
 
@@ -51,8 +50,6 @@ static std::string nodeTypeToString(repo::core::model::NodeType type)
 		return REPO_NODE_TYPE_MESH;
 	case repo::core::model::NodeType::TRANSFORMATION:
 		return REPO_NODE_TYPE_TRANSFORMATION;
-	case repo::core::model::NodeType::REFERENCE:
-		return REPO_NODE_TYPE_REFERENCE;
 	case repo::core::model::NodeType::METADATA:
 		return REPO_NODE_TYPE_METADATA;
 	case repo::core::model::NodeType::MATERIAL:
@@ -170,8 +167,6 @@ void SelectionTreeMaker::generateSelectionTrees()
 	projection.includeField(REPO_NODE_LABEL_SHARED_ID);
 	projection.includeField(REPO_NODE_LABEL_PARENTS);
 	projection.includeField(REPO_NODE_LABEL_TYPE);
-	projection.includeField(REPO_NODE_REFERENCE_LABEL_OWNER);
-	projection.includeField(REPO_NODE_REFERENCE_LABEL_PROJECT);
 
 	auto sceneCollection = scene->getProjectName() + "." + REPO_COLLECTION_SCENE;
 	auto cursor = handler->findCursorByCriteria(scene->getDatabaseName(), sceneCollection, filter, projection);
@@ -190,7 +185,6 @@ void SelectionTreeMaker::generateSelectionTrees()
 		switch (type) {
 		case repo::core::model::NodeType::MESH:
 		case repo::core::model::NodeType::TRANSFORMATION:
-		case repo::core::model::NodeType::REFERENCE:
 		{
 			SelectionTree::Node node;
 			node.type = type;
@@ -205,16 +199,9 @@ void SelectionTreeMaker::generateSelectionTrees()
 				uniqueIdToParentSharedId[node._id] = repo.getParentIDs()[0];
 			}
 
-			if (node.type == repo::core::model::NodeType::REFERENCE) {
-
-				// For reference nodes, communicate the endpoint via the name...
-				repo::core::model::ReferenceNode refNode(bson);
-				auto refDb = refNode.getDatabaseName();
-				node.name = (scene->getDatabaseName() == refDb ? "" : (refDb + "/")) + refNode.getProjectId();
-			}
-
 			trees.fullTree.nodes.push_back(node);
 		}
+
 		break;
 		case repo::core::model::NodeType::METADATA:
 		{

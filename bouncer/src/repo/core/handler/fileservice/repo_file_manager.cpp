@@ -95,7 +95,19 @@ bool FileManager::uploadFileAndCommit(
 		break;
 	}
 
-	auto linkName = fsHandler->uploadFile(databaseName, collectionNamePrefix, fileUUID.toString(), *fileContents);
+	std::string linkName;
+	try {
+		linkName = fsHandler->uploadFile(databaseName, collectionNamePrefix, fileUUID.toString(), *fileContents);
+	}
+	catch (const std::exception& e)
+	{
+		if (fileContents != &bin)
+		{
+			delete fileContents;
+		}
+		std::throw_with_nested(repo::lib::RepoFileUploadException("Failed to upload " + fileUUID.toString()));
+	}
+
 	if (success = !linkName.empty()) {
 		success = upsertFileRef(
 			databaseName,

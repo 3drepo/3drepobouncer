@@ -27,7 +27,6 @@ const Config = {};
 const rabbitmq = object({
 	host: string().required(),
 	sharedDir: string().required(),
-	worker_queue: string().default('jobq'),
 	callback_queue: string().default('callbackq'),
 	model_queue: string().default('modelq'),
 	drawing_queue: string().default('drawingq'),

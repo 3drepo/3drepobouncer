@@ -89,45 +89,6 @@ void RepoManipulator::connectAndAuthenticateWithAdmin(
 	dbHandler->testConnection();
 }
 
-repo::core::model::RepoScene* RepoManipulator::createFederatedScene(
-	const std::map<repo::core::model::ReferenceNode, std::string>& fedMap)
-{
-	repo::core::model::RepoNodeSet transNodes;
-	repo::core::model::RepoNodeSet refNodes;
-	repo::core::model::RepoNodeSet emptySet;
-
-	auto rootNode = new repo::core::model::TransformationNode(
-		repo::core::model::RepoBSONFactory::makeTransformationNode(
-			repo::lib::RepoMatrix(), "Federation"));
-
-	transNodes.insert(rootNode);
-
-	std::map<std::string, repo::core::model::TransformationNode*> groupNameToNode;
-
-	for (const auto& pair : fedMap)
-	{
-		auto parentNode = rootNode;
-		if (!pair.second.empty()) {
-			if (groupNameToNode.find(pair.second) == groupNameToNode.end()) {
-				groupNameToNode[pair.second] = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode(
-					repo::lib::RepoMatrix(), pair.second, { rootNode->getSharedID() }));
-				transNodes.insert(groupNameToNode[pair.second]);
-			}
-
-			parentNode = groupNameToNode[pair.second];
-		}
-
-		auto copy = new repo::core::model::ReferenceNode(pair.first);
-		copy->addParent(parentNode->getSharedID());
-		refNodes.insert(copy);
-	}
-	//federate scene has no referenced files
-	repo::core::model::RepoScene* scene =
-		new repo::core::model::RepoScene({}, emptySet, emptySet, emptySet, emptySet, emptySet, transNodes, refNodes);
-
-	return scene;
-}
-
 uint8_t RepoManipulator::commitScene(
 	const std::string& user,
 	repo::core::model::RepoScene* scene,
@@ -159,17 +120,15 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 	const std::string& project,
 	const repo::lib::RepoUUID& uuid,
 	const bool& headRevision,
-	const bool& ignoreRefScene,
 	const bool& skeletonFetch,
 	const std::vector<repo::core::model::ModelRevisionNode::UploadStatus>& includeStatus)
 {
 	modelutility::SceneManager sceneManager;
-	return sceneManager.fetchScene(dbHandler.get(), database, project, uuid, headRevision, ignoreRefScene, skeletonFetch, includeStatus);
+	return sceneManager.fetchScene(dbHandler.get(), database, project, uuid, headRevision, skeletonFetch, includeStatus);
 }
 
 void RepoManipulator::fetchScene(
 	repo::core::model::RepoScene* scene,
-	const bool& ignoreRefScene,
 	const bool& skeletonFetch)
 {
 	modelutility::SceneManager sceneManager;

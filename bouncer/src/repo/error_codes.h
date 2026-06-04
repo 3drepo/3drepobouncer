@@ -33,8 +33,8 @@
 #define REPOERR_LOAD_SCENE_MISSING_TEXTURE 7
 //invalid arguments to function
 #define REPOERR_INVALID_ARG 8
-//failed to generate federation
-#define REPOERR_FED_GEN_FAIL 9
+//9 was used for Federations
+
 //Scene uploaded but missing some nodes
 #define REPOERR_LOAD_SCENE_MISSING_NODES 10
 //Failed to get file from project
