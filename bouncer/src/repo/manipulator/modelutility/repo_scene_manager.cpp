@@ -60,6 +60,7 @@ uint8_t SceneManager::commitScene(
 				{
 					repoError << "failed to commit selection tree";
 					success = false;
+					return REPOERR_BUNDLE_GEN_FAILED;
 				}
 
 				repoInfo << "Generating Repo Bundles...";
@@ -71,6 +72,7 @@ uint8_t SceneManager::commitScene(
 				{
 					repoError << "failed to commit repo bundles";
 					success = false;
+					return REPOERR_BUNDLE_GEN_FAILED;
 				}
 
 				errCode = REPOERR_OK;
