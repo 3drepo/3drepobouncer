@@ -1,10 +1,27 @@
 name: Deploy Bouncer to Staging
 
 on:
-  workflow_run:
-    workflows: ["Build and Push Bouncer"]
-    types: [completed]
-    branches: [staging]
+  workflow_call:
+    inputs:
+      image_tag:
+        description: "Image tag to deploy."
+        required: true
+        type: string
+      build_id:
+        description: "Build workflow run ID to annotate pods with."
+        required: true
+        type: string
+    secrets:
+      KUBE_CONFIG_STAGING:
+        required: true
+      PROJ_MANAGEMENT_TOKEN:
+        required: true
+      REGISTRY_LOGIN_SERVER:
+        required: true
+      REGISTRY_TOKEN:
+        required: true
+      REGISTRY_USERNAME:
+        required: true
 
 permissions:
   contents: read
@@ -13,16 +30,16 @@ concurrency:
   group: deploy-staging
   cancel-in-progress: false
 
-# Update HELM_CHART_VERSION here when the bouncer helm chart is bumped in DevOps.
-# IMAGE_TAG is derived from the branch name of the triggering build
+# Update HELM_CHART_VERSION when the bouncer chart is bumped in DevOps.
+# IMAGE_TAG is passed by the build workflow
 
 env:
   HELM_CHART_VERSION: '5.23.0'
-  IMAGE_TAG: ${{ github.event.workflow_run.head_branch }}
+  IMAGE_TAG: ${{ inputs.image_tag }}
+  BUILD_ID: ${{ inputs.build_id }}
 
 jobs:
   deploy:
-    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
 
     steps:
@@ -75,7 +92,7 @@ jobs:
             -f deployments/asite-stg/helm/bouncer/values.yaml \
             --set image.tag=${{ env.IMAGE_TAG }} \
             --set rollingupdate.enabled=true \
-            --set-string podAnnotations.buildId=${{ github.event.workflow_run.id }} \
+            --set-string podAnnotations.buildId=${{ env.BUILD_ID }} \
             --wait \
             --rollback-on-failure
 
