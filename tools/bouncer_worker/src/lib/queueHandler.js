@@ -209,9 +209,6 @@ QueueHandler.connectToQueue = async (specificQueue) => {
 QueueHandler.runNTasks = async (queueType, nTasks) => {
 	const queueName = getQueueName(queueType);
 	const handler = queueHandlers[queueName];
-	if (!handler.validateConfiguration(logLabel)) {
-		exitApplication();
-	}
 	connectToRabbitMQ(false, (conn) => executeTasks(conn, queueName, nTasks, handler.onMessageReceived));
 };
 
