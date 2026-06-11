@@ -17,7 +17,7 @@ concurrency:
 # IMAGE_TAG is derived from the branch name of the triggering build
 
 env:
-  HELM_CHART_VERSION: '5.22.2'
+  HELM_CHART_VERSION: '5.23.0'
   IMAGE_TAG: ${{ github.event.workflow_run.head_branch }}
 
 jobs:
