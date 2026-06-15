@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       build_id:
-        description: "Build workflow run ID to annotate pods with."
+        description: "Commit SHA to annotate pods with."
         required: true
         type: string
 

@@ -15,7 +15,7 @@ permissions:
 
 concurrency:
   group: build-${{ github.event_name }}-${{ github.event_name == 'issue_comment' && github.event.issue.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/staging' }}
 
 jobs:
   pre-build:
@@ -141,8 +141,8 @@ jobs:
       - pre-build
       - build-push
     if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
-    uses: ./.github/workflows/deploy.yml
+    uses: ./.github/workflows/_deploy.yml
     with:
       image_tag: ${{ needs.pre-build.outputs.version }}
-      build_id: ${{ github.run_id }}
+      build_id: ${{ github.sha }}
     secrets: inherit
