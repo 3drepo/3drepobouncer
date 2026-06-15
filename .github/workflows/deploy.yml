@@ -11,17 +11,6 @@ on:
         description: "Build workflow run ID to annotate pods with."
         required: true
         type: string
-    secrets:
-      KUBE_CONFIG_STAGING:
-        required: true
-      PROJ_MANAGEMENT_TOKEN:
-        required: true
-      REGISTRY_LOGIN_SERVER:
-        required: true
-      REGISTRY_TOKEN:
-        required: true
-      REGISTRY_USERNAME:
-        required: true
 
 permissions:
   contents: read
