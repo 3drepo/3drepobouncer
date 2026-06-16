@@ -99,7 +99,7 @@ jobs:
 
           if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
             VERSION="${GITHUB_REF##*/}"
-            CHECKOUT_REF="${GITHUB_REF}"
+            CHECKOUT_REF="${GITHUB_SHA}"
           elif [[ "${GITHUB_EVENT_NAME}" == "issue_comment" ]]; then
             # For PR comments, we need to get the PR branch name for the version tag
             ISSUE_NUMBER=$(jq -r .issue.number < "$GITHUB_EVENT_PATH")
