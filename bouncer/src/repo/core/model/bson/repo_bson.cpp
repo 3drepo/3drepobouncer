@@ -322,7 +322,6 @@ repo::core::model::RepoBSON RepoBSON::getBinaryReference() const
 		RepoBSON extRefbson = getObjectField(REPO_LABEL_BINARY_REFERENCE);
 		return extRefbson.getObjectField(REPO_LABEL_BINARY_BUFFER);
 	}
-
 	return res;
 }
 
@@ -342,6 +341,24 @@ void RepoBSON::initBinaryBuffer(const std::vector<uint8_t> &buffer)
 			bigFiles[elem] = std::vector<uint8_t>(buffer.begin() + start, buffer.begin() + start + size);
 		}
 	}
+}
+
+size_t RepoBSON::getBinaryBufferSize() const
+{
+	size_t size = 0;
+	if (hasField(REPO_LABEL_BINARY_REFERENCE))
+	{
+		RepoBSON extRefbson = getObjectField(REPO_LABEL_BINARY_REFERENCE);
+
+		auto elemRefs = extRefbson.getObjectField(REPO_LABEL_BINARY_ELEMENTS);
+		for (const auto& elem : elemRefs.getFieldNames()) {
+			auto elemRefBson = elemRefs.getObjectField(elem);
+			size_t elemstart = elemRefBson.getLongField(REPO_LABEL_BINARY_START);
+			size_t elemSize = elemRefBson.getLongField(REPO_LABEL_BINARY_SIZE);
+			size = std::max(size, elemstart + elemSize);
+		}
+	}
+	return size;
 }
 
 bool RepoBSON::hasBinField(const std::string &label) const

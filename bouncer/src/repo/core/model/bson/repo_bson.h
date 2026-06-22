@@ -231,6 +231,7 @@ namespace repo {
 
 				repo::core::model::RepoBSON getBinaryReference() const;
 				void initBinaryBuffer(const std::vector<uint8_t> &buffer);
+				size_t getBinaryBufferSize() const;
 
 				bool hasFileReference() const;
 

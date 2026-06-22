@@ -56,6 +56,22 @@ const bouncer = object({
 	log_dir: string(),
 });
 
+const db = object({
+	username: string().required(),
+	password: string().required(),
+	connectionString: string().optional(),
+	dbhost: string().when('connectionString', {
+		is: (connectionString) => !connectionString,
+		then: (schema) => schema.required(),
+		otherwise: (schema) => schema.optional(),
+	}),
+	dbport: string().when('connectionString', {
+		is: (connectionString) => !connectionString,
+		then: (schema) => schema.required(),
+		otherwise: (schema) => schema.optional(),
+	}),
+});
+
 const elastic = object({
 	cloud: object({
 		id: string().required(),
@@ -98,6 +114,7 @@ const schema = object({
 	processMonitoring,
 	bouncer,
 	elastic,
+	db,
 });
 
 // eslint-disable-next-line consistent-return

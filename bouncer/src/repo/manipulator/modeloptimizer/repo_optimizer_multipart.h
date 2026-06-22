@@ -73,6 +73,8 @@ namespace repo {
 					repo::core::handler::database::query::RepoQuery filter;
 					repo::lib::RepoUUID texId;
 
+					bool isOpaque;
+
 					bool isTexturedJob() const {
 						return !texId.isDefaultValue();
 					}

@@ -88,6 +88,14 @@ RepoAssets::operator RepoBSON() const
 	if (metadataNodes.size())
 		builder.appendArray(REPO_ASSETS_LABEL_METADATA, metadataNodes);
 
+	// This magic number exists only on the 782 bouncer build. It indicates to the
+	// viewer that these bundles have been rebuilt and so the cache is invalid.
+	// As bouncer worker is currently written, a rebuild can never take place more
+	// than once per revision, so it is safe to put a constant here.
+	// This bouncer build should never be connected to a queue.
+
+	builder.append("version", 1);
+
 	return builder.obj();
 }
 

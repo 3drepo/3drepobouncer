@@ -28,10 +28,10 @@ namespace repo {
 			namespace fileservice {
 				class DataRef {
 					friend class BlobFilesHandler;
-				private:
+				public:
 					const std::string fileName;
 					const int64_t startPos;
-					const int64_t size;
+					int64_t size;
 				public:
 					DataRef(const std::string &fileName, const int64_t &startPos, const int64_t &size)
 						: fileName(fileName), startPos(startPos), size(size) {}

@@ -15,16 +15,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-const { exitAfter, queue } = require('../lib/processParams');
+const { exitAfter, queue, migrateUnityBundles } = require('../lib/processParams');
 const { exitApplication } = require('../lib/utils');
 const { connectToQueue, runNTasks } = require('../lib/queueHandler');
 const { testClient } = require('../tasks/bouncerClient');
 const { testImageClient } = require('../tasks/imageProcessing');
 const logger = require('../lib/logger');
+const { runUnityBundleMigration } = require('../migration/migrateUnityBundles');
 
 const startBouncerWorker = async () => {
 	try {
 		await testClient();
+
+		if (migrateUnityBundles !== undefined) {
+			await runUnityBundleMigration(migrateUnityBundles);
+			return; // Migration is a one-shot job
+		}
+
 		if (!queue || queue === 'drawing') {
 			await testImageClient();
 		}

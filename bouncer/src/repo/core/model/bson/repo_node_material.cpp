@@ -27,12 +27,14 @@ using namespace repo::core::model;
 MaterialNode::MaterialNode() :
 RepoNode()
 {
+	texId = repo::lib::RepoUUID::defaultValue;
 }
 
 MaterialNode::MaterialNode(RepoBSON bson) :
 RepoNode(bson)
 {
 	deserialise(bson);
+	texId = repo::lib::RepoUUID::defaultValue;
 }
 
 MaterialNode::~MaterialNode()

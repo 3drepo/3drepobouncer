@@ -166,6 +166,8 @@ namespace repo {
 				const std::vector<repo::lib::RepoVector3D>& getLoadedNormals();
 
 				const std::vector<std::vector<repo::lib::RepoVector2D>>& getLoadedUVChannelsSeparated();
+
+				void recalculateBounds();
 			};
 		}
 	}
