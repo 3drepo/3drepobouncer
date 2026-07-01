@@ -85,7 +85,8 @@ uint8_t RepoController::_RepoControllerImpl::commitScene(
 	const std::string                   &owner,
 	const std::string                      &tag,
 	const std::string                      &desc,
-	const repo::lib::RepoUUID           &revId)
+	const repo::lib::RepoUUID           &revId,
+	const repo::manipulator::modelutility::WebBufferConfig& config)
 {
 	uint8_t errCode = REPOERR_UNKNOWN_ERR;
 	if (scene)
@@ -101,7 +102,8 @@ uint8_t RepoController::_RepoControllerImpl::commitScene(
 					owner.empty() ? "ANONYMOUS USER" : owner,
 					tag,
 					desc,
-					revId);
+					revId,
+					config);
 				workerPool.push(worker);
 			}
 			else
@@ -127,7 +129,6 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::fetchScene(
 	const std::string    &collection,
 	const std::string    &uuid,
 	const bool           &headRevision,
-	const bool           &ignoreRefScene,
 	const bool           &skeletonFetch,
 	const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus)
 {
@@ -137,7 +138,7 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::fetchScene(
 		manipulator::RepoManipulator* worker = workerPool.pop();
 
 		scene = worker->fetchScene(
-			database, collection, repo::lib::RepoUUID(uuid), headRevision, ignoreRefScene, skeletonFetch, includeStatus);
+			database, collection, repo::lib::RepoUUID(uuid), headRevision, skeletonFetch, includeStatus);
 
 		workerPool.push(worker);
 	}
@@ -248,33 +249,17 @@ void RepoController::_RepoControllerImpl::subscribeToLogger(
 	repo::lib::RepoLog::getInstance().subscribeListeners(listeners);
 }
 
-repo::core::model::RepoScene* RepoController::_RepoControllerImpl::createFederatedScene(
-	const std::map<repo::core::model::ReferenceNode, std::string> &fedMap)
-{
-	repo::core::model::RepoScene* scene = nullptr;
-	if (fedMap.size() > 0)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		scene = worker->createFederatedScene(fedMap);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to federate a new scene graph with no references!";
-	}
-
-	return scene;
-}
 
 bool RepoController::_RepoControllerImpl::generateAndCommitRepoBundlesBuffer(
 	const RepoController::RepoToken* token,
-	repo::core::model::RepoScene* scene)
+	repo::core::model::RepoScene* scene,
+	const repo::manipulator::modelutility::WebBufferConfig& config)
 {
 	bool success;
 	if (success = token && scene)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		success = worker->generateAndCommitRepoBundlesBuffer(scene);
+		success = worker->generateAndCommitRepoBundlesBuffer(scene, config);
 		workerPool.push(worker);
 	}
 	else
@@ -381,6 +366,15 @@ RepoController::_RepoControllerImpl::processDrawingRevision(
 {
 	manipulator::RepoManipulator* worker = workerPool.pop();
 	worker->processDrawingRevision(teamspace, revision, err, imagePath);
+	workerPool.push(worker);
+}
+
+void RepoController::_RepoControllerImpl::performClashDetection(
+	const RepoController::RepoToken* token,
+	const repo::manipulator::modelutility::ClashDetectionConfig& config)
+{
+	manipulator::RepoManipulator* worker = workerPool.pop();
+	worker->performClashDetection(config);
 	workerPool.push(worker);
 }
 

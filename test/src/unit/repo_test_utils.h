@@ -77,7 +77,7 @@ namespace testing {
 
 	tm getRandomTm();
 
-	repo::lib::RepoVector3D makeRepoVector();
+	repo::lib::RepoVector3D makeRandomRepoVector();
 
 	std::vector<uint8_t> makeRandomBinary(size_t size = 1000);
 
@@ -85,6 +85,8 @@ namespace testing {
 		int seed,
 		size_t numBinFiles,
 		size_t binFileSize = 1000);
+
+	repo::core::model::RepoBSON makeProjectSettings(const std::string& id);
 
 	// Returns a UUID that is a function of the random seed. If the seed is reset
 	// with resetRand(), the sequence will restart.
@@ -123,10 +125,6 @@ namespace testing {
 		const std::string& file,
 		const std::string& database,
 		const std::string& project);
-
-	std::string produceCreateFedArgs(
-		const std::string& file,
-		const std::string& owner = std::string());
 
 	std::string produceUploadFileArgs(
 		const std::string& filePath);

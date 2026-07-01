@@ -37,25 +37,35 @@
 namespace repo {
 	namespace manipulator {
 		namespace modeloptimizer {
+
+			// The vertex count is used as a rough approximation of the total geometry size.
+			// This figure is empirically set to end up with an average bundle size of 24 Mb.
+			#define REPO_MP_MAX_VERTEX_COUNT 1200000
+
 			class MultipartOptimizer
 			{
-				
 				typedef float Scalar;
 				typedef bvh::Bvh<Scalar> Bvh;
 				typedef bvh::Vector3<Scalar> BvhVector3;
 
+				repo::core::handler::AbstractDatabaseHandler* handler;
+				repo::manipulator::modelconvertor::AbstractModelExport* exporter;
+
 			public:
-				
-				bool processScene(
-					std::string database,
-					std::string collection,
-					repo::lib::RepoUUID revId,
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					repo::manipulator::modelconvertor::AbstractModelExport *exporter
+				MultipartOptimizer(
+					repo::core::handler::AbstractDatabaseHandler* handler,
+					repo::manipulator::modelconvertor::AbstractModelExport* exporter,
+					bool splitByFloor = false
 				);
 
+				void processScene(
+					std::string database,
+					std::string collection,
+					repo::lib::RepoUUID revId
+				);
 
 			private:
+				bool splitByFloor;
 
 				/**
 				* Represents a batched set of geometry.
@@ -76,14 +86,34 @@ namespace repo {
 					bool isTexturedJob() const {
 						return !texId.isDefaultValue();
 					}
-				};							
-				
+				};
+
+				struct BranchGroup {
+					std::string name; // The tag that gets associated with any supermeshes
+				};
+
+				/*
+				* Contains the baked transformation information, i.e. the final conditions
+				* of the Transformation just above a MeshNode.
+				*/
+				struct TransformInfo {
+					repo::lib::RepoMatrix matrix;
+					BranchGroup* branch = nullptr;
+				};
 
 				typedef std::unordered_map <repo::lib::RepoUUID, std::shared_ptr<repo::core::model::MaterialNode>, repo::lib::RepoUUIDHasher> MaterialPropMap;
-				typedef std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> TransformMap;
+				typedef std::unordered_map<repo::lib::RepoUUID, TransformInfo, repo::lib::RepoUUIDHasher> TransformMap;
 
-				std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> getAllTransforms(
-					repo::core::handler::AbstractDatabaseHandler *handler,
+				std::vector<std::unique_ptr<BranchGroup>> branchGroups;
+
+				/*
+				* Creates a new branch group with the given name. This will be cleaned up
+				* automatically when the optimizer is destroyed. This will not check for
+				* duplicates.
+				*/
+				BranchGroup* createBranchGroup(const std::string& name);
+
+				TransformMap getAllTransforms(
 					const std::string &database,
 					const std::string &collection,
 					const repo::lib::RepoUUID &revId
@@ -92,44 +122,40 @@ namespace repo {
 				void traverseTransformTree(
 					const repo::core::model::RepoBSON &root,
 					const std::unordered_map<repo::lib::RepoUUID, std::vector<repo::core::model::RepoBSON>, repo::lib::RepoUUIDHasher> &childNodeMap,
-					std::unordered_map<repo::lib::RepoUUID,	repo::lib::RepoMatrix, repo::lib::RepoUUIDHasher> &transforms);
+					TransformMap &transforms);
+
+				/*
+				* Uses metadata queries to find branching groups, and apply them to the
+				* transform map. Currently the metadata queries are static.
+				*/
+				void applyBranchGroups(
+					TransformMap& transforms, 
+					const std::string& database,
+					const std::string& collection, 
+					const repo::lib::RepoUUID &revId);
 
 				MaterialPropMap getAllMaterials(
-					repo::core::handler::AbstractDatabaseHandler *handler,
 					const std::string &database,
 					const std::string &collection,
 					const repo::lib::RepoUUID &revId
 				);
 
-				std::set<std::string> getAllGroupings(
-					repo::core::handler::AbstractDatabaseHandler* handler,
-					const std::string& database,
-					const std::string& collection,
-					const repo::lib::RepoUUID& revId
-				);
-
 				std::vector < repo::lib::RepoUUID> getAllTextureIds(
-					repo::core::handler::AbstractDatabaseHandler *handler,
 					const std::string &database,
 					const std::string &collection,
-					const repo::lib::RepoUUID &revId,
-					const std::string& grouping
+					const repo::lib::RepoUUID &revId
 				);
 
 				ProcessingJob createUntexturedJob(
-					const std::string &description,
 					const repo::lib::RepoUUID &revId,
 					const int primitive,
-					const std::string &grouping,
 					const bool isOpaque,
 					const bool hasNormals
 				);
 
 				ProcessingJob createTexturedJob(
-					const std::string &description,
 					const repo::lib::RepoUUID &revId,
 					const int primitive,
-					const std::string &grouping,
 					const bool hasNormals,
 					const repo::lib::RepoUUID &texId
 				);
@@ -137,8 +163,6 @@ namespace repo {
 				void clusterAndSupermesh(
 					const std::string &database,
 					const std::string &collection,
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					repo::manipulator::modelconvertor::AbstractModelExport *exporter,
 					const TransformMap& transformMap,
 					const MaterialPropMap& matPropMap,
 					const ProcessingJob &job
@@ -147,18 +171,17 @@ namespace repo {
 				void createSuperMeshes(
 					const std::string &database,
 					const std::string &collection,
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					repo::manipulator::modelconvertor::AbstractModelExport *exporter,
 					const TransformMap& transformMap,
 					const MaterialPropMap& matPropMap,
 					std::vector<repo::core::model::StreamingMeshNode>& meshNodes,
 					const std::vector<std::vector<int>>& clusters,
-					const repo::lib::RepoUUID &texId
+					const repo::lib::RepoUUID &texId,
+					const std::string& namedGrouping
 				);
 
 				void createSuperMesh(
-					repo::manipulator::modelconvertor::AbstractModelExport *exporter,
-					const mapped_mesh_t& mappedMesh
+					const mapped_mesh_t& mappedMesh,
+					const std::string& tag
 				);
 
 				void appendMesh(					
@@ -183,22 +206,6 @@ namespace repo {
 					size_t head
 				);
 
-				std::vector<std::set<uint32_t>> getUniqueVertices(
-					const Bvh& bvh,
-					const std::vector<repo::lib::repo_face_t>& primitives // The primitives in this tree are faces
-				);
-
-				/*
-				* Splits a MeshNode into a set of mapped_mesh_ts based on face location, so
-				* each mapped_mesh_t has a vertex count below a certain size.
-				*/
-				void splitMesh(
-					repo::core::model::StreamingMeshNode &node,
-					repo::manipulator::modelconvertor::AbstractModelExport *exporter,
-					const MaterialPropMap &matPropMap,
-					const repo::lib::RepoUUID &texId
-				);
-
 				/*
 				* Turns a mapped_mesh_t into a MeshNode that can be added to the database
 				*/
@@ -206,6 +213,55 @@ namespace repo {
 					const mapped_mesh_t &mapped
 				);
 
+				/*
+				* Splits a MeshNode into a set of mapped_mesh_ts based on face location, so
+				* each mapped_mesh_t has a vertex count below a certain size.
+				*
+				* To split the mesh in a memory efficient way, we use an advancing front approach together
+				* with some efficient use of pointer.
+				*
+				* First, a BVH for the faces is build. Then the tree is flattened so that we have the leaves
+				* and all branch nodes separately. The branch nodes will be in top-down order.
+
+				* The front is represented as two vectors of unique pointers. Both have the same length as the
+				* number of nodes in the bvh and are linked to them by their index (i.e. field i in the vector
+				* belongs to node i in the tree). The unique pointers are typed for sets for the vertex indices
+				* and for vectors for the primitive indices (the faces).
+				* They are both initially holding only nullptrs and will only ever hold valid pointers for the
+				* nodes currently relevant to the front. This allows to only hold the data that is really needed
+				* in memory at any time.
+				*
+				* First, the leaves are processed. For each, the unique vertex indices and the face indices are
+				* collected, the sets and vectors created, and the pointers to these attached to the front.
+				*
+				* Then, the branch nodes are traversed in reverse order. This order ensures that for each node
+				* that the processing reaches, the two children have been processed previously.
+				* At reaching a branch node, the state of their children is checked, their unique vertex indexes
+				* merged, and their count checked against the threshold.
+				* If the threshold is passed, the children are "cut off" i.e. processed to super meshes and written
+				* out.
+				* If the threshold is not passed, the new set and vector are attached to the current node and the
+				* sets/vectors of the children are deleted and the memory associated with it released.
+				* Nodes that have only one child are handled by moving the pointers to the parent without a copy.
+				*
+				* At reaching the end, it is possible to have vertices "left over" that come from branches that
+				* never exceeded the threshold. They are then gathered in one last super mesh.
+				*/
+				void splitMesh(
+					repo::core::model::StreamingMeshNode& node,
+					const MaterialPropMap& matPropMap,
+					const repo::lib::RepoUUID& texId,
+					const std::string& namedGrouping
+				);
+
+				void createSupermeshFromBranch(
+					repo::core::model::StreamingMeshNode& node,
+					const MaterialPropMap& matPropMap,
+					const repo::lib::RepoUUID& texId,
+					std::set<uint32_t>* globalVertexIndices,
+					std::vector<uint32_t>* primitives,
+					const std::string& namedGrouping
+				);
 
 				/**
 				* Groups the MeshNodes into sets based on their location and

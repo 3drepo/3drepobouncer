@@ -1,8 +1,8 @@
 {
   "name": "3drepobouncerWorker",
-  "version": "5.22.2",
+  "version": "5.23.1",
   "engines": {
-    "node": "22.x.x"
+    "node": "24.x.x"
   },
   "private": true,
   "scripts": {

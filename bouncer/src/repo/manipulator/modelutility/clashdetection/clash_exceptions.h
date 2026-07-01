@@ -1,0 +1,119 @@
+/**
+*  Copyright (C) 2025 3D Repo Ltd
+*
+*  This program is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU Affero General Public License as
+*  published by the Free Software Foundation, either version 3 of the
+*  License, or (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU Affero General Public License for more details.
+*
+*  You should have received a copy of the GNU Affero General Public License
+*  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+
+#include <exception>
+#include <string>
+#include <memory>
+#include <variant>
+#include <set>
+
+#include <repo/lib/datastructure/repo_container.h>
+
+namespace repo {
+	namespace manipulator {
+		namespace modelutility {
+			namespace clash {
+
+				struct ClashDetectionException : std::runtime_error
+				{
+					// For simplicitly, we'd like to pass the actual exception object which
+					// already has all the information to the report, however the thrown
+					// object may go out of scope before we're done with it, so this virtual
+					// method allows each exception to copy itself, preserving its data when
+					// handled by logic only written to deal with the base class.
+
+					virtual std::shared_ptr<ClashDetectionException> clone() const = 0;
+					~ClashDetectionException() = default;
+
+					virtual std::string toJson() const = 0;
+
+					ClashDetectionException()
+					: std::runtime_error("ClashDetectionException")
+					{
+					}
+				};
+
+				struct ValidationException : public ClashDetectionException {
+				};
+
+				/*
+				* Thrown when a mesh is encountered that contains geometry with a local
+				* position greater than MESH_LIMIT in any direction.
+				*/
+				struct MeshBoundsException : public ValidationException
+				{
+					MeshBoundsException(const repo::lib::Container& container, 
+						const repo::lib::RepoUUID& uniqueId);
+
+					repo::lib::Container container;
+					repo::lib::RepoUUID uniqueId;
+
+					virtual std::shared_ptr<ClashDetectionException> clone() const override;
+					virtual std::string toJson() const override;
+				};
+
+				/*
+				* Thrown when a transformation is encountered that when applied to a mesh
+				* would place any vertex of that mesh beyond MESH_LIMIT locally, or
+				* TRANSLATION_LIMIT globally.
+				*/
+				struct TransformBoundsException : public ValidationException
+				{
+					TransformBoundsException(const repo::lib::Container& container, 
+						const repo::lib::RepoUUID& uniqueId);
+
+					repo::lib::Container container;
+					repo::lib::RepoUUID uniqueId;
+
+					virtual std::shared_ptr<ClashDetectionException> clone() const override;
+					virtual std::string toJson() const override;
+				};
+
+				/*
+				* Thrown when a MeshNode appears in more than one Composite Object.
+				*/
+				struct DuplicateMeshIdsException : public ValidationException {
+					DuplicateMeshIdsException(const repo::lib::RepoUUID& uniqueId);
+
+					repo::lib::RepoUUID uniqueId;
+
+					virtual std::shared_ptr<ClashDetectionException> clone() const override;
+					virtual std::string toJson() const override;
+				};
+
+				/*
+				* Thrown when a test has failed because it is degenerate. Contains the unique
+				* Id of the MeshNode that the failed test was attempting to run on.
+				*/
+				struct DegenerateTestException : public ClashDetectionException {
+					DegenerateTestException(const repo::lib::RepoUUID& compositeIdA,
+						const repo::lib::RepoUUID& compositeIdB,
+						const char* what);
+
+					repo::lib::RepoUUID compositeIdA;
+					repo::lib::RepoUUID compositeIdB;
+					std::string message;
+
+					virtual std::shared_ptr<ClashDetectionException> clone() const override;
+					virtual std::string toJson() const override;
+				};
+			}
+		}
+	}
+}

@@ -23,7 +23,7 @@
 #include "repo_model_import_3drepo.h"
 #include "repo_model_import_oda.h"
 #include "repo_model_import_synchro.h"
-#include "repo_model_units.h"
+#include "repo/lib/repo_units.h"
 #include <repo/core/handler/repo_database_handler_abstract.h>
 #include <repo/core/handler/database/repo_query.h>
 #include <repo/core/model/bson/repo_bson.h>
@@ -31,6 +31,7 @@
 #include <filesystem>
 
 using namespace repo::manipulator::modelconvertor;
+using namespace repo::lib;
 
 repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 	const std::string &file,
@@ -59,11 +60,11 @@ repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 		auto fileUnits = modelConvertor->getUnits();
 		auto targetUnits = config.getTargetUnits();
 
-		auto unitsScale = determineScaleFactor(fileUnits, targetUnits);
-		repoInfo << "File units: " << toUnitsString(fileUnits) << "\tTarget units: " << toUnitsString(targetUnits);
+		auto unitsScale = units::determineScaleFactor(fileUnits, targetUnits);
+		repoInfo << "File units: " << units::toUnitsString(fileUnits) << "\tTarget units: " << units::toUnitsString(targetUnits);
 
 		if (unitsScale != 1.0) {
-			repoInfo << "Applying scaling factor of " << unitsScale << " to convert " << toUnitsString(fileUnits) << " to " << toUnitsString(targetUnits);
+			repoInfo << "Applying scaling factor of " << unitsScale << " to convert " << units::toUnitsString(fileUnits) << " to " << units::toUnitsString(targetUnits);
 			scene->applyScaleFactor(unitsScale);
 		}
 

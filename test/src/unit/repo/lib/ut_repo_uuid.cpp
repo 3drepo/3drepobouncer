@@ -19,6 +19,10 @@
 #include <sstream>
 #include <repo/lib/datastructure/repo_uuid.h>
 #include <gtest/gtest.h>
+#include <unordered_set>
+#include <thread>
+#include <mutex>
+#include <atomic>
 
 #include <repo/core/model/bson/repo_bson_builder.h>
 #include <boost/uuid/uuid_generators.hpp>
@@ -284,5 +288,53 @@ TEST(RepoUUIDTest, gteOperatorTest)
 	{
 		EXPECT_TRUE(fromGenB >= fromGenA);
 	}
+}
 
+TEST(RepoUUIDTest, multithreadingCollisionTest)
+{
+	int numThreads = 20;
+	int numSamplesPerThread = 100000;
+
+	std::mutex setMutex;
+	std::unordered_set<RepoUUID, RepoUUIDHasher> set;
+	
+	std::atomic_bool collision { false };
+
+	auto threadBehaviour = [&]
+		{
+			for (int i = 0; i < numSamplesPerThread; i++)
+			{
+				// All threads abort once the first collision is found
+				if (collision)
+					return;
+
+				auto newId = RepoUUID::createUUID();
+
+				{
+					std::scoped_lock lock{ setMutex };
+					
+					if (set.contains(newId))
+					{
+						collision = true;
+						return;
+					}
+					else
+					{
+						set.insert(newId);
+					}
+				}
+			}
+		};
+
+	std::vector<std::jthread> threads;
+	for (int i = 0; i < numThreads; i++)
+	{
+		threads.emplace_back(std::jthread(threadBehaviour));
+	}
+
+	for (auto& t : threads)
+		t.join();
+
+	if (collision)
+		FAIL() << "There was a collision after generating " << set.size() << " samples.\n";
 }

@@ -33,8 +33,8 @@
 #define REPOERR_LOAD_SCENE_MISSING_TEXTURE 7
 //invalid arguments to function
 #define REPOERR_INVALID_ARG 8
-//failed to generate federation
-#define REPOERR_FED_GEN_FAIL 9
+//9 was used for Federations
+
 //Scene uploaded but missing some nodes
 #define REPOERR_LOAD_SCENE_MISSING_NODES 10
 //Failed to get file from project
@@ -97,3 +97,7 @@
 #define REPOERR_FILE_IFC_UNSUPPORTED_SCHEMA 39
 //The specified view was found, but it is not a 3D view
 #define REPOERR_VIEW_NOT_3D 40
+//A repo ref for a file was requested but could not be found in the .ref collection
+//This can occur during multi-threaded operations with insertMany where the document
+//is already committed before the file is written into the file store
+#define REPOERR_FILE_REF_MISSING 41

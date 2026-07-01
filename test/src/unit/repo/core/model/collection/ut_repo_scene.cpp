@@ -98,14 +98,6 @@ static TextureNode makeTextureNode(
 	return RepoBSONFactory::makeTextureNode("", 0, 0, 0, 0, { parent });
 }
 
-static ReferenceNode makeReferenceNode(
-	const repo::lib::RepoUUID& parent)
-{
-	auto r = RepoBSONFactory::makeReferenceNode("db", "project");
-	r.addParent(parent);
-	return r;
-}
-
 TEST(RepoSceneTest, Constructor)
 {
 	//Just to make sure it doesn't throw exceptiosn with empty
@@ -143,8 +135,6 @@ TEST(RepoSceneTest, FilterNodesByType)
 	TextureNode texNode;
 	MeshNode meshNode;
 	TransformationNode transNode;
-	//Check empty vector doesn't crash
-	EXPECT_EQ(0, RepoScene::filterNodesByType(nodes, NodeType::REFERENCE).size());
 
 	int nMeshes = rand() % 10 + 1;
 	int nTrans = rand() % 10 + 1;
@@ -731,23 +721,6 @@ TEST(RepoSceneTest, getParentAsNodesFiltered)
 	EXPECT_EQ(0, scene.getParentNodesFiltered(RepoScene::GraphType::DEFAULT, m1, NodeType::MESH).size());
 }
 
-TEST(RepoSceneTest, getSceneFromReference)
-{
-	auto handler = getHandler();
-	RepoScene scene;
-	EXPECT_FALSE(scene.getSceneFromReference(defaultG, repo::lib::RepoUUID::createUUID()));
-	scene = RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_FED);
-	std::string errMsg;
-	scene.loadScene(handler.get(), errMsg);
-	ASSERT_TRUE(errMsg.empty());
-
-	auto references = scene.getAllReferences(defaultG);
-	ASSERT_TRUE(references.size());
-	for (const auto &ref : references)
-		EXPECT_TRUE(scene.getSceneFromReference(defaultG, ref->getSharedID()));
-	EXPECT_FALSE(scene.getSceneFromReference(defaultG, repo::lib::RepoUUID::createUUID()));
-}
-
 TEST(RepoSceneTest, getTextureIDForMesh)
 {
 	RepoScene scene;
@@ -789,10 +762,8 @@ TEST(RepoSceneTest, getAllNodes)
 	EXPECT_EQ(0, scene.getAllTransformations(RepoScene::GraphType::OPTIMIZED).size());
 	EXPECT_EQ(0, scene.getAllMetadata(defaultG).size());
 	EXPECT_EQ(0, scene.getAllMetadata(RepoScene::GraphType::OPTIMIZED).size());
-	EXPECT_EQ(0, scene.getAllReferences(defaultG).size());
-	EXPECT_EQ(0, scene.getAllReferences(RepoScene::GraphType::OPTIMIZED).size());
 
-	RepoNodeSet transNodes, meshNodes, metaNodes, matNodes, texNodes, refNodes;
+	RepoNodeSet transNodes, meshNodes, metaNodes, matNodes, texNodes;
 
 	auto root = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
 	meshNodes.insert(new MeshNode(makeMeshNode(root->getSharedID())));
@@ -803,11 +774,10 @@ TEST(RepoSceneTest, getAllNodes)
 	metaNodes.insert(new MetadataNode(makeMetadataNode(root->getSharedID())));
 	metaNodes.insert(new MetadataNode(makeMetadataNode(root->getSharedID())));
 	metaNodes.insert(new MetadataNode(makeMetadataNode(root->getSharedID())));
-	refNodes.insert(new ReferenceNode(makeReferenceNode(root->getSharedID())));
 
 	transNodes.insert(root);
 
-	auto scene2 = RepoScene(std::vector<std::string>(), meshNodes, matNodes, metaNodes, texNodes, transNodes, refNodes);
+	auto scene2 = RepoScene(std::vector<std::string>(), meshNodes, matNodes, metaNodes, texNodes, transNodes);
 
 	auto allSharedIDs = scene2.getAllSharedIDs(defaultG);
 	EXPECT_EQ(0, scene2.getAllSharedIDs(RepoScene::GraphType::OPTIMIZED).size());
@@ -855,15 +825,6 @@ TEST(RepoSceneTest, getAllNodes)
 	{
 		EXPECT_NE(metas.end(), metas.find(meta));
 		EXPECT_NE(allSharedIDs.end(), allSharedIDs.find(meta->getSharedID()));
-	}
-
-	auto refs = scene2.getAllReferences(defaultG);
-	EXPECT_EQ(refNodes.size(), refs.size());
-	EXPECT_EQ(0, scene2.getAllReferences(RepoScene::GraphType::OPTIMIZED).size());
-	for (const auto ref : refs)
-	{
-		EXPECT_NE(refs.end(), refs.find(ref));
-		EXPECT_NE(allSharedIDs.end(), allSharedIDs.find(ref->getSharedID()));
 	}
 }
 

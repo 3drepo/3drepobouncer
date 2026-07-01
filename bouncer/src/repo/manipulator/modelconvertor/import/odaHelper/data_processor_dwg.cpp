@@ -167,23 +167,27 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	auto ret = OdGsBaseMaterialView::doDraw(i, pDrawable);
 	collector->popDrawContext(ctx.get());
 
-	if (ctx) 
+	if (ctx && ctx->hasMeshes()) 
 	{
-		auto meshes = ctx->extractMeshes();
-		if (meshes.size()) {
-			// This stack frame should create a layer with actual geometry
+		// This stack frame should create a layer with actual geometry
 
-			if (parentLayer) {
-				collector->createLayer(parentLayer.id, parentLayer.name, {});
-			}
-			collector->createLayer(entityLayer.id, entityLayer.name, parentLayer.id);
-			collector->addMeshes(entityLayer.id, meshes);
+		if (parentLayer) {
+			collector->createLayer(parentLayer.id, parentLayer.name, {}, {});
+		}
 
-			if (!handleMetaValue.empty() && !collector->hasMetadata(entityLayer.id)) {
-				std::unordered_map<std::string, repo::lib::RepoVariant> meta;
-				meta["Entity Handle::Value"] = handleMetaValue;
-				collector->setMetadata(entityLayer.id, meta);
-			}
+		if (!collector->hasLayer(entityLayer.id)) {
+			auto bounds = ctx->getBounds();
+			auto m = repo::lib::RepoMatrix::translate(bounds.min());
+			collector->createLayer(entityLayer.id, entityLayer.name, parentLayer.id, m);
+		}
+
+		auto meshes = ctx->extractMeshes(collector->getLayerTransform(entityLayer.id).inverse());
+		collector->addMeshes(entityLayer.id, meshes);
+
+		if (!handleMetaValue.empty() && !collector->hasMetadata(entityLayer.id)) {
+			std::unordered_map<std::string, repo::lib::RepoVariant> meta;
+			meta["Entity Handle::Value"] = handleMetaValue;
+			collector->setMetadata(entityLayer.id, meta);
 		}
 	}
 

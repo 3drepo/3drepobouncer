@@ -127,7 +127,6 @@ RepoScene::RepoScene(
 	const RepoNodeSet              &metadata,
 	const RepoNodeSet              &textures,
 	const RepoNodeSet              &transformations,
-	const RepoNodeSet              &references,
 	const RepoNodeSet              &unknowns
 ) :
 	databaseName(""),
@@ -141,7 +140,7 @@ RepoScene::RepoScene(
 	graph.rootNode = nullptr;
 	stashGraph.rootNode = nullptr;
 	branch = repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH);
-	populateAndUpdate(GraphType::DEFAULT, meshes, materials, metadata, textures, transformations, references, unknowns);
+	populateAndUpdate(GraphType::DEFAULT, meshes, materials, metadata, textures, transformations, unknowns);
 }
 
 RepoScene::~RepoScene()
@@ -525,7 +524,7 @@ void RepoScene::addStashGraph(
 	const RepoNodeSet &transformations)
 {
 	populateAndUpdate(GraphType::OPTIMIZED, meshes, materials, RepoNodeSet(),
-		textures, transformations, RepoNodeSet(), RepoNodeSet());
+		textures, transformations, RepoNodeSet());
 }
 
 void RepoScene::clearStash()
@@ -539,14 +538,12 @@ void RepoScene::clearStash()
 	stashGraph.meshes.clear();
 	stashGraph.materials.clear();
 	stashGraph.metadata.clear();
-	stashGraph.references.clear();
 	stashGraph.textures.clear();
 	stashGraph.transformations.clear();
 	stashGraph.unknowns.clear();
 	stashGraph.nodesByUniqueID.clear();
 	stashGraph.sharedIDtoUniqueID.clear();
 	stashGraph.parentToChildren.clear();
-	stashGraph.referenceToScene.clear(); //how will this work for stash?
 
 	stashGraph.rootNode = nullptr;
 }
@@ -973,18 +970,7 @@ void RepoScene::getSceneBoundingBoxInternal(
 			MeshNode::transformBoundingBox(newmBBox, mat);
 			bbox.encapsulate(newmBBox);
 			break;
-		}
-		case NodeType::REFERENCE:
-		{
-			repoGraphInstance g = gType == GraphType::DEFAULT ? graph : stashGraph;
-			auto refSceneIt = graph.referenceToScene.find(node->getSharedID());
-			if (refSceneIt != graph.referenceToScene.end())
-			{
-				const RepoScene *refScene = refSceneIt->second;
-				bbox.encapsulate(refScene->getSceneBoundingBox());
-			}
-			break;
-		}
+		}		
 		}
 	}
 }
@@ -1221,15 +1207,6 @@ void RepoScene::removeNode(
 		case NodeType::METADATA:
 			g.metadata.erase(node);
 			break;
-		case NodeType::REFERENCE:
-		{
-			g.references.erase(node);
-			//Since it's reference node, also delete the referenced scene
-			RepoScene *s = g.referenceToScene[sharedID];
-			delete s;
-			g.referenceToScene.erase(sharedID);
-		}
-		break;
 		case NodeType::TEXTURE:
 			g.textures.erase(node);
 			break;
@@ -1296,11 +1273,6 @@ bool RepoScene::populate(
 			node = new TextureNode(obj);
 			g.textures.insert(node);
 		}
-		else if (REPO_NODE_TYPE_REFERENCE == nodeType)
-		{
-			node = new ReferenceNode(obj);
-			g.references.insert(node);
-		}
 		else if (REPO_NODE_TYPE_METADATA == nodeType)
 		{
 			node = new MetadataNode(obj);
@@ -1315,88 +1287,6 @@ bool RepoScene::populate(
 		success &= addNodeToMaps(gtype, node, errMsg);
 	} //Node Iteration
 
-	//deal with References
-	RepoNodeSet::iterator refIt;
-	//Make sure it is propagated into the repoScene if it exists in revision node
-
-	if (g.references.size()) worldOffset.clear();
-	if (!ignoreReferenceNodes)
-	{
-		for (const auto &node : g.references)
-		{
-			ReferenceNode* reference = (ReferenceNode*)node;
-
-			//construct a new RepoScene with the information from reference node and append this g to the Scene
-			std::string spDbName = reference->getDatabaseName();
-			if (spDbName.empty()) spDbName = databaseName;
-			RepoScene *refg = new RepoScene(spDbName, reference->getProjectId());
-			if (reference->useSpecificRevision())
-				refg->setRevision(reference->getProjectRevision());
-			else
-				refg->setBranch(reference->getProjectRevision());
-
-			if (!loadExtFiles) {
-				refg->skipLoadingExtFiles();
-			}
-
-			//Try to load the stash first, if fail, try scene.
-			if (loadExtFiles && refg->loadStash(handler, errMsg) || refg->loadScene(handler, errMsg))
-			{
-				g.referenceToScene[reference->getSharedID()] = refg;
-				auto refOffset = refg->getWorldOffset();
-				if (!worldOffset.size())
-				{
-					worldOffset = refOffset;
-				}
-			}
-			else {
-				repoWarning << "Failed to load reference node for ref ID " << reference->getUniqueID() << ": " << errMsg;
-			}
-		}
-	}
-
-	repoTrace << "World Offset = [" << worldOffset[0] << " , " << worldOffset[1] << ", " << worldOffset[2] << " ]";
-	//Now that we know the world Offset, make sure the referenced scenes are shifted accordingly
-	for (const auto &node : g.references)
-	{
-		ReferenceNode* reference = (ReferenceNode*)node;
-		auto parent = reference->getParentIDs().at(0);
-		auto refScene = g.referenceToScene[reference->getSharedID()];
-		if (refScene)
-		{
-			auto refOffset = refScene->getWorldOffset();
-			//Back to world coord of subProject
-			std::vector<std::vector<float>> backToSubWorld =
-			{ { 1., 0., 0., (float)refOffset[0] },
-			{ 0., 1., 0., (float)refOffset[1] },
-			{ 0., 0., 1., (float)refOffset[2] },
-			{ 0., 0., 0., 1 } };
-			std::vector<std::vector<float>> toFedWorldTrans =
-			{ { 1., 0., 0., (float)-worldOffset[0] },
-			{ 0., 1., 0., (float)-worldOffset[1] },
-			{ 0., 0., 1., (float)-worldOffset[2] },
-			{ 0., 0., 0., 1. } };
-
-			//parent - ref
-			//Becomes: toFedWorld - parent - toSubWorld - ref
-
-			auto parentNode = getNodeBySharedID(GraphType::DEFAULT, parent);
-			auto grandParent = parentNode->getParentIDs().at(0);
-			auto grandParentNode = getNodeBySharedID(GraphType::DEFAULT, grandParent);
-			auto toFedWorld = new TransformationNode(RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(toFedWorldTrans), "trans", { grandParent }));
-			auto toSubWorld = new TransformationNode(RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(backToSubWorld), "trans", { parent }));
-			std::vector<RepoNode*> newNodes;
-			newNodes.push_back(toFedWorld);
-			newNodes.push_back(toSubWorld);
-			addNodes(newNodes);
-			addInheritance(GraphType::DEFAULT, toSubWorld, reference);
-			addInheritance(GraphType::DEFAULT, toFedWorld, parentNode);
-			abandonChild(GraphType::DEFAULT, grandParent, parentNode);
-			abandonChild(GraphType::DEFAULT, parent, reference);
-			newModified.clear(); //We're still loading the scene, there shouldn't be anything here anyway.
-		}
-	}
-
 	return success;
 }
 
@@ -1407,7 +1297,6 @@ void RepoScene::populateAndUpdate(
 	const RepoNodeSet &metadata,
 	const RepoNodeSet &textures,
 	const RepoNodeSet &transformations,
-	const RepoNodeSet &references,
 	const RepoNodeSet &unknowns)
 {
 	std::string errMsg;
@@ -1417,15 +1306,14 @@ void RepoScene::populateAndUpdate(
 	addNodeToScene(gType, metadata, errMsg, &(instance.metadata));
 	addNodeToScene(gType, textures, errMsg, &(instance.textures));
 	addNodeToScene(gType, transformations, errMsg, &(instance.transformations));
-	addNodeToScene(gType, references, errMsg, &(instance.references));
 	addNodeToScene(gType, unknowns, errMsg, &(instance.unknowns));
 }
 
-void RepoScene::applyScaleFactor(const float &scale) {
+void RepoScene::applyScaleFactor(const double& scale) {
 	if (graph.rootNode)
 	{
 		auto rootTrans = dynamic_cast<TransformationNode*>(graph.rootNode);
-		std::vector<float> scalingMatrix = {
+		std::vector<double> scalingMatrix = {
 			scale, 0, 0, 0,
 			0, scale, 0, 0,
 			0, 0, scale, 0,
@@ -1459,7 +1347,7 @@ void RepoScene::reorientateDirectXModel()
 		auto rootTrans = dynamic_cast<TransformationNode*>(graph.rootNode);
 
 		//change offset relatively
-		std::vector<float> rotationMatrix = { 1, 0, 0, 0,
+		std::vector<double> rotationMatrix = { 1, 0, 0, 0,
 			0, 0, 1, 0,
 			0, -1, 0, 0,
 			0, 0, 0, 1 };
@@ -1522,9 +1410,9 @@ void RepoScene::setWorldOffset(
 void RepoScene::shiftModel(
 	const std::vector<double> &offset)
 {
-	std::vector<float> transMat = { 1, 0, 0, (float)offset[0],
-		0, 1, 0, (float)offset[1],
-		0, 0, 1, (float)offset[2],
+	std::vector<double> transMat = { 1, 0, 0, offset[0],
+		0, 1, 0, offset[1],
+		0, 0, 1, offset[2],
 		0, 0, 0, 1 };
 	if (graph.rootNode)
 	{

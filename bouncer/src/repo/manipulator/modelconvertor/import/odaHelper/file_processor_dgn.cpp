@@ -30,7 +30,7 @@
 #include <../Exports/2dExport/Include/2dExportDevice.h>
 
 #include "repo/lib/repo_exception.h"
-#include "../repo_model_units.h"
+#include "repo/lib/repo_units.h"
 #include "file_processor_dgn.h"
 #include "data_processor_dgn.h"
 #include "vectorise_device_dgn.h"
@@ -39,7 +39,7 @@
 #include <DgLine.h>      // This file puts OdDgLine3d in the output file
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-using ModelUnits = repo::manipulator::modelconvertor::ModelUnits;
+using ModelUnits = repo::lib::ModelUnits;
 
 class StubDeviceModuleDgn : public OdGsBaseModule
 {
@@ -361,8 +361,8 @@ void FileProcessorDgn::importDrawing(OdDgDatabasePtr pDb, const ODCOLORREF* pPal
 
 		OdDgElementId elementActId = pDb->getActiveModelId();
 		OdDgModelPtr pModel = elementActId.safeOpenObject();
-		repo::manipulator::modelconvertor::ModelUnits units = determineModelUnits(pModel->getMasterUnit());
-		drawingCollector->calibration.units = repo::manipulator::modelconvertor::toUnitsString(units);
+		ModelUnits units = determineModelUnits(pModel->getMasterUnit());
+		drawingCollector->calibration.units = repo::lib::units::toUnitsString(units);
 
 		// The call to update is what will create the svg in the memory stream
 

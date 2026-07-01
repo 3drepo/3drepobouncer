@@ -171,7 +171,6 @@ public:
 		const std::string    &project,
 		const std::string    &uuid = REPO_HISTORY_MASTER_BRANCH,
 		const bool           &headRevision = true,
-		const bool           &ignoreRefScene = false,
 		const bool           &skeletonFetch = false,
 		const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus = {});
 
@@ -191,7 +190,8 @@ public:
 		const std::string                   &owner = "",
 		const std::string                      &tag = "",
 		const std::string                      &desc = "",
-		const repo::lib::RepoUUID           &revId = repo::lib::RepoUUID::createUUID());
+		const repo::lib::RepoUUID           &revId = repo::lib::RepoUUID::createUUID(),
+		const repo::manipulator::modelutility::WebBufferConfig& config = {});
 
 	/*
 	*	------------- Logging --------------
@@ -221,13 +221,6 @@ public:
 	*	------------- Import/ Export --------------
 	*/
 
-	/**
-	* Create a federated scene with the given scene collections
-	* @param fedMap a map of reference scene and transformation from root where the scene should lie
-	* @return returns a constructed scene graph with the reference.
-	*/
-	repo::core::model::RepoScene* createFederatedScene(
-		const std::map<repo::core::model::ReferenceNode, std::string> &fedMap);
 
 	/**
 	* Generate and commit a RepoBundles encoding for the given scene
@@ -237,7 +230,8 @@ public:
 	*/
 	bool generateAndCommitRepoBundlesBuffer(
 		const RepoToken* token,
-		repo::core::model::RepoScene* scene);
+		repo::core::model::RepoScene* scene,
+		const repo::manipulator::modelutility::WebBufferConfig& config);
 
 	/**
 	* Generate and commit a selection tree for the given scene
@@ -283,6 +277,10 @@ public:
 		const repo::lib::RepoUUID revision,
 		uint8_t& err,
 		const std::string &imagePath);
+
+	void performClashDetection(
+		const RepoController::RepoToken* token,
+		const repo::manipulator::modelutility::ClashDetectionConfig& config);
 
 	/**
 	* Load metadata from a file

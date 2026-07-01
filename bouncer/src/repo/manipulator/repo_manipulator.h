@@ -23,11 +23,12 @@
 #include <map>
 #include <string>
 
-#include "../core/model/bson/repo_node_reference.h"
-#include "../core/model/bson/repo_node_transformation.h"
-#include "../core/model/bson/repo_node_mesh.h"
-#include "../core/model/collection/repo_scene.h"
-#include "../lib/repo_config.h"
+#include "repo/core/model/bson/repo_node_transformation.h"
+#include "repo/core/model/bson/repo_node_mesh.h"
+#include "repo/core/model/collection/repo_scene.h"
+#include "repo/manipulator/modelutility/repo_clash_detection_config_fwd.h"
+#include "repo/manipulator/modelutility/repo_web_buffer_config.h"
+#include "repo/lib/repo_config.h"
 #include "modelconvertor/export/repo_model_export_abstract.h"
 #include "modelconvertor/import/repo_model_import_config.h"
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_abstract.h"
@@ -61,16 +62,9 @@ namespace repo {
 				const std::string                     &owner = "",
 				const std::string                     &tag = "",
 				const std::string                     &desc = "",
-				const repo::lib::RepoUUID             &revId = repo::lib::RepoUUID::createUUID());
-
-			/**
-			* Create a federated scene with the given scene collections
-			* @param fedMap a map of reference scene and transformation from root where the scene should lie
-			* @return returns a constructed scene graph with the reference.
-			*/
-			repo::core::model::RepoScene* createFederatedScene(
-				const std::map<repo::core::model::ReferenceNode, std::string> &fedMap);
-
+				const repo::lib::RepoUUID             &revId = repo::lib::RepoUUID::createUUID(),
+				const modelutility::WebBufferConfig& config = {});
+			
 			/**
 			* Retrieve a RepoScene with a specific revision loaded.
 			* @param database the database the collection resides in
@@ -87,7 +81,6 @@ namespace repo {
 				const std::string                             &collection,
 				const repo::lib::RepoUUID                     &uuid,
 				const bool                                    &headRevision = false,
-				const bool                                    &ignoreRefScene = false,
 				const bool                                    &skeletonFetch = false,
 				const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus = {});
 
@@ -97,7 +90,6 @@ namespace repo {
 			*/
 			void fetchScene(
 				repo::core::model::RepoScene              *scene,
-				const bool                                &ignoreRefScene = false,
 				const bool                                &skeletonFetch = false);
 
 			/**
@@ -121,7 +113,9 @@ namespace repo {
 			*/
 			bool generateAndCommitWebViewBuffer(
 				repo::core::model::RepoScene          *scene,
-				const modelconvertor::ExportType   &exType);
+				const modelconvertor::ExportType   &exType,
+				const repo::manipulator::modelutility::WebBufferConfig& config
+			);
 
 			/**
 			* Generate and commit RepoBundles for the given scene
@@ -130,7 +124,9 @@ namespace repo {
 			*/
 
 			bool generateAndCommitRepoBundlesBuffer(
-				repo::core::model::RepoScene* scene);
+				repo::core::model::RepoScene* scene,
+				const repo::manipulator::modelutility::WebBufferConfig& config
+			);
 
 			/**
 			* Retrieve documents from a specified collection
@@ -236,6 +232,9 @@ namespace repo {
 				const lib::RepoUUID revision,
 				uint8_t& error,
 				const std::string &imagePath);
+
+			void performClashDetection(
+				const repo::manipulator::modelutility::ClashDetectionConfig& config);
 
 			void updateRevisionStatus(
 				repo::core::model::RepoScene* scene,

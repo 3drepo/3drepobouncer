@@ -1,0 +1,93 @@
+name: Deploy Bouncer to Staging
+
+on:
+  workflow_call:
+    inputs:
+      image_tag:
+        description: "Image tag to deploy."
+        required: true
+        type: string
+      build_id:
+        description: "Commit SHA to annotate pods with."
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+# Update HELM_CHART_VERSION when the bouncer chart is bumped in DevOps.
+# IMAGE_TAG is passed by the build workflow
+
+env:
+  HELM_CHART_VERSION: '5.23.0'
+  IMAGE_TAG: ${{ inputs.image_tag }}
+  BUILD_ID: ${{ inputs.build_id }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ---------------------------------------------------------------
+      # STEP 1: Checkout DevOps repo (sparse) for staging values file
+      # ---------------------------------------------------------------
+      - name: Checkout DevOps repo
+        uses: actions/checkout@v4
+        with:
+          repository: 3drepo/DevOps
+          token: ${{ secrets.PROJ_MANAGEMENT_TOKEN }}
+          sparse-checkout: deployments/asite-stg/helm/bouncer
+          sparse-checkout-cone-mode: false
+
+      # ---------------------------------------------------------------
+      # STEP 2: Setup Helm
+      # ---------------------------------------------------------------
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: '4.0.1'
+
+      # ---------------------------------------------------------------
+      # STEP 3: Set Kubernetes context
+      # ---------------------------------------------------------------
+      - name: Set Kubernetes context
+        uses: azure/k8s-set-context@v4
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG_STAGING }}
+
+      # ---------------------------------------------------------------
+      # STEP 4: Login to ACR for Helm OCI chart pull
+      # ---------------------------------------------------------------
+      - name: Login to ACR
+        run: |
+          echo "${{ secrets.REGISTRY_TOKEN }}" | helm registry login "${{ secrets.REGISTRY_LOGIN_SERVER }}" \
+            -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
+
+      # ---------------------------------------------------------------
+      # STEP 5: Deploy Helm chart
+      # ---------------------------------------------------------------
+      - name: Deploy Helm chart
+        run: |
+          helm upgrade --install \
+            --version ${{ env.HELM_CHART_VERSION }} \
+            www-bouncer \
+            oci://${{ secrets.REGISTRY_LOGIN_SERVER }}/helm/bouncer \
+            --namespace default \
+            -f deployments/asite-stg/helm/bouncer/values.yaml \
+            --set image.tag=${{ env.IMAGE_TAG }} \
+            --set rollingupdate.enabled=true \
+            --set-string podAnnotations.buildId=${{ env.BUILD_ID }} \
+            --wait \
+            --rollback-on-failure
+
+      # ---------------------------------------------------------------
+      # STEP 6: Cleanup
+      # ---------------------------------------------------------------
+      - name: Logout from ACR
+        if: always()
+        run: helm registry logout "${{ secrets.REGISTRY_LOGIN_SERVER }}"

@@ -27,12 +27,13 @@ namespace repo {
 					class Eq;
 					class Exists;
 					class Or;
+					class ArrayContains;
 					class RepoQueryBuilder;
 					class RepoProjectionBuilder;
 
 					class AddParent;
 
-					using RepoQuery = std::variant<Eq, Exists, Or, RepoQueryBuilder, RepoProjectionBuilder>;
+					using RepoQuery = std::variant<Eq, Exists, Or, ArrayContains, RepoQueryBuilder, RepoProjectionBuilder>;
 
 					using RepoUpdate = std::variant<AddParent>;
 				}

@@ -1,6 +1,6 @@
 include_directories(
 	../bouncer/src
-	${Boost_INCLUDE_DIR}
+	${Boost_INCLUDE_DIRS}
 )
 add_library(log
 	SHARED
@@ -9,7 +9,8 @@ add_library(log
 )
 
 target_link_libraries(log
-	${Boost_LIBRARIES}
+	Boost::log_setup
+	Boost::log
 )
 
 install(TARGETS "log" DESTINATION lib)
