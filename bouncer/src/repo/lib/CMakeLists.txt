@@ -22,6 +22,7 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/json_parser_write.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_config.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_exception.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_hash_combine.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_json_parser.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_license.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_property_tree.h

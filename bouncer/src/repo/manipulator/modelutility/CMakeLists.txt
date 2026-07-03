@@ -30,5 +30,6 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_mesh_map_reorganiser.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_scene_builder.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_scene_manager.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_web_buffer_config.h
 	CACHE STRING "HEADERS" FORCE)
 

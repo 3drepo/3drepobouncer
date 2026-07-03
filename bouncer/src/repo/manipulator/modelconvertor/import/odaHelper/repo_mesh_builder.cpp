@@ -259,7 +259,7 @@ void RepoMeshBuilder::extractMeshes(std::vector<MeshNode>& nodes, const repo::li
 
 		if (meshData->vertexMap.uvs.size() && (meshData->vertexMap.uvs.size() != meshData->vertexMap.vertices.size()))
 		{
-			throw new repo::lib::RepoGeometryProcessingException("RepoMeshBuilder mesh_data_t vertices size does not match the uvs size");
+			throw repo::lib::RepoGeometryProcessingException("RepoMeshBuilder mesh_data_t vertices size does not match the uvs size");
 		}
 
 		auto uvChannels = meshData->vertexMap.uvs.size() ?
@@ -271,7 +271,7 @@ void RepoMeshBuilder::extractMeshes(std::vector<MeshNode>& nodes, const repo::li
 		if (meshData->vertexMap.normals.size()) {
 			if ((meshData->vertexMap.normals.size() != meshData->vertexMap.vertices.size()))
 			{
-				throw new repo::lib::RepoGeometryProcessingException("RepoMeshBuilder mesh_data_t vertices size does not match the normals size, where normals are required.");
+				throw repo::lib::RepoGeometryProcessingException("RepoMeshBuilder mesh_data_t vertices size does not match the normals size, where normals are required.");
 			}
 
 			normals32.reserve(meshData->vertexMap.normals.size());
