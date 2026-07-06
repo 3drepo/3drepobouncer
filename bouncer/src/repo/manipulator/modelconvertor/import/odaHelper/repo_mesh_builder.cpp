@@ -54,7 +54,7 @@ repo_material_t RepoMeshBuilder::getMaterial()
 RepoMeshBuilder::~RepoMeshBuilder()
 {
 	// extractMeshes *must* be called, because there is where the mesh data instances are deleted/cleaned up.
-	if (meshes.size()) {
+	if (meshes.size() && !std::uncaught_exceptions()) {
 		throw repo::lib::RepoGeometryProcessingException("RepoMeshBuilder destroyed with meshes that have not been extracted.");
 	}
 }
