@@ -115,7 +115,8 @@ RepoMeshBuilder::face::face(std::initializer_list<repo::lib::RepoVector3D64> ver
 	setVertices(vertices);
 }
 
-RepoMeshBuilder::face::face(std::initializer_list<repo::lib::RepoVector3D64> vertices, repo::lib::RepoVector3D64 normal)
+RepoMeshBuilder::face::face(std::initializer_list<repo::lib::RepoVector3D64> vertices, repo::lib::RepoVector3D64 normal) :
+	face()
 {
 	setVertices(vertices);
 	this->norm = normal;
