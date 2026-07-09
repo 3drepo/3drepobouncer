@@ -70,7 +70,11 @@ void ModelRevisionNode::deserialise(RepoBSON& bson)
 	}
 	if (bson.hasField(REPO_NODE_REVISION_LABEL_VOID))
 	{
-		voided = bson.getBoolField(REPO_NODE_REVISION_LABEL_VOID);
+		auto field = bson.getField(REPO_NODE_REVISION_LABEL_VOID);
+		if (field.type() == repo::core::model::ElementType::BOOL) {
+			voided = bson.getBoolField(REPO_NODE_REVISION_LABEL_VOID);
+		}
+		// If it is not a boolean, it is considered false, as we don't know how to interpret it otherwise
 	}
 }
 
