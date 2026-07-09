@@ -286,7 +286,7 @@ std::vector<repo::lib::RepoMatrix> RepoBSON::getMatrixFieldArray(const std::stri
 
 std::vector<double> RepoBSON::getDoubleVectorField(const std::string& label) const
 {
-	return getArray<double>(label, false);
+	return getArray<double>(label, false, true);
 }
 
 std::vector<repo::lib::RepoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) const
@@ -496,10 +496,13 @@ repo::lib::RepoMatrix RepoBSON::getMatrixField(const std::string& label) const
 	return getMatrixFromArray(getField(label).get_array());
 }
 
+#pragma optimize("", off) // Disable optimizations for this function to avoid compiler warnings about unused template instantiations
+
 template<typename T>
 std::vector<T> RepoBSON::getArray(
 	const std::string& label,
-	bool missingIsEmpty
+	bool missingIsEmpty,
+	bool permissiveType
 ) const
 {
 	auto value = bsoncxx::document::value::find(label);
@@ -514,6 +517,24 @@ std::vector<T> RepoBSON::getArray(
 			}
 			catch (std::exception) // expect mongocxx or repo::lib exceptions, because we will further handle non-native types such as UUIDs
 			{
+				if constexpr (std::is_arithmetic_v<T>)
+				{
+					if (permissiveType)
+					{
+						switch (f.type()) {
+						case bsoncxx::type::k_int32:
+							results.push_back(static_cast<T>(f.get_int32()));
+							continue;
+						case bsoncxx::type::k_int64:
+							results.push_back(static_cast<T>(f.get_int64()));
+							continue;
+						case bsoncxx::type::k_double:
+							results.push_back(static_cast<T>(f.get_double()));
+							continue;
+						}
+					}
+				}
+
 				throw repo::lib::RepoFieldTypeException(label);
 			}
 		}
