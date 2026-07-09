@@ -496,8 +496,6 @@ repo::lib::RepoMatrix RepoBSON::getMatrixField(const std::string& label) const
 	return getMatrixFromArray(getField(label).get_array());
 }
 
-#pragma optimize("", off) // Disable optimizations for this function to avoid compiler warnings about unused template instantiations
-
 template<typename T>
 std::vector<T> RepoBSON::getArray(
 	const std::string& label,
