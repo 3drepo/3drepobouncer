@@ -29,6 +29,11 @@ using namespace repo::manipulator::modelconvertor::odaHelper;
 
 void DataProcessor::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* pNormal)
 {
+	processTriangleOut(p3Vertices, pNormal);
+}
+
+void DataProcessor::processTriangleOut(const OdInt32* p3Vertices, const OdGeVector3d* pNormal)
+{
 	GeometryCollector::Face triangle;
 	const auto pVertexDataList = vertexDataList();
 	for (int i = 0; i < 3; i++)
@@ -41,6 +46,11 @@ void DataProcessor::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* p
 
 void DataProcessor::polylineOut(OdInt32 numPoints, const OdInt32* vertexIndexList)
 {
+	processPolylineOut(numPoints, vertexIndexList);
+}
+
+void DataProcessor::processPolylineOut(OdInt32 numPoints, const OdInt32* vertexIndexList)
+{
 	const auto pVertexDataList = vertexDataList();
 	for (int i = 0; i < numPoints - 1; i++)
 	{
@@ -52,6 +62,11 @@ void DataProcessor::polylineOut(OdInt32 numPoints, const OdInt32* vertexIndexLis
 }
 
 void DataProcessor::polylineOut(OdInt32 numPoints, const OdGePoint3d* vertexList)
+{
+	processPolylineOut(numPoints, vertexList);
+}
+
+void DataProcessor::processPolylineOut(OdInt32 numPoints, const OdGePoint3d* vertexList)
 {
 	for (OdInt32 i = 0; i < (numPoints - 1); i++)
 	{

@@ -79,6 +79,18 @@ namespace repo {
 						MaterialColours& matColors,
 						repo::lib::repo_material_t& material);
 
+					virtual void processTriangleOut(
+						const OdInt32* p3Vertices,
+						const OdGeVector3d* pNormal);
+
+					virtual void processPolylineOut(
+						OdInt32 numPoints,
+						const OdInt32* vertexIndexList);
+
+					virtual void processPolylineOut(
+						OdInt32 numPoints,
+						const OdGePoint3d* vertexList);
+
 					double deviationValue = 0;
 
 				private:
