@@ -70,20 +70,6 @@ int32_t performOperation(
 * ======================== Command functions ===================
 */
 
-
-/**
-* Generate and commit a federation
-* @param controller the controller to the bouncer library
-* @param token      token provided by the controller after authentication
-* @param command    command and it's arguments to perform
-* @return returns true upon success
-*/
-int32_t generateFederation(
-	std::shared_ptr<repo::RepoController> controller,
-	const repo::RepoController::RepoToken      *token,
-	const repo_op_t            &command
-	);
-
 /**
 * Generate a particular type of stash (src/gltf/repo) for a given project
 * @param controller the controller to the bouncer library
@@ -91,7 +77,7 @@ int32_t generateFederation(
 * @param command    command and it's arguments to perform
 * @return returns true upon success
 */
-static int32_t generateStash(
+int32_t generateStash(
 	std::shared_ptr<repo::RepoController> controller,
 	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
@@ -104,7 +90,7 @@ static int32_t generateStash(
 * @param command    command and it's arguments to perform
 * @return returns true upon success
 */
-static int32_t importFileAndCommit(
+int32_t importFileAndCommit(
 	std::shared_ptr<repo::RepoController> controller,
 	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
@@ -117,7 +103,13 @@ static int32_t importFileAndCommit(
 * @param command    command and it's arguments to perform
 * @return returns the error code or 0 on success
 */
-static int32_t processDrawing(
+int32_t processDrawing(
+	std::shared_ptr<repo::RepoController> controller,
+	const repo::RepoController::RepoToken* token,
+	const repo_op_t& command
+);
+
+int32_t performClashDetection(
 	std::shared_ptr<repo::RepoController> controller,
 	const repo::RepoController::RepoToken* token,
 	const repo_op_t& command

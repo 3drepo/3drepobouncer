@@ -50,6 +50,19 @@ namespace repo {
 						std::string grouping
 					);
 
+					mesh_data(
+						bool name,
+						bool sharedId,
+						int numParents,
+						int faceSize,
+						bool normals,
+						int numUvChannels,
+						int numVertices,
+						int clusterRadius,
+						std::vector<repo::lib::RepoVector3D> clusterOrigins,
+						std::string grouping
+					);
+					
 					std::string name;
 					repo::lib::RepoUUID uniqueId;
 					repo::lib::RepoUUID sharedId;
@@ -60,6 +73,23 @@ namespace repo {
 					std::vector<repo::lib::RepoVector3D> normals;
 					std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
 					std::string grouping;
+
+				private:
+					void initNodeData(
+						bool name,
+						bool sharedId,
+						int numParents,
+						std::string grouping
+					);
+
+					void initGeometry(
+						int faceSize,
+						bool normals,
+						int numUvChannels,
+						int numVertices,
+						repo::lib::RepoVector3D min,
+						repo::lib::RepoVector3D max
+					);
 				};
 
 				struct GenericFace
@@ -119,15 +149,15 @@ namespace repo {
 						// Do nothing else
 					};
 
-					bool isFinalised() {
+					bool isFinalised() const {
 						return finalised;
 					};
 
-					std::vector<repo::core::model::SupermeshNode> getSupermeshes() {
+					const std::vector<repo::core::model::SupermeshNode>& getSupermeshes() const {
 						return supermeshNodes;
 					};
 
-					int getSupermeshCount() {
+					int getSupermeshCount() const {
 						return supermeshNodes.size();
 					};
 
@@ -137,7 +167,7 @@ namespace repo {
 				};
 
 				/**
-				* Builds a triangle soup MeshNode with exactly nVertices, and faces
+				* Builds a triangle soup MeshNode with exactly n Vertices, and faces
 				* constructed such that each vertex is referenced at least once.
 				*/
 				std::unique_ptr<repo::core::model::MeshNode> createRandomMesh(
@@ -146,6 +176,21 @@ namespace repo {
 					const int primitiveSize,
 					const std::string grouping,
 					const std::vector<repo::lib::RepoUUID>& parent);
+
+				/**
+				* Builds a triangle soup MeshNode with exactly n Vertices, and faces
+				* constructed such that each vertex is referenced at least once.
+				* The n vertices are also split evenly across a number of clusters
+				* which are defined by the cluster origins and the radius of that cluster.
+				*/
+				std::unique_ptr<repo::core::model::MeshNode> createRandomClusteredMesh(
+					const int nVertices,
+					const bool hasUV,
+					const int primitiveSize,
+					const std::string grouping,
+					const std::vector<repo::lib::RepoUUID>& parent,
+					const int clusterRadius,
+					const std::vector<repo::lib::RepoVector3D>& clusterOrigins);
 
 				/*
 				* Compare the geometric content of two meshes to determine if their
@@ -156,6 +201,23 @@ namespace repo {
 					std::string projectName,
 					repo::lib::RepoUUID revId,
 					TestModelExport* mockExporter
+				);
+
+				/*
+				* Check whether generated supermeshes are clustered around the given
+				* origins. This is used to test the mesh splitting.
+				*/
+				bool checkClusteredMeshSplit(
+					TestModelExport* mockExporter,
+					const std::vector<repo::lib::RepoVector3D>& clusterOrigins
+				);
+
+				/*
+				* Check whether the generated supermeshes all adhere to the vertex limit
+				*/
+				bool checkSupermeshVertCounts(
+					TestModelExport* mockExporter,
+					int limit
 				);
 
 				std::vector<GenericFace> getFacesFromDatabase(
@@ -239,6 +301,39 @@ namespace repo {
 				float shortestDistance(const repo::core::model::MeshNode& m, repo::lib::RepoVector3D p);
 				float shortestDistance(const std::vector<repo::core::model::MeshNode>& m, repo::lib::RepoVector3D p);
 				float shortestDistance(const std::vector<repo::lib::RepoVector3D>& v, repo::lib::RepoVector3D p);
+
+				/*
+				* Creates a cube centered on 0,0,0 with a side length of 1 in all dimensions.
+				*/
+				repo::core::model::MeshNode makeUnitCube();
+
+				/*
+				* Creates a cone centered on 0,0,0 with a height of 1 and a base radius of 1.
+				* The cone's axis is aligned with the Z axis.
+				*/
+				repo::core::model::MeshNode makeUnitCone();
+
+				/*
+				* Creates a sphere centered on 0,0,0 with a diameter of 1. This uses uv/lat
+				* -long grid approach, as opposed to the geodesic/icosahedron approach. This
+				* is chosen as it is arguably the more challenging mesh for testing purposes.
+				*/
+				repo::core::model::MeshNode makeUnitSphere();
+
+				/*
+				* Creates a cylinder centered on 0,0,0 with a height of 1 and a radius of 1,
+				* with a specific number of sides. The cylinder's axis is aligned with the
+				* Z axis. The 'cap' parameter determines whether the cylinder has top and
+				* bottom faces. The cap is tesselated such that all vertices sit on the
+				* boundary of the cylinder. A capped cylinder with 4 sides will be a box
+				* (but not a unit box - as the radius is 0.5).
+				*/
+				repo::core::model::MeshNode makeUnitCylinder(int sides, bool cap);
+
+				repo::core::model::MeshNode fromVertices(
+					const std::vector<repo::lib::RepoVector3D>& vertices,
+					repo::core::model::MeshNode::Primitive primitive = repo::core::model::MeshNode::Primitive::TRIANGLES
+				);
 			}
 		}
 	}

@@ -57,9 +57,10 @@ uint8_t RepoController::commitScene(
 	const std::string                   &owner,
 	const std::string                      &tag,
 	const std::string                      &desc,
-	const repo::lib::RepoUUID           &revId)
+	const repo::lib::RepoUUID           &revId,
+	const repo::manipulator::modelutility::WebBufferConfig& config)
 {
-	return impl->commitScene(token, scene, owner, tag, desc, revId);
+	return impl->commitScene(token, scene, owner, tag, desc, revId, config);
 }
 
 void RepoController::destroyToken(RepoController::RepoToken* token)
@@ -73,11 +74,10 @@ repo::core::model::RepoScene* RepoController::fetchScene(
 	const std::string    &collection,
 	const std::string    &uuid,
 	const bool           &headRevision,
-	const bool           &ignoreRefScene,
 	const bool           &skeletonFetch,
 	const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus)
 {
-	return impl->fetchScene(token, database, collection, uuid, headRevision, ignoreRefScene, skeletonFetch, includeStatus);
+	return impl->fetchScene(token, database, collection, uuid, headRevision, skeletonFetch, includeStatus);
 }
 
 bool RepoController::generateAndCommitSelectionTree(
@@ -122,17 +122,12 @@ void RepoController::logToFile(const std::string &filePath)
 	impl->logToFile(filePath);
 }
 
-repo::core::model::RepoScene* RepoController::createFederatedScene(
-	const std::map<repo::core::model::ReferenceNode, std::string> &fedMap)
-{
-	return impl->createFederatedScene(fedMap);
-}
-
 bool RepoController::generateAndCommitRepoBundlesBuffer(
 	const RepoController::RepoToken* token,
-	repo::core::model::RepoScene* scene)
+	repo::core::model::RepoScene* scene,
+	const repo::manipulator::modelutility::WebBufferConfig& config)
 {
-	return impl->generateAndCommitRepoBundlesBuffer(token, scene);
+	return impl->generateAndCommitRepoBundlesBuffer(token, scene, config);
 }
 
 std::shared_ptr<repo::lib::repo_partitioning_tree_t>
@@ -173,6 +168,13 @@ void RepoController::processDrawingRevision(
 	const std::string &imagePath)
 {
 	return impl->processDrawingRevision(token, teamspace, revision, err, imagePath);
+}
+
+void RepoController::performClashDetection(
+	const RepoToken* token,
+	const repo::manipulator::modelutility::ClashDetectionConfig& config)
+{
+	impl->performClashDetection(token, config);
 }
 
 void RepoController::updateRevisionStatus(

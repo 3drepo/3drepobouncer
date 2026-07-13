@@ -18,6 +18,7 @@
 #include "repo_bson_assets.h"
 #include "repo_bson_builder.h"
 #include "repo/lib/datastructure/repo_uuid.h"
+#include <unordered_set>
 
 using namespace repo::core::model;
 
@@ -82,6 +83,9 @@ RepoAssets::operator RepoBSON() const
 		metadataBuilder.appendVector3DObject(REPO_ASSETS_LABEL_MAX, meta.max);
 		metadataBuilder.append(REPO_ASSETS_LABEL_NUMSUBMESHES, (int32_t)meta.numSubmeshes);
 		metadataBuilder.append(REPO_ASSETS_LABEL_NUMCOMPONENTS, (int32_t)meta.numComponents);
+		if (meta.groups.size()) {
+			metadataBuilder.appendArray(REPO_ASSETS_LABEL_GROUPS, meta.groups);
+		}
 		metadataNodes.push_back(metadataBuilder.obj());
 	}
 
@@ -94,4 +98,18 @@ RepoAssets::operator RepoBSON() const
 bool RepoAssets::isEmpty() const
 {
 	return repoBundleFiles.empty() && repoJsonFiles.empty() && revisionId.isDefaultValue() && database.empty() && model.empty();
+}
+
+bool RepoSupermeshMetadata::operator==(const RepoSupermeshMetadata& other) const
+{
+	return numVertices == other.numVertices &&
+		numFaces == other.numFaces &&
+		numUVChannels == other.numUVChannels &&
+		numSubmeshes == other.numSubmeshes &&
+		numComponents == other.numComponents &&
+		primitive == other.primitive &&
+		min == other.min &&
+		max == other.max &&
+		std::unordered_set<std::string>(groups.begin(), groups.end()) ==
+		std::unordered_set<std::string>(other.groups.begin(), other.groups.end());
 }

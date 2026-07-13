@@ -17,8 +17,11 @@
 
 #include "functions.h"
 
+#include <repo/lib/repo_units.h>
 #include <repo/core/model/bson/repo_bson.h>
 #include <repo/core/model/bson/repo_bson_factory.h>
+#include <repo/manipulator/modelutility/repo_clash_detection_config.h>
+#include <repo/manipulator/modelutility/repo_web_buffer_config.h>
 
 #include <sstream>
 #include <fstream>
@@ -28,10 +31,12 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/filesystem.hpp>
 
+using namespace repo::lib;
+
 static const std::string FBX_EXTENSION = ".FBX";
 
-static const std::string cmdCreateFed = "genFed"; //create a federation
 static const std::string cmdGenStash = "genStash";   //test the connection
+static const std::string cmdClash = "clash";   //perform a clash detection operation
 static const std::string cmdImportFile = "import"; //file import
 static const std::string cmdProcessDrawing = "processDrawing"; //drawing import from revision node
 static const std::string cmdTestConn = "test";   //test the connection
@@ -45,7 +50,7 @@ std::string helpInfo()
 	ss << cmdGenStash << "\tGenerate Stash for a project. (args: database project [repo|src|tree] [all|revId])\n";
 	ss << cmdImportFile << "\t\tImport file to database. (args: {file database project [dxrotate] [owner] [configfile]} or {-f parameterFile} )\n";
 	ss << cmdProcessDrawing << "\t\tProcess drawing revision node into an image. (args: parameterFile)\n";
-	ss << cmdCreateFed << "\t\tGenerate a federation. (args: fedDetails [owner])\n";
+	ss << cmdClash << "\t\tPerform a clash detection operation. (args: configFile [resultsFile])\n";
 	ss << cmdTestConn << "\t\tTest the client and database connection is working. (args: none)\n";
 	ss << cmdVersion << "[-v]\tPrints the version of Repo Bouncer Client/Library\n";
 
@@ -65,13 +70,23 @@ int32_t knownValid(const std::string& cmd)
 		return 1;
 	if (cmd == cmdGenStash)
 		return 3;
-	if (cmd == cmdCreateFed)
-		return 1;
 	if (cmd == cmdTestConn)
 		return 0;
 	if (cmd == cmdVersion || cmd == cmdVersion2)
 		return 0;
+	if (cmd == cmdClash)
+		return 1;
 	return -1;
+}
+
+void replaceRepoModelPath(std::string& input) {
+	const char* env = std::getenv("REPO_MODEL_PATH");
+	if (env) {
+		size_t pos = input.find("$REPO_MODEL_PATH"); // Our conventions are to always use unix conventions
+		if (pos != std::string::npos) {
+			input.replace(pos, std::string("$REPO_MODEL_PATH").length(), env);
+		}
+	}
 }
 
 int32_t performOperation(
@@ -119,14 +134,17 @@ int32_t performOperation(
 			errCode = REPOERR_UNKNOWN_ERR;
 		}
 	}
-	else if (command.command == cmdCreateFed)
+	else if (command.command == cmdClash)
 	{
 		try {
-			errCode = generateFederation(controller, token, command);
+			errCode = performClashDetection(controller, token, command);
+		}
+		catch (const repo::lib::RepoException& e) {
+			throw; // RepoExceptions have additional context as well as an embedded return code, so let these bubble up
 		}
 		catch (const std::exception& e)
 		{
-			repoLogError("Failed to generate federation: " + std::string(e.what()));
+			repoLogError("Failed to perform clash detection: " + std::string(e.what()));
 			errCode = REPOERR_UNKNOWN_ERR;
 		}
 	}
@@ -151,95 +169,6 @@ int32_t performOperation(
 * ======================== Command functions ===================
 */
 
-int32_t generateFederation(
-	std::shared_ptr<repo::RepoController> controller,
-	const repo::RepoController::RepoToken* token,
-	const repo_op_t& command
-)
-{
-	/*
-	* Check the amount of parameters matches
-	*/
-	if (command.nArgcs < 1)
-	{
-		repoLogError("Number of arguments mismatch! " + cmdCreateFed
-			+ " requires 1 argument: fedDetails");
-		return REPOERR_INVALID_ARG;
-	}
-
-	std::string fedFile = command.args[0];
-	std::string owner;
-	repo::lib::RepoUUID revId = repo::lib::RepoUUID::createUUID();
-	if (command.nArgcs > 1)
-		owner = command.args[1];
-
-	repoLog("Federation configuration file: " + fedFile);
-
-	bool  success = false;
-	uint8_t errCode = REPOERR_FED_GEN_FAIL;
-
-	boost::property_tree::ptree jsonTree;
-	try {
-		boost::property_tree::read_json(fedFile, jsonTree);
-
-		const std::string database = jsonTree.get<std::string>("database", "");
-		const std::string project = jsonTree.get<std::string>("project", "");
-		auto revIdStr = jsonTree.get<std::string>("revId", "");
-		if (!revIdStr.empty()) {
-			revId = repo::lib::RepoUUID(revIdStr);
-		}
-		std::map< repo::core::model::ReferenceNode, std::string> refMap;
-
-		if (database.empty() || project.empty())
-		{
-			repoLogError("Failed to generate federation: database name(" + database + ") or project name("
-				+ project + ") was not specified!");
-		}
-		else
-		{
-			for (const auto& subPro : jsonTree.get_child("subProjects"))
-			{
-				// ===== Get project info =====
-				const std::string spDatabase = subPro.second.get<std::string>("database", database);
-				const std::string spProject = subPro.second.get<std::string>("project", "");
-				const std::string group = subPro.second.get<std::string>("group", "");
-				const std::string uuid = subPro.second.get<std::string>("revId", REPO_HISTORY_MASTER_BRANCH);
-				const bool isRevID = subPro.second.get<bool>("isRevId", false);
-				if (spProject.empty())
-				{
-					repoLogError("Failed to generate federation: One or more sub projects does not have a project name");
-					break;
-				}
-
-				auto refNode = repo::core::model::RepoBSONFactory::makeReferenceNode(spDatabase, spProject, repo::lib::RepoUUID(uuid), isRevID);
-				refMap[refNode] = group;
-			}
-
-			//Create the reference scene
-			if (success = refMap.size())
-			{
-				auto scene = controller->createFederatedScene(refMap);
-				if (success = scene)
-				{
-					scene->setDatabaseAndProjectName(database, project);
-					errCode = controller->commitScene(token, scene, owner, "", "", revId);
-				}
-			}
-			else
-			{
-				repoLogError("Failed to generate federation: Invalid/no sub-project declared");
-			}
-		}
-	}
-	catch (std::exception& e)
-	{
-		success = false;
-		repoLogError("Failed to generate Federation: " + std::string(e.what()));
-	}
-
-	return success ? REPOERR_OK : errCode;
-}
-
 bool _generateStash(
 	std::shared_ptr<repo::RepoController> controller,
 	const repo::RepoController::RepoToken* token,
@@ -249,13 +178,15 @@ bool _generateStash(
 	const bool                   isBranch,
 	const std::string& revID) {
 	repoLog("Generating stash of type " + type + " for " + dbName + "." + project + " rev: " + revID + (isBranch ? " (branch ID)" : ""));
-	auto scene = controller->fetchScene(token, dbName, project, revID, isBranch, false, type == "tree");
+	auto scene = controller->fetchScene(token, dbName, project, revID, isBranch, type == "tree");
 	bool  success = false;
 	if (scene) {
 		if (type == "repo")
 		{
+			repo::manipulator::modelutility::WebBufferConfig config;
+			config.splitByFloor = true;
 			controller->updateRevisionStatus(scene, repo::core::model::ModelRevisionNode::UploadStatus::GEN_WEB_STASH);
-			success = controller->generateAndCommitRepoBundlesBuffer(token, scene);
+			success = controller->generateAndCommitRepoBundlesBuffer(token, scene, config);
 		}
 		else if (type == "tree")
 		{
@@ -325,14 +256,23 @@ int32_t generateStash(
 	return success ? REPOERR_OK : REPOERR_STASH_GEN_FAIL;
 }
 
-repo::manipulator::modelconvertor::ModelUnits determineUnits(const std::string& units) {
-	if (units == "m") return repo::manipulator::modelconvertor::ModelUnits::METRES;
-	if (units == "cm") return repo::manipulator::modelconvertor::ModelUnits::CENTIMETRES;
-	if (units == "mm") return repo::manipulator::modelconvertor::ModelUnits::MILLIMETRES;
-	if (units == "dm") return repo::manipulator::modelconvertor::ModelUnits::DECIMETRES;
-	if (units == "ft") return repo::manipulator::modelconvertor::ModelUnits::FEET;
-
-	return repo::manipulator::modelconvertor::ModelUnits::UNKNOWN;
+int32_t performClashDetection(
+	std::shared_ptr<repo::RepoController> controller,
+	const repo::RepoController::RepoToken* token,
+	const repo_op_t& command)
+{
+	if (command.nArgcs < 1) {
+		repoError << "Clash detection requires a config file path";
+		return REPOERR_INVALID_ARG;
+	}
+	repo::manipulator::modelutility::ClashDetectionConfig clashConfig;
+	repo::manipulator::modelutility::ClashDetectionConfig::ParseJsonFile(command.args[0], clashConfig);
+	if (command.nArgcs > 1) {
+		clashConfig.resultsFile = command.args[1];
+	}
+	clashConfig.validate(); // Will throw if the config is invalid.
+	controller->performClashDetection(token, clashConfig);
+	return REPOERR_OK;
 }
 
 int32_t importFileAndCommit(
@@ -373,14 +313,25 @@ int32_t importFileAndCommit(
 			tag = jsonTree.get<std::string>("tag", "");
 			desc = jsonTree.get<std::string>("desc", "");
 
-			config.databaseName = jsonTree.get<std::string>("database", "");
-			config.projectName = jsonTree.get<std::string>("project", "");
+			// Client should be backwards compatible with v4 (database & project) and v5
+			// (teamspace & container) terminology. Teamspace/database are the terms that
+			// do not conflict, so we use them to distinguish which version is being used.
+
+			config.databaseName = jsonTree.get<std::string>("teamspace", "");
+			config.projectName = jsonTree.get<std::string>("container", "");
+
+			if (config.databaseName.empty()) {
+				config.databaseName = jsonTree.get<std::string>("database", "");
+				config.projectName = jsonTree.get<std::string>("project", "");
+			}
+
 			config.timeZone = jsonTree.get<std::string>("timezone", config.timeZone);
-			config.targetUnits = determineUnits(jsonTree.get<std::string>("units", ""));
+			config.targetUnits = units::fromString(jsonTree.get<std::string>("units", ""));
 			config.lod = jsonTree.get<int>("lod", config.lod);
 			config.importAnimations = jsonTree.get<bool>("importAnimations", config.importAnimations);
 			config.viewName = jsonTree.get<std::string>("view", config.viewName);
 			config.viewStyle = jsonTree.get<std::string>("style", "");
+			config.splitByFloor = jsonTree.get<bool>("splitByFloor", config.splitByFloor);
 			auto revIdStr = jsonTree.get<std::string>("revId", "");
 			if (!revIdStr.empty()) {
 				config.revisionId = repo::lib::RepoUUID(revIdStr);
@@ -409,6 +360,8 @@ int32_t importFileAndCommit(
 		}
 	}
 
+	replaceRepoModelPath(fileLoc);
+
 	boost::filesystem::path filePath(fileLoc);
 	std::string fileExt = filePath.extension().string();
 	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
@@ -424,7 +377,10 @@ int32_t importFileAndCommit(
 	{
 		repoLog("Trying to commit this scene to database as " + config.getDatabaseName() + "." + config.getProjectName());
 
-		err = controller->commitScene(token, graph, owner, tag, desc, config.revisionId);
+		repo::manipulator::modelutility::WebBufferConfig webBufferConfig;
+		webBufferConfig.splitByFloor = config.splitByFloor;
+
+		err = controller->commitScene(token, graph, owner, tag, desc, config.revisionId, webBufferConfig);
 
 		if (err == REPOERR_OK)
 		{
@@ -469,7 +425,14 @@ int32_t processDrawing(
 	try {
 		boost::property_tree::read_json(command.args[0], jsonTree);
 
-		database = jsonTree.get<std::string>("database", "");
+		// Support both v4 and v5 config terminology for backwards compatibility
+
+		database = jsonTree.get<std::string>("teamspace", {});
+
+		if (database.empty()) {
+			database = jsonTree.get<std::string>("database", "");
+		}
+
 		auto revisionStr = jsonTree.get<std::string>("revId", "");
 
 		if (database.empty() || revisionStr.empty())

@@ -16,7 +16,10 @@
 */
 
 #include "repo_bounds.h"
+#include "repo_matrix.h"
+#include <cmath>
 #include <cfloat>
+#include <cfenv>
 
 using namespace repo::lib;
 
@@ -37,6 +40,22 @@ RepoBounds::RepoBounds(const RepoVector3D& min, const RepoVector3D& max)
 {
 }
 
+repo::lib::RepoBounds::RepoBounds(std::initializer_list<RepoVector3D64> points)
+	:RepoBounds()
+{
+	for (auto& p : points) {
+		encapsulate(p);
+	}
+}
+
+repo::lib::RepoBounds::RepoBounds(const RepoVector3D64* points, size_t size)
+	:RepoBounds()
+{
+	for (size_t i = 0; i < size; ++i) {
+		encapsulate(points[i]);
+	}
+}
+
 void RepoBounds::encapsulate(const RepoVector3D64& p)
 {
 	bmin = repo::lib::RepoVector3D64::min(bmin, p);
@@ -54,6 +73,13 @@ bool RepoBounds::operator==(const RepoBounds& other) const
 	return this->bmin == other.bmin && this->bmax == other.bmax;
 }
 
+bool RepoBounds::contains(const RepoVector3D64& p) const
+{
+	return (p.x >= bmin.x && p.x <= bmax.x &&
+		p.y >= bmin.y && p.y <= bmax.y &&
+		p.z >= bmin.z && p.z <= bmax.z);
+}
+
 const RepoVector3D64& RepoBounds::min() const
 {
 	return bmin;
@@ -67,4 +93,83 @@ const RepoVector3D64& RepoBounds::max() const
 RepoVector3D64 RepoBounds::size() const
 {
 	return bmax - bmin;
+}
+
+RepoVector3D64 RepoBounds::center() const
+{
+	return (bmin + bmax) * 0.5;
+}
+
+double RepoBounds::volume() const
+{
+	auto s = size();
+	return s.x * s.y * s.z;
+}
+
+bool RepoBounds::operator>(const RepoBounds& other) const
+{
+	return size().norm() > other.size().norm();
+}
+
+REPO_API_EXPORT repo::lib::RepoBounds repo::lib::operator*(const _RepoMatrix<double>& matrix, const repo::lib::RepoBounds& bounds)
+{
+	/**
+	* This implementation uses the center-extents approach to transform the bounds,
+	* such as explained here: 
+	* https://zeux.io/2010/10/17/aabb-from-obb-with-component-wise-abs/
+	* This slightly more expensive than Avro's Graphics Gems approach, but it is
+	* robust to non-uniform scaling, saving the expense of that check.
+	*/
+
+	auto center = (bounds.min() + bounds.max()) * 0.5;
+
+	auto transformedCenter = matrix * center;
+
+	repo::lib::RepoMatrix mAbs(matrix.getData());
+	auto data = mAbs.getData();
+	for(int i = 0; i < 3; ++i)
+	{
+		for(int j = 0; j < 3; ++j)
+		{
+			data[i * 4 + j] = fabs(data[i * 4 + j]);
+		}
+	}
+
+	// The following lines configure the floating point rounding mode to always
+	// round up. Accuracy loss is inevitable in fp calculations, however because
+	// in this case we are working with bounding boxes, there is a correct way
+	// to deal with these losses - the one that makes the bounds larger.
+
+	auto currentRoundingMode = std::fegetround();
+	std::fesetround(FE_UPWARD);
+
+	auto extents = (bounds.max() - bounds.min()) * 0.5;
+	auto transformedExtents = mAbs.transformDirection(extents);
+
+	std::fesetround(currentRoundingMode);
+
+	auto min = transformedCenter - transformedExtents;
+	auto max = transformedCenter + transformedExtents;
+
+	// Extent the bounds by the ulp in each direction, to compensate for rounding
+	// error in the calculations above.
+
+	min.x = std::nexttoward(min.x, -std::numeric_limits<double>::infinity());
+	min.y = std::nexttoward(min.y, -std::numeric_limits<double>::infinity());
+	min.z = std::nexttoward(min.z, -std::numeric_limits<double>::infinity());
+	max.x = std::nexttoward(max.x, std::numeric_limits<double>::infinity());
+	max.y = std::nexttoward(max.y, std::numeric_limits<double>::infinity());
+	max.z = std::nexttoward(max.z, std::numeric_limits<double>::infinity());
+
+	return repo::lib::RepoBounds(min,max);
+}
+
+REPO_API_EXPORT repo::lib::RepoBounds repo::lib::operator*(const _RepoVector3D<double>& scalars, const repo::lib::RepoBounds& bounds)
+{
+	return { bounds.min() * scalars, bounds.max() * scalars };
+}
+
+REPO_API_EXPORT repo::lib::RepoBounds repo::lib::operator+(const repo::lib::RepoBounds& bounds, const RepoVector3D64& offset)
+{
+	return { bounds.min() + offset, bounds.max() + offset };
 }

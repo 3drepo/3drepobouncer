@@ -21,11 +21,13 @@
 
 #include "repo/core/model/bson/repo_bson_factory.h"
 #include <repo_log.h>
+#include "repo/lib/repo_units.h"
 #include "repo/lib/datastructure/repo_matrix.h"
 #include "repo/lib/datastructure/repo_bounds.h"
 #include "repo/error_codes.h"
 
 using namespace repo::manipulator::modelconvertor;
+using namespace repo::lib;
 
 const std::string RESOURCE_ID_NAME = "Resource ID";
 const std::string DEFAULT_SEQUENCE_NAME = "Unnamed Sequence";
@@ -287,25 +289,11 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 	auto identity = repo::lib::RepoMatrix();
 	determineUnits(reader->getUnits());
 
-	auto unitsScale = determineScaleFactor(modelUnits, settings.getTargetUnits());
-	auto reverseUnitsScale = determineScaleFactor(settings.getTargetUnits(), modelUnits);
+	auto unitsScale = units::determineScaleFactor(modelUnits, settings.getTargetUnits());
+	auto reverseUnitsScale = units::determineScaleFactor(settings.getTargetUnits(), modelUnits);
 
-	std::vector<float> scalingMatrixArr = {
-		unitsScale, 0, 0, 0,
-		0, unitsScale, 0, 0,
-		0, 0, unitsScale, 0,
-		0, 0, 0, 1
-	};
-
-	std::vector<float> reverseScalingMatrixArr = {
-		reverseUnitsScale, 0, 0, 0,
-		0, reverseUnitsScale, 0, 0,
-		0, 0, reverseUnitsScale, 0,
-		0, 0, 0, 1
-	};
-
-	scaleMatrix = repo::lib::RepoMatrix64(scalingMatrixArr);
-	reverseScaleMatrix = repo::lib::RepoMatrix64(reverseScalingMatrixArr);
+	scaleMatrix = repo::lib::RepoMatrix::scale(unitsScale);
+	reverseScaleMatrix = repo::lib::RepoMatrix::scale(reverseUnitsScale);
 
 	auto root = createTransNode(identity, reader->getProjectName());
 	transNodes.insert(root);
@@ -521,8 +509,8 @@ std::string SynchroModelImport::generateCache(
 	return id;
 }
 
-repo::lib::RepoMatrix64 SynchroModelImport::convertMatrixTo3DRepoWorld(
-	const repo::lib::RepoMatrix64 &matrix,
+repo::lib::RepoMatrix SynchroModelImport::convertMatrixTo3DRepoWorld(
+	const repo::lib::RepoMatrix &matrix,
 	const std::vector<double> &offset) {
 	std::vector<double> toDX = {
 		1, 0, 0, 0,
@@ -544,10 +532,10 @@ repo::lib::RepoMatrix64 SynchroModelImport::convertMatrixTo3DRepoWorld(
 		0, 0, 0,  1
 	};
 
-	repo::lib::RepoMatrix64 matDX(toDX);
-	repo::lib::RepoMatrix64 matGL(toGL);
-	repo::lib::RepoMatrix64 matToWorld(toWorld);
-	auto fromWorld = matToWorld.invert();
+	repo::lib::RepoMatrix matDX(toDX);
+	repo::lib::RepoMatrix matGL(toGL);
+	repo::lib::RepoMatrix matToWorld(toWorld);
+	auto fromWorld = matToWorld.inverse();
 
 	return scaleMatrix * ((matToWorld * matGL * matrix * matDX * fromWorld) * reverseScaleMatrix);
 }
@@ -555,7 +543,7 @@ repo::lib::RepoMatrix64 SynchroModelImport::convertMatrixTo3DRepoWorld(
 void SynchroModelImport::updateFrameState(
 	const std::vector<std::shared_ptr<synchro_reader::AnimationTask>> &tasks,
 	const std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
-	const std::unordered_map<std::string, repo::lib::RepoMatrix64> &resourceIDLastTrans,
+	const std::unordered_map<std::string, repo::lib::RepoMatrix> &resourceIDLastTrans,
 	std::unordered_map<float, std::set<std::string>> &alphaValueToIDs,
 	std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
 	std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState,
@@ -620,14 +608,14 @@ void SynchroModelImport::updateFrameState(
 
 				auto meshes = resourceIDsToSharedIDs.at(transTask->resourceID);
 				transformingResource.insert(transTask->resourceID);
-				repo::lib::RepoMatrix64 matrix(transTask->trans);
+				repo::lib::RepoMatrix matrix(transTask->trans);
 
 				bool isTransforming = true;
 
 				if (resourceIDLastTrans.find(transTask->resourceID) != resourceIDLastTrans.end()) {
 					if (transTask->reset) {
 						//The resource has a default animation state, so we actually have to move it to the inverse matrix
-						matrix = repo::lib::RepoMatrix64();
+						matrix = repo::lib::RepoMatrix();
 					}
 					else if (matrix.equals(resourceIDLastTrans.at(transTask->resourceID))) {
 						//it's moving to the final state
@@ -643,7 +631,7 @@ void SynchroModelImport::updateFrameState(
 				if (isTransforming) {
 					if (resourceIDLastTrans.find(transTask->resourceID) != resourceIDLastTrans.end()) {
 						//the geometry takes the transformation of the final frame as the default position. undo it before applying a new transformation.
-						matrix = matrix * resourceIDLastTrans.at(transTask->resourceID).invert();
+						matrix = matrix * resourceIDLastTrans.at(transTask->resourceID).inverse();
 					}
 
 					matrix = convertMatrixTo3DRepoWorld(matrix, offset);
@@ -653,7 +641,7 @@ void SynchroModelImport::updateFrameState(
 						resourceIDTransState.erase(transTask->resourceID);
 					}
 					else {
-						resourceIDTransState[transTask->resourceID] = matrix.getData();
+						resourceIDTransState[transTask->resourceID] = std::vector<double>(matrix.getData(), matrix.getData() + 16);
 					}
 				}
 			}
@@ -813,7 +801,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 		std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> meshAlphaState;
 		std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> meshColourState;
 		std::unordered_map<std::string, std::vector<double>> resourceIDTransState;
-		std::unordered_map<std::string, repo::lib::RepoMatrix64> resourceIDLastTrans;
+		std::unordered_map<std::string, repo::lib::RepoMatrix> resourceIDLastTrans;
 		std::unordered_map<std::string, std::vector<uint8_t>> stateBuffers;
 		std::vector<repo::core::model::RepoSequence::FrameData> frameData;
 		std::set<repo::lib::RepoUUID> defaultInvisible;
@@ -851,7 +839,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 				continue;
 			};
 
-			auto matrix = repo::lib::RepoMatrix64(lastStateEntry.second);
+			auto matrix = repo::lib::RepoMatrix(lastStateEntry.second);
 			if (!matrix.isIdentity()) {
 				resourceIDLastTrans[resourceID] = matrix;
 				for (const auto transId : resourceIDsToTransIDs[resourceID]) {
@@ -861,9 +849,10 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 					node->applyTransformation(matrix.getData());
 				}
 
-				auto matInverse = matrix.invert();
+				auto matInverse = matrix.inverse();
 
-				resourceIDTransState[lastStateEntry.first] = convertMatrixTo3DRepoWorld(matInverse, offset).getData();
+				auto world = convertMatrixTo3DRepoWorld(matInverse, offset);
+				resourceIDTransState[lastStateEntry.first] = std::vector<double>(world.getData(), world.getData() + 16);
 			}
 		}
 

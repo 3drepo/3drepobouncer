@@ -28,6 +28,7 @@ namespace repo {
 		namespace handler {
 			class AbstractDatabaseHandler;
 			namespace fileservice {
+				// This class is considered thread-safe.
 				class FileManager
 				{
 				public:

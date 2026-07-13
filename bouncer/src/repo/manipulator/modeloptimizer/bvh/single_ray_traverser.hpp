@@ -24,6 +24,7 @@ SOFTWARE.
 #define BVH_SINGLE_RAY_TRAVERSAL_HPP
 
 #include <cassert>
+#include <optional>
 
 #include "bvh.hpp"
 #include "ray.hpp"

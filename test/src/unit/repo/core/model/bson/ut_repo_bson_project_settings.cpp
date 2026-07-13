@@ -64,6 +64,16 @@ TEST(RepoProjectSettingsTest, Deserialise)
 		RepoProjectSettings settings(builder.obj());
 		EXPECT_EQ(settings.getStatus(), "error");
 	}
+
+	{
+		RepoBSONBuilder builder;
+		builder.append(REPO_LABEL_ID, projectId);
+		RepoBSONBuilder propertiesBuilder;
+		propertiesBuilder.append(REPO_PROJECT_SETTINGS_LABEL_UNITS, "m");
+		builder.append(REPO_PROJECT_SETTINGS_LABEL_PROPERTIES, propertiesBuilder.obj());
+		RepoProjectSettings settings(builder.obj());
+		EXPECT_EQ(settings.getUnits(), repo::lib::ModelUnits::METRES);
+	}
 }
 
 TEST(RepoProjectSettingsTest, Serialise)

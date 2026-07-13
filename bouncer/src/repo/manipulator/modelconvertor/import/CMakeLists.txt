@@ -33,6 +33,5 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_manager.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_oda.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_synchro.h
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_units.h
 	CACHE STRING "HEADERS" FORCE)
 

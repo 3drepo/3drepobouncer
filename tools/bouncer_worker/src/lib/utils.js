@@ -36,7 +36,7 @@ Utils.getCurrentDateTimeAsString = () => moment().format('YYYY-MM-DD_HH[h]mm[m]s
 Utils.gatherProcessInformation = (
 	owner,
 	model,
-	database,
+	teamspace,
 	queue,
 	repoLicense,
 	rid,
@@ -46,7 +46,7 @@ Utils.gatherProcessInformation = (
 		Owner: owner,
 		Model: model,
 		Rid: rid,
-		Database: database,
+		Database: teamspace,
 		Queue: queue, // logLabel.label,
 		licenseKey: repoLicense,
 	});

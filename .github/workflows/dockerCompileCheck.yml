@@ -1,9 +1,6 @@
 name: Run Docker build test
 
-on:
-  push:
-    tags-ignore:
-      - '*'
+on: push
 
 permissions:
   contents: read

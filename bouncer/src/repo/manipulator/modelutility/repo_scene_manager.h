@@ -14,11 +14,13 @@
 *  You should have received a copy of the GNU Affero General Public License
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #pragma once
-#include "../../core/model/collection/repo_scene.h"
-#include "../../core/handler/repo_database_handler_abstract.h"
-#include "../../core/handler/fileservice/repo_file_manager.h"
-#include "../modelconvertor/export/repo_model_export_abstract.h"
+#include "repo/core/model/collection/repo_scene.h"
+#include "repo/core/handler/repo_database_handler_abstract.h"
+#include "repo/core/handler/fileservice/repo_file_manager.h"
+#include "repo/manipulator/modelconvertor/export/repo_model_export_abstract.h"
+#include "repo_web_buffer_config.h"
 
 namespace repo {
 	namespace manipulator {
@@ -36,7 +38,8 @@ namespace repo {
 					const std::string												&desc,
 					const repo::lib::RepoUUID										&revId,
 					repo::core::handler::AbstractDatabaseHandler					*handler,
-					repo::core::handler::fileservice::FileManager					*fileManager
+					repo::core::handler::fileservice::FileManager					*fileManager,
+					const repo::manipulator::modelutility::WebBufferConfig& config
 				);
 
 				/**
@@ -55,7 +58,6 @@ namespace repo {
 					const std::string                             &project,
 					const repo::lib::RepoUUID                     &uuid,
 					const bool                                    &headRevision = true,
-					const bool                                    &ignoreRefScenes = false,
 					const bool                                    &skeletonFetch = false,
 					const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus = {});
 
@@ -63,11 +65,10 @@ namespace repo {
 					repo::core::handler::AbstractDatabaseHandler  *handler,
 					const std::string                             &database,
 					const std::string                             &project,
-					const bool                             &ignoreRefScene = false,
 					const bool                                    &skeletonFetch = false)
 				{
 					repo::lib::RepoUUID master = repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH);
-					return fetchScene(handler, database, project, master, true, ignoreRefScene, skeletonFetch);
+					return fetchScene(handler, database, project, master, true, skeletonFetch);
 				}
 
 				/**
@@ -114,9 +115,11 @@ namespace repo {
 				* @return returns repo_web_buffers upon success
 				*/
 				bool generateWebViewBuffers(
-					repo::core::model::RepoScene									*scene,
-					const repo::manipulator::modelconvertor::ExportType				&exType,
-					repo::core::handler::AbstractDatabaseHandler					*handler = nullptr);
+					repo::core::model::RepoScene								*scene,
+					const repo::manipulator::modelconvertor::ExportType			&exType,
+					repo::core::handler::AbstractDatabaseHandler				*handler,
+					const repo::manipulator::modelutility::WebBufferConfig		&config
+				);
 
 				/**
 				* Remove stash graph entry for the given scene
@@ -125,19 +128,7 @@ namespace repo {
 				* @param handler hander to the database
 				* @return returns true upon success
 				*/
-				bool removeStashGraph(
-					repo::core::model::RepoScene *scene);
-
-			private:
-				/**
-				* Generate a set of Repo Bundles in the form of web buffers for
-				* the given scene. The stash must have beeen generated already.
-				* This method requires project to have been built with
-				* REPO_ASSETGENERATOR_SUPPORT ON. If not, this method will report
-				* an error and return an empty buffers object.
-				*/
-				repo::lib::repo_web_buffers_t generateRepoBundleBuffer(
-					repo::core::model::RepoScene* scene);
+				bool removeStashGraph(repo::core::model::RepoScene *scene);
 			};
 		}
 	}

@@ -31,13 +31,14 @@ using namespace repo::manipulator::modelutility;
 
 
 uint8_t SceneManager::commitScene(
-	repo::core::model::RepoScene									*scene,
-	const std::string												&owner,
-	const std::string												&tag,
-	const std::string												&desc,
-	const repo::lib::RepoUUID										&revId,
-	repo::core::handler::AbstractDatabaseHandler					*handler,
-	repo::core::handler::fileservice::FileManager					*fileManager
+	repo::core::model::RepoScene* scene,
+	const std::string& owner,
+	const std::string& tag,
+	const std::string& desc,
+	const repo::lib::RepoUUID& revId,
+	repo::core::handler::AbstractDatabaseHandler* handler,
+	repo::core::handler::fileservice::FileManager* fileManager,
+	const repo::manipulator::modelutility::WebBufferConfig& config
 ) {
 	uint8_t errCode = REPOERR_UPLOAD_FAILED;
 	std::string msg;
@@ -47,33 +48,38 @@ uint8_t SceneManager::commitScene(
 		if (errCode == REPOERR_OK) {
 			repoInfo << "Scene successfully committed to the database";
 			bool success = true;
-			bool isFederation = scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size();
 
 			if (success)
 			{
 				repoInfo << "Generating Selection Tree JSON...";
 				scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::GEN_SEL_TREE);
+				
 				if (generateAndCommitSelectionTree(scene, handler))
 					repoInfo << "Selection Tree Stored into the database";
 				else
+				{
 					repoError << "failed to commit selection tree";
-			}
+					success = false;
+					errCode = REPOERR_BUNDLE_GEN_FAILED;
+				}
 
-			if (success && !isFederation)
-			{
 				repoInfo << "Generating Repo Bundles...";
 				scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::GEN_WEB_STASH);
-				if (success = generateWebViewBuffers(scene, repo::manipulator::modelconvertor::ExportType::REPO, handler))
+				
+				if (generateWebViewBuffers(scene, repo::manipulator::modelconvertor::ExportType::REPO, handler, config))
 					repoInfo << "Repo Bundles for Stash stored into the database";
 				else
-					repoError << "failed to commit Repo Bundles";
-			}
+				{
+					repoError << "failed to commit repo bundles";
+					success = false;
+					errCode = REPOERR_BUNDLE_GEN_FAILED;
+				}
 
-			if (success) {
 				errCode = REPOERR_OK;
 				scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE);
 			}
-			else {
+			else
+			{
 				errCode = REPOERR_UPLOAD_FAILED;
 			}
 		}
@@ -102,7 +108,6 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 	const std::string                             &project,
 	const repo::lib::RepoUUID                     &uuid,
 	const bool                                    &headRevision,
-	const bool                                    &ignoreRefScenes,
 	const bool                                    &skeletonFetch,
 	const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus)
 {
@@ -116,8 +121,6 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 		{
 			if (skeletonFetch)
 				scene->skipLoadingExtFiles();
-			if (ignoreRefScenes)
-				scene->ignoreReferenceScene();
 			if (headRevision)
 				scene->setBranch(uuid);
 			else
@@ -201,9 +204,11 @@ void SceneManager::fetchScene(
 }
 
 bool SceneManager::generateWebViewBuffers(
-	repo::core::model::RepoScene									*scene,
-	const repo::manipulator::modelconvertor::ExportType				&exType,
-	repo::core::handler::AbstractDatabaseHandler					*handler)
+	repo::core::model::RepoScene *scene,
+	const repo::manipulator::modelconvertor::ExportType &exType,
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	const repo::manipulator::modelutility::WebBufferConfig& config
+)
 {
 	bool validScene =
 		scene
@@ -251,14 +256,14 @@ bool SceneManager::generateWebViewBuffers(
 			return false;
 		}
 
-		repo::manipulator::modeloptimizer::MultipartOptimizer mpOpt;
-		return mpOpt.processScene(
+		repo::manipulator::modeloptimizer::MultipartOptimizer mpOpt(handler, exporter.get(), config.splitByFloor);
+		mpOpt.processScene(
 			scene->getDatabaseName(),
 			scene->getProjectName(),
-			scene->getRevisionID(),
-			handler,
-			exporter.get() 
+			scene->getRevisionID()
 		);
+
+		return true;
 	}
 	else
 	{

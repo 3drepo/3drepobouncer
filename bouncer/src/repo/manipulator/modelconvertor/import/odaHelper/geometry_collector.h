@@ -18,7 +18,7 @@
 #pragma once
 
 #include "repo/error_codes.h"
-#include "repo/manipulator/modelconvertor/import/repo_model_units.h"
+#include "repo/lib/repo_units.h"
 #include "repo/lib/datastructure/repo_structs.h"
 #include "repo/manipulator/modelutility/repo_scene_builder.h"
 #include "repo/core/model/bson/repo_bson_factory.h"
@@ -43,16 +43,24 @@ namespace repo {
 					/*
 					* Declares a new entry in the tree that can be accessed by an arbitrary
 					* Id (instead of a RepoUUID). If parentId is empty, the layer will be
-					* created under the root node.
+					* created under the root node. Returns true if the layer was newly created
+					* or false if it already existed. If the layer exists, the name, parent and
+					* transform will be unchanged/ignored.
 					*/
-					void createLayer(std::string id, std::string name, std::string parentId);
+					bool createLayer(std::string id, std::string name, std::string parentId, const repo::lib::RepoMatrix& transform);
 
 					/*
 					* True if the layer with the id was created with createLayer. createLayer
-					* can still be called but nothing will change (e.g. the name and parent
-					* will still be those of the first call).
+					* can still be called but nothing will change (e.g. the name, parent and
+					* matrix will still be those of the first call).
 					*/
 					bool hasLayer(std::string id);
+
+					/*
+					* Returns the matrix supplied for the createLayer call. If none was provided
+					* or the layer does not exist, returns the identity matrix.
+					*/
+					repo::lib::RepoMatrix getLayerTransform(std::string id);
 
 					/*
 					* Returns the sharedId for a layer with the given local id; used for
@@ -116,7 +124,7 @@ namespace repo {
 						sceneBuilder->addMaterialReference(material, parentId);
 					}
 
-					void setUnits(repo::manipulator::modelconvertor::ModelUnits units) {
+					void setUnits(repo::lib::ModelUnits units) {
 						sceneBuilder->setUnits(units);
 					}
 
@@ -174,7 +182,16 @@ namespace repo {
 							));
 						}
 
-						std::vector<std::pair<repo::core::model::MeshNode, repo::lib::repo_material_t>> extractMeshes();
+						/*
+						* Turns the mesh_data entries into a set of MeshNodes, each paired with a
+						* material. The matrix m is applied to each vertex before the mesh node is
+						* constructed.
+						*/
+						std::vector<std::pair<repo::core::model::MeshNode, repo::lib::repo_material_t>> extractMeshes(const repo::lib::RepoMatrix& m);
+
+						bool hasMeshes() const;
+
+						repo::lib::RepoBounds getBounds() const;
 
 					private:
 						repo::lib::RepoVector3D64 offset;
@@ -208,6 +225,7 @@ namespace repo {
 					std::stack<Context*> contexts;
 					repo::lib::repo_material_t latestMaterial;
 					std::unordered_map<std::string, repo::lib::RepoUUID> layerIdToSharedId;
+					std::unordered_map<std::string, repo::lib::RepoMatrix> layerIdToMatrix;
 					std::set<std::string> layersWithMetadata;
 					repo::lib::RepoUUID rootNodeId;
 				};

@@ -27,13 +27,17 @@ RUN echo >> /etc/sysctl.conf ; \
         echo net.ipv6.conf.all.disable_ipv6 = 1 >> /etc/sysctl.conf ;\
         echo net.ipv6.conf.default.disable_ipv6 = 1 >> /etc/sysctl.conf
 
-# Add Node.js 22 and Yarn
-        RUN cd /tmp && \
-        curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
-        curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
-        echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list && \
+# Add Node.js 24 and Yarn
+ARG NODE_VERSION=24.11.0
+RUN cd /tmp && \
         apt-get update && \
-        apt-get install -y nodejs yarn software-properties-common && \
+        apt-get install -y ca-certificates curl gnupg software-properties-common xz-utils && \
+        curl -fsSLO "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" && \
+        tar -xJf "node-v${NODE_VERSION}-linux-x64.tar.xz" -C /usr/local --strip-components=1 --no-same-owner && \
+        rm "node-v${NODE_VERSION}-linux-x64.tar.xz" && \
+        npm install -g yarn@1.22.22 && \
+        node --version && \
+        yarn --version && \
         rm -rf /var/lib/apt/lists/*
 
 

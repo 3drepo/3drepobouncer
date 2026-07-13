@@ -216,26 +216,6 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 
 }
 
-TEST(RepoBSONFactoryTest, MakeReferenceNodeTest)
-{
-	std::string dbName = "testDB";
-	std::string proName = "testProj";
-	repo::lib::RepoUUID revId = repo::lib::RepoUUID::createUUID();
-	bool isUnique = true;
-	std::string name = "refNodeName";
-
-	ReferenceNode ref = RepoBSONFactory::makeReferenceNode(dbName, proName, revId, isUnique, name);
-
-	EXPECT_EQ(dbName, ref.getDatabaseName());
-	EXPECT_EQ(proName, ref.getProjectId());
-	EXPECT_EQ(revId, ref.getProjectRevision());
-	EXPECT_EQ(isUnique, ref.useSpecificRevision());
-	EXPECT_EQ(name, ref.getName());
-
-	ReferenceNode ref2 = RepoBSONFactory::makeReferenceNode(dbName, proName, revId, !isUnique, name);
-	EXPECT_EQ(!isUnique, ref2.useSpecificRevision());
-}
-
 TEST(RepoBSONFactoryTest, MakeRevisionNodeTest)
 {
 	std::string owner = "revOwner";
@@ -295,18 +275,13 @@ TEST(RepoBSONFactoryTest, MakeTextureNodeTest)
 TEST(RepoBSONFactoryTest, MakeTransformationNodeTest)
 {
 	//If I make a transformation with no parameters, it should be identity matrix
-	std::vector<float> identity =
-	{ 1, 0, 0, 0,
-	0, 1, 0, 0,
-	0, 0, 1, 0,
-	0, 0, 0, 1 };
 
 	TransformationNode trans = RepoBSONFactory::makeTransformationNode();
 
-	EXPECT_TRUE(compareStdVectors(identity, trans.getTransMatrix().getData()));
+	EXPECT_THAT(trans.getTransMatrix().isIdentity(), IsTrue());
 
-	std::vector<std::vector<float>> transMat;
-	std::vector<float> transMatFlat;
+	std::vector<std::vector<double>> transMat;
+	std::vector<double> transMatFlat;
 	transMat.resize(4);
 	for (int i = 0; i < 4; ++i)
 		for (int j = 0; j < 4; ++j)
@@ -325,7 +300,7 @@ TEST(RepoBSONFactoryTest, MakeTransformationNodeTest)
 	EXPECT_EQ(name, trans2.getName());
 	auto matrix = trans2.getTransMatrix();
 
-	EXPECT_TRUE(compareStdVectors(transMatFlat, matrix.getData()));
+	EXPECT_THAT(memcmp(transMatFlat.data(), matrix.getData(), 16 * sizeof(double)), Eq(0));
 	EXPECT_THAT(trans2.getParentIDs(), UnorderedElementsAreArray(parents));
 
 	//ensure random parents aren't thrown in

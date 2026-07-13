@@ -21,8 +21,12 @@
 
 #include "repo_test_utils.h"
 #include "repo_test_mesh_utils.h"
+#include "repo_test_random_generator.h"
 #include "repo/core/model/bson/repo_bson_factory.h"
 #include "repo/core/model/bson/repo_bson_builder.h"
+
+#include <numbers>
+#include <random>
 
 using namespace repo::core::model;
 using namespace testing;
@@ -39,6 +43,24 @@ std::unique_ptr<MeshNode> repo::test::utils::mesh::createRandomMesh(
 
 	// The new mpOpt drops geometry that has no material, so we set the default here
 	mesh.setMaterial(repo::lib::repo_material_t::DefaultMaterial());	
+
+	return std::make_unique<MeshNode>(mesh);
+}
+
+std::unique_ptr<MeshNode> repo::test::utils::mesh::createRandomClusteredMesh(
+	const int nVertices,
+	const bool hasUV,
+	const int primitiveSize,
+	const std::string grouping,
+	const std::vector<repo::lib::RepoUUID>& parent,
+	const int clusterRadius,
+	const std::vector<repo::lib::RepoVector3D>& clusterOrigins)
+{
+	auto mesh = makeMeshNode(mesh_data(true, true, 0, primitiveSize, false, hasUV ? 1 : 0, nVertices, clusterRadius, clusterOrigins, grouping));
+	mesh.addParents(parent);
+
+	// The new mpOpt drops geometry that has no material, so we set the default here
+	mesh.setMaterial(repo::lib::repo_material_t::DefaultMaterial());
 
 	return std::make_unique<MeshNode>(mesh);
 }
@@ -100,6 +122,71 @@ bool repo::test::utils::mesh::compareMeshes(
 	return true;
 }
 
+bool repo::test::utils::mesh::checkClusteredMeshSplit(TestModelExport* mockExporter, const std::vector<repo::lib::RepoVector3D>& clusterOrigins)
+{
+	auto meshes = mockExporter->getSupermeshes();
+
+	for (auto& supermesh : meshes) {
+
+		// Initialise counters
+		std::vector<int> originCounts;
+		originCounts.reserve(clusterOrigins.size());
+		for (int i = 0; i < clusterOrigins.size(); i++)
+			originCounts.push_back(0);
+
+		// For each vertex, find the closest origin and increase
+		// the counter of that origin.
+		auto vertices = supermesh.getVertices();
+		for (auto& vertex : vertices) {
+
+			// Check distance to each of the cluster origins
+			float minDist = FLT_MAX;
+			int closestIndex = -1;
+			for (int i = 0; i < clusterOrigins.size(); i++)
+			{
+				auto dist = (vertex - clusterOrigins[i]).norm2();
+				if (dist < minDist)
+				{
+					minDist = dist;
+					closestIndex = i;
+				}
+			}
+
+			// Increment the one that is closest.
+			originCounts[closestIndex]++;
+		}
+
+		// After all vertices were checked, all except one of the counts need to be 0.
+		// If a supermesh has vertices split across clusters, then the splitting did
+		// not work correctly (in the context of this test).
+		bool foundNonZero = false;
+		for (auto count : originCounts) 
+		{
+			if (count > 0)
+			{
+				if (foundNonZero)
+					return false;
+				else
+					foundNonZero = true;
+			}
+		}
+	}
+
+	// If all supermeshes pass the test, return true.
+	return true;
+}
+
+bool repo::test::utils::mesh::checkSupermeshVertCounts(TestModelExport* mockExporter, int limit)
+{
+	auto meshes = mockExporter->getSupermeshes();
+
+	for (auto& supermesh : meshes) {
+		if (supermesh.getNumVertices() > limit)
+			return false;
+	}
+
+	return true;
+}
 
 // Helper method for getting binary data from the nodes in getFacesFromDatabase(...)
 template <class T>
@@ -513,6 +600,77 @@ repo::test::utils::mesh::mesh_data::mesh_data(
 	std::string grouping
 )
 {
+	// Initialise general node data
+	initNodeData(name, sharedId, numParents, grouping);
+
+	repo::lib::RepoVector3D min = repo::lib::RepoVector3D(FLT_MAX, FLT_MAX, FLT_MAX);
+	repo::lib::RepoVector3D max = repo::lib::RepoVector3D(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+	// Generate vertices for the triangle soup using the old deterministic randomiser
+	for (int i = 0; i < numVertices; i++)
+	{
+		auto newVert = makeRandomRepoVector();
+		vertices.push_back(newVert);
+		min = repo::lib::RepoVector3D::min(min, newVert);
+		max = repo::lib::RepoVector3D::max(max, newVert);
+	}
+
+	// Initialise the rest of the geometry and bounds
+	initGeometry(faceSize, normals, numUvChannels, numVertices, min, max);
+}
+
+repo::test::utils::mesh::mesh_data::mesh_data(
+	bool name,
+	bool sharedId,
+	int numParents,
+	int faceSize,
+	bool normals,
+	int numUvChannels,
+	int numVertices,
+	int clusterRadius,
+	std::vector<repo::lib::RepoVector3D> clusterOrigins,
+	std::string grouping
+)
+{
+	// Initialise general node data
+	initNodeData(name, sharedId, numParents, grouping);
+
+	repo::lib::RepoVector3D min = repo::lib::RepoVector3D(FLT_MAX, FLT_MAX, FLT_MAX);
+	repo::lib::RepoVector3D max = repo::lib::RepoVector3D(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+	// Generate clusters of triangle soup using the new random generator.
+	// These clusters are centred around the cluster origins and will be within
+	// the cluster radius.
+
+	RepoRandomGenerator random;
+
+	if (clusterOrigins.size() == 0)
+		throw repo::lib::RepoException("Cannot generate mesh data for 0 clusters.");
+	if (numVertices % clusterOrigins.size() != 0)
+		throw repo::lib::RepoException("Cannot generate clusters with unequal vertex counts.");
+
+	int numVerticesPerCluster = numVertices / clusterOrigins.size();
+	for (auto clusterOrigin : clusterOrigins) {
+		
+		for (int i = 0; i < numVerticesPerCluster; i++)
+		{
+			// Generate a random direction with a random length between 1 and clusterRadius.
+			// Then create the random vertex by adding that to the origin.
+			auto randDir = random.vector({ 1, (double)clusterRadius });
+			auto newVert = clusterOrigin + randDir;
+
+			vertices.push_back(newVert);
+			min = repo::lib::RepoVector3D::min(min, newVert);
+			max = repo::lib::RepoVector3D::max(max, newVert);
+		}
+	}
+
+	// Initialise the rest of the geometry and bounds
+	initGeometry(faceSize, normals, numUvChannels, numVertices, min, max);
+}
+
+void repo::test::utils::mesh::mesh_data::initNodeData(bool name, bool sharedId, int numParents, std::string grouping)
+{
 	if (name) {
 		this->name = "Named Mesh";
 	}
@@ -527,16 +685,17 @@ repo::test::utils::mesh::mesh_data::mesh_data(
 
 	uniqueId = getRandUUID();
 
-	repo::lib::RepoVector3D min = repo::lib::RepoVector3D(FLT_MAX, FLT_MAX, FLT_MAX);
-	repo::lib::RepoVector3D max = repo::lib::RepoVector3D(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	this->grouping = grouping;
+}
 
-	for (int i = 0; i < numVertices; i++)
-	{
-		vertices.push_back(repo::lib::RepoVector3D(rand() - rand(), rand() - rand(), rand() - rand()));
-		min = repo::lib::RepoVector3D::min(min, vertices[vertices.size() - 1]);
-		max = repo::lib::RepoVector3D::max(max, vertices[vertices.size() - 1]);
-	}
-
+void repo::test::utils::mesh::mesh_data::initGeometry(
+	int faceSize,
+	bool normals,
+	int numUvChannels,
+	int numVertices,
+	repo::lib::RepoVector3D min,
+	repo::lib::RepoVector3D max)
+{
 	int vertexIndex = 0;
 	do
 	{
@@ -565,8 +724,6 @@ repo::test::utils::mesh::mesh_data::mesh_data(
 	this->boundingBox.push_back({
 		max.x, max.y, max.z
 		});
-
-	this->grouping = grouping;
 }
 
 repo::lib::RepoMatrix repo::test::utils::mesh::makeTransform(bool translation, bool rotation)
@@ -652,4 +809,252 @@ float repo::test::utils::mesh::shortestDistance(const std::vector<repo::lib::Rep
 		d = std::min(d, (v - p).norm2());
 	}
 	return std::sqrt(d);
+}
+
+repo::core::model::MeshNode repo::test::utils::mesh::makeUnitCube()
+{
+	// Define the 8 vertices of the unit cube centered at (0,0,0)
+	std::vector<repo::lib::RepoVector3D> vertices = {
+		{-0.5, -0.5, -0.5}, // 0
+		{ 0.5, -0.5, -0.5}, // 1
+		{ 0.5,  0.5, -0.5}, // 2
+		{-0.5,  0.5, -0.5}, // 3
+		{-0.5, -0.5,  0.5}, // 4
+		{ 0.5, -0.5,  0.5}, // 5
+		{ 0.5,  0.5,  0.5}, // 6
+		{-0.5,  0.5,  0.5}  // 7
+	};
+
+	// Define the 12 triangular faces of the cube
+	std::vector<repo::lib::repo_face_t> faces = {
+		{2, 1, 0}, {3, 2, 0}, // Bottom face
+		{4, 5, 6}, {4, 6, 7}, // Top face
+		{0, 1, 5}, {0, 5, 4}, // Front face
+		{1, 2, 6}, {1, 6, 5}, // Right face
+		{2, 3, 7}, {2, 7, 6}, // Back face
+		{3, 0, 4}, {3, 4, 7}  // Left face
+	};
+
+	repo::lib::RepoBounds boundingBox = getBoundingBox(vertices);
+
+	return RepoBSONFactory::makeMeshNode(
+		vertices,
+		faces,
+		{},
+		boundingBox,
+		{},
+		"UnitCube"
+	);
+}
+
+repo::core::model::MeshNode repo::test::utils::mesh::makeUnitCone()
+{
+	// Number of segments for the circular base
+	const size_t segments = 16;
+
+	repo::lib::RepoVector3D apex(0.0, 0.0, 0.5);
+	repo::lib::RepoVector3D baseCenter(0.0, 0.0, -0.5);
+
+	// Define the vertices of the base
+	std::vector<repo::lib::RepoVector3D> vertices;
+	vertices.push_back(apex); // Add the apex as the first vertex
+
+	for (size_t i = 0; i < segments; ++i)
+	{
+		double angle = 2.0 * std::numbers::pi * i / segments;
+		double x = 0.5 * cos(angle);
+		double y = 0.5 * sin(angle);
+		vertices.emplace_back(x, y, -0.5);
+	}
+	vertices.push_back(baseCenter); // Add the center of the base
+
+	// Define the faces of the cone
+	std::vector<repo::lib::repo_face_t> faces;
+
+	// Create faces for the sides of the cone
+	for (size_t i = 1; i <= segments; ++i)
+	{
+		size_t next = (i % segments) + 1;
+		faces.push_back({ 0, i, next }); // Apex to two consecutive base vertices
+	}
+
+	// Create faces for the base
+	size_t baseCenterIndex = static_cast<size_t>(vertices.size() - 1);
+	for (size_t i = 1; i <= segments; ++i)
+	{
+		size_t next = (i % segments) + 1;
+		faces.push_back({ baseCenterIndex, next, i }); // Base center to two consecutive base vertices
+	}
+
+	// Compute the bounding box for the cone
+	repo::lib::RepoBounds boundingBox = getBoundingBox(vertices);
+
+	return RepoBSONFactory::makeMeshNode(
+		vertices,
+		faces,
+		{},
+		boundingBox,
+		{},
+		"UnitCone"
+	);
+}
+
+repo::core::model::MeshNode repo::test::utils::mesh::makeUnitSphere()
+{
+	// Number of segments for latitude and longitude
+	const size_t latitudeSegments = 16;
+	const size_t longitudeSegments = 32;
+
+	// Define the vertices
+	std::vector<repo::lib::RepoVector3D> vertices;
+
+	// Add the top vertex (north pole)
+	vertices.emplace_back(0.0, 0.0, 0.5);
+
+	// Add vertices for each latitude ring
+	for (int lat = 1; lat < latitudeSegments; ++lat)
+	{
+		double theta = std::numbers::pi * lat / latitudeSegments; // Polar angle
+		double sinTheta = sin(theta);
+		double cosTheta = cos(theta);
+
+		for (int lon = 0; lon < longitudeSegments; ++lon)
+		{
+			double phi = 2.0 * std::numbers::pi * lon / longitudeSegments; // Azimuthal angle
+			double x = 0.5 * sinTheta * cos(phi);
+			double y = 0.5 * sinTheta * sin(phi);
+			double z = 0.5 * cosTheta;
+			vertices.emplace_back(x, y, z);
+		}
+	}
+
+	// Add the bottom vertex (south pole)
+	vertices.emplace_back(0.0, 0.0, -0.5);
+
+	// Define the faces
+	std::vector<repo::lib::repo_face_t> faces;
+
+	// Create faces for the top cap
+	for (size_t lon = 0; lon < longitudeSegments; ++lon)
+	{
+		size_t nextLon = (lon + 1) % longitudeSegments;
+		faces.push_back({ 0, 1 + lon, 1 + nextLon });
+	}
+
+	// Create faces for the middle latitude rings
+	for (size_t lat = 0; lat < latitudeSegments - 2; ++lat)
+	{
+		for (size_t lon = 0; lon < longitudeSegments; ++lon)
+		{
+			size_t current = 1 + lat * longitudeSegments + lon;
+			size_t next = 1 + lat * longitudeSegments + (lon + 1) % longitudeSegments;
+			size_t below = current + longitudeSegments;
+			size_t belowNext = next + longitudeSegments;
+
+			faces.push_back({ current, below, next });
+			faces.push_back({ next, below, belowNext });
+		}
+	}
+
+	// Create faces for the bottom cap
+	size_t bottomIndex = static_cast<size_t>(vertices.size() - 1);
+	for (int lon = 0; lon < longitudeSegments; ++lon)
+	{
+		size_t current = bottomIndex - longitudeSegments + lon;
+		size_t next = bottomIndex - longitudeSegments + (lon + 1) % longitudeSegments;
+		faces.push_back({ bottomIndex, current, next });
+	}
+
+	repo::lib::RepoBounds boundingBox = getBoundingBox(vertices);
+
+	return RepoBSONFactory::makeMeshNode(
+		vertices,
+		faces,
+		{},
+		boundingBox,
+		{},
+		"UnitSphere"
+	);
+}
+
+repo::core::model::MeshNode repo::test::utils::mesh::makeUnitCylinder(int sides, bool cap)
+{
+	using repo::lib::RepoVector3D;
+	using repo::lib::repo_face_t;
+
+	const auto radius = 0.5;
+	const auto halfHeight = 0.5;
+
+	std::vector<RepoVector3D> vertices;
+	std::vector<repo_face_t> faces;
+
+	// Generate side vertices (bottom and top rings)
+	for (int i = 0; i < sides; ++i) {
+		auto angle = 0.25 * std::numbers::pi + 2.0 * std::numbers::pi * i / sides;
+		auto x = radius * std::cos(angle);
+		auto y = radius * std::sin(angle);
+		vertices.emplace_back(x, y, -halfHeight); // bottom ring
+		vertices.emplace_back(x, y, halfHeight);  // top ring
+	}
+
+	for (size_t i = 0; i < sides; ++i) {
+		auto next = (i + 1) % sides;
+		auto b0 = 2 * i;
+		auto t0 = 2 * i + 1;
+		auto b1 = 2 * next;
+		auto t1 = 2 * next + 1;
+
+		// Triangle 1
+		faces.push_back({ b0, b1, t1 });
+		// Triangle 2
+		faces.push_back({ b0, t1, t0 });
+	}
+
+	if (cap) {
+		// Bottom cap
+		for (size_t i = 0; i < sides - 2; ++i) {
+			faces.push_back({ 2 * (i + 2), 2 * (i + 1), 0 });
+		}
+		// Top cap
+		for (size_t i = 0; i < sides - 2; ++i) {
+			faces.push_back({ 2 * (i + 1) + 1, 2 * (i + 2) + 1, 1 });
+		}
+	}
+
+	repo::lib::RepoBounds boundingBox = getBoundingBox(vertices);
+
+	return RepoBSONFactory::makeMeshNode(
+		vertices,
+		faces,
+		{},
+		boundingBox,
+		{},
+		"UnitCylinder"
+	);
+}
+
+repo::core::model::MeshNode repo::test::utils::mesh::fromVertices(
+	const std::vector<repo::lib::RepoVector3D>& vertices, 
+	repo::core::model::MeshNode::Primitive primitive)
+{
+	std::vector<repo::lib::repo_face_t> faces;
+
+	for (size_t i = 0; i < vertices.size(); )
+	{
+		repo::lib::repo_face_t f;
+		for (size_t j = 0; j < static_cast<size_t>(primitive); j++) {
+			f.push_back(static_cast<uint32_t>(i++));
+		}
+
+		faces.push_back(f);
+	}
+
+	return RepoBSONFactory::makeMeshNode(
+		vertices,
+		faces,
+		{},
+		getBoundingBox(vertices),
+		{},
+		"fromVertices"
+	);
 }

@@ -12,7 +12,7 @@ include_directories(
 	../client/src
 	../log
 	../
-	${Boost_INCLUDE_DIR}
+	${Boost_INCLUDE_DIRS}
 	${MONGO_CXX_DRIVER_MONGO_INCLUDE_DIR}
 	${MONGO_CXX_DRIVER_BSON_INCLUDE_DIR}
 	${ASSIMP_INCLUDE_DIR}
@@ -30,7 +30,9 @@ target_link_libraries(
 	gtest
 	gmock
 	log
-	${Boost_LIBRARIES}
+	Boost::iostreams
+	Boost::locale
+	Boost::program_options
 	${MONGO_CXX_DRIVER_LIBRARIES}
 	${ASSIMP_LIBRARIES}
 	${IFCUTILS_LIBRARIES}

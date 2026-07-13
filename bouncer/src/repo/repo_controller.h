@@ -30,11 +30,12 @@
 #include "core/model/bson/repo_bson_project_settings.h"
 #include "core/model/bson/repo_node_transformation.h"
 #include "core/model/bson/repo_node_mesh.h"
-#include "core/model/bson/repo_node_reference.h"
 #include "core/model/collection/repo_scene.h"
 #include "lib/datastructure/repo_structs.h"
 #include "lib/repo_config.h"
-#include "manipulator/modelconvertor/import/repo_model_import_config.h"
+#include "repo/manipulator/modelconvertor/import/repo_model_import_config.h"
+#include "repo/manipulator/modelutility/repo_clash_detection_config_fwd.h"
+#include "repo/manipulator/modelutility/repo_web_buffer_config.h"
 #include "repo_bouncer_global.h"
 #include <repo_log.h>
 
@@ -171,7 +172,6 @@ namespace repo {
 			const std::string    &project,
 			const std::string    &uuid = REPO_HISTORY_MASTER_BRANCH,
 			const bool           &headRevision = true,
-			const bool           &ignoreRefScene = false,
 			const bool           &skeletonFetch = false,
 			const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus = {});
 
@@ -191,7 +191,8 @@ namespace repo {
 			const std::string                   &owner = "",
 			const std::string                      &tag = "",
 			const std::string                      &desc = "",
-			const repo::lib::RepoUUID           &revId = repo::lib::RepoUUID::createUUID());
+			const repo::lib::RepoUUID           &revId = repo::lib::RepoUUID::createUUID(),
+			const repo::manipulator::modelutility::WebBufferConfig& config = {});
 
 		/*
 		*	------------- Logging --------------
@@ -221,20 +222,14 @@ namespace repo {
 		*	------------- Import/ Export --------------
 		*/
 
-		/**
-		* Create a federated scene with the given scene collections
-		* @param fedMap a map of reference scene and transformation from root where the scene should lie
-		* @return returns a constructed scene graph with the reference.
-		*/
-		repo::core::model::RepoScene* createFederatedScene(
-			const std::map<repo::core::model::ReferenceNode, std::string> &fedMap);
 
 		/**
 		* Generate and commit RepoBundles for the given scene
 		*/
 		bool generateAndCommitRepoBundlesBuffer(
 			const RepoToken* token,
-			repo::core::model::RepoScene* scene);
+			repo::core::model::RepoScene* scene,
+			const repo::manipulator::modelutility::WebBufferConfig& config);
 
 		/**
 		* Generate and commit a selection tree for the given scene
@@ -283,6 +278,16 @@ namespace repo {
 		repo::core::model::RepoNodeSet loadMetadataFromFile(
 			const std::string &filePath,
 			const char        &delimiter = ',');
+
+		/*
+		* Perform clash detection and write the results to the file specified in the
+		* config. If the clash fails with a runtime error, the error will be written
+		* into the results file. The only other failure mode is a process error, which
+		* will be in the form of an exception thrown by this function.
+		*/
+		void performClashDetection(
+			const RepoToken* token,
+			const repo::manipulator::modelutility::ClashDetectionConfig& config);
 
 		/*
 		*	------------- Optimizations --------------

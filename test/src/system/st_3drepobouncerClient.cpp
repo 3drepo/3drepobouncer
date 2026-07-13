@@ -23,6 +23,7 @@
 #include <cstdlib>
 #include <stdlib.h>
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 #include <repo/error_codes.h>
 #include <repo/repo_controller.h>
 #include "../unit/repo_test_database_info.h"
@@ -521,44 +522,35 @@ TEST(RepoClientTest, UploadTestOwner)
 	EXPECT_TRUE(projectSettingsCheck("testDB", importNoOwnerPro2, "ANONYMOUS USER", "thisTag", "MyUpload"));
 }
 
-TEST(RepoClientTest, CreateFedTest)
+TEST(RepoClientTest, UploadSplitByFloors)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
+	auto handler = getHandler();
 
-	//Test Bad FilePath
-	std::string badFilePath = produceCreateFedArgs("nonExistentFile.json");
-	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(badFilePath));
+	// Tests whether the split-by-floor option works correctly.
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath("importFloorsSplit.json"))));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath("importFloorsNoSplit.json"))));
 
-	//Test Completely empty file
-	std::string emptyFilePath = produceCreateFedArgs(getDataPath(emptyFile));
-	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(emptyFilePath));
+	{
+		std::set<std::string> groups;
+		auto assets = handler->getAllFromCollectionTailable("testDB", "floors_split.stash.repobundles", 0, 1, {}, "timestamp");
+		EXPECT_EQ(assets.size(), 1);
+		for (auto& sm : assets[0].getObjectArray("metadata")) {
+			if (sm.hasField("groups")) {
+				for (auto& group : sm.getStringArray("groups")) {
+					groups.insert(group);	
+				}
+			}
+		}
+		EXPECT_THAT(groups, UnorderedElementsAre("Level 0", "Level 1", "Level 2"));
+	}
 
-	//Test json file with {}
-	std::string empty2FilePath = produceCreateFedArgs(getDataPath(emptyJSONFile));
-	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(empty2FilePath));
-
-	//Test json file with no sub projects
-	std::string noSPFilePath = produceCreateFedArgs(getDataPath(noSubProjectJSONFile));
-	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(noSPFilePath));
-	EXPECT_FALSE(projectExists(genFedDB, genFedNoSubProName));
-
-	//Test json file with empty string as database name
-	std::string noDBFilePath = produceCreateFedArgs(getDataPath(noDbNameJSONFile));
-	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(noDBFilePath));
-
-	//Test json file with empty string as project name
-	std::string noProFilePath = produceCreateFedArgs(getDataPath(noProNameJSONFile));
-	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(noProFilePath));
-
-	//Test badly formatted JSON file
-	std::string invalidJSONFilePath = produceCreateFedArgs(getDataPath(invalidJSONFile));
-	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(invalidJSONFilePath));
-
-	//Test success
-	std::string goodFilePath = produceCreateFedArgs(getDataPath(validGenFedJSONFile));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(goodFilePath));
-	EXPECT_TRUE(projectExists(genFedDB, genFedSuccessName));
+	{
+		auto assets = handler->getAllFromCollectionTailable("testDB", "floors_no_split.stash.repobundles", 0, 1, {}, "timestamp");
+		EXPECT_EQ(assets.size(), 1);
+		for (auto& sm : assets[0].getObjectArray("metadata")) {
+			EXPECT_THAT(sm.hasField("groups"), IsFalse());
+		}
+	}
 }
 
 TEST(RepoClientTest, GenStashTest)
