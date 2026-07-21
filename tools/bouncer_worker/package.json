@@ -23,7 +23,7 @@
     "tree-kill": "1.2.2",
     "uuid": "8.3.2",
     "winston": "3.17.0",
-    "yargs": "16.2.0",
+    "yargs": "16.2.2",
     "yup": "1.6.1"
   },
   "devDependencies": {
