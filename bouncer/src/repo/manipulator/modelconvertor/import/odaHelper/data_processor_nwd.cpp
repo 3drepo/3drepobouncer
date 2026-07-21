@@ -24,6 +24,9 @@
 #include "repo/manipulator/modelconvertor/import/odaHelper/repo_mesh_builder.h"
 #include "repo/core/model/bson/repo_node_transformation.h"
 #include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/lib/datastructure/repo_variant_utils.h"
+
+#include <repo_log.h>
 
 // ODA
 #include <OdaCommon.h>
@@ -657,27 +660,22 @@ void addTriangleData(
 {
 	const OdGePoint3dArray& aVertices = aVertexesData->getVertices();
 	const OdGeVector3dArray& aNormals = aVertexesData->getNormals();
-	const OdGePoint2dArray& aUvs = aVertexesData->getTexCoords();
+
+	// Textures are ignored for now, but if we wish to process them in the future
+	// the Uv coordinates are accessed nominally via the getTexCoords() member of
+	// OdNwVerticesData. Take care that we have encountered models before where
+	// the texcoords and vertices arrays are different lengths, so the necessary
+	// transformation of Uvs should be investigated properly if this is ever
+	// reintroduced.
 
 	for (auto triangle = aTrianglesBegin; triangle != aTrianglesEnd; triangle++)
 	{
 		RepoMeshBuilder::face face;
-
 		face.setVertices({
 			convertPoint(aVertices[triangle->pointIndex1], transformMatrix),
 			convertPoint(aVertices[triangle->pointIndex2], transformMatrix),
 			convertPoint(aVertices[triangle->pointIndex3], transformMatrix)
 			});
-
-		if (aUvs.length())
-		{
-			face.setUvs({
-				convertPoint(aUvs[triangle->pointIndex1]),
-				convertPoint(aUvs[triangle->pointIndex2]),
-				convertPoint(aUvs[triangle->pointIndex3])
-				});
-		}
-
 		meshBuilder.addFace(face);
 	}
 }
@@ -804,12 +802,31 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 		}
 	}
 
-	std::vector<repo::core::model::MeshNode> nodes;
-	meshBuilder.extractMeshes(nodes);
-	for (auto& mesh : nodes)
-	{
-		mesh.setMaterial(meshBuilder.getMaterial());
-		context.sceneBuilder->addNode(mesh);
+	if (meshBuilder.hasMeshes()) {
+
+		// Just before the meshes are stored, try to move any large offsets into the 
+		// parent's transformation. It is possible for multiple meshBuilders to
+		// contribute to the same parent, but for well constructed scenes meshes under
+		// those parents should be nearby.
+
+		// This condition should only ever be true once - it is possible for it to be true
+		// if we get a valid mesh that has zero size. Currently this is not possible as we
+		// only handle triangles and lines - but if we add support for points that will no
+		// longer hold.
+
+		if (context.parentNode->getTransMatrix().isIdentity()) {
+			repo::lib::RepoBounds bounds;
+			meshBuilder.getBounds(bounds);
+			context.parentNode->setTransformation(repo::lib::RepoMatrix::translate(bounds.center()));
+		}
+
+		std::vector<repo::core::model::MeshNode> nodes;
+		meshBuilder.extractMeshes(nodes, context.parentNode->getTransMatrix().inverse());
+		for (auto& mesh : nodes)
+		{
+			mesh.setMaterial(meshBuilder.getMaterial());
+			context.sceneBuilder->addNode(mesh);
+		}
 	}
 
 	return eOk;
@@ -910,6 +927,14 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 
 			context.parentNode = context.sceneBuilder->addNode(RepoBSONFactory::makeTransformationNode({}, levelName, { context.parentNode->getSharedID() }));
 
+			// To match the plug-in, and ensure metadata ends up in the right place for
+			// the benefit of smart groups, node properties are overridden with their
+			// parent's metadata
+			std::unordered_map<std::string, repo::lib::RepoVariant> merged = metadata;
+			for (auto p : context.parentMetadata) {
+				merged[p.first] = p.second;
+			}
+
 			// GetIcon distinguishes the type of node. This corresponds to the icon seen in
 			// the Selection Tree View in Navisworks.
 			// https://docs.opendesign.com/bimnv/OdNwModelItem__getIcon@const.html
@@ -919,14 +944,27 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 			if (pNode->getIcon() == NwModelItemIcon::LAYER)
 			{
 				context.layer = pNode;
-			}
 
-			// To match the plug-in, and ensure metadata ends up in the right place for
-			// the benefit of smart groups, node properties are overridden with their
-			// parent's metadata
-			std::unordered_map<std::string, repo::lib::RepoVariant> merged = metadata;
-			for (auto p : context.parentMetadata) {
-				merged[p.first] = p.second;
+				// For layers, check if we need to add the magic floor metadata. This applies
+				// to Rvt and Ifc partitions - both of which will create Layer's for floors.
+				//
+				// This magic parameter should be applied directly to the node's - it should
+				// not be inherited like the other parameters above. Hence we check the map
+				// extracted from the node (metadata) but write to map that is written to the
+				// db (merged).
+				{
+					auto it = metadata.find("Item::Internal Type"); // For Rvt files, look for the LcRevitLayer type
+					if (it != metadata.end() && boost::apply_visitor(repo::lib::StringConversionVisitor(), it->second) == "LcRevitLayer") {
+						merged[REPO_METADATA_GROUPING_FLOOR] = levelName;
+					}
+				}
+
+				{
+					auto it = metadata.find("Element::IfcClass"); // For Ifc files, look for the IfcBuildingStorey class
+					if (it != metadata.end() && boost::apply_visitor(repo::lib::StringConversionVisitor(), it->second) == "IfcBuildingStorey") {
+						merged[REPO_METADATA_GROUPING_FLOOR] = levelName;
+					}
+				}
 			}
 
 			context.sceneBuilder->addNode(RepoBSONFactory::makeMetaDataNode(merged, context.parentNode->getName(), { context.parentNode->getSharedID() }));

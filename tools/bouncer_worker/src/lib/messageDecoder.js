@@ -16,24 +16,24 @@
  */
 
 const fs = require('fs');
-const { config, configPath } = require('./config');
+const { configPath, replaceSharedDirTag } = require('./config');
 const { ERRCODE_ARG_FILE_FAIL } = require('../constants/errorCodes');
 const logger = require('./logger');
 
 const replaceSharedDirPlaceHolder = (command) => {
-	const tagToReplace = '$SHARED_SPACE';
 	// messages coming in has a placeholder for $SHARED_SPACE.
 	// we need to do a find/replace to make it use rabbitmq sharedDir instead
 	let cmd = command;
-	cmd = cmd.replace(tagToReplace, config.rabbitmq.sharedDir);
 	const cmdArr = cmd.split(/\s+/);
 	if (cmdArr[0] === 'import') {
-		const data = fs.readFileSync(cmdArr[2], 'utf8');
-		const result = data.replace(tagToReplace, config.rabbitmq.sharedDir);
+		cmd = replaceSharedDirTag(cmd);
+		cmdArr[2] = replaceSharedDirTag(cmdArr[2]);
+		const result = replaceSharedDirTag(fs.readFileSync(cmdArr[2], 'utf8'));
 		fs.writeFileSync(cmdArr[2], result, 'utf8');
 	} else if (cmdArr[0] === 'processDrawing') {
-		const data = fs.readFileSync(cmdArr[1], 'utf8');
-		const result = data.replace(tagToReplace, config.rabbitmq.sharedDir);
+		cmd = replaceSharedDirTag(cmd);
+		cmdArr[1] = replaceSharedDirTag(cmdArr[1]);
+		const result = replaceSharedDirTag(fs.readFileSync(cmdArr[1], 'utf8'));
 		fs.writeFileSync(cmdArr[1], result, 'utf8');
 	}
 	return cmd;
@@ -51,8 +51,8 @@ const messageDecoder = (cmd) => {
 					const cmdFile = require(args[2]);
 					res = {
 						cmdParams: [configPath, ...args],
-						database: cmdFile.database,
-						model: cmdFile.project,
+						teamspace: cmdFile.teamspace,
+						container: cmdFile.container,
 						user: cmdFile.owner,
 						file: cmdFile.file,
 						...res,
@@ -65,8 +65,8 @@ const messageDecoder = (cmd) => {
 					const cmdFile = require(args[1]);
 					res = {
 						cmdParams: [configPath, ...args],
-						database: cmdFile.database,
-						model: cmdFile.project,
+						teamspace: cmdFile.teamspace,
+						drawing: cmdFile.drawing,
 						user: cmdFile.owner,
 						file: cmdFile.file,
 						format: cmdFile.format,
@@ -75,24 +75,20 @@ const messageDecoder = (cmd) => {
 					};
 				}
 				break;
-			case 'genFed':
-				{
-					// eslint-disable-next-line
-					const cmdFile = require(args[1]);
-					res = {
-						cmdParams: [configPath, ...args],
-						database: cmdFile.database,
-						model: cmdFile.project,
-						user: cmdFile.owner,
-						...res,
-					};
-				}
+			case 'processClash':
+				res = {
+					cmdParams: [configPath],
+					teamspace: args[1],
+					project: args[2],
+					configFile: args[3],
+					...res,
+				};
 				break;
 			case 'genStash':
 				res = {
 					cmdParams: [configPath, ...args],
-					database: args[1],
-					model: args[2],
+					teamspace: args[1],
+					container: args[2],
 					...res,
 				};
 				break;

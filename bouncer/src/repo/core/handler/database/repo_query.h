@@ -46,14 +46,14 @@ namespace repo {
 					class REPO_API_EXPORT Eq
 					{
 					public:
-						Eq(std::string field, std::vector<repo::lib::RepoVariant> oneOf) :
+						Eq(std::string field, const std::vector<repo::lib::RepoVariant>& oneOf) :
 							field(field),
 							values(oneOf)
 						{
 						}
 
 						template<typename T>
-						Eq(std::string field, std::vector<T> oneOf) :
+						Eq(std::string field, const std::vector<T>& oneOf) :
 							field(field)
 						{
 							for (auto& v : oneOf) {
@@ -62,7 +62,25 @@ namespace repo {
 						}
 
 						template<typename T>
-						Eq(const char* field, std::vector<T> oneOf) :
+						Eq(std::string field, const std::set<T>& oneOf) :
+							field(field)
+						{
+							for (auto& v : oneOf) {
+								values.push_back(v);
+							}
+						}
+
+						template<typename T>
+						Eq(const char* field, const std::vector<T>& oneOf) :
+							field(field)
+						{
+							for (auto& v : oneOf) {
+								values.push_back(v);
+							}
+						}
+
+						template<typename T>
+						Eq(const char* field, const std::set<T>& oneOf) :
 							field(field)
 						{
 							for (auto& v : oneOf) {
@@ -75,6 +93,12 @@ namespace repo {
 							:field(field)
 						{
 							values.push_back(value);
+						}
+
+						Eq(const char* field, const char* value)
+							: field(field)
+						{
+							values.push_back(std::string(value));
 						}
 
 						template<typename T>
@@ -124,6 +148,30 @@ namespace repo {
 						}
 
 						std::vector<RepoQuery> conditions;
+					};
+
+					class REPO_API_EXPORT ArrayContains
+					{
+					public:
+						template<typename T>
+						ArrayContains(std::string array, T query)
+							:field(array),
+							q({query})
+						{
+						}
+
+						std::string field;
+
+						const RepoQuery& query() const {
+							return q[0];
+						}
+
+					private:
+						// Variants must know the size of their types ahead of time, so we cannot
+						// have circular definitions. We use a vector as a trivial indirection as
+						// this container has all the necessary traits (copyable, assignable,
+						// trivially destructible, etc), but it will only ever store one element.
+						std::vector<RepoQuery> q;
 					};
 
 					/*

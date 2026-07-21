@@ -31,19 +31,7 @@ void repo::core::model::StreamingMeshNode::SupermeshingData::bakeMeshes(const re
 	}
 
 	// Normals
-	auto matInverse = transform.invert();
-	auto worldMat = matInverse.transpose();
-
-	auto data = worldMat.getData();
-	data[3] = data[7] = data[11] = 0;
-	data[12] = data[13] = data[14] = 0;
-
-	repo::lib::RepoMatrix multMat(data);
-
-	for (int i = 0; i < normals.size(); i++) {
-		normals[i] = multMat * normals[i];
-		normals[i].normalize();
-	}
+	repo::core::model::MeshNode::transformNormals(normals, transform);
 }
 
 void repo::core::model::StreamingMeshNode::SupermeshingData::deserialise(const repo::core::model::RepoBSON& bson, const std::vector<uint8_t>& buffer, const bool ignoreUVs)
@@ -135,6 +123,9 @@ repo::core::model::StreamingMeshNode::StreamingMeshNode(const repo::core::model:
 	if (bson.hasField(REPO_NODE_MESH_LABEL_BOUNDING_BOX)) {
 		bounds = bson.getBoundsField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
 	}
+	if (bson.hasField(REPO_NODE_MESH_LABEL_GROUPING)) {
+		grouping = bson.getStringField(REPO_NODE_MESH_LABEL_GROUPING);
+	}
 }
 
 void repo::core::model::StreamingMeshNode::loadSupermeshingData(const repo::core::model::RepoBSON& bson, const std::vector<uint8_t>& buffer, const bool ignoreUVs)
@@ -148,6 +139,12 @@ void repo::core::model::StreamingMeshNode::loadSupermeshingData(const repo::core
 	supermeshingData = std::make_unique<SupermeshingData>(bson, buffer, ignoreUVs);
 }
 
+void repo::core::model::StreamingMeshNode::assertSupermeshingDataLoaded() {
+	if (!supermeshingDataLoaded()) {
+		throw repo::lib::RepoException("Tried to access supermesh geometry of StreamingMeshNode without loading geometry first.");
+	}
+}
+
 void repo::core::model::StreamingMeshNode::transformBounds(const repo::lib::RepoMatrix& transform)
 {
 	auto newMinBound = transform * bounds.min();
@@ -155,85 +152,43 @@ void repo::core::model::StreamingMeshNode::transformBounds(const repo::lib::Repo
 	bounds = repo::lib::RepoBounds(newMinBound, newMaxBound);
 }
 
-const repo::lib::RepoUUID repo::core::model::StreamingMeshNode::getUniqueId()
-{
-	if (supermeshingDataLoaded()) {
-		return supermeshingData->getUniqueId();
-	}
-	else {
-		repoError << "Tried to access supermesh geometry of StreamingMeshNode without loading geometry first. Empty returned.";
-		return repo::lib::RepoUUID();
-	}
+const repo::lib::RepoUUID repo::core::model::StreamingMeshNode::getUniqueId() {
+	assertSupermeshingDataLoaded();
+	return supermeshingData->getUniqueId();
 }
 
 const std::uint32_t repo::core::model::StreamingMeshNode::getNumLoadedFaces() {
-	if (supermeshingDataLoaded()) {
-		return supermeshingData->getNumFaces();
-	}
-	else {
-		repoError << "Tried to access supermesh geometry of StreamingMeshNode without loading geometry first. Empty returned.";
-		return 0;
-	}
+	assertSupermeshingDataLoaded();
+	return supermeshingData->getNumFaces();
 }
 
-const std::vector<repo::lib::repo_face_t>& repo::core::model::StreamingMeshNode::getLoadedFaces()
-{
-	if (supermeshingDataLoaded()) {
-		return supermeshingData->getFaces();
-	}
-	else {
-		repoError << "Tried to access supermesh geometry of StreamingMeshNode without loading geometry first. Empty returned.";
-		return emptyFace;
-	}
+const std::vector<repo::lib::repo_face_t>& repo::core::model::StreamingMeshNode::getLoadedFaces() {
+	assertSupermeshingDataLoaded();
+	return supermeshingData->getFaces();
 }
 
 const std::uint32_t repo::core::model::StreamingMeshNode::getNumLoadedVertices() {
-	if (supermeshingDataLoaded()) {
-		return supermeshingData->getNumVertices();
-	}
-	else {
-		repoError << "Tried to access supermesh geometry of StreamingMeshNode without loading geometry first. Empty returned.";
-		return 0;
-	}
+	assertSupermeshingDataLoaded();
+	return supermeshingData->getNumVertices();
 }
 
 const std::vector<repo::lib::RepoVector3D>& repo::core::model::StreamingMeshNode::getLoadedVertices() {
-	if (supermeshingDataLoaded()) {
-		return supermeshingData->getVertices();
-	}
-	else {
-		repoError << "Tried to access supermesh geometry of StreamingMeshNode without loading geometry first. Empty returned.";
-		return empty3D;
-	}
+	assertSupermeshingDataLoaded();
+	return supermeshingData->getVertices();
 }
 
 void repo::core::model::StreamingMeshNode::bakeLoadedMeshes(const repo::lib::RepoMatrix& transform) {
-	if (supermeshingDataLoaded()) {
-		supermeshingData->bakeMeshes(transform);
-	}
-	else {
-		repoError << "Tried to access supermesh geometry of StreamingMeshNode without loading geometry first. No action performed.";
-	}
+	assertSupermeshingDataLoaded();
+	return supermeshingData->bakeMeshes(transform);
 }
 
-const std::vector<repo::lib::RepoVector3D>& repo::core::model::StreamingMeshNode::getLoadedNormals()
-{
-	if (supermeshingDataLoaded()) {
-		return supermeshingData->getNormals();
-	}
-	else {
-		repoError << "Tried to access supermesh geometry of StreamingMeshNode without loading geometry first. Empty returned.";
-		return empty3D;
-	}
+const std::vector<repo::lib::RepoVector3D>& repo::core::model::StreamingMeshNode::getLoadedNormals() {
+	assertSupermeshingDataLoaded();
+	return supermeshingData->getNormals();
 }
 
 const std::vector<std::vector<repo::lib::RepoVector2D>>& repo::core::model::StreamingMeshNode::getLoadedUVChannelsSeparated()
 {
-	if (supermeshingDataLoaded()) {
-		return supermeshingData->getUVChannelsSeparated();
-	}
-	else {
-		repoError << "Tried to access supermesh geometry of StreamingMeshNode without loading geometry first. Empty returned.";
-		return emptyUV;
-	}
+	assertSupermeshingDataLoaded();
+	return supermeshingData->getUVChannelsSeparated();
 }

@@ -1,0 +1,12 @@
+name: Run Docker build test
+
+on: push
+
+permissions:
+  contents: read
+
+jobs:
+  build-docker:
+    uses: ./.github/workflows/_dockerBuild.yml
+    with:
+      target: init

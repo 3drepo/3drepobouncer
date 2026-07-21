@@ -22,6 +22,7 @@
 #include "data_processor_rvt.h"
 #include "helper_functions.h"
 #include "repo/lib/repo_utils.h"
+#include "repo/lib/repo_units.h"
 #include "repo/core/model/bson/repo_bson_builder.h"
 #include <Database/BmTransaction.h>
 #include <Database/BmUnitUtils.h>
@@ -31,8 +32,6 @@
 #include <Base/BmSpecTypeId.h>
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
-
-using ModelUnits = repo::manipulator::modelconvertor::ModelUnits;
 
 static const char* ODA_CSV_LOCATION = "ODA_CSV_LOCATION";
 static const std::string REVIT_ELEMENT_ID = "Element ID";
@@ -212,7 +211,7 @@ void DataProcessorRvt::initialise(GeometryCollector* collector, OdBmDatabasePtr 
 	this->collector = collector;
 	this->view = view;
 	this->modelToProjectCoordinates = modelToWorld;
-	collector->setUnits(repo::manipulator::modelconvertor::ModelUnits::FEET); // For Revit, the API always uses the internal coordinate system units, which are ft.
+	collector->setUnits(repo::lib::ModelUnits::FEET); // For Revit, the API always uses the internal coordinate system units, which are ft.
 }
 
 void DataProcessorRvt::beginViewVectorization()
@@ -292,9 +291,8 @@ void DataProcessorRvt::draw(const OdGiDrawable* pDrawable)
 		// no way to know for sure an element will result in geometry on the screen
 		// until it starts outputting vertices. Therefore, we only commit transform
 		// nodes the first time we actually get meshes for them.
-
-		auto meshes = ctx->extractMeshes();
-		if (meshes.size())
+		
+		if (ctx->hasMeshes())
 		{
 			// For Revit files, drawable elements are arranged into layers, not unlike
 			// drawings. This means we can get everything from just the element.
@@ -304,8 +302,18 @@ void DataProcessorRvt::draw(const OdGiDrawable* pDrawable)
 
 			// These methods create the transformation nodes on-demand
 
-			collector->createLayer(levelName, levelName, {});
-			collector->createLayer(elementName, elementName, levelName);
+			if (collector->createLayer(levelName, levelName, {}, {})) {
+				repo::core::model::RepoRef::Metadata meta;
+				meta[REPO_METADATA_GROUPING_FLOOR] = levelName; // This is the magic tag used to indicate this branch should form a level grouping, if that feature is used
+				collector->setMetadata(levelName, meta);
+			}
+
+			// This call does not necessarily update the transform, so make sure to get
+			// the transform explicitly when processing the meshes.
+
+			collector->createLayer(elementName, elementName, levelName, repo::lib::RepoMatrix::translate(ctx->getBounds().min()));
+
+			auto meshes = ctx->extractMeshes(collector->getLayerTransform(elementName).inverse());
 			collector->addMeshes(elementName, meshes);
 
 			try
@@ -641,27 +649,78 @@ std::unordered_map<std::string, repo::lib::RepoVariant> DataProcessorRvt::fillMe
 	return metadata;
 }
 
+OdCmEntityColor fixByACI(const ODCOLORREF* ids, const OdCmEntityColor& color)
+{
+	if (color.isByACI() || color.isByDgnIndex())
+	{
+		return OdCmEntityColor(ODGETRED(ids[color.colorIndex()]), ODGETGREEN(ids[color.colorIndex()]), ODGETBLUE(ids[color.colorIndex()]));
+	}
+	else if (!color.isByColor())
+	{
+		return OdCmEntityColor(0, 0, 0);
+	}
+	return color;
+}
+
 std::vector<float> toRepoColour(const OdGiMaterialColor& c)
 {
 	return { c.color().red() / 255.0f, c.color().green() / 255.0f, c.color().blue() / 255.0f, 1.0f };
 }
 
+std::vector<float> toRepoColour(const ODCOLORREF& c)
+{
+	return { ODGETRED(c) / 255.0f, ODGETGREEN(c) / 255.0f, ODGETBLUE(c) / 255.0f, 1.0f };
+}
+
+std::vector<float> toRepoColour(const OdBmCmColor& c)
+{
+	return {c.red() / 255.0f, c.green() / 255.0f, c.blue() / 255.0f, 1.0f};
+}
+
+std::vector<float> toRepoColour(const OdCmEntityColor& c)
+{
+	return {c.red() / 255.0f, c.green() / 255.0f, c.blue() / 255.0f, 1.0f};
+}
+
+std::vector<float> toRepoColour(const OdGiMaterialColor& c, const OdCmEntityColor& fallback)
+{
+	if (c.method() != OdGiMaterialColor::kInherit) {
+		return toRepoColour(c);
+	}
+	else {
+		return toRepoColour(fallback);
+	}
+}
+
 void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiMaterialTraitsData& materialData, repo::lib::repo_material_t& material)
 {
+	// Revit pulls material properties from different places, depending on the
+	// display mode.
+	// The Rvt importer attempts to match what the corresponding settings would
+	// do in the Revit viewport.
+	
+	// The effectiveTraits method returns the current 'brush' settings for the
+	// device. This is one way in which colours can be defined.
+
+	OdCmEntityColor deviceColour = fixByACI(this->baseDevice()->getPalette(), effectiveTraits().trueColor());
+
+	// The material traits object that comes with the cache should initialise most
+	// properties correctly.
+
 	OdGiMaterialColor colour;
 
 	materialData.shadingDiffuse(colour);
-	material.diffuse = toRepoColour(colour);
+	material.diffuse = toRepoColour(colour, deviceColour);
 
 	materialData.shadingSpecular(colour);
-	material.specular = toRepoColour(colour);
+	material.specular = toRepoColour(colour, deviceColour);
 
 	materialData.shadingAmbient(colour);
-	material.ambient = toRepoColour(colour);
+	material.ambient = toRepoColour(colour, deviceColour);
 
 	OdGiMaterialMap map;
 	materialData.emission(colour, map);
-	material.emissive = toRepoColour(colour);
+	material.emissive = toRepoColour(colour, deviceColour);
 
 	double opacity;
 	materialData.shadingOpacity(opacity);
@@ -671,8 +730,23 @@ void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const OdGiM
 	materialData.specular(specularColor, specularMap, glossFactor);
 	material.shininessStrength = glossFactor;
 
+	// Some material properties however live directly on the material, and are
+	// not picked up by the Visualize SDK, so pull these directly to better
+	// approximate Revit.
+
 	if (!materialPtr.isNull())
+	{
 		material.shininess = (float)materialPtr->getMaterial()->getShininess() / 255.0f;
+
+		// This colour is that in the Material's Graphics -> Shading tab, which
+		// corresponds to the colour used in flat shaded mode.
+		// It is masked by Use Render Appearance, which is the toggle next to it
+		// which specifies that the photo-real colour should be used instead.		
+
+		if (!materialPtr->getUseRenderAppearance()) {
+			material.diffuse = toRepoColour(materialPtr->getMaterial()->getColor());
+		}
+	}
 }
 
 void DataProcessorRvt::fillTexture(OdBmMaterialElemPtr materialPtr, repo::lib::repo_material_t& material, bool& missingTexture)

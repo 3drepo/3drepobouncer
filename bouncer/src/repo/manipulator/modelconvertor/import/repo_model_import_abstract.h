@@ -59,11 +59,11 @@ namespace repo {
 				virtual bool applyReduction() const { return true; }
 				virtual bool requireReorientation() const { return false; }
 
-				ModelUnits getUnits() const { return modelUnits; }
+				repo::lib::ModelUnits getUnits() const { return modelUnits; }
 
 			protected:
 				const ModelImportConfig settings; /*! Stores related settings for model import */
-				ModelUnits modelUnits = ModelUnits::UNKNOWN;
+				repo::lib::ModelUnits modelUnits = repo::lib::ModelUnits::UNKNOWN;
 			};
 		} //namespace modelconvertor
 	} //namespace manipulator

@@ -107,6 +107,7 @@ namespace repo {
 				};
 			}
 
+			// This class is considered thread-safe.
 			class AbstractDatabaseHandler {
 			public:
 				/**
@@ -172,8 +173,9 @@ namespace repo {
 				* @param name name of the collection
 				* @param index BSONObj specifying the index
 				* @param bool whether this is a sparse index
+				* @param suppressInfo flag whether the creation of the index should be announced on the command line. Used to accelerate soak tests.
 				*/
-				virtual void createIndex(const std::string& database, const std::string& collection, const database::index::RepoIndex& index, bool sparse) = 0;
+				virtual void createIndex(const std::string& database, const std::string& collection, const database::index::RepoIndex& index, bool sparse, bool suppressInfo = false) = 0;
 
 				/**
 				* Insert a single document in database.collection
@@ -362,9 +364,23 @@ namespace repo {
 					const std::string& database,
 					const std::string& collection) = 0;
 
-				virtual void setFileManager(std::shared_ptr<repo::core::handler::fileservice::FileManager> manager) = 0;
+				void setFileManager(std::shared_ptr<repo::core::handler::fileservice::FileManager> manager)
+				{
+					// Lock the muxtex to avoid race conditions with other threads trying to set the fileManager
+					std::scoped_lock fileManagerLock{ fileManagerMutex };
+
+					// Return if the file manager is already set or set it otherwise
+					if (this->fileManager != nullptr)
+						return;
+					this->fileManager = manager;
+				}
 
 				virtual std::shared_ptr<repo::core::handler::fileservice::FileManager> getFileManager() = 0;
+
+				virtual void loadBinaryBuffers(
+					const std::string& database,
+					const std::string& collection,
+					repo::core::model::RepoBSON& bson) = 0;
 
 			protected:
 				/**
@@ -379,6 +395,8 @@ namespace repo {
 				// as large vectors of binary data. It must be set using setFileManager
 				// before documents containing such members are uploaded.
 				std::shared_ptr<repo::core::handler::fileservice::FileManager> fileManager;
+
+				std::mutex fileManagerMutex;
 			};
 		}
 	}

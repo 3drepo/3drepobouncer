@@ -1,0 +1,478 @@
+/**
+*  Copyright (C) 2026 3D Repo Ltd
+*
+*  This program is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU Affero General Public License as
+*  published by the Free Software Foundation, either version 3 of the
+*  License, or (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU Affero General Public License for more details.
+*
+*  You should have received a copy of the GNU Affero General Public License
+*  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#include "repo_deformdepth.h"
+#include "repo/lib/datastructure/repo_structs.h"
+#include "geometry_tests.h"
+#include "repo/manipulator/modeloptimizer/bvh/sweep_sah_builder.hpp"
+#include "repo/manipulator/modeloptimizer/bvh/hierarchy_refitter.hpp"
+#include "bvh_operators.h"
+
+#include <set>
+
+using namespace geometry;
+using namespace repo::lib;
+
+using Bvh = bvh::Bvh<double>;
+
+namespace {
+	// Updates the Bvh bottom-up, refitting the bounds to the triangles under a given
+	// transformation. The Bvh is updated in-place, but the original triangles are
+    // not modified.
+
+	struct BvhRefitter
+	{
+		BvhRefitter(Bvh& bvh,
+			const std::vector<repo::lib::RepoVector3D64>& vertices,
+			const repo::lib::repo_face_t* faces)
+			: bvh(bvh), vertices(vertices), faces(faces)
+		{
+		}
+
+		Bvh& bvh;
+		const std::vector<repo::lib::RepoVector3D64>& vertices;
+		const repo::lib::repo_face_t* faces;
+
+		void refit()
+		{
+			if ( bvh.node_count <= 1 ) { // Special case if the BVH is just a leaf (not currently handled by BottomUpAlgorithm)
+				updateLeaf(bvh.nodes[0]);
+				return;
+			}
+			bvh::HierarchyRefitter<bvh::Bvh<double>> refitter(bvh);
+			refitter.refit(*this);
+		}
+
+		void updateLeaf(Bvh::Node& leaf) const
+		{
+			auto b = bvh::BoundingBox<double>::empty();
+			for ( size_t i = 0; i < leaf.primitive_count; i++ ) {
+				auto face = faces[bvh.primitive_indices[leaf.first_child_or_primitive + i]];
+				for (const auto& index : face) {
+					b.extend(reinterpret_cast< const bvh::Vector3<double>&>(vertices[index]));
+				}
+			}
+			leaf.bounding_box_proxy() = b;
+		}
+
+		void operator()(const Bvh::Node& node) const
+		{
+			updateLeaf(const_cast<Bvh::Node&>(node));
+		}
+	};
+}
+
+RepoDeformDepth::RepoDeformDepth(
+	RepoDeformDepth::Mesh& a,
+	const RepoDeformDepth::Mesh& b,
+	double tolerance) :
+	a(a),
+	b(b),
+	tolerance(tolerance),
+	distance(FLT_MAX)
+{
+	// If there is no intersection, there is nothing to do, which we signal by
+	// already setting the configuration distance to zero.
+
+	if (!intersect()) {
+		distance = 0.0;
+		return;
+	}
+
+	// Minimum separating axis is guaranteed to provide a separating vector, so
+	// provides a starting upper bounds on the penetration depth. Of course if
+	// this is smaller than the tolerance, we can end immediately too.
+
+	auto q = geometry::minimumSeparatingAxis(
+		a.bounds(),
+		b.bounds()
+	);
+	distance = std::min(distance, q.norm());
+
+	if (distance < tolerance) {
+		return;
+	}
+
+	// Perform a local search around the origin of (a). This is primarily to resolve
+	// collisions where (a) is a small object in a concavity, but it can also help
+	// in situations with very loose bounds.
+
+	auto axes = std::vector<repo::lib::RepoVector3D64>{
+		repo::lib::RepoVector3D64(1,0,0),
+		repo::lib::RepoVector3D64(0,1,0),
+		repo::lib::RepoVector3D64(0,0,1)
+	};
+
+	auto localSearchStepSize = tolerance / static_cast<double>(numLocalSearchSteps);
+
+	auto performLocalSearch = [&]() {
+		for (double istep = numLocalSearchSteps - 1; istep > 0; istep--) {
+			for (auto& axis : axes) {
+				for (int dir = -1; dir <= 1; dir += 2) {
+					auto pqs = axis * dir * (istep * localSearchStepSize);
+					if (!intersect(pqs)) { // Local search has found an intersection free configuration
+						return pqs;
+					}
+				}
+			}
+		}
+		return repo::lib::RepoVector3D64(FLT_MAX, FLT_MAX, FLT_MAX);
+	};
+
+	q = performLocalSearch();
+	distance = std::min(distance, q.norm());
+
+	if (distance < tolerance) {
+		return;
+	}
+
+	// Add additional early rejection tests here,
+	//	For example, a separating hyperplane (up to the tolerance) exists between
+	// the two vertex sets
+
+	// If we can't find a separating configuration without changing the mesh, then
+	// perform the deflation based search.
+
+	iterate();
+
+	// If we get to the deflation stage, then mesh (a) has changed - make sure to
+	// put it back in-case it is used again, as we if deflations stack we may end
+	// up with false positives.
+
+	a.resetConfiguration();
+}
+
+double RepoDeformDepth::getPenetrationDepth() const
+{
+	return distance;
+}
+
+bool RepoDeformDepth::intersect()
+{
+	return intersect(repo::lib::RepoVector3D64(0, 0, 0));
+}
+
+std::vector<repo::lib::RepoVector3D64> RepoDeformDepth::getContactManifold() const {
+	std::vector<repo::lib::RepoVector3D64> points;
+	points.push_back(a.bounds().center());
+	points.push_back(b.bounds().center());
+	return points;
+}
+
+namespace {
+	Bvh::Node operator+(const Bvh::Node& bounds, const RepoVector3D64& offset) {
+		Bvh::Node result = bounds;
+		result.bounds[0] += offset.x;
+		result.bounds[1] += offset.x;
+		result.bounds[2] += offset.y;
+		result.bounds[3] += offset.y;
+		result.bounds[4] += offset.z;
+		result.bounds[5] += offset.z;
+		return result;
+	}
+}
+
+bool RepoDeformDepth::intersect(const repo::lib::RepoVector3D64& m)
+{
+	bool intersecting = false;
+
+	for (auto& ga : a.faceGroups) {
+		for (auto& gb : b.faceGroups) {
+
+			bvh::traverse(ga.getBvh(), gb.getBvh(),
+				[&](const Bvh::Node& a, const Bvh::Node& b)
+				{
+					auto _a = a + m;
+					return bvh::predicates::contacts(_a, b);
+				},
+				[&](size_t _a, size_t _b)
+				{
+					auto triA = ga.getTriangle(_a) + m;
+					auto triB = gb.getTriangle(_b);
+
+					auto d = geometry::closestPoints(triA, triB);
+					auto ct = geometry::contactThreshold(triA, triB);
+					if (d.intersects || d.magnitude() < ct) {
+						intersecting = true;
+
+						// In hard mode, the configuration is either valid or it is not, so we can
+						// terminate the traversal the first time any intersection is found.
+						return true;
+					}
+
+					return false;
+				}
+			);
+
+			if (intersecting) { 
+				break; 
+			}
+		}
+
+		if (intersecting) { 
+			break; 
+		}
+	}
+
+	if (!intersecting) {
+		intersecting = contained(m);
+	}
+
+	return intersecting;
+}
+
+bool RepoDeformDepth::contained(const repo::lib::RepoVector3D64& m)
+{
+	for (auto& ga : a.faceGroups) {
+		for (auto& gb : b.faceGroups) {
+			if (ga.closed) {
+				if (geometry::contains(b._vertices, gb.getIndices(), gb.getBounds(), ga, {})) {
+					return true;
+				}
+			}
+			if (gb.closed) {
+				if (geometry::contains(a._vertices, ga.getIndices(), ga.getBounds(), gb, m)) {
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+void RepoDeformDepth::iterate(int maxIterations)
+{
+	if (distance < tolerance) {
+		return;
+	}
+
+	if (maxIterations < 0) {
+		maxIterations = (1.0 / deflateStepSize);
+	}
+
+	for(int i = 0; i < maxIterations; i++) {
+		if (intersect()) {
+			a.deflate(tolerance * deflateStepSize);
+
+			// If we've had to deform the mesh beyond the tolerance, there is no
+			// point in continuing further.
+			auto configDistance = a.getConfigurationDistance();
+			if(configDistance > tolerance) {
+				break;
+			}
+		}
+		else {
+			distance = a.getConfigurationDistance();
+			break;
+		}
+	}
+}
+
+RepoDeformDepth::Mesh::Mesh(geometry::RepoIndexedMesh&& mesh)
+{
+	vertices = std::move(mesh.vertices);
+	faces = std::move(mesh.faces);
+	faceGroups.push_back(Faces(*this, 0, faces.size()));
+	initialise();
+}
+
+void RepoDeformDepth::Mesh::addFaceRange(size_t start, size_t end) {
+	faceGroups.push_back(Faces(*this, start, end - start));
+}
+
+RepoDeformDepth::Mesh::Faces::Faces(
+	const geometry::RepoIndexedMesh& mesh, 
+	size_t start, 
+	size_t length)
+	:mesh(mesh),
+	start(start),
+	length(length),
+	closed(geometry::isClosedAndManifold(mesh.faces.data() + start, length))
+{
+	std::set<size_t> indices;
+	for(int i = 0; i < length; i++) {
+		auto& face = mesh.faces[start + i];
+		indices.insert(face[0]);
+		indices.insert(face[1]);
+		indices.insert(face[2]);
+	}
+	orderedIndices = std::vector<size_t>(indices.begin(), indices.end());
+	geometry::orderVertices(mesh.vertices, orderedIndices);
+}
+
+repo::lib::RepoBounds RepoDeformDepth::Mesh::Faces::getBounds() const {
+	const auto& a = bvh.nodes[0];
+	return repo::lib::RepoBounds(
+		repo::lib::RepoVector3D64(a.bounds[0], a.bounds[2], a.bounds[4]),
+		repo::lib::RepoVector3D64(a.bounds[1], a.bounds[3], a.bounds[5])
+	);
+}
+
+std::vector<size_t> RepoDeformDepth::Mesh::Faces::getIndices() const {
+	return orderedIndices;
+}
+
+void RepoDeformDepth::Mesh::deflate(double amount)
+{
+	for (auto vi = 0; vi < _vertices.size(); vi++) {
+		auto& v = _vertices[vi];
+		auto& n = pseudoNormals[vi];
+		v = v - n * amount;
+	}
+
+	for (auto& s : faceGroups) {
+		BvhRefitter refitter(s.bvh, _vertices, faces.data() + s.start);
+		refitter.refit();
+	}
+
+	deformed = true;
+}
+
+void RepoDeformDepth::Mesh::resetConfiguration()
+{
+	if(!deformed) {
+		return;
+	}
+	_vertices = vertices;
+
+	for (auto& s : faceGroups) {
+		BvhRefitter refitter(s.bvh, _vertices, faces.data() + s.start);
+		refitter.refit();
+	}
+
+	deformed = false;
+}
+
+repo::lib::RepoTriangle RepoDeformDepth::Mesh::getTriangle(size_t index) const
+{
+	auto& face = faces[index];
+	return repo::lib::RepoTriangle(
+		_vertices[face[0]],
+		_vertices[face[1]],
+		_vertices[face[2]]
+	);
+}
+
+repo::lib::RepoBounds RepoDeformDepth::Mesh::bounds() const
+{
+	repo::lib::RepoBounds b;
+	for (auto& g : faceGroups) {
+		b.encapsulate(g.getBounds());
+	} 
+	return b;
+}
+
+double RepoDeformDepth::Mesh::getConfigurationDistance() const
+{
+	double maxDistance = 0.0;
+	for (size_t vi = 0; vi < vertices.size(); vi++) {
+		maxDistance = std::max((vertices[vi] - _vertices[vi]).norm(), maxDistance);
+	}
+	return maxDistance;
+}
+
+void RepoDeformDepth::Mesh::initialise()
+{
+	_vertices = vertices;
+	buildBvh();
+	computePseudoNormals();
+	deformed = false;
+}
+
+void RepoDeformDepth::Mesh::buildBvh()
+{
+	for (auto& s : faceGroups) {
+		bvh::builders::build(s.bvh, _vertices, faces.data() + s.start, s.length);
+	}
+}
+
+void RepoDeformDepth::Mesh::computePseudoNormals() {
+	pseudoNormals.resize(vertices.size());
+
+	// The following algorithm computes boundary-adapted pseudo-normals for each
+	// vertex. These are angle-weighted normals from the faces, averaged with
+	// the 3D normals any boundary edges.
+	// 3D normals are orthogonal to both the face and the edge, that is, pointing
+	// 'outwards' from the boundary approximating the surface that might close the
+	// opening.
+
+	// (Note that these are not normals for the edges, but the per-vertex normals
+	// that result from the orientation of the edges.)
+
+	std::vector<repo::lib::RepoVector3D64> edgeNormals;
+	edgeNormals.resize(vertices.size());
+
+	// Find all the edges in advance so when we iterate the faces again, we will
+	// now whether a given edge is a boundary edge or not.
+
+	std::set<std::pair<size_t, size_t>> edges;
+	for (const auto& f : faces) {
+		edges.insert({f[0], f[1]});
+		edges.insert({f[1], f[2]});
+		edges.insert({f[2], f[0]});
+	}
+
+	for (const auto& f : faces) {
+		auto v0 = vertices[f[0]];
+		auto v1 = vertices[f[1]];
+		auto v2 = vertices[f[2]];
+
+		auto v01 = (v1 - v0).normalized();
+		auto v10 = -v01;
+		auto v12 = (v2 - v1).normalized();
+		auto v21 = -v12;
+		auto v20 = (v0 - v2).normalized();
+		auto v02 = -v20;
+
+		auto a0 = std::acos(v01.dotProduct(v02));
+		auto a1 = std::acos(v10.dotProduct(v12));
+		auto a2 = std::acos(v20.dotProduct(v21));
+
+		auto n = v01.crossProduct(v02).normalized();
+
+		pseudoNormals[f[0]] += n * a0;
+		pseudoNormals[f[1]] += n * a1;
+		pseudoNormals[f[2]] += n * a2;
+
+		// If edges are shared/non-boundary, then they don't have normals of their own
+
+		if (!edges.contains({f[1], f[0]})) {
+			auto n01 = v01.crossProduct(n).normalized();
+			edgeNormals[f[0]] += n01;
+			edgeNormals[f[1]] += n01;
+		}
+
+		if (!edges.contains({f[2], f[1]})) {
+			auto n12 = v12.crossProduct(n).normalized();
+			edgeNormals[f[1]] += n12;
+			edgeNormals[f[2]] += n12;
+		}
+
+		if (!edges.contains({f[0], f[2]})) {
+			auto n20 = v20.crossProduct(n).normalized();
+			edgeNormals[f[2]] += n20;
+			edgeNormals[f[0]] += n20;
+		}
+	}
+
+	for (size_t vi = 0; vi < pseudoNormals.size(); vi++) {
+		auto& pn = pseudoNormals[vi];
+		pn.normalize();
+		pn += edgeNormals[vi];
+		pn.normalize();
+	}
+}

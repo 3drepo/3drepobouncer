@@ -54,7 +54,7 @@ repo_material_t RepoMeshBuilder::getMaterial()
 RepoMeshBuilder::~RepoMeshBuilder()
 {
 	// extractMeshes *must* be called, because there is where the mesh data instances are deleted/cleaned up.
-	if (meshes.size()) {
+	if (meshes.size() && !std::uncaught_exceptions()) {
 		throw repo::lib::RepoGeometryProcessingException("RepoMeshBuilder destroyed with meshes that have not been extracted.");
 	}
 }
@@ -115,7 +115,8 @@ RepoMeshBuilder::face::face(std::initializer_list<repo::lib::RepoVector3D64> ver
 	setVertices(vertices);
 }
 
-RepoMeshBuilder::face::face(std::initializer_list<repo::lib::RepoVector3D64> vertices, repo::lib::RepoVector3D64 normal)
+RepoMeshBuilder::face::face(std::initializer_list<repo::lib::RepoVector3D64> vertices, repo::lib::RepoVector3D64 normal) :
+	face()
 {
 	setVertices(vertices);
 	this->norm = normal;
@@ -230,7 +231,24 @@ void RepoMeshBuilder::addFace(const face& bf)
 	meshData->faces.push_back(face);
 }
 
-void RepoMeshBuilder::extractMeshes(std::vector<MeshNode>& nodes)
+bool RepoMeshBuilder::hasMeshes() const
+{
+	for (auto& m : meshes) {
+		if (m.second->faces.size()) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void RepoMeshBuilder::getBounds(repo::lib::RepoBounds& bounds) const
+{
+	for (auto& m : meshes) {
+		bounds.encapsulate(m.second->boundingBox);
+	}
+}
+
+void RepoMeshBuilder::extractMeshes(std::vector<MeshNode>& nodes, const repo::lib::RepoMatrix& m)
 {
 	for (auto pair : meshes)
 	{
@@ -242,7 +260,7 @@ void RepoMeshBuilder::extractMeshes(std::vector<MeshNode>& nodes)
 
 		if (meshData->vertexMap.uvs.size() && (meshData->vertexMap.uvs.size() != meshData->vertexMap.vertices.size()))
 		{
-			throw new repo::lib::RepoGeometryProcessingException("RepoMeshBuilder mesh_data_t vertices size does not match the uvs size");
+			throw repo::lib::RepoGeometryProcessingException("RepoMeshBuilder mesh_data_t vertices size does not match the uvs size");
 		}
 
 		auto uvChannels = meshData->vertexMap.uvs.size() ?
@@ -254,22 +272,22 @@ void RepoMeshBuilder::extractMeshes(std::vector<MeshNode>& nodes)
 		if (meshData->vertexMap.normals.size()) {
 			if ((meshData->vertexMap.normals.size() != meshData->vertexMap.vertices.size()))
 			{
-				throw new repo::lib::RepoGeometryProcessingException("RepoMeshBuilder mesh_data_t vertices size does not match the normals size, where normals are required.");
+				throw repo::lib::RepoGeometryProcessingException("RepoMeshBuilder mesh_data_t vertices size does not match the normals size, where normals are required.");
 			}
 
 			normals32.reserve(meshData->vertexMap.normals.size());
-
-			for (int i = 0; i < meshData->vertexMap.vertices.size(); ++i) {
-				auto& n = meshData->vertexMap.normals[i];
+			for (auto& n : meshData->vertexMap.normals) {
 				normals32.push_back({ (float)(n.x), (float)(n.y), (float)(n.z) });
 			}
+
+			repo::core::model::MeshNode::transformNormals(normals32, m);
 		}
 
 		std::vector<repo::lib::RepoVector3D> vertices32;
 		vertices32.reserve(meshData->vertexMap.vertices.size());
 
 		for (int i = 0; i < meshData->vertexMap.vertices.size(); ++i) {
-			auto& v = meshData->vertexMap.vertices[i];
+			auto v = m * meshData->vertexMap.vertices[i];
 			vertices32.push_back({ (float)(v.x), (float)(v.y), (float)(v.z) });
 		}
 
@@ -277,11 +295,13 @@ void RepoMeshBuilder::extractMeshes(std::vector<MeshNode>& nodes)
 			vertices32,
 			meshData->faces,
 			normals32,
-			meshData->boundingBox,
+			{},
 			uvChannels,
 			{},
 			parents
 		);
+
+		meshNode.updateBoundingBox();
 
 		delete meshData;
 

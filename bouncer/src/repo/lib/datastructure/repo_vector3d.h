@@ -64,7 +64,7 @@ namespace repo{
 				return crc32.checksum();
 			}
 
-			_RepoVector3D<T> crossProduct(const _RepoVector3D<T> &vec)
+			_RepoVector3D<T> crossProduct(const _RepoVector3D<T> &vec) const
 			{
 				_RepoVector3D<T> product;
 				product.x = (y * vec.z) - (z * vec.y);
@@ -73,7 +73,7 @@ namespace repo{
 				return product;
 			}
 
-			T dotProduct(const _RepoVector3D<T> &vec)
+			T dotProduct(const _RepoVector3D<T> &vec) const
 			{
 				return x*vec.x + y*vec.y + z*vec.z;
 			}
@@ -108,6 +108,13 @@ namespace repo{
 				}
 			}
 
+			_RepoVector3D<T> normalized() const
+			{
+				auto r = *this;
+				r.normalize();
+				return r;
+			}
+
 			T norm() const
 			{
 				return std::sqrt(norm2());
@@ -131,9 +138,51 @@ namespace repo{
 				return _RepoVector3D<T>(x + other.x, y + other.y, z + other.z);
 			}
 
+			inline _RepoVector3D<T> operator+(const T& scalar) const
+			{
+				return _RepoVector3D<T>(x + scalar, y + scalar, z + scalar);
+			}
+
+			inline _RepoVector3D<T>& operator+=(const _RepoVector3D<T>& other)
+			{
+				x += other.x;
+				y += other.y;
+				z += other.z;
+				return *this;
+			}
+
 			inline _RepoVector3D<T> operator-(const _RepoVector3D<T> &other) const
 			{
 				return _RepoVector3D<T>(x - other.x, y - other.y, z - other.z);
+			}
+
+			inline _RepoVector3D<T> operator-(const T& scalar) const
+			{
+				return _RepoVector3D<T>(x - scalar, y - scalar, z - scalar);
+			}
+
+			inline _RepoVector3D<T> operator*(const T &scalar) const
+			{
+				return _RepoVector3D<T>(x * scalar, y * scalar, z * scalar);
+			}
+
+			inline _RepoVector3D<T> operator*(const _RepoVector3D<T>& other) const
+			{
+				return _RepoVector3D<T>(x * other.x, y * other.y, z * other.z);
+			}
+
+			inline _RepoVector3D<T> operator/(const T &scalar) const
+			{
+				if (scalar == 0)
+				{
+					throw std::invalid_argument("Division by zero");
+				}
+				return _RepoVector3D<T>(x / scalar, y / scalar, z / scalar);
+			}
+
+			inline _RepoVector3D<T> operator/(const _RepoVector3D<T>& other) const
+			{
+				return _RepoVector3D<T>(x / other.x, y / other.y, z / other.z);
 			}
 
 			inline _RepoVector3D<T> operator-() const

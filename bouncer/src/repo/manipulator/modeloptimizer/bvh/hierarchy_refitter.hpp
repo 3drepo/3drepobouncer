@@ -49,7 +49,7 @@ protected:
                 node.bounding_box_proxy() = bvh.nodes[first_child + 0]
                     .bounding_box_proxy()
                     .to_bounding_box()
-                    .extend(bvh.nodes[first_child + 1].bounding_box_proxy());
+                    .extend(bvh.nodes[first_child + 1].bounding_box_proxy().to_bounding_box());
             });
     }
 

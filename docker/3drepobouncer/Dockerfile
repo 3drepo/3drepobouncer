@@ -27,13 +27,17 @@ RUN echo >> /etc/sysctl.conf ; \
         echo net.ipv6.conf.all.disable_ipv6 = 1 >> /etc/sysctl.conf ;\
         echo net.ipv6.conf.default.disable_ipv6 = 1 >> /etc/sysctl.conf
 
-# Add Node.js 22 and Yarn
-        RUN cd /tmp && \
-        curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
-        curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
-        echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list && \
+# Add Node.js 24 and Yarn
+ARG NODE_VERSION=24.11.0
+RUN cd /tmp && \
         apt-get update && \
-        apt-get install -y nodejs yarn software-properties-common && \
+        apt-get install -y ca-certificates curl gnupg software-properties-common xz-utils && \
+        curl -fsSLO "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" && \
+        tar -xJf "node-v${NODE_VERSION}-linux-x64.tar.xz" -C /usr/local --strip-components=1 --no-same-owner && \
+        rm "node-v${NODE_VERSION}-linux-x64.tar.xz" && \
+        npm install -g yarn@1.22.22 && \
+        node --version && \
+        yarn --version && \
         rm -rf /var/lib/apt/lists/*
 
 
@@ -85,7 +89,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 ENV CC=/usr/bin/gcc
 ENV CXX=/usr/bin/g++
-ENV gcc_version=8.3
+ENV gcc_version=13
 ENV MONGO_ROOT=/home/bouncer/mongo-cxx-driver
 ENV ASSIMP_ROOT=/home/bouncer/assimp
 ENV IFCOPENSHELL_ROOT=/home/bouncer/IfcOpenShell
@@ -100,17 +104,6 @@ ENV LD_LIBRARY_PATH=$SYNCHRO_READER_ROOT/lib:$THRIFT_ROOT/lib/:$IFCOPENSHELL_ROO
 ENV SYNCHRO_PLUGIN_LOCATION=/home/bouncer/3drepobouncer/bin/plugins
 ENV CRYPTOLENS_ROOT=/home/bouncer/cryptoLens
 
-ARG LICENSE_PRODUCT_ID
-ENV LICENSE_PRODUCT_ID=${LICENSE_PRODUCT_ID}
-
-ARG LICENSE_AUTH_TOKEN
-ENV LICENSE_AUTH_TOKEN=${LICENSE_AUTH_TOKEN}
-
-ARG LICENSE_RSA_PUB_KEY_MOD  
-ENV LICENSE_RSA_PUB_KEY_MOD ${LICENSE_RSA_PUB_KEY_MOD}
-
-ARG LICENSE_RSA_PUB_KEY_EXP=AQAB
-ENV LICENSE_RSA_PUB_KEY_EXP ${LICENSE_RSA_PUB_KEY_EXP}
 
 ENV DATE_ROOT=/home/bouncer/date
 
@@ -132,7 +125,7 @@ RUN git clone --filter=blob:none --sparse https://${GITHUB_USER}:${GITHUB_TOKEN}
         chown -R bouncer:bouncer /home/bouncer && \
         mkdir -p /home/bouncer/oda && \
         chown -R bouncer:bouncer /home/bouncer/oda && \
-        cat focal/teigha/2026.9/teighaLinuxGCC8.3.tgz* | tar -C /home/bouncer/oda -xzvf - && \
+        cat focal/teigha/2027.2/teighaLinuxGCC${gcc_version}.tgz* | tar -C /home/bouncer/oda -xzvf - && \
         rm -rf tests && rm -rf focal && rm -rf noble
 
 USER root
@@ -141,8 +134,6 @@ CMD ["/bin/bash"]
 FROM core AS build
 
 ARG REBUILD_DATE=unknown
-ARG LICENSE_CHECK
-ENV LICENSE_CHECK=${LICENSE_CHECK}
 ARG app_3drepobouncer_version
 ARG DSYNCHRO_SUPPORT=on
 ENV DSYNCHRO_SUPPORT ${DSYNCHRO_SUPPORT:-on}
@@ -154,12 +145,10 @@ RUN echo -e "machine github.com\n login $GITHUB_USER\n password $GITHUB_TOKEN" >
         chown bouncer:bouncer /home/bouncer/3drepobouncer && \
         mkdir -p /home/bouncer/3drepobouncer/build && \
         cd /home/bouncer/3drepobouncer/build && \
-        if [ "$LICENSE_CHECK" -gt 0 ]; then FLAG=ON; else FLAG=OFF; fi && \
         cmake \
               -DCMAKE_CXX_COMPILER=$CXX \
               -DCMAKE_CXX_FLAGS=-Wno-deprecated-declarations -Wno-dev \
               -DODA_SUPPORT=ON \
-              -DLICENSE_CHECK=${FLAG} \
               -DSYNCHRO_SUPPORT=${DSYNCHRO_SUPPORT} \
               -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_INSTALL_PREFIX=/home/bouncer/bouncer_install ../ && \
@@ -180,8 +169,6 @@ COPY --from=build /home/bouncer/bouncer_package /home/bouncer/3drepobouncer/bin/
 COPY --from=build /home/bouncer/3drepobouncer/tools/bouncer_worker /home/bouncer/3drepobouncer/tools/bouncer_worker
 
 FROM deploy-base-core AS deploy
-ARG LICENSE_CHECK=0
-ENV LICENSE_CHECK ${LICENSE_CHECK}
 ENV LD_LIBRARY_PATH=/home/bouncer/3drepobouncer/bin/
 ENV ODA_CSV_LOCATION=/home/bouncer/3drepobouncer/bin/
 ENV SYNCHRO_PLUGIN_LOCATION=/home/bouncer/3drepobouncer/bin/plugins

@@ -2,8 +2,7 @@
     "logLocation": "/tmp/bouncer.log",
 	"umask": 2,
 	"rabbitmq": {
-		"host": "amqp://{{ getv "/app/queue/bouncer/username" }}:{{ getv "/app/queue/bouncer/password" }}@{{ getv "/app/queue/dns" }}:5672",{{if exists "/app/queue/jobq"}}
-		"worker_queue": "{{getv "/app/queue/jobq"}}",{{end}}
+		"host": "amqp://{{ getv "/app/queue/bouncer/username" }}:{{ getv "/app/queue/bouncer/password" }}@{{ getv "/app/queue/dns" }}:5672",
 		"callback_queue": "{{getv "/app/queue/callbackq"}}",{{if exists "/app/queue/modelq"}}
 		"model_queue": "{{getv "/app/queue/modelq"}}",{{if exists "/app/queue/drawingq"}}
 		"drawing_queue": "{{getv "/app/queue/drawingq"}}",{{end}}

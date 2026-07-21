@@ -1,0 +1,107 @@
+name: Docker Build
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Git ref to checkout. Defaults to the calling workflow ref.'
+        type: string
+        required: false
+        default: ''
+      target:
+        description: 'Docker build target stage (e.g. init). Omit to build all stages.'
+        type: string
+        required: false
+        default: ''
+      version:
+        description: 'Version tag for the Docker image. Required when push is true.'
+        type: string
+        required: false
+        default: ''
+      app_build_now:
+        description: 'Build timestamp for the dev image tag. Required when push is true.'
+        type: string
+        required: false
+        default: ''
+      push:
+        description: 'Push the built image to the container registry after building.'
+        type: boolean
+        required: false
+        default: false
+    secrets:
+      REGISTRY_LOGIN_SERVER:
+        required: false
+      REGISTRY_USERNAME:
+        required: false
+      REGISTRY_TOKEN:
+        required: false
+      PROJ_MANAGEMENT_TOKEN:
+        required: false
+      PROJ_MANAGEMENT_USER:
+        required: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      # ---------------------------------------------------------------
+      # STEP 1: Checkout source
+      # ---------------------------------------------------------------
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      # ---------------------------------------------------------------
+      # STEP 2: Log in to container registry (push only)
+      # ---------------------------------------------------------------
+      - name: Log in to Azure Container Registry
+        if: inputs.push
+        run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login "${{ secrets.REGISTRY_LOGIN_SERVER }}" -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
+
+      # ---------------------------------------------------------------
+      # STEP 3: Build Docker image
+      # ---------------------------------------------------------------
+      - name: Build Docker image
+        env:
+          DOCKER_BUILDKIT: 1
+          SHOULD_PUSH: ${{ inputs.push }}
+          REGISTRY: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+          PROJ_TOKEN: ${{ secrets.PROJ_MANAGEMENT_TOKEN }}
+          PROJ_USER: ${{ secrets.PROJ_MANAGEMENT_USER }}
+        run: |
+          EXTRA_ARGS=""
+          if [ -n "${{ inputs.target }}" ]; then
+            EXTRA_ARGS="--target ${{ inputs.target }}"
+          fi
+          # GITHUB_TOKEN and GITHUB_USER are required by the core stage to clone
+          # private repositories, so they are always passed as build args.
+          EXTRA_ARGS="$EXTRA_ARGS \
+            --build-arg GITHUB_TOKEN=${PROJ_TOKEN} \
+            --build-arg GITHUB_USER=${PROJ_USER}"
+          if [ "${SHOULD_PUSH}" = "true" ]; then
+            EXTRA_ARGS="$EXTRA_ARGS \
+              -t ${REGISTRY}/3drepobouncer:${{ inputs.version }} \
+              -t dev/3drepobouncer:${{ inputs.app_build_now }} \
+              --build-arg app_3drepobouncer_version=${{ inputs.version }}"
+          fi
+          docker build --no-cache $EXTRA_ARGS \
+            -f ./docker/3drepobouncer/Dockerfile \
+            ./docker/3drepobouncer/
+
+      # ---------------------------------------------------------------
+      # STEP 4: Push Docker image (push only)
+      # ---------------------------------------------------------------
+      - name: Push Docker image
+        if: inputs.push
+        run: docker push "${{ secrets.REGISTRY_LOGIN_SERVER }}/3drepobouncer:${{ inputs.version }}"
+
+      # ---------------------------------------------------------------
+      # STEP 5: Cleanup (push only)
+      # ---------------------------------------------------------------
+      - name: Cleanup
+        if: ${{ always() && inputs.push }}
+        run: docker logout "${{ secrets.REGISTRY_LOGIN_SERVER }}"

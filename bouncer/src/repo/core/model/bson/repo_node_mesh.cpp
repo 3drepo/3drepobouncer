@@ -95,10 +95,6 @@ void MeshNode::deserialise(RepoBSON& bson)
 	{
 		bson.getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_VERTICES, vertices);
 	}
-	else
-	{
-		repoWarning << "Could not find any vertices within mesh node (" << getUniqueID() << ")";
-	}
 
 	if (bson.hasBinField(REPO_NODE_MESH_LABEL_NORMALS))
 	{
@@ -329,29 +325,13 @@ void MeshNode::applyTransformation(
 			boundingBox.encapsulate(v);
 		}
 
-		if (normals.size())
-		{
-			auto matInverse = matrix.invert();
-			auto worldMat = matInverse.transpose();
-
-			auto data = worldMat.getData();
-			data[3] = data[7] = data[11] = 0;
-			data[12] = data[13] = data[14] = 0;
-
-			repo::lib::RepoMatrix multMat(data);
-
-			for (auto& n : normals)
-			{
-				n = multMat * n;
-				n.normalize();
-			}
-		}
+		transformNormals(normals, matrix);
 	}
 }
 
 void MeshNode::transformBoundingBox(
 	repo::lib::RepoBounds& bounds,
-	repo::lib::RepoMatrix matrix)
+	const repo::lib::RepoMatrix& matrix)
 {
 	// Compute the updated AABB by the method of the extrema of transformed
 	// corners.
@@ -375,6 +355,22 @@ void MeshNode::transformBoundingBox(
 	for (auto& c : corners)
 	{
 		bounds.encapsulate(c);
+	}
+}
+
+void MeshNode::transformNormals(
+	std::vector<repo::lib::RepoVector3D>& normals,
+	const repo::lib::RepoMatrix& matrix)
+{
+	auto worldMat = matrix.inverse().transpose();
+	auto data = worldMat.getData();
+	data[3] = data[7] = data[11] = 0;
+	data[12] = data[13] = data[14] = 0;
+
+	for (auto& n : normals)
+	{
+		n = worldMat * n;
+		n.normalize();
 	}
 }
 

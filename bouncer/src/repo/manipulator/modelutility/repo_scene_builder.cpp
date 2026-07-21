@@ -33,9 +33,12 @@
 
 using namespace repo::manipulator::modelutility;
 using namespace repo::core::model;
+using namespace repo::lib;
 
 // 500 Mb
 #define DEFAULT_THRESHOLD 1024*1024*500
+
+static const uint32_t MAX_MATERIALNODE_USAGE = 500000;
 
 /*
 * The async worker of RepoSceneBuilder is responsible for the multithreaded
@@ -159,7 +162,7 @@ RepoSceneBuilder::RepoSceneBuilder(
 	nodeCount(0),
 	isMissingTextures(false),
 	offset({}),
-	units(repo::manipulator::modelconvertor::ModelUnits::UNKNOWN),
+	units(repo::lib::ModelUnits::UNKNOWN),
 	impl(std::make_unique<AsyncImpl>(this))
 {
 }
@@ -255,22 +258,39 @@ void RepoSceneBuilder::setWorldOffset(const repo::lib::RepoVector3D64& offset)
 	this->offset = offset;
 }
 
+void RepoSceneBuilder::makeMaterialNode(const size_t key, const repo::lib::repo_material_t& m, repo::lib::RepoUUID parentId)
+{
+	auto node = repo::core::model::RepoBSONFactory::makeMaterialNode(m, {}, { parentId });
+	addNode(node);
+	materialToUniqueId[key] = { node.getUniqueID(), 1 };
+
+	if (m.hasTexture()) {
+		addTextureReference(m.texturePath, node.getSharedID());
+	}
+}
+
 void RepoSceneBuilder::addMaterialReference(const repo::lib::repo_material_t& m, repo::lib::RepoUUID parentId)
 {
 	auto key = m.checksum();
 	if (materialToUniqueId.find(key) == materialToUniqueId.end())
 	{
-		auto node = repo::core::model::RepoBSONFactory::makeMaterialNode(m, {}, { parentId });
-		addNode(node);
-		materialToUniqueId[key] = node.getUniqueID();
-
-		if (m.hasTexture()) {
-			addTextureReference(m.texturePath, node.getSharedID());
-		}
+		makeMaterialNode(key, m, parentId);
 	}
 	else
 	{
-		addParent(materialToUniqueId[key], parentId);
+		// Check usage
+		auto& entry = materialToUniqueId[key];
+		if (entry.second >= MAX_MATERIALNODE_USAGE)
+		{
+			// If we hit the limit, we make a new material node
+			makeMaterialNode(key, m, parentId);
+		}
+		else
+		{
+			// If not, just add the reference and increment the counter.
+			addParent(entry.first, parentId);
+			entry.second++;
+		}
 	}
 }
 
@@ -355,12 +375,12 @@ bool RepoSceneBuilder::hasMissingTextures()
 	return isMissingTextures;
 }
 
-void RepoSceneBuilder::setUnits(repo::manipulator::modelconvertor::ModelUnits units) 
+void RepoSceneBuilder::setUnits(ModelUnits units) 
 {
 	this->units = units;
 }
 
-repo::manipulator::modelconvertor::ModelUnits RepoSceneBuilder::getUnits()
+ModelUnits RepoSceneBuilder::getUnits()
 {
 	return this->units;
 }

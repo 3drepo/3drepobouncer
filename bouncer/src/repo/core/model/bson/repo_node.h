@@ -33,7 +33,6 @@ namespace repo {
 				MATERIAL,
 				MESH,
 				METADATA,
-				REFERENCE,
 				REVISION,
 				TEXTURE,
 				TRANSFORMATION,

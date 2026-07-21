@@ -31,8 +31,8 @@
 #define RAPIDJSON_NAMESPACE_BEGIN namespace repo { namespace rapidjson {
 #define RAPIDJSON_NAMESPACE_END } }
 
-#include <repo/manipulator/modelutility/rapidjson/rapidjson.h>
-#include <repo/manipulator/modelutility/rapidjson/document.h>
+#include <repo/lib/rapidjson/rapidjson.h>
+#include <repo/lib/rapidjson/document.h>
 
 #include "../../../repo_test_utils.h"
 #include "../../../repo_test_mesh_utils.h"
@@ -45,6 +45,7 @@ using namespace testing;
 using namespace repo::manipulator::modelconvertor;
 using namespace repo::manipulator::modelutility;
 using namespace repo;
+using namespace repo::lib;
 
 #define TESTDB "SelectionTreeTest"
 
@@ -128,16 +129,6 @@ class TreeTestUtilities
 		return result;
 	}
 
-	// For ref nodes, the name in the tree should be the container id, prepended
-	// by the database only when outside the current teamspace
-
-	std::string getExpectedReferenceNodeName(SceneUtils::NodeInfo& n) {
-		auto referenceNode = dynamic_cast<ReferenceNode*>(n.node);
-		auto referenceDatabase = referenceNode->getDatabaseName();
-		auto expected = (n.scene->getTeamspaceName() == referenceDatabase ? "" : (referenceDatabase + "/")) + referenceNode->getProjectId();
-		return expected;
-	}
-
 	struct CheckTreeContext
 	{
 		repo::lib::RepoUUID parentUniqueId;
@@ -155,21 +146,6 @@ class TreeTestUtilities
 		EXPECT_THAT(value["account"].GetString(), Eq(scene.getTeamspaceName()));
 		EXPECT_THAT(value["project"].GetString(), Eq(scene.getContainerName()));
 		EXPECT_THAT(value["type"].GetString(), Eq(node.node->getType()));
-
-		bool isRefNode = value["type"].GetString() == std::string("ref");
-
-		if (isRefNode) {
-			EXPECT_THAT(value["name"].GetString(), getExpectedReferenceNodeName(node));
-		}
-		else
-		{
-			if (!node.name().empty()) {
-				EXPECT_THAT(value["name"].GetString(), Eq(node.name()));
-			}
-			else {
-				EXPECT_THAT(value.HasMember("name"), IsFalse());
-			}
-		}
 
 		EXPECT_THAT(value["path"].GetString(), Eq(getPathAsString(node)));
 
@@ -296,9 +272,6 @@ class TreeTestUtilities
 		for (auto& n : scene.getMeshes()) {
 			expected[n.getUniqueId().toString()] = n.name();
 		}
-		for (auto& n : scene.getReferenceNodes()) {
-			expected[n.getUniqueId().toString()] = getExpectedReferenceNodeName(n);
-		}
 
 		EXPECT_THAT(actual, Eq(expected));
 	}
@@ -316,9 +289,6 @@ class TreeTestUtilities
 			expected[n.getUniqueId().toString()] = getPathAsString(n);
 		}
 		for (auto& n : scene.getMeshes()) {
-			expected[n.getUniqueId().toString()] = getPathAsString(n);
-		}
-		for (auto& n : scene.getReferenceNodes()) {
 			expected[n.getUniqueId().toString()] = getPathAsString(n);
 		}
 
@@ -536,57 +506,4 @@ TEST(RepoSelectionTreeTest, HiddenSynchro)
 	}
 
 	EXPECT_THAT(tree.invisibleNodeIds, UnorderedElementsAreArray(expected));
-}
-
-// Todo..
-
-// 1. Check naming of reference nodes
-
-TEST(RepoSelectionTreeTest, RefNodes)
-{
-	auto transformation = RepoBSONFactory::makeTransformationNode({}, "Federation");
-
-	auto ref1 = RepoBSONFactory::makeReferenceNode("database1", repo::lib::RepoUUID::createUUID().toString());
-	ref1.addParent(transformation.getSharedID());
-
-	auto ref2 = RepoBSONFactory::makeReferenceNode("database1", repo::lib::RepoUUID::createUUID().toString());
-	ref2.addParent(transformation.getSharedID());
-
-	auto ref3 = RepoBSONFactory::makeReferenceNode(TESTDB, repo::lib::RepoUUID::createUUID().toString());
-	ref3.addParent(transformation.getSharedID());
-
-	auto ref4 = RepoBSONFactory::makeReferenceNode("database1", repo::lib::RepoUUID::createUUID().toString());
-	ref4.changeName("ref4Name");
-	ref4.addParent(transformation.getSharedID());
-
-	RepoScene scene(
-		{},
-		{},
-		{},
-		{},
-		{},
-		{
-			new TransformationNode(transformation)
-		},
-		{
-			new ReferenceNode(ref1),
-			new ReferenceNode(ref2),
-			new ReferenceNode(ref3),
-			new ReferenceNode(ref4),
-		},
-		{}
-	);
-
-	auto handler = getHandler();
-
-	auto revision = repo::lib::RepoUUID::createUUID();
-
-	std::string errMsg;
-	scene.setDatabaseAndProjectName(TESTDB, "RefNodes");
-	scene.commit(handler.get(), handler->getFileManager().get(), errMsg, "repoTestUser", "repoTestCommitMessage", "tag", revision);
-
-	SceneManager manager;
-	manager.generateAndCommitSelectionTree(&scene, handler.get());
-
-	auto tree = TreeTestUtilities::CheckAllForScene(&scene);
 }

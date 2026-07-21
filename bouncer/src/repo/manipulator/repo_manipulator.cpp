@@ -19,6 +19,8 @@
 * Repo Manipulator which handles all the manipulation
 */
 
+#include "repo_manipulator.h"
+
 #include <boost/filesystem.hpp>
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
@@ -36,9 +38,8 @@
 #include "modelutility/repo_scene_manager.h"
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
 #include "modelutility/repo_drawing_manager.h"
-#include "repo_manipulator.h"
-
-
+#include "modelutility/repo_clash_detection_engine.h"
+#include "modelutility/repo_web_buffer_config.h"
 
 using namespace repo::manipulator;
 
@@ -88,52 +89,14 @@ void RepoManipulator::connectAndAuthenticateWithAdmin(
 	dbHandler->testConnection();
 }
 
-repo::core::model::RepoScene* RepoManipulator::createFederatedScene(
-	const std::map<repo::core::model::ReferenceNode, std::string>& fedMap)
-{
-	repo::core::model::RepoNodeSet transNodes;
-	repo::core::model::RepoNodeSet refNodes;
-	repo::core::model::RepoNodeSet emptySet;
-
-	auto rootNode = new repo::core::model::TransformationNode(
-		repo::core::model::RepoBSONFactory::makeTransformationNode(
-			repo::lib::RepoMatrix(), "Federation"));
-
-	transNodes.insert(rootNode);
-
-	std::map<std::string, repo::core::model::TransformationNode*> groupNameToNode;
-
-	for (const auto& pair : fedMap)
-	{
-		auto parentNode = rootNode;
-		if (!pair.second.empty()) {
-			if (groupNameToNode.find(pair.second) == groupNameToNode.end()) {
-				groupNameToNode[pair.second] = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode(
-					repo::lib::RepoMatrix(), pair.second, { rootNode->getSharedID() }));
-				transNodes.insert(groupNameToNode[pair.second]);
-			}
-
-			parentNode = groupNameToNode[pair.second];
-		}
-
-		auto copy = new repo::core::model::ReferenceNode(pair.first);
-		copy->addParent(parentNode->getSharedID());
-		refNodes.insert(copy);
-	}
-	//federate scene has no referenced files
-	repo::core::model::RepoScene* scene =
-		new repo::core::model::RepoScene({}, emptySet, emptySet, emptySet, emptySet, emptySet, transNodes, refNodes);
-
-	return scene;
-}
-
 uint8_t RepoManipulator::commitScene(
 	const std::string& user,
 	repo::core::model::RepoScene* scene,
 	const std::string& owner,
 	const std::string& tag,
 	const std::string& desc,
-	const repo::lib::RepoUUID& revId)
+	const repo::lib::RepoUUID& revId,
+	const WebBufferConfig& config)
 {
 	repoLog("Manipulator: Committing model to database");
 
@@ -149,7 +112,7 @@ uint8_t RepoManipulator::commitScene(
 	}
 
 	modelutility::SceneManager sceneManager;
-	return sceneManager.commitScene(scene, projOwner, tag, desc, revId, dbHandler.get(), dbHandler->getFileManager().get());
+	return sceneManager.commitScene(scene, projOwner, tag, desc, revId, dbHandler.get(), dbHandler->getFileManager().get(), config);
 }
 
 repo::core::model::RepoScene* RepoManipulator::fetchScene(
@@ -157,17 +120,15 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 	const std::string& project,
 	const repo::lib::RepoUUID& uuid,
 	const bool& headRevision,
-	const bool& ignoreRefScene,
 	const bool& skeletonFetch,
 	const std::vector<repo::core::model::ModelRevisionNode::UploadStatus>& includeStatus)
 {
 	modelutility::SceneManager sceneManager;
-	return sceneManager.fetchScene(dbHandler.get(), database, project, uuid, headRevision, ignoreRefScene, skeletonFetch, includeStatus);
+	return sceneManager.fetchScene(dbHandler.get(), database, project, uuid, headRevision, skeletonFetch, includeStatus);
 }
 
 void RepoManipulator::fetchScene(
 	repo::core::model::RepoScene* scene,
-	const bool& ignoreRefScene,
 	const bool& skeletonFetch)
 {
 	modelutility::SceneManager sceneManager;
@@ -175,11 +136,14 @@ void RepoManipulator::fetchScene(
 }
 
 bool RepoManipulator::generateAndCommitRepoBundlesBuffer(
-	repo::core::model::RepoScene* scene)
+	repo::core::model::RepoScene* scene,
+	const repo::manipulator::modelutility::WebBufferConfig& config
+)
 {
 	return generateAndCommitWebViewBuffer(
 		scene,
-		modelconvertor::ExportType::REPO
+		modelconvertor::ExportType::REPO,
+		config
 	);
 }
 
@@ -193,10 +157,12 @@ bool RepoManipulator::generateAndCommitSelectionTree(
 
 bool RepoManipulator::generateAndCommitWebViewBuffer(
 	repo::core::model::RepoScene* scene,
-	const modelconvertor::ExportType& exType)
+	const modelconvertor::ExportType& exType,
+	const repo::manipulator::modelutility::WebBufferConfig& config
+)
 {
 	modelutility::SceneManager SceneManager;
-	return SceneManager.generateWebViewBuffers(scene, exType, dbHandler.get());
+	return SceneManager.generateWebViewBuffers(scene, exType, dbHandler.get(), config);
 }
 
 std::vector<repo::core::model::RepoBSON>
@@ -313,6 +279,14 @@ void RepoManipulator::processDrawingRevision(
 	if (error == REPOERR_OK) {
 		error = manager.commitImage(dbHandler.get(), dbHandler->getFileManager().get(), teamspace, revisionNode, drawing);
 	}
+}
+
+void RepoManipulator::performClashDetection(
+	const ClashDetectionConfig& config)
+{
+	modelutility::ClashDetectionEngine clashEngine(dbHandler);
+	auto results = clashEngine.runClashDetection(config);
+	ClashDetectionEngineUtils::writeJson(results, config);
 }
 
 bool RepoManipulator::init(

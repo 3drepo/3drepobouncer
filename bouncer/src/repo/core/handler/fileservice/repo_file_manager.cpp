@@ -95,7 +95,19 @@ bool FileManager::uploadFileAndCommit(
 		break;
 	}
 
-	auto linkName = fsHandler->uploadFile(databaseName, collectionNamePrefix, fileUUID.toString(), *fileContents);
+	std::string linkName;
+	try {
+		linkName = fsHandler->uploadFile(databaseName, collectionNamePrefix, fileUUID.toString(), *fileContents);
+	}
+	catch (const std::exception& e)
+	{
+		if (fileContents != &bin)
+		{
+			delete fileContents;
+		}
+		std::throw_with_nested(repo::lib::RepoFileUploadException("Failed to upload " + fileUUID.toString()));
+	}
+
 	if (success = !linkName.empty()) {
 		success = upsertFileRef(
 			databaseName,
@@ -173,13 +185,21 @@ repo::core::model::RepoRefT<std::string> FileManager::getFileRef(
 	const std::string                            &databaseName,
 	const std::string                            &collectionNamePrefix,
 	const std::string                            &fileName) {
-	return repo::core::model::RepoRefT<std::string>(
-		getDbHandler()->findOneByUniqueID(
-			databaseName,
-			collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
-			fileName
-		)
+
+	auto doc = getDbHandler()->findOneByUniqueID(
+		databaseName,
+		collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
+		fileName
 	);
+
+	// During multi-threaded operations with insertMany, it is possible that a db entry is created
+	// before the file is committed and a ref is added to the ref table.
+	if (doc.isEmpty())
+		throw repo::lib::RepoRefMissingException("Ref entry for file " + fileName + " unavailable");
+
+	auto ref = repo::core::model::RepoRefT<std::string>(doc);
+
+	return ref;
 }
 
 repo::core::model::RepoRefT<repo::lib::RepoUUID> FileManager::getFileRef(

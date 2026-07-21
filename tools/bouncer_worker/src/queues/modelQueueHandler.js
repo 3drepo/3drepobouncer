@@ -16,10 +16,6 @@
  */
 
 const fs = require('fs');
-const {
-	callbackQueueSpecified,
-	logDirExists,
-	sharedDirExists } = require('./common');
 const { config } = require('../lib/config');
 const { runBouncerCommand } = require('../tasks/bouncerClient');
 const { ERRCODE_OK, ERRCODE_BOUNCER_CRASH, ERRCODE_REPO_LICENCE_INVALID } = require('../constants/errorCodes');
@@ -28,13 +24,15 @@ const { messageDecoder } = require('../lib/messageDecoder');
 const logger = require('../lib/logger');
 const processMonitor = require('../lib/processMonitor');
 const Utils = require('../lib/utils');
+const { IMPORT } = require('../constants/messageTypes');
+const { MODEL } = require('../constants/queueLabels');
 
 const Handler = {};
 const logLabel = { label: 'MODELQ' };
 
 Handler.onMessageReceived = async (cmd, rid, callback) => {
 	const logDir = `${config.logging.taskLogDir}/${rid.toString()}/`;
-	const { errorCode, database, model, user, cmdParams, file } = messageDecoder(cmd);
+	const { errorCode, teamspace, container, user, cmdParams, file } = messageDecoder(cmd);
 
 	if (errorCode) {
 		callback(JSON.stringify({ value: errorCode }));
@@ -46,15 +44,17 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	await Utils.sleep(100);
 	callback(JSON.stringify({
 		status: PROCESSING,
-		database,
-		project: model,
+		type: MODEL,
+		teamspace,
+		container,
 	}));
 
 	const returnMessage = {
 		value: ERRCODE_OK,
-		database,
-		project: model,
+		teamspace,
+		container,
 		user,
+		type: IMPORT,
 	};
 
 	const ridString = rid.toString();
@@ -62,8 +62,8 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	try {
 		const processInformation = Utils.gatherProcessInformation(
 			user,
-			model,
-			database,
+			container,
+			teamspace,
 			logLabel.label, // queue
 			config.repoLicense,
 			ridString,
@@ -93,10 +93,6 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		}
 	}
 };
-
-Handler.validateConfiguration = (label) => callbackQueueSpecified(label)
-	&& logDirExists(label)
-	&& sharedDirExists(label);
 
 Handler.prefetchCount = config.rabbitmq.model_prefetch;
 

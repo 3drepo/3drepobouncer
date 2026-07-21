@@ -24,7 +24,7 @@
 #include "repo/core/handler/fileservice/repo_file_handler_abstract.h"
 #include "repo/lib/datastructure/repo_structs.h"
 #include "repo/lib/datastructure/repo_variant.h"
-#include "repo/manipulator/modelconvertor/import/repo_model_units.h"
+#include "repo/lib/repo_units.h"
 
 #include <memory>
 #include <vector>
@@ -98,6 +98,11 @@ namespace repo {
 				repo::lib::RepoVector3D64 getWorldOffset();
 				void setWorldOffset(const repo::lib::RepoVector3D64& offset);
 
+				void makeMaterialNode(
+					const size_t key,
+					const repo::lib::repo_material_t& m,
+					repo::lib::RepoUUID parentId);
+
 				/*
 				* Adds the repo_material_t to the scene with the specified parent, or adds
 				* the parent Id to the material's existing node.
@@ -107,8 +112,8 @@ namespace repo {
 				void setMissingTextures();
 				bool hasMissingTextures();
 
-				void setUnits(repo::manipulator::modelconvertor::ModelUnits units);
-				repo::manipulator::modelconvertor::ModelUnits getUnits();
+				void setUnits(repo::lib::ModelUnits units);
+				repo::lib::ModelUnits getUnits();
 
 				/*
 				* Creates a common set of indices prior to import, to avoid Mongo having to build
@@ -128,7 +133,7 @@ namespace repo {
 				// All nodes will be committed with this as the revision id
 				repo::lib::RepoUUID revisionId;
 
-				repo::manipulator::modelconvertor::ModelUnits units;
+				repo::lib::ModelUnits units;
 
 				std::string databaseName;
 				std::string projectName;
@@ -154,7 +159,7 @@ namespace repo {
 				// These lookups are for use by the addMaterialReference method, which will
 				// update the parents of existing nodes.
 
-				std::unordered_map<size_t, repo::lib::RepoUUID> materialToUniqueId;
+				std::unordered_map<size_t, std::pair<repo::lib::RepoUUID, uint32_t>> materialToUniqueId;
 				std::unordered_map<std::string, repo::lib::RepoUUID> textureToUniqueId;
 
 				// We have to use raw pointers here because the std containers' interaction

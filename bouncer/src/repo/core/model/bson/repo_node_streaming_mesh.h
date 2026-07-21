@@ -99,13 +99,8 @@ namespace repo {
 				std::uint32_t numVertices = 0;
 				repo::lib::RepoUUID parent;
 				repo::lib::RepoBounds bounds;
-
+				std::string grouping;
 				std::unique_ptr<SupermeshingData> supermeshingData;
-
-				// Empty vectors as standins when the supermeshingData is not loaded
-				std::vector<repo::lib::repo_face_t> emptyFace;
-				std::vector<repo::lib::RepoVector3D> empty3D;
-				std::vector<std::vector<repo::lib::RepoVector2D>> emptyUV;
 
 			public:
 				StreamingMeshNode()
@@ -114,6 +109,12 @@ namespace repo {
 				}
 
 				StreamingMeshNode(const repo::core::model::RepoBSON& bson);
+
+				// StreamingMeshNode must have explicit move operators, even if default
+				// implementations, as we define explicit constructors above.
+
+				StreamingMeshNode(StreamingMeshNode&&) noexcept = default;
+				StreamingMeshNode& operator=(StreamingMeshNode&&) noexcept = default;
 
 				bool supermeshingDataLoaded() {
 					return supermeshingData != nullptr;
@@ -147,6 +148,11 @@ namespace repo {
 					return parent;
 				}
 
+				const std::string& getGrouping() const
+				{
+					return grouping;
+				}
+
 				void transformBounds(const repo::lib::RepoMatrix& transform);
 
 				// Requiring the supermeshing data to be loaded
@@ -166,6 +172,9 @@ namespace repo {
 				const std::vector<repo::lib::RepoVector3D>& getLoadedNormals();
 
 				const std::vector<std::vector<repo::lib::RepoVector2D>>& getLoadedUVChannelsSeparated();
+
+				private:
+					void assertSupermeshingDataLoaded(); // Throws if the supermeshing data is not loaded.
 			};
 		}
 	}
