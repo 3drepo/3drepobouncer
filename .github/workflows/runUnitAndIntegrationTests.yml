@@ -135,7 +135,7 @@ jobs:
       # db (restored) and the tests repo contents.
 
       - name: Create Shared Directories
-        run: mkdir -p ./fileShare/queue ./fileShare/log ./fileShare/models
+        run: mkdir -p $REPO_MODEL_PATH/queue $REPO_MODEL_PATH/log $REPO_MODEL_PATH/models
 
       - name: Start RabbitMQ
         uses: Namoshek/rabbitmq-github-action@v1.2.0
