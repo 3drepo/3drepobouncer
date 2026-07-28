@@ -1,5 +1,5 @@
 const assert = require('node:assert');
-const test = require('node:test');
+const { before, after, test } = require('node:test');
 const ampq = require('amqplib');
 const crypto = require('crypto');
 const fs = require('fs');
@@ -13,11 +13,25 @@ const path = require('path');
 */
 
 /*
-* Bouncer worker must be running for these tests.
+* This test suite will start and stop its own bouncer, but expects the queue
+* to already be running.
 */
 
 // Use the same config as bouncer_worker proper
 const { config, replaceSharedDirTag } = require('../src/lib/config');
+const { startBouncerWorker } = require('./helpers');
+const { CLASH } = require('../src/constants/queueLabels');
+
+let stopBouncerWorker = null;
+
+before(async () => {
+	const { stop } = await startBouncerWorker(config, CLASH);
+	stopBouncerWorker = stop;
+});
+
+after(async () => {
+	await stopBouncerWorker();
+});
 
 test('Test Clash Q', { concurrency: true }, async () => {
 	const clashq = config.rabbitmq.clash_queue;

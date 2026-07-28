@@ -116,7 +116,7 @@ const checkDirectory = (directory) => {
 // eslint-disable-next-line consistent-return
 const init = () => {
 	try {
-		Config.configPath = params.config || path.resolve(__dirname, '../../config.json');
+		Config.configPath = params.config || process.env.BOUNCER_CONFIG || path.resolve(__dirname, '../../config.json');
 		let config = JSON.parse(fs.readFileSync(Config.configPath));
 		config = schema.validateSync(config, {
 			stripUnknown: true,
