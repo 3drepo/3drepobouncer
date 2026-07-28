@@ -129,7 +129,7 @@ jobs:
 #        run: ./gtest-parallel ./3drepobouncer/3drepobouncerTest --gtest_filter=-Geometry.*
 
       - name: Create Shared Directories
-      - run: mkdir -p ./fileShare/queue ./fileShare/log ./fileShare/models
+        run: mkdir -p ./fileShare/queue ./fileShare/log ./fileShare/models
 
       - name: Start RabbitMQ
         uses: Namoshek/rabbitmq-github-action@v1.2.0
