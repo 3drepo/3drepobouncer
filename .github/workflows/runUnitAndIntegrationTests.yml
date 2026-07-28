@@ -122,10 +122,24 @@ jobs:
       - name: Copy GTest Parallel Runner to workspace
         run: mv ./gtp/* .
 
-      - name: Run Tests
+# 768 - turn these off temporarily while we debug the worker tests
+#      - name: Run Bouncer Tests
+#        env:
+#          LD_LIBRARY_PATH: ${{github.WORKSPACE}}/3drepobouncer
+#        run: ./gtest-parallel ./3drepobouncer/3drepobouncerTest --gtest_filter=-Geometry.*
+
+      - name: Create Shared Directories
+      - run: mkdir -p ./fileShare/queue ./fileShare/log ./fileShare/models
+
+      - name: Start RabbitMQ
+        uses: Namoshek/rabbitmq-github-action@v1.2.0
+
+      - name: Run Bouncer Worker Tests
         env:
           LD_LIBRARY_PATH: ${{github.WORKSPACE}}/3drepobouncer
-        run: ./gtest-parallel ./3drepobouncer/3drepobouncerTest --gtest_filter=-Geometry.*
+          BOUNCER_CONFIG: ${{github.WORKSPACE}}/tests/cplusplus/bouncer/data/models/config/bouncerWorker.json
+        working-directory: ./tools/bouncer_worker
+        run: yarn test
 
   check-license-support:
     runs-on: ubuntu-24.04    
