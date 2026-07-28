@@ -23,6 +23,7 @@ jobs:
       REPOBOUNCER_ROOT: ${{github.WORKSPACE}}/install
       BOUNCER: ${{github.WORKSPACE}}/3drepobouncer
       SYNCHRO_PLUGIN_LOCATION: ${{github.WORKSPACE}}/3drepobouncer/plugins # The plugins subfolder is created by package_release
+      BOUNCER_CONSOLE_OUT: "1"
 
     steps:
       - name: Checkout bouncer
