@@ -146,6 +146,10 @@ jobs:
           cache: yarn
           cache-dependency-path: tools/bouncer_worker/yarn.lock
 
+      - name: Install Bouncer Worker Dependencies
+        working-directory: ./tools/bouncer_worker
+        run: yarn install --frozen-lockfile
+
       - name: Run Bouncer Worker Tests
         env:
           LD_LIBRARY_PATH: ${{github.WORKSPACE}}/3drepobouncer
