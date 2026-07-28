@@ -128,11 +128,23 @@ jobs:
 #          LD_LIBRARY_PATH: ${{github.WORKSPACE}}/3drepobouncer
 #        run: ./gtest-parallel ./3drepobouncer/3drepobouncerTest --gtest_filter=-Geometry.*
 
+      # The following actions are concerned with bouncer worker. These are
+      # independent of the Bouncer tests, but are run in the same job as they
+      # share many expensive dependencies, such as a built bouncer, the mongo
+      # db (restored) and the tests repo contents.
+
       - name: Create Shared Directories
         run: mkdir -p ./fileShare/queue ./fileShare/log ./fileShare/models
 
       - name: Start RabbitMQ
         uses: Namoshek/rabbitmq-github-action@v1.2.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: yarn
+          cache-dependency-path: tools/bouncer_worker/yarn.lock
 
       - name: Run Bouncer Worker Tests
         env:
