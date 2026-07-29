@@ -230,24 +230,6 @@ RepoCalibration repo::core::model::RepoBSONFactory::makeRepoCalibration(
 	);
 }
 
-ReferenceNode RepoBSONFactory::makeReferenceNode(
-	const std::string& database,
-	const std::string& project,
-	const repo::lib::RepoUUID& revisionID,
-	const bool& isUniqueID,
-	const std::string& name,
-	const int& apiLevel)
-{
-	ReferenceNode node;
-	node.setSharedID(repo::lib::RepoUUID::createUUID());
-	node.changeName(name.empty() ? database + "." + project : name, true);
-	node.setDatabaseName(database);
-	node.setProjectId(project);
-	node.setProjectRevision(revisionID);
-	node.setUseSpecificRevision(isUniqueID);
-	return node;
-}
-
 ModelRevisionNode RepoBSONFactory::makeRevisionNode(
 	const std::string& user,
 	const repo::lib::RepoUUID& branch,

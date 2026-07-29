@@ -99,5 +99,10 @@ namespace repo {
 		public:
 			RepoRefMissingException(const std::string& msg);
 		};
+
+		REPO_API_EXPORT class RepoFileUploadException : public RepoException {
+		public:
+			RepoFileUploadException(const std::string& msg);
+		};
 	}
 }

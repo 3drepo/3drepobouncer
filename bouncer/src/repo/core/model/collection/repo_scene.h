@@ -45,7 +45,6 @@ namespace repo {
 					RepoNodeSet meshes; //!< Meshes
 					RepoNodeSet materials; //!< Materials
 					RepoNodeSet metadata; //!< Metadata
-					RepoNodeSet references; //!< References
 					RepoNodeSet textures; //!< Textures
 					RepoNodeSet transformations; //!< Transformations
 					RepoNodeSet unknowns; //!< Unknown types
@@ -55,7 +54,6 @@ namespace repo {
 					std::unordered_map<repo::lib::RepoUUID, RepoNode*, repo::lib::RepoUUIDHasher> nodesByUniqueID;
 					std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher> sharedIDtoUniqueID; //** mapping of shared ID to Unique ID
 					ParentMap parentToChildren; //** mapping of shared id to its children's shared id
-					std::unordered_map<repo::lib::RepoUUID, RepoScene*, repo::lib::RepoUUIDHasher> referenceToScene; //** mapping of reference ID to it's scene graph
 				};
 
 				static const std::vector<std::string> collectionsInProject;
@@ -99,7 +97,6 @@ namespace repo {
 				* @param metadata Repo Node set of metadata
 				* @param textures Repo Node set of textures
 				* @param transformations Repo Node set of transformations
-				* @param references Repo Node set of references (optional)
 				* @param unknowns Repo Node set of unknowns (optional)
 				*/
 				RepoScene(
@@ -109,7 +106,6 @@ namespace repo {
 					const RepoNodeSet              &metadata,
 					const RepoNodeSet              &textures,
 					const RepoNodeSet              &transformations,
-					const RepoNodeSet              &references = RepoNodeSet(),
 					const RepoNodeSet              &unknowns = RepoNodeSet());
 
 				/**
@@ -130,10 +126,6 @@ namespace repo {
 				*/
 				bool isOK() const {
 					return !status;
-				}
-
-				void ignoreReferenceScene() {
-					ignoreReferenceNodes = true;
 				}
 
 				void skipLoadingExtFiles() {
@@ -596,22 +588,6 @@ namespace repo {
 					const NodeType  &type) const;
 
 				/**
-				* Get Scene from reference node
-				*/
-				RepoScene* getSceneFromReference(
-					const GraphType &gType,
-					const repo::lib::RepoUUID  &reference) const
-				{
-					const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
-					RepoScene* refScene = nullptr;
-
-					std::unordered_map<repo::lib::RepoUUID, RepoScene*, repo::lib::RepoUUIDHasher >::const_iterator it = g.referenceToScene.find(reference);
-					if (it != g.referenceToScene.end())
-						refScene = it->second;
-					return refScene;
-				}
-
-				/**
 				* Get the texture ID that is associated with the given mesh
 				* if the mesh has no texture, it returns an empty string
 				* @param gType the graph type to search through
@@ -666,16 +642,6 @@ namespace repo {
 					const GraphType &gType) const
 				{
 					return  gType == GraphType::OPTIMIZED ? stashGraph.metadata : graph.metadata;
-				}
-
-				/**
-				* Get all reference nodes within current scene revision
-				* @return a RepoNodeSet of references
-				*/
-				RepoNodeSet getAllReferences(
-					const GraphType &gType) const
-				{
-					return  gType == GraphType::OPTIMIZED ? stashGraph.references : graph.references;
 				}
 
 				/**
@@ -999,7 +965,6 @@ namespace repo {
 					const RepoNodeSet &metadata,
 					const RepoNodeSet &textures,
 					const RepoNodeSet &transformations,
-					const RepoNodeSet &references,
 					const RepoNodeSet &unknowns);
 
 				/**
@@ -1053,7 +1018,6 @@ namespace repo {
 				repoGraphInstance graph; //current state of the graph, given the branch/revision
 				repoGraphInstance stashGraph; //current state of the optimized graph, given the branch/revision
 				uint16_t status = 0; //health of the scene, 0 denotes healthy
-				bool ignoreReferenceNodes = false;
 				bool loadExtFiles = true;
 			};
 		}//namespace graph

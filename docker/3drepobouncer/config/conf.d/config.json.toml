@@ -6,7 +6,6 @@ keys = [
     "/app/queue/bouncer/username",
     "/app/queue/bouncer/password",
 	"/app/queue/dns",
-	"/app/queue/jobq",
 	"/app/queue/callbackq",
 	"/app/queue/modelq",
 	"/app/efs/models",

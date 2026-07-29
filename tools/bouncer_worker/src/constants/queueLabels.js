@@ -16,7 +16,6 @@
  */
 
 module.exports = {
-	JOB: 'job',
 	MODEL: 'model',
 	DRAWING: 'drawing',
 	CLASH: 'clash',

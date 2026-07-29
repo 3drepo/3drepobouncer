@@ -15,7 +15,7 @@ permissions:
 
 concurrency:
   group: build-${{ github.event_name }}-${{ github.event_name == 'issue_comment' && github.event.issue.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/staging' }}
 
 jobs:
   pre-build:
@@ -47,7 +47,7 @@ jobs:
         run: |
           ORG="3drepo"
           USER="${{ github.actor }}"
-          
+
           echo "Checking if $USER belongs to $ORG..."
 
           # Check if the user is a member of the organization (including private members)
@@ -99,14 +99,14 @@ jobs:
 
           if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
             VERSION="${GITHUB_REF##*/}"
-            CHECKOUT_REF="${GITHUB_REF}"
+            CHECKOUT_REF="${GITHUB_SHA}"
           elif [[ "${GITHUB_EVENT_NAME}" == "issue_comment" ]]; then
             # For PR comments, we need to get the PR branch name for the version tag
             ISSUE_NUMBER=$(jq -r .issue.number < "$GITHUB_EVENT_PATH")
             VERSION=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls/$ISSUE_NUMBER" | jq -r .head.ref)
-            
+
             if [ "$VERSION" = "null" ] || [ -z "$VERSION" ]; then
               echo "Failed to get PR branch name"
               exit 1
@@ -134,4 +134,15 @@ jobs:
       version: ${{ needs.pre-build.outputs.version }}
       app_build_now: ${{ needs.pre-build.outputs.app_build_now }}
       push: true
+    secrets: inherit
+
+  deploy-staging:
+    needs:
+      - pre-build
+      - build-push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      image_tag: ${{ needs.pre-build.outputs.version }}
+      build_id: ${{ github.sha }}
     secrets: inherit

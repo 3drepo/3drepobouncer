@@ -23,7 +23,6 @@ set(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_mesh.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_metadata.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_model_revision.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_reference.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_revision.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_streaming_mesh.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_supermesh.cpp
@@ -50,7 +49,6 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_mesh.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_metadata.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_model_revision.h
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_reference.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_revision.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_streaming_mesh.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_supermesh.h

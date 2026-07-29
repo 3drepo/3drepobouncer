@@ -116,9 +116,6 @@ NodeType RepoNode::parseType(const std::string& nodeType)
 	else if (REPO_NODE_TYPE_TEXTURE == nodeType) {
 		return repo::core::model::NodeType::TEXTURE;
 	}
-	else if (REPO_NODE_TYPE_REFERENCE == nodeType) {
-		return repo::core::model::NodeType::REFERENCE;
-	}
 	else if (REPO_NODE_TYPE_METADATA == nodeType) {
 		return repo::core::model::NodeType::METADATA;
 	}

@@ -108,7 +108,6 @@ const static std::string noSubProjectJSONFile = "noSubPro.json";
 const static std::string noDbNameJSONFile = "noDb.json";
 const static std::string noProNameJSONFile = "noPro.json";
 const static std::string invalidJSONFile = "invalid.json";
-const static std::string validGenFedJSONFile = "validFed.json";
 
 const static std::string  importSuccess = "successFileImport.json";
 const static std::string  importSuccess2 = "successFileImport2.json";
@@ -137,10 +136,6 @@ const static std::string  processDrawingConfig = "processDrawingConfig.json";
 
 const static std::string getFileFileName = "a0205d17-e73c-4d3f-ad1b-8b875cb5f342cube_obj";
 const static std::string getFileNameBIMModel = "5be1aca9-e4d0-4cec-987d-80d2fde3dade3DrepoBIM_obj";
-
-const static std::string genFedDB = "genFedTest";
-const static std::string genFedNoSubProName = "noSubPro";
-const static std::string genFedSuccessName = "fedTest";
 
 const static std::pair<std::string, std::string> REPO_GTEST_DROPCOL_TESTCASE = { "sampleDataRW", "collectionToDrop" };
 const static std::string REPO_GTEST_RAWFILE_FETCH_TEST = "gridFSFile";

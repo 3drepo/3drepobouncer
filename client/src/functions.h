@@ -70,20 +70,6 @@ int32_t performOperation(
 * ======================== Command functions ===================
 */
 
-
-/**
-* Generate and commit a federation
-* @param controller the controller to the bouncer library
-* @param token      token provided by the controller after authentication
-* @param command    command and it's arguments to perform
-* @return returns true upon success
-*/
-int32_t generateFederation(
-	std::shared_ptr<repo::RepoController> controller,
-	const repo::RepoController::RepoToken      *token,
-	const repo_op_t            &command
-	);
-
 /**
 * Generate a particular type of stash (src/gltf/repo) for a given project
 * @param controller the controller to the bouncer library

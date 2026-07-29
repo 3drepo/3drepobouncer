@@ -163,7 +163,7 @@ bool testing::projectSettingsCheck(
 
 	if (token)
 	{
-		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, true, true, { repo::core::model::ModelRevisionNode::UploadStatus::MISSING_BUNDLES });
+		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, true, { repo::core::model::ModelRevisionNode::UploadStatus::MISSING_BUNDLES });
 		if (scene)
 		{
 			res = scene->getOwner() == owner && scene->getTag() == tag && scene->getMessage() == desc;
@@ -182,7 +182,7 @@ bool testing::projectHasValidRevision(
 	auto token = initController(controller);
 	if (token)
 	{
-		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, true);
+		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true);
 		if (res = scene)
 		{
 			delete scene;
@@ -338,18 +338,6 @@ std::string testing::produceGetFileArgs(
 		+ database + " "
 		+ project + " \""
 		+ file + "\"";
-}
-
-std::string testing::produceCreateFedArgs(
-	const std::string& file,
-	const std::string& owner
-)
-{
-	return  getClientExePath() + " "
-		+ getConnConfig()
-		+ " genFed \""
-		+ file + "\" "
-		+ owner;
 }
 
 std::string testing::produceUploadFileArgs(

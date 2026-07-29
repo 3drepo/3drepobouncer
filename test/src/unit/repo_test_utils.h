@@ -126,10 +126,6 @@ namespace testing {
 		const std::string& database,
 		const std::string& project);
 
-	std::string produceCreateFedArgs(
-		const std::string& file,
-		const std::string& owner = std::string());
-
 	std::string produceUploadFileArgs(
 		const std::string& filePath);
 

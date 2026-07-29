@@ -216,26 +216,6 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 
 }
 
-TEST(RepoBSONFactoryTest, MakeReferenceNodeTest)
-{
-	std::string dbName = "testDB";
-	std::string proName = "testProj";
-	repo::lib::RepoUUID revId = repo::lib::RepoUUID::createUUID();
-	bool isUnique = true;
-	std::string name = "refNodeName";
-
-	ReferenceNode ref = RepoBSONFactory::makeReferenceNode(dbName, proName, revId, isUnique, name);
-
-	EXPECT_EQ(dbName, ref.getDatabaseName());
-	EXPECT_EQ(proName, ref.getProjectId());
-	EXPECT_EQ(revId, ref.getProjectRevision());
-	EXPECT_EQ(isUnique, ref.useSpecificRevision());
-	EXPECT_EQ(name, ref.getName());
-
-	ReferenceNode ref2 = RepoBSONFactory::makeReferenceNode(dbName, proName, revId, !isUnique, name);
-	EXPECT_EQ(!isUnique, ref2.useSpecificRevision());
-}
-
 TEST(RepoBSONFactoryTest, MakeRevisionNodeTest)
 {
 	std::string owner = "revOwner";

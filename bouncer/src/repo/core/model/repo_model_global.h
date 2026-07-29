@@ -201,7 +201,7 @@
 #define REPO_NODE_TYPE_MATERIAL			"material"
 #define REPO_NODE_TYPE_MESH          	"mesh"
 #define REPO_NODE_TYPE_METADATA     	"meta"
-#define REPO_NODE_TYPE_REFERENCE		"ref"
+#define REPO_NODE_TYPE_REFERENCE		"ref" //deprecated but reserved to avoid issues with older db entries
 #define REPO_NODE_TYPE_REVISION			"revision"
 #define REPO_NODE_TYPE_SHADER			"shader"
 #define REPO_NODE_TYPE_TEXTURE			"texture"

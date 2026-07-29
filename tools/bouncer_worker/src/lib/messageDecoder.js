@@ -75,19 +75,6 @@ const messageDecoder = (cmd) => {
 					};
 				}
 				break;
-			case 'genFed':
-				{
-					// eslint-disable-next-line
-					const cmdFile = require(args[1]);
-					res = {
-						cmdParams: [configPath, ...args],
-						teamspace: cmdFile.teamspace,
-						federation: cmdFile.federation,
-						user: cmdFile.owner,
-						...res,
-					};
-				}
-				break;
 			case 'processClash':
 				res = {
 					cmdParams: [configPath],
