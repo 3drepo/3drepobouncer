@@ -135,7 +135,7 @@ jobs:
       # db (restored) and the tests repo contents.
 
       - name: Create Shared Directories
-        run: mkdir -p $REPO_MODEL_PATH/queue $REPO_MODEL_PATH/log $REPO_MODEL_PATH/models
+        run: mkdir -p $REPO_MODEL_PATH/queue $REPO_MODEL_PATH/log
 
       - name: Start RabbitMQ
         uses: Namoshek/rabbitmq-github-action@v1.2.0
@@ -154,7 +154,7 @@ jobs:
       - name: Run Bouncer Worker Tests
         env:
           LD_LIBRARY_PATH: ${{github.WORKSPACE}}/3drepobouncer
-          BOUNCER_CONFIG: ${{github.WORKSPACE}}/tests/cplusplus/bouncer/data/models/config/bouncerWorker.json
+          BOUNCER_CONFIG: ${{github.WORKSPACE}}/tests/cplusplus/bouncer/data/models/bouncerWorker.json
         working-directory: ./tools/bouncer_worker
         run: yarn test
 
