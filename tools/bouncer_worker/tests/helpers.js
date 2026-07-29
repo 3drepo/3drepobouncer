@@ -26,9 +26,9 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * Starts a bouncer worker instance and waits until it is ready to consume
  * messages from all configured queues.
  *
- * @returns {Promise<{ stop: () => Promise<{ code: number|null, signal: NodeJS.Signals|null }> }>} A handle with a stop() method.
+ * @returns {Promise<{ stop: () => Promise<{ code: number|null, signal: NodeJS.Signals|null }>, waitForExit: () => Promise<{ code: number|null, signal: NodeJS.Signals|null }> }>} A handle with stop() and waitForExit() methods.
  */
-const startBouncerWorker = async (config, queue = undefined) => {
+const startBouncerWorker = async (config, queue = undefined, exitAfter = undefined) => {
 	const output = [];
 
 	const args = [];
@@ -36,6 +36,11 @@ const startBouncerWorker = async (config, queue = undefined) => {
 	if (queue) {
 		args.push('--queue');
 		args.push(queue);
+	}
+
+	if (Number.isInteger(exitAfter) && exitAfter > 0) {
+		args.push('--exitAfter');
+		args.push(exitAfter.toString());
 	}
 
 	const worker = spawn(process.execPath, [
@@ -86,7 +91,9 @@ const startBouncerWorker = async (config, queue = undefined) => {
 		return workerExitPromise;
 	};
 
-	return { stop };
+	const waitForExit = () => workerExitPromise;
+
+	return { stop, waitForExit };
 };
 
 module.exports = { startBouncerWorker };

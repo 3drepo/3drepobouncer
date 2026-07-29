@@ -37,14 +37,14 @@ const path = require('path');
 // Use the same config as bouncer_worker proper
 const { config } = require('../src/lib/config');
 const { startBouncerWorker } = require('./helpers');
-const { MODEL } = require('../src/constants/queueLabels');
+const { DRAWING } = require('../src/constants/queueLabels');
 const { PROCESSING } = require('../src/constants/statuses');
-const { IMPORT } = require('../src/constants/messageTypes');
+const { DRAWING: DRAWING_TYPE } = require('../src/constants/messageTypes');
 
 let stopBouncerWorker = null;
 
 before(async () => {
-	const { stop } = await startBouncerWorker(config, MODEL);
+	const { stop } = await startBouncerWorker(config, DRAWING);
 	stopBouncerWorker = stop;
 });
 
@@ -52,55 +52,41 @@ after(async () => {
 	await stopBouncerWorker();
 });
 
-test('Test Model Import Q', { concurrency: true }, async () => {
-	const modelq = config.rabbitmq.model_queue;
+test('Test Drawing Q', { concurrency: false }, async () => {
+	const drawingq = config.rabbitmq.drawing_queue;
 	const callbackq = config.rabbitmq.callback_queue;
 
 	const connection = await ampq.connect(config.rabbitmq.host);
 
 	const correlationId = crypto.randomUUID().toString();
 
-	const teamspace = 'testTeamspace';
-	const container = 'testContainer';
+	const teamspace = 'testDrawings';
+	const drawing = '0ffe7f18-8ef9-4580-9419-a1bcb9d4c9c7';
 
-	const importDirectory = path.join(config.rabbitmq.sharedDir, correlationId);
-	const importConfigPath = path.join(config.rabbitmq.sharedDir, `${correlationId}.json`);
+	// When bouncer processes drawings, it updates what should be an already
+	// existing revision, with apprporiate refs for the source image.
+	// The test database should have already been restored containing a
+	// drawing revision with the following id.
 
-	// Create the import configuration, as the backend would. See,
-	// src\v4\services\queue.js
-	// src\v5\handler\queue.js
-	// The import command should use the shared space placeholder literal, as
-	// the backend does.
-
-	fs.mkdirSync(importDirectory, { recursive: true });
-
-	fs.copyFileSync(
-		path.join(process.env.REPO_MODEL_PATH, 'cube.obj'),
-		path.join(importDirectory, 'cube.obj'),
-	);
-
-	const importConfig = {
-		lod: 0,
-		timezone: 'Europe/London',
-		importAnimations: false,
-		tag: 'model_import_test',
+	const drawingConfig = {
 		owner: crypto.randomUUID().toString(),
-		units: 'm',
-		file: `$SHARED_SPACE/${correlationId}/cube.obj`,
+		drawing,
 		teamspace,
-		container,
-		revId: crypto.randomUUID().toString(),
+		revId: '4dce0696-533b-490e-bd69-b437f24c7e3d',
 	};
 
-	fs.writeFileSync(importConfigPath, JSON.stringify(importConfig));
+	fs.writeFileSync(
+		path.join(config.rabbitmq.sharedDir, `${correlationId}.json`),
+		JSON.stringify(drawingConfig),
+	);
 
 	// Post message
 	{
 		const channel = await connection.createChannel();
 
-		await channel.assertQueue(modelq);
-		const message = `import -f $SHARED_SPACE/${correlationId}.json`;
-		channel.sendToQueue(modelq, Buffer.from(message), {
+		await channel.assertQueue(drawingq);
+		const message = `processDrawing $SHARED_SPACE/${correlationId}.json`;
+		channel.sendToQueue(drawingq, Buffer.from(message), {
 			correlationId,
 		});
 
@@ -119,7 +105,7 @@ test('Test Model Import Q', { concurrency: true }, async () => {
 			let seenProcessing = false;
 
 			const timeoutHandle = setTimeout(() => {
-				reject(new Error('Timed out waiting for model import callback'));
+				reject(new Error('Timed out waiting for drawing callback'));
 			}, 60000);
 
 			channel.consume(callbackq, (message) => {
@@ -130,17 +116,19 @@ test('Test Model Import Q', { concurrency: true }, async () => {
 					return;
 				}
 
-				if (content.status === PROCESSING && content.type === MODEL) {
+				if (content.status === PROCESSING) {
+					assert.equal(content.teamspace, teamspace);
+					assert.equal(content.drawing, drawing);
 					seenProcessing = true;
 					channel.ack(message);
 					return;
 				}
 
 				assert.equal(content.value, 0);
-				assert.equal(content.type, IMPORT);
+				assert.equal(content.type, DRAWING_TYPE);
 				assert.equal(content.teamspace, teamspace);
-				assert.equal(content.container, container);
-				assert.equal(content.user, importConfig.owner);
+				assert.equal(content.drawing, drawing);
+				assert.equal(content.user, drawingConfig.owner);
 				assert.equal(seenProcessing, true);
 
 				clearTimeout(timeoutHandle);
