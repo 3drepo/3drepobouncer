@@ -139,6 +139,8 @@ jobs:
 
       - name: Start RabbitMQ
         uses: Namoshek/rabbitmq-github-action@v1.2.0
+        with:
+          ports: 5672:5672
 
       - name: Setup Node
         uses: actions/setup-node@v6
