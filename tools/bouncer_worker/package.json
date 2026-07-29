@@ -9,7 +9,7 @@
     "start": "pm2 start src/scripts/bouncer_worker.js",
     "stop": "pm2 kill",
     "restart": "npm stop; npm start",
-    "test": "node --test tests/*.test.js",
+    "test": "node --test --test-concurrency=1 tests/*.test.js",
     "lint": "eslint --ext .js src",
     "run-worker": "node src/scripts/bouncer_worker.js",
     "watch": "nodemon src/scripts/bouncer_worker.js"

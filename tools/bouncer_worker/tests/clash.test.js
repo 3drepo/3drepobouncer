@@ -38,6 +38,8 @@ const path = require('path');
 const { config, replaceSharedDirTag } = require('../src/lib/config');
 const { startBouncerWorker } = require('./helpers');
 const { CLASH } = require('../src/constants/queueLabels');
+const { PROCESSING } = require('../src/constants/statuses');
+const { CLASH: CLASH_TYPE } = require('../src/constants/messageTypes');
 
 let stopBouncerWorker = null;
 
@@ -92,24 +94,46 @@ test('Test Clash Q', { concurrency: true }, async () => {
 		await channel.close();
 	}
 
-	// Wait for callback
+	// Wait for callbacks
 	{
 		const channel = await connection.createChannel();
 
 		await channel.assertQueue(callbackq);
 		await channel.prefetch(1);
 
-		await new Promise((resolve) => {
+		await new Promise((resolve, reject) => {
+			let seenProcessing = false;
+
+			const timeoutHandle = setTimeout(() => {
+				reject(new Error('Timed out waiting for clash callback'));
+			}, 60000);
+
 			channel.consume(callbackq, (message) => {
 				const content = JSON.parse(message.content.toString());
+
+				if (message.properties.correlationId !== correlationId) {
+					channel.ack(message);
+					return;
+				}
+
+				if (content.status === PROCESSING && content.type === CLASH_TYPE) {
+					assert.equal(content.teamspace, teamspace);
+					assert.equal(content.project, project);
+					seenProcessing = true;
+					channel.ack(message);
+					return;
+				}
 
 				assert.equal(message.properties.correlationId, correlationId);
 				assert.equal(content.value, 0);
 				assert.equal(content.results, path.join(`$SHARED_SPACE/${correlationId}`, 'results.json'));
 				assert.equal(fs.existsSync(replaceSharedDirTag(content.results)), true);
+				assert.equal(content.type, CLASH_TYPE);
 				assert.equal(content.project, project);
 				assert.equal(content.teamspace, teamspace);
+				assert.equal(seenProcessing, true);
 
+				clearTimeout(timeoutHandle);
 				channel.ack(message);
 				resolve();
 			});
