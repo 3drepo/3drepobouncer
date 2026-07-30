@@ -28,7 +28,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  *
  * @returns {Promise<{ stop: () => Promise<{ code: number|null, signal: NodeJS.Signals|null }>, waitForExit: () => Promise<{ code: number|null, signal: NodeJS.Signals|null }> }>} A handle with stop() and waitForExit() methods.
  */
-const startBouncerWorker = async (config, queue = undefined, exitAfter = undefined) => {
+const startBouncerWorker = async (queue = undefined, exitAfter = undefined) => {
 	const output = [];
 
 	const args = [];

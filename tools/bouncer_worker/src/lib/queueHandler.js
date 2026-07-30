@@ -99,7 +99,7 @@ const establishChannel = async (conn, queueNames) => {
 };
 
 const executeTasks = async (conn, queueName, nTasks, callback) => {
-	const channel = await conn.createChannel();
+	const channel = await conn.createConfirmChannel();
 	channel.assertQueue(rabbitmq.callback_queue, { durable: true });
 	channel.prefetch(1);
 	logger.info(`Processing ${nTasks} tasks on ${queueName}...`, logLabel);
@@ -142,8 +142,8 @@ const executeTasks = async (conn, queueName, nTasks, callback) => {
 		}
 	}
 
-	// There's no promise/callback for knowing when Ack has been received by the server. So we're doing a wait here.
-	await sleep(rabbitmq.waitBeforeShutdownMS);
+	// Ensure callback publishes are confirmed by RabbitMQ before shutdown.
+	await channel.waitForConfirms();
 	await channel.close();
 	await conn.close();
 };
