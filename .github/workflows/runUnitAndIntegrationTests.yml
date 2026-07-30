@@ -123,14 +123,13 @@ jobs:
       - name: Copy GTest Parallel Runner to workspace
         run: mv ./gtp/* .
 
-# 768 - turn these off temporarily while we debug the worker tests
-#      - name: Run Bouncer Tests
-#        env:
-#          LD_LIBRARY_PATH: ${{github.WORKSPACE}}/3drepobouncer
-#        run: ./gtest-parallel ./3drepobouncer/3drepobouncerTest --gtest_filter=-Geometry.*
+      - name: Run Bouncer Tests
+        env:
+          LD_LIBRARY_PATH: ${{github.WORKSPACE}}/3drepobouncer
+        run: ./gtest-parallel ./3drepobouncer/3drepobouncerTest --gtest_filter=-Geometry.*
 
       # The following actions are concerned with bouncer worker. These are
-      # independent of the Bouncer tests, but are run in the same job as they
+      # independent of the bouncer tests, but are run in the same job as they
       # share many expensive dependencies, such as a built bouncer, the mongo
       # db (restored) and the tests repo contents.
 
