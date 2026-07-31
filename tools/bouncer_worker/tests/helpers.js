@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
+const { randomBytes, randomUUID } = require('node:crypto');
 const { spawn } = require('node:child_process');
 const { PROCESSING } = require('../src/constants/statuses');
 
@@ -152,4 +153,8 @@ const waitForCallback = async (connection, callbackq, correlationId, { onProcess
 	}
 };
 
-module.exports = { startBouncerWorker, postToQueue, waitForCallback };
+const generateUUIDString = () => randomUUID().toString();
+
+const generateRandomString = (length = 8) => randomBytes(length).toString('hex');
+
+module.exports = { generateRandomString, generateUUIDString, startBouncerWorker, postToQueue, waitForCallback };

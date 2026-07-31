@@ -17,24 +17,23 @@
 
 const assert = require('node:assert');
 const ampq = require('amqplib');
-const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { config, replaceSharedDirTag } = require('../src/lib/config');
 const { CLASH: CLASH_TYPE, IMPORT: IMPORT_TYPE, DRAWING: DRAWING_TYPE } = require('../src/constants/messageTypes');
 const queueLabels = require('../src/constants/queueLabels');
-const { postToQueue, waitForCallback } = require('./helpers');
+const { generateUUIDString, postToQueue, waitForCallback, generateRandomString } = require('./helpers');
 
 const testClashQ = async () => {
 	const connection = await ampq.connect(config.rabbitmq.host);
-	const correlationId = crypto.randomUUID().toString();
+	const correlationId = generateUUIDString();
 
 	// In practice, these are used to determine where to look for the clash run
 	// in the database. They are completely independent of which geometries
 	// are clashed, so can be anything here.
 
-	const project = 'testProject';
-	const teamspace = 'testTeamspace';
+	const project = generateUUIDString();
+	const teamspace = generateRandomString();
 
 	const clashConfigDirectory = path.join(config.rabbitmq.sharedDir, correlationId);
 
@@ -80,10 +79,10 @@ const testClashQ = async () => {
 const testModelQ = async () => {
 	const connection = await ampq.connect(config.rabbitmq.host);
 
-	const correlationId = crypto.randomUUID().toString();
+	const correlationId = generateUUIDString();
 
-	const teamspace = 'testTeamspace';
-	const container = 'testContainer';
+	const teamspace = generateRandomString();
+	const container = generateUUIDString();
 
 	const importDirectory = path.join(config.rabbitmq.sharedDir, correlationId);
 	const importConfigPath = path.join(config.rabbitmq.sharedDir, `${correlationId}.json`);
@@ -106,12 +105,12 @@ const testModelQ = async () => {
 		timezone: 'Europe/London',
 		importAnimations: false,
 		tag: 'model_import_test',
-		owner: crypto.randomUUID().toString(),
+		owner: generateUUIDString(),
 		units: 'm',
 		file: `$SHARED_SPACE/${correlationId}/cube.obj`,
 		teamspace,
 		container,
-		revId: crypto.randomUUID().toString(),
+		revId: generateUUIDString(),
 	};
 
 	fs.writeFileSync(importConfigPath, JSON.stringify(importConfig));
@@ -144,7 +143,7 @@ const testModelQ = async () => {
 const testDrawingQ = async () => {
 	const connection = await ampq.connect(config.rabbitmq.host);
 
-	const correlationId = crypto.randomUUID().toString();
+	const correlationId = generateUUIDString();
 
 	// These arguments must match what is already in the database.
 
@@ -157,7 +156,7 @@ const testDrawingQ = async () => {
 	// drawing revision with the following id.
 
 	const drawingConfig = {
-		owner: crypto.randomUUID().toString(),
+		owner: generateUUIDString(),
 		drawing,
 		teamspace,
 		revId: '4dce0696-533b-490e-bd69-b437f24c7e3d',
