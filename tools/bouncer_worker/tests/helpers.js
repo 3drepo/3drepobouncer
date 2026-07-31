@@ -108,12 +108,14 @@ const startBouncerWorker = async (queue = undefined, exitAfter = undefined) => {
 const createCorrelationIdAndSharedDirectory = (filesToCopy) => {
 	const correlationId = generateUUIDString();
 	const correlationDirectory = path.join(config.rabbitmq.sharedDir, correlationId);
-	fs.mkdirSync(correlationDirectory, { recursive: true });
-	for (const file of filesToCopy) {
-		fs.copyFileSync(
-			file,
-			path.join(correlationDirectory, path.basename(file)),
-		);
+	if (filesToCopy?.length) {
+		fs.mkdirSync(correlationDirectory, { recursive: true });
+		for (const file of filesToCopy) {
+			fs.copyFileSync(
+				file,
+				path.join(correlationDirectory, path.basename(file)),
+			);
+		}
 	}
 	return correlationId;
 };
