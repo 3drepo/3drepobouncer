@@ -16,6 +16,7 @@
  */
 
 const { spawn } = require('node:child_process');
+const { PROCESSING } = require('../src/constants/statuses');
 
 const FORCE_KILL_TIMEOUT_MS = 10000;
 const WORKER_LOG_LINES = 40;
@@ -96,4 +97,59 @@ const startBouncerWorker = async (queue = undefined, exitAfter = undefined) => {
 	return { stop, waitForExit };
 };
 
-module.exports = { startBouncerWorker };
+const postToQueue = async (connection, queueName, message, correlationId) => {
+	const channel = await connection.createChannel();
+	await channel.assertQueue(queueName);
+	channel.sendToQueue(queueName, Buffer.from(message), { correlationId });
+	// Closing the channel flushes the message
+	await channel.close();
+};
+
+const waitForCallback = async (connection, callbackq, correlationId, { onProcessing, onComplete, timeoutMessage }) => {
+	const channel = await connection.createChannel();
+	await channel.assertQueue(callbackq);
+	await channel.prefetch(1);
+
+	try {
+		await new Promise((resolve, reject) => {
+			let seenProcessing = false;
+
+			const timeoutHandle = setTimeout(() => {
+				reject(new Error(timeoutMessage));
+			}, 60000);
+
+			channel.consume(callbackq, (message) => {
+				const content = JSON.parse(message.content.toString());
+
+				if (message.properties.correlationId !== correlationId) {
+					channel.ack(message);
+					return;
+				}
+
+				try {
+					if (content.status === PROCESSING) {
+						onProcessing(content);
+						seenProcessing = true;
+						channel.ack(message);
+						return;
+					}
+
+					onComplete(content, seenProcessing);
+				} catch (err) {
+					clearTimeout(timeoutHandle);
+					channel.ack(message);
+					reject(err);
+					return;
+				}
+
+				clearTimeout(timeoutHandle);
+				channel.ack(message);
+				resolve();
+			});
+		});
+	} finally {
+		await channel.close();
+	}
+};
+
+module.exports = { startBouncerWorker, postToQueue, waitForCallback };

@@ -21,14 +21,11 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { config, replaceSharedDirTag } = require('../src/lib/config');
-const { PROCESSING } = require('../src/constants/statuses');
 const { CLASH: CLASH_TYPE, IMPORT: IMPORT_TYPE, DRAWING: DRAWING_TYPE } = require('../src/constants/messageTypes');
-const QueueLabels = require('../src/constants/queueLabels');
 const queueLabels = require('../src/constants/queueLabels');
+const { postToQueue, waitForCallback } = require('./helpers');
 
 const testClashQ = async () => {
-	const clashq = config.rabbitmq.clash_queue;
-	const callbackq = config.rabbitmq.callback_queue;
 	const connection = await ampq.connect(config.rabbitmq.host);
 	const correlationId = crypto.randomUUID().toString();
 
@@ -52,75 +49,35 @@ const testClashQ = async () => {
 		path.join(clashConfigDirectory, 'clashConfig.json'),
 	);
 
-	// Post message
-	{
-		const channel = await connection.createChannel();
+	await postToQueue(
+		connection,
+		config.rabbitmq.clash_queue,
+		`processClash ${teamspace} ${project} $SHARED_SPACE/${correlationId}/clashConfig.json`,
+		correlationId,
+	);
 
-		await channel.assertQueue(clashq);
-		const message = `processClash ${teamspace} ${project} $SHARED_SPACE/${correlationId}/clashConfig.json`;
-		channel.sendToQueue(clashq, Buffer.from(message), {
-			correlationId,
-		});
-
-		// Closing the channel flushes the message
-		await channel.close();
-	}
-
-	// Wait for callbacks
-	{
-		const channel = await connection.createChannel();
-
-		await channel.assertQueue(callbackq);
-		await channel.prefetch(1);
-
-		await new Promise((resolve, reject) => {
-			let seenProcessing = false;
-
-			const timeoutHandle = setTimeout(() => {
-				reject(new Error('Timed out waiting for clash callback'));
-			}, 60000);
-
-			channel.consume(callbackq, (message) => {
-				const content = JSON.parse(message.content.toString());
-
-				if (message.properties.correlationId !== correlationId) {
-					channel.ack(message);
-					return;
-				}
-
-				if (content.status === PROCESSING && content.type === CLASH_TYPE) {
-					assert.equal(content.teamspace, teamspace);
-					assert.equal(content.project, project);
-					seenProcessing = true;
-					channel.ack(message);
-					return;
-				}
-
-				assert.equal(message.properties.correlationId, correlationId);
-				assert.equal(content.value, 0);
-				assert.equal(content.results, path.join(`$SHARED_SPACE/${correlationId}`, 'results.json'));
-				assert.equal(fs.existsSync(replaceSharedDirTag(content.results)), true);
-				assert.equal(content.type, CLASH_TYPE);
-				assert.equal(content.project, project);
-				assert.equal(content.teamspace, teamspace);
-				assert.equal(seenProcessing, true);
-
-				clearTimeout(timeoutHandle);
-				channel.ack(message);
-				resolve();
-			});
-		});
-
-		await channel.close();
-	}
+	await waitForCallback(connection, config.rabbitmq.callback_queue, correlationId, {
+		timeoutMessage: 'Timed out waiting for clash callback',
+		onProcessing: (content) => {
+			assert.equal(content.type, CLASH_TYPE);
+			assert.equal(content.teamspace, teamspace);
+			assert.equal(content.project, project);
+		},
+		onComplete: (content, seenProcessing) => {
+			assert.equal(content.value, 0);
+			assert.equal(content.results, path.join('$SHARED_SPACE', `${correlationId}`, 'results.json'));
+			assert.equal(fs.existsSync(replaceSharedDirTag(content.results)), true);
+			assert.equal(content.type, CLASH_TYPE);
+			assert.equal(content.project, project);
+			assert.equal(content.teamspace, teamspace);
+			assert.equal(seenProcessing, true);
+		},
+	});
 
 	await connection.close();
 };
 
 const testModelQ = async () => {
-	const modelq = config.rabbitmq.model_queue;
-	const callbackq = config.rabbitmq.callback_queue;
-
 	const connection = await ampq.connect(config.rabbitmq.host);
 
 	const correlationId = crypto.randomUUID().toString();
@@ -159,74 +116,37 @@ const testModelQ = async () => {
 
 	fs.writeFileSync(importConfigPath, JSON.stringify(importConfig));
 
-	// Post message
-	{
-		const channel = await connection.createChannel();
+	await postToQueue(
+		connection,
+		config.rabbitmq.model_queue,
+		`import -f $SHARED_SPACE/${correlationId}.json`,
+		correlationId,
+	);
 
-		await channel.assertQueue(modelq);
-		const message = `import -f $SHARED_SPACE/${correlationId}.json`;
-		channel.sendToQueue(modelq, Buffer.from(message), {
-			correlationId,
-		});
-
-		// Closing the channel flushes the message
-		await channel.close();
-	}
-
-	// Wait for callbacks
-	{
-		const channel = await connection.createChannel();
-
-		await channel.assertQueue(callbackq);
-		await channel.prefetch(1);
-
-		await new Promise((resolve, reject) => {
-			let seenProcessing = false;
-
-			const timeoutHandle = setTimeout(() => {
-				reject(new Error('Timed out waiting for model import callback'));
-			}, 60000);
-
-			channel.consume(callbackq, (message) => {
-				const content = JSON.parse(message.content.toString());
-
-				if (message.properties.correlationId !== correlationId) {
-					channel.ack(message);
-					return;
-				}
-
-				if (content.status === PROCESSING && content.type === QueueLabels.MODEL) {
-					seenProcessing = true;
-					channel.ack(message);
-					return;
-				}
-
-				assert.equal(content.value, 0);
-				assert.equal(content.type, IMPORT_TYPE);
-				assert.equal(content.teamspace, teamspace);
-				assert.equal(content.container, container);
-				assert.equal(content.user, importConfig.owner);
-				assert.equal(seenProcessing, true);
-
-				clearTimeout(timeoutHandle);
-				channel.ack(message);
-				resolve();
-			});
-		});
-
-		await channel.close();
-	}
+	await waitForCallback(connection, config.rabbitmq.callback_queue, correlationId, {
+		timeoutMessage: 'Timed out waiting for model import callback',
+		onProcessing: (content) => {
+			assert.equal(content.type, queueLabels.MODEL);
+		},
+		onComplete: (content, seenProcessing) => {
+			assert.equal(content.value, 0);
+			assert.equal(content.type, IMPORT_TYPE);
+			assert.equal(content.teamspace, teamspace);
+			assert.equal(content.container, container);
+			assert.equal(content.user, importConfig.owner);
+			assert.equal(seenProcessing, true);
+		},
+	});
 
 	await connection.close();
 };
 
 const testDrawingQ = async () => {
-	const drawingq = config.rabbitmq.drawing_queue;
-	const callbackq = config.rabbitmq.callback_queue;
-
 	const connection = await ampq.connect(config.rabbitmq.host);
 
 	const correlationId = crypto.randomUUID().toString();
+
+	// These arguments must match what is already in the database.
 
 	const teamspace = 'testDrawings';
 	const drawing = '0ffe7f18-8ef9-4580-9419-a1bcb9d4c9c7';
@@ -248,65 +168,28 @@ const testDrawingQ = async () => {
 		JSON.stringify(drawingConfig),
 	);
 
-	// Post message
-	{
-		const channel = await connection.createChannel();
+	await postToQueue(
+		connection,
+		config.rabbitmq.drawing_queue,
+		`processDrawing $SHARED_SPACE/${correlationId}.json`,
+		correlationId,
+	);
 
-		await channel.assertQueue(drawingq);
-		const message = `processDrawing $SHARED_SPACE/${correlationId}.json`;
-		channel.sendToQueue(drawingq, Buffer.from(message), {
-			correlationId,
-		});
-
-		// Closing the channel flushes the message
-		await channel.close();
-	}
-
-	// Wait for callbacks
-	{
-		const channel = await connection.createChannel();
-
-		await channel.assertQueue(callbackq);
-		await channel.prefetch(1);
-
-		await new Promise((resolve, reject) => {
-			let seenProcessing = false;
-
-			const timeoutHandle = setTimeout(() => {
-				reject(new Error('Timed out waiting for drawing callback'));
-			}, 60000);
-
-			channel.consume(callbackq, (message) => {
-				const content = JSON.parse(message.content.toString());
-
-				if (message.properties.correlationId !== correlationId) {
-					channel.ack(message);
-					return;
-				}
-
-				if (content.status === PROCESSING) {
-					assert.equal(content.teamspace, teamspace);
-					assert.equal(content.drawing, drawing);
-					seenProcessing = true;
-					channel.ack(message);
-					return;
-				}
-
-				assert.equal(content.value, 0);
-				assert.equal(content.type, DRAWING_TYPE);
-				assert.equal(content.teamspace, teamspace);
-				assert.equal(content.drawing, drawing);
-				assert.equal(content.user, drawingConfig.owner);
-				assert.equal(seenProcessing, true);
-
-				clearTimeout(timeoutHandle);
-				channel.ack(message);
-				resolve();
-			});
-		});
-
-		await channel.close();
-	}
+	await waitForCallback(connection, config.rabbitmq.callback_queue, correlationId, {
+		timeoutMessage: 'Timed out waiting for drawing callback',
+		onProcessing: (content) => {
+			assert.equal(content.teamspace, teamspace);
+			assert.equal(content.drawing, drawing);
+		},
+		onComplete: (content, seenProcessing) => {
+			assert.equal(content.value, 0);
+			assert.equal(content.type, DRAWING_TYPE);
+			assert.equal(content.teamspace, teamspace);
+			assert.equal(content.drawing, drawing);
+			assert.equal(content.user, drawingConfig.owner);
+			assert.equal(seenProcessing, true);
+		},
+	});
 
 	await connection.close();
 };

@@ -16,9 +16,9 @@
  */
 
 const { describe, before, after, test } = require('node:test');
-const { startBouncerWorker } = require('./helpers');
-const { CLASH, MODEL, DRAWING } = require('../src/constants/queueLabels');
-const { testClashQ, testModelQ, testDrawingQ, testSingleQConsumer } = require('./tests');
+const { startBouncerWorker } = require('../helpers');
+const { CLASH, MODEL, DRAWING } = require('../../src/constants/queueLabels');
+const { testClashQ, testModelQ, testDrawingQ, testSingleQConsumer } = require('../tests');
 /*
 * The test suite will start and stop its own bouncers, but expects the queue
 * to already be running.
