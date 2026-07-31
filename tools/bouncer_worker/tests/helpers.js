@@ -17,12 +17,19 @@
 
 const { randomBytes, randomUUID } = require('node:crypto');
 const { spawn } = require('node:child_process');
+const fs = require('fs');
+const path = require('path');
+const { config } = require('../src/lib/config');
 const { PROCESSING } = require('../src/constants/statuses');
 
 const FORCE_KILL_TIMEOUT_MS = 10000;
 const WORKER_LOG_LINES = 40;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const generateUUIDString = () => randomUUID().toString();
+
+const generateRandomString = (length = 8) => randomBytes(length).toString('hex');
 
 /**
  * Starts a bouncer worker instance and waits until it is ready to consume
@@ -98,6 +105,19 @@ const startBouncerWorker = async (queue = undefined, exitAfter = undefined) => {
 	return { stop, waitForExit };
 };
 
+const createCorrelationIdAndSharedDirectory = (filesToCopy) => {
+	const correlationId = generateUUIDString();
+	const correlationDirectory = path.join(config.rabbitmq.sharedDir, correlationId);
+	fs.mkdirSync(correlationDirectory, { recursive: true });
+	for (const file of filesToCopy) {
+		fs.copyFileSync(
+			file,
+			path.join(correlationDirectory, path.basename(file)),
+		);
+	}
+	return correlationId;
+};
+
 const postToQueue = async (connection, queueName, message, correlationId) => {
 	const channel = await connection.createChannel();
 	await channel.assertQueue(queueName);
@@ -153,8 +173,5 @@ const waitForCallback = async (connection, callbackq, correlationId, { onProcess
 	}
 };
 
-const generateUUIDString = () => randomUUID().toString();
-
-const generateRandomString = (length = 8) => randomBytes(length).toString('hex');
-
-module.exports = { generateRandomString, generateUUIDString, startBouncerWorker, postToQueue, waitForCallback };
+// eslint-disable-next-line max-len
+module.exports = { createCorrelationIdAndSharedDirectory, generateRandomString, generateUUIDString, startBouncerWorker, postToQueue, waitForCallback };

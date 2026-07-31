@@ -22,11 +22,10 @@ const path = require('path');
 const { config, replaceSharedDirTag } = require('../src/lib/config');
 const { CLASH: CLASH_TYPE, IMPORT: IMPORT_TYPE, DRAWING: DRAWING_TYPE } = require('../src/constants/messageTypes');
 const queueLabels = require('../src/constants/queueLabels');
-const { generateUUIDString, postToQueue, waitForCallback, generateRandomString } = require('./helpers');
+const { generateUUIDString, postToQueue, waitForCallback, generateRandomString, copyFileToSharedDirectory, createCorrelationIdAndSharedDirectory } = require('./helpers');
 
 const testClashQ = async () => {
 	const connection = await ampq.connect(config.rabbitmq.host);
-	const correlationId = generateUUIDString();
 
 	// In practice, these are used to determine where to look for the clash run
 	// in the database. They are completely independent of which geometries
@@ -35,23 +34,19 @@ const testClashQ = async () => {
 	const project = generateUUIDString();
 	const teamspace = generateRandomString();
 
-	const clashConfigDirectory = path.join(config.rabbitmq.sharedDir, correlationId);
-
 	// This config in the tests repo is a valid config that performs a clash
 	// using one of the ClashDetection containers in the database dump. We
 	// copy it to $SHARED_SPACE in order to test the shared space tag
 	// substitution logic as well.
 
-	fs.mkdirSync(clashConfigDirectory, { recursive: true });
-	fs.copyFileSync(
+	const correlationId = createCorrelationIdAndSharedDirectory([
 		path.join(process.env.REPO_MODEL_PATH, 'clash/simple_clash_config.json'),
-		path.join(clashConfigDirectory, 'clashConfig.json'),
-	);
+	]);
 
 	await postToQueue(
 		connection,
 		config.rabbitmq.clash_queue,
-		`processClash ${teamspace} ${project} $SHARED_SPACE/${correlationId}/clashConfig.json`,
+		`processClash ${teamspace} ${project} $SHARED_SPACE/${correlationId}/simple_clash_config.json`,
 		correlationId,
 	);
 
@@ -78,14 +73,8 @@ const testClashQ = async () => {
 
 const testModelQ = async () => {
 	const connection = await ampq.connect(config.rabbitmq.host);
-
-	const correlationId = generateUUIDString();
-
 	const teamspace = generateRandomString();
 	const container = generateUUIDString();
-
-	const importDirectory = path.join(config.rabbitmq.sharedDir, correlationId);
-	const importConfigPath = path.join(config.rabbitmq.sharedDir, `${correlationId}.json`);
 
 	// Create the import configuration, as the backend would. See,
 	// src\v4\services\queue.js
@@ -93,12 +82,9 @@ const testModelQ = async () => {
 	// The import command should use the shared space placeholder literal, as
 	// the backend does.
 
-	fs.mkdirSync(importDirectory, { recursive: true });
-
-	fs.copyFileSync(
+	const correlationId = createCorrelationIdAndSharedDirectory([
 		path.join(process.env.REPO_MODEL_PATH, 'cube.obj'),
-		path.join(importDirectory, 'cube.obj'),
-	);
+	]);
 
 	const importConfig = {
 		lod: 0,
@@ -113,7 +99,10 @@ const testModelQ = async () => {
 		revId: generateUUIDString(),
 	};
 
-	fs.writeFileSync(importConfigPath, JSON.stringify(importConfig));
+	fs.writeFileSync(
+		path.join(config.rabbitmq.sharedDir, `${correlationId}.json`),
+		JSON.stringify(importConfig),
+	);
 
 	await postToQueue(
 		connection,
