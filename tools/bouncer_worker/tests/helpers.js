@@ -25,11 +25,13 @@ const { PROCESSING } = require('../src/constants/statuses');
 const FORCE_KILL_TIMEOUT_MS = 10000;
 const WORKER_LOG_LINES = 40;
 
+const Helpers = {};
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const generateUUIDString = () => randomUUID().toString();
+Helpers.generateUUIDString = () => randomUUID().toString();
 
-const generateRandomString = (length = 8) => randomBytes(length).toString('hex');
+Helpers.generateRandomString = (length = 8) => randomBytes(length).toString('hex');
 
 /**
  * Starts a bouncer worker instance and waits until it is ready to consume
@@ -37,7 +39,7 @@ const generateRandomString = (length = 8) => randomBytes(length).toString('hex')
  *
  * @returns {Promise<{ stop: () => Promise<{ code: number|null, signal: NodeJS.Signals|null }>, waitForExit: () => Promise<{ code: number|null, signal: NodeJS.Signals|null }> }>} A handle with stop() and waitForExit() methods.
  */
-const startBouncerWorker = async (queue = undefined, exitAfter = undefined) => {
+Helpers.startBouncerWorker = async (queue = undefined, exitAfter = undefined) => {
 	const output = [];
 
 	const args = [];
@@ -105,8 +107,8 @@ const startBouncerWorker = async (queue = undefined, exitAfter = undefined) => {
 	return { stop, waitForExit };
 };
 
-const createCorrelationIdAndSharedDirectory = (filesToCopy) => {
-	const correlationId = generateUUIDString();
+Helpers.createCorrelationIdAndSharedDirectory = (filesToCopy) => {
+	const correlationId = Helpers.generateUUIDString();
 	const correlationDirectory = path.join(config.rabbitmq.sharedDir, correlationId);
 	if (filesToCopy?.length) {
 		fs.mkdirSync(correlationDirectory, { recursive: true });
@@ -120,7 +122,7 @@ const createCorrelationIdAndSharedDirectory = (filesToCopy) => {
 	return correlationId;
 };
 
-const postToQueue = async (connection, queueName, message, correlationId) => {
+Helpers.postToQueue = async (connection, queueName, message, correlationId) => {
 	const channel = await connection.createChannel();
 	await channel.assertQueue(queueName);
 	channel.sendToQueue(queueName, Buffer.from(message), { correlationId });
@@ -128,7 +130,8 @@ const postToQueue = async (connection, queueName, message, correlationId) => {
 	await channel.close();
 };
 
-const waitForCallback = async (connection, callbackq, correlationId, { onProcessing, onComplete, timeoutMessage }) => {
+Helpers.waitForCallback = async (connection, callbackq, correlationId,
+	{ onProcessing, onComplete, timeoutMessage }) => {
 	const channel = await connection.createChannel();
 	await channel.assertQueue(callbackq);
 	await channel.prefetch(1);
@@ -175,5 +178,4 @@ const waitForCallback = async (connection, callbackq, correlationId, { onProcess
 	}
 };
 
-// eslint-disable-next-line max-len
-module.exports = { createCorrelationIdAndSharedDirectory, generateRandomString, generateUUIDString, startBouncerWorker, postToQueue, waitForCallback };
+module.exports = Helpers;
