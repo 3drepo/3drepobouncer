@@ -9,7 +9,7 @@
     "start": "pm2 start src/scripts/bouncer_worker.js",
     "stop": "pm2 kill",
     "restart": "npm stop; npm start",
-    "test": "node --test --test-concurrency=1 --test-timeout=60000 tests/**/*.test.js",
+    "test": "c8 --check-coverage node --test --test-concurrency=1 --test-timeout=60000 tests/**/*.test.js",
     "lint": "eslint --ext .js src",
     "run-worker": "node src/scripts/bouncer_worker.js",
     "watch": "nodemon src/scripts/bouncer_worker.js"
@@ -28,6 +28,7 @@
     "yup": "1.7.0"
   },
   "devDependencies": {
+    "c8": "10.1.3",
     "eslint": "7.10.0",
     "eslint-config-airbnb-base": "14.2.0",
     "eslint-plugin-import": "2.22.1",
