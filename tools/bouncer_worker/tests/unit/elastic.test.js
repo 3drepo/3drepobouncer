@@ -169,7 +169,7 @@ describe('elastic.js', () => {
 		assert.equal(calls.createDoc[0].id, 'hashed-id');
 		assert.equal(calls.createDoc[0].refresh, true);
 		assert.equal(calls.createDoc[0].body.namespace, 'worker-a');
-		assert.equal(logs.info.some(([msg]) => msg.includes('Succesfully connected to elastic-cloud-id')), true);
+		assert.equal(logs.info.some(([msg]) => msg.includes('connected to elastic-cloud-id')), true);
 		assert.equal(logs.info.some(([msg]) => msg.includes('Created index io-bouncer')), true);
 		assert.equal(logs.info.some(([msg]) => msg.includes('Created mapping io-bouncer')), true);
 	});
