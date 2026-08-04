@@ -21,6 +21,7 @@ const { createRequire } = require('node:module');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { generateRandomPath, generateRandomString } = require('../random');
 
 const moduleRequire = createRequire(__filename);
 
@@ -77,7 +78,7 @@ const buildConfig = ({ sharedDir, taskLogDir, umask, repoLicense, envars, elasti
 		memoryIntervalMS: 250,
 	},
 	bouncer: {
-		path: 'C:/bouncer/client.exe',
+		path: generateRandomPath(),
 		envars,
 		log_dir: './logs',
 	},
@@ -85,7 +86,7 @@ const buildConfig = ({ sharedDir, taskLogDir, umask, repoLicense, envars, elasti
 	repoLicense,
 	elastic,
 	timeoutMS: 1000,
-	unknownProp: 'ignored',
+	unknownProp: generateRandomString(),
 });
 
 const loadConfig = ({ envConfigPath, paramConfigPath, mockExit, mockError, mockLog } = {}) => {

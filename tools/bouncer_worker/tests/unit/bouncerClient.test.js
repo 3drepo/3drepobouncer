@@ -17,19 +17,18 @@
 
 const { describe, test, afterEach } = require('node:test');
 const assert = require('node:assert');
-const path = require('node:path');
 const { createRequire } = require('node:module');
+const { generateRandomString, generateRandomPath } = require('../random');
 
 const moduleRequire = createRequire(__filename);
 
-const bouncerClientPath = require.resolve('../../src/tasks/bouncerClient');
-const configPath = require.resolve('../../src/lib/config');
-const loggerPath = require.resolve('../../src/lib/logger');
-const runCommandPath = require.resolve('../../src/lib/runCommand');
-const errorCodesPath = require.resolve('../../src/constants/errorCodes');
+const bouncerClientModulePath = require.resolve('../../src/tasks/bouncerClient');
+const configModulePath = require.resolve('../../src/lib/config');
+const loggerModulePath = require.resolve('../../src/lib/logger');
+const runCommandModulePath = require.resolve('../../src/lib/runCommand');
+const errorCodesModulePath = require.resolve('../../src/constants/errorCodes');
 
-const { BOUNCER_SOFT_FAILS } = moduleRequire(errorCodesPath);
-const expectedBouncerPath = path.normalize('C:/Program Files/3D Repo/Bouncer/bouncer.exe');
+const { BOUNCER_SOFT_FAILS } = moduleRequire(errorCodesModulePath);
 
 const envKeys = ['BC_ENV_ALPHA', 'BC_ENV_BETA', 'REPO_LOG_DIR', 'REPO_LICENSE', 'REPO_INSTANCE_ID'];
 const originalEnvValues = {};
@@ -39,10 +38,10 @@ envKeys.forEach((key) => {
 });
 
 const clearModuleCache = () => {
-	delete require.cache[bouncerClientPath];
-	delete require.cache[configPath];
-	delete require.cache[loggerPath];
-	delete require.cache[runCommandPath];
+	delete require.cache[bouncerClientModulePath];
+	delete require.cache[configModulePath];
+	delete require.cache[loggerModulePath];
+	delete require.cache[runCommandModulePath];
 
 	envKeys.forEach((key) => {
 		if (originalEnvValues[key] === undefined) {
@@ -65,19 +64,19 @@ const loadBouncerClientWithMocks = ({
 
 	const baseConfig = {
 		bouncer: {
-			path: 'C:/Program Files/3D Repo/Bouncer/bouncer.exe',
+			path: generateRandomPath(),
 			envars: {
-				BC_ENV_ALPHA: 'alpha',
-				BC_ENV_BETA: 'beta',
+				BC_ENV_ALPHA: generateRandomString(),
+				BC_ENV_BETA: generateRandomString(),
 			},
 		},
-		repoLicense: 'repo-lic-123',
-		instanceId: 'instance-abc',
+		repoLicense: generateRandomString(),
+		instanceId: generateRandomString(),
 	};
 
-	require.cache[configPath] = {
-		id: configPath,
-		filename: configPath,
+	require.cache[configModulePath] = {
+		id: configModulePath,
+		filename: configModulePath,
 		loaded: true,
 		exports: {
 			config: {
@@ -88,13 +87,13 @@ const loadBouncerClientWithMocks = ({
 					...(configOverrides && configOverrides.bouncer),
 				},
 			},
-			configPath: '/tmp/bouncer-config.json',
+			configPath: generateRandomString(),
 		},
 	};
 
-	require.cache[loggerPath] = {
-		id: loggerPath,
-		filename: loggerPath,
+	require.cache[loggerModulePath] = {
+		id: loggerModulePath,
+		filename: loggerModulePath,
 		loaded: true,
 		exports: {
 			info: (...args) => calls.loggerInfo.push(args),
@@ -102,9 +101,9 @@ const loadBouncerClientWithMocks = ({
 		},
 	};
 
-	require.cache[runCommandPath] = {
-		id: runCommandPath,
-		filename: runCommandPath,
+	require.cache[runCommandModulePath] = {
+		id: runCommandModulePath,
+		filename: runCommandModulePath,
 		loaded: true,
 		exports: async (...args) => {
 			calls.run.push(args);
@@ -115,8 +114,13 @@ const loadBouncerClientWithMocks = ({
 		},
 	};
 
-	const bouncerClient = moduleRequire(bouncerClientPath);
-	return { bouncerClient, calls };
+	const bouncerClient = moduleRequire(bouncerClientModulePath);
+	return {
+		bouncerClient,
+		calls,
+		config: require.cache[configModulePath].exports.config,
+		configPath: require.cache[configModulePath].exports.configPath,
+	};
 };
 
 const testTestClient = () => {
@@ -124,23 +128,23 @@ const testTestClient = () => {
 		afterEach(clearModuleCache);
 
 		test('logs status, sets env and runs bouncer test command', async () => {
-			const { bouncerClient, calls } = loadBouncerClientWithMocks();
+			const { bouncerClient, calls, config, configPath } = loadBouncerClientWithMocks();
 
 			await bouncerClient.testClient();
 
 			assert.equal(calls.loggerInfo.some(([msg]) => msg.includes('Checking status of client...')), true);
-			assert.equal(calls.loggerInfo.some(([msg]) => msg.includes('Machine Instance ID is set to instance-abc')), true);
+			assert.equal(calls.loggerInfo.some(([msg]) => msg.includes(`Machine Instance ID is set to ${config.instanceId}`)), true);
 			assert.equal(calls.loggerInfo.some(([msg]) => msg.includes('Bouncer call passed')), true);
 
 			assert.equal(calls.run.length, 1);
-			assert.equal(calls.run[0][0], expectedBouncerPath);
-			assert.deepEqual(calls.run[0][1], ['/tmp/bouncer-config.json', 'test']);
+			assert.equal(calls.run[0][0], config.bouncer.path);
+			assert.deepEqual(calls.run[0][1], [configPath, 'test']);
 			assert.deepEqual(calls.run[0][2], { logLabel: { label: 'INIT' } });
 
-			assert.equal(process.env.BC_ENV_ALPHA, 'alpha');
-			assert.equal(process.env.BC_ENV_BETA, 'beta');
-			assert.equal(process.env.REPO_LICENSE, 'repo-lic-123');
-			assert.equal(process.env.REPO_INSTANCE_ID, 'instance-abc');
+			assert.equal(process.env.BC_ENV_ALPHA, config.bouncer.envars.BC_ENV_ALPHA);
+			assert.equal(process.env.BC_ENV_BETA, config.bouncer.envars.BC_ENV_BETA);
+			assert.equal(process.env.REPO_LICENSE, config.repoLicense);
+			assert.equal(process.env.REPO_INSTANCE_ID, config.instanceId);
 			assert.equal(process.env.REPO_LOG_DIR, originalEnvValues.REPO_LOG_DIR);
 		});
 
@@ -177,26 +181,30 @@ const testRunBouncerCommand = () => {
 		afterEach(clearModuleCache);
 
 		test('sets log dir and forwards options including soft fail codes', async () => {
-			const { bouncerClient, calls } = loadBouncerClientWithMocks({
+			const { bouncerClient, calls, config } = loadBouncerClientWithMocks({
 				runImpl: async () => 7,
 			});
 
+			const taskLogDir = generateRandomPath();
+			const modelDir = generateRandomPath();
+			const rid = generateRandomString();
+
 			const result = await bouncerClient.runBouncerCommand(
-				'/tmp/task-log-dir',
-				['import', '/tmp/model.ifc'],
-				{ Rid: 'rid-123' },
+				taskLogDir,
+				['import', modelDir],
+				{ Rid: rid },
 			);
 
 			assert.equal(result, 7);
-			assert.equal(process.env.REPO_LOG_DIR, '/tmp/task-log-dir');
+			assert.equal(process.env.REPO_LOG_DIR, taskLogDir);
 			assert.equal(calls.run.length, 1);
-			assert.equal(calls.run[0][0], expectedBouncerPath);
-			assert.deepEqual(calls.run[0][1], ['import', '/tmp/model.ifc']);
+			assert.equal(calls.run[0][0], config.bouncer.path);
+			assert.deepEqual(calls.run[0][1], ['import', modelDir]);
 			assert.deepEqual(calls.run[0][2], {
 				codesAsSuccess: BOUNCER_SOFT_FAILS,
 				logLabel: { label: 'BOUNCER' },
 			});
-			assert.deepEqual(calls.run[0][3], { Rid: 'rid-123' });
+			assert.deepEqual(calls.run[0][3], { Rid: rid });
 		});
 	});
 };

@@ -26,13 +26,14 @@ const { CLASH: CLASH_TYPE, IMPORT: IMPORT_TYPE, DRAWING: DRAWING_TYPE } = requir
 const queueLabels = require('../../src/constants/queueLabels');
 const {
 	startBouncerWorker,
-	generateUUIDString,
 	postToQueue,
 	waitForCallback,
-	generateRandomString,
 	createCorrelationIdAndSharedDirectory,
 } = require('../helpers');
-
+const {
+	generateRandomString,
+	generateUUIDString,
+} = require('../random');
 /*
 * The test suite will start and stop its own bouncers, but expects the queue
 * to already be running.

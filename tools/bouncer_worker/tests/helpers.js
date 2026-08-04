@@ -15,23 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-const { randomBytes, randomUUID } = require('node:crypto');
 const { spawn } = require('node:child_process');
 const fs = require('fs');
 const path = require('path');
 const { config } = require('../src/lib/config');
 const { PROCESSING } = require('../src/constants/statuses');
+const { generateUUIDString } = require('./random');
 
 const FORCE_KILL_TIMEOUT_MS = 10000;
 const WORKER_LOG_LINES = 40;
 
 const Helpers = {};
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-Helpers.generateUUIDString = () => randomUUID().toString();
-
-Helpers.generateRandomString = (length = 8) => randomBytes(length).toString('hex');
 
 /**
  * Starts a bouncer worker instance.
@@ -87,10 +81,16 @@ Helpers.startBouncerWorker = async (queue = undefined, exitAfter = undefined) =>
 
 		worker.kill('SIGTERM');
 
+		let timeoutHandle;
+		const timeoutPromise = new Promise((resolve) => {
+			timeoutHandle = setTimeout(() => resolve(null), FORCE_KILL_TIMEOUT_MS);
+		});
+
 		const gracefulExitResult = await Promise.race([
 			workerExitPromise,
-			sleep(FORCE_KILL_TIMEOUT_MS).then(() => null),
+			timeoutPromise,
 		]);
+		clearTimeout(timeoutHandle);
 
 		if (gracefulExitResult) {
 			return gracefulExitResult;
@@ -106,7 +106,7 @@ Helpers.startBouncerWorker = async (queue = undefined, exitAfter = undefined) =>
 };
 
 Helpers.createCorrelationIdAndSharedDirectory = (filesToCopy) => {
-	const correlationId = Helpers.generateUUIDString();
+	const correlationId = generateUUIDString();
 	const correlationDirectory = path.join(config.rabbitmq.sharedDir, correlationId);
 	if (filesToCopy?.length) {
 		fs.mkdirSync(correlationDirectory, { recursive: true });
