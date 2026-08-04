@@ -35,8 +35,6 @@ const clearModuleCache = () => {
 	delete require.cache[utilsPath];
 };
 
-afterEach(clearModuleCache);
-
 const loadElasticWithMocks = ({ elasticConfig, indexExists = false, healthError, createError } = {}) => {
 	const logs = {
 		info: [],
@@ -131,6 +129,8 @@ const loadElasticWithMocks = ({ elasticConfig, indexExists = false, healthError,
 };
 
 describe(__filename, () => {
+	afterEach(clearModuleCache);
+
 	test('returns early when elastic config is not defined', async () => {
 		const { Elastic, calls } = loadElasticWithMocks({ elasticConfig: undefined });
 

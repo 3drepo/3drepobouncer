@@ -43,8 +43,6 @@ const clearModuleCache = () => {
 	global.setTimeout = originalSetTimeout;
 };
 
-afterEach(clearModuleCache);
-
 const createMockChild = () => {
 	const closeHandlers = [];
 	const stdoutHandlers = [];
@@ -152,6 +150,8 @@ const loadRunCommandWithMocks = ({ timeoutMS = 5000 } = {}) => {
 };
 
 describe(__filename, () => {
+	afterEach(clearModuleCache);
+
 	test('resolves on zero exit code and logs stdout/stderr when verbose', async () => {
 		const { runCommand, child, calls } = loadRunCommandWithMocks({ timeoutMS: 2000 });
 		const processInfo = { Rid: 'rid-1' };

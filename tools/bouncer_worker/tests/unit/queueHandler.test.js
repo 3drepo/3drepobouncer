@@ -51,8 +51,6 @@ const clearModuleCache = () => {
 	delete require.cache[clashHandlerPath];
 };
 
-afterEach(clearModuleCache);
-
 const flushAsync = () => new Promise((resolve) => setImmediate(resolve));
 
 const loadQueueHandlerWithMocks = ({
@@ -325,6 +323,8 @@ const loadQueueHandlerWithMocks = ({
 };
 
 describe(__filename, () => {
+	afterEach(clearModuleCache);
+
 	test('connectToQueue wires all configured queues and handles successful message ack', async () => {
 		const { QueueHandler, calls, consumers } = loadQueueHandlerWithMocks();
 

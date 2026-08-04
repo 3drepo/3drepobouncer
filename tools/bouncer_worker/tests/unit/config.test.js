@@ -55,8 +55,6 @@ const cleanup = () => {
 	}
 };
 
-afterEach(cleanup);
-
 const writeConfig = (tempRoot, data) => {
 	const configPath = path.join(tempRoot, 'config.json');
 	fs.mkdirSync(path.dirname(configPath), { recursive: true });
@@ -124,6 +122,8 @@ const loadConfig = ({ envConfigPath, paramConfigPath, mockExit, mockError, mockL
 };
 
 describe(__filename, () => {
+	afterEach(cleanup);
+
 	test('loads config from BOUNCER_CONFIG and applies defaults/fallbacks', () => {
 		const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'bouncer-config-test-'));
 		const sharedDir = path.join(tempRoot, 'shared');

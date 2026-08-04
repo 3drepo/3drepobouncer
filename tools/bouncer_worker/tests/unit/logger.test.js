@@ -31,8 +31,6 @@ const clearModuleCache = () => {
 	delete require.cache[winstonPath];
 };
 
-afterEach(clearModuleCache);
-
 const loadLoggerWithMocks = ({
 	logLevel = 'info',
 	noColors = false,
@@ -115,6 +113,8 @@ const loadLoggerWithMocks = ({
 };
 
 describe(__filename, () => {
+	afterEach(clearModuleCache);
+
 	test('uses colorized text formatter by default and console transport', () => {
 		const { logger, calls } = loadLoggerWithMocks({
 			logLevel: 'verbose',

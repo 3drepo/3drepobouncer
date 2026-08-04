@@ -48,8 +48,6 @@ const clearModuleCache = () => {
 	Math.max = originalMathMax;
 };
 
-afterEach(clearModuleCache);
-
 const loadProcessMonitorWithMocks = ({
 	enabled = true,
 	memoryIntervalMS = 10,
@@ -192,6 +190,8 @@ const loadProcessMonitorWithMocks = ({
 };
 
 describe(__filename, () => {
+	afterEach(clearModuleCache);
+
 	test('startMonitor skips when monitoring is disabled', async () => {
 		const { ProcessMonitor, calls, logs } = loadProcessMonitorWithMocks({ enabled: false });
 

@@ -47,8 +47,6 @@ const clearModuleCache = () => {
 	});
 };
 
-afterEach(clearModuleCache);
-
 const loadMessageDecoderWithMocks = ({ sharedDir, configValue = 'C:/fake/config.json' } = {}) => {
 	const logs = {
 		error: [],
@@ -84,19 +82,22 @@ const loadMessageDecoderWithMocks = ({ sharedDir, configValue = 'C:/fake/config.
 const toCommandPath = (absolutePath) => absolutePath.replace(/\\/g, '/');
 
 describe(__filename, () => {
+	afterEach(clearModuleCache);
+
 	test('decodes import command and rewrites shared-space placeholders in config file', () => {
-		const sharedDir = fs.mkdtempSync(path.join(os.tmpdir(), 'decoder-import-'));
+		const sharedDir = toCommandPath(fs.mkdtempSync(path.join(os.tmpdir(), 'decoder-import-')));
 		const cmdFilePath = path.join(sharedDir, 'import.json');
 		const cmdFilePathCmd = toCommandPath(cmdFilePath);
 		const modelPath = '$SHARED_SPACE/model.ifc';
-
-		fs.writeFileSync(cmdFilePath, JSON.stringify({
+		const cmdFile = {
 			teamspace: 'team-a',
 			container: 'container-a',
 			owner: 'user-a',
 			file: modelPath,
 			extra: '$SHARED_SPACE/extra',
-		}));
+		};
+
+		fs.writeFileSync(cmdFilePath, JSON.stringify(cmdFile));
 		jsonModulesToClear.push(cmdFilePathCmd);
 
 		const { messageDecoder } = loadMessageDecoderWithMocks({
@@ -115,11 +116,11 @@ describe(__filename, () => {
 
 		const rewritten = JSON.parse(fs.readFileSync(cmdFilePath, 'utf8'));
 		assert.equal(rewritten.file, `${toCommandPath(sharedDir)}/model.ifc`);
-		assert.equal(rewritten.extra, `${toCommandPath(sharedDir)}/extra`);
+		assert.equal(rewritten.extra, cmdFile.extra);
 	});
 
 	test('decodes processDrawing command and rewrites placeholders', () => {
-		const sharedDir = fs.mkdtempSync(path.join(os.tmpdir(), 'decoder-drawing-'));
+		const sharedDir = toCommandPath(fs.mkdtempSync(path.join(os.tmpdir(), 'decoder-drawing-')));
 		const cmdFilePath = path.join(sharedDir, 'drawing.json');
 		const cmdFilePathCmd = toCommandPath(cmdFilePath);
 

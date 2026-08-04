@@ -53,8 +53,6 @@ const clearModuleCache = () => {
 	});
 };
 
-afterEach(clearModuleCache);
-
 const loadBouncerClientWithMocks = ({
 	runImpl,
 	configOverrides,
@@ -121,74 +119,89 @@ const loadBouncerClientWithMocks = ({
 	return { bouncerClient, calls };
 };
 
+const testTestClient = () => {
+	describe('testClient', () => {
+		afterEach(clearModuleCache);
+
+		test('logs status, sets env and runs bouncer test command', async () => {
+			const { bouncerClient, calls } = loadBouncerClientWithMocks();
+
+			await bouncerClient.testClient();
+
+			assert.equal(calls.loggerInfo.some(([msg]) => msg.includes('Checking status of client...')), true);
+			assert.equal(calls.loggerInfo.some(([msg]) => msg.includes('Machine Instance ID is set to instance-abc')), true);
+			assert.equal(calls.loggerInfo.some(([msg]) => msg.includes('Bouncer call passed')), true);
+
+			assert.equal(calls.run.length, 1);
+			assert.equal(calls.run[0][0], expectedBouncerPath);
+			assert.deepEqual(calls.run[0][1], ['/tmp/bouncer-config.json', 'test']);
+			assert.deepEqual(calls.run[0][2], { logLabel: { label: 'INIT' } });
+
+			assert.equal(process.env.BC_ENV_ALPHA, 'alpha');
+			assert.equal(process.env.BC_ENV_BETA, 'beta');
+			assert.equal(process.env.REPO_LICENSE, 'repo-lic-123');
+			assert.equal(process.env.REPO_INSTANCE_ID, 'instance-abc');
+			assert.equal(process.env.REPO_LOG_DIR, originalEnvValues.REPO_LOG_DIR);
+		});
+
+		test('omits repo-license log and env vars when repo license is not configured', async () => {
+			const { bouncerClient, calls } = loadBouncerClientWithMocks({
+				configOverrides: {
+					repoLicense: undefined,
+					instanceId: undefined,
+				},
+			});
+
+			await bouncerClient.testClient();
+
+			assert.equal(calls.loggerInfo.some(([msg]) => msg.includes('Machine Instance ID is set to')), false);
+			assert.equal(process.env.REPO_LICENSE, undefined);
+			assert.equal(process.env.REPO_INSTANCE_ID, undefined);
+		});
+
+		test('logs and rethrows run errors', async () => {
+			const { bouncerClient, calls } = loadBouncerClientWithMocks({
+				runImpl: async () => {
+					throw 29;
+				},
+			});
+
+			await assert.rejects(bouncerClient.testClient(), (err) => err === 29);
+			assert.equal(calls.loggerError.some(([msg]) => msg.includes('Bouncer call errored (Error code: 29)')), true);
+		});
+	});
+};
+
+const testRunBouncerCommand = () => {
+	describe('RunBouncerCommand', () => {
+		afterEach(clearModuleCache);
+
+		test('sets log dir and forwards options including soft fail codes', async () => {
+			const { bouncerClient, calls } = loadBouncerClientWithMocks({
+				runImpl: async () => 7,
+			});
+
+			const result = await bouncerClient.runBouncerCommand(
+				'/tmp/task-log-dir',
+				['import', '/tmp/model.ifc'],
+				{ Rid: 'rid-123' },
+			);
+
+			assert.equal(result, 7);
+			assert.equal(process.env.REPO_LOG_DIR, '/tmp/task-log-dir');
+			assert.equal(calls.run.length, 1);
+			assert.equal(calls.run[0][0], expectedBouncerPath);
+			assert.deepEqual(calls.run[0][1], ['import', '/tmp/model.ifc']);
+			assert.deepEqual(calls.run[0][2], {
+				codesAsSuccess: BOUNCER_SOFT_FAILS,
+				logLabel: { label: 'BOUNCER' },
+			});
+			assert.deepEqual(calls.run[0][3], { Rid: 'rid-123' });
+		});
+	});
+};
+
 describe(__filename, () => {
-	test('testClient logs status, sets env and runs bouncer test command', async () => {
-		const { bouncerClient, calls } = loadBouncerClientWithMocks();
-
-		await bouncerClient.testClient();
-
-		assert.equal(calls.loggerInfo.some(([msg]) => msg.includes('Checking status of client...')), true);
-		assert.equal(calls.loggerInfo.some(([msg]) => msg.includes('Machine Instance ID is set to instance-abc')), true);
-		assert.equal(calls.loggerInfo.some(([msg]) => msg.includes('Bouncer call passed')), true);
-
-		assert.equal(calls.run.length, 1);
-		assert.equal(calls.run[0][0], expectedBouncerPath);
-		assert.deepEqual(calls.run[0][1], ['/tmp/bouncer-config.json', 'test']);
-		assert.deepEqual(calls.run[0][2], { logLabel: { label: 'INIT' } });
-
-		assert.equal(process.env.BC_ENV_ALPHA, 'alpha');
-		assert.equal(process.env.BC_ENV_BETA, 'beta');
-		assert.equal(process.env.REPO_LICENSE, 'repo-lic-123');
-		assert.equal(process.env.REPO_INSTANCE_ID, 'instance-abc');
-		assert.equal(process.env.REPO_LOG_DIR, originalEnvValues.REPO_LOG_DIR);
-	});
-
-	test('testClient omits repo-license log and env vars when repo license is not configured', async () => {
-		const { bouncerClient, calls } = loadBouncerClientWithMocks({
-			configOverrides: {
-				repoLicense: undefined,
-				instanceId: undefined,
-			},
-		});
-
-		await bouncerClient.testClient();
-
-		assert.equal(calls.loggerInfo.some(([msg]) => msg.includes('Machine Instance ID is set to')), false);
-		assert.equal(process.env.REPO_LICENSE, undefined);
-		assert.equal(process.env.REPO_INSTANCE_ID, undefined);
-	});
-
-	test('testClient logs and rethrows run errors', async () => {
-		const { bouncerClient, calls } = loadBouncerClientWithMocks({
-			runImpl: async () => {
-				throw 29;
-			},
-		});
-
-		await assert.rejects(bouncerClient.testClient(), (err) => err === 29);
-		assert.equal(calls.loggerError.some(([msg]) => msg.includes('Bouncer call errored (Error code: 29)')), true);
-	});
-
-	test('runBouncerCommand sets log dir and forwards options including soft fail codes', async () => {
-		const { bouncerClient, calls } = loadBouncerClientWithMocks({
-			runImpl: async () => 7,
-		});
-
-		const result = await bouncerClient.runBouncerCommand(
-			'/tmp/task-log-dir',
-			['import', '/tmp/model.ifc'],
-			{ Rid: 'rid-123' },
-		);
-
-		assert.equal(result, 7);
-		assert.equal(process.env.REPO_LOG_DIR, '/tmp/task-log-dir');
-		assert.equal(calls.run.length, 1);
-		assert.equal(calls.run[0][0], expectedBouncerPath);
-		assert.deepEqual(calls.run[0][1], ['import', '/tmp/model.ifc']);
-		assert.deepEqual(calls.run[0][2], {
-			codesAsSuccess: BOUNCER_SOFT_FAILS,
-			logLabel: { label: 'BOUNCER' },
-		});
-		assert.deepEqual(calls.run[0][3], { Rid: 'rid-123' });
-	});
+	testTestClient();
+	testRunBouncerCommand();
 });
