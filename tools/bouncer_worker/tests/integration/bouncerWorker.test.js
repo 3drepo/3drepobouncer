@@ -21,11 +21,17 @@ const ampq = require('amqplib');
 const fs = require('fs');
 const path = require('path');
 const { CLASH, MODEL, DRAWING } = require('../../src/constants/queueLabels');
-const { startBouncerWorker } = require('../helpers');
 const { config, replaceSharedDirTag } = require('../../src/lib/config');
 const { CLASH: CLASH_TYPE, IMPORT: IMPORT_TYPE, DRAWING: DRAWING_TYPE } = require('../../src/constants/messageTypes');
 const queueLabels = require('../../src/constants/queueLabels');
-const { generateUUIDString, postToQueue, waitForCallback, generateRandomString, createCorrelationIdAndSharedDirectory } = require('../helpers');
+const {
+	startBouncerWorker,
+	generateUUIDString,
+	postToQueue,
+	waitForCallback,
+	generateRandomString,
+	createCorrelationIdAndSharedDirectory,
+} = require('../helpers');
 
 /*
 * The test suite will start and stop its own bouncers, but expects the queue
