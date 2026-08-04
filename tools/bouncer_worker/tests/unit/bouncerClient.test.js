@@ -141,7 +141,7 @@ describe('bouncerClient.js', () => {
 		assert.equal(process.env.BC_ENV_BETA, 'beta');
 		assert.equal(process.env.REPO_LICENSE, 'repo-lic-123');
 		assert.equal(process.env.REPO_INSTANCE_ID, 'instance-abc');
-		assert.equal(process.env.REPO_LOG_DIR, undefined);
+		assert.equal(process.env.REPO_LOG_DIR, originalEnvValues.REPO_LOG_DIR);
 	});
 
 	test('testClient omits repo-license log and env vars when repo license is not configured', async () => {
