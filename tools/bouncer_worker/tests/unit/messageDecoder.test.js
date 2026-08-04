@@ -54,7 +54,7 @@ const loadMessageDecoderWithMocks = ({ sharedDir, configValue = 'C:/fake/config.
 		error: [],
 	};
 
-	const replaceSharedDirTag = (input) => input.replace(/\$SHARED_SPACE/g, sharedDir.replace(/\\/g, '/'));
+	const replaceSharedDirTag = (input) => input.replace('$SHARED_SPACE', sharedDir);
 
 	require.cache[configPath] = {
 		id: configPath,
