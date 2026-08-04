@@ -34,9 +34,7 @@ Helpers.generateUUIDString = () => randomUUID().toString();
 Helpers.generateRandomString = (length = 8) => randomBytes(length).toString('hex');
 
 /**
- * Starts a bouncer worker instance and waits until it is ready to consume
- * messages from all configured queues.
- *
+ * Starts a bouncer worker instance.
  * @returns {Promise<{ stop: () => Promise<{ code: number|null, signal: NodeJS.Signals|null }>, waitForExit: () => Promise<{ code: number|null, signal: NodeJS.Signals|null }> }>} A handle with stop() and waitForExit() methods.
  */
 Helpers.startBouncerWorker = async (queue = undefined, exitAfter = undefined) => {
