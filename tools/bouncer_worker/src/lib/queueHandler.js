@@ -100,8 +100,8 @@ const establishChannel = async (conn, queueNames) => {
 
 const executeTasks = async (conn, queueName, nTasks, callback) => {
 	const channel = await conn.createConfirmChannel();
-	channel.assertQueue(rabbitmq.callback_queue, { durable: true });
-	channel.prefetch(1);
+	await channel.assertQueue(rabbitmq.callback_queue, { durable: true });
+	await channel.prefetch(1);
 	logger.info(`Processing ${nTasks} tasks on ${queueName}...`, logLabel);
 
 	let lastActive = new Date();
