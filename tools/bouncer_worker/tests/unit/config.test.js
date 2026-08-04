@@ -123,7 +123,7 @@ const loadConfig = ({ envConfigPath, paramConfigPath, mockExit, mockError, mockL
 	return moduleRequire(configModulePath);
 };
 
-describe('config.js', () => {
+describe(__filename, () => {
 	test('loads config from BOUNCER_CONFIG and applies defaults/fallbacks', () => {
 		const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'bouncer-config-test-'));
 		const sharedDir = path.join(tempRoot, 'shared');

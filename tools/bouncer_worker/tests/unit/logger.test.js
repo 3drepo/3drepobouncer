@@ -114,7 +114,7 @@ const loadLoggerWithMocks = ({
 	return { logger, calls };
 };
 
-describe('logger.js', () => {
+describe(__filename, () => {
 	test('uses colorized text formatter by default and console transport', () => {
 		const { logger, calls } = loadLoggerWithMocks({
 			logLevel: 'verbose',

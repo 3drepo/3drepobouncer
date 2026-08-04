@@ -324,7 +324,7 @@ const loadQueueHandlerWithMocks = ({
 	return { QueueHandler, calls, logs, consumers, conn, channel, eventHandlers };
 };
 
-describe('queueHandler.js', () => {
+describe(__filename, () => {
 	test('connectToQueue wires all configured queues and handles successful message ack', async () => {
 		const { QueueHandler, calls, consumers } = loadQueueHandlerWithMocks();
 

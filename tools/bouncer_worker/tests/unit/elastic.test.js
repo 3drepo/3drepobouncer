@@ -130,7 +130,7 @@ const loadElasticWithMocks = ({ elasticConfig, indexExists = false, healthError,
 	return { Elastic, logs, exitCalls, calls };
 };
 
-describe('elastic.js', () => {
+describe(__filename, () => {
 	test('returns early when elastic config is not defined', async () => {
 		const { Elastic, calls } = loadElasticWithMocks({ elasticConfig: undefined });
 

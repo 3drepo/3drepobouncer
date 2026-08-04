@@ -83,7 +83,7 @@ const loadMessageDecoderWithMocks = ({ sharedDir, configValue = 'C:/fake/config.
 
 const toCommandPath = (absolutePath) => absolutePath.replace(/\\/g, '/');
 
-describe('messageDecoder.js', () => {
+describe(__filename, () => {
 	test('decodes import command and rewrites shared-space placeholders in config file', () => {
 		const sharedDir = fs.mkdtempSync(path.join(os.tmpdir(), 'decoder-import-'));
 		const cmdFilePath = path.join(sharedDir, 'import.json');

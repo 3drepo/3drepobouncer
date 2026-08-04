@@ -191,7 +191,7 @@ const loadProcessMonitorWithMocks = ({
 	};
 };
 
-describe('processMonitor.js', () => {
+describe(__filename, () => {
 	test('startMonitor skips when monitoring is disabled', async () => {
 		const { ProcessMonitor, calls, logs } = loadProcessMonitorWithMocks({ enabled: false });
 

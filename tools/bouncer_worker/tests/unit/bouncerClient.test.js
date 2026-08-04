@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
 const { describe, test, afterEach } = require('node:test');
 const assert = require('node:assert');
 const path = require('node:path');
@@ -122,7 +121,7 @@ const loadBouncerClientWithMocks = ({
 	return { bouncerClient, calls };
 };
 
-describe('bouncerClient.js', () => {
+describe(__filename, () => {
 	test('testClient logs status, sets env and runs bouncer test command', async () => {
 		const { bouncerClient, calls } = loadBouncerClientWithMocks();
 

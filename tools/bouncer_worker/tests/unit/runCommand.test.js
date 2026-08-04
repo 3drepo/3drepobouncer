@@ -151,7 +151,7 @@ const loadRunCommandWithMocks = ({ timeoutMS = 5000 } = {}) => {
 	return { runCommand, child, calls, triggerTimeout: () => timeoutCallback() };
 };
 
-describe('runCommand.js', () => {
+describe(__filename, () => {
 	test('resolves on zero exit code and logs stdout/stderr when verbose', async () => {
 		const { runCommand, child, calls } = loadRunCommandWithMocks({ timeoutMS: 2000 });
 		const processInfo = { Rid: 'rid-1' };
