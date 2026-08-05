@@ -130,19 +130,23 @@ describe(__filename, () => {
 		const sharedDir = path.join(tempRoot, 'shared');
 		fs.mkdirSync(sharedDir, { recursive: true });
 
-		const configPath = writeConfig(tempRoot, buildConfig({
+		const config = buildConfig({
 			sharedDir,
 			envars: {
-				CUSTOM_FLAG: 'yes',
+				CUSTOM_FLAG: generateRandomString(),
 			},
 			elastic: {
-				cloud: { id: 'cloud-id' },
-				auth: { apiKey: 'api-key' },
-				namespace: 'main',
+				cloud: { id: generateRandomString() },
+				auth: { apiKey: generateRandomPath() },
+				namespace: generateRandomString(),
 			},
-		}));
+		});
+
+		const configPath = writeConfig(tempRoot, config);
 
 		const Config = loadConfig({ envConfigPath: configPath });
+
+		const modelName = `${generateRandomString()}.ifc`;
 
 		assert.equal(Config.configPath, configPath);
 		assert.equal(Config.config.logging.taskLogDir, sharedDir);
@@ -158,8 +162,11 @@ describe(__filename, () => {
 		assert.equal(Config.config.rabbitmq.waitBeforeShutdownMS, 60000);
 		assert.equal(Config.config.rabbitmq.maxWaitTimeMS, 300000);
 		assert.equal(Config.config.elastic.maxRetries, 5);
+		assert.deepEqual(Config.config.elastic.cloud, config.elastic.cloud);
+		assert.deepEqual(Config.config.elastic.auth, config.elastic.auth);
+		assert.equal(Config.config.elastic.namespace, config.elastic.namespace);
 		assert.equal(Config.config.unknownProp, undefined);
-		assert.equal(Config.replaceSharedDirTag('$SHARED_SPACE/model.ifc'), `${sharedDir}/model.ifc`);
+		assert.equal(Config.replaceSharedDirTag(`$SHARED_SPACE/${modelName}`), `${sharedDir}/${modelName}`);
 	});
 
 	test('process args config path takes precedence over BOUNCER_CONFIG', () => {
@@ -186,11 +193,13 @@ describe(__filename, () => {
 		const sharedDir = path.join(tempRoot, 'shared');
 		fs.mkdirSync(sharedDir, { recursive: true });
 
-		const configPath = writeConfig(tempRoot, buildConfig({
+		const config = buildConfig({
 			sharedDir,
 			umask: 2,
-			repoLicense: 'lic-key',
-		}));
+			repoLicense: generateRandomString(),
+		});
+
+		const configPath = writeConfig(tempRoot, config);
 
 		const umaskCalls = [];
 		const logs = [];
@@ -206,7 +215,7 @@ describe(__filename, () => {
 
 		assert.deepEqual(umaskCalls, [2]);
 		assert.equal(logs.some((entry) => entry.includes('Setting umask: 2')), true);
-		assert.equal(Config.config.instanceId, undefined);
+		assert.notEqual(Config.config.instanceId, undefined);
 	});
 
 	test('fails when default config path is used and file does not exist', () => {
@@ -253,7 +262,7 @@ describe(__filename, () => {
 		const errorLogs = [];
 
 		fs.accessSync = () => {
-			throw new Error('permission denied');
+			throw new Error(generateRandomString());
 		};
 
 		const Config = loadConfig({

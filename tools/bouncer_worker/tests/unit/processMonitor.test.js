@@ -18,6 +18,7 @@
 const { describe, test, afterEach } = require('node:test');
 const assert = require('node:assert');
 const { createRequire } = require('node:module');
+const { generateRandomString, generateRandomSentence } = require('../random');
 
 const moduleRequire = createRequire(__filename);
 
@@ -189,15 +190,30 @@ const loadProcessMonitorWithMocks = ({
 	};
 };
 
+const generateMemorySamples = (numSamples = 1) => {
+	const memUsed = [];
+	let maxMemory = 0;
+	for (let i = 0; i < numSamples; i++) {
+		const start = 20 + Math.random() * 100;
+		const end = start + Math.random() * 100;
+		memUsed.push(start);
+		memUsed.push(end);
+		maxMemory = Math.max(maxMemory, end - start);
+	}
+	return { memUsed, maxMemory };
+};
+
 describe(__filename, () => {
 	afterEach(clearModuleCache);
 
 	test('startMonitor skips when monitoring is disabled', async () => {
 		const { ProcessMonitor, calls, logs } = loadProcessMonitorWithMocks({ enabled: false });
 
-		await ProcessMonitor.startMonitor({ Rid: 'rid-1', Queue: 'modelq' });
-		await ProcessMonitor.stopMonitor('rid-1', 0);
-		await ProcessMonitor.sendReport('rid-1');
+		const Rid = generateRandomString();
+
+		await ProcessMonitor.startMonitor({ Rid, Queue: 'modelq' });
+		await ProcessMonitor.stopMonitor(Rid, 0);
+		await ProcessMonitor.sendReport(Rid);
 
 		assert.equal(calls.setInterval.length, 0);
 		assert.equal(calls.createProcessRecord.length, 0);
@@ -208,73 +224,85 @@ describe(__filename, () => {
 		let now = 100;
 		Date.now = () => now;
 
+		const { memUsed, maxMemory } = generateMemorySamples(1);
+
 		const { ProcessMonitor, calls, timerCallbacks, logs } = loadProcessMonitorWithMocks({
 			platform: 'win32',
-			memUsed: [200, 320],
+			memUsed,
 			memoryIntervalMS: 15,
 			elasticEnabled: true,
 		});
 
-		const processInfo = { Rid: 'rid-1', Queue: 'modelq', Owner: 'user-1' };
+		const Rid = generateRandomString();
+
+		const processInfo = { Rid, Queue: 'modelq', Owner: generateRandomString() };
 		await ProcessMonitor.startMonitor(processInfo);
 		assert.deepEqual(calls.setInterval, [15]);
 		assert.equal(timerCallbacks.length, 1);
 
 		await timerCallbacks[0]();
 		now = 160;
-		await ProcessMonitor.stopMonitor('rid-1', 7);
-		await ProcessMonitor.sendReport('rid-1');
+		await ProcessMonitor.stopMonitor(Rid, 7);
+		await ProcessMonitor.sendReport(Rid);
 
 		assert.equal(calls.clearInterval.length, 1);
 		assert.equal(calls.createProcessRecord.length, 1);
-		assert.equal(calls.createProcessRecord[0].Rid, 'rid-1');
+		assert.equal(calls.createProcessRecord[0].Rid, Rid);
 		assert.equal(calls.createProcessRecord[0].ReturnCode, 7);
-		assert.equal(calls.createProcessRecord[0].MaxMemory, 120);
+		assert.equal(calls.createProcessRecord[0].MaxMemory, maxMemory);
 		assert.equal(calls.createProcessRecord[0].ProcessTime, 60);
 		assert.deepEqual(calls.sleep, [15, 15]);
-		assert.equal(logs.verbose.some(([message]) => message.includes('Monitoring enabled for revision rid-1')), true);
-		assert.equal(logs.verbose.some(([message]) => message.includes('Stopping monitoring for rid-1')), true);
-		assert.equal(logs.verbose.some(([message]) => message.includes('Sending report for rid-1')), true);
+		assert.equal(logs.verbose.some(([message]) => message.includes(`Monitoring enabled for revision ${Rid}`)), true);
+		assert.equal(logs.verbose.some(([message]) => message.includes(`Stopping monitoring for ${Rid}`)), true);
+		assert.equal(logs.verbose.some(([message]) => message.includes(`Sending report for ${Rid}`)), true);
 	});
 
 	test('accumulates previous report data across multiple monitor runs', async () => {
+		const { memUsed, maxMemory } = generateMemorySamples(2);
+
 		let now = 100;
 		Date.now = () => now;
 		const { ProcessMonitor, calls, timerCallbacks } = loadProcessMonitorWithMocks({
 			platform: 'win32',
-			memUsed: [100, 180, 300, 340],
+			memUsed,
 			memoryIntervalMS: 5,
 		});
 
-		await ProcessMonitor.startMonitor({ Rid: 'rid-2', Queue: 'modelq' });
+		const Rid = generateRandomString();
+
+		await ProcessMonitor.startMonitor({ Rid, Queue: 'modelq' });
 		await timerCallbacks[0]();
 		now = 150;
-		await ProcessMonitor.stopMonitor('rid-2', 0);
+		await ProcessMonitor.stopMonitor(Rid, 0);
 
 		now = 200;
-		await ProcessMonitor.startMonitor({ Rid: 'rid-2', Queue: 'modelq' });
+		await ProcessMonitor.startMonitor({ Rid, Queue: 'modelq' });
 		await timerCallbacks[1]();
 		now = 240;
-		await ProcessMonitor.stopMonitor('rid-2', 0);
-		await ProcessMonitor.sendReport('rid-2');
+		await ProcessMonitor.stopMonitor(Rid, 0);
+		await ProcessMonitor.sendReport(Rid);
 
 		assert.equal(calls.createProcessRecord.length, 1);
-		assert.equal(calls.createProcessRecord[0].MaxMemory, 80);
+		assert.equal(calls.createProcessRecord[0].MaxMemory, maxMemory);
 		assert.equal(calls.createProcessRecord[0].ProcessTime, 90);
 	});
 
 	test('uses docker memory source when running in linux docker', async () => {
+		const { memUsed } = generateMemorySamples(1);
+
 		const { ProcessMonitor, calls } = loadProcessMonitorWithMocks({
 			platform: 'linux',
 			dockerEnvExists: true,
-			memUsed: [400, 550],
+			memUsed,
 			memoryIntervalMS: 9,
 			elasticEnabled: false,
 		});
 
-		await ProcessMonitor.startMonitor({ Rid: 'rid-3', Queue: 'drawingq' });
-		await ProcessMonitor.stopMonitor('rid-3', 0);
-		await ProcessMonitor.clearReport('rid-3');
+		const Rid = generateRandomString();
+
+		await ProcessMonitor.startMonitor({ Rid, Queue: 'drawingq' });
+		await ProcessMonitor.stopMonitor(Rid, 0);
+		await ProcessMonitor.clearReport(Rid);
 
 		assert.equal(calls.readFileSync.length >= 1, true);
 		assert.equal(calls.mem, 0);
@@ -282,16 +310,19 @@ describe(__filename, () => {
 	});
 
 	test('sendReport logs elastic failure and keeps execution stable', async () => {
+		const { memUsed } = generateMemorySamples(1);
 		const { ProcessMonitor, logs } = loadProcessMonitorWithMocks({
 			platform: 'win32',
-			memUsed: [111, 120],
+			memUsed,
 			elasticEnabled: true,
 			elasticError: new Error('elastic unavailable'),
 		});
 
-		await ProcessMonitor.startMonitor({ Rid: 'rid-4', Queue: 'clashq' });
-		await ProcessMonitor.stopMonitor('rid-4', 2);
-		await ProcessMonitor.sendReport('rid-4');
+		const Rid = generateRandomString();
+
+		await ProcessMonitor.startMonitor({ Rid, Queue: 'clashq' });
+		await ProcessMonitor.stopMonitor(Rid, 2);
+		await ProcessMonitor.sendReport(Rid);
 
 		assert.equal(logs.error.some(([msg]) => msg.includes('Failed to create elastic record')), true);
 	});
@@ -302,9 +333,11 @@ describe(__filename, () => {
 			osInfoError: new Error('os unavailable'),
 		});
 
-		await ProcessMonitor.startMonitor({ Rid: 'rid-5', Queue: 'modelq' });
-		await ProcessMonitor.stopMonitor('rid-5', 0);
-		await ProcessMonitor.clearReport('rid-5');
+		const Rid = generateRandomString();
+
+		await ProcessMonitor.startMonitor({ Rid, Queue: 'modelq' });
+		await ProcessMonitor.stopMonitor(Rid, 0);
+		await ProcessMonitor.clearReport(Rid);
 
 		assert.equal(logs.error.some(([msg]) => msg.includes('Failed to get operating system information record')), true);
 		assert.equal(calls.setInterval.length, 0);
@@ -316,37 +349,48 @@ describe(__filename, () => {
 			memError: new Error('mem failed'),
 		});
 
-		await ProcessMonitor.startMonitor({ Rid: 'rid-6', Queue: 'modelq' });
+		const Rid = generateRandomString();
+
+		await ProcessMonitor.startMonitor({ Rid, Queue: 'modelq' });
 
 		assert.equal(logs.error.some(([msg]) => msg.includes('Failed to get memory information record')), true);
 	});
 
 	test('logs updateMemory error when maxMemory update throws', async () => {
+		const { memUsed } = generateMemorySamples(1);
 		const { ProcessMonitor, timerCallbacks, logs } = loadProcessMonitorWithMocks({
 			platform: 'win32',
-			memUsed: [100, 150],
+			memUsed,
 		});
 
-		await ProcessMonitor.startMonitor({ Rid: 'rid-7', Queue: 'modelq' });
+		const Rid = generateRandomString();
+
+		await ProcessMonitor.startMonitor({ Rid, Queue: 'modelq' });
+
+		const errorMessage = generateRandomSentence();
+
 		Math.max = () => {
-			throw new Error('max failed');
+			throw new Error(errorMessage);
 		};
 		await timerCallbacks[0]();
 
-		assert.equal(logs.error.some(([msg]) => msg.includes('[ProcessMonitor.updateMemory]: Error: max failed')), true);
+		assert.equal(logs.error.some(([msg]) => msg.includes(`[ProcessMonitor.updateMemory]: Error: ${errorMessage}`)), true);
 	});
 
 	test('sendReport logs info when elastic integration is disabled', async () => {
+		const { memUsed } = generateMemorySamples(1);
 		const { ProcessMonitor, logs } = loadProcessMonitorWithMocks({
 			platform: 'win32',
-			memUsed: [90, 120],
+			memUsed,
 			elasticEnabled: false,
 		});
 
-		await ProcessMonitor.startMonitor({ Rid: 'rid-8', Queue: 'modelq' });
-		await ProcessMonitor.stopMonitor('rid-8', 0);
-		await ProcessMonitor.sendReport('rid-8');
+		const Rid = generateRandomString();
 
-		assert.equal(logs.info.some(([msg]) => msg.includes('rid-8 stats ProcessTime:')), true);
+		await ProcessMonitor.startMonitor({ Rid, Queue: 'modelq' });
+		await ProcessMonitor.stopMonitor(Rid, 0);
+		await ProcessMonitor.sendReport(Rid);
+
+		assert.equal(logs.info.some(([msg]) => msg.includes(`${Rid} stats ProcessTime:`)), true);
 	});
 });

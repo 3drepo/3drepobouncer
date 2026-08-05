@@ -18,6 +18,7 @@
 const { describe, test, afterEach } = require('node:test');
 const assert = require('node:assert');
 const { createRequire } = require('node:module');
+const { generateRandomString } = require('../random');
 
 const moduleRequire = createRequire(__filename);
 
@@ -114,18 +115,20 @@ const loadElasticWithMocks = ({ elasticConfig, indexExists = false, healthError,
 		},
 	};
 
+	const hashedId = generateRandomString();
+
 	require.cache[utilsPath] = {
 		id: utilsPath,
 		filename: utilsPath,
 		loaded: true,
 		exports: {
 			exitApplication: () => exitCalls.push(true),
-			hashCode: () => 'hashed-id',
+			hashCode: () => hashedId,
 		},
 	};
 
 	const Elastic = moduleRequire(elasticModulePath);
-	return { Elastic, logs, exitCalls, calls };
+	return { Elastic, logs, exitCalls, calls, hashedId };
 };
 
 describe(__filename, () => {
@@ -134,7 +137,7 @@ describe(__filename, () => {
 	test('returns early when elastic config is not defined', async () => {
 		const { Elastic, calls } = loadElasticWithMocks({ elasticConfig: undefined });
 
-		await Elastic.createProcessRecord({ Owner: 'user-1' });
+		await Elastic.createProcessRecord({ Owner: generateRandomString() });
 
 		assert.equal(calls.constructorArgs.length, 0);
 		assert.equal(calls.createDoc.length, 0);
@@ -142,16 +145,16 @@ describe(__filename, () => {
 
 	test('initializes elastic client, creates index/mapping and writes process record', async () => {
 		const elasticConfig = {
-			cloud: { id: 'elastic-cloud-id' },
-			auth: { apiKey: 'elastic-api-key' },
-			namespace: 'worker-a',
+			cloud: { id: generateRandomString() },
+			auth: { apiKey: generateRandomString() },
+			namespace: generateRandomString(),
 		};
-		const { Elastic, calls, logs } = loadElasticWithMocks({ elasticConfig, indexExists: false });
+		const { Elastic, calls, logs, hashedId } = loadElasticWithMocks({ elasticConfig, indexExists: false });
 
 		const payload = {
-			Owner: 'user-1',
-			Model: 'model-1',
-			Database: 'db-1',
+			Owner: generateRandomString(),
+			Model: generateRandomString(),
+			Database: generateRandomString(),
 		};
 
 		await Elastic.createProcessRecord(payload);
@@ -166,23 +169,23 @@ describe(__filename, () => {
 		assert.equal(calls.putMapping[0].body.properties.Owner.type, 'keyword');
 		assert.equal(calls.createDoc.length, 1);
 		assert.equal(calls.createDoc[0].index, 'io-bouncer');
-		assert.equal(calls.createDoc[0].id, 'hashed-id');
+		assert.equal(calls.createDoc[0].id, hashedId);
 		assert.equal(calls.createDoc[0].refresh, true);
-		assert.equal(calls.createDoc[0].body.namespace, 'worker-a');
-		assert.equal(logs.info.some(([msg]) => msg.includes('connected to elastic-cloud-id')), true);
+		assert.equal(calls.createDoc[0].body.namespace, elasticConfig.namespace);
+		assert.equal(logs.info.some(([msg]) => msg.includes(`connected to ${elasticConfig.cloud.id}`)), true);
 		assert.equal(logs.info.some(([msg]) => msg.includes('Created index io-bouncer')), true);
 		assert.equal(logs.info.some(([msg]) => msg.includes('Created mapping io-bouncer')), true);
 	});
 
 	test('does not create index or mapping when index already exists', async () => {
 		const elasticConfig = {
-			cloud: { id: 'elastic-cloud-id' },
-			auth: { apiKey: 'elastic-api-key' },
-			namespace: 'worker-a',
+			cloud: { id: generateRandomString() },
+			auth: { apiKey: generateRandomString() },
+			namespace: generateRandomString(),
 		};
 		const { Elastic, calls } = loadElasticWithMocks({ elasticConfig, indexExists: true });
 
-		await Elastic.createProcessRecord({ Owner: 'user-1' });
+		await Elastic.createProcessRecord({ Owner: generateRandomString() });
 
 		assert.equal(calls.createIndex.length, 0);
 		assert.equal(calls.putMapping.length, 0);
@@ -190,9 +193,9 @@ describe(__filename, () => {
 
 	test('logs health check failure and calls exitApplication', async () => {
 		const elasticConfig = {
-			cloud: { id: 'elastic-cloud-id' },
-			auth: { apiKey: 'elastic-api-key' },
-			namespace: 'worker-a',
+			cloud: { id: generateRandomString() },
+			auth: { apiKey: generateRandomString() },
+			namespace: generateRandomString(),
 		};
 		const { Elastic, logs, exitCalls } = loadElasticWithMocks({
 			elasticConfig,
@@ -200,7 +203,7 @@ describe(__filename, () => {
 			indexExists: true,
 		});
 
-		await Elastic.createProcessRecord({ Owner: 'user-1' });
+		await Elastic.createProcessRecord({ Owner: generateRandomString() });
 
 		assert.equal(exitCalls.length, 1);
 		assert.equal(logs.error.some(([msg]) => msg.includes('Health check failed on elastic connection')), true);
@@ -208,9 +211,9 @@ describe(__filename, () => {
 
 	test('logs create failures', async () => {
 		const elasticConfig = {
-			cloud: { id: 'elastic-cloud-id' },
-			auth: { apiKey: 'elastic-api-key' },
-			namespace: 'worker-a',
+			cloud: { id: generateRandomString() },
+			auth: { apiKey: generateRandomString() },
+			namespace: generateRandomString(),
 		};
 		const { Elastic, logs } = loadElasticWithMocks({
 			elasticConfig,
@@ -218,16 +221,16 @@ describe(__filename, () => {
 			indexExists: true,
 		});
 
-		await Elastic.createProcessRecord({ Owner: 'user-1' });
+		await Elastic.createProcessRecord({ Owner: generateRandomString() });
 
 		assert.equal(logs.error.some(([msg]) => msg.includes('createElasticRecord Error: create failed io-bouncer')), true);
 	});
 
 	test('does not create record when payload is empty', async () => {
 		const elasticConfig = {
-			cloud: { id: 'elastic-cloud-id' },
-			auth: { apiKey: 'elastic-api-key' },
-			namespace: 'worker-a',
+			cloud: { id: generateRandomString() },
+			auth: { apiKey: generateRandomString() },
+			namespace: generateRandomString(),
 		};
 		const { Elastic, calls } = loadElasticWithMocks({ elasticConfig, indexExists: true });
 

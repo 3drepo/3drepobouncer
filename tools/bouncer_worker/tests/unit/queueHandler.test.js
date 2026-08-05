@@ -18,6 +18,7 @@
 const { describe, test, afterEach } = require('node:test');
 const assert = require('node:assert');
 const { createRequire } = require('node:module');
+const { generateUUIDString, generateRandomString, generateRandomSentence } = require('../random');
 
 const { ERRCODE_REPO_LICENCE_INVALID } = require('../../src/constants/errorCodes');
 
@@ -335,10 +336,11 @@ describe(__filename, () => {
 		assert.equal(calls.assertQueue.includes('callbackq'), true);
 		assert.deepEqual(calls.consumeQueues.sort(), ['clashq', 'drawingq', 'modelq']);
 		assert.deepEqual(calls.prefetch, [2, 3, 4]);
+		const correlationId = generateUUIDString();
 
 		const message = {
 			content: Buffer.from('import -f foo.json'),
-			properties: { correlationId: 'rid-1', appId: 'app-1' },
+			properties: { correlationId, appId: generateRandomString() },
 		};
 
 		await consumers.modelq(message);
@@ -346,7 +348,7 @@ describe(__filename, () => {
 
 		assert.equal(calls.sendToQueue.length, 1);
 		assert.equal(calls.sendToQueue[0].queueName, 'callbackq');
-		assert.equal(calls.sendToQueue[0].props.correlationId, 'rid-1');
+		assert.equal(calls.sendToQueue[0].props.correlationId, correlationId);
 		assert.equal(calls.ack.length, 1);
 		assert.equal(calls.nack.length, 0);
 	});
@@ -361,7 +363,7 @@ describe(__filename, () => {
 
 		const message = {
 			content: Buffer.from('import -f foo.json'),
-			properties: { correlationId: 'rid-2', appId: 'app-2' },
+			properties: { correlationId: generateUUIDString(), appId: generateRandomString() },
 		};
 
 		await consumers.modelq(message);
@@ -375,7 +377,7 @@ describe(__filename, () => {
 		const { QueueHandler, calls, channel } = loadQueueHandlerWithMocks();
 		const msg = {
 			content: Buffer.from('import -f bar.json'),
-			properties: { correlationId: 'rid-3', appId: 'app-3' },
+			properties: { correlationId: generateUUIDString(), appId: generateRandomString() },
 		};
 		const pending = [msg];
 		channel.get = async () => pending.shift() || null;
@@ -416,10 +418,10 @@ describe(__filename, () => {
 				throw sentinel;
 			},
 		});
-
-		await assert.rejects(() => QueueHandler.connectToQueue('not-a-queue'), sentinel);
+		const queue = generateRandomString();
+		await assert.rejects(() => QueueHandler.connectToQueue(queue), sentinel);
 		assert.equal(calls.connect.length, 0);
-		assert.equal(logs.error.some(([msg]) => msg.includes('Unrecognised queue type: not-a-queue')), true);
+		assert.equal(logs.error.some(([msg]) => msg.includes(`Unrecognised queue type: ${queue}`)), true);
 	});
 
 	test('exits after retries exhausted when reconnect keeps failing', async () => {
@@ -482,7 +484,7 @@ describe(__filename, () => {
 		});
 		const msg = {
 			content: Buffer.from('import -f delayed.json'),
-			properties: { correlationId: 'rid-4', appId: 'app-4' },
+			properties: { correlationId: generateUUIDString(), appId: generateRandomString() },
 		};
 		let getCall = 0;
 		channel.get = async () => {
@@ -518,7 +520,7 @@ describe(__filename, () => {
 		});
 		const msg = {
 			content: Buffer.from('import -f failed.json'),
-			properties: { correlationId: 'rid-5', appId: 'app-5' },
+			properties: { correlationId: generateUUIDString(), appId: generateRandomString() },
 		};
 		channel.get = async () => msg;
 
@@ -546,20 +548,23 @@ describe(__filename, () => {
 		const { QueueHandler, eventHandlers, calls, logs, channel } = loadQueueHandlerWithMocks();
 		channel.get = async () => null;
 
+		const message = generateRandomSentence();
+
 		await QueueHandler.runNTasks('clash', 1);
 		await flushAsync();
 
-		eventHandlers.error({ message: 'socket broken' });
+		eventHandlers.error({ message });
 		eventHandlers.close();
 
-		assert.equal(logs.error.some(([msg]) => msg.includes('Connection error: socket broken')), true);
+		assert.equal(logs.error.some(([msg]) => msg.includes(`Connection error: ${message}`)), true);
 		assert.equal(calls.exitApplication.includes(0), true);
 	});
 
 	test('exits without reconnect when runNTasks fails to establish connection', async () => {
+		const message = generateRandomSentence();
 		const { QueueHandler, calls, logs } = loadQueueHandlerWithMocks({
 			connectImpl: async () => {
-				throw new Error('cannot connect');
+				throw new Error(message);
 			},
 			exitImpl: () => undefined,
 		});
@@ -568,7 +573,7 @@ describe(__filename, () => {
 		await flushAsync();
 		assert.equal(calls.connect.length, 1);
 		assert.equal(calls.exitApplication.length > 0, true);
-		assert.equal(logs.error.some(([msg]) => msg.includes('Failed to establish connection to rabbit mq: Error: cannot connect.')), true);
+		assert.equal(logs.error.some(([msg]) => msg.includes(`Failed to establish connection to rabbit mq: Error: ${message}.`)), true);
 	});
 
 	test('routes model queue messages through real model handler', async () => {
@@ -579,17 +584,18 @@ describe(__filename, () => {
 
 		await QueueHandler.connectToQueue('model');
 		await flushAsync();
+		const correlationId = generateUUIDString();
 
 		const message = {
 			content: Buffer.from('import -f model.json'),
-			properties: { correlationId: 'rid-model', appId: 'app-model' },
+			properties: { correlationId, appId: generateRandomString() },
 		};
 
 		await consumers.modelq(message);
 		await flushAsync();
 
 		assert.equal(calls.runBouncer.length, 1);
-		assert.equal(calls.sendReport.includes('rid-model'), true);
+		assert.equal(calls.sendReport.includes(correlationId), true);
 		assert.equal(calls.sendToQueue.length, 2);
 		assert.equal(calls.statSync.includes('/tmp/model.ifc'), true);
 
@@ -609,17 +615,18 @@ describe(__filename, () => {
 
 		await QueueHandler.connectToQueue('drawing');
 		await flushAsync();
+		const correlationId = generateUUIDString();
 
 		const message = {
 			content: Buffer.from('processDrawing /tmp/drawing.json'),
-			properties: { correlationId: 'rid-drawing', appId: 'app-drawing' },
+			properties: { correlationId, appId: generateRandomString() },
 		};
 
 		await consumers.drawingq(message);
 		await flushAsync();
 
 		assert.equal(calls.runBouncer.length, 1);
-		assert.equal(calls.sendReport.includes('rid-drawing'), true);
+		assert.equal(calls.sendReport.includes(correlationId), true);
 		assert.equal(calls.sendToQueue.length, 2);
 
 		const processingReply = JSON.parse(calls.sendToQueue[0].buffer.toString());
@@ -638,17 +645,18 @@ describe(__filename, () => {
 
 		await QueueHandler.connectToQueue('clash');
 		await flushAsync();
+		const correlationId = generateUUIDString();
 
 		const message = {
 			content: Buffer.from('processClash ts-clash proj-clash /tmp/config.json'),
-			properties: { correlationId: 'rid-clash', appId: 'app-clash' },
+			properties: { correlationId, appId: generateRandomString() },
 		};
 
 		await consumers.clashq(message);
 		await flushAsync();
 
 		assert.equal(calls.runBouncer.length, 1);
-		assert.equal(calls.sendReport.includes('rid-clash'), true);
+		assert.equal(calls.sendReport.includes(correlationId), true);
 		assert.equal(calls.sendToQueue.length, 2);
 
 		const processingReply = JSON.parse(calls.sendToQueue[0].buffer.toString());
@@ -667,10 +675,11 @@ describe(__filename, () => {
 
 		await QueueHandler.connectToQueue('model');
 		await flushAsync();
+		const correlationId = generateUUIDString();
 
 		await consumers.modelq({
 			content: Buffer.from('bad message'),
-			properties: { correlationId: 'rid-model-err', appId: 'app-model' },
+			properties: { correlationId, appId: generateRandomString() },
 		});
 		await flushAsync();
 
@@ -689,14 +698,15 @@ describe(__filename, () => {
 
 		await QueueHandler.connectToQueue('model');
 		await flushAsync();
+		const correlationId = generateUUIDString();
 
 		await consumers.modelq({
 			content: Buffer.from('import -f model.json'),
-			properties: { correlationId: 'rid-model-fail', appId: 'app-model' },
+			properties: { correlationId, appId: generateRandomString() },
 		});
 		await flushAsync();
 
-		assert.equal(calls.sendReport.includes('rid-model-fail'), true);
+		assert.equal(calls.sendReport.includes(correlationId), true);
 		assert.equal(logs.error.some(([msg]) => msg.includes('Import model error: model failed')), true);
 		assert.equal(calls.sendToQueue.length, 2);
 		assert.equal(calls.ack.length, 1);
@@ -713,14 +723,15 @@ describe(__filename, () => {
 
 		await QueueHandler.connectToQueue('model');
 		await flushAsync();
+		const correlationId = generateUUIDString();
 
 		await consumers.modelq({
 			content: Buffer.from('import -f model.json'),
-			properties: { correlationId: 'rid-model-lic', appId: 'app-model' },
+			properties: { correlationId, appId: generateRandomString() },
 		});
 		await flushAsync();
 
-		assert.equal(calls.clearReport.includes('rid-model-lic'), true);
+		assert.equal(calls.clearReport.includes(correlationId), true);
 		assert.equal(logs.error.some(([msg]) => msg.includes('Invalid 3D Repo license')), true);
 		assert.equal(calls.nack.length, 1);
 		assert.equal(calls.sleep.includes(50), true);
@@ -737,7 +748,7 @@ describe(__filename, () => {
 
 		await consumers.drawingq({
 			content: Buffer.from('bad drawing message'),
-			properties: { correlationId: 'rid-drawing-err', appId: 'app-drawing' },
+			properties: { correlationId: generateUUIDString(), appId: generateRandomString() },
 		});
 		await flushAsync();
 
@@ -757,38 +768,41 @@ describe(__filename, () => {
 
 		await QueueHandler.connectToQueue('drawing');
 		await flushAsync();
+		const correlationId = generateUUIDString();
 
 		await consumers.drawingq({
 			content: Buffer.from('processDrawing /tmp/drawing.json'),
-			properties: { correlationId: 'rid-drawing-lic', appId: 'app-drawing' },
+			properties: { correlationId, appId: generateRandomString() },
 		});
 		await flushAsync();
 
-		assert.equal(calls.clearReport.includes('rid-drawing-lic'), true);
+		assert.equal(calls.clearReport.includes(correlationId), true);
 		assert.equal(logs.error.some(([msg]) => msg.includes('Invalid 3D Repo license')), true);
 		assert.equal(calls.nack.length, 1);
 		assert.equal(calls.sleep.includes(50), true);
 	});
 
 	test('real drawing handler reports default bouncer errors', async () => {
+		const message = generateRandomSentence();
 		const { QueueHandler, consumers, calls, logs } = loadQueueHandlerWithMocks({
 			useRealHandlers: true,
 			runBouncerImpl: async () => {
-				throw new Error('drawing failed');
+				throw new Error(message);
 			},
 		});
 
 		await QueueHandler.connectToQueue('drawing');
 		await flushAsync();
+		const correlationId = generateUUIDString();
 
 		await consumers.drawingq({
 			content: Buffer.from('processDrawing /tmp/drawing.json'),
-			properties: { correlationId: 'rid-drawing-fail', appId: 'app-drawing' },
+			properties: { correlationId, appId: generateRandomString() },
 		});
 		await flushAsync();
 
-		assert.equal(calls.sendReport.includes('rid-drawing-fail'), true);
-		assert.equal(logs.error.some(([msg]) => msg.includes('Import drawing error: drawing failed')), true);
+		assert.equal(calls.sendReport.includes(correlationId), true);
+		assert.equal(logs.error.some(([msg]) => msg.includes(`Import drawing error: ${message}`)), true);
 		assert.equal(calls.sendToQueue.length, 2);
 		assert.equal(calls.ack.length, 1);
 	});
@@ -804,7 +818,7 @@ describe(__filename, () => {
 
 		await consumers.clashq({
 			content: Buffer.from('bad clash message'),
-			properties: { correlationId: 'rid-clash-err', appId: 'app-clash' },
+			properties: { correlationId: generateUUIDString(), appId: generateRandomString() },
 		});
 		await flushAsync();
 
@@ -814,10 +828,11 @@ describe(__filename, () => {
 	});
 
 	test('real clash handler reports default bouncer errors', async () => {
+		const message = generateRandomSentence();
 		const { QueueHandler, consumers, calls, logs } = loadQueueHandlerWithMocks({
 			useRealHandlers: true,
 			runBouncerImpl: async () => {
-				throw new Error('clash failed');
+				throw new Error(message);
 			},
 		});
 
@@ -826,14 +841,14 @@ describe(__filename, () => {
 
 		await consumers.clashq({
 			content: Buffer.from('processClash ts-clash proj-clash /tmp/config.json'),
-			properties: { correlationId: 'rid-clash-fail', appId: 'app-clash' },
+			properties: { correlationId: generateUUIDString(), appId: generateRandomString() },
 		});
 		await flushAsync();
 
-		assert.equal(logs.error.some(([msg]) => msg.includes('Error running clash detection: clash failed')), true);
+		assert.equal(logs.error.some(([msg]) => msg.includes(`Error running clash detection: ${message}`)), true);
 		assert.equal(calls.sendToQueue.length, 2);
 		const finalReply = JSON.parse(calls.sendToQueue[1].buffer.toString());
-		assert.equal(finalReply.message, 'clash failed');
+		assert.equal(finalReply.message, message);
 		assert.equal(calls.ack.length, 1);
 	});
 });

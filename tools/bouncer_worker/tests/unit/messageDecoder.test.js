@@ -21,6 +21,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { createRequire } = require('node:module');
+const { generateRandomString, generateUUIDString, generateRandomSize, generateRandomFilepath } = require('../random');
 
 const moduleRequire = createRequire(__filename);
 
@@ -88,34 +89,37 @@ describe(__filename, () => {
 		const sharedDir = toCommandPath(fs.mkdtempSync(path.join(os.tmpdir(), 'decoder-import-')));
 		const cmdFilePath = path.join(sharedDir, 'import.json');
 		const cmdFilePathCmd = toCommandPath(cmdFilePath);
-		const modelPath = '$SHARED_SPACE/model.ifc';
+		const model = `${generateRandomString()}.ifc`;
+		const modelPath = `$SHARED_SPACE/${model}`;
 		const cmdFile = {
-			teamspace: 'team-a',
-			container: 'container-a',
-			owner: 'user-a',
+			teamspace: generateRandomString(),
+			container: generateUUIDString(),
+			owner: generateRandomString(),
 			file: modelPath,
-			extra: '$SHARED_SPACE/extra',
+			extra: `$SHARED_SPACE/${generateRandomString()}`,
 		};
 
 		fs.writeFileSync(cmdFilePath, JSON.stringify(cmdFile));
 		jsonModulesToClear.push(cmdFilePathCmd);
 
+		const configValue = generateRandomFilepath();
+
 		const { messageDecoder } = loadMessageDecoderWithMocks({
 			sharedDir,
-			configValue: 'C:/repo/local.json',
+			configValue,
 		});
 
 		const result = messageDecoder('import -f $SHARED_SPACE/import.json');
 
-		assert.deepEqual(result.cmdParams, ['C:/repo/local.json', 'import', '-f', cmdFilePathCmd]);
+		assert.deepEqual(result.cmdParams, [configValue, 'import', '-f', cmdFilePathCmd]);
 		assert.equal(result.command, 'import');
-		assert.equal(result.teamspace, 'team-a');
-		assert.equal(result.container, 'container-a');
-		assert.equal(result.user, 'user-a');
-		assert.equal(result.file, `${toCommandPath(sharedDir)}/model.ifc`);
+		assert.equal(result.teamspace, cmdFile.teamspace);
+		assert.equal(result.container, cmdFile.container);
+		assert.equal(result.user, cmdFile.owner);
+		assert.equal(result.file, `${toCommandPath(sharedDir)}/${model}`);
 
 		const rewritten = JSON.parse(fs.readFileSync(cmdFilePath, 'utf8'));
-		assert.equal(rewritten.file, `${toCommandPath(sharedDir)}/model.ifc`);
+		assert.equal(rewritten.file, `${toCommandPath(sharedDir)}/${model}`);
 		assert.equal(rewritten.extra, cmdFile.extra);
 	});
 
@@ -123,15 +127,18 @@ describe(__filename, () => {
 		const sharedDir = toCommandPath(fs.mkdtempSync(path.join(os.tmpdir(), 'decoder-drawing-')));
 		const cmdFilePath = path.join(sharedDir, 'drawing.json');
 		const cmdFilePathCmd = toCommandPath(cmdFilePath);
+		const file = generateRandomFilepath();
 
-		fs.writeFileSync(cmdFilePath, JSON.stringify({
-			teamspace: 'team-d',
-			drawing: 'drawing-1',
-			owner: 'user-d',
-			file: '$SHARED_SPACE/input.png',
+		const cmdFile = {
+			teamspace: generateRandomString(),
+			drawing: generateUUIDString(),
+			owner: generateRandomString(),
+			file: `$SHARED_SPACE/${file}`,
 			format: 'png',
-			size: 123,
-		}));
+			size: generateRandomSize(),
+		};
+
+		fs.writeFileSync(cmdFilePath, JSON.stringify(cmdFile));
 		jsonModulesToClear.push(cmdFilePathCmd);
 
 		const { messageDecoder } = loadMessageDecoderWithMocks({ sharedDir });
@@ -139,39 +146,48 @@ describe(__filename, () => {
 
 		assert.deepEqual(result.cmdParams, ['C:/fake/config.json', 'processDrawing', cmdFilePathCmd]);
 		assert.equal(result.command, 'processDrawing');
-		assert.equal(result.teamspace, 'team-d');
-		assert.equal(result.drawing, 'drawing-1');
-		assert.equal(result.user, 'user-d');
-		assert.equal(result.format, 'png');
-		assert.equal(result.size, 123);
+		assert.equal(result.teamspace, cmdFile.teamspace);
+		assert.equal(result.drawing, cmdFile.drawing);
+		assert.equal(result.user, cmdFile.owner);
+		assert.equal(result.format, cmdFile.format);
+		assert.equal(result.size, cmdFile.size);
 
 		const rewritten = JSON.parse(fs.readFileSync(cmdFilePath, 'utf8'));
-		assert.equal(rewritten.file, `${toCommandPath(sharedDir)}/input.png`);
+		assert.equal(rewritten.file, `${toCommandPath(sharedDir)}/${file}`);
 	});
 
 	test('decodes processClash command', () => {
 		const sharedDir = fs.mkdtempSync(path.join(os.tmpdir(), 'decoder-clash-'));
-		const { messageDecoder } = loadMessageDecoderWithMocks({ sharedDir, configValue: '/tmp/cfg.json' });
+		const configValue = generateRandomFilepath();
+		const { messageDecoder } = loadMessageDecoderWithMocks({ sharedDir, configValue });
 
-		const result = messageDecoder('processClash ts-1 project-1 /tmp/clash.json');
+		const teamspace = generateRandomString();
+		const project = generateUUIDString();
+		const filename = generateRandomFilepath();
+
+		const result = messageDecoder(`processClash ${teamspace} ${project} ${filename}`);
 
 		assert.equal(result.command, 'processClash');
-		assert.deepEqual(result.cmdParams, ['/tmp/cfg.json']);
-		assert.equal(result.teamspace, 'ts-1');
-		assert.equal(result.project, 'project-1');
-		assert.equal(result.configFile, '/tmp/clash.json');
+		assert.deepEqual(result.cmdParams, [configValue]);
+		assert.equal(result.teamspace, teamspace);
+		assert.equal(result.project, project);
+		assert.equal(result.configFile, filename);
 	});
 
 	test('decodes genStash command', () => {
 		const sharedDir = fs.mkdtempSync(path.join(os.tmpdir(), 'decoder-stash-'));
-		const { messageDecoder } = loadMessageDecoderWithMocks({ sharedDir, configValue: '/tmp/cfg.json' });
+		const configValue = generateRandomFilepath();
+		const { messageDecoder } = loadMessageDecoderWithMocks({ sharedDir, configValue });
 
-		const result = messageDecoder('genStash ts-1 model-1 full all');
+		const teamspace = generateRandomString();
+		const container = generateUUIDString();
+
+		const result = messageDecoder(`genStash ${teamspace} ${container} full all`);
 
 		assert.equal(result.command, 'genStash');
-		assert.deepEqual(result.cmdParams, ['/tmp/cfg.json', 'genStash', 'ts-1', 'model-1', 'full', 'all']);
-		assert.equal(result.teamspace, 'ts-1');
-		assert.equal(result.container, 'model-1');
+		assert.deepEqual(result.cmdParams, [configValue, 'genStash', teamspace, container, 'full', 'all']);
+		assert.equal(result.teamspace, teamspace);
+		assert.equal(result.container, container);
 	});
 
 	test('returns ERRCODE_ARG_FILE_FAIL for unknown command', () => {

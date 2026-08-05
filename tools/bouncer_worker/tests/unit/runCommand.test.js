@@ -18,6 +18,7 @@
 const { describe, test, afterEach } = require('node:test');
 const assert = require('node:assert');
 const { createRequire } = require('node:module');
+const { generateRandomString, generateRandomFilepath, generateRandomSentence } = require('../random');
 
 const moduleRequire = createRequire(__filename);
 
@@ -154,32 +155,40 @@ describe(__filename, () => {
 
 	test('resolves on zero exit code and logs stdout/stderr when verbose', async () => {
 		const { runCommand, child, calls } = loadRunCommandWithMocks({ timeoutMS: 2000 });
-		const processInfo = { Rid: 'rid-1' };
+		const Rid = generateRandomString();
+		const processInfo = { Rid };
 		const logLabel = { label: 'INIT' };
+		const filename = generateRandomFilepath();
+		const tool = generateRandomFilepath();
 
-		const resultPromise = runCommand('C:/tool.exe', ['-f', 'input.ifc'], { logLabel }, processInfo);
-		child.emitStdout(Buffer.from('hello-out'));
-		child.emitStderr(Buffer.from('hello-err'));
+		const resultPromise = runCommand(tool, ['-f', filename], { logLabel }, processInfo);
+
+		const stdout = generateRandomSentence();
+		const stderr = generateRandomSentence();
+
+		child.emitStdout(Buffer.from(stdout));
+		child.emitStderr(Buffer.from(stderr));
 		child.emitClose(0, null);
 		const result = await resultPromise;
 
 		assert.equal(result, 0);
 		assert.equal(calls.spawn.length, 1);
-		assert.equal(calls.spawn[0].exe, '"C:/tool.exe"');
-		assert.deepEqual(calls.spawn[0].params, ['-f', 'input.ifc']);
+		assert.equal(calls.spawn[0].exe, `"${tool}"`);
+		assert.deepEqual(calls.spawn[0].params, ['-f', filename]);
 		assert.equal(calls.spawn[0].options.shell, true);
 		assert.deepEqual(calls.startMonitor, [processInfo]);
-		assert.deepEqual(calls.stopMonitor, [{ rid: 'rid-1', code: 0 }]);
+		assert.deepEqual(calls.stopMonitor, [{ rid: Rid, code: 0 }]);
 		assert.deepEqual(calls.timeouts, [2000]);
-		assert.equal(calls.loggerInfo.some(([msg]) => msg.includes('Executing command: "C:/tool.exe" -f input.ifc')), true);
+		assert.equal(calls.loggerInfo.some(([msg]) => msg.includes(`Executing command: "${tool}" -f ${filename}`)), true);
 		assert.equal(calls.loggerInfo.some(([msg]) => msg.includes('Command executed. Code: 0 signal: null')), true);
-		assert.equal(calls.loggerVerbose.some(([msg]) => msg.includes('[STDOUT]: hello-out')), true);
-		assert.equal(calls.loggerVerbose.some(([msg]) => msg.includes('[STDERR]: hello-err')), true);
+		assert.equal(calls.loggerVerbose.some(([msg]) => msg.includes(`[STDOUT]: ${stdout}`)), true);
+		assert.equal(calls.loggerVerbose.some(([msg]) => msg.includes(`[STDERR]: ${stderr}`)), true);
 	});
 
 	test('resolves when exit code is marked as success', async () => {
 		const { runCommand, child } = loadRunCommandWithMocks();
-		const resultPromise = runCommand('C:/tool.exe', [], { codesAsSuccess: [7], logLabel: { label: 'INIT' } });
+		const tool = generateRandomFilepath();
+		const resultPromise = runCommand(`${tool}`, [], { codesAsSuccess: [7], logLabel: { label: 'INIT' } });
 		child.emitClose(7, null);
 		const result = await resultPromise;
 		assert.equal(result, 7);
@@ -187,37 +196,43 @@ describe(__filename, () => {
 
 	test('rejects with exit code on hard failure', async () => {
 		const { runCommand, child, calls } = loadRunCommandWithMocks();
-		const resultPromise = runCommand('C:/tool.exe', [], { logLabel: { label: 'INIT' } });
-		child.emitClose(12, null);
-		await assert.rejects(resultPromise, (err) => err === 12);
-		assert.equal(calls.loggerInfo.some(([msg]) => msg.includes('exiting with ERRCODE_UNKNOWN_ERROR: 12 signal: null')), true);
+		const tool = generateRandomFilepath();
+		const resultPromise = runCommand(`${tool}`, [], { logLabel: { label: 'INIT' } });
+		const code = Math.floor(Math.random() * 10) + 2;
+		child.emitClose(code, null);
+		await assert.rejects(resultPromise, (err) => err === code);
+		assert.equal(calls.loggerInfo.some(([msg]) => msg.includes(`exiting with ERRCODE_UNKNOWN_ERROR: ${code} signal: null`)), true);
 	});
 
 	test('rejects with ERRCODE_UNKNOWN_ERROR when close code is null', async () => {
 		const { runCommand, child } = loadRunCommandWithMocks();
-		const resultPromise = runCommand('C:/tool.exe', [], { logLabel: { label: 'INIT' } });
+		const tool = generateRandomFilepath();
+		const resultPromise = runCommand(`${tool}`, [], { logLabel: { label: 'INIT' } });
 		child.emitClose(null, 'SIGTERM');
 		await assert.rejects(resultPromise, (err) => err === ERRCODE_UNKNOWN_ERROR);
 	});
 
 	test('rejects with ERRCODE_TIMEOUT and kills process when timeout elapses first', async () => {
 		const { runCommand, child, calls, triggerTimeout } = loadRunCommandWithMocks();
-		const processInfo = { Rid: 'rid-timeout' };
-		const resultPromise = runCommand('C:/tool.exe', [], { logLabel: { label: 'INIT' } }, processInfo);
+		const tool = generateRandomFilepath();
+		const Rid = generateRandomString();
+		const processInfo = { Rid };
+		const resultPromise = runCommand(`${tool}`, [], { logLabel: { label: 'INIT' } }, processInfo);
 
 		triggerTimeout();
 		child.emitClose(null, 'SIGKILL');
 
 		await assert.rejects(resultPromise, (err) => err === ERRCODE_TIMEOUT);
 		assert.deepEqual(calls.kill, [321]);
-		assert.deepEqual(calls.stopMonitor, [{ rid: 'rid-timeout', code: ERRCODE_TIMEOUT }]);
+		assert.deepEqual(calls.stopMonitor, [{ rid: Rid, code: ERRCODE_TIMEOUT }]);
 		assert.equal(calls.loggerInfo.some(([msg]) => msg.includes('Max processing time reached, terminating the process')), true);
 		assert.equal(calls.loggerInfo.some(([msg]) => msg.includes('Command executed. Code: TIMEDOUT signal: SIGKILL')), true);
 	});
 
 	test('does not log execution line when verbose is false', async () => {
 		const { runCommand, child, calls } = loadRunCommandWithMocks();
-		const resultPromise = runCommand('C:/tool.exe', [], { verbose: false, logLabel: { label: 'INIT' } });
+		const tool = generateRandomFilepath();
+		const resultPromise = runCommand(`${tool}`, [], { verbose: false, logLabel: { label: 'INIT' } });
 		child.emitClose(0, null);
 		await resultPromise;
 		assert.equal(calls.loggerInfo.some(([msg]) => msg.startsWith('Executing command:')), false);

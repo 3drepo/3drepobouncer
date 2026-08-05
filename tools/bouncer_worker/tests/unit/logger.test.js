@@ -18,6 +18,7 @@
 const { describe, test, afterEach } = require('node:test');
 const assert = require('node:assert');
 const { createRequire } = require('node:module');
+const { generateRandomPath, generateRandomString, generateRandomSentence: generateRandomSentance, generateRandomDate } = require('../random');
 
 const moduleRequire = createRequire(__filename);
 
@@ -132,12 +133,16 @@ describe(__filename, () => {
 		assert.deepEqual(formatParts, ['timestamp', 'colorize', 'align', 'printf']);
 		assert.equal(calls.printf.length, 1);
 
+		const level = generateRandomString();
+		const message = generateRandomSentance();
+		const timestamp = generateRandomDate().toLocaleString();
+
 		const rendered = calls.printf[0]({
-			level: 'info',
-			message: 'hello world',
-			timestamp: '2026-08-03T12:00:00.000Z',
+			level,
+			message,
+			timestamp,
 		});
-		assert.equal(rendered, '2026-08-03T12:00:00.000Z [info] [APP] hello world');
+		assert.equal(rendered, `${timestamp} [${level}] [APP] ${message}`);
 	});
 
 	test('uses plain text formatter without colors and adds file transport when configured', () => {
@@ -157,13 +162,18 @@ describe(__filename, () => {
 		assert.deepEqual(formatParts, ['timestamp', 'align', 'printf']);
 		assert.equal(formatParts.includes('colorize'), false);
 
+		const level = generateRandomString();
+		const message = generateRandomSentance();
+		const timestamp = generateRandomDate().toLocaleString();
+		const label = generateRandomString();
+
 		const rendered = calls.printf[0]({
-			level: 'warn',
-			message: 'disk is full',
-			label: 'AMQP',
-			timestamp: '2026-08-03T12:01:00.000Z',
+			level,
+			message,
+			label,
+			timestamp,
 		});
-		assert.equal(rendered, '2026-08-03T12:01:00.000Z [warn] [AMQP] disk is full');
+		assert.equal(rendered, `${timestamp} [${level}] [${label}] ${message}`);
 	});
 
 	test('uses json formatter pipeline when jsonOutput is enabled', () => {

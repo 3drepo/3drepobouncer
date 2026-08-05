@@ -32,4 +32,26 @@ Random.generateRandomString = generateRandomString;
 
 Random.generateRandomPath = () => path.normalize(`${generateRandomString()}/${generateRandomString()}}`);
 
+Random.generateRandomSentence = () => {
+	let sentence = '';
+	for (let i = 0; i < 3 + (Math.random() * 7); i++) {
+		// eslint-disable-next-line prefer-template
+		sentence += generateRandomString() + ' ';
+	}
+	return sentence;
+};
+
+Random.generateRandomFilepath = () => {
+	let filepath = '';
+	for (let i = 0; i < 1 + (Math.random() * 3); i++) {
+		// eslint-disable-next-line prefer-template
+		filepath += '/' + generateRandomString();
+	}
+	return `${filepath}.${generateRandomString(3)}`;
+};
+
+Random.generateRandomSize = () => Math.floor(Math.random() * 1000) + 2;
+
+Random.generateRandomDate = () => new Date(+(new Date()) - Math.floor(Math.random() * 10000000000));
+
 module.exports = Random;
