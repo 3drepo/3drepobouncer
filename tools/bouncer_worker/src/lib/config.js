@@ -90,8 +90,8 @@ const schema = object({
 	umask: number(),
 	repoLicense: string(),
 	instanceId: string().when('repoLicense', { // This entry ensures that if repoLicense is defined, so is the instanceId
-		is: true,
-		then: (sch) => sch.default(uuidv4()),
+		is: (repoLicense) => !!repoLicense,
+		then: (sch) => sch.default(() => uuidv4()),
 	}),
 	rabbitmq,
 	logging,
