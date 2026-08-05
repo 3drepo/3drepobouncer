@@ -5,6 +5,7 @@ tools/scripts/log*
 tools/scripts/*.csv
 tools/bouncer_worker/toy
 tools/bouncer_worker/log
+tools/bouncer_worker/coverage
 .vs
 .vscode
 
