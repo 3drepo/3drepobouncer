@@ -18,7 +18,6 @@
 const Path = require('path');
 const { config } = require('../lib/config');
 const { runBouncerCommand } = require('../tasks/bouncerClient');
-const { generateSVG } = require('../tasks/imageProcessing');
 const { ERRCODE_OK, ERRCODE_BOUNCER_CRASH, ERRCODE_REPO_LICENCE_INVALID } = require('../constants/errorCodes');
 const { PROCESSING } = require('../constants/statuses');
 const { messageDecoder } = require('../lib/messageDecoder');
@@ -47,7 +46,7 @@ const generateTaskProfile = (user, drawing, teamspace, rid, format, size) => ({
 Handler.onMessageReceived = async (cmd, rid, callback) => {
 	const ridString = rid.toString();
 	const logDir = Path.join(config.logging.taskLogDir, ridString);
-	const { errorCode, teamspace, drawing, user, cmdParams, format, size, file } = messageDecoder(cmd);
+	const { errorCode, teamspace, drawing, user, cmdParams, format, size } = messageDecoder(cmd);
 
 	if (errorCode) {
 		callback(JSON.stringify({ value: errorCode }));
@@ -73,16 +72,8 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 
 	try {
 		const procInfo = generateTaskProfile(user, drawing, teamspace, ridString, format, size);
-
-		if (format === '.pdf') {
-			const svgPath = Path.join(logDir, `${ridString}.svg`);
-			await generateSVG(file, svgPath, procInfo);
-			cmdParams.push(svgPath);
-		}
-
 		returnMessage.value = await runBouncerCommand(logDir, cmdParams, procInfo);
 		await processMonitor.sendReport(ridString);
-
 		callback(JSON.stringify(returnMessage));
 	} catch (err) {
 		switch (err) {
