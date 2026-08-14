@@ -1,0 +1,194 @@
+/**
+*  Copyright (C) 2024 3D Repo Ltd
+*
+*  This program is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU Affero General Public License as
+*  published by the Free Software Foundation, either version 3 of the
+*  License, or (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU Affero General Public License for more details.
+*
+*  You should have received a copy of the GNU Affero General Public License
+*  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+
+#include <string>
+#include <vector>
+#include <array>
+#include <unordered_map>
+#include <unordered_set>
+
+#include <SharedPtr.h>
+#include <DbProxyEntity.h>
+#include <DbEntityWithGrData.h>
+#include <DbRegAppTable.h>
+#include <DbRegAppTableRecord.h>
+#include <DbDictionary.h>
+#include <DbXrecord.h>
+#include <Gi/GiWorldDraw.h>
+
+#include "proxy_app_handler.h"
+#include "civil3d_proxy_handler.h"
+#include "plant3d_proxy_handler.h"
+#include "repo/lib/datastructure/repo_variant.h"
+
+namespace repo {
+	namespace manipulator {
+		namespace modelconvertor {
+			namespace odaHelper {
+				/* Controls how much proxy data getProxyInfo() eagerly reads for one
+				entity. The XData chain and the extension dictionary are deliberately
+				not read up front: opening the extension dictionary is a database
+				object open, and most proxies never need it - they produce no
+				geometry, or their layer already carries metadata. Those reads are
+				loaded on demand by DwgProxyInspector's internal ensureProxyXData()/
+				ensureProxyExtensionDictionary(), which are no-ops once cached. */
+				struct ProxyReadOptions
+				{
+					/* Defaults are the cheap draw-time profile; metadata and
+					diagnostic paths opt in to what they actually need. */
+					bool readXData = false;
+					bool readExtensionDictionary = false;
+					/* Falls back to scanning the whole registered application
+					table when xData() yields nothing. Expensive, so off
+					outside diagnostics. */
+					bool scanRegisteredAppsFallback = false;
+				};
+
+				struct ProxyInfo
+				{
+					OdDbProxyEntityPtr entity; // null => not a proxy
+					std::string originalClass;
+					std::string originalDxfName;
+					std::string applicationDescription;
+					std::vector<std::string> xDataApps;
+					ProxyAppType appType = ProxyAppType::Unknown;
+					OdDbProxyEntity::GraphicsMetafileType graphicsType = OdDbProxyEntity::kNoMetafile;
+					bool hasFullGraphicsFlag = false;
+					OdDbEntityWithGrDataPEPtr graphicsPE;
+
+					/* Lazily populated; see DwgProxyInspector's internal ensureProxyXData()
+					and ensureProxyExtensionDictionary(). */
+					OdResBufPtr xData;
+					bool xDataLoaded = false;
+					OdDbObjectId extensionDictionaryId;
+					OdDbDictionaryPtr extensionDictionary;
+					bool extensionDictionaryLoaded = false;
+
+					// Set together with appType by DwgProxyInspector::classifyApplication(); never diverges from it.
+					ProxyAppHandler* matchedHandler = nullptr;
+
+					bool isProxy() const { return !entity.isNull(); }
+					bool isCivil3D() const { return appType == ProxyAppType::Civil3D; }
+					bool isPlant3D() const { return appType == ProxyAppType::Plant3D; }
+					bool hasFullGraphics() const { return hasFullGraphicsFlag; }
+				};
+
+				/* Everything needed to inspect, classify, replay and report on proxy
+				entities (Civil3D/Plant3D/custom object-enabler classes ODA cannot
+				natively load) for one DWG file.
+
+				One DwgProxyInspector is constructed per file - see
+				FileProcessorDwg::importModel(), which owns it alongside the
+				GeometryCollector - and shared by pointer with every DataProcessorDwg
+				view instance ODA creates while vectorising that file (a file may be
+				vectorised more than once; see the comment on DataProcessor). Sharing
+				one DwgProxyInspector across every pass is what lets it commit to a
+				single detected authoring app for the life of the file: a DWG is
+				produced by one app, never both, so once any proxy entity is classified
+				as Civil3D or Plant3D, every subsequent entity - across every
+				vectorisation pass - is only ever tested against that same app; see
+				classifyApplication(). */
+				class DwgProxyInspector
+				{
+				public:
+					bool getProxyInfo(OdDbEntityPtr entity, ProxyInfo& info, const ProxyReadOptions& options = ProxyReadOptions());
+
+					/* Is this proxy's class a "special" geometry case that needs more
+					than plain stored-graphics replay (e.g. Civil3D TIN surfaces)?
+					Delegates to the matched handler - DwgProxyInspector has no
+					compiled-in knowledge of which app, if any, has such a case. */
+					bool isSpecialGeometryClass(const ProxyInfo& info) const;
+
+					bool drawStoredProxyGraphics(OdDbEntityPtr pEntity, const ProxyInfo& info, OdGiWorldDraw* worldDraw);
+
+					void logProxyWithoutRenderableGeometry(
+						OdDbEntityPtr pEntity,
+						ProxyInfo& info,
+						bool replayedStoredProxyGraphics,
+						bool replayReturnedGeometry);
+
+					std::unordered_map<std::string, repo::lib::RepoVariant> getProxyEntityMetadata(OdDbEntityPtr pEntity, ProxyInfo& info);
+
+					/* Routes the hot OdGi geometry callbacks (processTriangleOut,
+					polygonOut, tristripProc, processPolylineOut) on DataProcessorDwg.
+					Non-null only for the duration of one entity's stored-graphics
+					replay when that entity needs geometry capture (see
+					isSpecialGeometryClass()); DataProcessorDwg saves/restores the
+					previous value around each replay so nested draws can't leak into
+					the wrong capture. */
+					ProxyGeometryCapture* activeCapture() const { return activeGeometryCapture; }
+					void setActiveCapture(ProxyGeometryCapture* capture) { activeGeometryCapture = capture; }
+
+					// Diagnostics: called once per entity from DataProcessorDwg::doDraw().
+					void recordEntitySeen(bool isProxy, const ProxyInfo& info);
+					void printDiagnostics(const std::unordered_map<std::string, size_t>& entityTypeCount) const;
+
+				private:
+					ProxyAppType classifyApplication(const std::string& originalClass, ProxyAppHandler*& outHandler);
+					static std::string formatApplicationDisplayString(const ProxyInfo& info);
+
+					void ensureProxyXData(ProxyInfo& info, const ProxyReadOptions& options = ProxyReadOptions());
+					void ensureProxyExtensionDictionary(ProxyInfo& info);
+
+					void addProxyBasicMetadata(OdDbEntityPtr pEntity, const ProxyInfo& info, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
+					void addProxyGeneralMetadata(OdDbEntityPtr pEntity, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
+					void addProxyGeometryMetadata(OdDbEntityPtr pEntity, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
+					void addProxyXDataMetadata(const ProxyInfo& info, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
+					void addProxyDictionaryMetadata(const ProxyInfo& info, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
+
+					void extractXDataProperties(OdResBufPtr pRb, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
+					void extractTextPropertiesFromProxy(OdDbProxyEntityPtr proxyEntity, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
+
+					// Used by printDiagnostics() to filter the general entity-type
+					// count down to the ones worth reporting on individually.
+					bool isKnownAppClassName(const std::string& className) const;
+
+					/* Registered proxy-app handlers. Both are constructed unconditionally
+					(they're cheap - Plant3D is stateless, Civil3D's only state is an
+					empty-until-used TIN capture buffer), but only ever consulted
+					together until the first proxy entity is classified; see
+					classifyApplication(). */
+					Civil3DProxyHandler civil3DHandler;
+					Plant3DProxyHandler plant3DHandler;
+					std::array<ProxyAppHandler*, 2> proxyHandlers = { &civil3DHandler, &plant3DHandler };
+
+					/* Set by classifyApplication() the first time any proxy entity in
+					this file matches a handler, and never changed after that: a DWG
+					is authored by one app, never both, so once detected, entities that
+					would otherwise match the *other* app are classified Custom rather
+					than misattributed. */
+					ProxyAppHandler* activeHandler = nullptr;
+
+					ProxyGeometryCapture* activeGeometryCapture = nullptr;
+
+					size_t proxyEntities = 0;
+					size_t civil3dEntities = 0;
+					size_t plant3dEntities = 0;
+
+					/* Proxies that produced no renderable geometry are reported once each,
+					but only for the first kMaxLoggedProxyGeometryFailures of them; the rest
+					are counted and summarised, so a proxy heavy drawing cannot flood the log. */
+					static const size_t kMaxLoggedProxyGeometryFailures = 20;
+					std::unordered_set<std::string> loggedProxyGeometryFailures;
+					size_t suppressedProxyGeometryFailures = 0;
+				};
+			}
+		}
+	}
+}

@@ -56,9 +56,10 @@ public:
 class DeviceModuleDwg : public OdGsBaseModule
 {
 public:
-	void init(GeometryCollector* collector)
+	void init(GeometryCollector* collector, DwgProxyInspector* proxy)
 	{
 		this->collector = collector;
+		this->proxy = proxy;
 	}
 
 protected:
@@ -71,6 +72,7 @@ protected:
 	{
 		auto pP = OdRxObjectImpl<DataProcessorDwg, OdGsViewImpl>::createObject();
 		((DataProcessorDwg*)pP.get())->initialise(collector);
+		((DataProcessorDwg*)pP.get())->setProxy(proxy);
 		return pP;
 	}
 
@@ -86,6 +88,7 @@ protected:
 
 private:
 	GeometryCollector* collector;
+	DwgProxyInspector* proxy;
 };
 ODRX_DEFINE_PSEUDO_STATIC_MODULE(DeviceModuleDwg);
 
@@ -93,12 +96,17 @@ void FileProcessorDwg::importModel(OdDbDatabasePtr pDb)
 {
 	GeometryCollector collector(repoSceneBuilder);
 
+	// One DwgProxyInspector for the whole file, shared by every DataProcessorDwg
+	// view instance the device below creates - see dwg_proxy_inspector.h for why
+	// proxy-app detection needs to be file-scoped rather than per-instance.
+	DwgProxyInspector proxy;
+
 	// Create the vectorizer device that will render the DWG database. This will
 	// use the GeometryCollector underneath.
 
 	OdGsModulePtr pGsModule = ODRX_STATIC_MODULE_ENTRY_POINT(DeviceModuleDwg)(OD_T("DeviceModuleDwg"));
 	auto deviceModule = (DeviceModuleDwg*)pGsModule.get();
-	deviceModule->init(&collector);
+	deviceModule->init(&collector, &proxy);
 	auto pDevice = pGsModule->createDevice();
 
 	collector.setUnits(determineModelUnits(pDb->getINSUNITS()));

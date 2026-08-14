@@ -26,6 +26,7 @@
 #include <BimCommon.h>
 #include <DbBaseDatabase.h>
 #include <DbDictionary.h>
+#include <DbEntity.h>
 #include <Database/BmDatabase.h>
 #include <Database/Entities/BmDBView.h>
 #include <Database/Entities/BmViewport.h>
@@ -105,6 +106,20 @@ namespace repo {
 				repo::lib::RepoVector3D64 toRepoVector(const OdGePoint3d& p);
 				repo::lib::RepoVector3D64 toRepoVector(const OdGeVector3d& p);
 				repo::lib::RepoBounds toRepoBounds(const OdGeExtents3d& b);
+
+				/* Reads every entity property ODA's Common Data Access (CDA) exposes
+				(the same properties shown in the AutoCAD Properties panel: General,
+				Pattern, Geometry, etc.) into metadata. Used for both proxy and
+				non-proxy entities, so it lives here rather than on any one
+				entity-specific class. */
+				void extractEntityProperties(OdDbEntityPtr pEntity, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
+
+				/* Some metadata sources (CDA, XData, extension dictionaries) can
+				independently contribute a "General::<Something>" property under
+				slightly different spellings/casing. This folds any such duplicate
+				onto the canonical "General::..." key the tree/UI expects, dropping
+				the non-canonical one. */
+				void removeDuplicateGeneralMetadata(std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
 			}
 		}
 	}

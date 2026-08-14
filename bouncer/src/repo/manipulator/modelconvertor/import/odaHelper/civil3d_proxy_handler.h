@@ -50,11 +50,14 @@ namespace repo {
 
 					ProxyGeometryCapture* geometryCapture() override { return &tinCapture; }
 
-					/* The class-name check formerly on ProxyInfo::isCivil3DTinSurface().
-					Concrete (not on the ProxyAppHandler interface) since there is no
-					known need yet for another app to have an analogous "special surface
-					class" check - see DataProcessorDwg::isCivil3DTinSurface(). */
 					bool isTinSurfaceClass(const std::string& originalClass) const;
+
+					// The only concrete ProxyAppHandler with a "special surface class"
+					// today - see ProxyAppHandler::isSpecialSurfaceClass().
+					bool isSpecialSurfaceClass(const std::string& originalClass) const override
+					{
+						return isTinSurfaceClass(originalClass);
+					}
 
 				private:
 					/* Holds the transient state needed to capture TIN surface triangles and

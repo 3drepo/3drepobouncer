@@ -114,6 +114,15 @@ namespace repo {
 					{
 						return nullptr;
 					}
+
+					// Does this proxy class need special-case geometry handling beyond
+					// stored-graphics replay (e.g. Civil3D TIN surfaces)? Default: no
+					// app has one, so this never needs to reach past the interface into
+					// a concrete handler.
+					virtual bool isSpecialSurfaceClass(const std::string& originalClass) const
+					{
+						return false;
+					}
 				};
 			}
 		}
