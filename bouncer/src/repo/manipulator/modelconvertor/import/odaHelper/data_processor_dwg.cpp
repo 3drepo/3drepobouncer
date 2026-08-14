@@ -48,476 +48,191 @@
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
+// samePoint(), pointKey(), edgeKey() and extractProxyDictionaryProperties() now
+// live alongside compare() and the other shared geometry/proxy utilities in
+// helper_functions.h. Civil3D/Plant3D-specific data and logic live in
+// civil3d_proxy_handler.h/.cpp and plant3d_proxy_handler.h/.cpp.
+
 DataProcessorDwg::~DataProcessorDwg()
 {
 	// This exists so we can use unique_ptr with a forward declaration of DwgDrawContext
 	printDiagnostics();
 }
 
-
-bool DataProcessorDwg::isProxyEntity(OdDbEntityPtr pEntity)
+ProxyAppType DataProcessorDwg::classifyApplication(const std::string& originalClass, ProxyAppHandler*& outHandler)
 {
-	if (pEntity.isNull()) return false;
-	return convertToStdString(pEntity->isA()->name()) == "AcDbProxyEntity";
-}
-bool DataProcessorDwg::isTinSurfaceProxy(OdDbEntityPtr pEntity)
-{
-	if (!isProxyEntity(pEntity)) return false;
+	outHandler = nullptr;
+	if (originalClass.empty() || originalClass == "Unknown") return ProxyAppType::Unknown;
 
-	auto originalClass = getProxyOriginalClassName(pEntity);
-	return originalClass == "AeccDbSurfaceTin" ||
-		originalClass == "AeccDbTinSurface" ||
-		originalClass.find("SurfaceTin") != std::string::npos ||
-		originalClass.find("TinSurface") != std::string::npos;
-}
-bool DataProcessorDwg::shouldReplayStoredProxyGraphics(OdDbEntityPtr pEntity)
-{
-	return isProxyEntity(pEntity);
-}
-std::string DataProcessorDwg::getProxyOriginalClassName(OdDbEntityPtr pEntity)
-{
-	if (pEntity.isNull() || !isProxyEntity(pEntity)) return "";
-
-	try {
-		OdDbProxyEntityPtr proxyEntity = OdDbProxyEntity::cast(pEntity);
-		if (!proxyEntity.isNull())
-		{
-			OdString originalClassName = proxyEntity->originalClassName();
-			if (!originalClassName.isEmpty())
-			{
-				return convertToStdString(originalClassName);
-			}
-
-			OdString appDescription = proxyEntity->applicationDescription();
-			if (!appDescription.isEmpty())
-			{
-				return convertToStdString(appDescription);
-			}
-		}
-	}
-	catch (OdError& e) {
-		repoTrace << "Failed to get proxy class: " << convertToStdString(e.description());
-	}
-
-	return "Unknown";
-}
-std::unordered_map<std::string, std::string> DataProcessorDwg::getProxyMetadata(OdDbEntityPtr pEntity)
-{
-	std::unordered_map<std::string, std::string> metadata;
-
-	if (pEntity.isNull()) return metadata;
-
-	try {
-		// Basic entity information
-		metadata["EntityType"] = convertToStdString(pEntity->isA()->name());
-		metadata["Handle"] = convertToStdString(toString(pEntity->objectId().getHandle()));
-		metadata["IsDBRO"] = pEntity->isDBRO() ? "true" : "false";
-
-		// Proxy-specific information
-		if (isProxyEntity(pEntity))
-		{
-			OdDbProxyEntityPtr proxyEntity = OdDbProxyEntity::cast(pEntity);
-			if (!proxyEntity.isNull())
-			{
-				// Original class name
-				OdString originalClass = proxyEntity->originalClassName();
-				if (!originalClass.isEmpty())
-				{
-					metadata["Original Class"] = convertToStdString(originalClass);
-				}
-				// Application
-				auto appType = detectApplicationType(pEntity);
-				if (!appType.empty())
-				{
-					metadata["Application"] = appType;
-				}
-				// Application description
-				OdString appDesc = proxyEntity->applicationDescription();
-				if (!appDesc.isEmpty())
-				{
-					metadata["Application Description"] = convertToStdString(appDesc);
-				}
-
-				// Proxy flags and saved graphics state
-				int flags = proxyEntity->proxyFlags();
-				metadata["ProxyFlags"] = std::to_string(flags);
-				auto graphicsType = proxyEntity->graphicsMetafileType();
-				metadata["GraphicsMetafileType"] = graphicsType == OdDbProxyEntity::kFullGraphics ? "Full Graphics" :
-					graphicsType == OdDbProxyEntity::kBoundingBox ? "Bounding Box" : "No Metafile";
-				metadata["HasProxyGraphics"] = graphicsType == OdDbProxyEntity::kFullGraphics ? "true" : "false";
-			}
-		}
-
-		// Layer information
-		try {
-			metadata["Layer"] = convertToStdString(toString(pEntity->layer()));
-		}
-		catch (...) {}
-
-		// Color information
-		try {
-			OdCmColor color = pEntity->color();
-			metadata["Color"] = std::to_string(color.colorIndex());
-		}
-		catch (...) {}
-
-		// Linetype
-		try {
-			metadata["Linetype"] = convertToStdString(toString(pEntity->linetype()));
-		}
-		catch (...) {}
-
-		// Lineweight
-		try {
-			metadata["Lineweight"] = convertToStdString(toString(pEntity->lineWeight()));
-		}
-		catch (...) {}
-
-		// Bounding box
-		try {
-			OdGeExtents3d extents;
-			if (pEntity->getGeomExtents(extents) == eOk)
-			{
-				auto min = extents.minPoint();
-				auto max = extents.maxPoint();
-				metadata["BoundsMin"] = "(" + std::to_string(min.x) + ", " +
-					std::to_string(min.y) + ", " +
-					std::to_string(min.z) + ")";
-				metadata["BoundsMax"] = "(" + std::to_string(max.x) + ", " +
-					std::to_string(max.y) + ", " +
-					std::to_string(max.z) + ")";
-			}
-		}
-		catch (...) {}
-
-		// XData - application-specific metadata
-		try {
-			OdResBufPtr pRb = pEntity->xData();
-			if (!pRb.isNull())
-			{
-				int xdataIndex = 0;
-				std::string currentApp = "";
-
-				for (; !pRb.isNull(); pRb = pRb->next())
-				{
-					int resType = pRb->restype();
-
-					if (resType == OdResBuf::kDxfRegAppName)  // 1001
-					{
-						currentApp = convertToStdString(pRb->getString());
-						metadata["XData_App_" + std::to_string(xdataIndex)] = currentApp;
-					}
-					else if (!currentApp.empty())
-					{
-						// Store XData values with app prefix
-						std::string key = "XData_" + currentApp + "_" + std::to_string(resType);
-
-						switch (resType)
-						{
-						case OdResBuf::kDxfXdAsciiString:  // 1000
-							metadata[key] = convertToStdString(pRb->getString());
-							break;
-						case OdResBuf::kDxfXdInteger16:    // 1070
-							metadata[key] = std::to_string(pRb->getInt16());
-							break;
-						case OdResBuf::kDxfXdInteger32:    // 1071
-							metadata[key] = std::to_string(pRb->getInt32());
-							break;
-						case OdResBuf::kDxfXdReal:         // 1040
-							metadata[key] = std::to_string(pRb->getDouble());
-							break;
-						case OdResBuf::kDxfXdDist:         // 1041
-							metadata[key] = std::to_string(pRb->getDouble());
-							break;
-						default:
-							metadata[key] = "Type:" + std::to_string(resType);
-							break;
-						}
-					}
-					xdataIndex++;
-				}
-			}
-		}
-		catch (OdError& e) {
-			metadata["XData_Error"] = convertToStdString(e.description());
-		}
-
-		// Extended dictionary (if any)
-		try {
-			OdDbObjectId extDictId = pEntity->extensionDictionary();
-			if (!extDictId.isNull())
-			{
-				metadata["HasExtensionDictionary"] = "true";
-
-				// Open the extension dictionary
-				OdDbDictionaryPtr pExtDict = extDictId.safeOpenObject();
-				if (!pExtDict.isNull())
-				{
-					// Iterate through all entries in the dictionary
-					OdDbDictionaryIteratorPtr pDictIter = pExtDict->newIterator();
-					int dictEntryIndex = 0;
-
-					for (; !pDictIter->done(); pDictIter->next(), dictEntryIndex++)
-					{
-						try {
-							// Get the entry name (key)
-							OdString entryName = pDictIter->name();
-							std::string entryNameStr = convertToStdString(entryName);
-
-							// Get the entry object ID
-							OdDbObjectId entryId = pDictIter->objectId();
-
-							// Store the entry name
-							std::string entryKey = "ExtDict_Entry_" + std::to_string(dictEntryIndex) + "_Name";
-							metadata[entryKey] = entryNameStr;
-
-							// Try to open and read the entry object
-							if (!entryId.isNull())
-							{
-								OdDbObjectPtr pObj = entryId.safeOpenObject();
-								if (!pObj.isNull())
-								{
-									// Store object class name
-									std::string classKey = "ExtDict_Entry_" + std::to_string(dictEntryIndex) + "_Class";
-									metadata[classKey] = convertToStdString(pObj->isA()->name());
-
-									// Try to cast to dictionary (nested dictionaries)
-									OdDbDictionaryPtr pNestedDict = OdDbDictionary::cast(pObj);
-									if (!pNestedDict.isNull())
-									{
-										std::string sizeKey = "ExtDict_Entry_" + std::to_string(dictEntryIndex) + "_Size";
-										metadata[sizeKey] = std::to_string(pNestedDict->numEntries());
-									}
-
-									// Try to read as XRecord (common storage type)
-									OdDbXrecordPtr pXRec = OdDbXrecord::cast(pObj);
-									if (!pXRec.isNull())
-									{
-										OdResBufPtr pRb = pXRec->rbChain();
-										int xrecIndex = 0;
-
-										for (; !pRb.isNull() && xrecIndex < 50; pRb = pRb->next(), xrecIndex++)
-										{
-											int resType = pRb->restype();
-											std::string valueKey = "ExtDict_Entry_" + std::to_string(dictEntryIndex) +
-												"_XRec_" + std::to_string(xrecIndex);
-
-											try {
-												switch (resType)
-												{
-												case OdResBuf::kDxfText:
-												case OdResBuf::kDxfXTextString:
-													metadata[valueKey] = convertToStdString(pRb->getString());
-													break;
-												case OdResBuf::kDxfInt8:
-													metadata[valueKey] = std::to_string(pRb->getInt8());
-													break;
-												case OdResBuf::kDxfInt16:
-													metadata[valueKey] = std::to_string(pRb->getInt16());
-													break;
-												case OdResBuf::kDxfInt32:
-													metadata[valueKey] = std::to_string(pRb->getInt32());
-													break;
-												//case OdResBuf::kDxfDouble:
-												case OdResBuf::kDxfReal:
-													metadata[valueKey] = std::to_string(pRb->getDouble());
-													break;
-												case OdResBuf::kDxfBool:
-													metadata[valueKey] = pRb->getBool() ? "true" : "false";
-													break;
-												/*case OdResBuf::kDxfObjectId:
-													metadata[valueKey] = "ObjectId:" +
-														convertToStdString(toString(pRb->getObjectId(OdDb::kForRead).getHandle()));
-													break;*/
-												/*case OdResBuf::kDxf3dPoint:
-												{
-													OdGePoint3d pt = pRb->getPoint3d();
-													metadata[valueKey] = "Point(" + std::to_string(pt.x) + ", " +
-														std::to_string(pt.y) + ", " +
-														std::to_string(pt.z) + ")";
-													break;
-												}*/
-												default:
-													metadata[valueKey] = "ResType:" + std::to_string(resType);
-													break;
-												}
-											}
-											catch (...) {
-												metadata[valueKey] = "Error reading ResType:" + std::to_string(resType);
-											}
-										}
-
-										if (!pRb.isNull())
-										{
-											metadata["ExtDict_Entry_" + std::to_string(dictEntryIndex) + "_XRec_Truncated"] = "true";
-										}
-									}
-								}
-							}
-						}
-						catch (OdError& e) {
-							metadata["ExtDict_Entry_" + std::to_string(dictEntryIndex) + "_Error"] =
-								convertToStdString(e.description());
-						}
-						catch (...) {
-							metadata["ExtDict_Entry_" + std::to_string(dictEntryIndex) + "_Error"] =
-								"Unknown error reading entry";
-						}
-					}
-
-					metadata["ExtDict_TotalEntries"] = std::to_string(dictEntryIndex);
-				}
-			}
-			else
-			{
-				metadata["HasExtensionDictionary"] = "false";
-			}
-		}
-		catch (...) {}
-
-	}
-	catch (OdError& e) {
-		metadata["Error"] = convertToStdString(e.description());
-	}
-	catch (...) {
-		metadata["Error"] = "Unknown exception reading metadata";
-	}
-
-	return metadata;
-}
-std::vector<std::string> DataProcessorDwg::getProxyXDataApps(OdDbEntityPtr pEntity)
-{
-	std::vector<std::string> apps;
-	if (pEntity.isNull()) return apps;
-
-	try {
-		// Use xData() with nullptr to get all registered application names
-		OdResBufPtr pRb = pEntity->xData();
-
-		if (!pRb.isNull())
-		{
-			// XData is stored as a linked list of result buffers
-			// Each app starts with a kDxfRegAppName (1001) entry
-			for (; !pRb.isNull(); pRb = pRb->next())
-			{
-				if (pRb->restype() == OdResBuf::kDxfRegAppName)  // 1001 = App name
-				{
-					OdString appName = pRb->getString();
-					if (!appName.isEmpty())
-					{
-						apps.push_back(convertToStdString(appName));
-					}
-				}
-			}
-		}
-		else
-		{
-			repoTrace << "xData() returned null - trying database query method";
-
-			// Method 2: Alternative - Query the database for registered apps
-			if (pEntity->database() != nullptr)
-			{
-				OdDbObjectId entityId = pEntity->objectId();
-				if (!entityId.isNull())
-				{
-					OdDbRegAppTablePtr pAppTable = pEntity->database()->getRegAppTableId().safeOpenObject();
-					if (!pAppTable.isNull())
-					{
-						repoTrace << "Checking registered application table...";
-						OdDbSymbolTableIteratorPtr pIter = pAppTable->newIterator();
-
-						for (; !pIter->done(); pIter->step())
-						{
-							OdDbRegAppTableRecordPtr pApp = pIter->getRecord();
-							if (!pApp.isNull())
-							{
-								OdString appName = pApp->getName();
-								std::string appStr = convertToStdString(appName);
-
-								// Check if this entity actually has data for this app
-								OdResBufPtr pAppData = pEntity->xData(appName);
-								if (!pAppData.isNull())
-								{
-									repoTrace << "  Entity has XData for: " << appStr;
-									apps.push_back(appStr);
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	catch (OdError& e) {
-		repoTrace << "XData access failed: " << convertToStdString(e.description());
-	}
-	catch (...) {
-		repoTrace << "XData access failed with unknown exception";
-	}
-
-	return apps;
-}
-std::string DataProcessorDwg::detectApplicationType(OdDbEntityPtr pEntity)
-{
-	if (pEntity.isNull()) return "";
-
-	if (isProxyEntity(pEntity))
+	for (auto* handler : proxyHandlers)
 	{
-		std::string originalClass = getProxyOriginalClassName(pEntity);
-		if (!originalClass.empty() && originalClass != "Unknown")
+		if (handler->matches(originalClass))
 		{
-			if (originalClass.find("Aecc") != std::string::npos)
-				return "Civil3D (" + originalClass + ")";
-			if (originalClass.find("AcPp") != std::string::npos)
-				return "Plant3D (" + originalClass + ")";
-			if (originalClass.find("Civil") != std::string::npos)
-				return "Civil3D (" + originalClass + ")";
-			if (originalClass.find("Plant") != std::string::npos)
-				return "Plant3D (" + originalClass + ")";
-
-			return "CustomApp (" + originalClass + ")";
+			outHandler = handler;
+			return handler->appType();
 		}
 	}
 
-	auto xdataApps = getProxyXDataApps(pEntity);
-	for (const auto& app : xdataApps)
+	return ProxyAppType::Custom;
+}
+
+std::string DataProcessorDwg::formatApplicationDisplayString(const ProxyInfo& info)
+{
+	if (!info.originalClass.empty() && info.originalClass != "Unknown")
 	{
-		if (app.find("Aecc") != std::string::npos)
-			return "Civil3D (XData)";
-		if (app.find("AcPp") != std::string::npos)
-			return "Plant3D (XData)";
+		if (info.matchedHandler) return info.matchedHandler->appName() + " (" + info.originalClass + ")";
+		return "CustomApp (" + info.originalClass + ")";
+	}
+
+	for (const auto& app : info.xDataApps)
+	{
+		if (app.find("Aecc") != std::string::npos) return "Civil3D (XData)";
+		if (app.find("AcPp") != std::string::npos) return "Plant3D (XData)";
 	}
 
 	return "";
 }
 
-bool DataProcessorDwg::drawStoredProxyGraphics(OdDbEntityPtr pEntity)
+bool DataProcessorDwg::getProxyInfo(OdDbEntityPtr entity, ProxyInfo& info, const ProxyReadOptions& options)
 {
-	if (pEntity.isNull() || !shouldReplayStoredProxyGraphics(pEntity)) return false;
+	info = ProxyInfo();
 
-	OdDbProxyEntityPtr proxyEntity = OdDbProxyEntity::cast(pEntity);
-	if (proxyEntity.isNull()) return false;
+	if (entity.isNull()) return false;
 
-	if (proxyEntity->graphicsMetafileType() != OdDbProxyEntity::kFullGraphics)
-	{
-		repoTrace << "Proxy has no full graphics metafile: "
-			<< getProxyOriginalClassName(pEntity);
-		return false;
-	}
-
-	OdDbEntityWithGrDataPEPtr graphics = OdDbEntityWithGrDataPE::cast(pEntity);
-	if (graphics.isNull())
-	{
-		repoTrace << "No stored graphics protocol extension for proxy: "
-			<< getProxyOriginalClassName(pEntity);
-		return false;
-	}
+	info.entity = OdDbProxyEntity::cast(entity);
+	if (info.entity.isNull()) return false;
 
 	try
 	{
-		repoInfo << "Replaying stored proxy graphics for "
-			<< getProxyOriginalClassName(pEntity);
-		return graphics->worldDraw(pEntity, this);
+		OdString originalClassName = info.entity->originalClassName();
+		if (!originalClassName.isEmpty())
+		{
+			info.originalClass = convertToStdString(originalClassName);
+		}
+		else
+		{
+			OdString appDescription = info.entity->applicationDescription();
+			info.originalClass = !appDescription.isEmpty() ? convertToStdString(appDescription) : "Unknown";
+		}
+	}
+	catch (OdError& e)
+	{
+		repoTrace << "Failed to get proxy class: " << convertToStdString(e.description());
+		info.originalClass = "Unknown";
+	}
+
+	OdString originalDxfName = info.entity->originalDxfName();
+	if (!originalDxfName.isEmpty()) info.originalDxfName = convertToStdString(originalDxfName);
+
+	OdString appDescription = info.entity->applicationDescription();
+	if (!appDescription.isEmpty()) info.applicationDescription = convertToStdString(appDescription);
+
+	info.graphicsType = info.entity->graphicsMetafileType();
+	info.hasFullGraphicsFlag = info.graphicsType == OdDbProxyEntity::kFullGraphics;
+
+	try { info.graphicsPE = OdDbEntityWithGrDataPE::cast(entity); }
+	catch (...) {}
+
+	if (options.readXData) ensureProxyXData(info, options);
+	if (options.readExtensionDictionary) ensureProxyExtensionDictionary(info);
+
+	info.appType = classifyApplication(info.originalClass, info.matchedHandler);
+
+	return true;
+}
+
+void DataProcessorDwg::ensureProxyXData(ProxyInfo& info, const ProxyReadOptions& options)
+{
+	if (info.xDataLoaded || info.entity.isNull()) return;
+	info.xDataLoaded = true;
+
+	try
+	{
+		info.xData = info.entity->xData();
+		if (!info.xData.isNull())
+		{
+			for (OdResBufPtr pRb = info.xData; !pRb.isNull(); pRb = pRb->next())
+			{
+				if (pRb->restype() == OdResBuf::kDxfRegAppName)
+				{
+					OdString appName = pRb->getString();
+					if (!appName.isEmpty()) info.xDataApps.push_back(convertToStdString(appName));
+				}
+			}
+		}
+		else if (options.scanRegisteredAppsFallback && info.entity->database() != nullptr)
+		{
+			repoTrace << "xData() returned null - trying database query method";
+
+			OdDbObjectId entityId = info.entity->objectId();
+			if (!entityId.isNull())
+			{
+				OdDbRegAppTablePtr pAppTable = info.entity->database()->getRegAppTableId().safeOpenObject();
+				if (!pAppTable.isNull())
+				{
+					repoTrace << "Checking registered application table...";
+					OdDbSymbolTableIteratorPtr pIter = pAppTable->newIterator();
+
+					for (; !pIter->done(); pIter->step())
+					{
+						OdDbRegAppTableRecordPtr pApp = pIter->getRecord();
+						if (pApp.isNull()) continue;
+
+						OdString appName = pApp->getName();
+						std::string appStr = convertToStdString(appName);
+
+						OdResBufPtr pAppData = info.entity->xData(appName);
+						if (!pAppData.isNull())
+						{
+							repoTrace << "  Entity has XData for: " << appStr;
+							info.xDataApps.push_back(appStr);
+						}
+					}
+				}
+			}
+		}
+	}
+	catch (OdError& e)
+	{
+		repoTrace << "XData access failed: " << convertToStdString(e.description());
+	}
+	catch (...)
+	{
+		repoTrace << "XData access failed with unknown exception";
+	}
+}
+
+void DataProcessorDwg::ensureProxyExtensionDictionary(ProxyInfo& info)
+{
+	if (info.extensionDictionaryLoaded || info.entity.isNull()) return;
+	info.extensionDictionaryLoaded = true;
+
+	try
+	{
+		info.extensionDictionaryId = info.entity->extensionDictionary();
+		if (!info.extensionDictionaryId.isNull())
+		{
+			info.extensionDictionary = info.extensionDictionaryId.safeOpenObject();
+		}
+	}
+	catch (...)
+	{
+		repoTrace << "Proxy extension dictionary access failed";
+	}
+}
+
+bool DataProcessorDwg::drawStoredProxyGraphics(OdDbEntityPtr pEntity, const ProxyInfo& info)
+{
+	if (pEntity.isNull() || !info.isProxy()) return false;
+
+	// Both of these cases are already reported, deduplicated and with handle and
+	// layer context, by logProxyWithoutRenderableGeometry().
+	if (!info.hasFullGraphics()) return false;
+	if (info.graphicsPE.isNull()) return false;
+
+	try
+	{
+		return info.graphicsPE->worldDraw(pEntity, this);
 	}
 	catch (OdError& e)
 	{
@@ -536,42 +251,47 @@ void DataProcessorDwg::printDiagnostics() const
 {
 	if (stats.totalEntities == 0) return;
 
-	repoInfo << "===============================================================";
-	repoInfo << "||        DWG IMPORT DIAGNOSTIC REPORT                       ||";
-	repoInfo << "===============================================================";
-	repoInfo << "  Total entities:                " << stats.totalEntities;
-	repoInfo << "    With geometry:               " << stats.entitiesWithGeometry;
-	repoInfo << "    Without geometry:            " << stats.entitiesWithoutGeometry;
-	repoInfo << "===============================================================";
-	repoInfo << "  Civil3D entities:               " << stats.civil3dEntities;
-	repoInfo << "  Plant3D entities:               " << stats.plant3dEntities;
-	repoInfo << "  Proxy entities:                 " << stats.proxyEntities;
+	repoInfo << "DWG import: " << stats.totalEntities << " entities, "
+		<< stats.entitiesWithGeometry << " with geometry, "
+		<< stats.entitiesWithoutGeometry << " without";
+	repoInfo << "DWG import: " << stats.civil3dEntities << " Civil3D, "
+		<< stats.plant3dEntities << " Plant3D, "
+		<< stats.proxyEntities << " proxy entities";
+
+	if (suppressedProxyGeometryFailures)
+	{
+		repoInfo << "DWG import: " << suppressedProxyGeometryFailures
+			<< " further proxies without renderable geometry were not reported individually";
+	}
 
 	if (!stats.entityTypeCount.empty() && (stats.proxyEntities > 0 || stats.civil3dEntities > 0 || stats.plant3dEntities > 0))
 	{
-		repoInfo << "===============================================================";
-		repoInfo << "|| CUSTOM ENTITY TYPES FOUND                                 ||";
-		repoInfo << "===============================================================";
+		std::string customTypes;
 		for (const auto& [type, count] : stats.entityTypeCount)
 		{
 			if (type.find("Aecc") != std::string::npos ||
 				type.find("AcPp") != std::string::npos ||
 				type == "AcDbProxyEntity")
 			{
-				repoInfo << "  " << type << ": " << count;
+				if (!customTypes.empty()) customTypes += ", ";
+				customTypes += type + "=" + std::to_string(count);
 			}
 		}
-	}
 
-	repoInfo << "===============================================================\n";
+		if (!customTypes.empty())
+		{
+			repoInfo << "DWG import: custom entity types: " << customTypes;
+		}
+	}
 }
 
 void DataProcessorDwg::logProxyWithoutRenderableGeometry(
 	OdDbEntityPtr pEntity,
+	ProxyInfo& info,
 	bool replayedStoredProxyGraphics,
 	bool replayReturnedGeometry)
 {
-	if (!isProxyEntity(pEntity)) return;
+	if (!info.isProxy()) return;
 
 	std::string handle = "Unknown";
 	try
@@ -580,7 +300,24 @@ void DataProcessorDwg::logProxyWithoutRenderableGeometry(
 	}
 	catch (...) {}
 
+	// Report each distinct proxy once, and only up to the cap. Everything past
+	// that is counted and summarised by printDiagnostics(), so a drawing with
+	// thousands of unrenderable proxies cannot flood the log.
 	if (!loggedProxyGeometryFailures.insert(handle).second) return;
+
+	if (loggedProxyGeometryFailures.size() > kMaxLoggedProxyGeometryFailures)
+	{
+		if (++suppressedProxyGeometryFailures == 1)
+		{
+			repoWarning << "[DWG_PROXY_NO_RENDERABLE_GEOMETRY] reached "
+				<< kMaxLoggedProxyGeometryFailures
+				<< " reported proxies; further ones are counted only";
+		}
+		return;
+	}
+
+	// Only needed for proxies we are actually going to report on.
+	ensureProxyXData(info);
 
 	std::string layer = "Unknown";
 	try
@@ -589,119 +326,134 @@ void DataProcessorDwg::logProxyWithoutRenderableGeometry(
 	}
 	catch (...) {}
 
-	std::string originalClass = getProxyOriginalClassName(pEntity);
-	std::string originalDxfName;
-	std::string appDescription;
 	std::string graphicsTypeName = "Unknown";
 	std::string reason = "No geometry was produced by the vectorizer";
-	bool hasGraphicsProtocolExtension = false;
 
-	OdDbProxyEntityPtr proxyEntity = OdDbProxyEntity::cast(pEntity);
-	if (!proxyEntity.isNull())
+	if (info.graphicsType == OdDbProxyEntity::kNoMetafile)
 	{
-		OdString dxfName = proxyEntity->originalDxfName();
-		if (!dxfName.isEmpty()) originalDxfName = convertToStdString(dxfName);
-
-		OdString description = proxyEntity->applicationDescription();
-		if (!description.isEmpty()) appDescription = convertToStdString(description);
-
-		auto graphicsType = proxyEntity->graphicsMetafileType();
-		if (graphicsType == OdDbProxyEntity::kNoMetafile)
+		graphicsTypeName = "No Metafile";
+		reason = "Proxy entity has no saved graphics metafile";
+	}
+	else if (info.graphicsType == OdDbProxyEntity::kBoundingBox)
+	{
+		graphicsTypeName = "Bounding Box";
+		reason = "Proxy entity only has bounding-box proxy graphics";
+	}
+	else if (info.graphicsType == OdDbProxyEntity::kFullGraphics)
+	{
+		graphicsTypeName = "Full Graphics";
+		if (!replayedStoredProxyGraphics)
 		{
-			graphicsTypeName = "No Metafile";
-			reason = "Proxy entity has no saved graphics metafile";
+			reason = "Stored proxy graphics replay was not attempted";
 		}
-		else if (graphicsType == OdDbProxyEntity::kBoundingBox)
+		else if (!replayReturnedGeometry)
 		{
-			graphicsTypeName = "Bounding Box";
-			reason = "Proxy entity only has bounding-box proxy graphics";
+			reason = "Stored proxy graphics replay returned false";
 		}
-		else if (graphicsType == OdDbProxyEntity::kFullGraphics)
+		else
 		{
-			graphicsTypeName = "Full Graphics";
-			if (!replayedStoredProxyGraphics)
-			{
-				reason = "Stored proxy graphics replay was not attempted";
-			}
-			else if (!replayReturnedGeometry)
-			{
-				reason = "Stored proxy graphics replay returned false";
-			}
-			else
-			{
-				reason = "Stored proxy graphics replay produced no supported mesh or line geometry";
-			}
+			reason = "Stored proxy graphics replay produced no supported mesh or line geometry";
 		}
 	}
-
-	try
-	{
-		hasGraphicsProtocolExtension = !OdDbEntityWithGrDataPE::cast(pEntity).isNull();
-	}
-	catch (...) {}
 
 	std::string xdataApps;
-	try
+	for (size_t i = 0; i < info.xDataApps.size(); ++i)
 	{
-		auto apps = getProxyXDataApps(pEntity);
-		for (size_t i = 0; i < apps.size(); ++i)
-		{
-			if (i > 0) xdataApps += ",";
-			xdataApps += apps[i];
-		}
+		if (i > 0) xdataApps += ",";
+		xdataApps += info.xDataApps[i];
 	}
-	catch (...) {}
 
-	repoWarning << "[DWG_PROXY_NO_RENDERABLE_GEOMETRY] handle=" << handle
-		<< " layer=\"" << layer << "\""
-		<< " originalClass=\"" << originalClass << "\""
-		<< " originalDxfName=\"" << originalDxfName << "\""
-		<< " graphicsMetafile=\"" << graphicsTypeName << "\""
-		<< " replayAttempted=" << (replayedStoredProxyGraphics ? "true" : "false")
-		<< " replayReturned=" << (replayReturnedGeometry ? "true" : "false")
-		<< " hasGraphicsPE=" << (hasGraphicsProtocolExtension ? "true" : "false")
-		<< " reason=\"" << reason << "\"";
+	// Built as a single record: the optional fields used to be separate log
+	// lines, which multiplied the volume for no extra information.
+	std::string message = "[DWG_PROXY_NO_RENDERABLE_GEOMETRY] handle=" + handle +
+		" layer=\"" + layer + "\"" +
+		" originalClass=\"" + info.originalClass + "\"" +
+		" originalDxfName=\"" + info.originalDxfName + "\"" +
+		" graphicsMetafile=\"" + graphicsTypeName + "\"" +
+		" replayAttempted=" + (replayedStoredProxyGraphics ? "true" : "false") +
+		" replayReturned=" + (replayReturnedGeometry ? "true" : "false") +
+		" hasGraphicsPE=" + (info.graphicsPE.isNull() ? "false" : "true") +
+		" reason=\"" + reason + "\"";
 
-	if (!appDescription.empty())
+	if (!info.applicationDescription.empty())
 	{
-		repoWarning << "[DWG_PROXY_NO_RENDERABLE_GEOMETRY] handle=" << handle
-			<< " applicationDescription=\"" << appDescription << "\"";
+		message += " applicationDescription=\"" + info.applicationDescription + "\"";
 	}
 
 	if (!xdataApps.empty())
 	{
-		repoWarning << "[DWG_PROXY_NO_RENDERABLE_GEOMETRY] handle=" << handle
-			<< " xdataApps=\"" << xdataApps << "\"";
+		message += " xdataApps=\"" + xdataApps + "\"";
 	}
+
+	repoWarning << message;
+}
+
+std::unordered_map<std::string, repo::lib::RepoVariant> DataProcessorDwg::getProxyEntityMetadata(OdDbEntityPtr pEntity, ProxyInfo& info)
+{
+	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
+	if (!info.isProxy()) return metadata;
+
+	// Metadata is the one path that genuinely needs both of the expensive reads.
+	ensureProxyXData(info);
+	ensureProxyExtensionDictionary(info);
 
 	try
 	{
-		OdGeExtents3d extents;
-		if (pEntity->getGeomExtents(extents) == eOk)
-		{
-			auto min = extents.minPoint();
-			auto max = extents.maxPoint();
-			repoWarning << "[DWG_PROXY_NO_RENDERABLE_GEOMETRY] handle=" << handle
-				<< " boundsMin=(" << min.x << "," << min.y << "," << min.z << ")"
-				<< " boundsMax=(" << max.x << "," << max.y << "," << max.z << ")";
-		}
+		// First ask ODA Common Data Access for palette-style properties. When a
+		// native object enabler is available this can include custom object data;
+		// otherwise it normally returns the proxy/general entity properties.
+		addProxyBasicMetadata(pEntity, info, metadata);
+		addProxyGeneralMetadata(pEntity, metadata);
+		addProxyGeometryMetadata(pEntity, metadata);
+		addProxyXDataMetadata(info, metadata);
+		addProxyDictionaryMetadata(info, metadata);
+		extractTextPropertiesFromProxy(info.entity, metadata);
 	}
-	catch (...) {}
-}
-std::unordered_map<std::string, repo::lib::RepoVariant> DataProcessorDwg::getProxyEntityMetadata(OdDbEntityPtr pEntity)
-{
-	std::unordered_map<std::string, repo::lib::RepoVariant> metadata;
-	if (!isProxyEntity(pEntity)) return metadata;
+	catch (OdError& e)
+	{
+		metadata["Proxy::Metadata Error"] = convertToStdString(e.description());
+	}
+	catch (...)
+	{
+		metadata["Proxy::Metadata Error"] = std::string("Unknown error reading proxy metadata");
+	}
 
+	return metadata;
+}
+
+void DataProcessorDwg::addProxyBasicMetadata(OdDbEntityPtr pEntity, const ProxyInfo& info, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
+{
+	extractEntityProperties(pEntity, metadata);
+
+	if (!info.originalClass.empty())
+	{
+		metadata["Proxy::Original Class"] = info.originalClass;
+	}
+
+	if (!info.originalDxfName.empty())
+	{
+		metadata["Proxy::Original DXF Name"] = info.originalDxfName;
+	}
+
+	if (!info.applicationDescription.empty())
+	{
+		metadata["Proxy::Application Description"] = info.applicationDescription;
+	}
+
+	auto appType = formatApplicationDisplayString(info);
+	if (!appType.empty())
+	{
+		metadata["Proxy::Application"] = appType;
+	}
+}
+
+void DataProcessorDwg::addProxyGeneralMetadata(OdDbEntityPtr pEntity, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
+{
 	auto setIfMissing = [&](const std::string& key, const repo::lib::RepoVariant& value) {
 		if (metadata.find(key) == metadata.end())
 		{
 			metadata[key] = value;
 		}
-	};
-
-	auto yesNo = [](bool value) {
-		return value ? std::string("Yes") : std::string("No");
 	};
 
 	auto colorToString = [](const OdCmColor& clr) {
@@ -757,205 +509,44 @@ std::unordered_map<std::string, repo::lib::RepoVariant> DataProcessorDwg::getPro
 		}
 	};
 
-	try
-	{
-		OdDbProxyEntityPtr proxyEntity = OdDbProxyEntity::cast(pEntity);
-		if (proxyEntity.isNull()) return metadata;
-
-		// First ask ODA Common Data Access for palette-style properties. When a
-		// native object enabler is available this can include custom object data;
-		// otherwise it normally returns the proxy/general entity properties.
-		extractEntityProperties(pEntity, metadata);
-
-		std::string originalClass = convertToStdString(proxyEntity->originalClassName());
-		if (originalClass.empty()) originalClass = getProxyOriginalClassName(pEntity);
-		if (!originalClass.empty())
-		{
-			metadata["Proxy::Original Class"] = originalClass;
-		}
-
-		OdString originalDxfName = proxyEntity->originalDxfName();
-		if (!originalDxfName.isEmpty())
-		{
-			metadata["Proxy::Original DXF Name"] = convertToStdString(originalDxfName);
-		}
-
-		OdString appDescription = proxyEntity->applicationDescription();
-		if (!appDescription.isEmpty())
-		{
-			metadata["Proxy::Application Description"] = convertToStdString(appDescription);
-		}
-
-		auto appType = detectApplicationType(pEntity);
-		if (!appType.empty())
-		{
-			metadata["Proxy::Application"] = appType;
-		}
-
-		auto graphicsType = proxyEntity->graphicsMetafileType();
-		std::string graphicsTypeName = "No Metafile";
-		if (graphicsType == OdDbProxyEntity::kBoundingBox)
-		{
-			graphicsTypeName = "Bounding Box";
-		}
-		else if (graphicsType == OdDbProxyEntity::kFullGraphics)
-		{
-			graphicsTypeName = "Full Graphics";
-		}
-		metadata["Proxy::Graphics Metafile Type"] = graphicsTypeName;
-		metadata["Proxy::Has Full Graphics"] = yesNo(graphicsType == OdDbProxyEntity::kFullGraphics);
-
-		int flags = proxyEntity->proxyFlags();
-		metadata["Proxy::Flags"] = static_cast<int64_t>(flags);
-		metadata["Proxy Flags::Erase Allowed"] = yesNo(proxyEntity->eraseAllowed());
-		metadata["Proxy Flags::Transform Allowed"] = yesNo(proxyEntity->transformAllowed());
-		metadata["Proxy Flags::Color Change Allowed"] = yesNo(proxyEntity->colorChangeAllowed());
-		metadata["Proxy Flags::Layer Change Allowed"] = yesNo(proxyEntity->layerChangeAllowed());
-		metadata["Proxy Flags::Linetype Change Allowed"] = yesNo(proxyEntity->linetypeChangeAllowed());
-		metadata["Proxy Flags::Linetype Scale Change Allowed"] = yesNo(proxyEntity->linetypeScaleChangeAllowed());
-		metadata["Proxy Flags::Visibility Change Allowed"] = yesNo(proxyEntity->visibilityChangeAllowed());
-		metadata["Proxy Flags::Lineweight Change Allowed"] = yesNo(proxyEntity->lineWeightChangeAllowed());
-		metadata["Proxy Flags::Material Change Allowed"] = yesNo(proxyEntity->materialChangeAllowed());
-
-		setIfMissing("General::Layer", convertToStdString(toString(pEntity->layer())));
-		setIfMissing("General::True Color", colorToString(pEntity->color()));
-		setIfMissing("General::Linetype", convertToStdString(toString(pEntity->linetype())));
-		setIfMissing("General::Linetype scale", pEntity->linetypeScale());
-		setIfMissing("General::Lineweight", lineWeightToString(pEntity->lineWeight()));
-		setIfMissing("General::Visibility", pEntity->visibility() == OdDb::kInvisible ? std::string("Invisible") : std::string("Visible"));
-
-		try
-		{
-			OdGeExtents3d extents;
-			if (pEntity->getGeomExtents(extents) == eOk)
-			{
-				auto min = extents.minPoint();
-				auto max = extents.maxPoint();
-				metadata["Geometry::Bounds Min"] = "(" + std::to_string(min.x) + ", " +
-					std::to_string(min.y) + ", " + std::to_string(min.z) + ")";
-				metadata["Geometry::Bounds Max"] = "(" + std::to_string(max.x) + ", " +
-					std::to_string(max.y) + ", " + std::to_string(max.z) + ")";
-			}
-		}
-		catch (...) {}
-
-		OdResBufPtr pRb = pEntity->xData();
-		if (!pRb.isNull())
-		{
-			extractXDataProperties(pRb, metadata);
-		}
-
-		OdDbObjectId extDictId = pEntity->extensionDictionary();
-		if (!extDictId.isNull())
-		{
-			OdDbDictionaryPtr pExtDict = extDictId.safeOpenObject();
-			if (!pExtDict.isNull())
-			{
-				extractCivil3DStoredProperties(pExtDict, metadata);
-				extractPlant3DStoredProperties(pExtDict, metadata);
-			}
-		}
-
-		extractTextPropertiesFromProxy(proxyEntity, metadata);
-
-		// Preserve raw proxy storage details too. These are useful for custom
-		// proxy classes where the native palette fields are not exposed by CDA.
-		auto rawMetadata = getProxyMetadata(pEntity);
-		for (const auto& item : rawMetadata)
-		{
-			if (!item.second.empty())
-			{
-				setIfMissing("Proxy Raw::" + item.first, item.second);
-			}
-		}
-	}
-	catch (OdError& e)
-	{
-		metadata["Proxy::Metadata Error"] = convertToStdString(e.description());
-	}
-	catch (...)
-	{
-		metadata["Proxy::Metadata Error"] = std::string("Unknown error reading proxy metadata");
-	}
-
-	return metadata;
+	setIfMissing("General::Layer", convertToStdString(toString(pEntity->layer())));
+	setIfMissing("General::True Color", colorToString(pEntity->color()));
+	setIfMissing("General::Linetype", convertToStdString(toString(pEntity->linetype())));
+	setIfMissing("General::Linetype scale", pEntity->linetypeScale());
+	setIfMissing("General::Lineweight", lineWeightToString(pEntity->lineWeight()));
+	setIfMissing("General::Visibility", pEntity->visibility() == OdDb::kInvisible ? std::string("Invisible") : std::string("Visible"));
 }
-void DataProcessorDwg::addTinSurfaceComputedMetadata(
-	OdDbEntityPtr pEntity,
-	std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
+
+void DataProcessorDwg::addProxyGeometryMetadata(OdDbEntityPtr pEntity, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
-	if (!isTinSurfaceProxy(pEntity) || tinSurfaceTriangles.empty()) return;
-
-	auto setIfMissing = [&](const std::string& key, const repo::lib::RepoVariant& value) {
-		if (metadata.find(key) == metadata.end())
-		{
-			metadata[key] = value;
-		}
-	};
-
-	std::unordered_set<std::string> uniquePoints;
-	double minElevation = 0.0;
-	double maxElevation = 0.0;
-	bool hasElevation = false;
-
-	auto pointKey = [](const repo::lib::RepoVector3D64& p) {
-		const double keyScale = 1000000.0;
-		return std::to_string(static_cast<long long>(p.x * keyScale)) + "," +
-			std::to_string(static_cast<long long>(p.y * keyScale)) + "," +
-			std::to_string(static_cast<long long>(p.z * keyScale));
-	};
-
-	for (const auto& triangle : tinSurfaceTriangles)
-	{
-		for (int i = 0; i < triangle.numVertices; ++i)
-		{
-			const auto& p = triangle.vertices[i];
-			if (uniquePoints.insert(pointKey(p)).second)
-			{
-				if (!hasElevation)
-				{
-					minElevation = p.z;
-					maxElevation = p.z;
-					hasElevation = true;
-				}
-				else
-				{
-					minElevation = std::min(minElevation, p.z);
-					maxElevation = std::max(maxElevation, p.z);
-				}
-			}
-		}
-	}
-
-	if (!uniquePoints.empty() && metadata.find("Data::Number of Points") == metadata.end())
-	{
-		metadata["Data::Rendered Number of Points"] = static_cast<int64_t>(uniquePoints.size());
-	}
-	if (hasElevation)
-	{
-		auto roundElevation = [](double value) {
-			return std::round(value * 1000.0) / 1000.0;
-		};
-		setIfMissing("Data::Minimum Elevation", roundElevation(minElevation));
-		setIfMissing("Data::Maximum Elevation", roundElevation(maxElevation));
-	}
-
 	try
 	{
-		auto layerName = convertToStdString(toString(pEntity->layer()));
-		auto name = layerName;
-		auto separator = layerName.find_last_of('-');
-		if (separator != std::string::npos && separator + 1 < layerName.size())
+		OdGeExtents3d extents;
+		if (pEntity->getGeomExtents(extents) == eOk)
 		{
-			name = layerName.substr(separator + 1);
+			auto min = extents.minPoint();
+			auto max = extents.maxPoint();
+			metadata["Geometry::Bounds Min"] = "(" + std::to_string(min.x) + ", " +
+				std::to_string(min.y) + ", " + std::to_string(min.z) + ")";
+			metadata["Geometry::Bounds Max"] = "(" + std::to_string(max.x) + ", " +
+				std::to_string(max.y) + ", " + std::to_string(max.z) + ")";
 		}
-		setIfMissing("Information::Name", name);
 	}
 	catch (...) {}
+}
 
-	setIfMissing("Information::Style", std::string("Contours and Triangles"));
-	setIfMissing("Information::Material", std::string("ByLayer"));
-	setIfMissing("Information::Show Tooltips", std::string("Yes"));
+void DataProcessorDwg::addProxyXDataMetadata(const ProxyInfo& info, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
+{
+	if (!info.xData.isNull())
+	{
+		extractXDataProperties(info.xData, metadata);
+	}
+}
+
+void DataProcessorDwg::addProxyDictionaryMetadata(const ProxyInfo& info, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
+{
+	if (info.extensionDictionary.isNull() || !info.matchedHandler) return;
+	info.matchedHandler->addDictionaryMetadata(info.extensionDictionary, metadata);
 }
 
 void DataProcessorDwg::removeDuplicateGeneralMetadata(
@@ -1011,10 +602,13 @@ void DataProcessorDwg::removeDuplicateGeneralMetadata(
 		metadata.erase(key);
 	}
 }
+
 void DataProcessorDwg::setEntityMetadata(
 	const std::string& layerId,
 	const std::string& handleMetaValue,
-	OdDbEntityPtr pEntity)
+	OdDbEntityPtr pEntity,
+	ProxyInfo& info,
+	ProxyGeometryCapture* capturedGeometry)
 {
 	if (layerId.empty() || handleMetaValue.empty() || collector->hasMetadata(layerId)) return;
 
@@ -1023,16 +617,19 @@ void DataProcessorDwg::setEntityMetadata(
 
 	if (!pEntity.isNull())
 	{
-		if (isProxyEntity(pEntity))
+		if (info.isProxy())
 		{
-			metadata = getProxyEntityMetadata(pEntity);
+			metadata = getProxyEntityMetadata(pEntity, info);
 		}
 		else
 		{
 			extractEntityProperties(pEntity, metadata);
 		}
 
-		addTinSurfaceComputedMetadata(pEntity, metadata);
+		if (capturedGeometry && capturedGeometry->hasTriangles())
+		{
+			capturedGeometry->addComputedMetadata(pEntity, metadata);
+		}
 		removeDuplicateGeneralMetadata(metadata);
 
 		for (const auto& [key, value] : metadata)
@@ -1043,136 +640,7 @@ void DataProcessorDwg::setEntityMetadata(
 
 	collector->setMetadata(layerId, meta);
 }
-void DataProcessorDwg::extractCivil3DStoredProperties(OdDbDictionaryPtr pDict, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
-{
-	// Known Civil3D dictionary entries that might contain data
-	std::vector<std::string> civil3dDicts = {
-		"ACAD_XREC_ROUNDTRIP",  // Roundtrip data often has useful info
-		"AeccDbSurfaceTin",
-		"AeccDbAssembly",
-		"AeccDbSubassembly",
-		"AeccDbAlignment",
-		"AeccDbAlignmentStationLabeling",
-		"AeccDbProfileDataBandLabeling",
-		"AeccDbAlignmentMinorStationLabeling",
-		"AeccDbVAlignment",
-		"AeccDbCorridor",
-		"AeccDbSurface",
-		"AeccDbFace",
-		"AeccDbLotLine",
-		"AeccDbGraphProfile",
-		"AeccDbProfile"
-	};
 
-	for (const auto& dictName : civil3dDicts)
-	{
-		OdResult pStatus;
-		OdDbObjectId entryId = pDict->getAt(OdString(dictName.c_str()), &pStatus);
-		if (pStatus == eOk && !entryId.isNull())
-		{
-			OdDbXrecordPtr pXRec = OdDbXrecord::cast(entryId.safeOpenObject());
-			if (!pXRec.isNull())
-			{
-				OdResBufPtr pRb = pXRec->rbChain();
-
-				// Parse known Civil3D property patterns
-				std::string propName = "";
-				for (; !pRb.isNull(); pRb = pRb->next())
-				{
-					int resType = pRb->restype();
-
-					// Civil3D often stores property names as strings followed by values
-					if (resType == OdResBuf::kDxfText || resType == OdResBuf::kDxfXTextString)
-					{
-						std::string text = convertToStdString(pRb->getString());
-
-						// Check if it's a property name
-						if (text.find("Station") != std::string::npos ||
-							text.find("Offset") != std::string::npos ||
-							text.find("Elevation") != std::string::npos ||
-							text.find("Grade") != std::string::npos)
-						{
-							propName = "Civil3D::" + text;
-						}
-						else if (!propName.empty())
-						{
-							metadata[propName] = text;
-							propName = "";
-						}
-					}
-					else if (!propName.empty() && resType == OdResBuf::kDxfReal)
-					{
-						metadata[propName] = pRb->getDouble();
-						propName = "";
-					}
-					else if (!propName.empty() && resType == OdResBuf::kDxfInt32)
-					{
-						metadata[propName] = (int64_t)pRb->getInt32();
-						propName = "";
-					}
-				}
-			}
-		}
-	}
-}
-void DataProcessorDwg::extractPlant3DStoredProperties(OdDbDictionaryPtr pDict, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
-{
-	// Known Plant3D dictionary entries
-	std::vector<std::string> plant3dDicts = {
-		"ACAD_XREC_ROUNDTRIP",
-		"AcPpDb3dPart",
-		"AcPpDb3dSpecPart",
-		"PartSizeProperties"
-	};
-
-	for (const auto& dictName : plant3dDicts)
-	{
-		OdResult pStatus;
-		OdDbObjectId entryId = pDict->getAt(OdString(dictName.c_str()), &pStatus);
-		if (pStatus == eOk && !entryId.isNull())
-		{
-			OdDbXrecordPtr pXRec = OdDbXrecord::cast(entryId.safeOpenObject());
-			if (!pXRec.isNull())
-			{
-				OdResBufPtr pRb = pXRec->rbChain();
-
-				// Parse known Plant3D property patterns
-				std::string propName = "";
-				for (; !pRb.isNull(); pRb = pRb->next())
-				{
-					int resType = pRb->restype();
-
-					// Plant3D often stores: Tag, Service, Size, Spec
-					if (resType == OdResBuf::kDxfText || resType == OdResBuf::kDxfXTextString)
-					{
-						std::string text = convertToStdString(pRb->getString());
-
-						// Common Plant3D properties
-						if (text.find("Tag") != std::string::npos ||
-							text.find("Service") != std::string::npos ||
-							text.find("Size") != std::string::npos ||
-							text.find("NominalDiameter") != std::string::npos ||
-							text.find("Spec") != std::string::npos ||
-							text.find("PartFamily") != std::string::npos)
-						{
-							propName = "Plant3D::" + text;
-						}
-						else if (!propName.empty())
-						{
-							metadata[propName] = text;
-							propName = "";
-						}
-					}
-					else if (!propName.empty() && resType == OdResBuf::kDxfReal)
-					{
-						metadata[propName] = pRb->getDouble();
-						propName = "";
-					}
-				}
-			}
-		}
-	}
-}
 void DataProcessorDwg::extractXDataProperties(OdResBufPtr pRb, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	std::string currentApp = "";
@@ -1233,6 +701,7 @@ void DataProcessorDwg::extractXDataProperties(OdResBufPtr pRb, std::unordered_ma
 		}
 	}
 }
+
 void DataProcessorDwg::extractTextPropertiesFromProxy(OdDbProxyEntityPtr proxyEntity, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	try {
@@ -1277,6 +746,7 @@ void DataProcessorDwg::extractTextPropertiesFromProxy(OdDbProxyEntityPtr proxyEn
 	}
 	catch (...) {}
 }
+
 void DataProcessorDwg::extractEntityProperties(OdDbEntityPtr pEntity, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	if (pEntity.isNull()) return;
@@ -1547,6 +1017,13 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		ctx = collector->makeNewDrawContext();
 	}
 
+	// A proxy entity is inspected exactly once here; every downstream
+	// consumer in this function (diagnostics, TIN detection, stored-graphics
+	// replay, metadata) reuses this same ProxyInfo instead of re-casting or
+	// re-querying ODA for the same entity.
+	ProxyInfo info;
+	bool isProxy = false;
+
 	OdDbEntityPtr pEntity = OdDbEntity::cast(pDrawable);
 	if (!pEntity.isNull())
 	{
@@ -1554,16 +1031,21 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		stats.totalEntities++;
 		auto className = convertToStdString(pEntity->isA()->name());
 		stats.entityTypeCount[className]++;
-		if (isProxyEntity(pEntity))
+
+		// Cheap inspection only: one cast, no XData or extension dictionary
+		// read. Consumers that need those load them on demand.
+		isProxy = getProxyInfo(pEntity, info);
+		if (isProxy)
 		{
 			stats.proxyEntities++;
-			auto originalClass = getProxyOriginalClassName(pEntity);
-			stats.entityTypeCount["Proxy-" + originalClass]++;
-			if (originalClass.find("Aecc") != std::string::npos || originalClass.find("Civil") != std::string::npos)
+			stats.entityTypeCount["Proxy-" + info.originalClass]++;
+			// isCivil3D()/isPlant3D() read a single ProxyAppType value, so an
+			// entity can only ever land in one bucket, never both.
+			if (info.isCivil3D())
 			{
 				stats.civil3dEntities++;
 			}
-			if (originalClass.find("AcPp") != std::string::npos || originalClass.find("Plant") != std::string::npos)
+			else if (info.isPlant3D())
 			{
 				stats.plant3dEntities++;
 			}
@@ -1600,7 +1082,7 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		const OdDbHandle& handle = pEntity->objectId().getHandle();
 		auto sHandle = pEntity->isDBRO() ? toString(handle) : toString(L"non-DbResident");
 		auto entityId = convertToStdString(toString(sHandle));
-		auto entityName = getClassDisplayName(pEntity);
+		auto entityName = getClassDisplayName(pEntity, info);
 
 		// Check if this drawable is directly under a layer or in a block.
 
@@ -1669,28 +1151,36 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		}
 	}
 
-	bool tinSurfaceProxy = !pEntity.isNull() && isTinSurfaceProxy(pEntity);
-	bool replayStoredProxyGraphics = !pEntity.isNull() && shouldReplayStoredProxyGraphics(pEntity);
+	// thisEntityCapture: is THIS entity a Civil3D TIN surface, and if so, the
+	// capture object for it. Kept separate from the activeGeometryCapture MEMBER
+	// (below), which tracks what the geometry callbacks should route into for the
+	// duration of the nested OdGsBaseMaterialView::doDraw() call only - the
+	// underlying capture buffer is never swapped per-entity, only toggled.
+	ProxyGeometryCapture* thisEntityCapture = (isProxy && isCivil3DTinSurface(info)) ? info.matchedHandler->geometryCapture() : nullptr;
+	bool tinSurfaceProxy = thisEntityCapture != nullptr;
+	bool replayStoredProxyGraphics = isProxy;
 
 	collector->pushDrawContext(ctx.get());
 	bool ret = false;
 	if (replayStoredProxyGraphics)
 	{
-		bool previousTinSurfaceProxyCapture = capturingTinSurfaceProxy;
-		capturingTinSurfaceProxy = tinSurfaceProxy;
+		ProxyGeometryCapture* previousCapture = activeGeometryCapture;
 		if (tinSurfaceProxy)
 		{
-			tinSurfaceEdgeKeys.clear();
-			tinSurfaceTriangles.clear();
-			hasTinSurfaceFaceMaterial = false;
+			thisEntityCapture->beginCapture();
+			activeGeometryCapture = thisEntityCapture;
+		}
+		else
+		{
+			activeGeometryCapture = nullptr;
 		}
 
-		ret = drawStoredProxyGraphics(pEntity);
-		if (!(ctx && ctx->hasMeshes()) && (!tinSurfaceProxy || tinSurfaceTriangles.empty()))
+		ret = drawStoredProxyGraphics(pEntity, info);
+		if (!(ctx && ctx->hasMeshes()) && (!tinSurfaceProxy || !thisEntityCapture->hasTriangles()))
 		{
 			ret = OdGsBaseMaterialView::doDraw(i, pDrawable) || ret;
 		}
-		capturingTinSurfaceProxy = previousTinSurfaceProxyCapture;
+		activeGeometryCapture = previousCapture;
 	}
 	else
 	{
@@ -1698,7 +1188,7 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	}
 	collector->popDrawContext(ctx.get());
 
-	const bool hasTinSurfaceFaces = tinSurfaceProxy && !tinSurfaceTriangles.empty();
+	const bool hasTinSurfaceFaces = tinSurfaceProxy && thisEntityCapture->hasTriangles();
 
 	// ===== CHECK GEOMETRY EXTRACTION =====
 	if (ctx && !pEntity.isNull())
@@ -1710,9 +1200,9 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		else
 		{
 			stats.entitiesWithoutGeometry++;
-			if (isProxyEntity(pEntity))
+			if (isProxy)
 			{
-				logProxyWithoutRenderableGeometry(pEntity, replayStoredProxyGraphics, ret);
+				logProxyWithoutRenderableGeometry(pEntity, info, replayStoredProxyGraphics, ret);
 			}
 
 		}
@@ -1734,9 +1224,9 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 				collector->addMeshes(parentLayer.id, meshes);
 			}
 
-			addTinSurfaceFaceLayers(parentLayer.id, entityLayer.id);
-			setEntityMetadata(parentLayer.id, handleMetaValue, pEntity);
-			tinSurfaceTriangles.clear();
+			thisEntityCapture->applyFaceLayers(collector, parentLayer.id, entityLayer.id);
+			setEntityMetadata(parentLayer.id, handleMetaValue, pEntity, info, thisEntityCapture);
+			thisEntityCapture->clearTriangles();
 		}
 		else
 		{
@@ -1752,91 +1242,23 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 				collector->addMeshes(entityLayer.id, meshes);
 			}
 
-			setEntityMetadata(entityLayer.id, handleMetaValue, pEntity);
+			setEntityMetadata(entityLayer.id, handleMetaValue, pEntity, info, nullptr);
 		}
 	}
 	return ret;
 }
 
-bool DataProcessorDwg::addTinSurfaceTriangle(
-	const repo::lib::RepoVector3D64& p0,
-	const repo::lib::RepoVector3D64& p1,
-	const repo::lib::RepoVector3D64& p2)
-{
-	if (!capturingTinSurfaceProxy) return false;
-
-	auto samePoint = [](const repo::lib::RepoVector3D64& a, const repo::lib::RepoVector3D64& b) {
-		return compare(a.x, b.x) == 0 &&
-			compare(a.y, b.y) == 0 &&
-			compare(a.z, b.z) == 0;
-	};
-
-	if (samePoint(p0, p1) || samePoint(p1, p2) || samePoint(p2, p0)) return false;
-
-	GeometryCollector::Face triangle;
-	triangle.push_back(p0);
-	triangle.push_back(p1);
-	triangle.push_back(p2);
-	tinSurfaceTriangles.push_back(triangle);
-	if (!hasTinSurfaceFaceMaterial)
-	{
-		tinSurfaceFaceMaterial = collector->getLastMaterial();
-		hasTinSurfaceFaceMaterial = true;
-	}
-
-	addTinSurfaceEdge(p0, p1);
-	addTinSurfaceEdge(p1, p2);
-	addTinSurfaceEdge(p2, p0);
-	return true;
-}
-
-bool DataProcessorDwg::addTinSurfaceEdge(
-	const repo::lib::RepoVector3D64& p0,
-	const repo::lib::RepoVector3D64& p1)
-{
-	if (!capturingTinSurfaceProxy) return false;
-
-	auto samePoint = [](const repo::lib::RepoVector3D64& a, const repo::lib::RepoVector3D64& b) {
-		return compare(a.x, b.x) == 0 &&
-			compare(a.y, b.y) == 0 &&
-			compare(a.z, b.z) == 0;
-	};
-
-	if (samePoint(p0, p1)) return false;
-
-	auto pointKey = [](const repo::lib::RepoVector3D64& p) {
-		const double keyScale = 1000000.0;
-		return std::to_string(static_cast<long long>(p.x * keyScale)) + "," +
-			std::to_string(static_cast<long long>(p.y * keyScale)) + "," +
-			std::to_string(static_cast<long long>(p.z * keyScale));
-	};
-
-	auto key0 = pointKey(p0);
-	auto key1 = pointKey(p1);
-	auto edgeKey = key0 < key1 ? key0 + "|" + key1 : key1 + "|" + key0;
-	if (!tinSurfaceEdgeKeys.insert(edgeKey).second) return false;
-
-	auto edgeMaterial = repo::lib::repo_material_t::DefaultMaterial();
-	edgeMaterial.diffuse = { 0.03f, 0.03f, 0.03f };
-	edgeMaterial.ambient = edgeMaterial.diffuse;
-	edgeMaterial.emissive = edgeMaterial.diffuse;
-	edgeMaterial.lineWeight = 1.0f;
-	edgeMaterial.isWireframe = true;
-	collector->setMaterial(edgeMaterial);
-	collector->addFace({ p0, p1 });
-	return true;
-}
-
 void DataProcessorDwg::processTriangleOut(const OdInt32* p3Vertices, const OdGeVector3d* pNormal)
 {
-	if (!capturingTinSurfaceProxy)
+	if (!activeGeometryCapture)
 	{
 		DataProcessor::processTriangleOut(p3Vertices, pNormal);
 		return;
 	}
 
 	const auto pVertexDataList = vertexDataList();
-	addTinSurfaceTriangle(
+	activeGeometryCapture->addTriangle(
+		collector,
 		toRepoVector(pVertexDataList[p3Vertices[0]]),
 		toRepoVector(pVertexDataList[p3Vertices[1]]),
 		toRepoVector(pVertexDataList[p3Vertices[2]]));
@@ -1844,7 +1266,7 @@ void DataProcessorDwg::processTriangleOut(const OdInt32* p3Vertices, const OdGeV
 
 void DataProcessorDwg::polygonOut(OdInt32 numPoints, const OdGePoint3d* vertexList, const OdGeVector3d* pNormal)
 {
-	if (!capturingTinSurfaceProxy)
+	if (!activeGeometryCapture)
 	{
 		OdGiGeometrySimplifier::polygonOut(numPoints, vertexList, pNormal);
 		return;
@@ -1854,7 +1276,8 @@ void DataProcessorDwg::polygonOut(OdInt32 numPoints, const OdGePoint3d* vertexLi
 
 	for (OdInt32 i = 1; i + 1 < numPoints; ++i)
 	{
-		addTinSurfaceTriangle(
+		activeGeometryCapture->addTriangle(
+			collector,
 			toRepoVector(vertexList[0]),
 			toRepoVector(vertexList[i]),
 			toRepoVector(vertexList[i + 1]));
@@ -1870,12 +1293,6 @@ void DataProcessorDwg::shellProc(
 	const OdGiFaceData* pFaceData,
 	const OdGiVertexData* pVertexData)
 {
-	if (capturingTinSurfaceProxy)
-	{
-		repoTrace << "TIN surface proxy shellProc vertices=" << numVertices
-			<< " faceListSize=" << faceListSize;
-	}
-
 	OdGiGeometrySimplifier::shellProc(
 		numVertices,
 		vertexList,
@@ -1894,12 +1311,6 @@ void DataProcessorDwg::meshProc(
 	const OdGiFaceData* pFaceData,
 	const OdGiVertexData* pVertexData)
 {
-	if (capturingTinSurfaceProxy)
-	{
-		repoTrace << "TIN surface proxy meshProc rows=" << numRows
-			<< " columns=" << numColumns;
-	}
-
 	OdGiGeometrySimplifier::meshProc(
 		numRows,
 		numColumns,
@@ -1917,7 +1328,7 @@ void DataProcessorDwg::tristripProc(
 	const OdGiEdgeData* pEdgeData,
 	const OdGiVertexData* pVertexData)
 {
-	if (!capturingTinSurfaceProxy)
+	if (!activeGeometryCapture)
 	{
 		OdGiGeometrySimplifier::tristripProc(
 			numVertices,
@@ -1940,14 +1351,16 @@ void DataProcessorDwg::tristripProc(
 	{
 		if ((i % 2) == 0)
 		{
-			addTinSurfaceTriangle(
+			activeGeometryCapture->addTriangle(
+				collector,
 				toRepoVector(pointAt(i)),
 				toRepoVector(pointAt(i + 1)),
 				toRepoVector(pointAt(i + 2)));
 		}
 		else
 		{
-			addTinSurfaceTriangle(
+			activeGeometryCapture->addTriangle(
+				collector,
 				toRepoVector(pointAt(i + 1)),
 				toRepoVector(pointAt(i)),
 				toRepoVector(pointAt(i + 2)));
@@ -1955,52 +1368,9 @@ void DataProcessorDwg::tristripProc(
 	}
 }
 
-void DataProcessorDwg::addTinSurfaceFaceLayers(
-	const std::string& parentLayerId,
-	const std::string& sourceEntityId)
-{
-	for (size_t i = 0; i < tinSurfaceTriangles.size(); ++i)
-	{
-		auto faceLayerId = sourceEntityId + ":TIN_FACE:" + std::to_string(i);
-
-		auto faceContext = collector->makeNewDrawContext();
-		collector->pushDrawContext(faceContext.get());
-		if (hasTinSurfaceFaceMaterial)
-		{
-			collector->setMaterial(tinSurfaceFaceMaterial);
-		}
-		collector->addFace(tinSurfaceTriangles[i]);
-		collector->popDrawContext(faceContext.get());
-
-		if (faceContext->hasMeshes())
-		{
-			auto bounds = faceContext->getBounds();
-			auto m = repo::lib::RepoMatrix::translate(bounds.min());
-			collector->createLayer(faceLayerId, "Face", parentLayerId, m);
-
-			auto meshes = faceContext->extractMeshes(m.inverse());
-			collector->addMeshes(faceLayerId, meshes);
-		}
-	}
-}
-
-bool DataProcessorDwg::addTinSurfaceTrianglePolyline(const std::vector<repo::lib::RepoVector3D64>& points)
-{
-	if (!capturingTinSurfaceProxy || points.size() != 4) return false;
-
-	auto samePoint = [](const repo::lib::RepoVector3D64& a, const repo::lib::RepoVector3D64& b) {
-		return compare(a.x, b.x) == 0 &&
-			compare(a.y, b.y) == 0 &&
-			compare(a.z, b.z) == 0;
-	};
-
-	if (!samePoint(points.front(), points.back())) return false;
-	return addTinSurfaceTriangle(points[0], points[1], points[2]);
-}
-
 void DataProcessorDwg::processPolylineOut(OdInt32 numPoints, const OdInt32* vertexIndexList)
 {
-	if (capturingTinSurfaceProxy && numPoints == 4)
+	if (activeGeometryCapture && numPoints == 4)
 	{
 		std::vector<repo::lib::RepoVector3D64> points;
 		points.reserve(numPoints);
@@ -2011,7 +1381,7 @@ void DataProcessorDwg::processPolylineOut(OdInt32 numPoints, const OdInt32* vert
 			points.push_back(toRepoVector(pVertexDataList[vertexIndexList[i]]));
 		}
 
-		if (addTinSurfaceTrianglePolyline(points)) return;
+		if (activeGeometryCapture->addPolyline(collector, points)) return;
 	}
 
 	DataProcessor::processPolylineOut(numPoints, vertexIndexList);
@@ -2019,7 +1389,7 @@ void DataProcessorDwg::processPolylineOut(OdInt32 numPoints, const OdInt32* vert
 
 void DataProcessorDwg::processPolylineOut(OdInt32 numPoints, const OdGePoint3d* vertexList)
 {
-	if (capturingTinSurfaceProxy && numPoints == 4)
+	if (activeGeometryCapture && numPoints == 4)
 	{
 		std::vector<repo::lib::RepoVector3D64> points;
 		points.reserve(numPoints);
@@ -2029,7 +1399,7 @@ void DataProcessorDwg::processPolylineOut(OdInt32 numPoints, const OdGePoint3d* 
 			points.push_back(toRepoVector(vertexList[i]));
 		}
 
-		if (addTinSurfaceTrianglePolyline(points)) return;
+		if (activeGeometryCapture->addPolyline(collector, points)) return;
 	}
 
 	DataProcessor::processPolylineOut(numPoints, vertexList);
@@ -2091,7 +1461,7 @@ void DataProcessorDwg::setMode(OdGsView::RenderMode mode)
 	OdGiGeometrySimplifier::m_renderMode = OdGsBaseVectorizeView::m_renderMode;
 }
 
-std::string DataProcessorDwg::getClassDisplayName(OdDbEntityPtr entity)
+std::string DataProcessorDwg::getClassDisplayName(OdDbEntityPtr entity, const ProxyInfo& info)
 {
 	// This method is used to get a user friendly version of the entity type to
 	// display in the tree. For example, AcDb3dSolid -> 3D Solid.
@@ -2194,520 +1564,13 @@ std::string DataProcessorDwg::getClassDisplayName(OdDbEntityPtr entity)
 		{"AcDbSectionSymbol", "Section Symbol"},
 		{"AcDbViewport", "Viewport"},
 		{"RText", "RText"},
-
-		// =========================================================================
-		// CIVIL 3D ENTITIES - Complete mapping (Civil 3D 2021–2027)
-		// Source: Autodesk.Civil.DatabaseServices namespace
-		// https://help.autodesk.com/view/CIV3D/2025/ENU/?guid=89ffd413-aada-d770-e322-89dfa7b99369
-		// DWG class name pattern: AeccDb<X> -> .NET: Autodesk.Civil.DatabaseServices.<X>
-		// =========================================================================
-
-		// =========================================================================
-		// BASE ENTITY CLASSES
-		// .NET: Entity, CivilObject
-		// =========================================================================
-		{ "AeccDbEntity", "Civil Entity" },
-		{ "AeccDbCivilObject", "Civil Object" },
-
-		// =========================================================================
-		// SURFACES
-		// .NET: Surface, TinSurface, GridSurface, TinVolumeSurface, GridVolumeSurface
-		// =========================================================================
-		{ "AeccDbSurface", "Surface" },
-		{ "AeccDbSurfaceTin", "TIN Surface" },
-		{ "AeccDbTinSurface", "TIN Surface" },
-		{ "AeccDbSurfaceGrid", "Grid Surface" },
-		{ "AeccDbGridSurface", "Grid Surface" },
-		{ "AeccDbVolumeSurface", "Volume Surface" },
-		{ "AeccDbTinVolumeSurface", "TIN Volume Surface" },
-		{ "AeccDbGridVolumeSurface", "Grid Volume Surface" },
-		{ "AeccDbSurfaceBoundary", "Surface Boundary" },
-		{ "AeccDbSurfaceContour", "Surface Contour" },
-		{ "AeccDbSurfaceWatershed", "Surface Watershed" },
-		{ "AeccDbSurfaceDirection", "Surface Direction" },
-		{ "AeccDbSurfaceSlope", "Surface Slope" },
-		{ "AeccDbSurfaceDefinition", "Surface Definition" },
-		{ "AeccDbSurfaceOperationAdd", "Surface Add Operation" },
-		{ "AeccDbSurfaceOperationDelete", "Surface Delete Operation" },
-		{ "AeccDbSurfaceOperationModify", "Surface Modify Operation" },
-		{ "AeccDbSurfaceOperationSmooth", "Surface Smooth Operation" },
-		{ "AeccDbSurfaceMask", "Surface Mask" },
-		{ "AeccDbSurfaceAnalysis", "Surface Analysis" },
-		{ "AeccDbSurfaceSimplify", "Surface Simplify" },             // 2023+
-		{ "AeccDbWatershed", "Watershed" },
-		{ "AeccDbFace", "TIN Face" },
-		{ "AeccDbTinLine", "TIN Line" },
-		{ "AeccDbBreakline", "Breakline" },
-		{ "AeccDbDEMFile", "DEM File" },
-		{ "AeccDbSubgradeSurface", "Subgrade Surface" },             // 2025+
-
-		// =========================================================================
-		// SURFACE LABELS
-		// .NET: SurfaceElevationLabel, SurfaceSlopeLabel, SurfaceContourLabel, etc.
-		// =========================================================================
-		{ "AeccDbSurfaceElevationLabel", "Surface Elevation Label" },
-		{ "AeccDbSurfaceSpotElevationLabel", "Spot Elevation Label" },
-		{ "AeccDbSurfaceSlopeLabel", "Surface Slope Label" },
-		{ "AeccDbSurfaceContourLabel", "Surface Contour Label" },    // 2022+
-		{ "AeccDbContourLabel", "Contour Label" },
-
-		// =========================================================================
-		// ALIGNMENTS
-		// .NET: Alignment, AlignmentSubEntity (Line, Arc, Spiral, SCS, SSS, etc.)
-		// =========================================================================
-		{ "AeccDbAlignment", "Alignment" },
-		{ "AeccDbAlignmentEntity", "Alignment Entity" },
-		{ "AeccDbAlignmentLine", "Alignment Line" },
-		{ "AeccDbAlignmentArc", "Alignment Arc" },
-		{ "AeccDbAlignmentCurve", "Alignment Curve" },
-		{ "AeccDbAlignmentSpiral", "Alignment Spiral" },
-		{ "AeccDbAlignmentTangent", "Alignment Tangent" },
-		{ "AeccDbAlignmentSCS", "Alignment SCS" },
-		{ "AeccDbAlignmentSSS", "Alignment SSS" },
-		{ "AeccDbAlignmentSTS", "Alignment STS" },
-		{ "AeccDbAlignmentCSC", "Alignment CSC" },                   // 2022+
-		{ "AeccDbAlignmentCRC", "Alignment CRC" },
-		{ "AeccDbAlignmentSSCSS", "Alignment SSCSS" },
-		{ "AeccDbAlignmentCTS", "Alignment CTS" },
-		{ "AeccDbAlignmentSS", "Alignment SS" },
-		{ "AeccDbAlignmentMultiTransitionElement", "Multi-Transition Element" },
-		{ "AeccDbAlignmentPI", "Alignment PI" },
-		{ "AeccDbAlignmentStationEquation", "Station Equation" },
-		{ "AeccDbAlignmentDesignSpeed", "Design Speed" },
-		{ "AeccDbAlignmentCriteria", "Alignment Criteria" },
-		{ "AeccDbOffsetAlignment", "Offset Alignment" },
-		{ "AeccDbConnectedAlignment", "Connected Alignment" },
-		{ "AeccDbCurbReturnAlignment", "Curb Return Alignment" },
-		{ "AeccDbWidening", "Widening" },
-		{ "AeccDbAlignmentRegion", "Alignment Region" },             // 2024+
-
-		// =========================================================================
-		// ALIGNMENT LABELS
-		// .NET: AlignmentLabelGroup, AlignmentStationLabel, etc.
-		// =========================================================================
-		{ "AeccDbAlignmentLabel", "Alignment Label" },
-		{ "AeccDbAlignmentLabeling", "Alignment Labeling" },
-		{ "AeccDbAlignmentStationLabeling", "Station Labels" },
-		{ "AeccDbAlignmentMajorStationLabeling", "Major Station Labels" },
-		{ "AeccDbAlignmentMinorStationLabeling", "Minor Station Labels" },
-		{ "AeccDbAlignmentGeometryPointLabeling", "Geometry Point Labels" },
-		{ "AeccDbAlignmentSegmentLabeling", "Segment Labels" },
-		{ "AeccDbAlignmentCurveLabeling", "Curve Labels" },
-		{ "AeccDbAlignmentSpiralLabeling", "Spiral Labels" },
-		{ "AeccDbAlignmentTangentIntersectionLabeling", "Tangent Intersection Labels" },
-		{ "AeccDbAlignmentDesignSpeedLabeling", "Design Speed Labels" },
-		{ "AeccDbAlignmentStationEquationLabeling", "Station Equation Labels" },
-		{ "AeccDbAlignmentPILabeling", "PI Labels" },
-
-		// =========================================================================
-		// PROFILES
-		// .NET: Profile, ProfileView, ProfileEntity (Line, Curve, etc.)
-		// =========================================================================
-		{ "AeccDbProfile", "Profile" },
-		{ "AeccDbVAlignment", "Vertical Alignment" },
-		{ "AeccDbOffsetProfile", "Offset Profile" },
-		{ "AeccDbSuperelevationProfile", "Superelevation Profile" }, // 2021+
-		{ "AeccDbProfileView", "Profile View" },
-		{ "AeccDbGraphProfile", "Profile Graph" },
-		{ "AeccDbProfileEntity", "Profile Entity" },
-		{ "AeccDbProfilePVI", "Profile PVI" },
-		{ "AeccDbProfilePVICurve", "PVI Curve" },
-		{ "AeccDbProfileLine", "Profile Line" },
-		{ "AeccDbProfileCurve", "Profile Curve" },
-		{ "AeccDbProfileTangent", "Profile Tangent" },
-		{ "AeccDbProfileCrestCurve", "Crest Curve" },
-		{ "AeccDbProfileSagCurve", "Sag Curve" },
-		{ "AeccDbProfileCircularCurve", "Profile Circular Curve" },
-		{ "AeccDbProfileParabolicCurve", "Profile Parabolic Curve" },
-		{ "AeccDbProfileAsymmetricParabolicCurve", "Asymmetric Parabolic Curve" },
-		{ "AeccDbProfileGrade", "Profile Grade" },
-
-		// =========================================================================
-		// PROFILE LABELS
-		// .NET: ProfileLabelGroup, ProfileBandSet
-		// =========================================================================
-		{ "AeccDbProfileLabel", "Profile Label" },
-		{ "AeccDbProfileLabeling", "Profile Labeling" },
-		{ "AeccDbProfileDataBandLabeling", "Profile Data Band Labels" },
-		{ "AeccDbProfileHorizontalGeometryLabeling", "Horizontal Geometry Labels" },
-		{ "AeccDbProfileStationLabeling", "Profile Station Labels" },
-		{ "AeccDbProfileGradeBreakLabeling", "Grade Break Labels" },
-		{ "AeccDbProfileCurveLabeling", "Profile Curve Labels" },
-		{ "AeccDbProfileTangentLabeling", "Profile Tangent Labels" },
-		{ "AeccDbProfileBandSet", "Profile Band Set" },
-		{ "AeccDbProfileBand", "Profile Band" },
-		{ "AeccDbProfileViewBandLabel", "Profile View Band Label" }, // 2022+
-
-		// =========================================================================
-		// CORRIDORS
-		// .NET: Corridor, Baseline, BaselineRegion, AppliedAssembly,
-		//       CorridorFeatureLine, CorridorSurface
-		// =========================================================================
-		{ "AeccDbCorridor", "Corridor" },
-		{ "AeccDbBaseline", "Baseline" },
-		{ "AeccDbBaselineRegion", "Baseline Region" },
-		{ "AeccDbRegionCorridor", "Corridor Region" },
-		{ "AeccDbCorridorBaseline", "Corridor Baseline" },
-		{ "AeccDbCorridorRegion", "Corridor Region" },
-		{ "AeccDbCorridorFeatureLine", "Corridor Feature Line" },
-		{ "AeccDbCorridorSurface", "Corridor Surface" },
-		{ "AeccDbCorridorSection", "Corridor Section" },
-		{ "AeccDbCorridorCode", "Corridor Code" },
-		{ "AeccDbCorridorLink", "Corridor Link" },
-		{ "AeccDbCorridorPoint", "Corridor Point" },
-		{ "AeccDbCorridorShape", "Corridor Shape" },
-		{ "AeccDbCorridorTarget", "Corridor Target" },
-		{ "AeccDbCorridorFrequency", "Corridor Frequency" },
-		{ "AeccDbDaylightLine", "Daylight Line" },
-
-		// =========================================================================
-		// ASSEMBLIES / SUBASSEMBLIES
-		// .NET: Assembly, Subassembly, AppliedSubassembly
-		// =========================================================================
-		{ "AeccDbAssembly", "Assembly" },
-		{ "AeccDbAssemblyGroup", "Assembly Group" },
-		{ "AeccDbAssemblyOffset", "Assembly Offset" },               // 2022+
-		{ "AeccDbSubassembly", "Subassembly" },
-		{ "AeccDbAppliedAssembly", "Applied Assembly" },
-		{ "AeccDbAppliedSubassembly", "Applied Subassembly" },
-		{ "AeccDbSubassemblyLane", "Lane Subassembly" },
-		{ "AeccDbSubassemblyShoulder", "Shoulder Subassembly" },
-		{ "AeccDbSubassemblyDitch", "Ditch Subassembly" },
-		{ "AeccDbSubassemblyDaylight", "Daylight Subassembly" },
-		{ "AeccDbSubassemblyBuffer", "Buffer Subassembly" },
-		{ "AeccDbSubassemblyMedian", "Median Subassembly" },
-		{ "AeccDbSubassemblyGenericLink", "Generic Link Subassembly" },
-		{ "AeccDbSubassemblyMarkedPoint", "Marked Point Subassembly" },
-		{ "AeccDbSubassemblyConditional", "Conditional Subassembly" },
-		{ "AeccDbSubassemblyPKT", "PKT Subassembly" },              // 2021+
-
-		// =========================================================================
-		// FEATURE LINES / GRADING
-		// .NET: FeatureLine, Grading, GradingGroup
-		// =========================================================================
-		{ "AeccDbFeatureLine", "Feature Line" },
-		{ "AeccDbAutoFeatureLine", "Auto Feature Line" },
-		{ "AeccDbGrading", "Grading" },
-		{ "AeccDbGradingGroup", "Grading Group" },
-		{ "AeccDbGradingFeatureLine", "Grading Feature Line" },
-		{ "AeccDbGradingRule", "Grading Rule" },
-		{ "AeccDbGradingCriteria", "Grading Criteria" },
-		{ "AeccDbSteppedOffset", "Stepped Offset" },
-		{ "AeccDbFeatureLinePoint", "Feature Line Point" },          // 2023+
-		{ "AeccDbExtractionLine", "Extraction Line" },               // 2025+
-
-		// =========================================================================
-		// PARCELS
-		// .NET: Parcel, ParcelSegment
-		// =========================================================================
-		{ "AeccDbParcel", "Parcel" },
-		{ "AeccDbParcelSegment", "Parcel Segment" },
-		{ "AeccDbParcelSegmentLine", "Parcel Segment Line" },
-		{ "AeccDbParcelSegmentCurve", "Parcel Segment Curve" },
-		{ "AeccDbParcelLoop", "Parcel Loop" },
-		{ "AeccDbLotLine", "Lot Line" },
-		{ "AeccDbROW", "Right Of Way" },
-		{ "AeccDbParcelLabel", "Parcel Label" },
-		{ "AeccDbParcelAreaLabel", "Parcel Area Label" },
-		{ "AeccDbParcelLineLabel", "Parcel Line Label" },
-		{ "AeccDbParcelCurveLabel", "Parcel Curve Label" },
-
-		// =========================================================================
-		// PIPE NETWORKS
-		// .NET: Network, Part, Pipe, Structure, Connector
-		// Hierarchy: Network -> Part -> {Pipe, Structure}
-		//            Part -> ConnectorCollection -> Connector
-		// =========================================================================
-		{ "AeccDbNetwork", "Network" },
-		{ "AeccDbNetworkPart", "Network Part" },
-		{ "AeccDbNetworkPartConnector", "Network Part Connector" },
-		{ "AeccDbPipeNetwork", "Pipe Network" },
-		{ "AeccDbPipe", "Pipe" },
-		{ "AeccDbStructure", "Structure" },
-		{ "AeccDbPipeRun", "Pipe Run" },
-		{ "AeccDbGravityPipe", "Gravity Pipe" },
-		{ "AeccDbGravityStructure", "Gravity Structure" },
-		{ "AeccDbPipeLabel", "Pipe Label" },
-		{ "AeccDbStructureLabel", "Structure Label" },
-		{ "AeccDbSpanningPipeLabel", "Spanning Pipe Label" },
-		{ "AeccDbCrossingPipeLabel", "Crossing Pipe Label" },
-		{ "AeccDbPartsList", "Parts List" },
-		{ "AeccDbPartsListPipe", "Parts List Pipe" },
-		{ "AeccDbPartsListStructure", "Parts List Structure" },
-		{ "AeccDbPartFamily", "Part Family" },
-		{ "AeccDbPartSize", "Part Size" },
-		{ "AeccDbPartRule", "Part Rule" },
-		{ "AeccDbPartData", "Part Data" },
-		{ "AeccDbPipeNetworkLabel", "Pipe Network Label" },
-
-		// =========================================================================
-		// PRESSURE NETWORKS (2021+)
-		// .NET: PressureNetwork, PressurePipe, PressureFitting,
-		//       PressureAppurtenance, PressurePipeRun
-		// =========================================================================
-		{ "AeccDbPressureNetwork", "Pressure Network" },
-		{ "AeccDbPressurePipe", "Pressure Pipe" },
-		{ "AeccDbPressureFitting", "Pressure Fitting" },
-		{ "AeccDbPressureAppurtenance", "Pressure Appurtenance" },
-		{ "AeccDbPressurePipeRun", "Pressure Pipe Run" },
-		{ "AeccDbPressurePartsList", "Pressure Parts List" },
-		{ "AeccDbPressurePipeLabel", "Pressure Pipe Label" },
-		{ "AeccDbPressureFittingLabel", "Pressure Fitting Label" },
-		{ "AeccDbPressureNetworkLabel", "Pressure Network Label" },
-		{ "AeccDbPressureNetworkPartConnector", "Pressure Network Connector" },
-
-		// =========================================================================
-		// SECTIONS / SAMPLE LINES
-		// .NET: SampleLine, SampleLineGroup, SectionView, SectionViewGroup
-		// =========================================================================
-		{ "AeccDbSampleLine", "Sample Line" },
-		{ "AeccDbSampleLineGroup", "Sample Line Group" },
-		{ "AeccDbSampleLineLabeling", "Sample Line Labels" },
-		{ "AeccDbSampleLineVertex", "Sample Line Vertex" },
-		{ "AeccDbSection", "Section" },
-		{ "AeccDbSectionCorridor", "Corridor Section" },
-		{ "AeccDbSectionSurface", "Surface Section" },
-		{ "AeccDbSectionPipe", "Pipe Section" },                     // 2022+
-		{ "AeccDbSectionView", "Section View" },
-		{ "AeccDbSectionViewGroup", "Section View Group" },
-		{ "AeccDbMaterialSection", "Material Section" },
-		{ "AeccDbSectionLabel", "Section Label" },
-		{ "AeccDbSectionSegment", "Section Segment" },
-		{ "AeccDbSectionBandSet", "Section Band Set" },
-		{ "AeccDbSectionViewBandLabel", "Section View Band Label" },
-		{ "AeccDbSectionSource", "Section Source" },
-
-		// =========================================================================
-		// SUPERELEVATION (2021+)
-		// .NET: Superelevation, SuperelevationCriticalStation
-		// =========================================================================
-		{ "AeccDbSuperelevation", "Superelevation" },
-		{ "AeccDbSuperelevationView", "Superelevation View" },
-		{ "AeccDbSuperelevationCurve", "Superelevation Curve" },
-		{ "AeccDbSuperelevationCriticalStation", "Superelevation Critical Station" },
-
-		// =========================================================================
-		// CANT / RAIL (2021+)
-		// .NET: CantAlignment, RailAlignment
-		// =========================================================================
-		{ "AeccDbCantAlignment", "Cant Alignment" },
-		{ "AeccDbCantView", "Cant View" },
-		{ "AeccDbRailAlignment", "Rail Alignment" },
-
-		// =========================================================================
-		// MASS HAUL (2021+)
-		// .NET: MassHaulDiagram, MassHaulView, MassHaulLine
-		// =========================================================================
-		{ "AeccDbMassHaulDiagram", "Mass Haul Diagram" },
-		{ "AeccDbMassHaulView", "Mass Haul View" },
-		{ "AeccDbMassHaulLine", "Mass Haul Line" },
-
-		// =========================================================================
-		// SURVEY
-		// .NET: SurveyProject, SurveyNetwork, SurveyFigure, SurveyPoint
-		// =========================================================================
-		{ "AeccDbSurveyProject", "Survey Project" },
-		{ "AeccDbSurveyNetwork", "Survey Network" },
-		{ "AeccDbSurveyFigure", "Survey Figure" },
-		{ "AeccDbSurveyFigureLabel", "Survey Figure Label" },
-		{ "AeccDbSurveyPoint", "Survey Point" },
-		{ "AeccDbSurveySetup", "Survey Setup" },
-		{ "AeccDbSurveyObservation", "Survey Observation" },
-
-		// =========================================================================
-		// COGO POINTS
-		// .NET: CogoPoint, PointGroup
-		// =========================================================================
-		{ "AeccDbCogoPoint", "COGO Point" },
-		{ "AeccDbPointGroup", "Point Group" },
-		{ "AeccDbPointLabel", "Point Label" },
-		{ "AeccDbPointDescriptionKey", "Description Key" },
-		{ "AeccDbPointCloud", "Point Cloud" },
-		{ "AeccDbPointFile", "Point File" },
-
-		// =========================================================================
-		// SITES
-		// .NET: Site
-		// =========================================================================
-		{ "AeccDbSite", "Site" },
-		{ "AeccDbSiteParcel", "Site Parcel" },
-		{ "AeccDbSiteAlignment", "Site Alignment" },
-		{ "AeccDbSiteGrading", "Site Grading" },
-		{ "AeccDbSiteFeatureLine", "Site Feature Line" },
-
-		// =========================================================================
-		// INTERSECTIONS (2021+)
-		// .NET: Intersection
-		// =========================================================================
-		{ "AeccDbIntersection", "Intersection" },
-		{ "AeccDbOffsetBaseline", "Offset Baseline" },
-		{ "AeccDbConnectedAlignmentSet", "Connected Alignment Set" },
-
-		// =========================================================================
-		// DATA SHORTCUTS / REFERENCES
-		// .NET: DataReference, SurfaceReference, AlignmentReference, etc.
-		// =========================================================================
-		{ "AeccDbDataReference", "Data Reference" },
-		{ "AeccDbDataShortcut", "Data Shortcut" },
-		{ "AeccDbDataShortcutNode", "Data Shortcut Node" },
-		{ "AeccDbSurfaceReference", "Surface Reference" },
-		{ "AeccDbAlignmentReference", "Alignment Reference" },
-		{ "AeccDbProfileReference", "Profile Reference" },
-		{ "AeccDbPipeNetworkReference", "Pipe Network Reference" },
-		{ "AeccDbCorridorReference", "Corridor Reference" },
-		{ "AeccDbViewFrameGroupReference", "View Frame Group Reference" },
-
-		// =========================================================================
-		// PLAN PRODUCTION / SHEETS
-		// .NET: ViewFrame, ViewFrameGroup, MatchLine
-		// =========================================================================
-		{ "AeccDbViewFrame", "View Frame" },
-		{ "AeccDbViewFrameGroup", "View Frame Group" },
-		{ "AeccDbMatchLine", "Match Line" },
-		{ "AeccDbSheet", "Sheet" },
-		{ "AeccDbSheetSet", "Sheet Set" },
-		{ "AeccDbViewFrameLabel", "View Frame Label" },
-		{ "AeccDbMatchLineLabel", "Match Line Label" },
-
-		// =========================================================================
-		// QUANTITY TAKEOFF / MATERIALS
-		// .NET: QuantityTakeoffCriteria, MaterialList
-		// =========================================================================
-		{ "AeccDbMaterial", "Material" },
-		{ "AeccDbMaterialList", "Material List" },
-		{ "AeccDbQuantityTakeoff", "Quantity Takeoff" },
-		{ "AeccDbPayItem", "Pay Item" },
-		{ "AeccDbPayItemCategory", "Pay Item Category" },
-		{ "AeccDbComputeMaterials", "Compute Materials" },
-
-		// =========================================================================
-		// HYDRAULICS / CATCHMENTS (2021+)
-		// .NET: Catchment, CatchmentGroup
-		// =========================================================================
-		{ "AeccDbCatchment", "Catchment" },
-		{ "AeccDbCatchmentGroup", "Catchment Group" },
-		{ "AeccDbFlowSegment", "Flow Segment" },
-		{ "AeccDbHydraulicNetwork", "Hydraulic Network" },
-
-		// =========================================================================
-		// DRAINAGE (2021+)
-		// These are Structure subtypes in the SDK
-		// =========================================================================
-		{ "AeccDbCatchBasin", "Catch Basin" },
-		{ "AeccDbManhole", "Manhole" },
-		{ "AeccDbInlet", "Inlet" },
-		{ "AeccDbOutlet", "Outlet" },
-		{ "AeccDbHeadwall", "Headwall" },
-
-		// =========================================================================
-		// INTERFERENCE / ANALYSIS
-		// .NET: InterferenceCheck
-		// =========================================================================
-		{ "AeccDbInterferenceCheck", "Interference Check" },
-		{ "AeccDbInterference", "Interference" },
-		{ "AeccDbDepthCheck", "Depth Check" },
-
-		// =========================================================================
-		// MAP / GIS
-		// =========================================================================
-		{ "AeccDbCoordinateSystem", "Coordinate System" },
-		{ "AeccDbMapFeature", "Map Feature" },
-		{ "AeccDbGeoRaster", "Geo Raster" },
-
-		// =========================================================================
-		// ANALYSIS / VISUALIZATION
-		// .NET: SlopeArrow, WaterDrop
-		// =========================================================================
-		{ "AeccDbSlopeArrow", "Slope Arrow" },
-		{ "AeccDbWaterDrop", "Water Drop" },
-
-		// =========================================================================
-		// LABELS - GENERAL
-		// .NET: Label, LabelGroup, GeneralLabelGroup
-		// =========================================================================
-		{ "AeccDbLabel", "Civil Label" },
-		{ "AeccDbLabelGroup", "Label Group" },
-		{ "AeccDbGeneralLabel", "General Label" },
-		{ "AeccDbGeneralNoteLabel", "General Note Label" },
-		{ "AeccDbTagLabel", "Tag Label" },
-		{ "AeccDbReferenceText", "Reference Text" },
-		{ "AeccDbLineLabel", "Line Label" },
-		{ "AeccDbCurveLabel", "Curve Label" },
-		{ "AeccDbNoteLabel", "Note Label" },
-
-		// =========================================================================
-		// TABLES
-		// .NET: AlignmentTable, ParcelTable, PointTable, etc.
-		// =========================================================================
-		{ "AeccDbAlignmentTable", "Alignment Table" },
-		{ "AeccDbParcelTable", "Parcel Table" },
-		{ "AeccDbPointTable", "Point Table" },
-		{ "AeccDbPipeTable", "Pipe Table" },
-		{ "AeccDbStructureTable", "Structure Table" },
-		{ "AeccDbSurfaceTable", "Surface Table" },
-		{ "AeccDbVolumeTable", "Volume Table" },
-		{ "AeccDbSegmentTable", "Segment Table" },
-		{ "AeccDbProfileTable", "Profile Table" },
-		{ "AeccDbSectionTable", "Section Table" },
-		{ "AeccDbSurveyTable", "Survey Table" },
-
-		// =========================================================================
-		// PROJECTION OBJECTS
-		// .NET: ProjectionFigure, ProjectionLabel
-		// =========================================================================
-		{ "AeccDbProjectionLabel", "Projection Label" },
-		{ "AeccDbProjectionFigure", "Projection Figure" },
-
-		// =========================================================================
-		// STYLES (non-geometric but may appear as proxy originalClassName)
-		// .NET: Style, LabelStyle, ObjectLabelStyle
-		// =========================================================================
-		{ "AeccDbStyle", "Civil Style" },
-		{ "AeccDbStyleCollection", "Style Collection" },
-		{ "AeccDbLabelStyle", "Label Style" },
-		{ "AeccDbObjectLabelStyle", "Object Label Style" },
-		{ "AeccDbAlignmentStyle", "Alignment Style" },
-		{ "AeccDbProfileStyle", "Profile Style" },
-		{ "AeccDbProfileViewStyle", "Profile View Style" },
-		{ "AeccDbSurfaceStyle", "Surface Style" },
-		{ "AeccDbCorridorStyle", "Corridor Style" },
-		{ "AeccDbPipeStyle", "Pipe Style" },
-		{ "AeccDbStructureStyle", "Structure Style" },
-		{ "AeccDbSectionStyle", "Section Style" },
-		{ "AeccDbSectionViewStyle", "Section View Style" },
-		{ "AeccDbAssemblyStyle", "Assembly Style" },
-		{ "AeccDbCodeSetStyle", "Code Set Style" },
-		{ "AeccDbFeatureLineStyle", "Feature Line Style" },
-		{ "AeccDbGradingStyle", "Grading Style" },
-		{ "AeccDbParcelStyle", "Parcel Style" },
-		{ "AeccDbPointStyle", "Point Style" },
-		{ "AeccDbMarkerStyle", "Marker Style" },
-		{ "AeccDbMatchLineStyle", "Match Line Style" },
-		{ "AeccDbViewFrameStyle", "View Frame Style" },
-		{ "AeccDbGroupPlotStyle", "Group Plot Style" },
-		{ "AeccDbSheetStyle", "Sheet Style" },
-		{ "AeccDbIntersectionStyle", "Intersection Style" },
-		{ "AeccDbSampleLineStyle", "Sample Line Style" },
-		{ "AeccDbMassHaulLineStyle", "Mass Haul Line Style" },       // 2021+
-		{ "AeccDbMassHaulViewStyle", "Mass Haul View Style" },       // 2021+
-		{ "AeccDbCatchmentStyle", "Catchment Style" },               // 2021+
-		{ "AeccDbPressurePipeStyle", "Pressure Pipe Style" },        // 2021+
-		{ "AeccDbPressureFittingStyle", "Pressure Fitting Style" },  // 2021+
-
-		// =========================================================================
-		// CONNECTED DESIGN (2024+)
-		// .NET: Added in Civil 3D 2024
-		// =========================================================================
-		{ "AeccDbConnectedDesign", "Connected Design" },             // 2024+
-		{ "AeccDbDesignCheck", "Design Check" }
 	};
 
-	if (isProxyEntity(entity))
+	if (info.isProxy() && info.matchedHandler)
 	{
-		auto proxyClassName = getProxyOriginalClassName(entity);
-		auto it = classToDisplayName.find(proxyClassName);
-		if (it != classToDisplayName.end())
-			return it->second;
+		std::string name;
+		if (info.matchedHandler->getDisplayName(info.originalClass, name))
+			return name;
 	}
 
 	auto it = classToDisplayName.find(className);

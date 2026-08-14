@@ -28,7 +28,9 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
+#include <array>
 #include <DbProxyEntity.h>
+#include <DbEntityWithGrData.h>
 #include <DbRegAppTable.h>
 #include <DbRegAppTableRecord.h>
 #include <DbDictionary.h>
@@ -37,6 +39,9 @@
 #include "vectorise_device_dgn.h"
 #include "repo/core/model/bson/repo_node_mesh.h"
 #include "repo/lib/datastructure/repo_variant.h"
+#include "proxy_app_handler.h"
+#include "civil3d_proxy_handler.h"
+#include "plant3d_proxy_handler.h"
 
 namespace repo {
 	namespace manipulator {
@@ -48,7 +53,7 @@ namespace repo {
 					bool doDraw(OdUInt32 i,	const OdGiDrawable* pDrawable) override;
 					void setMode(OdGsView::RenderMode mode);
 					~DataProcessorDwg();
-					// ===== ADD THESE LINES (START) =====
+
 					struct DiagnosticStats {
 						size_t totalEntities = 0;
 						size_t civil3dEntities = 0;
@@ -61,7 +66,6 @@ namespace repo {
 
 					DiagnosticStats getStats() const { return stats; }
 					void printDiagnostics() const;
-					// ===== ADD THESE LINES (END) =====
 
 				protected:
 
@@ -115,44 +119,102 @@ namespace repo {
 						const OdGiVertexData* pVertexData = 0) override;
 
 				private:
-					// ===== ADDED: Helper methods for Civil3D/Plant3D detection =====
-					bool isProxyEntity(OdDbEntityPtr pEntity);
-					bool isTinSurfaceProxy(OdDbEntityPtr pEntity);
-					bool shouldReplayStoredProxyGraphics(OdDbEntityPtr pEntity);
-					std::string getProxyOriginalClassName(OdDbEntityPtr pEntity);
-					std::vector<std::string> getProxyXDataApps(OdDbEntityPtr pEntity);
-					std::string detectApplicationType(OdDbEntityPtr pEntity);
-					bool drawStoredProxyGraphics(OdDbEntityPtr pEntity);
-					std::unordered_map<std::string, repo::lib::RepoVariant> getProxyEntityMetadata(OdDbEntityPtr pEntity);
+					/* ===== Proxy entity inspection =====
+
+					A proxy entity is inspected once via getProxyInfo(), which performs the
+					single OdDbProxyEntity::cast() for that entity. The resulting ProxyInfo is
+					reused for classification, TIN detection, stored graphics replay, metadata
+					and diagnostics, instead of every consumer re-casting ODA.
+
+					The XData chain and the extension dictionary are deliberately not read up
+					front: opening the extension dictionary is a database object open, and most
+					proxies never need it - they produce no geometry, or their layer already
+					carries metadata. Those reads are loaded on demand by ensureProxyXData() and
+					ensureProxyExtensionDictionary(), which are no-ops once cached. */
+
+					struct ProxyReadOptions
+					{
+						/* Defaults are the cheap draw-time profile; metadata and
+						diagnostic paths opt in to what they actually need. */
+						bool readXData = false;
+						bool readExtensionDictionary = false;
+						/* Falls back to scanning the whole registered application
+						table when xData() yields nothing. Expensive, so off
+						outside diagnostics. */
+						bool scanRegisteredAppsFallback = false;
+					};
+
+					struct ProxyInfo
+					{
+						OdDbProxyEntityPtr entity; // null => not a proxy
+						std::string originalClass;
+						std::string originalDxfName;
+						std::string applicationDescription;
+						std::vector<std::string> xDataApps;
+						ProxyAppType appType = ProxyAppType::Unknown;
+						OdDbProxyEntity::GraphicsMetafileType graphicsType = OdDbProxyEntity::kNoMetafile;
+						bool hasFullGraphicsFlag = false;
+						OdDbEntityWithGrDataPEPtr graphicsPE;
+
+						/* Lazily populated; see ensureProxyXData() and
+						ensureProxyExtensionDictionary(). */
+						OdResBufPtr xData;
+						bool xDataLoaded = false;
+						OdDbObjectId extensionDictionaryId;
+						OdDbDictionaryPtr extensionDictionary;
+						bool extensionDictionaryLoaded = false;
+
+						// Set together with appType by classifyApplication(); never diverges from it.
+						ProxyAppHandler* matchedHandler = nullptr;
+
+						bool isProxy() const { return !entity.isNull(); }
+						bool isCivil3D() const { return appType == ProxyAppType::Civil3D; }
+						bool isPlant3D() const { return appType == ProxyAppType::Plant3D; }
+						bool hasFullGraphics() const { return hasFullGraphicsFlag; }
+					};
+
+					bool getProxyInfo(OdDbEntityPtr entity, ProxyInfo& info, const ProxyReadOptions& options = ProxyReadOptions());
+
+					/* On demand loaders for the two expensive proxy reads. Both return
+					immediately once the corresponding data has been cached in info. */
+					void ensureProxyXData(ProxyInfo& info, const ProxyReadOptions& options = ProxyReadOptions());
+					void ensureProxyExtensionDictionary(ProxyInfo& info);
+
+					ProxyAppType classifyApplication(const std::string& originalClass, ProxyAppHandler*& outHandler);
+					static std::string formatApplicationDisplayString(const ProxyInfo& info);
+
+					/* The class-name check formerly on ProxyInfo::isCivil3DTinSurface(),
+					moved here since a plain data struct can't reach civil3DHandler. */
+					bool isCivil3DTinSurface(const ProxyInfo& info) const
+					{
+						return info.isCivil3D() && civil3DHandler.isTinSurfaceClass(info.originalClass);
+					}
+
+					bool drawStoredProxyGraphics(OdDbEntityPtr pEntity, const ProxyInfo& info);
 					void logProxyWithoutRenderableGeometry(
 						OdDbEntityPtr pEntity,
+						ProxyInfo& info,
 						bool replayedStoredProxyGraphics,
 						bool replayReturnedGeometry);
-					bool addTinSurfaceTriangle(
-						const repo::lib::RepoVector3D64& p0,
-						const repo::lib::RepoVector3D64& p1,
-						const repo::lib::RepoVector3D64& p2);
-					bool addTinSurfaceEdge(
-						const repo::lib::RepoVector3D64& p0,
-						const repo::lib::RepoVector3D64& p1);
-					bool addTinSurfaceTrianglePolyline(const std::vector<repo::lib::RepoVector3D64>& points);
-					std::unordered_map<std::string, std::string> getProxyMetadata(OdDbEntityPtr pEntity);
-					// ===== END: Helper methods for Civil3D/Plant3D detection =====
 
-					void extractCivil3DStoredProperties(OdDbDictionaryPtr pDict, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
-					void extractPlant3DStoredProperties(OdDbDictionaryPtr pDict, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
+					std::unordered_map<std::string, repo::lib::RepoVariant> getProxyEntityMetadata(OdDbEntityPtr pEntity, ProxyInfo& info);
+					void addProxyBasicMetadata(OdDbEntityPtr pEntity, const ProxyInfo& info, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
+					void addProxyGeneralMetadata(OdDbEntityPtr pEntity, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
+					void addProxyGeometryMetadata(OdDbEntityPtr pEntity, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
+					void addProxyXDataMetadata(const ProxyInfo& info, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
+					void addProxyDictionaryMetadata(const ProxyInfo& info, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
+
 					void extractXDataProperties(OdResBufPtr pRb, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
 					void extractTextPropertiesFromProxy(OdDbProxyEntityPtr proxyEntity, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
 					void extractEntityProperties(OdDbEntityPtr pEntity, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
-					void addTinSurfaceComputedMetadata(
-						OdDbEntityPtr pEntity,
-						std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
 					void removeDuplicateGeneralMetadata(
 						std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
 					void setEntityMetadata(
 						const std::string& layerId,
 						const std::string& handleMetaValue,
-						OdDbEntityPtr pEntity);
+						OdDbEntityPtr pEntity,
+						ProxyInfo& info,
+						ProxyGeometryCapture* capturedGeometry);
 
 					void convertTo3DRepoColor(OdCmEntityColor& color, repo::lib::repo_color3d_t& out);
 
@@ -168,7 +230,7 @@ namespace repo {
 						{
 						}
 
-						Layer() 
+						Layer()
 						{
 						}
 
@@ -176,10 +238,6 @@ namespace repo {
 							return !id.empty() && !name.empty();
 						}
 					};
-
-					void addTinSurfaceFaceLayers(
-						const std::string& parentLayerId,
-						const std::string& sourceEntityId);
 
 					// Some properties to be held between invocations of doDraw()
 					class Context
@@ -193,14 +251,29 @@ namespace repo {
 
 					Context context;
 					mutable DiagnosticStats stats;
-					bool capturingTinSurfaceProxy = false;
-					std::unordered_set<std::string> tinSurfaceEdgeKeys;
-					std::vector<GeometryCollector::Face> tinSurfaceTriangles;
-					std::unordered_set<std::string> loggedProxyGeometryFailures;
-					bool hasTinSurfaceFaceMaterial = false;
-					repo::lib::repo_material_t tinSurfaceFaceMaterial;
 
-					std::string getClassDisplayName(OdDbEntityPtr entity);
+					/* Registered proxy-app handlers, tried in order for each proxy entity.
+					Both are always constructed (never conditionally) so a drawing containing
+					both Civil3D and Plant3D proxies classifies each entity independently.
+					Declared before proxyHandlers so taking their addresses below is
+					self-evidently safe regardless of member-initializer-list order. */
+					Civil3DProxyHandler civil3DHandler;
+					Plant3DProxyHandler plant3DHandler;
+					std::array<ProxyAppHandler*, 2> proxyHandlers = { &civil3DHandler, &plant3DHandler };
+
+					// Set for the duration of one entity's stored-graphics replay; the
+					// geometry callbacks route into it when non-null. Replaces the old
+					// TinSurfaceCapture tinCapture member/isActive() toggle.
+					ProxyGeometryCapture* activeGeometryCapture = nullptr;
+
+					/* Proxies that produced no renderable geometry are reported once each,
+					but only for the first kMaxLoggedProxyGeometryFailures of them; the rest
+					are counted and summarised, so a proxy heavy drawing cannot flood the log. */
+					static const size_t kMaxLoggedProxyGeometryFailures = 20;
+					std::unordered_set<std::string> loggedProxyGeometryFailures;
+					size_t suppressedProxyGeometryFailures = 0;
+
+					std::string getClassDisplayName(OdDbEntityPtr entity, const ProxyInfo& info);
 				};
 
 				typedef OdSharedPtr<DataProcessorDwg> DataProcessorDwgPtr;
