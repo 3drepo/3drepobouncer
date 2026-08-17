@@ -22,6 +22,7 @@
 #include <DbXrecord.h>
 
 #include "helper_functions.h"
+#include "dwg_proxy_inspector.h"
 
 #include <algorithm>
 #include <cmath>
@@ -53,7 +54,7 @@ namespace {
 	const std::vector<std::string> kCivil3DTriggers = { "Station", "Offset", "Elevation", "Grade" };
 }
 
-bool Civil3DProxyHandler::matches(const std::string& originalClass) const
+bool Civil3DProxyHandler::matchesClassName(const std::string& originalClass)
 {
 	return originalClass.find("Aecc") != std::string::npos ||
 		originalClass.find("Civil") != std::string::npos;
@@ -692,13 +693,6 @@ void Civil3DProxyHandler::TinCapture::addComputedMetadata(
 	OdDbEntityPtr pEntity,
 	std::unordered_map<std::string, repo::lib::RepoVariant>& metadata) const
 {
-	auto setIfMissing = [&](const std::string& key, const repo::lib::RepoVariant& value) {
-		if (metadata.find(key) == metadata.end())
-		{
-			metadata[key] = value;
-		}
-	};
-
 	std::unordered_set<std::string> uniquePoints;
 	double minElevation = 0.0;
 	double maxElevation = 0.0;
@@ -735,8 +729,8 @@ void Civil3DProxyHandler::TinCapture::addComputedMetadata(
 		auto roundElevation = [](double value) {
 			return std::round(value * 1000.0) / 1000.0;
 		};
-		setIfMissing("Data::Minimum Elevation", roundElevation(minElevation));
-		setIfMissing("Data::Maximum Elevation", roundElevation(maxElevation));
+		DwgProxyInspector::setMetadataIfMissing(metadata, "Data::Minimum Elevation", roundElevation(minElevation));
+		DwgProxyInspector::setMetadataIfMissing(metadata, "Data::Maximum Elevation", roundElevation(maxElevation));
 	}
 
 	try
@@ -748,11 +742,11 @@ void Civil3DProxyHandler::TinCapture::addComputedMetadata(
 		{
 			name = layerName.substr(separator + 1);
 		}
-		setIfMissing("Information::Name", name);
+		DwgProxyInspector::setMetadataIfMissing(metadata, "Information::Name", name);
 	}
 	catch (...) {}
 
-	setIfMissing("Information::Style", std::string("Contours and Triangles"));
-	setIfMissing("Information::Material", std::string("ByLayer"));
-	setIfMissing("Information::Show Tooltips", std::string("Yes"));
+	DwgProxyInspector::setMetadataIfMissing(metadata, "Information::Style", std::string("Contours and Triangles"));
+	DwgProxyInspector::setMetadataIfMissing(metadata, "Information::Material", std::string("ByLayer"));
+	DwgProxyInspector::setMetadataIfMissing(metadata, "Information::Show Tooltips", std::string("Yes"));
 }

@@ -37,23 +37,30 @@ ProxyAppType DwgProxyInspector::classifyApplication(const std::string& originalC
 		// second app's proxies be misattributed for the rest of this file.
 		if (activeHandler->matches(originalClass))
 		{
-			outHandler = activeHandler;
+			outHandler = activeHandler.get();
 			return activeHandler->appType();
 		}
 		return ProxyAppType::Custom;
 	}
 
-	for (auto* handler : proxyHandlers)
+	// No app detected yet for this file: probe each app's class-name rule
+	// without constructing an instance, and construct exactly the one that
+	// matches - a DWG is authored by one app, never both.
+	if (Civil3DProxyHandler::matchesClassName(originalClass))
 	{
-		if (handler->matches(originalClass))
-		{
-			outHandler = handler;
-			activeHandler = handler; // Lock in for the rest of this file.
-			return handler->appType();
-		}
+		activeHandler = std::make_unique<Civil3DProxyHandler>();
+	}
+	else if (Plant3DProxyHandler::matchesClassName(originalClass))
+	{
+		activeHandler = std::make_unique<Plant3DProxyHandler>();
+	}
+	else
+	{
+		return ProxyAppType::Custom;
 	}
 
-	return ProxyAppType::Custom;
+	outHandler = activeHandler.get();
+	return activeHandler->appType();
 }
 
 std::string DwgProxyInspector::formatApplicationDisplayString(const ProxyInfo& info)
@@ -80,7 +87,7 @@ bool DwgProxyInspector::isSpecialGeometryClass(const ProxyInfo& info) const
 
 bool DwgProxyInspector::isKnownAppClassName(const std::string& className) const
 {
-	return civil3DHandler.matches(className) || plant3DHandler.matches(className) || className == "AcDbProxyEntity";
+	return Civil3DProxyHandler::matchesClassName(className) || Plant3DProxyHandler::matchesClassName(className) || className == "AcDbProxyEntity";
 }
 
 bool DwgProxyInspector::getProxyInfo(OdDbEntityPtr entity, ProxyInfo& info, const ProxyReadOptions& options)
@@ -447,15 +454,19 @@ void DwgProxyInspector::addProxyBasicMetadata(OdDbEntityPtr pEntity, const Proxy
 	}
 }
 
+void DwgProxyInspector::setMetadataIfMissing(
+	std::unordered_map<std::string, repo::lib::RepoVariant>& metadata,
+	const std::string& key,
+	const repo::lib::RepoVariant& value)
+{
+	if (metadata.find(key) == metadata.end())
+	{
+		metadata[key] = value;
+	}
+}
+
 void DwgProxyInspector::addProxyGeneralMetadata(OdDbEntityPtr pEntity, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
-	auto setIfMissing = [&](const std::string& key, const repo::lib::RepoVariant& value) {
-		if (metadata.find(key) == metadata.end())
-		{
-			metadata[key] = value;
-		}
-	};
-
 	auto colorToString = [](const OdCmColor& clr) {
 		switch (clr.colorMethod())
 		{
@@ -509,12 +520,12 @@ void DwgProxyInspector::addProxyGeneralMetadata(OdDbEntityPtr pEntity, std::unor
 		}
 	};
 
-	setIfMissing("General::Layer", convertToStdString(toString(pEntity->layer())));
-	setIfMissing("General::True Color", colorToString(pEntity->color()));
-	setIfMissing("General::Linetype", convertToStdString(toString(pEntity->linetype())));
-	setIfMissing("General::Linetype scale", pEntity->linetypeScale());
-	setIfMissing("General::Lineweight", lineWeightToString(pEntity->lineWeight()));
-	setIfMissing("General::Visibility", pEntity->visibility() == OdDb::kInvisible ? std::string("Invisible") : std::string("Visible"));
+	setMetadataIfMissing(metadata, "General::Layer", convertToStdString(toString(pEntity->layer())));
+	setMetadataIfMissing(metadata, "General::True Color", colorToString(pEntity->color()));
+	setMetadataIfMissing(metadata, "General::Linetype", convertToStdString(toString(pEntity->linetype())));
+	setMetadataIfMissing(metadata, "General::Linetype scale", pEntity->linetypeScale());
+	setMetadataIfMissing(metadata, "General::Lineweight", lineWeightToString(pEntity->lineWeight()));
+	setMetadataIfMissing(metadata, "General::Visibility", pEntity->visibility() == OdDb::kInvisible ? std::string("Invisible") : std::string("Visible"));
 }
 
 void DwgProxyInspector::addProxyGeometryMetadata(OdDbEntityPtr pEntity, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)

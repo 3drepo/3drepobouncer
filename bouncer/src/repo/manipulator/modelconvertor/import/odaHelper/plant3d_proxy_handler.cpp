@@ -34,7 +34,7 @@ namespace {
 	const std::vector<std::string> kPlant3DTriggers = { "Tag", "Service", "Size", "NominalDiameter", "Spec", "PartFamily" };
 }
 
-bool Plant3DProxyHandler::matches(const std::string& originalClass) const
+bool Plant3DProxyHandler::matchesClassName(const std::string& originalClass)
 {
 	return originalClass.find("AcPp") != std::string::npos ||
 		originalClass.find("Plant") != std::string::npos;

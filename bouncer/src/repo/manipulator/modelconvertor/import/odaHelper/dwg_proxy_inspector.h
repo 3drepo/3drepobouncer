@@ -19,7 +19,7 @@
 
 #include <string>
 #include <vector>
-#include <array>
+#include <memory>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -125,6 +125,16 @@ namespace repo {
 
 					std::unordered_map<std::string, repo::lib::RepoVariant> getProxyEntityMetadata(OdDbEntityPtr pEntity, ProxyInfo& info);
 
+					/* Sets metadata[key] = value only if key is not already present.
+					Shared by any proxy metadata source (this class, or app handlers
+					such as Civil3DProxyHandler::TinCapture) that need to contribute
+					a computed property without overwriting one already set by an
+					earlier, higher-priority source. */
+					static void setMetadataIfMissing(
+						std::unordered_map<std::string, repo::lib::RepoVariant>& metadata,
+						const std::string& key,
+						const repo::lib::RepoVariant& value);
+
 					/* Routes the hot OdGi geometry callbacks (processTriangleOut,
 					polygonOut, tristripProc, processPolylineOut) on DataProcessorDwg.
 					Non-null only for the duration of one entity's stored-graphics
@@ -159,21 +169,16 @@ namespace repo {
 					// count down to the ones worth reporting on individually.
 					bool isKnownAppClassName(const std::string& className) const;
 
-					/* Registered proxy-app handlers. Both are constructed unconditionally
-					(they're cheap - Plant3D is stateless, Civil3D's only state is an
-					empty-until-used TIN capture buffer), but only ever consulted
-					together until the first proxy entity is classified; see
-					classifyApplication(). */
-					Civil3DProxyHandler civil3DHandler;
-					Plant3DProxyHandler plant3DHandler;
-					std::array<ProxyAppHandler*, 2> proxyHandlers = { &civil3DHandler, &plant3DHandler };
-
-					/* Set by classifyApplication() the first time any proxy entity in
-					this file matches a handler, and never changed after that: a DWG
-					is authored by one app, never both, so once detected, entities that
-					would otherwise match the *other* app are classified Custom rather
-					than misattributed. */
-					ProxyAppHandler* activeHandler = nullptr;
+					/* The detected app's handler for this file, constructed lazily by
+					classifyApplication() the first time any proxy entity matches
+					Civil3DProxyHandler::matchesClassName() or
+					Plant3DProxyHandler::matchesClassName() - both are static, so they
+					can be probed without constructing either instance. A DWG is
+					authored by one app, never both, so at most one of
+					Civil3DProxyHandler/Plant3DProxyHandler is ever constructed for the
+					life of the file, and once set, entities that would otherwise match
+					the *other* app are classified Custom rather than misattributed. */
+					std::unique_ptr<ProxyAppHandler> activeHandler;
 
 					ProxyGeometryCapture* activeGeometryCapture = nullptr;
 

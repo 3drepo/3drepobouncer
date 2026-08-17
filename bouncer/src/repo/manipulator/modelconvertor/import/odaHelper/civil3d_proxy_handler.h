@@ -38,7 +38,11 @@ namespace repo {
 				class Civil3DProxyHandler : public ProxyAppHandler
 				{
 				public:
-					bool matches(const std::string& originalClass) const override;
+					/* Callable before an instance exists, so DwgProxyInspector can decide
+					which concrete handler (if any) to construct without having to
+					construct both up front just to ask. */
+					static bool matchesClassName(const std::string& originalClass);
+					bool matches(const std::string& originalClass) const override { return matchesClassName(originalClass); }
 					ProxyAppType appType() const override { return ProxyAppType::Civil3D; }
 					std::string appName() const override { return "Civil3D"; }
 
