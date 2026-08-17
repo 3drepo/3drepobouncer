@@ -193,6 +193,54 @@ TEST(ODAModelImport, ColouredBoxesDWG)
 	));
 }
 
+TEST(ODAModelImport, Civil3DTinSurfaceDWG)
+{
+	// This fixture contains a Civil3D TIN surface, which DWG proxy-imports
+	// as a AeccDbSurfaceTin/AeccDbTinSurface proxy entity with no native
+	// geometry - Civil3DProxyHandler::TinCapture reconstructs the mesh by
+	// capturing triangles/edges from the entity's stored proxy graphics as
+	// they're replayed (see DataProcessorDwg::processTriangleOut et al.).
+
+	// NOTE: filename is a placeholder pending the real fixture being added
+	// to the REPO_MODEL_PATH test data set.
+	auto scene = ODAModelImportUtils::ModelImportManagerImport("Civil3DTinSurfaceDWG", getDataPath("Proxy_Civil3d_TinSurface.dwg"));
+	SceneUtils utils(scene);
+
+	// DataProcessorDwg::doDraw's tinSurfaceProxy branch attaches the captured
+	// faces and metadata to the DWG *layer* node (parentLayer.id) rather than
+	// creating a distinct node for the surface entity itself - so this looks
+	// up that layer node via the metadata TinCapture::addComputedMetadata
+	// sets on it, rather than by an entity display name.
+	auto surfaceLayerNodes = utils.findNodesByMetadata("Entity Handle::Value", "[43A2]");
+	ASSERT_THAT(surfaceLayerNodes.size(), Gt(0));
+	auto surfaceLayer = surfaceLayerNodes[0];
+
+	// TinCapture::applyFaceLayers creates one "Face" child layer per
+	// captured triangle, each carrying its own mesh.
+	auto faces = surfaceLayer.getChildren({ repo::core::model::NodeType::TRANSFORMATION });
+	ASSERT_THAT(faces.size(), Gt(0));
+	for (auto& face : faces) {
+		EXPECT_THAT(face.name(), Eq("Face"));
+		EXPECT_THAT(face.hasGeometry(), IsTrue());
+	}
+
+	// TinCapture::addComputedMetadata sets these fixed informational fields
+	// on the layer node regardless of the surface's actual data.
+	auto metadata = surfaceLayer.getMetadata();
+	ASSERT_THAT(metadata.count("Information::Style"), Eq(1u));
+	EXPECT_THAT(boost::apply_visitor(repo::lib::StringConversionVisitor(), metadata["Information::Style"]), Eq("Contours and Triangles"));
+
+	ASSERT_THAT(metadata.count("Information::Material"), Eq(1u));
+	EXPECT_THAT(boost::apply_visitor(repo::lib::StringConversionVisitor(), metadata["Information::Material"]), Eq("ByLayer"));
+
+	ASSERT_THAT(metadata.count("Information::Show Tooltips"), Eq(1u));
+	EXPECT_THAT(boost::apply_visitor(repo::lib::StringConversionVisitor(), metadata["Information::Show Tooltips"]), Eq("Yes"));
+
+	// Elevation range is data-dependent, so only presence is checked for now.
+	EXPECT_THAT(metadata.count("Data::Minimum Elevation"), Eq(1u));
+	EXPECT_THAT(metadata.count("Data::Maximum Elevation"), Eq(1u));
+}
+
 MATCHER_P(Paths, matcher, "") {
 	std::vector<std::string> paths;
 	for (auto& n : arg) {
