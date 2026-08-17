@@ -85,11 +85,6 @@ bool DwgProxyInspector::isSpecialGeometryClass(const ProxyInfo& info) const
 	return info.isProxy() && info.matchedHandler && info.matchedHandler->isSpecialSurfaceClass(info.originalClass);
 }
 
-bool DwgProxyInspector::isKnownAppClassName(const std::string& className) const
-{
-	return Civil3DProxyHandler::matchesClassName(className) || Plant3DProxyHandler::matchesClassName(className) || className == "AcDbProxyEntity";
-}
-
 bool DwgProxyInspector::getProxyInfo(OdDbEntityPtr entity, ProxyInfo& info, const ProxyReadOptions& options)
 {
 	info = ProxyInfo();
@@ -114,7 +109,7 @@ bool DwgProxyInspector::getProxyInfo(OdDbEntityPtr entity, ProxyInfo& info, cons
 	}
 	catch (OdError& e)
 	{
-		repoTrace << "Failed to get proxy class: " << convertToStdString(e.description());
+		repoWarning << "Failed to get proxy class: " << convertToStdString(e.description());
 		info.originalClass = "Unknown";
 	}
 
@@ -159,15 +154,12 @@ void DwgProxyInspector::ensureProxyXData(ProxyInfo& info, const ProxyReadOptions
 		}
 		else if (options.scanRegisteredAppsFallback && info.entity->database() != nullptr)
 		{
-			repoTrace << "xData() returned null - trying database query method";
-
 			OdDbObjectId entityId = info.entity->objectId();
 			if (!entityId.isNull())
 			{
 				OdDbRegAppTablePtr pAppTable = info.entity->database()->getRegAppTableId().safeOpenObject();
 				if (!pAppTable.isNull())
 				{
-					repoTrace << "Checking registered application table...";
 					OdDbSymbolTableIteratorPtr pIter = pAppTable->newIterator();
 
 					for (; !pIter->done(); pIter->step())
@@ -181,7 +173,6 @@ void DwgProxyInspector::ensureProxyXData(ProxyInfo& info, const ProxyReadOptions
 						OdResBufPtr pAppData = info.entity->xData(appName);
 						if (!pAppData.isNull())
 						{
-							repoTrace << "  Entity has XData for: " << appStr;
 							info.xDataApps.push_back(appStr);
 						}
 					}
@@ -191,11 +182,11 @@ void DwgProxyInspector::ensureProxyXData(ProxyInfo& info, const ProxyReadOptions
 	}
 	catch (OdError& e)
 	{
-		repoTrace << "XData access failed: " << convertToStdString(e.description());
+		repoWarning << "XData access failed: " << convertToStdString(e.description());
 	}
 	catch (...)
 	{
-		repoTrace << "XData access failed with unknown exception";
+		repoWarning << "XData access failed with unknown exception";
 	}
 }
 
@@ -214,7 +205,7 @@ void DwgProxyInspector::ensureProxyExtensionDictionary(ProxyInfo& info)
 	}
 	catch (...)
 	{
-		repoTrace << "Proxy extension dictionary access failed";
+		repoWarning << "Proxy extension dictionary access failed";
 	}
 }
 
@@ -222,8 +213,6 @@ bool DwgProxyInspector::drawStoredProxyGraphics(OdDbEntityPtr pEntity, const Pro
 {
 	if (pEntity.isNull() || !info.isProxy()) return false;
 
-	// Both of these cases are already reported, deduplicated and with handle and
-	// layer context, by logProxyWithoutRenderableGeometry().
 	if (!info.hasFullGraphics()) return false;
 	if (info.graphicsPE.isNull()) return false;
 
@@ -233,166 +222,14 @@ bool DwgProxyInspector::drawStoredProxyGraphics(OdDbEntityPtr pEntity, const Pro
 	}
 	catch (OdError& e)
 	{
-		repoTrace << "Stored proxy graphics replay failed: "
-			<< convertToStdString(e.description());
+		repoWarning << "Stored proxy graphics replay failed: " << convertToStdString(e.description());
 	}
 	catch (...)
 	{
-		repoTrace << "Stored proxy graphics replay failed with unknown error";
+		repoWarning << "Stored proxy graphics replay failed with unknown error";
 	}
 
 	return false;
-}
-
-void DwgProxyInspector::recordEntitySeen(bool isProxy, const ProxyInfo& info)
-{
-	if (!isProxy) return;
-
-	proxyEntities++;
-	// isCivil3D()/isPlant3D() read a single ProxyAppType value, so an entity
-	// can only ever land in one bucket, never both.
-	if (info.isCivil3D())
-	{
-		civil3dEntities++;
-	}
-	else if (info.isPlant3D())
-	{
-		plant3dEntities++;
-	}
-}
-
-void DwgProxyInspector::printDiagnostics(const std::unordered_map<std::string, size_t>& entityTypeCount) const
-{
-	repoInfo << "DWG import: " << civil3dEntities << " Civil3D, "
-		<< plant3dEntities << " Plant3D, "
-		<< proxyEntities << " proxy entities";
-
-	if (suppressedProxyGeometryFailures)
-	{
-		repoInfo << "DWG import: " << suppressedProxyGeometryFailures
-			<< " further proxies without renderable geometry were not reported individually";
-	}
-
-	if (!entityTypeCount.empty() && (proxyEntities > 0 || civil3dEntities > 0 || plant3dEntities > 0))
-	{
-		std::string customTypes;
-		for (const auto& [type, count] : entityTypeCount)
-		{
-			if (isKnownAppClassName(type))
-			{
-				if (!customTypes.empty()) customTypes += ", ";
-				customTypes += type + "=" + std::to_string(count);
-			}
-		}
-
-		if (!customTypes.empty())
-		{
-			repoInfo << "DWG import: custom entity types: " << customTypes;
-		}
-	}
-}
-
-void DwgProxyInspector::logProxyWithoutRenderableGeometry(
-	OdDbEntityPtr pEntity,
-	ProxyInfo& info,
-	bool replayedStoredProxyGraphics,
-	bool replayReturnedGeometry)
-{
-	if (!info.isProxy()) return;
-
-	std::string handle = "Unknown";
-	try
-	{
-		handle = convertToStdString(toString(pEntity->objectId().getHandle()));
-	}
-	catch (...) {}
-
-	// Report each distinct proxy once, and only up to the cap. Everything past
-	// that is counted and summarised by printDiagnostics(), so a drawing with
-	// thousands of unrenderable proxies cannot flood the log.
-	if (!loggedProxyGeometryFailures.insert(handle).second) return;
-
-	if (loggedProxyGeometryFailures.size() > kMaxLoggedProxyGeometryFailures)
-	{
-		if (++suppressedProxyGeometryFailures == 1)
-		{
-			repoWarning << "[DWG_PROXY_NO_RENDERABLE_GEOMETRY] reached "
-				<< kMaxLoggedProxyGeometryFailures
-				<< " reported proxies; further ones are counted only";
-		}
-		return;
-	}
-
-	// Only needed for proxies we are actually going to report on.
-	ensureProxyXData(info);
-
-	std::string layer = "Unknown";
-	try
-	{
-		layer = convertToStdString(toString(pEntity->layer()));
-	}
-	catch (...) {}
-
-	std::string graphicsTypeName = "Unknown";
-	std::string reason = "No geometry was produced by the vectorizer";
-
-	if (info.graphicsType == OdDbProxyEntity::kNoMetafile)
-	{
-		graphicsTypeName = "No Metafile";
-		reason = "Proxy entity has no saved graphics metafile";
-	}
-	else if (info.graphicsType == OdDbProxyEntity::kBoundingBox)
-	{
-		graphicsTypeName = "Bounding Box";
-		reason = "Proxy entity only has bounding-box proxy graphics";
-	}
-	else if (info.graphicsType == OdDbProxyEntity::kFullGraphics)
-	{
-		graphicsTypeName = "Full Graphics";
-		if (!replayedStoredProxyGraphics)
-		{
-			reason = "Stored proxy graphics replay was not attempted";
-		}
-		else if (!replayReturnedGeometry)
-		{
-			reason = "Stored proxy graphics replay returned false";
-		}
-		else
-		{
-			reason = "Stored proxy graphics replay produced no supported mesh or line geometry";
-		}
-	}
-
-	std::string xdataApps;
-	for (size_t i = 0; i < info.xDataApps.size(); ++i)
-	{
-		if (i > 0) xdataApps += ",";
-		xdataApps += info.xDataApps[i];
-	}
-
-	// Built as a single record: the optional fields used to be separate log
-	// lines, which multiplied the volume for no extra information.
-	std::string message = "[DWG_PROXY_NO_RENDERABLE_GEOMETRY] handle=" + handle +
-		" layer=\"" + layer + "\"" +
-		" originalClass=\"" + info.originalClass + "\"" +
-		" originalDxfName=\"" + info.originalDxfName + "\"" +
-		" graphicsMetafile=\"" + graphicsTypeName + "\"" +
-		" replayAttempted=" + (replayedStoredProxyGraphics ? "true" : "false") +
-		" replayReturned=" + (replayReturnedGeometry ? "true" : "false") +
-		" hasGraphicsPE=" + (info.graphicsPE.isNull() ? "false" : "true") +
-		" reason=\"" + reason + "\"";
-
-	if (!info.applicationDescription.empty())
-	{
-		message += " applicationDescription=\"" + info.applicationDescription + "\"";
-	}
-
-	if (!xdataApps.empty())
-	{
-		message += " xdataApps=\"" + xdataApps + "\"";
-	}
-
-	repoWarning << message;
 }
 
 std::unordered_map<std::string, repo::lib::RepoVariant> DwgProxyInspector::getProxyEntityMetadata(OdDbEntityPtr pEntity, ProxyInfo& info)

@@ -21,7 +21,6 @@
 #include <vector>
 #include <memory>
 #include <unordered_map>
-#include <unordered_set>
 
 #include <SharedPtr.h>
 #include <DbProxyEntity.h>
@@ -117,12 +116,6 @@ namespace repo {
 
 					bool drawStoredProxyGraphics(OdDbEntityPtr pEntity, const ProxyInfo& info, OdGiWorldDraw* worldDraw);
 
-					void logProxyWithoutRenderableGeometry(
-						OdDbEntityPtr pEntity,
-						ProxyInfo& info,
-						bool replayedStoredProxyGraphics,
-						bool replayReturnedGeometry);
-
 					std::unordered_map<std::string, repo::lib::RepoVariant> getProxyEntityMetadata(OdDbEntityPtr pEntity, ProxyInfo& info);
 
 					/* Sets metadata[key] = value only if key is not already present.
@@ -145,10 +138,6 @@ namespace repo {
 					ProxyGeometryCapture* activeCapture() const { return activeGeometryCapture; }
 					void setActiveCapture(ProxyGeometryCapture* capture) { activeGeometryCapture = capture; }
 
-					// Diagnostics: called once per entity from DataProcessorDwg::doDraw().
-					void recordEntitySeen(bool isProxy, const ProxyInfo& info);
-					void printDiagnostics(const std::unordered_map<std::string, size_t>& entityTypeCount) const;
-
 				private:
 					ProxyAppType classifyApplication(const std::string& originalClass, ProxyAppHandler*& outHandler);
 					static std::string formatApplicationDisplayString(const ProxyInfo& info);
@@ -165,10 +154,6 @@ namespace repo {
 					void extractXDataProperties(OdResBufPtr pRb, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
 					void extractTextPropertiesFromProxy(OdDbProxyEntityPtr proxyEntity, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
 
-					// Used by printDiagnostics() to filter the general entity-type
-					// count down to the ones worth reporting on individually.
-					bool isKnownAppClassName(const std::string& className) const;
-
 					/* The detected app's handler for this file, constructed lazily by
 					classifyApplication() the first time any proxy entity matches
 					Civil3DProxyHandler::matchesClassName() or
@@ -181,17 +166,6 @@ namespace repo {
 					std::unique_ptr<ProxyAppHandler> activeHandler;
 
 					ProxyGeometryCapture* activeGeometryCapture = nullptr;
-
-					size_t proxyEntities = 0;
-					size_t civil3dEntities = 0;
-					size_t plant3dEntities = 0;
-
-					/* Proxies that produced no renderable geometry are reported once each,
-					but only for the first kMaxLoggedProxyGeometryFailures of them; the rest
-					are counted and summarised, so a proxy heavy drawing cannot flood the log. */
-					static const size_t kMaxLoggedProxyGeometryFailures = 20;
-					std::unordered_set<std::string> loggedProxyGeometryFailures;
-					size_t suppressedProxyGeometryFailures = 0;
 				};
 			}
 		}

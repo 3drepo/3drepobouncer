@@ -27,7 +27,6 @@
 #include <CmColorBase.h>
 #include "helper_functions.h"
 #include "data_processor_dwg.h"
-#include <repo_log.h>
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
@@ -40,18 +39,6 @@ using namespace repo::manipulator::modelconvertor::odaHelper;
 DataProcessorDwg::~DataProcessorDwg()
 {
 	// This exists so we can use unique_ptr with a forward declaration of DwgDrawContext
-	printDiagnostics();
-}
-
-void DataProcessorDwg::printDiagnostics() const
-{
-	if (stats.totalEntities == 0) return;
-
-	repoInfo << "DWG import: " << stats.totalEntities << " entities, "
-		<< stats.entitiesWithGeometry << " with geometry, "
-		<< stats.entitiesWithoutGeometry << " without";
-
-	if (proxy) proxy->printDiagnostics(stats.entityTypeCount);
 }
 
 void DataProcessorDwg::setEntityMetadata(
@@ -126,19 +113,9 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	OdDbEntityPtr pEntity = OdDbEntity::cast(pDrawable);
 	if (!pEntity.isNull())
 	{
-		// ===== DIAGNOSTIC TRACKING =====
-		stats.totalEntities++;
-		auto className = convertToStdString(pEntity->isA()->name());
-		stats.entityTypeCount[className]++;
-
 		// Cheap inspection only: one cast, no XData or extension dictionary
 		// read. Consumers that need those load them on demand.
 		isProxy = proxy->getProxyInfo(pEntity, info);
-		if (isProxy)
-		{
-			stats.entityTypeCount["Proxy-" + info.originalClass]++;
-		}
-		proxy->recordEntitySeen(isProxy, info);
 
 		// As soon as we get an actual entity, cache the active Layout Id. This
 		// can be used to determine when we are back at the top level (out of a
@@ -278,24 +255,6 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	collector->popDrawContext(ctx.get());
 
 	const bool hasTinSurfaceFaces = tinSurfaceProxy && thisEntityCapture->hasTriangles();
-
-	// ===== CHECK GEOMETRY EXTRACTION =====
-	if (ctx && !pEntity.isNull())
-	{
-		if (ctx->hasMeshes() || hasTinSurfaceFaces)
-		{
-			stats.entitiesWithGeometry++;
-		}
-		else
-		{
-			stats.entitiesWithoutGeometry++;
-			if (isProxy)
-			{
-				proxy->logProxyWithoutRenderableGeometry(pEntity, info, replayStoredProxyGraphics, ret);
-			}
-
-		}
-	}
 
 	if (ctx && (ctx->hasMeshes() || hasTinSurfaceFaces))
 	{

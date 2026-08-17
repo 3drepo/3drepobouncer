@@ -52,16 +52,6 @@ namespace repo {
 					// to be file-scoped rather than per-instance.
 					void setProxy(DwgProxyInspector* proxy) { this->proxy = proxy; }
 
-					struct DiagnosticStats {
-						size_t totalEntities = 0;
-						size_t entitiesWithGeometry = 0;
-						size_t entitiesWithoutGeometry = 0;
-						std::unordered_map<std::string, size_t> entityTypeCount;
-					};
-
-					DiagnosticStats getStats() const { return stats; }
-					void printDiagnostics() const;
-
 				protected:
 
 					void convertTo3DRepoMaterial(
@@ -155,7 +145,6 @@ namespace repo {
 					};
 
 					Context context;
-					mutable DiagnosticStats stats;
 
 					// Not owned; see setProxy().
 					DwgProxyInspector* proxy = nullptr;
