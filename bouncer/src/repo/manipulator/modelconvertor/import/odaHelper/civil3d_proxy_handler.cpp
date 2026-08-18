@@ -732,21 +732,4 @@ void Civil3DProxyHandler::TinCapture::addComputedMetadata(
 		DwgProxyInspector::setMetadataIfMissing(metadata, "Data::Minimum Elevation", roundElevation(minElevation));
 		DwgProxyInspector::setMetadataIfMissing(metadata, "Data::Maximum Elevation", roundElevation(maxElevation));
 	}
-
-	try
-	{
-		auto layerName = convertToStdString(toString(pEntity->layer()));
-		auto name = layerName;
-		auto separator = layerName.find_last_of('-');
-		if (separator != std::string::npos && separator + 1 < layerName.size())
-		{
-			name = layerName.substr(separator + 1);
-		}
-		DwgProxyInspector::setMetadataIfMissing(metadata, "Information::Name", name);
-	}
-	catch (...) {}
-
-	DwgProxyInspector::setMetadataIfMissing(metadata, "Information::Style", std::string("Contours and Triangles"));
-	DwgProxyInspector::setMetadataIfMissing(metadata, "Information::Material", std::string("ByLayer"));
-	DwgProxyInspector::setMetadataIfMissing(metadata, "Information::Show Tooltips", std::string("Yes"));
 }

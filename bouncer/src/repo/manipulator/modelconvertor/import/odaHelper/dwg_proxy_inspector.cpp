@@ -211,6 +211,10 @@ std::unordered_map<std::string, repo::lib::RepoVariant> DwgProxyInspector::getPr
 	ensureProxyXData(info);
 	ensureProxyExtensionDictionary(info);
 
+	std::string handle = "Unknown";
+	try { handle = convertToStdString(toString(pEntity->objectId().getHandle())); }
+	catch (...) {}
+
 	try
 	{
 		// First ask ODA Common Data Access for palette-style properties. When a
@@ -225,11 +229,11 @@ std::unordered_map<std::string, repo::lib::RepoVariant> DwgProxyInspector::getPr
 	}
 	catch (OdError& e)
 	{
-		metadata["Proxy::Metadata Error"] = convertToStdString(e.description());
+		repoWarning << "Failed to read proxy metadata for entity [" << handle << "]: " << convertToStdString(e.description());
 	}
 	catch (...)
 	{
-		metadata["Proxy::Metadata Error"] = std::string("Unknown error reading proxy metadata");
+		repoWarning << "Failed to read proxy metadata for entity [" << handle << "]: unknown error";
 	}
 
 	return metadata;

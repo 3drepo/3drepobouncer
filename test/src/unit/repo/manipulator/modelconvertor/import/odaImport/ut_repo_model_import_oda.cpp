@@ -224,17 +224,8 @@ TEST(ODAModelImport, Civil3DTinSurfaceDWG)
 		EXPECT_THAT(face.hasGeometry(), IsTrue());
 	}
 
-	// TinCapture::addComputedMetadata sets these fixed informational fields
-	// on the layer node regardless of the surface's actual data.
+	// TinCapture::addComputedMetadata computes these from the captured triangles.
 	auto metadata = surfaceLayer.getMetadata();
-	ASSERT_THAT(metadata.count("Information::Style"), Eq(1u));
-	EXPECT_THAT(boost::apply_visitor(repo::lib::StringConversionVisitor(), metadata["Information::Style"]), Eq("Contours and Triangles"));
-
-	ASSERT_THAT(metadata.count("Information::Material"), Eq(1u));
-	EXPECT_THAT(boost::apply_visitor(repo::lib::StringConversionVisitor(), metadata["Information::Material"]), Eq("ByLayer"));
-
-	ASSERT_THAT(metadata.count("Information::Show Tooltips"), Eq(1u));
-	EXPECT_THAT(boost::apply_visitor(repo::lib::StringConversionVisitor(), metadata["Information::Show Tooltips"]), Eq("Yes"));
 
 	// Elevation range is data-dependent, so only presence is checked for now.
 	EXPECT_THAT(metadata.count("Data::Minimum Elevation"), Eq(1u));
