@@ -18,7 +18,6 @@
 #include <string>
 #include <sstream>
 #include <iostream>
-#include <unordered_set>
 #include <algorithm>
 #include <cctype>
 #include <boost/locale/encoding_utf.hpp>
@@ -187,58 +186,30 @@ repo::lib::RepoBounds repo::manipulator::modelconvertor::odaHelper::toRepoBounds
 	return *(repo::lib::RepoBounds*)(&b);
 }
 
-void repo::manipulator::modelconvertor::odaHelper::removeDuplicateGeneralMetadata(
-	std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
-{
-	auto canonicalGeneralKey = [](const std::string& key) {
-		const std::string prefix = "General::";
-		if (key.rfind(prefix, 0) != 0) return std::string();
+	
+std::string repo::manipulator::modelconvertor::odaHelper::canonicalGeneralMetadataKey(const std::string& key) {
+	const std::string prefix = "General::";
+	if (key.rfind(prefix, 0) != 0) return std::string();
 
-		std::string normalized;
-		for (auto ch : key.substr(prefix.size()))
+	std::string normalized;
+	for (auto ch : key.substr(prefix.size()))
+	{
+		unsigned char c = static_cast<unsigned char>(ch);
+		if (std::isalnum(c))
 		{
-			unsigned char c = static_cast<unsigned char>(ch);
-			if (std::isalnum(c))
-			{
-				normalized.push_back(static_cast<char>(std::tolower(c)));
-			}
+			normalized.push_back(static_cast<char>(std::tolower(c)));
 		}
-
-		if (normalized == "color" || normalized == "truecolor") return std::string("General::True Color");
-		if (normalized == "layer") return std::string("General::Layer");
-		if (normalized == "linetype") return std::string("General::Linetype");
-		if (normalized == "linetypescale") return std::string("General::Linetype scale");
-		if (normalized == "plotstyle" || normalized == "plotstylename") return std::string("General::Plot style");
-		if (normalized == "lineweight") return std::string("General::Lineweight");
-		if (normalized == "hyperlink") return std::string("General::Hyperlink");
-		if (normalized == "visibility") return std::string("General::Visibility");
-		return std::string();
-	};
-
-	std::vector<std::string> eraseKeys;
-	std::unordered_set<std::string> pendingCanonicalKeys;
-	std::vector<std::pair<std::string, repo::lib::RepoVariant>> insertValues;
-
-	for (const auto& [key, value] : metadata)
-	{
-		auto canonicalKey = canonicalGeneralKey(key);
-		if (canonicalKey.empty() || canonicalKey == key) continue;
-
-		if (metadata.find(canonicalKey) == metadata.end() && pendingCanonicalKeys.insert(canonicalKey).second)
-		{
-			insertValues.push_back({ canonicalKey, value });
-		}
-		eraseKeys.push_back(key);
 	}
 
-	for (const auto& [key, value] : insertValues)
-	{
-		metadata[key] = value;
-	}
-	for (const auto& key : eraseKeys)
-	{
-		metadata.erase(key);
-	}
+	if (normalized == "color" || normalized == "truecolor") return std::string("General::True Color");
+	if (normalized == "layer") return std::string("General::Layer");
+	if (normalized == "linetype") return std::string("General::Linetype");
+	if (normalized == "linetypescale") return std::string("General::Linetype scale");
+	if (normalized == "plotstyle" || normalized == "plotstylename") return std::string("General::Plot style");
+	if (normalized == "lineweight") return std::string("General::Lineweight");
+	if (normalized == "hyperlink") return std::string("General::Hyperlink");
+	if (normalized == "visibility") return std::string("General::Visibility");
+	return std::string();
 }
 
 void repo::manipulator::modelconvertor::odaHelper::extractEntityProperties(OdDbEntityPtr pEntity, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
@@ -286,6 +257,13 @@ void repo::manipulator::modelconvertor::odaHelper::extractEntityProperties(OdDbE
 
 				// Build the metadata key with category prefix
 				std::string metaKey = category.empty() ? propName : (category + "::" + propName);
+
+				// Fold onto the canonical spelling if this is a recognised
+				// "General::..." property under a different casing/naming, so
+				// it never coexists with the canonical key another metadata
+				// source (e.g. DwgProxyInspector::addProxyGeneralMetadata) sets.
+				auto canonicalKey = canonicalGeneralMetadataKey(metaKey);
+				if (!canonicalKey.empty()) metaKey = canonicalKey;
 
 				// Read the property value
 				OdRxValue value;

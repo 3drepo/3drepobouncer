@@ -113,13 +113,13 @@ namespace repo {
 				non-proxy entities, so it lives here rather than on any one
 				entity-specific class. */
 				void extractEntityProperties(OdDbEntityPtr pEntity, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
-
-				/* Some metadata sources (CDA, XData, extension dictionaries) can
-				independently contribute a "General::<Something>" property under
-				slightly different spellings/casing. This folds any such duplicate
-				onto the canonical "General::..." key the tree/UI expects, dropping
-				the non-canonical one. */
-				void removeDuplicateGeneralMetadata(std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
+				/* CDA (extractEntityProperties) reflects ODA's own property naming, which
+				doesn't always match the canonical "General::..." spelling the tree/UI
+				expects (e.g. "General::LineType" vs "General::Linetype", "General::Color"/
+				"General::TrueColor" vs "General::True Color"). Returns the canonical key
+				for a recognised property, or an empty string if key isn't a "General::..."
+				property this maps, so callers can fall back to the original key. */
+				std::string canonicalGeneralMetadataKey(const std::string& key);
 			}
 		}
 	}

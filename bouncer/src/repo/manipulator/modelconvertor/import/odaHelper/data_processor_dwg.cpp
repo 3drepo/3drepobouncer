@@ -68,7 +68,6 @@ void DataProcessorDwg::setEntityMetadata(
 		{
 			capturedGeometry->addComputedMetadata(pEntity, metadata);
 		}
-		removeDuplicateGeneralMetadata(metadata);
 
 		for (const auto& [key, value] : metadata)
 		{
