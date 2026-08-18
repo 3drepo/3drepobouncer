@@ -25,8 +25,6 @@
 #include <SharedPtr.h>
 #include <DbProxyEntity.h>
 #include <DbEntityWithGrData.h>
-#include <DbRegAppTable.h>
-#include <DbRegAppTableRecord.h>
 #include <DbDictionary.h>
 #include <DbXrecord.h>
 #include <Gi/GiWorldDraw.h>
@@ -40,25 +38,6 @@ namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
-				/* Controls how much proxy data getProxyInfo() eagerly reads for one
-				entity. The XData chain and the extension dictionary are deliberately
-				not read up front: opening the extension dictionary is a database
-				object open, and most proxies never need it - they produce no
-				geometry, or their layer already carries metadata. Those reads are
-				loaded on demand by DwgProxyInspector's internal ensureProxyXData()/
-				ensureProxyExtensionDictionary(), which are no-ops once cached. */
-				struct ProxyReadOptions
-				{
-					/* Defaults are the cheap draw-time profile; metadata and
-					diagnostic paths opt in to what they actually need. */
-					bool readXData = false;
-					bool readExtensionDictionary = false;
-					/* Falls back to scanning the whole registered application
-					table when xData() yields nothing. Expensive, so off
-					outside diagnostics. */
-					bool scanRegisteredAppsFallback = false;
-				};
-
 				struct ProxyInfo
 				{
 					OdDbProxyEntityPtr entity; // null => not a proxy
@@ -106,7 +85,7 @@ namespace repo {
 				class DwgProxyInspector
 				{
 				public:
-					bool getProxyInfo(OdDbEntityPtr entity, ProxyInfo& info, const ProxyReadOptions& options = ProxyReadOptions());
+					bool getProxyInfo(OdDbEntityPtr entity, ProxyInfo& info);
 
 					/* Is this proxy's class a "special" geometry case that needs more
 					than plain stored-graphics replay (e.g. Civil3D TIN surfaces)?
@@ -142,7 +121,7 @@ namespace repo {
 					ProxyAppType classifyApplication(const std::string& originalClass, ProxyAppHandler*& outHandler);
 					static std::string formatApplicationDisplayString(const ProxyInfo& info);
 
-					void ensureProxyXData(ProxyInfo& info, const ProxyReadOptions& options = ProxyReadOptions());
+					void ensureProxyXData(ProxyInfo& info);
 					void ensureProxyExtensionDictionary(ProxyInfo& info);
 
 					void addProxyBasicMetadata(OdDbEntityPtr pEntity, const ProxyInfo& info, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);

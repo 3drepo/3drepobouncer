@@ -85,7 +85,7 @@ bool DwgProxyInspector::isSpecialGeometryClass(const ProxyInfo& info) const
 	return info.isProxy() && info.matchedHandler && info.matchedHandler->isSpecialSurfaceClass(info.originalClass);
 }
 
-bool DwgProxyInspector::getProxyInfo(OdDbEntityPtr entity, ProxyInfo& info, const ProxyReadOptions& options)
+bool DwgProxyInspector::getProxyInfo(OdDbEntityPtr entity, ProxyInfo& info)
 {
 	info = ProxyInfo();
 
@@ -125,15 +125,12 @@ bool DwgProxyInspector::getProxyInfo(OdDbEntityPtr entity, ProxyInfo& info, cons
 	try { info.graphicsPE = OdDbEntityWithGrDataPE::cast(entity); }
 	catch (...) {}
 
-	if (options.readXData) ensureProxyXData(info, options);
-	if (options.readExtensionDictionary) ensureProxyExtensionDictionary(info);
-
 	info.appType = classifyApplication(info.originalClass, info.matchedHandler);
 
 	return true;
 }
 
-void DwgProxyInspector::ensureProxyXData(ProxyInfo& info, const ProxyReadOptions& options)
+void DwgProxyInspector::ensureProxyXData(ProxyInfo& info)
 {
 	if (info.xDataLoaded || info.entity.isNull()) return;
 	info.xDataLoaded = true;
@@ -149,33 +146,6 @@ void DwgProxyInspector::ensureProxyXData(ProxyInfo& info, const ProxyReadOptions
 				{
 					OdString appName = pRb->getString();
 					if (!appName.isEmpty()) info.xDataApps.push_back(convertToStdString(appName));
-				}
-			}
-		}
-		else if (options.scanRegisteredAppsFallback && info.entity->database() != nullptr)
-		{
-			OdDbObjectId entityId = info.entity->objectId();
-			if (!entityId.isNull())
-			{
-				OdDbRegAppTablePtr pAppTable = info.entity->database()->getRegAppTableId().safeOpenObject();
-				if (!pAppTable.isNull())
-				{
-					OdDbSymbolTableIteratorPtr pIter = pAppTable->newIterator();
-
-					for (; !pIter->done(); pIter->step())
-					{
-						OdDbRegAppTableRecordPtr pApp = pIter->getRecord();
-						if (pApp.isNull()) continue;
-
-						OdString appName = pApp->getName();
-						std::string appStr = convertToStdString(appName);
-
-						OdResBufPtr pAppData = info.entity->xData(appName);
-						if (!pAppData.isNull())
-						{
-							info.xDataApps.push_back(appStr);
-						}
-					}
 				}
 			}
 		}
