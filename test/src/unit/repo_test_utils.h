@@ -55,6 +55,19 @@ namespace testing {
 		const std::string& dbName,
 		const std::string& projectName);
 
+	/*
+	* Checks that the collection of the revision is a single, directed acyclic
+	* graph.
+	*/
+	void containerHasValidHierarchy(
+		const std::string& dbName,
+		const std::string& projectName,
+		const repo::lib::RepoUUID& revId);
+
+	void containerHasNoOrphanRefNodes(
+		const std::string& dbName,
+		const std::string& projectName);
+
 	bool fileExists(const std::string& file);
 
 	bool filesCompare(
@@ -142,4 +155,10 @@ namespace testing {
 
 	void setupTextures();
 	void unsetupTextures();
+
+	void writeImportConfig(
+		const std::string& importFilePath,
+		const repo::manipulator::modelconvertor::ModelImportConfig& config,
+		const std::string& configPath
+	);
 }

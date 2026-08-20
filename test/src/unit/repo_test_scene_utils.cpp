@@ -16,11 +16,16 @@
 */
 
 #include "repo_test_scene_utils.h"
+#include "repo_test_database_info.h"
+#include "repo_test_mesh_utils.h"
 #include <repo/core/model/bson/repo_node_metadata.h>
 #include <repo/core/model/bson/repo_node_mesh.h>
 #include <repo/core/model/bson/repo_node_material.h>
 #include <repo/core/model/bson/repo_node_texture.h>
+#include <repo/core/model/bson/repo_bson_factory.h>
+#include <repo/core/model//bson/repo_bson.h>
 #include <repo/lib/datastructure/repo_variant_utils.h>
+#include <repo/manipulator/modelutility/repo_scene_builder.h>
 
 using namespace repo::core::model;
 using namespace testing;
@@ -474,4 +479,107 @@ repo::lib::RepoMatrix SceneUtils::getWorldTransform(repo::core::model::RepoNode*
 		child = parents[0];
 	}
 	return m;
+}
+
+ContainerUtils::ContainerUtils(
+	std::shared_ptr<repo::core::handler::MongoDatabaseHandler> handler,
+	const std::string& database,
+	const std::string& container,
+	const repo::lib::RepoUUID& revisionId
+) :
+	handler(handler),
+	database(database),
+	container(container),
+	revisionId(revisionId)
+{
+}
+
+std::vector<repo::core::model::RepoBSON> ContainerUtils::getRootNodes()
+{
+	repo::core::handler::database::query::RepoQueryBuilder query;
+	query.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revisionId));
+	query.append(repo::core::handler::database::query::Exists(REPO_NODE_LABEL_PARENTS, false));
+	return handler->findAllByCriteria(
+		database,
+		container + ".scene",
+		query,
+		false
+	);
+}
+
+void ContainerUtils::deleteNode(const repo::lib::RepoUUID& id)
+{
+	handler->dropDocuments(
+		database,
+		container + ".scene",
+		repo::core::handler::database::query::Eq(REPO_NODE_LABEL_ID, id)
+	);
+}
+
+void ContainerUtils::updateRevision(const repo::core::model::RevisionNode& revision)
+{
+	handler->upsertDocument(
+		database,
+		container + ".history",
+		revision,
+		false
+	);
+}
+
+std::vector<repo::core::model::ModelRevisionNode> ContainerUtils::getRevisions()
+{
+	std::vector<repo::core::model::ModelRevisionNode> revisions;
+	auto docs = handler->findAllByCriteria(
+		database,
+		container + ".history",
+		repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_REVISION),
+		false
+	);
+	for (auto& d : docs) {
+		revisions.push_back(repo::core::model::ModelRevisionNode(d));
+	}
+	return revisions;
+}
+
+void testing::makeRandomScene(
+	std::shared_ptr<repo::core::handler::MongoDatabaseHandler> handler,
+	const std::string& db,
+	const std::string& project,
+	const repo::lib::RepoUUID& revisionId
+)
+{
+	using namespace repo::core::model;
+
+	repo::manipulator::modelutility::RepoSceneBuilder builder(
+		handler, db, project, revisionId);
+
+	builder.setUnits(repo::lib::ModelUnits::METRES);
+
+	// Root transformation — hold onto the shared_ptr while children need its sharedID
+	auto root = builder.addNode(
+		RepoBSONFactory::makeTransformationNode({}, "root"));
+
+	for (int b = 0; b < 5; ++b)
+	{
+		// Branch transformation under root
+		auto branch = builder.addNode(
+			RepoBSONFactory::makeTransformationNode(
+				{}, "branch_" + std::to_string(b), {root->getSharedID()}));
+
+		for (int m = 0; m < 2; ++m)
+		{
+			auto mesh = repo::test::utils::mesh::createRandomMesh(
+				30 + rand() % 100,	// nVertices
+				false,              // hasUV
+				3,                  // primitiveSize (triangles)
+				"",                 // grouping
+				{branch->getSharedID()});
+
+			builder.addNode(*mesh);
+		}
+	}
+	// root shared_ptr goes out of scope here — node is queued for write
+
+	root.reset();
+	builder.finalise();
 }
