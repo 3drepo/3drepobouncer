@@ -583,6 +583,44 @@ std::vector<repo::core::model::ModelRevisionNode> ContainerUtils::getRevisions()
 	return revisions;
 }
 
+namespace {
+	void makeRandomSceneNodes(std::function<void(std::unique_ptr<repo::core::model::RepoNode>)> addNode)
+	{
+		auto root = RepoBSONFactory::makeTransformationNode({}, "root");
+		auto rootId = root.getSharedID();
+		addNode(std::make_unique<TransformationNode>(root));
+
+		for (int b = 0; b < 5; ++b)
+		{
+			// Branch transformation under root
+			auto branch = RepoBSONFactory::makeTransformationNode(
+				{}, "branch_" + std::to_string(b), {rootId});
+			auto branchId = branch.getSharedID();
+			addNode(std::make_unique<TransformationNode>(branch));
+
+			auto material = RepoBSONFactory::makeMaterialNode(
+				{}, "material_" + std::to_string(b), {}
+			);
+
+			for (int m = 0; m < 2; ++m)
+			{
+				auto mesh = repo::test::utils::mesh::createRandomMesh(
+					30 + rand() % 100,	// nVertices
+					false,              // hasUV
+					3,                  // primitiveSize (triangles)
+					"",                 // grouping
+					{branchId});
+
+				material.addParent(mesh->getSharedID());
+
+				addNode(std::move(mesh));
+			}
+
+			addNode(std::make_unique<MaterialNode>(material));
+		}
+	}
+}
+
 void testing::makeRandomScene(
 	std::shared_ptr<repo::core::handler::MongoDatabaseHandler> handler,
 	const std::string& db,
@@ -597,29 +635,20 @@ void testing::makeRandomScene(
 
 	builder.setUnits(repo::lib::ModelUnits::METRES);
 
-	auto root = builder.addNode(
-		RepoBSONFactory::makeTransformationNode({}, "root"));
+	makeRandomSceneNodes([&](std::unique_ptr<RepoNode> n) {
+		builder.addNode(std::move(n));
+	});
 
-	for (int b = 0; b < 5; ++b)
-	{
-		// Branch transformation under root
-		auto branch = builder.addNode(
-			RepoBSONFactory::makeTransformationNode(
-				{}, "branch_" + std::to_string(b), {root->getSharedID()}));
-
-		for (int m = 0; m < 2; ++m)
-		{
-			auto mesh = repo::test::utils::mesh::createRandomMesh(
-				30 + rand() % 100,	// nVertices
-				false,              // hasUV
-				3,                  // primitiveSize (triangles)
-				"",                 // grouping
-				{branch->getSharedID()});
-
-			builder.addNode(*mesh);
-		}
-	}
-
-	root.reset(); // equivalent to the root going out of scope so it is queued for writing.
 	builder.finalise();
+}
+
+repo::core::model::RepoScene* testing::makeRandomScene()
+{
+	auto scene = new repo::core::model::RepoScene();
+
+	makeRandomSceneNodes([&](std::unique_ptr<RepoNode> n) {
+		scene->addNodes({n.release()});
+	});
+
+	return scene;
 }

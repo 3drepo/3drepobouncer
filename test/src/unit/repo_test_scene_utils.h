@@ -191,4 +191,6 @@ namespace testing {
 		const std::string& project,
 		const repo::lib::RepoUUID& revisionId
 	);
+
+	repo::core::model::RepoScene* makeRandomScene();
 }

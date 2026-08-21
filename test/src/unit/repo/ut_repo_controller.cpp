@@ -22,6 +22,7 @@
 #include "../repo_test_database_info.h"
 #include "../repo_test_fileservice_info.h"
 #include "../repo_test_utils.h"
+#include "../repo_test_scene_utils.h"
 
 using namespace repo;
 using namespace testing;
@@ -37,10 +38,16 @@ static std::shared_ptr<RepoController> getController()
 TEST(RepoControllerTest, CommitScene) {
 	auto controller = getController();
 	auto token = initController(controller.get());
+
+	// This test covers only legacy behaviour of RepoScene, which is committing a
+	// scene when it is fully resident in memory only. The new behaviour is to use
+	// the streamed importer (RepoSceneBuilder), for which the revision must be set
+	// ahead of time, and be the identical to that provided to commitScene.
+
+	auto scene = testing::makeRandomScene();
+
 	//Try to commit a scene without setting db/project name
 	uint8_t errCode;
-	auto scene = controller->loadSceneFromFile(getDataPath(simpleModel), errCode);
-	EXPECT_EQ(REPOERR_OK, errCode);
 	EXPECT_EQ(REPOERR_UNKNOWN_ERR, controller->commitScene(token, scene));
 	EXPECT_FALSE(scene->isRevisioned());
 
@@ -64,7 +71,7 @@ TEST(RepoControllerTest, CommitScene) {
 	EXPECT_TRUE(projectExists("commitSceneTest", "commitCube"));
 	EXPECT_EQ(scene->getOwner(), "ANONYMOUS USER");
 
-	auto scene2 = controller->loadSceneFromFile(getDataPath(simpleModel), errCode);
+	auto scene2 = makeRandomScene();
 	std::string owner = "dog";
 	EXPECT_EQ(errCode, 0);
 	scene2->setDatabaseAndProjectName("commitSceneTest", "commitCube2");
