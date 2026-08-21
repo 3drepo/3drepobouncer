@@ -163,8 +163,6 @@ void ModelImportManager::connectMetadataNodes(repo::core::model::RepoScene* scen
 	}
 }
 
-#pragma optimize("", off)
-
 void repo::manipulator::modelconvertor::ModelImportManager::cleanUpExistingImport(
 	const std::string& teamspace,
 	const std::string& container,
