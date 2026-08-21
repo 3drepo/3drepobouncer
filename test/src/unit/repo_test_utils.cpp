@@ -28,6 +28,7 @@
 #include <queue>
 #include <unordered_set>
 #include <unordered_map>
+#include <filesystem>
 
 using namespace repo::core::model;
 using namespace testing;
@@ -516,16 +517,19 @@ void testing::containerHasNoOrphanRefNodes(
 	const std::string& dbName,
 	const std::string& projectName)
 {
-	auto scene = getHandler()->findAllByCriteria(
+	auto handler = getHandler();
+	auto fileManager = handler->getFileManager();
+
+	auto scene = handler->findAllByCriteria(
 		dbName,
-		projectName + ".scene",
+		projectName + "." + REPO_COLLECTION_SCENE,
 		repo::core::handler::database::query::Exists(REPO_LABEL_BINARY_REFERENCE, true),
 		false
 	);
 
-	auto refs = getHandler()->findAllByCriteria(
+	auto refs = handler->findAllByCriteria(
 		dbName,
-		projectName + ".scene.ref",
+		projectName + "." + REPO_COLLECTION_SCENE + "." + REPO_COLLECTION_EXT_REF,
 		repo::core::handler::database::query::Exists(REPO_LABEL_ID, true), // findAllByCriteria doesn't support empty queries, so create one that will return true for every document
 		false
 	);
@@ -535,9 +539,17 @@ void testing::containerHasNoOrphanRefNodes(
 		referenced.insert(bson.getBinaryReference().getStringField(REPO_LABEL_BINARY_FILENAME));
 	}
 
+	std::unordered_set<std::string> references;
 	for (auto& bson : refs) {
 		auto refName = bson.getStringField(REPO_LABEL_ID);
 		EXPECT_TRUE(referenced.find(refName) != referenced.end()) << "Reference node " << refName << " is not referenced by any scene node";
+		references.insert(refName);
+	}
+
+	EXPECT_THAT(referenced, UnorderedElementsAreArray(references)); // Also check that there are no missing ref nodes.
+
+	for (auto& ref : refs) {
+		EXPECT_TRUE(std::filesystem::exists(fileManager->getFilePath(ref))) << "Reference node " << ref.getStringField(REPO_LABEL_ID) << " points to a file that does not exist: " << fileManager->getFilePath(ref);
 	}
 
 	EXPECT_THAT(referenced.size(), Gt(0)) << "There are no reference nodes in the scene. Make sure the scene commits binary blobs.";

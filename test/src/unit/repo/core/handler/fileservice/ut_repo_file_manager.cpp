@@ -101,7 +101,7 @@ TEST(FileManager, deleteFileAndRef)
 	auto dataPathName = getDataPath("fileShare/dir1/dir2/dir3/someFile");
 	ASSERT_TRUE(repo::lib::doesFileExist(dataPathName));
 
-	EXPECT_TRUE(manager->deleteFileAndRef(db, col, fileName));
+	EXPECT_TRUE(manager->deleteFileAndRef(db, col, {fileName}));
 
 	auto res = handler->findOneByUniqueID(db, col + "." + REPO_COLLECTION_EXT_REF, fileName);
 	EXPECT_TRUE(res.isEmpty());
@@ -109,5 +109,5 @@ TEST(FileManager, deleteFileAndRef)
 	EXPECT_FALSE(repo::lib::doesFileExist(dataPathName));
 
 	// Deleting a file a second time should not do anything, but not throw either
-	EXPECT_FALSE(manager->deleteFileAndRef(db, col, fileName));
+	EXPECT_FALSE(manager->deleteFileAndRef(db, col, {fileName}));
 }

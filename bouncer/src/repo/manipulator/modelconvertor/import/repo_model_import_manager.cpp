@@ -34,10 +34,10 @@ using namespace repo::manipulator::modelconvertor;
 using namespace repo::lib;
 
 repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
-	const std::string &file,
-	const repo::manipulator::modelconvertor::ModelImportConfig &config,
+	const std::string& file,
+	const repo::manipulator::modelconvertor::ModelImportConfig& config,
 	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-	uint8_t &error
+	uint8_t& error
 ) const {
 	if (!repo::lib::doesFileExist(std::filesystem::u8path(file))) {
 		error = REPOERR_MODEL_FILE_READ;
@@ -50,6 +50,8 @@ repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 		repoError << "Cannot find file: " << file;
 		return nullptr;
 	}
+
+	cleanUpExistingImport(config.getDatabaseName(), config.getProjectName(), config.getRevisionId(), handler);
 
 	repoTrace << "Importing model and generating Repo Scene";
 	repo::core::model::RepoScene* scene = modelConvertor->importModel(file, handler, error);
@@ -159,6 +161,46 @@ void ModelImportManager::connectMetadataNodes(repo::core::model::RepoScene* scen
 				metadata);
 		}
 	}
+}
+
+#pragma optimize("", off)
+
+void repo::manipulator::modelconvertor::ModelImportManager::cleanUpExistingImport(
+	const std::string& teamspace,
+	const std::string& container,
+	const repo::lib::RepoUUID& revisionId,
+	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler
+) const
+{
+	using namespace repo::core::handler::database::query;
+
+	auto collection = container + "." + REPO_COLLECTION_SCENE;
+
+	RepoQueryBuilder filter;
+	filter.append(Eq(REPO_NODE_REVISION_ID, revisionId));
+	filter.append(Exists(REPO_LABEL_BINARY_REFERENCE, true));
+
+	auto docsWithBinaries = handler->findCursorByCriteria(
+		teamspace,
+		collection,
+		filter
+	);
+	std::set<std::string> refsToDelete;
+	for (auto& doc : *docsWithBinaries) {
+		refsToDelete.insert(doc.getBinaryReference().getStringField(REPO_LABEL_BINARY_FILENAME));
+	}
+
+	handler->getFileManager()->deleteFileAndRef(
+		teamspace,
+		collection,
+		refsToDelete
+	);
+
+	handler->dropDocuments(
+		teamspace,
+		collection,
+		Eq(REPO_NODE_REVISION_ID, revisionId)
+	);
 }
 
 void ModelImportManager::connectMetadataNodes(repo::core::model::RepoScene* scene,

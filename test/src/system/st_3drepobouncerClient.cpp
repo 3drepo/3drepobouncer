@@ -32,6 +32,7 @@
 #include <repo/core/model/bson/repo_bson_builder.h>
 #include <repo/core/handler/database/repo_query.h>
 #include <unordered_set>
+#include <filesystem>
 
 using namespace testing;
 
@@ -736,8 +737,6 @@ TEST(RepoClientTest, UnicodeFilenames)
 #endif
 }
 
-#pragma optimize("", off)
-
 TEST(RepoClientTest, ExistingRevisionArtefactsAreRemoved)
 {
 	// Perform a couple of imports to pre-populate a container
@@ -790,6 +789,20 @@ TEST(RepoClientTest, ExistingRevisionArtefactsAreRemoved)
 
 	utils.updateRevision(revisionNode);
 
+	// Get all the link names for the orphaned nodes so we can check the files are
+	// properly deleted
+
+	auto fileManager = handler->getFileManager();
+	std::unordered_set<std::string> orphanLinkNames;
+	auto orphanRefNodes = utils.getAllRefNodes();
+	for (auto& ref : orphanRefNodes) {
+		orphanLinkNames.insert(fileManager->getFilePath(ref));
+	}
+
+	for (auto orphanLinkName : orphanLinkNames) {
+		EXPECT_TRUE(std::filesystem::exists(orphanLinkName));
+	}
+
 	// Now run the import again, which should remove all orphaned artefacts leaving
 	// three well-formed revisions.
 
@@ -805,4 +818,8 @@ TEST(RepoClientTest, ExistingRevisionArtefactsAreRemoved)
 	}
 
 	containerHasNoOrphanRefNodes(database, container);
+
+	for (auto orphanLinkName : orphanLinkNames) {
+		EXPECT_FALSE(std::filesystem::exists(orphanLinkName));
+	}
 }

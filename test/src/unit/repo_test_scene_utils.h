@@ -21,6 +21,7 @@
 #include <repo/core/model/bson/repo_node_mesh.h>
 #include <repo/core/model/bson/repo_node_revision.h>
 #include <repo/core/handler/repo_database_handler_mongo.h>
+#include <vector>
 
 namespace testing {
 
@@ -168,6 +169,8 @@ namespace testing {
 		);
 
 		std::vector<repo::core::model::RepoBSON> getRootNodes();
+
+		std::vector<repo::core::model::RepoRef> getAllRefNodes();
 
 		void deleteNode(const repo::lib::RepoUUID& id);
 

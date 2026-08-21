@@ -26,6 +26,7 @@
 #include <repo/core/model//bson/repo_bson.h>
 #include <repo/lib/datastructure/repo_variant_utils.h>
 #include <repo/manipulator/modelutility/repo_scene_builder.h>
+#include <set>
 
 using namespace repo::core::model;
 using namespace testing;
@@ -501,17 +502,56 @@ std::vector<repo::core::model::RepoBSON> ContainerUtils::getRootNodes()
 	query.append(repo::core::handler::database::query::Exists(REPO_NODE_LABEL_PARENTS, false));
 	return handler->findAllByCriteria(
 		database,
-		container + ".scene",
+		container + "." + REPO_COLLECTION_SCENE,
 		query,
 		false
 	);
+}
+
+std::vector<repo::core::model::RepoRef> ContainerUtils::getAllRefNodes()
+{
+	std::set<std::string> refNames;
+
+	{
+		repo::core::handler::database::query::RepoQueryBuilder query;
+		query.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revisionId));
+		query.append(repo::core::handler::database::query::Exists(REPO_LABEL_BINARY_REFERENCE, true));
+
+		auto cursor = handler->findCursorByCriteria(
+			database,
+			container + "." + REPO_COLLECTION_SCENE,
+			query
+		);
+
+		for (auto& doc : *cursor) {
+			auto reference = doc.getBinaryReference();
+			auto name = reference.getStringField(REPO_LABEL_BINARY_FILENAME);
+			refNames.insert(name);
+		}
+	}
+
+	std::vector<repo::core::model::RepoRef> refNodes;
+
+	{
+		auto cursor = handler->findCursorByCriteria(
+			database,
+			container + "." + REPO_COLLECTION_SCENE + "." + REPO_COLLECTION_EXT_REF,
+			repo::core::handler::database::query::Eq(REPO_LABEL_ID, refNames)
+		);
+
+		for (auto& doc : *cursor) {
+			refNodes.push_back(repo::core::model::RepoRef(doc));
+		}
+	}
+
+	return refNodes;
 }
 
 void ContainerUtils::deleteNode(const repo::lib::RepoUUID& id)
 {
 	handler->dropDocuments(
 		database,
-		container + ".scene",
+		container + "." + REPO_COLLECTION_SCENE,
 		repo::core::handler::database::query::Eq(REPO_NODE_LABEL_ID, id)
 	);
 }
@@ -520,7 +560,7 @@ void ContainerUtils::updateRevision(const repo::core::model::RevisionNode& revis
 {
 	handler->upsertDocument(
 		database,
-		container + ".history",
+		container + "." + REPO_COLLECTION_HISTORY,
 		revision,
 		false
 	);
@@ -531,7 +571,7 @@ std::vector<repo::core::model::ModelRevisionNode> ContainerUtils::getRevisions()
 	std::vector<repo::core::model::ModelRevisionNode> revisions;
 	auto docs = handler->findAllByCriteria(
 		database,
-		container + ".history",
+		container + "." + REPO_COLLECTION_HISTORY,
 		repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_REVISION),
 		false
 	);
