@@ -206,6 +206,7 @@
 #define REPO_NODE_TYPE_SHADER			"shader"
 #define REPO_NODE_TYPE_TEXTURE			"texture"
 #define REPO_NODE_TYPE_TRANSFORMATION   "transformation"
+#define REPO_NODE_TYPE_POINT			"point"
 #define REPO_NODE_TYPE_UNKNOWN			"unknown" // reserved UUID ext 00
 //-----------------------------------------------------------------------------
 

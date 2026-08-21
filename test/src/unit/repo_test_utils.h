@@ -79,6 +79,8 @@ namespace testing {
 
 	repo::lib::RepoVector3D makeRandomRepoVector();
 
+	repo::lib::repo_color4d_t makeRandomRepoColour();
+
 	std::vector<uint8_t> makeRandomBinary(size_t size = 1000);
 
 	repo::core::model::RepoBSON makeRandomRepoBSON(
