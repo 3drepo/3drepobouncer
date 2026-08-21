@@ -23,7 +23,7 @@
 #include <repo/core/model/bson/repo_node_material.h>
 #include <repo/core/model/bson/repo_node_texture.h>
 #include <repo/core/model/bson/repo_bson_factory.h>
-#include <repo/core/model//bson/repo_bson.h>
+#include <repo/core/model/bson/repo_bson.h>
 #include <repo/lib/datastructure/repo_variant_utils.h>
 #include <repo/manipulator/modelutility/repo_scene_builder.h>
 #include <set>
