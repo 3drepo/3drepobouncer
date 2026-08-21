@@ -28,6 +28,7 @@
 #include <repo/manipulator/modelutility/repo_scene_builder.h>
 #include <set>
 
+using namespace repo::core::handler::database;
 using namespace repo::core::model;
 using namespace testing;
 
@@ -497,9 +498,9 @@ ContainerUtils::ContainerUtils(
 
 std::vector<repo::core::model::RepoBSON> ContainerUtils::getRootNodes()
 {
-	repo::core::handler::database::query::RepoQueryBuilder query;
-	query.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revisionId));
-	query.append(repo::core::handler::database::query::Exists(REPO_NODE_LABEL_PARENTS, false));
+	query::RepoQueryBuilder query;
+	query.append(query::Eq(REPO_NODE_REVISION_ID, revisionId));
+	query.append(query::Exists(REPO_NODE_LABEL_PARENTS, false));
 	return handler->findAllByCriteria(
 		database,
 		container + "." + REPO_COLLECTION_SCENE,
@@ -513,9 +514,9 @@ std::vector<repo::core::model::RepoRef> ContainerUtils::getAllRefNodes()
 	std::set<std::string> refNames;
 
 	{
-		repo::core::handler::database::query::RepoQueryBuilder query;
-		query.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revisionId));
-		query.append(repo::core::handler::database::query::Exists(REPO_LABEL_BINARY_REFERENCE, true));
+		query::RepoQueryBuilder query;
+		query.append(query::Eq(REPO_NODE_REVISION_ID, revisionId));
+		query.append(query::Exists(REPO_LABEL_BINARY_REFERENCE, true));
 
 		auto cursor = handler->findCursorByCriteria(
 			database,
@@ -536,7 +537,7 @@ std::vector<repo::core::model::RepoRef> ContainerUtils::getAllRefNodes()
 		auto cursor = handler->findCursorByCriteria(
 			database,
 			container + "." + REPO_COLLECTION_SCENE + "." + REPO_COLLECTION_EXT_REF,
-			repo::core::handler::database::query::Eq(REPO_LABEL_ID, refNames)
+			query::Eq(REPO_LABEL_ID, refNames)
 		);
 
 		for (auto& doc : *cursor) {
@@ -552,7 +553,7 @@ void ContainerUtils::deleteNode(const repo::lib::RepoUUID& id)
 	handler->dropDocuments(
 		database,
 		container + "." + REPO_COLLECTION_SCENE,
-		repo::core::handler::database::query::Eq(REPO_NODE_LABEL_ID, id)
+		query::Eq(REPO_NODE_LABEL_ID, id)
 	);
 }
 
@@ -568,11 +569,12 @@ void ContainerUtils::updateRevision(const repo::core::model::RevisionNode& revis
 
 std::vector<repo::core::model::ModelRevisionNode> ContainerUtils::getRevisions()
 {
+	
 	std::vector<repo::core::model::ModelRevisionNode> revisions;
 	auto docs = handler->findAllByCriteria(
 		database,
 		container + "." + REPO_COLLECTION_HISTORY,
-		repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_REVISION),
+		query::Eq(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_REVISION),
 		false
 	);
 	for (auto& d : docs) {
@@ -595,7 +597,6 @@ void testing::makeRandomScene(
 
 	builder.setUnits(repo::lib::ModelUnits::METRES);
 
-	// Root transformation — hold onto the shared_ptr while children need its sharedID
 	auto root = builder.addNode(
 		RepoBSONFactory::makeTransformationNode({}, "root"));
 
@@ -618,8 +619,7 @@ void testing::makeRandomScene(
 			builder.addNode(*mesh);
 		}
 	}
-	// root shared_ptr goes out of scope here — node is queued for write
 
-	root.reset();
+	root.reset(); // equivalent to the root going out of scope so it is queued for writing.
 	builder.finalise();
 }
