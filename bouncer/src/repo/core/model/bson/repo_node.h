@@ -36,6 +36,7 @@ namespace repo {
 				REVISION,
 				TEXTURE,
 				TRANSFORMATION,
+				POINT,
 				UNKNOWN,
 			};
 

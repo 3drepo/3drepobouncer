@@ -69,6 +69,8 @@ namespace repo {
 
 				void appendLargeArray(std::string name, const void* data, size_t size);
 
+				void appendByteArray(std::string name, const std::vector<uint8_t> data);
+
 				/**
 				* Append a vector as a bson array.
 				* @param label label of the array

@@ -167,6 +167,17 @@ void RepoBSONBuilder::appendLargeArray(std::string name, const void* data, size_
 	memcpy(buf.data(), data, size);
 }
 
+void RepoBSONBuilder::appendByteArray(std::string name, const std::vector<uint8_t> data)
+{
+	key_owned(name);
+	bsoncxx::types::b_binary binary{
+	bsoncxx::binary_sub_type::k_binary,
+	data.size(),
+	data.data()
+	};
+	append(binary);
+}
+
 void RepoBSONBuilder::appendTime(std::string label, const int64_t& ts)
 {
 	key_owned(label);

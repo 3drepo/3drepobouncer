@@ -184,6 +184,17 @@ repo::lib::RepoUUID RepoBSONElement::UUID() const
 	throw repo::lib::RepoFieldTypeException("Cannot convert UUID because the binary has the wrong subtype");
 }
 
+std::vector<uint8_t> repo::core::model::RepoBSONElement::ByteArray() const
+{
+	const auto& b = element::get_binary();
+	
+	if (b.sub_type == bsoncxx::binary_sub_type::k_binary)
+	{
+		return std::vector<uint8_t>(b.bytes, b.bytes + b.size);
+	}
+	throw repo::lib::RepoFieldTypeException("Cannot convert element to byte array because the binary has the wrong subtype");
+}
+
 size_t RepoBSONElement::size() const
 {
 	return element::length();

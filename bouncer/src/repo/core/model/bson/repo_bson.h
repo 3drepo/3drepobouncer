@@ -166,6 +166,8 @@ namespace repo {
 				*/
 				std::vector<float> getFloatArray(const std::string &label) const;
 
+				std::vector<uint8_t> getByteArray(const std::string& label) const;
+
 				int getIntField(const std::string& label) const;
 
 				/**

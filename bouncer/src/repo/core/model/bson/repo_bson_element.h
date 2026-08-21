@@ -80,6 +80,8 @@ namespace repo {
 
 				repo::lib::RepoUUID UUID() const;
 
+				std::vector<uint8_t> ByteArray() const;
+
 				repo::lib::RepoVariant repoVariant() const;
 
 				bool operator==(const RepoBSONElement& other) const;

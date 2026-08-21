@@ -364,6 +364,11 @@ std::vector<float> RepoBSON::getFloatArray(const std::string &label) const
 	return getArray<float>(label, true);
 }
 
+std::vector<uint8_t> RepoBSON::getByteArray(const std::string& label) const
+{
+	return getField(label).ByteArray();
+}
+
 std::vector<std::string> RepoBSON::getStringArray(const std::string &label) const
 {
 	return getArray<std::string>(label, true);

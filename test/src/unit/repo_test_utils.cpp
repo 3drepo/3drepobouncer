@@ -43,6 +43,17 @@ repo::lib::RepoVector3D testing::makeRandomRepoVector()
 	return v;
 }
 
+repo::lib::repo_color4d_t testing::makeRandomRepoColour()
+{
+	repo::lib::repo_color4d_t c;
+	c.r = (double)rand() / (double)RAND_MAX;
+	c.g = (double)rand() / (double)RAND_MAX;
+	c.b = (double)rand() / (double)RAND_MAX;
+	c.a = (double)rand() / (double)RAND_MAX;
+
+	return c;
+}
+
 std::vector<uint8_t> testing::makeRandomBinary(size_t size)
 {
 	std::vector<uint8_t> bin;

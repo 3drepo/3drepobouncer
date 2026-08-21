@@ -14,6 +14,7 @@ set(TEST_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_mesh_utils.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_mock_clash_scene.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_mock_database.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_point_utils.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_random_generator.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_scene_utils.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_utils.cpp
@@ -29,6 +30,7 @@ set(TEST_HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_mesh_utils.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_mock_clash_scene.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_mock_database.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_point_utils.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_random_generator.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_scene_utils.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_utils.h
