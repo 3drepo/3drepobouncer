@@ -1994,10 +1994,10 @@ node-exports-info@^1.6.0:
     object.entries "^1.1.9"
     semver "^6.3.1"
 
-nodemon@3.1.12:
-  version "3.1.12"
-  resolved "https://registry.npmjs.org/nodemon/-/nodemon-3.1.12.tgz"
-  integrity sha512-ubbKNjz0Xvv49+5VWiqK2N+1VkoWdWi4xfpyuVbdT4QcdpGlN6Nx/OtxBCDHW8aUelaV6QHDbOjGca9HGnCiCw==
+nodemon@3.1.14:
+  version "3.1.14"
+  resolved "https://registry.yarnpkg.com/nodemon/-/nodemon-3.1.14.tgz#8487ca379c515301d221ec007f27f24ecafa2b51"
+  integrity sha512-jakjZi93UtB3jHMWsXL68FXSAosbLfY0In5gtKq3niLSkrWznrVBzXFNOEMJUfc9+Ke7SHWoAZsiMkNP3vq6Jw==
   dependencies:
     chokidar "^3.5.2"
     debug "^4"
