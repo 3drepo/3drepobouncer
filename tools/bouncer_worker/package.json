@@ -5,6 +5,9 @@
     "node": "24.x.x"
   },
   "private": true,
+  "resolutions": {
+    "ajv": "^6.14.0"
+  },
   "scripts": {
     "start": "pm2 start src/scripts/bouncer_worker.js",
     "stop": "pm2 kill",
