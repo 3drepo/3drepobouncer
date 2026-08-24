@@ -77,8 +77,7 @@ const listenToQueue = (channel, queueName, prefetchCount, callback) => {
 		logger.info(`Received ${msg.content.toString()} from ${queueName}`, logLabel);
 		callback(msg.content.toString(), msg.properties.correlationId, (reply, queue = rabbitmq.callback_queue) => {
 			logger.info(`Sending reply to ${queue}: ${reply}`, logLabel);
-			// eslint-disable-next-line new-cap
-			channel.sendToQueue(queue, new Buffer.from(reply),
+			channel.sendToQueue(queue, Buffer.from(reply),
 				{ correlationId: msg.properties.correlationId, appId: msg.properties.appId });
 		}).then(() => {
 			channel.ack(msg);
@@ -118,8 +117,7 @@ const executeTasks = async (conn, queueName, nTasks, callback) => {
 				// eslint-disable-next-line no-loop-func
 				(reply, queue = rabbitmq.callback_queue) => {
 					logger.info(`[${currentTaskNum}/${nTasks}] Sending to reply to ${queue}: ${reply}`, logLabel);
-					// eslint-disable-next-line new-cap
-					channel.sendToQueue(queue, new Buffer.from(reply),
+					channel.sendToQueue(queue, Buffer.from(reply),
 						{ correlationId: msg.properties.correlationId, appId: msg.properties.appId });
 				},
 			).then(() => {
