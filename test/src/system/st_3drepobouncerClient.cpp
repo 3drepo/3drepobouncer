@@ -741,6 +741,8 @@ TEST(RepoClientTest, ExistingRevisionArtefactsAreRemoved)
 {
 	// Perform a couple of imports to pre-populate a container
 
+	testing::setupTextures();
+
 	auto database = repo::lib::RepoUUID::createUUID().toString();
 	auto container = repo::lib::RepoUUID::createUUID().toString();
 	auto configPath = getDataPath("importExistingRevisionArtefacts.json");
