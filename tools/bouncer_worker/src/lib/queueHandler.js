@@ -191,7 +191,7 @@ const connectToRabbitMQ = async (autoReconnect, uponConnected) => {
 	}
 };
 
-QueueHandler.connectToQueue = (specificQueue) => {
+QueueHandler.connectToQueue = async (specificQueue) => {
 	const queueNames = [];
 	if (specificQueue) {
 		queueNames.push(getQueueName(specificQueue));
@@ -200,14 +200,14 @@ QueueHandler.connectToQueue = (specificQueue) => {
 			queueNames.push(getQueueName(label));
 		}
 	}
-	connectToRabbitMQ(true,
+	await connectToRabbitMQ(true,
 		(conn) => establishChannel(conn, queueNames));
 };
 
-QueueHandler.runNTasks = (queueType, nTasks) => {
+QueueHandler.runNTasks = async (queueType, nTasks) => {
 	const queueName = getQueueName(queueType);
 	const handler = queueHandlers[queueName];
-	connectToRabbitMQ(false, (conn) => executeTasks(conn, queueName, nTasks, handler.onMessageReceived));
+	await connectToRabbitMQ(false, (conn) => executeTasks(conn, queueName, nTasks, handler.onMessageReceived));
 };
 
 module.exports = QueueHandler;
