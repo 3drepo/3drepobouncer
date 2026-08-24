@@ -87,11 +87,16 @@ TEST(RepoControllerTest, CommitScene) {
 
 TEST(RepoControllerTest, LoadSceneFromFile) {
 	auto controller = getController();
+	auto token = initController(controller.get());
 	auto defaultG = core::model::RepoScene::GraphType::DEFAULT;
+
+	repo::manipulator::modelconvertor::ModelImportConfig config;
+	config.databaseName = "loadSceneFromFileTest";
+	config.projectName = "loadSceneFromFileTestContainer";
 
 	//standard import
 	uint8_t errCode;
-	auto scene = controller->loadSceneFromFile(getDataPath(simpleModel), errCode);
+	auto scene = controller->loadSceneFromFile(getDataPath(simpleModel), errCode, config);
 	ASSERT_TRUE(scene);
 	EXPECT_EQ(errCode, 0);
 	ASSERT_TRUE(scene->getRoot(defaultG));
@@ -100,24 +105,24 @@ TEST(RepoControllerTest, LoadSceneFromFile) {
 	EXPECT_TRUE(dynamic_cast<core::model::TransformationNode*>(scene->getRoot(defaultG))->isIdentity());
 
 	//Import the scene with non existant file
-	auto sceneNoFile = controller->loadSceneFromFile("thisFileDoesntExist.obj", errCode);
+	auto sceneNoFile = controller->loadSceneFromFile("thisFileDoesntExist.obj", errCode, config);
 	EXPECT_EQ(errCode, REPOERR_MODEL_FILE_READ);
 	EXPECT_FALSE(sceneNoFile);
 
 	//Import the scene with bad Extension
-	auto sceneBadExt = controller->loadSceneFromFile(getDataPath(badExtensionFile), errCode);
+	auto sceneBadExt = controller->loadSceneFromFile(getDataPath(badExtensionFile), errCode, config);
 	EXPECT_EQ(errCode, REPOERR_FILE_TYPE_NOT_SUPPORTED);
 	EXPECT_FALSE(sceneBadExt);
 
 	//Import the scene with texture but not found
-	auto sceneNoTex = controller->loadSceneFromFile(getDataPath(texturedModel), errCode);
+	auto sceneNoTex = controller->loadSceneFromFile(getDataPath(texturedModel), errCode, config);
 	EXPECT_EQ(errCode, 0);
 	EXPECT_TRUE(sceneNoTex);
 	EXPECT_TRUE(sceneNoTex->getRoot(defaultG));
 	EXPECT_TRUE(sceneNoTex->isMissingTexture());
 
 	//Import the scene with texture but not found
-	auto sceneTex = controller->loadSceneFromFile(getDataPath(texturedModel2), errCode);
+	auto sceneTex = controller->loadSceneFromFile(getDataPath(texturedModel2), errCode, config);
 	EXPECT_EQ(errCode, 0);
 	EXPECT_TRUE(sceneTex);
 	EXPECT_TRUE(sceneTex->getRoot(defaultG));

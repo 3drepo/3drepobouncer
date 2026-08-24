@@ -141,10 +141,8 @@ bool FileManager::deleteFileAndRef(
 {
 	using namespace repo::core::handler::database::query;
 
-	bool success = true;
-
 	if (names.empty()) {
-		return success;
+		return true;
 	}
 
 	auto handler = getDbHandler();
@@ -164,6 +162,8 @@ bool FileManager::deleteFileAndRef(
 			break;
 		}
 	}
+
+	bool success = fsHandlerLinkNames.size();
 
 	for (auto& name : fsHandlerLinkNames) {
 		success &= fsHandler->deleteFile(databaseName, collectionNamePrefix, name);
