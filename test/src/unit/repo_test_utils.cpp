@@ -22,8 +22,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest-matchers.h>
 #include <time.h>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
+#include <repo/lib/rapidjson/document.h>
+#include <repo/lib/rapidjson/prettywriter.h>
+#include <repo/lib/rapidjson/stringbuffer.h>
 #include <boost/filesystem.hpp>
 #include <queue>
 #include <unordered_set>
@@ -419,34 +420,39 @@ void testing::writeImportConfig(
 	const std::string& configPath
 )
 {
-	boost::property_tree::ptree jsonTree;
+	rapidjson::Document doc;
+	doc.SetObject();
+	auto& allocator = doc.GetAllocator();
 
-	jsonTree.put("file", importFilePath);
-
-	jsonTree.put("teamspace", config.databaseName);
-	jsonTree.put("container", config.projectName);
-	jsonTree.put("timezone", config.timeZone);
-	jsonTree.put("units", repo::lib::units::toUnitsString(config.targetUnits));
-	jsonTree.put("lod", config.lod);
-	jsonTree.put("importAnimations", config.importAnimations);
-	jsonTree.put("revId", config.revisionId.toString());
-	jsonTree.put("numThreads", config.numThreads);
-	jsonTree.put("splitByFloor", config.splitByFloor);
+	doc.AddMember("file", rapidjson::Value(importFilePath.c_str(), allocator), allocator);
+	doc.AddMember("teamspace", rapidjson::Value(config.databaseName.c_str(), allocator), allocator);
+	doc.AddMember("container", rapidjson::Value(config.projectName.c_str(), allocator), allocator);
+	doc.AddMember("timezone", rapidjson::Value(config.timeZone.c_str(), allocator), allocator);
+	doc.AddMember("units", rapidjson::Value(repo::lib::units::toUnitsString(config.targetUnits).c_str(), allocator), allocator);
+	doc.AddMember("lod", config.lod, allocator);
+	doc.AddMember("importAnimations", config.importAnimations, allocator);
+	doc.AddMember("revId", rapidjson::Value(config.revisionId.toString().c_str(), allocator), allocator);
+	doc.AddMember("numThreads", config.numThreads, allocator);
+	doc.AddMember("splitByFloor", config.splitByFloor, allocator);
 
 	if (!config.viewName.empty())
 	{
-		jsonTree.put("view", config.viewName);
+		doc.AddMember("view", rapidjson::Value(config.viewName.c_str(), allocator), allocator);
 	}
 
 	if (!config.viewStyle.empty())
 	{
-		jsonTree.put("style", config.viewStyle);
+		doc.AddMember("style", rapidjson::Value(config.viewStyle.c_str(), allocator), allocator);
 	}
+
+	rapidjson::StringBuffer buffer;
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
+	doc.Accept(writer);
 
 	std::ofstream ofs(configPath);
 	if (ofs.good())
 	{
-		boost::property_tree::write_json(ofs, jsonTree);
+		ofs << buffer.GetString();
 	}
 	else
 	{
