@@ -15,25 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
+const { connectToQueue, runNTasks } = require('../lib/queueHandler');
 const { exitAfter, queue } = require('../lib/processParams');
 const { exitApplication } = require('../lib/utils');
-const { connectToQueue, runNTasks } = require('../lib/queueHandler');
-const { testClient } = require('../tasks/bouncerClient');
-const { testImageClient } = require('../tasks/imageProcessing');
 const logger = require('../lib/logger');
+const { testClient } = require('../tasks/bouncerClient');
 
 const startBouncerWorker = async () => {
 	try {
 		await testClient();
-		if (!queue || queue === 'drawing') {
-			await testImageClient();
-		}
-
 		if (exitAfter > 0) {
 			if (!queue) {
 				throw '--queue must be specified running with --exitAfter option';
 			}
-
 			runNTasks(queue, exitAfter);
 		} else {
 			connectToQueue(queue);

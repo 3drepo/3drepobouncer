@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-const path = require('path');
-const { ERRCODE_OK } = require('../constants/errorCodes');
 const { config, replaceSharedDirTag } = require('../lib/config');
-const { runBouncerCommand } = require('../tasks/bouncerClient');
-const { messageDecoder } = require('../lib/messageDecoder');
-const logger = require('../lib/logger');
 const { CLASH } = require('../constants/messageTypes');
+const { ERRCODE_OK } = require('../constants/errorCodes');
 const { PROCESSING } = require('../constants/statuses');
-const Utils = require('../lib/utils');
 const ProcessMonitor = require('../lib/processMonitor');
+const Utils = require('../lib/utils');
+const logger = require('../lib/logger');
+const { messageDecoder } = require('../lib/messageDecoder');
+const path = require('path');
+const { runBouncerCommand } = require('../tasks/bouncerClient');
 
 const Handler = {};
 

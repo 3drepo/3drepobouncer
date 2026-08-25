@@ -5,6 +5,7 @@ tools/scripts/log*
 tools/scripts/*.csv
 tools/bouncer_worker/toy
 tools/bouncer_worker/log
+tools/bouncer_worker/coverage
 .vs
 .vscode
 
@@ -46,5 +47,4 @@ sandbox/sandbox.cpp
 *.db
 *.opendb
 tools/bouncer_worker/log.log
-*.json
 tools/bouncer_worker/bouncer_worker.log
