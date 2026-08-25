@@ -18,7 +18,8 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest-matchers.h>
-#include "repo/manipulator/modelconvertor/import/odaHelper/civil3d_proxy_handler.h"
+#include <OdaCommon.h>
+#include "repo/manipulator/modelconvertor/import/odaHelper/data_processor_dwg.h"
 #include "repo/manipulator/modelconvertor/import/odaHelper/dwg_proxy_inspector.h"
 #include "repo/lib/datastructure/repo_variant_utils.h"
 
@@ -26,91 +27,85 @@ using namespace repo::manipulator::modelconvertor::odaHelper;
 using namespace repo::lib;
 using namespace testing;
 
-// Civil3DProxyHandler::matchesClassName is what routes a DWG proxy entity's
-// original class name to Civil3D handling in DwgProxyInspector::classifyApplication.
-// It is pure string logic with no ODA-entity dependency, so it can be tested
+// DataProcessorDwg::isCivil3DProxyClass is what routes a DWG proxy entity's
+// original class name to Civil3D handling in DataProcessorDwg::doDraw. It is
+// pure string logic with no ODA-entity dependency, so it can be tested
 // directly without constructing a real proxy entity.
 
-TEST(Civil3DProxyHandlerTest, MatchesClassNameTrueCases)
+TEST(DataProcessorDwgTest, IsCivil3DProxyClassTrueCases)
 {
-	EXPECT_THAT(Civil3DProxyHandler::matchesClassName("AeccDbSurfaceTin"), IsTrue());
-	EXPECT_THAT(Civil3DProxyHandler::matchesClassName("AeccDbAlignment"), IsTrue());
-	EXPECT_THAT(Civil3DProxyHandler::matchesClassName("SomeCivilThing"), IsTrue());
-	EXPECT_THAT(Civil3DProxyHandler::matchesClassName("AeccAndCivilBoth"), IsTrue());
+	EXPECT_THAT(DataProcessorDwg::isCivil3DProxyClass("AeccDbSurfaceTin"), IsTrue());
+	EXPECT_THAT(DataProcessorDwg::isCivil3DProxyClass("AeccDbAlignment"), IsTrue());
+	EXPECT_THAT(DataProcessorDwg::isCivil3DProxyClass("SomeCivilThing"), IsTrue());
+	EXPECT_THAT(DataProcessorDwg::isCivil3DProxyClass("AeccAndCivilBoth"), IsTrue());
 
 	// The match is a substring search, not a prefix check.
-	EXPECT_THAT(Civil3DProxyHandler::matchesClassName("XAeccY"), IsTrue());
+	EXPECT_THAT(DataProcessorDwg::isCivil3DProxyClass("XAeccY"), IsTrue());
 }
 
-TEST(Civil3DProxyHandlerTest, MatchesClassNameFalseCases)
+TEST(DataProcessorDwgTest, IsCivil3DProxyClassFalseCases)
 {
-	EXPECT_THAT(Civil3DProxyHandler::matchesClassName("AcDbLine"), IsFalse());
-	EXPECT_THAT(Civil3DProxyHandler::matchesClassName(""), IsFalse());
+	EXPECT_THAT(DataProcessorDwg::isCivil3DProxyClass("AcDbLine"), IsFalse());
+	EXPECT_THAT(DataProcessorDwg::isCivil3DProxyClass(""), IsFalse());
 
 	// A near-miss that doesn't complete either substring.
-	EXPECT_THAT(Civil3DProxyHandler::matchesClassName("Aec"), IsFalse());
+	EXPECT_THAT(DataProcessorDwg::isCivil3DProxyClass("Aec"), IsFalse());
 
 	// The match is case-sensitive by design.
-	EXPECT_THAT(Civil3DProxyHandler::matchesClassName("aeccdbsurfacetin"), IsFalse());
-	EXPECT_THAT(Civil3DProxyHandler::matchesClassName("civil"), IsFalse());
+	EXPECT_THAT(DataProcessorDwg::isCivil3DProxyClass("aeccdbsurfacetin"), IsFalse());
+	EXPECT_THAT(DataProcessorDwg::isCivil3DProxyClass("civil"), IsFalse());
 }
 
-TEST(Civil3DProxyHandlerTest, IsTinSurfaceClassTrueCases)
+TEST(DataProcessorDwgTest, IsCivil3DSurfaceClassTrueCases)
 {
-	Civil3DProxyHandler handler;
-
-	EXPECT_THAT(handler.isTinSurfaceClass("AeccDbSurfaceTin"), IsTrue());
-	EXPECT_THAT(handler.isTinSurfaceClass("AeccDbTinSurface"), IsTrue());
+	EXPECT_THAT(DataProcessorDwg::isCivil3DSurfaceClass("AeccDbSurfaceTin"), IsTrue());
+	EXPECT_THAT(DataProcessorDwg::isCivil3DSurfaceClass("AeccDbTinSurface"), IsTrue());
 
 	// Substring matches, for future/variant class names.
-	EXPECT_THAT(handler.isTinSurfaceClass("AeccDbGridSurfaceTin2025"), IsTrue());
-	EXPECT_THAT(handler.isTinSurfaceClass("SomeTinSurfaceVariant"), IsTrue());
+	EXPECT_THAT(DataProcessorDwg::isCivil3DSurfaceClass("AeccDbGridSurfaceTin2025"), IsTrue());
+	EXPECT_THAT(DataProcessorDwg::isCivil3DSurfaceClass("SomeTinSurfaceVariant"), IsTrue());
 }
 
-TEST(Civil3DProxyHandlerTest, IsTinSurfaceClassFalseCases)
+TEST(DataProcessorDwgTest, IsCivil3DSurfaceClassFalseCases)
 {
-	Civil3DProxyHandler handler;
-
 	// A Civil3D surface that isn't a TIN, and an unrelated Civil3D class.
-	EXPECT_THAT(handler.isTinSurfaceClass("AeccDbSurface"), IsFalse());
-	EXPECT_THAT(handler.isTinSurfaceClass("AeccDbAlignment"), IsFalse());
-	EXPECT_THAT(handler.isTinSurfaceClass(""), IsFalse());
+	EXPECT_THAT(DataProcessorDwg::isCivil3DSurfaceClass("AeccDbSurface"), IsFalse());
+	EXPECT_THAT(DataProcessorDwg::isCivil3DSurfaceClass("AeccDbAlignment"), IsFalse());
+	EXPECT_THAT(DataProcessorDwg::isCivil3DSurfaceClass(""), IsFalse());
 
 	// Case-sensitive by design.
-	EXPECT_THAT(handler.isTinSurfaceClass("aeccdbsurfacetin"), IsFalse());
+	EXPECT_THAT(DataProcessorDwg::isCivil3DSurfaceClass("aeccdbsurfacetin"), IsFalse());
 }
 
-TEST(Civil3DProxyHandlerTest, GetDisplayNameKnownClasses)
+TEST(DataProcessorDwgTest, GetCivil3DDisplayNameKnownClasses)
 {
-	Civil3DProxyHandler handler;
 	std::string outName;
 
-	EXPECT_THAT(handler.getDisplayName("AeccDbSurfaceTin", outName), IsTrue());
+	EXPECT_THAT(DataProcessorDwg::getCivil3DDisplayName("AeccDbSurfaceTin", outName), IsTrue());
 	EXPECT_THAT(outName, Eq("TIN Surface"));
 
-	EXPECT_THAT(handler.getDisplayName("AeccDbAlignment", outName), IsTrue());
+	EXPECT_THAT(DataProcessorDwg::getCivil3DDisplayName("AeccDbAlignment", outName), IsTrue());
 	EXPECT_THAT(outName, Eq("Alignment"));
 
-	EXPECT_THAT(handler.getDisplayName("AeccDbPipe", outName), IsTrue());
+	EXPECT_THAT(DataProcessorDwg::getCivil3DDisplayName("AeccDbPipe", outName), IsTrue());
 	EXPECT_THAT(outName, Eq("Pipe"));
 }
 
-TEST(Civil3DProxyHandlerTest, GetDisplayNameUnknownClassLeavesOutNameUntouched)
+TEST(DataProcessorDwgTest, GetCivil3DDisplayNameUnknownClassLeavesOutNameUntouched)
 {
-	Civil3DProxyHandler handler;
 	std::string outName = "Sentinel";
 
-	EXPECT_THAT(handler.getDisplayName("NotARealCivil3DClass", outName), IsFalse());
+	EXPECT_THAT(DataProcessorDwg::getCivil3DDisplayName("NotARealCivil3DClass", outName), IsFalse());
 	EXPECT_THAT(outName, Eq("Sentinel"));
 
-	EXPECT_THAT(handler.getDisplayName("", outName), IsFalse());
+	EXPECT_THAT(DataProcessorDwg::getCivil3DDisplayName("", outName), IsFalse());
 	EXPECT_THAT(outName, Eq("Sentinel"));
 }
 
-// DwgProxyInspector::setMetadataIfMissing is shared by DwgProxyInspector itself
-// and by app handlers (e.g. Civil3DProxyHandler::TinCapture) to contribute a
-// computed property without overwriting one already set by a higher-priority
-// source. It is pure map logic with no ODA dependency.
+// DwgProxyInspector::setMetadataIfMissing is shared by any proxy metadata
+// source that needs to contribute a computed property without overwriting
+// one already set by a higher-priority source. It is pure map logic with no
+// ODA dependency.
 
 TEST(DwgProxyInspectorTest, SetMetadataIfMissingAddsNewKey)
 {

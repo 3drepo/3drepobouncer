@@ -26,65 +26,6 @@
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-ProxyAppType DwgProxyInspector::classifyApplication(const std::string& originalClass, ProxyAppHandler*& outHandler)
-{
-	outHandler = nullptr;
-	if (originalClass.empty() || originalClass == "Unknown") return ProxyAppType::Unknown;
-
-	if (activeHandler)
-	{
-		// This file has already been attributed to one app; never let a
-		// second app's proxies be misattributed for the rest of this file.
-		if (activeHandler->matches(originalClass))
-		{
-			outHandler = activeHandler.get();
-			return activeHandler->appType();
-		}
-		return ProxyAppType::Custom;
-	}
-
-	// No app detected yet for this file: probe each app's class-name rule
-	// without constructing an instance, and construct exactly the one that
-	// matches - a DWG is authored by one app, never both.
-	if (Civil3DProxyHandler::matchesClassName(originalClass))
-	{
-		activeHandler = std::make_unique<Civil3DProxyHandler>();
-	}
-	else if (Plant3DProxyHandler::matchesClassName(originalClass))
-	{
-		activeHandler = std::make_unique<Plant3DProxyHandler>();
-	}
-	else
-	{
-		return ProxyAppType::Custom;
-	}
-
-	outHandler = activeHandler.get();
-	return activeHandler->appType();
-}
-
-std::string DwgProxyInspector::formatApplicationDisplayString(const ProxyInfo& info)
-{
-	if (!info.originalClass.empty() && info.originalClass != "Unknown")
-	{
-		if (info.matchedHandler) return info.matchedHandler->appName() + " (" + info.originalClass + ")";
-		return "CustomApp (" + info.originalClass + ")";
-	}
-
-	for (const auto& app : info.xDataApps)
-	{
-		if (app.find("Aecc") != std::string::npos) return "Civil3D (XData)";
-		if (app.find("AcPp") != std::string::npos) return "Plant3D (XData)";
-	}
-
-	return "";
-}
-
-bool DwgProxyInspector::isSpecialGeometryClass(const ProxyInfo& info) const
-{
-	return info.isProxy() && info.matchedHandler && info.matchedHandler->isSpecialSurfaceClass(info.originalClass);
-}
-
 bool DwgProxyInspector::getProxyInfo(OdDbEntityPtr entity, ProxyInfo& info)
 {
 	info = ProxyInfo();
@@ -124,8 +65,6 @@ bool DwgProxyInspector::getProxyInfo(OdDbEntityPtr entity, ProxyInfo& info)
 
 	try { info.graphicsPE = OdDbEntityWithGrDataPE::cast(entity); }
 	catch (...) {}
-
-	info.appType = classifyApplication(info.originalClass, info.matchedHandler);
 
 	return true;
 }
@@ -224,7 +163,6 @@ std::unordered_map<std::string, repo::lib::RepoVariant> DwgProxyInspector::getPr
 		addProxyGeneralMetadata(pEntity, metadata);
 		addProxyGeometryMetadata(pEntity, metadata);
 		addProxyXDataMetadata(info, metadata);
-		addProxyDictionaryMetadata(info, metadata);
 		extractTextPropertiesFromProxy(info.entity, metadata);
 	}
 	catch (OdError& e)
@@ -256,12 +194,6 @@ void DwgProxyInspector::addProxyBasicMetadata(OdDbEntityPtr pEntity, const Proxy
 	if (!info.applicationDescription.empty())
 	{
 		metadata["Proxy::Application Description"] = info.applicationDescription;
-	}
-
-	auto appType = formatApplicationDisplayString(info);
-	if (!appType.empty())
-	{
-		metadata["Proxy::Application"] = appType;
 	}
 }
 
@@ -363,12 +295,6 @@ void DwgProxyInspector::addProxyXDataMetadata(const ProxyInfo& info, std::unorde
 	{
 		extractXDataProperties(info.xData, metadata);
 	}
-}
-
-void DwgProxyInspector::addProxyDictionaryMetadata(const ProxyInfo& info, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
-{
-	if (info.extensionDictionary.isNull() || !info.matchedHandler) return;
-	info.matchedHandler->addDictionaryMetadata(info.extensionDictionary, metadata);
 }
 
 void DwgProxyInspector::extractXDataProperties(OdResBufPtr pRb, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)

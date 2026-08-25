@@ -239,17 +239,11 @@ uint8_t FileProcessorDwg::readFile()
 
 		OdDbDatabasePtr pDb = svcs.readFile(getFilename());
 
-		// ===== ADDED: Configure database to use proxy graphics =====
-		// PROXYGRAPHICS system variable controls how custom objects display:
-		// 0 = No proxy graphics (bounding box only)
-		// 1 = Show proxy graphics
-		try {
-			//pDb->setPROXYGRAPHICS(1); // Enable proxy graphics display
-			//repoInfo << "Enabled proxy graphics display";
-		}
-		catch (...) {
-			repoWarning << "Failed to enable proxy graphics";
-		}
+		// The PROXYGRAPHICS system variable controls whether a proxy entity's
+		// stored graphics are written to the file at all. It can only be set
+		// by the authoring application (AutoCAD/Civil3D) when it saves the
+		// file - ODA has no ProxyModule/object enabler to write it here, so
+		// there is nothing to configure on pDb at import time.
 
 		if (repoSceneBuilder)
 		{
