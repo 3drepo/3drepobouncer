@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
+const yargs = require('yargs/yargs');
 const queueLabels = Object.values(require('../constants/queueLabels'));
 
 const parseParameters = () => {

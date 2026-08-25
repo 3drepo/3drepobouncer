@@ -15,17 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-const fs = require('fs');
-const { config } = require('../lib/config');
-const { runBouncerCommand } = require('../tasks/bouncerClient');
-const { ERRCODE_OK, ERRCODE_BOUNCER_CRASH, ERRCODE_REPO_LICENCE_INVALID } = require('../constants/errorCodes');
-const { PROCESSING } = require('../constants/statuses');
-const { messageDecoder } = require('../lib/messageDecoder');
-const logger = require('../lib/logger');
-const processMonitor = require('../lib/processMonitor');
-const Utils = require('../lib/utils');
+const { ERRCODE_BOUNCER_CRASH, ERRCODE_OK, ERRCODE_REPO_LICENCE_INVALID } = require('../constants/errorCodes');
 const { IMPORT } = require('../constants/messageTypes');
 const { MODEL } = require('../constants/queueLabels');
+const { PROCESSING } = require('../constants/statuses');
+const Utils = require('../lib/utils');
+const { config } = require('../lib/config');
+const fs = require('fs');
+const logger = require('../lib/logger');
+const { messageDecoder } = require('../lib/messageDecoder');
+const processMonitor = require('../lib/processMonitor');
+const { runBouncerCommand } = require('../tasks/bouncerClient');
 
 const Handler = {};
 const logLabel = { label: 'MODELQ' };
@@ -80,16 +80,16 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		callback(JSON.stringify(returnMessage));
 	} catch (err) {
 		switch (err) {
-			case ERRCODE_REPO_LICENCE_INVALID:
-				logger.error('Failed to run 3drepobouncer: Invalid 3D Repo license', logLabel);
-				await processMonitor.clearReport(ridString);
-				await Utils.sleep(config.rabbitmq.maxWaitTimeMS);
-				throw err;
-			default:
-				logger.error(`Import model error: ${err.message || err}`, logLabel);
-				await processMonitor.sendReport(ridString);
-				returnMessage.value = err || ERRCODE_BOUNCER_CRASH;
-				callback(JSON.stringify(returnMessage));
+		case ERRCODE_REPO_LICENCE_INVALID:
+			logger.error('Failed to run 3drepobouncer: Invalid 3D Repo license', logLabel);
+			await processMonitor.clearReport(ridString);
+			await Utils.sleep(config.rabbitmq.maxWaitTimeMS);
+			throw err;
+		default:
+			logger.error(`Import model error: ${err.message || err}`, logLabel);
+			await processMonitor.sendReport(ridString);
+			returnMessage.value = err || ERRCODE_BOUNCER_CRASH;
+			callback(JSON.stringify(returnMessage));
 		}
 	}
 };

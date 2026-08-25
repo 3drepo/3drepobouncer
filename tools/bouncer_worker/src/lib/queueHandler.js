@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-const amqp = require('amqplib');
-const { rabbitmq } = require('./config').config;
-const logger = require('./logger');
 const { exitApplication, sleep } = require('./utils');
-const ModelQHandler = require('../queues/modelQueueHandler');
-const DrawingQHandler = require('../queues/drawingQueueHandler');
+const { rabbitmq } = require('./config').config;
 const ClashQHandler = require('../queues/clashQueueHandler');
+const DrawingQHandler = require('../queues/drawingQueueHandler');
+const ModelQHandler = require('../queues/modelQueueHandler');
+const amqp = require('amqplib');
+const logger = require('./logger');
 const queueLabel = require('../constants/queueLabels');
 
 let connClosed = false;
@@ -46,24 +46,24 @@ if (rabbitmq.clash_queue) {
 // eslint-disable-next-line consistent-return
 const getQueueName = (label) => {
 	switch (label) {
-		case queueLabel.MODEL:
-			if (rabbitmq.model_queue) {
-				return rabbitmq.model_queue;
-			}
-			break;
-		case queueLabel.DRAWING:
-			if (rabbitmq.drawing_queue) {
-				return rabbitmq.drawing_queue;
-			}
-			break;
-		case queueLabel.CLASH:
-			if (rabbitmq.clash_queue) {
-				return rabbitmq.clash_queue;
-			}
-			break;
-		default:
-			logger.error(`Unrecognised queue type: ${label}. Expected [model|drawing|clash]`, logLabel);
-			exitApplication();
+	case queueLabel.MODEL:
+		if (rabbitmq.model_queue) {
+			return rabbitmq.model_queue;
+		}
+		break;
+	case queueLabel.DRAWING:
+		if (rabbitmq.drawing_queue) {
+			return rabbitmq.drawing_queue;
+		}
+		break;
+	case queueLabel.CLASH:
+		if (rabbitmq.clash_queue) {
+			return rabbitmq.clash_queue;
+		}
+		break;
+	default:
+		logger.error(`Unrecognised queue type: ${label}. Expected [model|drawing|clash]`, logLabel);
+		exitApplication();
 	}
 	logger.error(`Failed to find rabbitmq entry for queue type: ${label} in config`, logLabel);
 	exitApplication();
@@ -73,12 +73,11 @@ const listenToQueue = (channel, queueName, prefetchCount, callback) => {
 	channel.assertQueue(queueName, { durable: true });
 	logger.info(`Waiting for messages in ${queueName}...`, logLabel);
 	channel.prefetch(prefetchCount);
-	channel.consume(queueName, async (msg) => {
+	channel.consume(queueName, (msg) => {
 		logger.info(`Received ${msg.content.toString()} from ${queueName}`, logLabel);
 		callback(msg.content.toString(), msg.properties.correlationId, (reply, queue = rabbitmq.callback_queue) => {
 			logger.info(`Sending reply to ${queue}: ${reply}`, logLabel);
-			// eslint-disable-next-line new-cap
-			channel.sendToQueue(queue, new Buffer.from(reply),
+			channel.sendToQueue(queue, Buffer.from(reply),
 				{ correlationId: msg.properties.correlationId, appId: msg.properties.appId });
 		}).then(() => {
 			channel.ack(msg);
@@ -118,8 +117,7 @@ const executeTasks = async (conn, queueName, nTasks, callback) => {
 				// eslint-disable-next-line no-loop-func
 				(reply, queue = rabbitmq.callback_queue) => {
 					logger.info(`[${currentTaskNum}/${nTasks}] Sending to reply to ${queue}: ${reply}`, logLabel);
-					// eslint-disable-next-line new-cap
-					channel.sendToQueue(queue, new Buffer.from(reply),
+					channel.sendToQueue(queue, Buffer.from(reply),
 						{ correlationId: msg.properties.correlationId, appId: msg.properties.appId });
 				},
 			).then(() => {
@@ -202,14 +200,14 @@ QueueHandler.connectToQueue = async (specificQueue) => {
 			queueNames.push(getQueueName(label));
 		}
 	}
-	connectToRabbitMQ(true,
+	await connectToRabbitMQ(true,
 		(conn) => establishChannel(conn, queueNames));
 };
 
 QueueHandler.runNTasks = async (queueType, nTasks) => {
 	const queueName = getQueueName(queueType);
 	const handler = queueHandlers[queueName];
-	connectToRabbitMQ(false, (conn) => executeTasks(conn, queueName, nTasks, handler.onMessageReceived));
+	await connectToRabbitMQ(false, (conn) => executeTasks(conn, queueName, nTasks, handler.onMessageReceived));
 };
 
 module.exports = QueueHandler;
