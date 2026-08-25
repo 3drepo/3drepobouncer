@@ -102,7 +102,7 @@ namespace repo {
 					);
 
 					/**
-					 * Delete file ref and associated file from database.
+					 * Delete file refs and associated files from database.
 					 */
 					bool deleteFileAndRef(
 						const std::string& databaseName,
