@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-const fs = require('fs');
 const { configPath, replaceSharedDirTag } = require('./config');
 const { ERRCODE_ARG_FILE_FAIL } = require('../constants/errorCodes');
+const fs = require('fs');
 const logger = require('./logger');
 
 const replaceSharedDirPlaceHolder = (command) => {
@@ -45,55 +45,55 @@ const messageDecoder = (cmd) => {
 		const args = replaceSharedDirPlaceHolder(cmd).split(/\s+/);
 		res = { command: args[0] };
 		switch (args[0]) {
-			case 'import':
-				{
-					// eslint-disable-next-line
+		case 'import':
+			{
+				// eslint-disable-next-line
 					const cmdFile = require(args[2]);
-					res = {
-						cmdParams: [configPath, ...args],
-						teamspace: cmdFile.teamspace,
-						container: cmdFile.container,
-						user: cmdFile.owner,
-						file: cmdFile.file,
-						...res,
-					};
-				}
-				break;
-			case 'processDrawing':
-				{
-					// eslint-disable-next-line
-					const cmdFile = require(args[1]);
-					res = {
-						cmdParams: [configPath, ...args],
-						teamspace: cmdFile.teamspace,
-						drawing: cmdFile.drawing,
-						user: cmdFile.owner,
-						file: cmdFile.file,
-						format: cmdFile.format,
-						size: cmdFile.size,
-						...res,
-					};
-				}
-				break;
-			case 'processClash':
-				res = {
-					cmdParams: [configPath],
-					teamspace: args[1],
-					project: args[2],
-					configFile: args[3],
-					...res,
-				};
-				break;
-			case 'genStash':
 				res = {
 					cmdParams: [configPath, ...args],
-					teamspace: args[1],
-					container: args[2],
+					teamspace: cmdFile.teamspace,
+					container: cmdFile.container,
+					user: cmdFile.owner,
+					file: cmdFile.file,
 					...res,
 				};
-				break;
-			default:
-				res = { errorCode: ERRCODE_ARG_FILE_FAIL };
+			}
+			break;
+		case 'processDrawing':
+			{
+				// eslint-disable-next-line
+					const cmdFile = require(args[1]);
+				res = {
+					cmdParams: [configPath, ...args],
+					teamspace: cmdFile.teamspace,
+					drawing: cmdFile.drawing,
+					user: cmdFile.owner,
+					file: cmdFile.file,
+					format: cmdFile.format,
+					size: cmdFile.size,
+					...res,
+				};
+			}
+			break;
+		case 'processClash':
+			res = {
+				cmdParams: [configPath],
+				teamspace: args[1],
+				project: args[2],
+				configFile: args[3],
+				...res,
+			};
+			break;
+		case 'genStash':
+			res = {
+				cmdParams: [configPath, ...args],
+				teamspace: args[1],
+				container: args[2],
+				...res,
+			};
+			break;
+		default:
+			res = { errorCode: ERRCODE_ARG_FILE_FAIL };
 		}
 	} catch (err) {
 		logger.error(`Failed to parse message: ${err.message || err}`);
