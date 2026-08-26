@@ -335,10 +335,15 @@ void RepoBSON::initBinaryBuffer(const std::vector<uint8_t> &buffer)
 
 		for (const auto &elem : elemRefs.getFieldNames()) {
 			auto elemRefBson = elemRefs.getObjectField(elem);
-			size_t start = elemRefBson.getLongField(REPO_LABEL_BINARY_START);
-			size_t size = elemRefBson.getLongField(REPO_LABEL_BINARY_SIZE);
-
-			bigFiles[elem] = std::vector<uint8_t>(buffer.begin() + start, buffer.begin() + start + size);
+			try {
+				size_t start = elemRefBson.getLongField(REPO_LABEL_BINARY_START);
+				size_t size = elemRefBson.getLongField(REPO_LABEL_BINARY_SIZE);
+				bigFiles[elem] = std::vector<uint8_t>(buffer.begin() + start, buffer.begin() + start + size);
+			}
+			catch (...)
+			{
+				std::throw_with_nested(repo::lib::RepoException("initBinaryBuffer - unable to parse: " + bsoncxx::to_json(elemRefBson)));
+			}
 		}
 	}
 }
@@ -360,7 +365,7 @@ size_t RepoBSON::getBinaryBufferSize() const
 			}
 			catch (...)
 			{
-				std::throw_with_nested(repo::lib::RepoException("Unable to parse: " + bsoncxx::to_json(elemRefBson)));
+				std::throw_with_nested(repo::lib::RepoException("getBinaryBufferSize - unable to parse: " + bsoncxx::to_json(elemRefBson)));
 			}
 		}
 	}
