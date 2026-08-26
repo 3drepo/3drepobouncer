@@ -28,9 +28,11 @@
 #include <repo/repo_controller.h>
 #include "../unit/repo_test_database_info.h"
 #include "../unit/repo_test_utils.h"
+#include "../unit/repo_test_scene_utils.h"
 #include <repo/core/model/bson/repo_bson_builder.h>
 #include <repo/core/handler/database/repo_query.h>
 #include <unordered_set>
+#include <filesystem>
 
 using namespace testing;
 
@@ -733,4 +735,93 @@ TEST(RepoClientTest, UnicodeFilenames)
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadArgs("unicodeImport", "spm", getDataPath("КР3_очищено.6_4.spm"))));
 	EXPECT_TRUE(projectIsPopulated("unicodeImport", "spm"));
 #endif
+}
+
+TEST(RepoClientTest, ExistingRevisionArtefactsAreRemoved)
+{
+	// Perform a couple of imports to pre-populate a container
+
+	testing::setupTextures();
+
+	auto database = repo::lib::RepoUUID::createUUID().toString();
+	auto container = repo::lib::RepoUUID::createUUID().toString();
+	auto configPath = getDataPath("importExistingRevisionArtefacts.json");
+
+	repo::manipulator::modelconvertor::ModelImportConfig config;
+	config.databaseName = database;
+	config.projectName = container;
+	config.targetUnits = repo::lib::ModelUnits::METRES;
+	config.splitByFloor = true;
+
+	for (int i = 0; i < 2; i++)
+	{
+		config.revisionId = repo::lib::RepoUUID::createUUID();
+		testing::writeImportConfig(getDataPath("sample.rvt"), config, configPath);
+		EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(configPath)));
+	}
+
+	// Now commit some artefacts for a revision to emulate an import that was
+	// aborted mid-progress.
+
+	auto handler = getHandler();
+	config.revisionId = repo::lib::RepoUUID::createUUID();
+
+	// Create multiple random graphs over each other and delete one of the root
+	// nodes, to encompass the case where multiple failed imports have run, and
+	// also when the streaming scene builder is destroyed with nodes still buffered
+	// (leaving orphan nodes).
+
+	testing::makeRandomScene(handler, database, container, config.revisionId);
+	testing::makeRandomScene(handler, database, container, config.revisionId);
+	testing::makeRandomScene(handler, database, container, config.revisionId);
+
+	testing::ContainerUtils utils(handler, database, container, config.revisionId);
+	auto rootNodes = utils.getRootNodes();
+	utils.deleteNode(rootNodes[0].getUUIDField(REPO_NODE_LABEL_ID));
+
+	// Flag the revision as incomplete, which will be the most likely
+	// case for failed imports, though it is also possible to have
+	// overlapping successful imports if they were started manually.
+
+	repo::core::model::ModelRevisionNode revisionNode;
+	revisionNode.setUniqueID(config.revisionId);
+	revisionNode.setTimestamp();
+	revisionNode.setAuthor("test");
+	revisionNode.updateStatus(repo::core::model::ModelRevisionNode::UploadStatus::GEN_DEFAULT);
+
+	utils.updateRevision(revisionNode);
+
+	// Get all the link names for the orphaned nodes so we can check the files are
+	// properly deleted
+
+	auto fileManager = handler->getFileManager();
+	std::unordered_set<std::string> orphanLinkNames;
+	auto orphanRefNodes = utils.getAllRefNodes();
+	for (auto& ref : orphanRefNodes) {
+		orphanLinkNames.insert(fileManager->getFilePath(ref));
+	}
+
+	for (auto orphanLinkName : orphanLinkNames) {
+		EXPECT_TRUE(std::filesystem::exists(orphanLinkName));
+	}
+
+	// Now run the import again, which should remove all orphaned artefacts leaving
+	// three well-formed revisions.
+
+	testing::writeImportConfig(getDataPath("sample.rvt"), config, configPath);
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(configPath)));
+
+	auto history = utils.getRevisions();
+	EXPECT_EQ(history.size(), 3);
+
+	for (auto& rev : history) {
+		EXPECT_EQ(rev.getUploadStatus(), repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE);
+		containerHasValidHierarchy(database, container, rev.getUniqueID());
+	}
+
+	containerHasNoOrphanRefNodes(database, container);
+
+	for (auto orphanLinkName : orphanLinkNames) {
+		EXPECT_FALSE(std::filesystem::exists(orphanLinkName));
+	}
 }

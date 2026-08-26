@@ -19,6 +19,9 @@
 
 #include <repo/core/model/collection/repo_scene.h>
 #include <repo/core/model/bson/repo_node_mesh.h>
+#include <repo/core/model/bson/repo_node_revision.h>
+#include <repo/core/handler/repo_database_handler_mongo.h>
+#include <vector>
 
 namespace testing {
 
@@ -152,4 +155,42 @@ namespace testing {
 
 		bool isPopulated();
 	};
+
+	// The ContainerUtils class behaves similarly to the SceneUtils class, but
+	// instead of wrapping a RepoScene instance loaded into memory it operates
+	// directly on the database.
+	class ContainerUtils {
+	public:
+		ContainerUtils(
+			std::shared_ptr<repo::core::handler::MongoDatabaseHandler> handler,
+			const std::string& database,
+			const std::string& container,
+			const repo::lib::RepoUUID& revisionId
+		);
+
+		std::vector<repo::core::model::RepoBSON> getRootNodes();
+
+		std::vector<repo::core::model::RepoRef> getAllRefNodes();
+
+		void deleteNode(const repo::lib::RepoUUID& id);
+
+		void updateRevision(const repo::core::model::RevisionNode& revision);
+
+		std::vector<repo::core::model::ModelRevisionNode> getRevisions();
+
+	private:
+		const std::string database;
+		const std::string container;
+		const repo::lib::RepoUUID revisionId;
+		std::shared_ptr<repo::core::handler::MongoDatabaseHandler> handler;
+	};
+
+	void makeRandomScene(
+		std::shared_ptr<repo::core::handler::MongoDatabaseHandler> handler,
+		const std::string& db,
+		const std::string& project,
+		const repo::lib::RepoUUID& revisionId
+	);
+
+	repo::core::model::RepoScene* makeRandomScene();
 }

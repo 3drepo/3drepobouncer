@@ -1075,10 +1075,8 @@ TEST(RepoSceneTest, removeNode)
 	scene.removeNode(defaultG, repo::lib::RepoUUID::createUUID());
 	auto root = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
 	scene.addNodes({ root });
+	scene.removeNode(defaultG, root->getSharedID()); // This call will delete rootNode as newly added nodes are deleted on remove.
 	scene.removeNode(defaultG, root->getSharedID());
-	scene.removeNode(defaultG, root->getSharedID());
-
-	delete root;
 }
 
 TEST(RepoSceneTest, resetChangeSet)

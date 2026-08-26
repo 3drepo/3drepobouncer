@@ -16,11 +16,20 @@
 */
 
 #include "repo_test_utils.h"
+#include "repo_test_mesh_utils.h"
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest-matchers.h>
 #include <time.h>
+#include <repo/lib/rapidjson/document.h>
+#include <repo/lib/rapidjson/prettywriter.h>
+#include <repo/lib/rapidjson/stringbuffer.h>
+#include <boost/filesystem.hpp>
+#include <queue>
+#include <unordered_set>
+#include <unordered_map>
+#include <filesystem>
 
 using namespace repo::core::model;
 using namespace testing;
@@ -403,4 +412,151 @@ void testing::unsetupTextures()
 #else
 	unsetenv("REPO_RVT_TEXTURES");
 #endif // WIN32
+}
+
+void testing::writeImportConfig(
+	const std::string& importFilePath,
+	const repo::manipulator::modelconvertor::ModelImportConfig& config,
+	const std::string& configPath
+)
+{
+	rapidjson::Document doc;
+	doc.SetObject();
+	auto& allocator = doc.GetAllocator();
+
+	doc.AddMember("file", rapidjson::Value(importFilePath.c_str(), allocator), allocator);
+	doc.AddMember("teamspace", rapidjson::Value(config.databaseName.c_str(), allocator), allocator);
+	doc.AddMember("container", rapidjson::Value(config.projectName.c_str(), allocator), allocator);
+	doc.AddMember("timezone", rapidjson::Value(config.timeZone.c_str(), allocator), allocator);
+	doc.AddMember("units", rapidjson::Value(repo::lib::units::toUnitsString(config.targetUnits).c_str(), allocator), allocator);
+	doc.AddMember("lod", config.lod, allocator);
+	doc.AddMember("importAnimations", config.importAnimations, allocator);
+	doc.AddMember("revId", rapidjson::Value(config.revisionId.toString().c_str(), allocator), allocator);
+	doc.AddMember("numThreads", config.numThreads, allocator);
+	doc.AddMember("splitByFloor", config.splitByFloor, allocator);
+
+	if (!config.viewName.empty())
+	{
+		doc.AddMember("view", rapidjson::Value(config.viewName.c_str(), allocator), allocator);
+	}
+
+	if (!config.viewStyle.empty())
+	{
+		doc.AddMember("style", rapidjson::Value(config.viewStyle.c_str(), allocator), allocator);
+	}
+
+	rapidjson::StringBuffer buffer;
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
+	doc.Accept(writer);
+
+	std::ofstream ofs(configPath);
+	if (ofs.good())
+	{
+		ofs << buffer.GetString();
+	}
+	else
+	{
+		throw std::runtime_error("Failed to write config file to " + configPath);
+	}
+}
+
+void testing::containerHasValidHierarchy(
+	const std::string& dbName,
+	const std::string& projectName,
+	const repo::lib::RepoUUID& revId)
+{
+	auto handler = getHandler();
+	auto scene = handler->findAllByCriteria(
+		dbName,
+		projectName + ".scene",
+		repo::core::handler::database::query::Eq(REPO_LABEL_REVISION, revId),
+		false
+	);
+
+	struct Node {
+		bool referenced = false;
+		std::vector<Node*> children;
+	};
+	std::unordered_map<repo::lib::RepoUUID, Node, repo::lib::RepoUUIDHasher> nodes;
+	std::vector<Node*> roots;
+
+	for (auto& bson : scene) {
+		nodes[repo::core::model::RepoNode(bson).getSharedID()] = { };
+	}
+	for (auto& bson : scene) {
+		auto node = repo::core::model::RepoNode(bson);
+		for (auto& parentId : node.getParentIDs())
+		{
+			if (nodes.find(parentId) != nodes.end()) {
+				nodes[parentId].children.push_back(&nodes[node.getSharedID()]);
+			}
+			else {
+				FAIL() << "Parent node " << parentId << " does not exist for node " << node.getSharedID();
+			}
+		}
+		if (node.getParentIDs().empty()) {
+			roots.push_back(&nodes[node.getSharedID()]);
+		}
+	}
+
+	EXPECT_THAT(roots.size(), Eq(1)) << "A valid hierarchy may only have one root, but there are " << roots.size();
+
+	std::queue<Node*> queue;
+	queue.push(roots[0]);
+	while (!queue.empty()) {
+		auto current = queue.front();
+		queue.pop();
+		current->referenced = true;
+		for (auto child : current->children) {
+			if (!child->referenced) {
+				queue.push(child);
+			}
+		}
+	}
+
+	for (auto& [id, node] : nodes) {
+		EXPECT_TRUE(node.referenced) << "Node " << id << " is not reachable from the root";
+	}
+}
+
+void testing::containerHasNoOrphanRefNodes(
+	const std::string& dbName,
+	const std::string& projectName)
+{
+	auto handler = getHandler();
+	auto fileManager = handler->getFileManager();
+
+	auto scene = handler->findAllByCriteria(
+		dbName,
+		projectName + "." + REPO_COLLECTION_SCENE,
+		repo::core::handler::database::query::Exists(REPO_LABEL_BINARY_REFERENCE, true),
+		false
+	);
+
+	auto refs = handler->findAllByCriteria(
+		dbName,
+		projectName + "." + REPO_COLLECTION_SCENE + "." + REPO_COLLECTION_EXT_REF,
+		repo::core::handler::database::query::Exists(REPO_LABEL_ID, true), // findAllByCriteria doesn't support empty queries, so create one that will return true for every document
+		false
+	);
+
+	std::unordered_set<std::string> referenced;
+	for (auto& bson : scene) {
+		referenced.insert(bson.getBinaryReference().getStringField(REPO_LABEL_BINARY_FILENAME));
+	}
+
+	std::unordered_set<std::string> references;
+	for (auto& bson : refs) {
+		auto refName = bson.getStringField(REPO_LABEL_ID);
+		EXPECT_TRUE(referenced.find(refName) != referenced.end()) << "Reference node " << refName << " is not referenced by any scene node";
+		references.insert(refName);
+	}
+
+	EXPECT_THAT(referenced, UnorderedElementsAreArray(references)); // Also check that there are no missing ref nodes.
+
+	for (auto& ref : refs) {
+		EXPECT_TRUE(std::filesystem::exists(fileManager->getFilePath(ref))) << "Reference node " << ref.getStringField(REPO_LABEL_ID) << " points to a file that does not exist: " << fileManager->getFilePath(ref);
+	}
+
+	EXPECT_THAT(referenced.size(), Gt(0)) << "There are no reference nodes in the scene. Make sure the scene commits binary blobs.";
 }
