@@ -353,9 +353,15 @@ size_t RepoBSON::getBinaryBufferSize() const
 		auto elemRefs = extRefbson.getObjectField(REPO_LABEL_BINARY_ELEMENTS);
 		for (const auto& elem : elemRefs.getFieldNames()) {
 			auto elemRefBson = elemRefs.getObjectField(elem);
-			size_t elemstart = elemRefBson.getLongField(REPO_LABEL_BINARY_START);
-			size_t elemSize = elemRefBson.getLongField(REPO_LABEL_BINARY_SIZE);
-			size = std::max(size, elemstart + elemSize);
+			try {
+				size_t elemstart = elemRefBson.getLongField(REPO_LABEL_BINARY_START);
+				size_t elemSize = elemRefBson.getLongField(REPO_LABEL_BINARY_SIZE);
+				size = std::max(size, elemstart + elemSize);
+			}
+			catch (...)
+			{
+				std::throw_with_nested(repo::lib::RepoException("Unable to parse: " + bsoncxx::to_json(elemRefBson)));
+			}
 		}
 	}
 	return size;

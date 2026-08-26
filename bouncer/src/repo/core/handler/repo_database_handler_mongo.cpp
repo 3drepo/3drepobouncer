@@ -376,15 +376,19 @@ void MongoDatabaseHandler::loadBinaryBuffers(const std::string& database,
 	const std::string& collection, 
 	repo::core::model::RepoBSON& bson)
 {
-	fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
-
-	if (bson.hasFileReference()) {
-		auto ref = fileservice::DataRef::deserialise(bson.getBinaryReference());
-		if (!ref.size) {
-			ref.size = bson.getBinaryBufferSize();
+	try {
+		fileservice::BlobFilesHandler blobHandler(fileManager, database, collection);
+		if (bson.hasFileReference()) {
+			auto ref = fileservice::DataRef::deserialise(bson.getBinaryReference());
+			if (!ref.size) {
+				ref.size = bson.getBinaryBufferSize();
+			}
+			auto buffer = blobHandler.readToBuffer(ref);
+			bson.initBinaryBuffer(buffer);
 		}
-		auto buffer = blobHandler.readToBuffer(ref);
-		bson.initBinaryBuffer(buffer);
+	}catch(...)
+	{
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "loadBinaryBuffers", database, collection, bsoncxx::to_json(bson), true));
 	}
 }
 
