@@ -44,8 +44,14 @@ void MetadataNode::deserialise(RepoBSON& bson)
 	if (bson.hasField(REPO_NODE_LABEL_METADATA)) {
 		auto metadata = bson.getObjectArray(REPO_NODE_LABEL_METADATA);
 		for (auto& field : metadata) {
-			auto key = field.getStringField(REPO_NODE_LABEL_META_KEY);
-			metadataMap[key] = field.getField(REPO_NODE_LABEL_META_VALUE).repoVariant();
+			try {
+				auto key = field.getStringField(REPO_NODE_LABEL_META_KEY);
+				metadataMap[key] = field.getField(REPO_NODE_LABEL_META_VALUE).repoVariant();
+			}
+			catch (const repo::lib::RepoException& e)
+			{
+				repoWarning << "Failed to deserialise metadata entry: " << e.printFull() << " As this is branch 782 this will not affect the migration and will be ignored.";
+			}
 		}
 	}
 }

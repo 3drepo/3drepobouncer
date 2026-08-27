@@ -20,22 +20,46 @@
 #include "repo_exception.h"
 #include <sstream>
 
+#define BOOST_STACKTRACE_USE_ADDR2LINE
+#include <boost/stacktrace.hpp>
+
 using namespace repo::lib;
 
-void printNestedExceptions(const std::exception& e, std::stringstream& stream, int indent = 0)
-{
-	stream << std::string(indent, '\t') << e.what() << std::endl;
-	try {
-		std::rethrow_if_nested(e);
-	}
-	catch (const std::exception& nested)
+namespace {
+	void printNestedExceptions(const std::exception& e, std::stringstream& stream, int indent = 0)
 	{
-		printNestedExceptions(nested, stream, indent + 1);
+		stream << std::string(indent, '\t') << e.what() << std::endl;
+
+		bool isInnermost = true;
+		try {
+			std::rethrow_if_nested(e);
+		}
+		catch (const std::exception& nested)
+		{
+			isInnermost = false;
+			printNestedExceptions(nested, stream, indent + 1);
+		}
+		catch (...)
+		{
+			isInnermost = false;
+		}
+
+		if (isInnermost)
+		{
+			auto repoEx = dynamic_cast<const RepoException*>(&e);
+			if (repoEx)
+			{
+				stream << "Stack trace of innermost exception:" << std::endl;
+				stream << repoEx->getStackTrace();
+			}
+		}
 	}
 }
 
 RepoException::RepoException(const std::string& msg)
-	: errMsg(msg), errorCode(REPOERR_UNKNOWN_ERR) 
+	: errMsg(msg), errorCode(REPOERR_UNKNOWN_ERR),
+	stackTrace(boost::stacktrace::to_string(boost::stacktrace::stacktrace()))
+
 {
 }
 
@@ -49,6 +73,11 @@ int RepoException::repoCode() const
 	return errorCode;
 }
 
+std::string RepoException::getStackTrace() const
+{
+	return stackTrace;
+}
+
 std::string RepoException::printFull() const
 {
 	std::stringstream stream;
@@ -56,8 +85,8 @@ std::string RepoException::printFull() const
 	return stream.str();
 }
 
-RepoFieldNotFoundException::RepoFieldNotFoundException(const std::string& fieldName)
-	: RepoBSONException("BSON does not have the field: " + fieldName) 
+RepoFieldNotFoundException::RepoFieldNotFoundException(const std::string& fieldName, std::string json)
+	: RepoBSONException("BSON does not have the field: " + fieldName + " " + json)
 {
 }
 

@@ -26,6 +26,11 @@ add_library(3drepobouncer SHARED ${SOURCES})
 set_target_properties(3drepobouncer PROPERTIES RELEASE_POSTFIX "_${VERSION_MAJOR}_${VERSION_MINOR}")
 set_target_properties(3drepobouncer PROPERTIES DEBUG_POSTFIX "_${VERSION_MAJOR}_${VERSION_MINOR}_d")
 
+if(NOT WIN32)
+	target_compile_options(3drepobouncer PRIVATE -g -rdynamic)
+	target_link_options(3drepobouncer PRIVATE -rdynamic)
+endif()
+
 target_link_libraries(3drepobouncer
 	${Boost_LIBRARIES}
 	${MONGO_CXX_DRIVER_LIBRARIES}
@@ -39,6 +44,7 @@ target_link_libraries(3drepobouncer
 	${AWSSDK_LIBRARIES}
 	${CRYPTOLENS_LIBRARIES}
 	log
+	$<$<NOT:$<BOOL:${WIN32}>>:dl>
 )
 
 install(DIRECTORY src/ DESTINATION include FILES_MATCHING PATTERN "*.h")

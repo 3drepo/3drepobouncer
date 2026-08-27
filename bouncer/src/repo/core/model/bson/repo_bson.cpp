@@ -66,7 +66,7 @@ RepoBSONElement RepoBSON::getField(const std::string& label) const
 	}
 	else
 	{
-		throw repo::lib::RepoFieldNotFoundException(label);
+		throw repo::lib::RepoFieldNotFoundException(label, bsoncxx::to_json(*this));
 	}
 }
 

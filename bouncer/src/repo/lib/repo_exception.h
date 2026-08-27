@@ -42,9 +42,16 @@ namespace repo {
 			*/
 			REPO_API_EXPORT std::string printFull() const;
 
+			/*
+			 * Returns the stack trace of the innermost exception, if any. If there are
+			 * no nested exceptions, returns the stack trace of this exception.
+			 */
+			REPO_API_EXPORT std::string getStackTrace() const;
+
 		protected:
 			int errorCode;
 			const std::string errMsg;
+			const std::string stackTrace;
 		};
 
 		REPO_API_EXPORT class RepoInvalidLicenseException : public RepoException {
@@ -82,7 +89,7 @@ namespace repo {
 
 		REPO_API_EXPORT class RepoFieldNotFoundException : public RepoBSONException {
 		public:
-			RepoFieldNotFoundException(const std::string& fieldName);
+			RepoFieldNotFoundException(const std::string& fieldName, std::string json = {});
 		};
 
 		REPO_API_EXPORT class RepoFieldTypeException : public RepoBSONException {
