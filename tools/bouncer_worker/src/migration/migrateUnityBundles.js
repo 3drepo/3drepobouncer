@@ -130,13 +130,25 @@ async function runUnityBundleMigration(teamspace) {
 
 	logger.info(`Found ${revisions.length} revisions to migrate.`);
 	const n = revisions.length;
+	const failures = [];
 	let i = 0;
 	for (const revision of revisions) {
 		logger.info(`- regenerating ${revision.teamspace} ${revision.project} ${revision.container} ${revision.revId} (${++i}/${n})`);
-		await migrateRevision(revision);
+		try {
+			await migrateRevision(revision);
+		} catch (err) {
+			logger.error(`\t- Failed to migrate ${revision.teamspace} ${revision.project} ${revision.container} ${revision.revId}: ${err.message ?? err}`);
+			failures.push(revision);
+		}
 	}
 
-	logger.info(`Migrated ${i} revisions.`);
+	logger.info(`Migrated ${i - failures.length}/${n} revisions.`);
+	if (failures.length) {
+		logger.info(`Failed to migrate ${failures.length} revision(s):`);
+		failures.forEach(({ teamspace: ts, project, container, revId }) => {
+			logger.info(`\t- ${ts} ${project} ${container} ${revId}`);
+		});
+	}
 }
 
 module.exports = {
