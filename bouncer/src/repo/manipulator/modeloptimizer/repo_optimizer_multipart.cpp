@@ -422,11 +422,11 @@ MultipartOptimizer::ProcessingJob repo::manipulator::modeloptimizer::MultipartOp
 	// Create filter
 	repo::core::handler::database::query::RepoQueryBuilder filter;
 	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));
+	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_MESH));
 	if (primitive == 2) {
 		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_PRIMITIVE, 2));
 	}
-	else if (primitive == 3) {
-		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_MESH));
+	else if (primitive == 3) {	
 		filter.append(repo::core::handler::database::query::Or(
 			repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_PRIMITIVE, 3),
 			repo::core::handler::database::query::Exists(REPO_NODE_MESH_LABEL_PRIMITIVE, false)
@@ -453,11 +453,11 @@ MultipartOptimizer::ProcessingJob repo::manipulator::modeloptimizer::MultipartOp
 	// Create filter
 	repo::core::handler::database::query::RepoQueryBuilder filter;
 	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_REVISION_ID, revId));
+	filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_MESH));
 	if (primitive == 2) {
 		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_PRIMITIVE, 2));
 	}
 	else if (primitive == 3) {
-		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_MESH));
 		filter.append(repo::core::handler::database::query::Or(
 			repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_PRIMITIVE, 3),
 			repo::core::handler::database::query::Exists(REPO_NODE_MESH_LABEL_PRIMITIVE, false)
