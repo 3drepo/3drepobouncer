@@ -437,18 +437,7 @@ MultipartOptimizer::ProcessingJob repo::manipulator::modeloptimizer::MultipartOp
 	else
 		filter.append(repo::core::handler::database::query::Exists(REPO_NODE_MESH_LABEL_GROUPING, false));
 	
-	if (hasNormals) {
-		filter.append(
-			repo::core::handler::database::query::Or(
-				repo::core::handler::database::query::Exists(REPO_FILTER_TAG_NORMALS, hasNormals),
-				repo::core::handler::database::query::Exists("_blobRef.elements.normals", true)
-			)
-		);
-	}
-	else
-	{
-		filter.append(repo::core::handler::database::query::Exists(REPO_FILTER_TAG_NORMALS, hasNormals));
-	}
+	filter.append(repo::core::handler::database::query::Exists("_blobRef.elements.normals", hasNormals));
 
 	// Create job
 	return ProcessingJob({ description, filter, {}, isOpaque });
@@ -480,18 +469,7 @@ MultipartOptimizer::ProcessingJob repo::manipulator::modeloptimizer::MultipartOp
 	else
 		filter.append(repo::core::handler::database::query::Exists(REPO_NODE_MESH_LABEL_GROUPING, false));
 
-	if (hasNormals) {
-		filter.append(
-			repo::core::handler::database::query::Or(
-				repo::core::handler::database::query::Exists(REPO_FILTER_TAG_NORMALS, hasNormals),
-				repo::core::handler::database::query::Exists("_blobRef.elements.normals", true)
-			)
-		);
-	}
-	else
-	{
-		filter.append(repo::core::handler::database::query::Exists(REPO_FILTER_TAG_NORMALS, hasNormals));
-	}
+	filter.append(repo::core::handler::database::query::Exists("_blobRef.elements.normals", hasNormals));
 
 	// Create job
 	return ProcessingJob({ description, filter, texId, true });
