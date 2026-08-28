@@ -436,7 +436,19 @@ MultipartOptimizer::ProcessingJob repo::manipulator::modeloptimizer::MultipartOp
 		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_GROUPING, grouping));
 	else
 		filter.append(repo::core::handler::database::query::Exists(REPO_NODE_MESH_LABEL_GROUPING, false));
-	filter.append(repo::core::handler::database::query::Exists(REPO_FILTER_TAG_NORMALS, hasNormals));
+	
+	if (hasNormals) {
+		filter.append(
+			repo::core::handler::database::query::Or(
+				repo::core::handler::database::query::Exists(REPO_FILTER_TAG_NORMALS, hasNormals),
+				repo::core::handler::database::query::Exists("_blobRef.elements.normals", true)
+			)
+		);
+	}
+	else
+	{
+		filter.append(repo::core::handler::database::query::Exists(REPO_FILTER_TAG_NORMALS, hasNormals));
+	}
 
 	// Create job
 	return ProcessingJob({ description, filter, {}, isOpaque });
@@ -467,11 +479,25 @@ MultipartOptimizer::ProcessingJob repo::manipulator::modeloptimizer::MultipartOp
 		filter.append(repo::core::handler::database::query::Eq(REPO_NODE_MESH_LABEL_GROUPING, grouping));
 	else
 		filter.append(repo::core::handler::database::query::Exists(REPO_NODE_MESH_LABEL_GROUPING, false));
-	filter.append(repo::core::handler::database::query::Exists(REPO_FILTER_TAG_NORMALS, hasNormals));
+
+	if (hasNormals) {
+		filter.append(
+			repo::core::handler::database::query::Or(
+				repo::core::handler::database::query::Exists(REPO_FILTER_TAG_NORMALS, hasNormals),
+				repo::core::handler::database::query::Exists("_blobRef.elements.normals", true)
+			)
+		);
+	}
+	else
+	{
+		filter.append(repo::core::handler::database::query::Exists(REPO_FILTER_TAG_NORMALS, hasNormals));
+	}
 
 	// Create job
 	return ProcessingJob({ description, filter, texId, true });
 }
+
+repo::core::model::RepoBSON REPO_API_EXPORT makeQueryFilterDocument(const repo::core::handler::database::query::RepoQuery& query);
 
 void MultipartOptimizer::clusterAndSupermesh(
 	const std::string &database,
@@ -483,6 +509,11 @@ void MultipartOptimizer::clusterAndSupermesh(
 	const MultipartOptimizer::ProcessingJob &job
 ) {
 	repoInfo << "Processing Job: " << job.description;
+
+	{
+		auto q = makeQueryFilterDocument(job.filter);
+		repoInfo << q.toString();
+	}
 
 	// Create projection
 	repo::core::handler::database::query::RepoProjectionBuilder projection;
