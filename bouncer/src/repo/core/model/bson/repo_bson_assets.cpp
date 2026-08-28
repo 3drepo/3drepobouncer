@@ -94,7 +94,7 @@ RepoAssets::operator RepoBSON() const
 	// than once per revision, so it is safe to put a constant here.
 	// This bouncer build should never be connected to a queue.
 
-	builder.append("version", 1);
+	builder.append("version", 2);
 
 	return builder.obj();
 }
