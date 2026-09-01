@@ -56,10 +56,9 @@ public:
 class DeviceModuleDwg : public OdGsBaseModule
 {
 public:
-	void init(GeometryCollector* collector, DwgProxyInspector* proxy)
+	void init(GeometryCollector* collector)
 	{
 		this->collector = collector;
-		this->proxy = proxy;
 	}
 
 protected:
@@ -72,7 +71,6 @@ protected:
 	{
 		auto pP = OdRxObjectImpl<DataProcessorDwg, OdGsViewImpl>::createObject();
 		((DataProcessorDwg*)pP.get())->initialise(collector);
-		((DataProcessorDwg*)pP.get())->setProxy(proxy);
 		return pP;
 	}
 
@@ -88,7 +86,6 @@ protected:
 
 private:
 	GeometryCollector* collector;
-	DwgProxyInspector* proxy;
 };
 ODRX_DEFINE_PSEUDO_STATIC_MODULE(DeviceModuleDwg);
 
@@ -96,17 +93,12 @@ void FileProcessorDwg::importModel(OdDbDatabasePtr pDb)
 {
 	GeometryCollector collector(repoSceneBuilder);
 
-	// One DwgProxyInspector for the whole file, shared by every DataProcessorDwg
-	// view instance the device below creates - see dwg_proxy_inspector.h for why
-	// proxy-app detection needs to be file-scoped rather than per-instance.
-	DwgProxyInspector proxy;
-
 	// Create the vectorizer device that will render the DWG database. This will
 	// use the GeometryCollector underneath.
 
 	OdGsModulePtr pGsModule = ODRX_STATIC_MODULE_ENTRY_POINT(DeviceModuleDwg)(OD_T("DeviceModuleDwg"));
 	auto deviceModule = (DeviceModuleDwg*)pGsModule.get();
-	deviceModule->init(&collector, &proxy);
+	deviceModule->init(&collector);
 	auto pDevice = pGsModule->createDevice();
 
 	collector.setUnits(determineModelUnits(pDb->getINSUNITS()));
@@ -225,25 +217,8 @@ uint8_t FileProcessorDwg::readFile()
 		::odrxDynamicLinker()->loadModule(RxPropertiesModuleName, false);
 		::odrxDynamicLinker()->loadModule(DbPropertiesModuleName, false);
 		::odrxDynamicLinker()->loadModule(RxCommonDataAccessModuleName, false);
-		
-		// ===== ADDED: Enable proxy graphics rendering =====
-		// This allows ODA to render custom entities using their embedded proxy graphics
-		// even when specific modules (Civil3D, Plant3D) are not available
-		try {
-			::odrxDynamicLinker()->loadModule(L"ProxyGraphics", false);
-			repoInfo << "Loaded ProxyGraphics module - will attempt to render custom entities";
-		}
-		catch (...) {
-			repoWarning << "ProxyGraphics module not available";
-		}
 
 		OdDbDatabasePtr pDb = svcs.readFile(getFilename());
-
-		// The PROXYGRAPHICS system variable controls whether a proxy entity's
-		// stored graphics are written to the file at all. It can only be set
-		// by the authoring application (AutoCAD/Civil3D) when it saves the
-		// file - ODA has no ProxyModule/object enabler to write it here, so
-		// there is nothing to configure on pDb at import time.
 
 		if (repoSceneBuilder)
 		{

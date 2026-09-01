@@ -20,131 +20,20 @@
 #include <DbLayout.h>
 #include <OdDbGeoDataMarker.h>
 #include <DbBlockTableRecord.h>
+#include <DbStubPtrArray.h>
 #include <DbBlockReference.h>
 #include <OdString.h>
+#include <DgCmColor.h>
 #include <toString.h>
-#include <DbDatabase.h>
-#include <CmColorBase.h>
+
 #include "helper_functions.h"
 #include "data_processor_dwg.h"
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-namespace {
-	// The wireframe material used for the surface-edge overlay (see
-	// DataProcessorDwg::addSurfaceEdgeIfNeeded). Cached as a static value,
-	// not rebuilt per call, so every edge across an entire surface entity's
-	// replay (potentially thousands of edges) resolves to the same material
-	// checksum and lands in the same mesh.
-	const repo::lib::repo_material_t& surfaceEdgeMaterial()
-	{
-		static const repo::lib::repo_material_t material = []() {
-			auto m = repo::lib::repo_material_t::DefaultMaterial();
-			m.diffuse = { 0.03f, 0.03f, 0.03f };
-			m.ambient = m.diffuse;
-			m.emissive = m.diffuse;
-			m.lineWeight = 1.0f;
-			m.isWireframe = true;
-			return m;
-		}();
-		return material;
-	}
-
-	/* Substrings used to spot a property name resbuf within a Civil3D
-	extension-dictionary Xrecord. Const at namespace scope, so this has
-	internal linkage and is built once rather than per entity. */
-	const std::vector<std::string> kCivil3DTriggers = { "Station", "Offset", "Elevation", "Grade" };
-}
-
-// Generic proxy entity inspection and metadata extraction lives on the
-// file-scoped DwgProxyInspector class (dwg_proxy_inspector.h/.cpp), shared by
-// every DataProcessorDwg instance created while vectorising one file.
-// Civil3D-specific classification, display names, and dictionary metadata
-// are DataProcessorDwg's own concern - see isCivil3DProxyClass et al. below;
-// removing Civil3D support means deleting those methods and their call sites.
-
 DataProcessorDwg::~DataProcessorDwg()
 {
 	// This exists so we can use unique_ptr with a forward declaration of DwgDrawContext
-}
-
-void DataProcessorDwg::setEntityMetadata(
-	const std::string& layerId,
-	const std::string& handleMetaValue,
-	OdDbEntityPtr pEntity,
-	ProxyInfo& info)
-{
-	if (layerId.empty() || handleMetaValue.empty() || collector->hasMetadata(layerId)) return;
-
-	std::unordered_map<std::string, repo::lib::RepoVariant> meta, metadata;
-	meta["Entity Handle::Value"] = handleMetaValue;
-
-	if (!pEntity.isNull())
-	{
-		if (info.isProxy())
-		{
-			metadata = proxy->getProxyEntityMetadata(pEntity, info);
-			addCivil3DDictionaryMetadata(info, metadata);
-
-			auto appString = formatProxyApplicationString(info);
-			if (!appString.empty())
-			{
-				metadata["Proxy::Application"] = appString;
-			}
-		}
-		else
-		{
-			extractEntityProperties(pEntity, metadata);
-		}
-
-		for (const auto& [key, value] : metadata)
-		{
-			meta[key] = value;
-		}
-	}
-
-	collector->setMetadata(layerId, meta);
-}
-
-bool DataProcessorDwg::drawProxyAwareGeometry(
-	OdUInt32 i,
-	const OdGiDrawable* pDrawable,
-	OdDbEntityPtr pEntity,
-	bool isProxy,
-	const ProxyInfo& info,
-	GeometryCollector::Context* ctx)
-{
-	// If this entity is a Civil3D TIN surface (or any future "surface" proxy
-	// class), drawingSurfaceEdges enables a wireframe edge overlay for the
-	// duration of this entity's draw - see addSurfaceTriangle. Both
-	// surface-state members are fully saved and restored around this call so
-	// sibling or nested surface entities never leak state into one another.
-	bool previousDrawingSurfaceEdges = drawingSurfaceEdges;
-	auto previousSurfaceEdgeKeys = std::move(currentSurfaceEdgeKeys);
-
-	drawingSurfaceEdges = isProxy && isCivil3DSurfaceClass(info.originalClass);
-	currentSurfaceEdgeKeys.clear();
-
-	collector->pushDrawContext(ctx);
-	bool ret = false;
-	if (isProxy)
-	{
-		ret = proxy->drawStoredProxyGraphics(pEntity, info, this);
-		if (!(ctx && ctx->hasMeshes()))
-		{
-			ret = OdGsBaseMaterialView::doDraw(i, pDrawable) || ret;
-		}
-	}
-	else
-	{
-		ret = OdGsBaseMaterialView::doDraw(i, pDrawable);
-	}
-	collector->popDrawContext(ctx);
-
-	drawingSurfaceEdges = previousDrawingSurfaceEdges;
-	currentSurfaceEdgeKeys = std::move(previousSurfaceEdgeKeys);
-
-	return ret;
 }
 
 bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
@@ -161,7 +50,7 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	// don't have Ids. The current behaviour is to disable these by default
 	// through pDb->setGEOMARKERVISIBILITY. If they are re-enabled, this snippet
 	// ensures that the geometry goes into its own tree node.
-
+	
 	// dynamic_cast is a workaround for an ODA bug where OdDbGeoDataMarker has no ODA RTTI
 	// https://forum.opendesign.com/showthread.php?24537-Cast-of-OdGiDrawable-to-OdDbGeoDataMarker-succeeding-for-OdDbEntity
 	auto pGeoDataMarker = dynamic_cast<const OdDbGeoDataMarker*>(pDrawable);
@@ -170,21 +59,11 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		entityLayer = { "GeoPositionMarker", "Geo Position Marker" };
 		ctx = collector->makeNewDrawContext();
 	}
-
-	// A proxy entity is inspected exactly once here, via the shared Proxy; every
-	// downstream consumer in this function (diagnostics, TIN detection,
-	// stored-graphics replay, metadata) reuses this same ProxyInfo instead of
-	// re-casting or re-querying ODA for the same entity.
-	ProxyInfo info;
-	bool isProxy = false;
-
+	
 	OdDbEntityPtr pEntity = OdDbEntity::cast(pDrawable);
 	if (!pEntity.isNull())
 	{
-		// Cheap inspection only: one cast, no XData or extension dictionary
-		// read. Consumers that need those load them on demand.
-		isProxy = proxy->getProxyInfo(pEntity, info);
-
+		activeProxyInfo = DwgProxyUtils::getProxyInfo(pEntity);
 		// As soon as we get an actual entity, cache the active Layout Id. This
 		// can be used to determine when we are back at the top level (out of a
 		// block).
@@ -216,7 +95,7 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		const OdDbHandle& handle = pEntity->objectId().getHandle();
 		auto sHandle = pEntity->isDBRO() ? toString(handle) : toString(L"non-DbResident");
 		auto entityId = convertToStdString(toString(sHandle));
-		auto entityName = getClassDisplayName(pEntity, info);
+		auto entityName = getClassDisplayName(pEntity, activeProxyInfo);
 
 		// Check if this drawable is directly under a layer or in a block.
 
@@ -285,9 +164,25 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		}
 	}
 
-	bool ret = drawProxyAwareGeometry(i, pDrawable, pEntity, isProxy, info, ctx.get());
+	activeProxyInfo.currentSurfaceEdgeKeys.clear();
 
-	if (ctx && ctx->hasMeshes())
+	collector->pushDrawContext(ctx.get());
+	bool ret = false;
+	if (activeProxyInfo.isProxy())
+	{
+		ret = DwgProxyUtils::drawStoredProxyGraphics(pEntity, activeProxyInfo, this);
+		if (!(ctx && ctx->hasMeshes()))
+		{
+			ret = OdGsBaseMaterialView::doDraw(i, pDrawable) || ret;
+		}
+	}
+	else
+	{
+		ret = OdGsBaseMaterialView::doDraw(i, pDrawable);
+	}
+	collector->popDrawContext(ctx.get());
+
+	if (ctx && ctx->hasMeshes()) 
 	{
 		// This stack frame should create a layer with actual geometry
 
@@ -304,145 +199,18 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		auto meshes = ctx->extractMeshes(collector->getLayerTransform(entityLayer.id).inverse());
 		collector->addMeshes(entityLayer.id, meshes);
 
-		setEntityMetadata(entityLayer.id, handleMetaValue, pEntity, info);
+		if (!handleMetaValue.empty() && !collector->hasMetadata(entityLayer.id)) {
+			std::unordered_map<std::string, repo::lib::RepoVariant> meta;
+			meta["Entity Handle::Value"] = handleMetaValue;
+			if (activeProxyInfo.isProxy()) {
+				DwgProxyUtils::addProxyMetadata(pEntity, activeProxyInfo, meta);
+				meta["Entity Class::Value"] = activeProxyInfo.originalClass;
+			}
+			collector->setMetadata(entityLayer.id, meta);
+		}
 	}
+
 	return ret;
-}
-
-void DataProcessorDwg::processTriangleOut(const OdInt32* p3Vertices, const OdGeVector3d* pNormal)
-{
-	if (!drawingSurfaceEdges)
-	{
-		DataProcessor::processTriangleOut(p3Vertices, pNormal);
-		return;
-	}
-
-	const auto pVertexDataList = vertexDataList();
-	addSurfaceTriangle(
-		toRepoVector(pVertexDataList[p3Vertices[0]]),
-		toRepoVector(pVertexDataList[p3Vertices[1]]),
-		toRepoVector(pVertexDataList[p3Vertices[2]]));
-}
-
-void DataProcessorDwg::polygonOut(OdInt32 numPoints, const OdGePoint3d* vertexList, const OdGeVector3d* pNormal)
-{
-	if (!drawingSurfaceEdges)
-	{
-		OdGiGeometrySimplifier::polygonOut(numPoints, vertexList, pNormal);
-		return;
-	}
-
-	if (numPoints < 3) return;
-
-	for (OdInt32 i = 1; i + 1 < numPoints; ++i)
-	{
-		addSurfaceTriangle(
-			toRepoVector(vertexList[0]),
-			toRepoVector(vertexList[i]),
-			toRepoVector(vertexList[i + 1]));
-	}
-}
-
-void DataProcessorDwg::tristripProc(
-	OdInt32 numVertices,
-	const OdGePoint3d* vertexList,
-	OdInt32 stripListSize,
-	const OdInt32* stripList,
-	const OdGiEdgeData* pEdgeData,
-	const OdGiVertexData* pVertexData)
-{
-	if (!drawingSurfaceEdges)
-	{
-		OdGiGeometrySimplifier::tristripProc(
-			numVertices,
-			vertexList,
-			stripListSize,
-			stripList,
-			pEdgeData,
-			pVertexData);
-		return;
-	}
-
-	const OdInt32 count = stripList && stripListSize > 0 ? stripListSize : numVertices;
-	if (count < 3) return;
-
-	auto pointAt = [&](OdInt32 index) -> const OdGePoint3d& {
-		return stripList && stripListSize > 0 ? vertexList[stripList[index]] : vertexList[index];
-	};
-
-	for (OdInt32 i = 0; i + 2 < count; ++i)
-	{
-		if ((i % 2) == 0)
-		{
-			addSurfaceTriangle(
-				toRepoVector(pointAt(i)),
-				toRepoVector(pointAt(i + 1)),
-				toRepoVector(pointAt(i + 2)));
-		}
-		else
-		{
-			addSurfaceTriangle(
-				toRepoVector(pointAt(i + 1)),
-				toRepoVector(pointAt(i)),
-				toRepoVector(pointAt(i + 2)));
-		}
-	}
-}
-
-void DataProcessorDwg::processPolylineOut(OdInt32 numPoints, const OdInt32* vertexIndexList)
-{
-	if (drawingSurfaceEdges && numPoints == 4)
-	{
-		const auto pVertexDataList = vertexDataList();
-		auto p0 = toRepoVector(pVertexDataList[vertexIndexList[0]]);
-		auto p1 = toRepoVector(pVertexDataList[vertexIndexList[1]]);
-		auto p2 = toRepoVector(pVertexDataList[vertexIndexList[2]]);
-		auto p3 = toRepoVector(pVertexDataList[vertexIndexList[3]]);
-
-		if (samePoint(p0, p3) && addSurfaceTriangle(p0, p1, p2)) return;
-	}
-
-	DataProcessor::processPolylineOut(numPoints, vertexIndexList);
-}
-
-void DataProcessorDwg::processPolylineOut(OdInt32 numPoints, const OdGePoint3d* vertexList)
-{
-	if (drawingSurfaceEdges && numPoints == 4)
-	{
-		auto p0 = toRepoVector(vertexList[0]);
-		auto p1 = toRepoVector(vertexList[1]);
-		auto p2 = toRepoVector(vertexList[2]);
-		auto p3 = toRepoVector(vertexList[3]);
-
-		if (samePoint(p0, p3) && addSurfaceTriangle(p0, p1, p2)) return;
-	}
-
-	DataProcessor::processPolylineOut(numPoints, vertexList);
-}
-
-bool DataProcessorDwg::addSurfaceTriangle(
-	const repo::lib::RepoVector3D64& p0,
-	const repo::lib::RepoVector3D64& p1,
-	const repo::lib::RepoVector3D64& p2)
-{
-	if (samePoint(p0, p1) || samePoint(p1, p2) || samePoint(p2, p0)) return false;
-
-	addSurfaceEdgeIfNeeded(p0, p1);
-	addSurfaceEdgeIfNeeded(p1, p2);
-	addSurfaceEdgeIfNeeded(p2, p0);
-
-	return true;
-}
-
-void DataProcessorDwg::addSurfaceEdgeIfNeeded(
-	const repo::lib::RepoVector3D64& p0,
-	const repo::lib::RepoVector3D64& p1)
-{
-	if (samePoint(p0, p1)) return;
-	if (!currentSurfaceEdgeKeys.insert(edgeKey(p0, p1)).second) return;
-
-	collector->setMaterial(surfaceEdgeMaterial());
-	collector->addFace({ p0, p1 });
 }
 
 void DataProcessorDwg::convertTo3DRepoColor(OdCmEntityColor& color, repo::lib::repo_color3d_t& out)
@@ -494,6 +262,33 @@ void DataProcessorDwg::convertTo3DRepoMaterial(
 	material.shininessStrength = 0;
 }
 
+void DataProcessorDwg::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* pNormal)
+{
+	if (activeProxyInfo.isProxy() && activeProxyInfo.isCivil3DSurfaceClass())
+	{
+		const auto pVertexDataList = vertexDataList();
+		auto p0 = toRepoVector(pVertexDataList[p3Vertices[0]]);
+		auto p1 = toRepoVector(pVertexDataList[p3Vertices[1]]);
+		auto p2 = toRepoVector(pVertexDataList[p3Vertices[2]]);
+		if (samePoint(p0, p1) || samePoint(p1, p2) || samePoint(p2, p0)) 
+			return;
+		addSurfaceEdgeIfNeeded(p0, p1);
+		addSurfaceEdgeIfNeeded(p1, p2);
+		addSurfaceEdgeIfNeeded(p2, p0);
+		return;
+	}
+	DataProcessor::triangleOut(p3Vertices, pNormal);	
+}
+
+void DataProcessorDwg::addSurfaceEdgeIfNeeded(const repo::lib::RepoVector3D64& p0, const repo::lib::RepoVector3D64& p1)
+{
+	if (samePoint(p0, p1)) return;
+	if (!activeProxyInfo.currentSurfaceEdgeKeys.insert(edgeKey(p0, p1)).second) return;
+
+	//collector->setMaterial(surfaceEdgeMaterial());
+	collector->addFace({ p0, p1 });
+}
+
 void DataProcessorDwg::setMode(OdGsView::RenderMode mode)
 {
 	OdGsBaseVectorizeView::m_renderMode = kGouraudShaded;
@@ -519,6 +314,14 @@ std::string DataProcessorDwg::getClassDisplayName(OdDbEntityPtr entity, const Pr
 	// 'missing'.
 
 	auto className = convertToStdString(entity->isA()->name());
+	if (info.isProxy())
+	{
+		// If this is a proxy, we want to display the original class name, not
+		// the generic "Proxy" name. This is because the original class name
+		// gives a better indication of what the entity actually is.
+		className = info.originalClass;
+	}
+
 	const static std::unordered_map<std::string, std::string> classToDisplayName
 	{
 		{"AcDb3dSolid", "3D Solid"},
@@ -604,57 +407,6 @@ std::string DataProcessorDwg::getClassDisplayName(OdDbEntityPtr entity, const Pr
 		{"AcDbSectionSymbol", "Section Symbol"},
 		{"AcDbViewport", "Viewport"},
 		{"RText", "RText"},
-	};
-
-	if (info.isProxy())
-	{
-		std::string name;
-		if (getCivil3DDisplayName(info.originalClass, name))
-			return name;
-	}
-
-	auto it = classToDisplayName.find(className);
-	if (it != classToDisplayName.end())
-	{
-		return it->second;
-	}
-	else
-	{
-		return className;
-	}
-}
-
-bool DataProcessorDwg::isCivil3DProxyClass(const std::string& originalClass)
-{
-	return originalClass.find("Aecc") != std::string::npos ||
-		originalClass.find("Civil") != std::string::npos;
-}
-
-bool DataProcessorDwg::isCivil3DSurfaceClass(const std::string& originalClass)
-{
-	return originalClass == "AeccDbSurfaceTin" ||
-		originalClass == "AeccDbTinSurface" ||
-		originalClass.find("SurfaceTin") != std::string::npos ||
-		originalClass.find("TinSurface") != std::string::npos;
-}
-
-bool DataProcessorDwg::getCivil3DDisplayName(const std::string& originalClass, std::string& outName)
-{
-	const static std::unordered_map<std::string, std::string> classToDisplayName
-	{
-		// =========================================================================
-		// CIVIL 3D ENTITIES - Complete mapping (Civil 3D 2021-2027)
-		// Source: Autodesk.Civil.DatabaseServices namespace
-		// https://help.autodesk.com/view/CIV3D/2025/ENU/?guid=89ffd413-aada-d770-e322-89dfa7b99369
-		// DWG class name pattern: AeccDb<X> -> .NET: Autodesk.Civil.DatabaseServices.<X>
-		// =========================================================================
-
-		// =========================================================================
-		// BASE ENTITY CLASSES
-		// .NET: Entity, CivilObject
-		// =========================================================================
-		{ "AeccDbEntity", "Civil Entity" },
-		{ "AeccDbCivilObject", "Civil Object" },
 
 		// =========================================================================
 		// SURFACES
@@ -1146,35 +898,15 @@ bool DataProcessorDwg::getCivil3DDisplayName(const std::string& originalClass, s
 		// .NET: Added in Civil 3D 2024
 		// =========================================================================
 		{ "AeccDbConnectedDesign", "Connected Design" },             // 2024+
-		{ "AeccDbDesignCheck", "Design Check" }
+		{ "AeccDbDesignCheck", "Design Check" },
 	};
-
-	auto it = classToDisplayName.find(originalClass);
-	if (it == classToDisplayName.end()) return false;
-
-	outName = it->second;
-	return true;
-}
-
-void DataProcessorDwg::addCivil3DDictionaryMetadata(
-	const ProxyInfo& info,
-	std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
-{
-	if (!isCivil3DProxyClass(info.originalClass) || info.extensionDictionary.isNull()) return;
-	extractProxyDictionaryProperties(info.extensionDictionary, { info.originalClass }, "Civil3D", kCivil3DTriggers, true, metadata);
-}
-
-std::string DataProcessorDwg::formatProxyApplicationString(const ProxyInfo& info)
-{
-	if (!info.originalClass.empty() && info.originalClass != "Unknown")
+	auto it = classToDisplayName.find(className);
+	if (it != classToDisplayName.end())
 	{
-		return (isCivil3DProxyClass(info.originalClass) ? "Civil3D (" : "CustomApp (") + info.originalClass + ")";
+		return it->second;
 	}
-
-	for (const auto& app : info.xDataApps)
+	else
 	{
-		if (app.find("Aecc") != std::string::npos) return "Civil3D (XData)";
+		return className;
 	}
-
-	return "";
 }

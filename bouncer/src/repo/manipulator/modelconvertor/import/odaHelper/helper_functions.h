@@ -18,15 +18,11 @@
 #pragma once
 
 #include <string>
-#include <vector>
-#include <unordered_map>
 #include <SharedPtr.h>
 #include <OdString.h>
 #include <OdaCommon.h>
 #include <BimCommon.h>
 #include <DbBaseDatabase.h>
-#include <DbDictionary.h>
-#include <DbEntity.h>
 #include <Database/BmDatabase.h>
 #include <Database/Entities/BmDBView.h>
 #include <Database/Entities/BmViewport.h>
@@ -35,7 +31,6 @@
 
 #include "repo/lib/datastructure/repo_structs.h"
 #include "repo/lib/datastructure/repo_bounds.h"
-#include "repo/lib/datastructure/repo_variant.h"
 
 namespace repo {
 	namespace manipulator {
@@ -87,39 +82,11 @@ namespace repo {
 				points; the same key is returned whichever order they are given in. */
 				std::string edgeKey(const repo::lib::RepoVector3D64& a, const repo::lib::RepoVector3D64& b);
 
-				/* Generic extension-dictionary stored-property extraction: scans a
-					fixed set of dictionary entries for Xrecords, and within each walks
-					the resbuf chain looking for a property name string (one of
-					triggerSubstrings) followed by its value. includeInt32 controls
-					whether kDxfInt32 resbufs are parsed as property values, since not
-					every caller's original property format used them. */
-					void extractProxyDictionaryProperties(
-						OdDbDictionaryPtr pDict,
-						const std::vector<std::string>& dictNames,
-						const std::string& metadataPrefix,
-						const std::vector<std::string>& triggerSubstrings,
-						bool includeInt32,
-						std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
-
-					repo::lib::RepoVector3D64 calcNormal(repo::lib::RepoVector3D64 p1, repo::lib::RepoVector3D64 p2, repo::lib::RepoVector3D64 p3);
+				repo::lib::RepoVector3D64 calcNormal(repo::lib::RepoVector3D64 p1, repo::lib::RepoVector3D64 p2, repo::lib::RepoVector3D64 p3);
 
 				repo::lib::RepoVector3D64 toRepoVector(const OdGePoint3d& p);
 				repo::lib::RepoVector3D64 toRepoVector(const OdGeVector3d& p);
 				repo::lib::RepoBounds toRepoBounds(const OdGeExtents3d& b);
-
-				/* Reads every entity property ODA's Common Data Access (CDA) exposes
-				(the same properties shown in the AutoCAD Properties panel: General,
-				Pattern, Geometry, etc.) into metadata. Used for both proxy and
-				non-proxy entities, so it lives here rather than on any one
-				entity-specific class. */
-				void extractEntityProperties(OdDbEntityPtr pEntity, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
-				/* CDA (extractEntityProperties) reflects ODA's own property naming, which
-				doesn't always match the canonical "General::..." spelling the tree/UI
-				expects (e.g. "General::LineType" vs "General::Linetype", "General::Color"/
-				"General::TrueColor" vs "General::True Color"). Returns the canonical key
-				for a recognised property, or an empty string if key isn't a "General::..."
-				property this maps, so callers can fall back to the original key. */
-				std::string canonicalGeneralMetadataKey(const std::string& key);
 			}
 		}
 	}
