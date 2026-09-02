@@ -12,6 +12,7 @@ if(ODA_SUPPORT)
 		${CMAKE_CURRENT_SOURCE_DIR}/data_processor_dwg.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/data_processor_nwd.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/data_processor_rvt.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/dwg_proxy_utils.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor_dgn.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor_dwg.cpp
@@ -32,6 +33,7 @@ if(ODA_SUPPORT)
 		${CMAKE_CURRENT_SOURCE_DIR}/data_processor_dwg.h
 		${CMAKE_CURRENT_SOURCE_DIR}/data_processor_nwd.h
 		${CMAKE_CURRENT_SOURCE_DIR}/data_processor_rvt.h
+		${CMAKE_CURRENT_SOURCE_DIR}/dwg_proxy_utils.h
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor.h
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor_dgn.h
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor_dwg.h

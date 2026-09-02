@@ -30,6 +30,7 @@
 #include "vectorise_device_dgn.h"
 #include "repo/core/model/bson/repo_node_mesh.h"
 #include "repo/lib/datastructure/repo_variant.h"
+#include "dwg_proxy_utils.h"
 
 namespace repo {
 	namespace manipulator {
@@ -51,7 +52,11 @@ namespace repo {
 						MaterialColours& matColors,
 						repo::lib::repo_material_t& material) override;
 
+					void triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* pNormal) override;
+
 				private:
+					void addSurfaceEdgeIfNeeded(const repo::lib::RepoVector3D64& p0, const repo::lib::RepoVector3D64& p1);
+
 					void convertTo3DRepoColor(OdCmEntityColor& color, repo::lib::repo_color3d_t& out);
 
 					class Layer
@@ -86,8 +91,9 @@ namespace repo {
 					};
 
 					Context context;
+					ProxyInfo activeProxyInfo;
 
-					std::string getClassDisplayName(OdDbEntityPtr entity);
+					std::string getClassDisplayName(OdDbEntityPtr entity, const ProxyInfo& info);
 				};
 
 				typedef OdSharedPtr<DataProcessorDwg> DataProcessorDwgPtr;

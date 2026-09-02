@@ -65,6 +65,30 @@ int repo::manipulator::modelconvertor::odaHelper::compare(double d1, double d2)
 	return 0;
 }
 
+bool repo::manipulator::modelconvertor::odaHelper::samePoint(const repo::lib::RepoVector3D64& a, const repo::lib::RepoVector3D64& b)
+{
+	return compare(a.x, b.x) == 0 &&
+		compare(a.y, b.y) == 0 &&
+		compare(a.z, b.z) == 0;
+}
+
+std::string repo::manipulator::modelconvertor::odaHelper::pointKey(const repo::lib::RepoVector3D64& p)
+{
+	// Quantise to the same tolerance samePoint()/compare() use, so points that
+	// compare equal always produce the same key.
+	const double keyScale = 1.0 / DOUBLE_TOLERANCE;
+	return std::to_string(static_cast<long long>(p.x * keyScale)) + "," +
+		std::to_string(static_cast<long long>(p.y * keyScale)) + "," +
+		std::to_string(static_cast<long long>(p.z * keyScale));
+}
+
+std::string repo::manipulator::modelconvertor::odaHelper::edgeKey(const repo::lib::RepoVector3D64& a, const repo::lib::RepoVector3D64& b)
+{
+	auto keyA = pointKey(a);
+	auto keyB = pointKey(b);
+	return keyA < keyB ? keyA + "|" + keyB : keyB + "|" + keyA;
+}
+
 repo::lib::RepoVector3D64 repo::manipulator::modelconvertor::odaHelper::calcNormal(repo::lib::RepoVector3D64 p1, repo::lib::RepoVector3D64 p2, repo::lib::RepoVector3D64 p3)
 {
 	repo::lib::RepoVector3D64 vecA = p2 - p1;

@@ -81,16 +81,13 @@ namespace repo {
 
 					double deviationValue = 0;
 
-				private:
 					/**
 					* This callback is invoked when next triangle should be processed
 					* defined in OdGiGeometrySimplifier class
 					* @param p3Vertices - input vertices of the triangle
 					* @param pNormal - input veritces normal
 					*/
-					void triangleOut(
-						const OdInt32* p3Vertices,
-						const OdGeVector3d* pNormal) final;
+					virtual void triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* pNormal);
 
 					/**
 					* This callback is invoked when the next line should be processed.
@@ -98,12 +95,11 @@ namespace repo {
 					* @param numPoints Number of points.
 					* @param vertexIndexList Pointer to an array of vertex indices.
 					*/
-					void polylineOut(
-						OdInt32 numPoints,
-						const OdInt32* vertexIndexList) final;
+					virtual void polylineOut(OdInt32 numPoints, const OdInt32* vertexIndexList);
 
-					void polylineOut(OdInt32 numPoints,
-						const OdGePoint3d* vertexList) final;
+					virtual void polylineOut(OdInt32 numPoints, const OdGePoint3d* vertexList);
+
+				private:					
 
 					/**
 					* This callback is invoked when next material should be processed
