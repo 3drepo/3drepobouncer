@@ -165,6 +165,7 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	}
 
 	activeProxyInfo.currentSurfaceEdgeKeys.clear();
+	activeProxyInfo.currentSurfacePointKeys.clear();
 
 	collector->pushDrawContext(ctx.get());
 	bool ret = false;
@@ -270,8 +271,11 @@ void DataProcessorDwg::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d
 		auto p0 = toRepoVector(pVertexDataList[p3Vertices[0]]);
 		auto p1 = toRepoVector(pVertexDataList[p3Vertices[1]]);
 		auto p2 = toRepoVector(pVertexDataList[p3Vertices[2]]);
-		if (samePoint(p0, p1) || samePoint(p1, p2) || samePoint(p2, p0)) 
+		if (samePoint(p0, p1) || samePoint(p1, p2) || samePoint(p2, p0))
 			return;
+		activeProxyInfo.currentSurfacePointKeys.insert(pointKey(p0));
+		activeProxyInfo.currentSurfacePointKeys.insert(pointKey(p1));
+		activeProxyInfo.currentSurfacePointKeys.insert(pointKey(p2));
 		addSurfaceEdgeIfNeeded(p0, p1);
 		addSurfaceEdgeIfNeeded(p1, p2);
 		addSurfaceEdgeIfNeeded(p2, p0);
@@ -285,7 +289,9 @@ void DataProcessorDwg::addSurfaceEdgeIfNeeded(const repo::lib::RepoVector3D64& p
 	if (samePoint(p0, p1)) return;
 	if (!activeProxyInfo.currentSurfaceEdgeKeys.insert(edgeKey(p0, p1)).second) return;
 
-	//collector->setMaterial(surfaceEdgeMaterial());
+	auto edgeMaterial = collector->getLastMaterial();
+	edgeMaterial.diffuse = { 0.4f, 0.4f, 0.4f };
+	collector->setMaterial(edgeMaterial);
 	collector->addFace({ p0, p1 });
 }
 

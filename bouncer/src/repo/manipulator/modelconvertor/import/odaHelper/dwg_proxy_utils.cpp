@@ -87,7 +87,7 @@ void DwgProxyUtils::addProxyMetadata(OdDbEntityPtr pEntity, const ProxyInfo& inf
 	DwgProxyUtils::addProxyGeneralMetadata(pEntity, metadata);
 	if (info.isProxy() && info.isCivil3DSurfaceClass())
 	{
-		DwgProxyUtils::addProxyGeometryMetadata(pEntity, metadata);
+		DwgProxyUtils::addProxyGeometryMetadata(pEntity, info, metadata);
 	}
 }
 
@@ -154,7 +154,7 @@ void DwgProxyUtils::addProxyGeneralMetadata(OdDbEntityPtr pEntity, std::unordere
 	metadata["General::Visibility"] = pEntity->visibility() == OdDb::kInvisible ? std::string("Invisible") : std::string("Visible");
 }
 
-void DwgProxyUtils::addProxyGeometryMetadata(OdDbEntityPtr pEntity, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
+void DwgProxyUtils::addProxyGeometryMetadata(OdDbEntityPtr pEntity, const ProxyInfo& info, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata)
 {
 	try
 	{
@@ -165,6 +165,9 @@ void DwgProxyUtils::addProxyGeometryMetadata(OdDbEntityPtr pEntity, std::unorder
 			auto max = extents.maxPoint();
 			metadata["Geometry::Bounds Min"] = "(" + std::to_string(min.x) + ", " + std::to_string(min.y) + ", " + std::to_string(min.z) + ")";
 			metadata["Geometry::Bounds Max"] = "(" + std::to_string(max.x) + ", " + std::to_string(max.y) + ", " + std::to_string(max.z) + ")";
+			metadata["Geometry::Minimum Elevation"] = min.z;
+			metadata["Geometry::Maximum Elevation"] = max.z;
+			metadata["Geometry::Number Of Points"] = static_cast<int64_t>(info.currentSurfacePointKeys.size());
 		}
 	}
 	catch (...) {}
