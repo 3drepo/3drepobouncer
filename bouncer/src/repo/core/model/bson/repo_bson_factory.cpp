@@ -301,6 +301,35 @@ TransformationNode RepoBSONFactory::makeTransformationNode(
 	return node;
 }
 
+PointNode repo::core::model::RepoBSONFactory::makePointNode(
+	const std::vector<repo::lib::RepoVector3D>& points,
+	const std::vector<repo::lib::repo_color4d_t>& colours,
+	const repo::lib::RepoBounds& boundingBox,
+	const std::vector<uint8_t>& treePosition,
+	const std::string& name,
+	const std::vector<repo::lib::RepoUUID>& parents)
+{
+	PointNode node = makePointNode(
+		boundingBox,
+		treePosition,
+		name,
+		parents);
+	node.setPoints(points);
+	node.setColourAttributes(colours);
+	return node;
+}
+
+PointNode repo::core::model::RepoBSONFactory::makePointNode(const repo::lib::RepoBounds& boundingBox, const std::vector<uint8_t>& treePosition, const std::string& name, const std::vector<repo::lib::RepoUUID>& parents)
+{
+	PointNode node;
+	node.setSharedID(repo::lib::RepoUUID::createUUID());
+	node.setBoundingBox(boundingBox);
+	node.setTreePosition(treePosition);
+	node.changeName(name, true);
+	node.addParents(parents);
+	return node;
+}
+
 RepoTask RepoBSONFactory::makeTask(
 	const std::string& name,
 	const uint64_t& startTime,

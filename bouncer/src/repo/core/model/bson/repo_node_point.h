@@ -25,7 +25,37 @@ namespace repo {
 	namespace core {
 		namespace model {
 
-			//------------------------------------------------------------------------------
+			struct PointData
+			{
+				repo::lib::RepoVector3D64 position;
+				repo::lib::repo_color4d_t colour;
+				// In the future, more attributes here
+
+				PointData()
+				{
+				}
+
+				PointData(
+					repo::lib::RepoVector3D64 pos,
+					repo::lib::repo_color4d_t col
+					)
+				{
+					this->position = pos;
+					this->colour = col;
+				}
+
+				bool operator==(const PointData& other)
+				{
+					return (this->position == other.position) && (this->colour == other.colour);
+				}
+
+				bool operator!=(const PointData& other)
+				{
+					return !(*this == other);
+				}
+			};
+
+//------------------------------------------------------------------------------
 //
 // Fields specific only to point clouds
 //
@@ -120,6 +150,8 @@ namespace repo {
 				{
 					boundingBox = bounds;
 				}
+
+				void addPoint(const PointData& point);
 
 				// Retrieve a vector of points from the object
 				const std::vector<repo::lib::RepoVector3D>& getPoints() const

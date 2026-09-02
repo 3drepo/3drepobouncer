@@ -23,6 +23,7 @@
 #include "repo_model_import_3drepo.h"
 #include "repo_model_import_oda.h"
 #include "repo_model_import_synchro.h"
+#include "repo_model_import_xyz.h"
 #include "repo/lib/repo_units.h"
 #include <repo/core/handler/repo_database_handler_abstract.h>
 #include <repo/core/handler/database/repo_query.h>
@@ -118,6 +119,8 @@ std::shared_ptr<AbstractModelImport> ModelImportManager::chooseModelConvertor(
 		modelConvertor = std::shared_ptr<AbstractModelImport>(new repo::manipulator::modelconvertor::RepoModelImport(config));
 	else if (fileExt == ".SPM")
 		modelConvertor = std::shared_ptr<AbstractModelImport>(new repo::manipulator::modelconvertor::SynchroModelImport(config));
+	else if (fileExt == ".XYZ")
+		modelConvertor = std::shared_ptr<AbstractModelImport>(new repo::manipulator::modelconvertor::XYZModelImport(config));
 
 	return modelConvertor;
 }

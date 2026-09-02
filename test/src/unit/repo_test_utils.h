@@ -78,6 +78,8 @@ namespace testing {
 	tm getRandomTm();
 
 	repo::lib::RepoVector3D makeRandomRepoVector();
+	
+	repo::lib::RepoVector3D makeRandomRepoVector(repo::lib::RepoBounds bounds);
 
 	repo::lib::repo_color4d_t makeRandomRepoColour();
 

@@ -17,7 +17,9 @@ set(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_ifc.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_manager.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_oda.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_point_cloud_abstract.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_synchro.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_xyz.cpp
 	CACHE STRING "SOURCES" FORCE)
 
 set(HEADERS
@@ -32,6 +34,8 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_ifc.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_manager.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_oda.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_point_cloud_abstract.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_synchro.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_xyz.h
 	CACHE STRING "HEADERS" FORCE)
 

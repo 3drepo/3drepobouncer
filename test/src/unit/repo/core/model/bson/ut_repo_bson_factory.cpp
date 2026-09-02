@@ -309,6 +309,72 @@ TEST(RepoBSONFactoryTest, MakeTransformationNodeTest)
 	EXPECT_EQ(parents.size(), trans3.getParentIDs().size());
 }
 
+TEST(RepoBSONFactoryTest, MakePointNodeTest)
+{
+	// Create test data
+	int nCount = 10;
+
+	//Set up faces
+	std::vector<repo::lib::RepoVector3D> points;
+	std::vector<repo_color4d_t> colours;
+	points.reserve(nCount);
+	colours.reserve(nCount);
+	for (int i = 0; i < nCount; ++i)
+	{
+		repo_color4d_t colour = { 
+			(float)std::rand() / RAND_MAX,
+			(float)std::rand() / RAND_MAX,
+			(float)std::rand() / RAND_MAX,
+			(float)std::rand() / RAND_MAX };
+		colours.push_back(colour);
+
+		points.push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f });
+	}
+	repo::lib::RepoBounds boundingBox(
+		repo::lib::RepoVector3D64(std::rand() / 100.f, std::rand() / 100.f, std::rand() / 100.f),
+		repo::lib::RepoVector3D64(std::rand() / 100.f, std::rand() / 100.f, std::rand() / 100.f)
+	);
+
+	std::vector<uint8_t> treePosition;
+	int treePosLength = std::floor(((float)std::rand() / RAND_MAX) * 7.0);
+	for (int i = 0; i < treePosLength; i++)
+	{
+		int pos = std::floor(((float)std::rand() / RAND_MAX) * 7.0);
+		treePosition.push_back(pos);
+	}
+
+	std::string name = "pointTest";
+
+	repo::lib::RepoUUID parent = repo::lib::RepoUUID::createUUID();
+
+
+	// Make point node with point and colour attribute data
+	auto pointNode = RepoBSONFactory::makePointNode(points, colours, boundingBox, treePosition, name, { parent });
+
+	auto pOut = pointNode.getPoints();
+	auto cOut = pointNode.getColourAttributes();
+	auto tPosOut = pointNode.getTreePosition();
+	EXPECT_FALSE(pointNode.getUniqueID().isDefaultValue());
+	EXPECT_FALSE(pointNode.getSharedID().isDefaultValue());
+	EXPECT_TRUE(compareStdVectors(points, pOut));
+	EXPECT_TRUE(compareStdVectors(colours, cOut));
+	EXPECT_TRUE(compareStdVectors(treePosition, tPosOut));
+
+	auto bbox = pointNode.getBoundingBox();
+	EXPECT_THAT(bbox, Eq(boundingBox));
+
+	auto nameOut = pointNode.getName();
+	EXPECT_THAT(name, Eq(nameOut));
+
+	// Make point node without point and colour attribute data
+	pointNode = RepoBSONFactory::makePointNode(points, colours, boundingBox, treePosition, name, { parent });
+	pOut = pointNode.getPoints();
+	cOut = pointNode.getColourAttributes();
+	EXPECT_TRUE(pOut.size(), Eq(0));
+	EXPECT_TRUE(cOut.size(), Eq(0));
+	EXPECT_TRUE(pointNode.getNumPoints(), Eq(pOut.size()));
+}
+
 TEST(RepoBSONFactoryTest, MakeRepoBundleAssets)
 {
 	// Generate an assets list document with 57500 supermeshes. This is an

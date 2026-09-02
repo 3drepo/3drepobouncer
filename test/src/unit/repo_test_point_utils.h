@@ -21,6 +21,10 @@
 */
 
 #include <repo/core/model/bson/repo_node_point.h>
+#include <repo/manipulator/modelconvertor/import/repo_model_import_point_cloud_abstract.h>
+#include <repo/core/handler/database/repo_query.h>
+#include <repo/core/handler/fileservice/repo_data_ref.h>
+#include <repo/core/handler/fileservice/repo_blob_files_handler.h>
 
 namespace repo {
 	namespace test {
@@ -76,7 +80,118 @@ namespace repo {
 				// Creates a random point node with the given format using a repeated seed.
 				// The RepoNode properties (uniqueId, sharedId, etc) are not initialised.
 				repo::core::model::PointNode makeDeterministicPointNode(int treeLevels);
-			}
+
+				// Mock importer
+				class TestPCImport : public repo::manipulator::modelconvertor::AbstractPointCloudImport
+				{
+					public:
+						TestPCImport(const repo::manipulator::modelconvertor::ModelImportConfig& settings);
+
+						void createTestData(
+							int numPoints,
+							repo::lib::RepoBounds bounds
+						);
+
+						const std::vector<repo::core::model::PointData>& getTestData()
+						{
+							return points;
+						}
+
+						const repo::lib::RepoVector3D64 getOffset()
+						{
+							return offset;
+						}
+
+						virtual ~TestPCImport();
+
+						/**
+						* Import model from a given file
+						* @param path to the file
+						* @param database handler
+						* @param error message if failed
+						* @return returns a populated RepoScene upon success
+						*/
+						repo::core::model::RepoScene* importModel(
+							std::string filePath,
+							std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+							uint8_t& errMsg
+						);
+
+				protected:
+					bool getNextPoint(repo::core::model::PointData& point);
+					void resetReader();
+					uint8_t loadFile(std::string filePath);
+
+				private:
+					bool testDataCreated = false;
+					int readPos = 0;
+					std::vector<repo::core::model::PointData> points;
+					repo::lib::RepoVector3D64 offset;
+				};
+
+				struct GenericPoint
+				{
+					std::vector<float> data;
+					int hit;
+
+					void push(repo::lib::RepoVector3D p, repo::lib::repo_color4d_t c)
+					{
+						data.push_back(p.x);
+						data.push_back(p.y);
+						data.push_back(p.z);
+						data.push_back(c.r);
+						data.push_back(c.g);
+						data.push_back(c.b);
+						data.push_back(c.a);
+					}
+
+					void push(repo::core::model::PointData pd)
+					{
+						data.push_back(pd.position.x);
+						data.push_back(pd.position.y);
+						data.push_back(pd.position.z);
+						data.push_back(pd.colour.r);
+						data.push_back(pd.colour.g);
+						data.push_back(pd.colour.b);
+						data.push_back(pd.colour.a);
+					}
+
+					const long hash() const
+					{
+						size_t hash = 0;
+						for (const auto value : data)
+						{
+							boost::hash_combine(hash, value);
+						}
+						return hash;
+					}
+
+					const bool equals(const GenericPoint& other) const
+					{
+						return data == other.data;
+					}
+				};
+
+				std::vector<GenericPoint> getPointsFromDatabase(
+					std::string database,
+					std::string projectName,
+					repo::lib::RepoUUID revId);
+
+				std::vector<GenericPoint> getPointsFromMockImporter(
+					TestPCImport* mockImporter);
+
+				bool comparePointClouds(
+					std::string database,
+					std::string projectName,
+					repo::lib::RepoUUID revId,
+					TestPCImport* mockImporter);
+
+				void checkChunkCorrectness(
+					std::string database,
+					std::string projectName,
+					repo::lib::RepoUUID revId,
+					repo::lib::RepoBounds expectedBounds);
+			} // namespace point
 		} // namespace utils
 	} // namespace test
 } // namespace repo

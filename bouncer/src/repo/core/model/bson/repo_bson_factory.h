@@ -35,6 +35,7 @@
 #include "repo_node_model_revision.h"
 #include "repo_node_texture.h"
 #include "repo_node_transformation.h"
+#include "repo_node_point.h"
 
 #include "repo/lib/datastructure/repo_variant.h"
 
@@ -253,6 +254,39 @@ namespace repo {
 					const std::string                     &name = "<transformation>",
 					const std::vector<repo::lib::RepoUUID>		      &parents = std::vector<repo::lib::RepoUUID>(),
 					const int                             &apiLevel = REPO_NODE_API_LEVEL_1);
+
+				/**
+				* Create a Point Node
+				* @param points vector of points
+				* @param colours vector of colours
+				* @param bounds bounding box
+				* @param treePosition array denoting the path to this node at each split
+				* @param name name of the node (optional, default empty string)
+				* @param parents list of parents (optional, default no parents)
+				* @return returns a point node
+				*/
+				static PointNode makePointNode(
+					const std::vector<repo::lib::RepoVector3D>& points,
+					const std::vector<repo::lib::repo_color4d_t>& colours,
+					const repo::lib::RepoBounds& boundingBox,
+					const std::vector<uint8_t>& treePosition,
+					const std::string& name = std::string(),
+					const std::vector<repo::lib::RepoUUID>& parents = {});
+
+				/**
+				* Create a Point Node without points or colours set
+				* They are used during the chunking where they are successively filled with points
+				* @param bounds bounding box
+				* * @param treePosition array denoting the path to this node at each split
+				* @param name name of the node (optional, default empty string)
+				* @param parents list of parents (optional, default no parents)
+				* @return returns a point node
+				*/
+				static PointNode makePointNode(
+					const repo::lib::RepoBounds& boundingBox,
+					const std::vector<uint8_t>& treePosition,
+					const std::string& name = std::string(),
+					const std::vector<repo::lib::RepoUUID>& parents = {});
 
 				static RepoSequence makeSequence(
 					const std::vector<repo::core::model::RepoSequence::FrameData> &frameData,

@@ -43,6 +43,20 @@ repo::lib::RepoVector3D testing::makeRandomRepoVector()
 	return v;
 }
 
+repo::lib::RepoVector3D testing::makeRandomRepoVector(repo::lib::RepoBounds bounds)
+{
+	auto min = bounds.min();
+	auto dims = bounds.max() - bounds.min();
+	
+	repo::lib::RepoVector3D v;
+	v.x = ((double)rand()) / (double)(RAND_MAX);
+	v.y = ((double)rand()) / (double)(RAND_MAX);
+	v.z = ((double)rand()) / (double)(RAND_MAX);
+
+	v = min + v * dims;
+	return v;
+}
+
 repo::lib::repo_color4d_t testing::makeRandomRepoColour()
 {
 	repo::lib::repo_color4d_t c;

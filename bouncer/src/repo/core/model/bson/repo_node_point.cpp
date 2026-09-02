@@ -123,6 +123,12 @@ void PointNode::applyTransformation(
 	}
 }
 
+void PointNode::addPoint(const PointData& point)
+{
+	points.push_back(point.position);
+	colourAttributes.push_back(point.colour);
+}
+
 bool PointNode::sEqual(const RepoNode& other) const
 {
 	auto otherPoint = dynamic_cast<const PointNode*>(&other);
