@@ -197,26 +197,62 @@ TEST(ODAModelImport, Civil3DTinSurfaceDWG)
 {
 	// This fixture contains a Civil3D TIN surface, which DWG proxy-imports as
 	// an AeccDbSurfaceTin/AeccDbTinSurface proxy entity with no native
-	// geometry - Civil3DProxyHandler::isSurfaceClass() flags it as a surface,
-	// and DataProcessorDwg::addSurfaceTriangle draws the replayed triangles
-	// as a single shaded mesh plus a single wireframe edge mesh (see
-	// DataProcessorDwg::processTriangleOut et al.), rather than one mesh per
+	// geometry - ProxyInfo::isCivil3DSurfaceClass() flags it as a surface, and
+	// DataProcessorDwg::triangleOut/addSurfaceEdgeIfNeeded draw the replayed
+	// triangles as a deduped wireframe edge overlay, rather than one mesh per
 	// triangle.
 	auto scene = ODAModelImportUtils::ModelImportManagerImport("Civil3DTinSurfaceDWG", getDataPath("Proxy_Civil3d_TinSurface.dwg"));
 	SceneUtils utils(scene);
 
 	// The surface's meshes and metadata are attached to the entity's own
-	// layer node (entityLayer.id), found here via the metadata
-	// DataProcessorDwg::setEntityMetadata sets on it.
+	// layer node (entityLayer.id), found here via the "Entity Handle::Value"
+	// metadata doDraw sets on it.
 	auto surfaceLayerNodes = utils.findNodesByMetadata("Entity Handle::Value", "[43A2]");
 	ASSERT_THAT(surfaceLayerNodes.size(), Gt(0));
 	auto surfaceLayer = surfaceLayerNodes[0];
 
-	// addSurfaceTriangle forces every triangle under one fixed material (the
-	// shaded mesh) and derives a deduped wireframe overlay (the edge mesh),
-	// both attached directly to the surface's own node - no per-face child
-	// layers.
+	// addSurfaceEdgeIfNeeded derives a deduped wireframe overlay from the
+	// triangle stream, attached directly to the surface's own node - no
+	// per-face child layers.
 	EXPECT_THAT(surfaceLayer.hasGeometry(), IsTrue());
+
+	// DwgProxyUtils::addProxyMetadata always contributes the General:: fields
+	// off the entity itself, and - because this entity is a Civil3D surface -
+	// also the Geometry:: fields from addProxyGeometryMetadata. Values that
+	// are specific to this fixture (layer name, colour, etc.) aren't asserted
+	// here, only that each field is actually populated with the expected type.
+	auto metadata = surfaceLayer.getMetadata();
+
+	EXPECT_THAT(metadata.count("Entity Class::Value"), Eq(1));
+
+	EXPECT_THAT(metadata.count("General::Layer"), Eq(1));
+	EXPECT_THAT(metadata.count("General::True Color"), Eq(1));
+	EXPECT_THAT(metadata.count("General::Linetype"), Eq(1));
+	EXPECT_THAT(metadata.count("General::Lineweight"), Eq(1));
+	EXPECT_THAT(metadata.count("General::Visibility"), Eq(1));
+
+	ASSERT_THAT(metadata.count("General::Linetype scale"), Eq(1));
+	EXPECT_THAT(boost::get<double>(metadata["General::Linetype scale"]), Gt(0));
+
+	EXPECT_THAT(metadata.count("Geometry::Bounds Min"), Eq(1));
+	EXPECT_THAT(metadata.count("Geometry::Bounds Max"), Eq(1));
+
+	// These two match the fixture's own AutoCAD Civil3D Properties panel
+	// (Data::Minimum/Maximum Elevation = 29.000m/56.000m), computed here from
+	// the entity's geometry extents rather than read from Civil3D's own
+	// stored TIN data (which isn't accessible - see addProxyGeometryMetadata).
+	ASSERT_THAT(metadata.count("Geometry::Minimum Elevation"), Eq(1));
+	ASSERT_THAT(metadata.count("Geometry::Maximum Elevation"), Eq(1));
+	EXPECT_THAT(boost::get<double>(metadata["Geometry::Minimum Elevation"]), DoubleNear(29.0, 1.0));
+	EXPECT_THAT(boost::get<double>(metadata["Geometry::Maximum Elevation"]), DoubleNear(56.0, 1.0));
+
+	// Civil3D's own Properties panel reports 23122 points for this surface.
+	// currentSurfacePointKeys is a position-dedup of the *tessellated* proxy
+	// graphics' triangle corners, not Civil3D's original TIN point list, so
+	// exact parity isn't guaranteed - only that a plausible positive count is
+	// produced.
+	ASSERT_THAT(metadata.count("Geometry::Number Of Points"), Eq(1));
+	EXPECT_THAT(boost::get<int64_t>(metadata["Geometry::Number Of Points"]), Eq(23092));
 }
 
 MATCHER_P(Paths, matcher, "") {
