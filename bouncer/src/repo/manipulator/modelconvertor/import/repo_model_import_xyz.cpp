@@ -25,7 +25,9 @@ using namespace repo::manipulator::modelconvertor;
 XYZModelImport::XYZModelImport(const ModelImportConfig& settings) : 
 	AbstractPointCloudImport(settings)
 {
-
+	// XYZ files do not have metadata to indicate the unit.
+	// For ease of use, we default to millimetres.
+	modelUnits = repo::lib::ModelUnits::MILLIMETRES;
 }
 
 repo::manipulator::modelconvertor::XYZModelImport::~XYZModelImport()
