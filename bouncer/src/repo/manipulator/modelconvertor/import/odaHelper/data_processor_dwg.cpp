@@ -186,6 +186,15 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 
 		if (!handleMetaValue.empty() && !collector->hasMetadata(entityLayer.id)) {
 			std::unordered_map<std::string, repo::lib::RepoVariant> meta;
+
+			// This snippet removes the array decorators from the handle value
+			if (handleMetaValue.size() >= 2
+				&& handleMetaValue.front() == '['
+				&& handleMetaValue.back() == ']') {
+				handleMetaValue.pop_back();
+				handleMetaValue.erase(handleMetaValue.begin());
+			}
+
 			meta["Entity Handle::Value"] = handleMetaValue;
 			collector->setMetadata(entityLayer.id, meta);
 		}

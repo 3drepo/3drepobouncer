@@ -94,6 +94,7 @@ static std::vector<std::string> ignoredCategories = { "Material", "Geometry", "A
 static std::vector<std::string> ignoredKeys = { "Item::Source File Name" };
 static std::vector<std::string> keysForPathSanitation = { "Item::Source File", "Item::File Name" };
 static std::string sElementIdKey = "Element ID::Value";
+static std::string dwgEntityHandleKey = "Entity Handle::Value";
 
 // The Vectorizer and Simplifier are used to tessellate objects that are not
 // stored as meshes in the Nwd, such as text.
@@ -186,6 +187,49 @@ repo::lib::RepoVector2D convertPoint(OdGePoint2d pnt)
 {
 	return repo::lib::RepoVector2D(pnt.x, pnt.y);
 };
+
+void convertToHexString(repo::lib::RepoVariant& v)
+{
+	class HexStringVisitor : public boost::static_visitor<std::string> {
+	public:
+
+		std::string operator()(const bool& b) const {
+			throw new repo::lib::RepoException("Cannot convert boolean to hex string");
+		}
+
+		std::string operator()(const int& i) const {
+			std::stringstream stream;
+			stream << std::uppercase << std::hex << i;
+			return stream.str();
+		}
+
+		std::string operator()(const int64_t& ll) const {
+			std::stringstream stream;
+			stream << std::uppercase << std::hex << ll;
+			return stream.str();
+		}
+
+		std::string operator()(const double& d) const {
+			std::stringstream stream;
+			stream << std::uppercase << std::hex << (int64_t)d;
+			return stream.str();
+		}
+
+		std::string operator()(const std::string& s) const {
+			return s;
+		}
+
+		std::string operator()(const tm& t) const {
+			throw new repo::lib::RepoException("Cannot convert boolean to hex string");
+		}
+
+		std::string operator()(const repo::lib::RepoUUID& u) const {
+			return u.toString();
+		}
+	};
+
+	v = boost::apply_visitor(HexStringVisitor(), v);
+}
 
 // These next methods explicitly ignore the alpha component of the Nw colours,
 // because the material *should* have the transparency accessible via a
@@ -649,6 +693,16 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 	for (auto key : ignoredKeys) {
 		metadata.erase(key);
 	}
+
+	// If we have a key that matches exactly a DWG Entity Handle, make sure
+	// it is represented as a hexidecimal text string, as this is how it is
+	// displayed in AutoCAD and imported by the native DWG importer.
+
+	auto elementIdIt = metadata.find(dwgEntityHandleKey);
+	if (elementIdIt != metadata.end()) {
+		 convertToHexString(elementIdIt->second);
+	}
+
 }
 
 void addTriangleData(
@@ -927,13 +981,11 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 
 			context.parentNode = context.sceneBuilder->addNode(RepoBSONFactory::makeTransformationNode({}, levelName, { context.parentNode->getSharedID() }));
 
-			// To match the plug-in, and ensure metadata ends up in the right place for
-			// the benefit of smart groups, node properties are overridden with their
-			// parent's metadata
+			// Inherit any parent metadata that is not explicitly set by the current node,
+			// this will inherit, e.g. the Type block for Revit Instances, as a
+			// convenience.
 			std::unordered_map<std::string, repo::lib::RepoVariant> merged = metadata;
-			for (auto p : context.parentMetadata) {
-				merged[p.first] = p.second;
-			}
+			merged.insert(context.parentMetadata.begin(), context.parentMetadata.end());
 
 			// GetIcon distinguishes the type of node. This corresponds to the icon seen in
 			// the Selection Tree View in Navisworks.
