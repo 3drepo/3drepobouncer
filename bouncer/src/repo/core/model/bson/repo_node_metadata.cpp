@@ -50,7 +50,8 @@ void MetadataNode::deserialise(RepoBSON& bson)
 			}
 			catch (const repo::lib::RepoException& e)
 			{
-				repoWarning << "Failed to deserialise metadata entry: " << e.printFull() << " As this is branch 782 this will not affect the migration and will be ignored.";
+				// Commenting out for CA because there are many nodes and it is destroying the log!
+				//repoWarning << "Failed to deserialise metadata entry: " << e.printFull() << " As this is branch 782 this will not affect the migration and will be ignored.";
 			}
 		}
 	}
