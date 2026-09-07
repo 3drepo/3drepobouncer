@@ -220,7 +220,7 @@ void convertToHexString(repo::lib::RepoVariant& v)
 		}
 
 		std::string operator()(const tm& t) const {
-			throw new repo::lib::RepoException("Cannot convert boolean to hex string");
+			throw new repo::lib::RepoException("Cannot convert time struct to hex string");
 		}
 
 		std::string operator()(const repo::lib::RepoUUID& u) const {
