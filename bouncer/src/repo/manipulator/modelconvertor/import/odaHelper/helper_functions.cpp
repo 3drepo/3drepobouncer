@@ -65,6 +65,13 @@ int repo::manipulator::modelconvertor::odaHelper::compare(double d1, double d2)
 	return 0;
 }
 
+bool repo::manipulator::modelconvertor::odaHelper::samePoint(const repo::lib::RepoVector3D64& a, const repo::lib::RepoVector3D64& b)
+{
+	return compare(a.x, b.x) == 0 &&
+		compare(a.y, b.y) == 0 &&
+		compare(a.z, b.z) == 0;
+}
+
 repo::lib::RepoVector3D64 repo::manipulator::modelconvertor::odaHelper::calcNormal(repo::lib::RepoVector3D64 p1, repo::lib::RepoVector3D64 p2, repo::lib::RepoVector3D64 p3)
 {
 	repo::lib::RepoVector3D64 vecA = p2 - p1;
