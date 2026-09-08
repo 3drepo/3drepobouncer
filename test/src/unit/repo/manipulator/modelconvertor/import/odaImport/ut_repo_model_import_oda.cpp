@@ -206,8 +206,10 @@ TEST(ODAModelImport, Civil3DTinSurfaceDWG)
 
 	// The surface's meshes and metadata are attached to the entity's own
 	// layer node (entityLayer.id), found here via the "Entity Handle::Value"
-	// metadata doDraw sets on it.
-	auto surfaceLayerNodes = utils.findNodesByMetadata("Entity Handle::Value", "[43A2]");
+	// metadata doDraw sets on it. doDraw strips the surrounding "[...]" array
+	// decorators from the raw handle before storing it, so this is bracket-free
+	// like every other handle lookup in this file.
+	auto surfaceLayerNodes = utils.findNodesByMetadata("Entity Handle::Value", "43A2");
 	ASSERT_THAT(surfaceLayerNodes.size(), Gt(0));
 	auto surfaceLayer = surfaceLayerNodes[0];
 

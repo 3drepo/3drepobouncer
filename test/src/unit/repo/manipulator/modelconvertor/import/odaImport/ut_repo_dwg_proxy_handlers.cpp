@@ -67,3 +67,41 @@ TEST(ProxyInfoTest, IsCivil3DSurfaceClassFalseCases)
 	info.originalClass = "aeccdbsurfacetin";
 	EXPECT_THAT(info.isCivil3DSurfaceClass(), IsFalse());
 }
+
+// ProxyInfo::hasEdge/resetEdges are pure position-based dedup logic (no
+// ODA-entity dependency), so - like isCivil3DSurfaceClass - they can be
+// tested directly without importing a fixture.
+
+TEST(ProxyInfoTest, HasEdgeDedupIsOrderIndependent)
+{
+	ProxyInfo info;
+	RepoVector3D64 a(0, 0, 0), b(1, 0, 0), c(0, 1, 0);
+
+	// First time this edge is seen, in either direction, it should be recorded
+	// and hasEdge should report it as new (false).
+	EXPECT_THAT(info.hasEdge(a, b), IsFalse());
+
+	// Same edge, same order - already seen.
+	EXPECT_THAT(info.hasEdge(a, b), IsTrue());
+
+	// Same edge, reversed order - still the same undirected edge.
+	EXPECT_THAT(info.hasEdge(b, a), IsTrue());
+
+	// A genuinely different edge sharing an endpoint is still new.
+	EXPECT_THAT(info.hasEdge(b, c), IsFalse());
+	EXPECT_THAT(info.hasEdge(c, b), IsTrue());
+}
+
+TEST(ProxyInfoTest, ResetEdgesClearsDedupState)
+{
+	ProxyInfo info;
+	RepoVector3D64 a(0, 0, 0), b(1, 0, 0);
+
+	EXPECT_THAT(info.hasEdge(a, b), IsFalse());
+	EXPECT_THAT(info.hasEdge(a, b), IsTrue());
+
+	info.resetEdges();
+
+	// After resetting, the same edge is treated as new again.
+	EXPECT_THAT(info.hasEdge(a, b), IsFalse());
+}
