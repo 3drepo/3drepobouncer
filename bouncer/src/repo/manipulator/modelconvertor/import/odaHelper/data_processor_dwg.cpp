@@ -164,7 +164,7 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		}
 	}
 
-	activeProxyInfo.currentSurfaceEdgeKeys.clear();
+	activeProxyInfo.resetEdges();
 
 	collector->pushDrawContext(ctx.get());
 	bool ret = false;
@@ -283,7 +283,7 @@ void DataProcessorDwg::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d
 void DataProcessorDwg::addSurfaceEdgeIfNeeded(const repo::lib::RepoVector3D64& p0, const repo::lib::RepoVector3D64& p1)
 {
 	if (samePoint(p0, p1)) return;
-	if (!activeProxyInfo.currentSurfaceEdgeKeys.insert(edgeKey(p0, p1)).second) return;
+	if (activeProxyInfo.hasEdge(p0, p1)) return;
 
 	auto edgeMaterial = collector->getLastMaterial();
 	edgeMaterial.diffuse = { 0.4f, 0.4f, 0.4f };

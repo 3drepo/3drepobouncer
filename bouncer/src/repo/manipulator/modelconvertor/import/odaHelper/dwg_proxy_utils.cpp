@@ -26,6 +26,16 @@
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
+bool ProxyInfo::hasEdge(const repo::lib::RepoVector3D64& a, const repo::lib::RepoVector3D64& b)
+{
+	return !edges.insert(EdgeKey(a, b)).second;
+}
+
+void ProxyInfo::resetEdges()
+{
+	edges.clear();
+}
+
 ProxyInfo DwgProxyUtils::getProxyInfo(OdDbEntityPtr entity)
 {
 	ProxyInfo info = ProxyInfo();
