@@ -50,11 +50,11 @@ namespace testing {
 			{
 			}
 
-			bool isLeaf() {
+			bool isLeaf() const {
 				return !numVisibleChildren;
 			}
 
-			bool hasGeometry() {
+			bool hasGeometry() const {
 				return numMeshes;
 			}
 
