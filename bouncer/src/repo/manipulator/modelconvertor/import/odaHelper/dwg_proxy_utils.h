@@ -54,13 +54,6 @@ namespace repo {
 					// Cleared at the start of each entity's draw.
 					std::unordered_set<std::string> currentSurfaceEdgeKeys;
 
-					// Per-entity dedup of triangle vertices seen for the same reason (keyed by
-					// pointKey(p)). Its size is used as the surface's "Number Of Points"
-					// metadata - an approximation, since Civil3D's true TIN point count isn't
-					// otherwise available from the tessellated proxy graphics. Cleared at the
-					// start of each entity's draw.
-					std::unordered_set<std::string> currentSurfacePointKeys;
-
 					// Returns true when this represents a proxy entity.
 					bool isProxy() const { return !entity.isNull(); }
 
@@ -89,7 +82,7 @@ namespace repo {
 				public:
 					static ProxyInfo getProxyInfo(OdDbEntityPtr entity);
 
-					static bool drawStoredProxyGraphics(OdDbEntityPtr pEntity, const ProxyInfo& info, OdGiWorldDraw* worldDraw);
+					static bool drawProxyGraphics(OdDbEntityPtr pEntity, const ProxyInfo& info, OdGiWorldDraw* worldDraw);
 
 					static void addProxyMetadata(OdDbEntityPtr pEntity, const ProxyInfo& info, std::unordered_map<std::string, repo::lib::RepoVariant>& metadata);
 

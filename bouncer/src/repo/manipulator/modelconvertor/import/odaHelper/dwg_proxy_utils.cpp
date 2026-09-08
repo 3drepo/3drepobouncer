@@ -59,7 +59,7 @@ ProxyInfo DwgProxyUtils::getProxyInfo(OdDbEntityPtr entity)
 	return info;
 }
 
-bool DwgProxyUtils::drawStoredProxyGraphics(OdDbEntityPtr pEntity, const ProxyInfo& info, OdGiWorldDraw* worldDraw)
+bool DwgProxyUtils::drawProxyGraphics(OdDbEntityPtr pEntity, const ProxyInfo& info, OdGiWorldDraw* worldDraw)
 {
 	if (pEntity.isNull() || !info.isProxy()) return false;
 
@@ -167,7 +167,6 @@ void DwgProxyUtils::addProxyGeometryMetadata(OdDbEntityPtr pEntity, const ProxyI
 			metadata["Geometry::Bounds Max"] = "(" + std::to_string(max.x) + ", " + std::to_string(max.y) + ", " + std::to_string(max.z) + ")";
 			metadata["Geometry::Minimum Elevation"] = min.z;
 			metadata["Geometry::Maximum Elevation"] = max.z;
-			metadata["Geometry::Number Of Points"] = static_cast<int64_t>(info.currentSurfacePointKeys.size());
 		}
 	}
 	catch (...) {}

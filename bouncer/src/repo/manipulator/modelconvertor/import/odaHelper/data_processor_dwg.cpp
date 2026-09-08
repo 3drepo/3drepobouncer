@@ -165,13 +165,12 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	}
 
 	activeProxyInfo.currentSurfaceEdgeKeys.clear();
-	activeProxyInfo.currentSurfacePointKeys.clear();
 
 	collector->pushDrawContext(ctx.get());
 	bool ret = false;
 	if (activeProxyInfo.isProxy())
 	{
-		ret = DwgProxyUtils::drawStoredProxyGraphics(pEntity, activeProxyInfo, this);
+		ret = DwgProxyUtils::drawProxyGraphics(pEntity, activeProxyInfo, this);
 		if (!(ctx && ctx->hasMeshes()))
 		{
 			ret = OdGsBaseMaterialView::doDraw(i, pDrawable) || ret;
@@ -273,9 +272,6 @@ void DataProcessorDwg::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d
 		auto p2 = toRepoVector(pVertexDataList[p3Vertices[2]]);
 		if (samePoint(p0, p1) || samePoint(p1, p2) || samePoint(p2, p0))
 			return;
-		activeProxyInfo.currentSurfacePointKeys.insert(pointKey(p0));
-		activeProxyInfo.currentSurfacePointKeys.insert(pointKey(p1));
-		activeProxyInfo.currentSurfacePointKeys.insert(pointKey(p2));
 		addSurfaceEdgeIfNeeded(p0, p1);
 		addSurfaceEdgeIfNeeded(p1, p2);
 		addSurfaceEdgeIfNeeded(p2, p0);

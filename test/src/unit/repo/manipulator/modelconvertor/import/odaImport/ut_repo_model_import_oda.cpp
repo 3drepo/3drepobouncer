@@ -246,13 +246,11 @@ TEST(ODAModelImport, Civil3DTinSurfaceDWG)
 	EXPECT_THAT(boost::get<double>(metadata["Geometry::Minimum Elevation"]), DoubleNear(29.0, 1.0));
 	EXPECT_THAT(boost::get<double>(metadata["Geometry::Maximum Elevation"]), DoubleNear(56.0, 1.0));
 
-	// Civil3D's own Properties panel reports 23122 points for this surface.
-	// currentSurfacePointKeys is a position-dedup of the *tessellated* proxy
-	// graphics' triangle corners, not Civil3D's original TIN point list, so
-	// exact parity isn't guaranteed - only that a plausible positive count is
-	// produced.
-	ASSERT_THAT(metadata.count("Geometry::Number Of Points"), Eq(1));
-	EXPECT_THAT(boost::get<int64_t>(metadata["Geometry::Number Of Points"]), Eq(23092));
+	// Number Of Points is deliberately not exposed - it would be a dedup of
+	// the *tessellated* proxy graphics' triangle corners, not Civil3D's
+	// original TIN point list, and is an implementation detail of the edge
+	// extraction that can drift once meshes are de-duped further downstream.
+	EXPECT_THAT(metadata.count("Geometry::Number Of Points"), Eq(0));
 }
 
 MATCHER_P(Paths, matcher, "") {
