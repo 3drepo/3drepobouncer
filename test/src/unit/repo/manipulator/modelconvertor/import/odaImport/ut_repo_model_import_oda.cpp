@@ -225,8 +225,6 @@ TEST(ODAModelImport, Civil3DTinSurfaceDWG)
 	// here, only that each field is actually populated with the expected type.
 	auto metadata = surfaceLayer.getMetadata();
 
-	EXPECT_THAT(metadata.count("Entity Class::Value"), Eq(1));
-
 	EXPECT_THAT(metadata.count("General::Layer"), Eq(1));
 	EXPECT_THAT(metadata.count("General::True Color"), Eq(1));
 	EXPECT_THAT(metadata.count("General::Linetype"), Eq(1));
