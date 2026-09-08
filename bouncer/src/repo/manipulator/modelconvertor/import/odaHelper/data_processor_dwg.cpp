@@ -213,7 +213,6 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 			meta["Entity Handle::Value"] = handleMetaValue;
 			if (activeProxyInfo.isProxy()) {
 				DwgProxyUtils::addProxyMetadata(pEntity, activeProxyInfo, meta);
-				meta["Entity Class::Value"] = activeProxyInfo.originalClass;
 			}
 			collector->setMetadata(entityLayer.id, meta);
 		}
