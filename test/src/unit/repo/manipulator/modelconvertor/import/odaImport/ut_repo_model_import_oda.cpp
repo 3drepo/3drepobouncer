@@ -160,21 +160,21 @@ TEST(ODAModelImport, ColouredBoxesDWG)
 	// These two elements are set to byLayer, and the layers have two different
 	// colours
 
-	auto byLayer1 = utils.findNodeByMetadata("Entity Handle::Value", "[6FC5]");
+	auto byLayer1 = utils.findNodeByMetadata("Entity Handle::Value", "6FC5");
 	EXPECT_THAT(byLayer1.getColours(), ElementsAre(repo::lib::repo_color4d_t(1, 1, 1, 1)));
 
-	auto byLayer2 = utils.findNodeByMetadata("Entity Handle::Value", "[6FC9]");
+	auto byLayer2 = utils.findNodeByMetadata("Entity Handle::Value", "6FC9");
 	EXPECT_THAT(byLayer2.getColours(), ElementsAre(repo::lib::repo_color4d_t(1, 0, 0, 1)));
 
 	// This element has a fixed colour
 
-	auto cyan = utils.findNodeByMetadata("Entity Handle::Value", "[702C]");
+	auto cyan = utils.findNodeByMetadata("Entity Handle::Value", "702C");
 	EXPECT_THAT(cyan.getColours(), ElementsAre(repo::lib::repo_color4d_t(0, 1, 1, 1)));
 
 	// This is a 3d solid that has one face with a fixed colour and the others by
 	// layer
 
-	auto mixed = utils.findNodeByMetadata("Entity Handle::Value", "[6FCD]");
+	auto mixed = utils.findNodeByMetadata("Entity Handle::Value", "6FCD");
 	EXPECT_THAT(mixed.getColours(), UnorderedElementsAre(
 		repo::lib::repo_color4d_t(1, 1, 1, 1),
 		repo::lib::repo_color4d_t(0, 1, 0, 1)
@@ -184,7 +184,7 @@ TEST(ODAModelImport, ColouredBoxesDWG)
 	// specific colour, and a face assigned to the block colour. The remaining
 	// faces are per-layer, but the layer has changed again.
 
-	auto block = utils.findNodeByMetadata("Entity Handle::Value", "[7063]");
+	auto block = utils.findNodeByMetadata("Entity Handle::Value", "7063");
 	EXPECT_THAT(block.getColours(), UnorderedElementsAre(
 		repo::lib::repo_color4d_t(1, 0, 1, 1),
 		repo::lib::repo_color4d_t(0, 1, 0, 1),
@@ -201,39 +201,178 @@ MATCHER_P(Paths, matcher, "") {
 	return ExplainMatchResult(matcher, paths, result_listener);
 }
 
-TEST(ODAModelImport, NestedBlocksDWG)
+MATCHER(AreLeafNodes, "") {
+	for (auto& n : arg) {
+		if (!n.isLeaf()) {
+			return false;
+		}
+	}
+	return true;
+}
+
+TEST(ODAModelImport, DwgElementIds)
 {
-	auto scene = ODAModelImportUtils::ModelImportManagerImport("NestedBlocksDWG", getDataPath("nestedBlocks.dwg"));
-	SceneUtils utils(scene);
+	// Tests that when importing a Dwg file, the leaf nodes hold the correct entity
+	// handles. These should be the handles displayed when the LIST command is used
+	// on elements selected in the UI.
 
-	// This dwg contains a number of nested blocks. The DWG importer should put
-	// block items under the block reference for the given layer (by block, or
-	// explicit) they items are in.
+	{
+		auto scene = ODAModelImportUtils::ModelImportManagerImport("NestedBlocksDWG", getDataPath("nestedBlocks.dwg"));
+		SceneUtils utils(scene);
 
-	// The outer most block touches three layers: it itself is on layer 0, it contains a
-	// nested block reference on layer 2, and an entity on layer 3. The nested reference
-	// itself explicitly has an item on layer 1 (the other layer 2 references show on 
-	// layer 0, by convention as only the first block is considered).
+		// This dwg contains a number of nested blocks. The DWG importer should put
+		// block items under the block reference for the given layer (by block, or
+		// explicit) they items are in.
 
-	EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "[4FA]"), Paths(UnorderedElementsAre(
-		"rootNode->0->My Outer Block",
-		"rootNode->Layer1->My Outer Block",
-		"rootNode->Layer3->My Outer Block"
-	)));
+		// The outer most block touches three layers: it itself is on layer 0, it contains a
+		// nested block reference on layer 2, and an entity on layer 3. The nested reference
+		// itself explicitly has an item on layer 1 (the other layer 2 references show on
+		// layer 0, by convention as only the first block is considered).
 
-	EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "[50D]"), Paths(UnorderedElementsAre(
-		"rootNode->0->My Block", 
-		"rootNode->Layer1->My Block"
-	)));
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "4FA"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre(
+					"rootNode->0->My Outer Block",
+					"rootNode->Layer1->My Outer Block",
+					"rootNode->Layer3->My Outer Block"
+				)),
+				AreLeafNodes()
+			)
+		);
 
-	EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "[423]"), Paths(UnorderedElementsAre(
-		"rootNode->0->Block Text"
-	)));
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "50D"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre(
+					"rootNode->0->My Block",
+					"rootNode->Layer1->My Block"
+				)),
+				AreLeafNodes()
+			)
+		);
 
-	// Even though this handle exists, it should be compressed in the tree.
-	EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "[534]"), IsEmpty());
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "423"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre(
+					"rootNode->0->Block Text"
+				)),
+				AreLeafNodes()
+			)
+		);
 
-	EXPECT_THAT(utils.getRootNode().getChildNames(), UnorderedElementsAre("0", "Layer1", "Layer3"));
+		// Even though this handle exists, it should be compressed in the tree.
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "534"), IsEmpty());
+
+		EXPECT_THAT(utils.getRootNode().getChildNames(), UnorderedElementsAre("0", "Layer1", "Layer3"));
+	}
+
+	{
+		auto scene = ODAModelImportUtils::ModelImportManagerImport("NestedBlocksDWG", getDataPath("groupsAndReferences.dwg"));
+		SceneUtils utils(scene);
+
+		// This dwg contains a number of grouped entities. These entities are selected
+		// as one in the UI, but maintain separate Ids (the LIST command when selecting
+		// a Group will show the set of all the Ids belonging to that group).
+		// Groups are not represented in the 3DR tree - items are parented directly to
+		// their layer.
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "1FF"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->0->3D Solid")),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "203"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->0->3D Solid")),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "1FB"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->0->Text")),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "207"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->0->3D Solid")),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "20B"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->0->3D Solid")),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "1FC"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->0->Text")),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "1FD"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->0->Text")),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "1FE"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->0->Text")),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "223"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->0->Two Boxes")),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "224"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->0->Two Boxes")),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "225"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->0->Two Boxes")),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "227"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->0->Text")),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "228"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->0->Two Boxes")),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "229"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->0->Two Boxes")),
+				AreLeafNodes()
+			)
+		);
+	}
 }
 
 TEST(ODAModelImport, RevitMEPSystems)
@@ -357,6 +496,486 @@ TEST_F(NwdTestSuite, NwdWorldOrientation)
 	EXPECT_THAT(column1, BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(-34, 0, -34), repo::lib::RepoVector3D64(34, 267, 34)), 2.0));
 	EXPECT_THAT(column2, BoundsAre(repo::lib::RepoBounds(repo::lib::RepoVector3D64(-34, -102, 84), repo::lib::RepoVector3D64(34, 165, 152)), 2.0));
 	EXPECT_THAT(repo::lib::RepoVector3D64(scene->getWorldOffset()), VectorNear(repo::lib::RepoVector3D64(-34, -102, 152), 1.0));
+}
+
+TEST(ODAModelImport, RvtElementIds)
+{
+	// Tests that when importing a Rvt file, the building elements are correctly
+	// parented and the Ids show up on leaf nodes as expected.
+
+	auto scene = ODAModelImportUtils::ModelImportManagerImport("RevitElementIds", getDataPath("rvt/floors_and_levels.rvt"));
+	SceneUtils utils(scene);
+
+	// For Revit files, all elements are leaf nodes parented to their level.
+
+	auto checkElementNode = [&](std::string elementId, std::string nodeName, std::string parentName) {
+		auto node = utils.findNodeByMetadata("Element ID", elementId);
+		auto parent = node.getParent();
+		EXPECT_THAT(parent.name(), parentName);
+		EXPECT_THAT(node.name(), nodeName);
+		EXPECT_THAT(node.isLeaf(), IsTrue());
+	};
+
+	checkElementNode("315582", "Wall-Ext_102Bwk-75Ins-100LBlk-12P_315582", "Level 0");
+	checkElementNode("315675", "Wall-Ext_102Bwk-75Ins-100LBlk-12P_315675", "Level 0");
+	checkElementNode("315812", "Wall-Ext_102Bwk-75Ins-100LBlk-12P_315812", "Level 0");
+	checkElementNode("317879", "Wall-Ext_50Cdg-100Ins-200Cdg_317879", "Level 0");
+	checkElementNode("318094", "Wall-Ext_50Cdg-100Ins-200Cdg_318094", "Level 0");
+	checkElementNode("319105", "Wall-Ext_102Bwk-75Ins-100LBlk-12P_319105", "Level 0");
+	checkElementNode("319611", "American_Beech-6.0_Meters_319611", "Level 0");
+	checkElementNode("320440", "Floor_Timber_22Cbd-225Joist_320440", "Level 0");
+	checkElementNode("321130", "Wall-Ext_102Bwk-75Ins-100LBlk-12P_321130", "Level 0");
+	checkElementNode("321553", "450x450mm_321553", "Level 0");
+	checkElementNode("322400", "Plain_322400", "Level 0");
+	checkElementNode("322420", "910x910mm_322420", "Level 0");
+	checkElementNode("322619", "910x910mm_322619", "Level 0");
+	checkElementNode("323345", "1525x762mm_323345", "Level 0");
+	checkElementNode("323484", "1525x762mm_323484", "Level 0");
+	checkElementNode("323643", "1525x762mm_323643", "Level 0");
+
+	checkElementNode("318474", "Wall-Ext_102Bwk-75Ins-100LBlk-12P_318474", "Level 1");
+	checkElementNode("319859", "Blue_Berry_Elder-4.5_Meters_319859", "Level 1");
+	checkElementNode("320479", "Floor-Grnd-Susp_65Scr-80Ins-100Blk-75PC_320479", "Level 1");
+	checkElementNode("321593", "450x450mm_321593", "Level 1");
+	checkElementNode("322721", "910x910mm_322721", "Level 1");
+	checkElementNode("322810", "910x910mm_322810", "Level 1");
+	checkElementNode("322902", "910x910mm_322902", "Level 1");
+	checkElementNode("323131", "Standard_323131", "Level 1");
+	checkElementNode("324002", "1830x915mm_324002", "Level 1");
+
+	checkElementNode("319431", "Wall-Ext_102Bwk-75Ins-100LBlk-12P_319431", "Level 2");
+	checkElementNode("321906", "Roof_Pitched-50SS-220Ins-20MPan-225Purl_321906", "Level 2");
+	checkElementNode("322245", "Roof_Pitched-50SS-220Ins-20MPan-225Purl_322245", "Level 2");
+
+	checkElementNode("320061", "Golden_Chain-5.5_Meters_320061", "Planting Level Ground");
+	checkElementNode("326881", "Generic - 1000mm_326881", "Planting Level Ground");
+}
+
+TEST(ODAModelImport, IfcElementIds)
+{
+	// Tests that when importing an Ifc file, the building elements are correctly
+	// parented and the Ids show up on leaf nodes as expected.
+
+	auto scene = ODAModelImportUtils::ModelImportManagerImport("IfcElementIds", getDataPath("floors_and_levels.ifc"));
+	SceneUtils utils(scene);
+
+	// For Revit files, all elements are leaf nodes parented to their level.
+
+	auto checkElementNode = [&](std::string ifcGuid, std::string level, std::string type, std::string nodeName) {
+		auto node = utils.findNodeByMetadata("IFC GUID", ifcGuid);
+		auto parent = node.getParent();
+		EXPECT_THAT(parent.name(), type);
+		EXPECT_THAT(node.name(), nodeName);
+		EXPECT_THAT(node.isLeaf(), IsTrue());
+	};
+
+	checkElementNode("2DePx0C557Z9aK0dEkG7MV", "Level 0", "IfcBuildingElementProxy", "Mass 1:Mass 1:326836");
+	checkElementNode("3uypd3qm54TPFhO8d6eltr", "Level 0", "IfcBuildingElementProxy", "Planting_RPC_Tree_Deciduous:American_Beech-6.0_Meters:319611");
+	checkElementNode("3uypd3qm54TPFhO8d6el_p", "Level 0", "IfcBuildingElementProxy", "Planting_RPC_Tree_Deciduous:Golden_Chain-5.5_Meters:320061");
+	checkElementNode("0U8CBumiD12fyW3CWxbuhl", "Level 0", "IfcColumn", "Columns_Rectangular:450x450mm:321553");
+	checkElementNode("1MVAkYYmnE7QgYR4_J$UrA", "Level 0", "IfcCovering", "Compound Ceiling:Plain:322400");
+	checkElementNode("13d87sRKv29he5ds1biQJB", "Level 0", "IfcFurniture", "Furniture_Desk:1525x762mm:323345");
+	checkElementNode("13d87sRKv29he5ds1biQH6", "Level 0", "IfcFurniture", "Furniture_Desk:1525x762mm:323484");
+	checkElementNode("13d87sRKv29he5ds1biRlX", "Level 0", "IfcFurniture", "Furniture_Desk:1525x762mm:323643");
+	checkElementNode("1KNjBh9G523fLWhU0zg3zO", "Level 0", "IfcWall", "Basic Wall:Wall-Ext_102Bwk-75Ins-100LBlk-12P:315812");
+	checkElementNode("1KNjBh9G523fLWhU0zg3v2", "Level 0", "IfcWall", "Basic Wall:Wall-Ext_102Bwk-75Ins-100LBlk-12P:315582");
+	checkElementNode("1KNjBh9G523fLWhU0zg3$d", "Level 0", "IfcWall", "Basic Wall:Wall-Ext_102Bwk-75Ins-100LBlk-12P:315675");
+	checkElementNode("1KNjBh9G523fLWhU0zg3TB", "Level 0", "IfcWall", "Basic Wall:Wall-Ext_50Cdg-100Ins-200Cdg:317879");
+	checkElementNode("1KNjBh9G523fLWhU0zg3Ho", "Level 0", "IfcWall", "Basic Wall:Wall-Ext_50Cdg-100Ins-200Cdg:318094");
+	checkElementNode("3ny9ts4853hhUZjoQfavdV", "Level 0", "IfcWall", "Basic Wall:Wall-Ext_102Bwk-75Ins-100LBlk-12P:321130");
+	checkElementNode("1qeDbwZJn2WOr3AfleTFhH", "Level 0", "IfcSlab", "Floor:Floor_Timber_22Cbd-225Joist:320440");
+	checkElementNode("2DePx0C557Z9aK0dEkG7Nu", "Level 0", "IfcSlab", "Mass 1:Planting Level Ground:326867");
+	checkElementNode("36VZMrI$LFN9LvOu4kDriQ", "Level 0", "IfcWindow", "Windows_Sgl_Plain:910x910mm:322420");
+	checkElementNode("36VZMrI$LFN9LvOu4kDrnL", "Level 0", "IfcWindow", "Windows_Sgl_Plain:910x910mm:322619");
+
+	checkElementNode("0U8CBumiD12fyW3CWxbuh7", "Level 1", "IfcColumn", "Columns_Rectangular:450x450mm:321593");
+	checkElementNode("2DePx0C557Z9aK0dEkG7Nv", "Level 1", "IfcSlab", "Mass 1:Level 1:326866");
+	checkElementNode("3ny9ts4853hhUZjoQfavng", "Level 1", "IfcSlab", "Floor:Floor-Grnd-Susp_65Scr-80Ins-100Blk-75PC:320479");
+	checkElementNode("36VZMrI$LFN9LvOu4kDrvL", "Level 1", "IfcDuctSegment", "Rectangular Duct:Standard:323131");
+	checkElementNode("36VZMrI$LFN9LvOu4kDrqu", "Level 1", "IfcWindow", "Windows_Sgl_Plain:910x910mm:322902");
+	checkElementNode("36VZMrI$LFN9LvOu4kDroK", "Level 1", "IfcWindow", "Windows_Sgl_Plain:910x910mm:322810");
+	checkElementNode("36VZMrI$LFN9LvOu4kDrpF", "Level 1", "IfcWindow", "Windows_Sgl_Plain:910x910mm:322721");
+	checkElementNode("13d87sRKv29he5ds1biRfu", "Level 1", "IfcFurniture", "Furniture_Desk:1830x915mm:324002");
+	checkElementNode("3dNsFSBm92aOVYtbYeR8Ef", "Level 1", "IfcFurniture", "Toposolid:Generic - 1000mm:326881");
+	checkElementNode("1KNjBh9G523fLWhU0zg3Bs", "Level 1", "IfcWall", "Basic Wall:Wall-Ext_102Bwk-75Ins-100LBlk-12P:318474");
+	checkElementNode("3uypd3qm54TPFhO8d6elpz", "Level 1", "IfcBuildingElementProxy", "Planting_RPC_Tree_Deciduous:Blue_Berry_Elder-4.5_Meters:319859");
+
+	checkElementNode("04bARXgCj3qx3D1QQvFZTt", "Level 2", "IfcRoof", "Basic Roof:Roof_Pitched-50SS-220Ins-20MPan-225Purl:321906");
+	checkElementNode("1KNjBh9G523fLWhU0zg34x", "Level 2", "IfcWall", "Basic Wall:Wall-Ext_102Bwk-75Ins-100LBlk-12P:319431");
+
+	// The roof 322245 is exported as a set of IfcSlab entities by Revit, as can be
+	// verified by other Ifc viewers.
+
+	{
+		auto node = utils.findNodeByMetadata("IFC GUID", "3myR9wgr1DpflUvYdQhCq2");
+		EXPECT_THAT(node.isLeaf(), IsFalse());
+		auto metadata = node.getMetadata();
+		EXPECT_THAT(boost::apply_visitor(repo::lib::StringConversionVisitor(), metadata["IFC Type"]), Eq(std::string("IfcRoof")));
+		for (auto& child : node.getChildren({
+				repo::core::model::NodeType::MESH,
+				repo::core::model::NodeType::TRANSFORMATION
+			})) {
+			EXPECT_THAT(child.isLeaf(), IsTrue());
+			auto childMetadata = child.getMetadata();
+			EXPECT_THAT(boost::apply_visitor(repo::lib::StringConversionVisitor(), childMetadata["IFC Type"]), Eq(std::string("IfcSlab")));
+			EXPECT_THAT(boost::apply_visitor(repo::lib::StringConversionVisitor(), childMetadata["IFC GUID"]), AnyOf(
+				std::string("3myR9wgr1DpflUvYlQhCq2"),
+				std::string("3myR9wgr1DpflUvYhQhCq2"),
+				std::string("3myR9wgr1DpflUvYpQhCq2"),
+				std::string("3myR9wgr1DpflUvYtQhCq2")
+			));
+		}
+	}
+}
+
+TEST_F(NwdTestSuite, NwdRvtElementIds)
+{
+	// Tests that when importing an NWD hosting RVT files, the building elements
+	// (those with unique Ids) are leaf nodes in the 3DR tree, are correctly parented
+	// and hold the correct geometry.
+
+	auto scene = ODAModelImportUtils::ModelImportManagerImport("RevitElementIds", getDataPath("floors_and_levels_rvt.nwd"));
+	SceneUtils utils(scene);
+
+	// For Revit files, all elements are leaf nodes parented to their level.
+
+	auto checkElementNode = [&](std::string elementId, std::string elementName , std::string nodeName) {
+		auto node = utils.findNodeByMetadata("Element ID::Value", elementId);
+		EXPECT_THAT(node.isLeaf(), IsTrue()) << "Element ID " << elementId;
+		auto metadata = node.getMetadata();
+		EXPECT_THAT(boost::apply_visitor(repo::lib::StringConversionVisitor(), metadata["Element::Name"]), Eq(elementName)) << "Element ID " << elementId;
+		EXPECT_THAT(node.name(), nodeName) << "Element ID " << elementId;
+	};
+
+	// In Navis files, the leaf nodes are named after their Family
+
+	checkElementNode("326836", "Mass 1", "Mass 1");
+	checkElementNode("315582", "Wall-Ext_102Bwk-75Ins-100LBlk-12P", "Basic Wall");
+	checkElementNode("315675", "Wall-Ext_102Bwk-75Ins-100LBlk-12P", "Basic Wall");
+	checkElementNode("315812", "Wall-Ext_102Bwk-75Ins-100LBlk-12P", "Basic Wall");
+	checkElementNode("321130", "Wall-Ext_102Bwk-75Ins-100LBlk-12P", "Basic Wall");
+	checkElementNode("319105", "Wall-Ext_102Bwk-75Ins-100LBlk-12P", "Basic Wall");
+	checkElementNode("317879", "Wall-Ext_50Cdg-100Ins-200Cdg", "Basic Wall");
+	checkElementNode("318094", "Wall-Ext_50Cdg-100Ins-200Cdg", "Basic Wall");
+	checkElementNode("319611", "American_Beech-6.0_Meters", "Planting_RPC_Tree_Deciduous");
+	checkElementNode("320440", "Floor_Timber_22Cbd-225Joist", "Floor");
+	checkElementNode("321553", "450x450mm", "Columns_Rectangular");
+	checkElementNode("322400", "Plain", "Compound Ceiling");
+	checkElementNode("322420", "910x910mm", "Windows_Sgl_Plain");
+	checkElementNode("322619", "910x910mm", "Windows_Sgl_Plain");
+	checkElementNode("323345", "1525x762mm", "Furniture_Desk");
+	checkElementNode("323484", "1525x762mm", "Furniture_Desk");
+	checkElementNode("323643", "1525x762mm", "Furniture_Desk");
+
+	checkElementNode("318474", "Wall-Ext_102Bwk-75Ins-100LBlk-12P", "Basic Wall");
+	checkElementNode("319859", "Blue_Berry_Elder-4.5_Meters", "Planting_RPC_Tree_Deciduous");
+	checkElementNode("320479", "Floor-Grnd-Susp_65Scr-80Ins-100Blk-75PC", "Floor");
+	checkElementNode("321593", "450x450mm", "Columns_Rectangular");
+	checkElementNode("322721", "910x910mm", "Windows_Sgl_Plain");
+	checkElementNode("322810", "910x910mm", "Windows_Sgl_Plain");
+	checkElementNode("322902", "910x910mm", "Windows_Sgl_Plain");
+	checkElementNode("323131", "Standard", "Rectangular Duct");
+	checkElementNode("324002", "1830x915mm", "Furniture_Desk");
+
+	checkElementNode("319431", "Wall-Ext_102Bwk-75Ins-100LBlk-12P", "Basic Wall");
+	checkElementNode("321906", "Roof_Pitched-50SS-220Ins-20MPan-225Purl", "Basic Roof");
+	checkElementNode("322245", "Roof_Pitched-50SS-220Ins-20MPan-225Purl", "Basic Roof");
+
+	checkElementNode("320061", "Golden_Chain-5.5_Meters", "Planting_RPC_Tree_Deciduous");
+	checkElementNode("326881", "Generic - 1000mm", "Toposolid");
+}
+
+TEST_F(NwdTestSuite, NwdIfcElementIds)
+{
+	// Tests that when importing an NWD hosting IFC files, the building elements
+	// (those with unique Ids) are leaf nodes in the 3DR tree, are correctly parented
+	// and hold the correct geometry.
+
+	auto scene = ODAModelImportUtils::ModelImportManagerImport("NwdIfcElementIds", getDataPath("floors_and_levels_ifc.nwd"));
+	SceneUtils utils(scene);
+
+	// For Revit files, all elements are leaf nodes parented to their level.
+
+	auto checkElementNode = [&](std::string ifcGuid, std::string level, std::string type, std::string nodeName) {
+		auto node = utils.findNodeByMetadata("Element::IfcGUID", ifcGuid);
+		EXPECT_THAT(node.isLeaf(), IsTrue());
+		EXPECT_THAT(node.name(), nodeName);
+		auto metadata = node.getMetadata();
+		EXPECT_THAT(boost::apply_visitor(repo::lib::StringConversionVisitor(), metadata["Element::IfcClass"]), Eq(type));
+	};
+
+	checkElementNode("2DePx0C557Z9aK0dEkG7MV", "Level 0", "IfcBuildingElementProxy", "Mass 1:Mass 1:326836");
+	checkElementNode("3uypd3qm54TPFhO8d6eltr", "Level 0", "IfcBuildingElementProxy", "Planting_RPC_Tree_Deciduous:American_Beech-6.0_Meters:319611");
+	checkElementNode("3uypd3qm54TPFhO8d6el_p", "Level 0", "IfcBuildingElementProxy", "Planting_RPC_Tree_Deciduous:Golden_Chain-5.5_Meters:320061");
+	checkElementNode("0U8CBumiD12fyW3CWxbuhl", "Level 0", "IfcColumn", "Columns_Rectangular:450x450mm:321553");
+	checkElementNode("1MVAkYYmnE7QgYR4_J$UrA", "Level 0", "IfcCovering", "Compound Ceiling:Plain:322400");
+	checkElementNode("13d87sRKv29he5ds1biQJB", "Level 0", "IfcFurniture", "Furniture_Desk:1525x762mm:323345");
+	checkElementNode("13d87sRKv29he5ds1biQH6", "Level 0", "IfcFurniture", "Furniture_Desk:1525x762mm:323484");
+	checkElementNode("13d87sRKv29he5ds1biRlX", "Level 0", "IfcFurniture", "Furniture_Desk:1525x762mm:323643");
+	checkElementNode("1KNjBh9G523fLWhU0zg3zO", "Level 0", "IfcWall", "Basic Wall:Wall-Ext_102Bwk-75Ins-100LBlk-12P:315812");
+	checkElementNode("1KNjBh9G523fLWhU0zg3v2", "Level 0", "IfcWall", "Basic Wall:Wall-Ext_102Bwk-75Ins-100LBlk-12P:315582");
+	checkElementNode("1KNjBh9G523fLWhU0zg3$d", "Level 0", "IfcWall", "Basic Wall:Wall-Ext_102Bwk-75Ins-100LBlk-12P:315675");
+	checkElementNode("1KNjBh9G523fLWhU0zg3TB", "Level 0", "IfcWall", "Basic Wall:Wall-Ext_50Cdg-100Ins-200Cdg:317879");
+	checkElementNode("1KNjBh9G523fLWhU0zg3Ho", "Level 0", "IfcWall", "Basic Wall:Wall-Ext_50Cdg-100Ins-200Cdg:318094");
+	checkElementNode("3ny9ts4853hhUZjoQfavdV", "Level 0", "IfcWall", "Basic Wall:Wall-Ext_102Bwk-75Ins-100LBlk-12P:321130");
+	checkElementNode("1qeDbwZJn2WOr3AfleTFhH", "Level 0", "IfcSlab", "Floor:Floor_Timber_22Cbd-225Joist:320440");
+	checkElementNode("2DePx0C557Z9aK0dEkG7Nu", "Level 0", "IfcSlab", "Mass 1:Planting Level Ground:326867");
+	checkElementNode("36VZMrI$LFN9LvOu4kDriQ", "Level 0", "IfcWindow", "Windows_Sgl_Plain:910x910mm:322420");
+	checkElementNode("36VZMrI$LFN9LvOu4kDrnL", "Level 0", "IfcWindow", "Windows_Sgl_Plain:910x910mm:322619");
+
+	checkElementNode("0U8CBumiD12fyW3CWxbuh7", "Level 1", "IfcColumn", "Columns_Rectangular:450x450mm:321593");
+	checkElementNode("2DePx0C557Z9aK0dEkG7Nv", "Level 1", "IfcSlab", "Mass 1:Level 1:326866");
+	checkElementNode("3ny9ts4853hhUZjoQfavng", "Level 1", "IfcSlab", "Floor:Floor-Grnd-Susp_65Scr-80Ins-100Blk-75PC:320479");
+	checkElementNode("36VZMrI$LFN9LvOu4kDrvL", "Level 1", "IfcDuctSegment", "Rectangular Duct:Standard:323131");
+	checkElementNode("36VZMrI$LFN9LvOu4kDrqu", "Level 1", "IfcWindow", "Windows_Sgl_Plain:910x910mm:322902");
+	checkElementNode("36VZMrI$LFN9LvOu4kDroK", "Level 1", "IfcWindow", "Windows_Sgl_Plain:910x910mm:322810");
+	checkElementNode("36VZMrI$LFN9LvOu4kDrpF", "Level 1", "IfcWindow", "Windows_Sgl_Plain:910x910mm:322721");
+	checkElementNode("13d87sRKv29he5ds1biRfu", "Level 1", "IfcFurniture", "Furniture_Desk:1830x915mm:324002");
+	checkElementNode("3dNsFSBm92aOVYtbYeR8Ef", "Level 1", "IfcGeographicElement", "Toposolid:Generic - 1000mm:326881");
+	checkElementNode("1KNjBh9G523fLWhU0zg3Bs", "Level 1", "IfcWall", "Basic Wall:Wall-Ext_102Bwk-75Ins-100LBlk-12P:318474");
+	checkElementNode("3uypd3qm54TPFhO8d6elpz", "Level 1", "IfcBuildingElementProxy", "Planting_RPC_Tree_Deciduous:Blue_Berry_Elder-4.5_Meters:319859");
+
+	checkElementNode("04bARXgCj3qx3D1QQvFZTt", "Level 2", "IfcRoof", "Basic Roof:Roof_Pitched-50SS-220Ins-20MPan-225Purl:321906");
+	checkElementNode("1KNjBh9G523fLWhU0zg34x", "Level 2", "IfcWall", "Basic Wall:Wall-Ext_102Bwk-75Ins-100LBlk-12P:319431");
+}
+
+TEST_F(NwdTestSuite, NwdDwgElementIds)
+{
+	// Tests that when importing an NWD hosting DWG files, the building elements
+	// (those with unique Ids) are leaf nodes in the 3DR tree, are correctly parented
+	// and hold the correct geometry.
+
+	{
+		auto scene = ODAModelImportUtils::ModelImportManagerImport("NestedBlocksDwgNwd", getDataPath("nestedBlocks_dwg.nwd"));
+		SceneUtils utils(scene);
+
+		// When nested blocks are hosted in the Dwg, the Navis tree will contain a
+		// number of Instance entries, which are not expressed in the 3DR tree. All
+		// the nodes with Ids however are reflected in the tree with the same names
+		// as in Navis.
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "422"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre(
+					"rootNode->nestedBlocks_dwg.nwd->0->Block Text->Text",
+					"rootNode->nestedBlocks_dwg.nwd->0->My Block->Block Text->Text",
+					"rootNode->nestedBlocks_dwg.nwd->Layer2->My Outer Block->My Block->Block Text->Text"
+				)),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "518"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre(
+					"rootNode->nestedBlocks_dwg.nwd->0->My Block->Line",
+					"rootNode->nestedBlocks_dwg.nwd->Layer2->My Outer Block->My Block->Line"
+				)),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "519"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre(
+					"rootNode->nestedBlocks_dwg.nwd->0->My Block->Line",
+					"rootNode->nestedBlocks_dwg.nwd->Layer2->My Outer Block->My Block->Line"
+				)),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "51A"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre(
+					"rootNode->nestedBlocks_dwg.nwd->Layer1->My Block->Line",
+					"rootNode->nestedBlocks_dwg.nwd->Layer1->My Outer Block->My Block->Line"
+				)),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "535"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre(
+					"rootNode->nestedBlocks_dwg.nwd->Layer3->My Outer Block->Text"
+				)),
+				AreLeafNodes()
+			)
+		);
+
+		// In Navis these top level LISTable items in AutoCAD are branch nodes.
+		// Below we only test those entities that are directly LISTed in AutoCAD.
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "423"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre(
+					"rootNode->nestedBlocks_dwg.nwd->0->Block Text"
+				)),
+				Not(AreLeafNodes())
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "50D"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre(
+					"rootNode->nestedBlocks_dwg.nwd->0->My Block",
+					"rootNode->nestedBlocks_dwg.nwd->Layer1->My Block"
+				)),
+				Not(AreLeafNodes())
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "4FA"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre(
+					"rootNode->nestedBlocks_dwg.nwd->Layer1->My Outer Block",
+					"rootNode->nestedBlocks_dwg.nwd->Layer2->My Outer Block",
+					"rootNode->nestedBlocks_dwg.nwd->Layer3->My Outer Block"
+				)),
+				Not(AreLeafNodes())
+			)
+		);
+	}
+
+	{
+		auto scene = ODAModelImportUtils::ModelImportManagerImport("NwdDwgElementIds", getDataPath("groupsAndReferences_dwg.nwd"));
+		SceneUtils utils(scene);
+
+		// The Navis importer goes one level deeper than the DWG importer, having
+		// both the Group Instance and the Group Members (with distinct Ids) being
+		// displayed in the tree.
+
+		// The first set of conditions are almost identical to the DWG importer (but
+		// with Groups in some cases).
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "1FF"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->groupsAndReferences_dwg.nwd->0->3D Solid")),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "203"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->groupsAndReferences_dwg.nwd->0->3D Solid")),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "1FB"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->groupsAndReferences_dwg.nwd->0->Text")),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "207"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->groupsAndReferences_dwg.nwd->0->*A1->3D Solid")),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "20B"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->groupsAndReferences_dwg.nwd->0->*A1->3D Solid")),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "1FC"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->groupsAndReferences_dwg.nwd->0->Text")),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "1FD"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->groupsAndReferences_dwg.nwd->0->Text")),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "1FE"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->groupsAndReferences_dwg.nwd->0->Text")),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "223"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->groupsAndReferences_dwg.nwd->0->Two Boxes")),
+				testing::Not(AreLeafNodes())
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "224"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->groupsAndReferences_dwg.nwd->0->Two Boxes")),
+				testing::Not(AreLeafNodes())
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "225"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->groupsAndReferences_dwg.nwd->0->Two Boxes")),
+				testing::Not(AreLeafNodes())
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "227"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->groupsAndReferences_dwg.nwd->0->Text")),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "228"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->groupsAndReferences_dwg.nwd->0->*A2->Two Boxes")),
+				testing::Not(AreLeafNodes())
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "229"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre("rootNode->groupsAndReferences_dwg.nwd->0->*A2->Two Boxes")),
+				testing::Not(AreLeafNodes())
+			)
+		);
+
+		// But we also have the descendents of the Groups, which will show up multiple times
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "21F"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre(
+					"rootNode->groupsAndReferences_dwg.nwd->0->Two Boxes->3D Solid",
+					"rootNode->groupsAndReferences_dwg.nwd->0->Two Boxes->3D Solid",
+					"rootNode->groupsAndReferences_dwg.nwd->0->Two Boxes->3D Solid",
+					"rootNode->groupsAndReferences_dwg.nwd->0->*A2->Two Boxes->3D Solid",
+					"rootNode->groupsAndReferences_dwg.nwd->0->*A2->Two Boxes->3D Solid"
+				)),
+				AreLeafNodes()
+			)
+		);
+
+		EXPECT_THAT(utils.findNodesByMetadata("Entity Handle::Value", "21B"),
+			testing::AllOf(
+				Paths(UnorderedElementsAre(
+					"rootNode->groupsAndReferences_dwg.nwd->0->Two Boxes->3D Solid",
+					"rootNode->groupsAndReferences_dwg.nwd->0->Two Boxes->3D Solid",
+					"rootNode->groupsAndReferences_dwg.nwd->0->Two Boxes->3D Solid",
+					"rootNode->groupsAndReferences_dwg.nwd->0->*A2->Two Boxes->3D Solid",
+					"rootNode->groupsAndReferences_dwg.nwd->0->*A2->Two Boxes->3D Solid"
+				)),
+				AreLeafNodes()
+			)
+		);
+	}
+
 }
 
 TEST(ODAModelImport, RevitHideCategories)
