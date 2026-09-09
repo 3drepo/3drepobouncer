@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-const path = require('path');
-const logger = require('../lib/logger');
 const { config, configPath } = require('../lib/config');
-const run = require('../lib/runCommand');
 const { BOUNCER_SOFT_FAILS } = require('../constants/errorCodes');
+const logger = require('../lib/logger');
+const path = require('path');
+const run = require('../lib/runCommand');
 
 const bouncerClientPath = path.normalize(config.bouncer.path);
 
@@ -65,18 +65,13 @@ BouncerHandler.testClient = async () => {
 	}
 };
 
-BouncerHandler.runBouncerCommand = async (
+BouncerHandler.runBouncerCommand = (
 	logDir,
 	cmdParams,
 	processInformation,
 ) => {
 	setBouncerEnvars(logDir);
 	return run(bouncerClientPath, cmdParams, { codesAsSuccess: BOUNCER_SOFT_FAILS, logLabel: { label: 'BOUNCER' } }, processInformation);
-};
-
-BouncerHandler.generateTreeStash = async (logDir, teamspace, container, stashType, rev = 'all') => {
-	const cmd = [configPath, 'genStash', teamspace, container, stashType, rev];
-	return BouncerHandler.runBouncerCommand(logDir, cmd);
 };
 
 module.exports = BouncerHandler;

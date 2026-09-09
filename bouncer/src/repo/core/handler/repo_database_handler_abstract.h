@@ -242,6 +242,11 @@ namespace repo {
 					const std::string &database,
 					const std::string &collection) = 0;
 
+				virtual void dropDocuments(
+					const std::string& database,
+					const std::string& collection,
+					const database::query::RepoQuery& criteria) = 0;
+
 				/*
 				*	------------- Query operations --------------
 				*/

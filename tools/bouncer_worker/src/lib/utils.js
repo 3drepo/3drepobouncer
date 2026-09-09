@@ -23,7 +23,7 @@ const Utils = {};
 Utils.hashCode = (s) => CryptoJS.MD5(s).toString();
 
 Utils.exitApplication = (errCode = -1) => {
-	// eslint-disable-next-line no-process-exit
+	// eslint-disable-next-line n/no-process-exit
 	process.exit(errCode);
 };
 

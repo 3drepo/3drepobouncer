@@ -49,6 +49,12 @@ namespace repo {
 					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler) const;
 
 				void connectMetadataNodes(repo::core::model::RepoScene* scene) const;
+
+				void cleanUpExistingImport(
+					const std::string &database,
+					const std::string &project,
+					const repo::lib::RepoUUID &revisionId,
+					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler) const;
 			};
 		} //namespace modelconvertor
 	} //namespace manipulator

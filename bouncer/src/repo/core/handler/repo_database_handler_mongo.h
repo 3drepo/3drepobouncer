@@ -200,6 +200,11 @@ namespace repo {
 					const std::string &database,
 					const std::string &collection);
 
+				void dropDocuments(
+					const std::string& database,
+					const std::string& collection,
+					const database::query::RepoQuery& criteria);
+
 				/**
 				 * Insert a single document in database.collection
 				 * @param database name

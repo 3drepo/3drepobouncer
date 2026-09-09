@@ -82,6 +82,11 @@ struct MockQueryFilterVisitor
 	{
 		throw MockDatabase::MockDatabaseMethodNotImplemented();
 	}
+
+	void operator() (const query::ArrayContains& n)
+	{
+		throw MockDatabase::MockDatabaseMethodNotImplemented();
+	}
 };
 
 MockDatabase::MockDatabase()
@@ -136,6 +141,14 @@ void MockDatabase::dropDocument(
 	const repo::core::model::RepoBSON bson,
 	const std::string& database,
 	const std::string& collection)
+{
+	throw MockDatabaseMethodNotImplemented();
+}
+
+void MockDatabase::dropDocuments(
+	const std::string& database,
+	const std::string& collection,
+	const repo::core::handler::database::query::RepoQuery& criteria)
 {
 	throw MockDatabaseMethodNotImplemented();
 }
