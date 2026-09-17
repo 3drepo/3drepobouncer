@@ -471,7 +471,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 			options.projection(projectionBson.view());
 
 			// Find all documents
-			auto cursor = col.find(criteria.view());
+			auto cursor = col.find(criteria.view(), options);
 			for (auto& doc : cursor) {
 				auto bson = repo::core::model::RepoBSON(doc);
 				if (loadBinaries)

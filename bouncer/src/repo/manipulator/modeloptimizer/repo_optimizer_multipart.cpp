@@ -500,7 +500,6 @@ void repo::manipulator::modeloptimizer::MultipartOptimizer::createSuperMeshes(
 
 		// Create projection
 		repo::core::handler::database::query::RepoProjectionBuilder projection;
-		projection.excludeField(REPO_NODE_LABEL_ID);
 		projection.includeField(REPO_NODE_LABEL_SHARED_ID);
 		projection.includeField(REPO_NODE_MESH_LABEL_VERTICES_COUNT);
 		projection.includeField(REPO_NODE_MESH_LABEL_FACES_COUNT);
