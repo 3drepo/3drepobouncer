@@ -522,6 +522,45 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 	}
 }
 
+repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
+	const std::string& database,
+	const std::string& collection,
+	const database::query::RepoQuery& filter,
+	const database::query::RepoQuery& projection,
+	const std::string& sortField)
+{
+	try
+	{
+		repo::core::model::RepoBSON criteria = makeQueryFilterDocument(filter);
+		if (!criteria.isEmpty() && !database.empty() && !collection.empty())
+		{
+			auto client = clientPool->acquire();
+			auto db = client->database(database);
+			auto col = db.collection(collection);
+
+			mongocxx::options::find options{};
+
+			repo::core::model::RepoBSON projectionBson = makeQueryFilterDocument(projection);
+			options.projection(projectionBson.view());
+
+			if (!sortField.empty()) {
+				options.sort(make_document(kvp(sortField, -1)));
+			}
+
+			// Find document
+			auto findResult = col.find_one(criteria.view(), options);
+			if (findResult.has_value()) {
+				return repo::core::model::RepoBSON(findResult.value());
+			}
+		}
+		return {};
+	}
+	catch (...)
+	{
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "findOneByCriteria", database, collection));
+	}
+}
+
 repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 	const std::string& database,
 	const std::string& collection,
@@ -1031,8 +1070,8 @@ private:
 	void executeBulkWrite()
 	{
 		if (bulk && bulkSize) {
-			bulk->execute();
-		}
+				bulk->execute();
+			}
 		bulk = std::make_unique<mongocxx::v_noabi::bulk_write>(this->collection.create_bulk_write());
 		bulkSize = 0;
 	}
