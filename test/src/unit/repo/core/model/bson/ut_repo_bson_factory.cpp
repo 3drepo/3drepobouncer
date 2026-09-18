@@ -336,10 +336,10 @@ TEST(RepoBSONFactoryTest, MakePointNodeTest)
 	);
 
 	std::vector<uint8_t> treePosition;
-	int treePosLength = std::floor(((float)std::rand() / RAND_MAX) * 7.0);
+	int treePosLength = std::rand() % 8;
 	for (int i = 0; i < treePosLength; i++)
 	{
-		int pos = std::floor(((float)std::rand() / RAND_MAX) * 7.0);
+		int pos = std::rand() % 8;
 		treePosition.push_back(pos);
 	}
 

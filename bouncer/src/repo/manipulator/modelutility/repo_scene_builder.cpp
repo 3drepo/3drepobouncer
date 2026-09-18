@@ -520,6 +520,7 @@ void RepoSceneBuilder::AsyncImpl::consumerFunction()
 #define DECLARE_ADDNODE_SPECIALISATION(T) template std::shared_ptr<T> RepoSceneBuilder::addNode<T>(const T& node);
 
 DECLARE_ADDNODE_SPECIALISATION(MeshNode)
+DECLARE_ADDNODE_SPECIALISATION(PointNode)
 DECLARE_ADDNODE_SPECIALISATION(TransformationNode)
 DECLARE_ADDNODE_SPECIALISATION(MaterialNode)
 DECLARE_ADDNODE_SPECIALISATION(TextureNode)

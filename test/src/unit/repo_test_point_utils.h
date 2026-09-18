@@ -22,6 +22,7 @@
 
 #include <repo/core/model/bson/repo_node_point.h>
 #include <repo/manipulator/modelconvertor/import/repo_model_import_point_cloud_abstract.h>
+#include <repo/manipulator/modelconvertor/export/repo_point_cloud_export_abstract.h>
 #include <repo/core/handler/database/repo_query.h>
 #include <repo/core/handler/fileservice/repo_data_ref.h>
 #include <repo/core/handler/fileservice/repo_blob_files_handler.h>
@@ -42,6 +43,15 @@ namespace repo {
 						int treeLevels
 					);
 
+					point_data(
+						bool name,
+						bool sharedId,
+						int numParents,
+						int numPoints,
+						repo::lib::RepoBounds targetBounds,
+						std::vector<uint8_t> treePosition
+					);
+
 					std::string name;
 					repo::lib::RepoUUID uniqueId;
 					repo::lib::RepoUUID sharedId;
@@ -52,9 +62,11 @@ namespace repo {
 					std::vector<repo::lib::repo_color4d_t> colourAttributes;
 				};
 
-				std::unique_ptr<repo::core::model::PointNode> createRandomPoints(
+				std::unique_ptr<repo::core::model::PointNode> createRandomPointChunk(
 					const int nPoints,
-					const std::vector<repo::lib::RepoUUID>& parent
+					const repo::lib::RepoBounds targetBounds,
+					const std::vector<repo::lib::RepoUUID>& parent,
+					std::vector<uint8_t> treePosition
 				);
 
 				// Creates a RepoBSON for a PointNode based on the point_data
@@ -67,12 +79,26 @@ namespace repo {
 				*/
 				void comparePointNode(point_data expected, repo::core::model::PointNode actual);
 
-				// Creates randomised points
-				std::vector<repo::lib::RepoVector3D> makePoints(int num);
+				/*
+				* Creates a PointNode based on the point_data
+				*/
+				repo::core::model::PointNode makePointNode(point_data data);
 
+				// Creates randomised point positions
+				std::vector<repo::lib::RepoVector3D> makePointPositions(int num);
+
+				// Creates randomised point positions for given bounds
+				std::vector<repo::lib::RepoVector3D64> makePointPositions(int num, repo::lib::RepoBounds bounds);
 
 				// Creates randomised colours
 				std::vector<repo::lib::repo_color4d_t> makeColourAttributes(int num);
+
+				// Creates randomised points in the PointData format used by the point node and optimiser
+				std::vector<repo::core::model::PointData> makePoints(int num);
+
+				// Creates randomised points for given boundsin the PointData format
+				// used by the point node and optimiser
+				std::vector<repo::core::model::PointData> makePoints(int num, repo::lib::RepoBounds bounds);
 
 				// Create randomised tree position
 				std::vector<uint8_t> makeTreePosition(int levels);
@@ -191,6 +217,67 @@ namespace repo {
 					std::string projectName,
 					repo::lib::RepoUUID revId,
 					repo::lib::RepoBounds expectedBounds);
+
+				// Mock Exporter
+				class TestPCExport : public repo::manipulator::modelconvertor::AbstractPointCloudExport
+				{
+					struct ExportedNode {
+						std::vector<uint8_t> treePosition;
+						std::vector<repo::core::model::PointData> pointData;
+					};
+
+				public:
+
+					// Make mock exporter
+					TestPCExport(
+						repo::core::handler::AbstractDatabaseHandler* dbHandler,
+						const std::string databaseName,
+						const std::string projectName,
+						const repo::lib::RepoUUID revId,
+						const std::vector<double> worldOffset,
+						const repo::lib::RepoBounds cloudBounds
+					) : AbstractPointCloudExport(dbHandler, databaseName, projectName, revId, worldOffset, cloudBounds)
+					{
+						exportedPointsCount = 0;
+						emptyExportedNodesCount = 0;
+					}
+
+					// Inherited via AbstractPointCloudExport
+					void addTreeNode(std::vector<repo::core::model::PointData>* pointData, std::vector<uint8_t> treePosition) override;
+					void finalise() override;
+
+					std::vector<ExportedNode>& getExportedNodes()
+					{
+						return exportedNodes;
+					}
+
+					int getExportedNodeCount()
+					{
+						return exportedNodes.size();
+					}
+
+					size_t getExportedPointCount()
+					{
+						return exportedPointsCount;
+					}
+
+					int getEmptyExportedNodesCount()
+					{
+						return emptyExportedNodesCount;
+					}
+
+					bool isFinalised()
+					{
+						return finalised;
+					}
+
+				private:
+					std::vector<ExportedNode> exportedNodes;
+					bool finalised = false;
+					size_t exportedPointsCount;
+					size_t emptyExportedNodesCount;
+				};
+
 			} // namespace point
 		} // namespace utils
 	} // namespace test

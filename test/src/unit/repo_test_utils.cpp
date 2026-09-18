@@ -43,17 +43,34 @@ repo::lib::RepoVector3D testing::makeRandomRepoVector()
 	return v;
 }
 
-repo::lib::RepoVector3D testing::makeRandomRepoVector(repo::lib::RepoBounds bounds)
+repo::lib::RepoVector3D64 testing::makeRandomRepoVector(repo::lib::RepoBounds bounds)
 {
 	auto min = bounds.min();
+	auto max = bounds.max();
 	auto dims = bounds.max() - bounds.min();
 	
-	repo::lib::RepoVector3D v;
+	repo::lib::RepoVector3D64 v;
 	v.x = ((double)rand()) / (double)(RAND_MAX);
 	v.y = ((double)rand()) / (double)(RAND_MAX);
 	v.z = ((double)rand()) / (double)(RAND_MAX);
 
 	v = min + v * dims;
+
+	//// Check the bottom edge for rounding errors given that the bounds are in doubles
+	//if ((double)v.x < min.x)
+	//	v.x = std::nextafter(v.x, std::numeric_limits<float>::infinity());
+	//if ((double)v.y < min.y)
+	//	v.y = std::nextafter(v.y, std::numeric_limits<float>::infinity());
+	//if ((double)v.z < min.z)
+	//	v.z = std::nextafter(v.z, std::numeric_limits<float>::infinity());
+
+	//if ((double)v.x > max.x)
+	//	v.x = std::nextafter(v.x, -std::numeric_limits<float>::infinity());
+	//if ((double)v.y > max.y)
+	//	v.y = std::nextafter(v.y, -std::numeric_limits<float>::infinity());
+	//if ((double)v.z > max.z)
+	//	v.z = std::nextafter(v.z, -std::numeric_limits<float>::infinity());
+
 	return v;
 }
 

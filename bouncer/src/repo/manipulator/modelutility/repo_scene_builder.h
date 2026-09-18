@@ -34,6 +34,7 @@ namespace repo {
 	namespace core {
 		namespace model {
 			class MeshNode;
+			class PointNode;
 			class TransformationNode;
 			class MetadataNode;
 			class MaterialNode;

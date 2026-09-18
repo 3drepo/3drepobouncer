@@ -100,7 +100,7 @@ TEST(PointNodeTest, Serialise)
 	EXPECT_THAT(((RepoBSON)node).getStringField(REPO_NODE_LABEL_NAME), Eq(node.getName()));
 
 	// We consider colour a mandatory attribute, so refuse serialisation without it
-	node.setPoints(makePoints(100));
+	node.setPoints(makePointPositions(100));
 	EXPECT_THROW(
 		{
 			((RepoBSON)node).getIntField(REPO_NODE_POINT_LABEL_POINTS_COUNT);
@@ -119,7 +119,7 @@ TEST(PointNodeTest, Serialise)
 	);
 
 	// We also refuse serialisation if the number of points and colour attributes diverge
-	node.setPoints(makePoints(100));
+	node.setPoints(makePointPositions(100));
 	node.setColourAttributes(makeColourAttributes(101));
 	EXPECT_THROW(
 		{
@@ -128,7 +128,7 @@ TEST(PointNodeTest, Serialise)
 		repo::lib::RepoException
 	);
 
-	node.setPoints(makePoints(100));
+	node.setPoints(makePointPositions(100));
 	node.setColourAttributes(makeColourAttributes(100));
 	((RepoBSON)node).getIntField(REPO_NODE_POINT_LABEL_POINTS_COUNT), Eq(node.getNumPoints());
 	std::vector<repo::lib::RepoVector3D> points;
@@ -199,7 +199,7 @@ TEST(PointNodeTest, SEqualTest)
 		// continue the random sequence.
 
 		pointNodes.push_back(makeDeterministicPointNode(3));
-		pointNodes[pointNodes.size() - 1].setPoints(makePoints(100));
+		pointNodes[pointNodes.size() - 1].setPoints(makePointPositions(100));
 
 		pointNodes.push_back(makeDeterministicPointNode(3));
 		pointNodes[pointNodes.size() - 1].setColourAttributes(makeColourAttributes(100));

@@ -8,10 +8,12 @@ add_subdirectory(bvh)
 set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_optimizer_multipart.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_optimizer_point_cloud.cpp
 	CACHE STRING "SOURCES" FORCE)
 
 set(HEADERS
 	${HEADERS}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_optimizer_multipart.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_optimizer_point_cloud.h
 	CACHE STRING "HEADERS" FORCE)
 

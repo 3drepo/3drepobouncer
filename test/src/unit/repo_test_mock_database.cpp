@@ -107,6 +107,26 @@ repo::core::model::RepoBSON MockDatabase::findOneByCriteria(
 	}
 }
 
+repo::core::model::RepoBSON MockDatabase::findOneByCriteria(
+	const std::string& database,
+	const std::string& collection,
+	const repo::core::handler::database::query::RepoQuery& criteria,
+	const repo::core::handler::database::query::RepoQuery& projection,
+	const std::string& sortField)
+{
+	// The mock ignores the projection for now.
+
+	if (collection == std::string("settings")) {
+		return projectSettings;
+	}
+	else {
+		MockQueryFilterVisitor visitor;
+		visitor.indexes = &indexes;
+		std::visit(visitor, criteria);
+		return visitor.results.size() ? visitor.results[0] : repo::core::model::RepoBSON();
+	}
+}
+
 repo::core::model::RepoBSON MockDatabase::findOneBySharedID(
 	const std::string& database,
 	const std::string& collection,

@@ -79,7 +79,7 @@ namespace testing {
 
 	repo::lib::RepoVector3D makeRandomRepoVector();
 	
-	repo::lib::RepoVector3D makeRandomRepoVector(repo::lib::RepoBounds bounds);
+	repo::lib::RepoVector3D64 makeRandomRepoVector(repo::lib::RepoBounds bounds);
 
 	repo::lib::repo_color4d_t makeRandomRepoColour();
 

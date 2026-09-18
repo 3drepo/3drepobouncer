@@ -970,7 +970,16 @@ void RepoScene::getSceneBoundingBoxInternal(
 			MeshNode::transformBoundingBox(newmBBox, mat);
 			bbox.encapsulate(newmBBox);
 			break;
-		}		
+		}
+		case NodeType::POINT:
+		{
+			const PointNode * point = dynamic_cast<const PointNode*>(node);
+			auto newpBBox = point->getBoundingBox();
+			// For point clouds, there is only one transform (the roor) and it is always identity
+			// so we don't need to transform anything here.
+			bbox.encapsulate(newpBBox);
+			break;
+		}
 		}
 	}
 }
@@ -1082,7 +1091,7 @@ bool RepoScene::loadRevision(
 			databaseName,
 			projectName + "." + REPO_COLLECTION_HISTORY,
 			query,
-			REPO_NODE_REVISION_LABEL_TIMESTAMP
+			std::string(REPO_NODE_REVISION_LABEL_TIMESTAMP)
 		);
 
 		repoTrace << "Fetching head of revision from branch " << branch;

@@ -880,6 +880,8 @@ TEST(RepoSceneTest, getSceneBoundingBox)
 	scene.loadScene(handler.get(), errMsg);
 	auto bb = scene.getSceneBoundingBox();
 	EXPECT_THAT(bb, Eq(getGoldenDataForBBoxTest()));
+
+	// TODO FT: Update with golden data for point cloud bbox
 }
 
 TEST(RepoSceneTest, getNodeBySharedID)

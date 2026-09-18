@@ -587,7 +587,7 @@ TEST(MongoDatabaseHandlerTest, FindOneByCriteria)
 		auto col = "cube.history";
 		auto id = repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH);
 		query::Eq search("shared_id", id);
-		auto result = handler->findOneByCriteria(db, col, search, "timestamp");
+		auto result = handler->findOneByCriteria(db, col, search, std::string("timestamp"));
 
 		EXPECT_THAT(result.getUUIDField("_id"), Eq(repo::lib::RepoUUID("57f09047-ead5-453b-96ab-d90a582127bf")));
 	}
@@ -608,7 +608,7 @@ TEST(MongoDatabaseHandlerTest, FindOneByCriteria)
 				query::Eq("_id", repo::lib::RepoUUID("3a28e39d-e901-4ca7-9453-9b9dde38d916")),
 				query::Eq("_id", repo::lib::RepoUUID("e664b837-45aa-4ad3-b2da-6efcce6438e2"))
 			),
-			"timestamp");
+			std::string("timestamp"));
 
 		EXPECT_THAT(result.getUUIDField("_id"), Eq(repo::lib::RepoUUID("3a28e39d-e901-4ca7-9453-9b9dde38d916")));
 	}
@@ -618,13 +618,13 @@ TEST(MongoDatabaseHandlerTest, FindOneByCriteria)
 		auto col = "cube.history";
 		auto result1 = handler->findOneByCriteria(db, col,
 			query::Exists("x", true),
-			"timestamp");
+			std::string("timestamp"));
 
 		EXPECT_THAT(result1.getUUIDField("_id"), Eq(repo::lib::RepoUUID("57f09047-ead5-453b-96ab-d90a582127bf")));
 
 		auto result2 = handler->findOneByCriteria(db, col,
 			query::Exists("x", false),
-			"timestamp");
+			std::string("timestamp"));
 
 		EXPECT_THAT(result2.getUUIDField("_id"), Eq(repo::lib::RepoUUID("0d35ee3d-03a8-433a-922a-ec2488d2aa90")));
 	}
@@ -636,19 +636,19 @@ TEST(MongoDatabaseHandlerTest, FindOneByCriteria)
 
 		query.append(query::Eq("shared_id", repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH)));
 		EXPECT_THAT(
-			handler->findOneByCriteria(db, col, query, "timestamp").getUUIDField("_id"),
+			handler->findOneByCriteria(db, col, query, std::string("timestamp")).getUUIDField("_id"),
 			Eq(repo::lib::RepoUUID("57f09047-ead5-453b-96ab-d90a582127bf"))
 		);
 
 		query.append(query::Exists("incomplete", false));
 		EXPECT_THAT(
-			handler->findOneByCriteria(db, col, query, "timestamp").getUUIDField("_id"),
+			handler->findOneByCriteria(db, col, query, std::string("timestamp")).getUUIDField("_id"),
 			Eq(repo::lib::RepoUUID("460cf713-faa8-41a9-9680-e2f659b0aeda"))
 		);
 
 		query.append(query::Exists("x", true));
 		EXPECT_THAT(
-			handler->findOneByCriteria(db, col, query, "timestamp").getUUIDField("_id"),
+			handler->findOneByCriteria(db, col, query, std::string("timestamp")).getUUIDField("_id"),
 			Eq(repo::lib::RepoUUID("e664b837-45aa-4ad3-b2da-6efcce6438e2"))
 		);
 	}
@@ -662,19 +662,19 @@ TEST(MongoDatabaseHandlerTest, FindOneByCriteria)
 			query::Eq(std::string("incomplete"), std::vector<int>({ 4, 5 }))
 		));
 		EXPECT_THAT(
-			handler->findOneByCriteria(db, col, query, "timestamp").getUUIDField("_id"),
+			handler->findOneByCriteria(db, col, query, std::string("timestamp")).getUUIDField("_id"),
 			Eq(repo::lib::RepoUUID("57f09047-ead5-453b-96ab-d90a582127bf"))
 		);
 
 		query.append(query::Exists("x", false));
 		EXPECT_THAT(
-			handler->findOneByCriteria(db, col, query, "timestamp").getUUIDField("_id"),
+			handler->findOneByCriteria(db, col, query, std::string("timestamp")).getUUIDField("_id"),
 			Eq(repo::lib::RepoUUID("0d35ee3d-03a8-433a-922a-ec2488d2aa90"))
 		);
 
 		query.append(query::Exists("y", true));
 		EXPECT_THAT(
-			handler->findOneByCriteria(db, col, query, "timestamp").getUUIDField("_id"),
+			handler->findOneByCriteria(db, col, query, std::string("timestamp")).getUUIDField("_id"),
 			Eq(repo::lib::RepoUUID("460cf713-faa8-41a9-9680-e2f659b0aeda"))
 		);
 	}

@@ -20,6 +20,7 @@
 #include "repo_model_import_abstract.h"
 #include "repo/core/model/bson/repo_node_point.h"
 #include "repo/manipulator/modelutility/repo_scene_builder.h"
+#include "repo/lib/point_cloud/repo_point_cloud_utils.h"
 
 namespace repo {
 	namespace manipulator {
@@ -75,14 +76,6 @@ namespace repo {
 
 				std::vector<std::unique_ptr<repo::core::model::PointNode>> nodes;
 				std::vector<int> nodeIndices;
-
-				int getIndexFromCellCoordinates(int xIndex, int yIndex, int zIndex);
-
-				int projectPositionIntoCell(repo::lib::RepoVector3D64 position);
-
-				int getIndexFromTreePosition(std::vector<uint8_t>& treePosition);
-
-				repo::lib::RepoBounds getBoundsFromTreePosition(std::vector<uint8_t>& treePosition);
 
 				void createNode(
 					repo::lib::RepoBounds bounds,

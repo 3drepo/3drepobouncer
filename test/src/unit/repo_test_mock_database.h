@@ -151,6 +151,13 @@ namespace testing {
 			const repo::core::handler::database::query::RepoQuery& criteria,
 			const std::string& sortField = "") override;
 
+		virtual repo::core::model::RepoBSON findOneByCriteria(
+			const std::string& database,
+			const std::string& collection,
+			const repo::core::handler::database::query::RepoQuery& criteria,
+			const repo::core::handler::database::query::RepoQuery& projeciton,
+			const std::string& sortField = "") override;
+
 		virtual repo::core::model::RepoBSON findOneBySharedID(
 			const std::string& database,
 			const std::string& collection,

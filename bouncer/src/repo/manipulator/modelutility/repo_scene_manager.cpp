@@ -20,6 +20,7 @@
 #include "repo/core/model/bson/repo_bson_teamspace.h"
 #include "../../error_codes.h"
 #include "../modeloptimizer/repo_optimizer_multipart.h"
+#include "../modeloptimizer/repo_optimizer_point_cloud.h"
 #include "../modelutility/repo_maker_selection_tree.h"
 
 #ifdef REPO_ASSET_GENERATOR_SUPPORT
@@ -232,36 +233,82 @@ bool SceneManager::generateWebViewBuffers(
 			worldOffset = std::vector<double>({ 0, 0, 0 });
 		}
 
-		// Initialise exporter		
-		std::unique_ptr<repo::manipulator::modelconvertor::AbstractModelExport> exporter = nullptr;
-
-		switch (exType)
+		switch (scene->getSceneGeometryType())
 		{
-		case repo::manipulator::modelconvertor::ExportType::REPO:
-#ifdef REPO_ASSET_GENERATOR_SUPPORT
-			exporter = std::make_unique<repo::manipulator::modelconvertor::RepoBundleExport>(
-				handler,
-				database,
-				collection,
-				revId,
-				worldOffset
+		case repo::core::model::RepoScene::SceneGeometryType::MESH:
+		{
+			// Initialise exporter
+			std::unique_ptr<repo::manipulator::modelconvertor::AbstractModelExport> exporter = nullptr;
+
+			switch (exType)
+			{
+				case repo::manipulator::modelconvertor::ExportType::REPO:
+	#ifdef REPO_ASSET_GENERATOR_SUPPORT
+					exporter = std::make_unique<repo::manipulator::modelconvertor::RepoBundleExport>(
+						handler,
+						database,
+						collection,
+						revId,
+						worldOffset
+					);
+	#else
+					repoError << "Bouncer must be built with REPO_ASSET_GENERATOR_SUPPORT ON in order to generate Repo Bundles.";
+					return false;
+	#endif // REPO_ASSETGENERATOR
+					break;
+				default:
+					repoError << "Unknown export type with enum:  " << (uint16_t)exType;
+					return false;
+			}
+
+			repo::manipulator::modeloptimizer::MultipartOptimizer mpOpt(handler, exporter.get(), config.splitByFloor);
+			mpOpt.processScene(
+				scene->getDatabaseName(),
+				scene->getProjectName(),
+				scene->getRevisionID()
 			);
-#else
-			repoError << "Bouncer must be built with REPO_ASSET_GENERATOR_SUPPORT ON in order to generate Repo Bundles.";
-			return false;
-#endif // REPO_ASSETGENERATOR
 			break;
+		}
+		case repo::core::model::RepoScene::SceneGeometryType::POINTCLOUD:
+		{
+			// Initialise exporter
+			std::unique_ptr<repo::manipulator::modelconvertor::AbstractPointCloudExport> exporter = nullptr;
+
+			switch (exType)
+			{
+				case repo::manipulator::modelconvertor::ExportType::REPO:
+#ifdef REPO_ASSET_GENERATOR_SUPPORT
+					// TODO FT: Implement this exporter
+					//exporter = std::make_unique < repo::manipulator::modelconvertor<RepoPointCloudExport>(
+					//	handler,
+					//	database,
+					//	collection,
+					//	revId,
+					//	worldOffset);
+#else
+					repoError << "Bouncer must be built with REPO_ASSET_GENERATOR_SUPPORT ON in order to generate Repo Bundles.";
+					return false;
+#endif // REPO_ASSETGENERATOR
+					break;
+				default:
+					repoError << "Unknown export type with enum:  " << (uint16_t)exType;
+					return false;
+			}
+
+			auto cloudBounds = scene->getSceneBoundingBox();
+			repo::manipulator::modeloptimizer::PointCloudOptimizer pcOpt(handler, exporter.get());
+			pcOpt.processScene(
+				scene->getDatabaseName(),
+				scene->getProjectName(),
+				scene->getRevisionID(),
+				cloudBounds
+			);
+			break;
+		}
 		default:
-			repoError << "Unknown export type with enum:  " << (uint16_t)exType;
+			repoError << "Unknown Scene Geometry Type";
 			return false;
 		}
-
-		repo::manipulator::modeloptimizer::MultipartOptimizer mpOpt(handler, exporter.get(), config.splitByFloor);
-		mpOpt.processScene(
-			scene->getDatabaseName(),
-			scene->getProjectName(),
-			scene->getRevisionID()
-		);
 
 		return true;
 	}

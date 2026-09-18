@@ -29,230 +29,6 @@ AbstractPointCloudImport::~AbstractPointCloudImport()
 {
 }
 
-int AbstractPointCloudImport::getIndexFromCellCoordinates(
-	int xIndex,
-	int yIndex,
-	int zIndex)
-{
-	return (xIndex * (steps * steps)) + (yIndex * steps) + zIndex;
-}
-
-int AbstractPointCloudImport::projectPositionIntoCell(repo::lib::RepoVector3D64 pos)
-{
-	auto min = bounds.min();
-
-	// Calculate X-Index of cell
-	int xIndex = floor((pos.x - min.x) / stepLength);
-	if (xIndex == steps)
-		xIndex--;
-
-	// Calculate Y-Index of cell
-	int yIndex = floor((pos.y - min.y) / stepLength);
-	if (yIndex == steps)
-		yIndex--;
-
-	// Calculate Z-Index of cell
-	int zIndex = floor((pos.z - min.z) / stepLength);
-	if (zIndex == steps)
-		zIndex--;
-
-	if (xIndex > steps || yIndex > steps || zIndex > steps)
-		throw repo::lib::RepoException("Point Cloud Import: Point outside of the grid detected.");
-
-	// Calculate index in the counting array
-	int index = getIndexFromCellCoordinates(
-		xIndex,
-		yIndex,
-		zIndex);
-
-	return index;
-
-}
-
-int AbstractPointCloudImport::getIndexFromTreePosition(
-	std::vector<uint8_t>& treePosition)
-{
-	if (treePosition.size() != REPO_PC_CHUNKING_DEPTH)
-	{
-		throw repo::lib::RepoException("Partial tree positions cannot be used to retrieve an index.");
-	}
-
-	int x = 0;
-	int y = 0;
-	int z = 0;
-
-	int currentSteps = steps;
-
-	for (int i = 0; i < treePosition.size(); i++)
-	{
-		// Split is numbered as such:
-		// ------------------------------ x
-		// |							|
-		// |	0/4		|		1/5		|
-		// |							|
-		// |----------------------------|
-		// |							|
-		// |	3/7		|		2/6		|
-		// |							|
-		// ------------------------------
-		// y
-		// 
-		// 0 to 3 are the top level, 4 to 7 are the bottom level
-
-		uint8_t childIndex = treePosition[i];
-
-		// Calculate the lengths of the children for this split
-		currentSteps = currentSteps / 2;
-
-		switch (childIndex)
-		{
-		case 0:
-			// X remains the same
-			// Y Remains the same
-			// Z is changed
-			z = z + currentSteps;
-			break;
-		case 1:
-			// X is changed
-			// Y remains the same
-			// Z is changed
-			x = x + currentSteps;
-			z = z + currentSteps;
-			break;
-		case 2:
-			// X is changed
-			// Y is changed
-			// Z is changed
-			x = x + currentSteps;
-			y = y + currentSteps;
-			z = z + currentSteps;
-			break;
-		case 3:
-			// X remains the same
-			// Y is changed
-			// Z is changed
-			y = y + currentSteps;
-			z = z + currentSteps;
-			break;
-		case 4:
-			// X remains the same
-			// Y remains the same
-			// Z remains the same
-			break;
-		case 5:
-			// X is changed
-			// Y remains the same
-			// Z remains the same
-			x = x + currentSteps;
-			break;
-		case 6:
-			// X is changed
-			// Y is changed
-			// Z remains the same
-			x = x + currentSteps;
-			y = y + currentSteps;
-			break;
-		case 7:
-			// X remains the same
-			// Y is changed
-			// Z remains the same
-			y = y + currentSteps;
-			break;
-		}
-	}
-
-	return getIndexFromCellCoordinates(x, y, z);
-}
-
-// TODO FT: This will probably be moved into a utility class at some point
-repo::lib::RepoBounds AbstractPointCloudImport::getBoundsFromTreePosition(std::vector<uint8_t>& treePosition)
-{
-	auto min = bounds.min();
-	auto dimensions = bounds.max() - bounds.min();
-
-	for (int i = 0; i < treePosition.size(); i++)
-	{
-		// Split is numbered as such:
-		// ------------------------------ x
-		// |							|
-		// |	0/4		|		1/5		|
-		// |							|
-		// |----------------------------|
-		// |							|
-		// |	3/7		|		2/6		|
-		// |							|
-		// ------------------------------
-		// y
-		// 
-		// 0 to 3 are the top level, 4 to 7 are the bottom level
-
-		uint8_t childIndex = treePosition[i];
-
-		// Calculate the dimensions of the children for this split
-		dimensions = dimensions / 2.0;
-
-		switch (childIndex)
-		{
-		case 0:
-			// X remains the same
-			// Y Remains the same
-			// Z is changed
-			min.z = min.z + dimensions.z;
-			break;
-		case 1:
-			// X is changed
-			// Y remains the same
-			// Z is changed
-			min.x = min.x + dimensions.x;
-			min.z = min.z + dimensions.z;
-			break;
-		case 2:
-			// X is changed
-			// Y is changed
-			// Z is changed
-			min.x = min.x + dimensions.x;
-			min.y = min.y + dimensions.y;
-			min.z = min.z + dimensions.z;
-			break;
-		case 3:
-			// X remains the same
-			// Y is changed
-			// Z is changed
-			min.y = min.y + dimensions.y;
-			min.z = min.z + dimensions.z;
-			break;
-		case 4:
-			// X remains the same
-			// Y remains the same
-			// Z remains the same
-			break;
-		case 5:
-			// X is changed
-			// Y remains the same
-			// Z remains the same
-			min.x = min.x + dimensions.x;
-			break;
-		case 6:
-			// X is changed
-			// Y is changed
-			// Z remains the same
-			min.x = min.x + dimensions.x;
-			min.y = min.y + dimensions.y;
-			break;
-		case 7:
-			// X remains the same
-			// Y is changed
-			// Z remains the same
-			min.y = min.y + dimensions.y;
-			break;
-		}
-	}
-
-	auto max = min + dimensions;
-
-	return repo::lib::RepoBounds(min, max);
-}
-
 void AbstractPointCloudImport::createNode(
 	repo::lib::RepoBounds bounds,
 	std::vector<uint8_t>& treePosition,
@@ -283,7 +59,7 @@ void AbstractPointCloudImport::mergeCells(
 	if (treePosition.size() == REPO_PC_CHUNKING_DEPTH)
 	{
 		// If we are at the bottom, we just get the count and return that
-		int cellIndex = getIndexFromTreePosition(treePosition);
+		int cellIndex = repo::lib::pointcloud::PointCloudUtils::getIndexFromTreePosition(treePosition, REPO_PC_CHUNKING_DEPTH);
 		numPoints = counters[cellIndex];
 		cellsMergedBelow = false;
 		return;
@@ -336,7 +112,7 @@ void AbstractPointCloudImport::mergeCells(
 			// Create a node for this child.
 			auto childTreePosition = treePosition;
 			childTreePosition.push_back(i);
-			auto nodeBounds = getBoundsFromTreePosition(childTreePosition);
+			auto nodeBounds = repo::lib::pointcloud::PointCloudUtils::getBoundsFromTreePosition(childTreePosition, bounds);
 
 			createNode(
 				nodeBounds,
@@ -369,7 +145,9 @@ void AbstractPointCloudImport::updateLeaves(
 	{
 		// If we hit the bottom, we store the index of the node associated with this cell.
 		// We also need to update the counter to the value of the merged node
-		int cellIndex = getIndexFromTreePosition(treePosition);	
+		int cellIndex = repo::lib::pointcloud::PointCloudUtils::getIndexFromTreePosition(
+			treePosition,
+			REPO_PC_CHUNKING_DEPTH);
 
 		nodeIndices[cellIndex] = nodeIndex;
 		counters[cellIndex] = pointCount;
@@ -481,7 +259,10 @@ repo::core::model::RepoScene* AbstractPointCloudImport::importModel(
 			auto pos = pointData.position;
 
 			// Project point to get cell index
-			int cellIndex = projectPositionIntoCell(pos);
+			int cellIndex = repo::lib::pointcloud::PointCloudUtils::project3DPositionToCellIndex(
+				pos,
+				bounds,
+				REPO_PC_CHUNKING_DEPTH);
 
 			// Increase the counter of that cell by one
 			counters[cellIndex]++;
@@ -499,7 +280,7 @@ repo::core::model::RepoScene* AbstractPointCloudImport::importModel(
 		settings.getRevisionId()
 	);
 	sceneBuilder->createIndexes();
-	repoInfo << "POST INDEX CREATION";
+
 	createRootNode(sceneBuilder.get());
 
 	// First, initialise structures to keep track of nodes.
@@ -528,7 +309,10 @@ repo::core::model::RepoScene* AbstractPointCloudImport::importModel(
 			auto pos = pointData.position;
 
 			// Project point to get cell index
-			int cellIndex = projectPositionIntoCell(pos);
+			int cellIndex = repo::lib::pointcloud::PointCloudUtils::project3DPositionToCellIndex(
+				pos,
+				bounds,
+				REPO_PC_CHUNKING_DEPTH);
 
 			// Get pointer to node belonging to that cell.
 			auto nodeIndex = nodeIndices[cellIndex];
@@ -572,7 +356,8 @@ repo::core::model::RepoScene* AbstractPointCloudImport::importModel(
 		settings.getProjectName()
 	);
 
-	// scene->setDataType(PointCloud) // TODO FT: To implement
+	// Flag the scene as a point cloud
+	scene->setSceneGeometryType(repo::core::model::RepoScene::SceneGeometryType::POINTCLOUD);
 
 	scene->setWorldOffset(worldOffset);
 	

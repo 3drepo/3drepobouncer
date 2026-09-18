@@ -67,6 +67,13 @@ namespace repo {
 				*/
 				enum class GraphType { DEFAULT, OPTIMIZED };
 
+				/// <summary>
+				/// MESH -       The scene is for mesh geometry (triangles or lines) and will be processed using the
+				///              regular multipart optimiser
+				/// POINTCLOUD - The scene is for point cloud data and will be processed using the point cloud optimiser
+				/// </summary>
+				enum class SceneGeometryType { MESH, POINTCLOUD };
+
 				/**
 				* Used for loading scene graphs from database
 				* Constructor - instantiates a new scene graph representation.
@@ -832,6 +839,26 @@ namespace repo {
 				*/
 				void reorientateDirectXModel();
 
+				/// <summary>
+				/// Sets the geometry type of this scene.
+				/// </summary>
+				/// <param name="type">The new geometry type.
+				/// Can be either mesh or point cloud.</param>
+				void setSceneGeometryType(SceneGeometryType type)
+				{
+					geometryType = type;
+				}
+
+				/// <summary>
+				/// Returns the geometry type of this scene.
+				/// </summary>
+				/// <returns>The geometry type. Can be either
+				/// mesh or point cloud.</returns>
+				SceneGeometryType getSceneGeometryType()
+				{
+					return geometryType;
+				}
+
 				/**
 				* ----------------------------------------------------------
 				*/
@@ -1004,6 +1031,8 @@ namespace repo {
 				std::vector<uint8_t> taskList;
 				std::unordered_map<std::string, std::vector<uint8_t>> frameStates;
 				std::set<repo::lib::RepoUUID> defaultInvisible;
+
+				SceneGeometryType geometryType = SceneGeometryType::MESH; // Default to mesh
 
 				/*
 				* ---------------- Scene Graph Details ----------------

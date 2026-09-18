@@ -76,6 +76,67 @@ repo::test::utils::point::point_data::point_data(
 		});
 }
 
+repo::test::utils::point::point_data::point_data(
+	bool name,
+	bool sharedId,
+	int numParents,
+	int numPoints,
+	repo::lib::RepoBounds targetBounds,
+	std::vector<uint8_t> treePosition)
+{
+	if (name)
+	{
+		this->name = "Named Point";
+	}
+
+	if (sharedId)
+	{
+		this->sharedId = getRandUUID();
+	}
+
+	for (int i = 0; i < numParents; i++)
+	{
+		parents.push_back(getRandUUID());
+	}
+
+	this->treePosition = treePosition;
+
+	uniqueId = getRandUUID();
+
+	// We are actually shrinking the bounds for the generation a little bit (1%).
+	// The projection is actually not always inclusive of the lower bound
+	// (for more detail see description in repo_point_cloud_utils.h), which in
+	// production is not an issue, but gets in the way of testing.
+	auto shrink = (targetBounds.max() - targetBounds.min()) * 0.01;
+	auto genMin = targetBounds.min() + shrink;
+	auto genMax = targetBounds.max() - shrink;
+	auto genBounds = repo::lib::RepoBounds(genMin, genMax);
+
+	// Generate points for the cloud using the old deterministic randomiser
+	for (int i = 0; i < numPoints; i++)
+	{
+		auto newVert = makeRandomRepoVector(genBounds);
+		points.push_back(newVert);
+
+		auto newColour = makeRandomRepoColour();
+		colourAttributes.push_back(newColour);
+	}
+
+	repo::lib::RepoVector3D min = targetBounds.min();
+	repo::lib::RepoVector3D max = targetBounds.max();
+
+	boundingBox.push_back({
+	min.x, min.y, min.z
+		});
+
+	boundingBox.push_back({
+		max.x, max.y, max.z
+		});
+
+}
+
+
+
 void repo::test::utils::point::comparePointNode(point_data expected, PointNode actual)
 {
 	EXPECT_THAT(actual.getUniqueID(), Eq(expected.uniqueId));
@@ -87,11 +148,56 @@ void repo::test::utils::point::comparePointNode(point_data expected, PointNode a
 	EXPECT_THAT(actual.getColourAttributes(), ElementsAreArray(expected.colourAttributes));
 }
 
-std::vector<repo::lib::RepoVector3D> repo::test::utils::point::makePoints(int num)
+repo::core::model::PointNode repo::test::utils::point::makePointNode(point_data data)
 {
-	std::vector<repo::lib::RepoVector3D> points;
+	return repo::core::model::PointNode(pointNodeTestBSONFactory(data));
+}
+
+std::vector<repo::lib::RepoVector3D> repo::test::utils::point::makePointPositions(int num)
+{
+	std::vector<repo::lib::RepoVector3D> positions;
 	for (int i = 0; i < num; i++) {
-		points.push_back(makeRandomRepoVector());
+		positions.push_back(makeRandomRepoVector());
+	}
+	return positions;
+}
+
+std::vector<repo::lib::RepoVector3D64> repo::test::utils::point::makePointPositions(int num, repo::lib::RepoBounds bounds)
+{
+	std::vector<repo::lib::RepoVector3D64> positions;
+	for (int i = 0; i < num; i++) {
+		positions.push_back(makeRandomRepoVector(bounds));
+	}
+	return positions;
+}
+
+std::vector<repo::core::model::PointData> repo::test::utils::point::makePoints(
+	int num)
+{
+	auto positions = makePointPositions(num);
+	auto colourAttributes = makeColourAttributes(num);
+	auto points = std::vector<repo::core::model::PointData>();
+	for (int i = 0; i < num; i++)
+	{
+		auto p = positions[i];
+		auto c = colourAttributes[i];
+		points.push_back(repo::core::model::PointData(p, c));
+	}
+	return points;
+}
+
+std::vector<repo::core::model::PointData> repo::test::utils::point::makePoints(
+	int num,
+	repo::lib::RepoBounds bounds)
+{
+	auto positions = makePointPositions(num, bounds);
+	auto colourAttributes = makeColourAttributes(num);
+	auto points = std::vector<repo::core::model::PointData>();
+	for (int i = 0; i < num; i++)
+	{
+		auto p = positions[i];
+		auto c = colourAttributes[i];
+		points.push_back(repo::core::model::PointData(p, c));
 	}
 	return points;
 }
@@ -111,7 +217,7 @@ std::vector<uint8_t> repo::test::utils::point::makeTreePosition(int levels)
 
 	for (int i = 0; i < levels; i++)
 	{
-		uint8_t p = static_cast<uint8_t>(floor(((double)rand() / (double)RAND_MAX) * 8));
+		uint8_t p = rand() % 8;
 		treePosition.push_back(p);
 	}
 
@@ -395,6 +501,26 @@ void repo::test::utils::point::checkChunkCorrectness(
 	}
 }
 
+std::unique_ptr<repo::core::model::PointNode> repo::test::utils::point::createRandomPointChunk(
+	const int nPoints,
+	const repo::lib::RepoBounds targetBounds,
+	const std::vector<repo::lib::RepoUUID>& parent,
+	std::vector<uint8_t> treePosition)
+{
+	auto pointNode = makePointNode(point_data(
+		true,
+		true,
+		0,
+		nPoints,
+		targetBounds,
+		treePosition)
+	);
+
+	pointNode.addParents(parent);
+
+	return std::make_unique<repo::core::model::PointNode>(pointNode);
+}
+
 /**
 * This implementation should be the reference for the node database schema and
 * should be effectively independent, but equivalent, to the serialise method
@@ -524,3 +650,25 @@ uint8_t repo::test::utils::point::TestPCImport::loadFile(std::string filePath)
 
 	return 0;
 }
+
+void repo::test::utils::point::TestPCExport::addTreeNode(
+	std::vector<repo::core::model::PointData>* pointData,
+	std::vector<uint8_t> treePosition)
+{
+	auto newNode = ExportedNode();
+	newNode.treePosition = treePosition;
+	newNode.pointData = *pointData;
+
+	exportedPointsCount += newNode.pointData.size();
+
+	if (newNode.pointData.size() == 0)
+		emptyExportedNodesCount++;
+
+	exportedNodes.push_back(std::move(newNode));
+}
+
+void repo::test::utils::point::TestPCExport::finalise()
+{
+	finalised = true;
+}
+
