@@ -44,7 +44,7 @@ namespace repo {
 					this->colour = col;
 				}
 
-				bool operator==(const PointData& other)
+				bool operator==(const PointData& other) const
 				{
 					return (this->position == other.position) && (this->colour == other.colour);
 				}
@@ -52,6 +52,20 @@ namespace repo {
 				bool operator!=(const PointData& other)
 				{
 					return !(*this == other);
+				}
+			};
+
+			struct PointDataHasher
+			{
+				size_t operator()(const PointData pd) const
+				{
+					return std::hash<float>()(pd.position.x)
+						^ std::hash<float>()(pd.position.y)
+						^ std::hash<float>()(pd.position.z)
+						^ std::hash<float>()(pd.colour.r)
+						^ std::hash<float>()(pd.colour.g)
+						^ std::hash<float>()(pd.colour.b)
+						^ std::hash<float>()(pd.colour.a);
 				}
 			};
 
@@ -188,6 +202,8 @@ namespace repo {
 				{
 					this->treePosition = std::vector<uint8_t>(treePosition.begin(), treePosition.end());
 				}
+
+				size_t getSize() const;
 
 			};
 		} //namespace model

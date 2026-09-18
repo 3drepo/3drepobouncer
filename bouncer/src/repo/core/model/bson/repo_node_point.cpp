@@ -146,3 +146,16 @@ bool PointNode::sEqual(const RepoNode& other) const
 
 	return success;
 }
+
+size_t PointNode::getSize() const
+{
+	// Implementation aims to be as quick as possible as we can expect this to
+	// be called alot now streaming imports are used.
+
+	size_t size = 0;
+	size += points.size() * sizeof(repo::lib::RepoVector3D);
+	size += colourAttributes.size() * sizeof(repo::lib::repo_color4d_t);
+	size += treePosition.size() * sizeof(uint8_t);
+	size += sizeof(*this);
+	return size;
+}
