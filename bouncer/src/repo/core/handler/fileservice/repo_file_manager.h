@@ -22,17 +22,135 @@
 #include "repo_file_handler_abstract.h"
 #include "repo/core/model/bson/repo_bson_ref.h"
 #include "repo/lib/repo_config.h"
+#include <boost/iostreams/filtering_stream.hpp>
+#include "log/repo_log.h"
 
 namespace repo {
 	namespace core {
 		namespace handler {
 			class AbstractDatabaseHandler;
 			namespace fileservice {
+
+				template<typename IdType>
+				class FileHandle {
+				public:
+
+					FileHandle(
+						std::string databaseName,
+						std::string collectionNamePrefix,
+						repo::lib::RepoUUID fileUUID,
+						std::string linkName,
+						IdType id,
+						repo::core::model::RepoRef::Metadata metadata,
+						std::unique_ptr<std::ofstream> fileStream,
+						std::unique_ptr<boost::iostreams::filtering_stream<boost::iostreams::output>> outStream)
+						: databaseName(databaseName), 
+						collectionNamePrefix(collectionNamePrefix),
+						fileUUID(fileUUID),
+						linkName(linkName),
+						id(id),
+						metadata(metadata),
+						fileStream(std::move(fileStream)),
+						outStream(std::move(outStream)),
+						size(0)
+					{
+					}
+
+					~FileHandle()
+					{
+						if (isFileOpen())
+						{
+							outStream.reset();
+							fileStream->close();
+						}
+					}
+
+					bool isFileOpen()
+					{
+						return fileStream->is_open();
+					}
+
+					void writeData(const std::vector<uint8_t>& bin)
+					{
+						if (!isFileOpen())
+						{
+							throw repo::lib::RepoException("Writing to file " + linkName + " attempted but file stream closed unexpectedly.");
+						}
+
+						outStream->write((char*)bin.data(), bin.size());
+						outStream->flush();
+
+						size += bin.size();
+					}
+
+					std::string getLinkName()
+					{
+						return linkName;
+					}
+
+					repo::lib::RepoUUID getFileUUID()
+					{
+						return fileUUID;
+					}
+
+					std::string getDatabaseName()
+					{
+						return databaseName;
+					}
+
+					std::string getCollectionNamePrefix()
+					{
+						return collectionNamePrefix;
+					}
+
+					IdType getId()
+					{
+						return id;
+					}
+
+					size_t getSize()
+					{
+						return size;
+					}
+
+					repo::core::model::RepoRef::Metadata getMetadata()
+					{
+						return metadata;
+					}
+
+					std::ofstream* getFileStream()
+					{
+						return fileStream.get();
+					}
+
+					void closeStreams()
+					{
+						// Close out stream first. This is important if gzip compression is used.
+						outStream.reset();
+
+						// Close the file stream
+						fileStream->close();
+					}
+
+				private:
+
+					repo::lib::RepoUUID fileUUID;
+					std::string linkName;
+					IdType id;
+					size_t size;
+					repo::core::model::RepoRef::Metadata metadata;
+
+					std::string databaseName;
+					std::string collectionNamePrefix;
+
+					std::unique_ptr<std::ofstream> fileStream;
+					std::unique_ptr<boost::iostreams::filtering_stream<boost::iostreams::output>> outStream;
+				};
+
 				// This class is considered thread-safe.
 				class FileManager
 				{
 				public:
-
 					/**
 					 * Default constructor
 					 */
@@ -126,6 +244,20 @@ namespace repo {
 					*/
 					std::string getFilePath(
 						const repo::core::model::RepoRef& refNode
+					);
+
+					template<typename IdType>
+					std::unique_ptr<FileHandle<IdType>> requestFileHandle(
+						const std::string& databaseName,
+						const std::string& collectionNamePrefix,
+						const IdType& id,
+						Metadata metadata,
+						const Encoding& encoding = Encoding::None
+					);
+
+					template<typename IdType>
+					bool turnInFileHandleForUpload(
+						std::unique_ptr<FileHandle<IdType>> fileHandle
 					);
 
 				private:

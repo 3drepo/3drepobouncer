@@ -317,6 +317,95 @@ std::string FileManager::getFilePath(
 	return fsHandler->getFilePath(ref.getRefLink());
 }
 
+template<typename IdType>
+std::unique_ptr<FileHandle<IdType>> FileManager::requestFileHandle(
+	const std::string& databaseName,
+	const std::string& collectionNamePrefix,
+	const IdType& id,
+	Metadata metadata,
+	const Encoding& encoding)
+{
+	// Create file ID that doubles as file name
+	auto fileUUID = repo::lib::RepoUUID::createUUID();
+
+	// Get file stream
+	std::string linkName;
+	auto fileStream = fsHandler->uploadFileStream(databaseName, collectionNamePrefix, fileUUID.toString(), linkName);
+
+	// Create optional filter for gzip compression
+	auto outStream = std::make_unique<boost::iostreams::filtering_stream<boost::iostreams::output>>();
+	switch (encoding)
+	{
+		case FileManager::Encoding::Gzip:
+		{
+			outStream->push(boost::iostreams::gzip_compressor());
+			metadata["encoding"] = std::string("gzip");
+		}
+		break;
+	}
+	outStream->push(*fileStream);
+
+	// Create File Handle object
+	return std::make_unique<FileHandle<IdType>>(
+		databaseName,
+		collectionNamePrefix,
+		fileUUID,
+		linkName,
+		id,
+		metadata,
+		std::move(fileStream),
+		std::move(outStream)
+	);
+}
+
+template<typename IdType>
+bool FileManager::turnInFileHandleForUpload(std::unique_ptr<FileHandle<IdType>> fileHandle)
+{
+	if (!fileHandle->isFileOpen())
+	{
+		throw repo::lib::RepoException("FileManager::tunrInFileHandleForUpload: File was already closed");
+	}
+
+	fileHandle->closeStreams();
+
+
+	// Upsert the document
+	auto linkName = fileHandle->getLinkName();
+	auto size = fileHandle->getSize();
+	bool success = false;
+	if (!linkName.empty())
+	{
+		auto db = fileHandle->getDatabaseName();
+		auto col = fileHandle->getCollectionNamePrefix();
+
+		if (size > 0)
+		{
+			// ... Upsert here
+			success = upsertFileRef(
+				db,
+				col,
+				fileHandle->getId(),
+				linkName,
+				fsHandler->getType(),
+				size,
+				fileHandle->getMetadata()
+			);
+		}
+		else
+		{
+			// If there was no data, we delete the empty file again
+			fsHandler->deleteFile(
+				db,
+				col,
+				linkName
+			);
+			repoWarning << "Valid file handle closed, but no data was written to it.";
+		}
+	}
+
+	return success;
+}
+
 bool FileManager::dropFileRef(
 	const repo::core::model::RepoBSON            bson,
 	const std::string                            &databaseName,
@@ -398,3 +487,23 @@ template bool FileManager::uploadFileAndCommit<repo::lib::RepoUUID>(
 	const std::vector<uint8_t>&,
 	const Metadata&,
 	const Encoding&);
+
+template std::unique_ptr<FileHandle<std::string>> FileManager::requestFileHandle<std::string>(
+	const std::string&,
+	const std::string&,
+	const std::string&,
+	Metadata,
+	const Encoding&);
+
+template std::unique_ptr<FileHandle<repo::lib::RepoUUID>> FileManager::requestFileHandle<repo::lib::RepoUUID>(
+	const std::string&,
+	const std::string&,
+	const repo::lib::RepoUUID&,
+	Metadata,
+	const Encoding&);
+
+template bool FileManager::turnInFileHandleForUpload(
+	std::unique_ptr<FileHandle<std::string>>);
+
+template bool FileManager::turnInFileHandleForUpload(
+	std::unique_ptr<FileHandle<repo::lib::RepoUUID>>);

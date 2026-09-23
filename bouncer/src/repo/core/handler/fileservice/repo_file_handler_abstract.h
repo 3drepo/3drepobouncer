@@ -83,6 +83,13 @@ namespace repo {
 						const std::vector<uint8_t> &bin
 					) = 0;
 
+					virtual std::unique_ptr<std::ofstream> uploadFileStream(
+						const std::string& database,
+						const std::string& collection,
+						const std::string& fileName,
+						std::string &linkName
+					) = 0;
+
 					virtual repo::core::model::RepoRef::RefType getType() const = 0;
 
 				protected:

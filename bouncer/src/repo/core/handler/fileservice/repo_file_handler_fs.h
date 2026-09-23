@@ -94,6 +94,13 @@ namespace repo {
 						const std::string& link
 					);
 
+					std::unique_ptr<std::ofstream> uploadFileStream(
+						const std::string& database,
+						const std::string& collection,
+						const std::string& fileName,
+						std::string& linkName
+					);
+
 				private:
 					/*
 					 *	=================================== Private Fields ========================================

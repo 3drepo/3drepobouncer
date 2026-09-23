@@ -100,6 +100,32 @@ std::string FSFileHandler::getFilePath(
 	return fullPath.string();
 }
 
+std::unique_ptr<std::ofstream> FSFileHandler::uploadFileStream(
+	const std::string& database,
+	const std::string& collection,
+	const std::string& keyName,
+	std::string& linkName)
+{
+	auto hierachy = level > 0 ? determineHierachy(keyName) : std::vector<std::string>();
+
+	auto path = dirPath;
+	std::stringstream ss;
+	for (const auto& levelName : hierachy) {
+		path /= levelName;
+		ss << levelName << "/";
+		if (!repo::lib::doesDirExist(path)) {
+			std::filesystem::create_directories(path);
+		}
+	}
+
+	path /= keyName;
+	ss << keyName;
+
+	linkName = ss.str();
+
+	return	std::make_unique<std::ofstream>(path.string(), std::ios::out | std::ios::binary);
+}
+
 std::vector<std::string> FSFileHandler::determineHierachy(
 	const std::string &name
 ) const {
