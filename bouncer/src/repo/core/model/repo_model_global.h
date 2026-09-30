@@ -96,20 +96,21 @@
 #define REPO_COMMAND_Q              "q"
 #define REPO_COMMAND_U              "u"
 
-#define REPO_COLLECTION_HISTORY         "history"
-#define REPO_COLLECTION_ISSUES          "issues"
-#define REPO_COLLECTION_RAW             "history"
-#define REPO_COLLECTION_SCENE           "scene"
-#define REPO_COLLECTION_STASH_REPO      "stash.3drepo"
-#define REPO_COLLECTION_STASH_SRC       "stash.src"	// This collection is no longer used but may still exist in the database
-#define REPO_COLLECTION_STASH_GLTF      "stash.gltf" // This collection is no longer used but may still exist in the database
-#define REPO_COLLECTION_STASH_X3D       "stash.x3d" // This collection is no longer used but may still exist in the database
-#define REPO_COLLECTION_STASH_JSON      "stash.json_mpc"
-#define REPO_COLLECTION_STASH_UNITY     "stash.unity3d" // This collection is no longer used but may still exist in the database
-#define REPO_COLLECTION_STASH_BUNDLE    "stash.repobundles"
-#define REPO_COLLECTION_EXT_REF         "ref"
-#define REPO_COLLECTION_SEQUENCE        "sequences"
-#define REPO_COLLECTION_TASK            "activities"
+#define REPO_COLLECTION_HISTORY           "history"
+#define REPO_COLLECTION_ISSUES            "issues"
+#define REPO_COLLECTION_RAW               "history"
+#define REPO_COLLECTION_SCENE             "scene"
+#define REPO_COLLECTION_STASH_REPO        "stash.3drepo"
+#define REPO_COLLECTION_STASH_SRC         "stash.src"	// This collection is no longer used but may still exist in the database
+#define REPO_COLLECTION_STASH_GLTF        "stash.gltf" // This collection is no longer used but may still exist in the database
+#define REPO_COLLECTION_STASH_X3D         "stash.x3d" // This collection is no longer used but may still exist in the database
+#define REPO_COLLECTION_STASH_JSON        "stash.json_mpc"
+#define REPO_COLLECTION_STASH_UNITY       "stash.unity3d" // This collection is no longer used but may still exist in the database
+#define REPO_COLLECTION_STASH_BUNDLE      "stash.repobundles"
+#define REPO_COLLECTION_STASH_POINTCLOUDS "stash.pointclouds"
+#define REPO_COLLECTION_EXT_REF           "ref"
+#define REPO_COLLECTION_SEQUENCE          "sequences"
+#define REPO_COLLECTION_TASK              "activities"
 #define REPO_COLLECTION_DRAWINGS		"drawings.history"
 #define REPO_COLLECTION_CALIBRATIONS	"drawings.calibrations"
 
