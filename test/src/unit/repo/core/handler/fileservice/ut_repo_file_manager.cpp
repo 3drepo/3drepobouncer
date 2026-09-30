@@ -151,7 +151,7 @@ TEST(FileManager, FileHandle)
 		handle->writeData(expected1);
 
 		// Write data second time
-		handle->writeData(expected2);
+		handle->writeData(expected2.data(), expected2.size());
 
 		// Turn in the handle
 		bool success = manager->turnInFileHandleForUpload(std::move(handle));
@@ -185,7 +185,7 @@ TEST(FileManager, FileHandle)
 		handle->writeData(expected1);
 
 		// Write data second time
-		handle->writeData(expected2);
+		handle->writeData(expected2.data(), expected2.size());
 
 		// Turn in the handle
 		bool success = manager->turnInFileHandleForUpload(std::move(handle));
