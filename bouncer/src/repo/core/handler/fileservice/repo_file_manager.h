@@ -23,7 +23,6 @@
 #include "repo/core/model/bson/repo_bson_ref.h"
 #include "repo/lib/repo_config.h"
 #include <boost/iostreams/filtering_stream.hpp>
-#include "log/repo_log.h"
 
 namespace repo {
 	namespace core {
