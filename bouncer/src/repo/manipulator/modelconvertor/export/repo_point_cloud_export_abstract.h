@@ -16,7 +16,7 @@
 */
 
 /**
-* Abstract Point Cloud convertor(Export)
+* Abstract Point Cloud converter (Export)
 */
 
 #pragma once
