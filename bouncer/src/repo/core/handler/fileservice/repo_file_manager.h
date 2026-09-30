@@ -83,6 +83,19 @@ namespace repo {
 						size += bin.size();
 					}
 
+					void writeData(const uint8_t* start, const size_t length)
+					{
+						if (!isFileOpen())
+						{
+							throw repo::lib::RepoException("Writing to file " + linkName + " attempted but file stream closed unexpectedly.");
+						}
+
+						outStream->write((char*)start, length);
+						outStream->flush();
+
+						size += length;
+					}
+
 					std::string getLinkName()
 					{
 						return linkName;
