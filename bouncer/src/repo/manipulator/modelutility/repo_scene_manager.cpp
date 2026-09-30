@@ -25,6 +25,7 @@
 
 #ifdef REPO_ASSET_GENERATOR_SUPPORT
 #include <submodules/asset_generator/src/repo_model_export_repobundle.h>
+#include <submodules/asset_generator/src/repo_model_export_point_cloud.h>
 #endif
 
 using namespace repo::lib;
@@ -276,15 +277,18 @@ bool SceneManager::generateWebViewBuffers(
 
 			switch (exType)
 			{
-				case repo::manipulator::modelconvertor::ExportType::REPO:
+			case repo::manipulator::modelconvertor::ExportType::REPO:
 #ifdef REPO_ASSET_GENERATOR_SUPPORT
-					// TODO FT: Implement this exporter
-					//exporter = std::make_unique < repo::manipulator::modelconvertor<RepoPointCloudExport>(
-					//	handler,
-					//	database,
-					//	collection,
-					//	revId,
-					//	worldOffset);
+			{
+				auto cloudBounds = scene->getSceneBoundingBox();
+				exporter = std::make_unique <repo::manipulator::modelconvertor::RepoPointCloudExport>(
+					handler,
+					database,
+					collection,
+					revId,
+					worldOffset,
+					cloudBounds);
+			}
 #else
 					repoError << "Bouncer must be built with REPO_ASSET_GENERATOR_SUPPORT ON in order to generate Repo Bundles.";
 					return false;
