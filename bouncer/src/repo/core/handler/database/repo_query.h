@@ -128,7 +128,11 @@ namespace repo {
 					class REPO_API_EXPORT Or
 					{
 					public:
-						template<typename ...Arguments>
+						// The enable_if term prevents this constructor from being called with a
+						// single argument, which would make no sense for Or, and makes it more
+						// likely that mistakes invoking one of the other variants will be caught
+						// at compile time instead of runtime.
+						template<typename ...Arguments, std::enable_if_t<(sizeof ...(Arguments) > 1), int> = 0 >
 						Or(Arguments... anyOf) {
 							append(anyOf...); // Will call one of the two overloads depending on the number of Arguments
 						}

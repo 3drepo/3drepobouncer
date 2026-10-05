@@ -122,10 +122,41 @@ jobs:
       - name: Copy GTest Parallel Runner to workspace
         run: mv ./gtp/* .
 
-      - name: Run Tests
+      - name: Run Bouncer Tests
         env:
           LD_LIBRARY_PATH: ${{github.WORKSPACE}}/3drepobouncer
         run: ./gtest-parallel ./3drepobouncer/3drepobouncerTest --gtest_filter=-Geometry.*
+
+      # The following actions are concerned with bouncer worker. These are
+      # independent of the bouncer tests, but are run in the same job as they
+      # share many expensive dependencies, such as a built bouncer, the mongo
+      # db (restored) and the tests repo contents.
+
+      - name: Create Shared Directories
+        run: mkdir -p $REPO_MODEL_PATH/queue $REPO_MODEL_PATH/log
+
+      - name: Start RabbitMQ
+        uses: Namoshek/rabbitmq-github-action@v1.2.0
+        with:
+          ports: 5672:5672
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: yarn
+          cache-dependency-path: tools/bouncer_worker/yarn.lock
+
+      - name: Install Bouncer Worker Dependencies
+        working-directory: ./tools/bouncer_worker
+        run: yarn install --frozen-lockfile
+
+      - name: Run Bouncer Worker Tests
+        env:
+          LD_LIBRARY_PATH: ${{github.WORKSPACE}}/3drepobouncer
+          BOUNCER_CONFIG: ${{github.WORKSPACE}}/tests/cplusplus/bouncer/data/models/bouncerWorker.json
+        working-directory: ./tools/bouncer_worker
+        run: yarn test
 
   check-license-support:
     runs-on: ubuntu-24.04    

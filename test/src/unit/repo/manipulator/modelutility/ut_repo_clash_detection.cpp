@@ -3881,7 +3881,7 @@ void importLinkFile(
 
 		// Handle
 		pos = line.find(del);
-		auto handle = "[" + line.substr(0, pos) + "]";
+		auto handle = line.substr(0, pos);
 		line.erase(0, pos + 1);
 
 		// ClashSet Name

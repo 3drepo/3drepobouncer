@@ -70,6 +70,10 @@ namespace repo {
 
 				int compare(double d1, double d2);
 
+				/* Compares two points for equality, one axis at a time, using the
+				same tolerance as compare(). */
+				bool samePoint(const repo::lib::RepoVector3D64& a, const repo::lib::RepoVector3D64& b);
+
 				repo::lib::RepoVector3D64 calcNormal(repo::lib::RepoVector3D64 p1, repo::lib::RepoVector3D64 p2, repo::lib::RepoVector3D64 p3);
 
 				repo::lib::RepoVector3D64 toRepoVector(const OdGePoint3d& p);

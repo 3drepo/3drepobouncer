@@ -16,6 +16,7 @@
 */
 #include <regex>
 #include "repo_file_manager.h"
+#include "repo/core/handler/database/repo_query.h"
 #include "repo/core/handler/repo_database_handler_abstract.h"
 #include "repo/lib/repo_exception.h"
 #include "repo/core/model/repo_model_global.h"
@@ -28,6 +29,7 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/interprocess/streams/bufferstream.hpp>
 #include <istream>
+#include <unordered_set>
 
 using namespace repo::core::handler::fileservice;
 
@@ -132,51 +134,46 @@ bool FileManager::uploadFileAndCommit(
 }
 
 bool FileManager::deleteFileAndRef(
-	const std::string                            &databaseName,
-	const std::string                            &collectionNamePrefix,
-	const std::string                            &fileName)
+	const std::string& databaseName,
+	const std::string& collectionNamePrefix,
+	const std::set<std::string>& names
+)
 {
-	bool success = true;
+	using namespace repo::core::handler::database::query;
 
-	repo::core::model::RepoBSON node = getDbHandler()->findOneByUniqueID(
+	if (names.empty()) {
+		return true;
+	}
+
+	auto handler = getDbHandler();
+
+	auto cursor = handler->findCursorByCriteria(
 		databaseName,
 		collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
-		fileName
+		Eq(REPO_LABEL_ID, names)
 	);
 
-	if (node.isEmpty())
-	{
-		repoTrace << "Failed: cannot find file ref "
-			<< fileName << " from "
-			<< databaseName << "/"
-			<< collectionNamePrefix << "." << REPO_COLLECTION_EXT_REF;
-		success = false;
-	}
-	else
-	{
-		repo::core::model::RepoRefT<std::string> ref(node); // The argument is a string, so we are only considering this type of ref node.
-		const auto keyName = ref.getRefLink();
-		const auto type = ref.getType(); //Should return enum
-
-		std::shared_ptr<AbstractFileHandler> handler = nullptr;
-		switch (type) {
+	std::unordered_set<std::string> fsHandlerLinkNames;
+	for (auto& ref : *cursor) {
+		repo::core::model::RepoRefT<std::string> node(ref); // The argument is a string, so we are only considering this type of ref node.
+		switch (node.getType()) {
 		case repo::core::model::RepoRef::RefType::FS:
-			handler = fsHandler;
+			fsHandlerLinkNames.insert(node.getRefLink());
 			break;
 		}
-
-		if (handler) {
-			success = handler->deleteFile(databaseName, collectionNamePrefix, keyName) &&
-				dropFileRef(
-					ref,
-					databaseName,
-					collectionNamePrefix);
-		}
-		else {
-			repoError << "Trying to delete a file from " << repo::core::model::RepoRef::convertTypeAsString(type) << " but connection to this service is not configured.";
-			success = false;
-		}
 	}
+
+	bool success = fsHandlerLinkNames.size();
+
+	for (auto& name : fsHandlerLinkNames) {
+		success &= fsHandler->deleteFile(databaseName, collectionNamePrefix, name);
+	}
+
+	handler->dropDocuments(
+		databaseName,
+		collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
+		Eq(REPO_LABEL_ID, names)
+	);
 
 	return success;
 }

@@ -440,6 +440,29 @@ void MongoDatabaseHandler::dropDocument(
 	}
 }
 
+void MongoDatabaseHandler::dropDocuments(
+	const std::string& database,
+	const std::string& collection,
+	const database::query::RepoQuery& criteria)
+{
+	try
+	{
+		if (database.empty() || collection.empty())
+		{
+			return;
+		}
+		auto client = clientPool->acquire();
+		auto db = client->database(database);
+		auto col = db.collection(collection);
+		repo::core::model::RepoBSON criteriaDoc = makeQueryFilterDocument(criteria);
+		col.delete_many(criteriaDoc.view());
+	}
+	catch (...)
+	{
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "dropDocument", database, collection));
+	}
+}
+
 std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria(
 	const std::string& database,
 	const std::string& collection,
