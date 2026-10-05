@@ -59,11 +59,32 @@ bool DataProcessorDwg::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		entityLayer = { "GeoPositionMarker", "Geo Position Marker" };
 		ctx = collector->makeNewDrawContext();
 	}
-	
+
+	// AcDbLayout describes the Paper Space layout of a drawing. It is also not
+	// an entity. This importer does not use the Layouts - it is meant to import
+	// everything in Model Space only - so we ignore Layouts and anything
+	// underneath them.
+
+	auto pLayout = dynamic_cast<const OdDbLayout*>(pDrawable);
+	if (pLayout)
+	{
+		return true;
+	}
+
 	OdDbEntityPtr pEntity = OdDbEntity::cast(pDrawable);
 	if (!pEntity.isNull())
 	{
+		// This should catch both basic entities and block *references* that
+		// exist only under Paper Space, so we don't get to the point of
+		// importing the block's geometry unless it exists in Model Space.
+
+		if (pEntity->blockId() == pEntity->database()->getPaperSpaceId())
+		{
+			return true;
+		}
+
 		activeProxyInfo = DwgProxyUtils::getProxyInfo(pEntity);
+
 		// As soon as we get an actual entity, cache the active Layout Id. This
 		// can be used to determine when we are back at the top level (out of a
 		// block).
