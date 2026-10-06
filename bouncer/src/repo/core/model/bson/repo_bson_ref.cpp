@@ -22,12 +22,15 @@
 using namespace repo::core::model;
 
 const std::string RepoRef::REPO_REF_TYPE_FS = "fs";
+const std::string RepoRef::REPO_REF_TYPE_EXTFS = "externalFS";
 const std::string RepoRef::REPO_REF_TYPE_UNKNOWN = "unknown";
 
 std::string RepoRef::convertTypeAsString(const RefType &type) {
 	switch (type) {
 	case RefType::FS:
 		return REPO_REF_TYPE_FS;
+	case RefType::EXTFS:
+		return REPO_REF_TYPE_EXTFS;
 	default:
 		return REPO_REF_TYPE_UNKNOWN;
 	}
@@ -59,6 +62,10 @@ RepoRef::RepoRef(RepoBSON bson)
 	{
 		type = RefType::FS;
 	}
+	else if (typeStr == REPO_REF_TYPE_EXTFS)
+	{
+		type = RefType::EXTFS;
+	}
 }
 
 RepoRef::operator RepoBSON() const
@@ -70,7 +77,17 @@ RepoRef::operator RepoBSON() const
 
 void RepoRef::serialise(RepoBSONBuilder& builder) const
 {
-	builder.append(REPO_REF_LABEL_TYPE, RepoRef::convertTypeAsString(type));
+	switch (type)
+	{
+	case RefType::FS:
+		builder.append(REPO_REF_LABEL_TYPE, RepoRef::convertTypeAsString(type));
+		break;
+	case RefType::EXTFS:
+		throw repo::lib::RepoBSONException("Cannot serialise an ExtFs ref node - these are for read-only files");
+	case RefType::UNKNOWN:
+		throw repo::lib::RepoBSONException("Cannot serialise RepoRef with unknown type");
+	}
+
 	builder.append(REPO_REF_LABEL_LINK, link);
 	builder.append(REPO_REF_LABEL_SIZE, (int64_t)size);
 	if (!name.empty())

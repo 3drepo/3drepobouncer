@@ -44,6 +44,7 @@ namespace repo {
 			{
 			public:
 				const static std::string REPO_REF_TYPE_FS;
+				const static std::string REPO_REF_TYPE_EXTFS;
 				const static std::string REPO_REF_TYPE_GRIDFS;
 				const static std::string REPO_REF_TYPE_UNKNOWN;
 
@@ -51,6 +52,7 @@ namespace repo {
 
 				enum class RefType {
 					FS,
+					EXTFS,
 					UNKNOWN,
 				};
 
