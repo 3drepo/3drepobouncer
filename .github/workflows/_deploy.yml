@@ -93,11 +93,14 @@ jobs:
           ksm --ini-file "$HOME/.keeper/keeper.ini" interpolate --validate \
             "$values_dir/values.yaml" > "$values_file"
 
+          # Pin client-side apply (not --server-side auto): deterministic across envs and
+          # avoids the KEDA-owned ScaledJob field (jobTargetRef...volumes) SSA conflict.
           helm upgrade --install \
             --version ${{ env.HELM_CHART_VERSION }} \
             www-bouncer \
             oci://${{ secrets.REGISTRY_LOGIN_SERVER }}/helm/bouncer \
             --namespace default \
+            --server-side=false \
             -f "$values_file" \
             --set image.tag=${{ env.IMAGE_TAG }} \
             --set rollingupdate.enabled=true \
