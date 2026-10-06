@@ -1,4 +1,4 @@
-name: Deploy Bouncer to Staging
+name: Deploy Bouncer
 
 on:
   workflow_call:
@@ -11,70 +11,52 @@ on:
         description: "Commit SHA to annotate pods with."
         required: true
         type: string
+      environment:
+        description: "Target environment: staging | qa | dev."
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: deploy-staging
+  group: deploy-${{ inputs.environment }}
   cancel-in-progress: false
 
 # Update HELM_CHART_VERSION when the bouncer chart is bumped in DevOps.
-# IMAGE_TAG is passed by the build workflow
 
 env:
   HELM_CHART_VERSION: '5.23.0'
   IMAGE_TAG: ${{ inputs.image_tag }}
   BUILD_ID: ${{ inputs.build_id }}
+  ENVIRONMENT: ${{ inputs.environment }}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # ---------------------------------------------------------------
-      # STEP 1: Checkout DevOps repo (sparse) for staging values file
-      # ---------------------------------------------------------------
       - name: Checkout DevOps repo
         uses: actions/checkout@v4
         with:
           repository: 3drepo/DevOps
           token: ${{ secrets.PROJ_MANAGEMENT_TOKEN }}
-          sparse-checkout: deployments/asite-stg/helm/bouncer
+          sparse-checkout: deployments/asite-${{ inputs.environment == 'staging' && 'stg' || inputs.environment }}/helm/bouncer
           sparse-checkout-cone-mode: false
 
-      # ---------------------------------------------------------------
-      # STEP 2: Setup Helm
-      # ---------------------------------------------------------------
       - name: Setup Helm
         uses: azure/setup-helm@v4
         with:
           version: '4.0.1'
 
-      # ---------------------------------------------------------------
-      # STEP 3: Set Kubernetes context
-      # ---------------------------------------------------------------
-      - name: Set Kubernetes context
-        uses: azure/k8s-set-context@v4
-        with:
-          method: kubeconfig
-          kubeconfig: ${{ secrets.KUBE_CONFIG_STAGING }}
-
-      # ---------------------------------------------------------------
-      # STEP 4: Login to ACR for Helm OCI chart pull
-      # ---------------------------------------------------------------
       - name: Login to ACR
         run: |
           echo "${{ secrets.REGISTRY_TOKEN }}" | helm registry login "${{ secrets.REGISTRY_LOGIN_SERVER }}" \
             -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
 
-      # ---------------------------------------------------------------
-      # STEP 5: Set up Keeper Secrets Manager CLI
-      # ---------------------------------------------------------------
       - name: Set up Keeper Secrets Manager CLI
         run: |
           set -euo pipefail
-          # Install pipx if the runner lacks it, then install the pinned KSM CLI.
           if ! command -v pipx >/dev/null 2>&1; then
             python3 -m pip install --user --upgrade pipx
             export PATH="$HOME/.local/bin:$PATH"
@@ -82,29 +64,34 @@ jobs:
           pipx install --force "keeper-secrets-manager-cli==1.5.0"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      # ---------------------------------------------------------------
-      # STEP 6: Deploy Helm chart (values interpolated from Keeper)
-      # ---------------------------------------------------------------
-      - name: Deploy Helm chart
+      - name: Deploy Helm chart (values + kubeconfig from Keeper)
         run: |
           set -euo pipefail
 
-          # Resolve keeper:// refs to a temp file within this step; the trap wipes both
-          # the ini and the resolved-values file on exit (success or failure).
           values_file="$(mktemp)"
-          trap 'rm -f "$values_file" "$HOME/.keeper/keeper.ini"' EXIT
+          kubeconfig_file="$(mktemp)"
+          trap 'rm -f "$values_file" "$kubeconfig_file" "$HOME/.keeper/keeper.ini"' EXIT
 
-          umask 077                                    # ini created 0600, no chmod race
+          umask 077
           mkdir -p "$HOME/.keeper"
           printf '%s' "${{ secrets.KSM_KEEPER_INIT_FILE_B64 }}" | base64 -d > "$HOME/.keeper/keeper.ini"
-          if [[ ! -s "$HOME/.keeper/keeper.ini" ]]; then   # empty secret -> empty ini; fail clearly
+          if [[ ! -s "$HOME/.keeper/keeper.ini" ]]; then
             echo "KSM_KEEPER_INIT_FILE_B64 secret is missing or empty" >&2
             exit 1
           fi
 
-          # Temp file (not process substitution) so a ksm failure aborts before helm runs.
+          # Target cluster kubeconfig from KSM (per environment), not a GitHub secret.
+          case "$ENVIRONMENT" in
+            qa)  kcfg_uid=cB6kUbMbgSovRGpQ10lQ5w ;;
+            dev) kcfg_uid=C93As_06lV79XkjXeKoMQQ ;;
+            *)   kcfg_uid=d3-r_U6ARnrEJwIZm3P9LQ ;;
+          esac
+          ksm --ini-file "$HOME/.keeper/keeper.ini" secret notation "$kcfg_uid/field/password" | base64 -d > "$kubeconfig_file"
+          export KUBECONFIG="$kubeconfig_file"
+
+          values_dir="deployments/asite-${ENVIRONMENT/staging/stg}/helm/bouncer"
           ksm --ini-file "$HOME/.keeper/keeper.ini" interpolate --validate \
-            deployments/asite-stg/helm/bouncer/values.yaml > "$values_file"
+            "$values_dir/values.yaml" > "$values_file"
 
           helm upgrade --install \
             --version ${{ env.HELM_CHART_VERSION }} \
@@ -114,13 +101,8 @@ jobs:
             -f "$values_file" \
             --set image.tag=${{ env.IMAGE_TAG }} \
             --set rollingupdate.enabled=true \
-            --set-string podAnnotations.buildId=${{ env.BUILD_ID }} \
-            --wait \
-            --rollback-on-failure
+            --set-string podAnnotations.buildId=${{ env.BUILD_ID }}
 
-      # ---------------------------------------------------------------
-      # STEP 7: Cleanup
-      # ---------------------------------------------------------------
       - name: Logout from ACR
         if: always()
         run: helm registry logout "${{ secrets.REGISTRY_LOGIN_SERVER }}"

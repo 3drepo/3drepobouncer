@@ -145,4 +145,29 @@ jobs:
     with:
       image_tag: ${{ needs.pre-build.outputs.version }}
       build_id: ${{ github.sha }}
+      environment: staging
+    secrets: inherit
+
+  deploy-qa:
+    needs:
+      - pre-build
+      - build-push
+    if: github.event_name == 'push' && github.ref == 'refs/tags/qa_deploy'
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      image_tag: ${{ needs.pre-build.outputs.version }}
+      build_id: ${{ github.sha }}
+      environment: qa
+    secrets: inherit
+
+  deploy-dev:
+    needs:
+      - pre-build
+      - build-push
+    if: github.event_name == 'push' && github.ref == 'refs/tags/dev_deploy'
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      image_tag: ${{ needs.pre-build.outputs.version }}
+      build_id: ${{ github.sha }}
+      environment: dev
     secrets: inherit
