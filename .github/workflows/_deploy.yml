@@ -95,6 +95,13 @@ jobs:
           ksm --ini-file "$HOME/.keeper/keeper.ini" interpolate --validate \
             "$values_dir/values.yaml" > "$values_file"
 
+          # staging keeps its original --wait/--rollback safety; qa/dev omit it because
+          # helm --wait blocks on KEDA ScaledJob readiness (ISSUE #918).
+          wait_args=()
+          if [[ "$ENVIRONMENT" == "staging" ]]; then
+            wait_args+=(--wait --rollback-on-failure)
+          fi
+
           # Pin client-side apply (not --server-side auto): deterministic across envs and
           # avoids the KEDA-owned ScaledJob field (jobTargetRef...volumes) SSA conflict.
           helm upgrade --install \
@@ -106,7 +113,8 @@ jobs:
             -f "$values_file" \
             --set image.tag=${{ env.IMAGE_TAG }} \
             --set rollingupdate.enabled=true \
-            --set-string podAnnotations.buildId=${{ env.BUILD_ID }}
+            --set-string podAnnotations.buildId=${{ env.BUILD_ID }} \
+            "${wait_args[@]}"
 
       - name: Logout from ACR
         if: always()
