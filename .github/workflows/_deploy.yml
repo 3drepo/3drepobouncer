@@ -41,13 +41,20 @@ jobs:
         with:
           repository: 3drepo/DevOps
           token: ${{ secrets.PROJ_MANAGEMENT_TOKEN }}
-          sparse-checkout: deployments/asite-${{ inputs.environment == 'staging' && 'stg' || inputs.environment }}/helm/bouncer
+          sparse-checkout: |
+            deployments/asite-${{ inputs.environment == 'staging' && 'stg' || inputs.environment }}/helm/bouncer
+            tools/post-deployment
           sparse-checkout-cone-mode: false
 
       - name: Setup Helm
         uses: azure/setup-helm@v4
         with:
           version: '4.0.1'
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.34.2'
 
       - name: Login to ACR
         run: |
@@ -115,6 +122,20 @@ jobs:
             --set rollingupdate.enabled=true \
             --set-string podAnnotations.buildId=${{ env.BUILD_ID }} \
             "${wait_args[@]}"
+
+          # Post-deploy health check; flags the job if the release is unhealthy.
+          # Retry so KEDA ScaledJobs have time to reach Ready after apply.
+          kctx="$(kubectl config current-context)"
+          for attempt in 1 2 3 4; do
+            if python3 tools/post-deployment/postDeployCheck.py \
+                 --context "$kctx" --release www-bouncer --expect-tag "$IMAGE_TAG" --no-logs --no-color; then
+              echo "post-deploy check passed"; exit 0
+            fi
+            echo "post-deploy check attempt $attempt failed; retrying in 45s..."
+            sleep 45
+          done
+          echo "::error::post-deploy check failed for www-bouncer ($ENVIRONMENT)"
+          exit 1
 
       - name: Logout from ACR
         if: always()
