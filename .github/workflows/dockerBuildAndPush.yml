@@ -171,16 +171,3 @@ jobs:
       build_id: ${{ github.sha }}
       environment: dev
     secrets: inherit
-
-  # TEMP: pre-merge staging test via tag, remove before merge.
-  deploy-staging-test:
-    needs:
-      - pre-build
-      - build-push
-    if: github.event_name == 'push' && github.ref == 'refs/tags/staging_deploy'
-    uses: ./.github/workflows/_deploy.yml
-    with:
-      image_tag: ${{ needs.pre-build.outputs.version }}
-      build_id: ${{ github.sha }}
-      environment: staging
-    secrets: inherit
