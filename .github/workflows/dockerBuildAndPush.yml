@@ -20,7 +20,7 @@ concurrency:
 jobs:
   pre-build:
     if: |
-      github.event_name == 'push' ||
+      (github.event_name == 'push' && github.event.deleted != true) ||
       (
         github.event_name == 'issue_comment' &&
         startsWith(github.event.comment.body, '/build-bouncer') &&
@@ -152,7 +152,7 @@ jobs:
     needs:
       - pre-build
       - build-push
-    if: github.event_name == 'push' && github.ref == 'refs/tags/qa_deploy'
+    if: github.event_name == 'push' && github.event.deleted != true && github.ref == 'refs/tags/qa_deploy'
     uses: ./.github/workflows/_deploy.yml
     with:
       image_tag: ${{ needs.pre-build.outputs.version }}
@@ -164,7 +164,7 @@ jobs:
     needs:
       - pre-build
       - build-push
-    if: github.event_name == 'push' && github.ref == 'refs/tags/dev_deploy'
+    if: github.event_name == 'push' && github.event.deleted != true && github.ref == 'refs/tags/dev_deploy'
     uses: ./.github/workflows/_deploy.yml
     with:
       image_tag: ${{ needs.pre-build.outputs.version }}
