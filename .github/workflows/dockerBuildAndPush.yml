@@ -87,7 +87,7 @@ jobs:
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/$REPO_FULL_NAME/issues/$PR_NUMBER/comments \
-            -d '{"body":"Build triggered for `/build-bouncer` by @'${{ github.actor }}' — workflow is running..."}'
+            -d '{"body":"Build triggered for `/build-bouncer` by @'${{ github.actor }}' - workflow is running..."}'
 
       # ---------------------------------------------------------------
       # STEP 3: Set build metadata

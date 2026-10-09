@@ -126,7 +126,7 @@ jobs:
           # Post-deploy health check; flags the job if the release is unhealthy.
           # Retry so KEDA ScaledJobs have time to reach Ready after apply.
           # Rollouts always take a bit (spot nodes spin up, KEDA ScaledJobs settle), so wait
-          # first, then poll quietly — only surface the check output on success or final failure.
+          # first, then poll quietly, only surface the check output on success or final failure.
           kctx="$(kubectl config current-context)"
           chk="tools/post-deployment/postDeployCheck.py"
           attempts=10
