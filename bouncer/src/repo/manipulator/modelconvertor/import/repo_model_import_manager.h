@@ -34,10 +34,8 @@ namespace repo {
 				ModelImportManager() {}
 
 				repo::core::model::RepoScene* ImportFromFile(
-					const std::string &file,
 					const repo::manipulator::modelconvertor::ModelImportConfig &config,
-					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-					uint8_t &error) const;
+					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler) const;
 
 			private:
 				std::shared_ptr<AbstractModelImport> chooseModelConvertor(
@@ -55,6 +53,13 @@ namespace repo {
 					const std::string &project,
 					const repo::lib::RepoUUID &revisionId,
 					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler) const;
+
+				repo::core::model::ModelRevisionNode fetchRevision(
+					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+					const std::string& teamspace,
+					const std::string& container,
+					const repo::lib::RepoUUID& revisionId
+				) const;
 			};
 		} //namespace modelconvertor
 	} //namespace manipulator

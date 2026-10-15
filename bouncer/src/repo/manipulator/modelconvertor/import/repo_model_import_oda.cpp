@@ -77,11 +77,9 @@ repo::core::model::RepoScene* OdaModelImport::importModel(std::string filePath, 
 
 	repo::core::model::RepoScene* scene = new repo::core::model::RepoScene(
 		settings.getDatabaseName(),
-		settings.getProjectName()
+		settings.getProjectName(),
+		settings.getRevisionId()
 	);
-	scene->setRevision(settings.getRevisionId());
-	scene->setOriginalFiles({ filePath });
-	scene->loadRootNode(handler.get());
 	scene->setWorldOffset(sceneBuilder->getWorldOffset());
 	if (sceneBuilder->hasMissingTextures()) {
 		scene->setMissingTexture();

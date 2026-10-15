@@ -21,6 +21,7 @@
 #include "../../../../repo_test_database_info.h"
 #include "../../../../repo_test_utils.h"
 #include "../../../../repo_test_scene_utils.h"
+#include "../../../../repo_test_revision_utils.h"
 #include "../../../../repo_test_common_tests.h"
 
 using namespace repo::manipulator::modelconvertor;
@@ -33,14 +34,16 @@ repo::core::model::RepoScene* ModelImportManagerImport(std::string db, std::stri
 	config.revisionId = repo::lib::RepoUUID::createUUID();
 	config.projectName = db;
 
+	testing::makeRevisionNode(getHandler(), config, path);
+
 	auto handler = getHandler();
 
 	uint8_t err;
 	std::string msg;
 
 	ModelImportManager manager;
-	auto scene = manager.ImportFromFile(path, config, handler, err);
-	scene->commit(handler.get(), handler->getFileManager().get(), msg, "testuser", "", "", config.getRevisionId());
+	auto scene = manager.ImportFromFile(config, handler);
+	scene->commit(handler);
 
 	return scene;
 }

@@ -25,6 +25,7 @@
 #include "../../../../repo_test_utils.h"
 #include "../../../../repo_test_database_info.h"
 #include "../../../../repo_test_scene_utils.h"
+#include "../../../../repo_test_revision_utils.h"
 #include "../../../../repo_test_mesh_utils.h"
 #include "../../../../repo_test_matchers.h"
 #include "../../../../repo_test_common_tests.h"
@@ -52,13 +53,15 @@ namespace RepoModelImportUtils
 
 		auto handler = getHandler();
 
+		testing::makeRevisionNode(handler, config, bimFilePath);
+
 		ModelImportManager manager;
-		auto scene = manager.ImportFromFile(bimFilePath, config, handler, impModelErrCode);
+		auto scene = manager.ImportFromFile(config, handler);
 
 		if (scene) {
 			std::string msg;
-			scene->commit(handler.get(), handler->getFileManager().get(), msg, "testuser", "", "", config.getRevisionId());
-			scene->loadScene(handler.get(), msg);
+			scene->commit(handler);
+			scene->loadScene(handler.get());
 		}
 
 		return scene;

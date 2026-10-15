@@ -52,6 +52,15 @@ repo::lib::RepoVector3D testing::makeRandomRepoVector()
 	return v;
 }
 
+repo::lib::RepoVector3D64 testing::makeRandomRepoVector64()
+{
+	repo::lib::RepoVector3D64 v;
+	v.x = ((double)rand() - (double)rand()) / (double)(RAND_MAX) * (8.0e6);
+	v.y = ((double)rand() - (double)rand()) / (double)(RAND_MAX) * (8.0e6);
+	v.z = ((double)rand() - (double)rand()) / (double)(RAND_MAX) * (8.0e6);
+	return v;
+}
+
 std::vector<uint8_t> testing::makeRandomBinary(size_t size)
 {
 	std::vector<uint8_t> bin;
@@ -127,17 +136,11 @@ void testing::restartRand(int seed)
 	uuidPoolCounter = seed;
 }
 
-bool testing::projectExists(
-	const std::string& db,
-	const std::string& project)
+bool testing::projectIsPopulated(
+	const repo::manipulator::modelconvertor::ModelImportConfig& config
+)
 {
-	auto handler = getHandler();
-	for (auto collection : handler->getCollections(db)) {
-		if (collection == (project + ".history")) {
-			return true;
-		}
-	}
-	return false;
+	return projectIsPopulated(config.getDatabaseName(), config.getProjectName());
 }
 
 bool testing::projectIsPopulated(
@@ -161,26 +164,6 @@ bool testing::projectIsPopulated(
 		return false;
 	}
 	return true;
-}
-
-bool testing::projectSettingsCheck(
-	const std::string& dbName, const std::string& projectName, const std::string& owner, const std::string& tag, const std::string& desc)
-{
-	bool res = false;
-	repo::RepoController* controller = new repo::RepoController();
-	auto token = initController(controller);
-
-	if (token)
-	{
-		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, true, { repo::core::model::ModelRevisionNode::UploadStatus::MISSING_BUNDLES });
-		if (scene)
-		{
-			res = scene->getOwner() == owner && scene->getTag() == tag && scene->getMessage() == desc;
-			delete scene;
-		}
-	}
-	delete controller;
-	return res;
 }
 
 bool testing::projectHasValidRevision(
@@ -258,19 +241,24 @@ bool testing::compareMaterialStructs(const repo::lib::repo_material_t& m1, const
 		&& m1.isTwoSided == m2.isTwoSided;
 }
 
-std::string testing::getRandomString(const uint32_t& iLen)
+std::string testing::getRandomString(uint32_t iLen)
 {
 	std::string sStr;
 	sStr.reserve(iLen);
 	char syms[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	unsigned int Ind = 0;
 	srand(time(NULL) + rand());
-	for (int i = 0; i < iLen; ++i);
+	for (int i = 0; i < iLen; ++i)
 	{
 		sStr.push_back(syms[rand() % 62]);
 	}
 
 	return sStr;
+}
+
+std::string testing::getRandomContainer()
+{
+	return repo::lib::RepoUUID::createUUID().toString();
 }
 
 bool testing::compareVectors(const repo::lib::repo_color4d_t& v1, const repo::lib::repo_color4d_t& v2)
@@ -321,20 +309,6 @@ std::string produceCleanArgs(
 		+ project;
 }
 
-std::string testing::produceGenStashArgs(
-	const std::string& database,
-	const std::string& project,
-	const std::string& type
-)
-{
-	return  getClientExePath() + " "
-		+ getConnConfig()
-		+ " genStash "
-		+ database + " "
-		+ project + " "
-		+ type;
-}
-
 std::string testing::produceGetFileArgs(
 	const std::string& file,
 	const std::string& database,
@@ -349,15 +323,6 @@ std::string testing::produceGetFileArgs(
 		+ file + "\"";
 }
 
-std::string testing::produceUploadFileArgs(
-	const std::string& filePath
-) {
-	return  getClientExePath() + " "
-		+ getConnConfig()
-		+ " import -f \""
-		+ filePath + "\"";
-}
-
 std::string testing::produceProcessDrawingArgs(
 	const std::string& filePath
 )
@@ -366,19 +331,6 @@ std::string testing::produceProcessDrawingArgs(
 		+ getConnConfig()
 		+ " processDrawing \""
 		+ filePath + "\"";
-}
-
-std::string testing::produceUploadArgs(
-	const std::string& database,
-	const std::string& project,
-	const std::string& filePath,
-	const std::string& configPath)
-{
-	return  getClientExePath()
-		+ " " + configPath
-		+ " import \""
-		+ filePath + "\" "
-		+ database + " " + project;
 }
 
 int testing::runProcess(
@@ -415,7 +367,6 @@ void testing::unsetupTextures()
 }
 
 void testing::writeImportConfig(
-	const std::string& importFilePath,
 	const repo::manipulator::modelconvertor::ModelImportConfig& config,
 	const std::string& configPath
 )
@@ -424,7 +375,6 @@ void testing::writeImportConfig(
 	doc.SetObject();
 	auto& allocator = doc.GetAllocator();
 
-	doc.AddMember("file", rapidjson::Value(importFilePath.c_str(), allocator), allocator);
 	doc.AddMember("teamspace", rapidjson::Value(config.databaseName.c_str(), allocator), allocator);
 	doc.AddMember("container", rapidjson::Value(config.projectName.c_str(), allocator), allocator);
 	doc.AddMember("timezone", rapidjson::Value(config.timeZone.c_str(), allocator), allocator);

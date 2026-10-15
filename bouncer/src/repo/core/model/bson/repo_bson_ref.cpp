@@ -53,9 +53,9 @@ RepoRef::RepoRef(RepoBSON bson)
 	type = RefType::UNKNOWN;
 	size = bson.getLongField(REPO_REF_LABEL_SIZE);
 	link = bson.getStringField(REPO_REF_LABEL_LINK);
-	if (bson.hasField(REPO_NODE_LABEL_NAME))
+	if (bson.hasField(REPO_REF_LABEL_NAME))
 	{
-		name = bson.getStringField(REPO_NODE_LABEL_NAME);
+		name = bson.getStringField(REPO_REF_LABEL_NAME);
 	}
 	auto typeStr = bson.getStringField(REPO_REF_LABEL_TYPE);
 	if (typeStr == REPO_REF_TYPE_FS)

@@ -16,12 +16,17 @@
 */
 
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest-matchers.h>
 #include <repo/core/handler/fileservice/repo_file_manager.h>
+#include <repo/core/model/repo_model_global.h>
+#include <repo/core/model/bson/repo_bson_builder.h>
 #include <repo/core/model/bson/repo_node.h>
-
 #include <repo/lib/repo_exception.h>
 #include <repo/lib/repo_utils.h>
 #include "../../../../repo_test_fileservice_info.h"
+#include "../../../../repo_test_utils.h"
+#include <filesystem>
 
 using namespace repo::core::handler::fileservice;
 
@@ -110,4 +115,69 @@ TEST(FileManager, deleteFileAndRef)
 
 	// Deleting a file a second time should not do anything, but not throw either
 	EXPECT_FALSE(manager->deleteFileAndRef(db, col, {fileName}));
+}
+
+TEST(FileManager, GetExtFsPath)
+{
+	using namespace repo::core::model;
+	using namespace testing;
+
+	auto handler = getHandler();
+
+	std::string refId = repo::lib::RepoUUID().createUUID().toString();
+	std::string teamspace = "FileManagerTest";
+	std::string collection = testing::getRandomContainer();
+	std::string extFilePath = "FileManager/external_file.txt";
+	std::string extFileName = "external_file.txt";
+
+	// Build an EXTFS node explicitly, as serialising an EXTFS node is not allowed
+
+	{
+		RepoBSONBuilder builder;
+		builder.append(REPO_LABEL_ID, refId);
+		builder.append(REPO_REF_LABEL_TYPE, RepoRef::REPO_REF_TYPE_EXTFS);
+		builder.append(REPO_REF_LABEL_LINK, extFilePath);
+		builder.append(REPO_REF_LABEL_NAME, extFileName);
+		builder.append(REPO_REF_LABEL_SIZE, (int64_t)19);
+
+		handler->insertDocument(
+			teamspace,
+			collection + "." + REPO_COLLECTION_EXT_REF,
+			builder.obj()
+		);
+	}
+
+	auto ref = handler->getFileManager()->getFileRef(teamspace, collection, refId);
+	EXPECT_THAT(ref.getType(), Eq(RepoRef::RefType::EXTFS));
+
+	{
+		// This config file does not have an extfs path configured.
+
+		auto config = repo::lib::RepoConfig::fromFile(getDataPath("config/config.json"));
+
+		// Even though fs is not used in this test, a valid config must be provided
+		// otherwise fs handler will throw.
+
+		config.configureFS(getDataPath("fileShare"));
+
+		// Extfs is optional, as not all bouncer operations (e.g. clash) require access
+		// to it. When it is accessed though, FileManager should asser that it is
+		// configured.
+
+		handler->setFileManager(std::make_shared<repo::core::handler::fileservice::FileManager>(config, handler));
+
+		EXPECT_THROW(handler->getFileManager()->getFilePath(ref), repo::lib::RepoException);
+	}
+
+	{
+		auto config = repo::lib::RepoConfig::fromFile(getDataPath("config/config.json"));
+		config.configureFS(getDataPath("fileShare"));
+		config.configureExtFS(getDataPath(""));
+		handler->setFileManager(std::make_shared<repo::core::handler::fileservice::FileManager>(config, handler));
+
+		auto mountPoint = std::filesystem::path(getDataPath(""));
+		auto expectedPath = mountPoint / extFilePath;
+
+		EXPECT_THAT(handler->getFileManager()->getFilePath(ref), Eq(expectedPath.string()));
+	}
 }

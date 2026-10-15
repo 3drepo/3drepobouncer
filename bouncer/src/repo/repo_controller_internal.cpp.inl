@@ -79,50 +79,6 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::init(
 	return token;
 }
 
-uint8_t RepoController::_RepoControllerImpl::commitScene(
-	const RepoController::RepoToken                     *token,
-	repo::core::model::RepoScene        *scene,
-	const std::string                   &owner,
-	const std::string                      &tag,
-	const std::string                      &desc,
-	const repo::lib::RepoUUID           &revId,
-	const repo::manipulator::modelutility::WebBufferConfig& config)
-{
-	uint8_t errCode = REPOERR_UNKNOWN_ERR;
-	if (scene)
-	{
-		if (!(scene->getDatabaseName().empty() || scene->getProjectName().empty()))
-		{
-			if (token)
-			{
-				manipulator::RepoManipulator* worker = workerPool.pop();
-				errCode = worker->commitScene(
-					token->getDatabaseUsername(),
-					scene,
-					owner.empty() ? "ANONYMOUS USER" : owner,
-					tag,
-					desc,
-					revId,
-					config);
-				workerPool.push(worker);
-			}
-			else
-			{
-				repoError << "Trying to commit to the database without a database connection!";
-			}
-		}
-		else
-		{
-			repoError << "Trying to commit a scene without specifying database/project names.";
-		}
-	}
-	else
-	{
-		repoError << "Trying to commit an empty scene into the database";
-	}
-	return errCode;
-}
-
 repo::core::model::RepoScene* RepoController::_RepoControllerImpl::fetchScene(
 	const RepoController::RepoToken      *token,
 	const std::string    &database,
@@ -332,28 +288,14 @@ bool RepoController::_RepoControllerImpl::isVREnabled(const RepoToken *token,
 	return result;
 }
 
-repo::core::model::RepoScene*
-RepoController::_RepoControllerImpl::loadSceneFromFile(
-	const std::string                                          &filePath,
-	uint8_t													 &err,
+uint32_t
+RepoController::_RepoControllerImpl::processModelRevision(
 	const repo::manipulator::modelconvertor::ModelImportConfig &config)
 {
-	repo::core::model::RepoScene *scene = nullptr;
-
-	if (!filePath.empty())
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		scene = worker->loadSceneFromFile(filePath, err, config);
-		workerPool.push(worker);
-		if (!scene)
-			repoError << "Failed to load scene from file - error code: " << std::to_string(err);
-	}
-	else
-	{
-		repoError << "Trying to load from an empty file path!";
-	}
-
-	return scene;
+	manipulator::RepoManipulator* worker = workerPool.pop();
+	uint32_t returnCode = worker->processModelRevision(config);
+	workerPool.push(worker);
+	return returnCode;
 }
 
 void

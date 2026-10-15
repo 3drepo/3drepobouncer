@@ -45,6 +45,10 @@ FileManager::FileManager(
 	else {
 		throw repo::lib::RepoException("Filestore configuration must be provided.");
 	}
+	auto extFs = config.getExtFSConfig();
+	if (extFs.configured) {
+		extfsMountDirectory = extFs.dir;
+	}
 }
 
 std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> FileManager::getDbHandler()
@@ -306,12 +310,16 @@ std::string FileManager::getFilePath(
 	const repo::core::model::RepoRef& ref
 )
 {
-	if (ref.getType() != repo::core::model::RepoRef::RefType::FS)
+	switch (ref.getType())
 	{
-		repoTrace << "Failed: can only get paths of files stored with fs";
-		return "";
+	case repo::core::model::RepoRef::RefType::FS:
+		return fsHandler->getFilePath(ref.getRefLink());
+	case repo::core::model::RepoRef::RefType::EXTFS:
+		if (extfsMountDirectory.empty()) {
+			throw repo::lib::RepoInvalidConfigException("External fs mount directory not configured.");
+		}
+		return (extfsMountDirectory / ref.getRefLink()).string();
 	}
-	return fsHandler->getFilePath(ref.getRefLink());
 }
 
 bool FileManager::dropFileRef(

@@ -38,7 +38,7 @@ namespace repo {
 #define REPO_REF_LABEL_LINK "link"
 #define REPO_REF_LABEL_SIZE "size"
 #define REPO_REF_LABEL_TYPE "type"
-
+#define REPO_REF_LABEL_NAME "name"
 
 			class REPO_API_EXPORT RepoRef
 			{
