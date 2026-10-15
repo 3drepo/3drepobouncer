@@ -48,6 +48,10 @@ namespace testing {
 		const repo::manipulator::modelconvertor::ModelImportConfig& config
 	);
 
+	bool sceneHasArtefacts(
+		const repo::manipulator::modelconvertor::ModelImportConfig& config
+	);
+
 	bool projectHasValidRevision(
 		const std::string& dbName,
 		const std::string& projectName);

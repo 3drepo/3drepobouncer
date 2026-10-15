@@ -143,6 +143,18 @@ bool testing::projectIsPopulated(
 	return projectIsPopulated(config.getDatabaseName(), config.getProjectName());
 }
 
+bool testing::sceneHasArtefacts(
+	const repo::manipulator::modelconvertor::ModelImportConfig& config
+)
+{
+	auto handler = getHandler();
+	return handler->count(
+		config.getDatabaseName(),
+		config.getProjectName() + "." + REPO_COLLECTION_SCENE,
+		repo::core::handler::database::query::Eq(REPO_LABEL_REVISION, config.revisionId)
+	);
+}
+
 bool testing::projectIsPopulated(
 	const std::string& db,
 	const std::string& project

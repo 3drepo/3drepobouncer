@@ -243,7 +243,7 @@ TEST(RepoClientTest, UploadTestBadDBAuth)
 
 	EXPECT_EQ(REPOERR_AUTH_FAILED, runImport(getDataPath("config/badAuth.json"), importConfigPath));
 
-	EXPECT_FALSE(testing::projectIsPopulated(config));
+	EXPECT_FALSE(testing::sceneHasArtefacts(config));
 }
 
 // These next few consider config files that have a valid schema but

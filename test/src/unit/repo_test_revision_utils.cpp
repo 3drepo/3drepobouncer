@@ -37,7 +37,7 @@ ModelRevisionNode testing::makeRevisionNode(
 	revisionNode.setTimestamp();
 	revisionNode.setFiles({testing::getRandomString()});
 	revisionNode.setTag(testing::getRandomString());
-	revisionNode.setSharedID(testing::getRandUUID());
+	revisionNode.setSharedID(repo::lib::RepoUUID::defaultValue);
 
 	handler->insertDocument(
 		teamspace,
@@ -57,7 +57,10 @@ repo::core::model::ModelRevisionNode testing::makeRevisionNode(
 	auto refId = repo::lib::RepoUUID::createUUID().toString();
 	auto filename = extFilePath.filename();
 	auto extfs = std::filesystem::path(getDataPath(""));
-	auto size = std::filesystem::file_size(extfs / extFilePath);
+	auto size = 0;
+	if (std::filesystem::exists(extFilePath)) {
+		size = std::filesystem::file_size(extFilePath);
+	}
 
 	ModelRevisionNode revisionNode;
 	revisionNode.setUniqueID(config.revisionId);
@@ -65,7 +68,7 @@ repo::core::model::ModelRevisionNode testing::makeRevisionNode(
 	revisionNode.setTimestamp();
 	revisionNode.setFiles({refId});
 	revisionNode.setTag(testing::getRandomString());
-	revisionNode.setSharedID(testing::getRandUUID());
+	revisionNode.setSharedID(repo::lib::RepoUUID::defaultValue);
 	revisionNode.updateStatus(ModelRevisionNode::UploadStatus::GEN_DEFAULT);
 
 	handler->insertDocument(

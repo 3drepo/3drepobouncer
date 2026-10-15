@@ -293,9 +293,15 @@ RepoController::_RepoControllerImpl::processModelRevision(
 	const repo::manipulator::modelconvertor::ModelImportConfig &config)
 {
 	manipulator::RepoManipulator* worker = workerPool.pop();
-	uint32_t returnCode = worker->processModelRevision(config);
-	workerPool.push(worker);
-	return returnCode;
+	try {
+		uint32_t returnCode = worker->processModelRevision(config);
+		workerPool.push(worker);
+		return returnCode;
+	}
+	catch (...) {
+		workerPool.push(worker);
+		throw;
+	}
 }
 
 void

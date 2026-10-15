@@ -45,7 +45,7 @@ repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 	);
 	
 	if (!revision.getOrgFiles().size()) {
-		throw repo::lib::RepoImportException(REPOERR_MODEL_FILE_READ);
+		throw repo::lib::RepoImportException(REPOERR_FILE_REF_MISSING);
 	}
 
 	auto refId = revision.getOrgFiles()[0];
@@ -322,11 +322,16 @@ repo::core::model::ModelRevisionNode ModelImportManager::fetchRevision(
 	const repo::lib::RepoUUID& revisionId
 ) const
 {
-	return repo::core::model::ModelRevisionNode(
-		handler->findOneByUniqueID(
-			teamspace,
-			container + "." + REPO_COLLECTION_HISTORY,
-			revisionId
-		)
-	);
+	try {
+		return repo::core::model::ModelRevisionNode(
+			handler->findOneByUniqueID(
+				teamspace,
+				container + "." + REPO_COLLECTION_HISTORY,
+				revisionId
+			)
+		);
+	}
+	catch (RepoBSONException& e) {
+		std::throw_with_nested(repo::lib::RepoImportException(REPOERR_REVISION_NOT_FOUND));
+	}
 }

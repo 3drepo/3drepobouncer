@@ -59,10 +59,10 @@ TEST(RepoControllerTest, ProcessModelRevision) {
 			FAIL() << "processModelRevision should have thrown for a non-existent revision";
 		}
 		catch (const repo::lib::RepoException& e) {
-			EXPECT_EQ(e.repoCode(), REPOERR_FILE_REF_MISSING);
+			EXPECT_EQ(e.repoCode(), REPOERR_REVISION_NOT_FOUND);
 		}
 
-		EXPECT_FALSE(testing::projectIsPopulated(config));
+		EXPECT_FALSE(testing::sceneHasArtefacts(config));
 	}
 
 	// Config that points to an incomplete revision (one that has no rFile
@@ -92,7 +92,7 @@ TEST(RepoControllerTest, ProcessModelRevision) {
 			EXPECT_EQ(e.repoCode(), REPOERR_FILE_REF_MISSING);
 		}
 
-		EXPECT_FALSE(testing::projectIsPopulated(config));
+		EXPECT_FALSE(testing::sceneHasArtefacts(config));
 	}
 
 	// Config that points to a revision missing a ref node (the revision
@@ -123,7 +123,7 @@ TEST(RepoControllerTest, ProcessModelRevision) {
 			EXPECT_EQ(e.repoCode(), REPOERR_FILE_REF_MISSING);
 		}
 
-		EXPECT_FALSE(testing::projectIsPopulated(config));
+		EXPECT_FALSE(testing::sceneHasArtefacts(config));
 	}
 
 	// Config that points to a revision with a ref node that can't be resolved
@@ -140,9 +140,15 @@ TEST(RepoControllerTest, ProcessModelRevision) {
 
 		testing::makeRevisionNode(handler, config, getDataPath("nonExistentFile"));
 
-		EXPECT_EQ(REPOERR_MODEL_FILE_READ, controller->processModelRevision(config));
+		try {
+			controller->processModelRevision(config);
+			FAIL() << "processModelRevision should have thrown for a revision with a ref node that can't be resolved to an actual file";
+		}
+		catch (const repo::lib::RepoException& e) {
+			EXPECT_EQ(e.repoCode(), REPOERR_MODEL_FILE_READ);
+		}
 
-		EXPECT_FALSE(testing::projectIsPopulated(config));
+		EXPECT_FALSE(testing::sceneHasArtefacts(config));
 	}
 
 	// Config that points to a model with textures (without textures available)

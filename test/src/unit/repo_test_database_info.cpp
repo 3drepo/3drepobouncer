@@ -82,6 +82,7 @@ repo::lib::RepoConfig getConfig()
 {
 	auto config = repo::lib::RepoConfig::fromFile(getDataPath("config/withFS.json"));
 	config.configureFS(getDataPath("fileShare"));
+	config.configureExtFS(getDataPath(""));
 	return config;
 }
 
