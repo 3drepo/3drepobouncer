@@ -130,7 +130,7 @@ RepoScene::RepoScene(
 ) :
 	teamspace({}),
 	container({}),
-	revision({}),
+	revision(repo::lib::RepoUUID::defaultValue),
 	status(0)
 {
 	graph.rootNode = nullptr;
