@@ -153,7 +153,7 @@ TEST(FileManager, GetExtFsPath)
 	{
 		// This config file does not have an extfs path configured.
 
-		auto config = repo::lib::RepoConfig::fromFile(getDataPath("config/config.json"));
+		auto config = repo::lib::RepoConfig::fromFile(getDataPath("config/configNoExtFs.json"));
 
 		// Even though fs is not used in this test, a valid config must be provided
 		// otherwise fs handler will throw.
