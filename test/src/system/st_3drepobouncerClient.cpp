@@ -78,7 +78,7 @@ namespace {
 				config.getProjectName() + "." + REPO_COLLECTION_HISTORY,
 				repo::core::handler::database::query::Eq(REPO_LABEL_ID, config.getRevisionId())
 			);
-			auto revisionNode = repo::core::model::ModelRevisionNode(bson);
+			revisionNode = repo::core::model::ModelRevisionNode(bson);
 		}
 		catch (repo::lib::RepoBSONException)
 		{

@@ -35,8 +35,8 @@ namespace repo {
 				* Commit a RepoScene and produce the necessary assets for web viewing, based
 				* on the WebBufferConfig.
 				* The RepoScene does not have to be loaded (if for example a Streaming import
-				* was used), but it must be fully versioned (call fetchScene() to get a
-				* versioned scene).
+				* was used), but it must be fully versioned (call, e.g. setRevision, or load
+				* head).
 				*/
 				void commitScene(
 					repo::core::model::RepoScene *scene,
