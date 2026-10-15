@@ -275,7 +275,7 @@ TEST(RepoClientTest, UploadTestNoFile)
 	auto importConfigPath = getDataPath(repo::lib::RepoUUID::createUUID().toString() + ".json");
 	testing::writeImportConfig(config, importConfigPath);
 
-	EXPECT_EQ(REPOERR_MODEL_FILE_READ, runImport(getDataPath("config/config.json"), importConfigPath));
+	EXPECT_EQ(REPOERR_FILE_REF_MISSING, runImport(getDataPath("config/config.json"), importConfigPath));
 
 	EXPECT_FALSE(testing::projectIsPopulated(config));
 }
