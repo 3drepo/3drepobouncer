@@ -320,6 +320,7 @@ std::string FileManager::getFilePath(
 		}
 		return (extfsMountDirectory / ref.getRefLink()).string();
 	}
+	throw repo::lib::RepoException("Unsupported RepoRef type: " + repo::core::model::RepoRef::convertTypeAsString(ref.getType()));
 }
 
 bool FileManager::dropFileRef(
