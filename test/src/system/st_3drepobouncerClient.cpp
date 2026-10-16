@@ -44,7 +44,7 @@ namespace {
 		return runProcess(
 			getClientExePath() + " "
 			+ bouncerConfig
-			+ " import -f \""
+			+ " import \""
 			+ importConfig + "\""
 		);
 	}

@@ -47,8 +47,8 @@ std::string helpInfo()
 {
 	std::stringstream ss;
 
-	ss << cmdGenStash << "\tGenerate Stash for a project. (args: database project [repo|src|tree] [all|revId])\n";
-	ss << cmdImportFile << "\t\tImport file to database. (args: {file database project [dxrotate] [owner] [configfile]} or {-f parameterFile} )\n";
+	ss << cmdGenStash << "\t\tGenerate Stash for a project. (args: database project [repo|src|tree] [all|revId])\n";
+	ss << cmdImportFile << "\t\tImport the file of a model revision node into the database. (args: parameterFile )\n";
 	ss << cmdProcessDrawing << "\t\tProcess drawing revision node into an image. (args: parameterFile)\n";
 	ss << cmdClash << "\t\tPerform a clash detection operation. (args: configFile [resultsFile])\n";
 	ss << cmdTestConn << "\t\tTest the client and database connection is working. (args: none)\n";
@@ -65,7 +65,7 @@ bool isSpecialCommand(const std::string& cmd)
 int32_t knownValid(const std::string& cmd)
 {
 	if (cmd == cmdImportFile)
-		return 2;
+		return 1;
 	if (cmd == cmdProcessDrawing)
 		return 1;
 	if (cmd == cmdGenStash)
@@ -258,23 +258,20 @@ int32_t importFileAndCommit(
 {
 	using namespace repo::manipulator::modelconvertor;
 
-	/*
-	* Check the amount of parameters matches
-	*/
-	bool usingSettingFiles = command.nArgcs == 2 && std::string(command.args[0]) == "-f";
-	if (!usingSettingFiles)
-	{
-		repoError << "Number of arguments mismatch! Bouncer imports can now only be invoked with a config file specified via -f.";
+	if (command.nArgcs < 1) {
+		repoError << "Bouncer model import requires a config file.";
 		return REPOERR_INVALID_ARG;
 	}
 
-	if (!std::filesystem::exists(command.args[1]))
+	auto configFilePath = command.args[0];
+
+	if (!std::filesystem::exists(configFilePath))
 	{
-		repoError << "Config file does not exist: " << command.args[1];
+		repoError << "Config file does not exist: " << configFilePath;
 		return REPOERR_INVALID_ARG;
 	};
 
-	auto config = ModelImportConfig::ParseJsonFile(command.args[1]);
+	auto config = ModelImportConfig::ParseJsonFile(configFilePath);
 	config.validate(); // Will throw if the config is invalid.
 
 	return controller->processModelRevision(config);
