@@ -30,10 +30,6 @@ namespace testing {
 	repo::RepoController::RepoToken* initController(
 		repo::RepoController* controller);
 
-	bool projectExists(
-		const std::string& db,
-		const std::string& project);
-
 	/*
 	* Checks the contents of the projects head revision to ensure
 	* it has valid some transformation and mesh nodes, indicating
@@ -44,12 +40,17 @@ namespace testing {
 		const std::string& project
 	);
 
-	bool projectSettingsCheck(
-		const std::string& dbName,
-		const std::string& projectName,
-		const std::string& owner,
-		const std::string& tag,
-		const std::string& desc);
+	/*
+	* Checks the projects contents, for a specific revision referred
+	* to by the import config.
+	*/
+	bool projectIsPopulated(
+		const repo::manipulator::modelconvertor::ModelImportConfig& config
+	);
+
+	bool sceneHasArtefacts(
+		const repo::manipulator::modelconvertor::ModelImportConfig& config
+	);
 
 	bool projectHasValidRevision(
 		const std::string& dbName,
@@ -90,11 +91,15 @@ namespace testing {
 		const std::vector<repo::lib::repo_color4d_t>& v1,
 		const std::vector<repo::lib::repo_color4d_t>& v2);
 
-	std::string getRandomString(const uint32_t& iLen);
+	std::string getRandomString(uint32_t iLen = 10);
+
+	std::string getRandomContainer();
 
 	tm getRandomTm();
 
 	repo::lib::RepoVector3D makeRandomRepoVector();
+
+	repo::lib::RepoVector3D64 makeRandomRepoVector64();
 
 	std::vector<uint8_t> makeRandomBinary(size_t size = 1000);
 
@@ -133,27 +138,13 @@ namespace testing {
 	// by iterating them directly, which is more performant.
 	int nFields(const repo::core::model::RepoBSON& bson);
 
-	std::string produceGenStashArgs(
-		const std::string& database,
-		const std::string& project,
-		const std::string& type);
-
 	std::string produceGetFileArgs(
 		const std::string& file,
 		const std::string& database,
 		const std::string& project);
 
-	std::string produceUploadFileArgs(
-		const std::string& filePath);
-
 	std::string produceProcessDrawingArgs(
 		const std::string& filePath);
-
-	std::string produceUploadArgs(
-		const std::string& database,
-		const std::string& project,
-		const std::string& filePath,
-		const std::string& configPath = getConnConfig());
 
 	int runProcess(const std::string& cmd);
 
@@ -161,7 +152,6 @@ namespace testing {
 	void unsetupTextures();
 
 	void writeImportConfig(
-		const std::string& importFilePath,
 		const repo::manipulator::modelconvertor::ModelImportConfig& config,
 		const std::string& configPath
 	);

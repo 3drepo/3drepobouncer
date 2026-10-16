@@ -248,6 +248,12 @@ namespace repo {
 					const repo::core::model::RepoBSON &obj,
 					const bool        &overwrite);
 
+				void updateDocument(
+					const std::string& database,
+					const std::string& collection,
+					const database::query::RepoUpdate& update
+				);
+
 				/*
 				*	------------- Query operations --------------
 				*/

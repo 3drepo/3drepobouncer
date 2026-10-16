@@ -37,6 +37,16 @@ typedef std::unordered_map<repo::lib::RepoUUID, std::vector<repo::core::model::R
 namespace repo {
 	namespace core {
 		namespace model {
+			/*
+			* Represents the scene graph of a Container at a specific revision. RepoScene
+			* can hold the entire collection in memory, or more often now, serve as a
+			* pointer to a particular revision.
+			* 
+			* A RepoScene can be constructed first from a revision, and then populated with
+			* nodes, or it can be populated and then have its revision set. In either case,
+			* the scene must have both contents & an existing revision node to be valid,
+			* and it must valid in order to perform operations such as commits.
+			*/
 			class REPO_API_EXPORT RepoScene
 			{
 				//FIXME: unsure as to whether i should make the graph a differen class.. struct for now.
@@ -67,30 +77,26 @@ namespace repo {
 				*/
 				enum class GraphType { DEFAULT, OPTIMIZED };
 
-				/**
-				* Used for loading scene graphs from database
-				* Constructor - instantiates a new scene graph representation.
-				* Branch is set to master and Revision is set to head
-				* Use setRevision() and setBranch()
-				* to specify which revision to load
-				* NOTE: This merely sets up the settings of the scene graph
-				* the graph itself is not loaded until loadScene() is called!
-				*
-				* @param database name  of the database
-				* @param projectId name of the project
+				/*
+				* A completely empty scene - it must be both revisioned and populated before
+				* it can be committed.
 				*/
-				RepoScene(
-					const std::string                                  &database = std::string(),
-					const std::string                                  &projectName = std::string());
+				RepoScene();
 
 				/**
-				* Used for constructing scene graphs from model convertors
-				* Constructor - instantiates a new scene graph representation.
-				* This scene will be flagged as not revisioned. A database handler
-				* will need to be set before it can be commited into the database
-				* NOTE: database handler, project name, database name will need to be
-				* set before this scene graph can be commited to the database.
-				* @param refFiles vector of files created this scene
+				* Creates a RepoScene that points to a specific revision, that may or may
+				* not yet be populated.
+				*/
+				RepoScene(
+					const std::string &teamspace,
+					const std::string &container,
+					const repo::lib::RepoUUID &revision
+				);
+
+				/**
+				* Used for constructing scene graphs from non-streaming model
+				* importers. The scene must be revisioned before it can be
+				* committed.
 				* @param cameras Repo Node set of cameras
 				* @param meshes  Repo Node set of meshes
 				* @param materials Repo Node set of materials
@@ -100,7 +106,6 @@ namespace repo {
 				* @param unknowns Repo Node set of unknowns (optional)
 				*/
 				RepoScene(
-					const std::vector<std::string> &refFiles,
 					const RepoNodeSet              &meshes,
 					const RepoNodeSet              &materials,
 					const RepoNodeSet              &metadata,
@@ -115,6 +120,12 @@ namespace repo {
 				* and also its child graphs
 				*/
 				~RepoScene();
+
+				void setRevision(
+					const std::string& teamspace,
+					const std::string& container,
+					const repo::lib::RepoUUID& revision
+				);
 
 				static std::vector<RepoNode*> filterNodesByType(
 					const std::vector<RepoNode*> nodes,
@@ -237,32 +248,14 @@ namespace repo {
 				void clearStash();
 
 				/**
-				* Commit changes on the default graph into the database
-				* This commits an update to project settings, a new revision node
-				* and the changes within this scene
-				* @param errMsg error message if this failed
-				* @param userName name of the author
-				* @param message message for this commit (optional)
-				* @param tag tag for this commit (optional)
-				* @return returns true upon success
+				* Commit any changes on the default graph and resets the tracked changes.
+				* After this is called the status of the revision will be GEN_DEFAULT,
+				* regardless of whether any changes were made or not.
+				* This will also commit any sequences in the scene.
 				*/
-				uint8_t commit(
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					repo::core::handler::fileservice::FileManager *manager,
-					std::string &errMsg,
-					const std::string &userName,
-					const std::string &message = std::string(),
-					const std::string &tag = std::string(),
-					const repo::lib::RepoUUID &revId = repo::lib::RepoUUID::createUUID());
-
-				/**
-				* Get the branch ID of this scene graph
-				* @return returns the branch ID of this scene
-				*/
-				repo::lib::RepoUUID getBranchID() const
-				{
-					return branch;
-				}
+				void commit(
+					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler
+				);
 
 				/**
 				* Get name of the database
@@ -270,7 +263,7 @@ namespace repo {
 				*/
 				std::string getDatabaseName() const
 				{
-					return databaseName;
+					return teamspace;
 				}
 
 				/**
@@ -279,50 +272,7 @@ namespace repo {
 				*/
 				repo::lib::RepoUUID getRevisionID() const
 				{
-					if (revNode)
-						return revNode->getUniqueID();
-					else
-						return revision;
-				}
-
-				/**
-				* If the scene is revisioned, get the owner of the model
-				* if the scene is not revisioned, this function will return
-				* an empty string
-				* @return returns the owner, or empty string.
-				*/
-				std::string getOwner() const
-				{
-					if (revNode)
-						return revNode->getAuthor();
-					else
-						return "";
-				}
-
-				/**
-				* If the scene is revisioned, get the tag associated with the revision
-				* if the reivison is not tagged or the scene is not revisioned, return empty string
-				* @return returns the tag, or empty string.
-				*/
-				std::string getTag() const
-				{
-					if (revNode)
-						return revNode->getTag();
-					else
-						return "";
-				}
-
-				/**
-				* If the scene is revisioned, get the commit message associated with the revision
-				* if the reivison does not have a commit message or the scene is not revisioned, return empty string
-				* @return returns the tag, or empty string.
-				*/
-				std::string getMessage() const
-				{
-					if (revNode)
-						return revNode->getMessage();
-					else
-						return commitMsg;
+					return revision;
 				}
 
 				static std::vector<std::string> getProjectExtensions()
@@ -336,7 +286,7 @@ namespace repo {
 				*/
 				std::string getProjectName() const
 				{
-					return projectName;
+					return container;
 				}
 
 				/**
@@ -349,51 +299,13 @@ namespace repo {
 				}
 
 				/**
-				* Return if it the scene is of a head revision
-				* @return returns true if it is head of a branch
-				*/
-				bool isHeadRevision() const
-				{
-					return headRevision;
-				}
-
-				/**
 				* Check if this scene is revisioned
 				* @return returns true if the scene is revisioned
 				*/
 				bool isRevisioned() const
 				{
-					return !unRevisioned;
+					return !teamspace.empty() && !container.empty() && (bool)revision;
 				}
-
-				/**
-				* Set project and database names. This will overwrite the current ones
-				* @param newDatabaseName new name of database.
-				* @param newProjectMame new name of the project
-				*/
-				void setDatabaseAndProjectName(std::string newDatabaseName, std::string newProjectName);
-
-				/**
-				* Set project revision
-				* @param uuid of the revision.
-				*/
-				void setRevision(repo::lib::RepoUUID revisionID)
-				{
-					headRevision = false;
-					revision = revisionID;
-				}
-
-				/**
-				* Set Branch
-				* @param uuid of branch
-				*/
-				void setBranch(repo::lib::RepoUUID branchID) { branch = branchID; }
-
-				/**
-				* Set commit message
-				* @param msg message to go with the commit
-				*/
-				void setCommitMessage(const std::string &msg) { commitMsg = msg; }
 
 				/**
 				* Set the world offset value for the model
@@ -403,13 +315,6 @@ namespace repo {
 				*/
 				void setWorldOffset(
 					const std::vector<double> &offset);
-
-				/**
-				* Get branch name return uuid of branch there is no name
-				* return "master" if this scene is not revisioned.
-				* @return name of the branch or uuid if no name
-				*/
-				std::string getBranchName() const;
 
 				/**
 				* Return the best graph type availalble for viewing
@@ -425,38 +330,14 @@ namespace repo {
 				}
 
 				/**
-				* Load revision information of the configured branch/revision
-				* If setProjectRevision() and setProjectBranch was never called,
-				* it will load master/head.
-				* @param handler database handler to perform this action
-				* @param errMsg message if it failed
-				* @return return true upon success
-				*/
-				bool loadRevision(
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					std::string &errMsg,
-					const std::vector<ModelRevisionNode::UploadStatus> &includeStatus = {});
-
-				/**
 				* Load Scene into Scene graph object base on the
 				* revision/branch setting.
 				* @param handler database handler to perform this action
 				* @param errMsg message if it failed
 				* @return return true upon success
 				*/
-				bool loadScene(
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					std::string &errMsg);
-
-				/**
-				* Load stash into scene base on the revision setting
-				* @param handler database handler to perform this action
-				* @param errMsg message if it failed
-				* @return return true upon success
-				*/
-				bool loadStash(
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					std::string &errMsg);
+				void loadScene(
+					repo::core::handler::AbstractDatabaseHandler *handler);
 
 				/*
 				* Loads the root node of the Default graph into the member. This method
@@ -472,7 +353,7 @@ namespace repo {
 				* should a handler is supplied
 				* @param status status of the revision
 				*/
-				bool updateRevisionStatus(
+				void updateRevisionStatus(
 					repo::core::handler::AbstractDatabaseHandler *handler,
 					const ModelRevisionNode::UploadStatus &status);
 
@@ -617,7 +498,7 @@ namespace repo {
 				* @return a RepoNodeSet of meshes
 				*/
 				RepoNodeSet getAllMeshes(
-					const GraphType &gType) const
+					const GraphType &gType = GraphType::DEFAULT) const
 				{
 					return  gType == GraphType::OPTIMIZED ? stashGraph.meshes : graph.meshes;
 				}
@@ -659,7 +540,7 @@ namespace repo {
 				* @return a RepoNodeSet of transformations
 				*/
 				RepoNodeSet getAllTransformations(
-					const GraphType &gType) const
+					const GraphType &gType = GraphType::DEFAULT) const
 				{
 					return  gType == GraphType::OPTIMIZED ? stashGraph.transformations : graph.transformations;
 				}
@@ -764,12 +645,12 @@ namespace repo {
 				* check if Root Node exists
 				* @return returns true if rootNode is not null.
 				*/
-				bool hasRoot(const GraphType &gType) const {
+				bool hasRoot(const GraphType &gType = GraphType::DEFAULT) const {
 					const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 					return (bool)g.rootNode;
 				}
 
-				RepoNode* getRoot(const GraphType &gType) const {
+				RepoNode* getRoot(const GraphType &gType = GraphType::DEFAULT) const {
 					const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 					return g.rootNode;
 				}
@@ -783,18 +664,6 @@ namespace repo {
 					const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 					return g.nodesByUniqueID.size();
 				}
-
-				/**
-				* Get the file names of the original files that are stored within the database
-				* @return returns a vector of file names
-				*/
-				std::vector<std::string> getOriginalFiles() const;
-
-				/*
-				* Adds the fileName to the reference files list. This has no effect if the scene
-				* has already been commi
-				*/
-				void setOriginalFiles(std::vector<std::string> fileNames);
 
 				/**
 				* -------------- Scene Modification Functions --------------
@@ -819,12 +688,6 @@ namespace repo {
 				void removeNode(
 					const GraphType                   &gtype,
 					const repo::lib::RepoUUID                    &sharedID);
-
-				/**
-				* Reset the change set of this RepoScene.
-				* turn everything into newly added and set it as unrevisioned
-				*/
-				void resetChangeSet();
 
 				/**
 				* Rotates the model by 270 degrees to compensate the different axis orientation
@@ -860,10 +723,9 @@ namespace repo {
 				* @param errMsg error message if it returns false
 				* @return returns true if succeeded
 				*/
-				bool addNodeToMaps(
-					const GraphType &gType,
-					RepoNode *node,
-					std::string &errMsg);
+				void addNodeToMaps(
+					const GraphType& gType,
+					RepoNode* node);
 
 				/**
 				* Commit a vector of nodes into the database
@@ -880,32 +742,10 @@ namespace repo {
 					const GraphType &gType,
 					std::string &errMsg);
 
-				bool commitSequence(
+				void commitSequence(
 					repo::core::handler::AbstractDatabaseHandler *handler,
-					repo::core::handler::fileservice::FileManager *manager,
-					const repo::lib::RepoUUID &revID,
-					std::string &err
+					repo::core::handler::fileservice::FileManager *manager
 				);
-
-				/**
-				* Commit a revision node into project.revExt base on the
-				* changes on this scene
-				* @param errMsg error message if this failed
-				* @param newRevNode a reference to the revNode that will be created in this function
-				* @param userName name of the author
-				* @param message message describing this commit
-				* @param tag tag for this commit
-				* @return returns true upon success
-				*/
-				bool commitRevisionNode(
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					repo::core::handler::fileservice::FileManager *manager,
-					std::string &errMsg,
-					ModelRevisionNode *&newRevNode,
-					const std::string &userName,
-					const std::string &message,
-					const std::string &tag,
-					const repo::lib::RepoUUID &revId);
 
 				/**
 				* Commit a new nodes into project.sceneExt base on the
@@ -913,10 +753,7 @@ namespace repo {
 				* @param errMsg error message if this failed
 				* @return returns true upon success
 				*/
-				bool commitSceneChanges(
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					const repo::lib::RepoUUID &revId,
-					std::string &errMsg);
+				void commitSceneChanges(repo::core::handler::AbstractDatabaseHandler *handler);
 
 				/**
 				* Recursive function to find the scene's bounding box
@@ -931,6 +768,13 @@ namespace repo {
 					const repo::lib::RepoMatrix   &mat,
 					repo::lib::RepoBounds&bbox) const;
 
+				ModelRevisionNode getRevisionNode(
+					repo::core::handler::AbstractDatabaseHandler *handler);
+
+				void updateRevisionNode(
+					repo::core::handler::AbstractDatabaseHandler* handler,
+					ModelRevisionNode& revNode);
+
 				/**
 				* populate the collections (cameras, meshes etc) with the given nodes
 				* @param gtype which graph to populate
@@ -939,11 +783,10 @@ namespace repo {
 				* @param errMsg error message when this function returns false
 				* @return returns true if scene graph populated with no errors
 				*/
-				bool populate(
+				void populate(
 					const GraphType &gtype,
 					repo::core::handler::AbstractDatabaseHandler *handler,
-					std::vector<RepoBSON> nodes,
-					std::string &errMsg);
+					std::vector<RepoBSON> nodes);
 
 				/**
 				* Populate the collections with the given node sets
@@ -967,37 +810,15 @@ namespace repo {
 					const RepoNodeSet &transformations,
 					const RepoNodeSet &unknowns);
 
-				/**
-				* Shift the model by the given vector
-				* this alter the root node with the given translation
-				* @param offset a vector 3 double denoting the vector shift
-				*/
-				void shiftModel(
-					const std::vector<double> &offset);
-
-				/*
-				* ---------------- Scene utilities ----------------
-				*/
-
-				std::string sanitizeExt(const std::string& name) const;
-				std::string sanitizeName(const std::string& name) const;
-				std::string sanitizeDatabaseName(const std::string& name) const;
-
 				/*
 				* ---------------- Scene Graph settings ----------------
 				*/
 
-				std::vector<std::string> refFiles;  //Original Files that created this scene
 				std::vector<RepoNode*> toRemove;
 				std::vector<double> worldOffset;
-				repo::lib::RepoUUID   revision;
-				repo::lib::RepoUUID   branch;
-				std::string commitMsg;
-				bool headRevision;
-				bool unRevisioned;       /*! Flag to indicate if the scene graph is revisioned (true for scene graphs from model convertor)*/
-				std::string databaseName;/*! name of the database */
-				std::string projectName; /*! name of the project */
-				ModelRevisionNode		 *revNode;
+				repo::lib::RepoUUID revision;
+				std::string teamspace;/*! name of the database */
+				std::string container; /*! name of the project */
 
 				RepoSequence sequence;
 				std::vector<RepoTask> tasks;
@@ -1015,8 +836,8 @@ namespace repo {
 				std::set<repo::lib::RepoUUID> newRemoved; //list of nodes removed for this revision (shared ID)
 				std::set<repo::lib::RepoUUID> newModified; // list of nodes modified during this revision  (shared ID)
 
-				repoGraphInstance graph; //current state of the graph, given the branch/revision
-				repoGraphInstance stashGraph; //current state of the optimized graph, given the branch/revision
+				repoGraphInstance graph; //current state of the graph, given the revision
+				repoGraphInstance stashGraph; //current state of the optimized graph, given the revision
 				uint16_t status = 0; //health of the scene, 0 denotes healthy
 				bool loadExtFiles = true;
 			};

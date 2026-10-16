@@ -29,414 +29,469 @@
 #include "../unit/repo_test_database_info.h"
 #include "../unit/repo_test_utils.h"
 #include "../unit/repo_test_scene_utils.h"
+#include "../unit/repo_test_revision_utils.h"
 #include <repo/core/model/bson/repo_bson_builder.h>
 #include <repo/core/handler/database/repo_query.h>
 #include <unordered_set>
 #include <filesystem>
 
+using namespace repo::manipulator::modelconvertor;
 using namespace testing;
 
-static std::string getSuccessFilePath()
-{
-	return getDataPath(simpleModel);
+namespace {
+	int runImport(std::string bouncerConfig, std::string importConfig)
+	{
+		return runProcess(
+			getClientExePath() + " "
+			+ bouncerConfig
+			+ " import \""
+			+ importConfig + "\""
+		);
+	}
+
+	/*
+	* Run the upload process by passing the client a config file, and check the
+	* results. This method assumes the revision node already exists.
+	*/
+	int testModelUploadFromConfigFile(std::string configFile, bool expectSuccess = true)
+	{
+		auto returnCode = runImport(getConnConfig(), configFile);
+
+		ModelImportConfig config;
+		try {
+			config = ModelImportConfig::ParseJsonFile(configFile);
+			config.validate();
+		}
+		catch (repo::lib::RepoInvalidConfigException) {
+			if (expectSuccess) {
+				ADD_FAILURE() << "Could not parse config file " << configFile;
+			}
+			return returnCode;
+		}
+
+		auto handler = getHandler();
+
+		repo::core::model::ModelRevisionNode revisionNode;
+		try {
+			auto bson = handler->findOneByCriteria(
+				config.getDatabaseName(),
+				config.getProjectName() + "." + REPO_COLLECTION_HISTORY,
+				repo::core::handler::database::query::Eq(REPO_LABEL_ID, config.getRevisionId())
+			);
+			revisionNode = repo::core::model::ModelRevisionNode(bson);
+		}
+		catch (repo::lib::RepoBSONException)
+		{
+			if (expectSuccess) {
+				ADD_FAILURE() << "Could not find expected revision node " << config.getDatabaseName() << " " << config.getProjectName() + "." + REPO_COLLECTION_HISTORY << " " << config.getRevisionId().toString();				return returnCode;
+			}
+			return returnCode;
+		}
+
+		if (expectSuccess)
+		{
+			EXPECT_THAT(revisionNode.getUploadStatus(), Eq(repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE));
+
+			// check that the scene is populated
+
+			repo::core::model::RepoScene scene(
+				config.getDatabaseName(),
+				config.getProjectName(),
+				config.getRevisionId()
+			);
+			scene.loadScene(handler.get());
+
+			EXPECT_THAT(scene.hasRoot(), IsTrue());
+			EXPECT_THAT(scene.getAllMeshes().size(), Gt(0)) << "Scene has no meshes";
+			EXPECT_THAT(scene.getAllTransformations().size(), Gt(0)) << "Scene has no transformations";
+
+			// check that the web resources exist
+
+			auto bundles = handler->findAllByCriteria(
+				config.getDatabaseName(),
+				config.getProjectName() + "." + REPO_COLLECTION_STASH_BUNDLE,
+				repo::core::handler::database::query::Eq(REPO_LABEL_ID, config.getRevisionId())
+			);
+
+			EXPECT_THAT(bundles.size(), Eq(1)) << "Incorrect number of bundles found for revision";
+
+			auto assets = bundles[0];
+
+			EXPECT_THAT(assets.getStringArray("assets").size(), Gt(0)) << "No assets found in bundle";
+		}
+		else
+		{
+			// If the config file points to an existing revision node, then that node
+			// should always be left in a failure state unless the import succeeds.
+
+			EXPECT_THAT(revisionNode.getUploadStatus(), Ne(repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE));
+		}
+
+		return returnCode;
+	}
+
+	/*
+	* Uploads a model file to the database to the container and revision specified
+	* in the config, if any. Any fields in the config that are not specified will be
+	* filled in with arbitrary values so that the config is valid. This method will
+	* create a revision node for the file.
+	*/
+	int testModelUpload(std::filesystem::path filename, ModelImportConfig& config, bool expectSuccess = true)
+	{
+		// Ensure the config is valid
+
+		if (config.databaseName.empty()) {
+			config.databaseName = "stUpload";
+		}
+		if (config.projectName.empty()) {
+			config.projectName = testing::getRandomContainer();
+		}
+		if (!config.revisionId) {
+			config.revisionId = repo::lib::RepoUUID::createUUID();
+		}
+		if (config.targetUnits == repo::lib::ModelUnits::UNKNOWN) {
+			config.targetUnits = repo::lib::ModelUnits::METRES;
+		}
+
+		// Save the config to a temporary file
+
+		auto configPath = getDataPath(repo::lib::RepoUUID::createUUID().toString() + ".json");
+		testing::writeImportConfig(config, configPath);
+
+		// make sure there is no existing revision node - this method does not support
+		// that, if the test should create its own node, then it should use another
+		// method to do the upload
+
+		auto handler = getHandler();
+
+		auto revision = config.getRevisionId();
+
+		EXPECT_THAT(handler->count(
+			config.getDatabaseName(),
+			config.getProjectName() + "." + REPO_COLLECTION_HISTORY,
+			repo::core::handler::database::query::Eq(REPO_LABEL_ID, revision)
+		), Eq(0));
+
+		// creates the revision and ref nodes for the specified filename
+
+		testing::makeRevisionNode(handler, config, filename);
+
+		return testModelUploadFromConfigFile(configPath, expectSuccess);
+	}
+
+	/*
+	* Uploads a model file to the database to a new container, checks if the upload
+	* was successful, and returns the exit code. Use this to quickly test the upload
+	* of files that should be working. Do not use this to test files that are expected
+	* to fail, as this will throw on any failures.
+	*/
+	int testModelUpload(std::filesystem::path filename, bool expectSuccess = true)
+	{
+		ModelImportConfig config;
+		return testModelUpload(filename, config, expectSuccess);
+	}
+
+	int testGenStash(const ModelImportConfig& config, std::string type)
+	{
+		return runProcess(
+			getClientExePath() + " "
+			+ getConnConfig() + " "
+			+ "genStash" + " "
+			+ config.getDatabaseName() + " "
+			+ config.getProjectName() + " " 
+			+ config.getRevisionId().toString() + " "
+			+ type
+		);
+	}
 }
 
-static int testUpload(
-	std::string mongoDbName,
-	std::string projectName,
-	std::string fileName
-)
-{
-	std::string uploadCmd = produceUploadArgs(
-		mongoDbName,
-		projectName,
-		getDataPath(fileName));
-
-	int errCode = runProcess(uploadCmd);
-	;
-	repoInfo << "Error code from bouncer client: " << errCode
-		<< ", " << (int)errCode;
-	return errCode;
-};
+// These next two tests test the behaviour of the client with an invalid
+// bouncer config.
 
 TEST(RepoClientTest, UploadTestInvalidDBConn)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
+	ModelImportConfig config;
+	config.databaseName = "stUpload";
+	config.projectName = "fail";
+	config.revisionId = repo::lib::RepoUUID::createUUID();
+
+	testing::makeRevisionNode(getHandler(), config, "cube.obj");
+
+	auto importConfigPath = getDataPath(repo::lib::RepoUUID::createUUID().toString() + ".json");
+	testing::writeImportConfig(config, importConfigPath);
 
 	//Test failing to connect to database
-	std::string db = "stUpload";
-	std::string failToConnect = produceUploadArgs(db, "failConn", getSuccessFilePath(), getDataPath("config/invalidAdd.json"));
-	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToConnect));
-	EXPECT_FALSE(projectExists(db, "failConn"));
+
+	EXPECT_EQ(REPOERR_AUTH_FAILED, runImport(getDataPath("config/invalidAdd.json"), importConfigPath));
+	
+	EXPECT_FALSE(testing::projectIsPopulated(config));
 }
 
 TEST(RepoClientTest, UploadTestBadDBAuth)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
+	ModelImportConfig config;
+	config.databaseName = "stUpload";
+	config.projectName = "fail";
+	config.revisionId = repo::lib::RepoUUID::createUUID();
+
+	testing::makeRevisionNode(getHandler(), config, "cube.obj");
+
+	auto importConfigPath = getDataPath(repo::lib::RepoUUID::createUUID().toString() + ".json");
+	testing::writeImportConfig(config, importConfigPath);
 
 	//Test Bad authentication
-	std::string failToAuth = produceUploadArgs(db, "failAuth", getSuccessFilePath(), getDataPath("config/badAuth.json"));
-	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToAuth));
-	EXPECT_FALSE(projectExists(db, "failAuth"));
+
+	EXPECT_EQ(REPOERR_AUTH_FAILED, runImport(getDataPath("config/badAuth.json"), importConfigPath));
+
+	EXPECT_FALSE(testing::sceneHasArtefacts(config));
 }
+
+// These next few consider config files that have a valid schema but
+// are not a valid configuration for importing for one reason or
+// another.
 
 TEST(RepoClientTest, UploadTestNoFile)
 {
 	//this ensures we can run processes
 	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
-	//Test Bad FilePath
-	std::string badFilePath = produceUploadArgs(db, "failPath", "nonExistentFile.obj");
-	fflush(stdout);
-	std::cout << " Executing: " << badFilePath << std::endl;
-	fflush(stdout);
-	EXPECT_EQ((int)REPOERR_MODEL_FILE_READ, runProcess(badFilePath));
-	EXPECT_FALSE(projectExists(db, "failPath"));
+
+	ModelImportConfig config;
+	config.databaseName = "stUpload";
+	config.projectName = "fail";
+	config.revisionId = repo::lib::RepoUUID::createUUID();
+
+	repo::core::model::ModelRevisionNode revision;
+	revision.setUniqueID(config.revisionId);
+	
+	// Insert a revision missing the rFile array
+
+	auto handler = getHandler();
+	handler->insertDocument(
+		config.databaseName,
+		config.projectName + "." + REPO_COLLECTION_HISTORY,
+		revision
+	);
+
+	auto importConfigPath = getDataPath(repo::lib::RepoUUID::createUUID().toString() + ".json");
+	testing::writeImportConfig(config, importConfigPath);
+
+	EXPECT_EQ(REPOERR_FILE_REF_MISSING, runImport(getDataPath("config/config.json"), importConfigPath));
+
+	EXPECT_FALSE(testing::projectIsPopulated(config));
 }
 
 TEST(RepoClientTest, UploadTestBadExt)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
+	ModelImportConfig config;
+	config.databaseName = "stUpload";
+	config.projectName = "fail";
+	config.revisionId = repo::lib::RepoUUID::createUUID();
 
-	//Test Bad extension
-	std::string badExt = produceUploadArgs(db, "failExt", getDataPath(badExtensionFile));
-	EXPECT_EQ((int)REPOERR_FILE_TYPE_NOT_SUPPORTED, runProcess(badExt));
-	EXPECT_FALSE(projectExists(db, "failExt"));
+	testing::makeRevisionNode(getHandler(), config, "cube.exe");
+
+	auto importConfigPath = getDataPath(repo::lib::RepoUUID::createUUID().toString() + ".json");
+	testing::writeImportConfig(config, importConfigPath);
+
+	//Test Bad authentication
+
+	EXPECT_EQ(REPOERR_FILE_TYPE_NOT_SUPPORTED, runImport(getDataPath("config/config.json"), importConfigPath));
+
+	EXPECT_FALSE(testing::projectIsPopulated(config));
 }
 
 TEST(RepoClientTest, UploadTestBadFBXVer)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
+	ModelImportConfig config;
+	config.databaseName = "stUpload";
+	config.projectName = "fail";
+	config.revisionId = repo::lib::RepoUUID::createUUID();
 
-	//Unsupported FBX version
-	std::string unsupportedVersion = produceUploadArgs(db, "failExt", getDataPath(unsupportedFBXVersion));
-	EXPECT_EQ((int)REPOERR_UNSUPPORTED_FBX_VERSION, runProcess(unsupportedVersion));
-	EXPECT_FALSE(projectExists(db, "failExt"));
+	testing::makeRevisionNode(getHandler(), config, unsupportedFBXVersion);
+
+	auto importConfigPath = getDataPath(repo::lib::RepoUUID::createUUID().toString() + ".json");
+	testing::writeImportConfig(config, importConfigPath);
+
+	//Test unsupported fbx
+
+	EXPECT_EQ(REPOERR_UNSUPPORTED_FBX_VERSION, runImport(getDataPath("config/config.json"), importConfigPath));
+
+	EXPECT_FALSE(testing::projectIsPopulated(config));
 }
 
 TEST(RepoClientTest, UploadTestBadArgs)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
+	//Invalid arguments (attempting to call using the old style)
+	{
+		std::string args = getClientExePath() + " " + getDataPath("config/config.json") + " import " + "filename.obj " + "db " + "proj";
+		EXPECT_EQ((int)REPOERR_INVALID_ARG, runProcess(args));
+	}
 
-	//Insufficient arguments
-	std::string lackArg = getClientExePath() + " " + getConnConfig() + " import " + getSuccessFilePath();
-	EXPECT_EQ((int)REPOERR_INVALID_ARG, runProcess(lackArg));
+	//Invalid arguments (missing config path)
+	{
+		std::string args = getClientExePath() + " " + getDataPath("config/config.json") + " import " + "-f ";
+		EXPECT_EQ((int)REPOERR_INVALID_ARG, runProcess(args));
+	}
+
+	//Invalid arguments (config file doesn't exist)
+	{
+		std::string args = getClientExePath() + " " + getDataPath("config/config.json") + " import " + "-f " + "nonexistentConfig.json";
+		EXPECT_EQ((int)REPOERR_INVALID_ARG, runProcess(args));
+	}
 }
 
 TEST(RepoClientTest, UploadTestSuccess)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
-
-	//Test Good Upload
-	std::string goodUpload = produceUploadArgs(db, "cube", getSuccessFilePath());
-	EXPECT_EQ((int)REPOERR_OK, runProcess(goodUpload));
-	EXPECT_TRUE(projectExists(db, "cube"));
-
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importSuccess))));
-	EXPECT_TRUE(projectExists("testDB", importSuccessPro));
-	EXPECT_TRUE(projectSettingsCheck("testDB", importSuccessPro, "owner", "", ""));
-
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importSuccess2))));
-	EXPECT_TRUE(projectExists("testDB", importSuccessPro2));
-	EXPECT_TRUE(projectSettingsCheck("testDB", importSuccessPro2, "owner", "taggg", "desccc"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload("cube.obj"));
 }
 
 TEST(RepoClientTest, UploadTestTexture)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
-
-	//Test Textured Upload
-	std::string texUpload = produceUploadArgs(db, "textured", getDataPath(texturedModel));
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, runProcess(texUpload));
-	EXPECT_TRUE(projectExists(db, "textured"));
+	//Test Textured Upload where the texture is missing
+	EXPECT_EQ(REPOERR_LOAD_SCENE_MISSING_TEXTURE, testModelUpload(texturedModel, true));
 }
 
 TEST(RepoClientTest, UploadTestBIM)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
+	// This unsupported BIM version should fail to upload
 
-	std::string mongoDbName = "stUpload";
+	EXPECT_EQ(REPOERR_UNSUPPORTED_BIM_VERSION, testModelUpload("RepoModelImport/cube_bim1_spoofed.bim", false));
 
-	std::string spoofedBim1PrjName = "spoofedBIM1Test";
-	EXPECT_EQ(REPOERR_UNSUPPORTED_BIM_VERSION,
-		testUpload(mongoDbName, spoofedBim1PrjName, "RepoModelImport/cube_bim1_spoofed.bim"));
-	EXPECT_FALSE(projectExists(mongoDbName, spoofedBim1PrjName));
+	// Regular BIM files should all succeed
 
-	std::string okBim2PrjName = "okBIM2Test";
-	EXPECT_EQ(REPOERR_OK,
-		testUpload(mongoDbName, okBim2PrjName, "RepoModelImport/cube_bim2_navis_2021_repo_4.6.1.bim"));
-	EXPECT_TRUE(projectExists(mongoDbName, okBim2PrjName));
+	EXPECT_EQ(REPOERR_OK, testModelUpload("RepoModelImport/cube_bim2_navis_2021_repo_4.6.1.bim"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload("RepoModelImport/BrickWalls_bim3.bim"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload("RepoModelImport/wall_section_bim4.bim"));
 
-	std::string okBim3PrjName = "okBIM3Test";
-	EXPECT_EQ(REPOERR_OK,
-		testUpload(mongoDbName, okBim3PrjName, "RepoModelImport/BrickWalls_bim3.bim"));
-	EXPECT_TRUE(projectExists(mongoDbName, okBim3PrjName));
+	// These files with texture corruption should still upload OK
 
-	std::string okBim4PrjName = "okBIM4Test";
-	EXPECT_EQ(REPOERR_OK,
-		testUpload(mongoDbName, okBim4PrjName, "RepoModelImport/wall_section_bim4.bim"));
-	EXPECT_TRUE(projectExists(mongoDbName, okBim4PrjName));
-
-	std::string corrTxtrBim3PrjName = "corruptedTextureBIM3Test";
-	EXPECT_EQ(REPOERR_OK,
-		testUpload(mongoDbName, corrTxtrBim3PrjName, "RepoModelImport/BrickWalls_bim3_CorruptedTextureField.bim"));
-	EXPECT_TRUE(projectExists(mongoDbName, corrTxtrBim3PrjName));
-
-	std::string corrMatBim3PrjName = "corruptedMaterialBIM3Test";
-	EXPECT_EQ(REPOERR_OK,
-		testUpload(mongoDbName, corrMatBim3PrjName, "RepoModelImport/BrickWalls_bim3_MissingTexture.bim"));
-	EXPECT_TRUE(projectExists(mongoDbName, corrMatBim3PrjName));
+	EXPECT_EQ(REPOERR_OK, testModelUpload("RepoModelImport/BrickWalls_bim3_CorruptedTextureField.bim"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload("RepoModelImport/BrickWalls_bim3_MissingTexture.bim"));
 }
 
 TEST(RepoClientTest, UploadTestIFC)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
-
-	//Upload IFCFile
-	std::string ifcUpload = produceUploadArgs(db, "ifcTest", getDataPath(ifcModel));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(ifcUpload));
-	EXPECT_TRUE(projectExists(db, "ifcTest"));
-
-	std::string ifc4Upload = produceUploadArgs(db, "ifc4Test", getDataPath(ifc4Model));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(ifc4Upload));
-	EXPECT_TRUE(projectExists(db, "ifc4Test"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(ifcModel));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(ifc4Model));
 }
 
 TEST(RepoClientTest, UploadTestDGN)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
-
-	//Upload DGN file
-	std::string dgnUpload = produceUploadArgs(db, "dgnTest", getDataPath(dgnModel));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(dgnUpload));
-	EXPECT_TRUE(projectExists(db, "dgnTest"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(dgnModel));
 }
 
 TEST(RepoClientTest, UploadTestDWG)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
+	EXPECT_EQ(REPOERR_OK, testModelUpload(dwgModel));
 
-	//Upload DWG file
-	std::string dwgUpload = produceUploadArgs(db, "dwgTest", getDataPath(dwgModel));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(dwgUpload));
-	EXPECT_TRUE(projectExists(db, "dwgTest"));
+	// Checks that encrypted files fail with the correct code
 
-	// This snippet checks if encrypted files are handled correctly.
-	std::string dwgUploadProtected = produceUploadArgs(db, "dwgTestProtected", getDataPath(dwgPasswordProtected));
-	EXPECT_EQ(REPOERR_FILE_IS_ENCRYPTED, runProcess(dwgUploadProtected));
+	EXPECT_EQ(REPOERR_FILE_IS_ENCRYPTED, testModelUpload(dwgPasswordProtected, false));
 }
 
 TEST(RepoClientTest, UploadTestDXF)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
-
-	//Upload XF file
-	std::string dxfUpload = produceUploadArgs(db, "dxfTest", getDataPath(dxfModel));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(dxfUpload));
-	EXPECT_TRUE(projectExists(db, "dxfTest"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(dxfModel));
 }
 
 TEST(RepoClientTest, UploadTestRVT)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
-
 	testing::unsetupTextures();
 
-	//Upload RVT file
-	std::string rvtUpload = produceUploadArgs(db, "rvtTest", getDataPath(rvtModel));
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, runProcess(rvtUpload));
-	EXPECT_TRUE(projectExists(db, "rvtTest"));
+	EXPECT_EQ(REPOERR_LOAD_SCENE_MISSING_TEXTURE, testModelUpload(rvtModel));
 
 	testing::setupTextures();
 
-	std::string rvtUpload2 = produceUploadArgs(db, "rvtTest2", getDataPath(rvtModel));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload2));
-	EXPECT_TRUE(projectExists(db, "rvtTest2"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(rvtModel));
 
 	//Upload RVT file with no valid 3D view (should create a default view)
-	std::string rvtUpload3 = produceUploadArgs(db, "rvtTest3", getDataPath(rvtNo3DViewModel));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload3));
-	EXPECT_TRUE(projectExists(db, "rvtTest3"));
+
+	EXPECT_EQ(REPOERR_OK, testModelUpload(rvtNo3DViewModel));
 
 	//Upload RVT file with a named view that does not exist
-	std::string rvtUpload4 = produceUploadFileArgs(getDataPath("importRvtNonExistentView.json"));
-	EXPECT_EQ((int)REPOERR_VIEW_NOT_FOUND, runProcess(rvtUpload4));
+	{
+		ModelImportConfig config;
+		config.databaseName = "rvtUpload";
+		config.projectName = "rvtTest4";
+		config.revisionId = repo::lib::RepoUUID::createUUID();
+		config.viewName = "Not A View";
+
+		EXPECT_EQ(REPOERR_VIEW_NOT_FOUND, testModelUpload(rvtModel, config, false));
+	}
 
 	//Upload RVT file with a named view that is not 3D
-	std::string rvtUpload5 = produceUploadFileArgs(getDataPath("importRvtNon3DView.json"));
-	EXPECT_EQ((int)REPOERR_VIEW_NOT_3D, runProcess(rvtUpload5));
+	{
+		ModelImportConfig config;
+		config.databaseName = "rvtUpload";
+		config.projectName = "rvtTest5";
+		config.revisionId = repo::lib::RepoUUID::createUUID();
+		config.viewName = "Site";
+
+		EXPECT_EQ(REPOERR_VIEW_NOT_3D, testModelUpload(rvtModel, config, false));
+	}
 }
 
 TEST(RepoClientTest, UploadTestRVT2021)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
-
 	testing::setupTextures();
-
-	//Upload RVT file
-	std::string rvtUpload = produceUploadArgs(db, "rvtTest2021", getDataPath(rvtModel2021));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload));
-	EXPECT_TRUE(projectExists(db, "rvtTest2021"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(rvtModel2021));
 }
 
 TEST(RepoClientTest, UploadTestRVT2022)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
-
 	testing::setupTextures();
-
-	//Upload RVT file
-	std::string rvtUpload = produceUploadArgs(db, "rvtTest2022", getDataPath(rvtModel2022));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload));
-	EXPECT_TRUE(projectExists(db, "rvtTest2022"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(rvtModel2022));
 }
 
 TEST(RepoClientTest, UploadTestNWD2022)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
-
-	//Upload NWD file
-	std::string nwdUpload = produceUploadArgs(db, "nwdTest2022", getDataPath(nwdModel2022));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(nwdUpload));
-	EXPECT_TRUE(projectExists(db, "nwdTest2022"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(nwdModel2022));
 }
 
 TEST(RepoClientTest, UploadTestRVT2024)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
-
 	testing::setupTextures();
-
-	//Upload RVT file
-	std::string rvtUpload = produceUploadArgs(db, "rvtTest2024", getDataPath(rvtModel2024));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload));
-	EXPECT_TRUE(projectExists(db, "rvtTest2024"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(rvtModel2024));
 }
 
 TEST(RepoClientTest, UploadTestNWD2024)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
-
-	//Upload NWD file
-	std::string nwdUpload = produceUploadArgs(db, "nwdTest2024", getDataPath(nwdModel2024));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(nwdUpload));
-	EXPECT_TRUE(projectExists(db, "nwdTest2024"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(nwdModel2024));
 }
 
 TEST(RepoClientTest, UploadTestRVT2025)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
-
 	testing::setupTextures();
-
-	//Upload RVT file
-	std::string rvtUpload = produceUploadArgs(db, "rvtTest2025", getDataPath(rvtModel2025));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload));
-	EXPECT_TRUE(projectExists(db, "rvtTest2025"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(rvtModel2025));
 }
 
 TEST(RepoClientTest, UploadTestNWD2025)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
-
-	//Upload NWD file
-	std::string nwdUpload = produceUploadArgs(db, "nwdTest2025", getDataPath(nwdModel2025));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(nwdUpload));
-	EXPECT_TRUE(projectExists(db, "nwdTest2025"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(nwdModel2025));
 }
 
 TEST(RepoClientTest, UploadTestRVT2026)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
-
 	testing::setupTextures();
-
-	//Upload RVT file
-	std::string rvtUpload = produceUploadArgs(db, "rvtTest2026", getDataPath(rvtModel2026));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload));
-	EXPECT_TRUE(projectExists(db, "rvtTest2025"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(rvtModel2026));
 }
 
 TEST(RepoClientTest, UploadTestNWD2026)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
-
-	//Upload NWD file
-	std::string nwdUpload = produceUploadArgs(db, "nwdTest2026", getDataPath(nwdModel2026));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(nwdUpload));
-	EXPECT_TRUE(projectExists(db, "nwdTest2026"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(nwdModel2026));
 }
 
 TEST(RepoClientTest, UploadTestNWDProtected)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
-
-	//Upload password-protected NWD
-	std::string nwdUpload = produceUploadArgs(db, "nwdPasswordProtected", getDataPath(nwdPasswordProtected));
-	EXPECT_EQ((int)REPOERR_FILE_IS_ENCRYPTED, runProcess(nwdUpload));
+	EXPECT_EQ(REPOERR_FILE_IS_ENCRYPTED, testModelUpload(nwdPasswordProtected, false));
 }
 
 TEST(RepoClientTest, UploadTestNWC)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
-	std::string project = "nwcTest";
-
-	std::string nwcUpload = produceUploadArgs(db, project, getDataPath(nwcModel));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(nwcUpload));
-	EXPECT_TRUE(projectExists(db, project));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(nwcModel));
 }
 
 TEST(RepoClientTest, UploadTestSPM)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
-
 	//commenting out 6.2 as we don't support this right now and it will crash.
 	/*std::string spmUpload = produceUploadArgs(db, "synchroTest", getDataPath(synchroFile));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(spmUpload));
@@ -448,91 +503,65 @@ TEST(RepoClientTest, UploadTestSPM)
 	EXPECT_FALSE(projectExists(db, "synchroTest2"));*/
 
 	//we also support 6.3
-	std::string spmUpload3 = produceUploadArgs(db, "synchroTest3", getDataPath(synchroVersion6_3));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(spmUpload3));
-	EXPECT_TRUE(projectExists(db, "synchroTest3"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(synchroVersion6_3));
 
-	std::string spmUpload4 = produceUploadArgs(db, "synchroTest4", getDataPath(synchroVersion6_4));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(spmUpload4));
-	EXPECT_TRUE(projectExists(db, "synchroTest4"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(synchroVersion6_4));
 
-	std::string spmUpload5 = produceUploadArgs(db, "synchroTest5", getDataPath(synchroVersion6_5));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(spmUpload5));
-	EXPECT_TRUE(projectExists(db, "synchroTest5"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(synchroVersion6_5));
 
-	std::string spmUpload6 = produceUploadArgs(db, "synchroTest6", getDataPath(synchroVersion6_5_3_7));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(spmUpload6));
-	EXPECT_TRUE(projectExists(db, "synchroTest6"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(synchroVersion6_5_3_7));
 }
 
 TEST(RepoClientTest, UploadTestRVTRegressionTests)
 {
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
-
 	// Some of these files have externally referenced or absolute referenced textures
 	// that cannot be found on Linux, so we do not consider textures.
 	testing::unsetupTextures();
+	
+	// Regression tests for fixed bugs that previously caused crashes or failed uploads
 
-	// Regression tests for fixed bugs
-	std::string rvtUpload4 = produceUploadArgs(db, "rvtTest4", getDataPath(rvtRoofTest));
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, runProcess(rvtUpload4));
-	EXPECT_TRUE(projectExists(db, "rvtTest4"));
+	EXPECT_EQ(REPOERR_LOAD_SCENE_MISSING_TEXTURE, testModelUpload(rvtRoofTest));
 
-	std::string rvtUpload5 = produceUploadArgs(db, "rvtTest5", getDataPath(rvtMeta1));
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, runProcess(rvtUpload5));
-	EXPECT_TRUE(projectExists(db, "rvtTest5"));
+	EXPECT_EQ(REPOERR_LOAD_SCENE_MISSING_TEXTURE, testModelUpload(rvtMeta1));
 
-	std::string rvtUpload6 = produceUploadArgs(db, "rvtTest6", getDataPath(rvtMeta2));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload6));
-	EXPECT_TRUE(projectExists(db, "rvtTest6"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(rvtMeta2));
 
-	std::string rvtUpload7 = produceUploadArgs(db, "rvtTest7", getDataPath(rvtHouse));
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, runProcess(rvtUpload7));
-	EXPECT_TRUE(projectExists(db, "rvtTest7"));
+	EXPECT_EQ(REPOERR_LOAD_SCENE_MISSING_TEXTURE, testModelUpload(rvtHouse));
 }
 
 TEST(RepoClientTest, UploadTestMissingFieldsInJSON)
 {
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-	std::string db = "stUpload";
+	std::vector<std::string> badConfigFiles = {
+	//	"empty.json",
+	//	"empty2.json",
+	//	"importNoDatabase.json",
+	//	"importNoDatabase2.json",
+		"importNoProject.json",
+		"importNoProject2.json",
+		"importNoRev.json",
+		"importNoRev2.json",
+	};
 
-	//JSON AS argument
-	//Empty JSON
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(emptyFile))));
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importNoFile))));
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(emptyJSONFile))));
-	EXPECT_EQ((int)REPOERR_MODEL_FILE_READ, runProcess(produceUploadFileArgs(getDataPath(importbadDir))));
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importbadDir2))));
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importNoDatabase))));
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importNoDatabase2))));
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importNoProject))));
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(importNoProject2)));
-}
-
-TEST(RepoClientTest, UploadTestOwner)
-{
-	//this ensures we can run processes
-	ASSERT_TRUE(system(nullptr));
-
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importNoOwner))));
-	EXPECT_TRUE(projectExists("testDB", importNoOwnerPro));
-	EXPECT_TRUE(projectSettingsCheck("testDB", importNoOwnerPro, "ANONYMOUS USER", "thisTag", "MyUpload"));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importNoOwner2))));
-	EXPECT_TRUE(projectExists("testDB", importNoOwnerPro2));
-	EXPECT_TRUE(projectSettingsCheck("testDB", importNoOwnerPro2, "ANONYMOUS USER", "thisTag", "MyUpload"));
+	for(auto& s : badConfigFiles)
+	{
+		std::string configPath = getDataPath(s);
+		EXPECT_EQ(REPOERR_INVALID_CONFIG_FILE, testModelUploadFromConfigFile(getDataPath(s), false)) << "Failed on config file " << s;
+	}
 }
 
 TEST(RepoClientTest, UploadSplitByFloors)
 {
 	auto handler = getHandler();
 
-	// Tests whether the split-by-floor option works correctly.
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath("importFloorsSplit.json"))));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath("importFloorsNoSplit.json"))));
-
 	{
+		ModelImportConfig config;
+		config.databaseName = "testDB";
+		config.projectName = "floors_split";
+		config.revisionId = repo::lib::RepoUUID::createUUID();
+		config.splitByFloor = true;
+
+		EXPECT_EQ(REPOERR_OK, testModelUpload("floors_and_levels.ifc", config, true));
+
 		std::set<std::string> groups;
 		auto assets = handler->getAllFromCollectionTailable("testDB", "floors_split.stash.repobundles", 0, 1, {}, "timestamp");
 		EXPECT_EQ(assets.size(), 1);
@@ -547,6 +576,14 @@ TEST(RepoClientTest, UploadSplitByFloors)
 	}
 
 	{
+		ModelImportConfig config;
+		config.databaseName = "testDB";
+		config.projectName = "floors_no_split";
+		config.revisionId = repo::lib::RepoUUID::createUUID();
+		config.splitByFloor = false;
+
+		EXPECT_EQ(REPOERR_OK, testModelUpload("floors_and_levels.ifc", config, true));
+
 		auto assets = handler->getAllFromCollectionTailable("testDB", "floors_no_split.stash.repobundles", 0, 1, {}, "timestamp");
 		EXPECT_EQ(assets.size(), 1);
 		for (auto& sm : assets[0].getObjectArray("metadata")) {
@@ -557,13 +594,13 @@ TEST(RepoClientTest, UploadSplitByFloors)
 
 TEST(RepoClientTest, GenStashTest)
 {
-	repo::RepoController* controller = new repo::RepoController();
-	std::string errMsg;
-	repo::RepoController::RepoToken* token = initController(controller);
-	repo::lib::RepoUUID stashRoot;
+	using namespace repo::core::handler::database;
 
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadArgs("genStashTest", "cube", getDataPath(simpleModel))));
-	EXPECT_TRUE(projectExists("genStashTest", "cube"));
+	ModelImportConfig config;
+	config.databaseName = "genStashTest";
+	config.projectName = "cube";
+	
+	testModelUpload("cube.obj", config);
 
 	auto handler = getHandler();
 
@@ -573,12 +610,19 @@ TEST(RepoClientTest, GenStashTest)
 	handler->dropCollection("genStashTest", "cube.stash.repobundles.ref");
 	handler->dropCollection("genStashTest", "cube.stash.json_mpc.ref");
 
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("genStashTest", "cube", "repo")));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("genStashTest", "cube", "tree")));
-
 	std::unordered_set<std::string> collections;
-	for (auto& name : handler->getCollections("genStashTest"))
-	{
+	for (auto& name : handler->getCollections("genStashTest")) {
+		collections.insert(name);
+	}
+
+	EXPECT_TRUE(collections.find("cube.stash.repobundles") == collections.end());
+	EXPECT_TRUE(collections.find("cube.stash.repobundles.ref") == collections.end());
+	EXPECT_TRUE(collections.find("cube.stash.json_mpc.ref") == collections.end());
+
+	EXPECT_THAT(testGenStash(config, "repo"), Eq(0));
+
+	collections.clear();
+	for (auto& name : handler->getCollections("genStashTest")) {
 		collections.insert(name);
 	}
 
@@ -586,19 +630,13 @@ TEST(RepoClientTest, GenStashTest)
 	EXPECT_TRUE(collections.find("cube.stash.repobundles.ref") != collections.end());
 	EXPECT_TRUE(collections.find("cube.stash.json_mpc.ref") != collections.end());
 
-	// Now check for the tree
+	auto documents = handler->findAllByCriteria("genStashTest", "cube.stash.json_mpc.ref", query::Eq(REPO_NODE_LABEL_ID, config.revisionId.toString() + "/fulltree.json"));
+	EXPECT_EQ(documents.size(), 0);
 
-	using namespace repo::core::handler::database;
+	EXPECT_THAT(testGenStash(config, "tree"), Eq(0));
 
-	auto revisions = handler->findAllByCriteria("genStashTest", "cube.history", query::Eq("type", std::string("revision")));
-
-	EXPECT_EQ(revisions.size(), 1);
-
-	auto revisionId = revisions[0].getUUIDField("_id").toString();
-	auto documents = handler->findAllByCriteria("genStashTest", "cube.stash.json_mpc.ref", query::Eq("_id", revisionId + "/fulltree.json"));
+	documents = handler->findAllByCriteria("genStashTest", "cube.stash.json_mpc.ref", query::Eq(REPO_NODE_LABEL_ID, config.revisionId.toString() + "/fulltree.json"));
 	EXPECT_EQ(documents.size(), 1);
-
-	delete controller;
 }
 
 TEST(RepoClientTest, ProcessDrawing)
@@ -705,26 +743,13 @@ TEST(RepoClientTest, ProcessDrawing)
 
 TEST(RepoClientTest, UnicodeFilenames)
 {
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadArgs("unicodeImport", "dgn", getDataPath("КР3_очищено.dgn"))));
-	EXPECT_TRUE(projectIsPopulated("unicodeImport", "dgn"));
-
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadArgs("unicodeImport", "dwg", getDataPath("КР3_очищено.dwg"))));
-	EXPECT_TRUE(projectIsPopulated("unicodeImport", "dwg"));
-
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadArgs("unicodeImport", "nwc", getDataPath("КР3_очищено.nwc"))));
-	EXPECT_TRUE(projectIsPopulated("unicodeImport", "nwc"));
-
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadArgs("unicodeImport", "rvt", getDataPath("КР3_очищено.rvt"))));
-	EXPECT_TRUE(projectIsPopulated("unicodeImport", "rvt"));
-
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadArgs("unicodeImport", "bim004", getDataPath("КР3_очищено.bim004.bim"))));
-	EXPECT_TRUE(projectIsPopulated("unicodeImport", "bim004"));
-
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadArgs("unicodeImport", "obj", getDataPath("КР3_очищено.obj")))); // Assimp
-	EXPECT_TRUE(projectIsPopulated("unicodeImport", "obj"));
-
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadArgs("unicodeImport", "ifc", getDataPath("КР3_очищено.ifc"))));
-	EXPECT_TRUE(projectIsPopulated("unicodeImport", "ifc"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(u8"КР3_очищено.dgn"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(u8"КР3_очищено.dwg"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(u8"КР3_очищено.nwc"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(u8"КР3_очищено.rvt"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(u8"КР3_очищено.bim004.bim"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(u8"КР3_очищено.obj"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(u8"КР3_очищено.ifc"));
 
 	/*
 	* Synchro does not support Unicode filenames on Windows. This is a known issue,
@@ -732,20 +757,19 @@ TEST(RepoClientTest, UnicodeFilenames)
 	* but is low priority because the Linux versions of the plugins do.
 	*/
 #ifndef WIN32
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadArgs("unicodeImport", "spm", getDataPath("КР3_очищено.6_4.spm"))));
-	EXPECT_TRUE(projectIsPopulated("unicodeImport", "spm"));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(u8"КР3_очищено.6_4.spm"));
 #endif
 }
 
 TEST(RepoClientTest, ExistingRevisionArtefactsAreRemoved)
 {
-	// Perform a couple of imports to pre-populate a container
+	// Perform a couple of imports to pre-populate a container with prior
+	// (successful) revisions.
 
 	testing::setupTextures();
 
 	auto database = repo::lib::RepoUUID::createUUID().toString();
 	auto container = repo::lib::RepoUUID::createUUID().toString();
-	auto configPath = getDataPath("importExistingRevisionArtefacts.json");
 
 	repo::manipulator::modelconvertor::ModelImportConfig config;
 	config.databaseName = database;
@@ -756,8 +780,7 @@ TEST(RepoClientTest, ExistingRevisionArtefactsAreRemoved)
 	for (int i = 0; i < 2; i++)
 	{
 		config.revisionId = repo::lib::RepoUUID::createUUID();
-		testing::writeImportConfig(getDataPath("sample.rvt"), config, configPath);
-		EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(configPath)));
+		EXPECT_EQ(REPOERR_OK, testModelUpload("sample.rvt", config, true));
 	}
 
 	// Now commit some artefacts for a revision to emulate an import that was
@@ -779,18 +802,6 @@ TEST(RepoClientTest, ExistingRevisionArtefactsAreRemoved)
 	auto rootNodes = utils.getRootNodes();
 	utils.deleteNode(rootNodes[0].getUUIDField(REPO_NODE_LABEL_ID));
 
-	// Flag the revision as incomplete, which will be the most likely
-	// case for failed imports, though it is also possible to have
-	// overlapping successful imports if they were started manually.
-
-	repo::core::model::ModelRevisionNode revisionNode;
-	revisionNode.setUniqueID(config.revisionId);
-	revisionNode.setTimestamp();
-	revisionNode.setAuthor("test");
-	revisionNode.updateStatus(repo::core::model::ModelRevisionNode::UploadStatus::GEN_DEFAULT);
-
-	utils.updateRevision(revisionNode);
-
 	// Get all the link names for the orphaned nodes so we can check the files are
 	// properly deleted
 
@@ -808,8 +819,7 @@ TEST(RepoClientTest, ExistingRevisionArtefactsAreRemoved)
 	// Now run the import again, which should remove all orphaned artefacts leaving
 	// three well-formed revisions.
 
-	testing::writeImportConfig(getDataPath("sample.rvt"), config, configPath);
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(configPath)));
+	EXPECT_EQ(REPOERR_OK, testModelUpload("sample.rvt", config, true));
 
 	auto history = utils.getRevisions();
 	EXPECT_EQ(history.size(), 3);

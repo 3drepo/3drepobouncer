@@ -24,6 +24,7 @@
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 #include <fstream>
+#include <algorithm>
 
 #include <repo_log.h>
 #include "repo/error_codes.h"
@@ -74,54 +75,52 @@ static bool extNameCheck(const char &c)
 	return c == ' ' || c == '$';
 }
 
-std::string RepoScene::sanitizeExt(const std::string& name) const
-{
-	// http://docs.mongodb.org/manual/reference/limits/#Restriction-on-Collection-Names
-	std::string newName(name);
-	std::replace_if(newName.begin(), newName.end(), extNameCheck, '_');
-
-	return newName;
-}
-
-std::string RepoScene::sanitizeName(const std::string& name) const
-{
-	// http://docs.mongodb.org/manual/reference/limits/#Restriction-on-Collection-Names
-	std::string newName(name);
-	std::replace_if(newName.begin(), newName.end(), nameCheck, '_');
-
-	return newName;
-}
-
-std::string RepoScene::sanitizeDatabaseName(const std::string& name) const
+void checkParameters(const std::string& teamspace, const std::string& collection, const repo::lib::RepoUUID& revision)
 {
 	// http://docs.mongodb.org/manual/reference/limits/#naming-restrictions
+	if(std::any_of(teamspace.begin(), teamspace.end(), dbNameCheck))
+	{
+		throw repo::lib::RepoInvalidConfigException("Teamspace name contains invalid characters");
+	}
 
-	// Cannot contain any of /\. "$*<>:|?
-	std::string newName(name);
-	std::replace_if(newName.begin(), newName.end(), dbNameCheck, '_');
+	// http://docs.mongodb.org/manual/reference/limits/#Restriction-on-Collection-Names
+	if(std::any_of(collection.begin(), collection.end(), nameCheck))
+	{
+		throw repo::lib::RepoInvalidConfigException("Collection name contains invalid characters");
+	}
 
-	return newName;
+	if (!revision)
+	{
+		throw repo::lib::RepoInvalidConfigException("Revision ID is invalid");
+	}
 }
 
-RepoScene::RepoScene(
-	const std::string &database,
-	const std::string &projectName)
-	:
-	databaseName(sanitizeDatabaseName(database)),
-	projectName(sanitizeName(projectName)),
-	headRevision(true),
-	unRevisioned(true),
-	revNode(0),
+RepoScene::RepoScene() :
+	teamspace({}),
+	container({}),
+	revision(repo::lib::RepoUUID::defaultValue),
 	status(0)
 {
 	graph.rootNode = nullptr;
 	stashGraph.rootNode = nullptr;
-	//defaults to master branch
-	branch = repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH);
 }
 
 RepoScene::RepoScene(
-	const std::vector<std::string> &refFiles,
+	const std::string &teamspace,
+	const std::string &container,
+	const repo::lib::RepoUUID& revId)
+	:
+	teamspace(teamspace),
+	container(container),
+	revision(revId),
+	status(0)
+{
+	graph.rootNode = nullptr;
+	stashGraph.rootNode = nullptr;
+	checkParameters(teamspace, container, revision);
+}
+
+RepoScene::RepoScene(
 	const RepoNodeSet              &meshes,
 	const RepoNodeSet              &materials,
 	const RepoNodeSet              &metadata,
@@ -129,17 +128,13 @@ RepoScene::RepoScene(
 	const RepoNodeSet              &transformations,
 	const RepoNodeSet              &unknowns
 ) :
-	databaseName(""),
-	projectName(""),
-	headRevision(true),
-	unRevisioned(true),
-	refFiles(refFiles),
-	revNode(0),
+	teamspace({}),
+	container({}),
+	revision(repo::lib::RepoUUID::defaultValue),
 	status(0)
 {
 	graph.rootNode = nullptr;
 	stashGraph.rootNode = nullptr;
-	branch = repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH);
 	populateAndUpdate(GraphType::DEFAULT, meshes, materials, metadata, textures, transformations, unknowns);
 }
 
@@ -154,9 +149,17 @@ RepoScene::~RepoScene()
 	{
 		delete pair.second;
 	}
+}
 
-	if (revNode)
-		delete revNode;
+void RepoScene::setRevision(
+	const std::string& teamspace,
+	const std::string& container,
+	const repo::lib::RepoUUID& revision
+) {
+	this->teamspace = teamspace;
+	this->container = container;
+	this->revision = revision;
+	checkParameters(teamspace, container, revision);
 }
 
 void RepoScene::abandonChild(
@@ -390,40 +393,57 @@ bool RepoScene::addNodeToScene(
 	std::string &errMsg,
 	RepoNodeSet *collection)
 {
-	bool success = true;
-
 	for (auto & node : nodes)
 	{
-		if (node)
-		{
-			if (node->getTypeAsEnum() == NodeType::TRANSFORMATION || node->getParentIDs().size()) {
-				collection->insert(node);
-				if (!addNodeToMaps(gType, node, errMsg))
-				{
-					repoError << "failed to add node (" << node->getUniqueID() << " to scene graph: " << errMsg;
-					success = false;
-				}
-			}
-			else {
-				//Orphaned nodes detected, flag missing nodes
-				setMissingNodes();
-				continue;
-			}
+		if (node->getTypeAsEnum() == NodeType::TRANSFORMATION || node->getParentIDs().size()) {
+			collection->insert(node);
+			addNodeToMaps(gType, node);
 		}
-		if (gType == GraphType::DEFAULT)
+		else {
+			//Orphaned nodes detected, flag missing nodes
+			setMissingNodes();
+			continue;
+		}
+		if (gType == GraphType::DEFAULT) {
 			newAdded.insert(node->getSharedID());
+		}
 	}
-
-	return success;
+	return true;
 }
 
 void RepoScene::addNodes(
-	const std::vector<RepoNode *> &nodes)
+	const std::vector<RepoNode*>& nodes)
 {
 	std::string errMsg;
-	for (auto &node : nodes)
+	for (auto& node : nodes)
 	{
-		addNodeToMaps(GraphType::DEFAULT, node, errMsg);
+		addNodeToMaps(GraphType::DEFAULT, node);
+		switch (node->getTypeAsEnum())
+		{
+		case NodeType::MATERIAL:
+			graph.materials.insert(node);
+			break;
+		case NodeType::MESH:
+			graph.meshes.insert(node);
+			break;
+		case NodeType::METADATA:
+			graph.metadata.insert(node);
+			break;
+		case NodeType::TEXTURE:
+			graph.textures.insert(node);
+			break;
+		case NodeType::TRANSFORMATION:
+			graph.transformations.insert(node);
+			break;
+		case NodeType::UNKNOWN:
+			graph.unknowns.insert(node);
+			break;
+		default:
+		case NodeType::REVISION:
+			throw repo::lib::RepoSceneProcessingException("Cannot add a revision node to the scene graph");
+			break;
+		}
+
 		newAdded.insert(node->getSharedID());
 	}
 }
@@ -438,22 +458,20 @@ void RepoScene::loadRootNode(
 	query.append(repo::core::handler::database::query::Eq(REPO_LABEL_TYPE, std::string(REPO_NODE_TYPE_TRANSFORMATION)));
 	query.append(repo::core::handler::database::query::Exists(REPO_NODE_LABEL_PARENTS, false));
 
-	auto bson = handler->findOneByCriteria(databaseName, projectName + "." + REPO_COLLECTION_SCENE, query);
+	auto bson = handler->findOneByCriteria(teamspace, container + "." + REPO_COLLECTION_SCENE, query);
 
 	if (bson.isEmpty()) {
 		throw repo::lib::RepoSceneProcessingException(std::string("Could not find root node for ") + getDatabaseName() + "." + getProjectName() + "." + revision.toString());
 	}
 
 	std::string errMsg;
-	addNodeToMaps(GraphType::DEFAULT, new repo::core::model::TransformationNode(bson), errMsg);
+	addNodeToMaps(GraphType::DEFAULT, new repo::core::model::TransformationNode(bson));
 }
 
-bool RepoScene::addNodeToMaps(
+void RepoScene::addNodeToMaps(
 	const GraphType &gType,
-	RepoNode *node,
-	std::string &errMsg)
+	RepoNode *node)
 {
-	bool success = true;
 	repo::lib::RepoUUID uniqueID = node->getUniqueID();
 	repo::lib::RepoUUID sharedID = node->getSharedID();
 
@@ -515,8 +533,6 @@ bool RepoScene::addNodeToMaps(
 
 	g.nodesByUniqueID[uniqueID] = node;
 	g.sharedIDtoUniqueID[sharedID] = uniqueID;
-
-	return success;
 }
 
 void RepoScene::addStashGraph(
@@ -550,77 +566,36 @@ void RepoScene::clearStash()
 	stashGraph.rootNode = nullptr;
 }
 
-uint8_t RepoScene::commit(
-	repo::core::handler::AbstractDatabaseHandler *handler,
-	repo::core::handler::fileservice::FileManager *manager,
-	std::string &errMsg,
-	const std::string &userName,
-	const std::string &message,
-	const std::string &tag,
-	const repo::lib::RepoUUID &revId)
+void RepoScene::commit(
+	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler
+)
 {
-	bool success = true;
+	auto handlerPtr = handler.get();
 
-	//Sanity check that everything we need is here
-	if (!handler)
-	{
-		errMsg = "Cannot commit to the database - no database handler assigned.";
-		return REPOERR_UPLOAD_FAILED;
+	auto revNode = getRevisionNode(handlerPtr);
+	revNode.updateStatus(repo::core::model::ModelRevisionNode::UploadStatus::GEN_DEFAULT);
+	if (this->worldOffset.size()) {
+		revNode.setCoordOffset(this->worldOffset);
 	}
+	updateRevisionNode(handlerPtr, revNode);
+	
+	commitSceneChanges(handlerPtr);
 
-	if (databaseName.empty() || projectName.empty())
+	//Succeed in commiting everything.
+	//Reset the state.
+
+	newAdded.clear();
+	newRemoved.clear();
+	newModified.clear();
+	for (RepoNode* node : toRemove)
 	{
-		errMsg = "Cannot commit to the database - databaseName or projectName is empty (database: "
-			+ databaseName
-			+ " project: " + projectName + " ).";
-		return REPOERR_UPLOAD_FAILED;
+		delete node;
 	}
+	toRemove.clear();
 
-	if (!graph.rootNode)
-	{
-		errMsg = "Cannot commit to the database - Scene is empty!.";
-		return REPOERR_UPLOAD_FAILED;
-	}
-
-	repoInfo << "Commiting revision...";
-	ModelRevisionNode* newRevNode = 0;
-	if (!message.empty())
-		commitMsg = message;
-
-	if (success &= commitRevisionNode(handler, manager, errMsg, newRevNode, userName, commitMsg, tag, revId))
-	{
-		repoInfo << "Commited revision node, commiting scene nodes...";
-		//commited the revision node, commit the modification on the scene
-		if (success &= commitSceneChanges(handler, revId, errMsg))
-		{
-			//Succeed in commiting everything.
-			//Update Revision Node and reset state.
-
-			if (revNode)
-			{
-				delete revNode;
-			}
-
-			revNode = newRevNode;
-			revision = newRevNode->getUniqueID();
-
-			newAdded.clear();
-			newRemoved.clear();
-			newModified.clear();
-			commitMsg.clear();
-
-			refFiles.clear();
-			for (RepoNode* node : toRemove)
-			{
-				delete node;
-			}
-			toRemove.clear();
-			unRevisioned = false;
-		}
-		if (success && frameStates.size()) {
-			repoInfo << "Commited Scene nodes, committing sequence";
-			commitSequence(handler, manager, newRevNode->getUniqueID(), errMsg);
-		}
+	if (frameStates.size()) {
+		repoInfo << "Committing sequences...";
+		commitSequence(handlerPtr, handler->getFileManager().get());
 	}
 
 	// Create and Commit revision node. The new node will have a status of
@@ -628,145 +603,48 @@ uint8_t RepoScene::commit(
 	// the stash and reset the upload status before the scene will become
 	// visible.
 
-	repoInfo << "Succes: " << success << " msg: " << errMsg;
-	return success ? REPOERR_OK : (errMsg.find("exceeds maxBsonObjectSize") != std::string::npos ? REPOERR_MAX_NODES_EXCEEDED : REPOERR_UPLOAD_FAILED);
+	repoInfo << "Success.";
 }
 
-bool RepoScene::commitSequence(
+void RepoScene::commitSequence(
 	repo::core::handler::AbstractDatabaseHandler *handler,
-	repo::core::handler::fileservice::FileManager *manager,
-	const repo::lib::RepoUUID &revID,
-	std::string &err
+	repo::core::handler::fileservice::FileManager *manager
 ) {
 	if (frameStates.size()) {
-		auto sequenceCol = projectName + "." + REPO_COLLECTION_SEQUENCE;
-		sequence.setRevision(revID);
-		handler->insertDocument(databaseName, sequenceCol, sequence);
+		auto sequenceCol = container + "." + REPO_COLLECTION_SEQUENCE;
+		sequence.setRevision(revision);
+		handler->insertDocument(teamspace, sequenceCol, sequence);
 		for (const auto& state : frameStates) {
-			manager->uploadFileAndCommit(databaseName, sequenceCol, state.first, state.second);
+			manager->uploadFileAndCommit(teamspace, sequenceCol, state.first, state.second);
 		}
 
-		auto taskCol = projectName + "." + REPO_COLLECTION_TASK;
+		auto taskCol = container + "." + REPO_COLLECTION_TASK;
 		for (const auto &task : tasks) {
-			handler->insertDocument(databaseName, taskCol, task);
+			handler->insertDocument(teamspace, taskCol, task);
 		}
 
 		if (taskList.size()) {
-			manager->uploadFileAndCommit(databaseName, taskCol, sequence.getUniqueId().toString(), taskList);
+			manager->uploadFileAndCommit(teamspace, taskCol, sequence.getUniqueId().toString(), taskList);
 		}
 	}
-	return true;
 }
 
 void RepoScene::addErrorStatusToProjectSettings(
 	repo::core::handler::AbstractDatabaseHandler *handler
 )
 {
-	auto projectsettings = RepoProjectSettings(handler->findOneByUniqueID(databaseName, REPO_COLLECTION_SETTINGS, projectName));
+	auto projectsettings = RepoProjectSettings(handler->findOneByUniqueID(teamspace, REPO_COLLECTION_SETTINGS, container));
 	projectsettings.setErrorStatus();
-	handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, projectsettings, false);
+	handler->upsertDocument(teamspace, REPO_COLLECTION_SETTINGS, projectsettings, false);
 }
 
 void RepoScene::addTimestampToProjectSettings(
 	repo::core::handler::AbstractDatabaseHandler *handler
 )
 {
-	auto projectsettings = RepoProjectSettings(handler->findOneByUniqueID(databaseName, REPO_COLLECTION_SETTINGS, projectName));
+	auto projectsettings = RepoProjectSettings(handler->findOneByUniqueID(teamspace, REPO_COLLECTION_SETTINGS, container));
 	projectsettings.clearErrorStatus();
-	handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, projectsettings, false);
-}
-
-bool RepoScene::commitRevisionNode(
-	repo::core::handler::AbstractDatabaseHandler *handler,
-	repo::core::handler::fileservice::FileManager *manager,
-	std::string &errMsg,
-	ModelRevisionNode *&newRevNode,
-	const std::string &userName,
-	const std::string &message,
-	const std::string &tag,
-	const repo::lib::RepoUUID &revId)
-{
-	bool success = true;
-	std::vector<repo::lib::RepoUUID> parent;
-	parent.reserve(1);
-
-	if (!unRevisioned && !revNode)
-	{
-		if (!loadRevision(handler, errMsg))
-			return false;
-		parent.push_back(revNode->getUniqueID());
-	}
-
-	repoTrace << "Committing Revision Node....";
-
-	// The user may import the same filename with different content, so prefix
-	// the filename used for the ref node with the revision id
-
-	std::vector<std::string> fileNames;
-	for (const std::string &name : refFiles)
-	{
-		boost::filesystem::path filePath(name);
-		fileNames.push_back(revId.toString() + sanitizeName(filePath.filename().string()));
-	}
-
-	newRevNode =
-		new ModelRevisionNode(RepoBSONFactory::makeRevisionNode(userName, branch, revId,
-			fileNames, parent, worldOffset, message, tag));
-	newRevNode->updateStatus(ModelRevisionNode::UploadStatus::GEN_DEFAULT);
-
-	if (newRevNode)
-	{
-		using namespace core::handler::database::index;
-
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, Descending({ REPO_NODE_REVISION_LABEL_TIMESTAMP }));
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ REPO_NODE_REVISION_ID, "metadata.key", "metadata.value" }));
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ "metadata.key", "metadata.value" }));
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ REPO_NODE_REVISION_ID, REPO_NODE_LABEL_SHARED_ID, REPO_LABEL_TYPE }));
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, Ascending({ REPO_NODE_LABEL_SHARED_ID }));
-
-		for (size_t i = 0; i < refFiles.size(); i++)
-		{
-			std::ifstream file(refFiles[i], std::ios::binary);
-			if (file.is_open())
-			{
-				std::string fsName = fileNames[i];
-
-				file.seekg(0, std::ios::end);
-				std::streamsize size = file.tellg();
-				file.seekg(0, std::ios::beg);
-
-				std::vector<uint8_t> rawFile(size);
-				if (file.read((char*)rawFile.data(), size))
-				{
-					if (!(success = manager->uploadFileAndCommit(databaseName, projectName + "." + REPO_COLLECTION_RAW, fsName, rawFile)))
-					{
-						errMsg = "Failed to save original file into file storage: " + fsName;
-						repoError << errMsg;
-					}
-				}
-				else
-				{
-					repoError << "Failed to read reference file " << refFiles[i];
-				}
-
-				file.close();
-			}
-			else
-			{
-				repoError << "Failed to open reference file " << refFiles[i];
-			}
-		}
-		}
-	else
-	{
-		errMsg += "Failed to instantiate a new revision object!";
-		return false;
-	}
-
-	if (success)
-		handler->upsertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, *newRevNode, true);
-
-	return success;
+	handler->upsertDocument(teamspace, REPO_COLLECTION_SETTINGS, projectsettings, false);
 }
 
 bool RepoScene::commitNodes(
@@ -796,15 +674,13 @@ bool RepoScene::commitNodes(
 		nodes.push_back(*node);
 	}
 
-	handler->insertManyDocuments(databaseName, projectName + "." + ext, nodes);
+	handler->insertManyDocuments(teamspace, container + "." + ext, nodes);
 
 	return true;
 }
 
-bool RepoScene::commitSceneChanges(
-	repo::core::handler::AbstractDatabaseHandler *handler,
-	const repo::lib::RepoUUID &revId,
-	std::string &errMsg)
+void RepoScene::commitSceneChanges(
+	repo::core::handler::AbstractDatabaseHandler *handler)
 {
 	if (newAdded.size()) {
 		repoInfo << "Committing " << newAdded.size() << " nodes...";
@@ -812,11 +688,11 @@ bool RepoScene::commitSceneChanges(
 		std::vector<repo::core::model::RepoBSON> nodes;
 		for (auto& id : newAdded) {
 			auto node = graph.nodesByUniqueID[graph.sharedIDtoUniqueID[id]];
-			node->setRevision(revId);
+			node->setRevision(revision);
 			nodes.push_back(*node);
 		}
 
-		handler->insertManyDocuments(databaseName, projectName + "." + REPO_COLLECTION_SCENE, nodes);
+		handler->insertManyDocuments(teamspace, container + "." + REPO_COLLECTION_SCENE, nodes);
 	}
 
 	if (newModified.size()) {
@@ -824,12 +700,10 @@ bool RepoScene::commitSceneChanges(
 
 		for (auto& id : newModified) {
 			auto node = graph.nodesByUniqueID[graph.sharedIDtoUniqueID[id]];
-			node->setRevision(revId);
-			handler->upsertDocument(databaseName, projectName + "." + REPO_COLLECTION_SCENE, *node, false);
+			node->setRevision(revision);
+			handler->upsertDocument(teamspace, container + "." + REPO_COLLECTION_SCENE, *node, false);
 		}
 	}
-
-	return true;
 }
 
 std::vector<RepoNode*>
@@ -914,21 +788,6 @@ std::vector<RepoNode*> RepoScene::getParentNodesFiltered(
 	return results;
 }
 
-std::string RepoScene::getBranchName() const
-{
-	std::string branchName("master");
-	if (revNode)
-	{
-		branchName = revNode->getName();
-		if (branchName.empty())
-		{
-			branchName = revNode->getUniqueID().toString();
-		}
-	}
-
-	return branchName;
-}
-
 repo::lib::RepoBounds RepoScene::getSceneBoundingBox() const
 {
 	repo::lib::RepoBounds bbox;
@@ -938,41 +797,42 @@ repo::lib::RepoBounds RepoScene::getSceneBoundingBox() const
 		1, 0, 0, 0,
 		0, 1, 0, 0,
 		0, 0, 1, 0,
-		0, 0, 0, 1, };
+		0, 0, 0, 1,
+	};
 
 	getSceneBoundingBoxInternal(gType, gType == GraphType::OPTIMIZED ? stashGraph.rootNode : graph.rootNode, identity, bbox);
 	return bbox;
 }
 
 void RepoScene::getSceneBoundingBoxInternal(
-	const GraphType            &gType,
-	const RepoNode             *node,
-	const repo::lib::RepoMatrix   &mat,
-	repo::lib::RepoBounds &bbox) const
+	const GraphType& gType,
+	const RepoNode* node,
+	const repo::lib::RepoMatrix& mat,
+	repo::lib::RepoBounds& bbox) const
 {
-	if (node)
+	if (!node) {
+		throw repo::lib::RepoSceneProcessingException("Cannot calculate bounding box of a null node");
+	}
+	switch (node->getTypeAsEnum())
 	{
-		switch (node->getTypeAsEnum())
+	case NodeType::TRANSFORMATION:
 		{
-		case NodeType::TRANSFORMATION:
-		{
-			const TransformationNode *trans = dynamic_cast<const TransformationNode*>(node);
+			const TransformationNode* trans = dynamic_cast<const TransformationNode*>(node);
 			auto matTransformed = mat * trans->getTransMatrix();
 
-			for (const auto & child : getChildrenAsNodes(gType, trans->getSharedID()))
+			for (const auto& child : getChildrenAsNodes(gType, trans->getSharedID()))
 			{
 				getSceneBoundingBoxInternal(gType, child, matTransformed, bbox);
 			}
 			break;
 		}
-		case NodeType::MESH:
+	case NodeType::MESH:
 		{
-			const MeshNode *mesh = dynamic_cast<const MeshNode*>(node);
+			const MeshNode* mesh = dynamic_cast<const MeshNode*>(node);
 			auto newmBBox = mesh->getBoundingBox();
 			MeshNode::transformBoundingBox(newmBBox, mat);
 			bbox.encapsulate(newmBBox);
 			break;
-		}		
 		}
 	}
 }
@@ -1023,143 +883,24 @@ std::string RepoScene::getTextureIDForMesh(
 	return "";
 }
 
-std::vector<std::string> RepoScene::getOriginalFiles() const
+void RepoScene::loadScene(
+	repo::core::handler::AbstractDatabaseHandler *handler)
 {
-	if (revNode)
-	{
-		return revNode->getOrgFiles();
+	if (!handler) {
+		throw repo::lib::RepoException("Cannot load revision with an empty database handler");
 	}
 
-	return refFiles;
-}
-
-void RepoScene::setOriginalFiles(std::vector<std::string> fileNames)
-{
-	if (revNode)
-	{
-		revNode->setFiles(fileNames);
-	}
-	refFiles = fileNames;
-}
-
-bool RepoScene::loadRevision(
-	repo::core::handler::AbstractDatabaseHandler *handler,
-	std::string &errMsg,
-	const std::vector<ModelRevisionNode::UploadStatus> &includeStatus) {
-	bool success = true;
-
-	if (!handler)
-	{
-		errMsg = "Cannot load revision with an empty database handler";
-		return false;
-	}
-
-	RepoBSON bson;
-	repoTrace << "loading revision : " << databaseName << "." << projectName << " head Revision: " << headRevision;
-	if (headRevision) {
-
-		using namespace repo::core::handler::database;
-
-		query::RepoQueryBuilder query;
-		if (includeStatus.size())
-		{
-			std::vector<int> statuses;
-			std::transform(includeStatus.begin(), includeStatus.end(), std::back_inserter(statuses), [](auto s) { return (int)s; } );
-			query.append(
-				query::Or(
-					query::Eq(REPO_NODE_REVISION_LABEL_INCOMPLETE, statuses),
-					query::Exists(REPO_NODE_REVISION_LABEL_INCOMPLETE, false)
-				)
-			);
-		}
-		else
-		{
-			query.append(
-				query::Exists(REPO_NODE_REVISION_LABEL_INCOMPLETE, false)
-			);
-		}
-		query.append(query::Eq(REPO_NODE_LABEL_SHARED_ID, branch));
-
-		bson = handler->findOneByCriteria(
-			databaseName,
-			projectName + "." + REPO_COLLECTION_HISTORY,
-			query,
-			REPO_NODE_REVISION_LABEL_TIMESTAMP
-		);
-
-		repoTrace << "Fetching head of revision from branch " << branch;
-	}
-	else {
-		bson = handler->findOneByUniqueID(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, revision);
-		repoTrace << "Fetching revision using unique ID: " << revision;
-	}
-
-	if (bson.isEmpty()) {
-		errMsg = "Failed: cannot find revision document from " + databaseName + "." + projectName + "." + REPO_COLLECTION_HISTORY;
-		success = false;
-	}
-	else {
-		revNode = new ModelRevisionNode(bson);
-		worldOffset = revNode->getCoordOffset();
-		unRevisioned = false;
-	}
-
-	return success;
-}
-
-bool RepoScene::loadScene(
-	repo::core::handler::AbstractDatabaseHandler *handler,
-	std::string &errMsg) {
-	bool success = true;
-
-	if (!handler)
-	{
-		errMsg = "Cannot load revision with an empty database handler";
-		return false;
-	}
-
-	if (!revNode) {
-		//try to load revision node first.
-		if (!loadRevision(handler, errMsg)) return false;
+	if (!revision) {
+		throw repo::lib::RepoException("Cannot load empty revision");
 	}
 
 	std::vector<RepoBSON> nodes = handler->findAllByCriteria(
-		databaseName, projectName + "." + REPO_COLLECTION_SCENE, core::handler::database::query::Eq(REPO_NODE_STASH_REF, revNode->getUniqueID()), true
+		teamspace, container + "." + REPO_COLLECTION_SCENE, core::handler::database::query::Eq(REPO_NODE_STASH_REF, revision), loadExtFiles
 	);
 
 	repoInfo << "# of nodes in this unoptimised scene = " << nodes.size();
 
-	return populate(GraphType::DEFAULT, handler, nodes, errMsg);
-}
-
-bool RepoScene::loadStash(
-	repo::core::handler::AbstractDatabaseHandler *handler,
-	std::string &errMsg) {
-	bool success = true;
-	if (!handler)
-	{
-		errMsg += "Trying to load stash graph without a database handler!";
-		return false;
-	}
-
-	if (!revNode) {
-		if (!loadRevision(handler, errMsg)) return false;
-	}
-
-	std::vector<RepoBSON> nodes = handler->findAllByCriteria(
-		databaseName, projectName + "." + REPO_COLLECTION_STASH_REPO, core::handler::database::query::Eq(REPO_NODE_STASH_REF, revNode->getUniqueID())
-	);
-	if (success = nodes.size())
-	{
-		repoInfo << "# of nodes in this stash scene = " << nodes.size();
-		success = populate(GraphType::OPTIMIZED, handler, nodes, errMsg);
-	}
-	else
-	{
-		errMsg += "stash is empty";
-	}
-
-	return  success;
+	populate(GraphType::DEFAULT, handler, nodes);
 }
 
 void RepoScene::removeNode(
@@ -1236,14 +977,11 @@ void RepoScene::removeNode(
 	}
 }
 
-bool RepoScene::populate(
+void RepoScene::populate(
 	const GraphType &gtype,
 	repo::core::handler::AbstractDatabaseHandler *handler,
-	std::vector<RepoBSON> nodes,
-	std::string &errMsg)
+	std::vector<RepoBSON> nodes)
 {
-	bool success = true;
-
 	repoGraphInstance &g = gtype == GraphType::OPTIMIZED ? stashGraph : graph;
 
 	std::unordered_map<repo::lib::RepoUUID, RepoNode *, repo::lib::RepoUUIDHasher> nodesBySharedID;
@@ -1286,10 +1024,8 @@ bool RepoScene::populate(
 			g.unknowns.insert(node);
 		}
 
-		success &= addNodeToMaps(gtype, node, errMsg);
+		addNodeToMaps(gtype, node);
 	} //Node Iteration
-
-	return success;
 }
 
 void RepoScene::populateAndUpdate(
@@ -1312,84 +1048,68 @@ void RepoScene::populateAndUpdate(
 }
 
 void RepoScene::applyScaleFactor(const double& scale) {
-	if (graph.rootNode)
-	{
-		auto rootTrans = dynamic_cast<TransformationNode*>(graph.rootNode);
-		std::vector<double> scalingMatrix = {
-			scale, 0, 0, 0,
-			0, scale, 0, 0,
-			0, 0, scale, 0,
-			0, 0, 0, 1
-		};
 
-		rootTrans->applyTransformation(repo::lib::RepoMatrix(scalingMatrix));
-
-		//Clear the stash as bounding boxes in mesh mappings are no longer valid like this.
-		clearStash();
-
-		if (worldOffset.size())
-		{
-			for (int i = 0; i < worldOffset.size(); ++i) {
-				worldOffset[i] *= scale;
-			}
-		}
-
-		newModified.insert(rootTrans->getSharedID());
+	if(graph.rootNode == nullptr) {
+		throw repo::lib::RepoException("Must create or load the root node before scaling.");
 	}
+
+	auto rootTrans = dynamic_cast<TransformationNode*>(graph.rootNode);
+	std::vector<double> scalingMatrix = {
+		scale, 0, 0, 0,
+		0, scale, 0, 0,
+		0, 0, scale, 0,
+		0, 0, 0, 1
+	};
+
+	rootTrans->applyTransformation(repo::lib::RepoMatrix(scalingMatrix));
+
+	//Clear the stash as bounding boxes in mesh mappings are no longer valid like this.
+	clearStash();
+
+	if (worldOffset.size())
+	{
+		for (int i = 0; i < worldOffset.size(); ++i) {
+			worldOffset[i] *= scale;
+		}
+	}
+
+	newModified.insert(rootTrans->getSharedID());
 }
 
 void RepoScene::reorientateDirectXModel()
 {
+	if (!graph.rootNode) {
+		throw repo::lib::RepoException("Must create or load the root node before reorientating.");
+	}
+
 	//Need to rotate the model by 270 degrees on the X axis
 	//This is essentially swapping the 2nd and 3rd column, negating the 2nd.
-	repoTrace << "Reorientating model...";
 	//Stash root and scene root should be identical!
-	if (graph.rootNode)
+
+	auto rootTrans = dynamic_cast<TransformationNode*>(graph.rootNode);
+
+	//change offset relatively
+	std::vector<double> rotationMatrix = {
+		1, 0, 0, 0,
+		0, 0, 1, 0,
+		0, -1, 0, 0,
+		0, 0, 0, 1
+	};
+
+	rootTrans->applyTransformation(repo::lib::RepoMatrix(rotationMatrix));
+
+	//Clear the stash as bounding boxes in mesh mappings are no longer valid like this.
+	clearStash();
+
+	//Apply the rotation on the offset
+	if (worldOffset.size())
 	{
-		auto rootTrans = dynamic_cast<TransformationNode*>(graph.rootNode);
-
-		//change offset relatively
-		std::vector<double> rotationMatrix = { 1, 0, 0, 0,
-			0, 0, 1, 0,
-			0, -1, 0, 0,
-			0, 0, 0, 1 };
-
-		rootTrans->applyTransformation(repo::lib::RepoMatrix(rotationMatrix));
-
-		//Clear the stash as bounding boxes in mesh mappings are no longer valid like this.
-		clearStash();
-
-		//Apply the rotation on the offset
-		if (worldOffset.size())
-		{
-			auto temp = worldOffset[2];
-			worldOffset[2] = -worldOffset[1];
-			worldOffset[1] = temp;
-		}
-
-		newModified.insert(rootTrans->getSharedID());
+		auto temp = worldOffset[2];
+		worldOffset[2] = -worldOffset[1];
+		worldOffset[1] = temp;
 	}
-}
 
-void RepoScene::resetChangeSet()
-{
-	newRemoved.clear();
-	newModified.clear();
-	newAdded.clear();
-	newCurrent.clear();
-	std::vector<repo::lib::RepoUUID> sharedIds;
-	//boost::copy(graph.nodesByUniqueID | boost::adaptors::map_keys, std::back_inserter(newCurrent));
-	boost::copy(graph.sharedIDtoUniqueID | boost::adaptors::map_keys, std::back_inserter(sharedIds));
-	newAdded.insert(sharedIds.begin(), sharedIds.end());
-	revNode = nullptr;
-	unRevisioned = true;
-	databaseName = projectName = "";
-}
-
-void RepoScene::setDatabaseAndProjectName(std::string newDatabaseName, std::string newProjectName)
-{
-	databaseName = sanitizeDatabaseName(newDatabaseName);
-	projectName = sanitizeName(newProjectName);
+	newModified.insert(rootTrans->getSharedID());
 }
 
 void RepoScene::setWorldOffset(
@@ -1409,40 +1129,43 @@ void RepoScene::setWorldOffset(
 	}
 }
 
-void RepoScene::shiftModel(
-	const std::vector<double> &offset)
-{
-	std::vector<double> transMat = { 1, 0, 0, offset[0],
-		0, 1, 0, offset[1],
-		0, 0, 1, offset[2],
-		0, 0, 0, 1 };
-	if (graph.rootNode)
-	{
-		graph.rootNode->applyTransformation(transMat);
-	}
-
-	if (stashGraph.rootNode)
-	{
-		stashGraph.rootNode->applyTransformation(transMat);
-	}
-}
-
-bool RepoScene::updateRevisionStatus(
+void RepoScene::updateRevisionStatus(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	const ModelRevisionNode::UploadStatus &status)
 {
-	bool success = false;
-	if (revNode)
-	{
-		revNode->updateStatus(status);
-		handler->upsertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, *revNode, true);
-		repoInfo << "rev node status is: " << (int)revNode->getUploadStatus();
-		success = true;
-	}
-	else
-	{
-		repoError << "Trying to update the status of a revision when the scene is not revisioned!";
-	}
+	auto node = getRevisionNode(handler);
+	node.updateStatus(status);
+	updateRevisionNode(handler, node);
+}
 
-	return success;
+ModelRevisionNode RepoScene::getRevisionNode(
+	repo::core::handler::AbstractDatabaseHandler* handler)
+{
+	auto bson = handler->findOneByUniqueID(
+		teamspace,
+		container + "." + REPO_COLLECTION_HISTORY,
+		revision
+	);
+	ModelRevisionNode node(bson);
+	return node;
+}
+
+void RepoScene::updateRevisionNode(
+	repo::core::handler::AbstractDatabaseHandler* handler,
+	ModelRevisionNode& revNode)
+{
+	handler->upsertDocument(
+		teamspace,
+		container + "." + REPO_COLLECTION_HISTORY,
+		revNode,
+		false
+	);
+	if (revNode.getUploadStatus() == ModelRevisionNode::UploadStatus::COMPLETE)
+	{
+		handler->updateDocument(
+			teamspace,
+			container + "." + REPO_COLLECTION_HISTORY,
+			repo::core::handler::database::query::RemoveField(revision, REPO_NODE_REVISION_LABEL_INCOMPLETE)
+		);
+	}
 }
