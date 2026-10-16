@@ -32,7 +32,7 @@ const logLabel = { label: 'MODELQ' };
 
 Handler.onMessageReceived = async (cmd, rid, callback) => {
 	const logDir = `${config.logging.taskLogDir}/${rid.toString()}/`;
-	const { errorCode, teamspace, container, user, cmdParams, file } = messageDecoder(cmd);
+	const { errorCode, teamspace, container, revision, user, cmdParams, format, size } = messageDecoder(cmd);
 
 	if (errorCode) {
 		callback(JSON.stringify({ value: errorCode }));
@@ -47,12 +47,14 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		type: MODEL,
 		teamspace,
 		container,
+		revision,
 	}));
 
 	const returnMessage = {
 		value: ERRCODE_OK,
 		teamspace,
 		container,
+		revision,
 		user,
 		type: IMPORT,
 	};
@@ -70,8 +72,7 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		);
 
 		// Append process information with queue specific properties
-		const { size } = fs.statSync(file);
-		processInformation.FileType = file.split('.').pop().toString(); // filetype
+		processInformation.FileType = format
 		processInformation.FileSize = size;
 
 		returnMessage.value = await runBouncerCommand(logDir, cmdParams, processInformation);
