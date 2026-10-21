@@ -262,6 +262,17 @@ struct MongoUpdateVisitor
 
 		update.append("$addToSet", operation.obj());
 	}
+
+	void operator() (const query::RemoveField& u)
+	{
+		MongoQueryFilterVistior filter(&query);
+		query::Eq condition(REPO_LABEL_ID, u.uniqueId);
+		std::visit(filter, query::RepoQuery(condition));
+
+		repo::core::model::RepoBSONBuilder operation;
+		operation.append(u.field, 1);
+		update.append("$unset", operation.obj());
+	}
 };
 
 /*
@@ -828,6 +839,34 @@ void MongoDatabaseHandler::upsertDocument(
 	catch (...)
 	{
 		std::throw_with_nested(MongoDatabaseHandlerException(*this, "upsertDocument", database, collection));
+	}
+}
+
+void MongoDatabaseHandler::updateDocument(
+	const std::string& database,
+	const std::string& collection,
+	const database::query::RepoUpdate& update
+)
+{
+	try
+	{
+		auto client = clientPool->acquire();
+		auto db = client->database(database);
+		auto col = db.collection(collection);
+
+		MongoUpdateVisitor visitor;
+		std::visit(visitor, update);
+		auto filter = visitor.query.obj();
+		auto doc = visitor.update.obj();
+
+		mongocxx::options::update options{};
+		options.upsert(false);
+
+		col.update_one(filter.view(), doc.view(), options);
+	}
+	catch (...)
+	{
+		std::throw_with_nested(MongoDatabaseHandlerException(*this, "updateDocument", database, collection));
 	}
 }
 

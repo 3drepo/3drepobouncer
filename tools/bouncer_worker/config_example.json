@@ -30,6 +30,9 @@
 		"path" : "~/",
 		"level": 10
 	},
+	"extfs": {
+		"path": "~/"
+	},
 	"defaultStorage": "db",
 	"elastic": {
 		"cloud"      : { "id" : "ElasticCloudId:abc12345" },

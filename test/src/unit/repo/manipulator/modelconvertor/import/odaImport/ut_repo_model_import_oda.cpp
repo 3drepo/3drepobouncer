@@ -25,6 +25,7 @@
 #include "../../../../../repo_test_utils.h"
 #include "../../../../../repo_test_database_info.h"
 #include "../../../../../repo_test_scene_utils.h"
+#include "../../../../../repo_test_revision_utils.h"
 #include "../../../../../repo_test_matchers.h"
 #include "../../../../../repo_test_common_tests.h"
 #include "repo/manipulator/modelconvertor/import/odaHelper/file_processor_nwd.h"
@@ -42,13 +43,12 @@ namespace ODAModelImportUtils
 	{
 		auto handler = getHandler();
 
-		uint8_t err;
-		std::string msg;
+		testing::makeRevisionNode(handler, config, filename);
 
 		ModelImportManager manager;
-		auto scene = manager.ImportFromFile(filename, config, handler, err);
-		scene->commit(handler.get(), handler->getFileManager().get(), msg, "testuser", "", "", config.getRevisionId());
-		scene->loadScene(handler.get(), msg);
+		auto scene = manager.ImportFromFile(config, handler);
+		scene->commit(handler);
+		scene->loadScene(handler.get());
 
 		return scene;
 	}

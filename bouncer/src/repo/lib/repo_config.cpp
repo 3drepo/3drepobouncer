@@ -28,6 +28,18 @@
 
 using namespace repo::lib;
 
+namespace {
+	void replaceRepoModelPath(std::string& input) {
+		const char* env = std::getenv("REPO_MODEL_PATH");
+		if (env) {
+			size_t pos = input.find("$REPO_MODEL_PATH"); // Our conventions are to always use unix conventions
+			if (pos != std::string::npos) {
+				input.replace(pos, std::string("$REPO_MODEL_PATH").length(), env);
+			}
+		}
+	}
+}
+
 class RepoConfigException : public RepoException
 {
 public:
@@ -72,6 +84,13 @@ void RepoConfig::configureFS(
 	if (useAsDefault) defaultStorage = FileStorageEngine::FS;
 }
 
+void RepoConfig::configureExtFS(
+	const std::string& directory)
+{
+	extFsConf.dir = directory;
+	extFsConf.configured = true;
+}
+
 RepoConfig RepoConfig::fromFile(const std::string &filePath) {
 	try
 	{
@@ -104,9 +123,18 @@ RepoConfig RepoConfig::fromFile(const std::string &filePath) {
 
 		if (fsTree) {
 			auto path = fsTree->get<std::string>("path", "");
+			replaceRepoModelPath(path);
 			auto level = fsTree->get<int>("level", REPO_CONFIG_FS_DEFAULT_LEVEL);
 			if (!path.empty())
 				config.configureFS(path, level, useAsDefault == "fs" || useAsDefault.empty());
+		}
+
+		auto extfsTree = jsonTree.get_child_optional("extfs");
+		if (extfsTree) {
+			auto path = extfsTree->get<std::string>("path", "");
+			replaceRepoModelPath(path);
+			if (!path.empty())
+				config.configureExtFS(path);
 		}
 
 		return config;
