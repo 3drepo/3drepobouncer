@@ -89,13 +89,30 @@ void RepoManipulator::connectAndAuthenticateWithAdmin(
 	dbHandler->testConnection();
 }
 
-void RepoManipulator::commitScene(
+uint8_t RepoManipulator::commitScene(
 	const std::string& user,
 	repo::core::model::RepoScene* scene,
+	const std::string& owner,
+	const std::string& tag,
+	const std::string& desc,
+	const repo::lib::RepoUUID& revId,
 	const WebBufferConfig& config)
 {
+	repoLog("Manipulator: Committing model to database");
+
+	std::string projOwner = owner.empty() ? user : owner;
+
+	//Check if database exists
+	std::string dbName = scene->getDatabaseName();
+	std::string projectName = scene->getProjectName();
+	if (dbName.empty() || projectName.empty())
+	{
+		repoError << "Failed to commit scene : database name or project name is empty!";
+		return REPOERR_UPLOAD_FAILED;
+	}
+
 	modelutility::SceneManager sceneManager;
-	sceneManager.commitScene(scene, dbHandler, config);
+	return sceneManager.commitScene(scene, projOwner, tag, desc, revId, dbHandler.get(), dbHandler->getFileManager().get(), config);
 }
 
 repo::core::model::RepoScene* RepoManipulator::fetchScene(
@@ -192,31 +209,14 @@ RepoManipulator::loadMetadataFromFile(
 	return metaImport.readMetadata(filePath, tmp, delimiter);
 }
 
-uint32_t RepoManipulator::processModelRevision(
+repo::core::model::RepoScene*
+RepoManipulator::loadSceneFromFile(
+	const std::string& filePath,
+	uint8_t& error,
 	const repo::manipulator::modelconvertor::ModelImportConfig& config)
 {
 	repo::manipulator::modelconvertor::ModelImportManager manager;
-	auto scene = manager.ImportFromFile(config, dbHandler);
-
-	repoLog("Trying to commit this scene to database as " + config.getDatabaseName() + "." + config.getProjectName());
-
-	repo::manipulator::modelutility::WebBufferConfig webBufferConfig;
-	webBufferConfig.splitByFloor = config.splitByFloor;
-
-	commitScene({}, scene, webBufferConfig);
-
-	if (scene->isMissingNodes())
-	{
-		repoLog("Missing nodes detected!");
-		return REPOERR_LOAD_SCENE_MISSING_NODES;
-	}
-	else if (scene->isMissingTexture())
-	{
-		repoLog("Missing texture detected!");
-		return REPOERR_LOAD_SCENE_MISSING_TEXTURE;
-	}
-
-	return REPOERR_OK;
+	return manager.ImportFromFile(filePath, config, dbHandler, error);
 }
 
 void RepoManipulator::processDrawingRevision(

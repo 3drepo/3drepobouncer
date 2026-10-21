@@ -26,6 +26,7 @@ const moduleRequire = createRequire(__filename);
 
 const queueHandlerPath = require.resolve('../../src/lib/queueHandler');
 const amqpPath = require.resolve('amqplib');
+const fsPath = require.resolve('fs');
 const configPath = require.resolve('../../src/lib/config');
 const loggerPath = require.resolve('../../src/lib/logger');
 const utilsPath = require.resolve('../../src/lib/utils');
@@ -39,6 +40,7 @@ const clashHandlerPath = require.resolve('../../src/queues/clashQueueHandler');
 const clearModuleCache = () => {
 	delete require.cache[queueHandlerPath];
 	delete require.cache[amqpPath];
+	delete require.cache[fsPath];
 	delete require.cache[configPath];
 	delete require.cache[loggerPath];
 	delete require.cache[utilsPath];
@@ -81,6 +83,7 @@ const loadQueueHandlerWithMocks = ({
 		runBouncer: [],
 		sendReport: [],
 		clearReport: [],
+		statSync: [],
 		gatherProcessInformation: [],
 	};
 
@@ -170,6 +173,18 @@ const loadQueueHandlerWithMocks = ({
 		},
 	};
 
+	require.cache[fsPath] = {
+		id: fsPath,
+		filename: fsPath,
+		loaded: true,
+		exports: {
+			statSync: (filepath) => {
+				calls.statSync.push(filepath);
+				return { size: 321 };
+			},
+		},
+	};
+
 	require.cache[loggerPath] = {
 		id: loggerPath,
 		filename: loggerPath,
@@ -216,11 +231,9 @@ const loadQueueHandlerWithMocks = ({
 					return {
 						teamspace: 'ts-model',
 						container: 'container-model',
-						revision: 'a1627551-a4e9-4127-b2a0-595c4659ffab',
 						user: 'user-model',
-						cmdParams: ['import', '/tmp/config.json'],
-						format: 'obj',
-						size: 100,
+						cmdParams: ['import', '-f', '/tmp/model.ifc'],
+						file: '/tmp/model.ifc',
 					};
 				}
 
@@ -349,7 +362,7 @@ describe(__filename, () => {
 		await flushAsync();
 
 		const message = {
-			content: Buffer.from('import foo.json'),
+			content: Buffer.from('import -f foo.json'),
 			properties: { correlationId: generateUUIDString(), appId: generateRandomString() },
 		};
 
@@ -363,7 +376,7 @@ describe(__filename, () => {
 	test('runNTasks processes queued message and closes resources', async () => {
 		const { QueueHandler, calls, channel } = loadQueueHandlerWithMocks();
 		const msg = {
-			content: Buffer.from('import bar.json'),
+			content: Buffer.from('import -f bar.json'),
 			properties: { correlationId: generateUUIDString(), appId: generateRandomString() },
 		};
 		const pending = [msg];
@@ -470,7 +483,7 @@ describe(__filename, () => {
 			rabbitOverrides: { maxWaitTimeMS: 5000, pollingIntervalMS: 25 },
 		});
 		const msg = {
-			content: Buffer.from('import delayed.json'),
+			content: Buffer.from('import -f delayed.json'),
 			properties: { correlationId: generateUUIDString(), appId: generateRandomString() },
 		};
 		let getCall = 0;
@@ -506,7 +519,7 @@ describe(__filename, () => {
 			modelOnMessage: async () => Promise.reject(new Error('task failure')),
 		});
 		const msg = {
-			content: Buffer.from('import failed.json'),
+			content: Buffer.from('import -f failed.json'),
 			properties: { correlationId: generateUUIDString(), appId: generateRandomString() },
 		};
 		channel.get = async () => msg;
@@ -574,7 +587,7 @@ describe(__filename, () => {
 		const correlationId = generateUUIDString();
 
 		const message = {
-			content: Buffer.from('import model.json'),
+			content: Buffer.from('import -f model.json'),
 			properties: { correlationId, appId: generateRandomString() },
 		};
 
@@ -584,11 +597,7 @@ describe(__filename, () => {
 		assert.equal(calls.runBouncer.length, 1);
 		assert.equal(calls.sendReport.includes(correlationId), true);
 		assert.equal(calls.sendToQueue.length, 2);
-		assert.deepEqual(calls.runBouncer[0][2], {
-			Rid: correlationId,
-			FileType: 'obj',
-			FileSize: 100,
-		});
+		assert.equal(calls.statSync.includes('/tmp/model.ifc'), true);
 
 		const processingReply = JSON.parse(calls.sendToQueue[0].buffer.toString());
 		const finalReply = JSON.parse(calls.sendToQueue[1].buffer.toString());
@@ -692,7 +701,7 @@ describe(__filename, () => {
 		const correlationId = generateUUIDString();
 
 		await consumers.modelq({
-			content: Buffer.from('import model.json'),
+			content: Buffer.from('import -f model.json'),
 			properties: { correlationId, appId: generateRandomString() },
 		});
 		await flushAsync();
@@ -717,7 +726,7 @@ describe(__filename, () => {
 		const correlationId = generateUUIDString();
 
 		await consumers.modelq({
-			content: Buffer.from('import model.json'),
+			content: Buffer.from('import -f model.json'),
 			properties: { correlationId, appId: generateRandomString() },
 		});
 		await flushAsync();

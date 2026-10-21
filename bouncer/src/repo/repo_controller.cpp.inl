@@ -175,6 +175,25 @@ public:
 		const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus = {});
 
 	/*
+	*	------- Database Operations (insert/delete/update) ---------
+	*/
+
+	/**
+	* Commit a scene graph
+	* @param token Authentication token
+	* @param scene RepoScene to commit
+	* @param owner specify the owner of the scene (by default it is the user authorised to commit)
+	*/
+	uint8_t commitScene(
+		const RepoToken                     *token,
+		repo::core::model::RepoScene        *scene,
+		const std::string                   &owner = "",
+		const std::string                      &tag = "",
+		const std::string                      &desc = "",
+		const repo::lib::RepoUUID           &revId = repo::lib::RepoUUID::createUUID(),
+		const repo::manipulator::modelutility::WebBufferConfig& config = {});
+
+	/*
 	*	------------- Logging --------------
 	*/
 
@@ -239,7 +258,17 @@ public:
 	bool isVREnabled(const RepoToken *token,
 		const repo::core::model::RepoScene *scene);
 
-	uint32_t processModelRevision(
+	/**
+	* Load a Repo Scene from a file
+	* @param filePath path to file
+	* @param apply transformation reduction (default: true)
+	* @param rotateModel rotate model by 270degrees on x (default: false)
+	* @param config import settings(optional)
+	* @return returns a pointer to Repo Scene upon success
+	*/
+	repo::core::model::RepoScene* loadSceneFromFile(
+		const std::string &filePath,
+		uint8_t           &err,
 		const repo::manipulator::modelconvertor::ModelImportConfig &config);
 
 	void processDrawingRevision(

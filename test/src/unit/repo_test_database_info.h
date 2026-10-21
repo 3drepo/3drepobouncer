@@ -34,7 +34,6 @@ const static std::string REPO_GTEST_DBNAME2 = "sampleDataReadOnly2";
 const static std::string REPO_GTEST_DBNAME3 = "sandbox";
 const static std::string REPO_GTEST_DBNAME4 = "testMongoDatabaseHandler";
 const static std::string REPO_GTEST_DBNAME1_PROJ = "3drepoBIM";
-const static std::string REPO_GTEST_DBNAME1_REVISION = "5be1aca9-e4d0-4cec-987d-80d2fde3dade";
 const static std::string REPO_GTEST_DBNAME2_PROJ = "sphere";
 const static std::string REPO_GTEST_DBNAME1_FED = "fedTest";
 const static std::string REPO_GTEST_DBNAME_ROLEUSERTEST = "sampleDataRWRolesUsers";

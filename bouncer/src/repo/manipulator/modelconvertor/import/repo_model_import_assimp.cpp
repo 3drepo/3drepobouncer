@@ -965,7 +965,10 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 		* ---------------------------------------------
 		*/
 
-		scenePtr = new repo::core::model::RepoScene(meshes, materials, metadata, textures, transformations);
+		std::vector<std::string> fileVect;
+		if (!orgFile.empty())
+			fileVect.push_back(orgFile);
+		scenePtr = new repo::core::model::RepoScene(fileVect, meshes, materials, metadata, textures, transformations);
 		if (missingTextures)
 		{
 			scenePtr->setMissingTexture();

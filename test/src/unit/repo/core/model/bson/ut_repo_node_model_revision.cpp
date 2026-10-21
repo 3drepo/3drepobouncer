@@ -109,7 +109,7 @@ TEST(ModelRevisionNodeTest, DeserialiseEmpty)
 	EXPECT_THAT(node.getAuthor(), IsEmpty());
 	EXPECT_THAT(node.getMessage(), IsEmpty());
 	EXPECT_THAT(node.getTag(), IsEmpty());
-	EXPECT_THAT(node.getCoordOffset(), IsEmpty());
+	EXPECT_THAT(node.getCoordOffset(), ElementsAre(0,0,0));
 	EXPECT_THAT(node.getOrgFiles(), IsEmpty());
 	EXPECT_THAT(node.getTimestamp(), IsNow()); // Within a second or so of the current time...
 	EXPECT_THAT((uint32_t)node.getUploadStatus(), Eq((uint32_t)0));

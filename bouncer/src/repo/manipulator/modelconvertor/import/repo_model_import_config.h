@@ -66,10 +66,6 @@ namespace repo {
 
 				~ModelImportConfig() {}
 
-				static ModelImportConfig ParseJsonFile(std::string filename);
-
-				void validate();
-
 				bool shouldImportAnimations() const { return importAnimations; }
 				std::string getTimeZone() const { return timeZone; }
 				repo::lib::ModelUnits getTargetUnits() const { return targetUnits; }

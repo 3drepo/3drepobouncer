@@ -50,12 +50,19 @@ namespace repo {
 			~RepoManipulator();
 
 			/**
-			* Commit a completed scene, and prompt the creation of the supporting assets
-			* such as RepoBundles and the tree. The RepoScene must be fully versioned.
+			* Commit a scene graph
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param scene scene to commit
+			* @param owner specify the owner of the scene (by default it is the user authorised to commit)
 			*/
-			void commitScene(
+			uint8_t commitScene(
 				const std::string                     &user,
 				repo::core::model::RepoScene          *scene,
+				const std::string                     &owner = "",
+				const std::string                     &tag = "",
+				const std::string                     &desc = "",
+				const repo::lib::RepoUUID             &revId = repo::lib::RepoUUID::createUUID(),
 				const modelutility::WebBufferConfig& config = {});
 			
 			/**
@@ -203,12 +210,19 @@ namespace repo {
 					const char        &delimiter = ',');
 
 			/**
-			* Initialise the web resources of a model revision from its rfile, and updates
-			* the status code provided to one of the successful return values. On failure,
-			* will throw.
+			* Load a Repo Scene from a file
+			* @param filePath path to file
+			* @param msg error message if it fails
+			* @param apply transformation reduction optimizer (default = true)
+			* @param rotateModel rotate model by 270degrees on x (default: false)
+			* @param config import config (optional)
+			* @return returns a pointer to Repo Scene upon success
 			*/
-			uint32_t processModelRevision(
-				const repo::manipulator::modelconvertor::ModelImportConfig &config);
+			repo::core::model::RepoScene*
+				loadSceneFromFile(
+					const std::string                                          &filePath,
+					uint8_t													   &error,
+					const repo::manipulator::modelconvertor::ModelImportConfig &config);
 
 			/**
 			* Initialise the image of a drawing revision from its rfile

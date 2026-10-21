@@ -64,9 +64,11 @@ repo::core::model::RepoScene* IFCModelImport::importModel(std::string filePath, 
 
 	scene = new repo::core::model::RepoScene(
 		settings.getDatabaseName(),
-		settings.getProjectName(),
-		settings.getRevisionId()
+		settings.getProjectName()
 	);
+	scene->setRevision(settings.getRevisionId());
+	scene->setOriginalFiles({ filePath });
+	scene->loadRootNode(handler.get());
 	scene->setWorldOffset(sceneBuilder->getWorldOffset());
 
 	if (sceneBuilder->hasMissingTextures()) {

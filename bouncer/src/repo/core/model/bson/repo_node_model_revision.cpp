@@ -49,7 +49,6 @@ void ModelRevisionNode::deserialise(RepoBSON& bson)
 	{
 		status = (UploadStatus)bson.getIntField(REPO_NODE_REVISION_LABEL_INCOMPLETE);
 	}
-	offset = {};
 	if (bson.hasField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT))
 	{
 		offset = bson.getDoubleVectorField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT);
@@ -71,10 +70,7 @@ void ModelRevisionNode::deserialise(RepoBSON& bson)
 void ModelRevisionNode::serialise(repo::core::model::RepoBSONBuilder& builder) const
 {
 	RevisionNode::serialise(builder);
-	if (offset.size()) // This initialises to 0,0,0 if the node is created in bouncer, but may not be set if deserialised from the database
-	{
-		builder.append(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT, offset);
-	}
+	builder.append(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT, offset); // This is never empty because it initialises to 0,0,0.
 	if (files.size())
 	{
 		builder.appendArray(REPO_NODE_REVISION_LABEL_REF_FILE, files);
@@ -91,10 +87,7 @@ void ModelRevisionNode::serialise(repo::core::model::RepoBSONBuilder& builder) c
 	{
 		builder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, (int32_t)status);
 	}
-	if(sharedId.isDefaultValue())
-	{
-		builder.append(REPO_NODE_LABEL_SHARED_ID, sharedId); // By convention the ModelRevisionNode always has a SharedId member, even if zero
-	}
+	builder.append(REPO_NODE_LABEL_SHARED_ID, sharedId); // By convention the ModelRevisionNode always has a SharedId member, even if zero
 }
 
 bool ModelRevisionNode::sEqual(const RepoNode& other) const

@@ -88,30 +88,30 @@ const testClashQ = async () => {
 
 const testModelQ = async () => {
 	const connection = await ampq.connect(config.rabbitmq.host);
-
-	// These arguments must match what is already in the database.
-
-	const teamspace = 'testModelImport';
-	const container = 'c4ed1ab1-c0d1-439e-bb02-d21be8d1f744';
-	const revId = 'a9386b6c-7701-4489-b2a7-f20d2e3a7340';
+	const teamspace = generateRandomString();
+	const container = generateUUIDString();
 
 	// Create the import configuration, as the backend would. See,
 	// src\v4\services\queue.js
 	// src\v5\handler\queue.js
+	// The import command should use the shared space placeholder literal, as
+	// the backend does.
 
-	const correlationId = createCorrelationIdAndSharedDirectory();
+	const correlationId = createCorrelationIdAndSharedDirectory([
+		path.join(process.env.REPO_MODEL_PATH, 'cube.obj'),
+	]);
 
 	const importConfig = {
 		lod: 0,
 		timezone: 'Europe/London',
 		importAnimations: false,
+		tag: 'model_import_test',
+		owner: generateUUIDString(),
 		units: 'm',
+		file: `$SHARED_SPACE/${correlationId}/cube.obj`,
 		teamspace,
 		container,
-		revId,
-		owner: generateRandomString(),
-		format: "obj",
-		size: 100,
+		revId: generateUUIDString(),
 	};
 
 	fs.writeFileSync(
@@ -122,7 +122,7 @@ const testModelQ = async () => {
 	await postToQueue(
 		connection,
 		config.rabbitmq.model_queue,
-		`import $SHARED_SPACE/${correlationId}.json`,
+		`import -f $SHARED_SPACE/${correlationId}.json`,
 		correlationId,
 	);
 

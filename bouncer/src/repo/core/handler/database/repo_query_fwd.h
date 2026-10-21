@@ -32,11 +32,10 @@ namespace repo {
 					class RepoProjectionBuilder;
 
 					class AddParent;
-					class RemoveField;
 
 					using RepoQuery = std::variant<Eq, Exists, Or, ArrayContains, RepoQueryBuilder, RepoProjectionBuilder>;
 
-					using RepoUpdate = std::variant<AddParent, RemoveField>;
+					using RepoUpdate = std::variant<AddParent>;
 				}
 			}
 		}
