@@ -23,6 +23,7 @@
 #include "repo/core/model/bson/repo_bson_ref.h"
 #include "repo/lib/repo_config.h"
 #include <set>
+#include <filesystem>
 
 namespace repo {
 	namespace core {
@@ -169,6 +170,7 @@ namespace repo {
 
 					std::weak_ptr<AbstractDatabaseHandler> dbHandler;
 					std::shared_ptr<AbstractFileHandler> fsHandler;
+					std::filesystem::path extfsMountDirectory;
 				};
 			}
 		}

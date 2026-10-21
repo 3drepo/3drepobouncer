@@ -22,6 +22,10 @@
 #include <repo/core/model/bson/repo_node_revision.h>
 #include <repo/core/handler/repo_database_handler_mongo.h>
 #include <vector>
+#include <memory>
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest-matchers.h>
 
 namespace testing {
 
@@ -76,7 +80,7 @@ namespace testing {
 			}
 
 			/* Names of all children (excluding metadata); children that don't
-			* have names are omitted (as opposed to being included as empty 
+			* have names are omitted (as opposed to being included as empty
 			strings */
 			std::vector<std::string> getChildNames();
 
@@ -124,15 +128,15 @@ namespace testing {
 				return node->getSharedID();
 			}
 
-            bool operator==(const NodeInfo& other) const
-            {
+			bool operator==(const NodeInfo& other) const
+			{
 				return node->getUniqueID() == other.node->getUniqueID();
-            }
+			}
 
-            bool operator!=(const NodeInfo& other) const
-            {
+			bool operator!=(const NodeInfo& other) const
+			{
 				return !(*this == other);
-            }
+			}
 		};
 
 		std::vector<NodeInfo> findNodesByMetadata(std::string key, std::string value);
@@ -178,6 +182,8 @@ namespace testing {
 
 		std::vector<repo::core::model::ModelRevisionNode> getRevisions();
 
+		std::vector<repo::core::model::RepoBSON> getAllNodes(bool binaries = false) const;
+
 	private:
 		const std::string database;
 		const std::string container;
@@ -192,5 +198,19 @@ namespace testing {
 		const repo::lib::RepoUUID& revisionId
 	);
 
-	repo::core::model::RepoScene* makeRandomScene();
+	std::unique_ptr<repo::core::model::RepoScene> makeRandomScene();
+
+	// Compares a fully loaded RepoScene with a Container in the database. This
+	// looks for an exact match of the inheritance (ids), not just semantic
+	// equality.
+	bool MatchesContainerAndExplain(
+		const repo::core::model::RepoScene& scene,
+		const ContainerUtils& container,
+		::testing::MatchResultListener* listener
+	);
+
+	MATCHER_P(MatchesContainer, container, "")
+	{
+		return MatchesContainerAndExplain(arg, container, result_listener);
+	}
 }

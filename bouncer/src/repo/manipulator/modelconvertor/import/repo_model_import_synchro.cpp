@@ -398,7 +398,8 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 		<< matNodes.size() << " materials, "
 		<< textNodes.size() << " textures, "
 		<< metaNodes.size() << " metadata ";
-	auto scene = new repo::core::model::RepoScene({ orgFile }, meshNodes, matNodes, metaNodes, textNodes, transNodes);
+	auto scene = new repo::core::model::RepoScene(meshNodes, matNodes, metaNodes, textNodes, transNodes);
+
 	auto origin = reader->getGlobalOffset();
 
 	/*std::vector<double> offset = { origin.x + bbox[0].x, origin.y + bbox[0].y, origin.z + bbox[0].z };*/
