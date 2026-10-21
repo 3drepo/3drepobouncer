@@ -292,7 +292,7 @@ TEST(RepoClientTest, UploadTestBadExt)
 	auto importConfigPath = getDataPath(repo::lib::RepoUUID::createUUID().toString() + ".json");
 	testing::writeImportConfig(config, importConfigPath);
 
-	//Test bad extension
+	// Test bad extension
 
 	EXPECT_EQ(REPOERR_FILE_TYPE_NOT_SUPPORTED, runImport(getDataPath("config/config.json"), importConfigPath));
 
