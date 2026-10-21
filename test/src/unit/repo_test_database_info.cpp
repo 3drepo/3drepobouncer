@@ -36,7 +36,6 @@ std::shared_ptr<repo::core::handler::MongoDatabaseHandler> getHandler()
 
 	auto config = repo::lib::RepoConfig::fromFile(getDataPath("config/withFS.json"));
 	config.configureFS(getDataPath("fileShare"));
-	config.configureExtFS(getDataPath(""));
 	handler->setFileManager(std::make_shared<repo::core::handler::fileservice::FileManager>(config, handler));
 	return handler;
 }
@@ -82,7 +81,6 @@ repo::lib::RepoConfig getConfig()
 {
 	auto config = repo::lib::RepoConfig::fromFile(getDataPath("config/withFS.json"));
 	config.configureFS(getDataPath("fileShare"));
-	config.configureExtFS(getDataPath(""));
 	return config;
 }
 

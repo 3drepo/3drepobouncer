@@ -34,96 +34,66 @@ using namespace repo::manipulator::modelconvertor;
 using namespace repo::lib;
 
 repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
+	const std::string& file,
 	const repo::manipulator::modelconvertor::ModelImportConfig& config,
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler
-) const 
-{
-	auto revision = fetchRevision(handler, 
-		config.getDatabaseName(),
-		config.getProjectName(),
-		config.getRevisionId()
-	);
-	
-	if (!revision.getOrgFiles().size()) {
-		throw repo::lib::RepoImportException(REPOERR_FILE_REF_MISSING);
-	}
-
-	auto refId = revision.getOrgFiles()[0];
-
-	auto fileManager = handler->getFileManager();
-
-	auto refNode = fileManager->getFileRef(
-		config.getDatabaseName(),
-		config.getProjectName() + "." + REPO_COLLECTION_HISTORY,
-		refId
-	);
-	auto name = refNode.getFileName();
-	auto file = fileManager->getFilePath(refNode);
-
+	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+	uint8_t& error
+) const {
 	if (!repo::lib::doesFileExist(std::filesystem::u8path(file))) {
-		throw repo::lib::RepoImportException(REPOERR_MODEL_FILE_READ);
+		error = REPOERR_MODEL_FILE_READ;
+		repoError << "Cannot find file: " << file;
+		return nullptr;
 	}
-
-	auto modelConvertor = chooseModelConvertor(name, config);
+	auto modelConvertor = chooseModelConvertor(file, config);
 	if (!modelConvertor) {
-		throw repo::lib::RepoImporterUnavailable(name, REPOERR_FILE_TYPE_NOT_SUPPORTED);
+		error = REPOERR_FILE_TYPE_NOT_SUPPORTED;
+		repoError << "Cannot find file: " << file;
+		return nullptr;
 	}
 
-	cleanUpExistingImport(
-		config.getDatabaseName(),
-		config.getProjectName(),
-		config.getRevisionId(),
-		handler
-	);
+	cleanUpExistingImport(config.getDatabaseName(), config.getProjectName(), config.getRevisionId(), handler);
 
 	repoTrace << "Importing model and generating Repo Scene";
-
-	uint8_t err;
-	repo::core::model::RepoScene* scene = modelConvertor->importModel(file, handler, err);
-	
-	// Not all model converters follow the new exception based error handling, so
-	// make sure any error codes are propagated from here up.
-	if (!scene) {
-		throw repo::lib::RepoSceneProcessingException("Model converter failed", err);
-	}
-
-	if (!scene->isRevisioned()) {
-		scene->setRevision(
-			config.getDatabaseName(),
-			config.getProjectName(),
-			config.getRevisionId()
-		);
-	}
-
-	if (!scene->hasRoot()) {
-		scene->loadRootNode(handler.get());
-	}
-
-	auto fileUnits = modelConvertor->getUnits();
-	auto targetUnits = config.getTargetUnits();
-
-	auto unitsScale = units::determineScaleFactor(fileUnits, targetUnits);
-	repoInfo << "File units: " << units::toUnitsString(fileUnits) << "\tTarget units: " << units::toUnitsString(targetUnits);
-
-	if (unitsScale != 1.0) {
-		repoInfo << "Applying scaling factor of " << unitsScale << " to convert " << units::toUnitsString(fileUnits) << " to " << units::toUnitsString(targetUnits);
-		scene->applyScaleFactor(unitsScale);
-	}
-
-	if (modelConvertor->requireReorientation()) {
-		repoTrace << "rotating model by 270 degress on the x axis...";
-		scene->reorientateDirectXModel();
-	}
-
-	// Apply the in-leaf node metadata shim, on the scene directly or the db,
-	// depending on whether this was a streamed import or not.
+	repo::core::model::RepoScene* scene = modelConvertor->importModel(file, handler, error);
 	if (scene) {
-		repoInfo << "Connecting metadata within leaf nodes...";
-		if (scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()) {
-			connectMetadataNodes(scene);
+
+		scene->setDatabaseAndProjectName(config.getDatabaseName(), config.getProjectName());
+
+		auto fileUnits = modelConvertor->getUnits();
+		auto targetUnits = config.getTargetUnits();
+
+		auto unitsScale = units::determineScaleFactor(fileUnits, targetUnits);
+		repoInfo << "File units: " << units::toUnitsString(fileUnits) << "\tTarget units: " << units::toUnitsString(targetUnits);
+
+		if (unitsScale != 1.0) {
+			repoInfo << "Applying scaling factor of " << unitsScale << " to convert " << units::toUnitsString(fileUnits) << " to " << units::toUnitsString(targetUnits);
+			scene->applyScaleFactor(unitsScale);
+		}
+
+		if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT)) {
+			delete scene;
+			scene = nullptr;
+			error = REPOERR_NO_MESHES;
 		}
 		else {
-			connectMetadataNodes(scene, handler);
+			if (modelConvertor->requireReorientation()) {
+				repoTrace << "rotating model by 270 degress on the x axis...";
+				scene->reorientateDirectXModel();
+			}
+
+			error = REPOERR_OK;
+		}
+
+		// Apply the in-leaf node metadata shim, on the scene directly or the db,
+		// depending on whether this was a streamed import or not.
+		if (scene) {
+			repoInfo << "Connecting metadata within leaf nodes...";
+			if (scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()) {
+				connectMetadataNodes(scene);
+			}
+			else {
+				connectMetadataNodes(scene, handler);
+			}
 		}
 	}
 
@@ -312,26 +282,5 @@ void ModelImportManager::connectMetadataNodes(repo::core::model::RepoScene* scen
 				context->updateDocument(query::AddParent(m, t.meshSharedIds));
 			}
 		}
-	}
-}
-
-repo::core::model::ModelRevisionNode ModelImportManager::fetchRevision(
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
-	const std::string& teamspace,
-	const std::string& container,
-	const repo::lib::RepoUUID& revisionId
-) const
-{
-	try {
-		return repo::core::model::ModelRevisionNode(
-			handler->findOneByUniqueID(
-				teamspace,
-				container + "." + REPO_COLLECTION_HISTORY,
-				revisionId
-			)
-		);
-	}
-	catch (RepoBSONException& e) {
-		std::throw_with_nested(repo::lib::RepoImportException(REPOERR_REVISION_NOT_FOUND));
 	}
 }

@@ -38,13 +38,12 @@ namespace repo {
 #define REPO_REF_LABEL_LINK "link"
 #define REPO_REF_LABEL_SIZE "size"
 #define REPO_REF_LABEL_TYPE "type"
-#define REPO_REF_LABEL_NAME "name"
+
 
 			class REPO_API_EXPORT RepoRef
 			{
 			public:
 				const static std::string REPO_REF_TYPE_FS;
-				const static std::string REPO_REF_TYPE_EXTFS;
 				const static std::string REPO_REF_TYPE_GRIDFS;
 				const static std::string REPO_REF_TYPE_UNKNOWN;
 
@@ -52,7 +51,6 @@ namespace repo {
 
 				enum class RefType {
 					FS,
-					EXTFS,
 					UNKNOWN,
 				};
 

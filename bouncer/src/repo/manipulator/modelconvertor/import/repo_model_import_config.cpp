@@ -22,10 +22,6 @@
 #pragma once
 
 #include "repo_model_import_config.h"
-#include "repo/lib/repo_exception.h"
-#include <repo/lib/rapidjson/document.h>
-#include <fstream>
-#include <sstream>
 
 using namespace repo::manipulator::modelconvertor;
 using namespace repo::lib;
@@ -81,91 +77,4 @@ std::string ModelImportConfig::prettyPrint()
 		+ " view name: " + (viewName.empty() ? "NONE" : viewName)
 		+ " split by floor: " + (splitByFloor ? "true" : "false")
 	);
-}
-
-ModelImportConfig ModelImportConfig::ParseJsonFile(std::string filename)
-{
-	std::ifstream fileStream(filename, std::ios::in | std::ios::binary);
-	if (!fileStream.good())
-	{
-		throw repo::lib::RepoInvalidConfigException("Failed to open config file: " + filename);
-	}
-
-	std::ostringstream contentStream;
-	contentStream << fileStream.rdbuf();
-	auto content = contentStream.str();
-
-	rapidjson::Document jsonTree;
-	if (jsonTree.Parse(content.c_str()).HasParseError())
-	{
-		throw repo::lib::RepoInvalidConfigException("Failed to parse config file: " + filename);
-	}
-
-	ModelImportConfig config;
-
-	// Client should be backwards compatible with v4 (database & project) and v5
-	// (teamspace & container) terminology. Teamspace/database are the terms that
-	// do not conflict, so we use them to distinguish which version is being used.
-
-	if (jsonTree.HasMember("teamspace") && jsonTree["teamspace"].IsString()) {
-		config.databaseName = jsonTree["teamspace"].GetString();
-	}
-	if (jsonTree.HasMember("container") && jsonTree["container"].IsString()) {
-		config.projectName = jsonTree["container"].GetString();
-	}
-
-	if (config.databaseName.empty()) {
-		if (jsonTree.HasMember("database") && jsonTree["database"].IsString()) {
-			config.databaseName = jsonTree["database"].GetString();
-		}
-		if (jsonTree.HasMember("project") && jsonTree["project"].IsString()) {
-			config.projectName = jsonTree["project"].GetString();
-		}
-	}
-
-	if (jsonTree.HasMember("timezone") && jsonTree["timezone"].IsString()) {
-		config.timeZone = jsonTree["timezone"].GetString();
-	}
-
-	if (jsonTree.HasMember("units") && jsonTree["units"].IsString()) {
-		config.targetUnits = units::fromString(jsonTree["units"].GetString());
-	}
-
-	if (jsonTree.HasMember("lod") && jsonTree["lod"].IsInt()) {
-		config.lod = jsonTree["lod"].GetInt();
-	}
-
-	if (jsonTree.HasMember("importAnimations") && jsonTree["importAnimations"].IsBool()) {
-		config.importAnimations = jsonTree["importAnimations"].GetBool();
-	}
-
-	if (jsonTree.HasMember("view") && jsonTree["view"].IsString()) {
-		config.viewName = jsonTree["view"].GetString();
-	}
-
-	if (jsonTree.HasMember("style") && jsonTree["style"].IsString()) {
-		config.viewStyle = jsonTree["style"].GetString();
-	}
-
-	if (jsonTree.HasMember("splitByFloor") && jsonTree["splitByFloor"].IsBool()) {
-		config.splitByFloor = jsonTree["splitByFloor"].GetBool();
-	}
-
-	if (jsonTree.HasMember("revId") && jsonTree["revId"].IsString()) {
-		config.revisionId = repo::lib::RepoUUID(jsonTree["revId"].GetString());
-	}
-
-	if (jsonTree.HasMember("numThreads") && jsonTree["numThreads"].IsInt()) {
-		config.numThreads = jsonTree["numThreads"].GetInt();
-	}
-
-	return config;
-}
-
-void ModelImportConfig::validate() 
-{
-	if (databaseName.empty() || projectName.empty() || !revisionId)
-	{
-		throw repo::lib::RepoInvalidConfigException("Invalid configuration: database, project and revisionId must be specified");
-	}
 }

@@ -222,19 +222,6 @@ namespace repo {
 						std::set<repo::lib::RepoUUID> parentIds;
 					};
 
-					class REPO_API_EXPORT RemoveField
-					{
-					public:
-						RemoveField(const repo::lib::RepoUUID& uniqueId, std::string field) :
-							uniqueId(uniqueId),
-							field(field)
-						{
-						}
-
-						repo::lib::RepoUUID uniqueId;
-						std::string field;
-					};
-
 					/*
 					 * Convenience type to build a projection in multiple stages.
 					 */

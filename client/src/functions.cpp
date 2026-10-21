@@ -47,8 +47,8 @@ std::string helpInfo()
 {
 	std::stringstream ss;
 
-	ss << cmdGenStash << "\t\tGenerate Stash for a project. (args: database project [repo|src|tree] [all|revId])\n";
-	ss << cmdImportFile << "\t\tImport the file of a model revision node into the database. (args: parameterFile )\n";
+	ss << cmdGenStash << "\tGenerate Stash for a project. (args: database project [repo|src|tree] [all|revId])\n";
+	ss << cmdImportFile << "\t\tImport file to database. (args: {file database project [dxrotate] [owner] [configfile]} or {-f parameterFile} )\n";
 	ss << cmdProcessDrawing << "\t\tProcess drawing revision node into an image. (args: parameterFile)\n";
 	ss << cmdClash << "\t\tPerform a clash detection operation. (args: configFile [resultsFile])\n";
 	ss << cmdTestConn << "\t\tTest the client and database connection is working. (args: none)\n";
@@ -65,7 +65,7 @@ bool isSpecialCommand(const std::string& cmd)
 int32_t knownValid(const std::string& cmd)
 {
 	if (cmd == cmdImportFile)
-		return 1;
+		return 2;
 	if (cmd == cmdProcessDrawing)
 		return 1;
 	if (cmd == cmdGenStash)
@@ -77,6 +77,16 @@ int32_t knownValid(const std::string& cmd)
 	if (cmd == cmdClash)
 		return 1;
 	return -1;
+}
+
+void replaceRepoModelPath(std::string& input) {
+	const char* env = std::getenv("REPO_MODEL_PATH");
+	if (env) {
+		size_t pos = input.find("$REPO_MODEL_PATH"); // Our conventions are to always use unix conventions
+		if (pos != std::string::npos) {
+			input.replace(pos, std::string("$REPO_MODEL_PATH").length(), env);
+		}
+	}
 }
 
 int32_t performOperation(
@@ -204,29 +214,44 @@ int32_t generateStash(
 	/*
 	* Check the amount of parameters matches
 	*/
-	if (command.nArgcs < 4)
+	if (command.nArgcs < 3)
 	{
 		repoLogError("Number of arguments mismatch! " + cmdGenStash
-			+ " requires 4 arguments: database project revId [repo|tree]");
+			+ " requires 3 arguments:database project [repo|tree]");
 		return REPOERR_INVALID_ARG;
 	}
 
 	std::string dbName = command.args[0];
 	std::string project = command.args[1];
-	std::string revId = command.args[2];
-	std::string type = command.args[3];
+	std::string type = command.args[2];
 
-	if (type != "repo" && type != "tree") {
-		repoLogError("Invalid stash type: " + type + ". Must be 'repo' or 'tree'.");
+	if (!(type == "repo" || type == "tree"))
+	{
+		repoLogError("Unknown stash type: " + type);
 		return REPOERR_INVALID_ARG;
 	}
 
-	if (repo::lib::RepoUUID(revId).isDefaultValue()) {
-		repoLogError("Invalid revision ID: " + revId + ". Must be a valid UUID.");
-		return REPOERR_INVALID_ARG;
+	bool branch = true;
+	std::string revId = REPO_HISTORY_MASTER_BRANCH;
+	if (command.nArgcs > 3) {
+		revId = command.args[3];
+		branch = false;
 	}
 
-	auto success = _generateStash(controller, token, type, dbName, project, false, revId);
+	bool success = true;
+	std::string revToLower = revId;
+	std::transform(revToLower.begin(), revToLower.end(), revToLower.begin(), ::tolower);
+	if (revToLower == "all")
+	{
+		auto revs = controller->getAllFromCollectionContinuous(token, dbName, project + ".history");
+		for (const auto& rev : revs) {
+			auto revId = repo::core::model::RepoNode(rev).getUniqueID();
+			success &= _generateStash(controller, token, type, dbName, project, false, revId.toString());
+		}
+	}
+	else {
+		success = _generateStash(controller, token, type, dbName, project, branch, revId);
+	}
 
 	return success ? REPOERR_OK : REPOERR_STASH_GEN_FAIL;
 }
@@ -256,25 +281,125 @@ int32_t importFileAndCommit(
 	const repo_op_t& command
 )
 {
-	using namespace repo::manipulator::modelconvertor;
-
-	if (command.nArgcs < 1) {
-		repoError << "Bouncer model import requires a config file.";
+	/*
+	* Check the amount of parameters matches
+	*/
+	bool usingSettingFiles = command.nArgcs == 2 && std::string(command.args[0]) == "-f";
+	if (command.nArgcs < 3 && !usingSettingFiles)
+	{
+		repoLogError("Number of arguments mismatch! " + cmdImportFile
+			+ " requires 3 arguments: file database project [dxrotate] [owner] [config file] or 2 arguments: -f <path to json settings>");
 		return REPOERR_INVALID_ARG;
 	}
 
-	auto configFilePath = command.args[0];
+	repo::manipulator::modelconvertor::ModelImportConfig config;
 
-	if (!std::filesystem::exists(configFilePath))
+	config.revisionId = repo::lib::RepoUUID::createUUID(); // If the caller does not specify one
+
+	std::string fileLoc;
+	std::string  owner, tag, desc;
+
+	bool success = true;
+	bool rotate = false;
+	if (usingSettingFiles)
 	{
-		repoError << "Config file does not exist: " << configFilePath;
-		return REPOERR_INVALID_ARG;
-	};
+		//if we're using settings file then arg[1] must be file path
+		boost::property_tree::ptree jsonTree;
+		try {
+			boost::property_tree::read_json(command.args[1], jsonTree);
 
-	auto config = ModelImportConfig::ParseJsonFile(configFilePath);
-	config.validate(); // Will throw if the config is invalid.
+			fileLoc = jsonTree.get<std::string>("file", "");
+			owner = jsonTree.get<std::string>("owner", "");
+			tag = jsonTree.get<std::string>("tag", "");
+			desc = jsonTree.get<std::string>("desc", "");
 
-	return controller->processModelRevision(config);
+			// Client should be backwards compatible with v4 (database & project) and v5
+			// (teamspace & container) terminology. Teamspace/database are the terms that
+			// do not conflict, so we use them to distinguish which version is being used.
+
+			config.databaseName = jsonTree.get<std::string>("teamspace", "");
+			config.projectName = jsonTree.get<std::string>("container", "");
+
+			if (config.databaseName.empty()) {
+				config.databaseName = jsonTree.get<std::string>("database", "");
+				config.projectName = jsonTree.get<std::string>("project", "");
+			}
+
+			config.timeZone = jsonTree.get<std::string>("timezone", config.timeZone);
+			config.targetUnits = units::fromString(jsonTree.get<std::string>("units", ""));
+			config.lod = jsonTree.get<int>("lod", config.lod);
+			config.importAnimations = jsonTree.get<bool>("importAnimations", config.importAnimations);
+			config.viewName = jsonTree.get<std::string>("view", config.viewName);
+			config.viewStyle = jsonTree.get<std::string>("style", "");
+			config.splitByFloor = jsonTree.get<bool>("splitByFloor", config.splitByFloor);
+			auto revIdStr = jsonTree.get<std::string>("revId", "");
+			if (!revIdStr.empty()) {
+				config.revisionId = repo::lib::RepoUUID(revIdStr);
+			}
+			config.numThreads = jsonTree.get<int>("numThreads", config.numThreads);
+
+			if (config.databaseName.empty() || config.projectName.empty() || fileLoc.empty())
+			{
+				return REPOERR_LOAD_SCENE_FAIL;
+			}
+		}
+		catch (std::exception& e)
+		{
+			return REPOERR_LOAD_SCENE_FAIL;
+		}
+	}
+	else
+	{
+		fileLoc = command.args[0];
+		config.databaseName = command.args[1];
+		config.projectName = command.args[2];
+
+		if (command.nArgcs > 3)
+		{
+			owner = command.args[3];
+		}
+	}
+
+	replaceRepoModelPath(fileLoc);
+
+	boost::filesystem::path filePath(fileLoc);
+	std::string fileExt = filePath.extension().string();
+	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
+
+	//FIXME: This is getting complicated, we should consider using boost::program_options and start utilising flags...
+	//Something like this: http://stackoverflow.com/questions/15541498/how-to-implement-subcommands-using-boost-program-options
+
+	repoLog("File: " + fileLoc + " owner: " + owner + " " + config.prettyPrint());
+
+	uint8_t err;
+	repo::core::model::RepoScene* graph = controller->loadSceneFromFile(fileLoc, err, config);
+	if (graph)
+	{
+		repoLog("Trying to commit this scene to database as " + config.getDatabaseName() + "." + config.getProjectName());
+
+		repo::manipulator::modelutility::WebBufferConfig webBufferConfig;
+		webBufferConfig.splitByFloor = config.splitByFloor;
+
+		err = controller->commitScene(token, graph, owner, tag, desc, config.revisionId, webBufferConfig);
+
+		if (err == REPOERR_OK)
+		{
+			if (graph->isMissingNodes())
+			{
+				repoLog("Missing nodes detected!");
+				return REPOERR_LOAD_SCENE_MISSING_NODES;
+			}
+			else if (graph->isMissingTexture())
+			{
+				repoLog("Missing texture detected!");
+				return REPOERR_LOAD_SCENE_MISSING_TEXTURE;
+			}
+			else
+				return err;
+		}
+	}
+
+	return err ? err : REPOERR_LOAD_SCENE_FAIL;
 }
 
 int32_t processDrawing(

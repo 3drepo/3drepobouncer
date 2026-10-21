@@ -104,14 +104,6 @@ namespace testing {
 			throw MockDatabaseMethodNotImplemented();
 		}
 
-		virtual void updateDocument(
-			const std::string& database,
-			const std::string& collection,
-			const repo::core::handler::database::query::RepoUpdate& update
-		) {
-			throw MockDatabaseMethodNotImplemented();
-		}
-
 		virtual void dropCollection(
 			const std::string& database,
 			const std::string& collection) {

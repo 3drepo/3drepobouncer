@@ -36,7 +36,6 @@
 
 #include "../../../repo_test_utils.h"
 #include "../../../repo_test_mesh_utils.h"
-#include "../../../repo_test_revision_utils.h"
 #include "../../../repo_test_database_info.h"
 #include "../../../repo_test_fileservice_info.h"
 #include "../../../repo_test_scene_utils.h"
@@ -54,17 +53,17 @@ repo::core::model::RepoScene* ModelImportManagerImport(std::string filename, con
 {
 	auto handler = getHandler();
 
-	testing::makeRevisionNode(handler, config, filename);
+	uint8_t err;
+	std::string msg;
 
 	ModelImportManager manager;
-	auto scene = manager.ImportFromFile(config, handler);
-	scene->commit(handler);
+	auto scene = manager.ImportFromFile(filename, config, handler, err);
+	scene->commit(handler.get(), handler->getFileManager().get(), msg, "testuser", "", "", config.getRevisionId());
 
 	// The Selection Tree Maker no longer needs a populated scene, but SceneUtils
 	// still does in order to validate it...
-
 	if (!scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()) {
-		scene->loadScene(handler.get());
+		scene->loadScene(handler.get(), msg);
 	}
 
 	SceneManager manager2;	

@@ -29,30 +29,77 @@
 using namespace repo::lib;
 using namespace repo::manipulator::modelutility;
 
-void SceneManager::commitScene(
+
+uint8_t SceneManager::commitScene(
 	repo::core::model::RepoScene* scene,
-	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
+	const std::string& owner,
+	const std::string& tag,
+	const std::string& desc,
+	const repo::lib::RepoUUID& revId,
+	repo::core::handler::AbstractDatabaseHandler* handler,
+	repo::core::handler::fileservice::FileManager* fileManager,
 	const repo::manipulator::modelutility::WebBufferConfig& config
 ) {
-	try {
-		scene->commit(handler);
-		repoInfo << "Scene successfully committed to the database";
-
-		repoInfo << "Generating Selection Tree JSON...";
-		scene->updateRevisionStatus(handler.get(), repo::core::model::ModelRevisionNode::UploadStatus::GEN_SEL_TREE);
-		generateAndCommitSelectionTree(scene, handler.get());
-
-		repoInfo << "Generating Repo Bundles...";
-		scene->updateRevisionStatus(handler.get(), repo::core::model::ModelRevisionNode::UploadStatus::GEN_WEB_STASH);
-		generateWebViewBuffers(scene, repo::manipulator::modelconvertor::ExportType::REPO, handler.get(), config);
-
-		scene->updateRevisionStatus(handler.get(), repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE);
-	}
-	catch(...)
+	uint8_t errCode = REPOERR_UPLOAD_FAILED;
+	std::string msg;
+	if (handler && scene)
 	{
-		scene->addErrorStatusToProjectSettings(handler.get());
-		std::rethrow_exception(std::current_exception());
+		errCode = scene->commit(handler, fileManager, msg, owner, desc, tag, revId);
+		if (errCode == REPOERR_OK) {
+			repoInfo << "Scene successfully committed to the database";
+			bool success = true;
+
+			if (success)
+			{
+				repoInfo << "Generating Selection Tree JSON...";
+				scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::GEN_SEL_TREE);
+				
+				if (generateAndCommitSelectionTree(scene, handler))
+					repoInfo << "Selection Tree Stored into the database";
+				else
+				{
+					repoError << "failed to commit selection tree";
+					success = false;
+					errCode = REPOERR_BUNDLE_GEN_FAILED;
+				}
+
+				repoInfo << "Generating Repo Bundles...";
+				scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::GEN_WEB_STASH);
+				
+				if (generateWebViewBuffers(scene, repo::manipulator::modelconvertor::ExportType::REPO, handler, config))
+					repoInfo << "Repo Bundles for Stash stored into the database";
+				else
+				{
+					repoError << "failed to commit repo bundles";
+					success = false;
+					errCode = REPOERR_BUNDLE_GEN_FAILED;
+				}
+
+				errCode = REPOERR_OK;
+				scene->updateRevisionStatus(handler, repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE);
+			}
+			else
+			{
+				errCode = REPOERR_UPLOAD_FAILED;
+			}
+		}
 	}
+	else
+	{
+		if (!handler)
+			msg += "Failed to connect to database";
+		if (!scene)
+			msg += "Trying to commit a scene that does not exist!";
+		repoError << "Error committing scene to the database : " << msg;
+		errCode = REPOERR_UPLOAD_FAILED;
+	}
+
+	if (errCode != REPOERR_OK)
+	{
+		scene->addErrorStatusToProjectSettings(handler);
+	}
+
+	return errCode;
 }
 
 repo::core::model::RepoScene* SceneManager::fetchScene(
@@ -64,60 +111,51 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 	const bool                                    &skeletonFetch,
 	const std::vector<repo::core::model::ModelRevisionNode::UploadStatus> &includeStatus)
 {
-	if (!handler) {
-		throw repo::lib::RepoException("Failed to retrieve database handler to perform the operation");
-	}
-
-	auto scene = new repo::core::model::RepoScene();
-
-	if (headRevision) {
-		repoInfo << "Fetching head " << uuid.toString() << " of " << database << "." << project;
-
-		using namespace repo::core::handler::database;
-
-		query::RepoQueryBuilder query;
-		if (includeStatus.size())
+	repo::core::model::RepoScene* scene = nullptr;
+	if (handler)
+	{
+		//not setting a scene if we don't have a handler since we
+		//can't retreive anything from the database.
+		scene = new repo::core::model::RepoScene(database, project);
+		if (scene)
 		{
-			std::vector<int> statuses;
-			std::transform(includeStatus.begin(), includeStatus.end(), std::back_inserter(statuses), [](auto s) { return (int)s; });
-			query.append(
-				query::Or(
-					query::Eq(REPO_NODE_REVISION_LABEL_INCOMPLETE, statuses),
-					query::Exists(REPO_NODE_REVISION_LABEL_INCOMPLETE, false)
-				)
-			);
+			if (skeletonFetch)
+				scene->skipLoadingExtFiles();
+			if (headRevision)
+				scene->setBranch(uuid);
+			else
+				scene->setRevision(uuid);
+
+			std::string errMsg;
+			if (scene->loadRevision(handler, errMsg, includeStatus))
+			{
+				repoInfo << "Loaded" <<
+					(headRevision ? (" head revision of branch " + uuid.toString())
+						: (" revision " + uuid.toString()))
+					<< " of " << database << "." << project;
+
+				if (scene->loadScene(handler, errMsg))
+				{
+					repoTrace << "Loaded Scene";
+				}
+				else
+				{
+					delete scene;
+					scene = nullptr;
+				}
+			}
+			else
+			{
+				repoError << "Failed to load revision for "
+					<< database << "." << project << " : " << errMsg;
+				delete scene;
+				scene = nullptr;
+			}
 		}
-		else
-		{
-			query.append(
-				query::Exists(REPO_NODE_REVISION_LABEL_INCOMPLETE, false)
-			);
+		else {
+			repoError << "Failed to create a RepoScene(out of memory?)!";
 		}
-		query.append(query::Eq(REPO_NODE_LABEL_SHARED_ID, uuid));
-
-		auto bson = handler->findOneByCriteria(
-			database,
-			project + "." + REPO_COLLECTION_HISTORY,
-			query,
-			REPO_NODE_REVISION_LABEL_TIMESTAMP
-		);
-
-		if (bson.isEmpty()) {
-			throw repo::lib::RepoException("Failed to retrieve head revision for " + database + "." + project + " with branch id " + uuid.toString());
-		}
-
-		scene->setRevision(database, project, bson.getUUIDField(REPO_NODE_LABEL_ID));
 	}
-	else {
-		repoInfo << "Fetching revision " << uuid.toString() << " of " << database << "." << project;
-		scene->setRevision(database, project, uuid);
-	}
-
-	if (skeletonFetch) {
-		scene->skipLoadingExtFiles();
-	}
-
-	scene->loadScene(handler);
 
 	return scene;
 }
@@ -126,10 +164,43 @@ void SceneManager::fetchScene(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	repo::core::model::RepoScene              *scene)
 {
-	if (!handler || !scene || !scene->isRevisioned()) {
-		throw repo::lib::RepoException("Failed to retrieve database handler or scene is empty or not revisioned");
+	if (scene)
+	{
+		if (scene->isRevisioned())
+		{
+			if (!handler)
+			{
+				repoError << "Failed to retrieve database handler to perform the operation!";
+			}
+
+			std::string errMsg;
+			if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED) && scene->loadStash(handler, errMsg))
+			{
+				repoTrace << "Stash Loaded";
+			}
+			else
+			{
+				if (!errMsg.empty())
+					repoWarning << "Error loading stash for " << scene->getDatabaseName() << "." << scene->getProjectName() << " : " << errMsg;
+			}
+
+			errMsg.clear();
+
+			if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT) && scene->loadScene(handler, errMsg))
+			{
+				repoTrace << "Scene Loaded";
+			}
+			else
+			{
+				if (!errMsg.empty())
+					repoError << "Error loading scene: " << errMsg;
+			}
+		}
 	}
-	scene->loadScene(handler);
+	else
+	{
+		repoError << "Cannot populate a scene that doesn't exist. Use the other function if you wish to fully load a scene from scratch";
+	}
 }
 
 bool SceneManager::generateWebViewBuffers(

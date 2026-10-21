@@ -580,12 +580,13 @@ repo::core::model::RepoScene* RepoModelImport::importModel(std::string filePath,
 
 		scene = new repo::core::model::RepoScene(
 			settings.getDatabaseName(),
-			settings.getProjectName(),
-			settings.getRevisionId()
+			settings.getProjectName()
 		);
-		
 		scene->setWorldOffset(builder->offset);
-		
+
+		scene->setRevision(settings.getRevisionId());
+		scene->setOriginalFiles({ filePath });
+		scene->loadRootNode(handler.get());
 		if (builder->hasMissingTextures()) {
 			scene->setMissingTexture();
 		}
