@@ -161,7 +161,7 @@ TEST(FileManager, GetExtFsPath)
 		config.configureFS(getDataPath("fileShare"));
 
 		// Extfs is optional, as not all bouncer operations (e.g. clash) require access
-		// to it. When it is accessed though, FileManager should asser that it is
+		// to it. When it is accessed though, FileManager should assert that it is
 		// configured.
 
 		handler->setFileManager(std::make_shared<repo::core::handler::fileservice::FileManager>(config, handler));

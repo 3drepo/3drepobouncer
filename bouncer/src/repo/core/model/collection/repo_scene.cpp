@@ -598,11 +598,6 @@ void RepoScene::commit(
 		commitSequence(handlerPtr, handler->getFileManager().get());
 	}
 
-	// Create and Commit revision node. The new node will have a status of
-	// GEN_DEFAULT. The caller should perform the final steps to generate
-	// the stash and reset the upload status before the scene will become
-	// visible.
-
 	repoInfo << "Success.";
 }
 

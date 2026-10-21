@@ -22,6 +22,7 @@
 #include <repo/core/model/bson/repo_node_revision.h>
 #include <repo/core/handler/repo_database_handler_mongo.h>
 #include <vector>
+#include <memory>
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest-matchers.h>
@@ -197,7 +198,7 @@ namespace testing {
 		const repo::lib::RepoUUID& revisionId
 	);
 
-	repo::core::model::RepoScene* makeRandomScene();
+	std::unique_ptr<repo::core::model::RepoScene> makeRandomScene();
 
 	// Compares a fully loaded RepoScene with a Container in the database. This
 	// looks for an exact match of the inheritance (ids), not just semantic

@@ -85,8 +85,7 @@ void RepoConfig::configureFS(
 }
 
 void RepoConfig::configureExtFS(
-	const std::string& directory
-)
+	const std::string& directory)
 {
 	extFsConf.dir = directory;
 	extFsConf.configured = true;
@@ -124,6 +123,7 @@ RepoConfig RepoConfig::fromFile(const std::string &filePath) {
 
 		if (fsTree) {
 			auto path = fsTree->get<std::string>("path", "");
+			replaceRepoModelPath(path);
 			auto level = fsTree->get<int>("level", REPO_CONFIG_FS_DEFAULT_LEVEL);
 			if (!path.empty())
 				config.configureFS(path, level, useAsDefault == "fs" || useAsDefault.empty());
@@ -132,12 +132,10 @@ RepoConfig RepoConfig::fromFile(const std::string &filePath) {
 		auto extfsTree = jsonTree.get_child_optional("extfs");
 		if (extfsTree) {
 			auto path = extfsTree->get<std::string>("path", "");
+			replaceRepoModelPath(path);
 			if (!path.empty())
 				config.configureExtFS(path);
 		}
-
-		replaceRepoModelPath(config.fsConf.dir);
-		replaceRepoModelPath(config.extFsConf.dir);
 
 		return config;
 	}

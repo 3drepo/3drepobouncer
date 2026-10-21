@@ -207,7 +207,7 @@ int32_t generateStash(
 	if (command.nArgcs < 4)
 	{
 		repoLogError("Number of arguments mismatch! " + cmdGenStash
-			+ " requires 3 arguments: database project revId [repo|tree]");
+			+ " requires 4 arguments: database project revId [repo|tree]");
 		return REPOERR_INVALID_ARG;
 	}
 

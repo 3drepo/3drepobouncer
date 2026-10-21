@@ -221,7 +221,7 @@ namespace repo {
 					const bool        &overwrite) = 0;
 
 				/*
-				* Updates a collection using a RepoUpdate object, instead of a RepoBSON.
+				* Updates a document using a RepoUpdate object, instead of a RepoBSON.
 				*/
 				virtual void updateDocument(
 					const std::string& database,

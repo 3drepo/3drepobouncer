@@ -83,7 +83,7 @@ namespace {
 		catch (repo::lib::RepoBSONException)
 		{
 			if (expectSuccess) {
-				ADD_FAILURE() << "Could not find expected revision node " << config.getDatabaseName() << " " << config.getProjectName() + "." + REPO_COLLECTION_HISTORY << " " << config.getRevisionId().toString();				return returnCode;
+				ADD_FAILURE() << "Could not find expected revision node " << config.getDatabaseName() << " " << config.getProjectName() + "." + REPO_COLLECTION_HISTORY << " " << config.getRevisionId().toString();
 			}
 			return returnCode;
 		}
@@ -92,7 +92,7 @@ namespace {
 		{
 			EXPECT_THAT(revisionNode.getUploadStatus(), Eq(repo::core::model::ModelRevisionNode::UploadStatus::COMPLETE));
 
-			// check that the scene is populated
+			// Check that the scene is populated
 
 			repo::core::model::RepoScene scene(
 				config.getDatabaseName(),
@@ -105,7 +105,7 @@ namespace {
 			EXPECT_THAT(scene.getAllMeshes().size(), Gt(0)) << "Scene has no meshes";
 			EXPECT_THAT(scene.getAllTransformations().size(), Gt(0)) << "Scene has no transformations";
 
-			// check that the web resources exist
+			// Check that the web resources exist
 
 			auto bundles = handler->findAllByCriteria(
 				config.getDatabaseName(),
@@ -158,9 +158,9 @@ namespace {
 		auto configPath = getDataPath(repo::lib::RepoUUID::createUUID().toString() + ".json");
 		testing::writeImportConfig(config, configPath);
 
-		// make sure there is no existing revision node - this method does not support
-		// that, if the test should create its own node, then it should use another
-		// method to do the upload
+		// Make sure there is no existing revision node - this method does not support
+		// that. Tests that create their own node should use another method for the
+		// upload.
 
 		auto handler = getHandler();
 
@@ -220,7 +220,7 @@ TEST(RepoClientTest, UploadTestInvalidDBConn)
 	auto importConfigPath = getDataPath(repo::lib::RepoUUID::createUUID().toString() + ".json");
 	testing::writeImportConfig(config, importConfigPath);
 
-	//Test failing to connect to database
+	// Test failing to connect to database
 
 	EXPECT_EQ(REPOERR_AUTH_FAILED, runImport(getDataPath("config/invalidAdd.json"), importConfigPath));
 	
@@ -239,7 +239,7 @@ TEST(RepoClientTest, UploadTestBadDBAuth)
 	auto importConfigPath = getDataPath(repo::lib::RepoUUID::createUUID().toString() + ".json");
 	testing::writeImportConfig(config, importConfigPath);
 
-	//Test Bad authentication
+	// Test bad authentication
 
 	EXPECT_EQ(REPOERR_AUTH_FAILED, runImport(getDataPath("config/badAuth.json"), importConfigPath));
 
@@ -252,7 +252,7 @@ TEST(RepoClientTest, UploadTestBadDBAuth)
 
 TEST(RepoClientTest, UploadTestNoFile)
 {
-	//this ensures we can run processes
+	// This ensures we can run processes
 	ASSERT_TRUE(system(nullptr));
 
 	ModelImportConfig config;
@@ -292,7 +292,7 @@ TEST(RepoClientTest, UploadTestBadExt)
 	auto importConfigPath = getDataPath(repo::lib::RepoUUID::createUUID().toString() + ".json");
 	testing::writeImportConfig(config, importConfigPath);
 
-	//Test Bad authentication
+	//Test bad extension
 
 	EXPECT_EQ(REPOERR_FILE_TYPE_NOT_SUPPORTED, runImport(getDataPath("config/config.json"), importConfigPath));
 
@@ -311,7 +311,7 @@ TEST(RepoClientTest, UploadTestBadFBXVer)
 	auto importConfigPath = getDataPath(repo::lib::RepoUUID::createUUID().toString() + ".json");
 	testing::writeImportConfig(config, importConfigPath);
 
-	//Test unsupported fbx
+	// Test unsupported fbx
 
 	EXPECT_EQ(REPOERR_UNSUPPORTED_FBX_VERSION, runImport(getDataPath("config/config.json"), importConfigPath));
 
@@ -320,19 +320,19 @@ TEST(RepoClientTest, UploadTestBadFBXVer)
 
 TEST(RepoClientTest, UploadTestBadArgs)
 {
-	//Invalid arguments (attempting to call using the old style)
+	// Invalid arguments (attempting to call using the old style)
 	{
 		std::string args = getClientExePath() + " " + getDataPath("config/config.json") + " import " + "filename.obj " + "db " + "proj";
 		EXPECT_EQ((int)REPOERR_INVALID_ARG, runProcess(args));
 	}
 
-	//Invalid arguments (missing config path)
+	// Invalid arguments (missing config path)
 	{
 		std::string args = getClientExePath() + " " + getDataPath("config/config.json") + " import " + "-f ";
 		EXPECT_EQ((int)REPOERR_INVALID_ARG, runProcess(args));
 	}
 
-	//Invalid arguments (config file doesn't exist)
+	// Invalid arguments (config file doesn't exist)
 	{
 		std::string args = getClientExePath() + " " + getDataPath("config/config.json") + " import " + "-f " + "nonexistentConfig.json";
 		EXPECT_EQ((int)REPOERR_INVALID_ARG, runProcess(args));
@@ -346,7 +346,7 @@ TEST(RepoClientTest, UploadTestSuccess)
 
 TEST(RepoClientTest, UploadTestTexture)
 {
-	//Test Textured Upload where the texture is missing
+	// Test Textured Upload where the texture is missing
 	EXPECT_EQ(REPOERR_LOAD_SCENE_MISSING_TEXTURE, testModelUpload(texturedModel, true));
 }
 
@@ -403,11 +403,11 @@ TEST(RepoClientTest, UploadTestRVT)
 
 	EXPECT_EQ(REPOERR_OK, testModelUpload(rvtModel));
 
-	//Upload RVT file with no valid 3D view (should create a default view)
+	// Upload RVT file with no valid 3D view (should create a default view)
 
 	EXPECT_EQ(REPOERR_OK, testModelUpload(rvtNo3DViewModel));
 
-	//Upload RVT file with a named view that does not exist
+	// Upload RVT file with a named view that does not exist
 	{
 		ModelImportConfig config;
 		config.databaseName = "rvtUpload";
@@ -418,7 +418,7 @@ TEST(RepoClientTest, UploadTestRVT)
 		EXPECT_EQ(REPOERR_VIEW_NOT_FOUND, testModelUpload(rvtModel, config, false));
 	}
 
-	//Upload RVT file with a named view that is not 3D
+	// Upload RVT file with a named view that is not 3D
 	{
 		ModelImportConfig config;
 		config.databaseName = "rvtUpload";
@@ -492,17 +492,17 @@ TEST(RepoClientTest, UploadTestNWC)
 
 TEST(RepoClientTest, UploadTestSPM)
 {
-	//commenting out 6.2 as we don't support this right now and it will crash.
+	// Commenting out 6.2 as we don't support this right now and it will crash.
 	/*std::string spmUpload = produceUploadArgs(db, "synchroTest", getDataPath(synchroFile));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(spmUpload));
 	EXPECT_TRUE(projectExists(db, "synchroTest"));*/
 
-	//we don't support 6.1 - this will currently crash
+	// We don't support 6.1 - this will currently crash
 	/*std::string spmUpload2 = produceUploadArgs(db, "synchroTest2", getDataPath(synchroOldVersion));
 	EXPECT_EQ((int)REPOERR_UNSUPPORTED_VERSION, runProcess(spmUpload2));
 	EXPECT_FALSE(projectExists(db, "synchroTest2"));*/
 
-	//we also support 6.3
+	// We also support 6.3
 	EXPECT_EQ(REPOERR_OK, testModelUpload(synchroVersion6_3));
 
 	EXPECT_EQ(REPOERR_OK, testModelUpload(synchroVersion6_4));
@@ -532,10 +532,10 @@ TEST(RepoClientTest, UploadTestRVTRegressionTests)
 TEST(RepoClientTest, UploadTestMissingFieldsInJSON)
 {
 	std::vector<std::string> badConfigFiles = {
-	//	"empty.json",
-	//	"empty2.json",
-	//	"importNoDatabase.json",
-	//	"importNoDatabase2.json",
+		"empty.json",
+		"empty2.json",
+		"importNoDatabase.json",
+		"importNoDatabase2.json",
 		"importNoProject.json",
 		"importNoProject2.json",
 		"importNoRev.json",

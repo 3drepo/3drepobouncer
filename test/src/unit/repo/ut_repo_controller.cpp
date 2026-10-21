@@ -43,7 +43,7 @@ TEST(RepoControllerTest, ProcessModelRevision) {
 	auto handler = getHandler();
 	auto teamspace = "RepoControllerTest";
 
-	// Config with that points to a non-existent revision
+	// Config pointing to a non-existent revision
 
 	{
 		repo::manipulator::modelconvertor::ModelImportConfig config;

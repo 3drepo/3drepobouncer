@@ -394,7 +394,6 @@ TEST(RepoSceneTest, CommitScene)
 	{
 		auto scene = testing::makeRandomScene();
 		EXPECT_THROW(scene->commit(handler), repo::lib::RepoException);
-		delete scene;
 	}
 
 	// Commit a RepoScene populated in memory to the database, as might be done

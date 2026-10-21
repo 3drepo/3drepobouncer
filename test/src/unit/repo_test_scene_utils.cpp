@@ -655,9 +655,9 @@ void testing::makeRandomScene(
 	builder.finalise();
 }
 
-repo::core::model::RepoScene* testing::makeRandomScene()
+std::unique_ptr<repo::core::model::RepoScene> testing::makeRandomScene()
 {
-	auto scene = new repo::core::model::RepoScene();
+	auto scene = std::make_unique<repo::core::model::RepoScene>();
 
 	makeRandomSceneNodes([&](std::unique_ptr<RepoNode> n) {
 		scene->addNodes({n.release()});

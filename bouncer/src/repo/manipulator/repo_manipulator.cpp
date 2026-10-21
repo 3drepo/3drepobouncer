@@ -95,7 +95,7 @@ void RepoManipulator::commitScene(
 	const WebBufferConfig& config)
 {
 	modelutility::SceneManager sceneManager;
-	return sceneManager.commitScene(scene, dbHandler, config);
+	sceneManager.commitScene(scene, dbHandler, config);
 }
 
 repo::core::model::RepoScene* RepoManipulator::fetchScene(

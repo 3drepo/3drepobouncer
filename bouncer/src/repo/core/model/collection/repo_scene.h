@@ -350,7 +350,7 @@ namespace repo {
 				/**
 				* Update revision status, if the scene is revisioned
 				* This will also update the record within the database
-				* should a handler is supplied
+				* should a handler be supplied
 				* @param status status of the revision
 				*/
 				void updateRevisionStatus(
@@ -721,7 +721,6 @@ namespace repo {
 				* @param g which graph to insert into
 				* @param node pointer to the node to add
 				* @param errMsg error message if it returns false
-				* @return returns true if succeeded
 				*/
 				void addNodeToMaps(
 					const GraphType& gType,
@@ -751,7 +750,6 @@ namespace repo {
 				* Commit a new nodes into project.sceneExt base on the
 				* changes on this scene
 				* @param errMsg error message if this failed
-				* @return returns true upon success
 				*/
 				void commitSceneChanges(repo::core::handler::AbstractDatabaseHandler *handler);
 
@@ -781,7 +779,6 @@ namespace repo {
 				* @param handler database handler to use for retrieval
 				* @param nodes the nodes to populate with
 				* @param errMsg error message when this function returns false
-				* @return returns true if scene graph populated with no errors
 				*/
 				void populate(
 					const GraphType &gtype,
@@ -799,7 +796,6 @@ namespace repo {
 				* @param metadata Repo Node set of metadata
 				* @param textures Repo Node set of textures
 				* @param transformations Repo Node set of transformations
-				* @return returns true if scene graph populated with no errors
 				*/
 				void populateAndUpdate(
 					const GraphType &gType,
@@ -817,8 +813,8 @@ namespace repo {
 				std::vector<RepoNode*> toRemove;
 				std::vector<double> worldOffset;
 				repo::lib::RepoUUID revision;
-				std::string teamspace;/*! name of the database */
-				std::string container; /*! name of the project */
+				std::string teamspace;/*! previously known as database */
+				std::string container; /*! previously known as project */
 
 				RepoSequence sequence;
 				std::vector<RepoTask> tasks;
