@@ -40,14 +40,29 @@ namespace repo {
 				
 				virtual ~AbstractPointCloudExport();
 
-				virtual void addTreeNode(
+				void addTreeNode(
 					std::vector<repo::core::model::PointData>* pointData,
-					std::vector<uint8_t> treePosition
-				) = 0;
+					std::vector<uint8_t> treePosition)
+				{
+					// Thread-safe access to the internal implementation
+					std::scoped_lock lock { mutex };
+					addTreeNodeInternal(
+						pointData,
+						treePosition);
+				}
 
-				virtual void finalise() = 0;
+				void finalise()
+				{
+					// Thread-safe access to the internal implementation
+					std::scoped_lock lock { mutex };
+					finaliseInternal();
+				}
 
 			protected:
+
+				// Mutex for thread safety
+				std::mutex mutex;
+
 				repo::core::handler::AbstractDatabaseHandler* dbHandler;
 
 				// Model info
@@ -56,6 +71,17 @@ namespace repo {
 				repo::lib::RepoUUID revId;
 				std::vector<double> worldOffset;
 				repo::lib::RepoBounds cloudBounds;
+
+				// Internal implementation for children to implement
+
+				virtual void addTreeNodeInternal(
+					std::vector<repo::core::model::PointData>* pointData,
+					std::vector<uint8_t> treePosition
+				) = 0;
+
+				virtual void finaliseInternal() = 0;
+
+
 			};
 		}
 	} // namespace manipulator

@@ -651,7 +651,7 @@ uint8_t repo::test::utils::point::TestPCImport::loadFile(std::string filePath)
 	return 0;
 }
 
-void repo::test::utils::point::TestPCExport::addTreeNode(
+void repo::test::utils::point::TestPCExport::addTreeNodeInternal(
 	std::vector<repo::core::model::PointData>* pointData,
 	std::vector<uint8_t> treePosition)
 {
@@ -667,7 +667,7 @@ void repo::test::utils::point::TestPCExport::addTreeNode(
 	exportedNodes.push_back(std::move(newNode));
 }
 
-void repo::test::utils::point::TestPCExport::finalise()
+void repo::test::utils::point::TestPCExport::finaliseInternal()
 {
 	finalised = true;
 }

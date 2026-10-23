@@ -242,9 +242,6 @@ namespace repo {
 						emptyExportedNodesCount = 0;
 					}
 
-					// Inherited via AbstractPointCloudExport
-					void addTreeNode(std::vector<repo::core::model::PointData>* pointData, std::vector<uint8_t> treePosition) override;
-					void finalise() override;
 
 					std::vector<ExportedNode>& getExportedNodes()
 					{
@@ -276,6 +273,10 @@ namespace repo {
 					bool finalised = false;
 					size_t exportedPointsCount;
 					size_t emptyExportedNodesCount;
+
+					// Inherited via AbstractPointCloudExport
+					void addTreeNodeInternal(std::vector<repo::core::model::PointData>* pointData, std::vector<uint8_t> treePosition) override;
+					void finaliseInternal() override;
 				};
 
 			} // namespace point
