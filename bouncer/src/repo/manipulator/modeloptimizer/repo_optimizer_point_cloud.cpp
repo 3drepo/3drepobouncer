@@ -301,50 +301,64 @@ void Octree::subsample(
 		if (child == nullptr)
 			continue;
 
-		// Create structure to hold the indices of our sorted points
-		auto cells = std::vector<std::vector<int>>();
-		cells.resize(sampleCellsCount);
-
-		// Now go through points
-		auto points = child->points.get();
-		int numPoints = points->size();
-		auto childBounds = child->nodeBounds;
-		for (int e = 0; e < numPoints; e++)
-		{
-			auto point = (*points)[e];
-			
-			// Project the point to a cell in a 64x64x64 cube spanning the bounds of the child
-			int index = pointcloud::PointCloudUtils::project3DPositionToCellIndex(
-				point.position,
-				childBounds,
-				REPO_PC_SUBSAMPLE_SPLITS);
-
-			cells[index].push_back(e);
-		}
-
-		// Now go over cells and extract one point by random.
-		// The remaining points go into a different collection
 		auto reducedPoints = std::make_unique<std::vector<repo::core::model::PointData>>();
-		for (int e = 0; e < sampleCellsCount; e++)
+
+		// If the child has less than 100 points, we just take them all
+		if (child->points->size() < 100)
 		{
-			auto& cell = cells[e];
-			if (cell.size() > 0)
+			for (auto& point : *(child->points))
 			{
-				// Pick random index
-				int randIndex = rand() % cell.size();
-				
-				// Go over points in cell and either copy to the sample collection or the reduced collection
-				for (int j = 0; j < cell.size(); j++)
+				sample->push_back(point);
+			}
+		}
+		else
+		{
+			// Otherwise, we need to sample the points from the child
+
+			// Create structure to hold the indices of our sorted points
+			auto cells = std::vector<std::vector<int>>();
+			cells.resize(sampleCellsCount);
+
+			// Now go through points
+			auto points = child->points.get();
+			int numPoints = points->size();
+			auto childBounds = child->nodeBounds;
+			for (int e = 0; e < numPoints; e++)
+			{
+				auto point = (*points)[e];
+			
+				// Project the point to a cell in a 64x64x64 cube spanning the bounds of the child
+				int index = pointcloud::PointCloudUtils::project3DPositionToCellIndex(
+					point.position,
+					childBounds,
+					REPO_PC_SUBSAMPLE_SPLITS);
+
+				cells[index].push_back(e);
+			}
+
+			// Now go over cells and extract one point by random.
+			// The remaining points go into a different collection
+			for (int e = 0; e < sampleCellsCount; e++)
+			{
+				auto& cell = cells[e];
+				if (cell.size() > 0)
 				{
-					int index = cell[j];
-					auto p = (*points)[index];
-					if (j == randIndex)
+					// Pick random index
+					int randIndex = rand() % cell.size();
+				
+					// Go over points in cell and either copy to the sample collection or the reduced collection
+					for (int j = 0; j < cell.size(); j++)
 					{
-						sample->push_back(p);
-					}
-					else
-					{
-						reducedPoints->push_back(p);
+						int index = cell[j];
+						auto p = (*points)[index];
+						if (j == randIndex)
+						{
+							sample->push_back(p);
+						}
+						else
+						{
+							reducedPoints->push_back(p);
+						}
 					}
 				}
 			}
@@ -355,9 +369,14 @@ void Octree::subsample(
 		child->points.reset();
 		
 		auto exportPos = pointcloud::PointCloudUtils::combineTreePositions(rootPosition, child->nodeTreePosition);
-		if(reducedPoints->size() > 0)
-			exporter->addTreeNode(
-				reducedPoints.get(), exportPos);
+
+
+
+		// If there are points that went back into the child, export them
+		if (reducedPoints->size() > 0)
+		{
+			exporter->addTreeNode(reducedPoints.get(), exportPos);
+		}
 	}
 
 	// After extracting sample points from all children, assign them to this node

@@ -360,14 +360,14 @@ TEST(PointCloudOptimizerTest, OctreeSubsamplingSingleCell)
 	// This test is checking that the subsampling itself works correctly.
 	// Once the points of the child are split across the 64x64x64 cube,
 	// only a single point per cell should be elevated to the node above.
-	// This test is placing 10 nodes into a single cell for each child
-	// so after the subsampling, 9 should remain in the child and one should
+	// This test is placing 100 points into a single cell for each child
+	// so after the subsampling, 99 should remain in the child and one should
 	// have made it to the parent.
 
 	int splits = 1;
 
 	// We will be just projecting into a single cell per child, so we won't need that many points.
-	int noPointsPerChild = 10;
+	int noPointsPerChild = 100;
 
 	// Generate (cubic) bounding box
 	double boundsLength = 10;
@@ -926,6 +926,68 @@ TEST(PointCloudOptimizerTest, OctreeAddNode)
 			},
 			repo::lib::RepoException);
 	}
+}
+
+TEST(PointCloudOptimizerTest, ProcessTinyPointCloud)
+{
+	srand(time(NULL));
+
+	auto handler = getHandler();
+	std::string database = DBPOINTCLOUDOPTIMIZERTEST;
+	std::string projectName = "TestTinyPointCloud";
+	auto revId = repo::lib::RepoUUID::createUUID();
+
+	auto sceneBuilder = repo::manipulator::modelutility::RepoSceneBuilder(handler, database, projectName, revId);
+
+	auto rootNode = repo::core::model::RepoBSONFactory::makeTransformationNode({}, "rootNode", {});
+	sceneBuilder.addNode(rootNode);
+	auto rootNodeId = rootNode.getSharedID();
+
+	// Generate random (cubic) bounding box
+	double randLength = (double)rand();
+	auto randV1 = makeRandomRepoVector();
+	auto dims = repo::lib::RepoVector3D64(randLength, randLength, randLength);
+	auto randV2 = randV1 + dims;
+	auto cloudBounds = repo::lib::RepoBounds(randV1, randV2);
+
+	// Generate single chunk based on these bounds
+	int numPoints = 100; // 0.5 * REPO_PC_CHUNKING_MAXPOINTS;
+	sceneBuilder.addNode(createRandomPointChunk(
+		numPoints,
+		cloudBounds,
+		{ rootNodeId },
+		{}));
+
+	sceneBuilder.finalise();
+
+	// Make mock exporter
+	auto mockExporter = std::make_unique<TestPCExport>(
+		nullptr,
+		"",
+		"",
+		repo::lib::RepoUUID(),
+		std::vector<double>(3, 0),
+		cloudBounds);
+
+	PointCloudOptimizer opt(handler.get(), mockExporter.get());
+
+	opt.processScene(
+		database,
+		projectName,
+		revId,
+		cloudBounds
+	);
+
+	EXPECT_TRUE(mockExporter->isFinalised());
+
+	// (N^L -1) / (N - 1) with N being the number of children and L the number of levels (split + 1)
+	// This is the maximum number of nodes we expect to see, since we don't export empty nodes.
+	int noNodesExpectedUpperBound = (std::pow(8, REPO_PC_OPTIMISATION_SPLITS + 1) - 1) / 7;
+	EXPECT_THAT(mockExporter->getExportedNodeCount(), Lt(noNodesExpectedUpperBound));
+
+	// Lastly check number of points and that there are no empty nodes
+	EXPECT_THAT(mockExporter->getExportedPointCount(), Eq(numPoints));
+	EXPECT_THAT(mockExporter->getEmptyExportedNodesCount(), Eq(0));
 }
 
 TEST(PointCloudOptimizerTest, ProcessSingleChunkPointCloud)
