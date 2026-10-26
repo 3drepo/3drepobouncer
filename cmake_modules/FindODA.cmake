@@ -42,7 +42,6 @@ set(ODA_LIB_NAMES
 	TB_ModelerGeometry
 	TB_MEP
 	TB_Analytical
-	TB_Architecture
 	TB_StairsRamp
 	TB_Geometry
 	TB_HostObj
