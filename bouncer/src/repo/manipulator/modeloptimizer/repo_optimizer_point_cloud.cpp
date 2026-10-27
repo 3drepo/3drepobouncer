@@ -39,6 +39,8 @@ void PointCloudOptimizer::processScene(
 	repo::lib::RepoUUID revId,
 	repo::lib::RepoBounds cloudBounds)
 {
+	repoInfo << "Processing Scene with the Repo Point Cloud Optimiser";
+
 	// Get all PointNodes in their lightweight streaming structure and queue them
 
 	// Create filter
@@ -121,6 +123,8 @@ void PointCloudOptimizer::processScene(
 	for (auto& t : threads)
 		t.join();
 
+	repoInfo << "Finished processing all chunks. Merging trees.";
+
 	// After processing all, subsample the tree again
 	octree.subsampleTree(exporter);
 
@@ -129,6 +133,8 @@ void PointCloudOptimizer::processScene(
 
 	// Finalise export
 	exporter->finalise();
+
+	repoInfo << "Export finalised";
 }
 
 std::unique_ptr<OctreeNode> PointCloudOptimizer::processChunk(
@@ -136,6 +142,8 @@ std::unique_ptr<OctreeNode> PointCloudOptimizer::processChunk(
 	std::string collection,
 	repo::core::model::StreamingPointNode* chunk)
 {
+	repoInfo << "Starting processing chunk " << chunk->getSharedId().toString();
+
 	auto sceneCollection = collection + "." + REPO_COLLECTION_SCENE;
 	repo::core::handler::fileservice::BlobFilesHandler blobHandler(handler->getFileManager(), database, sceneCollection);
 
@@ -177,6 +185,8 @@ std::unique_ptr<OctreeNode> PointCloudOptimizer::processChunk(
 
 	// Have the tree perform the subsampling and export
 	octree.subsampleTree(exporter);
+
+	repoInfo << "Finished processing chunk " << chunk->getSharedId().toString();
 
 	return octree.moveRoot();
 }
