@@ -28,7 +28,7 @@ RUN echo >> /etc/sysctl.conf ; \
         echo net.ipv6.conf.default.disable_ipv6 = 1 >> /etc/sysctl.conf
 
 # Add Node.js 24 and Yarn
-ARG NODE_VERSION=24.11.0
+ARG NODE_VERSION=24.22.1
 RUN cd /tmp && \
         apt-get update && \
         apt-get install -y ca-certificates curl gnupg software-properties-common xz-utils && \
