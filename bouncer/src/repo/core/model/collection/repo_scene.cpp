@@ -424,6 +424,7 @@ void RepoScene::addNodes(
 	for (auto &node : nodes)
 	{
 		addNodeToMaps(GraphType::DEFAULT, node, errMsg);
+		newAdded.insert(node->getSharedID());
 	}
 }
 
@@ -443,7 +444,8 @@ void RepoScene::loadRootNode(
 		throw repo::lib::RepoSceneProcessingException(std::string("Could not find root node for ") + getDatabaseName() + "." + getProjectName() + "." + revision.toString());
 	}
 
-	addNodes({new repo::core::model::TransformationNode(bson)});
+	std::string errMsg;
+	addNodeToMaps(GraphType::DEFAULT, new repo::core::model::TransformationNode(bson), errMsg);
 }
 
 bool RepoScene::addNodeToMaps(

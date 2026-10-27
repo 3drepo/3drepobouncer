@@ -28,7 +28,7 @@ RUN echo >> /etc/sysctl.conf ; \
         echo net.ipv6.conf.default.disable_ipv6 = 1 >> /etc/sysctl.conf
 
 # Add Node.js 24 and Yarn
-ARG NODE_VERSION=24.11.0
+ARG NODE_VERSION=24.22.1
 RUN cd /tmp && \
         apt-get update && \
         apt-get install -y ca-certificates curl gnupg software-properties-common xz-utils && \
@@ -125,7 +125,7 @@ RUN git clone --filter=blob:none --sparse https://${GITHUB_USER}:${GITHUB_TOKEN}
         chown -R bouncer:bouncer /home/bouncer && \
         mkdir -p /home/bouncer/oda && \
         chown -R bouncer:bouncer /home/bouncer/oda && \
-        cat focal/teigha/2027.2/teighaLinuxGCC${gcc_version}.tgz* | tar -C /home/bouncer/oda -xzvf - && \
+        cat focal/teigha/2027.8/teighaLinuxGCC${gcc_version}.tgz* | tar -C /home/bouncer/oda -xzvf - && \
         rm -rf tests && rm -rf focal && rm -rf noble
 
 USER root

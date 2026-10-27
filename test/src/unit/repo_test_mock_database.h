@@ -115,6 +115,11 @@ namespace testing {
 			const std::string& database,
 			const std::string& collection) override;
 
+		virtual void dropDocuments(
+			const std::string& database,
+			const std::string& collection,
+			const repo::core::handler::database::query::RepoQuery& criteria) override;
+
 		virtual std::vector<repo::core::model::RepoBSON> findAllByCriteria(
 			const std::string& database,
 			const std::string& collection,

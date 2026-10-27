@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
+const { connectToQueue, runNTasks } = require('../lib/queueHandler');
 const { exitAfter, queue } = require('../lib/processParams');
 const { exitApplication } = require('../lib/utils');
-const { connectToQueue, runNTasks } = require('../lib/queueHandler');
-const { testClient } = require('../tasks/bouncerClient');
 const logger = require('../lib/logger');
+const { testClient } = require('../tasks/bouncerClient');
 
 const startBouncerWorker = async () => {
 	try {

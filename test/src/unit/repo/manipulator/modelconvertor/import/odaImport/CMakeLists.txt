@@ -7,6 +7,7 @@
 if(ODA_SUPPORT)
 	set(TEST_SOURCES
 		${TEST_SOURCES}
+		${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_dwg_proxy_handlers.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_metadata_variant_nwd.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_metadata_variant_rvt.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_model_import_oda.cpp

@@ -23,6 +23,7 @@
 #include "repo/core/model/bson/repo_bson_ref.h"
 #include "repo/lib/repo_config.h"
 #include <boost/iostreams/filtering_stream.hpp>
+#include <set>
 
 namespace repo {
 	namespace core {
@@ -231,12 +232,12 @@ namespace repo {
 					);
 
 					/**
-					 * Delete file ref and associated file from database.
+					 * Delete file refs and associated files from database.
 					 */
 					bool deleteFileAndRef(
-						const std::string                            &databaseName,
-						const std::string                            &collectionNamePrefix,
-						const std::string                            &fileName
+						const std::string& databaseName,
+						const std::string& collectionNamePrefix,
+						const std::set<std::string>& fileNames
 					);
 
 					repo::core::model::RepoRefT<std::string> getFileRef(

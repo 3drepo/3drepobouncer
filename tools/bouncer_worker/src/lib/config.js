@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-const path = require('path');
-const fs = require('fs');
-const { v4: uuidv4 } = require('uuid');
-const { boolean, object, string, number, lazy } = require('yup');
+const { boolean, lazy, number, object, string } = require('yup');
 const { exitApplication } = require('./utils');
+const fs = require('fs');
 const params = require('./processParams');
+const path = require('path');
+const { v4: uuidv4 } = require('uuid');
 
 const Config = {};
 
