@@ -435,6 +435,27 @@ TEST(ODAModelImport, DwgElementIds)
 	}
 }
 
+TEST(ODAModelImport, IgnoreDwgLayouts)
+{
+	auto scene = ODAModelImportUtils::ModelImportManagerImport("DwgLayoutElements", getDataPath("populatedLayouts.dwg"));
+	SceneUtils utils(scene);
+
+	// The first test is that the importer reaches this stage without
+	// throwing...
+	// Then we check the tree.
+
+	auto meshes = utils.getMeshes();
+	auto root = utils.getRootNode();
+	auto layers = root.getChildren({repo::core::model::NodeType::TRANSFORMATION});
+
+	EXPECT_THAT(layers.size(), Eq(1));
+	EXPECT_THAT(layers[0].numVisibleChildren, Eq(2));
+	for (auto m : layers[0].getChildren({repo::core::model::NodeType::TRANSFORMATION})) {
+		EXPECT_THAT(m.name(), AnyOf(Eq("3D Solid"), Eq("Arc")));
+	}
+	EXPECT_THAT(utils.getMeshes().size(), Eq(2));
+}
+
 TEST(ODAModelImport, RevitMEPSystems)
 {
 	auto scene = ODAModelImportUtils::ModelImportManagerImport("RevitMeta3", getDataPath(rvtMeta3));
