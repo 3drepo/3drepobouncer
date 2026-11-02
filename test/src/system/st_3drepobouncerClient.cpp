@@ -130,13 +130,19 @@ namespace {
 		return returnCode;
 	}
 
+	struct test_model_upload_options
+	{
+		bool expectSuccess = true;
+		std::filesystem::path linkPath = {};
+	};
+
 	/*
 	* Uploads a model file to the database to the container and revision specified
 	* in the config, if any. Any fields in the config that are not specified will be
 	* filled in with arbitrary values so that the config is valid. This method will
 	* create a revision node for the file.
 	*/
-	int testModelUpload(std::filesystem::path filename, ModelImportConfig& config, bool expectSuccess = true)
+	int testModelUpload(std::filesystem::path filepath, ModelImportConfig& config, const test_model_upload_options& options = test_model_upload_options())
 	{
 		// Ensure the config is valid
 
@@ -174,9 +180,23 @@ namespace {
 
 		// creates the revision and ref nodes for the specified filename
 
-		testing::makeRevisionNode(handler, config, filename);
+		auto extFilePath = filepath;
+		auto extFileName = filepath.filename();
 
-		return testModelUploadFromConfigFile(configPath, expectSuccess);
+		if (!options.linkPath.empty()) {
+			// copy the filepath to the overridden link path
+			auto dataPath = std::filesystem::path(getDataPath(""));
+			std::filesystem::copy_file(
+				dataPath / extFilePath,
+				dataPath / options.linkPath,
+				std::filesystem::copy_options::overwrite_existing
+			);
+			extFilePath = options.linkPath;
+		}
+
+		testing::makeRevisionNode(handler, config, extFilePath, extFileName);
+
+		return testModelUploadFromConfigFile(configPath, options.expectSuccess);
 	}
 
 	/*
@@ -185,10 +205,10 @@ namespace {
 	* of files that should be working. Do not use this to test files that are expected
 	* to fail, as this will throw on any failures.
 	*/
-	int testModelUpload(std::filesystem::path filename, bool expectSuccess = true)
+	int testModelUpload(std::filesystem::path filename, const test_model_upload_options& options = test_model_upload_options())
 	{
 		ModelImportConfig config;
-		return testModelUpload(filename, config, expectSuccess);
+		return testModelUpload(filename, config, options);
 	}
 
 	int testGenStash(const ModelImportConfig& config, std::string type)
@@ -347,14 +367,14 @@ TEST(RepoClientTest, UploadTestSuccess)
 TEST(RepoClientTest, UploadTestTexture)
 {
 	// Test Textured Upload where the texture is missing
-	EXPECT_EQ(REPOERR_LOAD_SCENE_MISSING_TEXTURE, testModelUpload(texturedModel, true));
+	EXPECT_EQ(REPOERR_LOAD_SCENE_MISSING_TEXTURE, testModelUpload(texturedModel));
 }
 
 TEST(RepoClientTest, UploadTestBIM)
 {
 	// This unsupported BIM version should fail to upload
 
-	EXPECT_EQ(REPOERR_UNSUPPORTED_BIM_VERSION, testModelUpload("RepoModelImport/cube_bim1_spoofed.bim", false));
+	EXPECT_EQ(REPOERR_UNSUPPORTED_BIM_VERSION, testModelUpload("RepoModelImport/cube_bim1_spoofed.bim", { .expectSuccess = false }));
 
 	// Regular BIM files should all succeed
 
@@ -385,7 +405,7 @@ TEST(RepoClientTest, UploadTestDWG)
 
 	// Checks that encrypted files fail with the correct code
 
-	EXPECT_EQ(REPOERR_FILE_IS_ENCRYPTED, testModelUpload(dwgPasswordProtected, false));
+	EXPECT_EQ(REPOERR_FILE_IS_ENCRYPTED, testModelUpload(dwgPasswordProtected, {.expectSuccess = false}));
 }
 
 TEST(RepoClientTest, UploadTestDXF)
@@ -415,7 +435,7 @@ TEST(RepoClientTest, UploadTestRVT)
 		config.revisionId = repo::lib::RepoUUID::createUUID();
 		config.viewName = "Not A View";
 
-		EXPECT_EQ(REPOERR_VIEW_NOT_FOUND, testModelUpload(rvtModel, config, false));
+		EXPECT_EQ(REPOERR_VIEW_NOT_FOUND, testModelUpload(rvtModel, config, {.expectSuccess = false}));
 	}
 
 	// Upload RVT file with a named view that is not 3D
@@ -426,7 +446,7 @@ TEST(RepoClientTest, UploadTestRVT)
 		config.revisionId = repo::lib::RepoUUID::createUUID();
 		config.viewName = "Site";
 
-		EXPECT_EQ(REPOERR_VIEW_NOT_3D, testModelUpload(rvtModel, config, false));
+		EXPECT_EQ(REPOERR_VIEW_NOT_3D, testModelUpload(rvtModel, config, {.expectSuccess = false}));
 	}
 }
 
@@ -482,7 +502,7 @@ TEST(RepoClientTest, UploadTestNWD2026)
 
 TEST(RepoClientTest, UploadTestNWDProtected)
 {
-	EXPECT_EQ(REPOERR_FILE_IS_ENCRYPTED, testModelUpload(nwdPasswordProtected, false));
+	EXPECT_EQ(REPOERR_FILE_IS_ENCRYPTED, testModelUpload(nwdPasswordProtected, {.expectSuccess = false}));
 }
 
 TEST(RepoClientTest, UploadTestNWC)
@@ -560,7 +580,7 @@ TEST(RepoClientTest, UploadSplitByFloors)
 		config.revisionId = repo::lib::RepoUUID::createUUID();
 		config.splitByFloor = true;
 
-		EXPECT_EQ(REPOERR_OK, testModelUpload("floors_and_levels.ifc", config, true));
+		EXPECT_EQ(REPOERR_OK, testModelUpload("floors_and_levels.ifc", config));
 
 		std::set<std::string> groups;
 		auto assets = handler->getAllFromCollectionTailable("testDB", "floors_split.stash.repobundles", 0, 1, {}, "timestamp");
@@ -582,7 +602,7 @@ TEST(RepoClientTest, UploadSplitByFloors)
 		config.revisionId = repo::lib::RepoUUID::createUUID();
 		config.splitByFloor = false;
 
-		EXPECT_EQ(REPOERR_OK, testModelUpload("floors_and_levels.ifc", config, true));
+		EXPECT_EQ(REPOERR_OK, testModelUpload("floors_and_levels.ifc", config));
 
 		auto assets = handler->getAllFromCollectionTailable("testDB", "floors_no_split.stash.repobundles", 0, 1, {}, "timestamp");
 		EXPECT_EQ(assets.size(), 1);
@@ -761,6 +781,25 @@ TEST(RepoClientTest, UnicodeFilenames)
 #endif
 }
 
+TEST(RepoClientTest, NameDeterminesImporter)
+{
+	// Make sure the type is extracted from the ref node name, but the contents
+	// come from the link.
+
+	test_model_upload_options options;
+	options.linkPath = repo::lib::RepoUUID::createUUID().toString();
+
+	EXPECT_EQ(REPOERR_OK, testModelUpload(u8"КР3_очищено.dgn", options));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(u8"КР3_очищено.dwg", options));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(u8"КР3_очищено.nwc", options));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(u8"КР3_очищено.rvt", options));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(u8"КР3_очищено.bim004.bim", options));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(u8"КР3_очищено.obj", options));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(u8"КР3_очищено.fbx", options));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(u8"КР3_очищено.ifc", options));
+	EXPECT_EQ(REPOERR_OK, testModelUpload(u8"synchro6_3.spm", options));
+}
+
 TEST(RepoClientTest, ExistingRevisionArtefactsAreRemoved)
 {
 	// Perform a couple of imports to pre-populate a container with prior
@@ -780,7 +819,7 @@ TEST(RepoClientTest, ExistingRevisionArtefactsAreRemoved)
 	for (int i = 0; i < 2; i++)
 	{
 		config.revisionId = repo::lib::RepoUUID::createUUID();
-		EXPECT_EQ(REPOERR_OK, testModelUpload("sample.rvt", config, true));
+		EXPECT_EQ(REPOERR_OK, testModelUpload("sample.rvt", config));
 	}
 
 	// Now commit some artefacts for a revision to emulate an import that was
@@ -819,7 +858,7 @@ TEST(RepoClientTest, ExistingRevisionArtefactsAreRemoved)
 	// Now run the import again, which should remove all orphaned artefacts leaving
 	// three well-formed revisions.
 
-	EXPECT_EQ(REPOERR_OK, testModelUpload("sample.rvt", config, true));
+	EXPECT_EQ(REPOERR_OK, testModelUpload("sample.rvt", config));
 
 	auto history = utils.getRevisions();
 	EXPECT_EQ(history.size(), 3);
