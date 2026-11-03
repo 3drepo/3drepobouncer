@@ -36,7 +36,7 @@ namespace repo {
 					FileProcessor(const std::string& inputFile, modelutility::RepoSceneBuilder* builder, const ModelImportConfig& config);
 
 				public:
-					static std::unique_ptr<FileProcessor> getFileProcessor(const std::string& inputFile, repo::manipulator::modelutility::RepoSceneBuilder* builder, const ModelImportConfig& config);
+					static std::unique_ptr<FileProcessor> getFileProcessor(const std::string& fileName, const std::string& filePath, repo::manipulator::modelutility::RepoSceneBuilder* builder, const ModelImportConfig& config);
 					virtual ~FileProcessor();
 					virtual uint8_t readFile() = 0;
 					bool shouldApplyReduction = false;

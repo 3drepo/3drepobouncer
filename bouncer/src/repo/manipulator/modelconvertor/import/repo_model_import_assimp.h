@@ -71,7 +71,7 @@ namespace repo {
 				* @param error message if failed
 				* @return returns a populated RepoScene upon success
 				*/
-				repo::core::model::RepoScene* importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t &errMsg);
+				repo::core::model::RepoScene* importModel(std::string filePath, std::string fileName, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t &errMsg);
 
 				/**
 				* Attempts to convert the assimp metadata entry into a RepoVariant
@@ -216,9 +216,10 @@ namespace repo {
 
 				Assimp::Importer importer;  /*! Stores ASSIMP related settings for model import */
 				const aiScene *assimpScene; /*! ASSIMP scene representation of the model */
-				std::string orgFile; /*! orgFileName */
 				bool keepMetadata;
 				bool requiresOrientation = false;
+				std::string extension;
+				std::filesystem::path filePath;
 			};
 		} //namespace AssimpModelImport
 	} //namespace manipulator

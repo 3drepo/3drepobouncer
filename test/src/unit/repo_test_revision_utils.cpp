@@ -54,8 +54,17 @@ repo::core::model::ModelRevisionNode testing::makeRevisionNode(
 	const std::filesystem::path extFilePath
 )
 {
+	return makeRevisionNode(handler, config, extFilePath, extFilePath.filename());
+}
+
+repo::core::model::ModelRevisionNode testing::makeRevisionNode(
+	std::shared_ptr<repo::core::handler::MongoDatabaseHandler> handler,
+	const repo::manipulator::modelconvertor::ModelImportConfig& config,
+	const std::filesystem::path extFilePath,
+	const std::filesystem::path extFileName
+)
+{
 	auto refId = repo::lib::RepoUUID::createUUID().toString();
-	auto filename = extFilePath.filename();
 	auto extfs = std::filesystem::path(getDataPath(""));
 	auto size = 0;
 	if (std::filesystem::exists(extFilePath)) {
@@ -90,7 +99,7 @@ repo::core::model::ModelRevisionNode testing::makeRevisionNode(
 	// string.
 
 	auto u8link = extFilePath.u8string();
-	auto u8filename = filename.u8string();
+	auto u8filename = extFileName.u8string();
 
 	RepoBSONBuilder builder;
 	builder.append(REPO_LABEL_ID, refId);

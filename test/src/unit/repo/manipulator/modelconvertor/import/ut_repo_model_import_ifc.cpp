@@ -21,6 +21,7 @@
 #include <repo/manipulator/modelconvertor/import/repo_model_import_manager.h>
 #include <repo_log.h>
 #include <repo/lib/datastructure/repo_structs.h>
+#include <filesystem>
 #include "../../../../repo_test_utils.h"
 #include "../../../../repo_test_database_info.h"
 #include "../../../../repo_test_scene_utils.h"
@@ -37,7 +38,7 @@ using namespace testing;
 
 namespace IfcModelImportUtils
 {
-	repo::core::model::RepoScene* ModelImportManagerImport(std::string collection, std::string filename)
+	repo::core::model::RepoScene* ModelImportManagerImport(std::string collection, std::filesystem::path filename)
 	{
 		ModelImportConfig config(
 			true,

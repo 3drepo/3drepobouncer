@@ -79,7 +79,7 @@ repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 	repoTrace << "Importing model and generating Repo Scene";
 
 	uint8_t err;
-	repo::core::model::RepoScene* scene = modelConvertor->importModel(file, handler, err);
+	repo::core::model::RepoScene* scene = modelConvertor->importModel(file, name, handler, err);
 	
 	// Not all model converters follow the new exception based error handling, so
 	// make sure any error codes are propagated from here up.
