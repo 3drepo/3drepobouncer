@@ -171,3 +171,52 @@ jobs:
       build_id: ${{ github.sha }}
       environment: dev
     secrets: inherit
+
+  deploy-sandbox:
+    needs:
+      - pre-build
+      - build-push
+    if: github.event_name == 'push' && github.event.deleted != true && github.ref == 'refs/tags/sandbox_deploy'
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      image_tag: ${{ needs.pre-build.outputs.version }}
+      build_id: ${{ github.sha }}
+      environment: sandbox
+    secrets: inherit
+
+  # prod clusters (uk/ca/uae); one tag per cluster, deploy one at a time.
+  deploy-uk:
+    needs:
+      - pre-build
+      - build-push
+    if: github.event_name == 'push' && github.event.deleted != true && github.ref == 'refs/tags/uk_deploy'
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      image_tag: ${{ needs.pre-build.outputs.version }}
+      build_id: ${{ github.sha }}
+      environment: uk
+    secrets: inherit
+
+  deploy-ca:
+    needs:
+      - pre-build
+      - build-push
+    if: github.event_name == 'push' && github.event.deleted != true && github.ref == 'refs/tags/ca_deploy'
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      image_tag: ${{ needs.pre-build.outputs.version }}
+      build_id: ${{ github.sha }}
+      environment: ca
+    secrets: inherit
+
+  deploy-uae:
+    needs:
+      - pre-build
+      - build-push
+    if: github.event_name == 'push' && github.event.deleted != true && github.ref == 'refs/tags/uae_deploy'
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      image_tag: ${{ needs.pre-build.outputs.version }}
+      build_id: ${{ github.sha }}
+      environment: uae
+    secrets: inherit
