@@ -854,7 +854,7 @@ namespace repo {
 				/// </summary>
 				/// <returns>The geometry type. Can be either
 				/// mesh or point cloud.</returns>
-				SceneGeometryType getSceneGeometryType()
+				SceneGeometryType getSceneGeometryType() const
 				{
 					return geometryType;
 				}
