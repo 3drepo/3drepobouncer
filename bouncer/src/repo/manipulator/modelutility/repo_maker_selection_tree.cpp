@@ -289,7 +289,10 @@ static void writePropertyTree(const SelectionTree::Node& node, const SelectionTr
 	writer.EndObject();
 }
 
-std::map<std::string, std::string> serialiseSelectionTreesToJson(const SelectionTreesSet& trees)
+std::map<std::string, std::string> serialiseSelectionTreesToJson(
+	const SelectionTreesSet& trees,
+	const repo::core::model::RepoScene::SceneGeometryType geometryType
+)
 {
 	std::map<std::string, std::string> map;
 
@@ -374,12 +377,26 @@ std::map<std::string, std::string> serialiseSelectionTreesToJson(const Selection
 	}
 
 
-	if (trees.modelSettings.hiddenNodes.size()) 
 	{
 		rapidjson::StringBuffer buffer;
 		rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 
 		writer.StartObject();
+
+		std::string sceneGeometryTypeStr;
+		switch (geometryType)
+		{
+		case repo::core::model::RepoScene::SceneGeometryType::MESH:
+			sceneGeometryTypeStr = "Mesh";
+			break;
+		case repo::core::model::RepoScene::SceneGeometryType::POINTCLOUD:
+			sceneGeometryTypeStr = "PointCloud";
+			break;
+		default:
+			throw repo::lib::RepoException("Unknown Scene Geometry Type encountered while serialising modelProperties.json");
+		}
+
+		writer.Key("sceneGeometryType"); writer.String(sceneGeometryTypeStr);
 
 		writer.Key("hiddenNodes");
 		writer.StartArray();
@@ -398,7 +415,7 @@ std::map<std::string, std::string> serialiseSelectionTreesToJson(const Selection
 
 std::map<std::string, std::vector<uint8_t>> SelectionTreeMaker::getSelectionTreeAsBuffer() const
 {
-	auto maps = serialiseSelectionTreesToJson(trees);
+	auto maps = serialiseSelectionTreesToJson(trees, scene->getSceneGeometryType());
 	std::map<std::string, std::vector<uint8_t>> buffer;
 	for (const auto& map : maps)
 	{
