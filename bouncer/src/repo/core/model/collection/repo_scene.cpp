@@ -384,6 +384,18 @@ bool RepoScene::isMissingNodes() const {
 	return status & REPO_SCENE_ENTITIES_BIT;
 }
 
+void repo::core::model::RepoScene::setSceneBounds(repo::lib::RepoBounds bounds)
+{
+	// This is only used for the point cloud geometry type since it is calculated on import.
+	if (geometryType != SceneGeometryType::POINTCLOUD)
+	{
+		repoWarning << "Attempting to set scene bounds for a scene geometry type that is not a Point Cloud. This is not supported.";
+		return;
+	}
+
+	sceneBounds = bounds;
+}
+
 bool RepoScene::addNodeToScene(
 	const GraphType &gType,
 	const RepoNodeSet nodes,
@@ -839,6 +851,7 @@ RepoScene::getChildrenAsNodes(
 {
 	std::vector<RepoNode*> children;
 	const repoGraphInstance &g = GraphType::OPTIMIZED == gType ? stashGraph : graph;
+	repoInfo << "Parent To Children" << g.parentToChildren.size();
 	auto it = g.parentToChildren.find(parent);
 	return it != g.parentToChildren.end() ? it->second : std::vector<RepoNode*>();
 }
@@ -931,6 +944,13 @@ std::string RepoScene::getBranchName() const
 
 repo::lib::RepoBounds RepoScene::getSceneBoundingBox() const
 {
+	// For point clouds, we use the stored value instead of calculating a new one
+	if (geometryType == SceneGeometryType::POINTCLOUD)
+	{
+		return sceneBounds;
+	}
+
+
 	repo::lib::RepoBounds bbox;
 	GraphType gType = stashGraph.rootNode ? GraphType::OPTIMIZED : GraphType::DEFAULT;
 
@@ -975,11 +995,7 @@ void RepoScene::getSceneBoundingBoxInternal(
 		}
 		case NodeType::POINT:
 		{
-			const PointNode * point = dynamic_cast<const PointNode*>(node);
-			auto newpBBox = point->getBoundingBox();
-			// For point clouds, there is only one transform (the roor) and it is always identity
-			// so we don't need to transform anything here.
-			bbox.encapsulate(newpBBox);
+			repoWarning << "Point Node found in scene bounding box lookup meant for non Point Cloud geometry types.";
 			break;
 		}
 		}

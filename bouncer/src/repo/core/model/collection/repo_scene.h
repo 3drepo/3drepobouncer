@@ -859,6 +859,8 @@ namespace repo {
 					return geometryType;
 				}
 
+				void setSceneBounds(repo::lib::RepoBounds bounds);
+
 				/**
 				* ----------------------------------------------------------
 				*/
@@ -1033,6 +1035,7 @@ namespace repo {
 				std::set<repo::lib::RepoUUID> defaultInvisible;
 
 				SceneGeometryType geometryType = SceneGeometryType::MESH; // Default to mesh
+				repo::lib::RepoBounds sceneBounds; // Only used for Point Cloud geometry Type
 
 				/*
 				* ---------------- Scene Graph Details ----------------

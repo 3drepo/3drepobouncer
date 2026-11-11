@@ -360,6 +360,7 @@ repo::core::model::RepoScene* AbstractPointCloudImport::importModel(
 	scene->setSceneGeometryType(repo::core::model::RepoScene::SceneGeometryType::POINTCLOUD);
 
 	scene->setWorldOffset(worldOffset);
+	scene->setSceneBounds(bounds);
 	
 	scene->setRevision(settings.getRevisionId());
 	scene->setOriginalFiles({ filePath });
