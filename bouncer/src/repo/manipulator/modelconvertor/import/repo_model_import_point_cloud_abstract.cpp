@@ -201,7 +201,7 @@ repo::core::model::RepoScene* AbstractPointCloudImport::importModel(
 	while (dataAvailable)
 	{
 		repo::core::model::PointData pointData;
-		dataAvailable = getNextPoint(pointData);
+		dataAvailable = getNextPoint(pointData, reorientPoints);
 		if (dataAvailable)
 		{
 			bounds.encapsulate(pointData.position);
@@ -248,7 +248,7 @@ repo::core::model::RepoScene* AbstractPointCloudImport::importModel(
 	{
 		repo::core::model::PointData pointData;
 
-		dataAvailable = getNextPoint(pointData);
+		dataAvailable = getNextPoint(pointData, reorientPoints);
 
 		if (dataAvailable)
 		{
@@ -298,7 +298,7 @@ repo::core::model::RepoScene* AbstractPointCloudImport::importModel(
 	{
 		repo::core::model::PointData pointData;
 
-		dataAvailable = getNextPoint(pointData);
+		dataAvailable = getNextPoint(pointData, reorientPoints);
 
 		if (dataAvailable)
 		{
@@ -367,4 +367,30 @@ repo::core::model::RepoScene* AbstractPointCloudImport::importModel(
 	scene->loadRootNode(handler.get());
 	
 	return scene;
+}
+
+bool repo::manipulator::modelconvertor::AbstractPointCloudImport::getNextPoint(repo::core::model::PointData& point, bool reorient)
+{
+	// Rotates the model by 270 degrees on the X axis
+	// This is essentially swapping the 2nd and 3rd column, negating the 2nd.
+	if (reorient)
+	{
+		if (getNextPoint(point))
+		{
+			std::vector<double> rotationMatrixRaw = { 1, 0, 0, 0,
+				0, 0, 1, 0,
+				0, -1, 0, 0,
+				0, 0, 0, 1 };
+			auto rotationMatrix = repo::lib::RepoMatrix(rotationMatrixRaw);
+			point.position = rotationMatrix * point.position;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else
+	{
+		return getNextPoint(point);
+	}
 }

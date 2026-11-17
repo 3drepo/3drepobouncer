@@ -58,6 +58,9 @@ namespace repo {
 
 			protected:
 
+				// Can be set by child to use raw input instead of rotating it by 270 degrees on the X axis
+				bool reorientPoints = true;
+
 				// To be implemented by the children
 				virtual bool getNextPoint(repo::core::model::PointData& point) = 0;
 				virtual void resetReader() = 0;
@@ -92,6 +95,8 @@ namespace repo {
 					int pointCount);
 
 				void createRootNode(repo::manipulator::modelutility::RepoSceneBuilder* builder);
+
+				bool getNextPoint(repo::core::model::PointData& point, bool reorient);
 			};
 		} // namespace modelconvertor
 	} // namespace manipulator
