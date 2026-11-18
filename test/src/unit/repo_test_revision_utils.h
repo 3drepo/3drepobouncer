@@ -35,4 +35,11 @@ namespace testing {
 		const repo::manipulator::modelconvertor::ModelImportConfig& config,
 		const std::filesystem::path extFilePath
 	);
+
+	repo::core::model::ModelRevisionNode makeRevisionNode(
+		std::shared_ptr<repo::core::handler::MongoDatabaseHandler> handler,
+		const repo::manipulator::modelconvertor::ModelImportConfig& config,
+		const std::filesystem::path extFilePath,
+		const std::filesystem::path extFileName
+	);
 }

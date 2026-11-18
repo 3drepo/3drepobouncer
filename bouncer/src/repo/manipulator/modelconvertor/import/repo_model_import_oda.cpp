@@ -48,7 +48,7 @@ bool OdaModelImport::isSupportedExts(const std::string &testExt)
 	return supportedExtensions.find(lowerExt) != std::string::npos;
 }
 
-repo::core::model::RepoScene* OdaModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err)
+repo::core::model::RepoScene* OdaModelImport::importModel(std::string filePath, std::string fileName, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err)
 {
 #ifdef ODA_SUPPORT
 	this->filePath = filePath;
@@ -62,7 +62,7 @@ repo::core::model::RepoScene* OdaModelImport::importModel(std::string filePath, 
 	);
 	sceneBuilder->createIndexes();
 
-	odaProcessor = odaHelper::FileProcessor::getFileProcessor(filePath, sceneBuilder.get(), settings);
+	odaProcessor = odaHelper::FileProcessor::getFileProcessor(filePath, fileName, sceneBuilder.get(), settings);
 	auto result = odaProcessor->readFile();
 
 	if (result != REPOERR_OK) {

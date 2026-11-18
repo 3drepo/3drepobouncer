@@ -27,6 +27,8 @@
 #include <filesystem>
 
 #include <assimp/importerdesc.h>
+#include <assimp/IOSystem.hpp>
+#include <assimp/IOStream.hpp>
 
 #include "repo/core/model/bson/repo_node_mesh.h"
 #include "repo/core/model/bson/repo_bson_factory.h"
@@ -269,15 +271,14 @@ uint32_t AssimpModelImport::composeAssimpPostProcessingFlags(
 }
 
 float AssimpModelImport::normaliseShininess(const float &rawValue) const {
-	std::string ext = getFileExtension(orgFile);
 	float value;
-	if (ext == ".FBX") {
+	if (extension == ".FBX") {
 		value = rawValue / 20.;
 	}
-	else if (ext == ".OBJ") {
+	else if (extension == ".OBJ") {
 		value = rawValue / 200.;
 	}
-	else if (ext == ".DAE") {
+	else if (extension == ".DAE") {
 		value = rawValue > 128 ? 1 : rawValue / 128;
 	}
 	else {
@@ -772,7 +773,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 							repoTrace << "External texture name: " << texName;
 							//External texture
 							std::ifstream::pos_type size;
-							auto filePath = std::filesystem::u8path(orgFile).parent_path() / std::filesystem::u8path(texName);
+							auto filePath = this->filePath.parent_path() / std::filesystem::u8path(texName);
 							std::ifstream file(filePath, std::ios::in | std::ios::binary | std::ios::ate);
 							char *memblock = nullptr;
 							if (!file.is_open())
@@ -1110,16 +1111,154 @@ std::string AssimpModelImport::getFileExtension(const std::string &filePath) con
 	return fileExt;
 }
 
-repo::core::model::RepoScene* AssimpModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t &err)
+/*
+* Minimal IOStream wrapping a std::ifstream, sufficient for Assimp's reading
+* needs during import.
+*/
+class RepoIOStream : public Assimp::IOStream
+{
+public:
+	RepoIOStream(const std::filesystem::path& path)
+		: stream(path, std::ios::binary)
+	{
+	}
+
+	size_t Read(void* pvBuffer, size_t pSize, size_t pCount) override
+	{
+		stream.read(static_cast<char*>(pvBuffer), pSize * pCount);
+		auto read = stream.gcount();
+		return pSize ? static_cast<size_t>(read / pSize) : 0;
+	}
+
+	size_t Write(const void*, size_t, size_t) override
+	{
+		// Not supported - this IOStream is read-only.
+		return 0;
+	}
+
+	aiReturn Seek(size_t pOffset, aiOrigin pOrigin) override
+	{
+		std::ios_base::seekdir dir;
+		switch (pOrigin)
+		{
+		case aiOrigin_SET: dir = std::ios_base::beg; break;
+		case aiOrigin_CUR: dir = std::ios_base::cur; break;
+		case aiOrigin_END: dir = std::ios_base::end; break;
+		default: return AI_FAILURE;
+		}
+
+		stream.clear();
+		stream.seekg(pOffset, dir);
+		return stream.good() || stream.eof() ? AI_SUCCESS : AI_FAILURE;
+	}
+
+	size_t Tell() const override
+	{
+		return stream ? static_cast<size_t>(const_cast<std::ifstream&>(stream).tellg()) : 0;
+	}
+
+	size_t FileSize() const override
+	{
+		auto& s = const_cast<std::ifstream&>(stream);
+		auto pos = s.tellg();
+		s.seekg(0, std::ios_base::end);
+		auto size = s.tellg();
+		s.seekg(pos);
+		return static_cast<size_t>(size);
+	}
+
+	void Flush() override
+	{
+	}
+
+	bool isGood() const
+	{
+		return stream.good();
+	}
+
+private:
+	mutable std::ifstream stream;
+};
+
+/*
+* Custom IOSystem that allows the file Assimp uses to determine the importer
+* and resolve the extension (pFile passed to ReadFile) to be different from
+* the actual file on disk.
+*/
+class RepoIOSystem : public Assimp::IOSystem
+{
+public:
+	RepoIOSystem(const std::filesystem::path& realPath, const std::string& virtualName) :
+		realPath(realPath), 
+		virtualName(virtualName)
+	{
+	}
+
+	bool Exists(const char* pFile) const override
+	{
+		if (isVirtualFile(pFile)) {
+			return std::filesystem::exists(realPath);
+		}
+		return std::filesystem::exists(resolveSibling(pFile));
+	}
+
+	Assimp::IOStream* Open(const char* pFile, const char* pMode = "rb") override
+	{
+		auto path = realPath;
+		if (!isVirtualFile(pFile)) {
+			// Any other file requested (e.g. referenced textures, .mtl files, etc.)
+			// should be resolved relative to the real file's directory, since that
+			// is where sibling resources actually live on disk.
+			path = resolveSibling(pFile);
+		}
+
+		if (std::filesystem::exists(path)) {
+			return new RepoIOStream(path);
+		}
+		else {
+			return nullptr;
+		}
+	}
+
+	virtual char getOsSeparator() const {
+		return std::filesystem::path::preferred_separator;
+	}
+
+	virtual void Close(Assimp::IOStream* pFile) {
+		delete pFile;
+	}
+
+private:
+	bool isVirtualFile(const char* pFile) const
+	{
+		return virtualName == pFile;
+	}
+
+	std::string resolveSibling(const char* pFile) const
+	{
+		std::filesystem::path requested(pFile);
+		if (requested.is_absolute())
+		{
+			return requested.string();
+		}
+		return (realPath.parent_path() / requested).string();
+	}
+
+	std::filesystem::path realPath;
+	std::string virtualName;
+};
+
+repo::core::model::RepoScene* AssimpModelImport::importModel(std::string filePath, std::string fileName, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t &err)
 {
 	bool success = true;
-	orgFile = filePath;
+	this->extension = getFileExtension(fileName);
+	this->filePath = std::filesystem::u8path(filePath);
 	setAssimpProperties();
 
 	//-------------------------------------------------------------------------
 	// Import model
 
-	repoInfo << "IMPORT [" << filePath << "]";
+	repoInfo << "IMPORT [" << filePath << " (" << fileName << ")" << "]";
 
 	//check if a file exist first
 	std::ifstream fs(std::filesystem::u8path(filePath));
@@ -1131,11 +1270,14 @@ repo::core::model::RepoScene* AssimpModelImport::importModel(std::string filePat
 		return nullptr;
 	}
 
-	keepMetadata = getFileExtension(filePath) == ".IFC";
+	keepMetadata = getFileExtension(fileName) == ".IFC";
 	importer.SetPropertyInteger(AI_CONFIG_GLOB_MEASURE_TIME, 1);
 	importer.SetPropertyBool(AI_CONFIG_IMPORT_IFC_SKIP_SPACE_REPRESENTATIONS, repoDefaultIfcSkipSpaceRepresentation);
 	importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_READ_TEXTURES, true);
-	assimpScene = importer.ReadFile(filePath, 0);
+
+	// importer will take ownership of the IO system and clean up when it is done
+	importer.SetIOHandler(new RepoIOSystem(this->filePath, fileName));
+	assimpScene = importer.ReadFile(fileName, 0);
 
 	if (!assimpScene) {
 		std::string errorString = importer.GetErrorString();
@@ -1157,9 +1299,7 @@ repo::core::model::RepoScene* AssimpModelImport::importModel(std::string filePat
 	{
 		// try to set the orientation from metadata
 		bool rootOrientatonSet = SetRootOrientationFromMetadata();
-		std::string ext = repo::lib::getExtension(orgFile);
-		repo::lib::toLower(ext);
-		bool isFbxFile = ext == ".fbx";
+		bool isFbxFile = extension == ".FBX";
 		requiresOrientation = !rootOrientatonSet && isFbxFile;
 
 		//-------------------------------------------------------------------------
