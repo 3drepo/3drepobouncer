@@ -21,9 +21,11 @@
 #include <repo/manipulator/modelconvertor/import/repo_model_import_manager.h>
 #include <repo_log.h>
 #include <repo/lib/datastructure/repo_structs.h>
+#include <filesystem>
 #include "../../../../repo_test_utils.h"
 #include "../../../../repo_test_database_info.h"
 #include "../../../../repo_test_scene_utils.h"
+#include "../../../../repo_test_revision_utils.h"
 #include "../../../../repo_test_matchers.h"
 #include "../../../../repo_test_common_tests.h"
 
@@ -36,7 +38,7 @@ using namespace testing;
 
 namespace IfcModelImportUtils
 {
-	repo::core::model::RepoScene* ModelImportManagerImport(std::string collection, std::string filename)
+	repo::core::model::RepoScene* ModelImportManagerImport(std::string collection, std::filesystem::path filename)
 	{
 		ModelImportConfig config(
 			true,
@@ -49,18 +51,12 @@ namespace IfcModelImportUtils
 
 		auto handler = getHandler();
 
-		uint8_t err;
-		std::string msg;
+		testing::makeRevisionNode(handler, config, filename);
 
 		ModelImportManager manager;
-		auto scene = manager.ImportFromFile(filename, config, handler, err);
-
-		if (err != REPOERR_OK) {
-			throw repo::lib::RepoImportException(err);
-		}
-
-		scene->commit(handler.get(), handler->getFileManager().get(), msg, "testuser", "", "", config.getRevisionId());
-		scene->loadScene(handler.get(), msg);
+		auto scene = manager.ImportFromFile(config, handler);
+		scene->commit(handler);
+		scene->loadScene(handler.get());
 
 		return scene;
 	}

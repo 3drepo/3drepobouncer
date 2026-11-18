@@ -220,6 +220,15 @@ namespace repo {
 					const repo::core::model::RepoBSON &obj,
 					const bool        &overwrite) = 0;
 
+				/*
+				* Updates a document using a RepoUpdate object, instead of a RepoBSON.
+				*/
+				virtual void updateDocument(
+					const std::string& database,
+					const std::string& collection,
+					const database::query::RepoUpdate& update
+				) = 0;
+
 				/**
 				* Remove a collection from the database
 				* @param database the database the collection resides in
@@ -373,10 +382,6 @@ namespace repo {
 				{
 					// Lock the muxtex to avoid race conditions with other threads trying to set the fileManager
 					std::scoped_lock fileManagerLock{ fileManagerMutex };
-
-					// Return if the file manager is already set or set it otherwise
-					if (this->fileManager != nullptr)
-						return;
 					this->fileManager = manager;
 				}
 

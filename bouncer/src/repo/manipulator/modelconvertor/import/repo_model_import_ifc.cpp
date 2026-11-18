@@ -40,7 +40,7 @@ IFCModelImport::~IFCModelImport()
 {
 }
 
-repo::core::model::RepoScene* IFCModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err)
+repo::core::model::RepoScene* IFCModelImport::importModel(std::string filePath, std::string fileName, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& err)
 {
 	repoInfo << "IMPORT [" << filePath << "]";
 	repoInfo << "=== IMPORTING MODEL WITH IFC OPEN SHELL ===";
@@ -64,11 +64,9 @@ repo::core::model::RepoScene* IFCModelImport::importModel(std::string filePath, 
 
 	scene = new repo::core::model::RepoScene(
 		settings.getDatabaseName(),
-		settings.getProjectName()
+		settings.getProjectName(),
+		settings.getRevisionId()
 	);
-	scene->setRevision(settings.getRevisionId());
-	scene->setOriginalFiles({ filePath });
-	scene->loadRootNode(handler.get());
 	scene->setWorldOffset(sceneBuilder->getWorldOffset());
 
 	if (sceneBuilder->hasMissingTextures()) {

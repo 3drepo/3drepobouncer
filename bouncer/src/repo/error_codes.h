@@ -101,3 +101,5 @@
 //This can occur during multi-threaded operations with insertMany where the document
 //is already committed before the file is written into the file store
 #define REPOERR_FILE_REF_MISSING 41
+//A revision node was specified but could not be found in the database.
+#define REPOERR_REVISION_NOT_FOUND 42

@@ -89,13 +89,13 @@ describe(__filename, () => {
 		const sharedDir = toCommandPath(fs.mkdtempSync(path.join(os.tmpdir(), 'decoder-import-')));
 		const cmdFilePath = path.join(sharedDir, 'import.json');
 		const cmdFilePathCmd = toCommandPath(cmdFilePath);
-		const model = `${generateRandomString()}.ifc`;
-		const modelPath = `$SHARED_SPACE/${model}`;
 		const cmdFile = {
 			teamspace: generateRandomString(),
 			container: generateUUIDString(),
+			revId: generateUUIDString(),
 			owner: generateRandomString(),
-			file: modelPath,
+			format: "ifc",
+			size: generateRandomSize(),
 			extra: `$SHARED_SPACE/${generateRandomString()}`,
 		};
 
@@ -109,18 +109,19 @@ describe(__filename, () => {
 			configValue,
 		});
 
-		const result = messageDecoder('import -f $SHARED_SPACE/import.json');
+		const result = messageDecoder('import $SHARED_SPACE/import.json');
 
-		assert.deepEqual(result.cmdParams, [configValue, 'import', '-f', cmdFilePathCmd]);
+		assert.deepEqual(result.cmdParams, [configValue, 'import', cmdFilePathCmd]);
 		assert.equal(result.command, 'import');
 		assert.equal(result.teamspace, cmdFile.teamspace);
 		assert.equal(result.container, cmdFile.container);
+		assert.equal(result.revision, cmdFile.revId);
+		assert.equal(result.format, cmdFile.format);
+		assert.equal(result.size, cmdFile.size);
 		assert.equal(result.user, cmdFile.owner);
-		assert.equal(result.file, `${toCommandPath(sharedDir)}/${model}`);
 
 		const rewritten = JSON.parse(fs.readFileSync(cmdFilePath, 'utf8'));
-		assert.equal(rewritten.file, `${toCommandPath(sharedDir)}/${model}`);
-		assert.equal(rewritten.extra, cmdFile.extra);
+		assert.equal(rewritten.extra, cmdFile.extra.replaceAll('$SHARED_SPACE', sharedDir));
 	});
 
 	test('decodes processDrawing command and rewrites placeholders', () => {

@@ -28,7 +28,9 @@
 #include <repo/error_codes.h>
 
 #include "../../../../repo_test_utils.h"
+#include "../../../../repo_test_revision_utils.h"
 #include "../../../../repo_test_mesh_utils.h"
+#include "../../../../repo_test_scene_utils.h"
 #include "../../../../repo_test_database_info.h"
 #include "../../../../repo_test_fileservice_info.h"
 
@@ -36,6 +38,8 @@ using namespace repo::core::model;
 using namespace testing;
 
 const static RepoScene::GraphType defaultG = RepoScene::GraphType::DEFAULT;
+
+#define TEAMSPACE "RepoSceneTest"
 
 static TransformationNode makeTransformationNode(
 	const repo::lib::RepoUUID& parent,
@@ -98,19 +102,65 @@ static TextureNode makeTextureNode(
 	return RepoBSONFactory::makeTextureNode("", 0, 0, 0, 0, { parent });
 }
 
-TEST(RepoSceneTest, Constructor)
+namespace {
+	repo::lib::RepoMatrix rotationMatrix() {
+		return repo::lib::RepoMatrix(std::vector<double>({
+			1, 0, 0, 0,
+			0, 0, 1, 0,
+			0, -1, 0, 0,
+			0, 0, 0, 1
+		}));
+	}
+
+	repo::lib::RepoMatrix scaleMatrix(double scale) {
+		return repo::lib::RepoMatrix(std::vector<double>({
+			scale, 0, 0, 0,
+			0, scale, 0, 0,
+			0, 0, scale, 0,
+			0, 0, 0, 1
+		}));
+	}
+}
+
+TEST(RepoSceneTest, Constructors)
 {
-	//Just to make sure it doesn't throw exceptiosn with empty
-	RepoScene scene;
-	RepoNodeSet empty;
-	std::vector<std::string> files;
-	RepoScene scene2(files, empty, empty, empty, empty, empty, empty);
+	{
+		RepoScene scene;
+		EXPECT_TRUE(scene.isOK());
+		EXPECT_EQ(scene.getRevisionID(), repo::lib::RepoUUID::defaultValue);
+		EXPECT_THAT(scene.getDatabaseName(), IsEmpty());
+		EXPECT_THAT(scene.getProjectName(), IsEmpty());
+		EXPECT_THAT(scene.hasRoot(), IsFalse());
+		EXPECT_THAT(scene.isRevisioned(), IsFalse());
+	}
+
+	{
+		RepoScene scene({}, {}, {}, {}, {}, {});
+		EXPECT_TRUE(scene.isOK());
+		EXPECT_EQ(scene.getRevisionID(), repo::lib::RepoUUID::defaultValue);
+		EXPECT_THAT(scene.getDatabaseName(), IsEmpty());
+		EXPECT_THAT(scene.getProjectName(), IsEmpty());
+		EXPECT_THAT(scene.hasRoot(), IsFalse());
+		EXPECT_THAT(scene.isRevisioned(), IsFalse());
+	}
+
+	{
+		repo::lib::RepoUUID rev = repo::lib::RepoUUID::createUUID();
+		std::string teamspace = testing::getRandomString(rand() % 100 + 1);
+		std::string project = testing::getRandomString(rand() % 100 + 1);
+		RepoScene scene(teamspace, project, rev);
+		EXPECT_TRUE(scene.isOK());
+		EXPECT_EQ(scene.getRevisionID(), rev);
+		EXPECT_THAT(scene.getDatabaseName(), teamspace);
+		EXPECT_THAT(scene.getProjectName(), project);
+		EXPECT_THAT(scene.hasRoot(), IsFalse());
+		EXPECT_THAT(scene.isRevisioned(), IsTrue());		
+	}
 }
 
 TEST(RepoSceneTest, ConstructOrphanMeshScene)
 {
 	RepoNodeSet empty, trans, meshes;
-	std::vector<std::string> files;
 
 	auto root = new TransformationNode(makeTransformationNode(getRandomString(rand() % 100 + 1)));
 	trans.insert(root);
@@ -125,7 +175,7 @@ TEST(RepoSceneTest, ConstructOrphanMeshScene)
 	meshes.insert(m2);
 	meshes.insert(m3);
 
-	RepoScene scene(files, empty, meshes, empty, empty, empty, trans);
+	RepoScene scene(empty, meshes, empty, empty, empty, trans);
 	EXPECT_TRUE(scene.isMissingNodes());
 }
 
@@ -171,8 +221,7 @@ TEST(RepoSceneTest, StatusCheck)
 	EXPECT_FALSE(emptyScene.isMissingTexture());
 
 	RepoNodeSet empty;
-	std::vector<std::string> files;
-	RepoScene scene2(files, empty, empty, empty, empty, empty, empty);
+	RepoScene scene2(empty, empty, empty, empty, empty, empty);
 
 	EXPECT_TRUE(scene2.isOK());
 	EXPECT_FALSE(scene2.isMissingTexture());
@@ -215,8 +264,7 @@ TEST(RepoSceneTest, AddMetadata)
 	metaNodes.insert(new MetadataNode(mm2));
 	metaNodes.insert(new MetadataNode(mm3));
 
-	RepoScene scene,
-		scene2(std::vector<std::string>(), meshNodes, empty, empty, empty, transNodes);
+	RepoScene scene, scene2(meshNodes, empty, empty, empty, transNodes);
 	scene.addMetadata(metaNodes, true);
 	EXPECT_EQ(0, scene.getAllMetadata(defaultG).size());
 	scene2.addMetadata(metaNodes, true, false); //no propagation check
@@ -249,12 +297,12 @@ TEST(RepoSceneTest, AddMetadata)
 	metaNodes.insert(new MetadataNode(mm2));
 	metaNodes.insert(new MetadataNode(mm3));
 
-	RepoScene scene3(std::vector<std::string>(), meshNodes, empty, empty, empty, transNodes);
+	RepoScene scene3(meshNodes, empty, empty, empty, transNodes);
 
 	scene3.addMetadata(metaNodes, true, true); //propagation check
 
 	auto scene3Meta = scene3.getAllMetadata(defaultG);
-	EXPECT_EQ(metaNodes.size(), scene2Meta.size());
+	EXPECT_EQ(metaNodes.size(), scene3Meta.size());
 	for (const auto& s3meta : scene3Meta)
 	{
 		auto parents = s3meta->getParentIDs();
@@ -329,162 +377,336 @@ TEST(RepoSceneTest, AddAndClearStashGraph)
 
 TEST(RepoSceneTest, CommitScene)
 {
-	RepoScene scene;
-	std::string errMsg;
-	std::string commitUser = "me";
-
 	auto handler = getHandler();
 
-	//Commiting an empty scene should fail (fails on empty project/database name)
-	EXPECT_EQ(REPOERR_UPLOAD_FAILED, scene.commit(handler.get(), handler->getFileManager().get(), errMsg, commitUser));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
+	// RepoScenes must have a revision in order to be committed.
 
-	scene.setDatabaseAndProjectName("sceneCommit", "test1");
-	EXPECT_EQ(REPOERR_UPLOAD_FAILED, scene.commit(handler.get(), handler->getFileManager().get(), errMsg, commitUser));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
+	{
+		RepoScene scene;
+		EXPECT_THROW(scene.commit(handler), repo::lib::RepoException);
+	}
 
-	RepoNodeSet transNodes;
-	RepoNodeSet meshNodes, empty;
+	{
+		RepoScene scene({}, {}, {}, {}, {}, {});
+		EXPECT_THROW(scene.commit(handler), repo::lib::RepoException);
+	}
 
-	auto root = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
+	{
+		auto scene = testing::makeRandomScene();
+		EXPECT_THROW(scene->commit(handler), repo::lib::RepoException);
+	}
 
-	auto t1 = new TransformationNode(makeTransformationNode(root->getSharedID(), getRandomString(rand() % 10 + 1)));
+	// Commit a RepoScene populated in memory to the database, as might be done
+	// during a legacy import.
 
-	auto m1 = new MeshNode(makeMeshNode(t1->getSharedID()));
-	auto m2 = new MeshNode(makeMeshNode(t1->getSharedID()));
+	{
+		auto teamspace = TEAMSPACE;
+		auto container = testing::getRandomString();
+		auto revision = repo::lib::RepoUUID::createUUID();
 
-	transNodes.insert(root);
-	transNodes.insert(t1);
+		// The RepoScene expects the revision node to already exist, as it
+		// will try and update it's status on commit
+		testing::makeRevisionNode(handler, teamspace, container, revision);
 
-	meshNodes.insert(m1);
-	meshNodes.insert(m2);
+		auto scene = testing::makeRandomScene();
+		scene->setRevision(teamspace, container, revision);
+		scene->commit(handler);
 
-	RepoScene scene2(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
-	scene2.setDatabaseAndProjectName("sceneCommit", "test2");
-	EXPECT_EQ(REPOERR_UPLOAD_FAILED, scene2.commit(nullptr, nullptr, errMsg, commitUser));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
+		// The scene should now be revisioned, and what is in memory exactly match
+		// what is in the database.
+		
+		EXPECT_THAT(*scene, MatchesContainer(ContainerUtils(handler, teamspace, container, revision)));
+	}
 
-	std::string commitMsg = "this is a commit message for this commit.";
-	std::string commitTag = "test";
+	// Use the RepoScene to update an existing collection, as might be done
+	// during a legacy import.
 
-	EXPECT_EQ(REPOERR_OK, scene2.commit(handler.get(), handler->getFileManager().get(), errMsg, commitUser, commitMsg, commitTag));
-	EXPECT_TRUE(errMsg.empty());
+	{
+		auto teamspace = TEAMSPACE;
+		auto container = testing::getRandomString();
+		auto revision = repo::lib::RepoUUID::createUUID();
 
-	EXPECT_TRUE(scene2.isRevisioned());
-	EXPECT_EQ(scene2.getOwner(), commitUser);
-	EXPECT_EQ(scene2.getTag(), commitTag);
-	EXPECT_EQ(scene2.getMessage(), commitMsg);
+		testing::makeRevisionNode(handler, teamspace, container, revision);
+
+		testing::makeRandomScene(handler, teamspace, container, revision);
+
+		auto scene = new RepoScene(teamspace, container, revision);
+		scene->loadScene(handler.get());
+
+		// Update some nodes. The RepoScene should now have the changes in memory,
+		// but not yet committed.
+
+		scene->reorientateDirectXModel();
+		scene->addNodes({new MeshNode(makeMeshNode(scene->getRoot()->getSharedID()))});
+
+		EXPECT_THAT(*scene, Not(MatchesContainer(ContainerUtils(handler, teamspace, container, revision))));
+
+		scene->commit(handler);
+
+		// The scene should now have written all the changes, and what is in memory
+		// exactly match what is in the database.
+
+		EXPECT_THAT(*scene, MatchesContainer(ContainerUtils(handler, teamspace, container, revision)));
+	}
 }
 
-TEST(RepoSceneTest, GetSetDatabaseProjectName)
+TEST(RepoSceneTest, WorldOffset)
 {
-	RepoScene scene;
-	EXPECT_TRUE(scene.getDatabaseName().empty());
-	EXPECT_TRUE(scene.getProjectName().empty());
-	std::string dbName = "dbName1245";
-	std::string projName = "dbprobabba";
-	scene.setDatabaseAndProjectName(dbName, projName);
-	EXPECT_EQ(dbName, scene.getDatabaseName());
-	EXPECT_EQ(projName, scene.getProjectName());
+	// If the scene contains a world offset, it will overwrite the one in the
+	// revision node, otherwise the revision node should be unchanged.
 
-	RepoScene scene2(dbName, projName);
-	EXPECT_EQ(dbName, scene2.getDatabaseName());
-	EXPECT_EQ(projName, scene2.getProjectName());
+	auto handler = getHandler();
+	auto teamspace = TEAMSPACE;
+	auto container = testing::getRandomString();
+	
+	ModelRevisionNode revNode;
 
-	std::string badDbName = "system.h$<>:|/\\.a?";
-	std::string badProjName = "p r o j e c t$...";
-	scene2.setDatabaseAndProjectName(badDbName, badProjName);
-	EXPECT_EQ("system_h________a_", scene2.getDatabaseName());
-	EXPECT_EQ("p_r_o_j_e_c_t____", scene2.getProjectName());
+	// For this test, emulate a revision node created by the backend, which will
+	// only have the bare minimum members set.
 
-	RepoScene scene3(badDbName, badProjName);
-	EXPECT_EQ("system_h________a_", scene3.getDatabaseName());
-	EXPECT_EQ("p_r_o_j_e_c_t____", scene3.getProjectName());
+	{
+		RevisionNode node;
+		node.setTimestamp();
+		node.setAuthor(testing::getRandomString());
+		handler->upsertDocument(
+			teamspace,
+			container + "." + REPO_COLLECTION_HISTORY,
+			node,
+			false
+		);
+		revNode.setUniqueID(node.getUniqueID());
+	}
+
+	auto pushRevisionNode = [&]() {
+		handler->upsertDocument(
+			teamspace,
+			container + "." + REPO_COLLECTION_HISTORY,
+			revNode,
+			false
+		);
+	};
+
+	auto pullRevisionNode = [&]() {
+		revNode = ModelRevisionNode(handler->findOneByUniqueID(
+			teamspace,
+			container + "." + REPO_COLLECTION_HISTORY,
+			revNode.getUniqueID()
+		));
+	};
+
+	// RepoScene with no offset should not change a revision node with no offset
+	{
+		pullRevisionNode();
+
+		// No status means complete
+		EXPECT_THAT(revNode.getUploadStatus(), Eq(ModelRevisionNode::UploadStatus::COMPLETE));
+		EXPECT_THAT(revNode.getCoordOffset(), IsEmpty());
+
+		RepoScene scene(teamspace, container, revNode.getUniqueID());
+		scene.commit(handler);
+		pullRevisionNode();
+
+		EXPECT_THAT(revNode.getUploadStatus(), Eq(ModelRevisionNode::UploadStatus::GEN_DEFAULT));
+		EXPECT_THAT(revNode.getCoordOffset(), IsEmpty());
+	}
+
+	// RepoScene with an offset should displace a revision node with no offset
+	{
+		pullRevisionNode();
+		EXPECT_THAT(revNode.getCoordOffset(), IsEmpty());
+
+		auto offset = makeRandomRepoVector64();
+		RepoScene scene(teamspace, container, revNode.getUniqueID());
+		scene.setWorldOffset(offset);
+		scene.commit(handler);
+		pullRevisionNode();
+		EXPECT_THAT(revNode.getCoordOffset(), Eq(offset.toStdVector()));
+	}
+
+	// RepoScene with no offset should not change a revision node with an offset
+	{
+		auto offset = makeRandomRepoVector64();
+		revNode.setCoordOffset(offset);
+		pushRevisionNode();
+		pullRevisionNode();
+		EXPECT_THAT(revNode.getCoordOffset(), Eq(offset.toStdVector()));
+
+		RepoScene scene(teamspace, container, revNode.getUniqueID());
+		scene.commit(handler);
+		pullRevisionNode();
+		EXPECT_THAT(revNode.getCoordOffset(), Eq(offset.toStdVector()));
+	}
+
+	// RepoScene with an offset should displace a revision node with an offset
+	{
+		auto offset = makeRandomRepoVector64();
+		revNode.setCoordOffset(makeRandomRepoVector64());
+		pushRevisionNode();
+		pullRevisionNode();
+		EXPECT_THAT(revNode.getCoordOffset(), Not(Eq(offset.toStdVector())));
+
+		RepoScene scene(teamspace, container, revNode.getUniqueID());
+		scene.setWorldOffset(offset);
+		scene.commit(handler);
+		pullRevisionNode();
+		EXPECT_THAT(revNode.getCoordOffset(), Eq(offset.toStdVector()));
+	}
+}
+
+TEST(RepoSceneTest, ReorientModel)
+{
+	// We should be able to update specific parts of a RepoScene, such as the root
+	// node, without having to load everything.
+
+	auto handler = getHandler();
+	auto teamspace = TEAMSPACE;
+	auto container = testing::getRandomString();
+	auto rev = repo::lib::RepoUUID::createUUID();
+
+	testing::makeRevisionNode(handler, teamspace, container, rev);
+	testing::makeRandomScene(handler, teamspace, container, rev);
+
+	RepoScene scene(teamspace, container, rev);
+
+	// Node must be loaded first
+
+	EXPECT_THROW(scene.reorientateDirectXModel(), repo::lib::RepoException);
+
+	scene.loadRootNode(handler.get());
+
+	ContainerUtils utils(handler, teamspace, container, rev);
+	{
+		repo::core::model::TransformationNode root(utils.getRootNodes()[0]);
+		EXPECT_THAT(root.getTransMatrix().isIdentity(), Eq(true));
+	}
+
+	scene.reorientateDirectXModel();
+	scene.commit(handler);
+
+	{
+		repo::core::model::TransformationNode root(utils.getRootNodes()[0]);
+		EXPECT_THAT(root.getTransMatrix(), rotationMatrix());
+	}
+}
+
+TEST(RepoSceneTest, ScaleModel)
+{
+	auto handler = getHandler();
+	auto teamspace = TEAMSPACE;
+	auto container = testing::getRandomString();
+	auto rev = repo::lib::RepoUUID::createUUID();
+
+	testing::makeRevisionNode(handler, teamspace, container, rev);
+	testing::makeRandomScene(handler, teamspace, container, rev);
+
+	RepoScene scene(teamspace, container, rev);
+
+	EXPECT_THROW(scene.applyScaleFactor(0.1), repo::lib::RepoException);
+
+	scene.loadRootNode(handler.get());
+
+	ContainerUtils utils(handler, teamspace, container, rev);
+	{
+		repo::core::model::TransformationNode root(utils.getRootNodes()[0]);
+		EXPECT_THAT(root.getTransMatrix().isIdentity(), Eq(true));
+	}
+
+	scene.applyScaleFactor(0.1);
+	scene.commit(handler);
+
+	{
+		repo::core::model::TransformationNode root(utils.getRootNodes()[0]);
+		EXPECT_THAT(root.getTransMatrix(), scaleMatrix(0.1));
+	}
+}
+
+TEST(RepoSceneTest, RootTransformCompositions)
+{
+	auto handler = getHandler();
+	auto teamspace = TEAMSPACE;
+	auto container = testing::getRandomString();
+	auto rev = repo::lib::RepoUUID::createUUID();
+
+	testing::makeRevisionNode(handler, teamspace, container, rev);
+	testing::makeRandomScene(handler, teamspace, container, rev);
+
+	RepoScene scene(teamspace, container, rev);
+	scene.loadRootNode(handler.get());
+	ContainerUtils utils(handler, teamspace, container, rev);
+
+	scene.applyScaleFactor(0.1);
+	scene.commit(handler);
+
+	{
+		repo::core::model::TransformationNode root(utils.getRootNodes()[0]);
+		EXPECT_THAT(root.getTransMatrix(), scaleMatrix(0.1));
+	}
+
+	scene.reorientateDirectXModel();
+	scene.commit(handler);
+
+	{
+		repo::core::model::TransformationNode root(utils.getRootNodes()[0]);
+		EXPECT_THAT(root.getTransMatrix(), scaleMatrix(0.1) * rotationMatrix());
+	}
+
+	scene.applyScaleFactor(100.0);
+	scene.commit(handler);
+
+	{
+		repo::core::model::TransformationNode root(utils.getRootNodes()[0]);
+		EXPECT_THAT(root.getTransMatrix(), scaleMatrix(0.1) * rotationMatrix() * scaleMatrix(100.0));
+	}
+}
+
+TEST(RepoSceneTest, InvalidRevision)
+{
+	// Should throw if any of the revision arguments are invalid.
+
+	EXPECT_THROW({
+		RepoScene scene("system.h$<>:|/\\.a?", "container", repo::lib::RepoUUID::createUUID());
+	}, repo::lib::RepoInvalidConfigException);
+
+	EXPECT_THROW({
+		RepoScene scene("teamspace", "p r o j e c t$...", repo::lib::RepoUUID::createUUID());
+	}, repo::lib::RepoInvalidConfigException);
+
+	EXPECT_THROW({
+		RepoScene scene("teamspace", "container", {});
+	}, repo::lib::RepoInvalidConfigException);
+
+	EXPECT_THROW({
+		RepoScene scene;
+		scene.setRevision("system.h$<>:|/\\.a?", "container", {});
+	}, repo::lib::RepoInvalidConfigException);
+
+	EXPECT_THROW({
+		RepoScene scene;
+		scene.setRevision("teamspace", "p r o j e c t$...", {});
+	}, repo::lib::RepoInvalidConfigException);
+
+	EXPECT_THROW({
+		RepoScene scene;
+		scene.setRevision("teamspace", "container", {});
+	}, repo::lib::RepoInvalidConfigException);
 }
 
 TEST(RepoSceneTest, getSetRevisionID)
 {
 	RepoScene scene;
-	EXPECT_TRUE(scene.isHeadRevision());
-	repo::lib::RepoUUID id = repo::lib::RepoUUID::createUUID();
-	scene.setRevision(id);
-	EXPECT_EQ(id, scene.getRevisionID());
-	EXPECT_FALSE(scene.isHeadRevision());
-}
+	EXPECT_THAT(scene.getRevisionID(), Eq(repo::lib::RepoUUID::defaultValue));
+	EXPECT_THAT(scene.getDatabaseName(), IsEmpty());
+	EXPECT_THAT(scene.getProjectName(), IsEmpty());
 
-TEST(RepoSceneTest, getRevisionProperties)
-{
-	RepoScene scene;
+	auto teamspace = TEAMSPACE;
+	auto container = testing::getRandomString();
+	auto revision = repo::lib::RepoUUID::createUUID();
+	scene.setRevision(teamspace, container, revision);
 
-	EXPECT_TRUE(scene.getOwner().empty());
-	EXPECT_TRUE(scene.getTag().empty());
-	EXPECT_TRUE(scene.getMessage().empty());
-	EXPECT_TRUE(compareStdVectors(scene.getWorldOffset(), std::vector<double>({ 0, 0, 0 })));
-
-	//commit a scene and try again
-	std::string errMsg;
-	std::string commitUser = "me";
-	std::string commitMessage = "message for my commit";
-	std::string commitTag = "tagggg";
-
-	RepoNodeSet transNodes;
-	RepoNodeSet meshNodes, empty;
-
-	auto root = new TransformationNode(makeTransformationNode(getRandomString(rand() % 10 + 1)));
-
-	auto t1 = new TransformationNode(makeTransformationNode(root->getSharedID(), getRandomString(rand() % 10 + 1)));
-
-	auto m1 = new MeshNode(makeMeshNode(t1->getSharedID()));
-	auto m2 = new MeshNode(makeMeshNode(t1->getSharedID()));
-
-	transNodes.insert(root);
-	transNodes.insert(t1);
-
-	meshNodes.insert(m1);
-	meshNodes.insert(m2);
-	std::vector<double> offset({ rand() / 1000., rand() / 1000., rand() / 1000. });
-
-	auto handler = getHandler();
-
-	RepoScene scene2(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
-	scene2.setDatabaseAndProjectName("sceneCommit", "test2");
-	ASSERT_EQ(REPOERR_OK, scene2.commit(handler.get(), handler->getFileManager().get(), errMsg, commitUser, commitMessage, commitTag));
-
-	scene2.setWorldOffset(offset);
-	EXPECT_EQ(scene2.getOwner(), commitUser);
-	EXPECT_EQ(scene2.getTag(), commitTag);
-	EXPECT_EQ(scene2.getMessage(), commitMessage);
-	EXPECT_TRUE(compareStdVectors(scene2.getWorldOffset(), offset));
-}
-
-TEST(RepoSceneTest, getSetBranchID)
-{
-	RepoScene scene;
-	EXPECT_EQ(scene.getBranchID().toString(), REPO_HISTORY_MASTER_BRANCH);
-
-	repo::lib::RepoUUID newBranch = repo::lib::RepoUUID::createUUID();
-	scene.setBranch(newBranch);
-
-	EXPECT_EQ(scene.getBranchID(), newBranch);
-}
-
-TEST(RepoSceneTest, setCommitMessage)
-{
-	RepoScene scene;
-	EXPECT_TRUE(scene.getMessage().empty());
-
-	auto message = getRandomString(rand() % 10 + 1);
-	scene.setCommitMessage(message);
-	EXPECT_EQ(scene.getMessage(), message);
-}
-
-TEST(RepoSceneTest, getBranchName)
-{
-	RepoScene scene;
-	EXPECT_EQ(scene.getBranchName(), "master");
+	EXPECT_EQ(scene.getRevisionID(), revision);
+	EXPECT_EQ(scene.getDatabaseName(), teamspace);
+	EXPECT_EQ(scene.getProjectName(), container);
+	EXPECT_TRUE(scene.isRevisioned());
 }
 
 TEST(RepoSceneTest, getViewGraph)
@@ -515,79 +737,148 @@ TEST(RepoSceneTest, getViewGraph)
 	meshNodes2.insert(new MeshNode(*m1));
 	meshNodes2.insert(new MeshNode(*m2));
 
-	RepoScene scene2(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
+	RepoScene scene2(empty, meshNodes, empty, empty, empty, transNodes);
 	scene2.addStashGraph(meshNodes2, empty, empty, transNodes2);
 
 	EXPECT_EQ(scene2.getViewGraph(), RepoScene::GraphType::OPTIMIZED);
 }
 
-TEST(RepoSceneTest, loadRevision)
-{
-	auto handler = getHandler();
-	std::string errMsg;
-	EXPECT_FALSE(RepoScene().loadRevision(handler.get(), errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_TRUE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadRevision(handler.get(), errMsg));
-	EXPECT_TRUE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_FALSE(RepoScene("nonexistantDatabase", "NonExistantProject").loadRevision(handler.get(), errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_FALSE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadRevision(nullptr, errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
-}
-
 TEST(RepoSceneTest, loadScene)
 {
+	// Should throw if the scene is not revisioned or no handler is provided.
+	// If the revision is valid, then the loaded scene should match what is
+	// in the database exactly.
+
 	auto handler = getHandler();
-	std::string errMsg;
-	EXPECT_FALSE(RepoScene().loadScene(handler.get(), errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_TRUE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadScene(handler.get(), errMsg));
-	EXPECT_TRUE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_FALSE(RepoScene("nonexistantDatabase", "NonExistantProject").loadScene(handler.get(), errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_FALSE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadScene(nullptr, errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
+
+	{
+		RepoScene scene;
+		EXPECT_THROW(scene.loadScene(handler.get()), repo::lib::RepoException);
+	}
+
+	{
+		RepoScene scene({}, {}, {}, {}, {}, {});
+		EXPECT_THROW(scene.loadScene(handler.get()), repo::lib::RepoException);
+	}
+
+	// So long as the scene is revisioned, it should not throw, though it
+	// obviously won't load anything.
+
+	{
+		auto teamspace = TEAMSPACE;
+		auto container = testing::getRandomString();
+		auto revision = repo::lib::RepoUUID::createUUID();
+		RepoScene scene(teamspace, container, revision);
+		scene.loadScene(handler.get());
+	}
+
+	{
+		auto teamspace = TEAMSPACE;
+		auto container = testing::getRandomString();
+		auto revision = repo::lib::RepoUUID::createUUID();
+		RepoScene scene;
+		scene.setRevision(teamspace, container, revision);
+		scene.loadScene(handler.get());
+	}
+
+
+	// Try to load a complete scene, the in memory representation should match
+	// the database.
+
+	{
+		auto teamspace = TEAMSPACE;
+		auto container = testing::getRandomString();
+		auto revision = repo::lib::RepoUUID::createUUID();
+		testing::makeRandomScene(handler, teamspace, container, revision);
+
+		RepoScene scene(teamspace, container, revision);
+		scene.loadScene(handler.get());
+		EXPECT_THAT(scene, MatchesContainer(ContainerUtils(handler, teamspace, container, revision)));
+	}
 }
 
-TEST(RepoSceneTest, loadStash)
+TEST(RepoSceneTest, UpdateRevisionStatus)
 {
 	auto handler = getHandler();
-	std::string errMsg;
-	EXPECT_FALSE(RepoScene().loadStash(handler.get(), errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_TRUE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadStash(handler.get(), errMsg));
-	EXPECT_TRUE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_FALSE(RepoScene("nonexistantDatabase", "NonExistantProject").loadStash(handler.get(), errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
-	EXPECT_FALSE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadStash(nullptr, errMsg));
-	EXPECT_FALSE(errMsg.empty());
-	errMsg.clear();
-}
 
-TEST(RepoSceneTest, updateRevisionStatus)
-{
-	auto handler = getHandler();
-	RepoScene scene;
+	auto teamspace = TEAMSPACE;
+	auto container = testing::getRandomString();
+	auto revision = repo::lib::RepoUUID::createUUID();
 
-	EXPECT_FALSE(scene.updateRevisionStatus(handler.get(), ModelRevisionNode::UploadStatus::GEN_DEFAULT));
-	EXPECT_FALSE(scene.updateRevisionStatus(nullptr, ModelRevisionNode::UploadStatus::GEN_DEFAULT));
+	testing::makeRevisionNode(handler, teamspace, container, revision);
 
-	scene = RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ);
-	std::string errMsg;
-	scene.loadRevision(handler.get(), errMsg);
-	EXPECT_TRUE(scene.updateRevisionStatus(handler.get(), ModelRevisionNode::UploadStatus::GEN_DEFAULT));
-	EXPECT_TRUE(scene.updateRevisionStatus(handler.get(), ModelRevisionNode::UploadStatus::COMPLETE));
+	RepoScene scene(teamspace, container, revision);
+
+	{
+		auto bson = handler->findOneByUniqueID(
+			teamspace,
+			container + "." + REPO_COLLECTION_HISTORY,
+			revision
+		);
+		auto revisionNode = ModelRevisionNode(bson);
+		EXPECT_THAT(revisionNode.getUploadStatus(), Eq(ModelRevisionNode::UploadStatus::COMPLETE));
+	}
+
+	// The update revision status method should make change immediately, without
+	// having to call commit. It should throw if there is no revision node to
+	// update.
+
+	{
+		scene.updateRevisionStatus(handler.get(), ModelRevisionNode::UploadStatus::GEN_DEFAULT);
+		auto bson = handler->findOneByUniqueID(
+			teamspace,
+			container + "." + REPO_COLLECTION_HISTORY,
+			revision
+		);
+		auto revisionNode = ModelRevisionNode(bson);
+		EXPECT_THAT(revisionNode.getUploadStatus(), Eq(ModelRevisionNode::UploadStatus::GEN_DEFAULT));
+	}
+
+	// The call should update the node but should not overwrite it - any additional
+	// bson fields should be preserved.
+
+	{
+		auto bson = handler->findOneByUniqueID(
+			teamspace,
+			container + "." + REPO_COLLECTION_HISTORY,
+			revision
+		);
+		RepoBSONBuilder builder;
+		builder.appendElementsUnique(bson);
+		builder.append("testField", std::string("testValue"));
+		handler->upsertDocument(
+			teamspace,
+			container + "." + REPO_COLLECTION_HISTORY,
+			builder.obj(),
+			false
+		);
+	}
+	{
+		scene.updateRevisionStatus(handler.get(), ModelRevisionNode::UploadStatus::GEN_WEB_STASH);
+		auto bson = handler->findOneByUniqueID(
+			teamspace,
+			container + "." + REPO_COLLECTION_HISTORY,
+			revision
+		);
+		EXPECT_THAT(bson.getStringField("testField"), Eq(std::string("testValue")));
+		auto revisionNode = ModelRevisionNode(bson);
+		EXPECT_THAT(revisionNode.getUploadStatus(), Eq(ModelRevisionNode::UploadStatus::GEN_WEB_STASH));
+	}
+
+	// When the status is set to complete, the status flag should be removed.
+
+	{
+		scene.updateRevisionStatus(handler.get(), ModelRevisionNode::UploadStatus::COMPLETE);
+		auto bson = handler->findOneByUniqueID(
+			teamspace,
+			container + "." + REPO_COLLECTION_HISTORY,
+			revision
+		);
+		auto revisionNode = ModelRevisionNode(bson);
+		EXPECT_THAT(revisionNode.getUploadStatus(), Eq(ModelRevisionNode::UploadStatus::COMPLETE));
+		EXPECT_FALSE(bson.hasField(REPO_NODE_REVISION_LABEL_INCOMPLETE));
+	}
+
 }
 
 TEST(RepoSceneTest, abandonChild)
@@ -602,7 +893,7 @@ TEST(RepoSceneTest, abandonChild)
 
 	meshNodes.insert(m1);
 
-	RepoScene scene(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
+	RepoScene scene(empty, meshNodes, empty, empty, empty, transNodes);
 	auto parentIDs = m1->getParentIDs();
 	ASSERT_TRUE(std::find(parentIDs.begin(), parentIDs.end(), root->getSharedID()) != parentIDs.end());
 	auto children = scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, root->getSharedID());
@@ -644,7 +935,7 @@ TEST(RepoSceneTest, addInheritance)
 	meshNodes.insert(m1);
 	meshNodes.insert(m2);
 
-	RepoScene scene(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
+	RepoScene scene(empty, meshNodes, empty, empty, empty, transNodes);
 
 	scene.addInheritance(RepoScene::GraphType::DEFAULT, nullptr, nullptr); //nothing should happen and should not crash
 	scene.addInheritance(RepoScene::GraphType::DEFAULT, repo::lib::RepoUUID::createUUID(), repo::lib::RepoUUID::createUUID()); //nothing should happen and should not crash
@@ -676,7 +967,7 @@ TEST(RepoSceneTest, getChildrenAsNodes)
 	meshNodes.insert(m1);
 	meshNodes.insert(m2);
 
-	RepoScene scene(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
+	RepoScene scene(empty, meshNodes, empty, empty, empty, transNodes);
 
 	auto children = scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, root->getSharedID());
 	EXPECT_EQ(2, children.size());
@@ -709,7 +1000,7 @@ TEST(RepoSceneTest, getParentAsNodesFiltered)
 	meshNodes.insert(m1);
 	meshNodes.insert(m2);
 
-	RepoScene scene(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
+	RepoScene scene(empty, meshNodes, empty, empty, empty, transNodes);
 
 	auto parents = scene.getParentNodesFiltered(RepoScene::GraphType::DEFAULT, nullptr, NodeType::MESH);
 	EXPECT_EQ(0, parents.size());
@@ -743,7 +1034,7 @@ TEST(RepoSceneTest, getTextureIDForMesh)
 	matNodes.insert(mat2);
 	texNodes.insert(tex1);
 
-	auto scene2 = RepoScene(std::vector<std::string>(), meshNodes, matNodes, empty, texNodes, transNodes);
+	auto scene2 = RepoScene(meshNodes, matNodes, empty, texNodes, transNodes);
 
 	EXPECT_EQ(tex1->getUniqueID().toString(), scene2.getTextureIDForMesh(defaultG, m1->getSharedID()));
 	EXPECT_TRUE(scene2.getTextureIDForMesh(defaultG, m2->getSharedID()).empty());
@@ -777,7 +1068,7 @@ TEST(RepoSceneTest, getAllNodes)
 
 	transNodes.insert(root);
 
-	auto scene2 = RepoScene(std::vector<std::string>(), meshNodes, matNodes, metaNodes, texNodes, transNodes);
+	auto scene2 = RepoScene(meshNodes, matNodes, metaNodes, texNodes, transNodes);
 
 	auto allSharedIDs = scene2.getAllSharedIDs(defaultG);
 	EXPECT_EQ(0, scene2.getAllSharedIDs(RepoScene::GraphType::OPTIMIZED).size());
@@ -851,7 +1142,7 @@ TEST(RepoSceneTest, getAllDescendantsByType)
 	matNodes.insert(mat2);
 	texNodes.insert(tex1);
 
-	auto scene2 = RepoScene(std::vector<std::string>(), meshNodes, matNodes, empty, texNodes, transNodes);
+	auto scene2 = RepoScene(meshNodes, matNodes, empty, texNodes, transNodes);
 	auto trans = scene2.getAllDescendantsByType(defaultG, root->getSharedID(), NodeType::TRANSFORMATION);
 	ASSERT_EQ(1, trans.size());
 	EXPECT_EQ(trans2, trans[0]);
@@ -875,9 +1166,17 @@ TEST(RepoSceneTest, getAllDescendantsByType)
 TEST(RepoSceneTest, getSceneBoundingBox)
 {
 	auto handler = getHandler();
-	std::string errMsg;
-	RepoScene scene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ);
-	scene.loadScene(handler.get(), errMsg);
+
+	// This recalculates the bounding box based on the scene contents.
+	// This method currently requires the scene to be fully loaded into memory.
+
+	RepoScene scene;
+	EXPECT_THROW(scene.getSceneBoundingBox(), repo::lib::RepoException);
+
+	scene.setRevision(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ, REPO_GTEST_DBNAME1_REVISION);
+	EXPECT_THROW(scene.getSceneBoundingBox(), repo::lib::RepoException);
+
+	scene.loadScene(handler.get());
 	auto bb = scene.getSceneBoundingBox();
 	EXPECT_THAT(bb, Eq(getGoldenDataForBBoxTest()));
 }
@@ -903,7 +1202,7 @@ TEST(RepoSceneTest, getNodeBySharedID)
 	matNodes.insert(mat2);
 	texNodes.insert(tex1);
 
-	auto scene2 = RepoScene(std::vector<std::string>(), meshNodes, matNodes, empty, texNodes, transNodes);
+	auto scene2 = RepoScene(meshNodes, matNodes, empty, texNodes, transNodes);
 
 	EXPECT_EQ(root, scene2.getNodeBySharedID(defaultG, root->getSharedID()));
 	EXPECT_EQ(nullptr, scene2.getNodeBySharedID(defaultG, repo::lib::RepoUUID::createUUID()));
@@ -930,7 +1229,7 @@ TEST(RepoSceneTest, getNodeByUniqueID)
 	matNodes.insert(mat2);
 	texNodes.insert(tex1);
 
-	auto scene2 = RepoScene(std::vector<std::string>(), meshNodes, matNodes, empty, texNodes, transNodes);
+	auto scene2 = RepoScene(meshNodes, matNodes, empty, texNodes, transNodes);
 
 	EXPECT_EQ(root, scene2.getNodeByUniqueID(defaultG, root->getUniqueID()));
 	EXPECT_EQ(nullptr, scene2.getNodeBySharedID(defaultG, repo::lib::RepoUUID::createUUID()));
@@ -948,7 +1247,7 @@ TEST(RepoSceneTest, hasRoot)
 	transNodes.insert(root);
 	transNodesStash.insert(rootStash);
 
-	auto scene2 = RepoScene(std::vector<std::string>(), empty, empty, empty, empty, transNodes);
+	auto scene2 = RepoScene(empty, empty, empty, empty, transNodes);
 	EXPECT_TRUE(scene2.hasRoot(defaultG));
 	EXPECT_FALSE(scene2.hasRoot(RepoScene::GraphType::OPTIMIZED));
 	scene2.addStashGraph(empty, empty, empty, transNodesStash);
@@ -970,7 +1269,7 @@ TEST(RepoSceneTest, getRoot)
 	transNodes.insert(root);
 	transNodesStash.insert(rootStash);
 
-	auto scene2 = RepoScene(std::vector<std::string>(), empty, empty, empty, empty, transNodes);
+	auto scene2 = RepoScene(empty, empty, empty, empty, transNodes);
 	EXPECT_EQ(root, scene2.getRoot(defaultG));
 	EXPECT_EQ(nullptr, scene2.getRoot(RepoScene::GraphType::OPTIMIZED));
 	scene2.addStashGraph(empty, empty, empty, transNodesStash);
@@ -992,7 +1291,7 @@ TEST(RepoSceneTest, getItemsInCurrentGraph)
 	transNodes.insert(root);
 	transNodesStash.insert(rootStash);
 
-	auto scene2 = RepoScene(std::vector<std::string>(), empty, empty, empty, empty, transNodes);
+	auto scene2 = RepoScene(empty, empty, empty, empty, transNodes);
 	EXPECT_EQ(1, scene2.getItemsInCurrentGraph(defaultG));
 	EXPECT_EQ(0, scene2.getItemsInCurrentGraph(RepoScene::GraphType::OPTIMIZED));
 	scene2.addStashGraph(empty, empty, empty, transNodesStash);
@@ -1000,40 +1299,6 @@ TEST(RepoSceneTest, getItemsInCurrentGraph)
 
 	scene2.clearStash();
 	EXPECT_EQ(0, scene2.getItemsInCurrentGraph(RepoScene::GraphType::OPTIMIZED));
-}
-
-TEST(RepoSceneTest, getOriginalFiles)
-{
-	RepoScene scene;
-	EXPECT_EQ(0, scene.getOriginalFiles().size());
-
-	RepoNodeSet empty;
-	auto scene2 = RepoScene(std::vector<std::string>(), empty, empty, empty, empty, empty, empty);
-	EXPECT_EQ(0, scene2.getOriginalFiles().size());
-
-	std::vector<std::string> orgFiles;
-	for (int i = 0; i < rand() % 10 + 1; ++i)
-	{
-		orgFiles.push_back(getRandomString(rand() % 10 + 1));
-	}
-
-	auto scene3 = RepoScene(orgFiles, empty, empty, empty, empty, empty);
-	auto orgFilesOut = scene3.getOriginalFiles();
-	ASSERT_EQ(orgFiles.size(), orgFilesOut.size());
-
-	for (int i = 0; i < orgFilesOut.size(); ++i)
-	{
-		EXPECT_TRUE(std::find(orgFilesOut.begin(), orgFilesOut.end(), orgFiles[i]) != orgFilesOut.end());
-	}
-
-	auto handler = getHandler();
-	auto scene4 = RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ);
-	std::string errMsg;
-	scene4.loadScene(handler.get(), errMsg);
-	ASSERT_TRUE(errMsg.empty());
-	auto orgFilesOut2 = scene4.getOriginalFiles();
-	EXPECT_EQ(1, orgFilesOut2.size());
-	EXPECT_EQ(getFileNameBIMModel, orgFilesOut2[0]);
 }
 
 TEST(RepoSceneTest, addNodes)
@@ -1079,37 +1344,20 @@ TEST(RepoSceneTest, removeNode)
 	scene.removeNode(defaultG, root->getSharedID());
 }
 
-TEST(RepoSceneTest, resetChangeSet)
-{
-	auto handler = getHandler();
-	RepoScene scene;
-	scene.resetChangeSet();
-
-	auto scene2 = RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ);
-	std::string errMsg;
-	scene2.loadScene(handler.get(), errMsg);
-	EXPECT_TRUE(scene2.isRevisioned());
-	scene2.resetChangeSet();
-	EXPECT_FALSE(scene2.isRevisioned());
-}
-
 TEST(RepoSceneTest, reorientateDirectXModel)
 {
 	RepoScene scene;
-	scene.reorientateDirectXModel();
+
+	EXPECT_THROW(scene.reorientateDirectXModel(), repo::lib::RepoException);
 	EXPECT_FALSE(scene.hasRoot(defaultG));
 	EXPECT_FALSE(scene.hasRoot(RepoScene::GraphType::OPTIMIZED));
 
 	RepoNodeSet transNodes, transNodesStash, empty;
 	auto root = new TransformationNode(RepoBSONFactory::makeTransformationNode());
-	auto rootStash = new TransformationNode(RepoBSONFactory::makeTransformationNode());
 	transNodes.insert(root);
-	transNodesStash.insert(rootStash);
 
 	ASSERT_TRUE(root->isIdentity());
-	ASSERT_TRUE(rootStash->isIdentity());
-	auto scene2 = RepoScene(std::vector<std::string>(), empty, empty, empty, empty, transNodes);
-	scene2.addStashGraph(empty, empty, empty, transNodesStash);
+	auto scene2 = RepoScene(empty, empty, empty, empty, transNodes);
 	scene2.reorientateDirectXModel();
 	std::vector<float> rotatedMat =
 	{

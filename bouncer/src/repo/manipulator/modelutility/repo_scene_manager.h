@@ -31,14 +31,16 @@ namespace repo {
 				SceneManager() {}
 				~SceneManager() {}
 
-				uint8_t commitScene(
-					repo::core::model::RepoScene									*scene,
-					const std::string												&owner,
-					const std::string												&tag,
-					const std::string												&desc,
-					const repo::lib::RepoUUID										&revId,
-					repo::core::handler::AbstractDatabaseHandler					*handler,
-					repo::core::handler::fileservice::FileManager					*fileManager,
+				/**
+				* Commit a RepoScene and produce the necessary assets for web viewing, based
+				* on the WebBufferConfig.
+				* The RepoScene does not have to be loaded (if for example a Streaming import
+				* was used), but it must be fully versioned (call, e.g. setRevision, or load
+				* head).
+				*/
+				void commitScene(
+					repo::core::model::RepoScene *scene,
+					std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
 					const repo::manipulator::modelutility::WebBufferConfig& config
 				);
 

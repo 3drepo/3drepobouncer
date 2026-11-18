@@ -288,3 +288,63 @@ TEST(RepoRefTest, MismatchedIdTypeString)
 		},
 		repo::lib::RepoBSONException);
 }
+
+TEST(RepoRefTest, ExternalFs)
+{
+	auto id = repo::lib::RepoUUID::createUUID().toString();
+	auto link = repo::lib::RepoUUID::createUUID().toString();
+	auto name = repo::lib::RepoUUID::createUUID().toString() = ".rvt";
+	auto size = std::rand();
+
+	repo::core::model::RepoBSONBuilder builder;
+	builder.append(REPO_REF_LABEL_TYPE, RepoRef::convertTypeAsString(RepoRef::RefType::EXTFS));
+	builder.append(REPO_REF_LABEL_LINK, link);
+	builder.append(REPO_REF_LABEL_SIZE, (int64_t)size);
+	builder.append(REPO_LABEL_ID, id);
+	builder.append(REPO_NODE_LABEL_NAME, name);
+
+	auto c = RepoRef(builder.obj());
+
+	EXPECT_THAT(c.getRefLink(), Eq(link));
+	EXPECT_THAT(c.getFileSize(), Eq(size));
+	EXPECT_THAT(c.getFileName(), Eq(name));
+	EXPECT_THAT(c.getType(), Eq(RepoRef::RefType::EXTFS));
+}
+
+TEST(RepoRefTest, CreateExternalFs)
+{
+	// External fs ref nodes are for read only files - it is not permissable to
+	// create them from within bouncer.
+
+	auto id = repo::lib::RepoUUID::createUUID();
+	auto link = repo::lib::RepoUUID::createUUID().toString();
+	auto size = std::rand();
+
+	EXPECT_THROW({
+		auto r = repo::core::model::RepoBSONFactory::makeRepoRef(
+			id,
+			RepoRef::RefType::EXTFS,
+			link,
+			size
+		);
+	},
+	repo::lib::RepoException);
+}
+
+TEST(RepoRefTest, SerialiseExternalFs)
+{
+	// It should not be possible to re-serialise an external fs node.
+
+	repo::core::model::RepoBSONBuilder builder;
+	builder.append(REPO_REF_LABEL_TYPE, RepoRef::convertTypeAsString(RepoRef::RefType::EXTFS));
+	builder.append(REPO_REF_LABEL_LINK, repo::lib::RepoUUID::createUUID().toString());
+	builder.append(REPO_REF_LABEL_SIZE, (int64_t)std::rand());
+	builder.append(REPO_NODE_LABEL_NAME, repo::lib::RepoUUID::createUUID().toString());
+
+	auto c = RepoRef(builder.obj());
+
+	EXPECT_THROW({
+		auto b = (RepoBSON)c;
+	},
+	repo::lib::RepoException);
+}
