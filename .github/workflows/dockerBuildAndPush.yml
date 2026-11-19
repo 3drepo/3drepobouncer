@@ -23,7 +23,7 @@ jobs:
       (github.event_name == 'push' && github.event.deleted != true) ||
       (
         github.event_name == 'issue_comment' &&
-        startsWith(github.event.comment.body, '/build-bouncer') &&
+        (startsWith(github.event.comment.body, '/build-bouncer') || startsWith(github.event.comment.body, '/deploy-bouncer')) &&
         github.event.issue.pull_request != null
       )
 
@@ -37,6 +37,8 @@ jobs:
       checkout_ref: ${{ steps.vars.outputs.checkout_ref }}
       version: ${{ steps.vars.outputs.version }}
       app_build_now: ${{ steps.vars.outputs.app_build_now }}
+      release_name: ${{ steps.deploycfg.outputs.release_name }}
+      custom_helm_override: ${{ steps.deploycfg.outputs.custom_helm_override }}
 
     steps:
       # ---------------------------------------------------------------
@@ -126,6 +128,38 @@ jobs:
           echo "Triggered by: ${GITHUB_EVENT_NAME}"
           echo "######################################################"
 
+      # ---------------------------------------------------------------
+      # STEP 4: Read deploy overrides from the PR branch (/deploy-bouncer only)
+      # ---------------------------------------------------------------
+      - name: Checkout PR branch deploy config
+        if: github.event_name == 'issue_comment' && startsWith(github.event.comment.body, '/deploy-bouncer')
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.vars.outputs.checkout_ref }}
+          sparse-checkout: .github/deploy
+          sparse-checkout-cone-mode: false
+
+      - name: Read deploy override config
+        id: deploycfg
+        if: github.event_name == 'issue_comment' && startsWith(github.event.comment.body, '/deploy-bouncer')
+        run: |
+          set -euo pipefail
+          RELEASE_NAME=www-bouncer
+          CUSTOM_HELM_OVERRIDE=
+          if [[ -f .github/deploy/config.env ]]; then
+            # shellcheck disable=SC1091
+            source .github/deploy/config.env
+          fi
+          # The comment path must never touch the real release; if the branch did not set a
+          # distinct name, derive a branch-scoped one so www-bouncer is always left alone.
+          if [[ -z "$RELEASE_NAME" || "$RELEASE_NAME" == "www-bouncer" ]]; then
+            safe="$(echo "${{ steps.vars.outputs.version }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g; s/^-*//; s/-*$//' | cut -c1-40)"
+            RELEASE_NAME="test-bouncer-${safe}"
+          fi
+          echo "release_name=$RELEASE_NAME" >> "$GITHUB_OUTPUT"
+          echo "custom_helm_override=$CUSTOM_HELM_OVERRIDE" >> "$GITHUB_OUTPUT"
+          echo "resolved test release: $RELEASE_NAME"
+
   build-push:
     needs: pre-build
     uses: ./.github/workflows/_dockerBuild.yml
@@ -146,6 +180,22 @@ jobs:
       image_tag: ${{ needs.pre-build.outputs.version }}
       build_id: ${{ github.sha }}
       environment: staging
+    secrets: inherit
+
+  # Parallel test bouncer on staging, driven by a /deploy-bouncer PR comment. Deploys a
+  # branch-scoped release with the branch's CUSTOM_HELM_OVERRIDE (e.g. a custom rabbitmq).
+  deploy-staging-test:
+    needs:
+      - pre-build
+      - build-push
+    if: github.event_name == 'issue_comment' && startsWith(github.event.comment.body, '/deploy-bouncer')
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      image_tag: ${{ needs.pre-build.outputs.version }}
+      build_id: ${{ github.sha }}
+      environment: staging
+      release_name: ${{ needs.pre-build.outputs.release_name }}
+      custom_helm_override: ${{ needs.pre-build.outputs.custom_helm_override }}
     secrets: inherit
 
   deploy-qa:

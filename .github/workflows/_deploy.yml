@@ -15,12 +15,22 @@ on:
         description: "Target environment: staging | qa | dev | sandbox | uk | ca | uae."
         required: true
         type: string
+      release_name:
+        description: "Helm release name. Defaults to www-bouncer (the real per-environment bouncer). A non-default name is only allowed on staging, for parallel test bouncers."
+        required: false
+        type: string
+        default: www-bouncer
+      custom_helm_override:
+        description: "Comma-separated helm --set overrides, applied on staging only (e.g. point a test bouncer at a custom rabbitmq)."
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: read
 
 concurrency:
-  group: deploy-${{ inputs.environment }}
+  group: deploy-${{ inputs.environment }}-${{ inputs.release_name }}
   cancel-in-progress: false
 
 # Update HELM_CHART_VERSION when the bouncer chart is bumped in DevOps.
@@ -30,6 +40,8 @@ env:
   IMAGE_TAG: ${{ inputs.image_tag }}
   BUILD_ID: ${{ inputs.build_id }}
   ENVIRONMENT: ${{ inputs.environment }}
+  RELEASE_NAME: ${{ inputs.release_name }}
+  CUSTOM_HELM_OVERRIDE: ${{ inputs.custom_helm_override }}
 
 jobs:
   deploy:
@@ -75,6 +87,13 @@ jobs:
         run: |
           set -euo pipefail
 
+          # A non-default release name is only ever a parallel test bouncer, which we
+          # permit on staging only. Fail closed so a stray release can never land on prod.
+          if [[ "$RELEASE_NAME" != "www-bouncer" && "$ENVIRONMENT" != "staging" ]]; then
+            echo "release_name '$RELEASE_NAME' is only allowed on staging, not '$ENVIRONMENT'" >&2
+            exit 1
+          fi
+
           values_file="$(mktemp)"
           kubeconfig_file="$(mktemp)"
           trap 'rm -f "$values_file" "$kubeconfig_file" "$HOME/.keeper/keeper.ini"' EXIT
@@ -119,11 +138,18 @@ jobs:
             wait_args+=(--wait --rollback-on-failure)
           fi
 
+          # Custom helm overrides for parallel test bouncers (staging only), e.g. point at a
+          # separate rabbitmq and disable KEDA. Mirrors io's CUSTOM_HELM_OVERRIDE.
+          override_args=()
+          if [[ "$ENVIRONMENT" == "staging" && -n "$CUSTOM_HELM_OVERRIDE" ]]; then
+            override_args+=(--set "$CUSTOM_HELM_OVERRIDE")
+          fi
+
           # Pin client-side apply (not --server-side auto): deterministic across envs and
           # avoids the KEDA-owned ScaledJob field (jobTargetRef...volumes) SSA conflict.
           helm upgrade --install \
             --version ${{ env.HELM_CHART_VERSION }} \
-            www-bouncer \
+            "$RELEASE_NAME" \
             oci://${{ secrets.REGISTRY_LOGIN_SERVER }}/helm/bouncer \
             --namespace default \
             --server-side=false \
@@ -131,6 +157,7 @@ jobs:
             --set image.tag=${{ env.IMAGE_TAG }} \
             --set rollingupdate.enabled=true \
             --set-string podAnnotations.buildId=${{ env.BUILD_ID }} \
+            "${override_args[@]}" \
             "${wait_args[@]}"
 
           # Post-deploy health check; flags the job if the release is unhealthy.
@@ -142,7 +169,7 @@ jobs:
           attempts=10
           sleep 90
           for attempt in $(seq 1 $attempts); do
-            if out="$(python3 "$chk" --context "$kctx" --release www-bouncer --expect-tag "$IMAGE_TAG" --release-only --no-color 2>&1)"; then
+            if out="$(python3 "$chk" --context "$kctx" --release "$RELEASE_NAME" --expect-tag "$IMAGE_TAG" --release-only --no-color 2>&1)"; then
               echo "$out"
               echo "post-deploy check passed (attempt $attempt/$attempts)"
               exit 0
@@ -153,7 +180,7 @@ jobs:
             fi
           done
           echo "$out"
-          echo "::error::post-deploy check failed for www-bouncer ($ENVIRONMENT)"
+          echo "::error::post-deploy check failed for $RELEASE_NAME ($ENVIRONMENT)"
           exit 1
 
       - name: Logout from ACR
