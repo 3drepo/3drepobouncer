@@ -265,7 +265,7 @@ static void writePropertyTree(const SelectionTree::Node& node, const SelectionTr
 	writer.Key("_id");	writer.String(node._id.toString());	
 	writer.Key("shared_id"); writer.String(node.shared_id.toString());
 
-	if (node.children.size()) {
+	if (node.children.size() || ((!node.name.empty() && node.name == "rootNode"))) { // the root always outputs the children array even if it is empty. This makes things easier on the frontend.
 		writer.Key("children");
 		writer.StartArray();
 		for (auto& child : node.children) {
