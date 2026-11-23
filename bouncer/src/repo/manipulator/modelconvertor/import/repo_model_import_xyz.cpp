@@ -219,9 +219,9 @@ uint8_t XYZModelImport::loadFile(std::string filePath)
 	return 0;
 }
 
-repo::core::model::RepoScene* XYZModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& errMsg)
+repo::core::model::RepoScene* XYZModelImport::importModel(std::string filePath, std::string fileName, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& errMsg)
 {
 	// We are just calling the implementation in the abstract point cloud importer
 	// since that takes care of the actual loading.
-	return AbstractPointCloudImport::importModel(filePath, handler, errMsg);
+	return AbstractPointCloudImport::importModel(filePath, fileName, handler, errMsg);
 }

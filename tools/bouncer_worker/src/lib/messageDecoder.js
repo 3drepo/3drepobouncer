@@ -25,12 +25,7 @@ const replaceSharedDirPlaceHolder = (command) => {
 	// we need to do a find/replace to make it use rabbitmq sharedDir instead
 	let cmd = command;
 	const cmdArr = cmd.split(/\s+/);
-	if (cmdArr[0] === 'import') {
-		cmd = replaceSharedDirTag(cmd);
-		cmdArr[2] = replaceSharedDirTag(cmdArr[2]);
-		const result = replaceSharedDirTag(fs.readFileSync(cmdArr[2], 'utf8'));
-		fs.writeFileSync(cmdArr[2], result, 'utf8');
-	} else if (cmdArr[0] === 'processDrawing') {
+	if (cmdArr[0] === 'import' || cmdArr[0] === 'processDrawing') {
 		cmd = replaceSharedDirTag(cmd);
 		cmdArr[1] = replaceSharedDirTag(cmdArr[1]);
 		const result = replaceSharedDirTag(fs.readFileSync(cmdArr[1], 'utf8'));
@@ -48,13 +43,15 @@ const messageDecoder = (cmd) => {
 		case 'import':
 			{
 				// eslint-disable-next-line
-					const cmdFile = require(args[2]);
+				const cmdFile = require(args[1]);
 				res = {
 					cmdParams: [configPath, ...args],
 					teamspace: cmdFile.teamspace,
 					container: cmdFile.container,
+					revision: cmdFile.revId,
+					format: cmdFile.format,
+					size: cmdFile.size,
 					user: cmdFile.owner,
-					file: cmdFile.file,
 					...res,
 				};
 			}
@@ -62,7 +59,7 @@ const messageDecoder = (cmd) => {
 		case 'processDrawing':
 			{
 				// eslint-disable-next-line
-					const cmdFile = require(args[1]);
+				const cmdFile = require(args[1]);
 				res = {
 					cmdParams: [configPath, ...args],
 					teamspace: cmdFile.teamspace,

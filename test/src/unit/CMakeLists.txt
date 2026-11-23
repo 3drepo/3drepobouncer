@@ -16,6 +16,7 @@ set(TEST_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_mock_database.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_point_utils.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_random_generator.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_revision_utils.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_scene_utils.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_utils.cpp
 	CACHE STRING "TEST_SOURCES" FORCE)
@@ -32,6 +33,7 @@ set(TEST_HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_mock_database.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_point_utils.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_random_generator.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_revision_utils.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_scene_utils.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_utils.h
 	CACHE STRING "TEST_HEADERS" FORCE)

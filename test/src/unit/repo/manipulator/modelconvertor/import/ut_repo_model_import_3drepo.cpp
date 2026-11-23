@@ -25,6 +25,7 @@
 #include "../../../../repo_test_utils.h"
 #include "../../../../repo_test_database_info.h"
 #include "../../../../repo_test_scene_utils.h"
+#include "../../../../repo_test_revision_utils.h"
 #include "../../../../repo_test_mesh_utils.h"
 #include "../../../../repo_test_matchers.h"
 #include "../../../../repo_test_common_tests.h"
@@ -37,8 +38,8 @@ using namespace repo::test::utils;
 namespace RepoModelImportUtils
 {
 	repo::core::model::RepoScene* ImportBIMFile(
-		std::string bimFilePath,
-		uint8_t& impModelErrCode)
+		std::string bimFilePath
+	)
 	{
 		ModelImportConfig config(
 			true,
@@ -52,13 +53,15 @@ namespace RepoModelImportUtils
 
 		auto handler = getHandler();
 
+		testing::makeRevisionNode(handler, config, bimFilePath);
+
 		ModelImportManager manager;
-		auto scene = manager.ImportFromFile(bimFilePath, config, handler, impModelErrCode);
+		auto scene = manager.ImportFromFile(config, handler);
 
 		if (scene) {
 			std::string msg;
-			scene->commit(handler.get(), handler->getFileManager().get(), msg, "testuser", "", "", config.getRevisionId());
-			scene->loadScene(handler.get(), msg);
+			scene->commit(handler);
+			scene->loadScene(handler.get());
 		}
 
 		return scene;
@@ -67,17 +70,21 @@ namespace RepoModelImportUtils
 
 TEST(RepoModelImport, ValidBIM001Import)
 {
-	uint8_t errCode = 0;
-	RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/cube_bim1_spoofed.bim"), errCode);
-	EXPECT_THAT(errCode, Eq(REPOERR_UNSUPPORTED_BIM_VERSION));
+	try {
+		RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/cube_bim1_spoofed.bim"));
+		FAIL() << "Expected RepoException to be thrown";
+	}
+	catch (repo::lib::RepoException& e) {
+		EXPECT_THAT(e.repoCode(), Eq(REPOERR_UNSUPPORTED_BIM_VERSION));
+	}
+	catch(...){
+		FAIL() << "Expected RepoException to be thrown";
+	}
 }
 
 TEST(RepoModelImport, ValidBIM002Import)
 {
-	uint8_t errCode = 0;
-	SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/cube_bim2_navis_2021_repo_4.6.1.bim"), errCode));
-
-	EXPECT_EQ(REPOERR_OK, errCode);
+	SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/cube_bim2_navis_2021_repo_4.6.1.bim")));
 
 	EXPECT_THAT(scene.findNodesByMetadata("Element ID:Value", "313363").size(), Eq(5));
 
@@ -109,10 +116,7 @@ TEST(RepoModelImport, ValidBIM002Import)
 
 TEST(RepoModelImport, ValidBIM003Import)
 {
-	uint8_t errCode = 0;
-	SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/BrickWalls_bim3.bim"), errCode));
-
-	EXPECT_EQ(REPOERR_OK, errCode);
+	SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/BrickWalls_bim3.bim")));
 
 	std::vector<std::string> names({
 		"Wall-Ext_102Bwk-75Ins-100LBlk-12P",
@@ -142,10 +146,7 @@ TEST(RepoModelImport, ValidBIM003Import)
 
 TEST(RepoModelImport, ValidBIM004Import)
 {
-	uint8_t errCode = 0;
-	SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/wall_section_bim4.bim"), errCode));
-
-	EXPECT_EQ(REPOERR_OK, errCode);
+	SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/wall_section_bim4.bim")));
 
 	auto node = scene.findLeafNode("Wall-Ext_102Bwk-75Ins-100LBlk-12P");
 	EXPECT_TRUE(node.hasGeometry());
@@ -181,12 +182,10 @@ TEST(RepoModelImport, SharedCoordinates)
 	* the bim file.
 	*/
 
-	uint8_t errCode = 0;
-
 	std::vector<SceneUtils> scenes = {
-		SceneUtils(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/rotatedbox.autocad.bim004.bim"), errCode)),
-		SceneUtils(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/rotatedbox.navis.bim004.bim"), errCode)),
-		SceneUtils(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/rotatedbox.revit.bim004.bim"), errCode))
+		SceneUtils(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/rotatedbox.autocad.bim004.bim"))),
+		SceneUtils(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/rotatedbox.navis.bim004.bim"))),
+		SceneUtils(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/rotatedbox.revit.bim004.bim")))
 	};
 
 	std::vector<repo::core::model::MeshNode> meshes;
@@ -220,8 +219,7 @@ TEST(RepoModelImport, SharedCoordinates)
 
 TEST(RepoModelImport, Normals)
 {
-	uint8_t errCode = 0;
-	SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/rotatedbox.revit.bim004.bim"), errCode));
+	SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/rotatedbox.revit.bim004.bim")));
 	auto mesh = scene.getMeshes()[0].getMeshInProjectCoordinates();
 
 	// Check against known good values that should be in the normals list
@@ -241,8 +239,7 @@ TEST(RepoModelImport, Normals)
 
 TEST(RepoModelImport, Metadata)
 {
-	uint8_t errCode = 0;
-	SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/metadata.bim004.bim"), errCode));
+	SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/metadata.bim004.bim")));
 	auto node = scene.findNodeByMetadata("Element ID", "329486");
 	auto metadata = node.getMetadata();
 
@@ -262,11 +259,9 @@ TEST(RepoModelImport, EmptyTransforms)
 	* keep the Json sections the same length, so may not always look sensible.)
 	*/
 
-	uint8_t errCode = 0;
-
 	std::vector<SceneUtils> scenes = {
-		SceneUtils(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/emptyTransforms1.bim004.bim"), errCode)),
-		SceneUtils(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/emptyTransforms2.bim004.bim"), errCode))
+		SceneUtils(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/emptyTransforms1.bim004.bim"))),
+		SceneUtils(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/emptyTransforms2.bim004.bim")))
 	};
 
 	for (auto s : scenes)
@@ -287,8 +282,7 @@ TEST(RepoModelImport, TransformHierarchy1)
 
 	// Note the normals in these files are not correct: https://github.com/3drepo/3D-Repo-Product-Team/issues/793
 
-	uint8_t errCode = 0;
-	SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/blockHierarchy.civils.bim004.bim"), errCode));
+	SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/blockHierarchy.civils.bim004.bim")));
 
 	// From Civils, block instances have the same Id
 
@@ -359,8 +353,7 @@ TEST(RepoModelImport, TransformHierarchy2)
 
 	// Note the normals in these files are not correct: https://github.com/3drepo/3D-Repo-Product-Team/issues/793
 
-	uint8_t errCode = 0;
-	SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/nestedBlocks.bim004.bim"), errCode));
+	SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/nestedBlocks.bim004.bim")));
 
 	{
 		auto n = scene.findTransformationNodeByName("[7004]");
@@ -393,8 +386,7 @@ TEST(RepoModelImport, TransformHierarchy2)
 
 TEST(RepoModelImport, Colours)
 {
-	uint8_t errCode = 0;
-	SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/colours.bim004.bim"), errCode));
+	SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/colours.bim004.bim")));
 
 	EXPECT_THAT(scene.findLeafNode("[287]").getColours(), ElementsAre(repo::lib::repo_color4d_t(0.949019611, 0.403921604, 0.133333296, 1)));
 	EXPECT_THAT(scene.findLeafNode("[28B]").getColours(), ElementsAre(repo::lib::repo_color4d_t(0.898039222, 0.909803927, 0.470588207, 1)));
@@ -403,25 +395,23 @@ TEST(RepoModelImport, Colours)
 
 TEST(RepoModelImport, MetadataParents)
 {
-	uint8_t errCode;
-
 	{
-		SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/columns_navis.bim"), errCode));
+		SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/columns_navis.bim")));
 		common::checkMetadataInheritence(scene);
 	}
 
 	{
-		SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/blockHierarchy.civils.bim004.bim"), errCode));
+		SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/blockHierarchy.civils.bim004.bim")));
 		common::checkMetadataInheritence(scene);
 	}
 
 	{
-		SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/columns_revit.bim"), errCode));
+		SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/columns_revit.bim")));
 		common::checkMetadataInheritence(scene);
 	}
 
 	{
-		SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/metadata.bim004.bim"), errCode));
+		SceneUtils scene(RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/metadata.bim004.bim")));
 		common::checkMetadataInheritence(scene);
 	}
 }

@@ -67,8 +67,7 @@ public:
 	const bool isPerspective;
 };
 
-repo::core::model::RepoScene* SynchroModelImport::importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t &errCode) {
-	orgFile = filePath;
+repo::core::model::RepoScene* SynchroModelImport::importModel(std::string filePath, std::string fileName, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t &errCode) {
 	reader = std::make_shared<synchro_reader::SynchroReader>(filePath, settings.getTimeZone());
 	repoInfo << "=== IMPORTING MODEL WITH SYNCHRO MODEL CONVERTOR (animations: " << settings.shouldImportAnimations() << ") ===";
 	repoInfo << "Sequence timezone is set to : " << (settings.getTimeZone().empty() ? "UTC" : settings.getTimeZone());
@@ -398,7 +397,8 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 		<< matNodes.size() << " materials, "
 		<< textNodes.size() << " textures, "
 		<< metaNodes.size() << " metadata ";
-	auto scene = new repo::core::model::RepoScene({ orgFile }, meshNodes, matNodes, metaNodes, textNodes, transNodes);
+	auto scene = new repo::core::model::RepoScene(meshNodes, matNodes, metaNodes, textNodes, transNodes);
+
 	auto origin = reader->getGlobalOffset();
 
 	/*std::vector<double> offset = { origin.x + bbox[0].x, origin.y + bbox[0].y, origin.z + bbox[0].z };*/

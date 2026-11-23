@@ -16,6 +16,7 @@
 */
 
 #include "repo_test_utils.h"
+#include "repo_test_revision_utils.h"
 #include "repo_test_clash_utils.h"
 #include "repo_test_database_info.h"
 
@@ -702,12 +703,11 @@ void testing::importModel(std::string filename, const repo::lib::Container& cont
 
 	auto handler = getHandler();
 
-	uint8_t err;
-	std::string msg;
+	testing::makeRevisionNode(handler, config, filename);
 
 	ModelImportManager manager;
-	auto scene = manager.ImportFromFile(filename, config, handler, err);
-	scene->commit(handler.get(), handler->getFileManager().get(), msg, "testuser", "", "", config.getRevisionId());
+	auto scene = manager.ImportFromFile(config, handler);
+	scene->commit(handler);
 
 	// Clash detection expects the units to be stored in model settings
 	handler->upsertDocument(

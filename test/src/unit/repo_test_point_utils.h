@@ -139,6 +139,7 @@ namespace repo {
 						*/
 						repo::core::model::RepoScene* importModel(
 							std::string filePath,
+							std::string fileName,
 							std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
 							uint8_t& errMsg
 						);

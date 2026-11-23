@@ -50,11 +50,12 @@ namespace repo {
 				/**
 				* Import model from a given file
 				* @param path to the file
+				* @param name of the file
 				* @param database handler
 				* @param error message if failed
 				* @return returns a populated RepoScene upon success
 				*/
-				repo::core::model::RepoScene* importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& errMsg);
+				repo::core::model::RepoScene* importModel(std::string filePath, std::string fileName, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& errMsg);
 
 			protected:
 

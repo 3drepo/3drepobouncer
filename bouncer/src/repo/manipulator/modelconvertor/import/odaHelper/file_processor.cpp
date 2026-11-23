@@ -51,19 +51,19 @@ std::unique_ptr<T> makeUnique(Args&&... args) {
 	return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
-std::unique_ptr<FileProcessor> FileProcessor::getFileProcessor(const std::string &inputFile, repo::manipulator::modelutility::RepoSceneBuilder* builder, const ModelImportConfig& config) {
-	boost::filesystem::path filePathP(inputFile);
+std::unique_ptr<FileProcessor> FileProcessor::getFileProcessor(const std::string& filePath, const std::string &fileName, repo::manipulator::modelutility::RepoSceneBuilder* builder, const ModelImportConfig& config) {
+	boost::filesystem::path filePathP(fileName);
 	std::string fileExt = filePathP.extension().string();
 	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
 
 	if (fileExt == ".DGN")
-		return makeUnique<FileProcessorDgn>(inputFile, builder, config);
+		return makeUnique<FileProcessorDgn>(filePath, builder, config);
 	else if (fileExt == ".DWG" || fileExt == ".DXF")
-		return makeUnique<FileProcessorDwg>(inputFile, builder, config);
+		return makeUnique<FileProcessorDwg>(filePath, builder, config);
 	else if (fileExt == ".RVT" || fileExt == ".RFA")
-		return makeUnique<FileProcessorRvt>(inputFile, builder, config);
+		return makeUnique<FileProcessorRvt>(filePath, builder, config);
 	else if (fileExt == ".NWD" || fileExt == ".NWC")
-		return makeUnique<FileProcessorNwd>(inputFile, builder, config);
+		return makeUnique<FileProcessorNwd>(filePath, builder, config);
 
 	return nullptr;
 }

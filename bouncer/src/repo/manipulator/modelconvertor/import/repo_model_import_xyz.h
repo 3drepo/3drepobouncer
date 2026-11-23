@@ -45,9 +45,7 @@ namespace repo {
 				* @param error message if failed
 				* @return returns a populated RepoScene upon success
 				*/
-				repo::core::model::RepoScene* importModel(std::string filePath, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& errMsg);
-
-
+				repo::core::model::RepoScene* importModel(std::string filePath, std::string fileName, std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler, uint8_t& errMsg);
 
 			protected:
 

@@ -18,6 +18,7 @@
 #include "repo_test_scene_utils.h"
 #include "repo_test_database_info.h"
 #include "repo_test_mesh_utils.h"
+#include "repo_test_utils.h"
 #include <repo/core/model/bson/repo_node_metadata.h>
 #include <repo/core/model/bson/repo_node_mesh.h>
 #include <repo/core/model/bson/repo_node_material.h>
@@ -509,6 +510,18 @@ std::vector<repo::core::model::RepoBSON> ContainerUtils::getRootNodes()
 	);
 }
 
+std::vector<repo::core::model::RepoBSON> ContainerUtils::getAllNodes(bool binaries) const
+{
+	query::RepoQueryBuilder query;
+	query.append(query::Eq(REPO_NODE_REVISION_ID, revisionId));
+	return handler->findAllByCriteria(
+		database,
+		container + "." + REPO_COLLECTION_SCENE,
+		query,
+		binaries
+	);
+}
+
 std::vector<repo::core::model::RepoRef> ContainerUtils::getAllRefNodes()
 {
 	std::set<std::string> refNames;
@@ -642,13 +655,148 @@ void testing::makeRandomScene(
 	builder.finalise();
 }
 
-repo::core::model::RepoScene* testing::makeRandomScene()
+std::unique_ptr<repo::core::model::RepoScene> testing::makeRandomScene()
 {
-	auto scene = new repo::core::model::RepoScene();
+	auto scene = std::make_unique<repo::core::model::RepoScene>();
 
 	makeRandomSceneNodes([&](std::unique_ptr<RepoNode> n) {
 		scene->addNodes({n.release()});
 	});
 
 	return scene;
+}
+
+// Reconstructs a strongly-typed RepoNode from a RepoBSON document, so that
+// subclass-specific content (geometry, matrices, metadata, etc) can be
+// compared via sEqual.
+std::unique_ptr<repo::core::model::RepoNode> createTypedNode(const repo::core::model::RepoBSON& bson)
+{
+	using namespace repo::core::model;
+	switch (RepoNode::parseType(bson.getStringField(REPO_NODE_LABEL_TYPE)))
+	{
+	case NodeType::MESH:
+		return std::make_unique<MeshNode>(bson);
+	case NodeType::MATERIAL:
+		return std::make_unique<MaterialNode>(bson);
+	case NodeType::METADATA:
+		return std::make_unique<MetadataNode>(bson);
+	case NodeType::TEXTURE:
+		return std::make_unique<TextureNode>(bson);
+	case NodeType::TRANSFORMATION:
+		return std::make_unique<TransformationNode>(bson);
+	default:
+		throw repo::lib::RepoException("Unexpected node type in scene collection: " + bson.getStringField(REPO_NODE_LABEL_TYPE));
+	}
+}
+
+bool testing::MatchesContainerAndExplain(
+	const repo::core::model::RepoScene& scene,
+	const ContainerUtils& container,
+	::testing::MatchResultListener* listener
+)
+{
+	using namespace repo::core::model;
+
+	*listener << "Comparing scene " << scene.getDatabaseName() << "." << scene.getProjectName()
+		<< ", revision " << scene.getRevisionID().toString() << " ";
+
+	// Build an index of every node currently in the database, keyed by
+	// unique Id, along with a flag to mark whether it has been matched
+	// against a node in the scene.
+
+	struct IndexEntry
+	{
+		std::unique_ptr<RepoNode> node;
+		bool compared = false;
+	};
+
+	std::unordered_map<repo::lib::RepoUUID, IndexEntry, repo::lib::RepoUUIDHasher> index;
+
+	for (auto& bson : container.getAllNodes(true))
+	{
+		auto node = createTypedNode(bson);
+		auto id = node->getUniqueID();
+		index[id] = IndexEntry{std::move(node), false};
+	}
+
+	// For every node in each of the scene's node collections, look it up in
+	// the index by unique Id, and compare its contents using sEqual. Mark the
+	// index entry as compared so we can check, at the end, that there are no
+	// left over nodes in the database that aren't in the scene.
+
+	auto compareAll = [&](const RepoNodeSet& nodes) -> bool {
+		for (auto n : nodes)
+		{
+			auto it = index.find(n->getUniqueID());
+			if (it == index.end()) {
+				*listener << "Node " << n->getUniqueID().toString()
+					<< " (\"" << n->getName() << "\") is present in the scene but not in the container.";
+				return false;
+			}
+
+			// Semantic equality check of the contents the node represents.
+
+			if (!n->sEqual(*it->second.node)) {
+				*listener << "Node " << n->getUniqueID().toString()
+					<< " (\"" << n->getName() << "\") does not satisfy sEqual between the scene and the container.";
+
+				{
+					auto m1 = dynamic_cast<MeshNode*>(n);
+					auto m2 = dynamic_cast<MeshNode*>(it->second.node.get());
+					EXPECT_THAT(m1->getFaces(), Eq(m2->getFaces()));
+				}
+
+				return false;
+			}
+
+			// For the scene equality operator, we also want to check the
+			// exact ids (_id, shared_id & parents).
+
+			auto& other = *it->second.node;
+
+			if (n->getSharedID() != other.getSharedID()) {
+				*listener << "Node " << n->getUniqueID().toString()
+					<< " (\"" << n->getName() << "\") has a different shared Id in the scene ("
+					<< n->getSharedID().toString() << ") than in the container ("
+					<< other.getSharedID().toString() << ").";
+				return false;
+			}
+
+			auto parents = n->getParentIDs();
+			auto otherParents = other.getParentIDs();
+
+			std::set<repo::lib::RepoUUID> parentSet(parents.begin(), parents.end());
+			std::set<repo::lib::RepoUUID> otherParentSet(otherParents.begin(), otherParents.end());
+
+			if (parentSet != otherParentSet) {
+				*listener << "Node " << n->getUniqueID().toString()
+					<< " (\"" << n->getName() << "\") has a different set of parents in the scene than in the container.";
+				return false;
+			}
+
+			it->second.compared = true;
+		}
+		return true;
+	};
+
+	if (!compareAll(scene.getAllMeshes(RepoScene::GraphType::DEFAULT))) return false;
+	if (!compareAll(scene.getAllMaterials(RepoScene::GraphType::DEFAULT))) return false;
+	if (!compareAll(scene.getAllMetadata(RepoScene::GraphType::DEFAULT))) return false;
+	if (!compareAll(scene.getAllTextures(RepoScene::GraphType::DEFAULT))) return false;
+	if (!compareAll(scene.getAllTransformations(RepoScene::GraphType::DEFAULT))) return false;
+
+	// Finally, check every node in the index has been compared against a node
+	// in the scene; if any remain, the database contains nodes that are not
+	// accounted for in the scene.
+
+	for (auto& entry : index)
+	{
+		if (!entry.second.compared) {
+			*listener << "Node " << entry.first.toString()
+				<< " is present in the container but not in the scene.";
+			return false;
+		}
+	}
+
+	return true;
 }

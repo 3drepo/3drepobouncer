@@ -185,6 +185,7 @@ void AbstractPointCloudImport::createRootNode(repo::manipulator::modelutility::R
 
 repo::core::model::RepoScene* AbstractPointCloudImport::importModel(
 	std::string filePath,
+	std::string fileName,
 	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
 	uint8_t& errMsg)
 {
@@ -353,7 +354,8 @@ repo::core::model::RepoScene* AbstractPointCloudImport::importModel(
 	repo::core::model::RepoScene* scene;
 	scene = new repo::core::model::RepoScene(
 		settings.getDatabaseName(),
-		settings.getProjectName()
+		settings.getProjectName(),
+		settings.getRevisionId()
 	);
 
 	// Flag the scene as a point cloud
@@ -361,9 +363,7 @@ repo::core::model::RepoScene* AbstractPointCloudImport::importModel(
 
 	scene->setWorldOffset(worldOffset);
 	scene->setSceneBounds(bounds);
-	
-	scene->setRevision(settings.getRevisionId());
-	scene->setOriginalFiles({ filePath });
+
 	scene->loadRootNode(handler.get());
 	
 	return scene;

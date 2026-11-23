@@ -35,7 +35,7 @@ namespace RepoModelImportUtils
 		ModelImportConfig config;
 		auto handler = getHandler();
 		auto modelConvertor = std::unique_ptr<AssimpModelImport>(new AssimpModelImport(config));
-		modelConvertor->importModel(filePath, handler, impModelErrCode);
+		modelConvertor->importModel(filePath, std::filesystem::path(filePath).filename().string(), handler, impModelErrCode);
 		return modelConvertor;
 	}
 
@@ -46,7 +46,7 @@ namespace RepoModelImportUtils
 		ModelImportConfig config;
 		auto handler = getHandler();
 		auto modelConvertor = std::unique_ptr<AssimpModelImport>(new AssimpModelImport(config));
-		return modelConvertor->importModel(filePath, handler, impModelErrCode);
+		return modelConvertor->importModel(filePath, std::filesystem::path(filePath).filename().string(), handler, impModelErrCode);
 	}
 }
 

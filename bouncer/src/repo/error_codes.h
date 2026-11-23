@@ -101,9 +101,11 @@
 //This can occur during multi-threaded operations with insertMany where the document
 //is already committed before the file is written into the file store
 #define REPOERR_FILE_REF_MISSING 41
+//A revision node was specified but could not be found in the database.
+#define REPOERR_REVISION_NOT_FOUND 42
 // When the colum description of the XYZ importer could not be split. Likely due to a wrong delimiter.
-#define REPOERR_XYZ_WRONG_DELIMITER 42
+#define REPOERR_XYZ_WRONG_DELIMITER 43
 // When the XYZ importer found no colum description.
-#define REPOERR_XYZ_COLUMN_DESCRIPTION_MISSING 43
+#define REPOERR_XYZ_COLUMN_DESCRIPTION_MISSING 44
 // When the XYZ importer found a column description, but required columns are missing
-#define REPOERR_XYZ_REQUIRED_COLUMNS_MISSING 44
+#define REPOERR_XYZ_REQUIRED_COLUMNS_MISSING 45

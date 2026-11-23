@@ -47,7 +47,7 @@ TEST(PointCloudImportAbstract, MainTest)
 	// "Import" the model
 	uint8_t errMsg;
 	auto handler = getHandler();
-	mockImporter->importModel("", handler, errMsg);
+	mockImporter->importModel("", "", handler, errMsg);
 	EXPECT_THAT(errMsg, Eq(0));
 
 	// Compare the point clouds as it was imported with the test

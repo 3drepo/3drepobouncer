@@ -51,18 +51,6 @@ RepoController::RepoToken* RepoController::init(
 	return impl->init(errMsg, config);
 }
 
-uint8_t RepoController::commitScene(
-	const RepoController::RepoToken    *token,
-	repo::core::model::RepoScene        *scene,
-	const std::string                   &owner,
-	const std::string                      &tag,
-	const std::string                      &desc,
-	const repo::lib::RepoUUID           &revId,
-	const repo::manipulator::modelutility::WebBufferConfig& config)
-{
-	return impl->commitScene(token, scene, owner, tag, desc, revId, config);
-}
-
 void RepoController::destroyToken(RepoController::RepoToken* token)
 {
 	if (token) delete token;
@@ -151,13 +139,10 @@ repo::core::model::RepoNodeSet RepoController::loadMetadataFromFile(
 	return impl->loadMetadataFromFile(filePath, delimiter);
 }
 
-repo::core::model::RepoScene*
-RepoController::loadSceneFromFile(
-	const std::string                                          &filePath,
-	uint8_t                                                    &err,
+uint32_t RepoController::processModelRevision(
 	const repo::manipulator::modelconvertor::ModelImportConfig &config)
 {
-	return impl->loadSceneFromFile(filePath, err, config);
+	return impl->processModelRevision(config);
 }
 
 void RepoController::processDrawingRevision(

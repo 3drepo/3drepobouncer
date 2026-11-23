@@ -578,6 +578,9 @@ RepoBSON repo::test::utils::point::pointNodeTestBSONFactory(point_data data)
 repo::test::utils::point::TestPCImport::TestPCImport(const repo::manipulator::modelconvertor::ModelImportConfig& settings) :
 	AbstractPointCloudImport(settings)
 {
+   // Test data is already generated in the expected orientation.
+	// Keep raw coordinates so comparisons against mock input remain valid.
+	reorientPoints = false;
 }
 
 repo::test::utils::point::TestPCImport::~TestPCImport()
@@ -615,12 +618,13 @@ void repo::test::utils::point::TestPCImport::createTestData(
 
 repo::core::model::RepoScene* repo::test::utils::point::TestPCImport::importModel(
 	std::string filePath,
+	std::string fileName,
 	std::shared_ptr<repo::core::handler::AbstractDatabaseHandler> handler,
 	uint8_t& errMsg)
 {
 	// We are just calling the implementation in the abstract point cloud importer
 	// since that takes care of the actual loading.
-	return AbstractPointCloudImport::importModel(filePath, handler, errMsg);
+	return AbstractPointCloudImport::importModel(filePath, fileName, handler, errMsg);
 }
 
 bool repo::test::utils::point::TestPCImport::getNextPoint(repo::core::model::PointData& point)

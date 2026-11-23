@@ -41,6 +41,11 @@ namespace repo {
 				bool configured = false;
 			};
 
+			struct extfs_config_t {
+				std::string dir;
+				bool configured = false;
+			};
+
 			/**
 			* Instantiate Repo Config with a database connection
 			* @params databaseAddr database address
@@ -85,8 +90,13 @@ namespace repo {
 				const bool useAsDefault = true
 			);
 
+			void REPO_API_EXPORT configureExtFS(
+				const std::string &directory
+			);
+
 			const database_config_t getDatabaseConfig() const { return dbConf; }
 			const fs_config_t getFSConfig() const { return fsConf; }
+			const extfs_config_t getExtFSConfig() const { return extFsConf; }
 
 			/**
 			* Get default storage engine currently configured
@@ -99,6 +109,7 @@ namespace repo {
 		private:
 			database_config_t dbConf;
 			fs_config_t fsConf;
+			extfs_config_t extFsConf;
 			FileStorageEngine defaultStorage;
 		};
 	}
