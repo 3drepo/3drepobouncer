@@ -8,10 +8,12 @@ add_subdirectory(auxiliary)
 set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_export_abstract.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_point_cloud_export_abstract.cpp
 	CACHE STRING "SOURCES" FORCE)
 
 set(HEADERS
 	${HEADERS}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_export_abstract.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_point_cloud_export_abstract.h
 	CACHE STRING "HEADERS" FORCE)
 

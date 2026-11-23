@@ -6,6 +6,7 @@
 
 add_subdirectory(datastructure)
 add_subdirectory(hopscotch_map)
+add_subdirectory(point_cloud)
 add_subdirectory(rapidjson)
 set(SOURCES
 	${SOURCES}

@@ -5,6 +5,7 @@
 
 
 add_subdirectory(odaImport)
+add_subdirectory(pointCloud)
 set(TEST_SOURCES
 	${TEST_SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_drawing_import_manager.cpp
