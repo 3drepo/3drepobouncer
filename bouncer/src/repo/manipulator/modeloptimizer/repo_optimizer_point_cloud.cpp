@@ -201,20 +201,6 @@ OctreeNode::OctreeNode(int splits, std::vector<uint8_t> treePosition, repo::lib:
 
 	// Initialise point storage
 	points = std::make_unique < std::vector<repo::core::model::PointData>>();
-
-	// If we have not reached the bottom, create children.
-	if (splits > treePosition.size())
-	{
-		for (int i = 0; i < 8; i++)
-		{
-			auto childPosition = treePosition;
-			childPosition.push_back(i);
-
-			auto childBounds = pointcloud::PointCloudUtils::getChildBoundsByIndex(nodeBounds, i);
-
-			children[i] = std::make_unique<OctreeNode>(splits, childPosition, childBounds);
-		}
-	}
 }
 
 void OctreeNode::insert(std::vector<uint8_t> treePosition, const repo::core::model::PointData& point)
@@ -226,6 +212,15 @@ void OctreeNode::insert(std::vector<uint8_t> treePosition, const repo::core::mod
 	else
 	{
 		int next = treePosition[nodeTreePosition.size()];
+
+		if (children[next] == nullptr)
+		{
+			auto childPosition = nodeTreePosition;
+			childPosition.push_back(next);
+			auto childBounds = pointcloud::PointCloudUtils::getChildBoundsByIndex(nodeBounds, next);
+			children[next] = std::make_unique<OctreeNode>(0, childPosition, childBounds);
+		}
+
 		children[next]->insert(treePosition, point);
 	}
 }
@@ -241,6 +236,15 @@ void OctreeNode::addNode(std::vector<uint8_t> treePosition, std::unique_ptr<Octr
 	}
 	else {
 		int next = treePosition[nodeTreePosition.size()];
+
+		if (children[next] == nullptr)
+		{
+			auto childPosition = nodeTreePosition;
+			childPosition.push_back(next);
+			auto childBounds = pointcloud::PointCloudUtils::getChildBoundsByIndex(nodeBounds, next);
+			children[next] = std::make_unique<OctreeNode>(0, childPosition, childBounds);
+		}
+
 		children[next]->addNode(treePosition, std::move(node));
 	}
 }
@@ -250,10 +254,14 @@ OctreeNode* OctreeNode::getNode(std::vector<uint8_t> treePosition)
 	if (nodeTreePosition.size() == (treePosition.size() - 1))
 	{
 		int next = treePosition[nodeTreePosition.size()];
+        if (children[next] == nullptr)
+			return nullptr;
 		return children[next].get();
 	}
 	else {
 		int next = treePosition[nodeTreePosition.size()];
+       if (children[next] == nullptr)
+			return nullptr;
 		return children[next]->getNode(treePosition);
 	}
 }
@@ -297,7 +305,8 @@ void Octree::subsample(
 	// If we are no leaf, we ask each of our children to subsample
 	for (int i = 0; i < 8; i++)
 	{
-		subsample(exporter, node->children[i].get());
+       if (node->children[i] != nullptr)
+			subsample(exporter, node->children[i].get());
 	}
 
 	// Then we subsample ourselves
